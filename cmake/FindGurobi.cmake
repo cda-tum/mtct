@@ -12,7 +12,6 @@ find_path(GUROBI_HOME
         $ENV{GUROBI_HOME}
         )
 
-cmake_print_variables(GUROBI_HOME)
 find_path(GUROBI_INCLUDE_DIR
         NAMES gurobi_c++.h
         PATHS "${GUROBI_HOME}/include"
@@ -113,7 +112,7 @@ if(TARGET Gurobi::GurobiC AND GUROBI_CXX_SRC AND NOT TARGET Gurobi::GurobiCXX)
     target_link_libraries(GurobiCXX PUBLIC Gurobi::GurobiC)
     # We need to be able to link this into a shared library:
     set_target_properties(GurobiCXX PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
+    cmake_print_variables(GurobiCXX)
 endif()
 
 # legacy support:

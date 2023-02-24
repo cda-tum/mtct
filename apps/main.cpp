@@ -10,7 +10,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "gurobi_c.h"
+#include "RailwayNetwork.hpp"
+#include "gurobi_c++.h"
 
 int main()
 {
