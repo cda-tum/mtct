@@ -10,6 +10,8 @@ project(
         LANGUAGES CXX
         DESCRIPTION "")
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 # check whether `modulename` is correctly cloned in the `extern` directory.
 macro(CHECK_SUBMODULE_PRESENT modulename)
     if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/${modulename}/CMakeLists.txt")
@@ -20,6 +22,20 @@ macro(CHECK_SUBMODULE_PRESENT modulename)
         from the main project directory")
     endif()
 endmacro()
+
+# Visual Studio compiler with static runtime libraries
+if(MSVC AND MT)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
+endif()
+
+find_package(Gurobi REQUIRED)
+
+if(NOT GUROBI_FOUND)
+    message(WARNING "Did not find Gurobi")
+endif()
 
 # add main library code
 add_subdirectory(src)
