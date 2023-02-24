@@ -47,7 +47,3 @@ if(BUILD_TESTS)
     include(GoogleTest)
     add_subdirectory(test)
 endif()
-
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    add_subdirectory(apps)
-endif ()

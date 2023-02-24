@@ -3,12 +3,11 @@
 #  Targets:
 #       Gurobi::GurobiC   - only the C interface
 #       Gurobi::GurobiCXX - C and C++ interface
-include(CMakePrintHelpers)
 #set(CMAKE_FIND_DEBUG_MODE TRUE)
 find_path(GUROBI_HOME
         NAMES "include/gurobi_c++.h"
         PATHS ${PROJECT_SOURCE_DIR}
-        PATH_SUFFIXES "gurobi1001/linux64" "gurobi1001/windows64"
+        PATH_SUFFIXES "gurobi*/linux64" "gurobi*/windows64"
         $ENV{GUROBI_HOME}
         )
 
@@ -112,7 +111,6 @@ if(TARGET Gurobi::GurobiC AND GUROBI_CXX_SRC AND NOT TARGET Gurobi::GurobiCXX)
     target_link_libraries(GurobiCXX PUBLIC Gurobi::GurobiC)
     # We need to be able to link this into a shared library:
     set_target_properties(GurobiCXX PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    cmake_print_variables(GurobiCXX)
 endif()
 
 # legacy support:
