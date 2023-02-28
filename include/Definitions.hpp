@@ -1,7 +1,8 @@
 #pragma once
 
-#include <cstddef>
-
-struct Edge{
-    std::size_t length;
-};
+namespace cda_rail {
+    // Constants for vertex type
+    static const int NO_BORDER = 0;
+    static const int VSS = 1;
+    static const int TTD = 2;
+}
