@@ -3,6 +3,8 @@ add_library(
         ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
         ${PROJECT_SOURCE_DIR}/include/RailwayNetwork.hpp
         RailwayNetwork.cpp
+        ${PROJECT_SOURCE_DIR}/include/xml/tinyxml2.h
+        xml/tinyxml2.cpp
 )
 
 # set include directories
