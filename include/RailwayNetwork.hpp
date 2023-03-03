@@ -8,15 +8,13 @@ namespace cda_rail {
          * Vertex object
          * @param name Name of the vertex
          * @param type Type of the vertex (NO_BORDER, VSS, TTD)
-         * @param successor_tuples Vector of successor tuples related to this vertex. Maybe not here?
          */
 
         std::string name;
         int type;
-        //std::vector<MovementTuple> successor_tuples;
     };
 
-    struct Edge {
+    class Edge {
         /**
          * Edge object
          * @param source Source vertex
@@ -25,12 +23,16 @@ namespace cda_rail {
          * @param max_speed Speed limit of vertex (in m/s)
          * @param breakable Boolean indicating if VSS can be placed on this edge
          * @param min_block_length Minimum block length (in m). Optional, default 0.
+         * @param successors Vector of successor edges
          */
+        public:
+            Vertex *source, *target;
+            double length, max_speed;
+            bool breakable;
+            double min_block_length = 0;
+            std::vector<Edge*> successors;
 
-        Vertex source, target;
-        double length, max_speed;
-        bool breakable;
-        double min_block_length = 0;
+            std::string toString() const;
     };
 
     struct Network {
@@ -42,6 +44,7 @@ namespace cda_rail {
 
         std::vector<Vertex> vertices;
         std::vector<Edge> edges;
+        // TODO: Might change to unordered_map
     };
 
     struct SuccessorTuple {
