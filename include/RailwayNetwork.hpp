@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace cda_rail {
     struct Vertex {
@@ -35,25 +36,20 @@ namespace cda_rail {
             std::string toString() const;
     };
 
-    struct Network {
+    class Network {
         /**
          * Graph object
-         * @param vertices Vector of vertices
-         * @param edges Vector of edges
+         * @param vertices Unordered map of vertices
+         * @param edges Unordered map of edges
+         * @param vertex_names Vector of vertex names
+         * @param edge_names Vector of edge names
          */
+        public:
+            std::unordered_map<std::string, Vertex> vertices;
+            std::unordered_map<std::string, Edge> edges;
+            std::vector<std::string> vertex_names;
+            std::vector<std::string> edge_names;
 
-        std::vector<Vertex> vertices;
-        std::vector<Edge> edges;
-        // TODO: Might change to unordered_map
-    };
-
-    struct SuccessorTuple {
-        /**
-         * MovementTuple object
-         * @param source Source edge
-         * @param target Target edge
-         */
-
-        Edge source, target;
+            static Network read_network(std::string path);
     };
 }

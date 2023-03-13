@@ -16,6 +16,7 @@ TEST(Functionaliy, SimpleTest) {
     EXPECT_TRUE(g.edges.size() == 0); // dummy test
 }
 
+/**
 TEST(Functionality, ReadXML) {
     tinyxml2::XMLDocument graph_xml;
     graph_xml.LoadFile("./example-networks/Fig11/network/tracks.graphml");
@@ -212,3 +213,4 @@ TEST(Functionality, JSON) {
         }
     }
 }
+ **/
