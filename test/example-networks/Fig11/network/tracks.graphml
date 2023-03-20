@@ -43,19 +43,19 @@
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
       <data key="d3">0.0</data>
-      <data key="d4">False</data>
+      <data key="d4">True</data>
     </edge>
     <edge source="l1" target="l2">
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
       <data key="d3">0.0</data>
-      <data key="d4">False</data>
+      <data key="d4">True</data>
     </edge>
     <edge source="l1" target="l0">
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
       <data key="d3">0.0</data>
-      <data key="d4">False</data>
+      <data key="d4">True</data>
     </edge>
     <edge source="l2" target="l3">
       <data key="d1">5.0</data>
@@ -67,7 +67,7 @@
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
       <data key="d3">0.0</data>
-      <data key="d4">False</data>
+      <data key="d4">True</data>
     </edge>
     <edge source="l3" target="g00">
       <data key="d1">5.0</data>
@@ -91,13 +91,13 @@
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
       <data key="d3">0.0</data>
-      <data key="d4">False</data>
+      <data key="d4">True</data>
     </edge>
     <edge source="r1" target="r0">
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
       <data key="d3">0.0</data>
-      <data key="d4">False</data>
+      <data key="d4">True</data>
     </edge>
     <edge source="r1" target="r2">
       <data key="d1">5.0</data>
@@ -127,7 +127,7 @@
       <data key="d1">300.0</data>
       <data key="d2">27.77777777777778</data>
       <data key="d3">0.0</data>
-      <data key="d4">False</data>
+      <data key="d4">True</data>
     </edge>
     <edge source="g00" target="l3">
       <data key="d1">5.0</data>
@@ -145,13 +145,13 @@
       <data key="d1">300.0</data>
       <data key="d2">27.77777777777778</data>
       <data key="d3">0.0</data>
-      <data key="d4">False</data>
+      <data key="d4">True</data>
     </edge>
     <edge source="g10" target="g11">
       <data key="d1">300.0</data>
       <data key="d2">27.77777777777778</data>
       <data key="d3">0.0</data>
-      <data key="d4">False</data>
+      <data key="d4">True</data>
     </edge>
     <edge source="g10" target="l3">
       <data key="d1">5.0</data>
@@ -169,7 +169,7 @@
       <data key="d1">300.0</data>
       <data key="d2">27.77777777777778</data>
       <data key="d3">0.0</data>
-      <data key="d4">False</data>
+      <data key="d4">True</data>
     </edge>
   </graph>
 </graphml>
