@@ -180,3 +180,65 @@ TEST(Functionality, ReadNetwork) {
     successors_target.clear();
     EXPECT_TRUE(network.get_successors("l1", "l0") == successors_target);
 }
+
+TEST(Functionality, WriteNetwork) {
+    cda_rail::Network network;
+    network.add_vertex("v0", 0);
+    network.add_vertex("v1", 1);
+    network.add_vertex("v2", 2);
+
+    network.add_edge("v0", "v1", 1, 2, true, 0);
+    network.add_edge("v1","v2", 3, 4, false, 1.5);
+    network.add_edge("v1","v0", 1, 2, true, 0);
+    network.add_edge("v2", "v0", 10, 20, false, 2);
+
+    network.add_successor(network.get_edge_index("v0", "v1"), network.get_edge_index("v1", "v2"));
+    network.add_successor(network.get_edge_index("v0", "v1"), network.get_edge_index("v1", "v0"));
+    network.add_successor(network.get_edge_index("v2","v0"), network.get_edge_index("v0", "v1"));
+
+    network.export_network("./tmp/write_network_test");
+
+    auto network_read = cda_rail::Network::read_network("./tmp/write_network_test");
+
+    // Delete created directory and everything in it
+    std::filesystem::remove_all("./tmp");
+
+
+    // check if both networks are equivalent
+
+    // check vertices
+    EXPECT_TRUE(network.number_of_vertices() == network_read.number_of_vertices());
+    for (int i = 0; i < network.number_of_vertices(); ++i) {
+        EXPECT_TRUE(network_read.has_vertex(network.get_vertex(i).name));
+        EXPECT_TRUE(network_read.get_vertex(network.get_vertex(i).name).type == network.get_vertex(i).type);
+    }
+
+    // check edges
+    EXPECT_TRUE(network.number_of_edges() == network_read.number_of_edges());
+    for (int i = 0; i < network.number_of_edges(); ++i) {
+        auto source_vertex = network.get_vertex(network.get_edge(i).source);
+        auto target_vertex = network.get_vertex(network.get_edge(i).target);
+        EXPECT_TRUE(network_read.has_edge(source_vertex.name, target_vertex.name));
+        auto edge_read = network_read.get_edge(source_vertex.name, target_vertex.name);
+        EXPECT_TRUE(edge_read.breakable == network.get_edge(i).breakable);
+        EXPECT_TRUE(edge_read.length == network.get_edge(i).length);
+        EXPECT_TRUE(edge_read.max_speed == network.get_edge(i).max_speed);
+        EXPECT_TRUE(edge_read.min_block_length == network.get_edge(i).min_block_length);
+    }
+
+    // check successors
+    for (int i = 0; i < network.number_of_edges(); ++i) {
+        auto successors_target = network.get_successors(i);
+        std::unordered_set<int> successors_target_transformed;
+        for (auto successor : successors_target) {
+            auto e = network.get_edge(successor);
+            std::string source = network.get_vertex(e.source).name;
+            std::string target = network.get_vertex(e.target).name;
+            successors_target_transformed.insert(network_read.get_edge_index(source, target));
+        }
+        auto e = network.get_edge(i);
+        std::string source = network.get_vertex(e.source).name;
+        std::string target = network.get_vertex(e.target).name;
+        EXPECT_TRUE(network_read.get_successors(source, target) == successors_target_transformed);
+    }
+}
