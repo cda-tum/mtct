@@ -7,6 +7,7 @@
 #include <sstream>
 #include <algorithm>
 #include "parsing/tinyxml2.h"
+#include <filesystem>
 
 namespace cda_rail {
     struct Vertex {
@@ -55,6 +56,12 @@ namespace cda_rail {
             static void add_edges_from_graphml(const tinyxml2::XMLElement* graphml_edge, cda_rail::Network& network, const std::string& breakable, const std::string& length, const std::string& max_speed, const std::string& min_block_length);
             void read_successors(const std::string& path);
             static void extract_vertices_from_key(const std::string& key, std::string& source_name, std::string& target_name);
+
+            void export_graphml(const std::filesystem::path& p) const;
+            void export_successors_python(const std::filesystem::path& p) const;
+            void export_successors_cpp(const std::filesystem::path& p) const;
+            void write_successor_set_to_file(std::ofstream& file, const int& i) const;
+            void write_successor_list_to_file(std::ofstream& file, const int& i) const;
         public:
             void add_vertex(const std::string& name, const int type);
             void add_edge(const int source, const int target, const double length, const double max_speed, const bool breakable, const double min_block_length = 0);
@@ -98,6 +105,7 @@ namespace cda_rail {
             [[nodiscard]] int number_of_edges() const;
 
             [[nodiscard]] static Network read_network(const std::string& path);
+            void export_network(const std::string& path) const;
     };
 
     // HELPER

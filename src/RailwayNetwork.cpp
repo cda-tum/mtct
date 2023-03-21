@@ -574,3 +574,203 @@ void cda_rail::to_bool_optional(std::string &s, std::optional<bool> &b) {
         b = tmp;
     }
 }
+
+void cda_rail::Network::export_graphml(const std::filesystem::path &p) const {
+    /**
+     * Export the network to a GraphML file in the given path.
+     * @param path: The path to the directory.
+     */
+
+    // Open the file.
+    std::ofstream file(p / "tracks.graphml");
+
+    // Write the header.
+    file << "<?xml version='1.0' encoding='UTF-8'?>" << std::endl;
+    file << R"(<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">)"
+         << std::endl;
+
+    // Write the key relations
+    std::string breakable = "d0";
+    std::string length = "d1";
+    std::string max_speed = "d2";
+    std::string min_block_length = "d3";
+    std::string type = "d4";
+    file << "<key id=\"" << breakable << R"(" for="edge" attr.name="breakable" attr.type="boolean"/>)" << std::endl;
+    file << "<key id=\"" << length << R"(" for="edge" attr.name="length" attr.type="double"/>)" << std::endl;
+    file << "<key id=\"" << max_speed << R"(" for="edge" attr.name="max_speed" attr.type="double"/>)" << std::endl;
+    file << "<key id=\"" << min_block_length << R"(" for="edge" attr.name="min_block_length" attr.type="double"/>)"
+         << std::endl;
+    file << "<key id=\"" << type << R"(" for="edge" attr.name="type" attr.type="long"/>)" << std::endl;
+
+    // Write the graph header
+    file << "<graph edgedefault=\"directed\">" << std::endl;
+
+    // Write the vertices
+    for (const auto &vertex : vertices) {
+        file << "<node id=\"" << vertex.name << "\">" << std::endl;
+        file << "<data key=\"" << type << "\">" << vertex.type << "</data>" << std::endl;
+        file << "</node>" << std::endl;
+    }
+
+    // Write the edges
+    for (const auto &edge : edges) {
+        file << "<edge source=\"" << vertices[edge.source].name << "\" target=\"" << vertices[edge.target].name << "\">"
+             << std::endl;
+        file << "<data key=\"" << breakable << "\">" << std::boolalpha << edge.breakable << "</data>" << std::endl;
+        file << "<data key=\"" << length << "\">" << edge.length << "</data>" << std::endl;
+        file << "<data key=\"" << max_speed << "\">" << edge.max_speed << "</data>" << std::endl;
+        file << "<data key=\"" << min_block_length << "\">" << edge.min_block_length << "</data>" << std::endl;
+        file << "</edge>" << std::endl;
+    }
+
+    // Write the footer
+    file << "</graph>" << std::endl;
+    file << "</graphml>" << std::endl;
+
+    // Close the file.
+    file.close();
+}
+
+void cda_rail::Network::export_successors_cpp(const std::filesystem::path &p) const {
+    /**
+     * Export the successors to successors_cpp.json for C++ in the given directory.
+     * @param path: The path to the directory.
+     */
+
+    // Open the file for C++.
+    std::ofstream file(p / "successors_cpp.json");
+
+    // Write the beginning of the file.
+    file << "{";
+
+    // Write the successors
+    bool first_key = true;
+    for (int i = 0; i < number_of_edges(); ++i) {
+        const auto& edge = get_edge(i);
+        // Write comma if not first key
+        if (first_key) {
+            first_key = false;
+        } else {
+            file << ", ";
+        }
+
+        // Write the key edge
+        file << R"("(')" << vertices[edge.source].name << "', '" << vertices[edge.target].name << "')\": ";
+
+        // Write the successor list
+        write_successor_list_to_file(file, i);
+    }
+
+    // Write the end of the file.
+    file << "}" << std::endl;
+}
+
+void cda_rail::Network::export_successors_python(const std::filesystem::path &p) const {
+    /**
+     * Export the successors to successors.txt for Python in the given directory.
+     * @param path: The path to the directory.
+     */
+
+    // Open the file for Python.
+    std::ofstream file(p / "successors.txt");
+
+    // Write the beginning of the file.
+    file << "{";
+
+    // Write the successors
+    bool first_key = true;
+    for (int i = 0; i < number_of_edges(); ++i) {
+        const auto& edge = get_edge(i);
+        // Write comma if not first key
+        if (first_key) {
+            first_key = false;
+        } else {
+            file << ", ";
+        }
+
+        // Write the key and set
+        file << "('" << vertices[edge.source].name << "', '" << vertices[edge.target].name << "'): ";
+        write_successor_set_to_file(file, i);
+    }
+
+    // Write the end of the file.
+    file << "}" << std::endl;
+}
+
+void cda_rail::Network::write_successor_list_to_file(std::ofstream& file, const int& i) const {
+    /**
+     * Write the successor list to the given file.
+     * @param file: The file to write to.
+     * @param i: The index of the edge.
+     */
+
+    bool first_element = true;
+    file << "[";
+    for (const auto& successor : successors[i]) {
+        // Write comma if not first element
+        if (first_element) {
+            first_element = false;
+        } else {
+            file << ", ";
+        }
+
+        // Write the successor
+        const auto& successor_edge = get_edge(successor);
+        file << "[\"" << vertices[successor_edge.source].name << "\", \"" << vertices[successor_edge.target].name << "\"]";
+    }
+    file << "]";
+}
+
+void cda_rail::Network::write_successor_set_to_file(std::ofstream& file, const int& i) const {
+    /**
+     * Write the successor set to the given file.
+     * @param file: The file to write to.
+     * @param i: The index of the edge.
+     */
+
+    // If there are no successors, write set(), otherwise write all successors.
+    if (get_successors(i).empty()) {
+        // Empty set
+        file << "set()";
+    } else {
+        // Write the beginning of the set.
+        file << "{";
+
+        // Write the elements of the set.
+        bool first_element = true;
+        for (const auto successor : get_successors(i)) {
+            // Write comma if not first element
+            if (first_element) {
+                first_element = false;
+            } else {
+                file << ", ";
+            }
+
+            // Write the element
+            const auto& successor_edge = get_edge(successor);
+            file << "('" << vertices[successor_edge.source].name << "', '" << vertices[successor_edge.target].name << "')";
+        }
+
+        // Write the end of the set.
+        file << "}";
+    }
+}
+
+void cda_rail::Network::export_network(const std::string &path) const {
+    /** Export the network to a given directory. This includes the graphml and successors files.
+     * @param path: The path to the directory.
+     */
+
+    // Create the directory if it does not exist.
+    std::filesystem::path p(path);
+    if (!std::filesystem::exists(p)) {
+        std::filesystem::create_directories(p);
+    }
+
+    // Export the graphml file.
+    export_graphml(p);
+
+    // Export the successors files.
+    export_successors_cpp(p);
+    export_successors_python(p);
+}
