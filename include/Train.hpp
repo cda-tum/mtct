@@ -13,7 +13,7 @@ namespace cda_rail {
          */
 
         std::string name;
-        double length;
+        int length;
         double max_speed;
         double acceleration;
         double deceleration;
