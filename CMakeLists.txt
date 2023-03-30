@@ -49,7 +49,3 @@ if(BUILD_TESTS)
     include(GoogleTest)
     add_subdirectory(test)
 endif()
-
-# Include tinyXML2
-set(tinyxml2_BUILD_TESTING OFF)
-target_link_libraries(${PROJECT_NAME}/extern INTERFACE tinyxml2::tinyxml2)
