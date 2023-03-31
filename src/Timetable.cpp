@@ -223,3 +223,60 @@ void cda_rail::Timetable::add_stop(const std::string &train_name, const std::str
     }
     add_stop(train_name_to_index.at(train_name), station_name_to_index.at(station_name), begin, end);
 }
+
+void cda_rail::Timetable::export_stations(const std::filesystem::path &p, const cda_rail::Network &network) const {
+    /**
+     * This private method exports all stations to a file. The file is a json file with the following structure:
+     * {"station1_name": [["edge1_0", "edge1_1"], ["edge2_0", "edge2_1"], ...], "station2_name": ...}
+     * Hereby the names stored in the network reference are used for the edges.
+     *
+     * @param p The path to the file directory to export to.
+     * @param network The network reference to use for the edge names.
+     */
+
+    if (!std::filesystem::exists(p)) {
+        throw std::invalid_argument("Path does not exist.");
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("Path is not a directory.");
+    }
+
+    json j;
+    for (const auto& station : stations) {
+        std::vector<std::pair<std::string, std::string>> edges;
+        for (const auto& track : station.tracks) {
+            const auto& edge = network.get_edge(track);
+            edges.emplace_back(network.get_vertex(edge.source).name, network.get_vertex(edge.target).name);
+        }
+        j[station.name] = edges;
+    }
+
+    std::ofstream file(p / "stations.json");
+    file << j << std::endl;
+}
+
+void cda_rail::Timetable::export_trains(const std::filesystem::path &p) const {
+    /**
+     * This private method exports all trains to a file. The file is a json file with the following structure:
+     * {"train1_name": {"length": train1_length, "max_speed": train1_max_speed, "acceleration": train1_acceleration,
+     *                  "deceleration": train1_deceleration}, "train2_name": ...}
+     *
+     * @param p The path to the file directory to export to.
+     */
+
+    if (!std::filesystem::exists(p)) {
+        throw std::invalid_argument("Path does not exist.");
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("Path is not a directory.");
+    }
+
+    json j;
+    for (const auto& train : trains) {
+        j[train.name] = {{"length", train.length}, {"max_speed", train.max_speed}, {"acceleration", train.acceleration},
+                         {"deceleration", train.deceleration}};
+    }
+
+    std::ofstream file(p / "trains.json");
+    file << j << std::endl;
+}

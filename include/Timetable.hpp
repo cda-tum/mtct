@@ -69,6 +69,9 @@ namespace cda_rail {
             std::unordered_map<std::string, int> station_name_to_index;
             std::unordered_map<std::string, int> train_name_to_index;
 
+            void export_stations(const std::filesystem::path& p, const cda_rail::Network& network) const;
+            void export_trains(const std::filesystem::path& p) const;
+
         public:
             void add_station(const std::string& name, const std::unordered_set<int>& tracks);
             void add_station(const std::string& name);
