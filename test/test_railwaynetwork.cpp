@@ -216,10 +216,10 @@ TEST(Functionality, WriteNetwork) {
     // check edges
     EXPECT_TRUE(network.number_of_edges() == network_read.number_of_edges());
     for (int i = 0; i < network.number_of_edges(); ++i) {
-        auto source_vertex = network.get_vertex(network.get_edge(i).source);
-        auto target_vertex = network.get_vertex(network.get_edge(i).target);
+        const auto& source_vertex = network.get_vertex(network.get_edge(i).source);
+        const auto& target_vertex = network.get_vertex(network.get_edge(i).target);
         EXPECT_TRUE(network_read.has_edge(source_vertex.name, target_vertex.name));
-        auto edge_read = network_read.get_edge(source_vertex.name, target_vertex.name);
+        const auto& edge_read = network_read.get_edge(source_vertex.name, target_vertex.name);
         EXPECT_TRUE(edge_read.breakable == network.get_edge(i).breakable);
         EXPECT_TRUE(edge_read.length == network.get_edge(i).length);
         EXPECT_TRUE(edge_read.max_speed == network.get_edge(i).max_speed);
@@ -228,15 +228,15 @@ TEST(Functionality, WriteNetwork) {
 
     // check successors
     for (int i = 0; i < network.number_of_edges(); ++i) {
-        auto successors_target = network.get_successors(i);
+        const auto& successors_target = network.get_successors(i);
         std::unordered_set<int> successors_target_transformed;
         for (auto successor : successors_target) {
-            auto e = network.get_edge(successor);
+            const auto& e = network.get_edge(successor);
             std::string source = network.get_vertex(e.source).name;
             std::string target = network.get_vertex(e.target).name;
             successors_target_transformed.insert(network_read.get_edge_index(source, target));
         }
-        auto e = network.get_edge(i);
+        const auto& e = network.get_edge(i);
         std::string source = network.get_vertex(e.source).name;
         std::string target = network.get_vertex(e.target).name;
         EXPECT_TRUE(network_read.get_successors(source, target) == successors_target_transformed);
