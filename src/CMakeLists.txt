@@ -10,6 +10,8 @@ add_library(
         Train.cpp
         ${PROJECT_SOURCE_DIR}/include/Timetable.hpp
         Timetable.cpp
+        ${PROJECT_SOURCE_DIR}/include/Station.hpp
+        Station.cpp
 )
 
 # set include directories

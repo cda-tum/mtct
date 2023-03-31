@@ -1,22 +1,12 @@
 #pragma once
 #include <string>
-#include <unordered_set>
 #include <unordered_map>
 #include <vector>
 #include "Train.hpp"
 #include "RailwayNetwork.hpp"
+#include "Station.hpp"
 
 namespace cda_rail {
-    struct Station {
-        /**
-         * Station object
-         * @param name Name of the station
-         * @param tracks Unordered set of edges that define the station.
-         */
-        std::string name;
-        std::unordered_set<int> tracks = {};
-    };
-
     struct ScheduledStop {
         /**
          * A scheduled stop.
@@ -63,22 +53,12 @@ namespace cda_rail {
          * Timetable class
          */
         private:
-            std::vector<Station> stations;
+            cda_rail::StationList station_list;
             cda_rail::TrainList train_list;
             std::vector<Schedule> schedules;
-            std::unordered_map<std::string, int> station_name_to_index;
-
-            void export_stations(const std::filesystem::path& p, const cda_rail::Network& network) const;
 
         public:
-            void add_station(const std::string& name, const std::unordered_set<int>& tracks);
-            void add_station(const std::string& name);
-
-            void add_track_to_station(int station_index, int track, const cda_rail::Network& network);
-            void add_track_to_station(const std::string& name, int track, const cda_rail::Network& network);
-            void add_track_to_station(int station_index, int source, int target, const cda_rail::Network& network);
-            void add_track_to_station(const std::string& name, int source, int target, const cda_rail::Network& network);
-            void add_track_to_station(int station_index, const std::string& source, const std::string& target, const cda_rail::Network& network);
+            explicit Timetable(const cda_rail::Network& network);
 
             void add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
                            int t_0, double v_0, int entry, int t_n, double v_n, int exit,
@@ -92,15 +72,10 @@ namespace cda_rail {
             void add_stop(int train_index, const std::string& station_name, int begin, int end, bool sort = true);
             void add_stop(const std::string& train_name, const std::string& station_name, int begin, int end, bool sort = true);
 
-            [[nodiscard]] int get_station_index(const std::string& name) const;
-            [[nodiscard]] const Station& get_station(int index) const;
-            [[nodiscard]] const Station& get_station(const std::string& name) const;
+            [[nodiscard]] const cda_rail::StationList& get_station_list() const;
             [[nodiscard]] const cda_rail::TrainList& get_train_list() const;
             [[nodiscard]] const Schedule& get_schedule(int index) const;
             [[nodiscard]] const Schedule& get_schedule(const std::string& train_name) const;
-
-            [[nodiscard]] bool has_station(const std::string& name) const;
-            [[nodiscard]] bool has_station(int index) const;
 
             void sort_stops();
 
