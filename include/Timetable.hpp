@@ -44,7 +44,7 @@ namespace cda_rail {
         int t_n;
         double v_n;
         int exit;
-        std::vector<ScheduledStop> stops;
+        std::vector<ScheduledStop> stops = {};
     };
 
     class Timetable {
@@ -59,7 +59,7 @@ namespace cda_rail {
             std::unordered_map<std::string, int> train_name_to_index;
 
         public:
-            void add_station(const std::string& name, std::unordered_set<int>& tracks);
+            void add_station(const std::string& name, const std::unordered_set<int>& tracks);
             void add_station(const std::string& name);
 
             void add_track_to_station(int station_index, int track, const cda_rail::Network& network);
