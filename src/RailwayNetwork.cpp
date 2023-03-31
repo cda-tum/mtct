@@ -640,13 +640,12 @@ void cda_rail::Network::export_successors_cpp(const std::filesystem::path &p) co
     json j;
     for (int i = 0; i < number_of_edges(); ++i) {
         const auto& edge = get_edge(i);
-        std::vector<std::pair<std::string, std::string>> successor_edges_expot;
+        std::vector<std::pair<std::string, std::string>> successor_edges_export;
         for (const auto& successor : successors[i]) {
             const auto& successor_edge = get_edge(successor);
-            successor_edges_expot.emplace_back(vertices[successor_edge.source].name, vertices[successor_edge.target].name);
+            successor_edges_export.emplace_back(vertices[successor_edge.source].name, vertices[successor_edge.target].name);
         }
-        std::string edge_str = "('" + vertices[edge.source].name + "', '" + vertices[edge.target].name + "')";
-        j[edge_str] = successor_edges_expot;
+        j["('" + vertices[edge.source].name + "', '" + vertices[edge.target].name + "')"] = successor_edges_export;
     }
 
     // Open and write the file for C++.
