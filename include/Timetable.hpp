@@ -64,13 +64,11 @@ namespace cda_rail {
          */
         private:
             std::vector<Station> stations;
-            std::vector<Train> trains;
+            cda_rail::TrainList train_list;
             std::vector<Schedule> schedules;
             std::unordered_map<std::string, int> station_name_to_index;
-            std::unordered_map<std::string, int> train_name_to_index;
 
             void export_stations(const std::filesystem::path& p, const cda_rail::Network& network) const;
-            void export_trains(const std::filesystem::path& p) const;
 
         public:
             void add_station(const std::string& name, const std::unordered_set<int>& tracks);
@@ -97,16 +95,12 @@ namespace cda_rail {
             [[nodiscard]] int get_station_index(const std::string& name) const;
             [[nodiscard]] const Station& get_station(int index) const;
             [[nodiscard]] const Station& get_station(const std::string& name) const;
-            [[nodiscard]] int get_train_index(const std::string& name) const;
-            [[nodiscard]] const Train& get_train(int index) const;
-            [[nodiscard]] const Train& get_train(const std::string& name) const;
+            [[nodiscard]] const cda_rail::TrainList& get_train_list() const;
             [[nodiscard]] const Schedule& get_schedule(int index) const;
             [[nodiscard]] const Schedule& get_schedule(const std::string& train_name) const;
 
             [[nodiscard]] bool has_station(const std::string& name) const;
             [[nodiscard]] bool has_station(int index) const;
-            [[nodiscard]] bool has_train(const std::string& name) const;
-            [[nodiscard]] bool has_train(int index) const;
 
             void sort_stops();
 

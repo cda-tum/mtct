@@ -39,51 +39,22 @@ bool cda_rail::Timetable::has_station(const std::string &name) const {
     return station_name_to_index.find(name) != station_name_to_index.end();
 }
 
-bool cda_rail::Timetable::has_train(const std::string &name) const {
-    return train_name_to_index.find(name) != train_name_to_index.end();
-}
-
-bool cda_rail::Timetable::has_train(int index) const {
-    return (index >= 0 && index < trains.size());
-}
-
 bool cda_rail::Timetable::has_station(int index) const {
     return (index >= 0 && index < stations.size());
 }
 
-int cda_rail::Timetable::get_train_index(const std::string &name) const {
-    if (!has_train(name)) {
-        throw std::out_of_range("Train does not exist.");
-    }
-    return train_name_to_index.at(name);
-}
-
-const cda_rail::Train &cda_rail::Timetable::get_train(int index) const {
-    if (!has_train(index)) {
-        throw std::out_of_range("Train does not exist.");
-    }
-    return trains.at(index);
-}
-
-const cda_rail::Train &cda_rail::Timetable::get_train(const std::string &name) const {
-    if (!has_train(name)) {
-        throw std::out_of_range("Train does not exist.");
-    }
-    return get_train(get_train_index(name));
-}
-
 const cda_rail::Schedule &cda_rail::Timetable::get_schedule(int index) const {
-    if (!has_train(index)) {
+    if (!train_list.has_train(index)) {
         throw std::out_of_range("Train does not exist.");
     }
     return schedules.at(index);
 }
 
 const cda_rail::Schedule &cda_rail::Timetable::get_schedule(const std::string &train_name) const {
-    if (!has_train(train_name)) {
+    if (!train_list.has_train(train_name)) {
         throw std::out_of_range("Train does not exist.");
     }
-    return get_schedule(get_train_index(train_name));
+    return get_schedule(train_list.get_train_index(train_name));
 }
 
 void cda_rail::Timetable::add_track_to_station(int station_index, int track, const cda_rail::Network &network) {
@@ -148,11 +119,10 @@ void cda_rail::Timetable::add_train(const std::string &name, int length, double 
     if (!network.has_vertex(exit)) {
         throw std::out_of_range("Exit vertex does not exist.");
     }
-    if (has_train(name)) {
+    if (train_list.has_train(name)) {
         throw std::out_of_range("Train already exists.");
     }
-    trains.push_back(cda_rail::Train{name, length, max_speed, acceleration, deceleration});
-    train_name_to_index[name] = trains.size() - 1;
+    train_list.add_train(name, length, max_speed, acceleration, deceleration);
     schedules.push_back(cda_rail::Schedule{t_0, v_0, entry, t_n, v_n, exit});
 }
 
@@ -165,7 +135,7 @@ void cda_rail::Timetable::add_train(const std::string &name, int length, double 
     if (!network.has_vertex(exit)) {
         throw std::out_of_range("Exit vertex does not exist.");
     }
-    if (has_train(name)) {
+    if (train_list.has_train(name)) {
         throw std::out_of_range("Train already exists.");
     }
     add_train(name, length, max_speed, acceleration, deceleration, t_0, v_0, network.get_vertex_index(entry), t_n, v_n,
@@ -173,7 +143,7 @@ void cda_rail::Timetable::add_train(const std::string &name, int length, double 
 }
 
 void cda_rail::Timetable::add_stop(int train_index, int station_index, int begin, int end, bool sort) {
-    if (!has_train(train_index)) {
+    if (!train_list.has_train(train_index)) {
         throw std::out_of_range("Train does not exist.");
     }
     if (!has_station(station_index)) {
@@ -203,10 +173,10 @@ void cda_rail::Timetable::add_stop(int train_index, int station_index, int begin
 }
 
 void cda_rail::Timetable::add_stop(const std::string &train_name, int station_index, int begin, int end, bool sort) {
-    if (!has_train(train_name)) {
+    if (!train_list.has_train(train_name)) {
         throw std::out_of_range("Train does not exist.");
     }
-    add_stop(train_name_to_index.at(train_name), station_index, begin, end, sort);
+    add_stop(train_list.get_train_index(train_name), station_index, begin, end, sort);
 }
 
 void cda_rail::Timetable::add_stop(int train_index, const std::string &station_name, int begin, int end, bool sort) {
@@ -217,13 +187,13 @@ void cda_rail::Timetable::add_stop(int train_index, const std::string &station_n
 }
 
 void cda_rail::Timetable::add_stop(const std::string &train_name, const std::string &station_name, int begin, int end, bool sort) {
-    if (!has_train(train_name)) {
+    if (!train_list.has_train(train_name)) {
         throw std::out_of_range("Train does not exist.");
     }
     if (!has_station(station_name)) {
         throw std::out_of_range("Station does not exist.");
     }
-    add_stop(train_name_to_index.at(train_name), station_name_to_index.at(station_name), begin, end, sort);
+    add_stop(train_list.get_train_index(train_name), station_name_to_index.at(station_name), begin, end, sort);
 }
 
 void cda_rail::Timetable::export_stations(const std::filesystem::path &p, const cda_rail::Network &network) const {
@@ -254,32 +224,6 @@ void cda_rail::Timetable::export_stations(const std::filesystem::path &p, const 
     }
 
     std::ofstream file(p / "stations.json");
-    file << j << std::endl;
-}
-
-void cda_rail::Timetable::export_trains(const std::filesystem::path &p) const {
-    /**
-     * This private method exports all trains to a file. The file is a json file with the following structure:
-     * {"train1_name": {"length": train1_length, "max_speed": train1_max_speed, "acceleration": train1_acceleration,
-     *                  "deceleration": train1_deceleration}, "train2_name": ...}
-     *
-     * @param p The path to the file directory to export to.
-     */
-
-    if (!std::filesystem::exists(p)) {
-        throw std::invalid_argument("Path does not exist.");
-    }
-    if (!std::filesystem::is_directory(p)) {
-        throw std::invalid_argument("Path is not a directory.");
-    }
-
-    json j;
-    for (const auto& train : trains) {
-        j[train.name] = {{"length", train.length}, {"max_speed", train.max_speed}, {"acceleration", train.acceleration},
-                         {"deceleration", train.deceleration}};
-    }
-
-    std::ofstream file(p / "trains.json");
     file << j << std::endl;
 }
 

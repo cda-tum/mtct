@@ -7,6 +7,7 @@ add_library(
         ${PROJECT_SOURCE_DIR}/include/parsing/json.hpp
         parsing/tinyxml2.cpp
         ${PROJECT_SOURCE_DIR}/include/Train.hpp
+        Train.cpp
         ${PROJECT_SOURCE_DIR}/include/Timetable.hpp
         Timetable.cpp
 )
