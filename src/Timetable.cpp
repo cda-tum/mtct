@@ -236,3 +236,7 @@ void cda_rail::Timetable::sort_stops() {
         std::sort(schedule.stops.begin(), schedule.stops.end());
     }
 }
+
+const cda_rail::TrainList &cda_rail::Timetable::get_train_list() const {
+    return train_list;
+}
