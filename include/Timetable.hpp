@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
+#include <vector>
 #include "Train.hpp"
 #include "RailwayNetwork.hpp"
 
@@ -23,6 +24,16 @@ namespace cda_rail {
         int begin;
         int end;
         int station;
+
+        bool operator<(const ScheduledStop& other) const {
+            return (end < other.begin);
+        }
+        bool operator>(const ScheduledStop& other) const {
+            return (begin > other.end);
+        }
+        bool operator==(const ScheduledStop& other) const {
+            return (begin == other.begin && end == other.end);
+        }
     };
 
     struct Schedule {

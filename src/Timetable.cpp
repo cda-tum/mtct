@@ -1,4 +1,11 @@
 #include "Timetable.hpp"
+#include <filesystem>
+#include <string>
+#include "parsing/json.hpp"
+#include <fstream>
+#include <algorithm>
+
+using json = nlohmann::json;
 
 void cda_rail::Timetable::add_station(const std::string &name, const std::unordered_set<int> &tracks) {
     stations.push_back(cda_rail::Station{name, tracks});
@@ -190,6 +197,7 @@ void cda_rail::Timetable::add_stop(int train_index, int station_index, int begin
     }
 
     stops_reference.push_back(cda_rail::ScheduledStop{begin, end, station_index});
+    std::sort(stops_reference.begin(), stops_reference.end());
 }
 
 void cda_rail::Timetable::add_stop(const std::string &train_name, int station_index, int begin, int end) {
