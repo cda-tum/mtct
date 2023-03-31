@@ -172,7 +172,7 @@ void cda_rail::Timetable::add_train(const std::string &name, int length, double 
               network.get_vertex_index(exit), network);
 }
 
-void cda_rail::Timetable::add_stop(int train_index, int station_index, int begin, int end) {
+void cda_rail::Timetable::add_stop(int train_index, int station_index, int begin, int end, bool sort) {
     if (!has_train(train_index)) {
         throw std::out_of_range("Train does not exist.");
     }
@@ -197,31 +197,33 @@ void cda_rail::Timetable::add_stop(int train_index, int station_index, int begin
     }
 
     stops_reference.push_back(cda_rail::ScheduledStop{begin, end, station_index});
-    std::sort(stops_reference.begin(), stops_reference.end());
+    if (sort) {
+        std::sort(stops_reference.begin(), stops_reference.end());
+    }
 }
 
-void cda_rail::Timetable::add_stop(const std::string &train_name, int station_index, int begin, int end) {
+void cda_rail::Timetable::add_stop(const std::string &train_name, int station_index, int begin, int end, bool sort) {
     if (!has_train(train_name)) {
         throw std::out_of_range("Train does not exist.");
     }
-    add_stop(train_name_to_index.at(train_name), station_index, begin, end);
+    add_stop(train_name_to_index.at(train_name), station_index, begin, end, sort);
 }
 
-void cda_rail::Timetable::add_stop(int train_index, const std::string &station_name, int begin, int end) {
+void cda_rail::Timetable::add_stop(int train_index, const std::string &station_name, int begin, int end, bool sort) {
     if (!has_station(station_name)) {
         throw std::out_of_range("Station does not exist.");
     }
-    add_stop(train_index, station_name_to_index.at(station_name), begin, end);
+    add_stop(train_index, station_name_to_index.at(station_name), begin, end, sort);
 }
 
-void cda_rail::Timetable::add_stop(const std::string &train_name, const std::string &station_name, int begin, int end) {
+void cda_rail::Timetable::add_stop(const std::string &train_name, const std::string &station_name, int begin, int end, bool sort) {
     if (!has_train(train_name)) {
         throw std::out_of_range("Train does not exist.");
     }
     if (!has_station(station_name)) {
         throw std::out_of_range("Station does not exist.");
     }
-    add_stop(train_name_to_index.at(train_name), station_name_to_index.at(station_name), begin, end);
+    add_stop(train_name_to_index.at(train_name), station_name_to_index.at(station_name), begin, end, sort);
 }
 
 void cda_rail::Timetable::export_stations(const std::filesystem::path &p, const cda_rail::Network &network) const {
@@ -279,4 +281,14 @@ void cda_rail::Timetable::export_trains(const std::filesystem::path &p) const {
 
     std::ofstream file(p / "trains.json");
     file << j << std::endl;
+}
+
+void cda_rail::Timetable::sort_stops() {
+    /**
+     * This methods sorts all stops of all trains according to the operator < of ScheduledStop.
+     */
+
+    for (auto& schedule : schedules) {
+        std::sort(schedule.stops.begin(), schedule.stops.end());
+    }
 }

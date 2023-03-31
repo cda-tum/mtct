@@ -89,10 +89,10 @@ namespace cda_rail {
                            int t_0, double v_0, const std::string& entry, int t_n, double v_n, const std::string& exit,
                            const cda_rail::Network& network);
 
-            void add_stop(int train_index, int station_index, int begin, int end);
-            void add_stop(const std::string& train_name, int station_index, int begin, int end);
-            void add_stop(int train_index, const std::string& station_name, int begin, int end);
-            void add_stop(const std::string& train_name, const std::string& station_name, int begin, int end);
+            void add_stop(int train_index, int station_index, int begin, int end, bool sort = true);
+            void add_stop(const std::string& train_name, int station_index, int begin, int end, bool sort = true);
+            void add_stop(int train_index, const std::string& station_name, int begin, int end, bool sort = true);
+            void add_stop(const std::string& train_name, const std::string& station_name, int begin, int end, bool sort = true);
 
             [[nodiscard]] int get_station_index(const std::string& name) const;
             [[nodiscard]] const Station& get_station(int index) const;
@@ -107,6 +107,8 @@ namespace cda_rail {
             [[nodiscard]] bool has_station(int index) const;
             [[nodiscard]] bool has_train(const std::string& name) const;
             [[nodiscard]] bool has_train(int index) const;
+
+            void sort_stops();
 
             void export_timetable(const std::string& path, const cda_rail::Network& network) const;
             [[nodiscard]] static cda_rail::Timetable import_timetable(const std::string& path, const cda_rail::Network& network);
