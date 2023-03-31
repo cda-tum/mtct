@@ -51,7 +51,7 @@ const cda_rail::Train &cda_rail::TrainList::get_train(const std::string &name) c
 
 void cda_rail::TrainList::export_trains(const std::string &path) const {
     /**
-     * This private method exports all trains to a file. The file is a json file with the following structure:
+     * This method exports all trains to a file. The file is a json file with the following structure:
      * {"train1_name": {"length": train1_length, "max_speed": train1_max_speed, "acceleration": train1_acceleration,
      *                  "deceleration": train1_deceleration}, "train2_name": ...}
      *
@@ -59,11 +59,12 @@ void cda_rail::TrainList::export_trains(const std::string &path) const {
      */
 
     std::filesystem::path p(path);
-    if (!std::filesystem::exists(p)) {
-        throw std::invalid_argument("Path does not exist.");
-    }
     if (!std::filesystem::is_directory(p)) {
         throw std::invalid_argument("Path is not a directory.");
+    }
+    if (!std::filesystem::exists(p)) {
+        // Create the directory if it doesn't exist
+        std::filesystem::create_directory(p);
     }
 
     json j;
@@ -74,4 +75,32 @@ void cda_rail::TrainList::export_trains(const std::string &path) const {
 
     std::ofstream file(p / "trains.json");
     file << j << std::endl;
+}
+
+cda_rail::TrainList cda_rail::TrainList::import_trains(const std::string &path) {
+    /**
+     * Imports trains from a file in the format specified in export_trains.
+     *
+     * @param path The path to the file to import from.
+     */
+
+    std::filesystem::path p(path);
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("Path is not a directory.");
+    }
+    if (!std::filesystem::exists(p)) {
+        throw std::invalid_argument("Path does not exist.");
+    }
+
+    // Read the file
+    std::ifstream f((p / "trains.json"));
+    json data = json::parse(f);
+
+    // Create the train list
+    cda_rail::TrainList train_list;
+    for (auto& [name, train] : data.items()) {
+        train_list.add_train(name, train["length"], train["max_speed"], train["acceleration"], train["deceleration"]);
+    }
+    
+    return train_list;
 }
