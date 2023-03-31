@@ -637,32 +637,21 @@ void cda_rail::Network::export_successors_cpp(const std::filesystem::path &p) co
      * @param path: The path to the directory.
      */
 
-    // Open the file for C++.
-    std::ofstream file(p / "successors_cpp.json");
-
-    // Write the beginning of the file.
-    file << "{";
-
-    // Write the successors
-    bool first_key = true;
+    json j;
     for (int i = 0; i < number_of_edges(); ++i) {
         const auto& edge = get_edge(i);
-        // Write comma if not first key
-        if (first_key) {
-            first_key = false;
-        } else {
-            file << ", ";
+        std::vector<std::pair<std::string, std::string>> successor_edges_expot;
+        for (const auto& successor : successors[i]) {
+            const auto& successor_edge = get_edge(successor);
+            successor_edges_expot.emplace_back(vertices[successor_edge.source].name, vertices[successor_edge.target].name);
         }
-
-        // Write the key edge
-        file << R"("(')" << vertices[edge.source].name << "', '" << vertices[edge.target].name << "')\": ";
-
-        // Write the successor list
-        write_successor_list_to_file(file, i);
+        std::string edge_str = "('" + vertices[edge.source].name + "', '" + vertices[edge.target].name + "')";
+        j[edge_str] = successor_edges_expot;
     }
 
-    // Write the end of the file.
-    file << "}" << std::endl;
+    // Open and write the file for C++.
+    std::ofstream file(p / "successors_cpp.json");
+    file << j << std::endl;
 }
 
 void cda_rail::Network::export_successors_python(const std::filesystem::path &p) const {
@@ -695,30 +684,6 @@ void cda_rail::Network::export_successors_python(const std::filesystem::path &p)
 
     // Write the end of the file.
     file << "}" << std::endl;
-}
-
-void cda_rail::Network::write_successor_list_to_file(std::ofstream& file, const int& i) const {
-    /**
-     * Write the successor list to the given file.
-     * @param file: The file to write to.
-     * @param i: The index of the edge.
-     */
-
-    bool first_element = true;
-    file << "[";
-    for (const auto& successor : successors[i]) {
-        // Write comma if not first element
-        if (first_element) {
-            first_element = false;
-        } else {
-            file << ", ";
-        }
-
-        // Write the successor
-        const auto& successor_edge = get_edge(successor);
-        file << "[\"" << vertices[successor_edge.source].name << "\", \"" << vertices[successor_edge.target].name << "\"]";
-    }
-    file << "]";
 }
 
 void cda_rail::Network::write_successor_set_to_file(std::ofstream& file, const int& i) const {
