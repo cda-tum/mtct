@@ -1,12 +1,12 @@
 #include "Timetable.hpp"
 
 void cda_rail::Timetable::add_station(const std::string &name, std::unordered_set<int> &tracks) {
-    stations.emplace_back(name, tracks);
+    stations.push_back(cda_rail::Station{name, tracks});
     station_name_to_index[name] = stations.size() - 1;
 }
 
 void cda_rail::Timetable::add_station(const std::string &name) {
-    stations.emplace_back(name);
+    stations.push_back(cda_rail::Station{name});
     station_name_to_index[name] = stations.size() - 1;
 }
 
@@ -89,7 +89,7 @@ void cda_rail::Timetable::add_track_to_station(int station_index, int track, con
     stations.at(station_index).tracks.insert(track);
 }
 
-void cda_rail::Timetable::add_track_to_station(const td::string &name, int track, const cda_rail::Network &network) {
+void cda_rail::Timetable::add_track_to_station(const std::string &name, int track, const cda_rail::Network &network) {
     if (!has_station(name)) {
         throw std::out_of_range("Station does not exist.");
     }
