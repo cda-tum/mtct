@@ -2,7 +2,7 @@
 #include "Station.hpp"
 #include <filesystem>
 #include <string>
-#include "parsing/json.hpp"
+#include "nlohmann/json.hpp"
 #include <fstream>
 #include <algorithm>
 

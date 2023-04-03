@@ -6,7 +6,7 @@
 #include <optional>
 #include <sstream>
 #include <algorithm>
-#include "parsing/tinyxml2.h"
+#include <tinyxml2.h>
 #include <filesystem>
 
 namespace cda_rail {

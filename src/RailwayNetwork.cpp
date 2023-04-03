@@ -1,7 +1,7 @@
 #include "RailwayNetwork.hpp"
 #include <string>
-#include "parsing/tinyxml2.h"
-#include "parsing/json.hpp"
+#include <tinyxml2.h>
+#include "nlohmann/json.hpp"
 #include <filesystem>
 #include <fstream>
 #include <optional>

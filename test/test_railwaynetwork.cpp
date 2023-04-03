@@ -1,7 +1,7 @@
 #include "RailwayNetwork.hpp"
 #include "gtest/gtest.h"
 #include <algorithm>
-#include "parsing/json.hpp"
+#include "nlohmann/json.hpp"
 #include <unordered_set>
 
 using json = nlohmann::json;

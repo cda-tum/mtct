@@ -3,9 +3,6 @@ add_library(
         ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
         ${PROJECT_SOURCE_DIR}/include/RailwayNetwork.hpp
         RailwayNetwork.cpp
-        ${PROJECT_SOURCE_DIR}/include/parsing/tinyxml2.h
-        ${PROJECT_SOURCE_DIR}/include/parsing/json.hpp
-        parsing/tinyxml2.cpp
         ${PROJECT_SOURCE_DIR}/include/Train.hpp
         Train.cpp
         ${PROJECT_SOURCE_DIR}/include/Timetable.hpp
@@ -23,5 +20,17 @@ if(GUROBI_FOUND)
     target_link_libraries(${PROJECT_NAME} PUBLIC Gurobi::GurobiCXX)
 endif()
 
+# add tinyxml2
+set(tinyxml2_BUILD_TESTING OFF)
+add_subdirectory(${PROJECT_SOURCE_DIR}/extern/tinyxml2 extern/tinyxml2)
+
+# add json
+set(json_BUILD_TESTING OFF)
+add_subdirectory(${PROJECT_SOURCE_DIR}/extern/json extern/json)
+
 target_link_libraries(${PROJECT_NAME} INTERFACE tinyxml2::tinyxml2)
 target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json)
+
+set_target_properties(
+        nlohmann_json PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+        $<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
