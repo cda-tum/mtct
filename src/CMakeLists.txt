@@ -15,4 +15,4 @@ if(GUROBI_FOUND)
 endif()
 
 target_link_libraries(${PROJECT_NAME} INTERFACE tinyxml2::tinyxml2)
-target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann)
+target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json)
