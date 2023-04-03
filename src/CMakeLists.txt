@@ -22,3 +22,6 @@ if(GUROBI_FOUND)
     target_include_directories(${PROJECT_NAME} PUBLIC ${GUROBI_INCLUDE_DIR})
     target_link_libraries(${PROJECT_NAME} PUBLIC Gurobi::GurobiCXX)
 endif()
+
+target_link_libraries(${PROJECT_NAME} INTERFACE tinyxml2::tinyxml2)
+target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann::json)

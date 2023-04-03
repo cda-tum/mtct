@@ -49,3 +49,11 @@ if(BUILD_TESTS)
     include(GoogleTest)
     add_subdirectory(test)
 endif()
+
+# add tinyxml2
+set(tinyxml2_BUILD_TESTING OFF)
+add_subdirectory(extern/tinyxml2/)
+
+# add json
+set(json_BUILD_TESTING OFF)
+add_subdirectory(extern/json)
