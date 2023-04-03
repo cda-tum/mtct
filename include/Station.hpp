@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "RailwayNetwork.hpp"
+#include <filesystem>
 
 namespace cda_rail {
     struct Station {
@@ -45,5 +46,6 @@ namespace cda_rail {
             void add_track_to_station(int station_index, const std::string& source, const std::string& target);
 
             void export_stations(const std::string& path) const;
+            void export_stations(const std::filesystem::path& p) const;
     };
 }

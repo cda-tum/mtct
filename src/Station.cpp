@@ -110,6 +110,10 @@ void cda_rail::StationList::export_stations(const std::string &path) const {
      */
 
     std::filesystem::path p(path);
+    export_stations(p);
+}
+
+void cda_rail::StationList::export_stations(const std::filesystem::path &p) const {
     if (!std::filesystem::exists(p)) {
         throw std::invalid_argument("Path does not exist.");
     }

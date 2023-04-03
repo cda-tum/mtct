@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <filesystem>
 
 namespace cda_rail {
     struct Train {
@@ -41,6 +42,8 @@ namespace cda_rail {
             [[nodiscard]] bool has_train(int index) const;
 
             void export_trains(const std::string& path) const;
+            void export_trains(const std::filesystem::path& p) const;
             [[nodiscard]] static cda_rail::TrainList import_trains(const std::string& path);
+            [[nodiscard]] static cda_rail::TrainList import_trains(const std::filesystem::path& p);
     };
 }
