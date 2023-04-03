@@ -28,9 +28,5 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/extern/tinyxml2 extern/tinyxml2)
 set(json_BUILD_TESTING OFF)
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/json extern/json)
 
-target_link_libraries(${PROJECT_NAME} INTERFACE tinyxml2::tinyxml2)
-target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json)
-
-set_target_properties(
-        nlohmann_json PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-        $<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+target_link_libraries(${PROJECT_NAME} PUBLIC tinyxml2::tinyxml2)
+target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
