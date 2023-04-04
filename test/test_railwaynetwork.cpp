@@ -1,4 +1,5 @@
 #include "RailwayNetwork.hpp"
+#include "Timetable.hpp"
 #include "gtest/gtest.h"
 #include <algorithm>
 #include "nlohmann/json.hpp"
@@ -241,4 +242,9 @@ TEST(Functionality, WriteNetwork) {
         std::string target = network.get_vertex(e.target).name;
         EXPECT_TRUE(network_read.get_successors(source, target) == successors_target_transformed);
     }
+}
+
+TEST(Functionality, ReadTimetable) {
+    auto network = cda_rail::Network::read_network("./example-networks/Fig11/network/");
+    auto timetable = cda_rail::Timetable::import_timetable("./example-networks/Fig11/timetable/", network);
 }
