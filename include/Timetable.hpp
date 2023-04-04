@@ -83,6 +83,7 @@ namespace cda_rail {
             void export_timetable(const std::filesystem::path& p, const cda_rail::Network& network) const;
             [[nodiscard]] static cda_rail::Timetable import_timetable(const std::string& path, const cda_rail::Network& network);
             [[nodiscard]] static cda_rail::Timetable import_timetable(const std::filesystem::path& p, const cda_rail::Network& network);
+            [[nodiscard]] static cda_rail::Timetable import_timetable(const char* path, const cda_rail::Network& network);
 
     };
 }

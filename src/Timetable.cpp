@@ -235,3 +235,7 @@ cda_rail::Timetable cda_rail::Timetable::import_timetable(const std::string &pat
     return import_timetable(std::filesystem::path(path), network);
 }
 
+cda_rail::Timetable cda_rail::Timetable::import_timetable(const char *path, const cda_rail::Network &network) {
+    return import_timetable(std::filesystem::path(path), network);
+}
+
