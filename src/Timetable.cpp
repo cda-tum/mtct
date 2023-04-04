@@ -122,8 +122,116 @@ const cda_rail::TrainList &cda_rail::Timetable::get_train_list() const {
     return train_list;
 }
 
-cda_rail::Timetable::Timetable(const cda_rail::Network &network) : station_list(network) {}
-
 const cda_rail::StationList &cda_rail::Timetable::get_station_list() const {
     return station_list;
-};
+}
+
+void cda_rail::Timetable::export_timetable(const std::filesystem::path &p, const cda_rail::Network &network) const {
+    /**
+     * This method exports the timetable to a directory. In particular the following files are created:
+     * - trains.json according to the function defined in cda_rail::TrainList::export_trains
+     * - stations.json according to the function defined in cda_rail::StationList::export_stations
+     * - schedules.json of the following format:
+     *  {"tr1": {"t_0": t_0, "v_0": v_0, "entry": v_name, "t_n": t_n, "v_n": v_n, "exit": v_name,
+     *         "stops": [{"begin": t_b, "end": t_e, "station": s_name}, ...]}, ...}
+     *
+     *  @param p The path to the directory where the files should be created.
+     */
+
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("Path is not a directory.");
+    }
+    if (!std::filesystem::exists(p)) {
+        // Create the directory if it doesn't exist
+        std::filesystem::create_directory(p);
+    }
+
+    train_list.export_trains(p);
+    station_list.export_stations(p, network);
+
+    json j;
+    for (int i = 0; i < schedules.size(); ++i) {
+        const auto& schedule = schedules.at(i);
+        json stops;
+
+        for (const auto& stop : schedule.stops) {
+            stops.push_back({{"begin", stop.begin}, {"end", stop.end}, {"station", station_list.get_station(stop.station).name}});
+        }
+        j[train_list.get_train(i).name] = {{"t_0", schedule.t_0}, {"v_0", schedule.v_0},
+                                                {"entry", station_list.get_network().get_vertex(schedule.entry).name},
+                                                {"t_n", schedule.t_n}, {"v_n", schedule.v_n},
+                                                {"exit", station_list.get_network().get_vertex(schedule.exit).name},
+                                                {"stops", stops}};
+    }
+
+    std::ofstream file(p / "schedules.json");
+    file << j << std::endl;
+}
+
+void cda_rail::Timetable::export_timetable(const std::string &path, const cda_rail::Network &network) const {
+    export_timetable(std::filesystem::path(path), network);
+}
+
+cda_rail::Timetable cda_rail::Timetable::import_timetable(const std::filesystem::path &p, const cda_rail::Network &network) {
+    /**
+     * This method imports a timetable from a directory. In particular the following files are read:
+     * - trains.json according to the function defined in cda_rail::TrainList::import_trains
+     * - stations.json according to the function defined in cda_rail::StationList::import_stations
+     * - schedules.json of the format described in cda_rail::Timetable::export_timetable
+     *
+     * @param p The path to the directory where the files should be read from.
+     * @param network The network to which the timetable belongs.
+     */
+
+    // Check if the path exists and is a directory
+    if (!std::filesystem::exists(p)) {
+        throw std::invalid_argument("Path does not exist.");
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("Path is not a directory.");
+    }
+
+    // Import the train list and the station list
+    cda_rail::Timetable timetable;
+    timetable.set_train_list(cda_rail::TrainList::import_trains(p));
+    timetable.station_list = cda_rail::StationList::import_stations(p, network);
+
+    // Read the schedules file
+    std::ifstream f(p / "schedules.json");
+    json data = json::parse(f);
+
+    // Parse the schedules
+    for (int i = 0; i < timetable.train_list.size(); i++) {
+        auto& tr = timetable.train_list.get_train(i);
+        if (!data.contains(tr.name)) {
+            throw std::invalid_argument("Schedule for train " + tr.name + " not found.");
+        }
+        auto& schedule_data = data[tr.name];
+        timetable.schedules.at(i).t_0 = schedule_data["t_0"];
+        timetable.schedules.at(i).v_0 = schedule_data["v_0"];
+        timetable.schedules.at(i).entry = network.get_vertex_index(schedule_data["entry"]);
+        timetable.schedules.at(i).t_n = schedule_data["t_n"];
+        timetable.schedules.at(i).v_n = schedule_data["v_n"];
+        timetable.schedules.at(i).exit = network.get_vertex_index(schedule_data["exit"]);
+
+        for (const auto& stop_data : schedule_data["stops"]) {
+            timetable.add_stop(i, stop_data["station"].get<std::string>(),
+                        stop_data["begin"].get<int>(), stop_data["end"].get<int>(), false);
+        }
+    }
+
+    // Sort the stops
+    timetable.sort_stops();
+
+    return timetable;
+}
+
+void cda_rail::Timetable::set_train_list(const cda_rail::TrainList &tl) {
+    train_list = tl;
+    schedules = std::vector<cda_rail::Schedule>(tl.size());
+}
+
+cda_rail::Timetable cda_rail::Timetable::import_timetable(const std::string &path, const cda_rail::Network &network) {
+    return import_timetable(std::filesystem::path(path), network);
+}
+

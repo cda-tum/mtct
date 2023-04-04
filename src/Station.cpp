@@ -9,8 +9,6 @@
 
 using json = nlohmann::json;
 
-cda_rail::StationList::StationList(const cda_rail::Network &network): network(network) {};
-
 void cda_rail::StationList::add_station(const std::string &name, const std::unordered_set<int> &tracks) {
     stations.push_back(cda_rail::Station{name, tracks});
     station_name_to_index[name] = stations.size() - 1;
@@ -47,7 +45,8 @@ const cda_rail::Station &cda_rail::StationList::get_station(const std::string &n
     return get_station(get_station_index(name));
 }
 
-void cda_rail::StationList::add_track_to_station(int station_index, int track) {
+void cda_rail::StationList::add_track_to_station(int station_index, int track,
+                                                 const cda_rail::Network &network) {
     if (!has_station(station_index)) {
         throw std::out_of_range("Station does not exist.");
     }
@@ -57,49 +56,53 @@ void cda_rail::StationList::add_track_to_station(int station_index, int track) {
     stations.at(station_index).tracks.insert(track);
 }
 
-void cda_rail::StationList::add_track_to_station(const std::string &name, int track) {
+void cda_rail::StationList::add_track_to_station(const std::string &name, int track,
+                                                 const cda_rail::Network &network) {
     if (!has_station(name)) {
         throw std::out_of_range("Station does not exist.");
     }
     if (!network.has_edge(track)) {
         throw std::out_of_range("Track does not exist.");
     }
-    add_track_to_station(get_station_index(name), track);
+    add_track_to_station(get_station_index(name), track, network);
 }
 
 void
-cda_rail::StationList::add_track_to_station(int station_index, int source, int target) {
+cda_rail::StationList::add_track_to_station(int station_index, int source, int target,
+                                            const cda_rail::Network &network) {
     if (!has_station(station_index)) {
         throw std::out_of_range("Station does not exist.");
     }
     if (!network.has_edge(source, target)) {
         throw std::out_of_range("Track does not exist.");
     }
-    add_track_to_station(station_index, network.get_edge_index(source, target));
+    add_track_to_station(station_index, network.get_edge_index(source, target), network);
 }
 
 void
-cda_rail::StationList::add_track_to_station(const std::string &name, int source, int target) {
+cda_rail::StationList::add_track_to_station(const std::string &name, int source, int target,
+                                            const cda_rail::Network &network) {
     if (!has_station(name)) {
         throw std::out_of_range("Station does not exist.");
     }
     if (!network.has_edge(source, target)) {
         throw std::out_of_range("Track does not exist.");
     }
-    add_track_to_station(get_station_index(name), network.get_edge_index(source, target));
+    add_track_to_station(get_station_index(name), network.get_edge_index(source, target), network);
 }
 
-void cda_rail::StationList::add_track_to_station(int station_index, const std::string &source, const std::string &target) {
+void cda_rail::StationList::add_track_to_station(int station_index, const std::string &source, const std::string &target,
+                                                 const cda_rail::Network &network) {
     if (!has_station(station_index)) {
         throw std::out_of_range("Station does not exist.");
     }
     if (!network.has_edge(source, target)) {
         throw std::out_of_range("Track does not exist.");
     }
-    add_track_to_station(station_index, network.get_edge_index(source, target));
+    add_track_to_station(station_index, network.get_edge_index(source, target), network);
 }
 
-void cda_rail::StationList::export_stations(const std::string &path) const {
+void cda_rail::StationList::export_stations(const std::string &path, const cda_rail::Network &network) const {
     /**
      * This method exports all stations to a file. The file is a json file with the following structure:
      * {"station1_name": [["edge1_0", "edge1_1"], ["edge2_0", "edge2_1"], ...], "station2_name": ...}
@@ -110,10 +113,10 @@ void cda_rail::StationList::export_stations(const std::string &path) const {
      */
 
     std::filesystem::path p(path);
-    export_stations(p);
+    export_stations(p, network);
 }
 
-void cda_rail::StationList::export_stations(const std::filesystem::path &p) const {
+void cda_rail::StationList::export_stations(const std::filesystem::path &p, const cda_rail::Network &network) const {
     if (!std::filesystem::exists(p)) {
         throw std::invalid_argument("Path does not exist.");
     }
@@ -133,4 +136,38 @@ void cda_rail::StationList::export_stations(const std::filesystem::path &p) cons
 
     std::ofstream file(p / "stations.json");
     file << j << std::endl;
+}
+
+cda_rail::StationList cda_rail::StationList::import_stations(const std::string &path, const cda_rail::Network &network) {
+    return import_stations(std::filesystem::path(path), network);
+}
+
+cda_rail::StationList cda_rail::StationList::import_stations(const std::filesystem::path &p, const cda_rail::Network &network) {
+    /**
+     * This method imports all stations from a file. The file is a json file with the structure described in export_stations.
+     * Hereby the names stored in the network reference are used for the edges.
+     *
+     * @param path The path to the file directory to import from.
+     * @param network The network reference to use for the edge names.
+     */
+
+    if (!std::filesystem::exists(p)) {
+        throw std::invalid_argument("Path does not exist.");
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("Path is not a directory.");
+    }
+
+    std::ifstream file(p / "stations.json");
+    json data = json::parse(file);
+
+    StationList stations;
+    for (const auto& [name, edges] : data.items()) {
+        stations.add_station(name);
+        for (const auto& edge : edges) {
+            stations.add_track_to_station(name, edge[0], edge[1], network);
+        }
+    }
+
+    return stations;
 }

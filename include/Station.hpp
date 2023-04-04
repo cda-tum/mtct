@@ -24,11 +24,8 @@ namespace cda_rail {
         private:
             std::vector<Station> stations;
             std::unordered_map<std::string, int> station_name_to_index;
-            cda_rail::Network network;
 
         public:
-            explicit StationList(const cda_rail::Network& network);
-
             void add_station(const std::string& name, const std::unordered_set<int>& tracks);
             void add_station(const std::string& name);
 
@@ -39,13 +36,17 @@ namespace cda_rail {
             [[nodiscard]] const Station& get_station(int index) const;
             [[nodiscard]] const Station& get_station(const std::string& name) const;
 
-            void add_track_to_station(int station_index, int track);
-            void add_track_to_station(const std::string& name, int track);
-            void add_track_to_station(int station_index, int source, int target);
-            void add_track_to_station(const std::string& name, int source, int target);
-            void add_track_to_station(int station_index, const std::string& source, const std::string& target);
+            [[nodiscard]] const cda_rail::Network& get_network() const;
 
-            void export_stations(const std::string& path) const;
-            void export_stations(const std::filesystem::path& p) const;
+            void add_track_to_station(int station_index, int track, const cda_rail::Network& network);
+            void add_track_to_station(const std::string& name, int track, const cda_rail::Network& network);
+            void add_track_to_station(int station_index, int source, int target, const cda_rail::Network& network);
+            void add_track_to_station(const std::string& name, int source, int target, const cda_rail::Network& network);
+            void add_track_to_station(int station_index, const std::string& source, const std::string& target, const cda_rail::Network& network);
+
+            void export_stations(const std::string& path, const cda_rail::Network& network) const;
+            void export_stations(const std::filesystem::path& p, const cda_rail::Network& network) const;
+            [[nodiscard]] static cda_rail::StationList import_stations(const std::string& path, const cda_rail::Network& network);
+            [[nodiscard]] static cda_rail::StationList import_stations(const std::filesystem::path& p, const cda_rail::Network& network);
     };
 }
