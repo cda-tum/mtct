@@ -158,9 +158,9 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path &p, const
             stops.push_back({{"begin", stop.begin}, {"end", stop.end}, {"station", station_list.get_station(stop.station).name}});
         }
         j[train_list.get_train(i).name] = {{"t_0", schedule.t_0}, {"v_0", schedule.v_0},
-                                                {"entry", station_list.get_network().get_vertex(schedule.entry).name},
+                                                {"entry", network.get_vertex(schedule.entry).name},
                                                 {"t_n", schedule.t_n}, {"v_n", schedule.v_n},
-                                                {"exit", station_list.get_network().get_vertex(schedule.exit).name},
+                                                {"exit", network.get_vertex(schedule.exit).name},
                                                 {"stops", stops}};
     }
 
