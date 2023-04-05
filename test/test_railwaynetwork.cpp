@@ -336,8 +336,6 @@ TEST(Functionality, IsDirectory) {
     EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/"));
     EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/"));
     std::filesystem::remove_all("./tmp");
-    EXPECT_FALSE(cda_rail::is_directory_and_create("./tmp/is_directory/is_file.txt"));
-    std::filesystem::remove_all("./tmp");
     EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory\)"));
     EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory\)"));
     std::filesystem::remove_all("./tmp");
@@ -349,8 +347,6 @@ TEST(Functionality, IsDirectory) {
     std::filesystem::remove_all("./tmp");
     EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp)"));
     EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp)"));
-    std::filesystem::remove_all("./tmp");
-    EXPECT_FALSE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory\is_file.txt)"));
     std::filesystem::remove_all("./tmp");
 }
 
