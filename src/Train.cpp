@@ -22,6 +22,7 @@ void cda_rail::TrainList::add_train(const std::string &name, int length, double 
         throw std::out_of_range("Train already exists.");
     }
     trains.push_back(cda_rail::Train{name, length, max_speed, acceleration, deceleration});
+    train_name_to_index[name] = trains.size() - 1;
 }
 
 int cda_rail::TrainList::size() const {
