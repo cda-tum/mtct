@@ -406,4 +406,91 @@ TEST(Functionality, WriteStations) {
 TEST(Functionality, ReadTimetable) {
     auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
     auto timetable = cda_rail::Timetable::import_timetable("./example-networks/Fig11/timetable/", network);
+
+    // Check if the timetable has the correct stations
+    auto& stations = timetable.get_station_list();
+    // Check if the station is imported correctly
+    EXPECT_TRUE(stations.size() == 1);
+    EXPECT_TRUE(stations.has_station("Central"));
+
+    // Check if the station is imported correctly
+    auto& station = stations.get_station("Central");
+    EXPECT_TRUE(station.name == "Central");
+    EXPECT_TRUE(station.tracks.size() == 4);
+    std::unordered_set<int> track_ids{network.get_edge_index("g00", "g01"),
+                                      network.get_edge_index("g10", "g11"),
+                                      network.get_edge_index("g01", "g00"),
+                                      network.get_edge_index("g11", "g10")};
+    EXPECT_TRUE(station.tracks == track_ids);
+
+    // Check if the timetable has the correct trains
+    auto& trains = timetable.get_train_list();
+    // Check if the all trains are imported
+    EXPECT_TRUE(trains.size() == 3);
+    EXPECT_TRUE(trains.has_train("tr1"));
+    EXPECT_TRUE(trains.has_train("tr2"));
+    EXPECT_TRUE(trains.has_train("tr3"));
+    // Check if the train tr1 is imported correctly
+    auto tr1 = trains.get_train("tr1");
+    EXPECT_TRUE(tr1.name == "tr1");
+    EXPECT_TRUE(tr1.length == 100);
+    EXPECT_TRUE(tr1.max_speed == 83.33);
+    EXPECT_TRUE(tr1.acceleration == 2);
+    EXPECT_TRUE(tr1.deceleration == 1);
+    // Check if the train tr2 is imported correctly
+    auto tr2 = trains.get_train("tr2");
+    EXPECT_TRUE(tr2.name == "tr2");
+    EXPECT_TRUE(tr2.length == 100);
+    EXPECT_TRUE(tr2.max_speed == 27.78);
+    EXPECT_TRUE(tr2.acceleration == 2);
+    EXPECT_TRUE(tr2.deceleration == 1);
+    // Check if the train tr3 is imported correctly
+    auto tr3 = trains.get_train("tr3");
+    EXPECT_TRUE(tr3.name == "tr3");
+    EXPECT_TRUE(tr3.length == 250);
+    EXPECT_TRUE(tr3.max_speed == 20);
+    EXPECT_TRUE(tr3.acceleration == 2);
+    EXPECT_TRUE(tr3.deceleration == 1);
+
+    // Check the schedule of tr1
+    auto& tr1_schedule = timetable.get_schedule("tr1");
+    EXPECT_TRUE(tr1_schedule.t_0 == 120);
+    EXPECT_TRUE(tr1_schedule.v_0 == 0);
+    EXPECT_TRUE(tr1_schedule.t_n == 640);
+    EXPECT_TRUE(tr1_schedule.v_n == 16.67);
+    EXPECT_TRUE(network.get_vertex(tr1_schedule.entry).name == "l0");
+    EXPECT_TRUE(network.get_vertex(tr1_schedule.exit).name == "r0");
+    EXPECT_TRUE(tr1_schedule.stops.size() == 1);
+    auto& stop = tr1_schedule.stops[0];
+    EXPECT_TRUE(stop.begin == 240);
+    EXPECT_TRUE(stop.end == 300);
+    EXPECT_TRUE(stations.get_station(stop.station).name == "Central");
+
+    // Check the schedule of tr2
+    auto& tr2_schedule = timetable.get_schedule("tr2");
+    EXPECT_TRUE(tr2_schedule.t_0 == 0);
+    EXPECT_TRUE(tr2_schedule.v_0 == 0);
+    EXPECT_TRUE(tr2_schedule.t_n == 420);
+    EXPECT_TRUE(tr2_schedule.v_n == 16.67);
+    EXPECT_TRUE(network.get_vertex(tr2_schedule.entry).name == "l0");
+    EXPECT_TRUE(network.get_vertex(tr2_schedule.exit).name == "r0");
+    EXPECT_TRUE(tr2_schedule.stops.size() == 1);
+    auto& stop2 = tr2_schedule.stops[0];
+    EXPECT_TRUE(stop2.begin == 120);
+    EXPECT_TRUE(stop2.end == 300);
+    EXPECT_TRUE(stations.get_station(stop2.station).name == "Central");
+
+    // Check the schedule of tr3
+    auto& tr3_schedule = timetable.get_schedule("tr3");
+    EXPECT_TRUE(tr3_schedule.t_0 == 0);
+    EXPECT_TRUE(tr3_schedule.v_0 == 0);
+    EXPECT_TRUE(tr3_schedule.t_n == 420);
+    EXPECT_TRUE(tr3_schedule.v_n == 16.67);
+    EXPECT_TRUE(network.get_vertex(tr3_schedule.entry).name == "r0");
+    EXPECT_TRUE(network.get_vertex(tr3_schedule.exit).name == "l0");
+    EXPECT_TRUE(tr3_schedule.stops.size() == 1);
+    auto& stop3 = tr3_schedule.stops[0];
+    EXPECT_TRUE(stop3.begin == 180);
+    EXPECT_TRUE(stop3.end == 300);
+    EXPECT_TRUE(stations.get_station(stop3.station).name == "Central");
 }
