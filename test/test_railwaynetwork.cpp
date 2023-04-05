@@ -359,7 +359,7 @@ TEST(Functionality, ReadStation) {
     EXPECT_TRUE(stations.has_station("Central"));
 
     // Check if the station is imported correctly
-    auto station = stations.get_station("Central");
+    auto& station = stations.get_station("Central");
     EXPECT_TRUE(station.name == "Central");
     EXPECT_TRUE(station.tracks.size() == 4);
     std::unordered_set<int> track_ids{network.get_edge_index("g00", "g01"),
