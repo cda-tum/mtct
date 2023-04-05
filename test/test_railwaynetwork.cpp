@@ -1,5 +1,6 @@
 #include "RailwayNetwork.hpp"
 #include "Timetable.hpp"
+#include "Definitions.hpp"
 #include "gtest/gtest.h"
 #include <algorithm>
 #include "nlohmann/json.hpp"
@@ -323,6 +324,34 @@ TEST(Functionality, WriteTrains) {
     EXPECT_TRUE(tr3.max_speed == 20);
     EXPECT_TRUE(tr3.acceleration == 2);
     EXPECT_TRUE(tr3.deceleration == 1);
+}
+
+TEST(Functionality, IsDirectory) {
+    EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory"));
+    EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory"));
+    std::filesystem::remove_all("./tmp");
+    EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory/"));
+    EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory/"));
+    std::filesystem::remove_all("./tmp");
+    EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/"));
+    EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/"));
+    std::filesystem::remove_all("./tmp");
+    EXPECT_FALSE(cda_rail::is_directory_and_create("./tmp/is_directory/is_file.txt"));
+    std::filesystem::remove_all("./tmp");
+    EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory\)"));
+    EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory\)"));
+    std::filesystem::remove_all("./tmp");
+    EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory)"));
+    EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory)"));
+    std::filesystem::remove_all("./tmp");
+    EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\)"));
+    EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\)"));
+    std::filesystem::remove_all("./tmp");
+    EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp)"));
+    EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp)"));
+    std::filesystem::remove_all("./tmp");
+    EXPECT_FALSE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory\is_file.txt)"));
+    std::filesystem::remove_all("./tmp");
 }
 
 TEST(Functionality, ReadTimetable) {
