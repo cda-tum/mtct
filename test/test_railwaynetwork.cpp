@@ -278,6 +278,53 @@ TEST(Functionality, ReadTrains) {
     EXPECT_TRUE(tr3.deceleration == 1);
 }
 
+TEST(Functionality, WriteTrains) {
+    // Create a train list
+    auto trains = cda_rail::TrainList();
+    trains.add_train("tr1", 100, 83.33, 2, 1);
+    trains.add_train("tr2", 100, 27.78, 2, 1);
+    trains.add_train("tr3", 250, 20, 2, 1);
+
+    // Write the train list to a file
+    trains.export_trains("./tmp/write_trains_test");
+
+    // Read the train list from the file
+    auto trains_read = cda_rail::TrainList::import_trains("./tmp/write_trains_test");
+
+    // Delete created directory and everything in it
+    std::filesystem::remove_all("./tmp");
+
+    // Check if the all trains are imported
+    EXPECT_TRUE(trains_read.size() == 3);
+    EXPECT_TRUE(trains_read.has_train("tr1"));
+    EXPECT_TRUE(trains_read.has_train("tr2"));
+    EXPECT_TRUE(trains_read.has_train("tr3"));
+
+    // Check if the train tr1 is imported correctly
+    auto tr1 = trains_read.get_train("tr1");
+    EXPECT_TRUE(tr1.name == "tr1");
+    EXPECT_TRUE(tr1.length == 100);
+    EXPECT_TRUE(tr1.max_speed == 83.33);
+    EXPECT_TRUE(tr1.acceleration == 2);
+    EXPECT_TRUE(tr1.deceleration == 1);
+
+    // Check if the train tr2 is imported correctly
+    auto tr2 = trains_read.get_train("tr2");
+    EXPECT_TRUE(tr2.name == "tr2");
+    EXPECT_TRUE(tr2.length == 100);
+    EXPECT_TRUE(tr2.max_speed == 27.78);
+    EXPECT_TRUE(tr2.acceleration == 2);
+    EXPECT_TRUE(tr2.deceleration == 1);
+
+    // Check if the train tr3 is imported correctly
+    auto tr3 = trains_read.get_train("tr3");
+    EXPECT_TRUE(tr3.name == "tr3");
+    EXPECT_TRUE(tr3.length == 250);
+    EXPECT_TRUE(tr3.max_speed == 20);
+    EXPECT_TRUE(tr3.acceleration == 2);
+    EXPECT_TRUE(tr3.deceleration == 1);
+}
+
 TEST(Functionality, ReadTimetable) {
     auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
     auto timetable = cda_rail::Timetable::import_timetable("./example-networks/Fig11/timetable/", network);
