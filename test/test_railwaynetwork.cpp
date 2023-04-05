@@ -350,6 +350,25 @@ TEST(Functionality, IsDirectory) {
     std::filesystem::remove_all("./tmp");
 }
 
+TEST(Functionality, ReadStation) {
+    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    auto stations = cda_rail::StationList::import_stations("./example-networks/Fig11/timetable/", network);
+
+    // Check if the station is imported correctly
+    EXPECT_TRUE(stations.size() == 1);
+    EXPECT_TRUE(stations.has_station("Central"));
+
+    // Check if the station is imported correctly
+    auto station = stations.get_station("Central");
+    EXPECT_TRUE(station.name == "Central");
+    EXPECT_TRUE(station.tracks.size() == 4);
+    std::unordered_set<int> track_ids{network.get_edge_index("g00", "g01"),
+                                      network.get_edge_index("g10", "g11"),
+                                      network.get_edge_index("g01", "g00"),
+                                      network.get_edge_index("g11", "g10")};
+    EXPECT_TRUE(station.tracks == track_ids);
+}
+
 TEST(Functionality, ReadTimetable) {
     auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
     auto timetable = cda_rail::Timetable::import_timetable("./example-networks/Fig11/timetable/", network);
