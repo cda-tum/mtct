@@ -369,6 +369,40 @@ TEST(Functionality, ReadStation) {
     EXPECT_TRUE(station.tracks == track_ids);
 }
 
+TEST(Functionality, WriteStations) {
+    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    cda_rail::StationList stations;
+
+    stations.add_station("S1");
+    stations.add_station("S2");
+
+    stations.add_track_to_station("S1", "l0", "l1", network);
+    stations.add_track_to_station("S2", "l0", "l1", network);
+    stations.add_track_to_station("S2", "l1", "l2", network);
+
+    stations.export_stations("./tmp/write_stations_test", network);
+    auto stations_read = cda_rail::StationList::import_stations("./tmp/write_stations_test", network);
+
+    std::filesystem::remove_all("./tmp");
+
+    EXPECT_TRUE(stations_read.size() == 2);
+    EXPECT_TRUE(stations_read.has_station("S1"));
+    EXPECT_TRUE(stations_read.has_station("S2"));
+
+    auto& s1 = stations_read.get_station("S1");
+    EXPECT_TRUE(s1.name == "S1");
+    EXPECT_TRUE(s1.tracks.size() == 1);
+    std::unordered_set<int> s1_tracks{network.get_edge_index("l0", "l1")};
+    EXPECT_TRUE(s1.tracks == s1_tracks);
+
+    auto& s2 = stations_read.get_station("S2");
+    EXPECT_TRUE(s2.name == "S2");
+    EXPECT_TRUE(s2.tracks.size() == 2);
+    std::unordered_set<int> s2_tracks{network.get_edge_index("l0", "l1"),
+                                      network.get_edge_index("l1", "l2")};
+    EXPECT_TRUE(s2.tracks == s2_tracks);
+}
+
 TEST(Functionality, ReadTimetable) {
     auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
     auto timetable = cda_rail::Timetable::import_timetable("./example-networks/Fig11/timetable/", network);
