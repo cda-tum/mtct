@@ -18,7 +18,7 @@ namespace cda_rail {
 
         if (!std::filesystem::exists(p)) {
             std::error_code error_code;
-            std::filesystem::create_directory(p, error_code);
+            std::filesystem::create_directories(p, error_code);
             if (error_code) {
                 return false;
             }
