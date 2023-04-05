@@ -239,3 +239,7 @@ cda_rail::Timetable cda_rail::Timetable::import_timetable(const char *path, cons
     return import_timetable(std::filesystem::path(path), network);
 }
 
+void cda_rail::Timetable::export_timetable(const char *path, const cda_rail::Network &network) const {
+    export_timetable(std::filesystem::path(path), network);
+}
+

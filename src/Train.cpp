@@ -112,3 +112,11 @@ cda_rail::TrainList cda_rail::TrainList::import_trains(const std::filesystem::pa
 
     return train_list;
 }
+
+void cda_rail::TrainList::export_trains(const char *path) const {
+    return export_trains(std::filesystem::path(path));
+}
+
+cda_rail::TrainList cda_rail::TrainList::import_trains(const char *path) {
+    return import_trains(std::filesystem::path(path));
+}

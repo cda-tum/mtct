@@ -46,8 +46,10 @@ namespace cda_rail {
             void add_track_to_station(const std::string& name, const std::string& source, const std::string& target, const cda_rail::Network& network);
 
             void export_stations(const std::string& path, const cda_rail::Network& network) const;
+            void export_stations(const char* path, const cda_rail::Network& network) const;
             void export_stations(const std::filesystem::path& p, const cda_rail::Network& network) const;
             [[nodiscard]] static cda_rail::StationList import_stations(const std::string& path, const cda_rail::Network& network);
+            [[nodiscard]] static cda_rail::StationList import_stations(const char* path, const cda_rail::Network& network);
             [[nodiscard]] static cda_rail::StationList import_stations(const std::filesystem::path& p, const cda_rail::Network& network);
     };
 }

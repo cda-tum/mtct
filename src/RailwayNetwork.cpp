@@ -142,7 +142,7 @@ void cda_rail::Network::add_edges_from_graphml(const tinyxml2::XMLElement *graph
     }
 }
 
-cda_rail::Network cda_rail::Network::read_graphml(const std::string& path) {
+cda_rail::Network cda_rail::Network::read_graphml(const std::filesystem::path &p) {
     /**
      * Read network graph from XML file
      * @param path Path to XML file
@@ -150,7 +150,6 @@ cda_rail::Network cda_rail::Network::read_graphml(const std::string& path) {
      */
 
     // Open graphml file
-    std::filesystem::path p(path);
     tinyxml2::XMLDocument graph_xml;
     graph_xml.LoadFile((p / "tracks.graphml").string().c_str());
     if (graph_xml.Error()) {
@@ -191,14 +190,13 @@ cda_rail::Network cda_rail::Network::read_graphml(const std::string& path) {
     return network;
 }
 
-void cda_rail::Network::read_successors(const std::string &path) {
+void cda_rail::Network::read_successors(const std::filesystem::path &p) {
     /**
      * Read successors from path
      * @param path Path to successors file
      */
 
     // Open file
-    std::filesystem::path p(path);
     std::ifstream f((p / "successors_cpp.json"));
     json data = json::parse(f);
 
@@ -215,18 +213,26 @@ void cda_rail::Network::read_successors(const std::string &path) {
     }
 }
 
-cda_rail::Network cda_rail::Network::read_network(const std::string &path) {
+cda_rail::Network cda_rail::Network::import_network(const std::filesystem::path &p) {
     /**
      * Read network from path. This includes the graph and successors.
-     * @param path Path to network file
+     * @param p Path to network directory
      * @return Network
      */
 
+    // Check if path exists
+    if (!std::filesystem::exists(p)) {
+        throw std::runtime_error("Path does not exist");
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::runtime_error("Path is not a directory");
+    }
+
     // Read graph
-    cda_rail::Network network = cda_rail::Network::read_graphml(path);
+    cda_rail::Network network = cda_rail::Network::read_graphml(p);
 
     // Read successors
-    network.read_successors(path);
+    network.read_successors(p);
 
     return network;
 }
@@ -720,15 +726,17 @@ void cda_rail::Network::write_successor_set_to_file(std::ofstream& file, const i
     }
 }
 
-void cda_rail::Network::export_network(const std::string &path) const {
+void cda_rail::Network::export_network(const std::filesystem::path &p) const {
     /** Export the network to a given directory. This includes the graphml and successors files.
      * @param path: The path to the directory.
      */
 
     // Create the directory if it does not exist.
-    std::filesystem::path p(path);
     if (!std::filesystem::exists(p)) {
         std::filesystem::create_directories(p);
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("The path is not a directory.");
     }
 
     // Export the graphml file.
@@ -737,4 +745,20 @@ void cda_rail::Network::export_network(const std::string &path) const {
     // Export the successors files.
     export_successors_cpp(p);
     export_successors_python(p);
+}
+
+cda_rail::Network cda_rail::Network::import_network(const char *path) {
+    return import_network(std::filesystem::path(path));
+}
+
+cda_rail::Network cda_rail::Network::import_network(const std::string &path) {
+    return import_network(std::filesystem::path(path));
+}
+
+void cda_rail::Network::export_network(const char *path) const {
+    export_network(std::filesystem::path(path));
+}
+
+void cda_rail::Network::export_network(const std::string &path) const {
+    export_network(std::filesystem::path(path));
 }

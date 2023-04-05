@@ -182,3 +182,11 @@ cda_rail::StationList cda_rail::StationList::import_stations(const std::filesyst
 
     return stations;
 }
+
+void cda_rail::StationList::export_stations(const char *path, const cda_rail::Network &network) const {
+    export_stations(std::filesystem::path(path), network);
+}
+
+cda_rail::StationList cda_rail::StationList::import_stations(const char *path, const cda_rail::Network &network) {
+    return import_stations(std::filesystem::path(path), network);
+}

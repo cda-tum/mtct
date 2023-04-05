@@ -50,11 +50,11 @@ namespace cda_rail {
             std::vector<std::unordered_set<int>> successors;
             std::unordered_map<std::string, int> vertex_name_to_index;
 
-            [[nodiscard]] static Network read_graphml(const std::string& path);
+            [[nodiscard]] static Network read_graphml(const std::filesystem::path& p);
             static void get_keys(tinyxml2::XMLElement* graphml_body, std::string& breakable, std::string& length, std::string& max_speed, std::string& min_block_length, std::string& type);
             static void add_vertices_from_graphml(const tinyxml2::XMLElement* graphml_node, cda_rail::Network& network, const std::string& type);
             static void add_edges_from_graphml(const tinyxml2::XMLElement* graphml_edge, cda_rail::Network& network, const std::string& breakable, const std::string& length, const std::string& max_speed, const std::string& min_block_length);
-            void read_successors(const std::string& path);
+            void read_successors(const std::filesystem::path& p);
             static void extract_vertices_from_key(const std::string& key, std::string& source_name, std::string& target_name);
 
             void export_graphml(const std::filesystem::path& p) const;
@@ -103,8 +103,12 @@ namespace cda_rail {
             [[nodiscard]] int number_of_vertices() const;
             [[nodiscard]] int number_of_edges() const;
 
-            [[nodiscard]] static Network read_network(const std::string& path);
+            [[nodiscard]] static Network import_network(const std::string& path);
+            [[nodiscard]] static Network import_network(const char* path);
+            [[nodiscard]] static Network import_network(const std::filesystem::path& p);
             void export_network(const std::string& path) const;
+            void export_network(const char*) const;
+            void export_network(const std::filesystem::path& p) const;
     };
 
     // HELPER

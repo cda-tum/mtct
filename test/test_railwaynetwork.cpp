@@ -17,7 +17,7 @@ struct EdgeTarget {
 };
 
 TEST(Functionality, ReadNetwork) {
-    cda_rail::Network network = cda_rail::Network::read_network("./example-networks/Fig11/network/");
+    cda_rail::Network network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
 
     // Check vertices properties
     std::vector<std::string> vertex_names = {"l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
@@ -199,7 +199,7 @@ TEST(Functionality, WriteNetwork) {
 
     network.export_network("./tmp/write_network_test");
 
-    auto network_read = cda_rail::Network::read_network("./tmp/write_network_test");
+    auto network_read = cda_rail::Network::import_network("./tmp/write_network_test");
 
     // Delete created directory and everything in it
     std::filesystem::remove_all("./tmp");
@@ -245,6 +245,6 @@ TEST(Functionality, WriteNetwork) {
 }
 
 TEST(Functionality, ReadTimetable) {
-    auto network = cda_rail::Network::read_network("./example-networks/Fig11/network/");
+    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
     auto timetable = cda_rail::Timetable::import_timetable("./example-networks/Fig11/timetable/", network);
 }
