@@ -494,3 +494,20 @@ TEST(Functionality, ReadTimetable) {
     EXPECT_TRUE(stop3.end == 300);
     EXPECT_TRUE(stations.get_station(stop3.station).name == "Central");
 }
+
+TEST(Functionality, WriteTimetable) {
+    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    cda_rail::Timetable timetable;
+
+    timetable.add_train("tr1", 100, 83.33, 2, 1,
+                        0, 0, "l0",
+                        300, 20, "r0",
+                        network);
+    timetable.add_train("tr2", 100, 27.78, 2, 1,
+                        0, 0, "r0",
+                        300, 20, "l0",
+                        network);
+
+    timetable.add_station("Station1");
+    timetable.add_station("Station2");
+}
