@@ -1,4 +1,5 @@
 #include "Train.hpp"
+#include "Definitions.hpp"
 #include <filesystem>
 #include <string>
 #include "nlohmann/json.hpp"
@@ -75,12 +76,8 @@ cda_rail::TrainList cda_rail::TrainList::import_trains(const std::string &path) 
 }
 
 void cda_rail::TrainList::export_trains(const std::filesystem::path &p) const {
-    if (!std::filesystem::is_directory(p)) {
-        throw std::invalid_argument("Path is not a directory.");
-    }
-    if (!std::filesystem::exists(p)) {
-        // Create the directory if it doesn't exist
-        std::filesystem::create_directory(p);
+    if (!cda_rail::is_directory_and_create(p)) {
+        throw std::runtime_error("Could not create directory " + p.string());
     }
 
     json j;

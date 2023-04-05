@@ -1,4 +1,5 @@
 #include "RailwayNetwork.hpp"
+#include "Definitions.hpp"
 #include <string>
 #include <tinyxml2.h>
 #include "nlohmann/json.hpp"
@@ -732,11 +733,8 @@ void cda_rail::Network::export_network(const std::filesystem::path &p) const {
      */
 
     // Create the directory if it does not exist.
-    if (!std::filesystem::exists(p)) {
-        std::filesystem::create_directories(p);
-    }
-    if (!std::filesystem::is_directory(p)) {
-        throw std::invalid_argument("The path is not a directory.");
+    if (!cda_rail::is_directory_and_create(p)) {
+        throw std::runtime_error("Could not create directory " + p.string());
     }
 
     // Export the graphml file.

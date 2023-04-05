@@ -1,5 +1,6 @@
 #include "Station.hpp"
 #include "RailwayNetwork.hpp"
+#include "Definitions.hpp"
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -128,11 +129,8 @@ void cda_rail::StationList::export_stations(const std::string &path, const cda_r
 }
 
 void cda_rail::StationList::export_stations(const std::filesystem::path &p, const cda_rail::Network &network) const {
-    if (!std::filesystem::exists(p)) {
-        throw std::invalid_argument("Path does not exist.");
-    }
-    if (!std::filesystem::is_directory(p)) {
-        throw std::invalid_argument("Path is not a directory.");
+    if (!cda_rail::is_directory_and_create(p)) {
+        throw std::runtime_error("Could not create directory " + p.string());
     }
 
     json j;
