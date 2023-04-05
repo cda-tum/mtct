@@ -102,6 +102,17 @@ void cda_rail::StationList::add_track_to_station(int station_index, const std::s
     add_track_to_station(station_index, network.get_edge_index(source, target), network);
 }
 
+void cda_rail::StationList::add_track_to_station(const std::string &name, const std::string &source, const std::string &target,
+                                                 const cda_rail::Network &network) {
+    if (!has_station(name)) {
+        throw std::out_of_range("Station does not exist.");
+    }
+    if (!network.has_edge(source, target)) {
+        throw std::out_of_range("Track does not exist.");
+    }
+    add_track_to_station(get_station_index(name), network.get_edge_index(source, target), network);
+}
+
 void cda_rail::StationList::export_stations(const std::string &path, const cda_rail::Network &network) const {
     /**
      * This method exports all stations to a file. The file is a json file with the following structure:
@@ -165,7 +176,7 @@ cda_rail::StationList cda_rail::StationList::import_stations(const std::filesyst
     for (const auto& [name, edges] : data.items()) {
         stations.add_station(name);
         for (const auto& edge : edges) {
-            stations.add_track_to_station(name, edge[0], edge[1], network);
+            stations.add_track_to_station(name, edge[0].get<std::string>(), edge[1].get<std::string>(), network);
         }
     }
 
