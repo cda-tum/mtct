@@ -7,7 +7,7 @@ namespace cda_rail {
     static const int VSS = 1;
     static const int TTD = 2;
 
-    bool is_directory_and_create(const std::filesystem::path& p) {
+    static bool is_directory_and_create(const std::filesystem::path& p) {
         /**
          * Checks if a directory exists and creates it if it doesn't.
          * Returns true if the directory exists or was created successfully.
