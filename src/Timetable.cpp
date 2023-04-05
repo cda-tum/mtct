@@ -240,3 +240,40 @@ void cda_rail::Timetable::export_timetable(const char *path, const cda_rail::Net
     export_timetable(std::filesystem::path(path), network);
 }
 
+void cda_rail::Timetable::add_station(const std::string &name, const std::unordered_set<int> &tracks) {
+    station_list.add_station(name, tracks);
+}
+
+void cda_rail::Timetable::add_station(const std::string &name) {
+    station_list.add_station(name);
+}
+
+void cda_rail::Timetable::add_track_to_station(int station_index, int track, const cda_rail::Network &network) {
+    station_list.add_track_to_station(station_index, track, network);
+}
+
+void cda_rail::Timetable::add_track_to_station(const std::string &name, int track, const cda_rail::Network &network) {
+    station_list.add_track_to_station(name, track, network);
+}
+
+void
+cda_rail::Timetable::add_track_to_station(int station_index, int source, int target, const cda_rail::Network &network) {
+    station_list.add_track_to_station(station_index, source, target, network);
+}
+
+void cda_rail::Timetable::add_track_to_station(const std::string &name, int source, int target,
+                                               const cda_rail::Network &network) {
+    station_list.add_track_to_station(name, source, target, network);
+}
+
+void cda_rail::Timetable::add_track_to_station(int station_index, const std::string &source, const std::string &target,
+                                               const cda_rail::Network &network) {
+    station_list.add_track_to_station(station_index, source, target, network);
+}
+
+void
+cda_rail::Timetable::add_track_to_station(const std::string &name, const std::string &source, const std::string &target,
+                                          const cda_rail::Network &network) {
+    station_list.add_track_to_station(name, source, target, network);
+}
+
