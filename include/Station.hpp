@@ -36,7 +36,7 @@ namespace cda_rail {
             [[nodiscard]] const Station& get_station(int index) const;
             [[nodiscard]] const Station& get_station(const std::string& name) const;
 
-            [[nodiscard]] const cda_rail::Network& get_network() const;
+            [[nodiscard]] int size() const;
 
             void add_track_to_station(int station_index, int track, const cda_rail::Network& network);
             void add_track_to_station(const std::string& name, int track, const cda_rail::Network& network);

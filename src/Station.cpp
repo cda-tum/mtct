@@ -188,3 +188,7 @@ void cda_rail::StationList::export_stations(const char *path, const cda_rail::Ne
 cda_rail::StationList cda_rail::StationList::import_stations(const char *path, const cda_rail::Network &network) {
     return import_stations(std::filesystem::path(path), network);
 }
+
+int cda_rail::StationList::size() const {
+    return stations.size();
+}
