@@ -409,7 +409,6 @@ TEST(Functionality, ReadTimetable) {
 
     // Check if the timetable has the correct stations
     auto& stations = timetable.get_station_list();
-    // Check if the station is imported correctly
     EXPECT_TRUE(stations.size() == 1);
     EXPECT_TRUE(stations.has_station("Central"));
 
@@ -510,4 +509,168 @@ TEST(Functionality, WriteTimetable) {
 
     timetable.add_station("Station1");
     timetable.add_station("Station2");
+
+    timetable.add_track_to_station("Station1", "g00", "g01", network);
+    timetable.add_track_to_station("Station1", "g10", "g11", network);
+    timetable.add_track_to_station("Station1", "g01", "g00", network);
+    timetable.add_track_to_station("Station1", "g11", "g10", network);
+    timetable.add_track_to_station("Station2", "r1", "r0", network);
+
+    timetable.add_stop("tr1", "Station1", 100, 160);
+    timetable.add_stop("tr1", "Station2", 200, 260);
+    timetable.add_stop("tr2", "Station1", 160, 220);
+
+    // Check if the timetable is as expected
+    // Check if the timetable has the correct stations
+    auto& stations = timetable.get_station_list();
+    EXPECT_TRUE(stations.size() == 2);
+    EXPECT_TRUE(stations.has_station("Station1"));
+    EXPECT_TRUE(stations.has_station("Station2"));
+
+    // Check if the stations are imported correctly
+    auto& st1 = stations.get_station("Station1");
+    EXPECT_TRUE(st1.name == "Station1");
+    EXPECT_TRUE(st1.tracks.size() == 4);
+    std::unordered_set<int> s1_expected_tracks = {network.get_edge_index("g00", "g01"),
+                                                 network.get_edge_index("g10", "g11"),
+                                                 network.get_edge_index("g01", "g00"),
+                                                 network.get_edge_index("g11", "g10")};
+    EXPECT_TRUE(st1.tracks == s1_expected_tracks);
+    auto& st2 = stations.get_station("Station2");
+    EXPECT_TRUE(st2.name == "Station2");
+    EXPECT_TRUE(st2.tracks.size() == 1);
+    std::unordered_set<int> s2_expected_tracks = {network.get_edge_index("r1", "r0")};
+    EXPECT_TRUE(st2.tracks == s2_expected_tracks);
+
+    // Check if the timetable has the correct trains
+    auto& trains = timetable.get_train_list();
+    EXPECT_TRUE(trains.size() == 2);
+    EXPECT_TRUE(trains.has_train("tr1"));
+    EXPECT_TRUE(trains.has_train("tr2"));
+
+    // Check if the train tr1 is saved correctly
+    auto tr1 = trains.get_train("tr1");
+    EXPECT_TRUE(tr1.name == "tr1");
+    EXPECT_TRUE(tr1.length == 100);
+    EXPECT_TRUE(tr1.max_speed == 83.33);
+    EXPECT_TRUE(tr1.acceleration == 2);
+    EXPECT_TRUE(tr1.deceleration == 1);
+    // Check if the train tr2 is saved correctly
+    auto tr2 = trains.get_train("tr2");
+    EXPECT_TRUE(tr2.name == "tr2");
+    EXPECT_TRUE(tr2.length == 100);
+    EXPECT_TRUE(tr2.max_speed == 27.78);
+    EXPECT_TRUE(tr2.acceleration == 2);
+    EXPECT_TRUE(tr2.deceleration == 1);
+
+    // Check if the schedule of tr1 is saved correctly
+    auto& tr1_schedule = timetable.get_schedule("tr1");
+    EXPECT_TRUE(tr1_schedule.t_0 == 0);
+    EXPECT_TRUE(tr1_schedule.v_0 == 0);
+    EXPECT_TRUE(tr1_schedule.t_n == 300);
+    EXPECT_TRUE(tr1_schedule.v_n == 20);
+    EXPECT_TRUE(network.get_vertex(tr1_schedule.entry).name == "l0");
+    EXPECT_TRUE(network.get_vertex(tr1_schedule.exit).name == "r0");
+    EXPECT_TRUE(tr1_schedule.stops.size() == 2);
+    auto& stop1 = tr1_schedule.stops[0];
+    EXPECT_TRUE(stop1.begin == 100);
+    EXPECT_TRUE(stop1.end == 160);
+    EXPECT_TRUE(stations.get_station(stop1.station).name == "Station1");
+    auto& stop2 = tr1_schedule.stops[1];
+    EXPECT_TRUE(stop2.begin == 200);
+    EXPECT_TRUE(stop2.end == 260);
+    EXPECT_TRUE(stations.get_station(stop2.station).name == "Station2");
+
+    // Check if the schedule of tr2 is saved correctly
+    auto& tr2_schedule = timetable.get_schedule("tr2");
+    EXPECT_TRUE(tr2_schedule.t_0 == 0);
+    EXPECT_TRUE(tr2_schedule.v_0 == 0);
+    EXPECT_TRUE(tr2_schedule.t_n == 300);
+    EXPECT_TRUE(tr2_schedule.v_n == 20);
+    EXPECT_TRUE(network.get_vertex(tr2_schedule.entry).name == "r0");
+    EXPECT_TRUE(network.get_vertex(tr2_schedule.exit).name == "l0");
+    EXPECT_TRUE(tr2_schedule.stops.size() == 1);
+    auto& stop3 = tr2_schedule.stops[0];
+    EXPECT_TRUE(stop3.begin == 160);
+    EXPECT_TRUE(stop3.end == 220);
+    EXPECT_TRUE(stations.get_station(stop3.station).name == "Station1");
+
+    // Write timetable to directory
+    timetable.export_timetable("./tmp/test-timetable/", network);
+
+    // Read timetable from directory
+    auto timetable_read = cda_rail::Timetable::import_timetable("./tmp/test-timetable/", network);
+
+    // Delete temporary files
+    std::filesystem::remove_all("./tmp");
+
+    // Check if the timetable is as expected
+    // Check if the timetable has the correct stations
+    auto& stations_read = timetable_read.get_station_list();
+    EXPECT_TRUE(stations_read.size() == 2);
+    EXPECT_TRUE(stations_read.has_station("Station1"));
+    EXPECT_TRUE(stations_read.has_station("Station2"));
+
+    // Check if the stations are imported correctly
+    auto& st1_read = stations_read.get_station("Station1");
+    EXPECT_TRUE(st1_read.name == "Station1");
+    EXPECT_TRUE(st1_read.tracks.size() == 4);
+    EXPECT_TRUE(st1_read.tracks == s1_expected_tracks);
+    auto& st2_read = stations_read.get_station("Station2");
+    EXPECT_TRUE(st2_read.name == "Station2");
+    EXPECT_TRUE(st2_read.tracks.size() == 1);
+    EXPECT_TRUE(st2_read.tracks == s2_expected_tracks);
+
+    // Check if the timetable has the correct trains
+    auto& trains_read = timetable_read.get_train_list();
+    EXPECT_TRUE(trains_read.size() == 2);
+    EXPECT_TRUE(trains_read.has_train("tr1"));
+    EXPECT_TRUE(trains_read.has_train("tr2"));
+
+    // Check if the train tr1 is saved correctly
+    auto tr1_read = trains_read.get_train("tr1");
+    EXPECT_TRUE(tr1_read.name == "tr1");
+    EXPECT_TRUE(tr1_read.length == 100);
+    EXPECT_TRUE(tr1_read.max_speed == 83.33);
+    EXPECT_TRUE(tr1_read.acceleration == 2);
+    EXPECT_TRUE(tr1_read.deceleration == 1);
+    // Check if the train tr2 is saved correctly
+    auto tr2_read = trains_read.get_train("tr2");
+    EXPECT_TRUE(tr2_read.name == "tr2");
+    EXPECT_TRUE(tr2_read.length == 100);
+    EXPECT_TRUE(tr2_read.max_speed == 27.78);
+    EXPECT_TRUE(tr2_read.acceleration == 2);
+    EXPECT_TRUE(tr2_read.deceleration == 1);
+
+    // Check if the schedule of tr1 is saved correctly
+    auto& tr1_schedule_read = timetable_read.get_schedule("tr1");
+    EXPECT_TRUE(tr1_schedule_read.t_0 == 0);
+    EXPECT_TRUE(tr1_schedule_read.v_0 == 0);
+    EXPECT_TRUE(tr1_schedule_read.t_n == 300);
+    EXPECT_TRUE(tr1_schedule_read.v_n == 20);
+    EXPECT_TRUE(network.get_vertex(tr1_schedule_read.entry).name == "l0");
+    EXPECT_TRUE(network.get_vertex(tr1_schedule_read.exit).name == "r0");
+    EXPECT_TRUE(tr1_schedule_read.stops.size() == 2);
+    auto& stop1_read = tr1_schedule_read.stops[0];
+    EXPECT_TRUE(stop1_read.begin == 100);
+    EXPECT_TRUE(stop1_read.end == 160);
+    EXPECT_TRUE(stations_read.get_station(stop1_read.station).name == "Station1");
+    auto& stop2_read = tr1_schedule_read.stops[1];
+    EXPECT_TRUE(stop2_read.begin == 200);
+    EXPECT_TRUE(stop2_read.end == 260);
+    EXPECT_TRUE(stations_read.get_station(stop2_read.station).name == "Station2");
+
+    // Check if the schedule of tr2 is saved correctly
+    auto& tr2_schedule_read = timetable_read.get_schedule("tr2");
+    EXPECT_TRUE(tr2_schedule_read.t_0 == 0);
+    EXPECT_TRUE(tr2_schedule_read.v_0 == 0);
+    EXPECT_TRUE(tr2_schedule_read.t_n == 300);
+    EXPECT_TRUE(tr2_schedule_read.v_n == 20);
+    EXPECT_TRUE(network.get_vertex(tr2_schedule_read.entry).name == "r0");
+    EXPECT_TRUE(network.get_vertex(tr2_schedule_read.exit).name == "l0");
+    EXPECT_TRUE(tr2_schedule_read.stops.size() == 1);
+    auto& stop3_read = tr2_schedule_read.stops[0];
+    EXPECT_TRUE(stop3_read.begin == 160);
+    EXPECT_TRUE(stop3_read.end == 220);
+    EXPECT_TRUE(stations_read.get_station(stop3_read.station).name == "Station1");
 }
