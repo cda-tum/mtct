@@ -1,14 +1,14 @@
 add_library(
         ${PROJECT_NAME}
         ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
-        ${PROJECT_SOURCE_DIR}/include/RailwayNetwork.hpp
-        RailwayNetwork.cpp
-        ${PROJECT_SOURCE_DIR}/include/Train.hpp
-        Train.cpp
-        ${PROJECT_SOURCE_DIR}/include/Timetable.hpp
-        Timetable.cpp
-        ${PROJECT_SOURCE_DIR}/include/Station.hpp
-        Station.cpp
+        ${PROJECT_SOURCE_DIR}/include/datastructure/RailwayNetwork.hpp
+        datastructure/RailwayNetwork.cpp
+        ${PROJECT_SOURCE_DIR}/include/datastructure/Train.hpp
+        datastructure/Train.cpp
+        ${PROJECT_SOURCE_DIR}/include/datastructure/Timetable.hpp
+        datastructure/Timetable.cpp
+        ${PROJECT_SOURCE_DIR}/include/datastructure/Station.hpp
+        datastructure/Station.cpp
 )
 
 # set include directories

@@ -3,7 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
-#include "RailwayNetwork.hpp"
+#include "datastructure/RailwayNetwork.hpp"
 #include <filesystem>
 
 namespace cda_rail {

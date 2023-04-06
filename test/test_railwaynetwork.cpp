@@ -1,5 +1,5 @@
-#include "RailwayNetwork.hpp"
-#include "Timetable.hpp"
+#include "datastructure/RailwayNetwork.hpp"
+#include "datastructure/Timetable.hpp"
 #include "Definitions.hpp"
 #include "gtest/gtest.h"
 #include <algorithm>

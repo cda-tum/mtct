@@ -2,9 +2,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "Train.hpp"
-#include "RailwayNetwork.hpp"
-#include "Station.hpp"
+#include "datastructure/Train.hpp"
+#include "datastructure/RailwayNetwork.hpp"
+#include "datastructure/Station.hpp"
 #include <filesystem>
 
 namespace cda_rail {

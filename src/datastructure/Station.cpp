@@ -1,5 +1,5 @@
-#include "Station.hpp"
-#include "RailwayNetwork.hpp"
+#include "datastructure/Station.hpp"
+#include "datastructure/RailwayNetwork.hpp"
 #include "Definitions.hpp"
 #include <filesystem>
 #include <fstream>

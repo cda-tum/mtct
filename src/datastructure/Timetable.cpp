@@ -1,5 +1,5 @@
-#include "Timetable.hpp"
-#include "Station.hpp"
+#include "datastructure/Timetable.hpp"
+#include "datastructure/Station.hpp"
 #include "Definitions.hpp"
 #include <filesystem>
 #include <string>

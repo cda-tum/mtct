@@ -1,4 +1,4 @@
-#include "RailwayNetwork.hpp"
+#include "datastructure/RailwayNetwork.hpp"
 #include "Definitions.hpp"
 #include <string>
 #include <tinyxml2.h>
