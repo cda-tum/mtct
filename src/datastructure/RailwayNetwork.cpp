@@ -788,30 +788,3 @@ bool cda_rail::Network::is_valid_successor(int e0, int e1) const {
      }
      return (successors[e0].find(e1) != successors[e0].end());
 }
-
-template<typename T>
-bool cda_rail::Network::is_valid_successor(const std::pair<T, T> &e0, int e1) const {
-    if (!has_edge(e0.first, e0.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    return is_valid_successor(get_edge_index(e0.first, e0.second), e1);
-}
-
-template<typename S>
-bool cda_rail::Network::is_valid_successor(int e0, const std::pair<S, S> &e1) const {
-    if (!has_edge(e1.first, e1.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    return is_valid_successor(e0, get_edge_index(e1.first, e1.second));
-}
-
-template<typename T, typename S>
-bool cda_rail::Network::is_valid_successor(const std::pair<T, T> &e0, const std::pair<S, S> &e1) const {
-    if (!has_edge(e0.first, e0.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    if (!has_edge(e1.first, e1.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    return is_valid_successor(get_edge_index(e0.first, e0.second), get_edge_index(e1.first, e1.second));
-}

@@ -111,16 +111,6 @@ namespace cda_rail {
             void export_network(const std::filesystem::path& p) const;
 
             [[nodiscard]] bool is_valid_successor(int e0, int e1) const;
-
-            template<typename T>
-            [[nodiscard]] bool is_valid_successor(const std::pair<T, T>& e0, int e1) const;
-
-            template<typename S>
-            [[nodiscard]] bool is_valid_successor(int e0, const std::pair<S, S>& e1) const;
-
-            template<typename T, typename S>
-            [[nodiscard]] bool is_valid_successor(const std::pair<T, T>& e0, const std::pair<S, S>& e1) const;
-
     };
 
     // HELPER
