@@ -124,3 +124,44 @@ void cda_rail::Route::remove_last_edge() {
     }
     edges.pop_back();
 }
+
+int cda_rail::Route::get_edge(int route_index) const {
+    /**
+     * Returns the edge at the given index.
+     * Throws an error if the index is out of range.
+     *
+     * @param route_index The index of the edge to return.
+     * @return The edge at the given index.
+     */
+
+    if (route_index < 0 || route_index >= edges.size()) {
+        throw std::out_of_range("Index out of range.");
+    }
+    return edges[route_index];
+}
+
+const cda_rail::Edge &cda_rail::Route::get_edge(int route_index, cda_rail::Network network) const {
+    /**
+     * Returns the edge at the given index.
+     * Throws an error if the index is out of range.
+     *
+     * @param route_index The index of the edge to return.
+     * @param network The network to which the edge belongs.
+     * @return The edge at the given index.
+     */
+
+    if (route_index < 0 || route_index >= edges.size()) {
+        throw std::out_of_range("Index out of range.");
+    }
+    return network.get_edge(edges[route_index]);
+}
+
+int cda_rail::Route::size() const {
+    /**
+     * Returns the number of edges in the route.
+     *
+     * @return The number of edges in the route.
+     */
+
+    return edges.size();
+}

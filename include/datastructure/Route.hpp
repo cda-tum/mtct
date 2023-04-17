@@ -19,5 +19,9 @@ namespace cda_rail {
 
             void remove_first_edge();
             void remove_last_edge();
+
+            [[nodiscard]] int get_edge(int route_index) const;
+            [[nodiscard]] const cda_rail::Edge& get_edge(int route_index, cda_rail::Network network) const;
+            [[nodiscard]] int size() const;
     };
 }
