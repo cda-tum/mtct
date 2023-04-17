@@ -17,16 +17,7 @@ namespace cda_rail {
             void push_front_edge(int source, int target, cda_rail::Network network);
             void push_front_edge(const std::string& source, const std::string& target, cda_rail::Network network);
 
-            void remove_edge(int edge_index, cda_rail::Network network);
-            void remove_edge(int source, int target, cda_rail::Network network);
-            void remove_edge(const std::string& source, const std::string& target, cda_rail::Network network);
-
-            void export_route(const std::filesystem::path& p, cda_rail::Network network) const;
-            void export_route(const std::string& path, cda_rail::Network network) const;
-            void export_route(const char* path, cda_rail::Network network) const;
-
-            void import_route(const std::filesystem::path& p, cda_rail::Network network);
-            void import_route(const std::string& path, cda_rail::Network network);
-            void import_route(const char* path, cda_rail::Network network);
+            void remove_first_edge();
+            void remove_last_edge();
     };
 }
