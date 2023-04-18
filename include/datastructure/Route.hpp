@@ -11,22 +11,22 @@ namespace cda_rail {
         private:
             std::vector<int> edges;
         public:
-            void push_back_edge(int edge_index, cda_rail::Network network);
-            void push_back_edge(int source, int target, cda_rail::Network network);
-            void push_back_edge(const std::string& source, const std::string& target, cda_rail::Network network);
+            void push_back_edge(int edge_index, const cda_rail::Network& network);
+            void push_back_edge(int source, int target, const cda_rail::Network& network);
+            void push_back_edge(const std::string& source, const std::string& target, const cda_rail::Network& network);
 
-            void push_front_edge(int edge_index, cda_rail::Network network);
-            void push_front_edge(int source, int target, cda_rail::Network network);
-            void push_front_edge(const std::string& source, const std::string& target, cda_rail::Network network);
+            void push_front_edge(int edge_index, const cda_rail::Network& network);
+            void push_front_edge(int source, int target, const cda_rail::Network& network);
+            void push_front_edge(const std::string& source, const std::string& target, const cda_rail::Network& network);
 
             void remove_first_edge();
             void remove_last_edge();
 
             [[nodiscard]] int get_edge(int route_index) const;
-            [[nodiscard]] const cda_rail::Edge& get_edge(int route_index, cda_rail::Network network) const;
+            [[nodiscard]] const cda_rail::Edge& get_edge(int route_index, const cda_rail::Network& network) const;
             [[nodiscard]] int size() const;
 
-            [[nodiscard]] bool assert(cda_rail::Network& network) const;
+            [[nodiscard]] bool assert(const cda_rail::Network& network) const;
     };
 
     class RouteMap {
