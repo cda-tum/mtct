@@ -187,3 +187,143 @@ bool cda_rail::Route::assert(const cda_rail::Network& network) const {
         }
     }
 }
+
+void cda_rail::RouteMap::add_empty_route(const std::string &train_name) {
+    /**
+     * Adds an empty route for the given train.
+     * Throws an error if the train already has a route.
+     *
+     * @param train_name The name of the train.
+     */
+
+    if (routes.find(train_name) != routes.end()) {
+        throw std::out_of_range("Train already has a route.");
+    }
+    routes[train_name] = Route();
+}
+
+void cda_rail::RouteMap::add_empty_route(const std::string &train_name, const cda_rail::TrainList &trains) {
+    /**
+     * Adds an empty route for the given train.
+     * Throws an error if the train already has a route.
+     * Throws an error if the train does not exist.
+     *
+     * @param train_name The name of the train.
+     * @param trains The list of trains.
+     */
+
+    if (!trains.has_train(train_name)) {
+        throw std::out_of_range("Train does not exist.");
+    }
+    add_empty_route(train_name);
+}
+
+void cda_rail::RouteMap::remove_first_edge(const std::string &train_name) {
+    /**
+     * Removes the first edge from the route of the given train.
+     * Throws an error if the train does not have a route.
+     *
+     * @param train_name The name of the train.
+     */
+
+    if (routes.find(train_name) == routes.end()) {
+        throw std::out_of_range("Train does not have a route.");
+    }
+    routes[train_name].remove_first_edge();
+}
+
+void cda_rail::RouteMap::remove_last_edge(const std::string &train_name) {
+    /**
+     * Removes the last edge from the route of the given train.
+     * Throws an error if the train does not have a route.
+     *
+     * @param train_name The name of the train.
+     */
+
+    if (routes.find(train_name) == routes.end()) {
+        throw std::out_of_range("Train does not have a route.");
+    }
+    routes[train_name].remove_last_edge();
+}
+
+const cda_rail::Route &cda_rail::RouteMap::get_route(const std::string &train_name) const {
+    /**
+     * Returns the route of the given train.
+     * Throws an error if the train does not have a route.
+     *
+     * @param train_name The name of the train.
+     */
+
+    if (routes.find(train_name) == routes.end()) {
+        throw std::out_of_range("Train does not have a route.");
+    }
+    return routes.at(train_name);
+}
+
+bool cda_rail::RouteMap::assert(const cda_rail::TrainList &trains, const cda_rail::Network &network,
+                                bool every_train_must_have_route) const {
+    /**
+     * Asserts if the route map is valid for the given trains and network.
+     * A route map is valid if all routes are valid for the given network and if all trains with routes exist.
+     * If every_train_must_have_route is true, then the route map is only valid if all trains have routes.
+     *
+     * @param trains The list of trains.
+     * @param network The network to which the routes belong.
+     * @param every_train_must_have_route If true, then the route map is only valid if all trains have routes.
+     * @return True if the route map is valid, false otherwise.
+     */
+
+    // If every train must have a route the sizes must be equal.
+    if (every_train_must_have_route && routes.size() != trains.size()) {
+        return false;
+    }
+
+    // Iterate through all elements in the route map.
+    for (auto& [name, route] : routes) {
+        // If the train does not exist, then the route map is not valid.
+        if (!trains.has_train(name)) {
+            return false;
+        }
+
+        // If the route is not valid, then the route map is not valid.
+        if (!route.assert(network)) {
+            return false;
+        }
+    }
+
+    // All checks passed
+    return true;
+}
+
+template<typename... Ts>
+void cda_rail::RouteMap::push_front_edge(const std::string &train_name, Ts &&... args) {
+    /**
+     * Adds the edge to the beginning of the route of the given train.
+     * Throws an error if the train does not have a route.
+     *
+     * @param train_name The name of the train.
+     * @param args The arguments to pass to the push_front_edge method of the Route class.
+     */
+
+    if (routes.find(train_name) == routes.end()) {
+        throw std::out_of_range("Train does not have a route.");
+    }
+    routes[train_name].push_front_edge(std::forward<Ts>(args)...);
+}
+
+template<typename... Ts>
+void cda_rail::RouteMap::push_back_edge(const std::string &train_name, Ts &&... args) {
+    /**
+     * Adds the edge to the end of the route of the given train.
+     * Throws an error if the train does not have a route.
+     *
+     * @param train_name The name of the train.
+     * @param args The arguments to pass to the push_back_edge method of the Route class.
+     */
+
+    if (routes.find(train_name) == routes.end()) {
+        throw std::out_of_range("Train does not have a route.");
+    }
+    routes[train_name].push_back_edge(std::forward<Ts>(args)...);
+}
+
