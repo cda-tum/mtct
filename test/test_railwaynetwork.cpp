@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "nlohmann/json.hpp"
 #include <unordered_set>
+#include "datastructure/Route.hpp"
 
 using json = nlohmann::json;
 
@@ -673,4 +674,58 @@ TEST(Functionality, WriteTimetable) {
     EXPECT_TRUE(stop3_read.begin == 160);
     EXPECT_TRUE(stop3_read.end == 220);
     EXPECT_TRUE(stations_read.get_station(stop3_read.station).name == "Station1");
+}
+
+
+TEST(Functionality, RouteMap) {
+    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    auto train_list = cda_rail::TrainList();
+
+    train_list.add_train("tr1", 100, 83.33, 2, 1);
+    train_list.add_train("tr2", 100, 27.78, 2, 1);
+
+    auto route_map = cda_rail::RouteMap();
+
+    EXPECT_ANY_THROW(route_map.add_empty_route("tr3", train_list));
+
+    route_map.add_empty_route("tr1", train_list);
+    route_map.push_back_edge("tr1", "l1", "l2", network);
+    EXPECT_ANY_THROW(route_map.push_back_edge("tr1", "l0", "l2", network));
+    EXPECT_ANY_THROW(route_map.push_back_edge("tr1", "l0", "l1", network));
+    route_map.push_back_edge("tr1", "l2", "l3", network);
+    EXPECT_ANY_THROW(route_map.push_front_edge("tr1", "l0", "l2", network));
+    EXPECT_ANY_THROW(route_map.push_front_edge("tr1", "l3", "g00", network));
+    route_map.push_front_edge("tr1", "l0", "l1", network);
+
+    // Check if route consists of three edges passing vertices l0-l1-l2-l3 in this order.
+    auto& route = route_map.get_route("tr1");
+    EXPECT_TRUE(route.size() == 3);
+    EXPECT_TRUE(network.get_vertex(route.get_edge(0, network).source).name == "l0");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(0, network).target).name == "l1");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(1, network).source).name == "l1");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(1, network).target).name == "l2");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(2, network).source).name == "l2");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(2, network).target).name == "l3");
+
+    // Check if the consistency checking works as expected
+    EXPECT_TRUE(route_map.check_consistency(train_list, network, false));
+    EXPECT_FALSE(route_map.check_consistency(train_list, network, true));
+    EXPECT_FALSE(route_map.check_consistency(train_list, network));
+
+    route_map.add_empty_route("tr2");
+    route_map.push_back_edge("tr2", "r0", "r1", network);
+    route_map.push_back_edge("tr2", "r1", "r2", network);
+
+    // Check if route consists of two edges passing vertices r0-r1-r2 in this order.
+    auto& route2 = route_map.get_route("tr2");
+    EXPECT_TRUE(route2.size() == 2);
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(0, network).source).name == "r0");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(0, network).target).name == "r1");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(1, network).source).name == "r1");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(1, network).target).name == "r2");
+
+    // Check if the consistency checking works as expected
+    EXPECT_TRUE(route_map.check_consistency(train_list, network, false));
+    EXPECT_TRUE(route_map.check_consistency(train_list, network, true));
+    EXPECT_TRUE(route_map.check_consistency(train_list, network));
 }
