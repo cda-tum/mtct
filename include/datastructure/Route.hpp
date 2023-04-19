@@ -26,7 +26,7 @@ namespace cda_rail {
             [[nodiscard]] const cda_rail::Edge& get_edge(int route_index, const cda_rail::Network& network) const;
             [[nodiscard]] int size() const;
 
-            [[nodiscard]] bool assert(const cda_rail::Network& network) const;
+            [[nodiscard]] bool check_consistency(const cda_rail::Network& network) const;
     };
 
     class RouteMap {
@@ -47,7 +47,7 @@ namespace cda_rail {
 
             [[nodiscard]] const Route& get_route(const std::string& train_name) const;
 
-            [[nodiscard]] bool assert(const cda_rail::TrainList& trains, const cda_rail::Network& network, bool every_train_must_have_route = true) const;
+            [[nodiscard]] bool check_consistency(const cda_rail::TrainList& trains, const cda_rail::Network& network, bool every_train_must_have_route = true) const;
 
             void export_routes(const std::filesystem::path& p, const cda_rail::Network& network) const;
             void export_routes(const std::string& path, const cda_rail::Network& network) const;

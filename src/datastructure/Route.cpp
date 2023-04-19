@@ -1,5 +1,10 @@
 #include "datastructure/Route.hpp"
 #include "datastructure/RailwayNetwork.hpp"
+#include "Definitions.hpp"
+#include "nlohmann/json.hpp"
+#include <fstream>
+
+using json = nlohmann::json;
 
 void cda_rail::Route::push_back_edge(int edge_index, const cda_rail::Network& network) {
     /**
@@ -166,7 +171,7 @@ int cda_rail::Route::size() const {
     return edges.size();
 }
 
-bool cda_rail::Route::assert(const cda_rail::Network& network) const {
+bool cda_rail::Route::check_consistency(const cda_rail::Network& network) const {
     /**
      * Asserts if the route is valid for the given network.
      * A route is valid if all edges exist in the network and if all edges are valid successors of the previous edge.
@@ -186,6 +191,7 @@ bool cda_rail::Route::assert(const cda_rail::Network& network) const {
             return false;
         }
     }
+    return true;
 }
 
 void cda_rail::RouteMap::add_empty_route(const std::string &train_name) {
@@ -260,7 +266,7 @@ const cda_rail::Route &cda_rail::RouteMap::get_route(const std::string &train_na
     return routes.at(train_name);
 }
 
-bool cda_rail::RouteMap::assert(const cda_rail::TrainList &trains, const cda_rail::Network &network,
+bool cda_rail::RouteMap::check_consistency(const cda_rail::TrainList &trains, const cda_rail::Network &network,
                                 bool every_train_must_have_route) const {
     /**
      * Asserts if the route map is valid for the given trains and network.
@@ -286,13 +292,122 @@ bool cda_rail::RouteMap::assert(const cda_rail::TrainList &trains, const cda_rai
         }
 
         // If the route is not valid, then the route map is not valid.
-        if (!route.assert(network)) {
+        if (!route.check_consistency(network)) {
             return false;
         }
     }
 
     // All checks passed
     return true;
+}
+
+void cda_rail::RouteMap::export_routes(const std::filesystem::path &p, const cda_rail::Network &network) const {
+    /**
+     * Exports the routes to a routes.json file within the given path.
+     * The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]} where the edge names are used.
+     *
+     * @param p The path to the directory in which the routes.json file should be created.
+     * @param network The network to which the routes belong.
+     */
+
+    if (!cda_rail::is_directory_and_create(p)) {
+        throw std::runtime_error("Could not create directory " + p.string());
+    }
+
+    json j;
+    for (auto& [name, route] : routes) {
+        std::vector<std::pair<std::string, std::string>> route_edges;
+        for(int i = 0; i < route.size(); i++) {
+            auto& edge = route.get_edge(i, network);
+            route_edges.emplace_back(network.get_vertex(edge.source).name, network.get_vertex(edge.target).name);
+        }
+        j[name] = route_edges;
+    }
+
+    std::ofstream file(p / "routes.json");
+    file << j << std::endl;
+}
+
+void cda_rail::RouteMap::export_routes(const std::string &path, const cda_rail::Network &network) const {
+    /**
+     * Exports the routes to a routes.json file within the given path.
+     * The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]} where the edge names are used.
+     *
+     * @param path The path to the directory where the routes.json file should be created.
+     * @param network The network to which the routes belong.
+     */
+
+    std::filesystem::path p(path);
+    export_routes(p, network);
+}
+
+void cda_rail::RouteMap::export_routes(const char *path, const cda_rail::Network &network) const {
+    /**
+     * Exports the routes to a routes.json file within the given path.
+     * The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]} where the edge names are used.
+     *
+     * @param path The path to the directory where the routes.json file should be created.
+     * @param network The network to which the routes belong.
+     */
+
+    std::filesystem::path p(path);
+    export_routes(p, network);
+}
+
+cda_rail::RouteMap cda_rail::RouteMap::import_routes(const std::filesystem::path &p, const cda_rail::Network &network) {
+    /**
+     * Imports the routes from a routes.json file within the given path.
+     * The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]} where the edge names are used.
+     *
+     * @param p The path to the directory in which the routes.json file should be created.
+     * @param network The network to which the routes belong.
+     */
+
+    if (!std::filesystem::exists(p)) {
+        throw std::invalid_argument("Path does not exist.");
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("Path is not a directory.");
+    }
+
+    std::ifstream file(p / "stations.json");
+    json data = json::parse(file);
+
+    RouteMap route_map;
+    for (auto& [name, route] : data.items()) {
+        route_map.add_empty_route(name);
+        for (auto& edge : route) {
+            route_map.push_back_edge(name, edge[0].get<std::string>(), edge[1].get<std::string>(), network);
+        }
+    }
+
+    return route_map;
+}
+
+cda_rail::RouteMap cda_rail::RouteMap::import_routes(const std::string &path, const cda_rail::Network &network) {
+    /**
+     * Imports the routes from a routes.json file within the given path.
+     * The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]} where the edge names are used.
+     *
+     * @param path The path to the directory where the routes.json file should be created.
+     * @param network The network to which the routes belong.
+     */
+
+    std::filesystem::path p(path);
+    return import_routes(p, network);
+}
+
+cda_rail::RouteMap cda_rail::RouteMap::import_routes(const char *path, const cda_rail::Network &network) {
+    /**
+     * Imports the routes from a routes.json file within the given path.
+     * The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]} where the edge names are used.
+     *
+     * @param path The path to the directory where the routes.json file should be created.
+     * @param network The network to which the routes belong.
+     */
+
+    std::filesystem::path p(path);
+    return import_routes(p, network);
 }
 
 template<typename... Ts>
