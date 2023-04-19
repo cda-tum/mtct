@@ -729,3 +729,130 @@ TEST(Functionality, RouteMap) {
     EXPECT_TRUE(route_map.check_consistency(train_list, network, true));
     EXPECT_TRUE(route_map.check_consistency(train_list, network));
 }
+
+TEST(Functionality, ImportRouteMap) {
+    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    auto train_list = cda_rail::TrainList::import_trains("./example-networks/Fig11/timetable/");
+    auto route_map = cda_rail::RouteMap::import_routes("./example-networks/Fig11/routes/", network);
+
+    // Check if the route consists of thee trains with names "tr1", "tr2" and "tr3"
+    EXPECT_TRUE(route_map.size() == 3);
+    EXPECT_TRUE(route_map.has_route("tr1"));
+    EXPECT_TRUE(route_map.has_route("tr2"));
+    EXPECT_TRUE(route_map.has_route("tr3"));
+
+    // Check if the route for tr1 consists of eight edges passing vertices l0-l1-l2-l3-g00-g01-r2-r1-r0 in this order.
+    auto& route = route_map.get_route("tr1");
+    EXPECT_TRUE(route.size() == 8);
+    EXPECT_TRUE(network.get_vertex(route.get_edge(0, network).source).name == "l0");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(0, network).target).name == "l1");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(1, network).source).name == "l1");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(1, network).target).name == "l2");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(2, network).source).name == "l2");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(2, network).target).name == "l3");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(3, network).source).name == "l3");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(3, network).target).name == "g00");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(4, network).source).name == "g00");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(4, network).target).name == "g01");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(5, network).source).name == "g01");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(5, network).target).name == "r2");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(6, network).source).name == "r2");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(6, network).target).name == "r1");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(7, network).source).name == "r1");
+    EXPECT_TRUE(network.get_vertex(route.get_edge(7, network).target).name == "r0");
+
+    // Check if the route for tr2 consists of eight edges passing vertices l0-l1-l2-l3-g00-g01-r2-r1-r0 in this order.
+    auto& route2 = route_map.get_route("tr2");
+    EXPECT_TRUE(route2.size() == 8);
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(0, network).source).name == "l0");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(0, network).target).name == "l1");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(1, network).source).name == "l1");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(1, network).target).name == "l2");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(2, network).source).name == "l2");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(2, network).target).name == "l3");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(3, network).source).name == "l3");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(3, network).target).name == "g00");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(4, network).source).name == "g00");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(4, network).target).name == "g01");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(5, network).source).name == "g01");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(5, network).target).name == "r2");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(6, network).source).name == "r2");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(6, network).target).name == "r1");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(7, network).source).name == "r1");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(7, network).target).name == "r0");
+
+    // Check if the route for tr3 consists of eight edges passing vertices r0-r1-r2-g11-g10-l3-l2-l1 in this order.
+    auto& route3 = route_map.get_route("tr3");
+    EXPECT_TRUE(route3.size() == 8);
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(0, network).source).name == "r0");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(0, network).target).name == "r1");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(1, network).source).name == "r1");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(1, network).target).name == "r2");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(2, network).source).name == "r2");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(2, network).target).name == "g11");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(3, network).source).name == "g11");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(3, network).target).name == "g10");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(4, network).source).name == "g10");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(4, network).target).name == "l3");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(5, network).source).name == "l3");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(5, network).target).name == "l2");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(6, network).source).name == "l2");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(6, network).target).name == "l1");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(7, network).source).name == "l1");
+    EXPECT_TRUE(network.get_vertex(route3.get_edge(7, network).target).name == "l0");
+
+
+    // Check imported consistency
+    EXPECT_TRUE(route_map.check_consistency(train_list, network, false));
+    EXPECT_TRUE(route_map.check_consistency(train_list, network, true));
+    EXPECT_TRUE(route_map.check_consistency(train_list, network));
+}
+
+TEST(Functionality, ExportRouteMap) {
+    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    auto train_list = cda_rail::TrainList();
+    train_list.add_train("tr1", 100, 83.33, 2, 1);
+    train_list.add_train("tr2", 100, 27.78, 2, 1);
+    auto route_map = cda_rail::RouteMap();
+    route_map.add_empty_route("tr1", train_list);
+    route_map.push_back_edge("tr1", "l1", "l2", network);
+    route_map.push_back_edge("tr1", "l2", "l3", network);
+    route_map.push_front_edge("tr1", "l0", "l1", network);
+    route_map.add_empty_route("tr2");
+    route_map.push_back_edge("tr2", "r0", "r1", network);
+    route_map.push_back_edge("tr2", "r1", "r2", network);
+
+    // Export and import route map
+    route_map.export_routes("./tmp/write_route_map_test", network);
+    auto route_map_read = cda_rail::RouteMap::import_routes("./tmp/write_route_map_test", network);
+    std::filesystem::remove_all("./tmp");
+
+    // Check if the route map is the same as the original one
+    // Check if the route map contains two routes for tr1 and tr2
+    EXPECT_TRUE(route_map_read.size() == 2);
+    EXPECT_TRUE(route_map_read.has_route("tr1"));
+    EXPECT_TRUE(route_map_read.has_route("tr2"));
+
+    // Check if the route for tr1 consists of three edges passing vertices l0-l1-l2-l3 in this order.
+    auto& route1 = route_map_read.get_route("tr1");
+    EXPECT_TRUE(route1.size() == 3);
+    EXPECT_TRUE(network.get_vertex(route1.get_edge(0, network).source).name == "l0");
+    EXPECT_TRUE(network.get_vertex(route1.get_edge(0, network).target).name == "l1");
+    EXPECT_TRUE(network.get_vertex(route1.get_edge(1, network).source).name == "l1");
+    EXPECT_TRUE(network.get_vertex(route1.get_edge(1, network).target).name == "l2");
+    EXPECT_TRUE(network.get_vertex(route1.get_edge(2, network).source).name == "l2");
+    EXPECT_TRUE(network.get_vertex(route1.get_edge(2, network).target).name == "l3");
+
+    // Check if the route for tr2 consists of two edges passing vertices r0-r1-r2 in this order.
+    auto& route2 = route_map_read.get_route("tr2");
+    EXPECT_TRUE(route2.size() == 2);
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(0, network).source).name == "r0");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(0, network).target).name == "r1");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(1, network).source).name == "r1");
+    EXPECT_TRUE(network.get_vertex(route2.get_edge(1, network).target).name == "r2");
+
+    // Check imported consistency
+    EXPECT_TRUE(route_map_read.check_consistency(train_list, network, false));
+    EXPECT_TRUE(route_map_read.check_consistency(train_list, network, true));
+    EXPECT_TRUE(route_map_read.check_consistency(train_list, network));
+}
