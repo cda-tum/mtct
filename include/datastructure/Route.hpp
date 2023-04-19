@@ -47,6 +47,8 @@ namespace cda_rail {
             void remove_first_edge(const std::string& train_name);
             void remove_last_edge(const std::string& train_name);
 
+            [[nodiscard]] bool has_route(const std::string& train_name) const;
+            [[nodiscard]] int size() const;
             [[nodiscard]] const Route& get_route(const std::string& train_name) const;
 
             [[nodiscard]] bool check_consistency(const cda_rail::TrainList& trains, const cda_rail::Network& network, bool every_train_must_have_route = true) const;

@@ -370,7 +370,7 @@ cda_rail::RouteMap cda_rail::RouteMap::import_routes(const std::filesystem::path
         throw std::invalid_argument("Path is not a directory.");
     }
 
-    std::ifstream file(p / "stations.json");
+    std::ifstream file(p / "routes.json");
     json data = json::parse(file);
 
     RouteMap route_map;
@@ -512,4 +512,25 @@ void cda_rail::RouteMap::push_front_edge(const std::string &train_name, const st
         throw std::out_of_range("Train does not have a route.");
     }
     routes[train_name].push_front_edge(source, target, network);
+}
+
+bool cda_rail::RouteMap::has_route(const std::string &train_name) const {
+    /**
+     * Checks if the given train has a route.
+     *
+     * @param train_name The name of the train.
+     * @return True if the train has a route, false otherwise.
+     */
+
+    return routes.find(train_name) != routes.end();
+}
+
+int cda_rail::RouteMap::size() const {
+    /**
+     * Returns the number of routes in the map.
+     *
+     * @return The number of routes in the map.
+     */
+
+    return routes.size();
 }
