@@ -36,11 +36,13 @@ namespace cda_rail {
             void add_empty_route(const std::string& train_name);
             void add_empty_route(const std::string& train_name, const cda_rail::TrainList& trains);
 
-            template<typename... Ts>
-            void push_back_edge(const std::string& train_name, Ts&&... args);
+            void push_back_edge(const std::string& train_name, int edge_index, const cda_rail::Network& network);
+            void push_back_edge(const std::string& train_name, int source, int target, const cda_rail::Network& network);
+            void push_back_edge(const std::string& train_name, const std::string& source, const std::string& target, const cda_rail::Network& network);
 
-            template<typename... Ts>
-            void push_front_edge(const std::string& train_name, Ts&&... args);
+            void push_front_edge(const std::string& train_name, int edge_index, const cda_rail::Network& network);
+            void push_front_edge(const std::string& train_name, int source, int target, const cda_rail::Network& network);
+            void push_front_edge(const std::string& train_name, const std::string& source, const std::string& target, const cda_rail::Network& network);
 
             void remove_first_edge(const std::string& train_name);
             void remove_last_edge(const std::string& train_name);

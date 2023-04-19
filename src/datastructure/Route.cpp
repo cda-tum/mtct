@@ -410,35 +410,106 @@ cda_rail::RouteMap cda_rail::RouteMap::import_routes(const char *path, const cda
     return import_routes(p, network);
 }
 
-template<typename... Ts>
-void cda_rail::RouteMap::push_front_edge(const std::string &train_name, Ts &&... args) {
-    /**
-     * Adds the edge to the beginning of the route of the given train.
-     * Throws an error if the train does not have a route.
-     *
-     * @param train_name The name of the train.
-     * @param args The arguments to pass to the push_front_edge method of the Route class.
-     */
-
-    if (routes.find(train_name) == routes.end()) {
-        throw std::out_of_range("Train does not have a route.");
-    }
-    routes[train_name].push_front_edge(std::forward<Ts>(args)...);
-}
-
-template<typename... Ts>
-void cda_rail::RouteMap::push_back_edge(const std::string &train_name, Ts &&... args) {
+void cda_rail::RouteMap::push_back_edge(const std::string &train_name, int edge_index, const cda_rail::Network &network) {
     /**
      * Adds the edge to the end of the route of the given train.
      * Throws an error if the train does not have a route.
      *
      * @param train_name The name of the train.
-     * @param args The arguments to pass to the push_back_edge method of the Route class.
+     * @param edge_index The index of the edge in the network.
+     * @param network The network to which the routes belong.
      */
 
     if (routes.find(train_name) == routes.end()) {
         throw std::out_of_range("Train does not have a route.");
     }
-    routes[train_name].push_back_edge(std::forward<Ts>(args)...);
+    routes[train_name].push_back_edge(edge_index, network);
 }
 
+void cda_rail::RouteMap::push_back_edge(const std::string &train_name, int source, int target,
+                                        const cda_rail::Network &network) {
+    /**
+     * Adds the edge to the end of the route of the given train.
+     * Throws an error if the train does not have a route.
+     *
+     * @param train_name The name of the train.
+     * @param source The index of the source station in the network.
+     * @param target The index of the target station in the network.
+     * @param network The network to which the routes belong.
+     */
+
+    if (routes.find(train_name) == routes.end()) {
+        throw std::out_of_range("Train does not have a route.");
+    }
+    routes[train_name].push_back_edge(source, target, network);
+}
+
+void cda_rail::RouteMap::push_back_edge(const std::string &train_name, const std::string &source, const std::string &target,
+                                   const cda_rail::Network &network) {
+    /**
+     * Adds the edge to the end of the route of the given train.
+     * Throws an error if the train does not have a route.
+     *
+     * @param train_name The name of the train.
+     * @param source The name of the source station.
+     * @param target The name of the target station.
+     * @param network The network to which the routes belong.
+     */
+
+    if (routes.find(train_name) == routes.end()) {
+        throw std::out_of_range("Train does not have a route.");
+    }
+    routes[train_name].push_back_edge(source, target, network);
+}
+
+void cda_rail::RouteMap::push_front_edge(const std::string &train_name, int edge_index, const cda_rail::Network &network) {
+    /**
+     * Adds the edge to the front of the route of the given train.
+     * Throws an error if the train does not have a route.
+     *
+     * @param train_name The name of the train.
+     * @param edge_index The index of the edge in the network.
+     * @param network The network to which the routes belong.
+     */
+
+    if (routes.find(train_name) == routes.end()) {
+        throw std::out_of_range("Train does not have a route.");
+    }
+    routes[train_name].push_front_edge(edge_index, network);
+}
+
+void cda_rail::RouteMap::push_front_edge(const std::string &train_name, int source, int target,
+                                         const cda_rail::Network &network) {
+    /**
+     * Adds the edge to the front of the route of the given train.
+     * Throws an error if the train does not have a route.
+     *
+     * @param train_name The name of the train.
+     * @param source The index of the source station in the network.
+     * @param target The index of the target station in the network.
+     * @param network The network to which the routes belong.
+     */
+
+    if (routes.find(train_name) == routes.end()) {
+        throw std::out_of_range("Train does not have a route.");
+    }
+    routes[train_name].push_front_edge(source, target, network);
+}
+
+void cda_rail::RouteMap::push_front_edge(const std::string &train_name, const std::string &source, const std::string &target,
+                                    const cda_rail::Network &network) {
+    /**
+     * Adds the edge to the front of the route of the given train.
+     * Throws an error if the train does not have a route.
+     *
+     * @param train_name The name of the train.
+     * @param source The name of the source station.
+     * @param target The name of the target station.
+     * @param network The network to which the routes belong.
+     */
+
+    if (routes.find(train_name) == routes.end()) {
+        throw std::out_of_range("Train does not have a route.");
+    }
+    routes[train_name].push_front_edge(source, target, network);
+}
