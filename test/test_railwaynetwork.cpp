@@ -602,6 +602,8 @@ TEST(Functionality, ReadTimetable) {
     EXPECT_TRUE(stop3.begin == 180);
     EXPECT_TRUE(stop3.end == 300);
     EXPECT_TRUE(stations.get_station(stop3.station).name == "Central");
+
+    EXPECT_TRUE(timetable.check_consistency(network));
 }
 
 TEST(Functionality, WriteTimetable) {
