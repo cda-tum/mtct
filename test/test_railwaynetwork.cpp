@@ -18,6 +18,115 @@ struct EdgeTarget {
     double min_block_length;
 };
 
+TEST(Functionality, NetworkFunctions) {
+    cda_rail::Network network;
+    network.add_vertex("v0", 0);
+    network.add_vertex("v1", 1);
+    network.add_vertex("v2", 2);
+
+    network.add_edge("v0", "v1", 1, 2, true, 0);
+    network.add_edge("v1","v2", 3, 4, false, 1.5);
+    network.add_edge("v1","v0", 1, 2, true, 0);
+    network.add_edge("v2", "v0", 10, 20, false, 2);
+
+    network.add_successor(network.get_edge_index("v0", "v1"), network.get_edge_index("v1", "v2"));
+    network.add_successor(network.get_edge_index("v2","v0"), network.get_edge_index("v0", "v1"));
+
+    // get Vertex tests
+    EXPECT_TRUE(network.get_vertex(0).name == "v0");
+    EXPECT_TRUE(network.get_vertex("v0").name == "v0");
+    EXPECT_TRUE(network.get_vertex_index("v0") == 0);
+
+    // get Edge tests
+    EXPECT_TRUE(network.get_edge(0).source == 0);
+    EXPECT_TRUE(network.get_edge(0).target == 1);
+    EXPECT_TRUE(network.get_edge(0, 1).source == 0);
+    EXPECT_TRUE(network.get_edge(0, 1).target == 1);
+    EXPECT_TRUE(network.get_edge("v0", "v1").source == 0);
+    EXPECT_TRUE(network.get_edge("v0", "v1").target == 1);
+    EXPECT_TRUE(network.get_edge_index(0, 1) == 0);
+    EXPECT_TRUE(network.get_edge_index("v0", "v1") == 0);
+
+    // has vertex tests
+    EXPECT_TRUE(network.has_vertex(0));
+    EXPECT_FALSE(network.has_vertex(3));
+    EXPECT_TRUE(network.has_vertex("v0"));
+    EXPECT_FALSE(network.has_vertex("v3"));
+
+    // has edge tests
+    EXPECT_TRUE(network.has_edge(0));
+    EXPECT_FALSE(network.has_edge(4));
+    EXPECT_TRUE(network.has_edge(0,1));
+    EXPECT_FALSE(network.has_edge(0,2));
+    EXPECT_TRUE(network.has_edge("v0", "v1"));
+    EXPECT_FALSE(network.has_edge("v0", "v2"));
+
+    // change vertex name tests
+    network.change_vertex_name(0, "v0_tmp");
+    EXPECT_TRUE(network.get_vertex(0).name == "v0_tmp");
+    EXPECT_TRUE(network.get_vertex("v0_tmp").name == "v0_tmp");
+    EXPECT_TRUE(network.get_vertex_index("v0_tmp") == 0);
+    EXPECT_FALSE(network.has_vertex("v0"));
+    EXPECT_TRUE(network.has_vertex("v0_tmp"));
+    network.change_vertex_name("v0_tmp", "v0");
+    EXPECT_TRUE(network.get_vertex(0).name == "v0");
+    EXPECT_TRUE(network.get_vertex("v0").name == "v0");
+    EXPECT_TRUE(network.get_vertex_index("v0") == 0);
+    EXPECT_FALSE(network.has_vertex("v0_tmp"));
+    EXPECT_TRUE(network.has_vertex("v0"));
+
+    // change edge properties tests
+    network.change_edge_property(0, 2, "length");
+    EXPECT_TRUE(network.get_edge(0).length == 2);
+    network.change_edge_property(0, 3, "max_speed");
+    EXPECT_TRUE(network.get_edge(0).max_speed == 3);
+    network.change_edge_property(0, 4, "min_block_length");
+    EXPECT_TRUE(network.get_edge(0).min_block_length == 4);
+    network.change_edge_property(0, 1, 5, "length");
+    EXPECT_TRUE(network.get_edge(0).length == 5);
+    network.change_edge_property(0, 1, 6, "max_speed");
+    EXPECT_TRUE(network.get_edge(0).max_speed == 6);
+    network.change_edge_property(0, 1, 7, "min_block_length");
+    EXPECT_TRUE(network.get_edge(0).min_block_length == 7);
+    network.change_edge_property("v0", "v1", 8, "length");
+    EXPECT_TRUE(network.get_edge(0).length == 8);
+    network.change_edge_property("v0", "v1", 9, "max_speed");
+    EXPECT_TRUE(network.get_edge(0).max_speed == 9);
+    network.change_edge_property("v0", "v1", 10, "min_block_length");
+    EXPECT_TRUE(network.get_edge(0).min_block_length == 10);
+    network.change_edge_breakable(1, true);
+    EXPECT_TRUE(network.get_edge(1).breakable);
+    network.change_edge_breakable(1, 2, false);
+    EXPECT_FALSE(network.get_edge(1).breakable);
+    network.change_edge_breakable("v1", "v2", true);
+    EXPECT_TRUE(network.get_edge(1).breakable);
+
+    // out and in edges tests
+    std::unordered_set<int> expected_out {1,2};
+    std::unordered_set<int> expected_in {0};
+    std::unordered_set<int> expected_neighbors {0,2};
+    EXPECT_TRUE(network.out_edges(1) == expected_out);
+    EXPECT_TRUE(network.out_edges("v1") == expected_out);
+    EXPECT_TRUE(network.in_edges(1) == expected_in);
+    EXPECT_TRUE(network.in_edges("v1") == expected_in);
+    EXPECT_TRUE(network.neighbors(1) == expected_neighbors);
+    EXPECT_TRUE(network.neighbors("v1") == expected_neighbors);
+
+    // successor tests
+    std::unordered_set<int> expected_successors {1};
+    EXPECT_TRUE(network.get_successors(0) == expected_successors);
+    EXPECT_TRUE(network.get_successors(0, 1) == expected_successors);
+    EXPECT_TRUE(network.get_successors("v0", "v1") == expected_successors);
+
+    // Vertex and edge numbers
+    EXPECT_TRUE(network.number_of_vertices() == 3);
+    EXPECT_TRUE(network.number_of_edges() == 4);
+
+    // Valid successor
+    EXPECT_TRUE(network.is_valid_successor(0, 1));
+    EXPECT_FALSE(network.is_valid_successor(0, 2));
+}
+
 TEST(Functionality, ReadNetwork) {
     cda_rail::Network network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
 
