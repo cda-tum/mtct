@@ -88,6 +88,8 @@ namespace cda_rail {
 
             void sort_stops();
 
+            [[nodiscard]] bool check_consistency(const cda_rail::Network& network) const;
+
             void export_timetable(const std::string& path, const cda_rail::Network& network) const;
             void export_timetable(const char* path, const cda_rail::Network& network) const;
             void export_timetable(const std::filesystem::path& p, const cda_rail::Network& network) const;

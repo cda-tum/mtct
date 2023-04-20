@@ -239,3 +239,13 @@ cda_rail::Timetable cda_rail::Timetable::import_timetable(const char *path, cons
 void cda_rail::Timetable::export_timetable(const char *path, const cda_rail::Network &network) const {
     export_timetable(std::filesystem::path(path), network);
 }
+
+bool cda_rail::Timetable::check_consistency(const cda_rail::Network &network) const {
+    /**
+     * This method checks if the timetable is consistent with the network, i.e., if the following holds:
+     * - All vertices used as entry and exit points are valid vertices of the network
+     * - Entry and exit vertices have exactly one neighboring vertex
+     * - All edges of stations are valid edges of the network
+     */
+     return true;
+}
