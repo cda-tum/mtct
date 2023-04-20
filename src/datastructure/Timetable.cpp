@@ -246,6 +246,39 @@ bool cda_rail::Timetable::check_consistency(const cda_rail::Network &network) co
      * - All vertices used as entry and exit points are valid vertices of the network
      * - Entry and exit vertices have exactly one neighboring vertex
      * - All edges of stations are valid edges of the network
+     * - All scheduled stops are comparable by < or >, hence not overlapping
      */
-     return true;
+
+    // Check if the entry and exit vertices are valid vertices of the network and if they have exactly one neighbor
+    for (const auto& schedule : schedules) {
+        if (!network.has_vertex(schedule.entry) || !network.has_vertex(schedule.exit)) {
+            return false;
+        }
+        if (network.neighbors(schedule.entry).size() != 1 || network.neighbors(schedule.exit).size() != 1) {
+            return false;
+        }
+    }
+
+    // Check if all edges of stations are valid edges of the network
+    for (int i = 0; i < station_list.size(); ++i) {
+        const auto& station = station_list.get_station(i);
+        for (auto track : station.tracks) {
+            if (!network.has_edge(track)) {
+                return false;
+            }
+        }
+    }
+
+    // Check if all stops are comparable by < or >
+    for (const auto& schedule : schedules) {
+        for (int i = 0; i < schedule.stops.size(); ++i) {
+            for (int j = i + 1; j < schedule.stops.size(); ++j) {
+                if (!(schedule.stops.at(i) < schedule.stops.at(j)) && !(schedule.stops.at(j) < schedule.stops.at(i))) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
 }
