@@ -25,6 +25,15 @@ namespace cda_rail {
         bool operator==(const ScheduledStop& other) const {
             return (begin == other.begin && end == other.end);
         }
+        bool operator<=(const ScheduledStop& other) const {
+            return *this < other || *this == other;
+        }
+        bool operator>=(const ScheduledStop& other) const {
+            return *this > other || *this == other;
+        }
+        bool operator!=(const ScheduledStop& other) const {
+            return !(*this == other);
+        }
     };
 
     struct Schedule {
