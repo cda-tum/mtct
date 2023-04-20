@@ -100,6 +100,9 @@ namespace cda_rail {
             [[nodiscard]] const std::unordered_set<int>& get_successors(const int source_id, const int target_id) const;
             [[nodiscard]] const std::unordered_set<int>& get_successors(const std::string& source_name, const std::string& target_name) const;
 
+            [[nodiscard]] std::unordered_set<int> neighbors(const int index) const;
+            [[nodiscard]] std::unordered_set<int> neighbors(const std::string& name) const;
+
             [[nodiscard]] int number_of_vertices() const;
             [[nodiscard]] int number_of_edges() const;
 

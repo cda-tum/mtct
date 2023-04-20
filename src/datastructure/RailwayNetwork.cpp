@@ -788,3 +788,26 @@ bool cda_rail::Network::is_valid_successor(int e0, int e1) const {
      }
      return (successors[e0].find(e1) != successors[e0].end());
 }
+
+std::unordered_set<int> cda_rail::Network::neighbors(const int index) const {
+    if (!has_vertex(index)) {
+        throw std::out_of_range("Vertex does not exist");
+    }
+    std::unordered_set<int> neighbors;
+    auto e_out = out_edges(index);
+    auto e_in = in_edges(index);
+    for (auto e : e_out) {
+        neighbors.insert(get_edge(e).target);
+    }
+    for (auto e : e_in) {
+        neighbors.insert(get_edge(e).source);
+    }
+    return neighbors;
+}
+
+std::unordered_set<int> cda_rail::Network::neighbors(const std::string &name) const {
+    if (!has_vertex(name)) {
+        throw std::out_of_range("Vertex does not exist");
+    }
+    return neighbors(get_vertex_index(name));
+}
