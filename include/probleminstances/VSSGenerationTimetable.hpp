@@ -62,8 +62,8 @@ namespace cda_rail::instances{
             void export_instance(const std::string& path) const;
             void export_instance(const char* path) const;
 
-            [[nodiscard]] static VSSGenerationTimetable import_instance(const std::filesystem::path& p);
-            [[nodiscard]] static VSSGenerationTimetable import_instance(const std::string& path);
-            [[nodiscard]] static VSSGenerationTimetable import_instance(const char* path);
+            [[nodiscard]] static VSSGenerationTimetable import_instance(const std::filesystem::path& p, bool every_train_must_have_route = true);
+            [[nodiscard]] static VSSGenerationTimetable import_instance(const std::string& path, bool every_train_must_have_route = true);
+            [[nodiscard]] static VSSGenerationTimetable import_instance(const char* path, bool every_train_must_have_route = true);
     };
 }

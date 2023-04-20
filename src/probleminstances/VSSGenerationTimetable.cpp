@@ -1,5 +1,6 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
+#include "Definitions.hpp"
 
 cda_rail::Network &cda_rail::instances::VSSGenerationTimetable::n() {
     return network;
@@ -119,6 +120,68 @@ const cda_rail::Route &cda_rail::instances::VSSGenerationTimetable::get_route(co
 bool cda_rail::instances::VSSGenerationTimetable::check_consistency(bool every_train_must_have_route) const {
     return (timetable.check_consistency(network) &&
         routes.check_consistency(get_train_list(), network, every_train_must_have_route));
+}
+
+void cda_rail::instances::VSSGenerationTimetable::export_instance(const std::filesystem::path &p) const {
+    /**
+     * Exports the instance to the given path, i.e.,
+     * - the network into the folder "network"
+     * - the timetable into the folder "timetable"
+     * - the routes into the folder "routes"
+     *
+     * @param p the path to the folder where the instance should be exported
+     */
+
+    if (!cda_rail::is_directory_and_create(p)) {
+        throw std::runtime_error("Could not create directory " + p.string());
+    }
+    network.export_network(p / "network");
+    timetable.export_timetable(p / "timetable", network);
+    routes.export_routes(p / "routes", network);
+}
+
+void cda_rail::instances::VSSGenerationTimetable::export_instance(const std::string &path) const {
+    std::filesystem::path p(path);
+    export_instance(p);
+}
+
+void cda_rail::instances::VSSGenerationTimetable::export_instance(const char *path) const {
+    std::filesystem::path p(path);
+    export_instance(p);
+}
+
+cda_rail::instances::VSSGenerationTimetable
+cda_rail::instances::VSSGenerationTimetable::import_instance(const std::filesystem::path &p, bool every_train_must_have_route) {
+    /**
+     * Imports an instance from the given path, i.e.,
+     * - the network from the folder "network"
+     * - the timetable from the folder "timetable"
+     * - the routes from the folder "routes"
+     *
+     * @param p the path to the folder where the instance should be imported from
+     */
+
+    cda_rail::instances::VSSGenerationTimetable instance;
+    instance.network = cda_rail::Network::import_network(p / "network");
+    instance.timetable = cda_rail::Timetable::import_timetable(p / "timetable", instance.network);
+    instance.routes = cda_rail::RouteMap::import_routes(p / "routes", instance.network);
+    if (!instance.check_consistency(every_train_must_have_route)) {
+        throw std::runtime_error("The imported instance is not consistent.");
+    }
+    return instance;
+}
+
+cda_rail::instances::VSSGenerationTimetable
+cda_rail::instances::VSSGenerationTimetable::import_instance(const std::string &path,
+                                                             bool every_train_must_have_route) {
+    std::filesystem::path p(path);
+    return import_instance(p, every_train_must_have_route);
+}
+
+cda_rail::instances::VSSGenerationTimetable
+cda_rail::instances::VSSGenerationTimetable::import_instance(const char *path, bool every_train_must_have_route) {
+    std::filesystem::path p(path);
+    return import_instance(p, every_train_must_have_route);
 }
 
 template<typename... Args>
