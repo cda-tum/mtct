@@ -7,4 +7,4 @@ if(NOT TARGET gtest OR NOT TARGET gmock)
             ${PROJECT_SOURCE_DIR}/extern/googletest "extern/googletest" EXCLUDE_FROM_ALL)
 endif()
 
-package_add_test(${PROJECT_NAME}_test ${PROJECT_NAME} test_railwaynetwork.cpp)
+package_add_test(${PROJECT_NAME}_test ${PROJECT_NAME} test_railwaynetwork.cpp test_probleminstances.cpp)
