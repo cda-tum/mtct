@@ -1,5 +1,6 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "gtest/gtest.h"
+#include "Definitions.hpp"
 
 struct EdgeTarget {
     std::string source;
@@ -334,4 +335,22 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     EXPECT_TRUE(instance.check_consistency());
     EXPECT_TRUE(instance.check_consistency(true));
     EXPECT_TRUE(instance.check_consistency(false));
+}
+
+TEST(Functionality, VSSGenerationTimetableExport) {
+    cda_rail::instances::VSSGenerationTimetable instance;
+
+    // Add a simple network to the instance
+    instance.n().add_vertex("v0", cda_rail::TTD);
+    instance.n().add_vertex("v1", cda_rail::VSS);
+    instance.n().add_vertex("v2", cda_rail::NO_BORDER);
+
+    instance.n().add_edge("v0", "v1", 100, 10, true, 10);
+    instance.n().add_edge("v1", "v2", 200, 20, false);
+    instance.n().add_edge("v1", "v0", 100, 10, true, 10);
+    instance.n().add_edge("v2", "v1", 200, 20, false);
+
+    // Add a simple timetable to the instance
+    instance.add_train("tr1", 50, 10, 2, 2, 0, 0, "v0", 600, 5, "v2");
+    instance.add_station("s0");
 }
