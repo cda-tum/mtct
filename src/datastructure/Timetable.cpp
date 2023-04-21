@@ -282,3 +282,11 @@ bool cda_rail::Timetable::check_consistency(const cda_rail::Network &network) co
 
     return true;
 }
+
+void cda_rail::Timetable::add_station(const std::string &name, const std::unordered_set<int> &tracks) {
+    station_list.add_station(name, tracks);
+}
+
+void cda_rail::Timetable::add_station(const std::string &name) {
+    station_list.add_station(name);
+}

@@ -19,8 +19,9 @@ namespace cda_rail::instances{
             void add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
                            int t_0, double v_0, const std::string& entry, int t_n, double v_n, const std::string& exit);
 
-            template<typename... Args>
-            void add_station(Args&&... args);
+            void add_station(const std::string& name, const std::unordered_set<int>& tracks);
+            void add_station(const std::string& name);
+
             template<typename... Args>
             void add_track_to_station(Args&&... args);
 

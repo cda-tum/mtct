@@ -76,10 +76,9 @@ namespace cda_rail {
                            int t_0, double v_0, const std::string& entry, int t_n, double v_n, const std::string& exit,
                            const cda_rail::Network& network);
 
-            template<typename... Args>
-            void add_station(Args&&... args) {
-                station_list.add_station(std::forward<Args>(args)...);
-            };
+            void add_station(const std::string& name, const std::unordered_set<int>& tracks);
+            void add_station(const std::string& name);
+
             template<typename... Args>
             void add_track_to_station(Args&&... args) {
                 station_list.add_track_to_station(std::forward<Args>(args)...);

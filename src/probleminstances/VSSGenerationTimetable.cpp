@@ -184,12 +184,16 @@ cda_rail::instances::VSSGenerationTimetable::import_instance(const char *path, b
     return import_instance(p, every_train_must_have_route);
 }
 
-template<typename... Args>
-void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(Args &&... args) {
-    timetable.add_station(args..., network);
+void cda_rail::instances::VSSGenerationTimetable::add_station(const std::string &name,
+                                                              const std::unordered_set<int> &tracks) {
+    timetable.add_station(name, tracks);
+}
+
+void cda_rail::instances::VSSGenerationTimetable::add_station(const std::string &name) {
+    timetable.add_station(name);
 }
 
 template<typename... Args>
-void cda_rail::instances::VSSGenerationTimetable::add_station(Args &&... args) {
-    timetable.add_station(args...);
+void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(Args &&... args) {
+    timetable.add_station(args..., network);
 }
