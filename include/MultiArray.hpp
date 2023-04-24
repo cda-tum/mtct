@@ -22,4 +22,4 @@ namespace cda_rail {
             template<typename... Args>
             void set(const T& value, size_t first, Args... args);
     };
-};
+}

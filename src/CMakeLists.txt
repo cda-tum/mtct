@@ -14,7 +14,6 @@ add_library(
         ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
         probleminstances/VSSGenerationTimetable.cpp
         ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
-        MultiArray.cpp
 )
 
 # set include directories
