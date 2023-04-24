@@ -15,7 +15,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     auto instance = cda_rail::instances::VSSGenerationTimetable::import_instance("./example-networks/Fig11/");
 
     // Expected network
-    auto network = instance.n();
+    const auto& network = instance.n();
 
     // Check vertices properties
     std::vector<std::string> vertex_names = {"l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
@@ -180,7 +180,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     EXPECT_TRUE(network.get_successors("l1", "l0") == successors_target);
 
     // Check timetable
-    auto stations = instance.get_station_list();
+    const auto& stations = instance.get_station_list();
     EXPECT_TRUE(stations.size() == 1);
     EXPECT_TRUE(stations.has_station("Central"));
 
@@ -194,7 +194,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
                                       network.get_edge_index("g11", "g10")};
     EXPECT_TRUE(station.tracks == track_ids);
 
-    auto trains = instance.get_train_list();
+    const auto& trains = instance.get_train_list();
     // Check if the all trains are imported
     EXPECT_TRUE(trains.size() == 3);
     EXPECT_TRUE(trains.has_train("tr1"));
@@ -265,7 +265,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     EXPECT_TRUE(stations.get_station(stop3.station).name == "Central");
 
     // Check the route  map
-    // Check if the route consists of thee trains with names "tr1", "tr2" and "tr3"
+    // Check if the route consists of three trains with names "tr1", "tr2" and "tr3"
     EXPECT_TRUE(instance.route_map_size() == 3);
     EXPECT_TRUE(instance.has_route("tr1"));
     EXPECT_TRUE(instance.has_route("tr2"));
@@ -438,7 +438,8 @@ TEST(Functionality, VSSGenerationTimetableExport) {
     auto& st2_read = stations_read.get_station("s1");
     EXPECT_TRUE(st2_read.name == "s1");
     EXPECT_TRUE(st2_read.tracks.size() == 2);
-    EXPECT_TRUE(st2_read.tracks == std::unordered_set<int>({network_read.get_edge_index("v1", "v2"), network_read.get_edge_index("v2", "v1")}));
+    EXPECT_TRUE(st2_read.tracks == std::unordered_set<int>({network_read.get_edge_index("v1", "v2"),
+                                                            network_read.get_edge_index("v2", "v1")}));
 
     // Check if the timetable has the correct trains
     auto& trains_read = instance_read.get_train_list();
