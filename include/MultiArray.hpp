@@ -9,12 +9,14 @@ namespace cda_rail {
     class MultiArray {
         private:
             std::vector<size_t> shape;
-            std::unique_ptr<T[]> data = nullptr;
-            std::unique_ptr<MultiArray<T>[]> rows = nullptr;
+            std::vector<T> data;
+            std::vector<MultiArray<T>> rows;
         public:
             // Constructor with arbitrary number of size_t parameters
             template<typename... Args>
             explicit MultiArray(size_t first, Args... args);
+            // Need for initialization
+            MultiArray() = default;
 
             // getter with arbitrary number of size_t parameters
             template<typename... Args>
@@ -107,14 +109,14 @@ namespace cda_rail {
          */
 
         // Set the shape
-        shape = {first, args...};
+        shape = {first, static_cast<size_t>(args)...};
 
         // If shape has only one element, allocate data
         if (shape.size() == 1) {
-            data = std::make_unique<T[]>(shape[0]);
+            data = std::vector<T>(shape[0]);
         } else {
             // Otherwise, allocate rows
-            rows = std::make_unique<MultiArray<T>[]>(shape[0]);
+            rows = std::vector<MultiArray<T>>(shape[0]);
             for (size_t i = 0; i < shape[0]; i++) {
                 rows[i] = MultiArray<T>(args...);
             }
