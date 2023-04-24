@@ -10,41 +10,24 @@ namespace cda_rail {
         private:
             std::vector<size_t> shape;
             std::vector<T> data;
-            std::vector<MultiArray<T>> rows;
         public:
             // Constructor with arbitrary number of size_t parameters
             template<typename... Args>
-            explicit MultiArray(size_t first, Args... args);
-            // Need for initialization
-            MultiArray() = default;
+            explicit MultiArray(Args... args);
 
             // getter with arbitrary number of size_t parameters
             template<typename... Args>
-            T& operator()(size_t first, Args... args);
-            // Only for compilation
-            T& operator()() {
-                throw std::overflow_error("Something terribly went wrong. This function should have never been called");
-            };
+            T& operator()(Args... args);
 
             // Function to obtain shape, size and dimensions
             const std::vector<size_t>& get_shape() const { return shape; };
-            size_t size() const;
+            size_t size() const { return data.size(); };
             size_t dimensions() const { return shape.size(); };
     };
 
     template<typename T>
-    size_t MultiArray<T>::size() const {
-        // Product of all elements in shape
-        size_t size = 1;
-        for (size_t i = 0; i < shape.size(); ++i) {
-            size *= shape[i];
-        }
-        return size;
-    }
-
-    template<typename T>
     template<typename... Args>
-    T &MultiArray<T>::operator()(size_t first, Args... args) {
+    T &MultiArray<T>::operator()(Args... args) {
         /**
          * Getter for an arbitrary number of dimensions.
          * The first parameter is the index of the first dimension.
@@ -57,28 +40,33 @@ namespace cda_rail {
          */
 
         // If the number of dimensions and number of arguments does not coincide throw an error
-        if (shape.size() != sizeof...(args) + 1) {
+        if (shape.size() != sizeof...(args)) {
             throw std::invalid_argument("Number of dimensions and number of arguments do not coincide.");
         }
-        // If the value first is too large throw an error
-        if (first >= shape[0]) {
-            std::stringstream ss;
-            ss << "Index " << first << " of dimension " << shape.size() << " counted from the rear end is too large.";
-            throw std::out_of_range(ss.str());
+        // If the value of any argument is too large throw an error
+        std::vector<size_t> arg_tuple = {static_cast<size_t>(args)...};
+        for (size_t i = 0; i < sizeof...(args); ++i) {
+            if (arg_tuple[i] >= shape[i]) {
+                std::stringstream ss;
+                ss << "Index " << arg_tuple[i] << " is too large for dimension " << i;
+                throw std::out_of_range(ss.str());
+            }
         }
 
-        // If shape has only one element, return data
-        if (shape.size() == 1) {
-            return data[first];
-        } else {
-            // Otherwise, return rows
-            return rows[first](args...);
+        // Get the index of the element in the data respecting the row-major order
+        size_t index = 0;
+        size_t multiplier = 1;
+        for (size_t i = 0; i < sizeof...(args); ++i) {
+            index += arg_tuple[i] * multiplier;
+            multiplier *= shape[i];
         }
+
+        return data[index];
     }
 
     template<typename T>
     template<typename... Args>
-    MultiArray<T>::MultiArray(size_t first, Args... args) {
+    MultiArray<T>::MultiArray(Args... args) {
         /**
          * Constructor for an arbitrary number of dimensions.
          * The first parameter is the size of the first dimension.
@@ -89,17 +77,14 @@ namespace cda_rail {
          */
 
         // Set the shape
-        shape = {first, static_cast<size_t>(args)...};
+        shape = {static_cast<size_t>(args)...};
 
         // If shape has only one element, allocate data
-        if (shape.size() == 1) {
-            data = std::vector<T>(shape[0]);
-        } else {
-            // Otherwise, allocate rows
-            rows = std::vector<MultiArray<T>>(shape[0]);
-            for (size_t i = 0; i < shape[0]; i++) {
-                rows[i] = MultiArray<T>(args...);
-            }
+        // The overall size of the array is the product of all elements in shape.
+        size_t cap = 1;
+        for (size_t i = 0; i < shape.size(); ++i) {
+            cap *= shape[i];
         }
+        data = std::vector<T>(cap);
     }
 }
