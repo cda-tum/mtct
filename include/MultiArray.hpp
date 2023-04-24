@@ -22,7 +22,9 @@ namespace cda_rail {
             template<typename... Args>
             [[nodiscard]] T& operator()(size_t first, Args... args);
             // Only for compilation
-            [[nodiscard]] T& operator()() { throw std::overflow_error("Something terribly went wrong. This function should have never been called"); };
+            [[nodiscard]] T& operator()() {
+                throw std::overflow_error("Something terribly went wrong. This function should have never been called");
+            };
     };
 
     template<typename T>
