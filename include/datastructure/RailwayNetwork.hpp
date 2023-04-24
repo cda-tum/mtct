@@ -66,6 +66,15 @@ namespace cda_rail {
             void add_edge(const int source, const int target, const double length, const double max_speed, const bool breakable, const double min_block_length = 0);
             void add_edge(const std::string& source_name, const std::string& target_name, const double length, const double max_speed, const bool breakable, const double min_block_length = 0);
             void add_successor(const int edge_in, const int edge_out);
+            void add_successor(const std::pair<int, int>& edge_in, const std::pair<int, int>& edge_out);
+            void add_successor(const std::pair<std::string, std::string>& edge_in, const std::pair<std::string, std::string>& edge_out);
+            void add_successor(const int edge_in, const std::pair<int, int>& edge_out);
+            void add_successor(const int edge_in, const std::pair<std::string, std::string>& edge_out);
+            void add_successor(const std::pair<int, int>& edge_in, const int edge_out);
+            void add_successor(const std::pair<int, int>& edge_in, const std::pair<std::string, std::string>& edge_out);
+            void add_successor(const std::pair<std::string, std::string>& edge_in, const int edge_out);
+            void add_successor(const std::pair<std::string, std::string>& edge_in, const std::pair<int, int>& edge_out);
+
 
             [[nodiscard]] const Vertex& get_vertex(const int index) const;
             [[nodiscard]] const Vertex& get_vertex(const std::string& name) const;

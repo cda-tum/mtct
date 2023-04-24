@@ -811,3 +811,126 @@ std::unordered_set<int> cda_rail::Network::neighbors(const std::string &name) co
     }
     return neighbors(get_vertex_index(name));
 }
+
+void cda_rail::Network::add_successor(const std::pair<int, int> &edge_in, const std::pair<int, int> &edge_out) {
+    /**
+     * Add a successor to the network.
+     * @param edge_in: The edge to add the successor to.
+     * @param edge_out: The successor edge.
+     */
+    if (!has_edge(edge_in.first, edge_in.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    if (!has_edge(edge_out.first, edge_out.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
+}
+
+void cda_rail::Network::add_successor(const std::pair<std::string, std::string> &edge_in,
+                                      const std::pair<std::string, std::string> &edge_out) {
+    /**
+     * Add a successor to the network.
+     * @param edge_in: The edge to add the successor to.
+     * @param edge_out: The successor edge.
+     */
+    if (!has_edge(edge_in.first, edge_in.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    if (!has_edge(edge_out.first, edge_out.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
+}
+
+void cda_rail::Network::add_successor(const int edge_in, const std::pair<int, int>& edge_out) {
+    /**
+     * Add a successor to the network.
+     * @param edge_in: The edge to add the successor to.
+     * @param edge_out: The successor edge.
+     */
+    if (!has_edge(edge_in)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    if (!has_edge(edge_out.first, edge_out.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    add_successor(edge_in, get_edge_index(edge_out.first, edge_out.second));
+}
+
+void cda_rail::Network::add_successor(const int edge_in, const std::pair<std::string, std::string>& edge_out) {
+    /**
+     * Add a successor to the network.
+     * @param edge_in: The edge to add the successor to.
+     * @param edge_out: The successor edge.
+     */
+    if (!has_edge(edge_in)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    if (!has_edge(edge_out.first, edge_out.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    add_successor(edge_in, get_edge_index(edge_out.first, edge_out.second));
+}
+
+void cda_rail::Network::add_successor(const std::pair<int, int> &edge_in, const int edge_out) {
+    /**
+     * Add a successor to the network.
+     * @param edge_in: The edge to add the successor to.
+     * @param edge_out: The successor edge.
+     */
+    if (!has_edge(edge_in.first, edge_in.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    if (!has_edge(edge_out)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    add_successor(get_edge_index(edge_in.first, edge_in.second), edge_out);
+}
+
+void cda_rail::Network::add_successor(const std::pair<int, int>& edge_in,
+                                      const std::pair<std::string, std::string>& edge_out) {
+    /**
+     * Add a successor to the network.
+     * @param edge_in: The edge to add the successor to.
+     * @param edge_out: The successor edge.
+     */
+    if (!has_edge(edge_in.first, edge_in.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    if (!has_edge(edge_out.first, edge_out.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
+}
+
+void cda_rail::Network::add_successor(const std::pair<std::string, std::string> &edge_in, const int edge_out) {
+    /**
+     * Add a successor to the network.
+     * @param edge_in: The edge to add the successor to.
+     * @param edge_out: The successor edge.
+     */
+    if (!has_edge(edge_in.first, edge_in.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    if (!has_edge(edge_out)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    add_successor(get_edge_index(edge_in.first, edge_in.second), edge_out);
+}
+
+void cda_rail::Network::add_successor(const std::pair<std::string, std::string>& edge_in,
+                                      const std::pair<int, int>& edge_out) {
+    /**
+     * Add a successor to the network.
+     * @param edge_in: The edge to add the successor to.
+     * @param edge_out: The successor edge.
+     */
+    if (!has_edge(edge_in.first, edge_in.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    if (!has_edge(edge_out.first, edge_out.second)) {
+        throw std::out_of_range("Edge does not exist");
+    }
+    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
+}
