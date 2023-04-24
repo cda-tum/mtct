@@ -350,7 +350,133 @@ TEST(Functionality, VSSGenerationTimetableExport) {
     instance.n().add_edge("v1", "v0", 100, 10, true, 10);
     instance.n().add_edge("v2", "v1", 200, 20, false);
 
+    instance.n().add_successor({"v0", "v1"}, {"v1", "v2"});
+    instance.n().add_successor({"v2", "v1"}, {"v1", "v0"});
+
     // Add a simple timetable to the instance
     instance.add_train("tr1", 50, 10, 2, 2, 0, 0, "v0", 600, 5, "v2");
     instance.add_station("s0");
+    instance.add_track_to_station("s0", "v0", "v1");
+    instance.add_station("s1");
+    instance.add_track_to_station("s1", "v1", "v2");
+    instance.add_track_to_station("s1", "v2", "v1");
+    instance.add_stop("tr1", "s1", 200, 260);
+    instance.add_stop("tr1", "s0", 60, 120);
+
+    EXPECT_TRUE(instance.get_station_list().get_station(instance.get_schedule("tr1").stops.at(0).station).name == "s0");
+
+    // Add route to instance
+    instance.add_empty_route("tr1");
+    instance.push_back_edge_to_route("tr1", "v0", "v1");
+    instance.push_back_edge_to_route("tr1", "v1", "v2");
+
+    // Check for consistency
+    EXPECT_TRUE(instance.check_consistency());
+
+    // Export the instance
+    instance.export_instance("./tmp/vss_generation_timetable_export_test");
+
+    // Import the instance and delete tmp folder
+    auto instance_read = cda_rail::instances::VSSGenerationTimetable::import_instance("./tmp/vss_generation_timetable_export_test");
+    std::filesystem::remove_all("./tmp");
+
+    // Check if the imported instance is still consistent
+    EXPECT_TRUE(instance_read.check_consistency());
+
+    // Check if the imported instance is the same as the original instance
+    // check vertices
+    const auto& network = instance.n();
+    const auto& network_read = instance_read.n();
+    EXPECT_TRUE(network.number_of_vertices() == network_read.number_of_vertices());
+    for (int i = 0; i < network.number_of_vertices(); ++i) {
+        EXPECT_TRUE(network_read.has_vertex(network.get_vertex(i).name));
+        EXPECT_TRUE(network_read.get_vertex(network.get_vertex(i).name).type == network.get_vertex(i).type);
+    }
+
+    // check edges
+    EXPECT_TRUE(network.number_of_edges() == network_read.number_of_edges());
+    for (int i = 0; i < network.number_of_edges(); ++i) {
+        const auto& source_vertex = network.get_vertex(network.get_edge(i).source);
+        const auto& target_vertex = network.get_vertex(network.get_edge(i).target);
+        EXPECT_TRUE(network_read.has_edge(source_vertex.name, target_vertex.name));
+        const auto& edge_read = network_read.get_edge(source_vertex.name, target_vertex.name);
+        EXPECT_TRUE(edge_read.breakable == network.get_edge(i).breakable);
+        EXPECT_TRUE(edge_read.length == network.get_edge(i).length);
+        EXPECT_TRUE(edge_read.max_speed == network.get_edge(i).max_speed);
+        EXPECT_TRUE(edge_read.min_block_length == network.get_edge(i).min_block_length);
+    }
+
+    // check successors
+    for (int i = 0; i < network.number_of_edges(); ++i) {
+        const auto& successors_target = network.get_successors(i);
+        std::unordered_set<int> successors_target_transformed;
+        for (auto successor : successors_target) {
+            const auto& e = network.get_edge(successor);
+            std::string source = network.get_vertex(e.source).name;
+            std::string target = network.get_vertex(e.target).name;
+            successors_target_transformed.insert(network_read.get_edge_index(source, target));
+        }
+        const auto& e = network.get_edge(i);
+        std::string source = network.get_vertex(e.source).name;
+        std::string target = network.get_vertex(e.target).name;
+        EXPECT_TRUE(network_read.get_successors(source, target) == successors_target_transformed);
+    }
+
+    // Check if the imported timetable is the same as the original timetable
+    // Check if the timetable has the correct stations
+    auto& stations_read = instance_read.get_station_list();
+    EXPECT_TRUE(stations_read.size() == 2);
+    EXPECT_TRUE(stations_read.has_station("s0"));
+    EXPECT_TRUE(stations_read.has_station("s1"));
+
+    // Check if the stations are imported correctly
+    auto& st1_read = stations_read.get_station("s0");
+    EXPECT_TRUE(st1_read.name == "s0");
+    EXPECT_TRUE(st1_read.tracks.size() == 1);
+    EXPECT_TRUE(network_read.get_edge(*st1_read.tracks.begin()).source == network_read.get_vertex_index("v0"));
+    EXPECT_TRUE(network_read.get_edge(*st1_read.tracks.begin()).target == network_read.get_vertex_index("v1"));
+    auto& st2_read = stations_read.get_station("s1");
+    EXPECT_TRUE(st2_read.name == "s1");
+    EXPECT_TRUE(st2_read.tracks.size() == 2);
+    EXPECT_TRUE(st2_read.tracks == std::unordered_set<int>({network_read.get_edge_index("v1", "v2"), network_read.get_edge_index("v2", "v1")}));
+
+    // Check if the timetable has the correct trains
+    auto& trains_read = instance_read.get_train_list();
+    EXPECT_TRUE(trains_read.size() == 1);
+    EXPECT_TRUE(trains_read.has_train("tr1"));
+
+    // Check if the train tr1 is saved correctly
+    auto tr1_read = trains_read.get_train("tr1");
+    EXPECT_TRUE(tr1_read.name == "tr1");
+    EXPECT_TRUE(tr1_read.length == 50);
+    EXPECT_TRUE(tr1_read.max_speed == 10);
+    EXPECT_TRUE(tr1_read.acceleration == 2);
+    EXPECT_TRUE(tr1_read.deceleration == 2);
+
+    // Check if the schedule of tr1 is saved correctly
+    auto& tr1_schedule_read = instance_read.get_schedule("tr1");
+    EXPECT_TRUE(tr1_schedule_read.t_0 == 0);
+    EXPECT_TRUE(tr1_schedule_read.v_0 == 0);
+    EXPECT_TRUE(tr1_schedule_read.t_n == 600);
+    EXPECT_TRUE(tr1_schedule_read.v_n == 5);
+    EXPECT_TRUE(network.get_vertex(tr1_schedule_read.entry).name == "v0");
+    EXPECT_TRUE(network.get_vertex(tr1_schedule_read.exit).name == "v2");
+    EXPECT_TRUE(tr1_schedule_read.stops.size() == 2);
+    auto& stop1_read = tr1_schedule_read.stops[0];
+    EXPECT_TRUE(stop1_read.begin == 60);
+    EXPECT_TRUE(stop1_read.end == 120);
+    EXPECT_TRUE(stations_read.get_station(stop1_read.station).name == "s0");
+    auto& stop2_read = tr1_schedule_read.stops[1];
+    EXPECT_TRUE(stop2_read.begin == 200);
+    EXPECT_TRUE(stop2_read.end == 260);
+    EXPECT_TRUE(stations_read.get_station(stop2_read.station).name == "s1");
+
+    // Check if the imported instance has the same route map as the original instance
+    // Check if the route for tr1 consists of two edges passing v0-v1-v2 in this order
+    const auto& route_read = instance_read.get_route("tr1");
+    EXPECT_TRUE(route_read.size() == 2);
+    EXPECT_TRUE(network_read.get_vertex(route_read.get_edge(0, network).source).name == "v0");
+    EXPECT_TRUE(network_read.get_vertex(route_read.get_edge(0, network).target).name == "v1");
+    EXPECT_TRUE(network_read.get_vertex(route_read.get_edge(1, network).source).name == "v1");
+    EXPECT_TRUE(network_read.get_vertex(route_read.get_edge(1, network).target).name == "v2");
 }
