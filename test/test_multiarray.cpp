@@ -24,6 +24,10 @@ TEST(Functionality, MultiArray) {
         }
     }
 
+    EXPECT_TRUE(a1.size() == 6);
+    EXPECT_TRUE(a1.dimensions() == 3);
+    EXPECT_TRUE(a1.get_shape() == std::vector<size_t>({1,2,3}));
+
     // Calling with wrong number of arguments should throw std::invalid_argument
     EXPECT_THROW(a1(0), std::invalid_argument);
     EXPECT_THROW(a1(0,0), std::invalid_argument);

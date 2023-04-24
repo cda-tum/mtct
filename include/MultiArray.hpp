@@ -25,7 +25,22 @@ namespace cda_rail {
             T& operator()() {
                 throw std::overflow_error("Something terribly went wrong. This function should have never been called");
             };
+
+            // Function to obtain shape, size and dimensions
+            const std::vector<size_t>& get_shape() const { return shape; };
+            size_t size() const;
+            size_t dimensions() const { return shape.size(); };
     };
+
+    template<typename T>
+    size_t MultiArray<T>::size() const {
+        // Product of all elements in shape
+        size_t size = 1;
+        for (size_t i = 0; i < shape.size(); ++i) {
+            size *= shape[i];
+        }
+        return size;
+    }
 
     template<typename T>
     template<typename... Args>
