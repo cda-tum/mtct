@@ -4,6 +4,7 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "gurobi_c++.h"
 #include "unordered_map"
+#include "MultiArray.hpp"
 
 namespace cda_rail::solver::mip_based {
     class VSSGenTimetableSolver {
@@ -14,6 +15,7 @@ namespace cda_rail::solver::mip_based {
             // Gurobi variables
             GRBEnv env = nullptr;
             GRBModel model = nullptr;
+            std::unordered_map<std::string, MultiArray<GRBVar>> vars;
 
         public:
             // Constructors
