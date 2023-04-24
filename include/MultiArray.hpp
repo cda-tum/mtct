@@ -20,9 +20,9 @@ namespace cda_rail {
 
             // getter with arbitrary number of size_t parameters
             template<typename... Args>
-            [[nodiscard]] T& operator()(size_t first, Args... args);
+            T& operator()(size_t first, Args... args);
             // Only for compilation
-            [[nodiscard]] T& operator()() {
+            T& operator()() {
                 throw std::overflow_error("Something terribly went wrong. This function should have never been called");
             };
     };
