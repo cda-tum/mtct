@@ -12,7 +12,7 @@ namespace cda_rail {
         public:
             // Constructor with arbitrary number of size_t parameters
             template<typename... Args>
-            MultiArray(size_t first, Args... args);
+            explicit MultiArray(size_t first, Args... args);
 
             // getter with arbitrary number of size_t parameters
             template<typename... Args>
