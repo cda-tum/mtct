@@ -1,0 +1,1 @@
+#include "solver/mip-based/VSSGenTimetableSolver.hpp"
