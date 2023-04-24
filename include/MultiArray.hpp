@@ -21,10 +21,14 @@ namespace cda_rail {
             // getter with arbitrary number of size_t parameters
             template<typename... Args>
             [[nodiscard]] const T& get(size_t first, Args... args) const;
+            // Only for compilation
+            [[nodiscard]] const T& get() const { throw std::overflow_error("Something terribly went wrong. This function should have never been called"); };
 
             // setter with arbitrary number of size_t parameters
             template<typename... Args>
             void set(const T& value, size_t first, Args... args);
+            // Only for compilation
+            void set(const T& value) { throw std::overflow_error("Something terribly went wrong. This function should have never been called"); };
     };
 
     template<typename T>
