@@ -193,7 +193,30 @@ void cda_rail::instances::VSSGenerationTimetable::add_station(const std::string 
     timetable.add_station(name);
 }
 
-template<typename... Args>
-void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(Args &&... args) {
-    timetable.add_station(args..., network);
+void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(int station_index, int track) {
+    timetable.add_track_to_station(station_index, track, network);
+}
+
+void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(const std::string &name, int track) {
+    timetable.add_track_to_station(name, track, network);
+}
+
+void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(int station_index, int source, int target) {
+    timetable.add_track_to_station(station_index, source, target, network);
+}
+
+void
+cda_rail::instances::VSSGenerationTimetable::add_track_to_station(const std::string &name, int source, int target) {
+    timetable.add_track_to_station(name, source, target, network);
+}
+
+void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(int station_index, const std::string &source,
+                                                                       const std::string &target) {
+    timetable.add_track_to_station(station_index, source, target, network);
+}
+
+void
+cda_rail::instances::VSSGenerationTimetable::add_track_to_station(const std::string &name, const std::string &source,
+                                                                  const std::string &target) {
+    timetable.add_track_to_station(name, source, target, network);
 }

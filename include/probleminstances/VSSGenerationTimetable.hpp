@@ -22,8 +22,12 @@ namespace cda_rail::instances{
             void add_station(const std::string& name, const std::unordered_set<int>& tracks);
             void add_station(const std::string& name);
 
-            template<typename... Args>
-            void add_track_to_station(Args&&... args);
+            void add_track_to_station(int station_index, int track);
+            void add_track_to_station(const std::string& name, int track);
+            void add_track_to_station(int station_index, int source, int target);
+            void add_track_to_station(const std::string& name, int source, int target);
+            void add_track_to_station(int station_index, const std::string& source, const std::string& target);
+            void add_track_to_station(const std::string& name, const std::string& source, const std::string& target);
 
             void add_stop(int train_index, int station_index, int begin, int end, bool sort = true);
             void add_stop(const std::string& train_name, int station_index, int begin, int end, bool sort = true);

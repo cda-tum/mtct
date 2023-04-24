@@ -79,10 +79,12 @@ namespace cda_rail {
             void add_station(const std::string& name, const std::unordered_set<int>& tracks);
             void add_station(const std::string& name);
 
-            template<typename... Args>
-            void add_track_to_station(Args&&... args) {
-                station_list.add_track_to_station(std::forward<Args>(args)...);
-            };
+            void add_track_to_station(int station_index, int track, const cda_rail::Network& network);
+            void add_track_to_station(const std::string& name, int track, const cda_rail::Network& network);
+            void add_track_to_station(int station_index, int source, int target, const cda_rail::Network& network);
+            void add_track_to_station(const std::string& name, int source, int target, const cda_rail::Network& network);
+            void add_track_to_station(int station_index, const std::string& source, const std::string& target, const cda_rail::Network& network);
+            void add_track_to_station(const std::string& name, const std::string& source, const std::string& target, const cda_rail::Network& network);
 
             void add_stop(int train_index, int station_index, int begin, int end, bool sort = true);
             void add_stop(const std::string& train_name, int station_index, int begin, int end, bool sort = true);
