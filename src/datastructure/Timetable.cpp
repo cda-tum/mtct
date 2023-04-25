@@ -247,6 +247,7 @@ bool cda_rail::Timetable::check_consistency(const cda_rail::Network &network) co
      * - Entry and exit vertices have exactly one neighboring vertex
      * - All edges of stations are valid edges of the network
      * - All scheduled stops are comparable by < or >, hence not overlapping
+     * - All scheduled stops lie within t_0 and t_n
      */
 
     // Check if the entry and exit vertices are valid vertices of the network and if they have exactly one neighbor
@@ -264,6 +265,15 @@ bool cda_rail::Timetable::check_consistency(const cda_rail::Network &network) co
         const auto& station = station_list.get_station(i);
         for (auto track : station.tracks) {
             if (!network.has_edge(track)) {
+                return false;
+            }
+        }
+    }
+
+    // Check if all stops lie within t_0 and t_n
+    for (const auto& schedule : schedules) {
+        for (const auto& stop : schedule.stops) {
+            if (stop.begin < schedule.t_0 || stop.end > schedule.t_n || stop.end < stop.begin) {
                 return false;
             }
         }
@@ -318,4 +328,14 @@ void
 cda_rail::Timetable::add_track_to_station(const std::string &name, const std::string &source, const std::string &target,
                                           const cda_rail::Network &network) {
     station_list.add_track_to_station(name, source, target, network);
+}
+
+int cda_rail::Timetable::maxT() const {
+    int ret = 0;
+    for (const auto& schedule : schedules) {
+        if (schedule.t_n > ret) {
+            ret = schedule.t_n;
+        }
+    }
+    return ret;
 }

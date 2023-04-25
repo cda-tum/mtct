@@ -34,6 +34,8 @@ namespace cda_rail::instances{
             void add_stop(int train_index, const std::string& station_name, int begin, int end, bool sort = true);
             void add_stop(const std::string& train_name, const std::string& station_name, int begin, int end, bool sort = true);
 
+            [[nodiscard]] int maxT() const;
+
             [[nodiscard]] const cda_rail::StationList& get_station_list() const;
             [[nodiscard]] const cda_rail::TrainList& get_train_list() const;
             [[nodiscard]] const Schedule& get_schedule(int index) const;

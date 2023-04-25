@@ -96,6 +96,8 @@ namespace cda_rail {
             [[nodiscard]] const Schedule& get_schedule(int index) const;
             [[nodiscard]] const Schedule& get_schedule(const std::string& train_name) const;
 
+            [[nodiscard]] int maxT() const;
+
             void sort_stops();
 
             [[nodiscard]] bool check_consistency(const cda_rail::Network& network) const;

@@ -335,6 +335,9 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     EXPECT_TRUE(instance.check_consistency());
     EXPECT_TRUE(instance.check_consistency(true));
     EXPECT_TRUE(instance.check_consistency(false));
+
+    // Check if maxT is correct
+    EXPECT_TRUE(instance.maxT() == 640);
 }
 
 TEST(Functionality, VSSGenerationTimetableExport) {

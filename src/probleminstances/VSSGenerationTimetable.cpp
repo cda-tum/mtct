@@ -220,3 +220,7 @@ cda_rail::instances::VSSGenerationTimetable::add_track_to_station(const std::str
                                                                   const std::string &target) {
     timetable.add_track_to_station(name, source, target, network);
 }
+
+int cda_rail::instances::VSSGenerationTimetable::maxT() const {
+    return timetable.maxT();
+}
