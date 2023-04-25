@@ -12,10 +12,16 @@ namespace cda_rail::solver::mip_based {
         private:
             cda_rail::instances::VSSGenerationTimetable instance;
 
+            // Instance variables
+            int dt, num_t, num_tr;
+
             // Gurobi variables
             GRBEnv env = nullptr;
             GRBModel model = nullptr;
             std::unordered_map<std::string, MultiArray<GRBVar>> vars;
+
+            // Helper functions
+            void create_fixed_routes_variables();
 
         public:
             // Constructors
@@ -25,6 +31,6 @@ namespace cda_rail::solver::mip_based {
             explicit VSSGenTimetableSolver(const char* instance_path);
 
             // Methods
-            void solve(); // to be added with parameters and return type later
+            void solve(int delta_t = 15); // to be added with parameters and return type later
     };
 }
