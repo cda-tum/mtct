@@ -820,6 +820,8 @@ TEST(Functionality, RouteMap) {
     EXPECT_TRUE(network.get_vertex(route.get_edge(2, network).source).name == "l2");
     EXPECT_TRUE(network.get_vertex(route.get_edge(2, network).target).name == "l3");
 
+    EXPECT_TRUE(route.length(network) == 1005);
+
     // Check if the consistency checking works as expected
     EXPECT_TRUE(route_map.check_consistency(train_list, network, false));
     EXPECT_FALSE(route_map.check_consistency(train_list, network, true));
@@ -836,6 +838,12 @@ TEST(Functionality, RouteMap) {
     EXPECT_TRUE(network.get_vertex(route2.get_edge(0, network).target).name == "r1");
     EXPECT_TRUE(network.get_vertex(route2.get_edge(1, network).source).name == "r1");
     EXPECT_TRUE(network.get_vertex(route2.get_edge(1, network).target).name == "r2");
+
+    EXPECT_TRUE(route2.length(network) == 505);
+
+    // Check route map length
+    EXPECT_TRUE(route_map.length("tr1", network) == 1005);
+    EXPECT_TRUE(route_map.length("tr2", network) == 505);
 
     // Check if the consistency checking works as expected
     EXPECT_TRUE(route_map.check_consistency(train_list, network, false));

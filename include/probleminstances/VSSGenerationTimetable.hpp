@@ -61,6 +61,8 @@ namespace cda_rail::instances{
             [[nodiscard]] int route_map_size() const;
             [[nodiscard]] const Route& get_route(const std::string& train_name) const;
 
+            [[nodiscard]] double route_length(const std::string& train_name) const;
+
             // General Consistency Check
             [[nodiscard]] bool check_consistency(bool every_train_must_have_route = true) const;
 

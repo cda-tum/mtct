@@ -194,6 +194,22 @@ bool cda_rail::Route::check_consistency(const cda_rail::Network& network) const 
     return true;
 }
 
+double cda_rail::Route::length(const cda_rail::Network &network) const {
+    /***
+     * Returns the length of the route, i.e., the sum of the lengths of all edges.
+     * Throws an error if an edge does not exist in the network.
+     *
+     * @param network The network to which the route belongs.
+     * @return The length of the route.
+     */
+
+    double length = 0;
+    for (int i = 0; i < edges.size(); i++) {
+        length += network.get_edge(edges[i]).length;
+    }
+    return length;
+}
+
 void cda_rail::RouteMap::add_empty_route(const std::string &train_name) {
     /**
      * Adds an empty route for the given train.
@@ -533,4 +549,12 @@ int cda_rail::RouteMap::size() const {
      */
 
     return routes.size();
+}
+
+double cda_rail::RouteMap::length(const std::string &train_name, const cda_rail::Network &network) const {
+    /**
+     * Returns the length of the route of the given train.
+     */
+
+    return get_route(train_name).length(network);
 }

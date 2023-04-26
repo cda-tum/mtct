@@ -224,3 +224,7 @@ cda_rail::instances::VSSGenerationTimetable::add_track_to_station(const std::str
 int cda_rail::instances::VSSGenerationTimetable::maxT() const {
     return timetable.maxT();
 }
+
+double cda_rail::instances::VSSGenerationTimetable::route_length(const std::string &train_name) const {
+    return routes.length(train_name, network);
+}
