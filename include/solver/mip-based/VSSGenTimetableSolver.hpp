@@ -6,6 +6,7 @@
 #include "unordered_map"
 #include "MultiArray.hpp"
 
+
 namespace cda_rail::solver::mip_based {
     class VSSGenTimetableSolver {
         // TODO: Maybe add an abstract parent class later on
@@ -16,8 +17,8 @@ namespace cda_rail::solver::mip_based {
             int dt, num_t, num_tr;
 
             // Gurobi variables
-            GRBEnv env = nullptr;
-            GRBModel model = nullptr;
+            std::optional<GRBEnv> env;
+            std::optional<GRBModel> model;
             std::unordered_map<std::string, MultiArray<GRBVar>> vars;
 
             // Helper functions

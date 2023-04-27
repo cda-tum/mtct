@@ -28,9 +28,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t) {
     num_tr = instance.get_train_list().size();
 
     // Create environment and model
-    GRBEnv env(true);
-    env.start();
-    GRBModel model(env);
+    env.emplace(true);
+    env->start();
+    model.emplace(env.value());
 
     create_fixed_routes_variables();
 }
@@ -50,7 +50,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_var
         auto r_len = instance.route_length(tr_name);
         for (int t_steps = 0; t_steps < num_t; ++t_steps) {
             auto t = t_steps * dt;
-            vars["lda"](i, t_steps) = model.addVar(0, r_len, 0, GRB_CONTINUOUS, "lda_" + tr_name + "_" + std::to_string(t));
+            vars["lda"](i, t_steps) = model->addVar(0, r_len, 0, GRB_CONTINUOUS, "lda_" + tr_name + "_" + std::to_string(t));
         }
     }
 }
