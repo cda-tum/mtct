@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <tinyxml2.h>
 #include <filesystem>
+#include "Definitions.hpp"
 
 namespace cda_rail {
     struct Vertex {
@@ -18,7 +19,7 @@ namespace cda_rail {
          */
 
         std::string name;
-        int type;
+        VertexType type;
     };
 
     struct Edge {
@@ -62,7 +63,7 @@ namespace cda_rail {
             void export_successors_cpp(const std::filesystem::path& p) const;
             void write_successor_set_to_file(std::ofstream& file, const int& i) const;
         public:
-            void add_vertex(const std::string& name, const int type);
+            void add_vertex(const std::string& name, VertexType type);
             void add_edge(const int source, const int target, const double length, const double max_speed, const bool breakable, const double min_block_length = 0);
             void add_edge(const std::string& source_name, const std::string& target_name, const double length, const double max_speed, const bool breakable, const double min_block_length = 0);
             void add_successor(const int edge_in, const int edge_out);

@@ -91,7 +91,7 @@ void cda_rail::Network::add_vertices_from_graphml(const tinyxml2::XMLElement *gr
         if (!v_type.has_value()) {
             throw std::runtime_error("Error reading graphml file");
         }
-        network.add_vertex(name, v_type.value());
+        network.add_vertex(name, static_cast<VertexType>(v_type.value()));
         graphml_node = graphml_node->NextSiblingElement("node");
     }
 }
@@ -238,7 +238,7 @@ cda_rail::Network cda_rail::Network::import_network(const std::filesystem::path 
     return network;
 }
 
-void cda_rail::Network::add_vertex(const std::string &name, const int type) {
+void cda_rail::Network::add_vertex(const std::string &name, VertexType type) {
     /**
      * Add vertex to network
      * @param name Name of vertex
@@ -620,7 +620,7 @@ void cda_rail::Network::export_graphml(const std::filesystem::path &p) const {
     // Write the vertices
     for (const auto &vertex : vertices) {
         file << "<node id=\"" << vertex.name << "\">" << std::endl;
-        file << "<data key=\"" << type << "\">" << vertex.type << "</data>" << std::endl;
+        file << "<data key=\"" << type << "\">" << static_cast<int>(vertex.type) << "</data>" << std::endl;
         file << "</node>" << std::endl;
     }
 

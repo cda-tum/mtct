@@ -20,9 +20,9 @@ struct EdgeTarget {
 
 TEST(Functionality, NetworkFunctions) {
     cda_rail::Network network;
-    network.add_vertex("v0", 0);
-    network.add_vertex("v1", 1);
-    network.add_vertex("v2", 2);
+    network.add_vertex("v0", cda_rail::VertexType::NO_BORDER);
+    network.add_vertex("v1", cda_rail::VertexType::VSS);
+    network.add_vertex("v2", cda_rail::VertexType::TTD);
 
     network.add_edge("v0", "v1", 1, 2, true, 0);
     network.add_edge("v1","v2", 3, 4, false, 1.5);
@@ -132,7 +132,17 @@ TEST(Functionality, ReadNetwork) {
 
     // Check vertices properties
     std::vector<std::string> vertex_names = {"l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
-    std::vector<int> type = {2,2,2,0,2,2,0,2,2,2,2};
+    std::vector<cda_rail::VertexType> type = {cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::NO_BORDER,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::NO_BORDER,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD};
 
     EXPECT_TRUE(network.number_of_vertices() == vertex_names.size());
 
@@ -295,9 +305,9 @@ TEST(Functionality, ReadNetwork) {
 
 TEST(Functionality, WriteNetwork) {
     cda_rail::Network network;
-    network.add_vertex("v0", 0);
-    network.add_vertex("v1", 1);
-    network.add_vertex("v2", 2);
+    network.add_vertex("v0", cda_rail::VertexType::NO_BORDER);
+    network.add_vertex("v1", cda_rail::VertexType::VSS);
+    network.add_vertex("v2", cda_rail::VertexType::TTD);
 
     network.add_edge("v0", "v1", 1, 2, true, 0);
     network.add_edge("v1","v2", 3, 4, false, 1.5);
