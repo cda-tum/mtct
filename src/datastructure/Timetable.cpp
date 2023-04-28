@@ -55,11 +55,11 @@ void cda_rail::Timetable::add_train(const std::string &name, int length, double 
               network.get_vertex_index(exit), network);
 }
 
-void cda_rail::Timetable::add_stop(int train_index, int station_index, int begin, int end, bool sort) {
+void cda_rail::Timetable::add_stop(int train_index, const std::string &station_name, int begin, int end, bool sort) {
     if (!train_list.has_train(train_index)) {
         throw std::out_of_range("Train does not exist.");
     }
-    if (!station_list.has_station(station_index)) {
+    if (!station_list.has_station(station_name)) {
         throw std::out_of_range("Station does not exist.");
     }
     if (begin < 0 || end < 0) {
@@ -68,9 +68,10 @@ void cda_rail::Timetable::add_stop(int train_index, int station_index, int begin
     if (begin >= end) {
         throw std::invalid_argument("End time has to be after the start time.");
     }
+
     auto& stops_reference = schedules.at(train_index).stops;
     for (const auto& stop : stops_reference) {
-        if (stop.station == station_index) {
+        if (stop.station == station_name) {
             throw std::out_of_range("Train already stops at station.");
         }
         // Check if [begin, end] and [stop.begin, stop.end] overlap
@@ -79,24 +80,10 @@ void cda_rail::Timetable::add_stop(int train_index, int station_index, int begin
         }
     }
 
-    stops_reference.push_back(cda_rail::ScheduledStop{begin, end, station_index});
+    stops_reference.push_back(cda_rail::ScheduledStop{begin, end, station_name});
     if (sort) {
         std::sort(stops_reference.begin(), stops_reference.end());
     }
-}
-
-void cda_rail::Timetable::add_stop(const std::string &train_name, int station_index, int begin, int end, bool sort) {
-    if (!train_list.has_train(train_name)) {
-        throw std::out_of_range("Train does not exist.");
-    }
-    add_stop(train_list.get_train_index(train_name), station_index, begin, end, sort);
-}
-
-void cda_rail::Timetable::add_stop(int train_index, const std::string &station_name, int begin, int end, bool sort) {
-    if (!station_list.has_station(station_name)) {
-        throw std::out_of_range("Station does not exist.");
-    }
-    add_stop(train_index, station_list.get_station_index(station_name), begin, end, sort);
 }
 
 void cda_rail::Timetable::add_stop(const std::string &train_name, const std::string &station_name, int begin, int end, bool sort) {
@@ -106,7 +93,7 @@ void cda_rail::Timetable::add_stop(const std::string &train_name, const std::str
     if (!station_list.has_station(station_name)) {
         throw std::out_of_range("Station does not exist.");
     }
-    add_stop(train_list.get_train_index(train_name), station_list.get_station_index(station_name), begin, end, sort);
+    add_stop(train_list.get_train_index(train_name), station_name, begin, end, sort);
 }
 
 void cda_rail::Timetable::sort_stops() {
@@ -260,8 +247,8 @@ bool cda_rail::Timetable::check_consistency(const cda_rail::Network &network) co
     }
 
     // Check if all edges of stations are valid edges of the network
-    for (int i = 0; i < station_list.size(); ++i) {
-        const auto& station = station_list.get_station(i);
+    for (auto station_name : station_list.get_station_names()) {
+        const auto& station = station_list.get_station(station_name);
         for (auto track : station.tracks) {
             if (!network.has_edge(track)) {
                 return false;
@@ -291,27 +278,13 @@ void cda_rail::Timetable::add_station(const std::string &name) {
     station_list.add_station(name);
 }
 
-void cda_rail::Timetable::add_track_to_station(int station_index, int track, const cda_rail::Network &network) {
-    station_list.add_track_to_station(station_index, track, network);
-}
-
 void cda_rail::Timetable::add_track_to_station(const std::string &name, int track, const cda_rail::Network &network) {
     station_list.add_track_to_station(name, track, network);
-}
-
-void
-cda_rail::Timetable::add_track_to_station(int station_index, int source, int target, const cda_rail::Network &network) {
-    station_list.add_track_to_station(station_index, source, target, network);
 }
 
 void cda_rail::Timetable::add_track_to_station(const std::string &name, int source, int target,
                                                const cda_rail::Network &network) {
     station_list.add_track_to_station(name, source, target, network);
-}
-
-void cda_rail::Timetable::add_track_to_station(int station_index, const std::string &source, const std::string &target,
-                                               const cda_rail::Network &network) {
-    station_list.add_track_to_station(station_index, source, target, network);
 }
 
 void

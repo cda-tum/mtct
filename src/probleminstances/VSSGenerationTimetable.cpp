@@ -19,16 +19,6 @@ void cda_rail::instances::VSSGenerationTimetable::add_train(const std::string &n
     timetable.add_train(name, length, max_speed, acceleration, deceleration, t_0, v_0, entry, t_n, v_n, exit, network);
 }
 
-void cda_rail::instances::VSSGenerationTimetable::add_stop(int train_index, int station_index, int begin, int end,
-                                                           bool sort) {
-    timetable.add_stop(train_index, station_index, begin, end, sort);
-}
-
-void cda_rail::instances::VSSGenerationTimetable::add_stop(const std::string &train_name, int station_index, int begin,
-                                                           int end, bool sort) {
-    timetable.add_stop(train_name, station_index, begin, end, sort);
-}
-
 void cda_rail::instances::VSSGenerationTimetable::add_stop(int train_index, const std::string &station_name, int begin,
                                                            int end, bool sort) {
     timetable.add_stop(train_index, station_name, begin, end, sort);
@@ -193,26 +183,13 @@ void cda_rail::instances::VSSGenerationTimetable::add_station(const std::string 
     timetable.add_station(name);
 }
 
-void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(int station_index, int track) {
-    timetable.add_track_to_station(station_index, track, network);
-}
-
 void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(const std::string &name, int track) {
     timetable.add_track_to_station(name, track, network);
-}
-
-void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(int station_index, int source, int target) {
-    timetable.add_track_to_station(station_index, source, target, network);
 }
 
 void
 cda_rail::instances::VSSGenerationTimetable::add_track_to_station(const std::string &name, int source, int target) {
     timetable.add_track_to_station(name, source, target, network);
-}
-
-void cda_rail::instances::VSSGenerationTimetable::add_track_to_station(int station_index, const std::string &source,
-                                                                       const std::string &target) {
-    timetable.add_track_to_station(station_index, source, target, network);
 }
 
 void

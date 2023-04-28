@@ -11,50 +11,22 @@
 using json = nlohmann::json;
 
 void cda_rail::StationList::add_station(const std::string &name, const std::unordered_set<int> &tracks) {
-    stations.push_back(cda_rail::Station{name, tracks});
-    station_name_to_index[name] = stations.size() - 1;
+    stations[name] = cda_rail::Station{name, tracks};
 }
 
 void cda_rail::StationList::add_station(const std::string &name) {
-    stations.push_back(cda_rail::Station{name});
-    station_name_to_index[name] = stations.size() - 1;
+    stations[name] = cda_rail::Station{name};
 }
 
 bool cda_rail::StationList::has_station(const std::string &name) const {
-    return station_name_to_index.find(name) != station_name_to_index.end();
-}
-
-bool cda_rail::StationList::has_station(int index) const {
-    return (index >= 0 && index < stations.size());
-}
-
-int cda_rail::StationList::get_station_index(const std::string &name) const {
-    if (!has_station(name)) {
-        throw std::out_of_range("Station does not exist.");
-    }
-    return station_name_to_index.at(name);
-}
-
-const cda_rail::Station &cda_rail::StationList::get_station(int index) const {
-    if (!has_station(index)) {
-        throw std::out_of_range("Station does not exist.");
-    }
-    return stations.at(index);
+    return stations.find(name) != stations.end();
 }
 
 const cda_rail::Station &cda_rail::StationList::get_station(const std::string &name) const {
-    return get_station(get_station_index(name));
-}
-
-void cda_rail::StationList::add_track_to_station(int station_index, int track,
-                                                 const cda_rail::Network &network) {
-    if (!has_station(station_index)) {
+    if (!has_station(name)) {
         throw std::out_of_range("Station does not exist.");
     }
-    if (!network.has_edge(track)) {
-        throw std::out_of_range("Track does not exist.");
-    }
-    stations.at(station_index).tracks.insert(track);
+    return stations.at(name);
 }
 
 void cda_rail::StationList::add_track_to_station(const std::string &name, int track,
@@ -65,19 +37,7 @@ void cda_rail::StationList::add_track_to_station(const std::string &name, int tr
     if (!network.has_edge(track)) {
         throw std::out_of_range("Track does not exist.");
     }
-    add_track_to_station(get_station_index(name), track, network);
-}
-
-void
-cda_rail::StationList::add_track_to_station(int station_index, int source, int target,
-                                            const cda_rail::Network &network) {
-    if (!has_station(station_index)) {
-        throw std::out_of_range("Station does not exist.");
-    }
-    if (!network.has_edge(source, target)) {
-        throw std::out_of_range("Track does not exist.");
-    }
-    add_track_to_station(station_index, network.get_edge_index(source, target), network);
+    stations.at(name).tracks.insert(track);
 }
 
 void
@@ -89,18 +49,7 @@ cda_rail::StationList::add_track_to_station(const std::string &name, int source,
     if (!network.has_edge(source, target)) {
         throw std::out_of_range("Track does not exist.");
     }
-    add_track_to_station(get_station_index(name), network.get_edge_index(source, target), network);
-}
-
-void cda_rail::StationList::add_track_to_station(int station_index, const std::string &source, const std::string &target,
-                                                 const cda_rail::Network &network) {
-    if (!has_station(station_index)) {
-        throw std::out_of_range("Station does not exist.");
-    }
-    if (!network.has_edge(source, target)) {
-        throw std::out_of_range("Track does not exist.");
-    }
-    add_track_to_station(station_index, network.get_edge_index(source, target), network);
+    add_track_to_station(name, network.get_edge_index(source, target), network);
 }
 
 void cda_rail::StationList::add_track_to_station(const std::string &name, const std::string &source, const std::string &target,
@@ -111,7 +60,7 @@ void cda_rail::StationList::add_track_to_station(const std::string &name, const 
     if (!network.has_edge(source, target)) {
         throw std::out_of_range("Track does not exist.");
     }
-    add_track_to_station(get_station_index(name), network.get_edge_index(source, target), network);
+    add_track_to_station(name, network.get_edge_index(source, target), network);
 }
 
 void cda_rail::StationList::export_stations(const std::string &path, const cda_rail::Network &network) const {
@@ -134,7 +83,7 @@ void cda_rail::StationList::export_stations(const std::filesystem::path &p, cons
     }
 
     json j;
-    for (const auto& station : stations) {
+    for (const auto& [name, station] : stations) {
         std::vector<std::pair<std::string, std::string>> edges;
         for (const auto& track : station.tracks) {
             const auto& edge = network.get_edge(track);
@@ -191,4 +140,18 @@ cda_rail::StationList cda_rail::StationList::import_stations(const char *path, c
 
 int cda_rail::StationList::size() const {
     return stations.size();
+}
+
+std::vector<std::string> cda_rail::StationList::get_station_names() const {
+    /**
+     * This method returns a vector of all station names, i.e., the keys of stations.
+     *
+     * @return A vector of all station names.
+     */
+
+    std::vector<std::string> names;
+    for (const auto& [name, station] : stations) {
+        names.push_back(name);
+    }
+    return names;
 }

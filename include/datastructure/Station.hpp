@@ -22,27 +22,20 @@ namespace cda_rail {
          * StationList class
          */
         private:
-            std::vector<Station> stations;
-            std::unordered_map<std::string, int> station_name_to_index;
+            std::unordered_map<std::string, Station> stations;
 
         public:
             void add_station(const std::string& name, const std::unordered_set<int>& tracks);
             void add_station(const std::string& name);
 
             [[nodiscard]] bool has_station(const std::string& name) const;
-            [[nodiscard]] bool has_station(int index) const;
-
-            [[nodiscard]] int get_station_index(const std::string& name) const;
-            [[nodiscard]] const Station& get_station(int index) const;
             [[nodiscard]] const Station& get_station(const std::string& name) const;
 
             [[nodiscard]] int size() const;
+            [[nodiscard]] std::vector<std::string> get_station_names() const;
 
-            void add_track_to_station(int station_index, int track, const cda_rail::Network& network);
             void add_track_to_station(const std::string& name, int track, const cda_rail::Network& network);
-            void add_track_to_station(int station_index, int source, int target, const cda_rail::Network& network);
             void add_track_to_station(const std::string& name, int source, int target, const cda_rail::Network& network);
-            void add_track_to_station(int station_index, const std::string& source, const std::string& target, const cda_rail::Network& network);
             void add_track_to_station(const std::string& name, const std::string& source, const std::string& target, const cda_rail::Network& network);
 
             void export_stations(const std::string& path, const cda_rail::Network& network) const;
