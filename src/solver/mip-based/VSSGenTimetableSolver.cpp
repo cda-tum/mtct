@@ -26,6 +26,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t) {
     dt = delta_t;
     num_t = instance.maxT() / dt + 1;
     num_tr = instance.get_train_list().size();
+    num_edges = instance.n().number_of_edges();
 
     // Create environment and model
     env.emplace(true);
@@ -43,6 +44,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_var
     // Create MultiArrays
     vars["lda"] = MultiArray<GRBVar>(num_tr, num_t);
     vars["mu"] = MultiArray<GRBVar>(num_tr, num_t);
+    vars["x_lda"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
+    vars["x_mu"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
 
     auto train_list = instance.get_train_list();
     for (int i = 0; i < num_tr; ++i) {
@@ -53,4 +56,25 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_var
             vars["lda"](i, t_steps) = model->addVar(0, r_len, 0, GRB_CONTINUOUS, "lda_" + tr_name + "_" + std::to_string(t));
         }
     }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variables() {
+    /**
+     * Creates general variables that are independent of the fixed route
+     */
+
+    // Create MultiArrays
+    vars["v"] = MultiArray<GRBVar>(num_tr, num_t + 1);
+    vars["x_in"] = MultiArray<GRBVar>(num_tr, num_t);
+    vars["x_out"] = MultiArray<GRBVar>(num_tr, num_t);
+    vars["x"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_vss_variables() {
+    /**
+     * Creates variables connected to the VSS decisions of the problem
+     */
+
+    // Create MultiArrays
+
 }
