@@ -61,56 +61,56 @@ namespace cda_rail {
             void export_graphml(const std::filesystem::path& p) const;
             void export_successors_python(const std::filesystem::path& p) const;
             void export_successors_cpp(const std::filesystem::path& p) const;
-            void write_successor_set_to_file(std::ofstream& file, const int& i) const;
+            void write_successor_set_to_file(std::ofstream& file, int i) const;
         public:
             void add_vertex(const std::string& name, VertexType type);
-            void add_edge(const int source, const int target, const double length, const double max_speed, const bool breakable, const double min_block_length = 0);
-            void add_edge(const std::string& source_name, const std::string& target_name, const double length, const double max_speed, const bool breakable, const double min_block_length = 0);
-            void add_successor(const int edge_in, const int edge_out);
+            void add_edge(int source,int target, double length, double max_speed, bool breakable, double min_block_length = 0);
+            void add_edge(const std::string& source_name, const std::string& target_name, double length, double max_speed, bool breakable, double min_block_length = 0);
+            void add_successor(int edge_in, int edge_out);
             void add_successor(const std::pair<int, int>& edge_in, const std::pair<int, int>& edge_out);
             void add_successor(const std::pair<std::string, std::string>& edge_in, const std::pair<std::string, std::string>& edge_out);
-            void add_successor(const int edge_in, const std::pair<int, int>& edge_out);
-            void add_successor(const int edge_in, const std::pair<std::string, std::string>& edge_out);
-            void add_successor(const std::pair<int, int>& edge_in, const int edge_out);
+            void add_successor(int edge_in, const std::pair<int, int>& edge_out);
+            void add_successor(int edge_in, const std::pair<std::string, std::string>& edge_out);
+            void add_successor(const std::pair<int, int>& edge_in, int edge_out);
             void add_successor(const std::pair<int, int>& edge_in, const std::pair<std::string, std::string>& edge_out);
-            void add_successor(const std::pair<std::string, std::string>& edge_in, const int edge_out);
+            void add_successor(const std::pair<std::string, std::string>& edge_in, int edge_out);
             void add_successor(const std::pair<std::string, std::string>& edge_in, const std::pair<int, int>& edge_out);
 
 
-            [[nodiscard]] const Vertex& get_vertex(const int index) const;
+            [[nodiscard]] const Vertex& get_vertex(int index) const;
             [[nodiscard]] const Vertex& get_vertex(const std::string& name) const;
             [[nodiscard]] int get_vertex_index(const std::string& name) const;
-            [[nodiscard]] const Edge& get_edge(const int index) const;
-            [[nodiscard]] const Edge& get_edge(const int source_id, const int target_id) const;
+            [[nodiscard]] const Edge& get_edge(int index) const;
+            [[nodiscard]] const Edge& get_edge(int source_id, int target_id) const;
             [[nodiscard]] const Edge& get_edge(const std::string& source_name, const std::string& target_name) const;
-            [[nodiscard]] int get_edge_index(const int source_id, const int target_id) const;
+            [[nodiscard]] int get_edge_index(int source_id, int target_id) const;
             [[nodiscard]] int get_edge_index(const std::string& source_name, const std::string& target_name) const;
 
-            [[nodiscard]] bool has_vertex(const int index) const;
+            [[nodiscard]] bool has_vertex(int index) const;
             [[nodiscard]] bool has_vertex(const std::string& name) const;
-            [[nodiscard]] bool has_edge(const int index) const;
-            [[nodiscard]] bool has_edge(const int source_id, const int target_id) const;
+            [[nodiscard]] bool has_edge(int index) const;
+            [[nodiscard]] bool has_edge(int source_id, int target_id) const;
             [[nodiscard]] bool has_edge(const std::string& source_name, const std::string& target_name) const;
 
-            void change_vertex_name(const int index, const std::string& new_name);
+            void change_vertex_name(int index, const std::string& new_name);
             void change_vertex_name(const std::string& old_name, const std::string& new_name);
 
-            void change_edge_property(const int index, const double value, const std::string& property);
-            void change_edge_property(const int source_id, const int target_id, const double value, const std::string& property);
-            void change_edge_property(const std::string& source_name, const std::string& target_name, const double value, const std::string& property);
-            void change_edge_breakable(const int index, const bool value);
-            void change_edge_breakable(const int source_id, const int target_id, const bool value);
-            void change_edge_breakable(const std::string& source_name, const std::string& target_name, const bool value);
+            void change_edge_property(int index, double value, const std::string& property);
+            void change_edge_property(int source_id, int target_id, double value, const std::string& property);
+            void change_edge_property(const std::string& source_name, const std::string& target_name, double value, const std::string& property);
+            void change_edge_breakable(int index, bool value);
+            void change_edge_breakable(int source_id, int target_id, bool value);
+            void change_edge_breakable(const std::string& source_name, const std::string& target_name, bool value);
 
-            [[nodiscard]] std::unordered_set<int> out_edges(const int index) const;
+            [[nodiscard]] std::unordered_set<int> out_edges(int index) const;
             [[nodiscard]] std::unordered_set<int> out_edges(const std::string& name) const;
-            [[nodiscard]] std::unordered_set<int> in_edges(const int index) const;
+            [[nodiscard]] std::unordered_set<int> in_edges(int index) const;
             [[nodiscard]] std::unordered_set<int> in_edges(const std::string& name) const;
-            [[nodiscard]] const std::unordered_set<int>& get_successors(const int index) const;
-            [[nodiscard]] const std::unordered_set<int>& get_successors(const int source_id, const int target_id) const;
+            [[nodiscard]] const std::unordered_set<int>& get_successors(int index) const;
+            [[nodiscard]] const std::unordered_set<int>& get_successors(int source_id, int target_id) const;
             [[nodiscard]] const std::unordered_set<int>& get_successors(const std::string& source_name, const std::string& target_name) const;
 
-            [[nodiscard]] std::unordered_set<int> neighbors(const int index) const;
+            [[nodiscard]] std::unordered_set<int> neighbors(int index) const;
             [[nodiscard]] std::unordered_set<int> neighbors(const std::string& name) const;
 
             [[nodiscard]] int number_of_vertices() const;
