@@ -151,7 +151,7 @@ std::vector<std::string> cda_rail::StationList::get_station_names() const {
 
     std::vector<std::string> names;
     for (const auto& [name, station] : stations) {
-        names.push_back(name);
+        names.emplace_back(name);
     }
     return names;
 }

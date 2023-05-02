@@ -20,6 +20,10 @@ namespace cda_rail {
 
         std::string name;
         VertexType type;
+
+        // Constructors
+        Vertex() = default;
+        Vertex(const std::string& name, VertexType type) : name(name), type(type) {};
     };
 
     struct Edge {
@@ -38,6 +42,11 @@ namespace cda_rail {
         double max_speed;
         bool breakable;
         double min_block_length = 0;
+
+        // Constructors
+        Edge() = default;
+        Edge(int source, int target, double length, double max_speed, bool breakable, double min_block_length = 0) :
+            source(source), target(target), length(length), max_speed(max_speed), breakable(breakable), min_block_length(min_block_length) {};
     };
 
     class Network {

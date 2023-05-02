@@ -35,6 +35,10 @@ namespace cda_rail {
         bool operator!=(const ScheduledStop& other) const {
             return !(*this == other);
         }
+
+        // Constructor
+        ScheduledStop() = default;
+        ScheduledStop(int begin, int end, const std::string& station) : begin(begin), end(end), station(station) {}
     };
 
     struct Schedule {
@@ -57,6 +61,11 @@ namespace cda_rail {
         double v_n;
         int exit;
         std::vector<ScheduledStop> stops = {};
+
+        // Constructor
+        Schedule() = default;
+        Schedule(int t_0, double v_0, int entry, int t_n, double v_n, int exit, const std::vector<ScheduledStop> stops = {}) :
+            t_0(t_0), v_0(v_0), entry(entry), t_n(t_n), v_n(v_n), exit(exit), stops(stops) {}
     };
 
     class Timetable {

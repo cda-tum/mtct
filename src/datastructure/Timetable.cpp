@@ -36,7 +36,7 @@ int cda_rail::Timetable::add_train(const std::string &name, int length, double m
         throw std::out_of_range("Train already exists.");
     }
     int index = train_list.add_train(name, length, max_speed, acceleration, deceleration);
-    schedules.push_back(cda_rail::Schedule{t_0, v_0, entry, t_n, v_n, exit});
+    schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
     return index;
 }
 
@@ -81,7 +81,7 @@ void cda_rail::Timetable::add_stop(int train_index, const std::string &station_n
         }
     }
 
-    stops_reference.push_back(cda_rail::ScheduledStop{begin, end, station_name});
+    stops_reference.emplace_back(begin, end, station_name);
     if (sort) {
         std::sort(stops_reference.begin(), stops_reference.end());
     }

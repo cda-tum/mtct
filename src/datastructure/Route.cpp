@@ -21,7 +21,7 @@ void cda_rail::Route::push_back_edge(int edge_index, const cda_rail::Network& ne
     if (!edges.empty() && !network.is_valid_successor(edges.back(), edge_index)) {
         throw std::out_of_range("Edge is not a valid successor.");
     }
-    edges.push_back(edge_index);
+    edges.emplace_back(edge_index);
 }
 
 void cda_rail::Route::push_back_edge(int source, int target, const cda_rail::Network& network) {

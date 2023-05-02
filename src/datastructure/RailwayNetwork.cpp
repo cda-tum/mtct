@@ -247,7 +247,7 @@ int cda_rail::Network::add_vertex(const std::string &name, VertexType type) {
     if (has_vertex(name)) {
         throw std::domain_error("Vertex already exists");
     }
-    vertices.push_back({name, type});
+    vertices.emplace_back(name, type);
     vertex_name_to_index[name] = vertices.size() - 1;
     return vertex_name_to_index[name];
 }
@@ -275,8 +275,7 @@ int cda_rail::Network::add_edge(int source, int target, double length, double ma
     if (has_edge(source, target)) {
         throw std::domain_error("Edge already exists");
     }
-    cda_rail::Edge e = {source, target, length, max_speed, breakable, min_block_length};
-    edges.push_back(e);
+    edges.emplace_back(source, target, length, max_speed, breakable, min_block_length);
     successors.emplace_back();
     return edges.size() - 1;
 }

@@ -20,6 +20,11 @@ namespace cda_rail {
         double max_speed;
         double acceleration;
         double deceleration;
+
+        // Constructors
+        Train() = default;
+        Train(const std::string& name, int length, double max_speed, double acceleration, double deceleration) :
+            name(name), length(length), max_speed(max_speed), acceleration(acceleration), deceleration(deceleration) {};
     };
 
     class TrainList {
