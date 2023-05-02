@@ -34,9 +34,7 @@ void cda_rail::Route::push_back_edge(int source, int target, const cda_rail::Net
      * @param network The network to which the edge belongs.
      */
 
-    if (!network.has_edge(source, target)) {
-        throw std::out_of_range("Edge does not exist.");
-    }
+    // No need to check for existence since this is done in a lower level function
     push_back_edge(network.get_edge_index(source, target), network);
 }
 
@@ -50,9 +48,7 @@ void cda_rail::Route::push_back_edge(const std::string &source, const std::strin
      * @param network The network to which the edge belongs.
      */
 
-    if (!network.has_edge(source, target)) {
-        throw std::out_of_range("Edge does not exist.");
-    }
+    // No need to check for existence since this is done in a lower level function
     push_back_edge(network.get_edge_index(source, target), network);
 }
 
@@ -84,9 +80,7 @@ void cda_rail::Route::push_front_edge(int source, int target, const cda_rail::Ne
      * @param network The network to which the edge belongs.
      */
 
-    if (!network.has_edge(source, target)) {
-        throw std::out_of_range("Edge does not exist.");
-    }
+    // No need to check for existence since this is done in a lower level function
     push_front_edge(network.get_edge_index(source, target), network);
 }
 
@@ -100,9 +94,7 @@ void cda_rail::Route::push_front_edge(const std::string &source, const std::stri
      * @param network The network to which the edge belongs.
      */
 
-    if (!network.has_edge(source, target)) {
-        throw std::out_of_range("Edge does not exist.");
-    }
+    // No need to check for existence since this is done in a lower level function
     push_front_edge(network.get_edge_index(source, target), network);
 }
 

@@ -46,9 +46,7 @@ const cda_rail::Train &cda_rail::TrainList::get_train(int index) const {
 }
 
 const cda_rail::Train &cda_rail::TrainList::get_train(const std::string &name) const {
-    if (!has_train(name)) {
-        throw std::out_of_range("Train does not exist.");
-    }
+    // No need to check for existence since this is done in a lower level function
     return get_train(get_train_index(name));
 }
 

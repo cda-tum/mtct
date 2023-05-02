@@ -43,23 +43,13 @@ void cda_rail::StationList::add_track_to_station(const std::string &name, int tr
 void
 cda_rail::StationList::add_track_to_station(const std::string &name, int source, int target,
                                             const cda_rail::Network &network) {
-    if (!has_station(name)) {
-        throw std::out_of_range("Station does not exist.");
-    }
-    if (!network.has_edge(source, target)) {
-        throw std::out_of_range("Track does not exist.");
-    }
+    // No need to check for existence since this is done in a lower level function
     add_track_to_station(name, network.get_edge_index(source, target), network);
 }
 
 void cda_rail::StationList::add_track_to_station(const std::string &name, const std::string &source, const std::string &target,
                                                  const cda_rail::Network &network) {
-    if (!has_station(name)) {
-        throw std::out_of_range("Station does not exist.");
-    }
-    if (!network.has_edge(source, target)) {
-        throw std::out_of_range("Track does not exist.");
-    }
+    // No need to check for existence since this is done in a lower level function
     add_track_to_station(name, network.get_edge_index(source, target), network);
 }
 
