@@ -71,9 +71,9 @@ namespace cda_rail {
             void set_train_list(const cda_rail::TrainList& tl);
 
         public:
-            void add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
+            int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
                            int t_0, double v_0, int entry, int t_n, double v_n, int exit, const cda_rail::Network& network);
-            void add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
+            int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
                            int t_0, double v_0, const std::string& entry, int t_n, double v_n, const std::string& exit,
                            const cda_rail::Network& network);
 

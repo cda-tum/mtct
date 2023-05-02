@@ -23,7 +23,7 @@ const cda_rail::Schedule &cda_rail::Timetable::get_schedule(const std::string &t
     return get_schedule(train_list.get_train_index(train_name));
 }
 
-void cda_rail::Timetable::add_train(const std::string &name, int length, double max_speed, double acceleration,
+int cda_rail::Timetable::add_train(const std::string &name, int length, double max_speed, double acceleration,
                                     double deceleration, int t_0, double v_0, int entry, int t_n, double v_n, int exit,
                                     const cda_rail::Network &network) {
     if (!network.has_vertex(entry)) {
@@ -35,11 +35,12 @@ void cda_rail::Timetable::add_train(const std::string &name, int length, double 
     if (train_list.has_train(name)) {
         throw std::out_of_range("Train already exists.");
     }
-    train_list.add_train(name, length, max_speed, acceleration, deceleration);
+    int index = train_list.add_train(name, length, max_speed, acceleration, deceleration);
     schedules.push_back(cda_rail::Schedule{t_0, v_0, entry, t_n, v_n, exit});
+    return index;
 }
 
-void cda_rail::Timetable::add_train(const std::string &name, int length, double max_speed, double acceleration,
+int cda_rail::Timetable::add_train(const std::string &name, int length, double max_speed, double acceleration,
                                     double deceleration, int t_0, double v_0, const std::string &entry, int t_n,
                                     double v_n, const std::string &exit, const cda_rail::Network &network) {
     if (!network.has_vertex(entry)) {
@@ -51,8 +52,8 @@ void cda_rail::Timetable::add_train(const std::string &name, int length, double 
     if (train_list.has_train(name)) {
         throw std::out_of_range("Train already exists.");
     }
-    add_train(name, length, max_speed, acceleration, deceleration, t_0, v_0, network.get_vertex_index(entry), t_n, v_n,
-              network.get_vertex_index(exit), network);
+    return add_train(name, length, max_speed, acceleration, deceleration, t_0, v_0, network.get_vertex_index(entry),
+                     t_n, v_n,network.get_vertex_index(exit), network);
 }
 
 void cda_rail::Timetable::add_stop(int train_index, const std::string &station_name, int begin, int end, bool sort) {

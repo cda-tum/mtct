@@ -17,13 +17,14 @@ bool cda_rail::TrainList::has_train(int index) const {
     return (index >= 0 && index < trains.size());
 }
 
-void cda_rail::TrainList::add_train(const std::string &name, int length, double max_speed, double acceleration,
+int cda_rail::TrainList::add_train(const std::string &name, int length, double max_speed, double acceleration,
                                     double deceleration) {
     if (has_train(name)) {
         throw std::out_of_range("Train already exists.");
     }
     trains.push_back(cda_rail::Train{name, length, max_speed, acceleration, deceleration});
     train_name_to_index[name] = trains.size() - 1;
+    return train_name_to_index[name];
 }
 
 int cda_rail::TrainList::size() const {

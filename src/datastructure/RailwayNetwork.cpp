@@ -238,7 +238,7 @@ cda_rail::Network cda_rail::Network::import_network(const std::filesystem::path 
     return network;
 }
 
-void cda_rail::Network::add_vertex(const std::string &name, VertexType type) {
+int cda_rail::Network::add_vertex(const std::string &name, VertexType type) {
     /**
      * Add vertex to network
      * @param name Name of vertex
@@ -249,9 +249,10 @@ void cda_rail::Network::add_vertex(const std::string &name, VertexType type) {
     }
     vertices.push_back({name, type});
     vertex_name_to_index[name] = vertices.size() - 1;
+    return vertex_name_to_index[name];
 }
 
-void cda_rail::Network::add_edge(int source, int target, double length, double max_speed,
+int cda_rail::Network::add_edge(int source, int target, double length, double max_speed,
                                  bool breakable, double min_block_length) {
     /**
      * Add edge to network
@@ -277,9 +278,10 @@ void cda_rail::Network::add_edge(int source, int target, double length, double m
     cda_rail::Edge e = {source, target, length, max_speed, breakable, min_block_length};
     edges.push_back(e);
     successors.emplace_back();
+    return edges.size() - 1;
 }
 
-void cda_rail::Network::add_edge(const std::string &source_name, const std::string &target_name, double length,
+int cda_rail::Network::add_edge(const std::string &source_name, const std::string &target_name, double length,
                                  double max_speed, bool breakable, double min_block_length) {
     /**
      * Add edge to network
@@ -296,8 +298,8 @@ void cda_rail::Network::add_edge(const std::string &source_name, const std::stri
     if (!has_vertex(target_name)) {
         throw std::out_of_range("Target vertex does not exist");
     }
-    add_edge(get_vertex_index(source_name), get_vertex_index(target_name), length, max_speed, breakable,
-             min_block_length);
+    return add_edge(get_vertex_index(source_name), get_vertex_index(target_name), length,
+                    max_speed, breakable, min_block_length);
 }
 
 void cda_rail::Network::add_successor(int edge_in, int edge_out) {

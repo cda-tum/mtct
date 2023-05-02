@@ -63,9 +63,9 @@ namespace cda_rail {
             void export_successors_cpp(const std::filesystem::path& p) const;
             void write_successor_set_to_file(std::ofstream& file, int i) const;
         public:
-            void add_vertex(const std::string& name, VertexType type);
-            void add_edge(int source,int target, double length, double max_speed, bool breakable, double min_block_length = 0);
-            void add_edge(const std::string& source_name, const std::string& target_name, double length, double max_speed, bool breakable, double min_block_length = 0);
+            int add_vertex(const std::string& name, VertexType type);
+            int add_edge(int source,int target, double length, double max_speed, bool breakable, double min_block_length = 0);
+            int add_edge(const std::string& source_name, const std::string& target_name, double length, double max_speed, bool breakable, double min_block_length = 0);
             void add_successor(int edge_in, int edge_out);
             void add_successor(const std::pair<int, int>& edge_in, const std::pair<int, int>& edge_out);
             void add_successor(const std::pair<std::string, std::string>& edge_in, const std::pair<std::string, std::string>& edge_out);

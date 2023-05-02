@@ -14,9 +14,9 @@ namespace cda_rail::instances{
             [[nodiscard]] cda_rail::Network& n();
 
             // Timetable functions
-            void add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
+            int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
                            int t_0, double v_0, int entry, int t_n, double v_n, int exit);
-            void add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
+            int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
                            int t_0, double v_0, const std::string& entry, int t_n, double v_n, const std::string& exit);
 
             void add_station(const std::string& name, const std::unordered_set<int>& tracks);

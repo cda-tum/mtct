@@ -20,17 +20,28 @@ struct EdgeTarget {
 
 TEST(Functionality, NetworkFunctions) {
     cda_rail::Network network;
-    network.add_vertex("v0", cda_rail::VertexType::NO_BORDER);
-    network.add_vertex("v1", cda_rail::VertexType::VSS);
-    network.add_vertex("v2", cda_rail::VertexType::TTD);
+    int v0 = network.add_vertex("v0", cda_rail::VertexType::NO_BORDER);
+    int v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
+    int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
 
-    network.add_edge("v0", "v1", 1, 2, true, 0);
-    network.add_edge("v1","v2", 3, 4, false, 1.5);
-    network.add_edge("v1","v0", 1, 2, true, 0);
-    network.add_edge("v2", "v0", 10, 20, false, 2);
+    int e0 = network.add_edge("v0", "v1", 1, 2, true, 0);
+    int e1 = network.add_edge("v1","v2", 3, 4, false, 1.5);
+    int e2 = network.add_edge("v1","v0", 1, 2, true, 0);
+    int e3 = network.add_edge("v2", "v0", 10, 20, false, 2);
 
     network.add_successor(network.get_edge_index("v0", "v1"), network.get_edge_index("v1", "v2"));
     network.add_successor(network.get_edge_index("v2","v0"), network.get_edge_index("v0", "v1"));
+
+    // check vertex indices
+    EXPECT_TRUE(network.get_vertex_index("v0") == v0);
+    EXPECT_TRUE(network.get_vertex_index("v1") == v1);
+    EXPECT_TRUE(network.get_vertex_index("v2") == v2);
+
+    // check edge indices
+    EXPECT_TRUE(network.get_edge_index("v0", "v1") == e0);
+    EXPECT_TRUE(network.get_edge_index("v1", "v2") == e1);
+    EXPECT_TRUE(network.get_edge_index("v1", "v0") == e2);
+    EXPECT_TRUE(network.get_edge_index("v2", "v0") == e3);
 
     // get Vertex tests
     EXPECT_TRUE(network.get_vertex(0).name == "v0");
@@ -402,9 +413,14 @@ TEST(Functionality, ReadTrains) {
 TEST(Functionality, WriteTrains) {
     // Create a train list
     auto trains = cda_rail::TrainList();
-    trains.add_train("tr1", 100, 83.33, 2, 1);
-    trains.add_train("tr2", 100, 27.78, 2, 1);
-    trains.add_train("tr3", 250, 20, 2, 1);
+    int tr1_index= trains.add_train("tr1", 100, 83.33, 2, 1);
+    int tr2_index = trains.add_train("tr2", 100, 27.78, 2, 1);
+    int tr3_index = trains.add_train("tr3", 250, 20, 2, 1);
+
+    // check the train indices
+    EXPECT_TRUE(trains.get_train_index("tr1") == tr1_index);
+    EXPECT_TRUE(trains.get_train_index("tr2") == tr2_index);
+    EXPECT_TRUE(trains.get_train_index("tr3") == tr3_index);
 
     // Write the train list to a file
     trains.export_trains("./tmp/write_trains_test");

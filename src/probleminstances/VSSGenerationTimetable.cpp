@@ -6,17 +6,17 @@ cda_rail::Network &cda_rail::instances::VSSGenerationTimetable::n() {
     return network;
 }
 
-void cda_rail::instances::VSSGenerationTimetable::add_train(const std::string &name, int length, double max_speed,
+int cda_rail::instances::VSSGenerationTimetable::add_train(const std::string &name, int length, double max_speed,
                                                             double acceleration, double deceleration, int t_0,
                                                             double v_0, int entry, int t_n, double v_n, int exit) {
-    timetable.add_train(name, length, max_speed, acceleration, deceleration, t_0, v_0, entry, t_n, v_n, exit, network);
+    return timetable.add_train(name, length, max_speed, acceleration, deceleration, t_0, v_0, entry, t_n, v_n, exit, network);
 }
 
-void cda_rail::instances::VSSGenerationTimetable::add_train(const std::string &name, int length, double max_speed,
+int cda_rail::instances::VSSGenerationTimetable::add_train(const std::string &name, int length, double max_speed,
                                                             double acceleration, double deceleration, int t_0,
                                                             double v_0, const std::string &entry, int t_n, double v_n,
                                                             const std::string &exit) {
-    timetable.add_train(name, length, max_speed, acceleration, deceleration, t_0, v_0, entry, t_n, v_n, exit, network);
+    return timetable.add_train(name, length, max_speed, acceleration, deceleration, t_0, v_0, entry, t_n, v_n, exit, network);
 }
 
 void cda_rail::instances::VSSGenerationTimetable::add_stop(int train_index, const std::string &station_name, int begin,
