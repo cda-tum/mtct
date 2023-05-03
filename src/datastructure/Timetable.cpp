@@ -11,7 +11,7 @@ using json = nlohmann::json;
 
 const cda_rail::Schedule &cda_rail::Timetable::get_schedule(int index) const {
     if (!train_list.has_train(index)) {
-        throw std::out_of_range("Train does not exist.");
+        throw std::invalid_argument("Train does not exist.");
     }
     return schedules.at(index);
 }
@@ -20,13 +20,13 @@ int cda_rail::Timetable::add_train(const std::string &name, int length, double m
                                     double deceleration, int t_0, double v_0, int entry, int t_n, double v_n, int exit,
                                     const cda_rail::Network &network) {
     if (!network.has_vertex(entry)) {
-        throw std::out_of_range("Entry vertex does not exist.");
+        throw std::invalid_argument("Entry vertex does not exist.");
     }
     if (!network.has_vertex(exit)) {
-        throw std::out_of_range("Exit vertex does not exist.");
+        throw std::invalid_argument("Exit vertex does not exist.");
     }
     if (train_list.has_train(name)) {
-        throw std::out_of_range("Train already exists.");
+        throw std::invalid_argument("Train already exists.");
     }
     int index = train_list.add_train(name, length, max_speed, acceleration, deceleration);
     schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
@@ -35,10 +35,10 @@ int cda_rail::Timetable::add_train(const std::string &name, int length, double m
 
 void cda_rail::Timetable::add_stop(int train_index, const std::string &station_name, int begin, int end, bool sort) {
     if (!train_list.has_train(train_index)) {
-        throw std::out_of_range("Train does not exist.");
+        throw std::invalid_argument("Train does not exist.");
     }
     if (!station_list.has_station(station_name)) {
-        throw std::out_of_range("Station does not exist.");
+        throw std::invalid_argument("Station does not exist.");
     }
     if (begin < 0 || end < 0) {
         throw std::invalid_argument("Time cannot be negative.");
@@ -50,7 +50,7 @@ void cda_rail::Timetable::add_stop(int train_index, const std::string &station_n
     auto& stops_reference = schedules.at(train_index).stops;
     for (const auto& stop : stops_reference) {
         if (stop.station == station_name) {
-            throw std::out_of_range("Train already stops at station.");
+            throw std::invalid_argument("Train already stops at station.");
         }
         // Check if [begin, end] and [stop.begin, stop.end] overlap
         if (begin <= stop.end && end >= stop.begin) {

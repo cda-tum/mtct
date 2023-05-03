@@ -12,7 +12,7 @@ using json = nlohmann::json;
 
 const cda_rail::Station &cda_rail::StationList::get_station(const std::string &name) const {
     if (!has_station(name)) {
-        throw std::out_of_range("Station does not exist.");
+        throw std::invalid_argument("Station does not exist.");
     }
     return stations.at(name);
 }
@@ -20,10 +20,10 @@ const cda_rail::Station &cda_rail::StationList::get_station(const std::string &n
 void cda_rail::StationList::add_track_to_station(const std::string &name, int track,
                                                  const cda_rail::Network &network) {
     if (!has_station(name)) {
-        throw std::out_of_range("Station does not exist.");
+        throw std::invalid_argument("Station does not exist.");
     }
     if (!network.has_edge(track)) {
-        throw std::out_of_range("Track does not exist.");
+        throw std::invalid_argument("Track does not exist.");
     }
     // If stations.at(name).tracks already contains track, nothing happens.
     if (std::find(stations.at(name).tracks.begin(), stations.at(name).tracks.end(), track) != stations.at(name).tracks.end()) {

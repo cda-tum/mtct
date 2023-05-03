@@ -215,7 +215,7 @@ int cda_rail::Network::add_vertex(const std::string &name, VertexType type) {
      * @param type Type of vertex
      */
     if (has_vertex(name)) {
-        throw std::domain_error("Vertex already exists");
+        throw std::invalid_argument("Vertex already exists");
     }
     vertices.emplace_back(name, type);
     vertex_name_to_index[name] = vertices.size() - 1;
@@ -243,7 +243,7 @@ int cda_rail::Network::add_edge(int source, int target, double length, double ma
         throw std::out_of_range("Target vertex does not exist");
     }
     if (has_edge(source, target)) {
-        throw std::domain_error("Edge already exists");
+        throw std::invalid_argument("Edge already exists");
     }
     edges.emplace_back(source, target, length, max_speed, breakable, min_block_length);
     successors.emplace_back();
@@ -354,7 +354,7 @@ void cda_rail::Network::change_vertex_name(int index, const std::string &new_nam
         throw std::out_of_range("Vertex does not exist");
     }
     if (has_vertex(new_name)) {
-        throw std::domain_error("Vertex with new name already exists");
+        throw std::invalid_argument("Vertex with new name already exists");
     }
     vertex_name_to_index.erase(vertices[index].name);
     vertices[index].name = new_name;
@@ -372,7 +372,7 @@ void cda_rail::Network::change_edge_property(int index, double value, const std:
     } else if (property == "min_block_length") {
         edges[index].min_block_length = value;
     } else {
-        throw std::domain_error("Property does not exist");
+        throw std::invalid_argument("Property does not exist");
     }
 }
 

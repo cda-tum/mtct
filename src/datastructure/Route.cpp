@@ -16,10 +16,10 @@ void cda_rail::Route::push_back_edge(int edge_index, const cda_rail::Network& ne
      */
 
     if (!network.has_edge(edge_index)) {
-        throw std::out_of_range("Edge does not exist.");
+        throw std::invalid_argument("Edge does not exist.");
     }
     if (!edges.empty() && !network.is_valid_successor(edges.back(), edge_index)) {
-        throw std::out_of_range("Edge is not a valid successor.");
+        throw std::invalid_argument("Edge is not a valid successor.");
     }
     edges.emplace_back(edge_index);
 }
@@ -34,10 +34,10 @@ void cda_rail::Route::push_front_edge(int edge_index, const cda_rail::Network& n
      */
 
     if (!network.has_edge(edge_index)) {
-        throw std::out_of_range("Edge does not exist.");
+        throw std::invalid_argument("Edge does not exist.");
     }
     if (!edges.empty() && !network.is_valid_successor(edge_index, edges.front())) {
-        throw std::out_of_range("Edge is not a valid predecessor.");
+        throw std::invalid_argument("Edge is not a valid predecessor.");
     }
     edges.insert(edges.begin(), edge_index);
 }
@@ -49,7 +49,7 @@ void cda_rail::Route::remove_first_edge() {
      */
 
     if (edges.empty()) {
-        throw std::out_of_range("Route is empty.");
+        throw std::invalid_argument("Route is empty.");
     }
     edges.erase(edges.begin());
 }
@@ -61,7 +61,7 @@ void cda_rail::Route::remove_last_edge() {
      */
 
     if (edges.empty()) {
-        throw std::out_of_range("Route is empty.");
+        throw std::invalid_argument("Route is empty.");
     }
     edges.pop_back();
 }
@@ -76,7 +76,7 @@ int cda_rail::Route::get_edge(int route_index) const {
      */
 
     if (route_index < 0 || route_index >= edges.size()) {
-        throw std::out_of_range("Index out of range.");
+        throw std::invalid_argument("Index out of range.");
     }
     return edges[route_index];
 }
@@ -92,7 +92,7 @@ const cda_rail::Edge &cda_rail::Route::get_edge(int route_index, const cda_rail:
      */
 
     if (route_index < 0 || route_index >= edges.size()) {
-        throw std::out_of_range("Index out of range.");
+        throw std::invalid_argument("Index out of range.");
     }
     return network.get_edge(edges[route_index]);
 }
@@ -129,7 +129,7 @@ void cda_rail::RouteMap::add_empty_route(const std::string &train_name) {
      */
 
     if (routes.find(train_name) != routes.end()) {
-        throw std::out_of_range("Train already has a route.");
+        throw std::invalid_argument("Train already has a route.");
     }
     routes[train_name] = Route();
 }
@@ -145,7 +145,7 @@ void cda_rail::RouteMap::add_empty_route(const std::string &train_name, const cd
      */
 
     if (!trains.has_train(train_name)) {
-        throw std::out_of_range("Train does not exist.");
+        throw std::invalid_argument("Train does not exist.");
     }
     add_empty_route(train_name);
 }
@@ -159,7 +159,7 @@ void cda_rail::RouteMap::remove_first_edge(const std::string &train_name) {
      */
 
     if (routes.find(train_name) == routes.end()) {
-        throw std::out_of_range("Train does not have a route.");
+        throw std::invalid_argument("Train does not have a route.");
     }
     routes[train_name].remove_first_edge();
 }
@@ -173,7 +173,7 @@ void cda_rail::RouteMap::remove_last_edge(const std::string &train_name) {
      */
 
     if (routes.find(train_name) == routes.end()) {
-        throw std::out_of_range("Train does not have a route.");
+        throw std::invalid_argument("Train does not have a route.");
     }
     routes[train_name].remove_last_edge();
 }
@@ -187,7 +187,7 @@ const cda_rail::Route &cda_rail::RouteMap::get_route(const std::string &train_na
      */
 
     if (routes.find(train_name) == routes.end()) {
-        throw std::out_of_range("Train does not have a route.");
+        throw std::invalid_argument("Train does not have a route.");
     }
     return routes.at(train_name);
 }
@@ -265,7 +265,7 @@ void cda_rail::RouteMap::push_back_edge(const std::string &train_name, int edge_
      */
 
     if (routes.find(train_name) == routes.end()) {
-        throw std::out_of_range("Train does not have a route.");
+        throw std::invalid_argument("Train does not have a route.");
     }
     routes[train_name].push_back_edge(edge_index, network);
 }
@@ -283,7 +283,7 @@ void cda_rail::RouteMap::push_back_edge(const std::string &train_name, int sourc
      */
 
     if (routes.find(train_name) == routes.end()) {
-        throw std::out_of_range("Train does not have a route.");
+        throw std::invalid_argument("Train does not have a route.");
     }
     routes[train_name].push_back_edge(source, target, network);
 }
@@ -301,7 +301,7 @@ void cda_rail::RouteMap::push_back_edge(const std::string &train_name, const std
      */
 
     if (routes.find(train_name) == routes.end()) {
-        throw std::out_of_range("Train does not have a route.");
+        throw std::invalid_argument("Train does not have a route.");
     }
     routes[train_name].push_back_edge(source, target, network);
 }
@@ -317,7 +317,7 @@ void cda_rail::RouteMap::push_front_edge(const std::string &train_name, int edge
      */
 
     if (routes.find(train_name) == routes.end()) {
-        throw std::out_of_range("Train does not have a route.");
+        throw std::invalid_argument("Train does not have a route.");
     }
     routes[train_name].push_front_edge(edge_index, network);
 }
@@ -335,7 +335,7 @@ void cda_rail::RouteMap::push_front_edge(const std::string &train_name, int sour
      */
 
     if (routes.find(train_name) == routes.end()) {
-        throw std::out_of_range("Train does not have a route.");
+        throw std::invalid_argument("Train does not have a route.");
     }
     routes[train_name].push_front_edge(source, target, network);
 }
@@ -353,7 +353,7 @@ void cda_rail::RouteMap::push_front_edge(const std::string &train_name, const st
      */
 
     if (routes.find(train_name) == routes.end()) {
-        throw std::out_of_range("Train does not have a route.");
+        throw std::invalid_argument("Train does not have a route.");
     }
     routes[train_name].push_front_edge(source, target, network);
 }
