@@ -25,7 +25,11 @@ void cda_rail::StationList::add_track_to_station(const std::string &name, int tr
     if (!network.has_edge(track)) {
         throw std::out_of_range("Track does not exist.");
     }
-    stations.at(name).tracks.insert(track);
+    // If stations.at(name).tracks already contains track, nothing happens.
+    if (std::find(stations.at(name).tracks.begin(), stations.at(name).tracks.end(), track) != stations.at(name).tracks.end()) {
+        return;
+    }
+    stations.at(name).tracks.emplace_back(track);
 }
 
 void cda_rail::StationList::export_stations(const std::string &path, const cda_rail::Network &network) const {

@@ -13,7 +13,7 @@ namespace cda_rail {
          * @param tracks Unordered set of edges that define the station.
          */
         std::string name;
-        std::unordered_set<int> tracks = {};
+        std::vector<int> tracks = {};
     };
 
     class StationList {
@@ -37,8 +37,6 @@ namespace cda_rail {
             StationList& operator=(StationList&& other) = default;
             ~StationList() = default;
 
-
-            void add_station(const std::string& name, const std::unordered_set<int>& tracks) {stations[name] = cda_rail::Station{name, tracks};};
             void add_station(const std::string& name) {stations[name] = cda_rail::Station{name};};
 
             [[nodiscard]] bool has_station(const std::string& name) const {return stations.find(name) != stations.end();};

@@ -4,7 +4,6 @@
 #include "gtest/gtest.h"
 #include <algorithm>
 #include "nlohmann/json.hpp"
-#include <unordered_set>
 #include "datastructure/Route.hpp"
 
 using json = nlohmann::json;
@@ -434,7 +433,7 @@ TEST(Functionality, ReadTrains) {
 TEST(Functionality, WriteTrains) {
     // Create a train list
     auto trains = cda_rail::TrainList();
-    int tr1_index= trains.add_train("tr1", 100, 83.33, 2, 1);
+    int tr1_index = trains.add_train("tr1", 100, 83.33, 2, 1);
     int tr2_index = trains.add_train("tr2", 100, 27.78, 2, 1);
     int tr3_index = trains.add_train("tr3", 250, 20, 2, 1);
 
@@ -519,11 +518,14 @@ TEST(Functionality, ReadStation) {
     auto& station = stations.get_station("Central");
     EXPECT_TRUE(station.name == "Central");
     EXPECT_TRUE(station.tracks.size() == 4);
-    std::unordered_set<int> track_ids{network.get_edge_index("g00", "g01"),
-                                      network.get_edge_index("g10", "g11"),
-                                      network.get_edge_index("g01", "g00"),
-                                      network.get_edge_index("g11", "g10")};
-    EXPECT_TRUE(station.tracks == track_ids);
+    std::vector<int> track_ids{network.get_edge_index("g00", "g01"),
+                               network.get_edge_index("g10", "g11"),
+                               network.get_edge_index("g01", "g00"),
+                               network.get_edge_index("g11", "g10")};
+    auto station_tracks = station.tracks;
+    std::sort(station_tracks.begin(), station_tracks.end());
+    std::sort(track_ids.begin(), track_ids.end());
+    EXPECT_TRUE(station_tracks == track_ids);
 }
 
 TEST(Functionality, WriteStations) {
@@ -549,15 +551,18 @@ TEST(Functionality, WriteStations) {
     auto& s1 = stations_read.get_station("S1");
     EXPECT_TRUE(s1.name == "S1");
     EXPECT_TRUE(s1.tracks.size() == 1);
-    std::unordered_set<int> s1_tracks{network.get_edge_index("l0", "l1")};
+    std::vector<int> s1_tracks{network.get_edge_index("l0", "l1")};
     EXPECT_TRUE(s1.tracks == s1_tracks);
 
     auto& s2 = stations_read.get_station("S2");
     EXPECT_TRUE(s2.name == "S2");
     EXPECT_TRUE(s2.tracks.size() == 2);
-    std::unordered_set<int> s2_tracks{network.get_edge_index("l0", "l1"),
+    std::vector<int> s2_tracks_target{network.get_edge_index("l0", "l1"),
                                       network.get_edge_index("l1", "l2")};
-    EXPECT_TRUE(s2.tracks == s2_tracks);
+    auto s2_tracks = s2.tracks;
+    std::sort(s2_tracks.begin(), s2_tracks.end());
+    std::sort(s2_tracks_target.begin(), s2_tracks_target.end());
+    EXPECT_TRUE(s2_tracks == s2_tracks_target);
 }
 
 TEST(Functionality, ReadTimetable) {
@@ -573,11 +578,14 @@ TEST(Functionality, ReadTimetable) {
     auto& station = stations.get_station("Central");
     EXPECT_TRUE(station.name == "Central");
     EXPECT_TRUE(station.tracks.size() == 4);
-    std::unordered_set<int> track_ids{network.get_edge_index("g00", "g01"),
+    std::vector<int> track_ids_target{network.get_edge_index("g00", "g01"),
                                       network.get_edge_index("g10", "g11"),
                                       network.get_edge_index("g01", "g00"),
                                       network.get_edge_index("g11", "g10")};
-    EXPECT_TRUE(station.tracks == track_ids);
+    auto track_ids = station.tracks;
+    std::sort(track_ids.begin(), track_ids.end());
+    std::sort(track_ids_target.begin(), track_ids_target.end());
+    EXPECT_TRUE(track_ids == track_ids_target);
 
     // Check if the timetable has the correct trains
     auto& trains = timetable.get_train_list();
@@ -690,15 +698,18 @@ TEST(Functionality, WriteTimetable) {
     auto& st1 = stations.get_station("Station1");
     EXPECT_TRUE(st1.name == "Station1");
     EXPECT_TRUE(st1.tracks.size() == 4);
-    std::unordered_set<int> s1_expected_tracks = {network.get_edge_index("g00", "g01"),
-                                                 network.get_edge_index("g10", "g11"),
-                                                 network.get_edge_index("g01", "g00"),
-                                                 network.get_edge_index("g11", "g10")};
-    EXPECT_TRUE(st1.tracks == s1_expected_tracks);
+    std::vector<int> s1_expected_tracks = {network.get_edge_index("g00", "g01"),
+                                           network.get_edge_index("g10", "g11"),
+                                           network.get_edge_index("g01", "g00"),
+                                           network.get_edge_index("g11", "g10")};
+    auto st1_tracks = st1.tracks;
+    std::sort(st1_tracks.begin(), st1_tracks.end());
+    std::sort(s1_expected_tracks.begin(), s1_expected_tracks.end());
+    EXPECT_TRUE(st1_tracks == s1_expected_tracks);
     auto& st2 = stations.get_station("Station2");
     EXPECT_TRUE(st2.name == "Station2");
     EXPECT_TRUE(st2.tracks.size() == 1);
-    std::unordered_set<int> s2_expected_tracks = {network.get_edge_index("r1", "r0")};
+    std::vector<int> s2_expected_tracks = {network.get_edge_index("r1", "r0")};
     EXPECT_TRUE(st2.tracks == s2_expected_tracks);
 
     // Check if the timetable has the correct trains
@@ -774,11 +785,15 @@ TEST(Functionality, WriteTimetable) {
     auto& st1_read = stations_read.get_station("Station1");
     EXPECT_TRUE(st1_read.name == "Station1");
     EXPECT_TRUE(st1_read.tracks.size() == 4);
-    EXPECT_TRUE(st1_read.tracks == s1_expected_tracks);
+    auto st1_read_tracks = st1_read.tracks;
+    std::sort(st1_read_tracks.begin(), st1_read_tracks.end());
+    EXPECT_TRUE(st1_read_tracks == s1_expected_tracks);
     auto& st2_read = stations_read.get_station("Station2");
     EXPECT_TRUE(st2_read.name == "Station2");
     EXPECT_TRUE(st2_read.tracks.size() == 1);
-    EXPECT_TRUE(st2_read.tracks == s2_expected_tracks);
+    auto st2_read_tracks = st2_read.tracks;
+    std::sort(st2_read_tracks.begin(), st2_read_tracks.end());
+    EXPECT_TRUE(st2_read_tracks == s2_expected_tracks);
 
     // Check if the timetable has the correct trains
     auto& trains_read = timetable_read.get_train_list();

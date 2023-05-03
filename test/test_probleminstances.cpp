@@ -204,11 +204,14 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     auto& station = stations.get_station("Central");
     EXPECT_TRUE(station.name == "Central");
     EXPECT_TRUE(station.tracks.size() == 4);
-    std::unordered_set<int> track_ids{network.get_edge_index("g00", "g01"),
-                                      network.get_edge_index("g10", "g11"),
-                                      network.get_edge_index("g01", "g00"),
-                                      network.get_edge_index("g11", "g10")};
-    EXPECT_TRUE(station.tracks == track_ids);
+    std::vector<int> track_ids{network.get_edge_index("g00", "g01"),
+                               network.get_edge_index("g10", "g11"),
+                               network.get_edge_index("g01", "g00"),
+                               network.get_edge_index("g11", "g10")};
+    auto tracks_read = station.tracks;
+    std::sort(tracks_read.begin(), tracks_read.end());
+    std::sort(track_ids.begin(), track_ids.end());
+    EXPECT_TRUE(tracks_read == track_ids);
 
     const auto& trains = instance.get_train_list();
     // Check if the all trains are imported
@@ -457,8 +460,12 @@ TEST(Functionality, VSSGenerationTimetableExport) {
     auto& st2_read = stations_read.get_station("s1");
     EXPECT_TRUE(st2_read.name == "s1");
     EXPECT_TRUE(st2_read.tracks.size() == 2);
-    EXPECT_TRUE(st2_read.tracks == std::unordered_set<int>({network_read.get_edge_index("v1", "v2"),
-                                                            network_read.get_edge_index("v2", "v1")}));
+    auto tracks_st2_read = st2_read.tracks;
+    auto tracks_st2_target = std::vector<int>({network_read.get_edge_index("v1", "v2"),
+                                               network_read.get_edge_index("v2", "v1")});
+    std::sort(tracks_st2_read.begin(), tracks_st2_read.end());
+    std::sort(tracks_st2_target.begin(), tracks_st2_target.end());
+    EXPECT_TRUE(tracks_st2_read == tracks_st2_target);
 
     // Check if the timetable has the correct trains
     auto& trains_read = instance_read.get_train_list();

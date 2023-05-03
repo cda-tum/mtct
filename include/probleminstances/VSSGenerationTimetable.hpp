@@ -36,7 +36,6 @@ namespace cda_rail::instances{
                 return timetable.add_train(name, length, max_speed, acceleration, deceleration, t_0, v_0, entry, t_n, v_n, exit, network);
             };
 
-            void add_station(const std::string& name, const std::unordered_set<int>& tracks) {timetable.add_station(name, tracks);};
             void add_station(const std::string& name) {timetable.add_station(name);};
 
             void add_track_to_station(const std::string& name, int track) {timetable.add_track_to_station(name, track, network);};

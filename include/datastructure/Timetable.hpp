@@ -102,7 +102,6 @@ namespace cda_rail {
                                  t_n, v_n,network.get_vertex_index(exit), network);
             };
 
-            void add_station(const std::string& name, const std::unordered_set<int>& tracks) {station_list.add_station(name, tracks);};
             void add_station(const std::string& name) {station_list.add_station(name);};
 
             void add_track_to_station(const std::string& name, int track, const cda_rail::Network& network) {station_list.add_track_to_station(name, track, network);};
