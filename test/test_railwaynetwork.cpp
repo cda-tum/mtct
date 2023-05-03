@@ -4,7 +4,6 @@
 #include "gtest/gtest.h"
 #include <algorithm>
 #include "nlohmann/json.hpp"
-#include <unordered_set>
 #include "datastructure/Route.hpp"
 
 using json = nlohmann::json;
@@ -20,17 +19,28 @@ struct EdgeTarget {
 
 TEST(Functionality, NetworkFunctions) {
     cda_rail::Network network;
-    network.add_vertex("v0", 0);
-    network.add_vertex("v1", 1);
-    network.add_vertex("v2", 2);
+    int v0 = network.add_vertex("v0", cda_rail::VertexType::NO_BORDER);
+    int v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
+    int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
 
-    network.add_edge("v0", "v1", 1, 2, true, 0);
-    network.add_edge("v1","v2", 3, 4, false, 1.5);
-    network.add_edge("v1","v0", 1, 2, true, 0);
-    network.add_edge("v2", "v0", 10, 20, false, 2);
+    int e0 = network.add_edge("v0", "v1", 1, 2, true, 0);
+    int e1 = network.add_edge("v1","v2", 3, 4, false, 1.5);
+    int e2 = network.add_edge("v1","v0", 1, 2, true, 0);
+    int e3 = network.add_edge("v2", "v0", 10, 20, false, 2);
 
     network.add_successor(network.get_edge_index("v0", "v1"), network.get_edge_index("v1", "v2"));
     network.add_successor(network.get_edge_index("v2","v0"), network.get_edge_index("v0", "v1"));
+
+    // check vertex indices
+    EXPECT_TRUE(network.get_vertex_index("v0") == v0);
+    EXPECT_TRUE(network.get_vertex_index("v1") == v1);
+    EXPECT_TRUE(network.get_vertex_index("v2") == v2);
+
+    // check edge indices
+    EXPECT_TRUE(network.get_edge_index("v0", "v1") == e0);
+    EXPECT_TRUE(network.get_edge_index("v1", "v2") == e1);
+    EXPECT_TRUE(network.get_edge_index("v1", "v0") == e2);
+    EXPECT_TRUE(network.get_edge_index("v2", "v0") == e3);
 
     // get Vertex tests
     EXPECT_TRUE(network.get_vertex(0).name == "v0");
@@ -102,18 +112,30 @@ TEST(Functionality, NetworkFunctions) {
     EXPECT_TRUE(network.get_edge(1).breakable);
 
     // out and in edges tests
-    std::unordered_set<int> expected_out {1,2};
-    std::unordered_set<int> expected_in {0};
-    std::unordered_set<int> expected_neighbors {0,2};
-    EXPECT_TRUE(network.out_edges(1) == expected_out);
-    EXPECT_TRUE(network.out_edges("v1") == expected_out);
-    EXPECT_TRUE(network.in_edges(1) == expected_in);
-    EXPECT_TRUE(network.in_edges("v1") == expected_in);
-    EXPECT_TRUE(network.neighbors(1) == expected_neighbors);
-    EXPECT_TRUE(network.neighbors("v1") == expected_neighbors);
+    std::vector<int> expected_out {1,2};
+    std::vector<int> expected_in {0};
+    std::vector<int> expected_neighbors {0,2};
+    auto out_edges_1 = network.out_edges(1);
+    std::sort(out_edges_1.begin(), out_edges_1.end());
+    EXPECT_TRUE(out_edges_1 == expected_out);
+    auto out_edges_v1 = network.out_edges("v1");
+    std::sort(out_edges_v1.begin(), out_edges_v1.end());
+    EXPECT_TRUE(out_edges_v1 == expected_out);
+    auto in_edges_1 = network.in_edges(1);
+    std::sort(in_edges_1.begin(), in_edges_1.end());
+    EXPECT_TRUE(in_edges_1 == expected_in);
+    auto in_edges_v1 = network.in_edges("v1");
+    std::sort(in_edges_v1.begin(), in_edges_v1.end());
+    EXPECT_TRUE(in_edges_v1 == expected_in);
+    auto neighbors_1 = network.neighbors(1);
+    std::sort(neighbors_1.begin(), neighbors_1.end());
+    EXPECT_TRUE(neighbors_1 == expected_neighbors);
+    auto neighbors_v1 = network.neighbors("v1");
+    std::sort(neighbors_v1.begin(), neighbors_v1.end());
+    EXPECT_TRUE(neighbors_v1 == expected_neighbors);
 
     // successor tests
-    std::unordered_set<int> expected_successors {1};
+    std::vector<int> expected_successors {1};
     EXPECT_TRUE(network.get_successors(0) == expected_successors);
     EXPECT_TRUE(network.get_successors(0, 1) == expected_successors);
     EXPECT_TRUE(network.get_successors("v0", "v1") == expected_successors);
@@ -132,7 +154,17 @@ TEST(Functionality, ReadNetwork) {
 
     // Check vertices properties
     std::vector<std::string> vertex_names = {"l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
-    std::vector<int> type = {2,2,2,0,2,2,0,2,2,2,2};
+    std::vector<cda_rail::VertexType> type = {cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::NO_BORDER,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::NO_BORDER,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD,
+                                              cda_rail::VertexType::TTD};
 
     EXPECT_TRUE(network.number_of_vertices() == vertex_names.size());
 
@@ -180,57 +212,60 @@ TEST(Functionality, ReadNetwork) {
     }
 
     // Check successors
-    std::unordered_set<int> successors_target;
+    std::vector<int> successors_target;
 
     // l0,l1
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l1", "l2"));
+    successors_target.emplace_back(network.get_edge_index("l1", "l2"));
     EXPECT_TRUE(network.get_successors("l0", "l1") == successors_target);
 
     // l1,l2
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l2", "l3"));
+    successors_target.emplace_back(network.get_edge_index("l2", "l3"));
     EXPECT_TRUE(network.get_successors("l1", "l2") == successors_target);
 
     // l2,l3
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l3", "g00"));
-    successors_target.insert(network.get_edge_index("l3", "g10"));
-    EXPECT_TRUE(network.get_successors("l2", "l3") == successors_target);
+    successors_target.emplace_back(network.get_edge_index("l3", "g00"));
+    successors_target.emplace_back(network.get_edge_index("l3", "g10"));
+    std::sort(successors_target.begin(), successors_target.end());
+    auto successors_l2_l3 = network.get_successors("l2", "l3");
+    std::sort(successors_l2_l3.begin(), successors_l2_l3.end());
+    EXPECT_TRUE(successors_l2_l3 == successors_target);
 
     // l3,g00
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g00", "g01"));
+    successors_target.emplace_back(network.get_edge_index("g00", "g01"));
     EXPECT_TRUE(network.get_successors("l3", "g00") == successors_target);
 
     // l3,g10
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g10", "g11"));
+    successors_target.emplace_back(network.get_edge_index("g10", "g11"));
     EXPECT_TRUE(network.get_successors("l3", "g10") == successors_target);
 
     // g00,g01
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g01", "r2"));
+    successors_target.emplace_back(network.get_edge_index("g01", "r2"));
     EXPECT_TRUE(network.get_successors("g00", "g01") == successors_target);
 
     // g10,g11
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g11", "r2"));
+    successors_target.emplace_back(network.get_edge_index("g11", "r2"));
     EXPECT_TRUE(network.get_successors("g10", "g11") == successors_target);
 
     // g01,r2
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("r2", "r1"));
+    successors_target.emplace_back(network.get_edge_index("r2", "r1"));
     EXPECT_TRUE(network.get_successors("g01", "r2") == successors_target);
 
     // g11,r2
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("r2", "r1"));
+    successors_target.emplace_back(network.get_edge_index("r2", "r1"));
     EXPECT_TRUE(network.get_successors("g11", "r2") == successors_target);
 
     // r2,r1
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("r1", "r0"));
+    successors_target.emplace_back(network.get_edge_index("r1", "r0"));
     EXPECT_TRUE(network.get_successors("r2", "r1") == successors_target);
 
     // r1,r0
@@ -239,53 +274,56 @@ TEST(Functionality, ReadNetwork) {
 
     // r0,r1
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("r1", "r2"));
+    successors_target.emplace_back(network.get_edge_index("r1", "r2"));
     EXPECT_TRUE(network.get_successors("r0", "r1") == successors_target);
 
     // r1,r2
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("r2", "g01"));
-    successors_target.insert(network.get_edge_index("r2", "g11"));
-    EXPECT_TRUE(network.get_successors("r1", "r2") == successors_target);
+    successors_target.emplace_back(network.get_edge_index("r2", "g01"));
+    successors_target.emplace_back(network.get_edge_index("r2", "g11"));
+    std::sort(successors_target.begin(), successors_target.end());
+    auto successors_r1_r2 = network.get_successors("r1", "r2");
+    std::sort(successors_r1_r2.begin(), successors_r1_r2.end());
+    EXPECT_TRUE(successors_r1_r2 == successors_target);
 
     // r2,g01
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g01", "g00"));
+    successors_target.emplace_back(network.get_edge_index("g01", "g00"));
     EXPECT_TRUE(network.get_successors("r2", "g01") == successors_target);
 
     // r2,g11
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g11", "g10"));
+    successors_target.emplace_back(network.get_edge_index("g11", "g10"));
     EXPECT_TRUE(network.get_successors("r2", "g11") == successors_target);
 
     // g01,g00
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g00", "l3"));
+    successors_target.emplace_back(network.get_edge_index("g00", "l3"));
     EXPECT_TRUE(network.get_successors("g01", "g00") == successors_target);
 
     // g11,g10
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g10", "l3"));
+    successors_target.emplace_back(network.get_edge_index("g10", "l3"));
     EXPECT_TRUE(network.get_successors("g11", "g10") == successors_target);
 
     // g00,l3
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l3", "l2"));
+    successors_target.emplace_back(network.get_edge_index("l3", "l2"));
     EXPECT_TRUE(network.get_successors("g00", "l3") == successors_target);
 
     // g10,l3
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l3", "l2"));
+    successors_target.emplace_back(network.get_edge_index("l3", "l2"));
     EXPECT_TRUE(network.get_successors("g10", "l3") == successors_target);
 
     // l3,l2
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l2", "l1"));
+    successors_target.emplace_back(network.get_edge_index("l2", "l1"));
     EXPECT_TRUE(network.get_successors("l3", "l2") == successors_target);
 
     // l2,l1
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l1", "l0"));
+    successors_target.emplace_back(network.get_edge_index("l1", "l0"));
     EXPECT_TRUE(network.get_successors("l2", "l1") == successors_target);
 
     // l1,l0
@@ -295,9 +333,9 @@ TEST(Functionality, ReadNetwork) {
 
 TEST(Functionality, WriteNetwork) {
     cda_rail::Network network;
-    network.add_vertex("v0", 0);
-    network.add_vertex("v1", 1);
-    network.add_vertex("v2", 2);
+    network.add_vertex("v0", cda_rail::VertexType::NO_BORDER);
+    network.add_vertex("v1", cda_rail::VertexType::VSS);
+    network.add_vertex("v2", cda_rail::VertexType::TTD);
 
     network.add_edge("v0", "v1", 1, 2, true, 0);
     network.add_edge("v1","v2", 3, 4, false, 1.5);
@@ -341,17 +379,20 @@ TEST(Functionality, WriteNetwork) {
     // check successors
     for (int i = 0; i < network.number_of_edges(); ++i) {
         const auto& successors_target = network.get_successors(i);
-        std::unordered_set<int> successors_target_transformed;
+        std::vector<int> successors_target_transformed;
         for (auto successor : successors_target) {
             const auto& e = network.get_edge(successor);
             std::string source = network.get_vertex(e.source).name;
             std::string target = network.get_vertex(e.target).name;
-            successors_target_transformed.insert(network_read.get_edge_index(source, target));
+            successors_target_transformed.emplace_back(network_read.get_edge_index(source, target));
         }
         const auto& e = network.get_edge(i);
         std::string source = network.get_vertex(e.source).name;
         std::string target = network.get_vertex(e.target).name;
-        EXPECT_TRUE(network_read.get_successors(source, target) == successors_target_transformed);
+        auto successors_target_transformed_read = network_read.get_successors(source, target);
+        std::sort(successors_target_transformed.begin(), successors_target_transformed.end());
+        std::sort(successors_target_transformed_read.begin(), successors_target_transformed_read.end());
+        EXPECT_TRUE(successors_target_transformed == successors_target_transformed_read);
     }
 }
 
@@ -392,9 +433,14 @@ TEST(Functionality, ReadTrains) {
 TEST(Functionality, WriteTrains) {
     // Create a train list
     auto trains = cda_rail::TrainList();
-    trains.add_train("tr1", 100, 83.33, 2, 1);
-    trains.add_train("tr2", 100, 27.78, 2, 1);
-    trains.add_train("tr3", 250, 20, 2, 1);
+    int tr1_index = trains.add_train("tr1", 100, 83.33, 2, 1);
+    int tr2_index = trains.add_train("tr2", 100, 27.78, 2, 1);
+    int tr3_index = trains.add_train("tr3", 250, 20, 2, 1);
+
+    // check the train indices
+    EXPECT_TRUE(trains.get_train_index("tr1") == tr1_index);
+    EXPECT_TRUE(trains.get_train_index("tr2") == tr2_index);
+    EXPECT_TRUE(trains.get_train_index("tr3") == tr3_index);
 
     // Write the train list to a file
     trains.export_trains("./tmp/write_trains_test");
@@ -472,11 +518,14 @@ TEST(Functionality, ReadStation) {
     auto& station = stations.get_station("Central");
     EXPECT_TRUE(station.name == "Central");
     EXPECT_TRUE(station.tracks.size() == 4);
-    std::unordered_set<int> track_ids{network.get_edge_index("g00", "g01"),
-                                      network.get_edge_index("g10", "g11"),
-                                      network.get_edge_index("g01", "g00"),
-                                      network.get_edge_index("g11", "g10")};
-    EXPECT_TRUE(station.tracks == track_ids);
+    std::vector<int> track_ids{network.get_edge_index("g00", "g01"),
+                               network.get_edge_index("g10", "g11"),
+                               network.get_edge_index("g01", "g00"),
+                               network.get_edge_index("g11", "g10")};
+    auto station_tracks = station.tracks;
+    std::sort(station_tracks.begin(), station_tracks.end());
+    std::sort(track_ids.begin(), track_ids.end());
+    EXPECT_TRUE(station_tracks == track_ids);
 }
 
 TEST(Functionality, WriteStations) {
@@ -502,15 +551,18 @@ TEST(Functionality, WriteStations) {
     auto& s1 = stations_read.get_station("S1");
     EXPECT_TRUE(s1.name == "S1");
     EXPECT_TRUE(s1.tracks.size() == 1);
-    std::unordered_set<int> s1_tracks{network.get_edge_index("l0", "l1")};
+    std::vector<int> s1_tracks{network.get_edge_index("l0", "l1")};
     EXPECT_TRUE(s1.tracks == s1_tracks);
 
     auto& s2 = stations_read.get_station("S2");
     EXPECT_TRUE(s2.name == "S2");
     EXPECT_TRUE(s2.tracks.size() == 2);
-    std::unordered_set<int> s2_tracks{network.get_edge_index("l0", "l1"),
+    std::vector<int> s2_tracks_target{network.get_edge_index("l0", "l1"),
                                       network.get_edge_index("l1", "l2")};
-    EXPECT_TRUE(s2.tracks == s2_tracks);
+    auto s2_tracks = s2.tracks;
+    std::sort(s2_tracks.begin(), s2_tracks.end());
+    std::sort(s2_tracks_target.begin(), s2_tracks_target.end());
+    EXPECT_TRUE(s2_tracks == s2_tracks_target);
 }
 
 TEST(Functionality, ReadTimetable) {
@@ -526,11 +578,14 @@ TEST(Functionality, ReadTimetable) {
     auto& station = stations.get_station("Central");
     EXPECT_TRUE(station.name == "Central");
     EXPECT_TRUE(station.tracks.size() == 4);
-    std::unordered_set<int> track_ids{network.get_edge_index("g00", "g01"),
+    std::vector<int> track_ids_target{network.get_edge_index("g00", "g01"),
                                       network.get_edge_index("g10", "g11"),
                                       network.get_edge_index("g01", "g00"),
                                       network.get_edge_index("g11", "g10")};
-    EXPECT_TRUE(station.tracks == track_ids);
+    auto track_ids = station.tracks;
+    std::sort(track_ids.begin(), track_ids.end());
+    std::sort(track_ids_target.begin(), track_ids_target.end());
+    EXPECT_TRUE(track_ids == track_ids_target);
 
     // Check if the timetable has the correct trains
     auto& trains = timetable.get_train_list();
@@ -645,15 +700,18 @@ TEST(Functionality, WriteTimetable) {
     auto& st1 = stations.get_station("Station1");
     EXPECT_TRUE(st1.name == "Station1");
     EXPECT_TRUE(st1.tracks.size() == 4);
-    std::unordered_set<int> s1_expected_tracks = {network.get_edge_index("g00", "g01"),
-                                                 network.get_edge_index("g10", "g11"),
-                                                 network.get_edge_index("g01", "g00"),
-                                                 network.get_edge_index("g11", "g10")};
-    EXPECT_TRUE(st1.tracks == s1_expected_tracks);
+    std::vector<int> s1_expected_tracks = {network.get_edge_index("g00", "g01"),
+                                           network.get_edge_index("g10", "g11"),
+                                           network.get_edge_index("g01", "g00"),
+                                           network.get_edge_index("g11", "g10")};
+    auto st1_tracks = st1.tracks;
+    std::sort(st1_tracks.begin(), st1_tracks.end());
+    std::sort(s1_expected_tracks.begin(), s1_expected_tracks.end());
+    EXPECT_TRUE(st1_tracks == s1_expected_tracks);
     auto& st2 = stations.get_station("Station2");
     EXPECT_TRUE(st2.name == "Station2");
     EXPECT_TRUE(st2.tracks.size() == 1);
-    std::unordered_set<int> s2_expected_tracks = {network.get_edge_index("r1", "r0")};
+    std::vector<int> s2_expected_tracks = {network.get_edge_index("r1", "r0")};
     EXPECT_TRUE(st2.tracks == s2_expected_tracks);
 
     // Check if the timetable has the correct trains
@@ -729,11 +787,15 @@ TEST(Functionality, WriteTimetable) {
     auto& st1_read = stations_read.get_station("Station1");
     EXPECT_TRUE(st1_read.name == "Station1");
     EXPECT_TRUE(st1_read.tracks.size() == 4);
-    EXPECT_TRUE(st1_read.tracks == s1_expected_tracks);
+    auto st1_read_tracks = st1_read.tracks;
+    std::sort(st1_read_tracks.begin(), st1_read_tracks.end());
+    EXPECT_TRUE(st1_read_tracks == s1_expected_tracks);
     auto& st2_read = stations_read.get_station("Station2");
     EXPECT_TRUE(st2_read.name == "Station2");
     EXPECT_TRUE(st2_read.tracks.size() == 1);
-    EXPECT_TRUE(st2_read.tracks == s2_expected_tracks);
+    auto st2_read_tracks = st2_read.tracks;
+    std::sort(st2_read_tracks.begin(), st2_read_tracks.end());
+    EXPECT_TRUE(st2_read_tracks == s2_expected_tracks);
 
     // Check if the timetable has the correct trains
     auto& trains_read = timetable_read.get_train_list();
@@ -976,4 +1038,58 @@ TEST(Functionality, ExportRouteMap) {
     EXPECT_TRUE(route_map_read.check_consistency(train_list, network, false));
     EXPECT_TRUE(route_map_read.check_consistency(train_list, network, true));
     EXPECT_TRUE(route_map_read.check_consistency(train_list, network));
+}
+
+TEST(Functionality, Iterators) {
+    // Create a train list
+    auto trains = cda_rail::TrainList();
+    trains.add_train("tr1", 100, 83.33, 2, 1);
+    trains.add_train("tr2", 100, 27.78, 2, 1);
+    trains.add_train("tr3", 250, 20, 2, 1);
+
+    // Check range based for loop
+    int i = 0;
+    for (const auto& train : trains) {
+        EXPECT_TRUE(&train == &trains.get_train(i));
+        i++;
+    }
+
+    // Create route map
+    auto route_map = cda_rail::RouteMap();
+
+    route_map.add_empty_route("tr1");
+    route_map.add_empty_route("tr2");
+
+    // Check range based for loop
+    for (const auto& [name, route] : route_map) {
+        EXPECT_TRUE(&route == &route_map.get_route(name));
+    }
+
+    // Create stations
+    cda_rail::StationList stations;
+    stations.add_station("S1");
+    stations.add_station("S2");
+
+    // Check range based for loop
+    for (const auto& [name, station] : stations) {
+        EXPECT_TRUE(&station == &stations.get_station(name));
+    }
+
+    // Create timetable
+    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    cda_rail::Timetable timetable;
+
+    timetable.add_train("tr1", 100, 83.33, 2, 1,
+                        0, 0, "l0",
+                        300, 20, "r0",
+                        network);
+    timetable.add_train("tr2", 100, 27.78, 2, 1,
+                        0, 0, "r0",
+                        300, 20, "l0",
+                        network);
+
+    // Check range based for loop
+    for (const auto& [name, schedule] : timetable) {
+        EXPECT_TRUE(&schedule == &timetable.get_schedule(name));
+    }
 }

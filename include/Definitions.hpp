@@ -3,9 +3,8 @@
 
 namespace cda_rail {
     // Constants for vertex type
-    static const int NO_BORDER = 0;
-    static const int VSS = 1;
-    static const int TTD = 2;
+
+    enum class VertexType {NO_BORDER = 0, VSS = 1, TTD = 2};
 
     static bool is_directory_and_create(const std::filesystem::path& p) {
         /**

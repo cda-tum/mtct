@@ -67,7 +67,7 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement *graphml_body, std::string
     }
 }
 
-void cda_rail::Network::add_vertices_from_graphml(const tinyxml2::XMLElement *graphml_node, cda_rail::Network &network,
+void cda_rail::Network::add_vertices_from_graphml(const tinyxml2::XMLElement *graphml_node,
                                                   const std::string &type) {
     /**
      * Add vertices from graphml file
@@ -91,12 +91,12 @@ void cda_rail::Network::add_vertices_from_graphml(const tinyxml2::XMLElement *gr
         if (!v_type.has_value()) {
             throw std::runtime_error("Error reading graphml file");
         }
-        network.add_vertex(name, v_type.value());
+        this->add_vertex(name, static_cast<VertexType>(v_type.value()));
         graphml_node = graphml_node->NextSiblingElement("node");
     }
 }
 
-void cda_rail::Network::add_edges_from_graphml(const tinyxml2::XMLElement *graphml_edge, cda_rail::Network &network,
+void cda_rail::Network::add_edges_from_graphml(const tinyxml2::XMLElement *graphml_edge,
                                                const std::string &breakable, const std::string &length,
                                                const std::string &max_speed, const std::string &min_block_length) {
     /**
@@ -138,16 +138,15 @@ void cda_rail::Network::add_edges_from_graphml(const tinyxml2::XMLElement *graph
         if (!e_length.has_value() || !e_max_speed.has_value() || !e_breakable.has_value() || !e_min_block_length.has_value()) {
             throw std::runtime_error("Error reading graphml file");
         }
-        network.add_edge(source_name, target_name, e_length.value(), e_max_speed.value(), e_breakable.value(), e_min_block_length.value());
+        this->add_edge(source_name, target_name, e_length.value(), e_max_speed.value(), e_breakable.value(), e_min_block_length.value());
         graphml_edge = graphml_edge->NextSiblingElement("edge");
     }
 }
 
-cda_rail::Network cda_rail::Network::read_graphml(const std::filesystem::path &p) {
+void cda_rail::Network::read_graphml(const std::filesystem::path &p) {
     /**
-     * Read network graph from XML file
+     * Read network graph from XML file into the object
      * @param path Path to XML file
-     * @return Network object
      */
 
     // Open graphml file
@@ -177,18 +176,13 @@ cda_rail::Network cda_rail::Network::read_graphml(const std::filesystem::path &p
         throw std::runtime_error("Graph is not directed. Not all properties present.");
     }
 
-    // Initialize network
-    auto network = cda_rail::Network();
-
     // Get vertices
     const tinyxml2::XMLElement* graphml_node = graphml_graph->FirstChildElement("node");
-    cda_rail::Network::add_vertices_from_graphml(graphml_node, network, type);
+    this->add_vertices_from_graphml(graphml_node, type);
 
     // Get edges
     const tinyxml2::XMLElement* graphml_edge = graphml_graph->FirstChildElement("edge");
-    cda_rail::Network::add_edges_from_graphml(graphml_edge, network, breakable, length, max_speed, min_block_length);
-
-    return network;
+    this->add_edges_from_graphml(graphml_edge, breakable, length, max_speed, min_block_length);
 }
 
 void cda_rail::Network::read_successors(const std::filesystem::path &p) {
@@ -214,45 +208,22 @@ void cda_rail::Network::read_successors(const std::filesystem::path &p) {
     }
 }
 
-cda_rail::Network cda_rail::Network::import_network(const std::filesystem::path &p) {
-    /**
-     * Read network from path. This includes the graph and successors.
-     * @param p Path to network directory
-     * @return Network
-     */
-
-    // Check if path exists
-    if (!std::filesystem::exists(p)) {
-        throw std::runtime_error("Path does not exist");
-    }
-    if (!std::filesystem::is_directory(p)) {
-        throw std::runtime_error("Path is not a directory");
-    }
-
-    // Read graph
-    cda_rail::Network network = cda_rail::Network::read_graphml(p);
-
-    // Read successors
-    network.read_successors(p);
-
-    return network;
-}
-
-void cda_rail::Network::add_vertex(const std::string &name, const int type) {
+int cda_rail::Network::add_vertex(const std::string &name, VertexType type) {
     /**
      * Add vertex to network
      * @param name Name of vertex
      * @param type Type of vertex
      */
     if (has_vertex(name)) {
-        throw std::domain_error("Vertex already exists");
+        throw std::invalid_argument("Vertex already exists");
     }
-    vertices.push_back({name, type});
+    vertices.emplace_back(name, type);
     vertex_name_to_index[name] = vertices.size() - 1;
+    return vertex_name_to_index[name];
 }
 
-void cda_rail::Network::add_edge(const int source, const int target, const double length, const double max_speed,
-                                 const bool breakable, const double min_block_length) {
+int cda_rail::Network::add_edge(int source, int target, double length, double max_speed,
+                                 bool breakable, double min_block_length) {
     /**
      * Add edge to network
      * @param source Source vertex
@@ -272,35 +243,14 @@ void cda_rail::Network::add_edge(const int source, const int target, const doubl
         throw std::out_of_range("Target vertex does not exist");
     }
     if (has_edge(source, target)) {
-        throw std::domain_error("Edge already exists");
+        throw std::invalid_argument("Edge already exists");
     }
-    cda_rail::Edge e = {source, target, length, max_speed, breakable, min_block_length};
-    edges.push_back(e);
+    edges.emplace_back(source, target, length, max_speed, breakable, min_block_length);
     successors.emplace_back();
+    return edges.size() - 1;
 }
 
-void cda_rail::Network::add_edge(const std::string &source_name, const std::string &target_name, const double length,
-                                 const double max_speed, const bool breakable, const double min_block_length) {
-    /**
-     * Add edge to network
-     * @param source_name Name of source vertex
-     * @param target_name Name of target vertex
-     * @param length Length of edge
-     * @param max_speed Maximum speed on edge
-     * @param breakable Whether edge is breakable
-     * @param min_block_length Minimum block length on edge
-     */
-    if (!has_vertex(source_name)) {
-        throw std::out_of_range("Source vertex does not exist");
-    }
-    if (!has_vertex(target_name)) {
-        throw std::out_of_range("Target vertex does not exist");
-    }
-    add_edge(get_vertex_index(source_name), get_vertex_index(target_name), length, max_speed, breakable,
-             min_block_length);
-}
-
-void cda_rail::Network::add_successor(const int edge_in, const int edge_out) {
+void cda_rail::Network::add_successor(int edge_in, int edge_out) {
     /**
      * Add successor to edge, but only if the edges are adjacent to each other
      *
@@ -317,21 +267,19 @@ void cda_rail::Network::add_successor(const int edge_in, const int edge_out) {
         throw std::invalid_argument("Edges are not adjacent");
     }
 
-    successors[edge_in].insert(edge_out);
+    // If successors[edges] already contains edge_out, do nothing
+    if (std::find(successors[edge_in].begin(), successors[edge_in].end(), edge_out) != successors[edge_in].end()) {
+        return;
+    }
+
+    successors[edge_in].emplace_back(edge_out);
 }
 
-const cda_rail::Vertex &cda_rail::Network::get_vertex(const int index) const {
+const cda_rail::Vertex &cda_rail::Network::get_vertex(int index) const {
     if (!has_vertex(index)) {
         throw std::out_of_range("Vertex does not exist");
     }
     return vertices[index];
-}
-
-const cda_rail::Vertex &cda_rail::Network::get_vertex(const std::string &name) const {
-    if (!has_vertex(name)) {
-        throw std::out_of_range("Vertex does not exist");
-    }
-    return vertices[get_vertex_index(name)];
 }
 
 int cda_rail::Network::get_vertex_index(const std::string &name) const {
@@ -341,14 +289,14 @@ int cda_rail::Network::get_vertex_index(const std::string &name) const {
     return vertex_name_to_index.at(name);
 }
 
-const cda_rail::Edge &cda_rail::Network::get_edge(const int index) const {
+const cda_rail::Edge &cda_rail::Network::get_edge(int index) const {
     if (!has_edge(index)) {
         throw std::out_of_range("Edge does not exist");
     }
     return edges[index];
 }
 
-const cda_rail::Edge &cda_rail::Network::get_edge(const int source_id, const int target_id) const {
+const cda_rail::Edge &cda_rail::Network::get_edge(int source_id, int target_id) const {
     if (!has_vertex(source_id)) {
         throw std::out_of_range("Source vertex does not exist");
     }
@@ -363,18 +311,7 @@ const cda_rail::Edge &cda_rail::Network::get_edge(const int source_id, const int
     throw std::out_of_range("Edge does not exist");
 }
 
-const cda_rail::Edge &cda_rail::Network::get_edge(const std::string &source_name,
-                                                  const std::string &target_name) const {
-    if (!has_vertex(source_name)) {
-        throw std::out_of_range("Source vertex does not exist");
-    }
-    if (!has_vertex(target_name)) {
-        throw std::out_of_range("Target vertex does not exist");
-    }
-    return get_edge(get_vertex_index(source_name), get_vertex_index(target_name));
-}
-
-int cda_rail::Network::get_edge_index(const int source_id, const int target_id) const {
+int cda_rail::Network::get_edge_index(int source_id, int target_id) const {
     if (!has_vertex(source_id)) {
         throw std::out_of_range("Source vertex does not exist");
     }
@@ -389,29 +326,7 @@ int cda_rail::Network::get_edge_index(const int source_id, const int target_id) 
     throw std::out_of_range("Edge does not exist");
 }
 
-int cda_rail::Network::get_edge_index(const std::string &source_name, const std::string &target_name) const {
-    if (!has_vertex(source_name)) {
-        throw std::out_of_range("Source vertex does not exist");
-    }
-    if (!has_vertex(target_name)) {
-        throw std::out_of_range("Target vertex does not exist");
-    }
-    return get_edge_index(get_vertex_index(source_name), get_vertex_index(target_name));
-}
-
-bool cda_rail::Network::has_vertex(const int index) const {
-    return (index >= 0 && index < vertices.size());
-}
-
-bool cda_rail::Network::has_vertex(const std::string &name) const {
-    return vertex_name_to_index.find(name) != vertex_name_to_index.end();
-}
-
-bool cda_rail::Network::has_edge(const int id) const {
-    return (id >= 0 && id < edges.size());
-}
-
-bool cda_rail::Network::has_edge(const int source_id, const int target_id) const {
+bool cda_rail::Network::has_edge(int source_id, int target_id) const {
     if (!has_vertex(source_id)) {
         throw std::out_of_range("Source vertex does not exist");
     }
@@ -434,29 +349,19 @@ bool cda_rail::Network::has_edge(const std::string &source_name, const std::stri
     return has_edge(get_vertex_index(source_name), get_vertex_index(target_name));
 }
 
-void cda_rail::Network::change_vertex_name(const int index, const std::string &new_name) {
+void cda_rail::Network::change_vertex_name(int index, const std::string &new_name) {
     if (!has_vertex(index)) {
         throw std::out_of_range("Vertex does not exist");
     }
     if (has_vertex(new_name)) {
-        throw std::domain_error("Vertex with new name already exists");
+        throw std::invalid_argument("Vertex with new name already exists");
     }
     vertex_name_to_index.erase(vertices[index].name);
     vertices[index].name = new_name;
     vertex_name_to_index[new_name] = index;
 }
 
-void cda_rail::Network::change_vertex_name(const std::string &old_name, const std::string &new_name) {
-    if (!has_vertex(old_name)) {
-        throw std::out_of_range("Vertex does not exist");
-    }
-    if (has_vertex(new_name)) {
-        throw std::domain_error("Vertex with new name already exists");
-    }
-    change_vertex_name(get_vertex_index(old_name), new_name);
-}
-
-void cda_rail::Network::change_edge_property(const int index, const double value, const std::string &property) {
+void cda_rail::Network::change_edge_property(int index, double value, const std::string &property) {
     if (!has_edge(index)) {
         throw std::out_of_range("Edge does not exist");
     }
@@ -467,116 +372,48 @@ void cda_rail::Network::change_edge_property(const int index, const double value
     } else if (property == "min_block_length") {
         edges[index].min_block_length = value;
     } else {
-        throw std::domain_error("Property does not exist");
+        throw std::invalid_argument("Property does not exist");
     }
 }
 
-void cda_rail::Network::change_edge_property(const int source_id, const int target_id, const double value,
-                                             const std::string &property) {
-    if (!has_edge(source_id, target_id)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    change_edge_property(get_edge_index(source_id, target_id), value, property);
-}
-
-void cda_rail::Network::change_edge_property(const std::string &source_name, const std::string &target_name,
-                                             const double value, const std::string &property) {
-    if (!has_edge(source_name, target_name)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    change_edge_property(get_edge_index(source_name, target_name), value, property);
-}
-
-void cda_rail::Network::change_edge_breakable(const int index, const bool value) {
+void cda_rail::Network::change_edge_breakable(int index, bool value) {
     if (!has_edge(index)) {
         throw std::out_of_range("Edge does not exist");
     }
     edges[index].breakable = value;
 }
 
-void cda_rail::Network::change_edge_breakable(const int source_id, const int target_id, const bool value) {
-    if (!has_edge(source_id, target_id)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    change_edge_breakable(get_edge_index(source_id, target_id), value);
-}
-
-void cda_rail::Network::change_edge_breakable(const std::string &source_name, const std::string &target_name,
-                                              const bool value) {
-    if (!has_edge(source_name, target_name)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    change_edge_breakable(get_edge_index(source_name, target_name), value);
-}
-
-std::unordered_set<int> cda_rail::Network::out_edges(const int index) const {
+std::vector<int> cda_rail::Network::out_edges(int index) const {
     if (!has_vertex(index)) {
         throw std::out_of_range("Vertex does not exist");
     }
-    std::unordered_set<int> out_edges;
+    std::vector<int> out_edges;
     for (int i = 0; i < edges.size(); ++i) {
         if (edges[i].source == index) {
-            out_edges.insert(i);
+            out_edges.emplace_back(i);
         }
     }
     return out_edges;
 }
 
-std::unordered_set<int> cda_rail::Network::out_edges(const std::string &name) const {
-    if (!has_vertex(name)) {
-        throw std::out_of_range("Vertex does not exist");
-    }
-    return out_edges(get_vertex_index(name));
-}
-
-std::unordered_set<int> cda_rail::Network::in_edges(const int index) const {
+std::vector<int> cda_rail::Network::in_edges(int index) const {
     if (!has_vertex(index)) {
         throw std::out_of_range("Vertex does not exist");
     }
-    std::unordered_set<int> in_edges;
+    std::vector<int> in_edges;
     for (int i = 0; i < edges.size(); ++i) {
         if (edges[i].target == index) {
-            in_edges.insert(i);
+            in_edges.emplace_back(i);
         }
     }
     return in_edges;
 }
 
-std::unordered_set<int> cda_rail::Network::in_edges(const std::string &name) const {
-    if (!has_vertex(name)) {
-        throw std::out_of_range("Vertex does not exist");
-    }
-    return in_edges(get_vertex_index(name));
-}
-
-int cda_rail::Network::number_of_vertices() const {
-    return vertices.size();
-}
-
-int cda_rail::Network::number_of_edges() const {
-    return edges.size();
-}
-
-const std::unordered_set<int> &cda_rail::Network::get_successors(const int index) const {
+const std::vector<int> &cda_rail::Network::get_successors(int index) const {
     if (!has_edge(index)) {
         throw std::out_of_range("Edge does not exist");
     }
     return successors[index];
-}
-
-const std::unordered_set<int> &cda_rail::Network::get_successors(const int source_id, const int target_id) const {
-    if (!has_edge(source_id, target_id)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    return get_successors(get_edge_index(source_id, target_id));
-}
-
-const std::unordered_set<int> &
-cda_rail::Network::get_successors(const std::string &source_name, const std::string &target_name) const {
-    if (!has_edge(source_name, target_name)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    return get_successors(get_edge_index(source_name, target_name));
 }
 
 void cda_rail::to_bool_optional(std::string &s, std::optional<bool> &b) {
@@ -620,7 +457,7 @@ void cda_rail::Network::export_graphml(const std::filesystem::path &p) const {
     // Write the vertices
     for (const auto &vertex : vertices) {
         file << "<node id=\"" << vertex.name << "\">" << std::endl;
-        file << "<data key=\"" << type << "\">" << vertex.type << "</data>" << std::endl;
+        file << "<data key=\"" << type << "\">" << static_cast<int>(vertex.type) << "</data>" << std::endl;
         file << "</node>" << std::endl;
     }
 
@@ -697,7 +534,7 @@ void cda_rail::Network::export_successors_python(const std::filesystem::path &p)
     file << "}" << std::endl;
 }
 
-void cda_rail::Network::write_successor_set_to_file(std::ofstream& file, const int& i) const {
+void cda_rail::Network::write_successor_set_to_file(std::ofstream& file, int i) const {
     /**
      * Write the successor set to the given file.
      * @param file: The file to write to.
@@ -750,22 +587,6 @@ void cda_rail::Network::export_network(const std::filesystem::path &p) const {
     export_successors_python(p);
 }
 
-cda_rail::Network cda_rail::Network::import_network(const char *path) {
-    return import_network(std::filesystem::path(path));
-}
-
-cda_rail::Network cda_rail::Network::import_network(const std::string &path) {
-    return import_network(std::filesystem::path(path));
-}
-
-void cda_rail::Network::export_network(const char *path) const {
-    export_network(std::filesystem::path(path));
-}
-
-void cda_rail::Network::export_network(const std::string &path) const {
-    export_network(std::filesystem::path(path));
-}
-
 bool cda_rail::Network::is_valid_successor(int e0, int e1) const {
     /**
      * Checks if the edge e1 is a valid successor of the edge e0, this includes the following:
@@ -786,151 +607,49 @@ bool cda_rail::Network::is_valid_successor(int e0, int e1) const {
      if (edges[e0].target != edges[e1].source) {
          return false;
      }
-     return (successors[e0].find(e1) != successors[e0].end());
+     return (std::find(successors[e0].begin(), successors[e0].end(), e1) != successors[e0].end());
 }
 
-std::unordered_set<int> cda_rail::Network::neighbors(const int index) const {
+std::vector<int> cda_rail::Network::neighbors(int index) const {
     if (!has_vertex(index)) {
         throw std::out_of_range("Vertex does not exist");
     }
-    std::unordered_set<int> neighbors;
+    std::vector<int> neighbors;
     auto e_out = out_edges(index);
     auto e_in = in_edges(index);
     for (auto e : e_out) {
-        neighbors.insert(get_edge(e).target);
+        // If e is not in neighbors, emplace back
+        if (std::find(neighbors.begin(), neighbors.end(), get_edge(e).target) == neighbors.end()) {
+            neighbors.emplace_back(get_edge(e).target);
+        }
     }
     for (auto e : e_in) {
-        neighbors.insert(get_edge(e).source);
+        // If e is not in neighbors, emplace back
+        if (std::find(neighbors.begin(), neighbors.end(), get_edge(e).source) == neighbors.end()) {
+            neighbors.emplace_back(get_edge(e).source);
+        }
     }
     return neighbors;
 }
 
-std::unordered_set<int> cda_rail::Network::neighbors(const std::string &name) const {
-    if (!has_vertex(name)) {
-        throw std::out_of_range("Vertex does not exist");
-    }
-    return neighbors(get_vertex_index(name));
-}
-
-void cda_rail::Network::add_successor(const std::pair<int, int> &edge_in, const std::pair<int, int> &edge_out) {
+cda_rail::Network::Network(const std::filesystem::path &p) {
     /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
+     * Construct object and read network from path. This includes the graph and successors.
+     * @param p Path to network directory
+     * @return Network
      */
-    if (!has_edge(edge_in.first, edge_in.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    if (!has_edge(edge_out.first, edge_out.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
-}
 
-void cda_rail::Network::add_successor(const std::pair<std::string, std::string> &edge_in,
-                                      const std::pair<std::string, std::string> &edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    if (!has_edge(edge_in.first, edge_in.second)) {
-        throw std::out_of_range("Edge does not exist");
+    // Check if path exists
+    if (!std::filesystem::exists(p)) {
+        throw std::runtime_error("Path does not exist");
     }
-    if (!has_edge(edge_out.first, edge_out.second)) {
-        throw std::out_of_range("Edge does not exist");
+    if (!std::filesystem::is_directory(p)) {
+        throw std::runtime_error("Path is not a directory");
     }
-    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
-}
 
-void cda_rail::Network::add_successor(const int edge_in, const std::pair<int, int>& edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    if (!has_edge(edge_in)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    if (!has_edge(edge_out.first, edge_out.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    add_successor(edge_in, get_edge_index(edge_out.first, edge_out.second));
-}
+    // Read graph
+    this->read_graphml(p);
 
-void cda_rail::Network::add_successor(const int edge_in, const std::pair<std::string, std::string>& edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    if (!has_edge(edge_in)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    if (!has_edge(edge_out.first, edge_out.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    add_successor(edge_in, get_edge_index(edge_out.first, edge_out.second));
-}
-
-void cda_rail::Network::add_successor(const std::pair<int, int> &edge_in, const int edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    if (!has_edge(edge_in.first, edge_in.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    if (!has_edge(edge_out)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    add_successor(get_edge_index(edge_in.first, edge_in.second), edge_out);
-}
-
-void cda_rail::Network::add_successor(const std::pair<int, int>& edge_in,
-                                      const std::pair<std::string, std::string>& edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    if (!has_edge(edge_in.first, edge_in.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    if (!has_edge(edge_out.first, edge_out.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
-}
-
-void cda_rail::Network::add_successor(const std::pair<std::string, std::string> &edge_in, const int edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    if (!has_edge(edge_in.first, edge_in.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    if (!has_edge(edge_out)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    add_successor(get_edge_index(edge_in.first, edge_in.second), edge_out);
-}
-
-void cda_rail::Network::add_successor(const std::pair<std::string, std::string>& edge_in,
-                                      const std::pair<int, int>& edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    if (!has_edge(edge_in.first, edge_in.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    if (!has_edge(edge_out.first, edge_out.second)) {
-        throw std::out_of_range("Edge does not exist");
-    }
-    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
+    // Read successors
+    this->read_successors(p);
 }
