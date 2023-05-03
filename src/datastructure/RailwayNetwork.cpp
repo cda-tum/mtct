@@ -267,7 +267,12 @@ void cda_rail::Network::add_successor(int edge_in, int edge_out) {
         throw std::invalid_argument("Edges are not adjacent");
     }
 
-    successors[edge_in].insert(edge_out);
+    // If successors[edges] already contains edge_out, do nothing
+    if (std::find(successors[edge_in].begin(), successors[edge_in].end(), edge_out) != successors[edge_in].end()) {
+        return;
+    }
+
+    successors[edge_in].emplace_back(edge_out);
 }
 
 const cda_rail::Vertex &cda_rail::Network::get_vertex(int index) const {
@@ -378,33 +383,33 @@ void cda_rail::Network::change_edge_breakable(int index, bool value) {
     edges[index].breakable = value;
 }
 
-std::unordered_set<int> cda_rail::Network::out_edges(int index) const {
+std::vector<int> cda_rail::Network::out_edges(int index) const {
     if (!has_vertex(index)) {
         throw std::out_of_range("Vertex does not exist");
     }
-    std::unordered_set<int> out_edges;
+    std::vector<int> out_edges;
     for (int i = 0; i < edges.size(); ++i) {
         if (edges[i].source == index) {
-            out_edges.insert(i);
+            out_edges.emplace_back(i);
         }
     }
     return out_edges;
 }
 
-std::unordered_set<int> cda_rail::Network::in_edges(int index) const {
+std::vector<int> cda_rail::Network::in_edges(int index) const {
     if (!has_vertex(index)) {
         throw std::out_of_range("Vertex does not exist");
     }
-    std::unordered_set<int> in_edges;
+    std::vector<int> in_edges;
     for (int i = 0; i < edges.size(); ++i) {
         if (edges[i].target == index) {
-            in_edges.insert(i);
+            in_edges.emplace_back(i);
         }
     }
     return in_edges;
 }
 
-const std::unordered_set<int> &cda_rail::Network::get_successors(int index) const {
+const std::vector<int> &cda_rail::Network::get_successors(int index) const {
     if (!has_edge(index)) {
         throw std::out_of_range("Edge does not exist");
     }
@@ -602,21 +607,27 @@ bool cda_rail::Network::is_valid_successor(int e0, int e1) const {
      if (edges[e0].target != edges[e1].source) {
          return false;
      }
-     return (successors[e0].find(e1) != successors[e0].end());
+     return (std::find(successors[e0].begin(), successors[e0].end(), e1) != successors[e0].end());
 }
 
-std::unordered_set<int> cda_rail::Network::neighbors(int index) const {
+std::vector<int> cda_rail::Network::neighbors(int index) const {
     if (!has_vertex(index)) {
         throw std::out_of_range("Vertex does not exist");
     }
-    std::unordered_set<int> neighbors;
+    std::vector<int> neighbors;
     auto e_out = out_edges(index);
     auto e_in = in_edges(index);
     for (auto e : e_out) {
-        neighbors.insert(get_edge(e).target);
+        // If e is not in neighbors, emplace back
+        if (std::find(neighbors.begin(), neighbors.end(), get_edge(e).target) == neighbors.end()) {
+            neighbors.emplace_back(get_edge(e).target);
+        }
     }
     for (auto e : e_in) {
-        neighbors.insert(get_edge(e).source);
+        // If e is not in neighbors, emplace back
+        if (std::find(neighbors.begin(), neighbors.end(), get_edge(e).source) == neighbors.end()) {
+            neighbors.emplace_back(get_edge(e).source);
+        }
     }
     return neighbors;
 }

@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
 #include <optional>
 #include <sstream>
 #include <algorithm>
@@ -57,7 +56,7 @@ namespace cda_rail {
         private:
             std::vector<Vertex> vertices;
             std::vector<Edge> edges;
-            std::vector<std::unordered_set<int>> successors;
+            std::vector<std::vector<int>> successors;
             std::unordered_map<std::string, int> vertex_name_to_index;
 
             void read_graphml(const std::filesystem::path& p);
@@ -149,18 +148,18 @@ namespace cda_rail {
             void change_edge_breakable(int source_id, int target_id, bool value) {change_edge_breakable(get_edge_index(source_id, target_id), value);};
             void change_edge_breakable(const std::string& source_name, const std::string& target_name, bool value) {change_edge_breakable(get_edge_index(source_name, target_name), value);};
 
-            [[nodiscard]] std::unordered_set<int> out_edges(int index) const;
-            [[nodiscard]] std::unordered_set<int> out_edges(const std::string& name) const {return out_edges(get_vertex_index(name));};
-            [[nodiscard]] std::unordered_set<int> in_edges(int index) const;
-            [[nodiscard]] std::unordered_set<int> in_edges(const std::string& name) const {return in_edges(get_vertex_index(name));};
-            [[nodiscard]] const std::unordered_set<int>& get_successors(int index) const;
-            [[nodiscard]] const std::unordered_set<int>& get_successors(int source_id, int target_id) const {return get_successors(get_edge_index(source_id, target_id));};
-            [[nodiscard]] const std::unordered_set<int>& get_successors(const std::string& source_name, const std::string& target_name) const {
+            [[nodiscard]] std::vector<int> out_edges(int index) const;
+            [[nodiscard]] std::vector<int> out_edges(const std::string& name) const {return out_edges(get_vertex_index(name));};
+            [[nodiscard]] std::vector<int> in_edges(int index) const;
+            [[nodiscard]] std::vector<int> in_edges(const std::string& name) const {return in_edges(get_vertex_index(name));};
+            [[nodiscard]] const std::vector<int>& get_successors(int index) const;
+            [[nodiscard]] const std::vector<int>& get_successors(int source_id, int target_id) const {return get_successors(get_edge_index(source_id, target_id));};
+            [[nodiscard]] const std::vector<int>& get_successors(const std::string& source_name, const std::string& target_name) const {
                 return get_successors(get_edge_index(source_name, target_name));
             };
 
-            [[nodiscard]] std::unordered_set<int> neighbors(int index) const;
-            [[nodiscard]] std::unordered_set<int> neighbors(const std::string& name) const {return neighbors(get_vertex_index(name));};
+            [[nodiscard]] std::vector<int> neighbors(int index) const;
+            [[nodiscard]] std::vector<int> neighbors(const std::string& name) const {return neighbors(get_vertex_index(name));};
 
             [[nodiscard]] int number_of_vertices() const {return vertices.size();};
             [[nodiscard]] int number_of_edges() const {return edges.size();};

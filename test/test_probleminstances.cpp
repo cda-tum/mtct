@@ -77,57 +77,60 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     }
 
     // Check successors
-    std::unordered_set<int> successors_target;
+    std::vector<int> successors_target;
 
     // l0,l1
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l1", "l2"));
+    successors_target.emplace_back(network.get_edge_index("l1", "l2"));
     EXPECT_TRUE(network.get_successors("l0", "l1") == successors_target);
 
     // l1,l2
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l2", "l3"));
+    successors_target.emplace_back(network.get_edge_index("l2", "l3"));
     EXPECT_TRUE(network.get_successors("l1", "l2") == successors_target);
 
     // l2,l3
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l3", "g00"));
-    successors_target.insert(network.get_edge_index("l3", "g10"));
-    EXPECT_TRUE(network.get_successors("l2", "l3") == successors_target);
+    successors_target.emplace_back(network.get_edge_index("l3", "g00"));
+    successors_target.emplace_back(network.get_edge_index("l3", "g10"));
+    auto successors_l2_l3 = network.get_successors("l2", "l3");
+    std::sort(successors_target.begin(), successors_target.end());
+    std::sort(successors_l2_l3.begin(), successors_l2_l3.end());
+    EXPECT_TRUE(successors_l2_l3 == successors_target);
 
     // l3,g00
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g00", "g01"));
+    successors_target.emplace_back(network.get_edge_index("g00", "g01"));
     EXPECT_TRUE(network.get_successors("l3", "g00") == successors_target);
 
     // l3,g10
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g10", "g11"));
+    successors_target.emplace_back(network.get_edge_index("g10", "g11"));
     EXPECT_TRUE(network.get_successors("l3", "g10") == successors_target);
 
     // g00,g01
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g01", "r2"));
+    successors_target.emplace_back(network.get_edge_index("g01", "r2"));
     EXPECT_TRUE(network.get_successors("g00", "g01") == successors_target);
 
     // g10,g11
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g11", "r2"));
+    successors_target.emplace_back(network.get_edge_index("g11", "r2"));
     EXPECT_TRUE(network.get_successors("g10", "g11") == successors_target);
 
     // g01,r2
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("r2", "r1"));
+    successors_target.emplace_back(network.get_edge_index("r2", "r1"));
     EXPECT_TRUE(network.get_successors("g01", "r2") == successors_target);
 
     // g11,r2
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("r2", "r1"));
+    successors_target.emplace_back(network.get_edge_index("r2", "r1"));
     EXPECT_TRUE(network.get_successors("g11", "r2") == successors_target);
 
     // r2,r1
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("r1", "r0"));
+    successors_target.emplace_back(network.get_edge_index("r1", "r0"));
     EXPECT_TRUE(network.get_successors("r2", "r1") == successors_target);
 
     // r1,r0
@@ -136,53 +139,56 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
 
     // r0,r1
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("r1", "r2"));
+    successors_target.emplace_back(network.get_edge_index("r1", "r2"));
     EXPECT_TRUE(network.get_successors("r0", "r1") == successors_target);
 
     // r1,r2
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("r2", "g01"));
-    successors_target.insert(network.get_edge_index("r2", "g11"));
-    EXPECT_TRUE(network.get_successors("r1", "r2") == successors_target);
+    successors_target.emplace_back(network.get_edge_index("r2", "g01"));
+    successors_target.emplace_back(network.get_edge_index("r2", "g11"));
+    auto successors_r1_r2 = network.get_successors("r1", "r2");
+    std::sort(successors_target.begin(), successors_target.end());
+    std::sort(successors_r1_r2.begin(), successors_r1_r2.end());
+    EXPECT_TRUE(successors_r1_r2 == successors_target);
 
     // r2,g01
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g01", "g00"));
+    successors_target.emplace_back(network.get_edge_index("g01", "g00"));
     EXPECT_TRUE(network.get_successors("r2", "g01") == successors_target);
 
     // r2,g11
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g11", "g10"));
+    successors_target.emplace_back(network.get_edge_index("g11", "g10"));
     EXPECT_TRUE(network.get_successors("r2", "g11") == successors_target);
 
     // g01,g00
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g00", "l3"));
+    successors_target.emplace_back(network.get_edge_index("g00", "l3"));
     EXPECT_TRUE(network.get_successors("g01", "g00") == successors_target);
 
     // g11,g10
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("g10", "l3"));
+    successors_target.emplace_back(network.get_edge_index("g10", "l3"));
     EXPECT_TRUE(network.get_successors("g11", "g10") == successors_target);
 
     // g00,l3
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l3", "l2"));
+    successors_target.emplace_back(network.get_edge_index("l3", "l2"));
     EXPECT_TRUE(network.get_successors("g00", "l3") == successors_target);
 
     // g10,l3
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l3", "l2"));
+    successors_target.emplace_back(network.get_edge_index("l3", "l2"));
     EXPECT_TRUE(network.get_successors("g10", "l3") == successors_target);
 
     // l3,l2
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l2", "l1"));
+    successors_target.emplace_back(network.get_edge_index("l2", "l1"));
     EXPECT_TRUE(network.get_successors("l3", "l2") == successors_target);
 
     // l2,l1
     successors_target.clear();
-    successors_target.insert(network.get_edge_index("l1", "l0"));
+    successors_target.emplace_back(network.get_edge_index("l1", "l0"));
     EXPECT_TRUE(network.get_successors("l2", "l1") == successors_target);
 
     // l1,l0
@@ -419,17 +425,20 @@ TEST(Functionality, VSSGenerationTimetableExport) {
     // check successors
     for (int i = 0; i < network.number_of_edges(); ++i) {
         const auto& successors_target = network.get_successors(i);
-        std::unordered_set<int> successors_target_transformed;
+        std::vector<int> successors_target_transformed;
         for (auto successor : successors_target) {
             const auto& e = network.get_edge(successor);
             std::string source = network.get_vertex(e.source).name;
             std::string target = network.get_vertex(e.target).name;
-            successors_target_transformed.insert(network_read.get_edge_index(source, target));
+            successors_target_transformed.emplace_back(network_read.get_edge_index(source, target));
         }
         const auto& e = network.get_edge(i);
         std::string source = network.get_vertex(e.source).name;
         std::string target = network.get_vertex(e.target).name;
-        EXPECT_TRUE(network_read.get_successors(source, target) == successors_target_transformed);
+        auto successors_target_read = network_read.get_successors(source, target);
+        std::sort(successors_target_transformed.begin(), successors_target_transformed.end());
+        std::sort(successors_target_read.begin(), successors_target_read.end());
+        EXPECT_TRUE(successors_target_transformed == successors_target_read);
     }
 
     // Check if the imported timetable is the same as the original timetable
