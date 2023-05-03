@@ -22,6 +22,8 @@ namespace cda_rail {
             void remove_first_edge();
             void remove_last_edge();
 
+            [[nodiscard]] double length(const cda_rail::Network& network) const;
+
             [[nodiscard]] int get_edge(int route_index) const;
             [[nodiscard]] const cda_rail::Edge& get_edge(int route_index, const cda_rail::Network& network) const;
             [[nodiscard]] int size() const {return edges.size();};
@@ -67,6 +69,8 @@ namespace cda_rail {
             [[nodiscard]] bool has_route(const std::string& train_name) const {return routes.find(train_name) != routes.end();};
             [[nodiscard]] int size() const {return routes.size();};
             [[nodiscard]] const Route& get_route(const std::string& train_name) const;
+
+            [[nodiscard]] double length(const std::string& train_name, const cda_rail::Network& network) const;
 
             [[nodiscard]] bool check_consistency(const cda_rail::TrainList& trains, const cda_rail::Network& network, bool every_train_must_have_route = true) const;
 

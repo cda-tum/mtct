@@ -13,6 +13,9 @@ add_library(
         datastructure/Route.cpp
         ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
         probleminstances/VSSGenerationTimetable.cpp
+        ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
+        ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
+        solver/mip-based/VSSGenTimetableSolver.cpp
 )
 
 # set include directories

@@ -54,6 +54,8 @@ namespace cda_rail::instances{
             [[nodiscard]] const Schedule& get_schedule(int index) const {return timetable.get_schedule(index);};
             [[nodiscard]] const Schedule& get_schedule(const std::string& train_name) const {return timetable.get_schedule(train_name);};
 
+            [[nodiscard]] int maxT() const;
+
             void sort_stops() {timetable.sort_stops();};
 
             // RouteMap functions
@@ -73,6 +75,8 @@ namespace cda_rail::instances{
             [[nodiscard]] bool has_route(const std::string& train_name) const {return routes.has_route(train_name);};
             [[nodiscard]] int route_map_size() const {return routes.size();};
             [[nodiscard]] const Route& get_route(const std::string& train_name) const {return routes.get_route(train_name);};
+
+            [[nodiscard]] double route_length(const std::string& train_name) const;
 
             // General Consistency Check
             [[nodiscard]] bool check_consistency(bool every_train_must_have_route = true) const {
