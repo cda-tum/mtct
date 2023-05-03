@@ -151,27 +151,18 @@ cda_rail::instances::VSSGenerationTimetable::import_instance(const std::filesyst
      * @param p the path to the folder where the instance should be imported from
      */
 
-    cda_rail::instances::VSSGenerationTimetable instance;
-    instance.network = cda_rail::Network::import_network(p / "network");
-    instance.timetable = cda_rail::Timetable::import_timetable(p / "timetable", instance.network);
-    instance.routes = cda_rail::RouteMap::import_routes(p / "routes", instance.network);
-    if (!instance.check_consistency(every_train_must_have_route)) {
-        throw std::runtime_error("The imported instance is not consistent.");
-    }
-    return instance;
+    return VSSGenerationTimetable(p, every_train_must_have_route);
 }
 
 cda_rail::instances::VSSGenerationTimetable
 cda_rail::instances::VSSGenerationTimetable::import_instance(const std::string &path,
                                                              bool every_train_must_have_route) {
-    std::filesystem::path p(path);
-    return import_instance(p, every_train_must_have_route);
+    return VSSGenerationTimetable(path, every_train_must_have_route);
 }
 
 cda_rail::instances::VSSGenerationTimetable
 cda_rail::instances::VSSGenerationTimetable::import_instance(const char *path, bool every_train_must_have_route) {
-    std::filesystem::path p(path);
-    return import_instance(p, every_train_must_have_route);
+    return VSSGenerationTimetable(path, every_train_must_have_route);
 }
 
 void cda_rail::instances::VSSGenerationTimetable::add_station(const std::string &name,
@@ -196,4 +187,15 @@ void
 cda_rail::instances::VSSGenerationTimetable::add_track_to_station(const std::string &name, const std::string &source,
                                                                   const std::string &target) {
     timetable.add_track_to_station(name, source, target, network);
+}
+
+cda_rail::instances::VSSGenerationTimetable::VSSGenerationTimetable(const std::filesystem::path &p,
+                                                                    bool every_train_must_have_route) {
+
+    this->network = cda_rail::Network::import_network(p / "network");
+    this->timetable = cda_rail::Timetable::import_timetable(p / "timetable", this->network);
+    this->routes = cda_rail::RouteMap::import_routes(p / "routes", this->network);
+    if (!this->check_consistency(every_train_must_have_route)) {
+        throw std::runtime_error("The imported instance is not consistent.");
+    }
 }

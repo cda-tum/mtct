@@ -33,6 +33,19 @@ namespace cda_rail {
         private:
             std::unordered_map<std::string, Route> routes;
         public:
+            // Constructors
+            RouteMap() = default;
+            RouteMap(const std::filesystem::path& p, const cda_rail::Network& network);
+            RouteMap(const std::string& path, const cda_rail::Network& network) : RouteMap(std::filesystem::path(path), network) {};
+            RouteMap(const char* path, const cda_rail::Network& network) : RouteMap(std::filesystem::path(path), network) {};
+
+            // Rule of 5
+            RouteMap(const RouteMap& other) = default;
+            RouteMap(RouteMap&& other) = default;
+            RouteMap& operator=(const RouteMap& other) = default;
+            RouteMap& operator=(RouteMap&& other) = default;
+            ~RouteMap() = default;
+
             void add_empty_route(const std::string& train_name);
             void add_empty_route(const std::string& train_name, const cda_rail::TrainList& trains);
 

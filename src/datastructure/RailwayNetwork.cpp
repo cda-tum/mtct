@@ -67,7 +67,7 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement *graphml_body, std::string
     }
 }
 
-void cda_rail::Network::add_vertices_from_graphml(const tinyxml2::XMLElement *graphml_node, cda_rail::Network &network,
+void cda_rail::Network::add_vertices_from_graphml(const tinyxml2::XMLElement *graphml_node,
                                                   const std::string &type) {
     /**
      * Add vertices from graphml file
@@ -91,12 +91,12 @@ void cda_rail::Network::add_vertices_from_graphml(const tinyxml2::XMLElement *gr
         if (!v_type.has_value()) {
             throw std::runtime_error("Error reading graphml file");
         }
-        network.add_vertex(name, static_cast<VertexType>(v_type.value()));
+        this->add_vertex(name, static_cast<VertexType>(v_type.value()));
         graphml_node = graphml_node->NextSiblingElement("node");
     }
 }
 
-void cda_rail::Network::add_edges_from_graphml(const tinyxml2::XMLElement *graphml_edge, cda_rail::Network &network,
+void cda_rail::Network::add_edges_from_graphml(const tinyxml2::XMLElement *graphml_edge,
                                                const std::string &breakable, const std::string &length,
                                                const std::string &max_speed, const std::string &min_block_length) {
     /**
@@ -138,16 +138,15 @@ void cda_rail::Network::add_edges_from_graphml(const tinyxml2::XMLElement *graph
         if (!e_length.has_value() || !e_max_speed.has_value() || !e_breakable.has_value() || !e_min_block_length.has_value()) {
             throw std::runtime_error("Error reading graphml file");
         }
-        network.add_edge(source_name, target_name, e_length.value(), e_max_speed.value(), e_breakable.value(), e_min_block_length.value());
+        this->add_edge(source_name, target_name, e_length.value(), e_max_speed.value(), e_breakable.value(), e_min_block_length.value());
         graphml_edge = graphml_edge->NextSiblingElement("edge");
     }
 }
 
-cda_rail::Network cda_rail::Network::read_graphml(const std::filesystem::path &p) {
+void cda_rail::Network::read_graphml(const std::filesystem::path &p) {
     /**
-     * Read network graph from XML file
+     * Read network graph from XML file into the object
      * @param path Path to XML file
-     * @return Network object
      */
 
     // Open graphml file
@@ -177,18 +176,13 @@ cda_rail::Network cda_rail::Network::read_graphml(const std::filesystem::path &p
         throw std::runtime_error("Graph is not directed. Not all properties present.");
     }
 
-    // Initialize network
-    auto network = cda_rail::Network();
-
     // Get vertices
     const tinyxml2::XMLElement* graphml_node = graphml_graph->FirstChildElement("node");
-    cda_rail::Network::add_vertices_from_graphml(graphml_node, network, type);
+    this->add_vertices_from_graphml(graphml_node, type);
 
     // Get edges
     const tinyxml2::XMLElement* graphml_edge = graphml_graph->FirstChildElement("edge");
-    cda_rail::Network::add_edges_from_graphml(graphml_edge, network, breakable, length, max_speed, min_block_length);
-
-    return network;
+    this->add_edges_from_graphml(graphml_edge, breakable, length, max_speed, min_block_length);
 }
 
 void cda_rail::Network::read_successors(const std::filesystem::path &p) {
@@ -221,21 +215,7 @@ cda_rail::Network cda_rail::Network::import_network(const std::filesystem::path 
      * @return Network
      */
 
-    // Check if path exists
-    if (!std::filesystem::exists(p)) {
-        throw std::runtime_error("Path does not exist");
-    }
-    if (!std::filesystem::is_directory(p)) {
-        throw std::runtime_error("Path is not a directory");
-    }
-
-    // Read graph
-    cda_rail::Network network = cda_rail::Network::read_graphml(p);
-
-    // Read successors
-    network.read_successors(p);
-
-    return network;
+    return Network(p);
 }
 
 int cda_rail::Network::add_vertex(const std::string &name, VertexType type) {
@@ -714,11 +694,11 @@ void cda_rail::Network::export_network(const std::filesystem::path &p) const {
 }
 
 cda_rail::Network cda_rail::Network::import_network(const char *path) {
-    return import_network(std::filesystem::path(path));
+    return Network(path);
 }
 
 cda_rail::Network cda_rail::Network::import_network(const std::string &path) {
-    return import_network(std::filesystem::path(path));
+    return Network(path);
 }
 
 void cda_rail::Network::export_network(const char *path) const {
@@ -854,4 +834,20 @@ void cda_rail::Network::add_successor(const std::pair<std::string, std::string>&
      */
     // No need to check for existence since this is done in a lower level function
     add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
+}
+
+cda_rail::Network::Network(const std::filesystem::path &p) {
+    // Check if path exists
+    if (!std::filesystem::exists(p)) {
+        throw std::runtime_error("Path does not exist");
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::runtime_error("Path is not a directory");
+    }
+
+    // Read graph
+    this->read_graphml(p);
+
+    // Read successors
+    this->read_successors(p);
 }

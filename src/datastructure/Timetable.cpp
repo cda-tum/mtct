@@ -153,47 +153,7 @@ cda_rail::Timetable cda_rail::Timetable::import_timetable(const std::filesystem:
      * @param network The network to which the timetable belongs.
      */
 
-    // Check if the path exists and is a directory
-    if (!std::filesystem::exists(p)) {
-        throw std::invalid_argument("Path does not exist.");
-    }
-    if (!std::filesystem::is_directory(p)) {
-        throw std::invalid_argument("Path is not a directory.");
-    }
-
-    // Import the train list and the station list
-    cda_rail::Timetable timetable;
-    timetable.set_train_list(cda_rail::TrainList::import_trains(p));
-    timetable.station_list = cda_rail::StationList::import_stations(p, network);
-
-    // Read the schedules file
-    std::ifstream f(p / "schedules.json");
-    json data = json::parse(f);
-
-    // Parse the schedules
-    for (int i = 0; i < timetable.train_list.size(); i++) {
-        auto& tr = timetable.train_list.get_train(i);
-        if (!data.contains(tr.name)) {
-            throw std::invalid_argument("Schedule for train " + tr.name + " not found.");
-        }
-        auto& schedule_data = data[tr.name];
-        timetable.schedules.at(i).t_0 = schedule_data["t_0"];
-        timetable.schedules.at(i).v_0 = schedule_data["v_0"];
-        timetable.schedules.at(i).entry = network.get_vertex_index(schedule_data["entry"]);
-        timetable.schedules.at(i).t_n = schedule_data["t_n"];
-        timetable.schedules.at(i).v_n = schedule_data["v_n"];
-        timetable.schedules.at(i).exit = network.get_vertex_index(schedule_data["exit"]);
-
-        for (const auto& stop_data : schedule_data["stops"]) {
-            timetable.add_stop(i, stop_data["station"].get<std::string>(),
-                        stop_data["begin"].get<int>(), stop_data["end"].get<int>(), false);
-        }
-    }
-
-    // Sort the stops
-    timetable.sort_stops();
-
-    return timetable;
+    return Timetable(p, network);
 }
 
 void cda_rail::Timetable::set_train_list(const cda_rail::TrainList &tl) {
@@ -202,11 +162,11 @@ void cda_rail::Timetable::set_train_list(const cda_rail::TrainList &tl) {
 }
 
 cda_rail::Timetable cda_rail::Timetable::import_timetable(const std::string &path, const cda_rail::Network &network) {
-    return import_timetable(std::filesystem::path(path), network);
+    return Timetable(path, network);
 }
 
 cda_rail::Timetable cda_rail::Timetable::import_timetable(const char *path, const cda_rail::Network &network) {
-    return import_timetable(std::filesystem::path(path), network);
+    return Timetable(path, network);
 }
 
 void cda_rail::Timetable::export_timetable(const char *path, const cda_rail::Network &network) const {
@@ -277,4 +237,45 @@ void
 cda_rail::Timetable::add_track_to_station(const std::string &name, const std::string &source, const std::string &target,
                                           const cda_rail::Network &network) {
     station_list.add_track_to_station(name, source, target, network);
+}
+
+cda_rail::Timetable::Timetable(const std::filesystem::path &p, const cda_rail::Network &network) {
+    // Check if the path exists and is a directory
+    if (!std::filesystem::exists(p)) {
+        throw std::invalid_argument("Path does not exist.");
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("Path is not a directory.");
+    }
+
+    // Import the train list and the station list
+    this->set_train_list(cda_rail::TrainList::import_trains(p));
+    this->station_list = cda_rail::StationList::import_stations(p, network);
+
+    // Read the schedules file
+    std::ifstream f(p / "schedules.json");
+    json data = json::parse(f);
+
+    // Parse the schedules
+    for (int i = 0; i < this->train_list.size(); i++) {
+        auto& tr = this->train_list.get_train(i);
+        if (!data.contains(tr.name)) {
+            throw std::invalid_argument("Schedule for train " + tr.name + " not found.");
+        }
+        auto& schedule_data = data[tr.name];
+        this->schedules.at(i).t_0 = schedule_data["t_0"];
+        this->schedules.at(i).v_0 = schedule_data["v_0"];
+        this->schedules.at(i).entry = network.get_vertex_index(schedule_data["entry"]);
+        this->schedules.at(i).t_n = schedule_data["t_n"];
+        this->schedules.at(i).v_n = schedule_data["v_n"];
+        this->schedules.at(i).exit = network.get_vertex_index(schedule_data["exit"]);
+
+        for (const auto& stop_data : schedule_data["stops"]) {
+            this->add_stop(i, stop_data["station"].get<std::string>(),
+                               stop_data["begin"].get<int>(), stop_data["end"].get<int>(), false);
+        }
+    }
+
+    // Sort the stops
+    this->sort_stops();
 }

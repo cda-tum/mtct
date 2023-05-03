@@ -10,6 +10,19 @@ namespace cda_rail::instances{
             cda_rail::Timetable timetable;
             cda_rail::RouteMap routes;
         public:
+            // Constructors
+            VSSGenerationTimetable() = default;
+            VSSGenerationTimetable(const std::filesystem::path& p, bool every_train_must_have_route = true);
+            VSSGenerationTimetable(const std::string& path, bool every_train_must_have_route = true) : VSSGenerationTimetable(std::filesystem::path(path), every_train_must_have_route) {};
+            VSSGenerationTimetable(const char* path, bool every_train_must_have_route = true) : VSSGenerationTimetable(std::filesystem::path(path), every_train_must_have_route) {};
+
+            // Rule of 5
+            VSSGenerationTimetable(const VSSGenerationTimetable& other) = default;
+            VSSGenerationTimetable(VSSGenerationTimetable&& other) = default;
+            VSSGenerationTimetable& operator=(const VSSGenerationTimetable& other) = default;
+            VSSGenerationTimetable& operator=(VSSGenerationTimetable&& other) = default;
+            ~VSSGenerationTimetable() = default;
+
             // Network functions, i.e., network is accessible via n() as a reference
             [[nodiscard]] cda_rail::Network& n();
 

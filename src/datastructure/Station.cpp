@@ -87,7 +87,7 @@ void cda_rail::StationList::export_stations(const std::filesystem::path &p, cons
 }
 
 cda_rail::StationList cda_rail::StationList::import_stations(const std::string &path, const cda_rail::Network &network) {
-    return import_stations(std::filesystem::path(path), network);
+    return StationList(path, network);
 }
 
 cda_rail::StationList cda_rail::StationList::import_stations(const std::filesystem::path &p, const cda_rail::Network &network) {
@@ -99,25 +99,7 @@ cda_rail::StationList cda_rail::StationList::import_stations(const std::filesyst
      * @param network The network reference to use for the edge names.
      */
 
-    if (!std::filesystem::exists(p)) {
-        throw std::invalid_argument("Path does not exist.");
-    }
-    if (!std::filesystem::is_directory(p)) {
-        throw std::invalid_argument("Path is not a directory.");
-    }
-
-    std::ifstream file(p / "stations.json");
-    json data = json::parse(file);
-
-    StationList stations;
-    for (const auto& [name, edges] : data.items()) {
-        stations.add_station(name);
-        for (const auto& edge : edges) {
-            stations.add_track_to_station(name, edge[0].get<std::string>(), edge[1].get<std::string>(), network);
-        }
-    }
-
-    return stations;
+    return StationList(p, network);
 }
 
 void cda_rail::StationList::export_stations(const char *path, const cda_rail::Network &network) const {
@@ -125,7 +107,7 @@ void cda_rail::StationList::export_stations(const char *path, const cda_rail::Ne
 }
 
 cda_rail::StationList cda_rail::StationList::import_stations(const char *path, const cda_rail::Network &network) {
-    return import_stations(std::filesystem::path(path), network);
+    return StationList(path, network);
 }
 
 int cda_rail::StationList::size() const {
@@ -144,4 +126,23 @@ std::vector<std::string> cda_rail::StationList::get_station_names() const {
         names.emplace_back(name);
     }
     return names;
+}
+
+cda_rail::StationList::StationList(const std::filesystem::path &p, const cda_rail::Network &network) {
+    if (!std::filesystem::exists(p)) {
+        throw std::invalid_argument("Path does not exist.");
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("Path is not a directory.");
+    }
+
+    std::ifstream file(p / "stations.json");
+    json data = json::parse(file);
+
+    for (const auto& [name, edges] : data.items()) {
+        this->add_station(name);
+        for (const auto& edge : edges) {
+            this->add_track_to_station(name, edge[0].get<std::string>(), edge[1].get<std::string>(), network);
+        }
+    }
 }

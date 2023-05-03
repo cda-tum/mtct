@@ -60,10 +60,10 @@ namespace cda_rail {
             std::vector<std::unordered_set<int>> successors;
             std::unordered_map<std::string, int> vertex_name_to_index;
 
-            [[nodiscard]] static Network read_graphml(const std::filesystem::path& p);
+            void read_graphml(const std::filesystem::path& p);
             static void get_keys(tinyxml2::XMLElement* graphml_body, std::string& breakable, std::string& length, std::string& max_speed, std::string& min_block_length, std::string& type);
-            static void add_vertices_from_graphml(const tinyxml2::XMLElement* graphml_node, cda_rail::Network& network, const std::string& type);
-            static void add_edges_from_graphml(const tinyxml2::XMLElement* graphml_edge, cda_rail::Network& network, const std::string& breakable, const std::string& length, const std::string& max_speed, const std::string& min_block_length);
+            void add_vertices_from_graphml(const tinyxml2::XMLElement* graphml_node, const std::string& type);
+            void add_edges_from_graphml(const tinyxml2::XMLElement* graphml_edge, const std::string& breakable, const std::string& length, const std::string& max_speed, const std::string& min_block_length);
             void read_successors(const std::filesystem::path& p);
             static void extract_vertices_from_key(const std::string& key, std::string& source_name, std::string& target_name);
 
@@ -72,6 +72,19 @@ namespace cda_rail {
             void export_successors_cpp(const std::filesystem::path& p) const;
             void write_successor_set_to_file(std::ofstream& file, int i) const;
         public:
+            // Constructors
+            Network() = default;
+            Network(const std::filesystem::path& p);
+            Network(const std::string& path) : Network(std::filesystem::path(path)) {};
+            Network(const char* path) : Network(std::filesystem::path(path)) {};
+
+            // Rule of 5
+            Network(const Network& other) = default;
+            Network(Network&& other) noexcept = default;
+            Network& operator=(const Network& other) = default;
+            Network& operator=(Network&& other) noexcept = default;
+            ~Network() = default;
+
             int add_vertex(const std::string& name, VertexType type);
             int add_edge(int source,int target, double length, double max_speed, bool breakable, double min_block_length = 0);
             int add_edge(const std::string& source_name, const std::string& target_name, double length, double max_speed, bool breakable, double min_block_length = 0);

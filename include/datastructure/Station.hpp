@@ -25,6 +25,20 @@ namespace cda_rail {
             std::unordered_map<std::string, Station> stations;
 
         public:
+            // Constructors
+            StationList() = default;
+            StationList(const std::filesystem::path& p, const cda_rail::Network& network);
+            StationList(const std::string& path, const cda_rail::Network& network) : StationList(std::filesystem::path(path), network) {};
+            StationList(const char* path, const cda_rail::Network& network) : StationList(std::filesystem::path(path), network) {};
+
+            // Rule of 5
+            StationList(const StationList& other) = default;
+            StationList(StationList&& other) = default;
+            StationList& operator=(const StationList& other) = default;
+            StationList& operator=(StationList&& other) = default;
+            ~StationList() = default;
+
+
             void add_station(const std::string& name, const std::unordered_set<int>& tracks);
             void add_station(const std::string& name);
 

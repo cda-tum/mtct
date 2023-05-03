@@ -80,6 +80,19 @@ namespace cda_rail {
             void set_train_list(const cda_rail::TrainList& tl);
 
         public:
+            // Constructors
+            Timetable() = default;
+            Timetable(const std::filesystem::path& p, const cda_rail::Network& network);
+            Timetable(const std::string& path, const cda_rail::Network& network) : Timetable(std::filesystem::path(path), network) {};
+            Timetable(const char* path, const cda_rail::Network& network) : Timetable(std::filesystem::path(path), network) {};
+
+            // Rule of 5
+            Timetable(const Timetable& other) = default;
+            Timetable(Timetable&& other) noexcept = default;
+            Timetable& operator=(const Timetable& other) = default;
+            Timetable& operator=(Timetable&& other) noexcept = default;
+            ~Timetable() = default;
+
             int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
                            int t_0, double v_0, int entry, int t_n, double v_n, int exit, const cda_rail::Network& network);
             int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,

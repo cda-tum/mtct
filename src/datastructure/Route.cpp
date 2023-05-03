@@ -355,25 +355,7 @@ cda_rail::RouteMap cda_rail::RouteMap::import_routes(const std::filesystem::path
      * @param network The network to which the routes belong.
      */
 
-    if (!std::filesystem::exists(p)) {
-        throw std::invalid_argument("Path does not exist.");
-    }
-    if (!std::filesystem::is_directory(p)) {
-        throw std::invalid_argument("Path is not a directory.");
-    }
-
-    std::ifstream file(p / "routes.json");
-    json data = json::parse(file);
-
-    RouteMap route_map;
-    for (auto& [name, route] : data.items()) {
-        route_map.add_empty_route(name);
-        for (auto& edge : route) {
-            route_map.push_back_edge(name, edge[0].get<std::string>(), edge[1].get<std::string>(), network);
-        }
-    }
-
-    return route_map;
+    return RouteMap(p, network);
 }
 
 cda_rail::RouteMap cda_rail::RouteMap::import_routes(const std::string &path, const cda_rail::Network &network) {
@@ -385,8 +367,7 @@ cda_rail::RouteMap cda_rail::RouteMap::import_routes(const std::string &path, co
      * @param network The network to which the routes belong.
      */
 
-    std::filesystem::path p(path);
-    return import_routes(p, network);
+    return RouteMap(path, network);
 }
 
 cda_rail::RouteMap cda_rail::RouteMap::import_routes(const char *path, const cda_rail::Network &network) {
@@ -398,8 +379,7 @@ cda_rail::RouteMap cda_rail::RouteMap::import_routes(const char *path, const cda
      * @param network The network to which the routes belong.
      */
 
-    std::filesystem::path p(path);
-    return import_routes(p, network);
+    return RouteMap(path, network);
 }
 
 void cda_rail::RouteMap::push_back_edge(const std::string &train_name, int edge_index, const cda_rail::Network &network) {
@@ -525,4 +505,24 @@ int cda_rail::RouteMap::size() const {
      */
 
     return routes.size();
+}
+
+cda_rail::RouteMap::RouteMap(const std::filesystem::path &p, const cda_rail::Network &network) {
+    if (!std::filesystem::exists(p)) {
+        throw std::invalid_argument("Path does not exist.");
+    }
+    if (!std::filesystem::is_directory(p)) {
+        throw std::invalid_argument("Path is not a directory.");
+    }
+
+    std::ifstream file(p / "routes.json");
+    json data = json::parse(file);
+
+
+    for (auto& [name, route] : data.items()) {
+        this->add_empty_route(name);
+        for (auto& edge : route) {
+            this->push_back_edge(name, edge[0].get<std::string>(), edge[1].get<std::string>(), network);
+        }
+    }
 }

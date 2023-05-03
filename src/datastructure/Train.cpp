@@ -70,8 +70,7 @@ cda_rail::TrainList cda_rail::TrainList::import_trains(const std::string &path) 
      * @param path The path to the file to import from.
      */
 
-    std::filesystem::path p(path);
-    return import_trains(p);
+    return TrainList(path);
 }
 
 void cda_rail::TrainList::export_trains(const std::filesystem::path &p) const {
@@ -90,6 +89,18 @@ void cda_rail::TrainList::export_trains(const std::filesystem::path &p) const {
 }
 
 cda_rail::TrainList cda_rail::TrainList::import_trains(const std::filesystem::path &p) {
+    return TrainList(p);
+}
+
+void cda_rail::TrainList::export_trains(const char *path) const {
+    return export_trains(std::filesystem::path(path));
+}
+
+cda_rail::TrainList cda_rail::TrainList::import_trains(const char *path) {
+    return TrainList(path);
+}
+
+cda_rail::TrainList::TrainList(const std::filesystem::path &p) {
     if (!std::filesystem::is_directory(p)) {
         throw std::invalid_argument("Path is not a directory.");
     }
@@ -101,19 +112,8 @@ cda_rail::TrainList cda_rail::TrainList::import_trains(const std::filesystem::pa
     std::ifstream f((p / "trains.json"));
     json data = json::parse(f);
 
-    // Create the train list
-    cda_rail::TrainList train_list;
+    // Add the trains
     for (auto& [name, train] : data.items()) {
-        train_list.add_train(name, train["length"], train["max_speed"], train["acceleration"], train["deceleration"]);
+        this->add_train(name, train["length"], train["max_speed"], train["acceleration"], train["deceleration"]);
     }
-
-    return train_list;
-}
-
-void cda_rail::TrainList::export_trains(const char *path) const {
-    return export_trains(std::filesystem::path(path));
-}
-
-cda_rail::TrainList cda_rail::TrainList::import_trains(const char *path) {
-    return import_trains(std::filesystem::path(path));
 }

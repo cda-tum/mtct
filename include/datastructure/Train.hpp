@@ -36,6 +36,19 @@ namespace cda_rail {
             std::unordered_map<std::string, int> train_name_to_index;
 
         public:
+            // Constructors
+            TrainList() = default;
+            TrainList(const std::filesystem::path& p);
+            TrainList(const std::string& path) : TrainList(std::filesystem::path(path)) {};
+            TrainList(const char* path) : TrainList(std::filesystem::path(path)) {};
+
+            // Rule of 5
+            TrainList(const TrainList& other) = default;
+            TrainList(TrainList&& other) noexcept = default;
+            TrainList& operator=(const TrainList& other) = default;
+            TrainList& operator=(TrainList&& other) noexcept = default;
+            ~TrainList() = default;
+
             int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration);
             [[nodiscard]] int size() const;
 
