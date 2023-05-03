@@ -93,6 +93,14 @@ namespace cda_rail {
             Timetable& operator=(Timetable&& other) noexcept = default;
             ~Timetable() = default;
 
+            // Iterators (for range-based for loops) that do not allow modification of the underlying data
+            auto begin() const {
+                return Iterator(train_list.begin(), schedules.begin());
+            };
+            auto end() const {
+                return Iterator(train_list.end(), schedules.end());
+            };
+
             int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
                            int t_0, double v_0, int entry, int t_n, double v_n, int exit, const cda_rail::Network& network);
             int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
@@ -129,5 +137,36 @@ namespace cda_rail {
             [[nodiscard]] static cda_rail::Timetable import_timetable(const std::filesystem::path& p, const cda_rail::Network& network) {return Timetable(p, network);};
             [[nodiscard]] static cda_rail::Timetable import_timetable(const char* path, const cda_rail::Network& network) {return Timetable(path, network);};
 
+            // Iterator struct
+            struct Iterator {
+                // Iterator tags
+                using iterator_category = std::forward_iterator_tag;
+                using difference_type = std::ptrdiff_t;
+                using value_type = const std::pair<const std::string&, const Schedule&>;
+                using pointer = value_type*;
+                using reference = value_type&;
+                using tr_iterator = std::_Vector_const_iterator<std::_Vector_val<std::_Simple_types<Train>>>;
+                using sch_iterator = std::_Vector_const_iterator<std::_Vector_val<std::_Simple_types<Schedule>>>;
+
+
+                // Iterator constructor
+                Iterator(tr_iterator tr_ptr, sch_iterator sch_ptr) : tr_ptr(tr_ptr), sch_ptr(sch_ptr) {};
+
+                // Iterator operators
+                reference operator*() const { return {tr_ptr->name, *sch_ptr}; };
+                pointer operator->() const { return &operator*(); };
+                // Prefix increment
+                Iterator& operator++() { ++tr_ptr; ++sch_ptr; return *this; };
+                // Postfix increment
+                Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; };
+
+                // Iterator comparison
+                friend bool operator==(const Iterator& a, const Iterator& b) { return a.tr_ptr == b.tr_ptr && a.sch_ptr == b.sch_ptr; };
+                friend bool operator!=(const Iterator& a, const Iterator& b) { return !(a == b); };
+
+                private:
+                    tr_iterator tr_ptr;
+                    sch_iterator sch_ptr;
+            };
     };
 }

@@ -46,6 +46,10 @@ namespace cda_rail {
             RouteMap& operator=(RouteMap&& other) = default;
             ~RouteMap() = default;
 
+            // Iterators (for range-based for loops) that do not allow modification of the underlying data
+            auto begin() const {return routes.begin();};
+            auto end() const {return routes.end();};
+
             void add_empty_route(const std::string& train_name);
             void add_empty_route(const std::string& train_name, const cda_rail::TrainList& trains);
 

@@ -37,6 +37,10 @@ namespace cda_rail {
             StationList& operator=(StationList&& other) = default;
             ~StationList() = default;
 
+            // Iterators (for range-based for loops) that do not allow modification of the underlying data
+            auto begin() const {return stations.begin();};
+            auto end() const {return stations.end();};
+
             void add_station(const std::string& name) {stations[name] = cda_rail::Station{name};};
 
             [[nodiscard]] bool has_station(const std::string& name) const {return stations.find(name) != stations.end();};

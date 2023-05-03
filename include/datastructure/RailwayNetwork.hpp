@@ -84,6 +84,9 @@ namespace cda_rail {
             Network& operator=(Network&& other) noexcept = default;
             ~Network() = default;
 
+            const std::vector<Vertex>& get_vertices() const {return vertices;};
+            const std::vector<Edge>& get_edges() const {return edges;};
+
             int add_vertex(const std::string& name, VertexType type);
             int add_edge(int source,int target, double length, double max_speed, bool breakable, double min_block_length = 0);
             int add_edge(const std::string& source_name, const std::string& target_name, double length, double max_speed, bool breakable, double min_block_length = 0) {
