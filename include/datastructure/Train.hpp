@@ -49,12 +49,6 @@ namespace cda_rail {
             TrainList& operator=(TrainList&& other) noexcept = default;
             ~TrainList() = default;
 
-            // Iterators (for range-based for loops) that do not allow modification of the underlying data
-            auto begin() const {return trains.begin();};
-            auto end() const {return trains.end();};
-            auto rbegin() const {return trains.rbegin();};
-            auto rend() const {return trains.rend();};
-
             int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration);
             [[nodiscard]] int size() const {return trains.size();};
 
