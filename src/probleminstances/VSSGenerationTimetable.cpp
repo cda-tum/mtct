@@ -38,11 +38,3 @@ cda_rail::instances::VSSGenerationTimetable::VSSGenerationTimetable(const std::f
         throw std::runtime_error("The imported instance is not consistent.");
     }
 }
-
-int cda_rail::instances::VSSGenerationTimetable::maxT() const {
-    return timetable.maxT();
-}
-
-double cda_rail::instances::VSSGenerationTimetable::route_length(const std::string &train_name) const {
-    return routes.length(train_name, network);
-}
