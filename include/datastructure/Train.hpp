@@ -50,20 +50,20 @@ namespace cda_rail {
             ~TrainList() = default;
 
             int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration);
-            [[nodiscard]] int size() const;
+            [[nodiscard]] int size() const {return trains.size();};
 
             [[nodiscard]] int get_train_index(const std::string& name) const;
             [[nodiscard]] const Train& get_train(int index) const;
-            [[nodiscard]] const Train& get_train(const std::string& name) const;
+            [[nodiscard]] const Train& get_train(const std::string& name) const {return get_train(get_train_index(name));};
 
-            [[nodiscard]] bool has_train(const std::string& name) const;
-            [[nodiscard]] bool has_train(int index) const;
+            [[nodiscard]] bool has_train(const std::string& name) const {return train_name_to_index.find(name) != train_name_to_index.end();};
+            [[nodiscard]] bool has_train(int index) const {return (index >= 0 && index < trains.size());};
 
-            void export_trains(const std::string& path) const;
-            void export_trains(const char* path) const;
+            void export_trains(const std::string& path) const {export_trains(std::filesystem::path(path));};
+            void export_trains(const char* path) const {export_trains(std::filesystem::path(path));};
             void export_trains(const std::filesystem::path& p) const;
-            [[nodiscard]] static cda_rail::TrainList import_trains(const std::string& path);
-            [[nodiscard]] static cda_rail::TrainList import_trains(const char* path);
-            [[nodiscard]] static cda_rail::TrainList import_trains(const std::filesystem::path& p);
+            [[nodiscard]] static cda_rail::TrainList import_trains(const std::string& path) {return TrainList(path);};
+            [[nodiscard]] static cda_rail::TrainList import_trains(const char* path) {return TrainList(path);};
+            [[nodiscard]] static cda_rail::TrainList import_trains(const std::filesystem::path& p) {return TrainList(p);};
     };
 }

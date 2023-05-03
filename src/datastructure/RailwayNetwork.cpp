@@ -208,16 +208,6 @@ void cda_rail::Network::read_successors(const std::filesystem::path &p) {
     }
 }
 
-cda_rail::Network cda_rail::Network::import_network(const std::filesystem::path &p) {
-    /**
-     * Read network from path. This includes the graph and successors.
-     * @param p Path to network directory
-     * @return Network
-     */
-
-    return Network(p);
-}
-
 int cda_rail::Network::add_vertex(const std::string &name, VertexType type) {
     /**
      * Add vertex to network
@@ -260,22 +250,6 @@ int cda_rail::Network::add_edge(int source, int target, double length, double ma
     return edges.size() - 1;
 }
 
-int cda_rail::Network::add_edge(const std::string &source_name, const std::string &target_name, double length,
-                                 double max_speed, bool breakable, double min_block_length) {
-    /**
-     * Add edge to network
-     * @param source_name Name of source vertex
-     * @param target_name Name of target vertex
-     * @param length Length of edge
-     * @param max_speed Maximum speed on edge
-     * @param breakable Whether edge is breakable
-     * @param min_block_length Minimum block length on edge
-     */
-    // No need to check for existence since this is done in a lower level function
-    return add_edge(get_vertex_index(source_name), get_vertex_index(target_name), length,
-                    max_speed, breakable, min_block_length);
-}
-
 void cda_rail::Network::add_successor(int edge_in, int edge_out) {
     /**
      * Add successor to edge, but only if the edges are adjacent to each other
@@ -301,11 +275,6 @@ const cda_rail::Vertex &cda_rail::Network::get_vertex(int index) const {
         throw std::out_of_range("Vertex does not exist");
     }
     return vertices[index];
-}
-
-const cda_rail::Vertex &cda_rail::Network::get_vertex(const std::string &name) const {
-    // No need to check for existence since this is done in a lower level function
-    return vertices[get_vertex_index(name)];
 }
 
 int cda_rail::Network::get_vertex_index(const std::string &name) const {
@@ -337,12 +306,6 @@ const cda_rail::Edge &cda_rail::Network::get_edge(int source_id, int target_id) 
     throw std::out_of_range("Edge does not exist");
 }
 
-const cda_rail::Edge &cda_rail::Network::get_edge(const std::string &source_name,
-                                                  const std::string &target_name) const {
-    // No need to check for existence since this is done in a lower level function
-    return get_edge(get_vertex_index(source_name), get_vertex_index(target_name));
-}
-
 int cda_rail::Network::get_edge_index(int source_id, int target_id) const {
     if (!has_vertex(source_id)) {
         throw std::out_of_range("Source vertex does not exist");
@@ -356,23 +319,6 @@ int cda_rail::Network::get_edge_index(int source_id, int target_id) const {
         }
     }
     throw std::out_of_range("Edge does not exist");
-}
-
-int cda_rail::Network::get_edge_index(const std::string &source_name, const std::string &target_name) const {
-    // No need to check for existence since this is done in a lower level function
-    return get_edge_index(get_vertex_index(source_name), get_vertex_index(target_name));
-}
-
-bool cda_rail::Network::has_vertex(int index) const {
-    return (index >= 0 && index < vertices.size());
-}
-
-bool cda_rail::Network::has_vertex(const std::string &name) const {
-    return vertex_name_to_index.find(name) != vertex_name_to_index.end();
-}
-
-bool cda_rail::Network::has_edge(int id) const {
-    return (id >= 0 && id < edges.size());
 }
 
 bool cda_rail::Network::has_edge(int source_id, int target_id) const {
@@ -410,11 +356,6 @@ void cda_rail::Network::change_vertex_name(int index, const std::string &new_nam
     vertex_name_to_index[new_name] = index;
 }
 
-void cda_rail::Network::change_vertex_name(const std::string &old_name, const std::string &new_name) {
-    // No need to check for existence since this is done in a lower level function
-    change_vertex_name(get_vertex_index(old_name), new_name);
-}
-
 void cda_rail::Network::change_edge_property(int index, double value, const std::string &property) {
     if (!has_edge(index)) {
         throw std::out_of_range("Edge does not exist");
@@ -430,34 +371,11 @@ void cda_rail::Network::change_edge_property(int index, double value, const std:
     }
 }
 
-void cda_rail::Network::change_edge_property(int source_id, int target_id, double value,
-                                             const std::string &property) {
-    // No need to check for existence since this is done in a lower level function
-    change_edge_property(get_edge_index(source_id, target_id), value, property);
-}
-
-void cda_rail::Network::change_edge_property(const std::string &source_name, const std::string &target_name,
-                                             double value, const std::string &property) {
-    // No need to check for existence since this is done in a lower level function
-    change_edge_property(get_edge_index(source_name, target_name), value, property);
-}
-
 void cda_rail::Network::change_edge_breakable(int index, bool value) {
     if (!has_edge(index)) {
         throw std::out_of_range("Edge does not exist");
     }
     edges[index].breakable = value;
-}
-
-void cda_rail::Network::change_edge_breakable(int source_id, int target_id, bool value) {
-    // No need to check for existence since this is done in a lower level function
-    change_edge_breakable(get_edge_index(source_id, target_id), value);
-}
-
-void cda_rail::Network::change_edge_breakable(const std::string &source_name, const std::string &target_name,
-                                              bool value) {
-    // No need to check for existence since this is done in a lower level function
-    change_edge_breakable(get_edge_index(source_name, target_name), value);
 }
 
 std::unordered_set<int> cda_rail::Network::out_edges(int index) const {
@@ -473,11 +391,6 @@ std::unordered_set<int> cda_rail::Network::out_edges(int index) const {
     return out_edges;
 }
 
-std::unordered_set<int> cda_rail::Network::out_edges(const std::string &name) const {
-    // No need to check for existence since this is done in a lower level function
-    return out_edges(get_vertex_index(name));
-}
-
 std::unordered_set<int> cda_rail::Network::in_edges(int index) const {
     if (!has_vertex(index)) {
         throw std::out_of_range("Vertex does not exist");
@@ -491,35 +404,11 @@ std::unordered_set<int> cda_rail::Network::in_edges(int index) const {
     return in_edges;
 }
 
-std::unordered_set<int> cda_rail::Network::in_edges(const std::string &name) const {
-    // No need to check for existence since this is done in a lower level function
-    return in_edges(get_vertex_index(name));
-}
-
-int cda_rail::Network::number_of_vertices() const {
-    return vertices.size();
-}
-
-int cda_rail::Network::number_of_edges() const {
-    return edges.size();
-}
-
 const std::unordered_set<int> &cda_rail::Network::get_successors(int index) const {
     if (!has_edge(index)) {
         throw std::out_of_range("Edge does not exist");
     }
     return successors[index];
-}
-
-const std::unordered_set<int> &cda_rail::Network::get_successors(int source_id, int target_id) const {
-    // No need to check for existence since this is done in a lower level function
-    return get_successors(get_edge_index(source_id, target_id));
-}
-
-const std::unordered_set<int> &
-cda_rail::Network::get_successors(const std::string &source_name, const std::string &target_name) const {
-    // No need to check for existence since this is done in a lower level function
-    return get_successors(get_edge_index(source_name, target_name));
 }
 
 void cda_rail::to_bool_optional(std::string &s, std::optional<bool> &b) {
@@ -693,22 +582,6 @@ void cda_rail::Network::export_network(const std::filesystem::path &p) const {
     export_successors_python(p);
 }
 
-cda_rail::Network cda_rail::Network::import_network(const char *path) {
-    return Network(path);
-}
-
-cda_rail::Network cda_rail::Network::import_network(const std::string &path) {
-    return Network(path);
-}
-
-void cda_rail::Network::export_network(const char *path) const {
-    export_network(std::filesystem::path(path));
-}
-
-void cda_rail::Network::export_network(const std::string &path) const {
-    export_network(std::filesystem::path(path));
-}
-
 bool cda_rail::Network::is_valid_successor(int e0, int e1) const {
     /**
      * Checks if the edge e1 is a valid successor of the edge e0, this includes the following:
@@ -748,95 +621,13 @@ std::unordered_set<int> cda_rail::Network::neighbors(int index) const {
     return neighbors;
 }
 
-std::unordered_set<int> cda_rail::Network::neighbors(const std::string &name) const {
-    // No need to check for existence since this is done in a lower level function
-    return neighbors(get_vertex_index(name));
-}
-
-void cda_rail::Network::add_successor(const std::pair<int, int> &edge_in, const std::pair<int, int> &edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    // No need to check for existence since this is done in a lower level function
-    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
-}
-
-void cda_rail::Network::add_successor(const std::pair<std::string, std::string> &edge_in,
-                                      const std::pair<std::string, std::string> &edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    // No need to check for existence since this is done in a lower level function
-    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
-}
-
-void cda_rail::Network::add_successor(int edge_in, const std::pair<int, int>& edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    // No need to check for existence since this is done in a lower level function
-    add_successor(edge_in, get_edge_index(edge_out.first, edge_out.second));
-}
-
-void cda_rail::Network::add_successor(int edge_in, const std::pair<std::string, std::string>& edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    // No need to check for existence since this is done in a lower level function
-    add_successor(edge_in, get_edge_index(edge_out.first, edge_out.second));
-}
-
-void cda_rail::Network::add_successor(const std::pair<int, int> &edge_in, int edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    // No need to check for existence since this is done in a lower level function
-    add_successor(get_edge_index(edge_in.first, edge_in.second), edge_out);
-}
-
-void cda_rail::Network::add_successor(const std::pair<int, int>& edge_in,
-                                      const std::pair<std::string, std::string>& edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    // No need to check for existence since this is done in a lower level function
-    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
-}
-
-void cda_rail::Network::add_successor(const std::pair<std::string, std::string> &edge_in, int edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    // No need to check for existence since this is done in a lower level function
-    add_successor(get_edge_index(edge_in.first, edge_in.second), edge_out);
-}
-
-void cda_rail::Network::add_successor(const std::pair<std::string, std::string>& edge_in,
-                                      const std::pair<int, int>& edge_out) {
-    /**
-     * Add a successor to the network.
-     * @param edge_in: The edge to add the successor to.
-     * @param edge_out: The successor edge.
-     */
-    // No need to check for existence since this is done in a lower level function
-    add_successor(get_edge_index(edge_in.first, edge_in.second), get_edge_index(edge_out.first, edge_out.second));
-}
-
 cda_rail::Network::Network(const std::filesystem::path &p) {
+    /**
+     * Construct object and read network from path. This includes the graph and successors.
+     * @param p Path to network directory
+     * @return Network
+     */
+
     // Check if path exists
     if (!std::filesystem::exists(p)) {
         throw std::runtime_error("Path does not exist");

@@ -16,11 +16,6 @@ const cda_rail::Schedule &cda_rail::Timetable::get_schedule(int index) const {
     return schedules.at(index);
 }
 
-const cda_rail::Schedule &cda_rail::Timetable::get_schedule(const std::string &train_name) const {
-    // No need to check for existence since this is done in a lower level function
-    return get_schedule(train_list.get_train_index(train_name));
-}
-
 int cda_rail::Timetable::add_train(const std::string &name, int length, double max_speed, double acceleration,
                                     double deceleration, int t_0, double v_0, int entry, int t_n, double v_n, int exit,
                                     const cda_rail::Network &network) {
@@ -36,14 +31,6 @@ int cda_rail::Timetable::add_train(const std::string &name, int length, double m
     int index = train_list.add_train(name, length, max_speed, acceleration, deceleration);
     schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
     return index;
-}
-
-int cda_rail::Timetable::add_train(const std::string &name, int length, double max_speed, double acceleration,
-                                    double deceleration, int t_0, double v_0, const std::string &entry, int t_n,
-                                    double v_n, const std::string &exit, const cda_rail::Network &network) {
-    // No need to check for existence since this is done in a lower level function
-    return add_train(name, length, max_speed, acceleration, deceleration, t_0, v_0, network.get_vertex_index(entry),
-                     t_n, v_n,network.get_vertex_index(exit), network);
 }
 
 void cda_rail::Timetable::add_stop(int train_index, const std::string &station_name, int begin, int end, bool sort) {
@@ -77,11 +64,6 @@ void cda_rail::Timetable::add_stop(int train_index, const std::string &station_n
     }
 }
 
-void cda_rail::Timetable::add_stop(const std::string &train_name, const std::string &station_name, int begin, int end, bool sort) {
-    // No need to check for existence since this is done in a lower level function
-    add_stop(train_list.get_train_index(train_name), station_name, begin, end, sort);
-}
-
 void cda_rail::Timetable::sort_stops() {
     /**
      * This methods sorts all stops of all trains according to the operator < of ScheduledStop.
@@ -90,14 +72,6 @@ void cda_rail::Timetable::sort_stops() {
     for (auto& schedule : schedules) {
         std::sort(schedule.stops.begin(), schedule.stops.end());
     }
-}
-
-const cda_rail::TrainList &cda_rail::Timetable::get_train_list() const {
-    return train_list;
-}
-
-const cda_rail::StationList &cda_rail::Timetable::get_station_list() const {
-    return station_list;
 }
 
 void cda_rail::Timetable::export_timetable(const std::filesystem::path &p, const cda_rail::Network &network) const {
@@ -138,39 +112,9 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path &p, const
     file << j << std::endl;
 }
 
-void cda_rail::Timetable::export_timetable(const std::string &path, const cda_rail::Network &network) const {
-    export_timetable(std::filesystem::path(path), network);
-}
-
-cda_rail::Timetable cda_rail::Timetable::import_timetable(const std::filesystem::path &p, const cda_rail::Network &network) {
-    /**
-     * This method imports a timetable from a directory. In particular the following files are read:
-     * - trains.json according to the function defined in cda_rail::TrainList::import_trains
-     * - stations.json according to the function defined in cda_rail::StationList::import_stations
-     * - schedules.json of the format described in cda_rail::Timetable::export_timetable
-     *
-     * @param p The path to the directory where the files should be read from.
-     * @param network The network to which the timetable belongs.
-     */
-
-    return Timetable(p, network);
-}
-
 void cda_rail::Timetable::set_train_list(const cda_rail::TrainList &tl) {
     train_list = tl;
     schedules = std::vector<cda_rail::Schedule>(tl.size());
-}
-
-cda_rail::Timetable cda_rail::Timetable::import_timetable(const std::string &path, const cda_rail::Network &network) {
-    return Timetable(path, network);
-}
-
-cda_rail::Timetable cda_rail::Timetable::import_timetable(const char *path, const cda_rail::Network &network) {
-    return Timetable(path, network);
-}
-
-void cda_rail::Timetable::export_timetable(const char *path, const cda_rail::Network &network) const {
-    export_timetable(std::filesystem::path(path), network);
 }
 
 bool cda_rail::Timetable::check_consistency(const cda_rail::Network &network) const {
@@ -216,30 +160,17 @@ bool cda_rail::Timetable::check_consistency(const cda_rail::Network &network) co
     return true;
 }
 
-void cda_rail::Timetable::add_station(const std::string &name, const std::unordered_set<int> &tracks) {
-    station_list.add_station(name, tracks);
-}
-
-void cda_rail::Timetable::add_station(const std::string &name) {
-    station_list.add_station(name);
-}
-
-void cda_rail::Timetable::add_track_to_station(const std::string &name, int track, const cda_rail::Network &network) {
-    station_list.add_track_to_station(name, track, network);
-}
-
-void cda_rail::Timetable::add_track_to_station(const std::string &name, int source, int target,
-                                               const cda_rail::Network &network) {
-    station_list.add_track_to_station(name, source, target, network);
-}
-
-void
-cda_rail::Timetable::add_track_to_station(const std::string &name, const std::string &source, const std::string &target,
-                                          const cda_rail::Network &network) {
-    station_list.add_track_to_station(name, source, target, network);
-}
-
 cda_rail::Timetable::Timetable(const std::filesystem::path &p, const cda_rail::Network &network) {
+    /**
+     * This method constructs the object and imports a timetable from a directory. In particular the following files are read:
+     * - trains.json according to the function defined in cda_rail::TrainList::import_trains
+     * - stations.json according to the function defined in cda_rail::StationList::import_stations
+     * - schedules.json of the format described in cda_rail::Timetable::export_timetable
+     *
+     * @param p The path to the directory where the files should be read from.
+     * @param network The network to which the timetable belongs.
+     */
+
     // Check if the path exists and is a directory
     if (!std::filesystem::exists(p)) {
         throw std::invalid_argument("Path does not exist.");
