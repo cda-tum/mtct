@@ -856,7 +856,6 @@ TEST(Functionality, WriteTimetable) {
     EXPECT_TRUE(stations_read.get_station(stop3_read.station).name == "Station1");
 }
 
-
 TEST(Functionality, RouteMap) {
     auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
     auto train_list = cda_rail::TrainList();
