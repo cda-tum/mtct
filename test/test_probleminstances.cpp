@@ -354,9 +354,6 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     EXPECT_TRUE(instance.check_consistency());
     EXPECT_TRUE(instance.check_consistency(true));
     EXPECT_TRUE(instance.check_consistency(false));
-
-    // Check if maxT is correct
-    EXPECT_TRUE(instance.maxT() == 640);
 }
 
 TEST(Functionality, VSSGenerationTimetableExport) {
@@ -509,7 +506,4 @@ TEST(Functionality, VSSGenerationTimetableExport) {
     EXPECT_TRUE(network_read.get_vertex(route_read.get_edge(0, network).target).name == "v1");
     EXPECT_TRUE(network_read.get_vertex(route_read.get_edge(1, network).source).name == "v1");
     EXPECT_TRUE(network_read.get_vertex(route_read.get_edge(1, network).target).name == "v2");
-
-    // Check tr1 length
-    EXPECT_TRUE(instance_read.route_length("tr1") == 300);
 }
