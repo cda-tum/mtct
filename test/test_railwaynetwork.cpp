@@ -676,6 +676,11 @@ TEST(Functionality, WriteTimetable) {
                         300, 20, "l0",
                         network);
 
+    std::pair<int, int> time_interval_expected {0, 300};
+
+    EXPECT_TRUE(timetable.time_interval("tr1") == time_interval_expected);
+    EXPECT_TRUE(timetable.time_interval("tr2") == time_interval_expected);
+
     timetable.add_station("Station1");
     timetable.add_station("Station2");
 

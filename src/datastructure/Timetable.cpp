@@ -230,3 +230,20 @@ int cda_rail::Timetable::maxT() const {
     }
     return ret;
 }
+
+std::pair<int, int> cda_rail::Timetable::time_interval(int train_index) const {
+    /**
+     * This method returns the time interval of a train schedule, i.e., the time at which it enters the network and the time at which it leaves the network.
+     *
+     * @param train_index The index of the train in the train list.
+     * @return A pair of integers (t_0, t_n) where t_0 is the time at which the train enters the network and t_n is the time at which the train leaves the network.
+     */
+
+    // Check if the train index is valid
+    if (!train_list.has_train(train_index)) {
+        throw std::invalid_argument("Train does not exist.");
+    }
+
+    auto& schedule = schedules.at(train_index);
+    return {schedule.t_0, schedule.t_n};
+}

@@ -127,6 +127,8 @@ namespace cda_rail {
             [[nodiscard]] const Schedule& get_schedule(const std::string& train_name) const {return get_schedule(train_list.get_train_index(train_name));};
 
             [[nodiscard]] int maxT() const;
+            [[nodiscard]] std::pair<int, int> time_interval(int train_index) const;
+            [[nodiscard]] std::pair<int, int> time_interval(const std::string& train_name) const {return time_interval(train_list.get_train_index(train_name));};
 
             void sort_stops();
 
