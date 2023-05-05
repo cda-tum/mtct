@@ -5,6 +5,7 @@ namespace cda_rail {
     // Constants for vertex type
 
     enum class VertexType {NO_BORDER = 0, VSS = 1, TTD = 2};
+    enum class SeparationType {UNIFORM, CHEBYCHEV};
 
     static bool is_directory_and_create(const std::filesystem::path& p) {
         /**

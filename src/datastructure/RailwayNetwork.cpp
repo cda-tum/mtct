@@ -653,3 +653,97 @@ cda_rail::Network::Network(const std::filesystem::path &p) {
     // Read successors
     this->read_successors(p);
 }
+
+bool cda_rail::Network::is_adjustable(int vertex_id) const {
+    /**
+     * Checks if a given vertex type is adjustable (if applicable for a certain algorithmic approach).
+     * A vertex is adjustable if all of the following conditions hold:
+     * - The vertex is of type NO_BORDER
+     * - The vertex has exactly two neighboring vertices
+     * In all other cases the vertex is not adjustable.
+     *
+     * @param vertex_id: The id of the vertex to check.
+     * @return: True if the vertex is adjustable, false otherwise.
+     */
+
+    // Check if vertex exists
+    if (!has_vertex(vertex_id)) {
+        throw std::invalid_argument("Vertex does not exist");
+    }
+
+    // Check if vertex is of type NO_BORDER
+    if (vertices[vertex_id].type != cda_rail::VertexType::NO_BORDER) {
+        return false;
+    }
+
+    // Check if vertex has exactly two neighbors
+    if (neighbors(vertex_id).size() != 2) {
+        return false;
+    }
+
+    // All conditions hold, vertex is adjustable
+    return true;
+}
+
+std::vector<std::vector<int>>
+cda_rail::Network::separate_edge_at(int edge_index, const std::vector<double>& distances_from_source) {
+    /**
+     * This function separates an edge at given distances from the source vertex. If the reverse edge exists it is separated analogously.
+     * In particular the following is done:
+     * - New vertices are created at the given distances from the source vertex and edges in between them.
+     * - The successors are updated accordingly.
+     * - The previous edge(s) are removed.
+     * - For every edge it is returned by which number(s) it was replaced for changing other variables accordingly.
+     * - This update of edge indices is then done accordingly.
+     *
+     * @param edge_index: The index of the edge to separate.
+     * @param distances_from_source: The distances from the source vertex at which to separate the edge.
+     * @return: A vector of vectors of integers. The outer vector contains the indices of the edges that replaced the original edge.
+     */
+
+    // Check if edge exists
+    if (!has_edge(edge_index)) {
+        throw std::invalid_argument("Edge does not exist");
+    }
+
+    // Check if distances are specified
+    if (distances_from_source.empty()) {
+        throw std::invalid_argument("Distances are not specified");
+    }
+
+    // Check if distances are sorted
+    if (!std::is_sorted(distances_from_source.begin(), distances_from_source.end())) {
+        throw std::invalid_argument("Distances are not sorted");
+    }
+
+    const auto& edge = get_edge(edge_index);
+
+    // Check if all distances are strictly between 0 and the length of the edge
+    if (distances_from_source.front() <= 0 || distances_from_source.back() >= edge.length) {
+        throw std::invalid_argument("Distances are not strictly between 0 and the length of the edge");
+    }
+
+    // Create new vertices
+    std::vector<int> new_vertices;
+    for (size_t i = 0; i < distances_from_source.size(); ++i) {
+        std::string vertex_name = get_vertex(edge.source).name + "_" + get_vertex(edge.target).name + "_" + std::to_string(i);
+        new_vertices.emplace_back(add_vertex(vertex_name, cda_rail::VertexType::NO_BORDER));
+    }
+
+    // Create new edges
+    std::vector<int> new_edges;
+    new_edges.emplace_back(add_edge(edge.source, new_vertices.front(), distances_from_source.front(), edge.max_speed, false, edge.min_block_length));
+    for (size_t i = 1; i < distances_from_source.size(); ++i) {
+        new_edges.emplace_back(add_edge(new_vertices[i - 1], new_vertices[i], distances_from_source[i] - distances_from_source[i - 1], edge.max_speed, false, edge.min_block_length));
+    }
+    new_edges.emplace_back(add_edge(new_vertices.back(), edge.target, edge.length - distances_from_source.back(), edge.max_speed, false, edge.min_block_length));
+
+    // If reverse edge exists, create new reverse edges
+    if (has_edge(edge.target, edge.source)) {
+        const auto& reverse_edge = get_edge(edge.target, edge.source);
+        std::vector<int> new_reverse_edges;
+        // TODO
+    }
+
+    // TODO
+}
