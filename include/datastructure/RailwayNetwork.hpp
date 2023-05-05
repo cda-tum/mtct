@@ -33,18 +33,18 @@ namespace cda_rail {
          * @param length Length of vertex (in m)
          * @param max_speed Speed limit of vertex (in m/s)
          * @param breakable Boolean indicating if VSS can be placed on this edge
-         * @param min_block_length Minimum block length (in m). Optional, default 0.
+         * @param min_block_length Minimum block length (in m). Optional, default 1.
          */
         int source;
         int target;
         double length;
         double max_speed;
         bool breakable;
-        double min_block_length = 0;
+        double min_block_length = 1;
 
         // Constructors
         Edge() = default;
-        Edge(int source, int target, double length, double max_speed, bool breakable, double min_block_length = 0) :
+        Edge(int source, int target, double length, double max_speed, bool breakable, double min_block_length = 1) :
             source(source), target(target), length(length), max_speed(max_speed), breakable(breakable), min_block_length(min_block_length) {};
     };
 
