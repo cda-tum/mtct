@@ -55,6 +55,8 @@ namespace cda_rail::instances{
             [[nodiscard]] const Schedule& get_schedule(const std::string& train_name) const {return timetable.get_schedule(train_name);};
 
             [[nodiscard]] int maxT() const {return timetable.maxT();};
+            [[nodiscard]] std::pair<int, int> time_interval(int train_index) const {return timetable.time_interval(train_index);};
+            [[nodiscard]] std::pair<int, int> time_interval(const std::string& train_name) const {return timetable.time_interval(train_name);};
 
             void sort_stops() {timetable.sort_stops();};
 

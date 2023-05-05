@@ -68,6 +68,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variable
     vars["x_in"] = MultiArray<GRBVar>(num_tr, num_t);
     vars["x_out"] = MultiArray<GRBVar>(num_tr, num_t);
     vars["x"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
+
+    auto train_list = instance.get_train_list();
+    for (int i = 0; i < num_tr; ++i) {
+        auto tr_name = train_list.get_train(i).name;
+        auto time_interval = instance.time_interval(tr_name);
+        time_interval.first /= dt;
+        time_interval.second /= dt;
+    }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_vss_variables() {
