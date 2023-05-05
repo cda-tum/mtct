@@ -49,7 +49,7 @@ namespace cda_rail {
             if (arg_tuple[i] >= shape[i]) {
                 std::stringstream ss;
                 ss << "Index " << arg_tuple[i] << " is too large for dimension " << i;
-                throw std::invalid_argument(ss.str());
+                throw std::out_of_range(ss.str());
             }
         }
 
