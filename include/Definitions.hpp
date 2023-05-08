@@ -7,6 +7,8 @@ namespace cda_rail {
     enum class VertexType {NO_BORDER = 0, VSS = 1, TTD = 2};
     enum class SeparationType {UNIFORM, CHEBYCHEV};
 
+    // Helper functions
+
     static bool is_directory_and_create(const std::filesystem::path& p) {
         /**
          * Checks if a directory exists and creates it if it doesn't.
