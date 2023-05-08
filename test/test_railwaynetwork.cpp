@@ -396,6 +396,35 @@ TEST(Functionality, WriteNetwork) {
     }
 }
 
+TEST(Functionality, NetworkEdgeSeparation) {
+    cda_rail::Network network;
+    // Add vertices
+    network.add_vertex("v00", cda_rail::VertexType::TTD);
+    network.add_vertex("v01", cda_rail::VertexType::TTD);
+    network.add_vertex("v1", cda_rail::VertexType::TTD);
+    network.add_vertex("v2", cda_rail::VertexType::TTD);
+    network.add_vertex("v30", cda_rail::VertexType::TTD);
+    network.add_vertex("v31", cda_rail::VertexType::TTD);
+
+    // Add edges
+    int v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
+    int v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
+    int v1_v2 = network.add_edge("v1", "v2", 100, 100, true, 10);
+    int v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
+    int v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
+
+    // Add successors
+    network.add_successor(v00_v1, v1_v2);
+    network.add_successor(v01_v1, v1_v2);
+    network.add_successor(v1_v2, v2_v30);
+    network.add_successor(v1_v2, v2_v31);
+
+    // Separate edge v1_v2 uniformly
+    auto new_edges = network.separate_edge("v1", "v2", cda_rail::SeparationType::UNIFORM);
+
+    std::cout << new_edges.first.size() << " / " << new_edges.second.size() << std::endl;
+}
+
 TEST(Functionality, ReadTrains) {
     auto trains = cda_rail::TrainList::import_trains("./example-networks/Fig11/timetable/");
 
