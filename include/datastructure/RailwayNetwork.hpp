@@ -71,7 +71,9 @@ namespace cda_rail {
             void export_successors_cpp(const std::filesystem::path& p) const;
             void write_successor_set_to_file(std::ofstream& file, int i) const;
 
-            std::vector<std::vector<int>> separate_edge_at(int edge_index, const std::vector<double>& distances_from_source);
+            std::pair<std::vector<int>, std::vector<int>> separate_edge_at(int edge_index, const std::vector<double>& distances_from_source);
+            std::pair<std::vector<int>, std::vector<int>> uniform_separate_edge(int edge_index);
+            std::pair<std::vector<int>, std::vector<int>> chebychev_separate_edge(int edge_index);
         public:
             // Constructors
             Network() = default;
@@ -136,7 +138,9 @@ namespace cda_rail {
             };
 
             [[nodiscard]] bool has_vertex(int index) const {return (index >= 0 && index < vertices.size());};
-            [[nodiscard]] bool has_vertex(const std::string& name) const {return vertex_name_to_index.find(name) != vertex_name_to_index.end();};
+            [[nodiscard]] bool has_vertex(const std::string& name) const {
+                return vertex_name_to_index.find(name) != vertex_name_to_index.end();
+            };
             [[nodiscard]] bool has_edge(int index) const {return (index >= 0 && index < edges.size());};
             [[nodiscard]] bool has_edge(int source_id, int target_id) const;
             [[nodiscard]] bool has_edge(const std::string& source_name, const std::string& target_name) const;
@@ -182,11 +186,11 @@ namespace cda_rail {
             [[nodiscard]] bool is_adjustable(const std::string& vertex_name) const { return is_adjustable(get_vertex_index(vertex_name)); };
 
             // Transformation functions
-            std::vector<std::vector<int>> separate_edge(int edge_index, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
-            std::vector<std::vector<int>> separate_edge(int source_id, int target_id, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM) {
+            std::pair<std::vector<int>, std::vector<int>> separate_edge(int edge_index, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
+            std::pair<std::vector<int>, std::vector<int>> separate_edge(int source_id, int target_id, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM) {
                 return separate_edge(get_edge_index(source_id, target_id), separation_type);
             };
-            std::vector<std::vector<int>> separate_edge(const std::string& source_name, const std::string& target_name, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM) {
+            std::pair<std::vector<int>, std::vector<int>> separate_edge(const std::string& source_name, const std::string& target_name, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM) {
                 return separate_edge(get_edge_index(source_name, target_name), separation_type);
             };
     };
