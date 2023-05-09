@@ -409,7 +409,7 @@ TEST(Functionality, NetworkEdgeSeparation) {
     // Add edges
     int v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
     int v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
-    int v1_v2 = network.add_edge("v1", "v2", 100, 100, true, 10);
+    int v1_v2 = network.add_edge("v1", "v2", 44, 100, true, 10);
     int v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
     int v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
 
@@ -422,7 +422,216 @@ TEST(Functionality, NetworkEdgeSeparation) {
     // Separate edge v1_v2 uniformly
     auto new_edges = network.separate_edge("v1", "v2", cda_rail::SeparationType::UNIFORM);
 
-    std::cout << new_edges.first.size() << " / " << new_edges.second.size() << std::endl;
+    // There are 4 new forward edges and no new reverse edges
+    EXPECT_TRUE(new_edges.first.size() == 4);
+    EXPECT_TRUE(new_edges.second.size() == 0);
+
+    // Check if the vertices are correct
+    // All old vertices still exist. Additionally vertices v1_v2_0 to v1_v2_2 have been added with type NO_BORDER
+    // Hence, in total there are 9 vertices.
+    EXPECT_TRUE(network.number_of_vertices() == 9);
+    EXPECT_TRUE(network.has_vertex("v1_v2_0"));
+    EXPECT_TRUE(network.has_vertex("v1_v2_1"));
+    EXPECT_TRUE(network.has_vertex("v1_v2_2"));
+    EXPECT_TRUE(network.get_vertex("v1_v2_0").type == cda_rail::VertexType::NO_BORDER);
+    EXPECT_TRUE(network.get_vertex("v1_v2_1").type == cda_rail::VertexType::NO_BORDER);
+    EXPECT_TRUE(network.get_vertex("v1_v2_2").type == cda_rail::VertexType::NO_BORDER);
+    EXPECT_TRUE(network.has_vertex("v00"));
+    EXPECT_TRUE(network.has_vertex("v01"));
+    EXPECT_TRUE(network.has_vertex("v1"));
+    EXPECT_TRUE(network.has_vertex("v2"));
+    EXPECT_TRUE(network.has_vertex("v30"));
+    EXPECT_TRUE(network.has_vertex("v31"));
+    EXPECT_TRUE(network.get_vertex("v00").type == cda_rail::VertexType::TTD);
+    EXPECT_TRUE(network.get_vertex("v01").type == cda_rail::VertexType::TTD);
+    EXPECT_TRUE(network.get_vertex("v1").type == cda_rail::VertexType::TTD);
+    EXPECT_TRUE(network.get_vertex("v2").type == cda_rail::VertexType::TTD);
+    EXPECT_TRUE(network.get_vertex("v30").type == cda_rail::VertexType::TTD);
+    EXPECT_TRUE(network.get_vertex("v31").type == cda_rail::VertexType::TTD);
+
+    // Check if the edges are correct
+    // v00/v01 ->(len: 100) v1 ->(len: 11) v1_v2_0 -> (len: 11) v1_v2_1 -> (len: 11) v1_v2_2 -> (len:11) v2 -> (len: 100) v30/v31
+    EXPECT_TRUE(network.number_of_edges() == 8);
+    EXPECT_TRUE(network.has_edge("v00", "v1"));
+    EXPECT_TRUE(network.has_edge("v01", "v1"));
+    EXPECT_TRUE(network.has_edge("v1", "v1_v2_0"));
+    EXPECT_TRUE(network.has_edge("v1_v2_0", "v1_v2_1"));
+    EXPECT_TRUE(network.has_edge("v1_v2_1", "v1_v2_2"));
+    EXPECT_TRUE(network.has_edge("v1_v2_2", "v2"));
+    EXPECT_TRUE(network.has_edge("v2", "v30"));
+    EXPECT_TRUE(network.has_edge("v2", "v31"));
+    EXPECT_TRUE(network.get_edge("v00", "v1").length == 100);
+    EXPECT_TRUE(network.get_edge("v01", "v1").length == 100);
+    EXPECT_TRUE(network.get_edge("v1", "v1_v2_0").length == 11);
+    EXPECT_TRUE(network.get_edge("v1_v2_0", "v1_v2_1").length == 11);
+    EXPECT_TRUE(network.get_edge("v1_v2_1", "v1_v2_2").length == 11);
+    EXPECT_TRUE(network.get_edge("v1_v2_2", "v2").length == 11);
+    EXPECT_TRUE(network.get_edge("v2", "v30").length == 100);
+    EXPECT_TRUE(network.get_edge("v2", "v31").length == 100);
+    // The other properties are unchanged, except that all edges are unbreakable, i.e., the breakable property is false
+    EXPECT_TRUE(network.get_edge("v00", "v1").breakable == false);
+    EXPECT_TRUE(network.get_edge("v01", "v1").breakable == false);
+    EXPECT_TRUE(network.get_edge("v1", "v1_v2_0").breakable == false);
+    EXPECT_TRUE(network.get_edge("v1_v2_0", "v1_v2_1").breakable == false);
+    EXPECT_TRUE(network.get_edge("v1_v2_1", "v1_v2_2").breakable == false);
+    EXPECT_TRUE(network.get_edge("v1_v2_2", "v2").breakable == false);
+    EXPECT_TRUE(network.get_edge("v2", "v30").breakable == false);
+    EXPECT_TRUE(network.get_edge("v2", "v31").breakable == false);
+    EXPECT_TRUE(network.get_edge("v00", "v1").max_speed == 100);
+    EXPECT_TRUE(network.get_edge("v01", "v1").max_speed == 100);
+    EXPECT_TRUE(network.get_edge("v1", "v1_v2_0").max_speed == 100);
+    EXPECT_TRUE(network.get_edge("v1_v2_0", "v1_v2_1").max_speed == 100);
+    EXPECT_TRUE(network.get_edge("v1_v2_1", "v1_v2_2").max_speed == 100);
+    EXPECT_TRUE(network.get_edge("v1_v2_2", "v2").max_speed == 100);
+    EXPECT_TRUE(network.get_edge("v2", "v30").max_speed == 100);
+    EXPECT_TRUE(network.get_edge("v2", "v31").max_speed == 100);
+    // The edge v1 -> v2 does not exist anymore
+    EXPECT_FALSE(network.has_edge("v1", "v2"));
+
+    // The new edges are v1 -> v1_v2_0 -> v1_v2_1 -> v1_v2_2 -> v2 in this order
+    EXPECT_TRUE(network.get_edge_index("v1", "v1_v2_0") == new_edges.first[0]);
+    EXPECT_TRUE(network.get_edge_index("v1_v2_0", "v1_v2_1") == new_edges.first[1]);
+    EXPECT_TRUE(network.get_edge_index("v1_v2_1", "v1_v2_2") == new_edges.first[2]);
+    EXPECT_TRUE(network.get_edge_index("v1_v2_2", "v2") == new_edges.first[3]);
+
+    // The last index of the new edges is identical to the old index of v1->v2
+    EXPECT_TRUE(network.get_edge_index("v1_v2_2", "v2") == v1_v2);
+
+    // v00 has no incoming edges
+    EXPECT_TRUE(network.in_edges("v00").size() == 0);
+    // v01 has no incoming edges
+    EXPECT_TRUE(network.in_edges("v01").size() == 0);
+    // v1 has two incoming edges, namely from v00 and v01
+    const auto in_edges_v1 = network.in_edges("v1");
+    EXPECT_TRUE(in_edges_v1.size() == 2);
+    EXPECT_TRUE(std::find(in_edges_v1.begin(), in_edges_v1.end(), network.get_edge_index("v00", "v1")) != in_edges_v1.end());
+    EXPECT_TRUE(std::find(in_edges_v1.begin(), in_edges_v1.end(), network.get_edge_index("v01", "v1")) != in_edges_v1.end());
+    // v1_v2_0 has one incoming edge, namely from v1
+    const auto in_edges_v1_v2_0 = network.in_edges("v1_v2_0");
+    EXPECT_TRUE(in_edges_v1_v2_0.size() == 1);
+    EXPECT_TRUE(std::find(in_edges_v1_v2_0.begin(), in_edges_v1_v2_0.end(), network.get_edge_index("v1", "v1_v2_0")) != in_edges_v1_v2_0.end());
+    // v1_v2_1 has one incoming edge, namely from v1_v2_0
+    const auto in_edges_v1_v2_1 = network.in_edges("v1_v2_1");
+    EXPECT_TRUE(in_edges_v1_v2_1.size() == 1);
+    EXPECT_TRUE(std::find(in_edges_v1_v2_1.begin(), in_edges_v1_v2_1.end(), network.get_edge_index("v1_v2_0", "v1_v2_1")) != in_edges_v1_v2_1.end());
+    // v1_v2_2 has one incoming edge, namely from v1_v2_1
+    const auto in_edges_v1_v2_2 = network.in_edges("v1_v2_2");
+    EXPECT_TRUE(in_edges_v1_v2_2.size() == 1);
+    EXPECT_TRUE(std::find(in_edges_v1_v2_2.begin(), in_edges_v1_v2_2.end(), network.get_edge_index("v1_v2_1", "v1_v2_2")) != in_edges_v1_v2_2.end());
+    // v2 has one incoming edge, namely from v1_v2_2
+    const auto in_edges_v2 = network.in_edges("v2");
+    EXPECT_TRUE(in_edges_v2.size() == 1);
+    EXPECT_TRUE(std::find(in_edges_v2.begin(), in_edges_v2.end(), network.get_edge_index("v1_v2_2", "v2")) != in_edges_v2.end());
+    // v30 has one incoming edge, namely from v2
+    const auto in_edges_v30 = network.in_edges("v30");
+    EXPECT_TRUE(in_edges_v30.size() == 1);
+    EXPECT_TRUE(std::find(in_edges_v30.begin(), in_edges_v30.end(), network.get_edge_index("v2", "v30")) != in_edges_v30.end());
+    // v31 has one incoming edge, namely from v2
+    const auto in_edges_v31 = network.in_edges("v31");
+    EXPECT_TRUE(in_edges_v31.size() == 1);
+    EXPECT_TRUE(std::find(in_edges_v31.begin(), in_edges_v31.end(), network.get_edge_index("v2", "v31")) != in_edges_v31.end());
+    // v00 has one outgoing edge, namely to v1
+    const auto out_edges_v00 = network.out_edges("v00");
+    EXPECT_TRUE(out_edges_v00.size() == 1);
+    EXPECT_TRUE(std::find(out_edges_v00.begin(), out_edges_v00.end(), network.get_edge_index("v00", "v1")) != out_edges_v00.end());
+    // v01 has one outgoing edge, namely to v1
+    const auto out_edges_v01 = network.out_edges("v01");
+    EXPECT_TRUE(out_edges_v01.size() == 1);
+    EXPECT_TRUE(std::find(out_edges_v01.begin(), out_edges_v01.end(), network.get_edge_index("v01", "v1")) != out_edges_v01.end());
+    // v1 has one outgoing edge, namely to v1_v2_0
+    const auto out_edges_v1 = network.out_edges("v1");
+    EXPECT_TRUE(out_edges_v1.size() == 1);
+    EXPECT_TRUE(std::find(out_edges_v1.begin(), out_edges_v1.end(), network.get_edge_index("v1", "v1_v2_0")) != out_edges_v1.end());
+    // v1_v2_0 has one outgoing edge, namely to v1_v2_1
+    const auto out_edges_v1_v2_0 = network.out_edges("v1_v2_0");
+    EXPECT_TRUE(out_edges_v1_v2_0.size() == 1);
+    EXPECT_TRUE(std::find(out_edges_v1_v2_0.begin(), out_edges_v1_v2_0.end(), network.get_edge_index("v1_v2_0", "v1_v2_1")) != out_edges_v1_v2_0.end());
+    // v1_v2_1 has one outgoing edge, namely to v1_v2_2
+    const auto out_edges_v1_v2_1 = network.out_edges("v1_v2_1");
+    EXPECT_TRUE(out_edges_v1_v2_1.size() == 1);
+    EXPECT_TRUE(std::find(out_edges_v1_v2_1.begin(), out_edges_v1_v2_1.end(), network.get_edge_index("v1_v2_1", "v1_v2_2")) != out_edges_v1_v2_1.end());
+    // v1_v2_2 has one outgoing edge, namely to v2
+    const auto out_edges_v1_v2_2 = network.out_edges("v1_v2_2");
+    EXPECT_TRUE(out_edges_v1_v2_2.size() == 1);
+    EXPECT_TRUE(std::find(out_edges_v1_v2_2.begin(), out_edges_v1_v2_2.end(), network.get_edge_index("v1_v2_2", "v2")) != out_edges_v1_v2_2.end());
+    // v2 has two outgoing edges, namely to v30 and v31
+    const auto out_edges_v2 = network.out_edges("v2");
+    EXPECT_TRUE(out_edges_v2.size() == 2);
+    EXPECT_TRUE(std::find(out_edges_v2.begin(), out_edges_v2.end(), network.get_edge_index("v2", "v30")) != out_edges_v2.end());
+    EXPECT_TRUE(std::find(out_edges_v2.begin(), out_edges_v2.end(), network.get_edge_index("v2", "v31")) != out_edges_v2.end());
+    // v30 has no outgoing edges
+    EXPECT_TRUE(network.out_edges("v30").empty());
+    // v31 has no outgoing edges
+    EXPECT_TRUE(network.out_edges("v31").empty());
+
+    // The successors are essentially the same as the outgoing edges in this case
+    // v00->v1 has one successor, namely v1->v1_v2_0
+    const auto successors_v00_v1 = network.get_successors("v00", "v1");
+    EXPECT_TRUE(successors_v00_v1.size() == 1);
+    EXPECT_TRUE(std::find(successors_v00_v1.begin(), successors_v00_v1.end(), network.get_edge_index("v1", "v1_v2_0")) != successors_v00_v1.end());
+    // v01->v1 has one successor, namely v1->v1_v2_0
+    const auto successors_v01_v1 = network.get_successors("v01", "v1");
+    EXPECT_TRUE(successors_v01_v1.size() == 1);
+    EXPECT_TRUE(std::find(successors_v01_v1.begin(), successors_v01_v1.end(), network.get_edge_index("v1", "v1_v2_0")) != successors_v01_v1.end());
+    // v1->v1_v2_0 has one successor, namely v1_v2_0->v1_v2_1
+    const auto successors_v1_v1_v2_0 = network.get_successors("v1", "v1_v2_0");
+    EXPECT_TRUE(successors_v1_v1_v2_0.size() == 1);
+    EXPECT_TRUE(std::find(successors_v1_v1_v2_0.begin(), successors_v1_v1_v2_0.end(), network.get_edge_index("v1_v2_0", "v1_v2_1")) != successors_v1_v1_v2_0.end());
+    // v1_v2_0->v1_v2_1 has one successor, namely v1_v2_1->v1_v2_2
+    const auto successors_v1_v2_0_v1_v2_1 = network.get_successors("v1_v2_0", "v1_v2_1");
+    EXPECT_TRUE(successors_v1_v2_0_v1_v2_1.size() == 1);
+    EXPECT_TRUE(std::find(successors_v1_v2_0_v1_v2_1.begin(), successors_v1_v2_0_v1_v2_1.end(), network.get_edge_index("v1_v2_1", "v1_v2_2")) != successors_v1_v2_0_v1_v2_1.end());
+    // v1_v2_1->v1_v2_2 has one successor, namely v1_v2_2->v2
+    const auto successors_v1_v2_1_v1_v2_2 = network.get_successors("v1_v2_1", "v1_v2_2");
+    EXPECT_TRUE(successors_v1_v2_1_v1_v2_2.size() == 1);
+    EXPECT_TRUE(std::find(successors_v1_v2_1_v1_v2_2.begin(), successors_v1_v2_1_v1_v2_2.end(), network.get_edge_index("v1_v2_2", "v2")) != successors_v1_v2_1_v1_v2_2.end());
+    // v1_v2_2->v2 has two successors, namely v2->v30 and v2->v31
+    const auto successors_v1_v2_2_v2 = network.get_successors("v1_v2_2", "v2");
+    EXPECT_TRUE(successors_v1_v2_2_v2.size() == 2);
+    EXPECT_TRUE(std::find(successors_v1_v2_2_v2.begin(), successors_v1_v2_2_v2.end(), network.get_edge_index("v2", "v30")) != successors_v1_v2_2_v2.end());
+    EXPECT_TRUE(std::find(successors_v1_v2_2_v2.begin(), successors_v1_v2_2_v2.end(), network.get_edge_index("v2", "v31")) != successors_v1_v2_2_v2.end());
+    // v2->v30 has no successors
+    EXPECT_TRUE(network.get_successors("v2", "v30").empty());
+    // v2->v31 has no successors
+    EXPECT_TRUE(network.get_successors("v2", "v31").empty());
+}
+
+TEST(Functionality, NetworkEdgeSeparationReverse) {
+    cda_rail::Network network;
+    // Add vertices
+    network.add_vertex("v00", cda_rail::VertexType::TTD);
+    network.add_vertex("v01", cda_rail::VertexType::TTD);
+    network.add_vertex("v1", cda_rail::VertexType::TTD);
+    network.add_vertex("v2", cda_rail::VertexType::TTD);
+    network.add_vertex("v30", cda_rail::VertexType::TTD);
+    network.add_vertex("v31", cda_rail::VertexType::TTD);
+
+    // Add edges
+    int v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
+    int v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
+    int v1_v2 = network.add_edge("v1", "v2", 44, 100, true, 10);
+    int v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
+    int v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
+    // Add reverse edges
+    int v1_v00 = network.add_edge("v1", "v00", 100, 100, false);
+    int v1_v01 = network.add_edge("v1", "v01", 100, 100, false);
+    int v2_v1 = network.add_edge("v2", "v1", 44, 100, true, 10);
+    int v30_v2 = network.add_edge("v30", "v2", 100, 100, false);
+    int v31_v2 = network.add_edge("v31", "v2", 100, 100, false);
+
+    // Add successors
+    network.add_successor(v00_v1, v1_v2);
+    network.add_successor(v01_v1, v1_v2);
+    network.add_successor(v1_v2, v2_v30);
+    network.add_successor(v1_v2, v2_v31);
+    // Add reverse successors
+    network.add_successor(v31_v2, v2_v1);
+    network.add_successor(v30_v2, v2_v1);
+    network.add_successor(v2_v1, v1_v00);
+    network.add_successor(v2_v1, v1_v01);
+
+    // Separate edge v1_v2 uniformly
+    auto new_edges = network.separate_edge("v1", "v2", cda_rail::SeparationType::UNIFORM);
 }
 
 TEST(Functionality, ReadTrains) {
