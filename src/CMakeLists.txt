@@ -1,8 +1,18 @@
 add_library(
         ${PROJECT_NAME}
         ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
-        ${PROJECT_SOURCE_DIR}/include/RailwayNetwork.hpp
-        RailwayNetwork.cpp
+        ${PROJECT_SOURCE_DIR}/include/datastructure/RailwayNetwork.hpp
+        datastructure/RailwayNetwork.cpp
+        ${PROJECT_SOURCE_DIR}/include/datastructure/Train.hpp
+        datastructure/Train.cpp
+        ${PROJECT_SOURCE_DIR}/include/datastructure/Timetable.hpp
+        datastructure/Timetable.cpp
+        ${PROJECT_SOURCE_DIR}/include/datastructure/Station.hpp
+        datastructure/Station.cpp
+        ${PROJECT_SOURCE_DIR}/include/datastructure/Route.hpp
+        datastructure/Route.cpp
+        ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
+        probleminstances/VSSGenerationTimetable.cpp
 )
 
 # set include directories
@@ -14,5 +24,13 @@ if(GUROBI_FOUND)
     target_link_libraries(${PROJECT_NAME} PUBLIC Gurobi::GurobiCXX)
 endif()
 
-target_link_libraries(${PROJECT_NAME} INTERFACE tinyxml2::tinyxml2)
-target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json)
+# add tinyxml2
+set(tinyxml2_BUILD_TESTING OFF)
+add_subdirectory(${PROJECT_SOURCE_DIR}/extern/tinyxml2 extern/tinyxml2)
+
+# add json
+set(json_BUILD_TESTING OFF)
+add_subdirectory(${PROJECT_SOURCE_DIR}/extern/json extern/json)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC tinyxml2::tinyxml2)
+target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
