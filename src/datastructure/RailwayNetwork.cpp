@@ -1012,62 +1012,7 @@ std::vector<std::vector<int>> cda_rail::Network::unbreakable_sections() const {
         }
     }
 
-    // For every section
-    while (!vertices_to_visit.empty()) {
-        // New section
-        ret_val.emplace_back();
-        // Stack for DFS
-        std::stack<int> stack;
-        stack.emplace(*vertices_to_visit.begin());
-        // List of visited vertices
-        std::vector<int> visited_vertices;
-
-        // Explore section DFS
-        while (!stack.empty()) {
-            // Get new vertex to visit
-            int current_vertex = stack.top();
-            stack.pop();
-            visited_vertices.emplace_back(current_vertex);
-            if(std::find(vertices_to_visit.begin(), vertices_to_visit.end(), current_vertex) != vertices_to_visit.end()) {
-                vertices_to_visit.erase(current_vertex);
-            }
-
-            const auto neighbor_vertices = neighbors(current_vertex);
-            for (const auto& neighbor : neighbor_vertices) {
-                // If neighboring vertex is of type NO_BORDER
-                if (get_vertex(neighbor).type == cda_rail::VertexType::NO_BORDER) {
-                    // If vertex has not been visited yet, add it to stack
-                    if (std::find(visited_vertices.begin(), visited_vertices.end(), neighbor) == visited_vertices.end()) {
-                        stack.emplace(neighbor);
-                    }
-                }
-                // If current_vertex -> neighbor exists
-                if (has_edge(current_vertex, neighbor)) {
-                    const auto edge_index = get_edge_index(current_vertex, neighbor);
-                    // If edge is breakable throw error
-                    if (get_edge(edge_index).breakable) {
-                        throw std::runtime_error("This should never happen, but I found a breakable edge in an unbreakable section");
-                    }
-                    // If edge is not yet in section add it
-                    if (std::find(ret_val.back().begin(), ret_val.back().end(), edge_index) == ret_val.back().end()) {
-                        ret_val.back().emplace_back(edge_index);
-                    }
-                }
-                // If neighbor -> current_vertex exists
-                if (has_edge(neighbor, current_vertex)) {
-                    const auto edge_index = get_edge_index(neighbor, current_vertex);
-                    // If edge is breakable throw error
-                    if (get_edge(edge_index).breakable) {
-                        throw std::runtime_error("This should never happen, but I found a breakable edge in an unbreakable section");
-                    }
-                    // If edge is not yet in section add it
-                    if (std::find(ret_val.back().begin(), ret_val.back().end(), edge_index) == ret_val.back().end()) {
-                        ret_val.back().emplace_back(edge_index);
-                    }
-                }
-            }
-        }
-    }
+    dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NO_BORDER);
 
     return ret_val;
 }
@@ -1095,6 +1040,14 @@ std::vector<std::vector<int>> cda_rail::Network::no_border_vss_sections() const 
         }
     }
 
+    dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NO_BORDER_VSS, {cda_rail::VertexType::NO_BORDER});
+
+    return ret_val;
+}
+
+void cda_rail::Network::dfs(std::vector<std::vector<int>> &ret_val, std::unordered_set<int> &vertices_to_visit,
+                            const cda_rail::VertexType& section_type,
+                            const std::vector<cda_rail::VertexType> error_types) const {
     // For every section
     while (!vertices_to_visit.empty()) {
         // New section
@@ -1119,16 +1072,15 @@ std::vector<std::vector<int>> cda_rail::Network::no_border_vss_sections() const 
             const auto neighbor_vertices = neighbors(current_vertex);
             for (const auto &neighbor: neighbor_vertices) {
                 // If neighboring vertex is of type NO_BORDER
-                if (get_vertex(neighbor).type == cda_rail::VertexType::NO_BORDER_VSS) {
+                if (get_vertex(neighbor).type == section_type) {
                     // If vertex has not been visited yet, add it to stack
                     if (std::find(visited_vertices.begin(), visited_vertices.end(), neighbor) ==
                         visited_vertices.end()) {
                         stack.emplace(neighbor);
                     }
                 }
-                if (get_vertex(neighbor).type == cda_rail::VertexType::NO_BORDER) {
-                    throw std::runtime_error(
-                            "This should never happen, but I found a NO_BORDER vertex in a NO_BORDER_VSS section");
+                if (std::find(error_types.begin(), error_types.end(), get_vertex(neighbor).type) != error_types.end()) {
+                    throw std::runtime_error("This should never happen, but I found error type vertex");
                 }
                 // If current_vertex -> neighbor exists
                 if (has_edge(current_vertex, neighbor)) {
@@ -1159,6 +1111,4 @@ std::vector<std::vector<int>> cda_rail::Network::no_border_vss_sections() const 
             }
         }
     }
-
-    return ret_val;
 }

@@ -8,6 +8,7 @@
 #include <tinyxml2.h>
 #include <filesystem>
 #include "Definitions.hpp"
+#include <unordered_set>
 
 namespace cda_rail {
     struct Vertex {
@@ -74,6 +75,11 @@ namespace cda_rail {
             std::pair<std::vector<int>, std::vector<int>> separate_edge_at(int edge_index, const std::vector<double>& distances_from_source);
             std::pair<std::vector<int>, std::vector<int>> uniform_separate_edge(int edge_index);
             std::pair<std::vector<int>, std::vector<int>> chebychev_separate_edge(int edge_index);
+
+            // helper function
+            void dfs(std::vector<std::vector<int>>& ret_val, std::unordered_set<int>& vertices_to_visit,
+                     const cda_rail::VertexType& section_type,
+                     const std::vector<cda_rail::VertexType> error_types = {}) const;
         public:
             // Constructors
             Network() = default;
