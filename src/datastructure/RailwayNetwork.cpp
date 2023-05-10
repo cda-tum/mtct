@@ -748,7 +748,7 @@ cda_rail::Network::separate_edge_at(int edge_index, const std::vector<double>& d
     if (has_edge(edge.target, edge.source)) {
         // Check if reverse edge has same length
         const auto reverse_edge_index = get_edge_index(edge.target, edge.source);
-        const auto& reverse_edge = get_edge(reverse_edge_index);
+        const auto reverse_edge = get_edge(reverse_edge_index);
         if (reverse_edge.length != edge.length) {
             throw std::invalid_argument("Reverse edge has different length");
         }
