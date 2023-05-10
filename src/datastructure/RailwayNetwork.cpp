@@ -743,6 +743,17 @@ cda_rail::Network::separate_edge_at(int edge_index, const std::vector<double>& d
     edges[edge_index].source = new_vertices.back();
     new_edges.emplace_back(edge_index);
 
+    // Update successors, i.e.,
+    // - For every incoming edge into edge.source, replace edge_index by new_edges.front() if applicable
+    // - For every new_edge (except the last) add the next new_edge as single successor
+    // - For the last new edge add the same successors as edge_index had (this has alredy been done implicitly)
+    for (const auto& incoming_edge_index : in_edges(edge.source)) {
+        std::replace(successors[incoming_edge_index].begin(), successors[incoming_edge_index].end(), edge_index, new_edges.front());
+    }
+    for (size_t i = 0; i < new_edges.size() - 1; ++i) {
+        add_successor(new_edges[i], new_edges[i + 1]);
+    }
+
     // If reverse edge exists, create new reverse edges
     auto& new_reverse_edges = return_edges.second;
     if (has_edge(edge.target, edge.source)) {
@@ -763,23 +774,10 @@ cda_rail::Network::separate_edge_at(int edge_index, const std::vector<double>& d
         change_edge_breakable(reverse_edge_index, false);
         edges[reverse_edge_index].source = new_vertices.front();
         new_reverse_edges.emplace_back(reverse_edge_index);
-    }
 
-    // Update successors, i.e.,
-    // - For every incoming edge into edge.source, replace edge_index by new_edges.front() if applicable
-    // - For every new_edge (except the last) add the next new_edge as single successor
-    // - For the last new edge add the same successors as edge_index had (this has alredy been done implicitly)
-    for (const auto& incoming_edge_index : in_edges(edge.source)) {
-        std::replace(successors[incoming_edge_index].begin(), successors[incoming_edge_index].end(), edge_index, new_edges.front());
-    }
-    for (size_t i = 0; i < new_edges.size() - 1; ++i) {
-        add_successor(new_edges[i], new_edges[i + 1]);
-    }
-
-    // If reverse edge exists, update successors analogously
-    if (has_edge(edge.target, edge.source)) {
+        // Update successors analogously
         for (const auto& incoming_edge_index : in_edges(edge.target)) {
-            std::replace(successors[incoming_edge_index].begin(), successors[incoming_edge_index].end(), get_edge_index(edge.target, edge.source), new_reverse_edges.front());
+            std::replace(successors[incoming_edge_index].begin(), successors[incoming_edge_index].end(), reverse_edge_index, new_reverse_edges.front());
         }
         for (size_t i = 0; i < new_reverse_edges.size() - 1; ++i) {
             add_successor(new_reverse_edges[i], new_reverse_edges[i + 1]);
