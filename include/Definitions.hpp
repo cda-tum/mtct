@@ -4,7 +4,7 @@
 namespace cda_rail {
     // Constants for vertex type
 
-    enum class VertexType {NO_BORDER = 0, VSS = 1, TTD = 2};
+    enum class VertexType {NO_BORDER = 0, VSS = 1, TTD = 2, NO_BORDER_VSS = 3};
     enum class SeparationType {UNIFORM, CHEBYCHEV};
 
     // Helper functions
