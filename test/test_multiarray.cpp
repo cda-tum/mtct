@@ -19,14 +19,14 @@ TEST(Functionality, MultiArray) {
     for (size_t i = 0; i < 1; ++i) {
         for (size_t j = 0; j < 2; ++j) {
             for (size_t k = 0; k < 3; ++k) {
-                EXPECT_TRUE(a1(i,j,k) == 6*i + 3*j + k);
+                EXPECT_EQ(a1(i,j,k), 6*i + 3*j + k);
             }
         }
     }
 
-    EXPECT_TRUE(a1.size() == 6);
-    EXPECT_TRUE(a1.dimensions() == 3);
-    EXPECT_TRUE(a1.get_shape() == std::vector<size_t>({1,2,3}));
+    EXPECT_EQ(a1.size(), 6);
+    EXPECT_EQ(a1.dimensions(), 3);
+    EXPECT_EQ(a1.get_shape(), std::vector<size_t>({1,2,3}));
 
     // Calling with wrong number of arguments should throw std::invalid_argument
     EXPECT_THROW(a1(0), std::invalid_argument);
