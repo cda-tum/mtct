@@ -469,14 +469,14 @@ TEST(Functionality, NetworkEdgeSeparation) {
     EXPECT_EQ(network.get_edge("v2", "v30").length, 100);
     EXPECT_EQ(network.get_edge("v2", "v31").length, 100);
     // The other properties are unchanged, except that all edges are unbreakable, i.e., the breakable property is false
-    EXPECT_EQ(network.get_edge("v00", "v1").breakable, false);
-    EXPECT_EQ(network.get_edge("v01", "v1").breakable, false);
-    EXPECT_EQ(network.get_edge("v1", "v1_v2_0").breakable, false);
-    EXPECT_EQ(network.get_edge("v1_v2_0", "v1_v2_1").breakable, false);
-    EXPECT_EQ(network.get_edge("v1_v2_1", "v1_v2_2").breakable, false);
-    EXPECT_EQ(network.get_edge("v1_v2_2", "v2").breakable, false);
-    EXPECT_EQ(network.get_edge("v2", "v30").breakable, false);
-    EXPECT_EQ(network.get_edge("v2", "v31").breakable, false);
+    EXPECT_FALSE(network.get_edge("v00", "v1").breakable);
+    EXPECT_FALSE(network.get_edge("v01", "v1").breakable);
+    EXPECT_FALSE(network.get_edge("v1", "v1_v2_0").breakable);
+    EXPECT_FALSE(network.get_edge("v1_v2_0", "v1_v2_1").breakable);
+    EXPECT_FALSE(network.get_edge("v1_v2_1", "v1_v2_2").breakable);
+    EXPECT_FALSE(network.get_edge("v1_v2_2", "v2").breakable);
+    EXPECT_FALSE(network.get_edge("v2", "v30").breakable);
+    EXPECT_FALSE(network.get_edge("v2", "v31").breakable);
     EXPECT_EQ(network.get_edge("v00", "v1").max_speed, 100);
     EXPECT_EQ(network.get_edge("v01", "v1").max_speed, 100);
     EXPECT_EQ(network.get_edge("v1", "v1_v2_0").max_speed, 100);
@@ -680,14 +680,14 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
     EXPECT_EQ(network.get_edge("v2", "v30").length, 100);
     EXPECT_EQ(network.get_edge("v2", "v31").length, 100);
     // The other properties are unchanged, except that all edges are unbreakable, i.e., the breakable property is false
-    EXPECT_EQ(network.get_edge("v00", "v1").breakable, false);
-    EXPECT_EQ(network.get_edge("v01", "v1").breakable, false);
-    EXPECT_EQ(network.get_edge("v1", "v1_v2_0").breakable, false);
-    EXPECT_EQ(network.get_edge("v1_v2_0", "v1_v2_1").breakable, false);
-    EXPECT_EQ(network.get_edge("v1_v2_1", "v1_v2_2").breakable, false);
-    EXPECT_EQ(network.get_edge("v1_v2_2", "v2").breakable, false);
-    EXPECT_EQ(network.get_edge("v2", "v30").breakable, false);
-    EXPECT_EQ(network.get_edge("v2", "v31").breakable, false);
+    EXPECT_FALSE(network.get_edge("v00", "v1").breakable);
+    EXPECT_FALSE(network.get_edge("v01", "v1").breakable);
+    EXPECT_FALSE(network.get_edge("v1", "v1_v2_0").breakable);
+    EXPECT_FALSE(network.get_edge("v1_v2_0", "v1_v2_1").breakable);
+    EXPECT_FALSE(network.get_edge("v1_v2_1", "v1_v2_2").breakable);
+    EXPECT_FALSE(network.get_edge("v1_v2_2", "v2").breakable);
+    EXPECT_FALSE(network.get_edge("v2", "v30").breakable);
+    EXPECT_FALSE(network.get_edge("v2", "v31").breakable);
     EXPECT_EQ(network.get_edge("v00", "v1").max_speed, 100);
     EXPECT_EQ(network.get_edge("v01", "v1").max_speed, 100);
     EXPECT_EQ(network.get_edge("v1", "v1_v2_0").max_speed, 100);
@@ -727,14 +727,14 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
     EXPECT_EQ(network.get_edge("v1", "v00").length, 100);
     EXPECT_EQ(network.get_edge("v1", "v01").length, 100);
     // The other properties are unchanged, except that all edges are unbreakable, i.e., the breakable property is false
-    EXPECT_EQ(network.get_edge("v30", "v2").breakable, false);
-    EXPECT_EQ(network.get_edge("v31", "v2").breakable, false);
-    EXPECT_EQ(network.get_edge("v2", "v1_v2_2").breakable, false);
-    EXPECT_EQ(network.get_edge("v1_v2_2", "v1_v2_1").breakable, false);
-    EXPECT_EQ(network.get_edge("v1_v2_1", "v1_v2_0").breakable, false);
-    EXPECT_EQ(network.get_edge("v1_v2_0", "v1").breakable, false);
-    EXPECT_EQ(network.get_edge("v1", "v00").breakable, false);
-    EXPECT_EQ(network.get_edge("v1", "v01").breakable, false);
+    EXPECT_FALSE(network.get_edge("v30", "v2").breakable);
+    EXPECT_FALSE(network.get_edge("v31", "v2").breakable);
+    EXPECT_FALSE(network.get_edge("v2", "v1_v2_2").breakable);
+    EXPECT_FALSE(network.get_edge("v1_v2_2", "v1_v2_1").breakable);
+    EXPECT_FALSE(network.get_edge("v1_v2_1", "v1_v2_0").breakable);
+    EXPECT_FALSE(network.get_edge("v1_v2_0", "v1").breakable);
+    EXPECT_FALSE(network.get_edge("v1", "v00").breakable);
+    EXPECT_FALSE(network.get_edge("v1", "v01").breakable);
     EXPECT_EQ(network.get_edge("v30", "v2").max_speed, 100);
     EXPECT_EQ(network.get_edge("v31", "v2").max_speed, 100);
     EXPECT_EQ(network.get_edge("v2", "v1_v2_2").max_speed, 100);
