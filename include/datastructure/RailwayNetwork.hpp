@@ -185,6 +185,14 @@ namespace cda_rail {
             [[nodiscard]] bool is_adjustable(int vertex_id) const;
             [[nodiscard]] bool is_adjustable(const std::string& vertex_name) const { return is_adjustable(get_vertex_index(vertex_name)); };
 
+            bool is_consistent_for_transformation() const;
+
+            // Get special edges
+            [[nodiscard]] std::vector<int> breakable_edges() const;
+            [[nodiscard]] std::vector<int> relevant_breakable_edges() const;
+            [[nodiscard]] std::vector<std::vector<int>> unbreakable_sections() const;
+            [[nodiscard]] std::vector<std::vector<int>> no_border_vss_sections() const;
+
             // Transformation functions
             std::pair<std::vector<int>, std::vector<int>> separate_edge(int edge_index, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
             std::pair<std::vector<int>, std::vector<int>> separate_edge(int source_id, int target_id, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM) {
@@ -193,6 +201,8 @@ namespace cda_rail {
             std::pair<std::vector<int>, std::vector<int>> separate_edge(const std::string& source_name, const std::string& target_name, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM) {
                 return separate_edge(get_edge_index(source_name, target_name), separation_type);
             };
+
+            std::vector<std::pair<int, std::vector<int>>> discretize(cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
     };
 
     // HELPER

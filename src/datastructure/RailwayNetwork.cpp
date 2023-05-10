@@ -7,6 +7,8 @@
 #include <fstream>
 #include <optional>
 #include <algorithm>
+#include <unordered_set>
+#include <stack>
 
 using json = nlohmann::json;
 
@@ -796,6 +798,11 @@ std::pair<std::vector<int>, std::vector<int>> cda_rail::Network::separate_edge(i
     * @param separation_type Type of separation.
     */
 
+    // Check if graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
     // Call function corresponding to separation type
     if (separation_type == cda_rail::SeparationType::UNIFORM) {
         return uniform_separate_edge(edge_index);
@@ -810,6 +817,11 @@ std::pair<std::vector<int>, std::vector<int>> cda_rail::Network::uniform_separat
     /**
      * Separates an edge (and possibly its reverse edge) uniformly according to the minimal block length.
      */
+
+    // Check if graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
 
     // Check if edge exists
     if (!has_edge(edge_index)) {
@@ -841,7 +853,312 @@ std::pair<std::vector<int>, std::vector<int>> cda_rail::Network::uniform_separat
 }
 
 std::pair<std::vector<int>, std::vector<int>> cda_rail::Network::chebychev_separate_edge(int edge_index) {
-    return std::pair<std::vector<int>, std::vector<int>>();
     // TODO: Not implemented yet
     throw std::exception("Not implemented yet");
+}
+
+std::vector<int> cda_rail::Network::breakable_edges() const {
+    /**
+     * Returns indices of all brekable edges.
+     */
+    // Check if graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
+    std::vector<int> ret_val;
+    for (int i = 0; i < number_of_edges(); ++i) {
+        if (get_edge(i).breakable) {
+            ret_val.emplace_back(i);
+        }
+    }
+    return ret_val;
+}
+
+std::vector<int> cda_rail::Network::relevant_breakable_edges() const {
+    /**
+     * Returns inidices of all breakable edges, but only once per direction.
+     */
+    // Check if graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
+    std::vector<int> ret_val;
+    for (int i = 0; i < number_of_edges(); ++i) {
+        const auto& edge = get_edge(i);
+        if (edge.breakable) {
+            // add edge only if reverse edge does not exist or has larger index
+            if (!has_edge(edge.target, edge.source) || get_edge_index(edge.target, edge.source) > i) {
+                ret_val.emplace_back(i);
+            }
+        }
+    }
+    return ret_val;
+}
+
+std::vector<std::pair<int, std::vector<int>>> cda_rail::Network::discretize(cda_rail::SeparationType separation_type) {
+    /**
+     * Discretizes graph.
+     *
+     * @param separation_type Type of separation.
+     * @return Vector of pairs. The first element of the pair is the edge index of the original edge. The second element is a vector of edge indices of the new edges.
+     */
+
+    std::vector<std::pair<int, std::vector<int>>> ret_val;
+    for (int i : relevant_breakable_edges()) {
+        auto separated_edges = separate_edge(i, separation_type);
+        if (!separated_edges.first.empty()) {
+            ret_val.emplace_back(separated_edges.first.back(), separated_edges.first);
+        }
+        if (!separated_edges.second.empty()) {
+            ret_val.emplace_back(separated_edges.second.back(), separated_edges.second);
+        }
+    }
+    return ret_val;
+}
+
+bool cda_rail::Network::is_consistent_for_transformation() const {
+    /**
+     * Checks if the graph passes consistency checks needed for the transformations to work correctly.
+     * - If an edge is breakable it has a minimal block length that is strictly positive.
+     * - If an edge is breakable both it's source and target are type VSS or TTD
+     * - For bidirectional edges, the breakable and length attributes are the same for both directions.
+     * - Vertices of type NO_BORDER_VSS have at most two neighbors. These neighbors are not of type NO_BORDER.
+     *
+     * @return True if the graph is consistent, false otherwise.
+     */
+
+    // Check every edge
+    for (size_t i = 0; i < number_of_edges(); ++i) {
+        const auto& edge = get_edge(i);
+        // If the edge is breakable, check if the minimal block length is strictly positive
+        if (edge.breakable && edge.min_block_length <= 0) {
+            return false;
+        }
+        // If the edge is breakable, check if source or target are of type NO_BORDER then return false
+        if (edge.breakable && (get_vertex(edge.source).type == cda_rail::VertexType::NO_BORDER || get_vertex(edge.target).type == cda_rail::VertexType::NO_BORDER)) {
+            return false;
+        }
+        // If the reverse edge exists check if the breakable and length attributes are the same
+        if (has_edge(edge.target, edge.source)) {
+            const auto& reverse_edge = get_edge(edge.target, edge.source);
+            if (edge.breakable != reverse_edge.breakable || edge.length != reverse_edge.length) {
+                return false;
+            }
+        }
+    }
+
+    // Check every vertex
+    for (size_t i = 0; i < number_of_vertices(); ++i) {
+        // If the vertex is of type NO_BORDER_VSS check conditions
+        if (get_vertex(i).type == cda_rail::VertexType::NO_BORDER_VSS) {
+            // Get neighbors
+            const auto& v_neighbors = neighbors(i);
+            // Check if there are more than two neighbors
+            if (v_neighbors.size() > 2) {
+                return false;
+            }
+            // Check if neighbors are of type NO_BORDER
+            for (const auto& j : v_neighbors) {
+                if (get_vertex(j).type == cda_rail::VertexType::NO_BORDER) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+std::vector<std::vector<int>> cda_rail::Network::unbreakable_sections() const {
+    /**
+     * Returns a vector of vectors of edge indices. Each vector of edge indices represents an unbreakable section.
+     */
+
+    // Check if graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
+    // Initialize return value
+    std::vector<std::vector<int>> ret_val;
+
+    // Add all one edge sections
+    for (int i = 0; i < number_of_edges(); ++i) {
+        const auto& edge = get_edge(i);
+        if (!edge.breakable) {
+            if (!has_edge(edge.target, edge.source) || get_edge_index(edge.target, edge.source) > i) {
+                if (get_vertex(edge.source).type == cda_rail::VertexType::TTD ||
+                    get_vertex(edge.source).type == cda_rail::VertexType::VSS) {
+                    if (get_vertex(edge.target).type == cda_rail::VertexType::TTD ||
+                        get_vertex(edge.target).type == cda_rail::VertexType::VSS) {
+                        ret_val.emplace_back();
+                        ret_val.back().emplace_back(i);
+                        if (has_edge(edge.target, edge.source)) {
+                            ret_val.back().emplace_back(get_edge_index(edge.target, edge.source));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Get possible start vertices
+    std::unordered_set<int> vertices_to_visit;
+    for (int i = 0; i < number_of_vertices(); ++i) {
+        if (get_vertex(i).type == cda_rail::VertexType::NO_BORDER && neighbors(i).size() >= 1) {
+            vertices_to_visit.emplace(i);
+        }
+    }
+
+    // For every section
+    while (!vertices_to_visit.empty()) {
+        // New section
+        ret_val.emplace_back();
+        // Stack for DFS
+        std::stack<int> stack;
+        stack.emplace(*vertices_to_visit.begin());
+        // List of visited vertices
+        std::vector<int> visited_vertices;
+
+        // Explore section DFS
+        while (!stack.empty()) {
+            // Get new vertex to visit
+            int current_vertex = stack.top();
+            stack.pop();
+            visited_vertices.emplace_back(current_vertex);
+            if(std::find(vertices_to_visit.begin(), vertices_to_visit.end(), current_vertex) != vertices_to_visit.end()) {
+                vertices_to_visit.erase(current_vertex);
+            }
+
+            const auto neighbor_vertices = neighbors(current_vertex);
+            for (const auto& neighbor : neighbor_vertices) {
+                // If neighboring vertex is of type NO_BORDER
+                if (get_vertex(neighbor).type == cda_rail::VertexType::NO_BORDER) {
+                    // If vertex has not been visited yet, add it to stack
+                    if (std::find(visited_vertices.begin(), visited_vertices.end(), neighbor) == visited_vertices.end()) {
+                        stack.emplace(neighbor);
+                    }
+                }
+                // If current_vertex -> neighbor exists
+                if (has_edge(current_vertex, neighbor)) {
+                    const auto edge_index = get_edge_index(current_vertex, neighbor);
+                    // If edge is breakable throw error
+                    if (get_edge(edge_index).breakable) {
+                        throw std::runtime_error("This should never happen, but I found a breakable edge in an unbreakable section");
+                    }
+                    // If edge is not yet in section add it
+                    if (std::find(ret_val.back().begin(), ret_val.back().end(), edge_index) == ret_val.back().end()) {
+                        ret_val.back().emplace_back(edge_index);
+                    }
+                }
+                // If neighbor -> current_vertex exists
+                if (has_edge(neighbor, current_vertex)) {
+                    const auto edge_index = get_edge_index(neighbor, current_vertex);
+                    // If edge is breakable throw error
+                    if (get_edge(edge_index).breakable) {
+                        throw std::runtime_error("This should never happen, but I found a breakable edge in an unbreakable section");
+                    }
+                    // If edge is not yet in section add it
+                    if (std::find(ret_val.back().begin(), ret_val.back().end(), edge_index) == ret_val.back().end()) {
+                        ret_val.back().emplace_back(edge_index);
+                    }
+                }
+            }
+        }
+    }
+
+    return ret_val;
+}
+
+std::vector<std::vector<int>> cda_rail::Network::no_border_vss_sections() const {
+    /**
+     * Returns a vector of vectors of edge indices. Each vector of edge indices represents a no border vss section.
+     * I.e., it includes sections containing NO_BORDER_VSS vertices that can be altered by an algorithm.
+     * These vertices have likely been created by a transformation in advance.
+     */
+
+    // Check if the graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
+    // Initialize return value
+    std::vector<std::vector<int>> ret_val;
+
+    // Get possible start vertices
+    std::unordered_set<int> vertices_to_visit;
+    for (int i = 0; i < number_of_vertices(); ++i) {
+        if (get_vertex(i).type == cda_rail::VertexType::NO_BORDER_VSS && neighbors(i).size() >= 1) {
+            vertices_to_visit.emplace(i);
+        }
+    }
+
+    // For every section
+    while (!vertices_to_visit.empty()) {
+        // New section
+        ret_val.emplace_back();
+        // Stack for DFS
+        std::stack<int> stack;
+        stack.emplace(*vertices_to_visit.begin());
+        // List of visited vertices
+        std::vector<int> visited_vertices;
+
+        // Explore section DFS
+        while (!stack.empty()) {
+            // Get new vertex to visit
+            int current_vertex = stack.top();
+            stack.pop();
+            visited_vertices.emplace_back(current_vertex);
+            if (std::find(vertices_to_visit.begin(), vertices_to_visit.end(), current_vertex) !=
+                vertices_to_visit.end()) {
+                vertices_to_visit.erase(current_vertex);
+            }
+
+            const auto neighbor_vertices = neighbors(current_vertex);
+            for (const auto &neighbor: neighbor_vertices) {
+                // If neighboring vertex is of type NO_BORDER
+                if (get_vertex(neighbor).type == cda_rail::VertexType::NO_BORDER_VSS) {
+                    // If vertex has not been visited yet, add it to stack
+                    if (std::find(visited_vertices.begin(), visited_vertices.end(), neighbor) ==
+                        visited_vertices.end()) {
+                        stack.emplace(neighbor);
+                    }
+                }
+                if (get_vertex(neighbor).type == cda_rail::VertexType::NO_BORDER) {
+                    throw std::runtime_error(
+                            "This should never happen, but I found a NO_BORDER vertex in a NO_BORDER_VSS section");
+                }
+                // If current_vertex -> neighbor exists
+                if (has_edge(current_vertex, neighbor)) {
+                    const auto edge_index = get_edge_index(current_vertex, neighbor);
+                    // If edge is breakable throw error
+                    if (get_edge(edge_index).breakable) {
+                        throw std::runtime_error(
+                                "This should never happen, but I found a breakable edge in an unbreakable section");
+                    }
+                    // If edge is not yet in section add it
+                    if (std::find(ret_val.back().begin(), ret_val.back().end(), edge_index) == ret_val.back().end()) {
+                        ret_val.back().emplace_back(edge_index);
+                    }
+                }
+                // If neighbor -> current_vertex exists
+                if (has_edge(neighbor, current_vertex)) {
+                    const auto edge_index = get_edge_index(neighbor, current_vertex);
+                    // If edge is breakable throw error
+                    if (get_edge(edge_index).breakable) {
+                        throw std::runtime_error(
+                                "This should never happen, but I found a breakable edge in an unbreakable section");
+                    }
+                    // If edge is not yet in section add it
+                    if (std::find(ret_val.back().begin(), ret_val.back().end(), edge_index) == ret_val.back().end()) {
+                        ret_val.back().emplace_back(edge_index);
+                    }
+                }
+            }
+        }
+    }
+
+    return ret_val;
 }
