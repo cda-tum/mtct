@@ -149,6 +149,101 @@ TEST(Functionality, NetworkFunctions) {
     EXPECT_FALSE(network.is_valid_successor(0, 2));
 }
 
+TEST(Functionality, NetworkSections) {
+    cda_rail::Network network;
+
+    // Add vertices
+    network.add_vertex("v0", cda_rail::VertexType::TTD);
+    network.add_vertex("v1", cda_rail::VertexType::NO_BORDER);
+    network.add_vertex("v20", cda_rail::VertexType::TTD);
+    network.add_vertex("v21", cda_rail::VertexType::NO_BORDER);
+    network.add_vertex("v30", cda_rail::VertexType::NO_BORDER);
+    network.add_vertex("v31", cda_rail::VertexType::VSS);
+    network.add_vertex("v4", cda_rail::VertexType::TTD);
+    network.add_vertex("v5", cda_rail::VertexType::VSS);
+    network.add_vertex("v6", cda_rail::VertexType::NO_BORDER_VSS);
+    network.add_vertex("v7", cda_rail::VertexType::TTD);
+
+    // Add edges v0 -> v1 -> v20 -> v30 -> v4 -> v5 -> v6 -> v7
+    // All unbreakable other properties not relevant
+    int v0_v1 = network.add_edge("v0", "v1", 1, 1, false);
+    int v1_v20 = network.add_edge("v1", "v20", 1, 1, false);
+    int v20_v30 = network.add_edge("v20", "v30", 1, 1, false);
+    int v30_v4 = network.add_edge("v30", "v4", 1, 1, false);
+    int v4_v5 = network.add_edge("v4", "v5", 1, 1, false);
+    int v5_v6 = network.add_edge("v5", "v6", 1, 1, false);
+    int v6_v7 = network.add_edge("v6", "v7", 1, 1, false);
+
+    // Add edges v7 -> v6 -> v5 -> v4 -> v31 -> v21 -> v1 -> v0
+    // v4 -> v31 breakable, all other unbreakable
+    int v7_v6 = network.add_edge("v7", "v6", 1, 1, false);
+    int v6_v5 = network.add_edge("v6", "v5", 1, 1, false);
+    int v5_v4 = network.add_edge("v5", "v4", 1, 1, false);
+    int v4_v31 = network.add_edge("v4", "v31", 1, 1, true);
+    int v31_v21 = network.add_edge("v31", "v21", 1, 1, false);
+    int v21_v1 = network.add_edge("v21", "v1", 1, 1, false);
+    int v1_v0 = network.add_edge("v1", "v0", 1, 1, false);
+
+    auto no_border_vss_sections = network.no_border_vss_sections();
+
+    // Check non_border_vss_sections
+    // There should be 1 section
+    EXPECT_EQ(no_border_vss_sections.size(), 1);
+    // The section should contain 4 edges, namely v5 -> v6 -> v7 and the reverse
+    EXPECT_EQ(no_border_vss_sections[0].size(), 4);
+    EXPECT_TRUE(std::find(no_border_vss_sections[0].begin(), no_border_vss_sections[0].end(), v5_v6) != no_border_vss_sections[0].end());
+    EXPECT_TRUE(std::find(no_border_vss_sections[0].begin(), no_border_vss_sections[0].end(), v6_v7) != no_border_vss_sections[0].end());
+    EXPECT_TRUE(std::find(no_border_vss_sections[0].begin(), no_border_vss_sections[0].end(), v7_v6) != no_border_vss_sections[0].end());
+    EXPECT_TRUE(std::find(no_border_vss_sections[0].begin(), no_border_vss_sections[0].end(), v6_v5) != no_border_vss_sections[0].end());
+
+    auto unbreakable_sections = network.unbreakable_sections();
+
+    // Check unbreakable_sections
+    // There should be 3 sections
+    EXPECT_EQ(unbreakable_sections.size(), 3);
+    // One section should contain v0_v1, one should contain v20_v30, and one should contain v4_v5
+    int s0 = -1, s1 = -1, s2 = -1;
+    for (int i = 0; i < unbreakable_sections.size(); i++) {
+        if (std::find(unbreakable_sections[i].begin(), unbreakable_sections[i].end(), v0_v1) != unbreakable_sections[i].end()) {
+            s0 = i;
+        }
+        if (std::find(unbreakable_sections[i].begin(), unbreakable_sections[i].end(), v20_v30) != unbreakable_sections[i].end()) {
+            s1 = i;
+        }
+        if (std::find(unbreakable_sections[i].begin(), unbreakable_sections[i].end(), v4_v5) != unbreakable_sections[i].end()) {
+            s2 = i;
+        }
+    }
+    // s0, s1 and s2 should be all different and within [0, 2]
+    EXPECT_NE(s0, s1);
+    EXPECT_NE(s0, s2);
+    EXPECT_NE(s1, s2);
+    EXPECT_GE(s0, 0);
+    EXPECT_GE(s1, 0);
+    EXPECT_GE(s2, 0);
+    EXPECT_LE(s0, 2);
+    EXPECT_LE(s1, 2);
+    EXPECT_LE(s2, 2);
+
+    // Section s0 should contain 5 edges, namely v0 -> v1, v1 -> v20, v31 -> v21, v21 -> v1, v1 -> v0
+    EXPECT_EQ(unbreakable_sections[s0].size(), 5);
+    EXPECT_TRUE(std::find(unbreakable_sections[s0].begin(), unbreakable_sections[s0].end(), v0_v1) != unbreakable_sections[s0].end());
+    EXPECT_TRUE(std::find(unbreakable_sections[s0].begin(), unbreakable_sections[s0].end(), v1_v20) != unbreakable_sections[s0].end());
+    EXPECT_TRUE(std::find(unbreakable_sections[s0].begin(), unbreakable_sections[s0].end(), v31_v21) != unbreakable_sections[s0].end());
+    EXPECT_TRUE(std::find(unbreakable_sections[s0].begin(), unbreakable_sections[s0].end(), v21_v1) != unbreakable_sections[s0].end());
+    EXPECT_TRUE(std::find(unbreakable_sections[s0].begin(), unbreakable_sections[s0].end(), v1_v0) != unbreakable_sections[s0].end());
+
+    // Section s1 should contain 2 edges, namely v20 -> v30 -> v4
+    EXPECT_EQ(unbreakable_sections[s1].size(), 2);
+    EXPECT_TRUE(std::find(unbreakable_sections[s1].begin(), unbreakable_sections[s1].end(), v20_v30) != unbreakable_sections[s1].end());
+    EXPECT_TRUE(std::find(unbreakable_sections[s1].begin(), unbreakable_sections[s1].end(), v30_v4) != unbreakable_sections[s1].end());
+
+    // Section s2 should contain 2 edges, namely v4 -> v5 and the reverse
+    EXPECT_EQ(unbreakable_sections[s2].size(), 2);
+    EXPECT_TRUE(std::find(unbreakable_sections[s2].begin(), unbreakable_sections[s2].end(), v4_v5) != unbreakable_sections[s2].end());
+    EXPECT_TRUE(std::find(unbreakable_sections[s2].begin(), unbreakable_sections[s2].end(), v5_v4) != unbreakable_sections[s2].end());
+}
+
 TEST(Functionality, ReadNetwork) {
     cda_rail::Network network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
 
