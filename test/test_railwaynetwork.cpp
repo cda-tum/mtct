@@ -880,9 +880,9 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
     EXPECT_EQ(v31_v2_successors.size(), 1);
     EXPECT_TRUE(std::find(v31_v2_successors.begin(), v31_v2_successors.end(), network.get_edge_index("v2", "v1_v2_2")) != v31_v2_successors.end());
     // Successors of v2->v1_v2_2 is the edge to v1_v2_1
-    const auto& v1_v2_v2_2_successors = network.get_successors("v2", "v1_v2_2");
-    EXPECT_EQ(v1_v2_v2_2_successors.size(), 1);
-    EXPECT_TRUE(std::find(v1_v2_v2_2_successors.begin(), v1_v2_v2_2_successors.end(), network.get_edge_index("v1_v2_2", "v1_v2_1")) != v1_v2_v2_2_successors.end());
+    const auto& v2_v1_v2_2_successors = network.get_successors("v2", "v1_v2_2");
+    EXPECT_EQ(v2_v1_v2_2_successors.size(), 1);
+    EXPECT_TRUE(std::find(v2_v1_v2_2_successors.begin(), v2_v1_v2_2_successors.end(), network.get_edge_index("v1_v2_2", "v1_v2_1")) != v2_v1_v2_2_successors.end());
     // Successors of v1_v2_2->v1_v2_1 is the edge to v1_v2_0
     const auto& v1_v2_2_v1_v2_1_successors = network.get_successors("v1_v2_2", "v1_v2_1");
     EXPECT_EQ(v1_v2_2_v1_v2_1_successors.size(), 1);
