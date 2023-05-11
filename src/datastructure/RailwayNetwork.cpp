@@ -1112,3 +1112,17 @@ void cda_rail::Network::dfs(std::vector<std::vector<int>> &ret_val, std::unorder
         }
     }
 }
+
+void cda_rail::Network::change_vertex_type(int index, cda_rail::VertexType new_type) {
+    /**
+     * Changes the type of a specific vertex.
+     *
+     * @param index: Index of the vertex to change
+     * @param new_type: New type of the vertex
+     */
+
+    if (!has_vertex(index)) {
+        throw std::invalid_argument("Vertex does not exist");
+    }
+    vertices[index].type = new_type;
+}

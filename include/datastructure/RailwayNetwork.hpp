@@ -153,6 +153,8 @@ namespace cda_rail {
 
             void change_vertex_name(int index, const std::string& new_name);
             void change_vertex_name(const std::string& old_name, const std::string& new_name) {change_vertex_name(get_vertex_index(old_name), new_name);};
+            void change_vertex_type(int index, cda_rail::VertexType new_type);
+            void change_vertex_type(const std::string& name, cda_rail::VertexType new_type) {change_vertex_type(get_vertex_index(name), new_type);};
 
             void change_edge_property(int index, double value, const std::string& property);
             void change_edge_property(int source_id, int target_id, double value, const std::string& property) {change_edge_property(get_edge_index(source_id, target_id), value, property);};
