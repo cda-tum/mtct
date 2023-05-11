@@ -244,6 +244,73 @@ TEST(Functionality, NetworkSections) {
     EXPECT_TRUE(std::find(unbreakable_sections[s2].begin(), unbreakable_sections[s2].end(), v5_v4) != unbreakable_sections[s2].end());
 }
 
+TEST(Functionality, NetworkConsistency) {
+    cda_rail::Network network;
+
+    // Add vertices
+    network.add_vertex("v0", cda_rail::VertexType::TTD);
+    network.add_vertex("v1", cda_rail::VertexType::NO_BORDER_VSS);
+    network.add_vertex("v2", cda_rail::VertexType::TTD);
+    network.add_vertex("v3", cda_rail::VertexType::VSS);
+
+    network.add_edge("v0", "v1", 100, 100, false);
+    network.add_edge("v1", "v2", 100, 100, false);
+    network.add_edge("v1", "v3", 100, 100, false);
+
+    EXPECT_FALSE(network.is_consistent_for_transformation());
+
+    network.change_vertex_type("v1", cda_rail::VertexType::NO_BORDER);
+
+    EXPECT_TRUE(network.is_consistent_for_transformation());
+
+    network.add_vertex("v4", cda_rail::VertexType::NO_BORDER);
+    network.add_vertex("v5", cda_rail::VertexType::NO_BORDER_VSS);
+    network.add_vertex("v6", cda_rail::VertexType::VSS);
+
+    network.add_edge("v2", "v4", 100, 100, false);
+    network.add_edge("v4", "v5", 100, 100, false);
+    network.add_edge("v5", "v6", 100, 100, false);
+
+    EXPECT_FALSE(network.is_consistent_for_transformation());
+
+    network.change_vertex_type("v5", cda_rail::VertexType::NO_BORDER);
+
+    EXPECT_TRUE(network.is_consistent_for_transformation());
+
+    network.add_vertex("v7", cda_rail::VertexType::TTD);
+
+    network.add_edge("v6", "v7", 100, 100, true, 0);
+
+    EXPECT_FALSE(network.is_consistent_for_transformation());
+
+    network.change_edge_property("v6", "v7", 1, "min_block_length");
+
+    EXPECT_TRUE(network.is_consistent_for_transformation());
+
+    network.change_vertex_type("v7", cda_rail::VertexType::NO_BORDER);
+
+    EXPECT_FALSE(network.is_consistent_for_transformation());
+
+    network.change_vertex_type("v7", cda_rail::VertexType::VSS);
+
+    EXPECT_TRUE(network.is_consistent_for_transformation());
+
+    network.add_vertex("v8", cda_rail::VertexType::TTD);
+
+    network.add_edge("v7", "v8", 100, 100, false);
+    network.add_edge("v8", "v7", 50, 50, false);
+
+    EXPECT_FALSE(network.is_consistent_for_transformation());
+
+    network.change_edge_property("v8", "v7", 100, "length");
+
+    EXPECT_TRUE(network.is_consistent_for_transformation());
+
+    network.change_edge_breakable("v8", "v7", true);
+
+    EXPECT_FALSE(network.is_consistent_for_transformation());
+}
+
 TEST(Functionality, ReadNetwork) {
     cda_rail::Network network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
 
