@@ -29,6 +29,8 @@ namespace cda_rail {
             [[nodiscard]] int size() const {return edges.size();};
 
             [[nodiscard]] bool check_consistency(const cda_rail::Network& network) const;
+
+            void update_after_discretization(const std::vector<std::pair<int, std::vector<int>>>& new_edges);
     };
 
     class RouteMap {
@@ -81,5 +83,7 @@ namespace cda_rail {
             [[nodiscard]] static RouteMap import_routes(const std::filesystem::path& p, const cda_rail::Network& network) {return RouteMap(p, network);};
             [[nodiscard]] static RouteMap import_routes(const std::string& path, const cda_rail::Network& network) {return RouteMap(path, network);};
             [[nodiscard]] static RouteMap import_routes(const char* path, const cda_rail::Network& network) {return RouteMap(path, network);};
+
+            void update_after_discretization(const std::vector<std::pair<int, std::vector<int>>>& new_edges);
     };
 }

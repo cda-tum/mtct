@@ -136,6 +136,31 @@ double cda_rail::Route::length(const cda_rail::Network &network) const {
     return length;
 }
 
+void cda_rail::Route::update_after_discretization(const std::vector<std::pair<int, std::vector<int>>> &new_edges) {
+    /**
+     * This method updates the route after the discretization of the network accordingly.
+     * For every pair (v, {v_1, ..., v_n}), v is replaced by v_1, ..., v_n.
+     *
+     * @param new_edges The new edges of the network.
+     */
+
+    const auto old_edges = edges;
+    edges.clear();
+    for (const auto &old_edge : old_edges) {
+        bool replaced = false;
+        for (const auto [track, new_tracks] : new_edges) {
+            if (old_edge == track) {
+                edges.insert(edges.end(), new_tracks.begin(), new_tracks.end());
+                replaced = true;
+                break;
+            }
+        }
+        if (!replaced) {
+            edges.emplace_back(old_edge);
+        }
+    }
+}
+
 void cda_rail::RouteMap::add_empty_route(const std::string &train_name) {
     /**
      * Adds an empty route for the given train.
@@ -408,4 +433,17 @@ double cda_rail::RouteMap::length(const std::string &train_name, const cda_rail:
      */
 
     return get_route(train_name).length(network);
+}
+
+void cda_rail::RouteMap::update_after_discretization(const std::vector<std::pair<int, std::vector<int>>> &new_edges) {
+    /**
+     * This method updates the routes after the discretization of the network accordingly.
+     * For every pair (v, {v_1, ..., v_n}), v is replaced by v_1, ..., v_n.
+     *
+     * @param new_edges The new edges of the network.
+     */
+
+    for (auto& [train_name, route] : routes) {
+        route.update_after_discretization(new_edges);
+    }
 }

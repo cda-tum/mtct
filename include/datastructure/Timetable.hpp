@@ -141,6 +141,8 @@ namespace cda_rail {
             [[nodiscard]] static cda_rail::Timetable import_timetable(const std::filesystem::path& p, const cda_rail::Network& network) {return Timetable(p, network);};
             [[nodiscard]] static cda_rail::Timetable import_timetable(const char* path, const cda_rail::Network& network) {return Timetable(path, network);};
 
+            void update_after_discretization(const std::vector<std::pair<int, std::vector<int>>>& new_edges) {station_list.update_after_discretization(new_edges);};
+
             // Iterator struct
             struct Iterator {
                 // Iterator tags
