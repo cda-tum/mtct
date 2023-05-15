@@ -100,5 +100,8 @@ namespace cda_rail::instances{
             [[nodiscard]] static VSSGenerationTimetable import_instance(const char* path, bool every_train_must_have_route = true) {
                 return VSSGenerationTimetable(path, every_train_must_have_route);
             };
+
+            // Transformation functions
+            void discretize(cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
     };
 }
