@@ -513,3 +513,73 @@ TEST(Functionality, VSSGenerationTimetableExport) {
     // Check tr1 length
     EXPECT_EQ(instance_read.route_length("tr1"), 300);
 }
+
+TEST(Functionality, Discretization) {
+    cda_rail::instances::VSSGenerationTimetable instance;
+
+    // Add a simple network to the instance
+    instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
+    instance.n().add_vertex("v1", cda_rail::VertexType::VSS);
+    instance.n().add_vertex("v2", cda_rail::VertexType::TTD);
+
+    instance.n().add_edge("v0", "v1", 100, 10, true, 10);
+    instance.n().add_edge("v1", "v2", 200, 20, false);
+    instance.n().add_edge("v1", "v0", 100, 10, true, 10);
+    instance.n().add_edge("v2", "v1", 200, 20, false);
+
+    instance.n().add_successor({"v0", "v1"}, {"v1", "v2"});
+    instance.n().add_successor({"v2", "v1"}, {"v1", "v0"});
+
+    // Add a simple timetable to the instance
+    instance.add_train("tr1", 50, 10, 2, 2, 0, 0, "v0", 600, 5, "v2");
+    instance.add_station("s0");
+    instance.add_track_to_station("s0", "v0", "v1");
+    instance.add_track_to_station("s0", "v1", "v2");
+    instance.add_station("s1");
+    instance.add_track_to_station("s1", "v1", "v2");
+    instance.add_track_to_station("s1", "v2", "v1");
+    instance.add_stop("tr1", "s1", 200, 260);
+    instance.add_stop("tr1", "s0", 60, 120);
+
+    EXPECT_EQ(instance.get_station_list().get_station(instance.get_schedule("tr1").stops.at(0).station).name, "s0");
+
+    // Add route to instance
+    instance.add_empty_route("tr1");
+    instance.push_back_edge_to_route("tr1", "v0", "v1");
+    instance.push_back_edge_to_route("tr1", "v1", "v2");
+
+    // Check for consistency
+    EXPECT_TRUE(instance.check_consistency());
+
+    // Discretize the instance
+    instance.discretize();
+
+    EXPECT_EQ(instance.n().number_of_vertices(), 12);
+    EXPECT_EQ(instance.n().number_of_edges(), 22);
+
+    // Check route
+    const auto& r1 = instance.get_route("tr1");
+    std::vector<std::string> expected_route = {"v0", "v0_v1_0", "v0_v1_1", "v0_v1_2", "v0_v1_3", "v0_v1_4", "v0_v1_5", "v0_v1_6", "v0_v1_7", "v0_v1_8", "v1", "v2"};
+    EXPECT_EQ(r1.size(), expected_route.size() - 1);
+    for (size_t i = 0; i < r1.size(); ++i) {
+        EXPECT_EQ(r1.get_edge(i), instance.n().get_edge_index(expected_route[i], expected_route[i + 1]));
+    }
+
+    // Check stations
+    const auto& s0 = instance.get_station_list().get_station("s0");
+    std::vector<std::string> expected_s0 = {"v0", "v0_v1_0", "v0_v1_1", "v0_v1_2", "v0_v1_3", "v0_v1_4", "v0_v1_5", "v0_v1_6", "v0_v1_7", "v0_v1_8", "v1", "v2"};
+    EXPECT_EQ(s0.tracks.size(), expected_s0.size() - 1);
+    for (size_t i = 0; i < s0.tracks.size(); ++i) {
+        const auto edge_id = instance.n().get_edge_index(expected_s0[i], expected_s0[i + 1]);
+        EXPECT_TRUE(std::find(s0.tracks.begin(), s0.tracks.end(), edge_id) != s0.tracks.end());
+    }
+
+
+    const auto& s1 = instance.get_station_list().get_station("s1");
+    std::vector<std::string> expected_s1 = {"v1", "v2", "v1"};
+    EXPECT_EQ(s1.tracks.size(), expected_s1.size() - 1);
+    for (size_t i = 0; i < s1.tracks.size(); ++i) {
+        const auto edge_id = instance.n().get_edge_index(expected_s1[i], expected_s1[i + 1]);
+        EXPECT_TRUE(std::find(s1.tracks.begin(), s1.tracks.end(), edge_id) != s1.tracks.end());
+    }
+}
