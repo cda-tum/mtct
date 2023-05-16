@@ -14,7 +14,7 @@ namespace cda_rail::solver::mip_based {
             cda_rail::instances::VSSGenerationTimetable instance;
 
             // Instance variables
-            int dt, num_t, num_tr, num_edges;
+            int dt, num_t, num_tr, num_edges, num_vertices;
 
             // Gurobi variables
             std::optional<GRBEnv> env;
