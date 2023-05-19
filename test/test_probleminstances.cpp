@@ -42,28 +42,28 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
 
     // Check edges properties
     std::vector<EdgeTarget> edge_targets;
-    edge_targets.push_back({"l0", "l1", 500, 27.77777777777778, true, 0});
-    edge_targets.push_back({"l1", "l2", 500, 27.77777777777778, true, 0});
+    edge_targets.push_back({"l0", "l1", 500, 27.77777777777778, true, 10});
+    edge_targets.push_back({"l1", "l2", 500, 27.77777777777778, true, 10});
     edge_targets.push_back({"l2", "l3", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"l3", "g00", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"l3", "g10", 5, 27.77777777777778, false, 0});
-    edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 0});
-    edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 0});
+    edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 10});
+    edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 10});
     edge_targets.push_back({"g01", "r2", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"g11", "r2", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"r2", "r1", 5, 27.77777777777778, false, 0});
-    edge_targets.push_back({"r1", "r0", 500, 27.77777777777778, true, 0});
-    edge_targets.push_back({"r0", "r1", 500, 27.77777777777778, true, 0});
+    edge_targets.push_back({"r1", "r0", 500, 27.77777777777778, true, 10});
+    edge_targets.push_back({"r0", "r1", 500, 27.77777777777778, true, 10});
     edge_targets.push_back({"r1", "r2", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"r2", "g01", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"r2", "g11", 5, 27.77777777777778, false, 0});
-    edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 0});
-    edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 0});
+    edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 10});
+    edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 10});
     edge_targets.push_back({"g00", "l3", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"g10", "l3", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"l3", "l2", 5, 27.77777777777778, false, 0});
-    edge_targets.push_back({"l2", "l1", 500, 27.77777777777778, true, 0});
-    edge_targets.push_back({"l1", "l0", 500, 27.77777777777778, true, 0});
+    edge_targets.push_back({"l2", "l1", 500, 27.77777777777778, true, 10});
+    edge_targets.push_back({"l1", "l0", 500, 27.77777777777778, true, 10});
 
     EXPECT_EQ(network.number_of_edges(), edge_targets.size());
     for (const auto& edge : edge_targets) {

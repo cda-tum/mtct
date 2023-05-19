@@ -339,28 +339,28 @@ TEST(Functionality, ReadNetwork) {
 
     // Check edges properties
     std::vector<EdgeTarget> edge_targets;
-    edge_targets.push_back({"l0", "l1", 500, 27.77777777777778, true, 0});
-    edge_targets.push_back({"l1", "l2", 500, 27.77777777777778, true, 0});
+    edge_targets.push_back({"l0", "l1", 500, 27.77777777777778, true, 10});
+    edge_targets.push_back({"l1", "l2", 500, 27.77777777777778, true, 10});
     edge_targets.push_back({"l2", "l3", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"l3", "g00", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"l3", "g10", 5, 27.77777777777778, false, 0});
-    edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 0});
-    edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 0});
+    edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 10});
+    edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 10});
     edge_targets.push_back({"g01", "r2", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"g11", "r2", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"r2", "r1", 5, 27.77777777777778, false, 0});
-    edge_targets.push_back({"r1", "r0", 500, 27.77777777777778, true, 0});
-    edge_targets.push_back({"r0", "r1", 500, 27.77777777777778, true, 0});
+    edge_targets.push_back({"r1", "r0", 500, 27.77777777777778, true, 10});
+    edge_targets.push_back({"r0", "r1", 500, 27.77777777777778, true, 10});
     edge_targets.push_back({"r1", "r2", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"r2", "g01", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"r2", "g11", 5, 27.77777777777778, false, 0});
-    edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 0});
-    edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 0});
+    edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 10});
+    edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 10});
     edge_targets.push_back({"g00", "l3", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"g10", "l3", 5, 27.77777777777778, false, 0});
     edge_targets.push_back({"l3", "l2", 5, 27.77777777777778, false, 0});
-    edge_targets.push_back({"l2", "l1", 500, 27.77777777777778, true, 0});
-    edge_targets.push_back({"l1", "l0", 500, 27.77777777777778, true, 0});
+    edge_targets.push_back({"l2", "l1", 500, 27.77777777777778, true, 10});
+    edge_targets.push_back({"l1", "l0", 500, 27.77777777777778, true, 10});
 
     EXPECT_EQ(network.number_of_edges(), edge_targets.size());
     for (const auto& edge : edge_targets) {
@@ -1061,6 +1061,44 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
     // Successors of v1->v00 and v1->v01 are empty
     EXPECT_TRUE(network.get_successors("v1", "v00").empty());
     EXPECT_TRUE(network.get_successors("v1", "v01").empty());
+}
+
+TEST(Functionality, NetworkVerticesByType) {
+    cda_rail::Network network;
+    // Add vertices of each type NO_BORDER (1x), TTD (2x), VSS (3x), NO_BORDER_VSS (4x)
+    auto v1 = network.add_vertex("v1", cda_rail::VertexType::NO_BORDER);
+    auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+    auto v3 = network.add_vertex("v3", cda_rail::VertexType::TTD);
+    auto v4 = network.add_vertex("v4", cda_rail::VertexType::VSS);
+    auto v5 = network.add_vertex("v5", cda_rail::VertexType::VSS);
+    auto v6 = network.add_vertex("v6", cda_rail::VertexType::VSS);
+    auto v7 = network.add_vertex("v7", cda_rail::VertexType::NO_BORDER_VSS);
+    auto v8 = network.add_vertex("v8", cda_rail::VertexType::NO_BORDER_VSS);
+    auto v9 = network.add_vertex("v9", cda_rail::VertexType::NO_BORDER_VSS);
+    auto v10 = network.add_vertex("v10", cda_rail::VertexType::NO_BORDER_VSS);
+
+    // Check if the vertices are in the correct sets
+    auto no_border = network.get_vertices_by_type(cda_rail::VertexType::NO_BORDER);
+    EXPECT_EQ(no_border.size(), 1);
+    EXPECT_TRUE(std::find(no_border.begin(), no_border.end(), v1) != no_border.end());
+
+    auto ttd = network.get_vertices_by_type(cda_rail::VertexType::TTD);
+    EXPECT_EQ(ttd.size(), 2);
+    EXPECT_TRUE(std::find(ttd.begin(), ttd.end(), v2) != ttd.end());
+    EXPECT_TRUE(std::find(ttd.begin(), ttd.end(), v3) != ttd.end());
+
+    auto vss = network.get_vertices_by_type(cda_rail::VertexType::VSS);
+    EXPECT_EQ(vss.size(), 3);
+    EXPECT_TRUE(std::find(vss.begin(), vss.end(), v4) != vss.end());
+    EXPECT_TRUE(std::find(vss.begin(), vss.end(), v5) != vss.end());
+    EXPECT_TRUE(std::find(vss.begin(), vss.end(), v6) != vss.end());
+
+    auto no_border_vss = network.get_vertices_by_type(cda_rail::VertexType::NO_BORDER_VSS);
+    EXPECT_EQ(no_border_vss.size(), 4);
+    EXPECT_TRUE(std::find(no_border_vss.begin(), no_border_vss.end(), v7) != no_border_vss.end());
+    EXPECT_TRUE(std::find(no_border_vss.begin(), no_border_vss.end(), v8) != no_border_vss.end());
+    EXPECT_TRUE(std::find(no_border_vss.begin(), no_border_vss.end(), v9) != no_border_vss.end());
+    EXPECT_TRUE(std::find(no_border_vss.begin(), no_border_vss.end(), v10) != no_border_vss.end());
 }
 
 TEST(Functionality, ReverseIndices) {
