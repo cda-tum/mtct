@@ -15,6 +15,9 @@ namespace cda_rail::solver::mip_based {
 
             // Instance variables
             int dt, num_t, num_tr, num_edges, num_vertices;
+            std::vector<std::vector<int>> unbreakable_sections, no_border_vss_sections;
+            std::vector<std::pair<int, int>> train_interval;
+            std::vector<int> no_border_vss_vertices;
 
             // Gurobi variables
             std::optional<GRBEnv> env;
@@ -25,6 +28,8 @@ namespace cda_rail::solver::mip_based {
             void create_fixed_routes_variables();
             void create_general_variables();
             void create_vss_variables();
+
+            std::vector<int> unbreakable_section_indices(int train_index) const;
 
         public:
             // Constructors
