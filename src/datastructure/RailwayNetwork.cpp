@@ -1126,3 +1126,55 @@ void cda_rail::Network::change_vertex_type(int index, cda_rail::VertexType new_t
     }
     vertices[index].type = new_type;
 }
+
+std::vector<std::pair<int, int>> cda_rail::Network::combine_reverse_edges(const std::vector<int> &edges) const {
+    /**
+     * Given a vector of edges, this function combines edges that are the reverse of each other.
+     * If no reverse of an edge exists, the second element will be -1, i.e., negative.
+     * A pair is only added once, i.e., the first index is always smaller than the second for uniqueness.
+     * The order of the edges is not preserved.
+     * It throws an error, if one of the edges does not exist.
+     *
+     * @param edges: Vector of edge indices
+     * @return: Vector of pairs of edge indices
+     */
+
+    // Check if all edges exist
+    for (const auto& edge_index: edges) {
+        if (!has_edge(edge_index)) {
+            throw std::invalid_argument("Edge does not exist");
+        }
+    }
+
+    // Initialize return value
+    std::vector<std::pair<int, int>> ret_val;
+
+    // Iterate over all edges
+    for (const auto& edge_index: edges) {
+        const auto reverse_edge_index = get_reverse_edge_index(edge_index);
+        if (reverse_edge_index < 0 || reverse_edge_index > edge_index) {
+            ret_val.emplace_back(edge_index, reverse_edge_index);
+        }
+    }
+
+    return ret_val;
+}
+
+int cda_rail::Network::get_reverse_edge_index(int edge_index) const {
+    /**
+     * Gets the reverse index of an edge, -1 if it does not exist.
+     * Throws an error if the edge does not exist.
+     *
+     * @param edge: Index of the edge
+     * @return: Index of the reverse edge, -1 if it does not exist
+     */
+
+    if (!has_edge(edge_index)) {
+        throw std::invalid_argument("Edge does not exist");
+    }
+    const auto& edge = get_edge(edge_index);
+    if (has_edge(edge.target, edge.source)) {
+        return get_edge_index(edge.target, edge.source);
+    }
+    return -1;
+}

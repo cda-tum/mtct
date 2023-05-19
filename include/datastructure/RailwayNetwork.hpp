@@ -200,6 +200,8 @@ namespace cda_rail {
             [[nodiscard]] std::vector<int> relevant_breakable_edges() const;
             [[nodiscard]] std::vector<std::vector<int>> unbreakable_sections() const;
             [[nodiscard]] std::vector<std::vector<int>> no_border_vss_sections() const;
+            [[nodiscard]] std::vector<std::pair<int, int>> combine_reverse_edges(const std::vector<int>& edges) const;
+            [[nodiscard]] int get_reverse_edge_index(int edge_index) const;
 
             // Transformation functions
             std::pair<std::vector<int>, std::vector<int>> separate_edge(int edge_index, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
