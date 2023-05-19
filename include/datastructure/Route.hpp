@@ -27,6 +27,7 @@ namespace cda_rail {
             [[nodiscard]] int get_edge(int route_index) const;
             [[nodiscard]] const cda_rail::Edge& get_edge(int route_index, const cda_rail::Network& network) const;
             [[nodiscard]] int size() const {return edges.size();};
+            [[nodiscard]] const std::vector<int>& get_edges() const {return edges;};
 
             [[nodiscard]] bool check_consistency(const cda_rail::Network& network) const;
 

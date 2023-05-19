@@ -1178,3 +1178,20 @@ int cda_rail::Network::get_reverse_edge_index(int edge_index) const {
     }
     return -1;
 }
+
+const std::vector<int> cda_rail::Network::get_vertices_by_type(cda_rail::VertexType type) const {
+    /**
+     * Returns a vector of all vertices of a specific type.
+     *
+     * @param type: Type of the vertices
+     * @return: Vector of vertex indices
+     */
+
+    std::vector<int> ret_val;
+    for (int i = 0; i < vertices.size(); ++i) {
+        if (vertices[i].type == type) {
+            ret_val.emplace_back(i);
+        }
+    }
+    return ret_val;
+}

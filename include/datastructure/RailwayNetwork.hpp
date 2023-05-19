@@ -97,6 +97,8 @@ namespace cda_rail {
             const std::vector<Vertex>& get_vertices() const {return vertices;};
             const std::vector<Edge>& get_edges() const {return edges;};
 
+            const std::vector<int> get_vertices_by_type(cda_rail::VertexType type) const;
+
             int add_vertex(const std::string& name, VertexType type);
             int add_edge(int source,int target, double length, double max_speed, bool breakable, double min_block_length = 1);
             int add_edge(const std::string& source_name, const std::string& target_name, double length, double max_speed, bool breakable, double min_block_length = 1) {
