@@ -1063,6 +1063,36 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
     EXPECT_TRUE(network.get_successors("v1", "v01").empty());
 }
 
+TEST(Functionality, ReverseIndices) {
+    cda_rail::Network network;
+    network.add_vertex("v1", cda_rail::VertexType::TTD);
+    network.add_vertex("v2", cda_rail::VertexType::TTD);
+    network.add_vertex("v3", cda_rail::VertexType::TTD);
+    network.add_vertex("v4", cda_rail::VertexType::TTD);
+
+    auto e12 = network.add_edge("v1", "v2", 100, 10, false);
+    auto e23 = network.add_edge("v2", "v3", 100, 10, false);
+    auto e34 = network.add_edge("v3", "v4", 100, 10, false);
+    auto e43 = network.add_edge("v4", "v3", 100, 10, false);
+    auto e21 = network.add_edge("v2", "v1", 100, 10, false);
+
+    // Check if the reverse indices are correct
+    EXPECT_EQ(network.get_reverse_edge_index(e12), e21);
+    EXPECT_EQ(network.get_reverse_edge_index(e23), -1);
+    EXPECT_EQ(network.get_reverse_edge_index(e34), e43);
+    EXPECT_EQ(network.get_reverse_edge_index(e43), e34);
+    EXPECT_EQ(network.get_reverse_edge_index(e21), e12);
+
+    std::vector edges = {e12, e23, e34, e43, e21};
+    auto edges_combined = network.combine_reverse_edges(edges);
+    // Expect three edge sets
+    EXPECT_EQ(edges_combined.size(), 3);
+    // Expect the following pairs to exist: (min(e12, e21), max(e12, e21)), (e23, -1), and (min(e34, e43), max(e34, e43))
+    EXPECT_TRUE(std::find(edges_combined.begin(), edges_combined.end(), std::make_pair(std::min(e12, e21), std::max(e12, e21))) != edges_combined.end());
+    EXPECT_TRUE(std::find(edges_combined.begin(), edges_combined.end(), std::make_pair(e23, -1)) != edges_combined.end());
+    EXPECT_TRUE(std::find(edges_combined.begin(), edges_combined.end(), std::make_pair(std::min(e34, e43), std::max(e34, e43))) != edges_combined.end());
+}
+
 TEST(Functionality, ReadTrains) {
     auto trains = cda_rail::TrainList::import_trains("./example-networks/Fig11/timetable/");
 
