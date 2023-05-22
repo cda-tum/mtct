@@ -80,6 +80,7 @@ namespace cda_rail {
             void dfs(std::vector<std::vector<int>>& ret_val, std::unordered_set<int>& vertices_to_visit,
                      const cda_rail::VertexType& section_type,
                      const std::vector<cda_rail::VertexType> error_types = {}) const;
+            std::vector<std::pair<int, int>> sort_edge_pairs (std::vector<std::pair<int, int>>& edge_pairs) const;
         public:
             // Constructors
             Network() = default;
@@ -202,8 +203,9 @@ namespace cda_rail {
             [[nodiscard]] std::vector<int> relevant_breakable_edges() const;
             [[nodiscard]] std::vector<std::vector<int>> unbreakable_sections() const;
             [[nodiscard]] std::vector<std::vector<int>> no_border_vss_sections() const;
-            [[nodiscard]] std::vector<std::pair<int, int>> combine_reverse_edges(const std::vector<int>& edges) const;
+            [[nodiscard]] std::vector<std::pair<int, int>> combine_reverse_edges(const std::vector<int>& edges, bool sort = false) const;
             [[nodiscard]] int get_reverse_edge_index(int edge_index) const;
+            [[nodiscard]] std::optional<int> common_vertex(const std::pair<int, int>& pair1, const std::pair<int, int>& pair2) const;
 
             // Transformation functions
             std::pair<std::vector<int>, std::vector<int>> separate_edge(int edge_index, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);

@@ -1127,7 +1127,7 @@ void cda_rail::Network::change_vertex_type(int index, cda_rail::VertexType new_t
     vertices[index].type = new_type;
 }
 
-std::vector<std::pair<int, int>> cda_rail::Network::combine_reverse_edges(const std::vector<int> &edges) const {
+std::vector<std::pair<int, int>> cda_rail::Network::combine_reverse_edges(const std::vector<int> &edges, bool sort) const {
     /**
      * Given a vector of edges, this function combines edges that are the reverse of each other.
      * If no reverse of an edge exists, the second element will be -1, i.e., negative.
@@ -1194,4 +1194,76 @@ const std::vector<int> cda_rail::Network::get_vertices_by_type(cda_rail::VertexT
         }
     }
     return ret_val;
+}
+
+std::optional<int>
+cda_rail::Network::common_vertex(const std::pair<int, int> &pair1, const std::pair<int, int> &pair2) const {
+    /**
+     * Returns the common vertex of two edge pairs, if it exists. Otherwise optional is empty.
+     * Throws an error if the pairs are not reverse of each other.
+     *
+     * @param pair1: First pair of edge indices
+     * @param pair2: Second pair of edge indices
+     */
+
+    // Initialize return value
+    std::optional<int> ret_val;
+
+    if (!has_edge(pair1.first) || !has_edge(pair2.first)) {
+        throw std::invalid_argument("Edge does not exist");
+    }
+
+    if (get_reverse_edge_index(pair1.first) != pair1.second) {
+        throw std::invalid_argument("First pair is not reverse of each other");
+    }
+    if (get_reverse_edge_index(pair2.first) != pair2.second) {
+        throw std::invalid_argument("Second pair is not reverse of each other");
+    }
+
+    const auto& edge1 = get_edge(pair1.first);
+    const auto& edge2 = get_edge(pair2.first);
+
+    if (edge1.source == edge2.source || edge1.source == edge2.target) {
+        ret_val = edge1.source;
+    } else if (edge1.target == edge2.source || edge1.target == edge2.target) {
+        ret_val = edge1.target;
+    }
+
+    return ret_val;
+}
+
+std::vector<std::pair<int, int>> cda_rail::Network::sort_edge_pairs (std::vector<std::pair<int, int>> edge_pairs) const {
+    /**
+     * Sort a vector of edge pairs so that neighboring pairs are adjacent
+     *
+     * @param edges: Vector of edge pairs
+     */
+
+    // Check if all edges exist
+    for (const auto& edge_pair: edge_pairs) {
+        if (!has_edge(edge_pair.first)) {
+            throw std::invalid_argument("Edge does not exist");
+        }
+    }
+    // Check if all pairs are reverse of each other
+    for (const auto& edge_pair: edge_pairs) {
+        if (get_reverse_edge_index(edge_pair.first) != edge_pair.second) {
+            throw std::invalid_argument("Pairs are not reverse of each other");
+        }
+    }
+
+    // Initialize counting and helping maps
+    //std::unordered_map<int, int> vertex_occurrences;
+    std::unordered_map<int, std::vector<int>> vertex_neighbors;
+
+    // Count occurrences of vertices
+    for (int i = 0; i < edge_pairs.size(); ++i) {
+        const auto& edge_pair = edge_pairs[i];
+        const auto& edge = get_edge(edge_pair.first);
+        //vertex_occurrences[edge.source]++;
+        //vertex_occurrences[edge.target]++;
+        vertex_neighbors[edge.source].emplace_back(i);
+        vertex_neighbors[edge.target].emplace_back(i);
+    }
+
 }
