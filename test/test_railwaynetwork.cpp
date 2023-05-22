@@ -196,6 +196,10 @@ TEST(Functionality, NetworkSections) {
     EXPECT_TRUE(std::find(no_border_vss_sections[0].begin(), no_border_vss_sections[0].end(), v7_v6) != no_border_vss_sections[0].end());
     EXPECT_TRUE(std::find(no_border_vss_sections[0].begin(), no_border_vss_sections[0].end(), v6_v5) != no_border_vss_sections[0].end());
 
+    std::pair<int, int> pair1 = std::make_pair(v5_v6, v6_v5);
+    std::pair<int, int> pair2 = std::make_pair(v6_v7, v7_v6);
+    EXPECT_TRUE(network.common_vertex(pair1, pair2) == network.get_vertex_index("v6"));
+
     auto unbreakable_sections = network.unbreakable_sections();
 
     // Check unbreakable_sections
