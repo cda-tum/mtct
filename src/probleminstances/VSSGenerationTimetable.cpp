@@ -50,3 +50,32 @@ void cda_rail::instances::VSSGenerationTimetable::discretize(cda_rail::Separatio
     timetable.update_after_discretization(new_edges);
     routes.update_after_discretization(new_edges);
 }
+
+std::vector<int>
+cda_rail::instances::VSSGenerationTimetable::trains_in_section(const std::vector<int> &section) const {
+    /**
+     * Returns the trains that traverse the given section
+     *
+     * @param section: the section
+     * @return the trains that traverse the given section
+     */
+
+    // Initialize the vector of trains
+    std::vector<int> tr_in_sec;
+
+    for (int i = 0; i < get_train_list().size(); ++i) {
+        auto tr_name = get_train_list().get_train(i).name;
+        auto tr_route = get_route(tr_name).get_edges();
+        bool tr_in_sec_flag = false;
+        for (int j = 0; j < section.size() && !tr_in_sec_flag; ++j) {
+            for (int k = 0; k < tr_route.size() && !tr_in_sec_flag; ++k) {
+                if (section[j] == tr_route[k]) {
+                    tr_in_sec.emplace_back(i);
+                    tr_in_sec_flag = true;
+                }
+            }
+        }
+    }
+
+    return tr_in_sec;
+}

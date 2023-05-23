@@ -103,5 +103,8 @@ namespace cda_rail::instances{
 
             // Transformation functions
             void discretize(cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
+
+            // Helper
+            std::vector<int> trains_in_section(const std::vector<int>& section) const;
     };
 }
