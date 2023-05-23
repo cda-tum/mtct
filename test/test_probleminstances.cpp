@@ -583,3 +583,61 @@ TEST(Functionality, Discretization) {
         EXPECT_TRUE(std::find(s1.tracks.begin(), s1.tracks.end(), edge_id) != s1.tracks.end());
     }
 }
+
+TEST(Functionality, TrainsOnSection) {
+    cda_rail::instances::VSSGenerationTimetable instance;
+
+    // Add a simple network to the instance
+    instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
+    instance.n().add_vertex("v1", cda_rail::VertexType::VSS);
+    instance.n().add_vertex("v2", cda_rail::VertexType::TTD);
+    instance.n().add_vertex("v3", cda_rail::VertexType::TTD);
+    instance.n().add_vertex("v4", cda_rail::VertexType::VSS);
+
+    // Add edges
+    int v0_v1 = instance.n().add_edge("v0", "v1", 100, 100, false);
+    int v1_v2 = instance.n().add_edge("v1", "v2", 100, 100, false);
+    int v2_v3 = instance.n().add_edge("v2", "v3", 100, 100, false);
+    int v3_v4 = instance.n().add_edge("v3", "v4", 100, 100, false);
+    int v1_v4 = instance.n().add_edge("v1", "v4", 100, 100, false);
+    int v2_v4 = instance.n().add_edge("v2", "v4", 100, 100, false);
+
+    // Add successors
+    instance.n().add_successor(v0_v1, v1_v2);
+    instance.n().add_successor(v1_v2, v2_v3);
+    instance.n().add_successor(v2_v3, v3_v4);
+    instance.n().add_successor(v1_v2, v2_v4);
+    instance.n().add_successor(v0_v1, v1_v4);
+
+    // Add trains
+    instance.add_train("tr1", 100, 100, 2, 2, 0, 10, 0, 100, 10, 1);
+    instance.add_train("tr2", 100, 100, 2, 2, 0, 10, 0, 100, 10, 1);
+    instance.add_train("tr3", 100, 100, 2, 2, 0, 10, 0, 100, 10, 1);
+
+    // Add routes
+    instance.add_empty_route("tr1");
+    instance.add_empty_route("tr2");
+    instance.add_empty_route("tr3");
+
+    instance.push_back_edge_to_route("tr1", "v0", "v1");
+    instance.push_back_edge_to_route("tr1", "v1", "v2");
+    instance.push_back_edge_to_route("tr1", "v2", "v3");
+    instance.push_back_edge_to_route("tr1", "v3", "v4");
+
+    instance.push_back_edge_to_route("tr2", "v0", "v1");
+    instance.push_back_edge_to_route("tr2", "v1", "v4");
+
+    instance.push_back_edge_to_route("tr3", "v0", "v1");
+    instance.push_back_edge_to_route("tr3", "v1", "v2");
+    instance.push_back_edge_to_route("tr3", "v2", "v4");
+
+    // Get Trains on section v1 - v2 - v3 - v4
+    auto trains_on_section = instance.trains_in_section({v1_v2, v2_v3, v3_v4});
+
+    // Expect tr1 and tr3 to be on the section
+    EXPECT_EQ(trains_on_section.size(), 2);
+    int tr1 = instance.get_train_list().get_train_index("tr1");
+    int tr3 = instance.get_train_list().get_train_index("tr3");
+    EXPECT_TRUE(std::find(trains_on_section.begin(), trains_on_section.end(), tr1) != trains_on_section.end());
+    EXPECT_TRUE(std::find(trains_on_section.begin(), trains_on_section.end(), tr3) != trains_on_section.end());
+}
