@@ -57,11 +57,19 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t) {
     // Create constraints
     create_fixed_routes_train_movement_constraints();
     create_boundary_fixed_routes_constraints();
+    create_vss_discretized_constraints();
+    create_unbreakable_sections_constraints();
 
     //model->write("model.lp");
 
     // Optimize
     model->optimize();
+
+    // Print solution of the first train
+    const auto& interval = train_interval[0];
+    for (int t = interval.first; t <= interval.second; ++t) {
+        std::cout << "t = " << t << " at [" << vars["lda"](0, t).get(GRB_DoubleAttr_X) << ", " << vars["mu"](0,t).get(GRB_DoubleAttr_X) << "]" <<  std::endl;
+    }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_variables() {
@@ -226,4 +234,104 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
         obj += vars["b"](i);
     }
     model->setObjective(obj, GRB_MINIMIZE);
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_vss_discretized_constraints() {
+    /**
+     * Creates VSS constraints, i.e., on NO_BORDER_VSS sections two trains must be separated by a chosen vertex.
+     */
+
+    // Iterate over all non-border VSS sections
+    for (const auto& no_border_vss_section : no_border_vss_sections) {
+        const auto tr_on_section = instance.trains_in_section(no_border_vss_section);
+        const auto no_border_vss_section_sorted = instance.n().combine_reverse_edges(no_border_vss_section, true);
+        // Iterate over all pairs of trains on the section
+        for (int i = 0; i < tr_on_section.size(); ++i) {
+            const auto& tr1 = tr_on_section[i];
+            const auto& tr1_interval = train_interval[tr1];
+            const auto& tr1_name = instance.get_train_list().get_train(tr1).name;
+            const auto& tr1_route = instance.get_route(tr1_name);
+            for (int j = i + 1; j < tr_on_section.size(); ++j) {
+                const auto& tr2 = tr_on_section[j];
+                const auto& tr2_interval = train_interval[tr2];
+                const auto& tr2_name = instance.get_train_list().get_train(tr2).name;
+                const auto& tr2_route = instance.get_route(tr2_name);
+                std::pair<int, int> t_interval = {std::max(tr1_interval.first, tr2_interval.first),
+                                                  std::min(tr1_interval.second, tr2_interval.second)};
+                // Iterate over all time steps where both trains can potentially be on the section
+                for (int t = t_interval.first; t <= t_interval.second; ++t) {
+                    // Iterate over all pairs of edges in the section
+                    for (int e1 = 0; e1 < no_border_vss_section_sorted.size(); ++e1) {
+                        for (int e2 = 0; e2 < no_border_vss_section_sorted.size(); ++e2) {
+                            if (e1 == e2) {
+                                continue;
+                            }
+                            GRBLinExpr lhs = 2;
+                            if (tr1_route.contains_edge(no_border_vss_section_sorted[e1].first)) {
+                                lhs -= vars["x"](tr1, t, no_border_vss_section_sorted[e1].first);
+                            }
+                            if (tr1_route.contains_edge(no_border_vss_section_sorted[e1].second)) {
+                                lhs -= vars["x"](tr1, t, no_border_vss_section_sorted[e1].second);
+                            }
+                            if (tr2_route.contains_edge(no_border_vss_section_sorted[e2].first)) {
+                                lhs -= vars["x"](tr2, t, no_border_vss_section_sorted[e2].first);
+                            }
+                            if (tr2_route.contains_edge(no_border_vss_section_sorted[e2].second)) {
+                                lhs -= vars["x"](tr2, t, no_border_vss_section_sorted[e2].second);
+                            }
+
+                            // Overlapping vertices
+                            for (int e_overlap = std::min(e1,e2); e_overlap < std::max(e1, e2); ++e_overlap) {
+                                const auto& v_overlap = instance.n().common_vertex(no_border_vss_section_sorted[e_overlap],
+                                                                                   no_border_vss_section_sorted[e_overlap + 1]);
+                                if (!v_overlap.has_value()) {
+                                    throw std::runtime_error("No common vertex found, this should not have happened");
+                                }
+                                // Find index of v_overlap in no_border_vss_vertices
+                                int v_overlap_index = std::find(no_border_vss_vertices.begin(), no_border_vss_vertices.end(), v_overlap.value()) - no_border_vss_vertices.begin();
+                                if (v_overlap_index >= no_border_vss_vertices.size()) {
+                                    throw std::runtime_error("Vertex not found in no_border_vss_vertices, this should not have happened");
+                                }
+                                lhs += vars["b"](v_overlap_index);
+                            }
+
+                            model->addConstr(lhs >= 1, "vss_" + tr1_name + "_" + tr2_name + "_" + std::to_string(t) + "_" + std::to_string(e1) + "_" + std::to_string(e2));
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_unbreakable_sections_constraints() {
+    /**
+     * Creates constraints for unbreakable sections, i.e., only one train can be on an unbreakable section at a time.
+     */
+
+    // Iterate over all unbreakable sections
+    for (int sec_index = 0; sec_index < unbreakable_sections.size(); ++sec_index) {
+        const auto& sec = unbreakable_sections[sec_index];
+        const auto& tr_on_sec = instance.trains_in_section(sec);
+        // tr is on section if it occupies at least one edge of the section
+        for (int tr : tr_on_sec) {
+            const auto& tr_interval = train_interval[tr];
+            const auto& tr_name = instance.get_train_list().get_train(tr).name;
+            const auto& tr_route = instance.get_route(tr_name);
+            for (int t = tr_interval.first; t <= tr_interval.second; ++t) {
+                GRBLinExpr lhs = 0;
+                int count = 0;
+                for (int e_index : sec) {
+                    if (tr_route.contains_edge(e_index)) {
+                        lhs += vars["x"](tr, t, e_index);
+                        count++;
+                    }
+                }
+                model->addConstr(lhs >= vars["x_sec"](tr, t, sec_index), "unbreakable_section_only_" + tr_name + "_" + std::to_string(t));
+                model->addConstr(lhs <= count * vars["x_sec"](tr, t, sec_index), "unbreakable_section_if_" + tr_name + "_" + std::to_string(t));
+            }
+        }
+        //TODO: sum of x_sec <= 1 for given time
+        
+    }
 }
