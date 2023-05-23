@@ -29,6 +29,8 @@ namespace cda_rail {
             [[nodiscard]] int size() const {return edges.size();};
             [[nodiscard]] const std::vector<int>& get_edges() const {return edges;};
 
+            bool contains_edge(int edge_index) const {return std::find(edges.begin(), edges.end(), edge_index) != edges.end();};
+
             [[nodiscard]] bool check_consistency(const cda_rail::Network& network) const;
 
             void update_after_discretization(const std::vector<std::pair<int, std::vector<int>>>& new_edges);
