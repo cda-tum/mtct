@@ -762,6 +762,49 @@ TEST(Functionality, NetworkEdgeSeparation) {
     EXPECT_TRUE(network.get_successors("v2", "v31").empty());
 }
 
+TEST(Functionality, SortPairs) {
+    cda_rail::Network network;
+    // Add vertices
+    network.add_vertex("v0", cda_rail::VertexType::TTD);
+    network.add_vertex("v1", cda_rail::VertexType::NO_BORDER_VSS);
+    network.add_vertex("v2", cda_rail::VertexType::NO_BORDER_VSS);
+    network.add_vertex("v3", cda_rail::VertexType::NO_BORDER_VSS);
+    network.add_vertex("v4", cda_rail::VertexType::TTD);
+    network.add_vertex("v5", cda_rail::VertexType::TTD);
+
+    // Add edges
+    int v0_v1 = network.add_edge("v0", "v1", 100, 100, false);
+    int v1_v2 = network.add_edge("v1", "v2", 100, 100, false);
+    int v2_v3 = network.add_edge("v2", "v3", 100, 100, false);
+    int v3_v4 = network.add_edge("v3", "v4", 100, 100, false);
+    int v4_v5 = network.add_edge("v4", "v5", 100, 100, false);
+    int v5_v4 = network.add_edge("v5", "v4", 100, 100, false);
+    int v4_v3 = network.add_edge("v4", "v3", 100, 100, false);
+    int v2_v1 = network.add_edge("v2", "v1", 100, 100, false);
+    int v1_v0 = network.add_edge("v1", "v0", 100, 100, false);
+
+    // Edge pairs
+    std::vector<int> to_combine = {v3_v4, v4_v3, v2_v1, v1_v2, v1_v0, v0_v1, v2_v3};
+    const auto& combined_edges = network.combine_reverse_edges(to_combine, true);
+
+    // Check correctness
+    std::vector<std::pair<int, int>> expected_combined_edges = {{std::min(v0_v1, v1_v0), std::max(v0_v1, v1_v0)},
+                                                                {std::min(v1_v2, v2_v1), std::max(v1_v2, v2_v1)},
+                                                                {v2_v3, -1},
+                                                                {std::min(v3_v4, v4_v3), std::max(v3_v4, v4_v3)}};
+    EXPECT_EQ(combined_edges.size(), expected_combined_edges.size());
+    int expected_index = 0;
+    int expected_incr = 1;
+    if (combined_edges[0] != expected_combined_edges[0]) {
+        expected_index = combined_edges.size() - 1;
+        expected_incr = -1;
+    }
+    for (int i = 0; i < combined_edges.size(); ++i) {
+        EXPECT_EQ(combined_edges[i], expected_combined_edges[expected_index]);
+        expected_index += expected_incr;
+    }
+}
+
 TEST(Functionality, NetworkEdgeSeparationReverse) {
     cda_rail::Network network;
     // Add vertices
