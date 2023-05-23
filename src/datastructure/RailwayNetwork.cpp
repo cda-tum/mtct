@@ -1136,6 +1136,7 @@ std::vector<std::pair<int, int>> cda_rail::Network::combine_reverse_edges(const 
      * It throws an error, if one of the edges does not exist.
      *
      * @param edges: Vector of edge indices
+     * @param sort: If true, the pairs are sorted by the neighboring relation. This only works if the edges correspond to a simple path!
      * @return: Vector of pairs of edge indices
      */
 
@@ -1157,6 +1158,9 @@ std::vector<std::pair<int, int>> cda_rail::Network::combine_reverse_edges(const 
         }
     }
 
+    if (sort) {
+        return sort_edge_pairs(ret_val);
+    }
     return ret_val;
 }
 
@@ -1232,7 +1236,7 @@ cda_rail::Network::common_vertex(const std::pair<int, int> &pair1, const std::pa
     return ret_val;
 }
 
-std::vector<std::pair<int, int>> cda_rail::Network::sort_edge_pairs (std::vector<std::pair<int, int>> edge_pairs) const {
+std::vector<std::pair<int, int>> cda_rail::Network::sort_edge_pairs (std::vector<std::pair<int, int>>& edge_pairs) const {
     /**
      * Sort a vector of edge pairs so that neighboring pairs are adjacent
      *
@@ -1254,16 +1258,61 @@ std::vector<std::pair<int, int>> cda_rail::Network::sort_edge_pairs (std::vector
 
     // Initialize counting and helping maps
     //std::unordered_map<int, int> vertex_occurrences;
-    std::unordered_map<int, std::vector<int>> vertex_neighbors;
+    std::unordered_map<int, std::unordered_set<int>> vertex_neighbors;
 
     // Count occurrences of vertices
     for (int i = 0; i < edge_pairs.size(); ++i) {
         const auto& edge_pair = edge_pairs[i];
         const auto& edge = get_edge(edge_pair.first);
-        //vertex_occurrences[edge.source]++;
-        //vertex_occurrences[edge.target]++;
-        vertex_neighbors[edge.source].emplace_back(i);
-        vertex_neighbors[edge.target].emplace_back(i);
+        vertex_neighbors[edge.source].emplace(i);
+        vertex_neighbors[edge.target].emplace(i);
     }
+
+    // Initialize return value
+    std::vector<std::pair<int, int>> ret_val;
+
+    // Find starting vertex
+    int i;
+    for (i = 0; i < number_of_vertices(); ++i) {
+        if (vertex_neighbors[i].size() == 1) {
+            break;
+        }
+    }
+
+    // Iterate over all edges
+    while (i < number_of_vertices()) {
+        // Check if done
+        if (vertex_neighbors[i].size() == 0) {
+           break;
+        }
+        if (vertex_neighbors[i].size() > 1) {
+            throw std::runtime_error("Something went wrong, vertex has more than one neighbor still.");
+        }
+
+        // Process edge pair
+        const auto edge_pair_index = *vertex_neighbors[i].begin();
+        const auto& edge_pair = edge_pairs[edge_pair_index];
+        ret_val.emplace_back(edge_pair);
+        const auto& edge = get_edge(edge_pair.first);
+        vertex_neighbors[edge.source].erase(edge_pair_index);
+        vertex_neighbors[edge.target].erase(edge_pair_index);
+
+        // Get next vertex
+        if (edge.source != i) {
+            i = edge.source;
+        } else if (edge.target != i) {
+            i = edge.target;
+        } else {
+            throw std::runtime_error("Something went wrong, source and target are equal.");
+        }
+    }
+
+    for (int i = 0; i < number_of_vertices(); ++i) {
+        if (vertex_neighbors[i].size() > 0) {
+            throw std::runtime_error("Something went wrong, not everything was processed.");
+        }
+    }
+
+    return ret_val;
 
 }
