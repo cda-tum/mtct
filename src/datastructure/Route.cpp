@@ -161,6 +161,39 @@ void cda_rail::Route::update_after_discretization(const std::vector<std::pair<in
     }
 }
 
+std::pair<double, double> cda_rail::Route::edge_pos(int edge, const cda_rail::Network &network) const {
+    /**
+     * Returns the position of the given edge in the route, i.e., the distance from the route start to the source and target respectively.
+     *
+     * @param edge The edge to get the position of.
+     * @param network The network to which the edge belongs.
+     * @return The position of the edge in the route.
+     */
+
+    if (!network.has_edge(edge)) {
+        throw std::invalid_argument("Edge does not exist.");
+    }
+
+    // Initialize return values
+    std::pair<double, double> return_pos = {0, 0};
+    bool edge_found = false;
+    for (int i = 0; i < edges.size(); i++) {
+        return_pos.second += network.get_edge(edges[i]).length;
+        if (edges[i] == edge) {
+            edge_found = true;
+            break;
+        }
+        return_pos.first += network.get_edge(edges[i]).length;
+    }
+
+    if (!edge_found) {
+        throw std::invalid_argument("Edge does not exist in route.");
+    }
+
+    return return_pos;
+
+}
+
 void cda_rail::RouteMap::add_empty_route(const std::string &train_name) {
     /**
      * Adds an empty route for the given train.

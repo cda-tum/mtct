@@ -79,6 +79,15 @@ namespace cda_rail::instances{
             [[nodiscard]] const Route& get_route(const std::string& train_name) const {return routes.get_route(train_name);};
 
             [[nodiscard]] double route_length(const std::string& train_name) const {return routes.length(train_name, network);};
+            [[nodiscard]] std::pair<double, double> route_edge_pos(const std::string& train_name, int edge) const {
+                return routes.edge_pos(train_name, edge, network);
+            };
+            [[nodiscard]] std::pair<double, double> route_edge_pos(const std::string& train_name, int source, int target) const {
+                return routes.edge_pos(train_name, source, target, network);
+            };
+            [[nodiscard]] std::pair<double, double> route_edge_pos(const std::string& train_name, const std::string& source, const std::string& target) const {
+                return routes.edge_pos(train_name, source, target, network);
+            };
 
             // General Consistency Check
             [[nodiscard]] bool check_consistency(bool every_train_must_have_route = true) const {
