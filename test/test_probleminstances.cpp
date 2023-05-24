@@ -584,7 +584,7 @@ TEST(Functionality, Discretization) {
     }
 }
 
-TEST(Functionality, TrainsOnSection) {
+TEST(Functionality, HelperFunctions) {
     cda_rail::instances::VSSGenerationTimetable instance;
 
     // Add a simple network to the instance
@@ -610,9 +610,9 @@ TEST(Functionality, TrainsOnSection) {
     instance.n().add_successor(v0_v1, v1_v4);
 
     // Add trains
-    instance.add_train("tr1", 100, 100, 2, 2, 0, 10, 0, 100, 10, 1);
-    instance.add_train("tr2", 100, 100, 2, 2, 0, 10, 0, 100, 10, 1);
-    instance.add_train("tr3", 100, 100, 2, 2, 0, 10, 0, 100, 10, 1);
+    int tr1 = instance.add_train("tr1", 100, 100, 2, 2, 0, 10, 0, 200, 10, 1);
+    int tr2 = instance.add_train("tr2", 100, 100, 2, 2, 60, 10, 0, 120, 10, 1);
+    int tr3 = instance.add_train("tr3", 100, 100, 2, 2, 80, 10, 0, 150, 10, 1);
 
     // Add routes
     instance.add_empty_route("tr1");
@@ -631,13 +631,66 @@ TEST(Functionality, TrainsOnSection) {
     instance.push_back_edge_to_route("tr3", "v1", "v2");
     instance.push_back_edge_to_route("tr3", "v2", "v4");
 
+    // Trains at time t
+    const auto trains_at_0 = instance.trains_at_t(0);
+    EXPECT_EQ(trains_at_0.size(), 1);
+    EXPECT_TRUE(std::find(trains_at_0.begin(), trains_at_0.end(), tr1) != trains_at_0.end());
+    const auto trains_at_59 = instance.trains_at_t(59);
+    EXPECT_EQ(trains_at_59.size(), 1);
+    EXPECT_TRUE(std::find(trains_at_59.begin(), trains_at_59.end(), tr1) != trains_at_59.end());
+    const auto trains_at_60 = instance.trains_at_t(60);
+    EXPECT_EQ(trains_at_60.size(), 2);
+    EXPECT_TRUE(std::find(trains_at_60.begin(), trains_at_60.end(), tr1) != trains_at_60.end());
+    EXPECT_TRUE(std::find(trains_at_60.begin(), trains_at_60.end(), tr2) != trains_at_60.end());
+    const auto trains_at_79 = instance.trains_at_t(79);
+    EXPECT_EQ(trains_at_79.size(), 2);
+    EXPECT_TRUE(std::find(trains_at_79.begin(), trains_at_79.end(), tr1) != trains_at_79.end());
+    EXPECT_TRUE(std::find(trains_at_79.begin(), trains_at_79.end(), tr2) != trains_at_79.end());
+    const auto trains_at_80 = instance.trains_at_t(80);
+    EXPECT_EQ(trains_at_80.size(), 3);
+    EXPECT_TRUE(std::find(trains_at_80.begin(), trains_at_80.end(), tr1) != trains_at_80.end());
+    EXPECT_TRUE(std::find(trains_at_80.begin(), trains_at_80.end(), tr2) != trains_at_80.end());
+    EXPECT_TRUE(std::find(trains_at_80.begin(), trains_at_80.end(), tr3) != trains_at_80.end());
+    const auto trains_at_119 = instance.trains_at_t(119);
+    EXPECT_EQ(trains_at_119.size(), 3);
+    EXPECT_TRUE(std::find(trains_at_119.begin(), trains_at_119.end(), tr1) != trains_at_119.end());
+    EXPECT_TRUE(std::find(trains_at_119.begin(), trains_at_119.end(), tr2) != trains_at_119.end());
+    EXPECT_TRUE(std::find(trains_at_119.begin(), trains_at_119.end(), tr3) != trains_at_119.end());
+    const auto trains_at_120 = instance.trains_at_t(120);
+    EXPECT_EQ(trains_at_120.size(), 3);
+    EXPECT_TRUE(std::find(trains_at_120.begin(), trains_at_120.end(), tr1) != trains_at_120.end());
+    EXPECT_TRUE(std::find(trains_at_120.begin(), trains_at_120.end(), tr2) != trains_at_120.end());
+    EXPECT_TRUE(std::find(trains_at_120.begin(), trains_at_120.end(), tr3) != trains_at_120.end());
+    const auto trains_at_121 = instance.trains_at_t(121);
+    EXPECT_EQ(trains_at_121.size(), 2);
+    EXPECT_TRUE(std::find(trains_at_121.begin(), trains_at_121.end(), tr1) != trains_at_121.end());
+    EXPECT_TRUE(std::find(trains_at_121.begin(), trains_at_121.end(), tr3) != trains_at_121.end());
+    const auto trains_at_149 = instance.trains_at_t(149);
+    EXPECT_EQ(trains_at_149.size(), 2);
+    EXPECT_TRUE(std::find(trains_at_149.begin(), trains_at_149.end(), tr1) != trains_at_149.end());
+    EXPECT_TRUE(std::find(trains_at_149.begin(), trains_at_149.end(), tr3) != trains_at_149.end());
+    const auto trains_at_150 = instance.trains_at_t(150);
+    EXPECT_EQ(trains_at_150.size(), 2);
+    EXPECT_TRUE(std::find(trains_at_150.begin(), trains_at_150.end(), tr1) != trains_at_150.end());
+    EXPECT_TRUE(std::find(trains_at_150.begin(), trains_at_150.end(), tr3) != trains_at_150.end());
+    const auto trains_at_151 = instance.trains_at_t(151);
+    EXPECT_EQ(trains_at_151.size(), 1);
+    EXPECT_TRUE(std::find(trains_at_151.begin(), trains_at_151.end(), tr1) != trains_at_151.end());
+    const auto trains_at_199 = instance.trains_at_t(199);
+    EXPECT_EQ(trains_at_199.size(), 1);
+    EXPECT_TRUE(std::find(trains_at_199.begin(), trains_at_199.end(), tr1) != trains_at_199.end());
+    const auto trains_at_200 = instance.trains_at_t(200);
+    EXPECT_EQ(trains_at_200.size(), 1);
+    EXPECT_TRUE(std::find(trains_at_200.begin(), trains_at_200.end(), tr1) != trains_at_200.end());
+    const auto trains_at_201 = instance.trains_at_t(201);
+    EXPECT_EQ(trains_at_201.size(), 0);
+
+
     // Get Trains on section v1 - v2 - v3 - v4
     auto trains_on_section = instance.trains_in_section({v1_v2, v2_v3, v3_v4});
 
     // Expect tr1 and tr3 to be on the section
     EXPECT_EQ(trains_on_section.size(), 2);
-    int tr1 = instance.get_train_list().get_train_index("tr1");
-    int tr3 = instance.get_train_list().get_train_index("tr3");
     EXPECT_TRUE(std::find(trains_on_section.begin(), trains_on_section.end(), tr1) != trains_on_section.end());
     EXPECT_TRUE(std::find(trains_on_section.begin(), trains_on_section.end(), tr3) != trains_on_section.end());
 }
