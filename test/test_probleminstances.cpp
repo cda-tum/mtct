@@ -685,6 +685,16 @@ TEST(Functionality, HelperFunctions) {
     const auto trains_at_201 = instance.trains_at_t(201);
     EXPECT_EQ(trains_at_201.size(), 0);
 
+    const auto trains_at_100_only_2_3 = instance.trains_at_t(100, {tr2, tr3});
+    EXPECT_EQ(trains_at_100_only_2_3.size(), 2);
+    EXPECT_TRUE(std::find(trains_at_100_only_2_3.begin(), trains_at_100_only_2_3.end(), tr2) != trains_at_100_only_2_3.end());
+    EXPECT_TRUE(std::find(trains_at_100_only_2_3.begin(), trains_at_100_only_2_3.end(), tr3) != trains_at_100_only_2_3.end());
+    const auto trains_at_130_only_2_3 = instance.trains_at_t(130, {tr2, tr3});
+    EXPECT_EQ(trains_at_130_only_2_3.size(), 1);
+    EXPECT_TRUE(std::find(trains_at_130_only_2_3.begin(), trains_at_130_only_2_3.end(), tr3) != trains_at_130_only_2_3.end());
+    const auto trains_at_190_only_2_3 = instance.trains_at_t(190, {tr2, tr3});
+    EXPECT_EQ(trains_at_190_only_2_3.size(), 0);
+
 
     // Get Trains on section v1 - v2 - v3 - v4
     auto trains_on_section = instance.trains_in_section({v1_v2, v2_v3, v3_v4});
