@@ -106,5 +106,6 @@ namespace cda_rail::instances{
 
             // Helper
             std::vector<int> trains_in_section(const std::vector<int>& section) const;
+            std::vector<int> trains_at_t(int t) const;
     };
 }

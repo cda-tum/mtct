@@ -79,3 +79,25 @@ cda_rail::instances::VSSGenerationTimetable::trains_in_section(const std::vector
 
     return tr_in_sec;
 }
+
+std::vector<int> cda_rail::instances::VSSGenerationTimetable::trains_at_t(int t) const {
+    /**
+     * Returns a list of all trains present at time t.
+     */
+
+    if (t < 0) {
+        throw std::invalid_argument("t must be non-negative.");
+    }
+
+    std::vector<int> trains;
+    const auto& train_list = timetable.get_train_list();
+    for (int i = 0; i < train_list.size(); ++i) {
+        const auto& interval = timetable.time_interval(i);
+        if (interval.first <= t && t <= interval.second) {
+            trains.push_back(i);
+        }
+    }
+
+    return trains;
+
+}
