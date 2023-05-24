@@ -1,6 +1,7 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "Definitions.hpp"
+#include <numeric>
 
 void cda_rail::instances::VSSGenerationTimetable::export_instance(const std::filesystem::path &p) const {
     /**
@@ -83,21 +84,42 @@ cda_rail::instances::VSSGenerationTimetable::trains_in_section(const std::vector
 std::vector<int> cda_rail::instances::VSSGenerationTimetable::trains_at_t(int t) const {
     /**
      * Returns a list of all trains present at time t.
+     *
+     * @param t the time
+     * @return a list of all trains present at time t.
+     */
+    const auto tr_number = get_train_list().size();
+    std::vector<int> trains_to_consider(tr_number);
+    std::iota(trains_to_consider.begin(), trains_to_consider.end(), 0);
+    return trains_at_t(t, trains_to_consider);
+}
+
+std::vector<int>
+cda_rail::instances::VSSGenerationTimetable::trains_at_t(int t, const std::vector<int> &trains_to_consider) const {
+    /**
+     * Returns a list of all trains present at time t. But only considers the trains in trains_to_consider.
+     *
+     * @param t the time
+     * @param trains_to_consider the trains to consider
+     * @return a list of all trains present at time t. But only considers the trains in trains_to_consider.
      */
 
     if (t < 0) {
         throw std::invalid_argument("t must be non-negative.");
     }
+    for (auto tr : trains_to_consider) {
+        if (!get_train_list().has_train(tr)) {
+            throw std::invalid_argument("trains_to_consider contains a train that does not exist.");
+        }
+    }
 
     std::vector<int> trains;
-    const auto& train_list = timetable.get_train_list();
-    for (int i = 0; i < train_list.size(); ++i) {
-        const auto& interval = timetable.time_interval(i);
+    for (int tr : trains_to_consider) {
+        const auto& interval = timetable.time_interval(tr);
         if (interval.first <= t && t <= interval.second) {
-            trains.push_back(i);
+            trains.push_back(tr);
         }
     }
 
     return trains;
-
 }
