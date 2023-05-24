@@ -331,7 +331,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_unbreakable_sect
                 model->addConstr(lhs <= count * vars["x_sec"](tr, t, sec_index), "unbreakable_section_if_" + tr_name + "_" + std::to_string(t));
             }
         }
-        //TODO: sum of x_sec <= 1 for given time
-        
+
+        for (int t = 0; t <= num_t; ++t) {
+            const auto tr_to_consider = instance.trains_at_t(t*dt, tr_on_sec);
+            GRBLinExpr lhs = 0;
+            for (int tr : tr_to_consider) {
+                lhs += vars["x_sec"](tr, t, sec_index);
+            }
+            model->addConstr(lhs <= 1, "unbreakable_section"+ std::to_string(sec_index) +"_at_most_one_" + std::to_string(t));
+        }
     }
 }
