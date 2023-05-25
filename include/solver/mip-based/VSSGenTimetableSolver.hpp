@@ -33,6 +33,8 @@ namespace cda_rail::solver::mip_based {
             void create_boundary_fixed_routes_constraints();
             void create_vss_discretized_constraints();
             void create_unbreakable_sections_constraints();
+            void create_fixed_routes_train_occupation_constraints();
+            void create_fixed_routes_train_in_station_constraints();
 
             void set_objective();
 

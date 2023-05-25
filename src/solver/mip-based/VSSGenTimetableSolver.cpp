@@ -59,8 +59,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t) {
     create_boundary_fixed_routes_constraints();
     create_vss_discretized_constraints();
     create_unbreakable_sections_constraints();
+    create_fixed_routes_train_occupation_constraints();
 
-    //model->write("model.lp");
+    model->write("model.lp");
 
     // Optimize
     model->optimize();
@@ -83,14 +84,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_var
     vars["x_lda"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
     vars["x_mu"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
 
-    auto train_list = instance.get_train_list();
+    const auto& train_list = instance.get_train_list();
     for (int i = 0; i < num_tr; ++i) {
-        auto tr_name = train_list.get_train(i).name;
-        auto r_len = instance.route_length(tr_name);
-        auto r_size = instance.get_route(tr_name).size();
-        auto initial_speed = instance.get_schedule(tr_name).v_0;
-        auto final_speed = instance.get_schedule(tr_name).v_n;
-        auto tr_len = instance.get_train_list().get_train(tr_name).length;
+        const auto tr_name = train_list.get_train(i).name;
+        const auto r_len = instance.route_length(tr_name);
+        const auto r_size = instance.get_route(tr_name).size();
+        const auto initial_speed = instance.get_schedule(tr_name).v_0;
+        const auto final_speed = instance.get_schedule(tr_name).v_n;
+        const auto tr_len = instance.get_train_list().get_train(tr_name).length;
         for (int t_steps = train_interval[i].first; t_steps <= train_interval[i].second; ++t_steps) {
             auto t = t_steps * dt;
             vars["mu"](i, t_steps) = model->addVar(0, r_len + tr_len, 0, GRB_CONTINUOUS, "mu_" + tr_name + "_" + std::to_string(t));
@@ -339,6 +340,46 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_unbreakable_sect
                 lhs += vars["x_sec"](tr, t, sec_index);
             }
             model->addConstr(lhs <= 1, "unbreakable_section"+ std::to_string(sec_index) +"_at_most_one_" + std::to_string(t));
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_train_occupation_constraints() {
+    /**
+     * Create constraints for edge occupation of trains with fixed routes.
+     */
+
+    // Iterate over all trains
+    const auto& train_list = instance.get_train_list();
+    for (int tr = 0; tr < train_list.size(); ++tr) {
+        const auto tr_name = train_list.get_train(tr).name;
+        const auto r_len = instance.route_length(tr_name);
+        const auto& tr_route = instance.get_route(tr_name);
+        const auto r_size = tr_route.size();
+        const auto initial_speed = instance.get_schedule(tr_name).v_0;
+        const auto final_speed = instance.get_schedule(tr_name).v_n;
+        const auto tr_len = instance.get_train_list().get_train(tr_name).length;
+
+        // Iterate over all edges
+        for (int j = 0; j < r_size; ++j) {
+            const auto edge_id = tr_route.get_edge(j);
+            const auto edge_pos = instance.route_edge_pos(tr_name, edge_id);
+            // Iterate over possible time steps
+            for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
+                // x_mu(tr, t, edge_id) = 1 if, and only if, mu(tr,t) > edge_pos.first
+                model->addConstr((r_len + tr_len) * vars["x_mu"](tr, t, edge_id) >= (vars["mu"](tr, t) - edge_pos.first), "x_mu_if_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+                model->addConstr(r_len * vars["x_mu"](tr, t, edge_id) <= r_len + vars["mu"](tr, t) - edge_pos.first, "x_mu_only_if_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+
+                // x_lda = 1 if, and only if, lda < edge_pos.second
+                model->addConstr((r_len + tr_len) * vars["x_lda"](tr, t, edge_id) >= edge_pos.second - vars["lda"](tr, t), "x_lda_if_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+                model->addConstr(r_len * vars["x_lda"](tr, t, edge_id) <= r_len + edge_pos.second - vars["lda"](tr, t), "x_lda_only_if_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+
+                // x = x_lda AND x_mu
+                GRBVar clause[2];
+                clause[0] = vars["x_lda"](tr, t, edge_id);
+                clause[1] = vars["x_mu"](tr, t, edge_id);
+                model->addGenConstrAnd(vars["x"](tr, t, edge_id), clause, 2, "x_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+            }
         }
     }
 }
