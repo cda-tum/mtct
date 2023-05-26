@@ -60,16 +60,24 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t) {
     create_vss_discretized_constraints();
     create_unbreakable_sections_constraints();
     create_fixed_routes_train_occupation_constraints();
+    create_general_station_constraints();
+    create_fixed_route_station_constraints();
 
     model->write("model.lp");
 
     // Optimize
     model->optimize();
 
-    // Print solution of the first train
-    const auto& interval = train_interval[0];
-    for (int t = interval.first; t <= interval.second; ++t) {
-        std::cout << "t = " << t << " at [" << vars["lda"](0, t).get(GRB_DoubleAttr_X) << ", " << vars["mu"](0,t).get(GRB_DoubleAttr_X) << "]" <<  std::endl;
+    // Print solution of all trains
+    // Iterate over all times
+    for (int t = 0; t < num_t; ++t) {
+        std::cout << "t = " << t*dt << "; ";
+        // Iterate over all trains
+        const auto tr_at_t = instance.trains_at_t(t * dt);
+        for (const auto &tr : tr_at_t) {
+            std::cout << tr << " at [" << vars["lda"](tr, t).get(GRB_DoubleAttr_X) << ", " << vars["mu"](tr, t).get(GRB_DoubleAttr_X) << "]; ";
+        }
+        std::cout << std::endl;
     }
 }
 
@@ -380,6 +388,70 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_tra
                 clause[0] = vars["x_lda"](tr, t, edge_id);
                 clause[1] = vars["x_mu"](tr, t, edge_id);
                 model->addGenConstrAnd(vars["x"](tr, t, edge_id), clause, 2, "x_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+            }
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_station_constraints() {
+    /**
+     * Creates constraints for general stations, i.e., if a train is in a station:
+     * - all other x variables are 0
+     * - the speed is 0
+     */
+
+    // Iterate over all trains
+    const auto& train_list = instance.get_train_list();
+    for (int tr = 0; tr < train_list.size(); ++tr) {
+        const auto tr_name = train_list.get_train(tr).name;
+        const auto& tr_schedule = instance.get_schedule(tr_name);
+        const auto& tr_route = instance.get_route(tr_name);
+        const auto& tr_edges = tr_route.get_edges();
+        for (const auto& tr_stop : tr_schedule.stops) {
+            const auto t0 = tr_stop.begin / dt;
+            const auto t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
+            const auto& stop_edges = instance.get_station_list().get_station(tr_stop.station).tracks;
+            const auto inverse_stop_edges = instance.n().inverse_edges(stop_edges, tr_edges);
+            for (int t = t0; t <= t1; ++t) {
+                model->addConstr(vars["v"](tr, t) == 0, "station_speed_" + tr_name + "_" + std::to_string(t));
+                for (int e : inverse_stop_edges) {
+                    model->addConstr(vars["x"](tr, t, e) == 0, "station_x_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
+                }
+                // At least on station edge must be occupied
+                GRBLinExpr lhs = 0;
+                for (int e : stop_edges) {
+                    if (tr_route.contains_edge(e)) {
+                        lhs += vars["x"](tr, t, e);
+                    }
+                }
+                model->addConstr(lhs >= 1, "station_occupancy_" + tr_name + "_" + std::to_string(t));
+            }
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_route_station_constraints() {
+    /**
+     * Constrain lambda and mu for fixed routes in stations.
+     */
+
+    // Iterate over all trains
+    const auto& train_list = instance.get_train_list();
+    for (int tr = 0; tr < train_list.size(); ++tr) {
+        const auto tr_name = train_list.get_train(tr).name;
+        const auto& tr_schedule = instance.get_schedule(tr_name);
+        const auto& tr_route = instance.get_route(tr_name);
+        const auto& tr_edges = tr_route.get_edges();
+        for (const auto& tr_stop : tr_schedule.stops) {
+            const auto t0 = tr_stop.begin / dt;
+            const auto t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
+            const auto& stop_edges = instance.get_station_list().get_station(tr_stop.station).tracks;
+            const auto& stop_pos = instance.route_edge_pos(tr_name, stop_edges);
+            for (int t = t0; t <= t1; ++t) {
+                model->addConstr(vars["mu"](tr, t) >= stop_pos.first, "mu_station_min_" + tr_name + "_" + std::to_string(t));
+                model->addConstr(vars["mu"](tr, t) <= stop_pos.second, "mu_station_max_" + tr_name + "_" + std::to_string(t));
+                model->addConstr(vars["lda"](tr, t) >= stop_pos.first, "lda_station_min_" + tr_name + "_" + std::to_string(t));
+                model->addConstr(vars["lda"](tr, t) <= stop_pos.second, "lda_station_max_" + tr_name + "_" + std::to_string(t));
             }
         }
     }
