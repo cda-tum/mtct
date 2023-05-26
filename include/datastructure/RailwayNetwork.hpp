@@ -9,6 +9,7 @@
 #include <filesystem>
 #include "Definitions.hpp"
 #include <unordered_set>
+#include <numeric>
 
 namespace cda_rail {
     struct Vertex {
@@ -206,6 +207,14 @@ namespace cda_rail {
             [[nodiscard]] std::vector<std::pair<int, int>> combine_reverse_edges(const std::vector<int>& edges, bool sort = false) const;
             [[nodiscard]] int get_reverse_edge_index(int edge_index) const;
             [[nodiscard]] std::optional<int> common_vertex(const std::pair<int, int>& pair1, const std::pair<int, int>& pair2) const;
+
+            std::vector<int> inverse_edges(const std::vector<int>& edge_indices) const {
+                const auto& edge_number = number_of_edges();
+                std::vector<int> edges_to_consider(edge_number);
+                std::iota(edges_to_consider.begin(), edges_to_consider.end(), 0);
+                return inverse_edges(edge_indices, edges_to_consider);
+            };
+            std::vector<int> inverse_edges(const std::vector<int>& edge_indices, const std::vector<int>& edges_to_consider) const;
 
             // Transformation functions
             std::pair<std::vector<int>, std::vector<int>> separate_edge(int edge_index, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);

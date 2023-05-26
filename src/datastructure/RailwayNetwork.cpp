@@ -1316,3 +1316,39 @@ std::vector<std::pair<int, int>> cda_rail::Network::sort_edge_pairs (std::vector
     return ret_val;
 
 }
+
+std::vector<int> cda_rail::Network::inverse_edges(const std::vector<int> &edge_indices,
+                                                  const std::vector<int> &edges_to_consider) const {
+    /**
+     * Returns a vector of edge indices that are the inverse of the given edge indices, i.e.,
+     * return edges_to_consider - edge_indices
+     *
+     * @param edge_indices: Vector of edge indices
+     * @param edges_to_consider: Vector of edge indices to consider
+     * @return: Vector of edge indices that are the inverse of the given edge indices
+     */
+
+    // Initialize return value
+    std::vector<int> ret_val;
+
+    // Check if all edges exist
+    for (const auto& edge_index: edge_indices) {
+        if (!has_edge(edge_index)) {
+            throw std::invalid_argument("Edge does not exist");
+        }
+    }
+    for (const auto& edge_index: edges_to_consider) {
+        if (!has_edge(edge_index)) {
+            throw std::invalid_argument("Edge does not exist");
+        }
+    }
+
+    // ret_val = edges_to_consider - edge_indices
+    for (const auto& edge_index: edges_to_consider) {
+        if (std::find(edge_indices.begin(), edge_indices.end(), edge_index) == edge_indices.end()) {
+            ret_val.emplace_back(edge_index);
+        }
+    }
+
+    return ret_val;
+}
