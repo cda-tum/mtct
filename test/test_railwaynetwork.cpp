@@ -1178,6 +1178,34 @@ TEST(Functionality, ReverseIndices) {
     EXPECT_TRUE(std::find(edges_combined.begin(), edges_combined.end(), std::make_pair(std::min(e34, e43), std::max(e34, e43))) != edges_combined.end());
 }
 
+TEST(Functionality, InverseEdges) {
+    cda_rail::Network network;
+
+    network.add_vertex("v1", cda_rail::VertexType::TTD);
+    network.add_vertex("v2", cda_rail::VertexType::TTD);
+    network.add_vertex("v3", cda_rail::VertexType::TTD);
+    network.add_vertex("v4", cda_rail::VertexType::TTD);
+
+    const auto e12 = network.add_edge("v1", "v2", 100, 10, false);
+    const auto e23 = network.add_edge("v2", "v3", 100, 10, false);
+    const auto e34 = network.add_edge("v3", "v4", 100, 10, false);
+    const auto e32 = network.add_edge("v3", "v2", 100, 10, false);
+
+    // Check if the inverse edges are correct
+
+    // inverse of e12 and e23 is e34 and e32
+    const auto inv_1 = network.inverse_edges({e12, e23});
+    EXPECT_EQ(inv_1.size(), 2);
+    EXPECT_TRUE(std::find(inv_1.begin(), inv_1.end(), e34) != inv_1.end());
+    EXPECT_TRUE(std::find(inv_1.begin(), inv_1.end(), e32) != inv_1.end());
+
+    // inverse of e23 and e32 only considering e12, e23 and e34 is e12 and e34
+    const auto inv_2 = network.inverse_edges({e23, e32}, {e12, e23, e34});
+    EXPECT_EQ(inv_2.size(), 2);
+    EXPECT_TRUE(std::find(inv_2.begin(), inv_2.end(), e12) != inv_2.end());
+    EXPECT_TRUE(std::find(inv_2.begin(), inv_2.end(), e34) != inv_2.end());
+}
+
 TEST(Functionality, ReadTrains) {
     auto trains = cda_rail::TrainList::import_trains("./example-networks/Fig11/timetable/");
 
@@ -1836,6 +1864,9 @@ TEST(Functionality, RouteMapHelper) {
     int v0_v1 = network.add_edge("v0", "v1", 10, 5, false);
     int v1_v2 = network.add_edge("v1", "v2", 20, 5, false);
     int v2_v3 = network.add_edge("v2", "v3", 30, 5, false);
+    int v3_v2 = network.add_edge("v3", "v2", 30, 5, false);
+    int v2_v1 = network.add_edge("v2", "v1", 20, 5, false);
+    int v1_v0 = network.add_edge("v1", "v0", 10, 5, false);
 
     network.add_successor({"v0", "v1" }, {"v1", "v2"});
     network.add_successor({"v1", "v2" }, {"v2", "v3"});
@@ -1856,6 +1887,10 @@ TEST(Functionality, RouteMapHelper) {
     const auto& tr1_e3_pos = tr1_map.edge_pos(v2_v3, network);
     std::pair<double, double> expected_tr1_e3_pos = {30, 60};
     EXPECT_EQ(tr1_e3_pos, expected_tr1_e3_pos);
+
+    const auto& station_pos = tr1_map.edge_pos({v1_v2, v2_v1, v2_v3, v3_v2}, network);
+    std::pair<double, double> expected_station_pos = {10, 60};
+    EXPECT_EQ(station_pos, expected_station_pos);
 
     EXPECT_EQ(tr1_map.length(network), 60);
 }
