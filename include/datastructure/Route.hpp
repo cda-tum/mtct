@@ -31,6 +31,8 @@ namespace cda_rail {
                 return edge_pos(network.get_edge_index(source, target), network);
             };
 
+            [[nodiscard]] std::pair<double, double> edge_pos(const std::vector<int>& edges, const cda_rail::Network& network) const;
+
             [[nodiscard]] int get_edge(int route_index) const;
             [[nodiscard]] const cda_rail::Edge& get_edge(int route_index, const cda_rail::Network& network) const;
             [[nodiscard]] int size() const {return edges.size();};
@@ -91,6 +93,9 @@ namespace cda_rail {
             };
             [[nodiscard]] std::pair<double, double> edge_pos(const std::string& train_name, const std::string& source, const std::string& target, const cda_rail::Network& network) const {
                 return get_route(train_name).edge_pos(source, target, network);
+            };
+            [[nodiscard]] std::pair<double, double> edge_pos(const std::string& train_name, const std::vector<int>& edges, const cda_rail::Network& network) const {
+                return get_route(train_name).edge_pos(edges, network);
             };
 
             [[nodiscard]] bool check_consistency(const cda_rail::TrainList& trains, const cda_rail::Network& network, bool every_train_must_have_route = true) const;

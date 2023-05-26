@@ -194,6 +194,32 @@ std::pair<double, double> cda_rail::Route::edge_pos(int edge, const cda_rail::Ne
 
 }
 
+std::pair<double, double>
+cda_rail::Route::edge_pos(const std::vector<int> &edges, const cda_rail::Network &network) const {
+    /**
+     * Returns the minimal start and maximal end position of the given edges in the route. Throws an error only if none of the edges exists in the route.
+     */
+
+    // Initialize return values
+    std::pair<double, double> return_pos = {length(network) + 1, -1};
+
+    // Iterate over all edges
+    for (const auto &edge : edges) {
+        if (!contains_edge(edge)) {
+            continue;
+        }
+        const auto [start_pos, end_pos] = edge_pos(edge, network);
+        return_pos.first = std::min(return_pos.first, start_pos);
+        return_pos.second = std::max(return_pos.second, end_pos);
+    }
+
+    if (return_pos.first > return_pos.second) {
+        throw std::runtime_error("None of the edges exists in the route.");
+    }
+
+    return return_pos;
+}
+
 void cda_rail::RouteMap::add_empty_route(const std::string &train_name) {
     /**
      * Adds an empty route for the given train.
