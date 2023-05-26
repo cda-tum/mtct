@@ -730,7 +730,7 @@ cda_rail::Network::separate_edge_at(int edge_index, const std::vector<double>& d
     std::vector<int> new_vertices;
     for (size_t i = 0; i < distances_from_source.size(); ++i) {
         std::string vertex_name = get_vertex(edge.source).name + "_" + get_vertex(edge.target).name + "_" + std::to_string(i);
-        new_vertices.emplace_back(add_vertex(vertex_name, cda_rail::VertexType::NO_BORDER));
+        new_vertices.emplace_back(add_vertex(vertex_name, cda_rail::VertexType::NO_BORDER_VSS));
     }
 
     // Create new edges

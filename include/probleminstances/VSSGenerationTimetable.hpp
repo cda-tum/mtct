@@ -88,7 +88,7 @@ namespace cda_rail::instances{
             [[nodiscard]] std::pair<double, double> route_edge_pos(const std::string& train_name, const std::string& source, const std::string& target) const {
                 return routes.edge_pos(train_name, source, target, network);
             };
-            [[nodiscard]] std::pair<double, double> route_edge_post(const std::string& train_name, const std::vector<int>& edges) const {
+            [[nodiscard]] std::pair<double, double> route_edge_pos(const std::string& train_name, const std::vector<int>& edges) const {
                 return routes.edge_pos(train_name, edges, network);
             };
 

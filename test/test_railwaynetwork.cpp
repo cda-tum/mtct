@@ -599,9 +599,9 @@ TEST(Functionality, NetworkEdgeSeparation) {
     EXPECT_TRUE(network.has_vertex("v1_v2_0"));
     EXPECT_TRUE(network.has_vertex("v1_v2_1"));
     EXPECT_TRUE(network.has_vertex("v1_v2_2"));
-    EXPECT_EQ(network.get_vertex("v1_v2_0").type, cda_rail::VertexType::NO_BORDER);
-    EXPECT_EQ(network.get_vertex("v1_v2_1").type, cda_rail::VertexType::NO_BORDER);
-    EXPECT_EQ(network.get_vertex("v1_v2_2").type, cda_rail::VertexType::NO_BORDER);
+    EXPECT_EQ(network.get_vertex("v1_v2_0").type, cda_rail::VertexType::NO_BORDER_VSS);
+    EXPECT_EQ(network.get_vertex("v1_v2_1").type, cda_rail::VertexType::NO_BORDER_VSS);
+    EXPECT_EQ(network.get_vertex("v1_v2_2").type, cda_rail::VertexType::NO_BORDER_VSS);
     EXPECT_TRUE(network.has_vertex("v00"));
     EXPECT_TRUE(network.has_vertex("v01"));
     EXPECT_TRUE(network.has_vertex("v1"));
@@ -853,9 +853,9 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
     EXPECT_TRUE(network.has_vertex("v1_v2_0"));
     EXPECT_TRUE(network.has_vertex("v1_v2_1"));
     EXPECT_TRUE(network.has_vertex("v1_v2_2"));
-    EXPECT_EQ(network.get_vertex("v1_v2_0").type, cda_rail::VertexType::NO_BORDER);
-    EXPECT_EQ(network.get_vertex("v1_v2_1").type, cda_rail::VertexType::NO_BORDER);
-    EXPECT_EQ(network.get_vertex("v1_v2_2").type, cda_rail::VertexType::NO_BORDER);
+    EXPECT_EQ(network.get_vertex("v1_v2_0").type, cda_rail::VertexType::NO_BORDER_VSS);
+    EXPECT_EQ(network.get_vertex("v1_v2_1").type, cda_rail::VertexType::NO_BORDER_VSS);
+    EXPECT_EQ(network.get_vertex("v1_v2_2").type, cda_rail::VertexType::NO_BORDER_VSS);
     EXPECT_TRUE(network.has_vertex("v00"));
     EXPECT_TRUE(network.has_vertex("v01"));
     EXPECT_TRUE(network.has_vertex("v1"));
