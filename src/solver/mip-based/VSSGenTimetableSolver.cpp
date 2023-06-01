@@ -55,6 +55,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t) {
     set_objective();
 
     // Create constraints
+    create_acceleration_constraints(); // ERROR
     create_fixed_routes_train_movement_constraints();
     create_boundary_fixed_routes_constraints();
     create_vss_discretized_constraints();
@@ -62,6 +63,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t) {
     create_fixed_routes_train_occupation_constraints();
     create_general_station_constraints();
     create_fixed_route_station_constraints();
+
 
     model->write("model.lp");
 
@@ -453,6 +455,25 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_route_stat
                 model->addConstr(vars["lda"](tr, t) >= stop_pos.first, "lda_station_min_" + tr_name + "_" + std::to_string(t));
                 model->addConstr(vars["lda"](tr, t) <= stop_pos.second, "lda_station_max_" + tr_name + "_" + std::to_string(t));
             }
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_acceleration_constraints() {
+    /**
+     * This method adds constraints connected to acceleration and deceleration of the trains.
+     */
+
+    // Iterate over all trains
+    const auto& train_list = instance.get_train_list();
+    for (int tr = 0; tr < train_list.size(); ++tr) {
+        // Iterate over all time steps
+        const auto& tr_object = train_list.get_train(tr);
+        for (int t = train_interval[tr].first; t < train_interval[tr].second; ++t) {
+            // v(t+1) - v(t) <= acceleration * dt
+            model->addConstr(vars["v"](tr, t + 1) - vars["v"](tr, t) <= tr_object.acceleration * dt, "acceleration_" + tr_object.name + "_" + std::to_string(t));
+            // v(t) - v(t+1) <= deceleration * dt
+            model->addConstr(vars["v"](tr, t) - vars["v"](tr, t + 1) <= tr_object.deceleration * dt, "deceleration_" + tr_object.name + "_" + std::to_string(t));
         }
     }
 }

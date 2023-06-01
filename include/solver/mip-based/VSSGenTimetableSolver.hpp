@@ -36,6 +36,7 @@ namespace cda_rail::solver::mip_based {
             void create_fixed_routes_train_occupation_constraints();
             void create_general_station_constraints();
             void create_fixed_route_station_constraints();
+            void create_acceleration_constraints();
 
             void set_objective();
 
