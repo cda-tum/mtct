@@ -22,18 +22,34 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
      * Solve the instance using Gurobi
      */
 
-    // Discretize
-    instance.discretize();
-
     // Save relevant variables
     dt = delta_t;
+    this->fix_routes = fix_routes;
+    this->discretize = discretize;
+    this->include_acceleration_deceleration = include_acceleration_deceleration;
+    this->include_breaking_distances = include_breaking_distances;
+
+    // Discretize if applicable
+    if (this->discretize) {
+        instance.discretize();
+    }
+
+    // Initialize other relevant variables
     num_t = instance.maxT() / dt + 1;
     num_tr = instance.get_train_list().size();
     num_edges = instance.n().number_of_edges();
     num_vertices = instance.n().number_of_vertices();
     unbreakable_sections = instance.n().unbreakable_sections();
-    no_border_vss_sections = instance.n().no_border_vss_sections();
-    no_border_vss_vertices = instance.n().get_vertices_by_type(cda_rail::VertexType::NO_BORDER_VSS);
+    if (this->discretize) {
+        no_border_vss_sections = instance.n().no_border_vss_sections();
+        num_breakable_sections = no_border_vss_sections.size();
+        no_border_vss_vertices = instance.n().get_vertices_by_type(cda_rail::VertexType::NO_BORDER_VSS);
+    } else {
+        breakable_sections = instance.n().combine_reverse_edges(instance.n().breakable_edges());
+        num_breakable_sections = breakable_sections.size();
+    }
+
+
 
     for (int i = 0; i < num_tr; ++i) {
         train_interval.emplace_back(instance.time_interval(i));
