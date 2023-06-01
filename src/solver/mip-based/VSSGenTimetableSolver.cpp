@@ -503,3 +503,19 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_acceleration_con
         }
     }
 }
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_breaklen_variables() {
+    /**
+     * This method creates the variables corresponding to breaking distances.
+     */
+
+    // Create MultiArrays
+    vars["breaklen"] = MultiArray<GRBVar>(num_tr, num_t);
+
+    // Iterate over all trains
+    for (int tr = 0; tr < num_tr; ++tr) {
+        for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
+            vars["breaklen"](tr, t) = model->addVar(0, GRB_INFINITY, 0, GRB_CONTINUOUS, "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
+        }
+    }
+}
