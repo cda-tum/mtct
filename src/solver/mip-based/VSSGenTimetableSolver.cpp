@@ -64,6 +64,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     create_general_station_constraints();
     create_fixed_route_station_constraints();
 
+    // Breaklen: https://www.gurobi.com/documentation/10.0/refman/constraints.html#subsubsection:GenConstrFunction
+
 
     model->write("model.lp");
 
