@@ -50,6 +50,6 @@ namespace cda_rail::solver::mip_based {
             explicit VSSGenTimetableSolver(const char* instance_path);
 
             // Methods
-            void solve(int delta_t = 15); // to be added with parameters and return type later
+            void solve(int delta_t = 15, bool fix_routes = true, bool discretize = false, bool include_acceleration_deceleration = true, bool include_breaking_distances = true); // to be added with parameters and return type later
     };
 }

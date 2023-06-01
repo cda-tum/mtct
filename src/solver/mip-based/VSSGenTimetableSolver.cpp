@@ -17,7 +17,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(const 
     instance = cda_rail::instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t) {
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize, bool include_acceleration_deceleration, bool include_breaking_distances) {
     /**
      * Solve the instance using Gurobi
      */
