@@ -14,10 +14,12 @@ namespace cda_rail::solver::mip_based {
             cda_rail::instances::VSSGenerationTimetable instance;
 
             // Instance variables
-            int dt, num_t, num_tr, num_edges, num_vertices;
+            int dt, num_t, num_tr, num_edges, num_vertices, num_breakable_sections;
             std::vector<std::vector<int>> unbreakable_sections, no_border_vss_sections;
             std::vector<std::pair<int, int>> train_interval;
+            std::vector<std::pair<int, int>> breakable_sections;
             std::vector<int> no_border_vss_vertices;
+            bool fix_routes, discretize, include_acceleration_deceleration, include_breaking_distances;
 
             // Gurobi variables
             std::optional<GRBEnv> env;
@@ -25,8 +27,13 @@ namespace cda_rail::solver::mip_based {
             std::unordered_map<std::string, MultiArray<GRBVar>> vars;
 
             // Helper functions
-            void create_fixed_routes_variables();
             void create_general_variables();
+            void create_fixed_routes_variables();
+            void create_free_routes_variables();
+            void create_discretized_variables();
+            void create_non_discretized_variables();
+            void create_breaklen_variables();
+
             void create_vss_variables();
 
             void create_fixed_routes_train_movement_constraints();
