@@ -34,8 +34,6 @@ namespace cda_rail::solver::mip_based {
             void create_non_discretized_variables();
             void create_breaklen_variables();
 
-            void create_vss_variables();
-
             void create_fixed_routes_train_movement_constraints();
             void create_boundary_fixed_routes_constraints();
             void create_vss_discretized_constraints();

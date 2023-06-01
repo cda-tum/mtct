@@ -64,7 +64,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
 
     // Create variables
     create_general_variables();
-    create_vss_variables();
+    create_discretized_variables();
     create_fixed_routes_variables();
 
     // Set objective
@@ -171,7 +171,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variable
     }
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_vss_variables() {
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_discretized_variables() {
     /**
      * Creates variables connected to the VSS decisions of the problem
      */
