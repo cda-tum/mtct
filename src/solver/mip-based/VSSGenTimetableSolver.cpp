@@ -142,6 +142,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variable
     vars["v"] = MultiArray<GRBVar>(num_tr, num_t + 1);
     vars["x"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
     vars["x_sec"] = MultiArray<GRBVar>(num_tr, num_t, unbreakable_sections.size());
+    vars["y_sec_fwd"] = MultiArray<GRBVar>(num_t, num_breakable_sections);
+    vars["y_sec_bwd"] = MultiArray<GRBVar>(num_t, num_breakable_sections);
 
     auto train_list = instance.get_train_list();
     for (int i = 0; i < num_tr; ++i) {
@@ -159,6 +161,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variable
             for (const auto& sec : unbreakable_section_indices(i)) {
                 vars["x_sec"](i, t, sec) = model->addVar(0, 1, 0, GRB_BINARY, "x_sec_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(sec));
             }
+        }
+    }
+    for (int t = 0; t < num_t; ++t) {
+        for (int i = 0; i < num_breakable_sections; ++i) {
+            vars["y_sec_fwd"](t, i) = model->addVar(0, 1, 0, GRB_BINARY, "y_sec_fwd_" + std::to_string(t) + "_" + std::to_string(i));
+            vars["y_sec_bwd"](t, i) = model->addVar(0, 1, 0, GRB_BINARY, "y_sec_bwd_" + std::to_string(t) + "_" + std::to_string(i));
         }
     }
 }
