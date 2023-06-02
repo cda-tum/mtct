@@ -117,8 +117,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_var
         const auto tr_name = train_list.get_train(i).name;
         const auto r_len = instance.route_length(tr_name);
         const auto r_size = instance.get_route(tr_name).size();
-        const auto initial_speed = instance.get_schedule(tr_name).v_0;
-        const auto final_speed = instance.get_schedule(tr_name).v_n;
         const auto tr_len = instance.get_train_list().get_train(tr_name).length;
         for (int t_steps = train_interval[i].first; t_steps <= train_interval[i].second; ++t_steps) {
             auto t = t_steps * dt;
@@ -393,8 +391,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_tra
         const auto r_len = instance.route_length(tr_name);
         const auto& tr_route = instance.get_route(tr_name);
         const auto r_size = tr_route.size();
-        const auto initial_speed = instance.get_schedule(tr_name).v_0;
-        const auto final_speed = instance.get_schedule(tr_name).v_n;
         const auto tr_len = instance.get_train_list().get_train(tr_name).length;
 
         // Iterate over all edges
