@@ -1352,3 +1352,15 @@ std::vector<int> cda_rail::Network::inverse_edges(const std::vector<int> &edge_i
 
     return ret_val;
 }
+
+int cda_rail::Network::max_vss_on_edge(int index) const {
+    /**
+     * Returns how many vss can be placed on a certain edge at most.
+     */
+
+    const auto& edge = get_edge(index);
+    if (!edge.breakable || edge.min_block_length == 0) {
+        return 0;
+    }
+    return static_cast<int>(std::floor(edge.length / edge.min_block_length));
+}

@@ -185,6 +185,14 @@ namespace cda_rail {
             [[nodiscard]] int number_of_vertices() const {return vertices.size();};
             [[nodiscard]] int number_of_edges() const {return edges.size();};
 
+            [[nodiscard]] int max_vss_on_edge(int index) const;
+            [[nodiscard]] int max_vss_on_edge(int source, int target) const {
+                return max_vss_on_edge(get_edge_index(source, target));
+            };
+            [[nodiscard]] int max_vss_on_edge(const std::string& source, const std::string& target) const {
+                return max_vss_on_edge(get_edge_index(source, target));
+            };
+
             [[nodiscard]] static Network import_network(const std::string& path) {return Network(path);};
             [[nodiscard]] static Network import_network(const char* path) {return Network(path);};
             [[nodiscard]] static Network import_network(const std::filesystem::path& p) {return Network(p);};
