@@ -47,6 +47,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     } else {
         breakable_sections = instance.n().combine_reverse_edges(instance.n().breakable_edges());
         num_breakable_sections = breakable_sections.size();
+        relevant_edges = instance.n().relevant_breakable_edges();
     }
 
 
@@ -556,4 +557,21 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_vari
                                                    "len_out_" + tr_name + "_" + std::to_string(t));
         }
     }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_variables() {
+    /**
+     * This method creates the variables needed if the graph is not discretized.
+     */
+
+    int max_vss = 0;
+    for (int e = 0; e < num_edges; ++e) {
+        max_vss = std::max(max_vss, instance.n().max_vss_on_edge(e));
+    }
+
+    // Create MultiArrays
+    vars["b_pos"] = MultiArray<GRBVar>(num_edges, max_vss);
+    vars["b_front"] = MultiArray<GRBVar>(num_tr, num_t, num_edges, max_vss);
+    vars["b_rear"] = MultiArray<GRBVar>(num_tr, num_t, num_edges, max_vss);
+    vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
 }
