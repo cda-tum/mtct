@@ -23,10 +23,10 @@ TEST(Functionality, NetworkFunctions) {
     int v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
     int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
 
-    int e0 = network.add_edge("v0", "v1", 1, 2, true, 0);
-    int e1 = network.add_edge("v1","v2", 3, 4, false, 1.5);
-    int e2 = network.add_edge("v1","v0", 1, 2, true, 0);
-    int e3 = network.add_edge("v2", "v0", 10, 20, false, 2);
+    int e0 = network.add_edge("v0", "v1", 1, 2, false, 0);
+    int e1 = network.add_edge("v1","v2", 3, 4, true, 1.5);
+    int e2 = network.add_edge("v1","v0", 1, 2, false, 0);
+    int e3 = network.add_edge("v2", "v0", 10, 20, true, 2);
 
     network.add_successor(network.get_edge_index("v0", "v1"), network.get_edge_index("v1", "v2"));
     network.add_successor(network.get_edge_index("v2","v0"), network.get_edge_index("v0", "v1"));
@@ -70,6 +70,12 @@ TEST(Functionality, NetworkFunctions) {
     EXPECT_FALSE(network.has_edge(0,2));
     EXPECT_TRUE(network.has_edge("v0", "v1"));
     EXPECT_FALSE(network.has_edge("v0", "v2"));
+
+    // Maximum number of VSS test
+    EXPECT_EQ(network.max_vss_on_edge(e0), 0);
+    EXPECT_EQ(network.max_vss_on_edge(e1), 2);
+    EXPECT_EQ(network.max_vss_on_edge(e2), 0);
+    EXPECT_EQ(network.max_vss_on_edge(e3), 5);
 
     // change vertex name tests
     network.change_vertex_name(0, "v0_tmp");
