@@ -574,4 +574,27 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
     vars["b_front"] = MultiArray<GRBVar>(num_tr, num_t, num_edges, max_vss);
     vars["b_rear"] = MultiArray<GRBVar>(num_tr, num_t, num_edges, max_vss);
     vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
+
+    for (int e = 0; e < num_edges; ++e) {
+        const auto vss_number_e = instance.n().max_vss_on_edge(e);
+        const auto& edge_len = instance.n().get_edge(e).length;
+        for (int vss = 0; vss < vss_number_e; ++vss) {
+            vars["b_pos"](e, vss) = model->addVar(0, edge_len, 0, GRB_CONTINUOUS, "b_pos_" + std::to_string(e) + "_" + std::to_string(vss));
+            for (int tr = 0; tr < num_tr; ++tr) {
+                for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
+                    vars["b_front"](tr, t, e, vss) = model->addVar(0, 1, 0, GRB_BINARY,
+                                                                   "b_front_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
+                    vars["b_rear"](tr, t, e, vss) = model->addVar(0, 1, 0, GRB_BINARY,
+                                                                    "b_rear_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
+                }
+            }
+        }
+    }
+
+    for (int e : relevant_edges) {
+        const auto vss_number_e = instance.n().max_vss_on_edge(e);
+        for (int vss = 0; vss < vss_number_e; ++vss) {
+            vars["b_used"](e, vss) = model->addVar(0, 1, 0, GRB_BINARY, "b_used_" + std::to_string(e) + "_" + std::to_string(vss));
+        }
+    }
 }
