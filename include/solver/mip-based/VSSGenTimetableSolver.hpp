@@ -17,7 +17,7 @@ namespace cda_rail::solver::mip_based {
             int dt, num_t, num_tr, num_edges, num_vertices, num_breakable_sections;
             std::vector<std::vector<int>> unbreakable_sections, no_border_vss_sections;
             std::vector<std::pair<int, int>> train_interval;
-            std::vector<std::pair<int, int>> breakable_sections;
+            std::vector<std::pair<int, int>> breakable_edges;
             std::vector<int> no_border_vss_vertices, relevant_edges;
             bool fix_routes, discretize, include_acceleration_deceleration, include_breaking_distances;
 
@@ -26,7 +26,7 @@ namespace cda_rail::solver::mip_based {
             std::optional<GRBModel> model;
             std::unordered_map<std::string, MultiArray<GRBVar>> vars;
 
-            // Helper functions
+            // Variable functions
             void create_general_variables();
             void create_fixed_routes_variables();
             void create_free_routes_variables();
@@ -34,17 +34,36 @@ namespace cda_rail::solver::mip_based {
             void create_non_discretized_variables();
             void create_breaklen_variables();
 
-            void create_fixed_routes_train_movement_constraints();
-            void create_boundary_fixed_routes_constraints();
-            void create_vss_discretized_constraints();
-            void create_unbreakable_sections_constraints();
-            void create_fixed_routes_train_occupation_constraints();
-            void create_general_station_constraints();
-            void create_fixed_route_station_constraints();
+            // Constraint functions
+            void create_general_constraints();
+            void create_fixed_routes_constraints();
+            void create_free_routes_constraints();
+            void create_discretized_constraints();
+            void create_non_discretized_constraints();
             void create_acceleration_constraints();
+            void create_breaklen_constraints();
 
+
+            // Helper functions for constraints
+            void create_general_schedule_constraints();
+            void create_unbreakable_sections_constraints();
+            void create_general_speed_constraints();
+            void create_reverse_occupation_constraints();
+
+            void create_fixed_routes_position_constraints();
+            void create_boundary_fixed_routes_constraints();
+            void create_fixed_routes_occupation_constraints();
+            void create_fixed_route_schedule_constraints();
+
+            void create_non_discretized_general_constraints();
+            void create_non_discretized_position_constraints();
+            void create_non_discretized_free_route_constraints():
+            void create_non_discretized_fixed_route_constraints();
+
+            // Objective
             void set_objective();
 
+            // Helper functions
             std::vector<int> unbreakable_section_indices(int train_index) const;
 
         public:

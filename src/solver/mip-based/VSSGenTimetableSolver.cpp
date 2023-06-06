@@ -45,8 +45,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         num_breakable_sections = no_border_vss_sections.size();
         no_border_vss_vertices = instance.n().get_vertices_by_type(cda_rail::VertexType::NO_BORDER_VSS);
     } else {
-        breakable_sections = instance.n().combine_reverse_edges(instance.n().breakable_edges());
-        num_breakable_sections = breakable_sections.size();
+        breakable_edges = instance.n().combine_reverse_edges(instance.n().breakable_edges());
+        num_breakable_sections = breakable_edges.size();
         relevant_edges = instance.n().relevant_breakable_edges();
     }
 
@@ -72,7 +72,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     set_objective();
 
     // Create constraints
-    create_acceleration_constraints(); // ERROR
+    create_acceleration_constraints();
     create_fixed_routes_train_movement_constraints();
     create_boundary_fixed_routes_constraints();
     create_vss_discretized_constraints();
@@ -267,13 +267,23 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
 
     // sum over all b_i as in no_border_vss_vertices
     GRBLinExpr obj = 0;
-    for (int i = 0; i < no_border_vss_vertices.size(); ++i) {
-        obj += vars["b"](i);
+    if (discretize) {
+        for (int i = 0; i < no_border_vss_vertices.size(); ++i) {
+            obj += vars["b"](i);
+        }
+    } else {
+        for (int i = 0; i < relevant_edges.size(); ++i) {
+            const auto& e = relevant_edges[i];
+            const auto vss_number_e = instance.n().max_vss_on_edge(e);
+            for (int vss = 0; vss < vss_number_e; ++vss) {
+                obj += vars["b_used"](i, vss);
+            }
+        }
     }
     model->setObjective(obj, GRB_MINIMIZE);
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_vss_discretized_constraints() {
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_discretized_constraints() {
     /**
      * Creates VSS constraints, i.e., on NO_BORDER_VSS sections two trains must be separated by a chosen vertex.
      */
@@ -591,10 +601,79 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
         }
     }
 
-    for (int e : relevant_edges) {
+    for (int i = 0; i < relevant_edges.size(); ++i) {
+        const auto& e = relevant_edges[i];
         const auto vss_number_e = instance.n().max_vss_on_edge(e);
         for (int vss = 0; vss < vss_number_e; ++vss) {
-            vars["b_used"](e, vss) = model->addVar(0, 1, 0, GRB_BINARY, "b_used_" + std::to_string(e) + "_" + std::to_string(vss));
+            vars["b_used"](i, vss) = model->addVar(0, 1, 0, GRB_BINARY, "b_used_" + std::to_string(e) + "_" + std::to_string(vss));
         }
     }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_constraints() {
+    /**
+     * These constraints appear in all variants
+     */
+
+    create_general_schedule_constraints();
+    create_unbreakable_sections_constraints();
+    create_general_speed_constraints();
+    create_reverse_occupation_constraints();
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_constraints() {
+    /**
+     * These constraints appear only when routes are fixed
+     */
+
+    create_fixed_routes_position_constraints();
+    create_boundary_fixed_routes_constraints();
+    create_fixed_routes_occupation_constraints();
+    create_fixed_route_schedule_constraints();
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_constraints() {
+    /**
+     * These constraints appear only when the graph is not discretized
+     */
+
+    create_non_discretized_general_constraints();
+    create_non_discretized_position_constraints();
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_general_constraints() {
+    // VSS can only be used if it is non-zero
+    for (int i = 0; i < relevant_edges.size(); ++i) {
+        const auto& e = relevant_edges[i];
+        const auto vss_number_e = instance.n().max_vss_on_edge(e);
+        const auto& e_len = instance.n().get_edge(e).length;
+        const auto& min_block_len_e = instance.n().get_edge(e).min_block_length;
+        for (int vss = 0; vss < vss_number_e; ++vss) {
+            model->addConstr(e_len * vars["b_used"](i, vss), GRB_GREATER_EQUAL, vars["b_pos"](e, vss), "b_used_" + std::to_string(e) + "_" + std::to_string(vss));
+            // Also remove redundant solutions
+            if (vss < vss_number_e - 1) {
+                model->addConstr(vars["b_pos"](e, vss), GRB_GREATER_EQUAL, vars["b_pos"](e, vss + 1) + vars["b_used"](i, vss + 1) * min_block_len_e,
+                                 "b_used_decreasing_" + std::to_string(e) + "_" + std::to_string(vss));
+            }
+        }
+    }
+
+    // Connect position of reverse edges
+    for (const auto& e_pair : breakable_edges) {
+        if (e_pair.second < 0) {
+            continue;
+        }
+        const auto vss_number_e = instance.n().max_vss_on_edge(e_pair.first);
+        if (instance.n().max_vss_on_edge(e_pair.second) != vss_number_e) {
+            throw std::runtime_error("VSS number of edges " + std::to_string(e_pair.first) + " and " + std::to_string(e_pair.second) + " do not match");
+        }
+        const auto& e_len = instance.n().get_edge(e_pair.first).length;
+        for (int vss = 0; vss < vss_number_e; ++vss) {
+            model->addConstr(vars["b_pos"](e_pair.first, vss) + vars["b_pos"](e_pair.second, vss), GRB_EQUAL, e_len, "b_pos_reverse_" + std::to_string(e_pair.first) + "_" + std::to_string(vss) + "_" + std::to_string(e_pair.second) + "_" + std::to_string(vss));
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_position_constraints() {
+
 }
