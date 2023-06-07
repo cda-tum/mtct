@@ -57,7 +57,7 @@ namespace cda_rail::solver::mip_based {
 
             void create_non_discretized_general_constraints();
             void create_non_discretized_position_constraints();
-            void create_non_discretized_free_route_constraints():
+            void create_non_discretized_free_route_constraints();
             void create_non_discretized_fixed_route_constraints();
 
             // Objective
