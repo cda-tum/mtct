@@ -17,8 +17,8 @@ namespace cda_rail::solver::mip_based {
             int dt, num_t, num_tr, num_edges, num_vertices, num_breakable_sections;
             std::vector<std::vector<int>> unbreakable_sections, no_border_vss_sections;
             std::vector<std::pair<int, int>> train_interval;
-            std::vector<std::pair<int, int>> breakable_edges;
-            std::vector<int> no_border_vss_vertices, relevant_edges;
+            std::vector<std::pair<int, int>> breakable_edges_pairs;
+            std::vector<int> no_border_vss_vertices, relevant_edges, breakable_edges;
             bool fix_routes, discretize, include_acceleration_deceleration, include_breaking_distances;
 
             // Gurobi variables
