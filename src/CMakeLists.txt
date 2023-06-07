@@ -18,6 +18,7 @@ add_library(
         solver/mip-based/VSSGenTimetableSolver_general.cpp
         solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
         solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
+        solver/mip-based/VSSGenTimetableSolver_helper.cpp
 )
 
 # set include directories
