@@ -120,5 +120,6 @@ namespace cda_rail::instances{
             std::vector<int> trains_in_section(const std::vector<int>& section) const;
             std::vector<int> trains_at_t(int t) const;
             std::vector<int> trains_at_t(int t, const std::vector<int>& trains_to_consider) const;
+            bool has_route_for_every_train() const;
     };
 }

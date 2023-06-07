@@ -123,3 +123,16 @@ cda_rail::instances::VSSGenerationTimetable::trains_at_t(int t, const std::vecto
 
     return trains;
 }
+
+bool cda_rail::instances::VSSGenerationTimetable::has_route_for_every_train() const {
+    /**
+     * Checks if every train has a route.
+     */
+
+    for (const auto& tr : get_train_list()) {
+        if (!has_route(tr.name)) {
+            return false;
+        }
+    }
+    return true;
+}
