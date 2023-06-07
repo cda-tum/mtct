@@ -49,7 +49,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         num_breakable_sections = no_border_vss_sections.size();
         no_border_vss_vertices = instance.n().get_vertices_by_type(cda_rail::VertexType::NO_BORDER_VSS);
     } else {
-        breakable_edges = instance.n().combine_reverse_edges(instance.n().breakable_edges());
+        breakable_edges = instance.n().breakable_edges();
+        breakable_edges_pairs = instance.n().combine_reverse_edges(breakable_edges);
         num_breakable_sections = breakable_edges.size();
         relevant_edges = instance.n().relevant_breakable_edges();
     }
@@ -155,14 +156,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
      */
 
     int max_vss = 0;
-    for (int e = 0; e < num_edges; ++e) {
+    for (const auto& e : breakable_edges) {
         max_vss = std::max(max_vss, instance.n().max_vss_on_edge(e));
     }
 
     // Create MultiArrays
-    vars["b_pos"] = MultiArray<GRBVar>(num_edges, max_vss);
-    vars["b_front"] = MultiArray<GRBVar>(num_tr, num_t, num_edges, max_vss);
-    vars["b_rear"] = MultiArray<GRBVar>(num_tr, num_t, num_edges, max_vss);
+    vars["b_pos"] = MultiArray<GRBVar>(num_breakable_sections, max_vss);
+    vars["b_front"] = MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
+    vars["b_rear"] = MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
     vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
 
     for (int e = 0; e < num_edges; ++e) {
@@ -485,7 +486,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
     }
 
     // Connect position of reverse edges
-    for (const auto& e_pair : breakable_edges) {
+    for (const auto& e_pair : breakable_edges_pairs) {
         if (e_pair.second < 0) {
             continue;
         }
