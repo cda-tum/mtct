@@ -121,5 +121,10 @@ namespace cda_rail::instances{
             std::vector<int> trains_at_t(int t) const;
             std::vector<int> trains_at_t(int t, const std::vector<int>& trains_to_consider) const;
             bool has_route_for_every_train() const;
+            std::vector<int> trains_on_edge(int edge_id, bool fixed_routes) const;
+            std::vector<int> edges_used_by_train(int train_id, bool fixed_routes) const {
+                return edges_used_by_train(get_train_list().get_train(train_id).name, fixed_routes);
+            };
+            std::vector<int> edges_used_by_train(const std::string& train_name, bool fixed_routes) const;
     };
 }

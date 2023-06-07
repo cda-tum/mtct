@@ -130,9 +130,49 @@ bool cda_rail::instances::VSSGenerationTimetable::has_route_for_every_train() co
      */
 
     for (const auto& tr : get_train_list()) {
-        if (!has_route(tr.name)) {
+        if (!has_route(tr.name) || get_route(tr.name).size() == 0) {
             return false;
         }
     }
     return true;
+}
+
+std::vector<int> cda_rail::instances::VSSGenerationTimetable::edges_used_by_train(const std::string &train_name,
+                                                                                  bool fixed_routes) const {
+    /**
+     * Returns edges used by a specific train.
+     */
+
+    if (!fixed_routes) {
+        // return vector with values 0, 1, ..., num_edges-1
+        std::vector<int> return_edges(network.number_of_edges());
+        std::iota(return_edges.begin(), return_edges.end(), 0);
+        return return_edges;
+    }
+    return get_route(train_name).get_edges();
+}
+
+std::vector<int> cda_rail::instances::VSSGenerationTimetable::trains_on_edge(int edge_id, bool fixed_routes) const {
+    /**
+     * Returns all trains that are present on a specific edge.
+     */
+
+    if (!network.has_edge(edge_id)) {
+        throw std::invalid_argument("edge_id does not exist.");
+    }
+
+    if (!fixed_routes) {
+        // return vector with values 0, 1, ..., num_trains-1
+        std::vector<int> return_trains(get_train_list().size());
+        std::iota(return_trains.begin(), return_trains.end(), 0);
+        return return_trains;
+    }
+    std::vector<int> return_trains;
+    for (int tr = 0; tr < get_train_list().size(); ++tr) {
+        const auto& tr_route = this->get_route(get_train_list().get_train(tr).name);
+        if (tr_route.contains_edge(edge_id)) {
+            return_trains.push_back(tr);
+        }
+    }
+    return return_trains;
 }
