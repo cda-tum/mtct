@@ -443,8 +443,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_constrai
 
     create_general_schedule_constraints();
     create_unbreakable_sections_constraints();
-    create_general_speed_constraints();
-    create_reverse_occupation_constraints();
+    //create_general_speed_constraints();
+    //create_reverse_occupation_constraints();
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_constraints() {
@@ -464,7 +464,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
      */
 
     create_non_discretized_general_constraints();
-    create_non_discretized_position_constraints();
+    //create_non_discretized_position_constraints();
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_general_constraints() {
