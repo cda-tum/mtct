@@ -723,9 +723,9 @@ TEST(Functionality, HelperFunctions) {
     EXPECT_TRUE(std::find(tr1_edges_fixed.begin(), tr1_edges_fixed.end(), v2_v3) != tr1_edges_fixed.end());
     EXPECT_TRUE(std::find(tr1_edges_fixed.begin(), tr1_edges_fixed.end(), v3_v4) != tr1_edges_fixed.end());
 
-    // const auto tr1_edges_fixed = instance.edges_used_by_train("tr1", false);
+    const auto tr1_edges_free = instance.edges_used_by_train("tr1", false);
     // Expect all 6 edges
-    EXPECT_EQ(tr1_edges_fixed.size(), instance.n().number_of_edges());
+    EXPECT_EQ(tr1_edges_free.size(), instance.n().number_of_edges());
 
     // Check trains on edge
     const auto trains_on_v1_v2_fixed = instance.trains_on_edge(v1_v2, true);
