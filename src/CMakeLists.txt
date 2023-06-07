@@ -15,7 +15,9 @@ add_library(
         probleminstances/VSSGenerationTimetable.cpp
         ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
         ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
-        solver/mip-based/VSSGenTimetableSolver.cpp
+        solver/mip-based/VSSGenTimetableSolver_general.cpp
+        solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
+        solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
 )
 
 # set include directories
