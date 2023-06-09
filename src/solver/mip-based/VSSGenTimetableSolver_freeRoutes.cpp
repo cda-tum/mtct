@@ -43,3 +43,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_vari
         }
     }
 }
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_constraints() {
+
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_free_route_constraints() {
+
+}
