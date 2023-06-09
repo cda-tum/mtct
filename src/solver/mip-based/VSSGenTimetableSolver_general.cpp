@@ -23,6 +23,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
      */
 
     // Save relevant variables
+    std::cout << "Save relevant variables" << std::endl;
     dt = delta_t;
     this->fix_routes = fix_routes;
     this->discretize = discretize;
@@ -34,11 +35,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     // Discretize if applicable
+    std::cout << "Discretize if applicable" << std::endl;
     if (this->discretize) {
         instance.discretize();
     }
 
     // Initialize other relevant variables
+    std::cout << "Initialize other relevant variables" << std::endl;
     num_t = instance.maxT() / dt + 1;
     num_tr = instance.get_train_list().size();
     num_edges = instance.n().number_of_edges();
@@ -58,8 +61,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         relevant_edges = instance.n().relevant_breakable_edges();
     }
 
-
-
     for (int i = 0; i < num_tr; ++i) {
         train_interval.emplace_back(instance.time_interval(i));
         train_interval.back().first /= dt;
@@ -67,54 +68,71 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     // Create environment and model
+    std::cout << "Create environment and model" << std::endl;
     env.emplace(true);
     env->start();
     model.emplace(env.value());
 
     // Create variables
+    std::cout << "Create general variables" << std::endl;
     create_general_variables();
     if (this->fix_routes) {
+        std::cout << "Create fixed routes variables" << std::endl;
         create_fixed_routes_variables();
     } else {
+        std::cout << "Create free routes variables" << std::endl;
         create_free_routes_variables();
     }
     if (this->discretize) {
+        std::cout << "Create discretized variables" << std::endl;
         create_discretized_variables();
     } else {
+        std::cout << "Create non-discretized variables" << std::endl;
         create_non_discretized_variables();
     }
     if (this->include_breaking_distances) {
+        std::cout << "Create breaking distance variables" << std::endl;
         create_breaklen_variables();
     }
 
     // Set objective
+    std::cout << "Set objective" << std::endl;
     set_objective();
 
     // Create constraints
+    std::cout << "Create general constraints" << std::endl;
     create_general_constraints();
     if (this->fix_routes) {
+        std::cout << "Create fixed routes constraints" << std::endl;
         create_fixed_routes_constraints();
     } else {
+        std::cout << "Create free routes constraints" << std::endl;
         create_free_routes_constraints();
     }
     if (this->discretize) {
+        std::cout << "Create discretized constraints" << std::endl;
         create_discretized_constraints();
     } else {
+        std::cout << "Create non-discretized constraints" << std::endl;
         create_non_discretized_constraints();
     }
     if (this->include_acceleration_deceleration) {
+        std::cout << "Create acceleration constraints" << std::endl;
         create_acceleration_constraints();
     }
     if (this->include_breaking_distances) {
+        std::cout << "Create breaking distance constraints" << std::endl;
         create_breaklen_constraints();
     }
 
     // Breaklen: https://www.gurobi.com/documentation/10.0/refman/constraints.html#subsubsection:GenConstrFunction
 
-
+    // Write model to file
+    std::cout << "Write model to file" << std::endl;
     model->write("model.lp");
 
     // Optimize
+    std::cout << "Optimize" << std::endl;
     model->optimize();
 
     // Print solution of all trains
@@ -603,4 +621,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_speed_co
             }
         }
     }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_reverse_occupation_constraints() {
+
 }
