@@ -547,15 +547,23 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
             GRBLinExpr lhs_front = 0;
             GRBLinExpr lhs_rear = 0;
             GRBLinExpr rhs = -1;
+            bool create_constraint = false;
             for (const auto& tr : instance.trains_at_t(t, tr_on_e)) {
+                create_constraint = true;
                 for (int vss = 0; vss < vss_number_e; ++vss) {
                     lhs_front += vars["b_front"](tr, t, e_index, vss);
                     lhs_rear += vars["b_rear"](tr, t, e_index, vss);
                 }
                 rhs += vars["x"](tr, t, e);
             }
-            model->addConstr(lhs_front, GRB_EQUAL, rhs, "b_front_correct_number_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(e_index));
-            model->addConstr(lhs_rear, GRB_EQUAL, rhs, "b_rear_correct_number_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(e_index));
+            if (create_constraint) {
+                model->addConstr(lhs_front, GRB_EQUAL, rhs,
+                                 "b_front_correct_number_" + std::to_string(t) + "_" + std::to_string(e) + "_" +
+                                 std::to_string(e_index));
+                model->addConstr(lhs_rear, GRB_EQUAL, rhs,
+                                 "b_rear_correct_number_" + std::to_string(t) + "_" + std::to_string(e) + "_" +
+                                 std::to_string(e_index));
+            }
         }
     }
 
