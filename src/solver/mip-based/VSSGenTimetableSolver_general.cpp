@@ -548,7 +548,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
             GRBLinExpr lhs_rear = 0;
             GRBLinExpr rhs = -1;
             bool create_constraint = false;
-            for (const auto& tr : instance.trains_at_t(t, tr_on_e)) {
+            for (const auto& tr : instance.trains_at_t(t*dt, tr_on_e)) {
                 create_constraint = true;
                 for (int vss = 0; vss < vss_number_e; ++vss) {
                     lhs_front += vars["b_front"](tr, t, e_index, vss);
@@ -597,7 +597,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
                 // sum_tr b_front(tr, t, e_index, vss) = sum_tr b_rear(tr, t, e_index, vss) <= 1
                 GRBLinExpr lhs = 0;
                 GRBLinExpr rhs = 0;
-                for (const auto& tr : instance.trains_at_t(t, tr_on_e)) {
+                for (const auto& tr : instance.trains_at_t(t*dt, tr_on_e)) {
                     lhs += vars["b_front"](tr, t, e_index, vss);
                     rhs += vars["b_rear"](tr, t, e_index, vss);
                 }
