@@ -143,3 +143,28 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_route_sche
         }
     }
 }
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_fixed_route_constraints() {
+    /**
+     * Creates non discretized vss constraints if routes are fixed
+     */
+
+    for (int tr = 0; tr < num_tr; ++tr) {
+        const auto& tr_name = instance.get_train_list().get_train(tr).name;
+        const auto r_len = instance.route_length(tr_name);
+        const auto& tr_len = instance.get_train_list().get_train(tr).length;
+        for (const auto e : instance.edges_used_by_train(tr, this->fix_routes)) {
+            const auto& e_index = breakable_edge_indices[e];
+            const auto vss_number_e = instance.n().max_vss_on_edge(e);
+            const auto edge_pos = instance.route_edge_pos(tr_name, e);
+            for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
+                for (int vss = 0; vss < vss_number_e; ++vss) {
+                    // mu(tr, t, e) - edge_pos.first <= b_pos(tr, t, e_index, vss) + (r_len + tr_len) * (1 - b_front(tr, t, e_index, vss))
+                    // lda(tr, t, e) - edge_pos.first + (r_len + tr_len) * (1 - b_rear(tr, t, e_index, vss)) >= b_pos(tr, t, e_index, vss)
+                    model->addConstr(vars["mu"](tr, t, e_index) - edge_pos.first, GRB_LESS_EQUAL, vars["b_pos"](tr, t, e_index, vss) + (r_len + tr_len) * (1 - vars["b_front"](tr, t, e_index, vss)), "b_pos_front_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
+                    model->addConstr(vars["lda"](tr, t, e_index) - edge_pos.first + (r_len + tr_len) * (1 - vars["b_rear"](tr, t, e_index, vss)), GRB_GREATER_EQUAL, vars["b_pos"](tr, t, e_index, vss), "b_pos_rear_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
+                }
+            }
+        }
+    }
+}
