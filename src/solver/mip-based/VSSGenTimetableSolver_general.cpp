@@ -220,7 +220,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
         const auto vss_number_e = instance.n().max_vss_on_edge(e);
         const auto& edge_len = instance.n().get_edge(e).length;
         for (int vss = 0; vss < vss_number_e; ++vss) {
-            vars["b_pos"](e, vss) = model->addVar(0, edge_len, 0, GRB_CONTINUOUS, "b_pos_" + std::to_string(e) + "_" + std::to_string(vss));
+            vars["b_pos"](i, vss) = model->addVar(0, edge_len, 0, GRB_CONTINUOUS, "b_pos_" + std::to_string(e) + "_" + std::to_string(vss));
             for (int tr = 0; tr < num_tr; ++tr) {
                 for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
                     vars["b_front"](tr, t, i, vss) = model->addVar(0, 1, 0, GRB_BINARY,
