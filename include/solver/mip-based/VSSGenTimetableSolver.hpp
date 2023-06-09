@@ -20,6 +20,7 @@ namespace cda_rail::solver::mip_based {
             std::vector<std::pair<int, int>> breakable_edges_pairs;
             std::vector<int> no_border_vss_vertices, relevant_edges, breakable_edges;
             bool fix_routes, discretize, include_acceleration_deceleration, include_breaking_distances;
+            std::unordered_map<int, int> breakable_edge_indices;
 
             // Gurobi variables
             std::optional<GRBEnv> env;

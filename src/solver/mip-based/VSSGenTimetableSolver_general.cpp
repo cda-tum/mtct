@@ -50,6 +50,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         no_border_vss_vertices = instance.n().get_vertices_by_type(cda_rail::VertexType::NO_BORDER_VSS);
     } else {
         breakable_edges = instance.n().breakable_edges();
+        for (int i = 0; i < breakable_edges.size(); ++i) {
+            breakable_edge_indices[breakable_edges[i]] = i;
+        }
         breakable_edges_pairs = instance.n().combine_reverse_edges(breakable_edges);
         num_breakable_sections = breakable_edges.size();
         relevant_edges = instance.n().relevant_breakable_edges();
