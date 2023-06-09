@@ -159,10 +159,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
             const auto edge_pos = instance.route_edge_pos(tr_name, e);
             for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
                 for (int vss = 0; vss < vss_number_e; ++vss) {
-                    // mu(tr, t, e) - edge_pos.first <= b_pos(tr, t, e_index, vss) + (r_len + tr_len) * (1 - b_front(tr, t, e_index, vss))
-                    // lda(tr, t, e) - edge_pos.first + (r_len + tr_len) * (1 - b_rear(tr, t, e_index, vss)) >= b_pos(tr, t, e_index, vss)
-                    model->addConstr(vars["mu"](tr, t, e_index) - edge_pos.first, GRB_LESS_EQUAL, vars["b_pos"](tr, t, e_index, vss) + (r_len + tr_len) * (1 - vars["b_front"](tr, t, e_index, vss)), "b_pos_front_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
-                    model->addConstr(vars["lda"](tr, t, e_index) - edge_pos.first + (r_len + tr_len) * (1 - vars["b_rear"](tr, t, e_index, vss)), GRB_GREATER_EQUAL, vars["b_pos"](tr, t, e_index, vss), "b_pos_rear_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
+                    // mu(tr, t) - edge_pos.first <= b_pos(e_index, vss) + (r_len + tr_len) * (1 - b_front(tr, t, e_index, vss))
+                    // lda(tr, t) - edge_pos.first + (r_len + tr_len) * (1 - b_rear(tr, t, e_index, vss)) >= b_pos(e_index, vss)
+                    model->addConstr(vars["mu"](tr, t) - edge_pos.first, GRB_LESS_EQUAL, vars["b_pos"](e_index, vss) + (r_len + tr_len) * (1 - vars["b_front"](tr, t, e_index, vss)), "b_pos_front_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
+                    model->addConstr(vars["lda"](tr, t) - edge_pos.first + (r_len + tr_len) * (1 - vars["b_rear"](tr, t, e_index, vss)), GRB_GREATER_EQUAL, vars["b_pos"](e_index, vss), "b_pos_rear_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
                 }
             }
         }
