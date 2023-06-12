@@ -738,4 +738,17 @@ TEST(Functionality, HelperFunctions) {
     const auto trains_on_v1_v2 = instance.trains_on_edge(v1_v2, false);
     // Expect all trains
     EXPECT_EQ(trains_on_v1_v2.size(), instance.get_train_list().size());
+
+    // Check trains on edge
+    const auto trains_on_v1_v2_fixed_partial = instance.trains_on_edge(v1_v2, true, {tr1, tr2});
+    // Expect tr1
+    EXPECT_EQ(trains_on_v1_v2_fixed_partial.size(), 1);
+    EXPECT_TRUE(std::find(trains_on_v1_v2_fixed_partial.begin(), trains_on_v1_v2_fixed_partial.end(), tr1) != trains_on_v1_v2_fixed_partial.end());
+
+    // Check trains on edge
+    const auto trains_on_v1_v2_partial = instance.trains_on_edge(v1_v2, false, {tr1, tr2});
+    // Expect tr1 and tr2
+    EXPECT_EQ(trains_on_v1_v2_partial.size(), 2);
+    EXPECT_TRUE(std::find(trains_on_v1_v2_partial.begin(), trains_on_v1_v2_partial.end(), tr1) != trains_on_v1_v2_partial.end());
+    EXPECT_TRUE(std::find(trains_on_v1_v2_partial.begin(), trains_on_v1_v2_partial.end(), tr2) != trains_on_v1_v2_partial.end());
 }
