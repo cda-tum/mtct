@@ -542,8 +542,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
         const auto vss_number_e = instance.n().max_vss_on_edge(e);
         const auto& tr_on_e = instance.trains_on_edge(e, this->fix_routes);
         for (int t = 0; t < num_t; ++t) {
-            // sum_(tr,vss) b_front(tr, t, e_index, vss) = sum_(tr) x(tr, t, e) - 1
-            // sum_(tr,vss) b_rear(tr, t, e_index, vss) = sum_(tr) x(tr, t, e) - 1
+            // sum_(tr,vss) b_front(tr, t, e_index, vss) >= sum_(tr) x(tr, t, e) - 1
+            // sum_(tr,vss) b_rear(tr, t, e_index, vss) >= sum_(tr) x(tr, t, e) - 1
             GRBLinExpr lhs_front = 0;
             GRBLinExpr lhs_rear = 0;
             GRBLinExpr rhs = -1;
@@ -557,11 +557,15 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
                 rhs += vars["x"](tr, t, e);
             }
             if (create_constraint) {
-                model->addConstr(lhs_front, GRB_EQUAL, rhs,
+                model->addConstr(lhs_front, GRB_GREATER_EQUAL, rhs,
                                  "b_front_correct_number_" + std::to_string(t) + "_" + std::to_string(e) + "_" +
                                  std::to_string(e_index));
-                model->addConstr(lhs_rear, GRB_EQUAL, rhs,
+                model->addConstr(lhs_rear, GRB_GREATER_EQUAL, rhs,
                                  "b_rear_correct_number_" + std::to_string(t) + "_" + std::to_string(e) + "_" +
+                                 std::to_string(e_index));
+                // lhs_front = lhs_rear
+                model->addConstr(lhs_front, GRB_EQUAL, lhs_rear,
+                                 "b_front_rear_correct_number_equal_" + std::to_string(t) + "_" + std::to_string(e) + "_" +
                                  std::to_string(e_index));
             }
         }
