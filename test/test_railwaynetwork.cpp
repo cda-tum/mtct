@@ -780,24 +780,24 @@ TEST(Functionality, SortPairs) {
 
     // Add edges
     int v0_v1 = network.add_edge("v0", "v1", 100, 100, false);
+    int v2_v1 = network.add_edge("v2", "v1", 100, 100, false);
+    int v1_v0 = network.add_edge("v1", "v0", 100, 100, false);
     int v1_v2 = network.add_edge("v1", "v2", 100, 100, false);
     int v2_v3 = network.add_edge("v2", "v3", 100, 100, false);
     int v3_v4 = network.add_edge("v3", "v4", 100, 100, false);
+    int v4_v3 = network.add_edge("v4", "v3", 100, 100, false);
     int v4_v5 = network.add_edge("v4", "v5", 100, 100, false);
     int v5_v4 = network.add_edge("v5", "v4", 100, 100, false);
-    int v4_v3 = network.add_edge("v4", "v3", 100, 100, false);
-    int v2_v1 = network.add_edge("v2", "v1", 100, 100, false);
-    int v1_v0 = network.add_edge("v1", "v0", 100, 100, false);
 
     // Edge pairs
     std::vector<int> to_combine = {v3_v4, v4_v3, v2_v1, v1_v2, v1_v0, v0_v1, v2_v3};
     const auto& combined_edges = network.combine_reverse_edges(to_combine, true);
 
     // Check correctness
-    std::vector<std::pair<int, int>> expected_combined_edges = {{std::min(v0_v1, v1_v0), std::max(v0_v1, v1_v0)},
-                                                                {std::min(v1_v2, v2_v1), std::max(v1_v2, v2_v1)},
+    std::vector<std::pair<int, int>> expected_combined_edges = {{v0_v1, v1_v0},
+                                                                {v1_v2, v2_v1},
                                                                 {v2_v3, -1},
-                                                                {std::min(v3_v4, v4_v3), std::max(v3_v4, v4_v3)}};
+                                                                {v3_v4, v4_v3}};
     EXPECT_EQ(combined_edges.size(), expected_combined_edges.size());
     int expected_index = 0;
     int expected_incr = 1;
