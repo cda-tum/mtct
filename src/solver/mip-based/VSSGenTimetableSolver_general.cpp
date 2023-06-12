@@ -128,8 +128,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     // Breaklen: https://www.gurobi.com/documentation/10.0/refman/constraints.html#subsubsection:GenConstrFunction
 
     // Write model to file
-    std::cout << "Write model to file" << std::endl;
-    model->write("model.lp");
+    //std::cout << "Write model to file" << std::endl;
+    //model->write("model.lp");
 
     // Optimize
     std::cout << "Optimize" << std::endl;
@@ -137,7 +137,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
 
     // Print solution of all trains
     // Iterate over all times
-    for (int t = 0; t < num_t; ++t) {
+    /**for (int t = 0; t < num_t; ++t) {
         std::cout << "t = " << t*dt << "; ";
         // Iterate over all trains
         const auto tr_at_t = instance.trains_at_t(t * dt);
@@ -145,7 +145,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
             std::cout << tr << " at [" << vars["lda"](tr, t).get(GRB_DoubleAttr_X) << ", " << vars["mu"](tr, t).get(GRB_DoubleAttr_X) << "]; ";
         }
         std::cout << std::endl;
-    }
+    }**/
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variables() {
@@ -157,8 +157,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variable
     vars["v"] = MultiArray<GRBVar>(num_tr, num_t + 1);
     vars["x"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
     vars["x_sec"] = MultiArray<GRBVar>(num_tr, num_t, unbreakable_sections.size());
-    vars["y_sec_fwd"] = MultiArray<GRBVar>(num_t, num_breakable_sections);
-    vars["y_sec_bwd"] = MultiArray<GRBVar>(num_t, num_breakable_sections);
+    vars["y_sec_fwd"] = MultiArray<GRBVar>(num_t, fwd_bwd_sections.size());
+    vars["y_sec_bwd"] = MultiArray<GRBVar>(num_t, fwd_bwd_sections.size());
 
     auto train_list = instance.get_train_list();
     for (int i = 0; i < num_tr; ++i) {
@@ -178,7 +178,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variable
         }
     }
     for (int t = 0; t < num_t; ++t) {
-        for (int i = 0; i < num_breakable_sections; ++i) {
+        for (int i = 0; i < fwd_bwd_sections.size(); ++i) {
             vars["y_sec_fwd"](t, i) = model->addVar(0, 1, 0, GRB_BINARY, "y_sec_fwd_" + std::to_string(t) + "_" + std::to_string(i));
             vars["y_sec_bwd"](t, i) = model->addVar(0, 1, 0, GRB_BINARY, "y_sec_bwd_" + std::to_string(t) + "_" + std::to_string(i));
         }
@@ -636,5 +636,96 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_speed_co
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_reverse_occupation_constraints() {
+    /**
+     * A breakable section can only be occupied in one direction at a time. This prevents trains from blocking each other, since reversing trains is not modelled.
+     */
+    // Connect y_sec and x
 
+    for (int t = 0; t < num_t; ++t) {
+        const auto tr_at_t = instance.trains_at_t(t * dt);
+        for (int i = 0; i < fwd_bwd_sections.size(); ++i) {
+            // y_sec_fwd(t,i) >= x(tr, t, e) for all e in fwd_bwd_sections[i].first and applicable trains
+            // y_sec_fwd(t,i) <= sum x(tr, t, e)
+            GRBLinExpr rhs = 0;
+            for (const auto& e : fwd_bwd_sections[i].first) {
+                const auto tr_on_edge = instance.trains_on_edge(e, this->fix_routes, tr_at_t);
+                for (const auto& tr : tr_on_edge) {
+                    rhs += vars["x"](tr, t, e);
+                    model->addConstr(vars["y_sec_fwd"](t, i), GRB_GREATER_EQUAL, vars["x"](tr, t, e), "y_sec_fwd_linker_1_" + std::to_string(t) + "_" + std::to_string(i) + "_" + std::to_string(tr) + "_" + std::to_string(e));
+                }
+            }
+            model->addConstr(vars["y_sec_fwd"](t, i), GRB_LESS_EQUAL, rhs, "y_sec_fwd_linker_2_" + std::to_string(t) + "_" + std::to_string(i));
+
+            // y_sec_bwd(t,i) >= x(tr, t, e) for all e in fwd_bwd_sections[i].second and applicable trains
+            // y_sec_bwd(t,i) <= sum x(tr, t, e)
+            rhs = 0;
+            for (const auto& e : fwd_bwd_sections[i].second) {
+                const auto tr_on_edge = instance.trains_on_edge(e, this->fix_routes, tr_at_t);
+                for (const auto& tr : tr_on_edge) {
+                    rhs += vars["x"](tr, t, e);
+                    model->addConstr(vars["y_sec_bwd"](t, i), GRB_GREATER_EQUAL, vars["x"](tr, t, e), "y_sec_bwd_linker_1_" + std::to_string(t) + "_" + std::to_string(i) + "_" + std::to_string(tr) + "_" + std::to_string(e));
+                }
+            }
+            model->addConstr(vars["y_sec_bwd"](t, i), GRB_LESS_EQUAL, rhs, "y_sec_bwd_linker_2_" + std::to_string(t) + "_" + std::to_string(i));
+        }
+    }
+
+    // Only one direction occupied
+    for (int t = 0; t < num_t; ++t) {
+        for (int i = 0; i < fwd_bwd_sections.size(); ++i) {
+            // y_sec_fwd(t,i) + y_sec_bwd(t, i) <= 1
+            model->addConstr(vars["y_sec_fwd"](t, i) + vars["y_sec_bwd"](t, i), GRB_LESS_EQUAL, 1, "y_sec_fwd_bwd_" + std::to_string(t) + "_" + std::to_string(i));
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::calculate_fwd_bwd_sections() {
+    /**
+     * Calculate the forward and backward sections for each breakable section
+     */
+
+    if (this -> discretize) {
+        calculate_fwd_bwd_sections_discretized();
+    } else {
+        calculate_fwd_bwd_sections_non_discretized();
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::calculate_fwd_bwd_sections_discretized() {
+    for (const auto& vss_section : no_border_vss_sections) {
+        const auto vss_section_sorted = instance.n().combine_reverse_edges(vss_section, true);
+        bool fwd_found = false;
+        bool bwd_found = false;
+        for (int i = 0; i < vss_section_sorted.size() && !fwd_found && !bwd_found; ++i) {
+            if (vss_section_sorted[i].first != -1) {
+                fwd_found = true;
+            }
+            if (vss_section_sorted[i].second != -1) {
+                bwd_found = true;
+            }
+        }
+        if (!fwd_found || !bwd_found) {
+            continue;
+        }
+        fwd_bwd_sections.emplace_back();
+        for (const auto& e : vss_section_sorted) {
+            if (e.first != -1) {
+                fwd_bwd_sections.back().first.emplace_back(e.first);
+            }
+            if (e.second != -1) {
+                fwd_bwd_sections.back().second.emplace_back(e.second);
+            }
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::calculate_fwd_bwd_sections_non_discretized() {
+    for (const auto& edge_pair : breakable_edges_pairs) {
+        if (edge_pair.first == -1 ||edge_pair.second == -1) {
+            continue;
+        }
+        fwd_bwd_sections.emplace_back();
+        fwd_bwd_sections.back().first.emplace_back(edge_pair.first);
+        fwd_bwd_sections.back().second.emplace_back(edge_pair.second);
+    }
 }
