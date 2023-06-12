@@ -70,6 +70,7 @@ namespace cda_rail::solver::mip_based {
             void calculate_fwd_bwd_sections();
             void calculate_fwd_bwd_sections_discretized();
             void calculate_fwd_bwd_sections_non_discretized();
+            double get_max_breaklen(const int& tr) const;
 
         public:
             // Constructors

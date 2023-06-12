@@ -14,18 +14,21 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_var
     vars["x_mu"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
 
     const auto& train_list = instance.get_train_list();
-    for (int i = 0; i < num_tr; ++i) {
-        const auto tr_name = train_list.get_train(i).name;
+    for (int tr = 0; tr < num_tr; ++tr) {
+        const auto tr_name = train_list.get_train(tr).name;
         const auto r_len = instance.route_length(tr_name);
-        const auto r_size = instance.get_route(tr_name).size();
-        const auto tr_len = instance.get_train_list().get_train(tr_name).length;
-        for (int t_steps = train_interval[i].first; t_steps <= train_interval[i].second; ++t_steps) {
+        const auto tr_len = train_list.get_train(tr_name).length;
+        double mu_ub = r_len + tr_len;
+        if (this->include_breaking_distances) {
+            mu_ub += get_max_breaklen(tr);
+        }
+        for (int t_steps = train_interval[tr].first; t_steps <= train_interval[tr].second; ++t_steps) {
             auto t = t_steps * dt;
-            vars["mu"](i, t_steps) = model->addVar(0, r_len + tr_len, 0, GRB_CONTINUOUS, "mu_" + tr_name + "_" + std::to_string(t));
-            vars["lda"](i, t_steps) = model->addVar(- tr_len, r_len, 0, GRB_CONTINUOUS, "lda_" + tr_name + "_" + std::to_string(t));
+            vars["mu"](tr, t_steps) = model->addVar(0, mu_ub, 0, GRB_CONTINUOUS, "mu_" + tr_name + "_" + std::to_string(t));
+            vars["lda"](tr, t_steps) = model->addVar(-tr_len, r_len, 0, GRB_CONTINUOUS, "lda_" + tr_name + "_" + std::to_string(t));
             for (int edge_id : instance.edges_used_by_train(tr_name, fix_routes)) {
-                vars["x_lda"](i, t_steps, edge_id) = model->addVar(0, 1, 0, GRB_BINARY, "x_lda_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
-                vars["x_mu"](i, t_steps, edge_id) = model->addVar(0, 1, 0, GRB_BINARY, "x_mu_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+                vars["x_lda"](tr, t_steps, edge_id) = model->addVar(0, 1, 0, GRB_BINARY, "x_lda_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+                vars["x_mu"](tr, t_steps, edge_id) = model->addVar(0, 1, 0, GRB_BINARY, "x_mu_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
             }
         }
     }
@@ -37,22 +40,30 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_pos
      */
 
     auto train_list = instance.get_train_list();
-    for (int i = 0; i < num_tr; ++i) {
-        auto tr_name = train_list.get_train(i).name;
+    for (int tr = 0; tr < num_tr; ++tr) {
+        auto tr_name = train_list.get_train(tr).name;
         auto tr_len = instance.get_train_list().get_train(tr_name).length;
-        for (int t = train_interval[i].first; t <= train_interval[i].second - 1; ++t) {
-            // full pos: mu - lda = len + (v(t) + v(t+1))/2 * dt
-            model->addConstr(vars["mu"](i, t) - vars["lda"](i, t) == tr_len + (vars["v"](i, t) + vars["v"](i, t + 1)) * dt / 2, "full_pos_" + tr_name + "_" + std::to_string(t));
+        for (int t = train_interval[tr].first; t <= train_interval[tr].second - 1; ++t) {
+            // full pos: mu - lda = len + (v(t) + v(t+1))/2 * dt + breaklen (if applicable)
+            GRBLinExpr rhs = tr_len + (vars["v"](tr, t) + vars["v"](tr, t + 1)) * dt / 2;
+            if (this->include_breaking_distances) {
+                rhs += vars["breaklen"](tr, t);
+            }
+            model->addConstr(vars["mu"](tr, t) - vars["lda"](tr, t) == rhs, "full_pos_" + tr_name + "_" + std::to_string(t));
             // overlap: mu(t) - lda(t+1) = len
-            model->addConstr(vars["mu"](i, t) - vars["lda"](i, t + 1) == tr_len, "overlap_" + tr_name + "_" + std::to_string(t));
+            model->addConstr(vars["mu"](tr, t) - vars["lda"](tr, t + 1) == tr_len, "overlap_" + tr_name + "_" + std::to_string(t));
             // mu increasing: mu(t+1) >= mu(t)
-            model->addConstr(vars["mu"](i, t + 1) >= vars["mu"](i, t), "mu_increasing_" + tr_name + "_" + std::to_string(t));
+            model->addConstr(vars["mu"](tr, t + 1) >= vars["mu"](tr, t), "mu_increasing_" + tr_name + "_" + std::to_string(t));
             // lda increasing: lda(t+1) >= lda(t)
-            model->addConstr(vars["lda"](i, t + 1) >= vars["lda"](i, t), "lda_increasing_" + tr_name + "_" + std::to_string(t));
+            model->addConstr(vars["lda"](tr, t + 1) >= vars["lda"](tr, t), "lda_increasing_" + tr_name + "_" + std::to_string(t));
         }
         // full pos also holds for t = train_interval[i].second
-        auto t = train_interval[i].second;
-        model->addConstr(vars["mu"](i, t) - vars["lda"](i, t) == tr_len + (vars["v"](i, t) + vars["v"](i, t + 1)) * dt / 2, "full_pos_" + tr_name + "_" + std::to_string(t));
+        auto t = train_interval[tr].second;
+        GRBLinExpr rhs = tr_len + (vars["v"](tr, t) + vars["v"](tr, t + 1)) * dt / 2;
+        if (this->include_breaking_distances) {
+            rhs += vars["breaklen"](tr, t);
+        }
+        model->addConstr(vars["mu"](tr, t) - vars["lda"](tr, t) == rhs, "full_pos_" + tr_name + "_" + std::to_string(t));
     }
 }
 
@@ -70,8 +81,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_boundary_fixed_r
         auto tr_len = instance.get_train_list().get_train(tr_name).length;
         // initial_lda: lda(train_interval[i].first) = - tr_len
         model->addConstr(vars["lda"](i, train_interval[i].first) == -tr_len, "initial_lda_" + tr_name);
-        // final_mu: mu(train_interval[i].second) = r_len + tr_len
-        model->addConstr(vars["mu"](i, train_interval[i].second) == r_len + tr_len, "final_mu_" + tr_name);
+        // final_mu: mu(train_interval[i].second) = r_len + tr_len + breaklen (if applicable)
+        GRBLinExpr rhs = r_len + tr_len;
+        if (this->include_breaking_distances) {
+            rhs += vars["breaklen"](i, train_interval[i].second);
+        }
+        model->addConstr(vars["mu"](i, train_interval[i].second) == rhs, "final_mu_" + tr_name);
         // initial_speed: v(train_interval[i].first) = initial_speed
         model->addConstr(vars["v"](i, train_interval[i].first) == initial_speed, "initial_speed_" + tr_name);
         // final_speed: v(train_interval[i].second) = final_speed

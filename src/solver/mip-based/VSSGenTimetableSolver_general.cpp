@@ -125,8 +125,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         create_breaklen_constraints();
     }
 
-    // Breaklen: https://www.gurobi.com/documentation/10.0/refman/constraints.html#subsubsection:GenConstrFunction
-
     // Write model to file
     //std::cout << "Write model to file" << std::endl;
     //model->write("model.lp");
@@ -439,8 +437,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_breaklen_variabl
 
     // Iterate over all trains
     for (int tr = 0; tr < num_tr; ++tr) {
+        const auto max_break_len = get_max_breaklen(tr);
         for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
-            vars["breaklen"](tr, t) = model->addVar(0, GRB_INFINITY, 0, GRB_CONTINUOUS, "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
+            vars["breaklen"](tr, t) = model->addVar(0, max_break_len, 0, GRB_CONTINUOUS, "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
         }
     }
 }
@@ -613,7 +612,19 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_breaklen_constraints() {
+    // https://www.gurobi.com/documentation/10.0/refman/constraints.html#subsubsection:GenConstrFunction
 
+    // break_len(tr, t) = v(tr, t+1)^2 / (2*tr_deceleration)
+    for (int tr = 0; tr < num_tr; ++tr) {
+        const auto& tr_deceleration = instance.get_train_list().get_train(tr).deceleration;
+        const auto& tr_max_speed = instance.get_train_list().get_train(tr).max_speed;
+        const double p [3] = {1/(2*tr_deceleration), 0, 0};
+        for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
+            model->addGenConstrPoly(vars["v"](tr, t+1), vars["breaklen"](tr, t), 3, p,
+                                    "breaklen_" + std::to_string(tr) + "_" + std::to_string(t),
+                                    "FuncPieceRatio=1 FuncPieces=-1 FuncPieceError=20");
+        }
+    }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_speed_constraints() {
@@ -728,4 +739,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::calculate_fwd_bwd_secti
         fwd_bwd_sections.back().first.emplace_back(edge_pair.first);
         fwd_bwd_sections.back().second.emplace_back(edge_pair.second);
     }
+}
+
+double cda_rail::solver::mip_based::VSSGenTimetableSolver::get_max_breaklen(const int &tr) const {
+    const auto& tr_deceleration = instance.get_train_list().get_train(tr).deceleration;
+    const auto& tr_max_speed = instance.get_train_list().get_train(tr).max_speed;
+    return tr_max_speed * tr_max_speed / (2 * tr_deceleration);
 }
