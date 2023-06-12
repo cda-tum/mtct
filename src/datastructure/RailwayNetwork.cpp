@@ -1292,18 +1292,21 @@ std::vector<std::pair<int, int>> cda_rail::Network::sort_edge_pairs (std::vector
         // Process edge pair
         const auto edge_pair_index = *vertex_neighbors[i].begin();
         const auto& edge_pair = edge_pairs[edge_pair_index];
-        ret_val.emplace_back(edge_pair);
+
         const auto& edge = get_edge(edge_pair.first);
         vertex_neighbors[edge.source].erase(edge_pair_index);
         vertex_neighbors[edge.target].erase(edge_pair_index);
 
         // Get next vertex
-        if (edge.source != i) {
+        if (edge.source != i && edge.target == i) {
+            ret_val.emplace_back(edge_pair.second, edge_pair.first);
             i = edge.source;
-        } else if (edge.target != i) {
+        }
+        else if (edge.target != i && edge.source == i) {
+            ret_val.emplace_back(edge_pair.first, edge_pair.second);
             i = edge.target;
         } else {
-            throw std::runtime_error("Something went wrong, source and target are equal.");
+            throw std::runtime_error("Something went wrong, source and target are not as expected.");
         }
     }
 
