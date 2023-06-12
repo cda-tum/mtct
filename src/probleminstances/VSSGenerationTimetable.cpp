@@ -153,6 +153,12 @@ std::vector<int> cda_rail::instances::VSSGenerationTimetable::edges_used_by_trai
 }
 
 std::vector<int> cda_rail::instances::VSSGenerationTimetable::trains_on_edge(int edge_id, bool fixed_routes) const {
+    std::vector<int> trains_to_consider(get_train_list().size());
+    std::iota(trains_to_consider.begin(), trains_to_consider.end(), 0);
+    return trains_on_edge(edge_id, fixed_routes, trains_to_consider);
+}
+
+std::vector<int> cda_rail::instances::VSSGenerationTimetable::trains_on_edge(int edge_id, bool fixed_routes, const std::vector<int>& trains_to_consider) const {
     /**
      * Returns all trains that are present on a specific edge.
      */
@@ -162,13 +168,10 @@ std::vector<int> cda_rail::instances::VSSGenerationTimetable::trains_on_edge(int
     }
 
     if (!fixed_routes) {
-        // return vector with values 0, 1, ..., num_trains-1
-        std::vector<int> return_trains(get_train_list().size());
-        std::iota(return_trains.begin(), return_trains.end(), 0);
-        return return_trains;
+        return trains_to_consider;
     }
     std::vector<int> return_trains;
-    for (int tr = 0; tr < get_train_list().size(); ++tr) {
+    for (int tr : trains_to_consider) {
         const auto& tr_route = this->get_route(get_train_list().get_train(tr).name);
         if (tr_route.contains_edge(edge_id)) {
             return_trains.push_back(tr);

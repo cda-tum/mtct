@@ -21,6 +21,7 @@ namespace cda_rail::solver::mip_based {
             std::vector<int> no_border_vss_vertices, relevant_edges, breakable_edges;
             bool fix_routes, discretize, include_acceleration_deceleration, include_breaking_distances;
             std::unordered_map<int, int> breakable_edge_indices;
+            std::vector<std::pair<std::vector<int>, std::vector<int>>> fwd_bwd_sections;
 
             // Gurobi variables
             std::optional<GRBEnv> env;
@@ -66,6 +67,9 @@ namespace cda_rail::solver::mip_based {
 
             // Helper functions
             std::vector<int> unbreakable_section_indices(int train_index) const;
+            void calculate_fwd_bwd_sections();
+            void calculate_fwd_bwd_sections_discretized();
+            void calculate_fwd_bwd_sections_non_discretized();
 
         public:
             // Constructors
