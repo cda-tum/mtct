@@ -19,7 +19,7 @@ namespace cda_rail::solver::mip_based {
             std::vector<std::pair<int, int>> train_interval;
             std::vector<std::pair<int, int>> breakable_edges_pairs;
             std::vector<int> no_border_vss_vertices, relevant_edges, breakable_edges;
-            bool fix_routes, discretize, include_acceleration_deceleration, include_breaking_distances;
+            bool fix_routes, discretize, include_acceleration_deceleration, include_breaking_distances, use_pwl;
             std::unordered_map<int, int> breakable_edge_indices;
             std::vector<std::pair<std::vector<int>, std::vector<int>>> fwd_bwd_sections;
 
@@ -80,6 +80,6 @@ namespace cda_rail::solver::mip_based {
             explicit VSSGenTimetableSolver(const char* instance_path);
 
             // Methods
-            void solve(int delta_t = 15, bool fix_routes = true, bool discretize = false, bool include_acceleration_deceleration = true, bool include_breaking_distances = true); // to be added with parameters and return type later
+            void solve(int delta_t = 15, bool fix_routes = true, bool discretize = false, bool include_acceleration_deceleration = true, bool include_breaking_distances = true, bool use_pwl = false); // to be added with parameters and return type later
     };
 }

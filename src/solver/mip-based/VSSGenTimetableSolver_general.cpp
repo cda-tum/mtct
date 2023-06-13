@@ -17,7 +17,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(const 
     instance = cda_rail::instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize, bool include_acceleration_deceleration, bool include_breaking_distances) {
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize, bool include_acceleration_deceleration, bool include_breaking_distances, bool use_pwl) {
     /**
      * Solve the instance using Gurobi
      */
@@ -29,6 +29,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     this->discretize = discretize;
     this->include_acceleration_deceleration = include_acceleration_deceleration;
     this->include_breaking_distances = include_breaking_distances;
+    this->use_pwl = use_pwl;
 
     if (this->fix_routes && !instance.has_route_for_every_train()) {
         throw std::runtime_error("Instance does not have a route for every train");
@@ -131,6 +132,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
 
     // Optimize
     std::cout << "Optimize" << std::endl;
+    if (this->include_breaking_distances && !this->use_pwl) {
+        model->set(GRB_IntParam_NonConvex, 2);
+    }
     model->optimize();
 
     // Print solution of all trains
@@ -612,17 +616,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_breaklen_constraints() {
-    // https://www.gurobi.com/documentation/10.0/refman/constraints.html#subsubsection:GenConstrFunction
-
     // break_len(tr, t) = v(tr, t+1)^2 / (2*tr_deceleration)
     for (int tr = 0; tr < num_tr; ++tr) {
         const auto& tr_deceleration = instance.get_train_list().get_train(tr).deceleration;
         const auto& tr_max_speed = instance.get_train_list().get_train(tr).max_speed;
         const double p [3] = {1/(2*tr_deceleration), 0, 0};
         for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
-            model->addGenConstrPoly(vars["v"](tr, t+1), vars["breaklen"](tr, t), 3, p,
-                                    "breaklen_" + std::to_string(tr) + "_" + std::to_string(t),
-                                    "FuncPieceRatio=1 FuncPieces=-1 FuncPieceError=20");
+            if (this->use_pwl) {
+                model->addGenConstrPoly(vars["v"](tr, t + 1), vars["breaklen"](tr, t), 3, p,
+                                        "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
+            } else {
+                model->addQConstr(vars["breaklen"](tr, t), GRB_EQUAL,
+                                  p[0] * vars["v"](tr, t + 1) * vars["v"](tr, t + 1),
+                                  "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
+            }
         }
     }
 }
