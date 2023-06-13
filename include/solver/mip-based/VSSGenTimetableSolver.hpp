@@ -62,6 +62,11 @@ namespace cda_rail::solver::mip_based {
             void create_non_discretized_free_route_constraints();
             void create_non_discretized_fixed_route_constraints();
 
+            void create_free_routes_position_constraints();
+            void create_free_routes_overlap_constraints();
+            void create_boundary_free_routes_constraints();
+            void create_free_routes_occupation_constraints();
+
             // Objective
             void set_objective();
 
