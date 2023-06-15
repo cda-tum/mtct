@@ -145,8 +145,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     // Write model to file
-    std::cout << "Write model to file" << std::endl;
-    model->write("model.lp");
+    //std::cout << "Write model to file" << std::endl;
+    //model->write("model.lp");
 
     // Optimize
     std::cout << "Optimize" << std::endl;
@@ -192,6 +192,24 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
             }
         }
         std::cout << std::endl;
+    }
+
+    std::cout << "----------------------" << std::endl << "VSS borders set: " << std::endl;
+    if (!this->discretize) {
+        for (int i = 0; i < relevant_edges.size(); ++i) {
+            const auto &e = relevant_edges[i];
+            const auto &e_index = breakable_edge_indices[e];
+            const auto vss_number_e = instance.n().max_vss_on_edge(e);
+            const auto &v0 = instance.n().get_vertex(instance.n().get_edge(e).source).name;
+            const auto &v1 = instance.n().get_vertex(instance.n().get_edge(e).target).name;
+            std::cout << "  On edge (" << v0 << ", " << v1 << ") at ";
+            for (int vss = 0; vss < vss_number_e; ++vss) {
+                if (vars["b_used"](i, vss).get(GRB_DoubleAttr_X) > 0.5) {
+                    std::cout << vars["b_pos"](e_index, vss).get(GRB_DoubleAttr_X) << ", ";
+                }
+            }
+            std::cout << std::endl;
+        }
     }
 }
 
