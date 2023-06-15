@@ -34,6 +34,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_var
     }
 }
 
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_constraints() {
+    /**
+     * These constraints appear only when routes are fixed
+     */
+
+    create_fixed_routes_position_constraints();
+    create_boundary_fixed_routes_constraints();
+    create_fixed_routes_occupation_constraints();
+    create_fixed_route_schedule_constraints();
+    if (this->use_cuts) {
+        create_fixed_routes_impossibility_cuts();
+    }
+}
+
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_position_constraints() {
     /**
      * Creates constraints that ensure that the trains move according to their fixed routes.
@@ -151,6 +165,51 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_route_sche
                 model->addConstr(vars["lda"](tr, t) >= stop_pos.first, "lda_station_min_" + tr_name + "_" + std::to_string(t));
                 model->addConstr(vars["lda"](tr, t) <= stop_pos.second, "lda_station_max_" + tr_name + "_" + std::to_string(t));
             }
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_impossibility_cuts() {
+    /**
+     * Cuts off solutions that are not possible in any way.
+     */
+
+    // Iterate over all trains
+    const auto& train_list = instance.get_train_list();
+    for (int tr = 0; tr < train_list.size(); ++tr) {
+        const auto tr_name = train_list.get_train(tr).name;
+        const auto& tr_route = instance.get_route(tr_name);
+        const auto& tr_edges = tr_route.get_edges();
+        for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
+            const auto before_after_struct = get_temporary_impossibility_struct(tr, t);
+            if (!before_after_struct.to_use) {
+                continue;
+            }
+
+            // Before and after position
+            double before_max, after_min;
+            if (before_after_struct.t_before <= train_interval[tr].first) {
+                before_max = 0;
+            } else {
+                before_max = instance.route_edge_pos(tr_name, before_after_struct.edges_before).second;
+            }
+            if (before_after_struct.t_after >= train_interval[tr].second) {
+                after_min = instance.route_length(tr_name);
+            } else {
+                after_min = instance.route_edge_pos(tr_name, before_after_struct.edges_after).first;
+            }
+
+            // Constraint inferred from before position
+            auto t_steps = t - before_after_struct.t_before + 1;
+            auto dist_travelled = max_distance_travelled(tr, t_steps, before_after_struct.v_before, train_list.get_train(tr).acceleration, this->include_breaking_distances);
+            // mu <= before_max + dist_travelled
+            model->addConstr(vars["mu"](tr, t), GRB_LESS_EQUAL, before_max + dist_travelled, "mu_cut_" + tr_name + "_" + std::to_string(t));
+
+            // Constraint inferred from after position
+            t_steps = before_after_struct.t_after - t;
+            dist_travelled = max_distance_travelled(tr, t_steps, before_after_struct.v_after, train_list.get_train(tr).deceleration, false);
+            // lda >= after_min - dist_travelled
+            model->addConstr(vars["lda"](tr, t), GRB_GREATER_EQUAL, after_min - dist_travelled, "lda_cut_" + tr_name + "_" + std::to_string(t));
         }
     }
 }

@@ -19,7 +19,7 @@ namespace cda_rail::solver::mip_based {
             std::vector<std::pair<int, int>> train_interval;
             std::vector<std::pair<int, int>> breakable_edges_pairs;
             std::vector<int> no_border_vss_vertices, relevant_edges, breakable_edges;
-            bool fix_routes, discretize, include_acceleration_deceleration, include_breaking_distances, use_pwl;
+            bool fix_routes, discretize, include_acceleration_deceleration, include_breaking_distances, use_pwl, use_cuts;
             std::unordered_map<int, int> breakable_edge_indices;
             std::vector<std::pair<std::vector<int>, std::vector<int>>> fwd_bwd_sections;
 
@@ -58,6 +58,7 @@ namespace cda_rail::solver::mip_based {
             void create_boundary_fixed_routes_constraints();
             void create_fixed_routes_occupation_constraints();
             void create_fixed_route_schedule_constraints();
+            void create_fixed_routes_impossibility_cuts();
 
             void create_non_discretized_general_constraints();
             void create_non_discretized_position_constraints();
@@ -68,6 +69,7 @@ namespace cda_rail::solver::mip_based {
             void create_free_routes_overlap_constraints();
             void create_boundary_free_routes_constraints();
             void create_free_routes_occupation_constraints();
+            void create_free_routes_impossibility_cuts();
 
             // Objective
             void set_objective();
@@ -79,6 +81,18 @@ namespace cda_rail::solver::mip_based {
             void calculate_fwd_bwd_sections_non_discretized();
             double get_max_breaklen(const int& tr) const;
 
+            struct TemporaryImpossibilityStruct {
+                bool to_use;
+                int t_before, t_after;
+                double v_before, v_after;
+                std::vector<int> edges_before, edges_after;
+            };
+            [[nodiscard]] TemporaryImpossibilityStruct get_temporary_impossibility_struct(const int& tr, const int& t) const;
+
+            double max_distance_travelled(const int& tr, const int& time_steps, const double& v0, const double& a_max, const bool& breaking_distance) const;
+
+
+
         public:
             // Constructors
             explicit VSSGenTimetableSolver(const cda_rail::instances::VSSGenerationTimetable& instance);
@@ -87,6 +101,6 @@ namespace cda_rail::solver::mip_based {
             explicit VSSGenTimetableSolver(const char* instance_path);
 
             // Methods
-            void solve(int delta_t = 15, bool fix_routes = true, bool discretize = false, bool include_acceleration_deceleration = true, bool include_breaking_distances = true, bool use_pwl = false); // to be added with parameters and return type later
+            void solve(int delta_t = 15, bool fix_routes = true, bool discretize = false, bool include_acceleration_deceleration = true, bool include_breaking_distances = true, bool use_pwl = false, bool use_cuts = true); // to be added with parameters and return type later
     };
 }

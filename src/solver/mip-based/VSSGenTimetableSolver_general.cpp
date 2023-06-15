@@ -17,7 +17,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(const 
     instance = cda_rail::instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize, bool include_acceleration_deceleration, bool include_breaking_distances, bool use_pwl) {
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize, bool include_acceleration_deceleration, bool include_breaking_distances, bool use_pwl, bool use_cuts) {
     /**
      * Solve the instance using Gurobi
      */
@@ -30,6 +30,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     this->include_acceleration_deceleration = include_acceleration_deceleration;
     this->include_breaking_distances = include_breaking_distances;
     this->use_pwl = use_pwl;
+    this->use_cuts = use_cuts;
 
     if (this->fix_routes && !instance.has_route_for_every_train()) {
         throw std::runtime_error("Instance does not have a route for every train");
@@ -65,7 +66,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     for (int i = 0; i < num_tr; ++i) {
         train_interval.emplace_back(instance.time_interval(i));
         train_interval.back().first /= dt;
-        train_interval.back().second /= dt;
+        if (train_interval.back().second % dt == 0) {
+            train_interval.back().second /= dt;
+            train_interval.back().second -= 1;
+        } else {
+            train_interval.back().second /= dt;
+        }
     }
 
     calculate_fwd_bwd_sections();
@@ -145,8 +151,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     // Write model to file
-    //std::cout << "Write model to file" << std::endl;
-    //model->write("model.lp");
+    std::cout << "Write model to file" << std::endl;
+    model->write("model.lp");
 
     // Optimize
     std::cout << "Optimize" << std::endl;
@@ -211,6 +217,19 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
             std::cout << std::endl;
         }
     }
+
+    // Print solution of all trains
+    /**
+    for (int t = 0; t < num_t; ++t) {
+        std::cout << "t = " << t*dt << ": ";
+        const auto tr_at_t = instance.trains_at_t(t * dt);
+        for (const auto &tr : tr_at_t) {
+            std::cout << instance.get_train_list().get_train(tr).name << " at [" <<
+            vars["lda"](tr, t).get(GRB_DoubleAttr_X) << ", " << vars["mu"](tr, t).get(GRB_DoubleAttr_X) << "], ";
+        }
+        std::cout << std::endl;
+    }
+    **/
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variables() {
@@ -521,17 +540,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_constrai
     create_general_speed_constraints();
     create_reverse_occupation_constraints();
     create_general_boundary_constraints();
-}
-
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_constraints() {
-    /**
-     * These constraints appear only when routes are fixed
-     */
-
-    create_fixed_routes_position_constraints();
-    create_boundary_fixed_routes_constraints();
-    create_fixed_routes_occupation_constraints();
-    create_fixed_route_schedule_constraints();
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_constraints() {

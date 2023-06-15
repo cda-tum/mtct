@@ -59,6 +59,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_cons
     create_free_routes_overlap_constraints();
     create_boundary_free_routes_constraints();
     create_free_routes_occupation_constraints();
+    if (this->use_cuts) {
+        create_free_routes_impossibility_cuts();
+    }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_position_constraints() {
@@ -344,6 +347,92 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_occu
                              "train_occupation_free_routes_x_out_1_only_if_" + tr_name + "_" + std::to_string(t));
             model->addConstr(len_out_ub * vars["x_out"](tr, t), GRB_GREATER_EQUAL, vars["len_out"](tr, t),
                                 "train_occupation_free_routes_x_out_1_if_" + tr_name + "_" + std::to_string(t));
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_impossibility_cuts() {
+    /**
+     * Impossible positions cut off due to schedule.
+     */
+
+    const auto apsp = instance.n().all_edge_pairs_shortest_paths();
+
+    // Iterate over all trains
+    const auto& train_list = instance.get_train_list();
+    for (int tr = 0; tr < train_list.size(); ++tr) {
+        const auto tr_name = train_list.get_train(tr).name;
+        for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
+            const auto before_after_struct = get_temporary_impossibility_struct(tr, t);
+            if (!before_after_struct.to_use) {
+                continue;
+            }
+
+            // maximum_dist_travelled
+            const auto t_steps_before = t - before_after_struct.t_before + 1;
+            const auto dist_travelled_before = max_distance_travelled(tr, t_steps_before, before_after_struct.v_before, train_list.get_train(tr).acceleration, this->include_breaking_distances);
+            const auto t_steps_after = before_after_struct.t_after - t;
+            const auto dist_travelled_after = max_distance_travelled(tr, t_steps_after, before_after_struct.v_after, train_list.get_train(tr).deceleration, false);
+
+            // Iterate over all edges
+            for (int e = 0; e < num_edges; ++e) {
+                const auto& e_len = instance.n().get_edge(e).length;
+
+                double dist_before, dist_after;
+
+                // Constraint inferred from before position
+                if (before_after_struct.t_before <= train_interval[tr].first) {
+                    const auto e_before = instance.n().out_edges(instance.get_schedule(tr).entry)[0];
+                    const auto& e_len_before = instance.n().get_edge(e_before).length;
+                    dist_before = apsp.at(e_before, e) + e_len_before - e_len;
+                } else {
+                    dist_before = INF;
+                    for (const auto& e_tmp : before_after_struct.edges_before) {
+                        const auto tmp_val = apsp.at(e_tmp, e) - e_len;
+                        if (tmp_val < dist_before) {
+                            dist_before = tmp_val;
+                        }
+                    }
+                }
+
+                if (dist_travelled_before < dist_before) {
+                    // Edge cannot be reached, i.e. x = 0
+                    model->addConstr(vars["x"](tr, t, e), GRB_EQUAL, 0,
+                                     "train_occupation_free_routes_impossibility_before_var1_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
+                } else if (dist_travelled_before < dist_before + e_len) {
+                    // Edge can be reached, but not fully, i.e.
+                    // e_mu <= dist_travelled_before - dist_before
+                    model->addConstr(vars["e_mu"](tr, t, e), GRB_LESS_EQUAL, dist_travelled_before - dist_before,
+                                     "train_occupation_free_routes_impossibility_before_var2_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
+                }
+                // Otherwise no constraint can be inferred
+
+                // Constraint inferred from after position
+                if (before_after_struct.t_after >= train_interval[tr].second) {
+                    const auto e_after = instance.n().in_edges(instance.get_schedule(tr).exit)[0];
+                    dist_after = apsp.at(e, e_after);
+                } else {
+                    dist_after = INF;
+                    for (const auto& e_tmp : before_after_struct.edges_after) {
+                        const auto tmp_val = apsp.at(e, e_tmp) - instance.n().get_edge(e_tmp).length;
+                        if (tmp_val < dist_after) {
+                            dist_after = tmp_val;
+                        }
+                    }
+                }
+
+                if (dist_travelled_after < dist_after) {
+                    // Destination is unreachable from edge, hence not possible and x = 0
+                    model->addConstr(vars["x"](tr, t, e), GRB_EQUAL, 0,
+                                     "train_occupation_free_routes_impossibility_after_var1_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
+                } else if (dist_travelled_after < dist_after + e_len) {
+                    // Destination is reachable, but not from full edge, i.e.,
+                    // e_lda >= (e_len - (dist_travelled_after - dist_after))*x
+                    model->addConstr(vars["e_lda"](tr, t, e), GRB_GREATER_EQUAL, (e_len - (dist_travelled_after - dist_after))*vars["x"](tr, t, e),
+                                     "train_occupation_free_routes_impossibility_after_var2_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
+                }
+            }
+
         }
     }
 }

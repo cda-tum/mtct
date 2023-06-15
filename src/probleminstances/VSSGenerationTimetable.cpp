@@ -116,7 +116,7 @@ cda_rail::instances::VSSGenerationTimetable::trains_at_t(int t, const std::vecto
     std::vector<int> trains;
     for (int tr : trains_to_consider) {
         const auto& interval = timetable.time_interval(tr);
-        if (interval.first <= t && t <= interval.second) {
+        if (interval.first <= t && t < interval.second) {
             trains.push_back(tr);
         }
     }
