@@ -1212,7 +1212,7 @@ TEST(Functionality, InverseEdges) {
     EXPECT_TRUE(std::find(inv_2.begin(), inv_2.end(), e34) != inv_2.end());
 }
 
-TEST(Functionality, FloaydWarshall) {
+TEST(Functionality, FloydWarshall) {
     // Initialize emtpy network
     cda_rail::Network network;
 
