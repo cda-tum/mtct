@@ -387,8 +387,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_schedule
     for (int tr = 0; tr < train_list.size(); ++tr) {
         const auto tr_name = train_list.get_train(tr).name;
         const auto& tr_schedule = instance.get_schedule(tr_name);
-        const auto& tr_route = instance.get_route(tr_name);
-        const auto& tr_edges = tr_route.get_edges();
+        const auto& tr_edges = instance.edges_used_by_train(tr, this->fix_routes);
         for (const auto& tr_stop : tr_schedule.stops) {
             const auto t0 = tr_stop.begin / dt;
             const auto t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
@@ -402,7 +401,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_schedule
                 // At least on station edge must be occupied
                 GRBLinExpr lhs = 0;
                 for (int e : stop_edges) {
-                    if (tr_route.contains_edge(e)) {
+                    // If e in tr_edges
+                    if (std::find(tr_edges.begin(), tr_edges.end(), e) != tr_edges.end()) {
                         lhs += vars["x"](tr, t, e);
                     }
                 }

@@ -70,14 +70,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_posi
     for (int tr = 0; tr < num_tr; ++tr) {
         const auto& tr_name = train_list.get_train(tr).name;
         const auto& tr_len = instance.get_train_list().get_train(tr_name).length;
-        const auto& v_0 = instance.get_schedule(tr).v_0;
-        const auto& v_n = instance.get_schedule(tr).v_n;
+        const auto& entry = instance.get_schedule(tr).entry;
+        const auto& exit = instance.get_schedule(tr).exit;
         for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
             // Train position has the correct length
-            // full pos: sum_e (e_lda - e_mu) + len_in + len_out = len + (v(t) + v(t+1))/2 * dt + breaklen (if applicable)
+            // full pos: sum_e (e_mu - e_lda) + len_in + len_out = len + (v(t) + v(t+1))/2 * dt + breaklen (if applicable)
             GRBLinExpr lhs = vars["len_in"](tr, t) + vars["len_out"](tr, t);
             for (int e = 0; e < num_edges; ++e) {
-                lhs += vars["e_lda"](tr, t, e) - vars["e_mu"](tr, t, e);
+                lhs += vars["e_mu"](tr, t, e) - vars["e_lda"](tr, t, e);
             }
             GRBLinExpr rhs = tr_len + (vars["v"](tr, t) + vars["v"](tr, t + 1)) * dt / 2;
             if (this->include_breaking_distances) {
@@ -101,10 +101,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_posi
                 for (const auto& e : in_edges) {
                     rhs_in += vars["x"](tr, t, e);
                 }
-                if (v == v_n) {
+                if (v == exit) {
                     rhs_out += vars["x_out"](tr, t);
                 }
-                if (v == v_0) {
+                if (v == entry) {
                     rhs_in += vars["x_in"](tr, t);
                 }
                 model->addConstr(lhs, GRB_LESS_EQUAL, rhs_out + rhs_in, "train_pos_x_v_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(v));
@@ -112,6 +112,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_posi
                 model->addConstr(lhs, GRB_GREATER_EQUAL, rhs_in, "train_pos_x_v_in_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(v));
             }
             // and sum_e x_e = sum_v x_v - 1
+            // add x_in and x_out on both lhs and rhs cancel out
             lhs = 0;
             rhs = -1;
             for (int e = 0; e < num_edges; ++e) {
@@ -153,11 +154,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_posi
                     model->addConstr(vars["e_mu"](tr, t, e1), GRB_LESS_EQUAL,
                                         vars["e_mu"](tr, t + 1, e1) + e_len * (1 - vars["x"](tr, t + 1, e1)),
                                         "train_pos_e_mu_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e1));
-                    // Also for in and out position, i.e.,
-                    // len_in is decreasing, len_out is increasing
-                    model->addConstr(vars["len_in"](tr, t+1), GRB_LESS_EQUAL, vars["len_in"](tr, t), "train_pos_len_in_" + tr_name + "_" + std::to_string(t));
-                    model->addConstr(vars["len_out"](tr, t+1), GRB_GREATER_EQUAL, vars["len_out"](tr, t), "train_pos_len_out_" + tr_name + "_" + std::to_string(t));
                 }
+            }
+            if (t < train_interval[tr].second) {
+                // Also for in and out position, i.e.,
+                // len_in is decreasing, len_out is increasing
+                model->addConstr(vars["len_in"](tr, t+1), GRB_LESS_EQUAL, vars["len_in"](tr, t), "train_pos_len_in_" + tr_name + "_" + std::to_string(t));
+                model->addConstr(vars["len_out"](tr, t+1), GRB_GREATER_EQUAL, vars["len_out"](tr, t), "train_pos_len_out_" + tr_name + "_" + std::to_string(t));
             }
         }
     }
@@ -172,8 +175,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_over
     for (int tr = 0; tr < num_tr; ++tr) {
         const auto &tr_name = train_list.get_train(tr).name;
         const auto &tr_len = train_list.get_train(tr_name).length;
-        const auto &v_0 = instance.get_schedule(tr).v_0;
-        const auto &v_n = instance.get_schedule(tr).v_n;
+        const auto &entry = instance.get_schedule(tr).entry;
+        const auto &exit = instance.get_schedule(tr).exit;
         for (int t = train_interval[tr].first; t <= train_interval[tr].second - 1; ++t) {
             // Correct overlap length
             GRBLinExpr lhs = vars["len_in"](tr, t + 1) + vars["len_out"](tr, t);
@@ -222,13 +225,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_over
                                          std::to_string(e) + "_" + std::to_string(e2));
                     }
                 }
-                if (e_v0 == v_0) {
+                if (e_v0 == entry) {
                     // len_in <= tr_len * overlap_e + tr_len * (1 - x_e)
                     model->addConstr(vars["len_in"](tr, t), GRB_LESS_EQUAL,
                                      tr_len * vars["overlap"](tr, t, e) + tr_len * (1 - vars["x"](tr, t, e)),
                                      "train_pos_overlap_at_front_" + tr_name + "_" + std::to_string(t) + "_len_in" + std::to_string(e));
                 }
-                if (e_v1 == v_n) {
+                if (e_v1 == exit) {
                     // overlap_e <= e_len * len_out + e_len * (1 - x_out)
                     model->addConstr(vars["overlap"](tr, t, e), GRB_LESS_EQUAL,
                                      e_len * vars["len_out"](tr, t) + e_len * (1 - vars["x_out"](tr, t)),
@@ -270,6 +273,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_occu
     const auto train_list = instance.get_train_list();
     for (int tr = 0; tr < num_tr; ++tr) {
         const auto &tr_name = train_list.get_train(tr).name;
+        const auto &entry = instance.get_schedule(tr).entry;
+        const auto &exit = instance.get_schedule(tr).exit;
         for (int e = 0; e < num_edges; ++e) {
             const auto& e_v0 = instance.n().get_edge(e).source;
             const auto& e_v1 = instance.n().get_edge(e).target;
@@ -290,6 +295,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_occu
                 for (const auto& e2 : out_edges) {
                     rhs += vars["x"](tr, t, e2);
                 }
+                if (e_v1 == exit) {
+                    // exit is an out-edge of the last edge
+                    rhs += vars["x_out"](tr, t);
+                }
                 rhs *= e_len;
                 model->addConstr(vars["e_mu"](tr, t, e) + e_len * (1 - vars["x"](tr, t, e)), GRB_GREATER_EQUAL, rhs,
                                  "train_occupation_free_routes_mu_1_if_not_last_edge_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
@@ -300,6 +309,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_occu
                 for (const auto& e2 : in_edges) {
                     rhs -= vars["x"](tr, t, e2);
                 }
+                if (e_v0 == entry) {
+                    // entry is an in-edge of the first edge
+                    rhs -= vars["x_in"](tr, t);
+                }
                 rhs *= e_len;
                 model->addConstr(vars["e_lda"](tr, t, e), GRB_LESS_EQUAL, rhs,
                                  "train_occupation_free_routes_lda_0_if_not_first_edge_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
@@ -309,6 +322,28 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_occu
                 model->addConstr(vars["x"](tr, t, e), GRB_LESS_EQUAL, vars["e_mu"](tr, t, e) - vars["e_lda"](tr, t, e),
                                  "train_occupation_free_routes_x_0_if_mu_lda_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
             }
+        }
+
+        // x_in and x_out
+        const auto& tr_len = train_list.get_train(tr_name).length;
+        double len_out_ub = tr_len;
+        if (this->include_breaking_distances) {
+            len_out_ub += get_max_breaklen(tr);
+        }
+        for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
+            // x_in = 1 if, and only if, len_in > 0, i.e.,
+            // x_in <= len_in, tr_len * x_in >= len_in
+            model->addConstr(vars["x_in"](tr, t), GRB_LESS_EQUAL, vars["len_in"](tr, t),
+                             "train_occupation_free_routes_x_in_1_only_if_" + tr_name + "_" + std::to_string(t));
+            model->addConstr(tr_len * vars["x_in"](tr, t), GRB_GREATER_EQUAL, vars["len_in"](tr, t),
+                                "train_occupation_free_routes_x_in_1_if_" + tr_name + "_" + std::to_string(t));
+
+            // x_out = 1 if, and only if, len_out > 0, i.e.,
+            // x_out <= len_out, len_out_ub * x_out >= len_out
+            model->addConstr(vars["x_out"](tr, t), GRB_LESS_EQUAL, vars["len_out"](tr, t),
+                             "train_occupation_free_routes_x_out_1_only_if_" + tr_name + "_" + std::to_string(t));
+            model->addConstr(len_out_ub * vars["x_out"](tr, t), GRB_GREATER_EQUAL, vars["len_out"](tr, t),
+                                "train_occupation_free_routes_x_out_1_if_" + tr_name + "_" + std::to_string(t));
         }
     }
 }
