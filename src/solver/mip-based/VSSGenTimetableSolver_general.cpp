@@ -68,6 +68,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         train_interval.back().second /= dt;
     }
 
+    calculate_fwd_bwd_sections();
+
     /**
     std::cout << "Vertices:" << std::endl;
     for (int v = 0; v < num_vertices; ++v) {
