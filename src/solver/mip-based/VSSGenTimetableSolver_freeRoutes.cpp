@@ -362,13 +362,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
             const auto vss_number_e = instance.n().max_vss_on_edge(e);
             for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
                 for (int vss = 0; vss < vss_number_e; ++vss) {
-                    // e_lda(e) <= b_pos(e_index) + e_len * (1 - b_front(e_index))
-                    model->addConstr(vars["e_lda"](tr, t, e),
+                    // e_mu(e) <= b_pos(e_index) + e_len * (1 - b_front(e_index))
+                    model->addConstr(vars["e_mu"](tr, t, e),
                                      GRB_LESS_EQUAL, vars["b_pos"](e_index, vss) + e_len * (1 - vars["b_front"](tr, t, e_index, vss)),
                                      "train_occupation_free_routes_vss_lda_b_pos_b_front_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
-                    // b_pos(e_index) <= e_mu(e) + e_len * (1 - b_rear(e_index))
+                    // b_pos(e_index) <= e_lda(e) + e_len * (1 - b_rear(e_index))
                     model->addConstr(vars["b_pos"](e_index, vss),
-                                     GRB_LESS_EQUAL, vars["e_mu"](tr, t, e) + e_len * (1 - vars["b_rear"](tr, t, e_index, vss)),
+                                     GRB_LESS_EQUAL, vars["e_lda"](tr, t, e) + e_len * (1 - vars["b_rear"](tr, t, e_index, vss)),
                                      "train_occupation_free_routes_vss_b_pos_mu_b_rear_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
                 }
             }
