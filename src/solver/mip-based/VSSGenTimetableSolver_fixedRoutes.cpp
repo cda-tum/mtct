@@ -87,10 +87,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_boundary_fixed_r
             rhs += vars["breaklen"](i, train_interval[i].second);
         }
         model->addConstr(vars["mu"](i, train_interval[i].second) == rhs, "final_mu_" + tr_name);
-        // initial_speed: v(train_interval[i].first) = initial_speed
-        model->addConstr(vars["v"](i, train_interval[i].first) == initial_speed, "initial_speed_" + tr_name);
-        // final_speed: v(train_interval[i].second) = final_speed
-        model->addConstr(vars["v"](i, train_interval[i].second) == final_speed, "final_speed_" + tr_name);
     }
 }
 

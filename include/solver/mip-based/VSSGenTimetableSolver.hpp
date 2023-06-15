@@ -47,6 +47,8 @@ namespace cda_rail::solver::mip_based {
 
 
             // Helper functions for constraints
+            void create_general_boundary_constraints();
+
             void create_general_schedule_constraints();
             void create_unbreakable_sections_constraints();
             void create_general_speed_constraints();

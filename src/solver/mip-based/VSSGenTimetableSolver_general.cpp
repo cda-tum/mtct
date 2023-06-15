@@ -520,6 +520,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_constrai
     create_unbreakable_sections_constraints();
     create_general_speed_constraints();
     create_reverse_occupation_constraints();
+    create_general_boundary_constraints();
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_constraints() {
@@ -815,4 +816,20 @@ double cda_rail::solver::mip_based::VSSGenTimetableSolver::get_max_breaklen(cons
     const auto& tr_deceleration = instance.get_train_list().get_train(tr).deceleration;
     const auto& tr_max_speed = instance.get_train_list().get_train(tr).max_speed;
     return tr_max_speed * tr_max_speed / (2 * tr_deceleration);
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_boundary_constraints() {
+    /**
+     * General boundary conditions, i.e., speed
+     */
+    auto train_list = instance.get_train_list();
+    for (int i = 0; i < num_tr; ++i) {
+        auto tr_name = train_list.get_train(i).name;
+        auto initial_speed = instance.get_schedule(tr_name).v_0;
+        auto final_speed = instance.get_schedule(tr_name).v_n;
+        // initial_speed: v(train_interval[i].first) = initial_speed
+        model->addConstr(vars["v"](i, train_interval[i].first) == initial_speed, "initial_speed_" + tr_name);
+        // final_speed: v(train_interval[i].second) = final_speed
+        model->addConstr(vars["v"](i, train_interval[i].second) == final_speed, "final_speed_" + tr_name);
+    }
 }
