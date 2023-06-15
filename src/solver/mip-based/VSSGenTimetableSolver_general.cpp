@@ -68,6 +68,22 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         train_interval.back().second /= dt;
     }
 
+    /**
+    std::cout << "Vertices:" << std::endl;
+    for (int v = 0; v < num_vertices; ++v) {
+        std::cout << "    " << v << ": "
+            << instance.n().get_vertex(v).name << std::endl;
+    }
+
+    std::cout << "Edges:" << std::endl;
+    for (int e = 0; e < num_edges; ++e) {
+        const auto edge = instance.n().get_edge(e);
+        std::cout << "    " << e << ": "
+            << instance.n().get_vertex(edge.source).name << " -> "
+            << instance.n().get_vertex(edge.target).name << std::endl;
+    }
+    **/
+
     // Create environment and model
     std::cout << "Create environment and model" << std::endl;
     env.emplace(true);
@@ -127,8 +143,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     // Write model to file
-    //std::cout << "Write model to file" << std::endl;
-    //model->write("model.lp");
+    std::cout << "Write model to file" << std::endl;
+    model->write("model.lp");
 
     // Optimize
     std::cout << "Optimize" << std::endl;
@@ -139,15 +155,42 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
 
     // Print solution of all trains
     // Iterate over all times
-    /**for (int t = 0; t < num_t; ++t) {
-        std::cout << "t = " << t*dt << "; ";
+    for (int t = 0; t < num_t; ++t) {
+        std::cout << "t = " << t*dt << ":" << std::endl;
         // Iterate over all trains
         const auto tr_at_t = instance.trains_at_t(t * dt);
         for (const auto &tr : tr_at_t) {
-            std::cout << tr << " at [" << vars["lda"](tr, t).get(GRB_DoubleAttr_X) << ", " << vars["mu"](tr, t).get(GRB_DoubleAttr_X) << "]; ";
+            std::cout << "     " << instance.get_train_list().get_train(tr).name << " at [";
+            for (const auto e : instance.edges_used_by_train(tr, this->fix_routes)) {
+                if (vars["x"](tr, t, e).get(GRB_DoubleAttr_X) > 0.5) {
+                    const auto edge = instance.n().get_edge(e);
+                    const auto v0 = instance.n().get_vertex(edge.source).name;
+                    const auto v1 = instance.n().get_vertex(edge.target).name;
+                    std::cout << "(" << v0 << ", " << v1 << ", " <<
+                        vars["e_lda"](tr, t, e).get(GRB_DoubleAttr_X) << ", " <<
+                        vars["e_mu"](tr, t, e).get(GRB_DoubleAttr_X) << "), ";
+                }
+            }
+            if (!this->fix_routes) {
+                std::cout << "len_in = " << vars["len_in"](tr, t).get(GRB_DoubleAttr_X) <<
+                          " (x = " << vars["x_in"](tr, t).get(GRB_DoubleAttr_X) << "), ";
+                std::cout << "len_out = " << vars["len_out"](tr, t).get(GRB_DoubleAttr_X)
+                          << " (x = " << vars["x_out"](tr, t).get(GRB_DoubleAttr_X) << ")";
+            }
+            std::cout << "]" << std::endl;
+            std::cout << "       speed: " << vars["v"](tr, t).get(GRB_DoubleAttr_X) << std::endl;
+            if (!this->fix_routes) {
+                std::cout << "       vertices used: ";
+                for (int v = 0; v < num_vertices; ++v) {
+                    if (vars["x_v"](tr, t, v).get(GRB_DoubleAttr_X) > 0.5) {
+                        std::cout << instance.n().get_vertex(v).name << ", ";
+                    }
+                }
+                std::cout << std::endl;
+            }
         }
         std::cout << std::endl;
-    }**/
+    }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variables() {
