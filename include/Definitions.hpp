@@ -3,8 +3,10 @@
 #include <vector>
 
 namespace cda_rail {
-    // Constants for vertex type
+    // Constants
+    const double INF = std::numeric_limits<double>::max()/3;
 
+    // Constants for vertex type
     enum class VertexType {NO_BORDER = 0, VSS = 1, TTD = 2, NO_BORDER_VSS = 3};
     enum class SeparationType {UNIFORM, CHEBYCHEV};
 

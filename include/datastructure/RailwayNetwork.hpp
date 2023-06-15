@@ -10,6 +10,7 @@
 #include "Definitions.hpp"
 #include <unordered_set>
 #include <numeric>
+#include "MultiArray.hpp"
 
 namespace cda_rail {
     struct Vertex {
@@ -234,6 +235,8 @@ namespace cda_rail {
             };
 
             std::vector<std::pair<int, std::vector<int>>> discretize(cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
+
+            MultiArray<double> all_edge_pairs_shortest_paths() const;
     };
 
     // HELPER

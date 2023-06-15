@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <unordered_set>
 #include <stack>
+#include "MultiArray.hpp"
+#include <limits>
 
 using json = nlohmann::json;
 
@@ -1366,4 +1368,38 @@ int cda_rail::Network::max_vss_on_edge(int index) const {
         return 0;
     }
     return static_cast<int>(std::floor(edge.length / edge.min_block_length));
+}
+
+cda_rail::MultiArray<double> cda_rail::Network::all_edge_pairs_shortest_paths() const {
+    /**
+     * Calculates all shortest paths between all edges.
+     * Given e0 = (v0, v1) and e1 = (v2, v3), the distance refers to the distance between v1 and v3 by only using valid successors.
+     * If v0 or v2 are of interest the value has to be post-processed accordingly.
+     * The distance is std::numeric_limits<double>::max()/3 if no path exists.
+     * This methods uses the Floyd-Warshall algorithm.
+     */
+    // Initialize return value
+    MultiArray<double> ret_val(number_of_edges(), number_of_edges());
+    for (int u = 0; u < number_of_edges(); ++u) {
+        for (int v = 0; v < number_of_edges(); ++v) {
+            if (u == v) {
+                ret_val(u, v) = 0;
+            } else if (is_valid_successor(u, v)) {
+                ret_val(u, v) = get_edge(v).length;
+            } else {
+                ret_val(u, v) = INF;
+            }
+        }
+    }
+
+    // Floyd-Warshall iterations
+    for (int k = 0; k < number_of_edges(); ++k) {
+        for (int i = 0; i < number_of_edges(); ++i) {
+            for (int j = 0; j < number_of_edges(); ++j) {
+                ret_val(i, j) = std::min(ret_val(i, j), ret_val(i, k) + ret_val(k, j));
+            }
+        }
+    }
+
+    return ret_val;
 }
