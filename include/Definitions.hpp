@@ -5,6 +5,7 @@
 namespace cda_rail {
     // Constants
     const double INF = std::numeric_limits<double>::max()/3;
+    const double ABS_PWL_ERROR = 10;
 
     // Constants for vertex type
     enum class VertexType {NO_BORDER = 0, VSS = 1, TTD = 2, NO_BORDER_VSS = 3};

@@ -1,6 +1,7 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 #include "gurobi_c++.h"
 #include "MultiArray.hpp"
+#include <memory>
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
         const cda_rail::instances::VSSGenerationTimetable &instance) : instance(instance) {}
@@ -622,14 +623,22 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_breaklen_constra
     for (int tr = 0; tr < num_tr; ++tr) {
         const auto& tr_deceleration = instance.get_train_list().get_train(tr).deceleration;
         const auto& tr_max_speed = instance.get_train_list().get_train(tr).max_speed;
-        const double p [3] = {1/(2*tr_deceleration), 0, 0};
-        for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
-            if (this->use_pwl) {
-                model->addGenConstrPoly(vars["v"](tr, t + 1), vars["breaklen"](tr, t), 3, p,
-                                        "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
-            } else {
+        if (this->use_pwl) {
+            const int N = std::ceil(tr_max_speed / (2 * std::sqrt(2 * tr_deceleration * ABS_PWL_ERROR)));
+            std::unique_ptr<double[]> xpts(new double[N + 1]);
+            std::unique_ptr<double[]> ypts(new double[N + 1]);
+            for (int i = 0; i <= N; ++i) {
+                xpts[i] = i * tr_max_speed / N;
+                ypts[i] = xpts[i] * xpts[i] / (2 * tr_deceleration);
+            }
+            for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
+                model->addGenConstrPWL(vars["v"](tr, t + 1), vars["breaklen"](tr, t), N + 1, xpts.get(), ypts.get(),
+                                       "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
+            }
+        } else {
+            for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
                 model->addQConstr(vars["breaklen"](tr, t), GRB_EQUAL,
-                                  p[0] * vars["v"](tr, t + 1) * vars["v"](tr, t + 1),
+                                  (1 / (2 * tr_deceleration)) * vars["v"](tr, t + 1) * vars["v"](tr, t + 1),
                                   "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
             }
         }
