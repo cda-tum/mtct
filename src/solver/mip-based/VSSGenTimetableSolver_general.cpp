@@ -38,8 +38,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     // Discretize if applicable
-    std::cout << "Discretize if applicable" << std::endl;
     if (this->discretize) {
+        std::cout << "Discretize graph" << std::endl;
         instance.discretize();
     }
 
@@ -76,22 +76,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     calculate_fwd_bwd_sections();
-
-    /**
-    std::cout << "Vertices:" << std::endl;
-    for (int v = 0; v < num_vertices; ++v) {
-        std::cout << "    " << v << ": "
-            << instance.n().get_vertex(v).name << std::endl;
-    }
-
-    std::cout << "Edges:" << std::endl;
-    for (int e = 0; e < num_edges; ++e) {
-        const auto edge = instance.n().get_edge(e);
-        std::cout << "    " << e << ": "
-            << instance.n().get_vertex(edge.source).name << " -> "
-            << instance.n().get_vertex(edge.target).name << std::endl;
-    }
-    **/
 
     // Create environment and model
     std::cout << "Create environment and model" << std::endl;
