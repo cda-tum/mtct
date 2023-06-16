@@ -45,7 +45,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
 
     // Initialize other relevant variables
     std::cout << "Initialize other relevant variables" << std::endl;
-    num_t = instance.maxT() / dt + 1;
+    num_t = instance.maxT() / dt;
+    if (instance.maxT() % dt != 0) {
+        num_t += 1;
+    }
     num_tr = instance.get_train_list().size();
     num_edges = instance.n().number_of_edges();
     num_vertices = instance.n().number_of_vertices();
@@ -145,6 +148,40 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         model->set(GRB_IntParam_NonConvex, 2);
     }
     model->optimize();
+
+    std::cout << "----------------------" << std::endl << "VSS borders set: " << std::endl;
+    if (!this->discretize) {
+        for (int i = 0; i < relevant_edges.size(); ++i) {
+            const auto &e = relevant_edges[i];
+            const auto &e_index = breakable_edge_indices[e];
+            const auto vss_number_e = instance.n().max_vss_on_edge(e);
+            const auto &v0 = instance.n().get_vertex(instance.n().get_edge(e).source).name;
+            const auto &v1 = instance.n().get_vertex(instance.n().get_edge(e).target).name;
+            std::cout << "  On edge (" << v0 << ", " << v1 << ") at ";
+            for (int vss = 0; vss < vss_number_e; ++vss) {
+                if (vars["b_used"](i, vss).get(GRB_DoubleAttr_X) > 0.5) {
+                    std::cout << vars["b_pos"](e_index, vss).get(GRB_DoubleAttr_X) << ", ";
+                }
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    // Print solution of all trains
+    for (int t = 0; t < num_t; ++t) {
+        std::cout << "t = " << t*dt << ":" << std::endl;
+        const auto tr_at_t = instance.trains_at_t(t * dt);
+        for (const auto &tr : tr_at_t) {
+            std::cout << "    " << instance.get_train_list().get_train(tr).name <<
+                " (v = " << vars["v"](tr, t).get(GRB_DoubleAttr_X) << "m/s to " << vars["v"](tr, t+1).get(GRB_DoubleAttr_X) <<"m/s) at [" <<
+                vars["lda"](tr, t).get(GRB_DoubleAttr_X) << ", " << vars["mu"](tr, t).get(GRB_DoubleAttr_X) << "]";
+            if (t < train_interval[tr].second && this->include_breaking_distances) {
+                std::cout << " breaking " << vars["breaklen"](tr, t).get(GRB_DoubleAttr_X) << "m";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variables() {
@@ -388,12 +425,17 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_schedule
             const auto t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
             const auto& stop_edges = instance.get_station_list().get_station(tr_stop.station).tracks;
             const auto inverse_stop_edges = instance.n().inverse_edges(stop_edges, tr_edges);
-            for (int t = t0; t <= t1; ++t) {
-                model->addConstr(vars["v"](tr, t) == 0, "station_speed_" + tr_name + "_" + std::to_string(t));
-                for (int e : inverse_stop_edges) {
-                    model->addConstr(vars["x"](tr, t, e) == 0, "station_x_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
+            for (int t = t0 - 1; t <= t1; ++t) {
+                if (t >= t0) {
+                    model->addConstr(vars["v"](tr, t) == 0, "station_speed_" + tr_name + "_" + std::to_string(t));
                 }
-                // At least on station edge must be occupied
+                if (t >= t0 && t < t1) { // because otherwise the front corresponds to t1+dt which is allowed outside
+                    for (int e: inverse_stop_edges) {
+                        model->addConstr(vars["x"](tr, t, e) == 0,
+                                         "station_x_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
+                    }
+                }
+                // At least on station edge must be occupied, this also holds for the leaving and entering time interval
                 GRBLinExpr lhs = 0;
                 for (int e : stop_edges) {
                     // If e in tr_edges
@@ -759,6 +801,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_boundary
         // initial_speed: v(train_interval[i].first) = initial_speed
         model->addConstr(vars["v"](i, train_interval[i].first) == initial_speed, "initial_speed_" + tr_name);
         // final_speed: v(train_interval[i].second) = final_speed
-        model->addConstr(vars["v"](i, train_interval[i].second) == final_speed, "final_speed_" + tr_name);
+        model->addConstr(vars["v"](i, train_interval[i].second + 1) == final_speed, "final_speed_" + tr_name);
     }
 }

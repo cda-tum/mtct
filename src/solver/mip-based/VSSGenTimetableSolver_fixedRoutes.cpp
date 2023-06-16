@@ -65,8 +65,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_pos
                 rhs += vars["breaklen"](tr, t);
             }
             model->addConstr(vars["mu"](tr, t) - vars["lda"](tr, t) == rhs, "full_pos_" + tr_name + "_" + std::to_string(t));
-            // overlap: mu(t) - lda(t+1) = len
-            model->addConstr(vars["mu"](tr, t) - vars["lda"](tr, t + 1) == tr_len, "overlap_" + tr_name + "_" + std::to_string(t));
+            // overlap: mu(t) - lda(t+1) = len + breaklen (if applicable)
+            rhs = tr_len;
+            if (this->include_breaking_distances) {
+                rhs += vars["breaklen"](tr, t);
+            }
+            model->addConstr(vars["mu"](tr, t) - vars["lda"](tr, t + 1) == rhs, "overlap_" + tr_name + "_" + std::to_string(t));
             // mu increasing: mu(t+1) >= mu(t)
             model->addConstr(vars["mu"](tr, t + 1) >= vars["mu"](tr, t), "mu_increasing_" + tr_name + "_" + std::to_string(t));
             // lda increasing: lda(t+1) >= lda(t)
@@ -91,8 +95,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_boundary_fixed_r
     for (int i = 0; i < num_tr; ++i) {
         auto tr_name = train_list.get_train(i).name;
         auto r_len = instance.route_length(tr_name);
-        auto initial_speed = instance.get_schedule(tr_name).v_0;
-        auto final_speed = instance.get_schedule(tr_name).v_n;
         auto tr_len = instance.get_train_list().get_train(tr_name).length;
         // initial_lda: lda(train_interval[i].first) = - tr_len
         model->addConstr(vars["lda"](i, train_interval[i].first) == -tr_len, "initial_lda_" + tr_name);
@@ -119,6 +121,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_occ
         const auto r_size = tr_route.size();
         const auto tr_len = instance.get_train_list().get_train(tr_name).length;
 
+        double mu_ub = r_len + tr_len;
+        if (this->include_breaking_distances) {
+            mu_ub += get_max_breaklen(tr);
+        }
+
         // Iterate over all edges
         for (int j = 0; j < r_size; ++j) {
             const auto edge_id = tr_route.get_edge(j);
@@ -126,7 +133,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_occ
             // Iterate over possible time steps
             for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
                 // x_mu(tr, t, edge_id) = 1 if, and only if, mu(tr,t) > edge_pos.first
-                model->addConstr((r_len + tr_len) * vars["x_mu"](tr, t, edge_id) >= (vars["mu"](tr, t) - edge_pos.first), "x_mu_if_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+                model->addConstr(mu_ub * vars["x_mu"](tr, t, edge_id) >= (vars["mu"](tr, t) - edge_pos.first), "x_mu_if_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
                 model->addConstr(r_len * vars["x_mu"](tr, t, edge_id) <= r_len + vars["mu"](tr, t) - edge_pos.first, "x_mu_only_if_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
 
                 // x_lda = 1 if, and only if, lda < edge_pos.second
@@ -160,12 +167,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_route_sche
             const auto t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
             const auto& stop_edges = instance.get_station_list().get_station(tr_stop.station).tracks;
             const auto& stop_pos = instance.route_edge_pos(tr_name, stop_edges);
-            for (int t = t0; t <= t1; ++t) {
-                model->addConstr(vars["mu"](tr, t) >= stop_pos.first, "mu_station_min_" + tr_name + "_" + std::to_string(t));
-                model->addConstr(vars["mu"](tr, t) <= stop_pos.second, "mu_station_max_" + tr_name + "_" + std::to_string(t));
-                model->addConstr(vars["lda"](tr, t) >= stop_pos.first, "lda_station_min_" + tr_name + "_" + std::to_string(t));
-                model->addConstr(vars["lda"](tr, t) <= stop_pos.second, "lda_station_max_" + tr_name + "_" + std::to_string(t));
-            }
+            // Other cases follow by increasing of lambda and mu
+            model->addConstr(vars["mu"](tr, t0-1) >= stop_pos.first, "mu_station_min_" + tr_name + "_" + std::to_string(t0-1)); // entering station
+            model->addConstr(vars["mu"](tr, t1-1) <= stop_pos.second, "mu_station_max_" + tr_name + "_" + std::to_string(t1-1)); // last before leaving
+            model->addConstr(vars["lda"](tr, t0) >= stop_pos.first, "lda_station_min_" + tr_name + "_" + std::to_string(t0)); // first after entering
+            model->addConstr(vars["lda"](tr, t1) <= stop_pos.second, "lda_station_max_" + tr_name + "_" + std::to_string(t1)); // leaving station
         }
     }
 }
@@ -224,16 +230,21 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
         const auto& tr_name = instance.get_train_list().get_train(tr).name;
         const auto r_len = instance.route_length(tr_name);
         const auto& tr_len = instance.get_train_list().get_train(tr).length;
+        double mu_ub = r_len + tr_len;
+        if (this->include_breaking_distances) {
+            mu_ub += get_max_breaklen(tr);
+        }
         for (const auto e : instance.edges_used_by_train(tr, this->fix_routes)) {
             const auto& e_index = breakable_edge_indices[e];
+            const auto& e_len = instance.n().get_edge(e).length;
             const auto vss_number_e = instance.n().max_vss_on_edge(e);
             const auto edge_pos = instance.route_edge_pos(tr_name, e);
             for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
                 for (int vss = 0; vss < vss_number_e; ++vss) {
-                    // mu(tr, t) - edge_pos.first <= b_pos(e_index, vss) + (r_len + tr_len) * (1 - b_front(tr, t, e_index, vss))
-                    // lda(tr, t) - edge_pos.first + (r_len + tr_len) * (1 - b_rear(tr, t, e_index, vss)) >= b_pos(e_index, vss)
-                    model->addConstr(vars["mu"](tr, t) - edge_pos.first, GRB_LESS_EQUAL, vars["b_pos"](e_index, vss) + (r_len + tr_len) * (1 - vars["b_front"](tr, t, e_index, vss)), "b_pos_front_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
-                    model->addConstr(vars["lda"](tr, t) - edge_pos.first + (r_len + tr_len) * (1 - vars["b_rear"](tr, t, e_index, vss)), GRB_GREATER_EQUAL, vars["b_pos"](e_index, vss), "b_pos_rear_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
+                    // mu(tr, t) - edge_pos.first <= b_pos(e_index, vss) + mu_ub * (1 - b_front(tr, t, e_index, vss))
+                    // lda(tr, t) - edge_pos.first + (r_len + tr_len + e_len) * (1 - b_rear(tr, t, e_index, vss)) >= b_pos(e_index, vss)
+                    model->addConstr(vars["mu"](tr, t) - edge_pos.first, GRB_LESS_EQUAL, vars["b_pos"](e_index, vss) + mu_ub * (1 - vars["b_front"](tr, t, e_index, vss)), "b_pos_front_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
+                    model->addConstr(vars["lda"](tr, t) - edge_pos.first + (r_len + tr_len + e_len) * (1 - vars["b_rear"](tr, t, e_index, vss)), GRB_GREATER_EQUAL, vars["b_pos"](e_index, vss), "b_pos_rear_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
                 }
             }
         }
