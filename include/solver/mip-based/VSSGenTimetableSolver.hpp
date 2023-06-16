@@ -59,6 +59,7 @@ namespace cda_rail::solver::mip_based {
             void create_fixed_routes_occupation_constraints();
             void create_fixed_route_schedule_constraints();
             void create_fixed_routes_impossibility_cuts();
+            void create_fixed_routes_no_overlap_entry_exit_constraints();
 
             void create_non_discretized_general_constraints();
             void create_non_discretized_position_constraints();
@@ -70,6 +71,7 @@ namespace cda_rail::solver::mip_based {
             void create_boundary_free_routes_constraints();
             void create_free_routes_occupation_constraints();
             void create_free_routes_impossibility_cuts();
+            void create_free_routes_no_overlap_entry_exit_constraints();
 
             // Objective
             void set_objective();
@@ -81,6 +83,8 @@ namespace cda_rail::solver::mip_based {
             void calculate_fwd_bwd_sections_non_discretized();
             double get_max_breaklen(const int& tr) const;
 
+            std::pair<std::vector<std::vector<int>>, std::vector<std::vector<int>>> common_entry_exit_vertices() const;
+
             struct TemporaryImpossibilityStruct {
                 bool to_use;
                 int t_before, t_after;
@@ -90,8 +94,6 @@ namespace cda_rail::solver::mip_based {
             [[nodiscard]] TemporaryImpossibilityStruct get_temporary_impossibility_struct(const int& tr, const int& t) const;
 
             double max_distance_travelled(const int& tr, const int& time_steps, const double& v0, const double& a_max, const bool& breaking_distance) const;
-
-
 
         public:
             // Constructors

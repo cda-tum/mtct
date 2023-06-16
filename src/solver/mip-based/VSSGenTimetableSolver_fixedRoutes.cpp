@@ -43,6 +43,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_con
     create_boundary_fixed_routes_constraints();
     create_fixed_routes_occupation_constraints();
     create_fixed_route_schedule_constraints();
+    create_fixed_routes_no_overlap_entry_exit_constraints();
     if (this->use_cuts) {
         create_fixed_routes_impossibility_cuts();
     }
@@ -234,6 +235,46 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
                     model->addConstr(vars["mu"](tr, t) - edge_pos.first, GRB_LESS_EQUAL, vars["b_pos"](e_index, vss) + (r_len + tr_len) * (1 - vars["b_front"](tr, t, e_index, vss)), "b_pos_front_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
                     model->addConstr(vars["lda"](tr, t) - edge_pos.first + (r_len + tr_len) * (1 - vars["b_rear"](tr, t, e_index, vss)), GRB_GREATER_EQUAL, vars["b_pos"](e_index, vss), "b_pos_rear_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e) + "_" + std::to_string(vss));
                 }
+            }
+        }
+    }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_no_overlap_entry_exit_constraints() {
+    /**
+     * Create constraints on common entry and exit points.
+     */
+
+    const auto train_entry_exit_pairs = common_entry_exit_vertices();
+
+    // If two trains share an entry vertex, then the first train must have left before the second train enters
+    for (const auto& tr_list : train_entry_exit_pairs.first) {
+        for (int i = 0; i < tr_list.size() - 1; ++i) {
+            const auto& tr1_entry = train_interval[tr_list[i]].first;
+            const auto& tr2_entry = train_interval[tr_list[i + 1]].first;
+            if (tr1_entry >= tr2_entry) {
+                throw std::runtime_error("Something went wrong with trains " + std::to_string(tr_list[i]) + " and " + std::to_string(tr_list[i + 1]) + " at common entry");
+            }
+            for (int t = tr2_entry; t < train_interval[tr_list[i]].second; ++t) {
+                // lda(tr1, t) >= 0
+                model->addConstr(vars["lda"](tr_list[i], t), GRB_GREATER_EQUAL, 0, "common_entry_" + std::to_string(tr_list[i]) + "_" + std::to_string(tr_list[i+1]) + "_" + std::to_string(t));
+            }
+        }
+    }
+
+    // If two trains share an exit vertex, then the first train must have left before the second train enters
+    for (const auto& tr_list : train_entry_exit_pairs.second) {
+        for (int i = 0; i < tr_list.size() - 1; ++i) {
+            const auto& tr1_exit = train_interval[tr_list[i]].second;
+            const auto& tr2_exit = train_interval[tr_list[i + 1]].second;
+            if (tr1_exit <= tr2_exit) {
+                throw std::runtime_error("Something went wrong with trains " + std::to_string(tr_list[i]) + " and " + std::to_string(tr_list[i + 1]) + " at common exit");
+            }
+            const auto& tr1_name = instance.get_train_list().get_train(tr_list[i]).name;
+            const auto& tr1_route_length = instance.route_length(tr1_name);
+            for (int t = train_interval[tr_list[i]].first; t <= tr2_exit; ++t) {
+                // mu(tr1, t) <= tr1_route_length
+                model->addConstr(vars["mu"](tr_list[i], t), GRB_LESS_EQUAL, tr1_route_length, "common_exit_" + std::to_string(tr_list[i]) + "_" + std::to_string(tr_list[i+1]) + "_" + std::to_string(t));
             }
         }
     }

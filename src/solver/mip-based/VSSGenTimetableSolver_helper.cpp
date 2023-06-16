@@ -1,6 +1,7 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 #include "gurobi_c++.h"
 #include "MultiArray.hpp"
+#include <unordered_map>
 
 std::vector<int>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(int train_index) const {
@@ -97,5 +98,43 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(const
     if (breaking_distance) {
         ret_val += final_speed*final_speed/(2*train_object.deceleration);
     }
+    return ret_val;
+}
+
+std::pair<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
+cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices() const {
+    /**
+     * Returns trains that have common entry or exit vertices sorted by entry/exit time
+     */
+
+    auto compare_entry = [this](int tr1, int tr2) -> bool {
+        return train_interval[tr1].first < train_interval[tr2].first;
+    };
+    auto compare_exit = [this](int tr1, int tr2) -> bool {
+        return train_interval[tr1].second > train_interval[tr2].second;
+    };
+
+    std::pair<std::vector<std::vector<int>>, std::vector<std::vector<int>>> ret_val;
+    std::unordered_map<int, std::vector<int>> entry_vertices;
+    std::unordered_map<int, std::vector<int>> exit_vertices;
+
+    for (int tr = 0; tr < num_tr; ++tr) {
+        entry_vertices[instance.get_schedule(tr).entry].push_back(tr);
+        exit_vertices[instance.get_schedule(tr).exit].push_back(tr);
+    }
+
+    for (auto& [_, tr_list] : entry_vertices) {
+        if (tr_list.size() > 1) {
+            std::sort(tr_list.begin(), tr_list.end(), compare_entry);
+            ret_val.first.push_back(tr_list);
+        }
+    }
+    for (auto& [_, tr_list] : exit_vertices) {
+        if (tr_list.size() > 1) {
+            std::sort(tr_list.begin(), tr_list.end(), compare_exit);
+            ret_val.second.push_back(tr_list);
+        }
+    }
+
     return ret_val;
 }
