@@ -386,8 +386,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_unbreakable_sect
     }
 }
 
-
-
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_schedule_constraints() {
     /**
      * Creates constraints for general stations, i.e., if a train is in a station:
