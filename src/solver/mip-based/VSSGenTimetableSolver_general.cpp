@@ -4,6 +4,7 @@
 #include <memory>
 #include <exception>
 #include <cmath>
+#include <chrono>
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
         const cda_rail::instances::VSSGenerationTimetable &instance) : instance(instance) {}
@@ -20,10 +21,16 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(const 
     instance = cda_rail::instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize, bool include_acceleration_deceleration, bool include_breaking_distances, bool use_pwl, bool use_cuts) {
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize, bool include_acceleration_deceleration, bool include_breaking_distances, bool use_pwl, bool use_cuts, bool debug, std::string model_name, int time_limit) {
     /**
      * Solve the instance using Gurobi
      */
+
+    decltype(std::chrono::high_resolution_clock::now()) start, model_created, model_solved;
+    long long create_time, solve_time;
+    if (debug) {
+        start = std::chrono::high_resolution_clock::now();
+    }
 
     // Save relevant variables
     std::cout << "Save relevant variables" << std::endl;
@@ -140,9 +147,21 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         create_breaklen_constraints();
     }
 
-    // Write model to file
-    //std::cout << "Write model to file" << std::endl;
-    //model->write("model.lp");
+    // Model created
+    if (debug) {
+        model_created = std::chrono::high_resolution_clock::now();
+        create_time = std::chrono::duration_cast<std::chrono::seconds>(model_created - start).count();
+        std::cout << "Model created in " << create_time << " s" << std::endl;
+        auto time_left = time_limit - create_time;
+        if (time_left < 0) {
+            time_left = 1;
+        }
+        if (time_left >= 61) {
+            time_left -= 60;
+        }
+        std::cout << "Time left: " << time_left << " s" << std::endl;
+        model->set(GRB_DoubleParam_TimeLimit, time_left);
+    }
 
     // Optimize
     std::cout << "Optimize" << std::endl;
@@ -151,40 +170,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
     model->optimize();
 
-    std::cout << "----------------------" << std::endl << "VSS borders set: " << std::endl;
-    if (!this->discretize) {
-        for (int i = 0; i < relevant_edges.size(); ++i) {
-            const auto &e = relevant_edges[i];
-            const auto &e_index = breakable_edge_indices[e];
-            const auto vss_number_e = instance.n().max_vss_on_edge(e);
-            const auto &v0 = instance.n().get_vertex(instance.n().get_edge(e).source).name;
-            const auto &v1 = instance.n().get_vertex(instance.n().get_edge(e).target).name;
-            std::cout << "  On edge (" << v0 << ", " << v1 << ") at ";
-            for (int vss = 0; vss < vss_number_e; ++vss) {
-                if (vars["b_used"](i, vss).get(GRB_DoubleAttr_X) > 0.5) {
-                    std::cout << vars["b_pos"](e_index, vss).get(GRB_DoubleAttr_X) << ", ";
-                }
-            }
-            std::cout << std::endl;
-        }
+    if (debug) {
+        model_solved = std::chrono::high_resolution_clock::now();
+        solve_time = std::chrono::duration_cast<std::chrono::seconds>(model_solved - model_created).count();
+        std::cout << "Model created in " << create_time << " s" << std::endl;
+        std::cout << "Model solved in " << solve_time << " s" << std::endl;
+        std::cout << "Objective: " << model->get(GRB_DoubleAttr_ObjVal) << std::endl;
+
+        std::cout << "Saving model and solution" << std::endl;
+        model->write(model_name + ".mps");
+        model->write(model_name + ".sol");
     }
 
-    // Print solution of all trains
-    for (int t = 0; t < num_t; ++t) {
-        std::cout << "t = " << t*dt << ":" << std::endl;
-        const auto tr_at_t = instance.trains_at_t(t * dt);
-        for (const auto &tr : tr_at_t) {
-            std::cout << "    " << instance.get_train_list().get_train(tr).name <<
-                " (v = " << vars["v"](tr, t).get(GRB_DoubleAttr_X) << "m/s to " << vars["v"](tr, t+1).get(GRB_DoubleAttr_X) <<"m/s) at [" <<
-                vars["lda"](tr, t).get(GRB_DoubleAttr_X) << ", " << vars["mu"](tr, t).get(GRB_DoubleAttr_X) << "]";
-            if (t < train_interval[tr].second && this->include_breaking_distances) {
-                std::cout << " breaking " << vars["breaklen"](tr, t).get(GRB_DoubleAttr_X) << "m";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-    }
 }
+
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variables() {
     /**
