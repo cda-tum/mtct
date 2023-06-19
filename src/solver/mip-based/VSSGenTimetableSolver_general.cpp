@@ -3,6 +3,7 @@
 #include "MultiArray.hpp"
 #include <memory>
 #include <exception>
+#include <cmath>
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
         const cda_rail::instances::VSSGenerationTimetable &instance) : instance(instance) {}
