@@ -2,6 +2,7 @@
 #include "gurobi_c++.h"
 #include "MultiArray.hpp"
 #include <exception>
+#include <cmath>
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_variables() {
     /**
