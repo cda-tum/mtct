@@ -3,6 +3,7 @@
 #include "MultiArray.hpp"
 #include <unordered_map>
 #include <exception>
+#include <cmath>
 
 std::vector<int>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(int train_index) const {
