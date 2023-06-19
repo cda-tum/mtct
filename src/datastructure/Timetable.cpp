@@ -6,6 +6,7 @@
 #include "nlohmann/json.hpp"
 #include <fstream>
 #include <algorithm>
+#include <exception>
 
 using json = nlohmann::json;
 

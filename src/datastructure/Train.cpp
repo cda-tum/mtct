@@ -4,6 +4,7 @@
 #include <string>
 #include "nlohmann/json.hpp"
 #include <fstream>
+#include <exception>
 
 using json = nlohmann::json;
 

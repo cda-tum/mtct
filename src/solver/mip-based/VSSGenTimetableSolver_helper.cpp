@@ -2,6 +2,7 @@
 #include "gurobi_c++.h"
 #include "MultiArray.hpp"
 #include <unordered_map>
+#include <exception>
 
 std::vector<int>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(int train_index) const {

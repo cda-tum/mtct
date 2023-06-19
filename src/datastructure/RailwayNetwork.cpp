@@ -10,7 +10,7 @@
 #include <unordered_set>
 #include <stack>
 #include "MultiArray.hpp"
-#include <limits>
+#include <exception>
 
 using json = nlohmann::json;
 

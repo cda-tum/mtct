@@ -2,6 +2,7 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "Definitions.hpp"
 #include <numeric>
+#include <exception>
 
 void cda_rail::instances::VSSGenerationTimetable::export_instance(const std::filesystem::path &p) const {
     /**

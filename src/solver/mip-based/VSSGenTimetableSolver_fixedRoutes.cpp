@@ -1,6 +1,7 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 #include "gurobi_c++.h"
 #include "MultiArray.hpp"
+#include <exception>
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_variables() {
     /**

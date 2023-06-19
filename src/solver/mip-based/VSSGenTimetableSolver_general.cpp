@@ -2,6 +2,7 @@
 #include "gurobi_c++.h"
 #include "MultiArray.hpp"
 #include <memory>
+#include <exception>
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
         const cda_rail::instances::VSSGenerationTimetable &instance) : instance(instance) {}
