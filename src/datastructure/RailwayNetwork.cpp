@@ -856,7 +856,7 @@ std::pair<std::vector<int>, std::vector<int>> cda_rail::Network::uniform_separat
 
 std::pair<std::vector<int>, std::vector<int>> cda_rail::Network::chebychev_separate_edge(int edge_index) {
     // TODO: Not implemented yet
-    throw std::exception("Not implemented yet");
+    throw std::runtime_error("Not implemented yet");
 }
 
 std::vector<int> cda_rail::Network::breakable_edges() const {
