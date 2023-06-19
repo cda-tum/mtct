@@ -667,9 +667,8 @@ TEST(Functionality, HelperFunctions) {
     EXPECT_TRUE(std::find(trains_at_119.begin(), trains_at_119.end(), tr2) != trains_at_119.end());
     EXPECT_TRUE(std::find(trains_at_119.begin(), trains_at_119.end(), tr3) != trains_at_119.end());
     const auto trains_at_120 = instance.trains_at_t(120);
-    EXPECT_EQ(trains_at_120.size(), 3);
+    EXPECT_EQ(trains_at_120.size(), 2);
     EXPECT_TRUE(std::find(trains_at_120.begin(), trains_at_120.end(), tr1) != trains_at_120.end());
-    EXPECT_TRUE(std::find(trains_at_120.begin(), trains_at_120.end(), tr2) != trains_at_120.end());
     EXPECT_TRUE(std::find(trains_at_120.begin(), trains_at_120.end(), tr3) != trains_at_120.end());
     const auto trains_at_121 = instance.trains_at_t(121);
     EXPECT_EQ(trains_at_121.size(), 2);
@@ -680,9 +679,8 @@ TEST(Functionality, HelperFunctions) {
     EXPECT_TRUE(std::find(trains_at_149.begin(), trains_at_149.end(), tr1) != trains_at_149.end());
     EXPECT_TRUE(std::find(trains_at_149.begin(), trains_at_149.end(), tr3) != trains_at_149.end());
     const auto trains_at_150 = instance.trains_at_t(150);
-    EXPECT_EQ(trains_at_150.size(), 2);
+    EXPECT_EQ(trains_at_150.size(), 1);
     EXPECT_TRUE(std::find(trains_at_150.begin(), trains_at_150.end(), tr1) != trains_at_150.end());
-    EXPECT_TRUE(std::find(trains_at_150.begin(), trains_at_150.end(), tr3) != trains_at_150.end());
     const auto trains_at_151 = instance.trains_at_t(151);
     EXPECT_EQ(trains_at_151.size(), 1);
     EXPECT_TRUE(std::find(trains_at_151.begin(), trains_at_151.end(), tr1) != trains_at_151.end());
@@ -690,8 +688,7 @@ TEST(Functionality, HelperFunctions) {
     EXPECT_EQ(trains_at_199.size(), 1);
     EXPECT_TRUE(std::find(trains_at_199.begin(), trains_at_199.end(), tr1) != trains_at_199.end());
     const auto trains_at_200 = instance.trains_at_t(200);
-    EXPECT_EQ(trains_at_200.size(), 1);
-    EXPECT_TRUE(std::find(trains_at_200.begin(), trains_at_200.end(), tr1) != trains_at_200.end());
+    EXPECT_EQ(trains_at_200.size(), 0);
     const auto trains_at_201 = instance.trains_at_t(201);
     EXPECT_EQ(trains_at_201.size(), 0);
 
