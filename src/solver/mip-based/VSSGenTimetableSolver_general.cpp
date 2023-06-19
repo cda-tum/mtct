@@ -139,8 +139,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     // Write model to file
-    std::cout << "Write model to file" << std::endl;
-    model->write("model.lp");
+    //std::cout << "Write model to file" << std::endl;
+    //model->write("model.lp");
 
     // Optimize
     std::cout << "Optimize" << std::endl;
