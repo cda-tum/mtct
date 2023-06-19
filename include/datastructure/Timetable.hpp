@@ -94,12 +94,14 @@ namespace cda_rail {
             ~Timetable() = default;
 
             // Iterators (for range-based for loops) that do not allow modification of the underlying data
+            /**
             auto begin() const {
                 return Iterator(train_list.begin(), schedules.begin());
             };
             auto end() const {
                 return Iterator(train_list.end(), schedules.end());
             };
+            **/
 
             int add_train(const std::string& name, int length, double max_speed, double acceleration, double deceleration,
                            int t_0, double v_0, int entry, int t_n, double v_n, int exit, const cda_rail::Network& network);
@@ -143,6 +145,7 @@ namespace cda_rail {
 
             void update_after_discretization(const std::vector<std::pair<int, std::vector<int>>>& new_edges) {station_list.update_after_discretization(new_edges);};
 
+            /**
             // Iterator struct
             struct Iterator {
                 // Iterator tags
@@ -174,5 +177,6 @@ namespace cda_rail {
                     tr_iterator tr_ptr;
                     sch_iterator sch_ptr;
             };
+            **/
     };
 }
