@@ -42,10 +42,14 @@ endif()
 add_subdirectory(src)
 
 # add test code
-option(BUILD_TESTS "Also build tests for QMAP project")
+option(BUILD_TESTS "Also build tests for rail project")
 if(BUILD_TESTS)
     enable_testing()
     include(cmake/PackageAddTest.cmake)
     include(GoogleTest)
     add_subdirectory(test)
+endif()
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    add_subdirectory(apps)
 endif()
