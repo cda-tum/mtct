@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
         std::cout << "   routes are fixed" << std::endl;
     }
     if (discretize) {
-        std::cout << "   ´the graph is preprocessed" << std::endl;
+        std::cout << "   the graph is preprocessed" << std::endl;
     }
     if (include_acceleration_deceleration) {
         std::cout << "   acceleration and deceleration are included" << std::endl;
