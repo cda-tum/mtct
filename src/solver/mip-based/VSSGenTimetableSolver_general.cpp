@@ -396,7 +396,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_discretized_cons
                                 lhs += vars["b"](v_overlap_index);
                             }
 
-                            model->addConstr(lhs >= 1, "vss_" + tr1_name + "_" + tr2_name + "_" + std::to_string(t) + "_" + std::to_string(e1) + "_" + std::to_string(e2));
+                            model->addConstr(lhs >= 1, "vss_" + tr1_name + "_" + tr2_name + "_" + std::to_string(t) + "_" + std::to_string(no_border_vss_section_sorted[e1].first) + "_" + std::to_string(no_border_vss_section_sorted[e2].first));
                         }
                     }
                 }
