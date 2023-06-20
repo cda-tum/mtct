@@ -183,9 +183,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     // Model created
     if (debug) {
         model_created = std::chrono::high_resolution_clock::now();
-        create_time = std::chrono::duration_cast<std::chrono::seconds>(model_created - start).count();
-        std::cout << "Model created in " << create_time << " s" << std::endl;
-        auto time_left = time_limit - create_time;
+        create_time = std::chrono::duration_cast<std::chrono::milliseconds>(model_created - start).count();
+        std::cout << "Model created in " << create_time << " ms" << std::endl;
+        auto time_left = time_limit - create_time/1000;
         if (time_left < 0) {
             time_left = 1;
         }
@@ -197,7 +197,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     // Optimize
-    std::cout << "Model created. Optimizin..." << std::endl;
+    std::cout << "Model created. Optimizing..." << std::endl;
     if (this->include_breaking_distances && !this->use_pwl) {
         model->set(GRB_IntParam_NonConvex, 2);
     }
@@ -205,9 +205,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
 
     if (debug) {
         model_solved = std::chrono::high_resolution_clock::now();
-        solve_time = std::chrono::duration_cast<std::chrono::seconds>(model_solved - model_created).count();
-        std::cout << "Model created in " << create_time << " s" << std::endl;
-        std::cout << "Model solved in " << solve_time << " s" << std::endl;
+        solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(model_solved - model_created).count();
+        std::cout << "Model created in " << create_time << " ms" << std::endl;
+        std::cout << "Model solved in " << solve_time << " ms" << std::endl;
         std::cout << "Objective: " << model->get(GRB_DoubleAttr_ObjVal) << std::endl;
 
         std::cout << "Saving model and solution" << std::endl;
