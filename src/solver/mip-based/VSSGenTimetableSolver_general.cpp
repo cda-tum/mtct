@@ -21,7 +21,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(const 
     instance = cda_rail::instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize, bool include_acceleration_deceleration, bool include_breaking_distances, bool use_pwl, bool use_cuts, bool debug, std::string model_name, int time_limit) {
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize, bool include_acceleration_deceleration, bool include_breaking_distances, bool use_pwl, bool use_cuts, bool debug, int time_limit, std::string file_name) {
     /**
      * Solve the instance using Gurobi
      */
@@ -33,7 +33,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     // Save relevant variables
-    std::cout << "Save relevant variables" << std::endl;
     dt = delta_t;
     this->fix_routes = fix_routes;
     this->discretize = discretize;
@@ -48,12 +47,16 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
 
     // Discretize if applicable
     if (this->discretize) {
-        std::cout << "Discretize graph" << std::endl;
+        std::cout << "Preprocessing graph..." << std::endl;
         instance.discretize();
     }
 
+    std::cout << "Creating model..." << std::endl;
+
     // Initialize other relevant variables
-    std::cout << "Initialize other relevant variables" << std::endl;
+    if(debug) {
+        std::cout << "Initialize other relevant variables" << std::endl;
+    }
     num_t = instance.maxT() / dt;
     if (instance.maxT() % dt != 0) {
         num_t += 1;
@@ -90,60 +93,90 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     calculate_fwd_bwd_sections();
 
     // Create environment and model
-    std::cout << "Create environment and model" << std::endl;
+    if(debug) {
+        std::cout << "Create environment and model" << std::endl;
+    }
     env.emplace(true);
     env->start();
     model.emplace(env.value());
 
     // Create variables
-    std::cout << "Create general variables" << std::endl;
+    if(debug) {
+        std::cout << "Create general variables" << std::endl;
+    }
     create_general_variables();
     if (this->fix_routes) {
-        std::cout << "Create fixed routes variables" << std::endl;
+        if(debug) {
+            std::cout << "Create fixed routes variables" << std::endl;
+        }
         create_fixed_routes_variables();
     } else {
-        std::cout << "Create free routes variables" << std::endl;
+        if(debug) {
+            std::cout << "Create free routes variables" << std::endl;
+        }
         create_free_routes_variables();
     }
     if (this->discretize) {
-        std::cout << "Create discretized variables" << std::endl;
+        if(debug) {
+            std::cout << "Create discretized variables" << std::endl;
+        }
         create_discretized_variables();
     } else {
-        std::cout << "Create non-discretized variables" << std::endl;
+        if(debug) {
+            std::cout << "Create non-discretized variables" << std::endl;
+        }
         create_non_discretized_variables();
     }
     if (this->include_breaking_distances) {
-        std::cout << "Create breaking distance variables" << std::endl;
+        if(debug) {
+            std::cout << "Create breaking distance variables" << std::endl;
+        }
         create_breaklen_variables();
     }
 
     // Set objective
-    std::cout << "Set objective" << std::endl;
+    if(debug) {
+        std::cout << "Set objective" << std::endl;
+    }
     set_objective();
 
     // Create constraints
-    std::cout << "Create general constraints" << std::endl;
+    if(debug) {
+        std::cout << "Create general constraints" << std::endl;
+    }
     create_general_constraints();
     if (this->fix_routes) {
-        std::cout << "Create fixed routes constraints" << std::endl;
+        if(debug) {
+            std::cout << "Create fixed routes constraints" << std::endl;
+        }
         create_fixed_routes_constraints();
     } else {
-        std::cout << "Create free routes constraints" << std::endl;
+        if(debug) {
+            std::cout << "Create free routes constraints" << std::endl;
+        }
         create_free_routes_constraints();
     }
     if (this->discretize) {
-        std::cout << "Create discretized constraints" << std::endl;
+        if(debug) {
+            std::cout << "Create discretized constraints" << std::endl;
+        }
         create_discretized_constraints();
     } else {
-        std::cout << "Create non-discretized constraints" << std::endl;
+        if(debug) {
+            std::cout << "Create non-discretized constraints" << std::endl;
+        }
         create_non_discretized_constraints();
     }
     if (this->include_acceleration_deceleration) {
-        std::cout << "Create acceleration constraints" << std::endl;
+        if(debug) {
+            std::cout << "Create acceleration constraints" << std::endl;
+        }
         create_acceleration_constraints();
     }
     if (this->include_breaking_distances) {
-        std::cout << "Create breaking distance constraints" << std::endl;
+        if(debug) {
+            std::cout << "Create breaking distance constraints" << std::endl;
+        }
         create_breaklen_constraints();
     }
 
@@ -164,7 +197,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     }
 
     // Optimize
-    std::cout << "Optimize" << std::endl;
+    std::cout << "Model created. Optimizin..." << std::endl;
     if (this->include_breaking_distances && !this->use_pwl) {
         model->set(GRB_IntParam_NonConvex, 2);
     }
@@ -178,9 +211,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         std::cout << "Objective: " << model->get(GRB_DoubleAttr_ObjVal) << std::endl;
 
         std::cout << "Saving model and solution" << std::endl;
-        model->write(model_name + ".mps");
-        model->write(model_name + ".sol");
+
+        model->write(file_name + ".mps");
+        model->write(file_name + ".sol");
     }
+
+    std::cout << "Done!" << std::endl;
 
 }
 

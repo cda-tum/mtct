@@ -103,6 +103,6 @@ namespace cda_rail::solver::mip_based {
             explicit VSSGenTimetableSolver(const char* instance_path);
 
             // Methods
-            void solve(int delta_t = 15, bool fix_routes = true, bool discretize = false, bool include_acceleration_deceleration = true, bool include_breaking_distances = true, bool use_pwl = false, bool use_cuts = true, bool debug = false, std::string model_name = "", int time_limit = 60*60);
+            void solve(int delta_t = 15, bool fix_routes = true, bool discretize = false, bool include_acceleration_deceleration = true, bool include_breaking_distances = true, bool use_pwl = false, bool use_cuts = true, bool debug = false, int time_limit = 60*60, std::string file_name = "");
     };
 }

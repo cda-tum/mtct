@@ -6,4 +6,4 @@ macro(ADD_SIM_EXECUTABLE appname)
             ${ARGN})
 endmacro()
 
-add_sim_executable(vss_generation_timetable_mip)
+add_sim_executable(vss_generation_timetable_mip_testing)
