@@ -26,11 +26,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_var
         }
         for (int t_steps = train_interval[tr].first; t_steps <= train_interval[tr].second; ++t_steps) {
             auto t = t_steps * dt;
-            vars["mu"](tr, t_steps) = model->addVar(0, mu_ub, 0, GRB_CONTINUOUS, "mu_" + tr_name + "_" + std::to_string(t));
-            vars["lda"](tr, t_steps) = model->addVar(-tr_len, r_len, 0, GRB_CONTINUOUS, "lda_" + tr_name + "_" + std::to_string(t));
+            vars["mu"](tr, t_steps) = model->addVar(0, mu_ub, 0, GRB_CONTINUOUS, "mu_" + tr_name + "_" + std::to_string(t*dt));
+            vars["lda"](tr, t_steps) = model->addVar(-tr_len, r_len, 0, GRB_CONTINUOUS, "lda_" + tr_name + "_" + std::to_string(t*dt));
             for (int edge_id : instance.edges_used_by_train(tr_name, fix_routes)) {
-                vars["x_lda"](tr, t_steps, edge_id) = model->addVar(0, 1, 0, GRB_BINARY, "x_lda_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
-                vars["x_mu"](tr, t_steps, edge_id) = model->addVar(0, 1, 0, GRB_BINARY, "x_mu_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+                const auto& edge = instance.n().get_edge(edge_id);
+                const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name + "," + instance.n().get_vertex(edge.target).name + "]";
+                vars["x_lda"](tr, t_steps, edge_id) = model->addVar(0, 1, 0, GRB_BINARY, "x_lda_" + tr_name + "_" + std::to_string(t*dt) + "_" + edge_name);
+                vars["x_mu"](tr, t_steps, edge_id) = model->addVar(0, 1, 0, GRB_BINARY, "x_mu_" + tr_name + "_" + std::to_string(t*dt) + "_" + edge_name);
             }
         }
     }

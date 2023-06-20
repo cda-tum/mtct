@@ -29,28 +29,31 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_vari
         }
         for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
             for (int e = 0; e < num_edges; ++e) {
+                const auto& edge = instance.n().get_edge(e);
+                const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name + "," + instance.n().get_vertex(edge.target).name + "]";
                 if (t < train_interval[tr].second) {
                     vars["overlap"](tr, t, e) = model->addVar(0, instance.n().get_edge(e).length, 0, GRB_CONTINUOUS,
-                                                              "overlap_" + tr_name + "_" + std::to_string(t) + "_" +
-                                                              std::to_string(e));
+                                                              "overlap_" + tr_name + "_" + std::to_string(t*dt) + "_" +
+                                                                      edge_name);
                 }
                 vars["e_lda"](tr, t, e) = model->addVar(0, instance.n().get_edge(e).length, 0, GRB_CONTINUOUS,
-                                                        "e_lda_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
+                                                        "e_lda_" + tr_name + "_" + std::to_string(t*dt) + "_" + edge_name);
                 vars["e_mu"](tr, t, e) = model->addVar(0, instance.n().get_edge(e).length, 0, GRB_CONTINUOUS,
-                                                       "e_mu_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(e));
+                                                       "e_mu_" + tr_name + "_" + std::to_string(t*dt) + "_" + edge_name);
             }
             for (int v = 0; v < num_vertices; ++v) {
+                const auto& v_name = instance.n().get_vertex(v).name;
                 vars["x_v"](tr, t, v) = model->addVar(0, 1, 0, GRB_BINARY,
-                                                      "x_v_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(v));
+                                                      "x_v_" + tr_name + "_" + std::to_string(t*dt) + "_" + v_name);
             }
             vars["len_in"](tr, t) = model->addVar(0, tr_len, 0, GRB_CONTINUOUS,
-                                                  "len_in_" + tr_name + "_" + std::to_string(t));
+                                                  "len_in_" + tr_name + "_" + std::to_string(t*dt));
             vars["x_in"](tr, t) = model->addVar(0, 1, 0, GRB_BINARY,
-                                                "x_in_" + tr_name + "_" + std::to_string(t));
+                                                "x_in_" + tr_name + "_" + std::to_string(t*dt));
             vars["len_out"](tr, t) = model->addVar(0, len_out_ub, 0, GRB_CONTINUOUS,
-                                                   "len_out_" + tr_name + "_" + std::to_string(t));
+                                                   "len_out_" + tr_name + "_" + std::to_string(t*dt));
             vars["x_out"](tr, t) = model->addVar(0, 1, 0, GRB_BINARY,
-                                                    "x_out_" + tr_name + "_" + std::to_string(t));
+                                                    "x_out_" + tr_name + "_" + std::to_string(t*dt));
         }
     }
 }

@@ -239,21 +239,23 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variable
         auto tr_name = train_list.get_train(i).name;
         auto r_size = instance.get_route(tr_name).size();
         for (int t = train_interval[i].first; t <= train_interval[i].second + 1; ++t) {
-            vars["v"](i, t) = model->addVar(0, max_speed, 0, GRB_CONTINUOUS, "v_" + tr_name + "_" + std::to_string(t));
+            vars["v"](i, t) = model->addVar(0, max_speed, 0, GRB_CONTINUOUS, "v_" + tr_name + "_" + std::to_string(t*dt));
         }
         for (int t = train_interval[i].first; t <= train_interval[i].second; ++t) {
             for (int edge_id : instance.edges_used_by_train(tr_name, fix_routes)) {
-                vars["x"](i, t, edge_id) = model->addVar(0, 1, 0, GRB_BINARY, "x_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(edge_id));
+                const auto& edge = instance.n().get_edge(edge_id);
+                const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name + "," + instance.n().get_vertex(edge.target).name + "]";
+                vars["x"](i, t, edge_id) = model->addVar(0, 1, 0, GRB_BINARY, "x_" + tr_name + "_" + std::to_string(t*dt) + "_" + edge_name);
             }
             for (const auto& sec : unbreakable_section_indices(i)) {
-                vars["x_sec"](i, t, sec) = model->addVar(0, 1, 0, GRB_BINARY, "x_sec_" + tr_name + "_" + std::to_string(t) + "_" + std::to_string(sec));
+                vars["x_sec"](i, t, sec) = model->addVar(0, 1, 0, GRB_BINARY, "x_sec_" + tr_name + "_" + std::to_string(t*dt) + "_" + std::to_string(sec));
             }
         }
     }
     for (int t = 0; t < num_t; ++t) {
         for (int i = 0; i < fwd_bwd_sections.size(); ++i) {
-            vars["y_sec_fwd"](t, i) = model->addVar(0, 1, 0, GRB_BINARY, "y_sec_fwd_" + std::to_string(t) + "_" + std::to_string(i));
-            vars["y_sec_bwd"](t, i) = model->addVar(0, 1, 0, GRB_BINARY, "y_sec_bwd_" + std::to_string(t) + "_" + std::to_string(i));
+            vars["y_sec_fwd"](t, i) = model->addVar(0, 1, 0, GRB_BINARY, "y_sec_fwd_" + std::to_string(t*dt) + "_" + std::to_string(i));
+            vars["y_sec_bwd"](t, i) = model->addVar(0, 1, 0, GRB_BINARY, "y_sec_bwd_" + std::to_string(t*dt) + "_" + std::to_string(i));
         }
     }
 }
@@ -268,7 +270,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_discretized_vari
 
     // Create variables
     for (int i = 0; i < no_border_vss_vertices.size(); ++i) {
-        vars["b"](i) = model->addVar(0, 1, 0, GRB_BINARY, "b_" + std::to_string(no_border_vss_vertices[i]));
+        const auto& v_name = instance.n().get_vertex(no_border_vss_vertices[i]).name;
+        vars["b"](i) = model->addVar(0, 1, 0, GRB_BINARY, "b_" + v_name);
     }
 }
 
@@ -292,14 +295,16 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
         const auto& e = breakable_edges[i];
         const auto vss_number_e = instance.n().max_vss_on_edge(e);
         const auto& edge_len = instance.n().get_edge(e).length;
+        const auto& edge = instance.n().get_edge(e);
+        const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name + "," + instance.n().get_vertex(edge.target).name + "]";
         for (int vss = 0; vss < vss_number_e; ++vss) {
-            vars["b_pos"](i, vss) = model->addVar(0, edge_len, 0, GRB_CONTINUOUS, "b_pos_" + std::to_string(e) + "_" + std::to_string(vss));
+            vars["b_pos"](i, vss) = model->addVar(0, edge_len, 0, GRB_CONTINUOUS, "b_pos_" + edge_name + "_" + std::to_string(vss));
             for (int tr = 0; tr < num_tr; ++tr) {
                 for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
                     vars["b_front"](tr, t, i, vss) = model->addVar(0, 1, 0, GRB_BINARY,
-                                                                   "b_front_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(i) + "_" + std::to_string(vss));
+                                                                   "b_front_" + std::to_string(tr) + "_" + std::to_string(t*dt) + "_" + edge_name + "_" + std::to_string(vss));
                     vars["b_rear"](tr, t, i, vss) = model->addVar(0, 1, 0, GRB_BINARY,
-                                                                  "b_rear_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(i) + "_" + std::to_string(vss));
+                                                                  "b_rear_" + std::to_string(tr) + "_" + std::to_string(t*dt) + "_" + edge_name + "_" + std::to_string(vss));
                 }
             }
         }
@@ -308,8 +313,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
     for (int i = 0; i < relevant_edges.size(); ++i) {
         const auto& e = relevant_edges[i];
         const auto vss_number_e = instance.n().max_vss_on_edge(e);
+        const auto& edge = instance.n().get_edge(e);
+        const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name + "," + instance.n().get_vertex(edge.target).name + "]";
         for (int vss = 0; vss < vss_number_e; ++vss) {
-            vars["b_used"](i, vss) = model->addVar(0, 1, 0, GRB_BINARY, "b_used_" + std::to_string(e) + "_" + std::to_string(vss));
+            vars["b_used"](i, vss) = model->addVar(0, 1, 0, GRB_BINARY, "b_used_" + edge_name + "_" + std::to_string(vss));
         }
     }
 }
