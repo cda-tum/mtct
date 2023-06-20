@@ -44,5 +44,7 @@ int main(int argc, char** argv) {
     }
     std::cout << "   timeout: " << timeout << "s" << std::endl;
 
-    solver.solve(delta_t, fix_routes, discretize, include_acceleration_deceleration, include_breaking_distance, use_pwl, use_cuts, timeout);
+    std::string file_name = model_name + "_" + std::to_string(delta_t) + "_" + std::to_string(fix_routes) + "_" + std::to_string(discretize) + "_" + std::to_string(include_acceleration_deceleration) + "_" + std::to_string(include_breaking_distance) + "_" + std::to_string(use_pwl) + "_" + std::to_string(use_cuts) + "_" + std::to_string(timeout);
+
+    solver.solve(delta_t, fix_routes, discretize, include_acceleration_deceleration, include_breaking_distance, use_pwl, use_cuts, true,timeout, file_name);
 }
