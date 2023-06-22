@@ -523,8 +523,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_breaklen_variabl
     // Iterate over all trains
     for (int tr = 0; tr < num_tr; ++tr) {
         const auto max_break_len = get_max_breaklen(tr);
+        const auto& tr_name = instance.get_train_list().get_train(tr).name;
         for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
-            vars["breaklen"](tr, t) = model->addVar(0, max_break_len, 0, GRB_CONTINUOUS, "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
+            vars["breaklen"](tr, t) = model->addVar(0, max_break_len, 0, GRB_CONTINUOUS, "breaklen_" + tr_name + "_" + std::to_string(t*dt));
         }
     }
 }
