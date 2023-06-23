@@ -186,8 +186,16 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_over
         const auto &entry = instance.get_schedule(tr).entry;
         const auto &exit = instance.get_schedule(tr).exit;
         for (int t = train_interval[tr].first; t <= train_interval[tr].second - 1; ++t) {
+            // Train cannot be solely on the exit edge
+            GRBLinExpr lhs = vars["x_in"](tr, t);
+            for (int e = 0; e < num_edges; ++e) {
+                lhs += vars["x"](tr, t, e);
+            }
+            // lhs >= 1
+            model->addConstr(lhs, GRB_GREATER_EQUAL, 1, "train_not_left_" + tr_name + "_" + std::to_string(t*dt));
+
             // Correct overlap length
-            GRBLinExpr lhs = vars["len_in"](tr, t + 1) + vars["len_out"](tr, t);
+            lhs = vars["len_in"](tr, t + 1) + vars["len_out"](tr, t);
             for (int e = 0; e < num_edges; ++e) {
                 lhs += vars["overlap"](tr, t, e);
             }
