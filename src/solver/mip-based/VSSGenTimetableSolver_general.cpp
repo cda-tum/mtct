@@ -503,7 +503,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_acceleration_con
     for (int tr = 0; tr < train_list.size(); ++tr) {
         // Iterate over all time steps
         const auto& tr_object = train_list.get_train(tr);
-        for (int t = train_interval[tr].first; t < train_interval[tr].second; ++t) {
+        for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
             // v(t+1) - v(t) <= acceleration * dt
             model->addConstr(vars["v"](tr, t + 1) - vars["v"](tr, t) <= tr_object.acceleration * dt, "acceleration_" + tr_object.name + "_" + std::to_string(t));
             // v(t) - v(t+1) <= deceleration * dt
