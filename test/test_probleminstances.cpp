@@ -749,3 +749,607 @@ TEST(Functionality, HelperFunctions) {
     EXPECT_TRUE(std::find(trains_on_v1_v2_partial.begin(), trains_on_v1_v2_partial.end(), tr1) != trains_on_v1_v2_partial.end());
     EXPECT_TRUE(std::find(trains_on_v1_v2_partial.begin(), trains_on_v1_v2_partial.end(), tr2) != trains_on_v1_v2_partial.end());
 }
+
+TEST(Example, Stammstrecke) {
+    cda_rail::instances::VSSGenerationTimetable instance;
+
+    // Pasing -> Laim
+    int pasing_entry = instance.n().add_vertex("PasingEntry", cda_rail::VertexType::TTD);
+    int pasing_exit = instance.n().add_vertex("PasingExit", cda_rail::VertexType::TTD);
+    int pasing_switch_1 = instance.n().add_vertex("PasingSwitch1", cda_rail::VertexType::TTD);
+    int pasing_switch_2 = instance.n().add_vertex("PasingSwitch2", cda_rail::VertexType::TTD);
+    int laim_1l = instance.n().add_vertex("Laim1L", cda_rail::VertexType::TTD);
+    int laim_3l = instance.n().add_vertex("Laim3L", cda_rail::VertexType::TTD);
+    int laim_1r = instance.n().add_vertex("Laim1R", cda_rail::VertexType::TTD);
+    int laim_entry = instance.n().add_vertex("LaimEntry", cda_rail::VertexType::TTD);
+    int laim_3r = instance.n().add_vertex("Laim3R", cda_rail::VertexType::TTD);
+    int laim_switch_nymphenburg = instance.n().add_vertex("LaimSwitchNymphenburg", cda_rail::VertexType::TTD);
+    int laim_exit_nymphenburg = instance.n().add_vertex("LaimExitNymphenburg", cda_rail::VertexType::TTD);
+
+    int e1lr = instance.n().add_edge(pasing_entry, pasing_switch_1, 280, 120/3.6, true, 100);
+    int e1rl = instance.n().add_edge(pasing_switch_2, pasing_exit, 160, 120/3.6, true, 100);
+    int e2lr = instance.n().add_edge(pasing_switch_1, laim_1l, 2812, 120/3.6, true, 100);
+    int e2rl = instance.n().add_edge(laim_switch_nymphenburg, pasing_switch_2, 2562, 120/3.6, true, 100);
+    int e3rl = instance.n().add_edge(laim_3l, laim_switch_nymphenburg, 370, 120/3.6, true, 100);
+    int e2rl_exit = instance.n().add_edge(laim_switch_nymphenburg, laim_exit_nymphenburg, 30, 100/3.6, false, 100);
+    int e3lr = instance.n().add_edge(laim_1l, laim_1r, 210, 120/3.6, true, 50);
+    int e4rl = instance.n().add_edge(laim_3r, laim_3l, 210, 120/3.6, true, 50);
+
+    int switch_e1 = instance.n().add_edge(pasing_switch_1, pasing_switch_2, 120, 80/3.6, false, 100);
+    int switch_e2 = instance.n().add_edge(pasing_switch_2, pasing_switch_1, 120, 80/3.6, false, 100);
+    instance.n().add_successor(switch_e1, e1rl);
+    instance.n().add_successor(switch_e2, e2lr);
+
+    instance.n().add_successor(e1lr, e2lr);
+    instance.n().add_successor(e2lr, e3lr);
+    instance.n().add_successor(e4rl, e3rl);
+    instance.n().add_successor(e3rl, e2rl);
+    instance.n().add_successor(e2rl, e1rl);
+    instance.n().add_successor(e3rl, e2rl_exit);
+
+    instance.add_station("Laim");
+    instance.add_track_to_station("Laim", e3lr);
+    instance.add_track_to_station("Laim", e4rl);
+
+    // Laim -> Hirschgarten
+    int laim_switch_hirschgarten = instance.n().add_vertex("LaimSwitchHirschgarten", cda_rail::VertexType::TTD);
+    int hirschgarten_1l = instance.n().add_vertex("Hirschgarten1L", cda_rail::VertexType::TTD);
+    int hirschgarten_2l = instance.n().add_vertex("Hirschgarten2L", cda_rail::VertexType::TTD);
+    int hirschgarten_1r = instance.n().add_vertex("Hirschgarten1R", cda_rail::VertexType::TTD);
+    int hirschgarten_2r = instance.n().add_vertex("Hirschgarten2R", cda_rail::VertexType::TTD);
+
+    int e4lr = instance.n().add_edge(laim_1r, laim_switch_hirschgarten, 200, 100/3.6, true, 100);
+    int e4lr_entry = instance.n().add_edge(laim_entry, laim_switch_hirschgarten, 200, 100/3.6, true, 100);
+    int e5lr = instance.n().add_edge(laim_switch_hirschgarten, hirschgarten_1l, 692, 100/3.6, true, 100);
+    int e6lr = instance.n().add_edge(hirschgarten_1l, hirschgarten_1r, 205, 100/3.6, true, 50);
+    int e5rl = instance.n().add_edge(hirschgarten_2l, laim_3r, 892, 100/3.6, true, 100);
+    int e6rl = instance.n().add_edge(hirschgarten_2r, hirschgarten_2l, 205, 100/3.6, true, 50);
+
+    instance.n().add_successor(e3lr, e4lr);
+    instance.n().add_successor(e5rl, e4rl);
+
+    instance.n().add_successor(e4lr, e5lr);
+    instance.n().add_successor(e4lr_entry, e5lr);
+    instance.n().add_successor(e5lr, e6lr);
+    instance.n().add_successor(e6rl, e5rl);
+
+    instance.add_station("Hirschgarten");
+    instance.add_track_to_station("Hirschgarten", e6lr);
+    instance.add_track_to_station("Hirschgarten", e6rl);
+
+    // Hirschgarten -> Donnersbergerbruecke
+    int donnersbergerbruecke_1l = instance.n().add_vertex("Donnersbergerbruecke1L", cda_rail::VertexType::TTD);
+    int donnersbergerbruecke_2l = instance.n().add_vertex("Donnersbergerbruecke2L", cda_rail::VertexType::TTD);
+    int donnersbergerbruecke_1r = instance.n().add_vertex("Donnersbergerbruecke1R", cda_rail::VertexType::TTD);
+    int donnersbergerbruecke_2r = instance.n().add_vertex("Donnersbergerbruecke2R", cda_rail::VertexType::TTD);
+
+    int e7lr = instance.n().add_edge(hirschgarten_1r, donnersbergerbruecke_1l, 1095, 100/3.6, true, 100);
+    int e8lr = instance.n().add_edge(donnersbergerbruecke_1l, donnersbergerbruecke_1r, 205, 100/3.6, true, 50);
+    int e7rl = instance.n().add_edge(donnersbergerbruecke_2l, hirschgarten_2r, 1095, 100/3.6, true, 100);
+    int e8rl = instance.n().add_edge(donnersbergerbruecke_2r, donnersbergerbruecke_2l, 205, 100/3.6, true, 50);
+
+    instance.n().add_successor(e6lr, e7lr);
+    instance.n().add_successor(e7rl, e6rl);
+
+    instance.n().add_successor(e7lr, e8lr);
+    instance.n().add_successor(e8rl, e7rl);
+
+    instance.add_station("Donnersbergerbruecke");
+    instance.add_track_to_station("Donnersbergerbruecke", e8lr);
+    instance.add_track_to_station("Donnersbergerbruecke", e8rl);
+
+    // Donnersbergerbruecke -> Hackerbruecke
+    int hackerbruecke_switch_1 = instance.n().add_vertex("HackerbrueckeSwitch1", cda_rail::VertexType::TTD);
+    int hackerbruecke_switch_2 = instance.n().add_vertex("HackerbrueckeSwitch2", cda_rail::VertexType::TTD);
+    int hackerbruecke_switch_3 = instance.n().add_vertex("HackerbrueckeSwitch3", cda_rail::VertexType::TTD);
+    int hackerbruecke_switch_4 = instance.n().add_vertex("HackerbrueckeSwitch4", cda_rail::VertexType::TTD);
+    int hackerbruecke_switch_c = instance.n().add_vertex("HackerbrueckeSwitchC", cda_rail::VertexType::NO_BORDER);
+    int hackerbruecke_1l = instance.n().add_vertex("Hackerbruecke1L", cda_rail::VertexType::TTD);
+    int hackerbruecke_2l = instance.n().add_vertex("Hackerbruecke2L", cda_rail::VertexType::TTD);
+    int hackerbruecke_1r = instance.n().add_vertex("Hackerbruecke1R", cda_rail::VertexType::TTD);
+    int hackerbruecke_2r = instance.n().add_vertex("Hackerbruecke2R", cda_rail::VertexType::TTD);
+
+    int e9lr = instance.n().add_edge(donnersbergerbruecke_1r, hackerbruecke_switch_1, 504, 100/3.6, true, 100);
+    int e10lr = instance.n().add_edge(hackerbruecke_switch_1, hackerbruecke_switch_2, 150, 100/3.6, false, 100);
+    int e11lr = instance.n().add_edge(hackerbruecke_switch_2, hackerbruecke_1l, 40, 100/3.6, false, 100);
+    int e12lr = instance.n().add_edge(hackerbruecke_1l, hackerbruecke_1r, 207, 100/3.6, true, 50);
+    int e9rl = instance.n().add_edge(hackerbruecke_switch_4, donnersbergerbruecke_2r, 504, 100/3.6, true, 100);
+    int e10rl = instance.n().add_edge(hackerbruecke_switch_3, hackerbruecke_switch_4, 150, 100/3.6, false, 100);
+    int e11rl = instance.n().add_edge(hackerbruecke_2l, hackerbruecke_switch_3, 40, 100/3.6, false, 100);
+    int e12rl = instance.n().add_edge(hackerbruecke_2r, hackerbruecke_2l, 207, 100/3.6, true, 50);
+
+    int switch_e3 = instance.n().add_edge(hackerbruecke_switch_1, hackerbruecke_switch_c, 75, 80/3.6, false, 100);
+    int switch_e4 = instance.n().add_edge(hackerbruecke_switch_2, hackerbruecke_switch_c, 75, 80/3.6, false, 100);
+    int switch_e5 = instance.n().add_edge(hackerbruecke_switch_3, hackerbruecke_switch_c, 75, 80/3.6, false, 100);
+    int switch_e6 = instance.n().add_edge(hackerbruecke_switch_4, hackerbruecke_switch_c, 75, 80/3.6, false, 100);
+    int switch_e7 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_1, 75, 80/3.6, false, 100);
+    int switch_e8 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_2, 75, 80/3.6, false, 100);
+    int switch_e9 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_3, 75, 80/3.6, false, 100);
+    int switch_e10 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_4, 75, 80/3.6, false, 100);
+
+    instance.n().add_successor(switch_e3, switch_e9);
+    instance.n().add_successor(switch_e4, switch_e10);
+    instance.n().add_successor(switch_e5, switch_e7);
+    instance.n().add_successor(switch_e6, switch_e8);
+    instance.n().add_successor(switch_e8, e11lr);
+    instance.n().add_successor(switch_e10, e9rl);
+    instance.n().add_successor(e9lr, switch_e3);
+    instance.n().add_successor(e11rl, switch_e5);
+
+    instance.n().add_successor(e8lr, e9lr);
+    instance.n().add_successor(e9rl, e8rl);
+
+    instance.n().add_successor(e9lr, e10lr);
+    instance.n().add_successor(e10lr, e11lr);
+    instance.n().add_successor(e11lr, e12lr);
+    instance.n().add_successor(e12rl, e11rl);
+    instance.n().add_successor(e11rl, e10rl);
+    instance.n().add_successor(e10rl, e9rl);
+
+    instance.add_station("Hackerbruecke");
+    instance.add_track_to_station("Hackerbruecke", e12lr);
+    instance.add_track_to_station("Hackerbruecke", e12rl);
+
+    // Hackerbruecke -> Hbf
+    int hbf_1l = instance.n().add_vertex("Hbf1L", cda_rail::VertexType::TTD);
+    int hbf_2l = instance.n().add_vertex("Hbf2L", cda_rail::VertexType::TTD);
+    int hbf_1r = instance.n().add_vertex("Hbf1R", cda_rail::VertexType::TTD);
+    int hbf_2r = instance.n().add_vertex("Hbf2R", cda_rail::VertexType::TTD);
+
+    int e13lr = instance.n().add_edge(hackerbruecke_1r, hbf_1l, 591, 80/3.6, true, 100);
+    int e14lr = instance.n().add_edge(hbf_1l, hbf_1r, 210, 80/3.6, true, 50);
+    int e13rl = instance.n().add_edge(hbf_2l, hackerbruecke_2r, 591, 80/3.6, true, 100);
+    int e14rl = instance.n().add_edge(hbf_2r, hbf_2l, 210, 80/3.6, true, 50);
+
+    instance.n().add_successor(e12lr, e13lr);
+    instance.n().add_successor(e13rl, e12rl);
+
+    instance.n().add_successor(e13lr, e14lr);
+    instance.n().add_successor(e14rl, e13rl);
+
+    instance.add_station("Hbf");
+    instance.add_track_to_station("Hbf", e14lr);
+    instance.add_track_to_station("Hbf", e14rl);
+
+    // Hbf -> Karlsplatz
+    int karlsplatz_1l = instance.n().add_vertex("Karlsplatz1L", cda_rail::VertexType::TTD);
+    int karlsplatz_2l = instance.n().add_vertex("Karlsplatz2L", cda_rail::VertexType::TTD);
+    int karlsplatz_1r = instance.n().add_vertex("Karlsplatz1R", cda_rail::VertexType::TTD);
+    int karlsplatz_2r = instance.n().add_vertex("Karlsplatz2R", cda_rail::VertexType::TTD);
+
+    int e15lr = instance.n().add_edge(hbf_1r, karlsplatz_1l, 292, 80/3.6, true, 100);
+    int e16lr = instance.n().add_edge(karlsplatz_1l, karlsplatz_1r, 206, 80/3.6, true, 50);
+    int e15rl = instance.n().add_edge(karlsplatz_2l, hbf_2r, 292, 80/3.6, true, 100);
+    int e16rl = instance.n().add_edge(karlsplatz_2r, karlsplatz_2l, 206, 80/3.6, true, 50);
+
+    instance.n().add_successor(e14lr, e15lr);
+    instance.n().add_successor(e15rl, e14rl);
+
+    instance.n().add_successor(e15lr, e16lr);
+    instance.n().add_successor(e16rl, e15rl);
+
+    instance.add_station("Karlsplatz");
+    instance.add_track_to_station("Karlsplatz", e16lr);
+    instance.add_track_to_station("Karlsplatz", e16rl);
+
+    // Karlsplatz -> Marienplatz
+    int marienplatz_1l = instance.n().add_vertex("Marienplatz1L", cda_rail::VertexType::TTD);
+    int marienplatz_2l = instance.n().add_vertex("Marienplatz2L", cda_rail::VertexType::TTD);
+    int marienplatz_1r = instance.n().add_vertex("Marienplatz1R", cda_rail::VertexType::TTD);
+    int marienplatz_2r = instance.n().add_vertex("Marienplatz2R", cda_rail::VertexType::TTD);
+
+    int e17lr = instance.n().add_edge(karlsplatz_1r, marienplatz_1l, 494, 80/3.6, true, 100);
+    int e18lr = instance.n().add_edge(marienplatz_1l, marienplatz_1r, 205, 80/3.6, true, 50);
+    int e17rl = instance.n().add_edge(marienplatz_2l, karlsplatz_2r, 494, 80/3.6, true, 100);
+    int e18rl = instance.n().add_edge(marienplatz_2r, marienplatz_2l, 205, 80/3.6, true, 50);
+
+    instance.n().add_successor(e16lr, e17lr);
+    instance.n().add_successor(e17rl, e16rl);
+
+    instance.n().add_successor(e17lr, e18lr);
+    instance.n().add_successor(e18rl, e17rl);
+
+    instance.add_station("Marienplatz");
+    instance.add_track_to_station("Marienplatz", e18lr);
+    instance.add_track_to_station("Marienplatz", e18rl);
+
+    // Marienplatz -> Isartor
+    int isartor_switch_lr = instance.n().add_vertex("IsartorSwitchLR", cda_rail::VertexType::TTD);
+    int isartor_switch_rl = instance.n().add_vertex("IsartorSwitchRL", cda_rail::VertexType::TTD);
+    int isartor_1l = instance.n().add_vertex("Isartor1L", cda_rail::VertexType::TTD);
+    int isartor_2l = instance.n().add_vertex("Isartor2L", cda_rail::VertexType::TTD);
+    int isartor_1r = instance.n().add_vertex("Isartor1R", cda_rail::VertexType::TTD);
+    int isartor_2r = instance.n().add_vertex("Isartor2R", cda_rail::VertexType::TTD);
+
+    int e19lr = instance.n().add_edge(marienplatz_1r, isartor_switch_lr, 393, 80/3.6, true, 100);
+    int e20lr = instance.n().add_edge(isartor_switch_lr, isartor_1l, 100, 80/3.6, false, 100);
+    int e21lr = instance.n().add_edge(isartor_1l, isartor_1r, 209, 80/3.6, true, 50);
+    int e19rl = instance.n().add_edge(isartor_switch_rl, marienplatz_2r, 343, 80/3.6, true, 100);
+    int e20rl = instance.n().add_edge(isartor_2l, isartor_switch_rl, 150, 80/3.6, false, 100);
+    int e21rl = instance.n().add_edge(isartor_2r, isartor_2l, 209, 80/3.6, true, 50);
+
+    instance.n().add_successor(e18lr, e19lr);
+    instance.n().add_successor(e19rl, e18rl);
+
+    instance.n().add_successor(e19lr, e20lr);
+    instance.n().add_successor(e20lr, e21lr);
+    instance.n().add_successor(e21rl, e20rl);
+    instance.n().add_successor(e20rl, e19rl);
+
+    instance.add_station("Isartor");
+    instance.add_track_to_station("Isartor", e21lr);
+    instance.add_track_to_station("Isartor", e21rl);
+
+
+    // Isartor -> Rosenheimer Platz
+    int isartor_switchR_lr = instance.n().add_vertex("IsartorSwitchR_LR", cda_rail::VertexType::TTD);
+    int isartor_switchR_rl = instance.n().add_vertex("IsartorSwitchR_RL", cda_rail::VertexType::TTD);
+    int rosenheimer_1l = instance.n().add_vertex("Rosenheimer1L", cda_rail::VertexType::TTD);
+    int rosenheimer_2l = instance.n().add_vertex("Rosenheimer2L", cda_rail::VertexType::TTD);
+    int rosenheimer_1r = instance.n().add_vertex("Rosenheimer1R", cda_rail::VertexType::TTD);
+    int rosenheimer_2r = instance.n().add_vertex("Rosenheimer2R", cda_rail::VertexType::TTD);
+
+    int e22lr = instance.n().add_edge(isartor_1r, isartor_switchR_lr, 100, 80/3.6, false, 100);
+    int e23lr = instance.n().add_edge(isartor_switchR_lr, rosenheimer_1l, 592, 80/3.6, true, 100);
+    int e24lr = instance.n().add_edge(rosenheimer_1l, rosenheimer_1r, 206, 80/3.6, true, 50);
+    int e22rl = instance.n().add_edge(isartor_switchR_rl, isartor_2r, 150, 80/3.6, false, 100);
+    int e23rl = instance.n().add_edge(rosenheimer_2l, isartor_switchR_rl, 542, 80/3.6, true, 100);
+    int e24rl = instance.n().add_edge(rosenheimer_2r, rosenheimer_2l, 206, 80/3.6, true, 50);
+
+    int switch_it_1 = instance.n().add_edge(isartor_switch_lr, isartor_switch_rl, 50, 60/3.6, false, 100);
+    int switch_it_2 = instance.n().add_edge(isartor_switch_rl, isartor_switch_lr, 50, 60/3.6, false, 100);
+    int switch_it_3 = instance.n().add_edge(isartor_switchR_lr, isartor_switchR_rl, 50, 60/3.6, false, 100);
+    int switch_it_4 = instance.n().add_edge(isartor_switchR_rl, isartor_switchR_lr, 50, 60/3.6, false, 100);
+    int tmp_1 = instance.n().add_edge(isartor_switchR_lr, isartor_1r, 100, 80/3.6, false, 100);
+    int tmp_2 = instance.n().add_edge(isartor_1r, isartor_1l, 209, 80/3.6, true, 50);
+    int tmp_3 = instance.n().add_edge(isartor_1l, isartor_switch_lr, 100, 80/3.6, false, 100);
+    instance.n().add_successor(switch_it_2, e20lr);
+    instance.n().add_successor(e22lr, switch_it_3);
+    instance.n().add_successor(e23rl, switch_it_4);
+    instance.n().add_successor(switch_it_4, tmp_1);
+    instance.n().add_successor(tmp_1, tmp_2);
+    instance.n().add_successor(tmp_2, tmp_3);
+    instance.n().add_successor(tmp_3, switch_it_1);
+
+    instance.n().add_successor(e21lr, e22lr);
+    instance.n().add_successor(e22rl, e21rl);
+
+    instance.n().add_successor(e22lr, e23lr);
+    instance.n().add_successor(e23lr, e24lr);
+    instance.n().add_successor(e24rl, e23rl);
+    instance.n().add_successor(e23rl, e22rl);
+
+    instance.add_station("Rosenheimer Platz");
+    instance.add_track_to_station("Rosenheimer Platz", e24lr);
+    instance.add_track_to_station("Rosenheimer Platz", e24rl);
+
+    // Rosenheimer Platz -> Ostbahnhof
+    int ost_switch1_lr = instance.n().add_vertex("OstSwitch1_LR", cda_rail::VertexType::TTD);
+    int ost_switch2_lr = instance.n().add_vertex("OstSwitch2_LR", cda_rail::VertexType::TTD);
+    int ost_switch1_rl = instance.n().add_vertex("OstSwitch1_RL", cda_rail::VertexType::TTD);
+    int ost_switch2_rl = instance.n().add_vertex("OstSwitch2_RL", cda_rail::VertexType::TTD);
+    int ost_1_exit = instance.n().add_vertex("Ost1Exit", cda_rail::VertexType::TTD);
+    int ost_2_exit = instance.n().add_vertex("Ost2Exit", cda_rail::VertexType::TTD);
+    int ost_3_entry = instance.n().add_vertex("Ost3Entry", cda_rail::VertexType::TTD);
+    int ost_4_entry = instance.n().add_vertex("Ost4Entry", cda_rail::VertexType::TTD);
+
+    int e25lr = instance.n().add_edge(rosenheimer_1r, ost_switch1_lr, 792, 80/3.6, true, 100);
+    int e26lr_a = instance.n().add_edge(ost_switch1_lr, ost_1_exit, 100, 80/3.6, false, 100);
+    int e26lr_b = instance.n().add_edge(ost_switch1_lr, ost_switch2_lr, 60, 80/3.6, false, 100);
+    int e27lr_b = instance.n().add_edge(ost_switch2_lr, ost_2_exit, 40, 80/3.6, false, 100);
+    int e25rl = instance.n().add_edge(ost_switch1_rl, rosenheimer_2r, 792, 80/3.6, true, 100);
+    int e26rl_a = instance.n().add_edge(ost_4_entry, ost_switch1_rl, 100, 80/3.6, false, 100);
+    int e26rl_b = instance.n().add_edge(ost_switch2_rl, ost_switch1_rl, 60, 80/3.6, false, 100);
+    int e27rl_b = instance.n().add_edge(ost_3_entry, ost_switch2_rl, 40, 80/3.6, false, 100);
+
+    instance.n().add_successor(e24lr, e25lr);
+    instance.n().add_successor(e25rl, e24rl);
+
+    instance.n().add_successor(e25lr, e26lr_a);
+    instance.n().add_successor(e25lr, e26lr_b);
+    instance.n().add_successor(e26lr_b, e27lr_b);
+    instance.n().add_successor(e27rl_b, e26rl_b);
+    instance.n().add_successor(e26rl_b, e25rl);
+    instance.n().add_successor(e26rl_a, e25rl);
+
+
+
+
+    // Add S2 Petershausen
+    instance.add_train("S2Petershausen", 135, 140/3.6, 1, 0.9, 0, 0, ost_3_entry, 17.25*60, 20, laim_exit_nymphenburg);
+    instance.add_stop("S2Petershausen", "Rosenheimer Platz", 1.5*60, 2*60);
+    instance.add_stop("S2Petershausen", "Isartor", 3.5*60, 4*60);
+    instance.add_stop("S2Petershausen", "Marienplatz", 5.25*60, 5.75*60);
+    instance.add_stop("S2Petershausen", "Karlsplatz", 7*60, 7.5*60);
+    instance.add_stop("S2Petershausen", "Hbf", 8.5*60, 9*60);
+    instance.add_stop("S2Petershausen", "Hackerbruecke", 10.25*60, 10.75*60);
+    instance.add_stop("S2Petershausen", "Donnersbergerbruecke", 12*60, 12.5*60);
+    instance.add_stop("S2Petershausen", "Hirschgarten", 14*60, 14.5*60);
+    instance.add_stop("S2Petershausen", "Laim", 16*60, 16.5*60);
+    instance.add_empty_route("S2Petershausen");
+    instance.push_back_edge_to_route("S2Petershausen", e27rl_b);
+    instance.push_back_edge_to_route("S2Petershausen", e26rl_b);
+    instance.push_back_edge_to_route("S2Petershausen", e25rl);
+    instance.push_back_edge_to_route("S2Petershausen", e24rl);
+    instance.push_back_edge_to_route("S2Petershausen", e23rl);
+    instance.push_back_edge_to_route("S2Petershausen", e22rl);
+    instance.push_back_edge_to_route("S2Petershausen", e21rl);
+    instance.push_back_edge_to_route("S2Petershausen", e20rl);
+    instance.push_back_edge_to_route("S2Petershausen", e19rl);
+    instance.push_back_edge_to_route("S2Petershausen", e18rl);
+    instance.push_back_edge_to_route("S2Petershausen", e17rl);
+    instance.push_back_edge_to_route("S2Petershausen", e16rl);
+    instance.push_back_edge_to_route("S2Petershausen", e15rl);
+    instance.push_back_edge_to_route("S2Petershausen", e14rl);
+    instance.push_back_edge_to_route("S2Petershausen", e13rl);
+    instance.push_back_edge_to_route("S2Petershausen", e12rl);
+    instance.push_back_edge_to_route("S2Petershausen", e11rl);
+    instance.push_back_edge_to_route("S2Petershausen", e10rl);
+    instance.push_back_edge_to_route("S2Petershausen", e9rl);
+    instance.push_back_edge_to_route("S2Petershausen", e8rl);
+    instance.push_back_edge_to_route("S2Petershausen", e7rl);
+    instance.push_back_edge_to_route("S2Petershausen", e6rl);
+    instance.push_back_edge_to_route("S2Petershausen", e5rl);
+    instance.push_back_edge_to_route("S2Petershausen", e4rl);
+    instance.push_back_edge_to_route("S2Petershausen", e3rl);
+    instance.push_back_edge_to_route("S2Petershausen", e2rl_exit);
+
+    // Add S6Tutzing
+    instance.add_train("S6Tutzing", 202, 140/3.6, 1, 0.9, 1.25*60, 0, ost_4_entry, 20.25*60, 0, pasing_exit);
+    instance.add_stop("S6Tutzing", "Rosenheimer Platz", 2.75*60, 3.25*60);
+    instance.add_stop("S6Tutzing", "Isartor", 4.75*60, 5.25*60);
+    instance.add_stop("S6Tutzing", "Marienplatz", 6.5*60, 7*60);
+    instance.add_stop("S6Tutzing", "Karlsplatz", 8.25*60, 8.75*60);
+    instance.add_stop("S6Tutzing", "Hbf", 9.75*60, 10.25*60);
+    instance.add_stop("S6Tutzing", "Hackerbruecke", 11.5*60, 12*60);
+    instance.add_stop("S6Tutzing", "Donnersbergerbruecke", 13.25*60, 13.75*60);
+    instance.add_stop("S6Tutzing", "Hirschgarten", 15.25*60, 15.75*60);
+    instance.add_stop("S6Tutzing", "Laim", 17.25*60, 17.75*60);
+    instance.add_empty_route("S6Tutzing");
+    instance.push_back_edge_to_route("S6Tutzing", e26rl_a);
+    instance.push_back_edge_to_route("S6Tutzing", e25rl);
+    instance.push_back_edge_to_route("S6Tutzing", e24rl);
+    instance.push_back_edge_to_route("S6Tutzing", e23rl);
+    instance.push_back_edge_to_route("S6Tutzing", e22rl);
+    instance.push_back_edge_to_route("S6Tutzing", e21rl);
+    instance.push_back_edge_to_route("S6Tutzing", e20rl);
+    instance.push_back_edge_to_route("S6Tutzing", e19rl);
+    instance.push_back_edge_to_route("S6Tutzing", e18rl);
+    instance.push_back_edge_to_route("S6Tutzing", e17rl);
+    instance.push_back_edge_to_route("S6Tutzing", e16rl);
+    instance.push_back_edge_to_route("S6Tutzing", e15rl);
+    instance.push_back_edge_to_route("S6Tutzing", e14rl);
+    instance.push_back_edge_to_route("S6Tutzing", e13rl);
+    instance.push_back_edge_to_route("S6Tutzing", e12rl);
+    instance.push_back_edge_to_route("S6Tutzing", e11rl);
+    instance.push_back_edge_to_route("S6Tutzing", e10rl);
+    instance.push_back_edge_to_route("S6Tutzing", e9rl);
+    instance.push_back_edge_to_route("S6Tutzing", e8rl);
+    instance.push_back_edge_to_route("S6Tutzing", e7rl);
+    instance.push_back_edge_to_route("S6Tutzing", e6rl);
+    instance.push_back_edge_to_route("S6Tutzing", e5rl);
+    instance.push_back_edge_to_route("S6Tutzing", e4rl);
+    instance.push_back_edge_to_route("S6Tutzing", e3rl);
+    instance.push_back_edge_to_route("S6Tutzing", e2rl);
+    instance.push_back_edge_to_route("S6Tutzing", e1rl);
+
+    // Add S8 Germering
+    instance.add_train("S8Germering", 135, 140/3.6, 1, 0.9, 2.5*60, 0, ost_4_entry, 21.75*60, 0, pasing_exit);
+    instance.add_stop("S8Germering", "Rosenheimer Platz", 4*60, 4.5*60);
+    instance.add_stop("S8Germering", "Isartor", 6*60, 6.5*60);
+    instance.add_stop("S8Germering", "Marienplatz", 7.75*60, 8.25*60);
+    instance.add_stop("S8Germering", "Karlsplatz", 9.5*60, 10*60);
+    instance.add_stop("S8Germering", "Hbf", 11.5*60, 12*60);
+    instance.add_stop("S8Germering", "Hackerbruecke", 13*60, 13.5*60);
+    instance.add_stop("S8Germering", "Donnersbergerbruecke", 14.75*60, 15.25*60);
+    instance.add_stop("S8Germering", "Hirschgarten", 16.75*60, 17.25*60);
+    instance.add_stop("S8Germering", "Laim", 18.75*60, 19.25*60);
+    instance.add_empty_route("S8Germering");
+    instance.push_back_edge_to_route("S8Germering", e26rl_a);
+    instance.push_back_edge_to_route("S8Germering", e25rl);
+    instance.push_back_edge_to_route("S8Germering", e24rl);
+    instance.push_back_edge_to_route("S8Germering", e23rl);
+    instance.push_back_edge_to_route("S8Germering", e22rl);
+    instance.push_back_edge_to_route("S8Germering", e21rl);
+    instance.push_back_edge_to_route("S8Germering", e20rl);
+    instance.push_back_edge_to_route("S8Germering", e19rl);
+    instance.push_back_edge_to_route("S8Germering", e18rl);
+    instance.push_back_edge_to_route("S8Germering", e17rl);
+    instance.push_back_edge_to_route("S8Germering", e16rl);
+    instance.push_back_edge_to_route("S8Germering", e15rl);
+    instance.push_back_edge_to_route("S8Germering", e14rl);
+    instance.push_back_edge_to_route("S8Germering", e13rl);
+    instance.push_back_edge_to_route("S8Germering", e12rl);
+    instance.push_back_edge_to_route("S8Germering", e11rl);
+    instance.push_back_edge_to_route("S8Germering", e10rl);
+    instance.push_back_edge_to_route("S8Germering", e9rl);
+    instance.push_back_edge_to_route("S8Germering", e8rl);
+    instance.push_back_edge_to_route("S8Germering", e7rl);
+    instance.push_back_edge_to_route("S8Germering", e6rl);
+    instance.push_back_edge_to_route("S8Germering", e5rl);
+    instance.push_back_edge_to_route("S8Germering", e4rl);
+    instance.push_back_edge_to_route("S8Germering", e3rl);
+    instance.push_back_edge_to_route("S8Germering", e2rl);
+    instance.push_back_edge_to_route("S8Germering", e1rl);
+
+    // S3 Mammendorf
+    instance.add_train("S3Mammendorf", 135, 140/3.6, 1, 0.9, 3.75*60, 0, ost_3_entry, 23*60, 0, pasing_exit);
+    instance.add_stop("S3Mammendorf", "Rosenheimer Platz", 5.25*60, 5.75*60);
+    instance.add_stop("S3Mammendorf", "Isartor", 7.25*60, 7.75*60);
+    instance.add_stop("S3Mammendorf", "Marienplatz", 9*60, 9.5*60);
+    instance.add_stop("S3Mammendorf", "Karlsplatz", 10.75*60, 11.25*60);
+    instance.add_stop("S3Mammendorf", "Hbf", 12.75*60, 13.25*60);
+    instance.add_stop("S3Mammendorf", "Hackerbruecke", 14.25*60, 14.75*60);
+    instance.add_stop("S3Mammendorf", "Donnersbergerbruecke", 16*60, 16.5*60);
+    instance.add_stop("S3Mammendorf", "Hirschgarten", 18*60, 18.5*60);
+    instance.add_stop("S3Mammendorf", "Laim", 20*60, 20.5*60);
+    instance.add_empty_route("S3Mammendorf");
+    instance.push_back_edge_to_route("S3Mammendorf", e27rl_b);
+    instance.push_back_edge_to_route("S3Mammendorf", e26rl_b);
+    instance.push_back_edge_to_route("S3Mammendorf", e25rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e24rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e23rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e22rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e21rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e20rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e19rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e18rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e17rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e16rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e15rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e14rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e13rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e12rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e11rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e10rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e9rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e8rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e7rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e6rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e5rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e4rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e3rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e2rl);
+    instance.push_back_edge_to_route("S3Mammendorf", e1rl);
+
+    // S2 Dachau
+    instance.add_train("S2Dachau", 202, 140/3.6, 1, 0.9, 5.25*60, 0, ost_3_entry, 23*60, 20, laim_exit_nymphenburg);
+    instance.add_stop("S2Dachau", "Rosenheimer Platz", 6.75*60, 7.25*60);
+    instance.add_stop("S2Dachau", "Isartor", 8.75*60, 9.25*60);
+    instance.add_stop("S2Dachau", "Marienplatz", 10.5*60, 11*60);
+    instance.add_stop("S2Dachau", "Karlsplatz", 12.25*60, 12.75*60);
+    instance.add_stop("S2Dachau", "Hbf", 14.25*60, 14.75*60);
+    instance.add_stop("S2Dachau", "Hackerbruecke", 16*60, 16.5*60);
+    instance.add_stop("S2Dachau", "Donnersbergerbruecke", 17.75*60, 18.25*60);
+    instance.add_stop("S2Dachau", "Hirschgarten", 19.75*60, 20.25*60);
+    instance.add_stop("S2Dachau", "Laim", 21.75*60, 22.25*60);
+    instance.add_empty_route("S2Dachau");
+    instance.push_back_edge_to_route("S2Dachau", e27rl_b);
+    instance.push_back_edge_to_route("S2Dachau", e26rl_b);
+    instance.push_back_edge_to_route("S2Dachau", e25rl);
+    instance.push_back_edge_to_route("S2Dachau", e24rl);
+    instance.push_back_edge_to_route("S2Dachau", e23rl);
+    instance.push_back_edge_to_route("S2Dachau", e22rl);
+    instance.push_back_edge_to_route("S2Dachau", e21rl);
+    instance.push_back_edge_to_route("S2Dachau", e20rl);
+    instance.push_back_edge_to_route("S2Dachau", e19rl);
+    instance.push_back_edge_to_route("S2Dachau", e18rl);
+    instance.push_back_edge_to_route("S2Dachau", e17rl);
+    instance.push_back_edge_to_route("S2Dachau", e16rl);
+    instance.push_back_edge_to_route("S2Dachau", e15rl);
+    instance.push_back_edge_to_route("S2Dachau", e14rl);
+    instance.push_back_edge_to_route("S2Dachau", e13rl);
+    instance.push_back_edge_to_route("S2Dachau", e12rl);
+    instance.push_back_edge_to_route("S2Dachau", e11rl);
+    instance.push_back_edge_to_route("S2Dachau", e10rl);
+    instance.push_back_edge_to_route("S2Dachau", e9rl);
+    instance.push_back_edge_to_route("S2Dachau", e8rl);
+    instance.push_back_edge_to_route("S2Dachau", e7rl);
+    instance.push_back_edge_to_route("S2Dachau", e6rl);
+    instance.push_back_edge_to_route("S2Dachau", e5rl);
+    instance.push_back_edge_to_route("S2Dachau", e4rl);
+    instance.push_back_edge_to_route("S2Dachau", e3rl);
+    instance.push_back_edge_to_route("S2Dachau", e2rl_exit);
+
+    // s4 Geltendorf
+    instance.add_train("S4Geltendorf", 135, 140/3.6, 1, 0.9, 6.75*60, 0, ost_4_entry, 26.25*60, 0, pasing_exit);
+    instance.add_stop("S4Geltendorf", "Rosenheimer Platz", 8.25*60, 8.75*60);
+    instance.add_stop("S4Geltendorf", "Isartor", 10.25*60, 10.75*60);
+    instance.add_stop("S4Geltendorf", "Marienplatz", 12*60, 12.5*60);
+    instance.add_stop("S4Geltendorf", "Karlsplatz", 13.75*60, 14.25*60);
+    instance.add_stop("S4Geltendorf", "Hbf", 15.75*60, 16.25*60);
+    instance.add_stop("S4Geltendorf", "Hackerbruecke", 17.5*60, 18*60);
+    instance.add_stop("S4Geltendorf", "Donnersbergerbruecke", 19.25*60, 19.75*60);
+    instance.add_stop("S4Geltendorf", "Hirschgarten", 21.25*60, 21.75*60);
+    instance.add_stop("S4Geltendorf", "Laim", 23.25*60, 23.75*60);
+    instance.add_empty_route("S4Geltendorf");
+    instance.push_back_edge_to_route("S4Geltendorf", e26rl_a);
+    instance.push_back_edge_to_route("S4Geltendorf", e25rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e24rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e23rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e22rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e21rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e20rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e19rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e18rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e17rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e16rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e15rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e14rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e13rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e12rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e11rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e10rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e9rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e8rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e7rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e6rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e5rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e4rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e3rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e2rl);
+    instance.push_back_edge_to_route("S4Geltendorf", e1rl);
+
+    // S1 Freising
+    instance.add_train("S1Freising", 202, 140/3.6, 1, 0.9, 8.5*60, 0, ost_3_entry, 26.5*60, 20, laim_exit_nymphenburg);
+    instance.add_stop("S1Freising", "Rosenheimer Platz", 10*60, 10.5*60);
+    instance.add_stop("S1Freising", "Isartor", 12*60, 12.5*60);
+    instance.add_stop("S1Freising", "Marienplatz", 13.5*60, 14*60);
+    instance.add_stop("S1Freising", "Karlsplatz", 15.5*60, 16*60);
+    instance.add_stop("S1Freising", "Hbf", 17.5*60, 18*60);
+    instance.add_stop("S1Freising", "Hackerbruecke", 19.25*60, 19.75*60);
+    instance.add_stop("S1Freising", "Donnersbergerbruecke", 21*60, 21.5*60);
+    instance.add_stop("S1Freising", "Hirschgarten", 23*60, 23.5*60);
+    instance.add_stop("S1Freising", "Laim", 25*60, 25.5*60);
+    instance.add_empty_route("S1Freising");
+    instance.push_back_edge_to_route("S1Freising", e27rl_b);
+    instance.push_back_edge_to_route("S1Freising", e26rl_b);
+    instance.push_back_edge_to_route("S1Freising", e25rl);
+    instance.push_back_edge_to_route("S1Freising", e24rl);
+    instance.push_back_edge_to_route("S1Freising", e23rl);
+    instance.push_back_edge_to_route("S1Freising", e22rl);
+    instance.push_back_edge_to_route("S1Freising", e21rl);
+    instance.push_back_edge_to_route("S1Freising", e20rl);
+    instance.push_back_edge_to_route("S1Freising", e19rl);
+    instance.push_back_edge_to_route("S1Freising", e18rl);
+    instance.push_back_edge_to_route("S1Freising", e17rl);
+    instance.push_back_edge_to_route("S1Freising", e16rl);
+    instance.push_back_edge_to_route("S1Freising", e15rl);
+    instance.push_back_edge_to_route("S1Freising", e14rl);
+    instance.push_back_edge_to_route("S1Freising", e13rl);
+    instance.push_back_edge_to_route("S1Freising", e12rl);
+    instance.push_back_edge_to_route("S1Freising", e11rl);
+    instance.push_back_edge_to_route("S1Freising", e10rl);
+    instance.push_back_edge_to_route("S1Freising", e9rl);
+    instance.push_back_edge_to_route("S1Freising", e8rl);
+    instance.push_back_edge_to_route("S1Freising", e7rl);
+    instance.push_back_edge_to_route("S1Freising", e6rl);
+    instance.push_back_edge_to_route("S1Freising", e5rl);
+    instance.push_back_edge_to_route("S1Freising", e4rl);
+    instance.push_back_edge_to_route("S1Freising", e3rl);
+    instance.push_back_edge_to_route("S1Freising", e2rl_exit);
+
+    EXPECT_TRUE(instance.check_consistency(true));
+
+    auto pairs = instance.n().all_edge_pairs_shortest_paths();
+
+    auto pasing_ost1 = pairs(e1lr, e26lr_a);
+    auto pasing_ost2 = pairs(e1lr, e27lr_b);
+    auto laim_ost1 = pairs(e4lr_entry, e26lr_a);
+    auto laim_ost2 = pairs(e4lr_entry, e27lr_b);
+    auto ost1_pasing = pairs(e26rl_a, e1rl);
+    auto ost2_pasing = pairs(e27rl_b, e1rl);
+    auto ost1_laim = pairs(e26rl_a, e2rl_exit);
+    auto ost2_laim = pairs(e27rl_b, e2rl_exit);
+
+    EXPECT_LE(pasing_ost1, 15000);
+    EXPECT_LE(pasing_ost2, 15000);
+    EXPECT_LE(laim_ost1, 15000);
+    EXPECT_LE(laim_ost2, 15000);
+    EXPECT_LE(ost1_pasing, 15000);
+    EXPECT_LE(ost2_pasing, 15000);
+    EXPECT_LE(ost1_laim, 15000);
+    EXPECT_LE(ost2_laim, 15000);
+
+    instance.export_instance("tmp/Stammstrecke_4Trains");
+}
