@@ -725,8 +725,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_speed_co
             const auto& max_speed = instance.n().get_edge(e).max_speed;
             if (max_speed < tr_speed) {
                 for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
-                    // v(tr,t) <= max_speed + (tr_speed - max_speed) * (1 - x(tr,t,e))
-                    model->addConstr(vars["v"](tr, t), GRB_LESS_EQUAL, max_speed + (tr_speed - max_speed) * (1 - vars["x"](tr, t, e)), "v_max_speed_" + std::to_string(tr) + "_" + std::to_string(t) + "_" + std::to_string(e));
+                    // v(tr,t+1) <= max_speed + (tr_speed - max_speed) * (1 - x(tr,t,e))
+                    model->addConstr(vars["v"](tr, t+1), GRB_LESS_EQUAL, max_speed + (tr_speed - max_speed) * (1 - vars["x"](tr, t, e)), "v_max_speed_" + std::to_string(tr) + "_" + std::to_string((t+1)*dt) + "_" + std::to_string(e));
+                    // If breaklens are included the speed is reduced before entering an edge, otherwise also include v(tr,t) <= max_speed + (tr_speed - max_speed) * (1 - x(tr,t,e))
+                    if (!this->include_breaking_distances) {
+                        model->addConstr(vars["v"](tr, t), GRB_LESS_EQUAL, max_speed + (tr_speed - max_speed) * (1 - vars["x"](tr, t, e)), "v_max_speed2_" + std::to_string(tr) + "_" + std::to_string(t*dt) + "_" + std::to_string(e));
+                    }
                 }
             }
         }
