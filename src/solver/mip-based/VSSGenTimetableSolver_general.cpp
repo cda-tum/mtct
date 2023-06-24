@@ -208,12 +208,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(model_solved - model_created).count();
         std::cout << "Model created in " << create_time << " ms" << std::endl;
         std::cout << "Model solved in " << solve_time << " ms" << std::endl;
-        std::cout << "Objective: " << model->get(GRB_DoubleAttr_ObjVal) << std::endl;
 
         std::cout << "Saving model and solution" << std::endl;
 
         model->write(file_name + ".mps");
         model->write(file_name + ".sol");
+
+        std::cout << "Objective: " << model->get(GRB_DoubleAttr_ObjVal) << std::endl;
     }
 
     std::cout << "Done!" << std::endl;
