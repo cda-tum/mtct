@@ -93,6 +93,18 @@
 <node id="Hackerbruecke2R">
 <data key="d4">2</data>
 </node>
+<node id="HackerbrueckeSwitchEntry">
+<data key="d4">2</data>
+</node>
+<node id="HackerbrueckeSwitchExit">
+<data key="d4">2</data>
+</node>
+<node id="DonnersbergerEntry">
+<data key="d4">2</data>
+</node>
+<node id="DonnersbergerExit">
+<data key="d4">2</data>
+</node>
 <node id="Hbf1L">
 <data key="d4">2</data>
 </node>
@@ -165,10 +177,10 @@
 <node id="Rosenheimer2R">
 <data key="d4">2</data>
 </node>
-<node id="OstSwitch1_LR">
+<node id="OstSwitch4_LR">
 <data key="d4">2</data>
 </node>
-<node id="OstSwitch2_LR">
+<node id="OstSwitch5_LR">
 <data key="d4">2</data>
 </node>
 <node id="OstSwitch1_RL">
@@ -177,16 +189,22 @@
 <node id="OstSwitch2_RL">
 <data key="d4">2</data>
 </node>
-<node id="Ost1Exit">
+<node id="OstSwitch3_RL">
 <data key="d4">2</data>
 </node>
-<node id="Ost2Exit">
+<node id="Ost1Entry">
+<data key="d4">2</data>
+</node>
+<node id="Ost2Entry">
 <data key="d4">2</data>
 </node>
 <node id="Ost3Entry">
 <data key="d4">2</data>
 </node>
-<node id="Ost4Entry">
+<node id="Ost4Exit">
+<data key="d4">2</data>
+</node>
+<node id="Ost5Exit">
 <data key="d4">2</data>
 </node>
 <edge source="PasingEntry" target="PasingSwitch1">
@@ -309,9 +327,21 @@
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 </edge>
-<edge source="Donnersbergerbruecke1R" target="HackerbrueckeSwitch1">
+<edge source="Donnersbergerbruecke1R" target="HackerbrueckeSwitchEntry">
 <data key="d0">true</data>
-<data key="d1">504</data>
+<data key="d1">210</data>
+<data key="d2">27.7778</data>
+<data key="d3">100</data>
+</edge>
+<edge source="HackerbrueckeSwitchEntry" target="HackerbrueckeSwitch1">
+<data key="d0">true</data>
+<data key="d1">294</data>
+<data key="d2">27.7778</data>
+<data key="d3">100</data>
+</edge>
+<edge source="DonnersbergerEntry" target="HackerbrueckeSwitchEntry">
+<data key="d0">true</data>
+<data key="d1">210</data>
 <data key="d2">27.7778</data>
 <data key="d3">100</data>
 </edge>
@@ -333,9 +363,21 @@
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 </edge>
-<edge source="HackerbrueckeSwitch4" target="Donnersbergerbruecke2R">
+<edge source="HackerbrueckeSwitchExit" target="Donnersbergerbruecke2R">
 <data key="d0">true</data>
-<data key="d1">504</data>
+<data key="d1">210</data>
+<data key="d2">27.7778</data>
+<data key="d3">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch4" target="HackerbrueckeSwitchExit">
+<data key="d0">true</data>
+<data key="d1">294</data>
+<data key="d2">27.7778</data>
+<data key="d3">100</data>
+</edge>
+<edge source="HackerbrueckeSwitchExit" target="DonnersbergerExit">
+<data key="d0">true</data>
+<data key="d1">210</data>
 <data key="d2">27.7778</data>
 <data key="d3">100</data>
 </edge>
@@ -591,49 +633,61 @@
 <data key="d2">22.2222</data>
 <data key="d3">100</data>
 </edge>
-<edge source="Rosenheimer1R" target="OstSwitch1_LR">
+<edge source="Rosenheimer1R" target="OstSwitch5_LR">
 <data key="d0">true</data>
 <data key="d1">792</data>
 <data key="d2">22.2222</data>
 <data key="d3">100</data>
 </edge>
-<edge source="OstSwitch1_LR" target="Ost1Exit">
-<data key="d0">false</data>
-<data key="d1">100</data>
-<data key="d2">22.2222</data>
-<data key="d3">100</data>
-</edge>
-<edge source="OstSwitch1_LR" target="OstSwitch2_LR">
+<edge source="OstSwitch5_LR" target="OstSwitch4_LR">
 <data key="d0">false</data>
 <data key="d1">60</data>
 <data key="d2">22.2222</data>
 <data key="d3">100</data>
 </edge>
-<edge source="OstSwitch2_LR" target="Ost2Exit">
+<edge source="OstSwitch4_LR" target="Ost4Exit">
 <data key="d0">false</data>
 <data key="d1">40</data>
 <data key="d2">22.2222</data>
 <data key="d3">100</data>
 </edge>
-<edge source="OstSwitch1_RL" target="Rosenheimer2R">
-<data key="d0">true</data>
-<data key="d1">792</data>
-<data key="d2">22.2222</data>
-<data key="d3">100</data>
-</edge>
-<edge source="Ost4Entry" target="OstSwitch1_RL">
+<edge source="OstSwitch5_LR" target="Ost5Exit">
 <data key="d0">false</data>
 <data key="d1">100</data>
 <data key="d2">22.2222</data>
 <data key="d3">100</data>
 </edge>
+<edge source="OstSwitch1_RL" target="Rosenheimer2R">
+<data key="d0">true</data>
+<data key="d1">752</data>
+<data key="d2">22.2222</data>
+<data key="d3">100</data>
+</edge>
+<edge source="Ost1Entry" target="OstSwitch1_RL">
+<data key="d0">false</data>
+<data key="d1">140</data>
+<data key="d2">22.2222</data>
+<data key="d3">100</data>
+</edge>
 <edge source="OstSwitch2_RL" target="OstSwitch1_RL">
+<data key="d0">false</data>
+<data key="d1">40</data>
+<data key="d2">22.2222</data>
+<data key="d3">100</data>
+</edge>
+<edge source="Ost2Entry" target="OstSwitch2_RL">
+<data key="d0">false</data>
+<data key="d1">100</data>
+<data key="d2">22.2222</data>
+<data key="d3">100</data>
+</edge>
+<edge source="OstSwitch3_RL" target="OstSwitch2_RL">
 <data key="d0">false</data>
 <data key="d1">60</data>
 <data key="d2">22.2222</data>
 <data key="d3">100</data>
 </edge>
-<edge source="Ost3Entry" target="OstSwitch2_RL">
+<edge source="Ost3Entry" target="OstSwitch3_RL">
 <data key="d0">false</data>
 <data key="d1">40</data>
 <data key="d2">22.2222</data>
