@@ -54,6 +54,9 @@
 <node id="v8b">
 <data key="d4">2</data>
 </node>
+<node id="switch_center">
+<data key="d4">2</data>
+</node>
 <edge source="v1" target="v2">
 <data key="d0">true</data>
 <data key="d1">4475</data>
@@ -150,9 +153,15 @@
 <data key="d2">25</data>
 <data key="d3">1</data>
 </edge>
-<edge source="v6b" target="v6">
+<edge source="v6b" target="switch_center">
 <data key="d0">false</data>
-<data key="d1">25</data>
+<data key="d1">13</data>
+<data key="d2">25</data>
+<data key="d3">1</data>
+</edge>
+<edge source="switch_center" target="v6">
+<data key="d0">false</data>
+<data key="d1">13</data>
 <data key="d2">25</data>
 <data key="d3">1</data>
 </edge>
