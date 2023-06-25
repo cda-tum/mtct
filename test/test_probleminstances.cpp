@@ -1696,6 +1696,7 @@ TEST(Example, Stammstrecke) {
     instance.push_back_edge_to_route("S2Ost", e26lr_5);
 
     EXPECT_TRUE(instance.check_consistency(true));
+    EXPECT_TRUE(instance.n().is_consistent_for_transformation());
 
     auto pairs = instance.n().all_edge_pairs_shortest_paths();
 
