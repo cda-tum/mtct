@@ -34,7 +34,7 @@ namespace cda_rail::solver::mip_based {
             void create_free_routes_variables();
             void create_discretized_variables();
             void create_non_discretized_variables();
-            void create_breaklen_variables();
+            void create_brakelen_variables();
 
             // Constraint functions
             void create_general_constraints();
@@ -43,7 +43,7 @@ namespace cda_rail::solver::mip_based {
             void create_discretized_constraints();
             void create_non_discretized_constraints();
             void create_acceleration_constraints();
-            void create_breaklen_constraints();
+            void create_brakelen_constraints();
 
 
             // Helper functions for constraints
@@ -81,7 +81,7 @@ namespace cda_rail::solver::mip_based {
             void calculate_fwd_bwd_sections();
             void calculate_fwd_bwd_sections_discretized();
             void calculate_fwd_bwd_sections_non_discretized();
-            double get_max_breaklen(const int& tr) const;
+            double get_max_brakelen(const int& tr) const;
 
             std::pair<std::vector<std::vector<int>>, std::vector<std::vector<int>>> common_entry_exit_vertices() const;
 

@@ -131,7 +131,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         if(debug) {
             std::cout << "Create breaking distance variables" << std::endl;
         }
-        create_breaklen_variables();
+        create_brakelen_variables();
     }
 
     // Set objective
@@ -177,7 +177,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         if(debug) {
             std::cout << "Create breaking distance constraints" << std::endl;
         }
-        create_breaklen_constraints();
+        create_brakelen_constraints();
     }
 
     // Model created
@@ -513,20 +513,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_acceleration_con
     }
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_breaklen_variables() {
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_brakelen_variables() {
     /**
      * This method creates the variables corresponding to breaking distances.
      */
 
     // Create MultiArrays
-    vars["breaklen"] = MultiArray<GRBVar>(num_tr, num_t);
+    vars["brakelen"] = MultiArray<GRBVar>(num_tr, num_t);
 
     // Iterate over all trains
     for (int tr = 0; tr < num_tr; ++tr) {
-        const auto max_break_len = get_max_breaklen(tr);
+        const auto max_break_len = get_max_brakelen(tr);
         const auto& tr_name = instance.get_train_list().get_train(tr).name;
         for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
-            vars["breaklen"](tr, t) = model->addVar(0, max_break_len, 0, GRB_CONTINUOUS, "breaklen_" + tr_name + "_" + std::to_string(t*dt));
+            vars["brakelen"](tr, t) = model->addVar(0, max_break_len, 0, GRB_CONTINUOUS, "brakelen_" + tr_name + "_" + std::to_string(t*dt));
         }
     }
 }
@@ -688,7 +688,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
     }
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_breaklen_constraints() {
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_brakelen_constraints() {
     // break_len(tr, t) = v(tr, t+1)^2 / (2*tr_deceleration)
     for (int tr = 0; tr < num_tr; ++tr) {
         const auto& tr_deceleration = instance.get_train_list().get_train(tr).deceleration;
@@ -702,14 +702,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_breaklen_constra
                 ypts[i] = xpts[i] * xpts[i] / (2 * tr_deceleration);
             }
             for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
-                model->addGenConstrPWL(vars["v"](tr, t + 1), vars["breaklen"](tr, t), N + 1, xpts.get(), ypts.get(),
-                                       "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
+                model->addGenConstrPWL(vars["v"](tr, t + 1), vars["brakelen"](tr, t), N + 1, xpts.get(), ypts.get(),
+                                       "brakelen_" + std::to_string(tr) + "_" + std::to_string(t));
             }
         } else {
             for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
-                model->addQConstr(vars["breaklen"](tr, t), GRB_EQUAL,
+                model->addQConstr(vars["brakelen"](tr, t), GRB_EQUAL,
                                   (1 / (2 * tr_deceleration)) * vars["v"](tr, t + 1) * vars["v"](tr, t + 1),
-                                  "breaklen_" + std::to_string(tr) + "_" + std::to_string(t));
+                                  "brakelen_" + std::to_string(tr) + "_" + std::to_string(t));
             }
         }
     }
@@ -728,7 +728,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_speed_co
                 for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
                     // v(tr,t+1) <= max_speed + (tr_speed - max_speed) * (1 - x(tr,t,e))
                     model->addConstr(vars["v"](tr, t+1), GRB_LESS_EQUAL, max_speed + (tr_speed - max_speed) * (1 - vars["x"](tr, t, e)), "v_max_speed_" + std::to_string(tr) + "_" + std::to_string((t+1)*dt) + "_" + std::to_string(e));
-                    // If breaklens are included the speed is reduced before entering an edge, otherwise also include v(tr,t) <= max_speed + (tr_speed - max_speed) * (1 - x(tr,t,e))
+                    // If brakelens are included the speed is reduced before entering an edge, otherwise also include v(tr,t) <= max_speed + (tr_speed - max_speed) * (1 - x(tr,t,e))
                     if (!this->include_breaking_distances) {
                         model->addConstr(vars["v"](tr, t), GRB_LESS_EQUAL, max_speed + (tr_speed - max_speed) * (1 - vars["x"](tr, t, e)), "v_max_speed2_" + std::to_string(tr) + "_" + std::to_string(t*dt) + "_" + std::to_string(e));
                     }
@@ -833,7 +833,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::calculate_fwd_bwd_secti
     }
 }
 
-double cda_rail::solver::mip_based::VSSGenTimetableSolver::get_max_breaklen(const int &tr) const {
+double cda_rail::solver::mip_based::VSSGenTimetableSolver::get_max_brakelen(const int &tr) const {
     const auto& tr_deceleration = instance.get_train_list().get_train(tr).deceleration;
     const auto& tr_max_speed = instance.get_train_list().get_train(tr).max_speed;
     return tr_max_speed * tr_max_speed / (2 * tr_deceleration);

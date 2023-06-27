@@ -22,7 +22,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_var
         const auto tr_len = train_list.get_train(tr_name).length;
         double mu_ub = r_len + tr_len;
         if (this->include_breaking_distances) {
-            mu_ub += get_max_breaklen(tr);
+            mu_ub += get_max_brakelen(tr);
         }
         for (int t_steps = train_interval[tr].first; t_steps <= train_interval[tr].second; ++t_steps) {
             auto t = t_steps * dt;
@@ -63,16 +63,16 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_pos
         auto tr_name = train_list.get_train(tr).name;
         auto tr_len = instance.get_train_list().get_train(tr_name).length;
         for (int t = train_interval[tr].first; t <= train_interval[tr].second - 1; ++t) {
-            // full pos: mu - lda = len + (v(t) + v(t+1))/2 * dt + breaklen (if applicable)
+            // full pos: mu - lda = len + (v(t) + v(t+1))/2 * dt + brakelen (if applicable)
             GRBLinExpr rhs = tr_len + (vars["v"](tr, t) + vars["v"](tr, t + 1)) * dt / 2;
             if (this->include_breaking_distances) {
-                rhs += vars["breaklen"](tr, t);
+                rhs += vars["brakelen"](tr, t);
             }
             model->addConstr(vars["mu"](tr, t) - vars["lda"](tr, t) == rhs, "full_pos_" + tr_name + "_" + std::to_string(t));
-            // overlap: mu(t) - lda(t+1) = len + breaklen (if applicable)
+            // overlap: mu(t) - lda(t+1) = len + brakelen (if applicable)
             rhs = tr_len;
             if (this->include_breaking_distances) {
-                rhs += vars["breaklen"](tr, t);
+                rhs += vars["brakelen"](tr, t);
             }
             model->addConstr(vars["mu"](tr, t) - vars["lda"](tr, t + 1) == rhs, "overlap_" + tr_name + "_" + std::to_string(t));
             // mu increasing: mu(t+1) >= mu(t)
@@ -84,7 +84,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_pos
         auto t = train_interval[tr].second;
         GRBLinExpr rhs = tr_len + (vars["v"](tr, t) + vars["v"](tr, t + 1)) * dt / 2;
         if (this->include_breaking_distances) {
-            rhs += vars["breaklen"](tr, t);
+            rhs += vars["brakelen"](tr, t);
         }
         model->addConstr(vars["mu"](tr, t) - vars["lda"](tr, t) == rhs, "full_pos_" + tr_name + "_" + std::to_string(t));
     }
@@ -102,10 +102,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_boundary_fixed_r
         auto tr_len = instance.get_train_list().get_train(tr_name).length;
         // initial_lda: lda(train_interval[i].first) = - tr_len
         model->addConstr(vars["lda"](i, train_interval[i].first) == -tr_len, "initial_lda_" + tr_name);
-        // final_mu: mu(train_interval[i].second) = r_len + tr_len + breaklen (if applicable)
+        // final_mu: mu(train_interval[i].second) = r_len + tr_len + brakelen (if applicable)
         GRBLinExpr rhs = r_len + tr_len;
         if (this->include_breaking_distances) {
-            rhs += vars["breaklen"](i, train_interval[i].second);
+            rhs += vars["brakelen"](i, train_interval[i].second);
         }
         model->addConstr(vars["mu"](i, train_interval[i].second) == rhs, "final_mu_" + tr_name);
     }
@@ -127,7 +127,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_occ
 
         double mu_ub = r_len + tr_len;
         if (this->include_breaking_distances) {
-            mu_ub += get_max_breaklen(tr);
+            mu_ub += get_max_brakelen(tr);
         }
 
         // Iterate over all edges
@@ -236,7 +236,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_non_discretized_
         const auto& tr_len = instance.get_train_list().get_train(tr).length;
         double mu_ub = r_len + tr_len;
         if (this->include_breaking_distances) {
-            mu_ub += get_max_breaklen(tr);
+            mu_ub += get_max_brakelen(tr);
         }
         for (const auto e : instance.edges_used_by_train(tr, this->fix_routes)) {
             const auto& e_index = breakable_edge_indices[e];
