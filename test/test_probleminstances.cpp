@@ -222,14 +222,14 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     // Check if the train tr1 is imported correctly
     auto tr1 = trains.get_train("tr1");
     EXPECT_EQ(tr1.name, "tr1");
-    EXPECT_EQ(tr1.length, 100);
+    EXPECT_EQ(tr1.length, 50);
     EXPECT_EQ(tr1.max_speed, 83.33);
     EXPECT_EQ(tr1.acceleration, 2);
     EXPECT_EQ(tr1.deceleration, 1);
     // Check if the train tr2 is imported correctly
     auto tr2 = trains.get_train("tr2");
     EXPECT_EQ(tr2.name, "tr2");
-    EXPECT_EQ(tr2.length, 100);
+    EXPECT_EQ(tr2.length, 50);
     EXPECT_EQ(tr2.max_speed, 27.78);
     EXPECT_EQ(tr2.acceleration, 2);
     EXPECT_EQ(tr2.deceleration, 1);
@@ -478,7 +478,7 @@ TEST(Functionality, VSSGenerationTimetableExport) {
     // Check if the train tr1 is saved correctly
     auto tr1_read = trains_read.get_train("tr1");
     EXPECT_EQ(tr1_read.name, "tr1");
-    EXPECT_EQ(tr1_read.length, 50);
+    EXPECT_EQ(tr1_read.length, 25);
     EXPECT_EQ(tr1_read.max_speed, 10);
     EXPECT_EQ(tr1_read.acceleration, 2);
     EXPECT_EQ(tr1_read.deceleration, 2);
@@ -766,17 +766,17 @@ TEST(Example, Stammstrecke) {
     int laim_switch_nymphenburg = instance.n().add_vertex("LaimSwitchNymphenburg", cda_rail::VertexType::TTD);
     int laim_exit_nymphenburg = instance.n().add_vertex("LaimExitNymphenburg", cda_rail::VertexType::TTD);
 
-    int e1lr = instance.n().add_edge(pasing_entry, pasing_switch_1, 280, 120/3.6, true, 100);
-    int e1rl = instance.n().add_edge(pasing_switch_2, pasing_exit, 160, 120/3.6, true, 100);
-    int e2lr = instance.n().add_edge(pasing_switch_1, laim_1l, 2812, 120/3.6, true, 100);
-    int e2rl = instance.n().add_edge(laim_switch_nymphenburg, pasing_switch_2, 2562, 120/3.6, true, 100);
-    int e3rl = instance.n().add_edge(laim_3l, laim_switch_nymphenburg, 370, 120/3.6, true, 100);
-    int e2rl_exit = instance.n().add_edge(laim_switch_nymphenburg, laim_exit_nymphenburg, 30, 100/3.6, false, 100);
-    int e3lr = instance.n().add_edge(laim_1l, laim_1r, 210, 120/3.6, true, 50);
-    int e4rl = instance.n().add_edge(laim_3r, laim_3l, 210, 120/3.6, true, 50);
+    int e1lr = instance.n().add_edge(pasing_entry, pasing_switch_1, 280, 120/3.6, true, 50);
+    int e1rl = instance.n().add_edge(pasing_switch_2, pasing_exit, 160, 120/3.6, true, 50);
+    int e2lr = instance.n().add_edge(pasing_switch_1, laim_1l, 2812, 120/3.6, true, 50);
+    int e2rl = instance.n().add_edge(laim_switch_nymphenburg, pasing_switch_2, 2562, 120/3.6, true, 50);
+    int e3rl = instance.n().add_edge(laim_3l, laim_switch_nymphenburg, 370, 120/3.6, true, 50);
+    int e2rl_exit = instance.n().add_edge(laim_switch_nymphenburg, laim_exit_nymphenburg, 30, 100/3.6, false, 50);
+    int e3lr = instance.n().add_edge(laim_1l, laim_1r, 210, 120/3.6, true, 25);
+    int e4rl = instance.n().add_edge(laim_3r, laim_3l, 210, 120/3.6, true, 25);
 
-    int switch_e1 = instance.n().add_edge(pasing_switch_1, pasing_switch_2, 120, 80/3.6, false, 100);
-    int switch_e2 = instance.n().add_edge(pasing_switch_2, pasing_switch_1, 120, 80/3.6, false, 100);
+    int switch_e1 = instance.n().add_edge(pasing_switch_1, pasing_switch_2, 120, 80/3.6, false, 50);
+    int switch_e2 = instance.n().add_edge(pasing_switch_2, pasing_switch_1, 120, 80/3.6, false, 50);
     instance.n().add_successor(switch_e1, e1rl);
     instance.n().add_successor(switch_e2, e2lr);
 
@@ -798,12 +798,12 @@ TEST(Example, Stammstrecke) {
     int hirschgarten_1r = instance.n().add_vertex("Hirschgarten1R", cda_rail::VertexType::TTD);
     int hirschgarten_2r = instance.n().add_vertex("Hirschgarten2R", cda_rail::VertexType::TTD);
 
-    int e4lr = instance.n().add_edge(laim_1r, laim_switch_hirschgarten, 200, 100/3.6, true, 100);
-    int e4lr_entry = instance.n().add_edge(laim_entry, laim_switch_hirschgarten, 200, 100/3.6, true, 100);
-    int e5lr = instance.n().add_edge(laim_switch_hirschgarten, hirschgarten_1l, 692, 100/3.6, true, 100);
-    int e6lr = instance.n().add_edge(hirschgarten_1l, hirschgarten_1r, 205, 100/3.6, true, 50);
-    int e5rl = instance.n().add_edge(hirschgarten_2l, laim_3r, 892, 100/3.6, true, 100);
-    int e6rl = instance.n().add_edge(hirschgarten_2r, hirschgarten_2l, 205, 100/3.6, true, 50);
+    int e4lr = instance.n().add_edge(laim_1r, laim_switch_hirschgarten, 200, 100/3.6, true, 50);
+    int e4lr_entry = instance.n().add_edge(laim_entry, laim_switch_hirschgarten, 200, 100/3.6, true, 50);
+    int e5lr = instance.n().add_edge(laim_switch_hirschgarten, hirschgarten_1l, 692, 100/3.6, true, 50);
+    int e6lr = instance.n().add_edge(hirschgarten_1l, hirschgarten_1r, 205, 100/3.6, true, 25);
+    int e5rl = instance.n().add_edge(hirschgarten_2l, laim_3r, 892, 100/3.6, true, 50);
+    int e6rl = instance.n().add_edge(hirschgarten_2r, hirschgarten_2l, 205, 100/3.6, true, 25);
 
     instance.n().add_successor(e3lr, e4lr);
     instance.n().add_successor(e5rl, e4rl);
@@ -823,10 +823,10 @@ TEST(Example, Stammstrecke) {
     int donnersbergerbruecke_1r = instance.n().add_vertex("Donnersbergerbruecke1R", cda_rail::VertexType::TTD);
     int donnersbergerbruecke_2r = instance.n().add_vertex("Donnersbergerbruecke2R", cda_rail::VertexType::TTD);
 
-    int e7lr = instance.n().add_edge(hirschgarten_1r, donnersbergerbruecke_1l, 1095, 100/3.6, true, 100);
-    int e8lr = instance.n().add_edge(donnersbergerbruecke_1l, donnersbergerbruecke_1r, 205, 100/3.6, true, 50);
-    int e7rl = instance.n().add_edge(donnersbergerbruecke_2l, hirschgarten_2r, 1095, 100/3.6, true, 100);
-    int e8rl = instance.n().add_edge(donnersbergerbruecke_2r, donnersbergerbruecke_2l, 205, 100/3.6, true, 50);
+    int e7lr = instance.n().add_edge(hirschgarten_1r, donnersbergerbruecke_1l, 1095, 100/3.6, true, 50);
+    int e8lr = instance.n().add_edge(donnersbergerbruecke_1l, donnersbergerbruecke_1r, 205, 100/3.6, true, 25);
+    int e7rl = instance.n().add_edge(donnersbergerbruecke_2l, hirschgarten_2r, 1095, 100/3.6, true, 50);
+    int e8rl = instance.n().add_edge(donnersbergerbruecke_2r, donnersbergerbruecke_2l, 205, 100/3.6, true, 25);
 
     instance.n().add_successor(e6lr, e7lr);
     instance.n().add_successor(e7rl, e6rl);
@@ -853,30 +853,30 @@ TEST(Example, Stammstrecke) {
     int donnersberger_entry = instance.n().add_vertex("DonnersbergerEntry", cda_rail::VertexType::TTD);
     int donnersberger_exit = instance.n().add_vertex("DonnersbergerExit", cda_rail::VertexType::TTD);
 
-    int e9lr_a = instance.n().add_edge(donnersbergerbruecke_1r, hackerbruecke_switch_entry, 210, 100/3.6, true, 100);
-    int e9lr_b = instance.n().add_edge(hackerbruecke_switch_entry, hackerbruecke_switch_1, 294, 100/3.6, true, 100);
-    int e9lr_entry = instance.n().add_edge(donnersberger_entry, hackerbruecke_switch_entry, 210, 100/3.6, true, 100);
-    int e10lr = instance.n().add_edge(hackerbruecke_switch_1, hackerbruecke_switch_2, 150, 100/3.6, false, 100);
-    int e11lr = instance.n().add_edge(hackerbruecke_switch_2, hackerbruecke_1l, 40, 100/3.6, false, 100);
-    int e12lr = instance.n().add_edge(hackerbruecke_1l, hackerbruecke_1r, 207, 100/3.6, true, 50);
-    int e9rl_a = instance.n().add_edge(hackerbruecke_switch_exit, donnersbergerbruecke_2r, 210, 100/3.6, true, 100);
-    int e9rl_b = instance.n().add_edge(hackerbruecke_switch_4, hackerbruecke_switch_exit, 294, 100/3.6, true, 100);
-    int e9rl_exit = instance.n().add_edge(hackerbruecke_switch_exit, donnersberger_exit, 210, 100/3.6, true, 100);
-    int e10rl = instance.n().add_edge(hackerbruecke_switch_3, hackerbruecke_switch_4, 150, 100/3.6, false, 100);
-    int e11rl = instance.n().add_edge(hackerbruecke_2l, hackerbruecke_switch_3, 40, 100/3.6, false, 100);
-    int e12rl = instance.n().add_edge(hackerbruecke_2r, hackerbruecke_2l, 207, 100/3.6, true, 50);
+    int e9lr_a = instance.n().add_edge(donnersbergerbruecke_1r, hackerbruecke_switch_entry, 210, 100/3.6, true, 50);
+    int e9lr_b = instance.n().add_edge(hackerbruecke_switch_entry, hackerbruecke_switch_1, 294, 100/3.6, true, 50);
+    int e9lr_entry = instance.n().add_edge(donnersberger_entry, hackerbruecke_switch_entry, 210, 100/3.6, true, 50);
+    int e10lr = instance.n().add_edge(hackerbruecke_switch_1, hackerbruecke_switch_2, 150, 100/3.6, false, 50);
+    int e11lr = instance.n().add_edge(hackerbruecke_switch_2, hackerbruecke_1l, 40, 100/3.6, false, 50);
+    int e12lr = instance.n().add_edge(hackerbruecke_1l, hackerbruecke_1r, 207, 100/3.6, true, 25);
+    int e9rl_a = instance.n().add_edge(hackerbruecke_switch_exit, donnersbergerbruecke_2r, 210, 100/3.6, true, 50);
+    int e9rl_b = instance.n().add_edge(hackerbruecke_switch_4, hackerbruecke_switch_exit, 294, 100/3.6, true, 50);
+    int e9rl_exit = instance.n().add_edge(hackerbruecke_switch_exit, donnersberger_exit, 210, 100/3.6, true, 50);
+    int e10rl = instance.n().add_edge(hackerbruecke_switch_3, hackerbruecke_switch_4, 150, 100/3.6, false, 50);
+    int e11rl = instance.n().add_edge(hackerbruecke_2l, hackerbruecke_switch_3, 40, 100/3.6, false, 50);
+    int e12rl = instance.n().add_edge(hackerbruecke_2r, hackerbruecke_2l, 207, 100/3.6, true, 25);
 
     instance.n().add_successor(e9rl_b, e9rl_exit);
     instance.n().add_successor(e9lr_entry, e9lr_b);
 
-    int switch_e3 = instance.n().add_edge(hackerbruecke_switch_1, hackerbruecke_switch_c, 75, 80/3.6, false, 100);
-    int switch_e4 = instance.n().add_edge(hackerbruecke_switch_2, hackerbruecke_switch_c, 75, 80/3.6, false, 100);
-    int switch_e5 = instance.n().add_edge(hackerbruecke_switch_3, hackerbruecke_switch_c, 75, 80/3.6, false, 100);
-    int switch_e6 = instance.n().add_edge(hackerbruecke_switch_4, hackerbruecke_switch_c, 75, 80/3.6, false, 100);
-    int switch_e7 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_1, 75, 80/3.6, false, 100);
-    int switch_e8 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_2, 75, 80/3.6, false, 100);
-    int switch_e9 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_3, 75, 80/3.6, false, 100);
-    int switch_e10 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_4, 75, 80/3.6, false, 100);
+    int switch_e3 = instance.n().add_edge(hackerbruecke_switch_1, hackerbruecke_switch_c, 75, 80/3.6, false, 50);
+    int switch_e4 = instance.n().add_edge(hackerbruecke_switch_2, hackerbruecke_switch_c, 75, 80/3.6, false, 50);
+    int switch_e5 = instance.n().add_edge(hackerbruecke_switch_3, hackerbruecke_switch_c, 75, 80/3.6, false, 50);
+    int switch_e6 = instance.n().add_edge(hackerbruecke_switch_4, hackerbruecke_switch_c, 75, 80/3.6, false, 50);
+    int switch_e7 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_1, 75, 80/3.6, false, 50);
+    int switch_e8 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_2, 75, 80/3.6, false, 50);
+    int switch_e9 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_3, 75, 80/3.6, false, 50);
+    int switch_e10 = instance.n().add_edge(hackerbruecke_switch_c, hackerbruecke_switch_4, 75, 80/3.6, false, 50);
 
     instance.n().add_successor(switch_e3, switch_e9);
     instance.n().add_successor(switch_e4, switch_e10);
@@ -909,10 +909,10 @@ TEST(Example, Stammstrecke) {
     int hbf_1r = instance.n().add_vertex("Hbf1R", cda_rail::VertexType::TTD);
     int hbf_2r = instance.n().add_vertex("Hbf2R", cda_rail::VertexType::TTD);
 
-    int e13lr = instance.n().add_edge(hackerbruecke_1r, hbf_1l, 591, 80/3.6, true, 100);
-    int e14lr = instance.n().add_edge(hbf_1l, hbf_1r, 210, 80/3.6, true, 50);
-    int e13rl = instance.n().add_edge(hbf_2l, hackerbruecke_2r, 591, 80/3.6, true, 100);
-    int e14rl = instance.n().add_edge(hbf_2r, hbf_2l, 210, 80/3.6, true, 50);
+    int e13lr = instance.n().add_edge(hackerbruecke_1r, hbf_1l, 591, 80/3.6, true, 50);
+    int e14lr = instance.n().add_edge(hbf_1l, hbf_1r, 210, 80/3.6, true, 25);
+    int e13rl = instance.n().add_edge(hbf_2l, hackerbruecke_2r, 591, 80/3.6, true, 50);
+    int e14rl = instance.n().add_edge(hbf_2r, hbf_2l, 210, 80/3.6, true, 25);
 
     instance.n().add_successor(e12lr, e13lr);
     instance.n().add_successor(e13rl, e12rl);
@@ -930,10 +930,10 @@ TEST(Example, Stammstrecke) {
     int karlsplatz_1r = instance.n().add_vertex("Karlsplatz1R", cda_rail::VertexType::TTD);
     int karlsplatz_2r = instance.n().add_vertex("Karlsplatz2R", cda_rail::VertexType::TTD);
 
-    int e15lr = instance.n().add_edge(hbf_1r, karlsplatz_1l, 292, 80/3.6, true, 100);
-    int e16lr = instance.n().add_edge(karlsplatz_1l, karlsplatz_1r, 206, 80/3.6, true, 50);
-    int e15rl = instance.n().add_edge(karlsplatz_2l, hbf_2r, 292, 80/3.6, true, 100);
-    int e16rl = instance.n().add_edge(karlsplatz_2r, karlsplatz_2l, 206, 80/3.6, true, 50);
+    int e15lr = instance.n().add_edge(hbf_1r, karlsplatz_1l, 292, 80/3.6, true, 50);
+    int e16lr = instance.n().add_edge(karlsplatz_1l, karlsplatz_1r, 206, 80/3.6, true, 25);
+    int e15rl = instance.n().add_edge(karlsplatz_2l, hbf_2r, 292, 80/3.6, true, 50);
+    int e16rl = instance.n().add_edge(karlsplatz_2r, karlsplatz_2l, 206, 80/3.6, true, 25);
 
     instance.n().add_successor(e14lr, e15lr);
     instance.n().add_successor(e15rl, e14rl);
@@ -951,10 +951,10 @@ TEST(Example, Stammstrecke) {
     int marienplatz_1r = instance.n().add_vertex("Marienplatz1R", cda_rail::VertexType::TTD);
     int marienplatz_2r = instance.n().add_vertex("Marienplatz2R", cda_rail::VertexType::TTD);
 
-    int e17lr = instance.n().add_edge(karlsplatz_1r, marienplatz_1l, 494, 80/3.6, true, 100);
-    int e18lr = instance.n().add_edge(marienplatz_1l, marienplatz_1r, 205, 80/3.6, true, 50);
-    int e17rl = instance.n().add_edge(marienplatz_2l, karlsplatz_2r, 494, 80/3.6, true, 100);
-    int e18rl = instance.n().add_edge(marienplatz_2r, marienplatz_2l, 205, 80/3.6, true, 50);
+    int e17lr = instance.n().add_edge(karlsplatz_1r, marienplatz_1l, 494, 80/3.6, true, 50);
+    int e18lr = instance.n().add_edge(marienplatz_1l, marienplatz_1r, 205, 80/3.6, true, 25);
+    int e17rl = instance.n().add_edge(marienplatz_2l, karlsplatz_2r, 494, 80/3.6, true, 50);
+    int e18rl = instance.n().add_edge(marienplatz_2r, marienplatz_2l, 205, 80/3.6, true, 25);
 
     instance.n().add_successor(e16lr, e17lr);
     instance.n().add_successor(e17rl, e16rl);
@@ -974,12 +974,12 @@ TEST(Example, Stammstrecke) {
     int isartor_1r = instance.n().add_vertex("Isartor1R", cda_rail::VertexType::TTD);
     int isartor_2r = instance.n().add_vertex("Isartor2R", cda_rail::VertexType::TTD);
 
-    int e19lr = instance.n().add_edge(marienplatz_1r, isartor_switch_lr, 393, 80/3.6, true, 100);
-    int e20lr = instance.n().add_edge(isartor_switch_lr, isartor_1l, 100, 80/3.6, false, 100);
-    int e21lr = instance.n().add_edge(isartor_1l, isartor_1r, 209, 80/3.6, true, 50);
-    int e19rl = instance.n().add_edge(isartor_switch_rl, marienplatz_2r, 343, 80/3.6, true, 100);
-    int e20rl = instance.n().add_edge(isartor_2l, isartor_switch_rl, 150, 80/3.6, false, 100);
-    int e21rl = instance.n().add_edge(isartor_2r, isartor_2l, 209, 80/3.6, true, 50);
+    int e19lr = instance.n().add_edge(marienplatz_1r, isartor_switch_lr, 393, 80/3.6, true, 50);
+    int e20lr = instance.n().add_edge(isartor_switch_lr, isartor_1l, 100, 80/3.6, false, 50);
+    int e21lr = instance.n().add_edge(isartor_1l, isartor_1r, 209, 80/3.6, true, 25);
+    int e19rl = instance.n().add_edge(isartor_switch_rl, marienplatz_2r, 343, 80/3.6, true, 50);
+    int e20rl = instance.n().add_edge(isartor_2l, isartor_switch_rl, 150, 80/3.6, false, 50);
+    int e21rl = instance.n().add_edge(isartor_2r, isartor_2l, 209, 80/3.6, true, 25);
 
     instance.n().add_successor(e18lr, e19lr);
     instance.n().add_successor(e19rl, e18rl);
@@ -1002,20 +1002,20 @@ TEST(Example, Stammstrecke) {
     int rosenheimer_1r = instance.n().add_vertex("Rosenheimer1R", cda_rail::VertexType::TTD);
     int rosenheimer_2r = instance.n().add_vertex("Rosenheimer2R", cda_rail::VertexType::TTD);
 
-    int e22lr = instance.n().add_edge(isartor_1r, isartor_switchR_lr, 100, 80/3.6, false, 100);
-    int e23lr = instance.n().add_edge(isartor_switchR_lr, rosenheimer_1l, 592, 80/3.6, true, 100);
-    int e24lr = instance.n().add_edge(rosenheimer_1l, rosenheimer_1r, 206, 80/3.6, true, 50);
-    int e22rl = instance.n().add_edge(isartor_switchR_rl, isartor_2r, 150, 80/3.6, false, 100);
-    int e23rl = instance.n().add_edge(rosenheimer_2l, isartor_switchR_rl, 542, 80/3.6, true, 100);
-    int e24rl = instance.n().add_edge(rosenheimer_2r, rosenheimer_2l, 206, 80/3.6, true, 50);
+    int e22lr = instance.n().add_edge(isartor_1r, isartor_switchR_lr, 100, 80/3.6, false, 50);
+    int e23lr = instance.n().add_edge(isartor_switchR_lr, rosenheimer_1l, 592, 80/3.6, true, 50);
+    int e24lr = instance.n().add_edge(rosenheimer_1l, rosenheimer_1r, 206, 80/3.6, true, 25);
+    int e22rl = instance.n().add_edge(isartor_switchR_rl, isartor_2r, 150, 80/3.6, false, 50);
+    int e23rl = instance.n().add_edge(rosenheimer_2l, isartor_switchR_rl, 542, 80/3.6, true, 50);
+    int e24rl = instance.n().add_edge(rosenheimer_2r, rosenheimer_2l, 206, 80/3.6, true, 25);
 
-    int switch_it_1 = instance.n().add_edge(isartor_switch_lr, isartor_switch_rl, 50, 60/3.6, false, 100);
-    int switch_it_2 = instance.n().add_edge(isartor_switch_rl, isartor_switch_lr, 50, 60/3.6, false, 100);
-    int switch_it_3 = instance.n().add_edge(isartor_switchR_lr, isartor_switchR_rl, 50, 60/3.6, false, 100);
-    int switch_it_4 = instance.n().add_edge(isartor_switchR_rl, isartor_switchR_lr, 50, 60/3.6, false, 100);
-    int tmp_1 = instance.n().add_edge(isartor_switchR_lr, isartor_1r, 100, 80/3.6, false, 100);
-    int tmp_2 = instance.n().add_edge(isartor_1r, isartor_1l, 209, 80/3.6, true, 50);
-    int tmp_3 = instance.n().add_edge(isartor_1l, isartor_switch_lr, 100, 80/3.6, false, 100);
+    int switch_it_1 = instance.n().add_edge(isartor_switch_lr, isartor_switch_rl, 50, 60/3.6, false, 50);
+    int switch_it_2 = instance.n().add_edge(isartor_switch_rl, isartor_switch_lr, 50, 60/3.6, false, 50);
+    int switch_it_3 = instance.n().add_edge(isartor_switchR_lr, isartor_switchR_rl, 50, 60/3.6, false, 50);
+    int switch_it_4 = instance.n().add_edge(isartor_switchR_rl, isartor_switchR_lr, 50, 60/3.6, false, 50);
+    int tmp_1 = instance.n().add_edge(isartor_switchR_lr, isartor_1r, 100, 80/3.6, false, 50);
+    int tmp_2 = instance.n().add_edge(isartor_1r, isartor_1l, 209, 80/3.6, true, 25);
+    int tmp_3 = instance.n().add_edge(isartor_1l, isartor_switch_lr, 100, 80/3.6, false, 50);
     instance.n().add_successor(switch_it_2, e20lr);
     instance.n().add_successor(e22lr, switch_it_3);
     instance.n().add_successor(e23rl, switch_it_4);
@@ -1048,16 +1048,16 @@ TEST(Example, Stammstrecke) {
     int ost_4_exit = instance.n().add_vertex("Ost4Exit", cda_rail::VertexType::TTD);
     int ost_5_exit = instance.n().add_vertex("Ost5Exit", cda_rail::VertexType::TTD);
 
-    int e25lr = instance.n().add_edge(rosenheimer_1r, ost_switch5_lr, 792, 80/3.6, true, 100);
-    int e26lr_4 = instance.n().add_edge(ost_switch5_lr, ost_switch4_lr, 60, 80/3.6, false, 100);
-    int e27lr_4 = instance.n().add_edge(ost_switch4_lr, ost_4_exit, 40, 80/3.6, false, 100);
-    int e26lr_5 = instance.n().add_edge(ost_switch5_lr, ost_5_exit, 100, 80/3.6, false, 100);
-    int e25rl = instance.n().add_edge(ost_switch1_rl, rosenheimer_2r, 752, 80/3.6, true, 100);
-    int e26rl_1 = instance.n().add_edge(ost_1_entry, ost_switch1_rl, 140, 80/3.6, false, 100);
-    int e26rl_23 = instance.n().add_edge(ost_switch2_rl, ost_switch1_rl, 40, 80/3.6, false, 100);
-    int e27rl_2 = instance.n().add_edge(ost_2_entry, ost_switch2_rl, 100, 80/3.6, false, 100);
-    int e27rl_3 = instance.n().add_edge(ost_switch3_rl, ost_switch2_rl, 60, 80/3.6, false, 100);
-    int e28rl_3 = instance.n().add_edge(ost_3_entry, ost_switch3_rl, 40, 80/3.6, false, 100);
+    int e25lr = instance.n().add_edge(rosenheimer_1r, ost_switch5_lr, 792, 80/3.6, true, 50);
+    int e26lr_4 = instance.n().add_edge(ost_switch5_lr, ost_switch4_lr, 60, 80/3.6, false, 50);
+    int e27lr_4 = instance.n().add_edge(ost_switch4_lr, ost_4_exit, 40, 80/3.6, false, 50);
+    int e26lr_5 = instance.n().add_edge(ost_switch5_lr, ost_5_exit, 100, 80/3.6, false, 50);
+    int e25rl = instance.n().add_edge(ost_switch1_rl, rosenheimer_2r, 752, 80/3.6, true, 50);
+    int e26rl_1 = instance.n().add_edge(ost_1_entry, ost_switch1_rl, 140, 80/3.6, false, 50);
+    int e26rl_23 = instance.n().add_edge(ost_switch2_rl, ost_switch1_rl, 40, 80/3.6, false, 50);
+    int e27rl_2 = instance.n().add_edge(ost_2_entry, ost_switch2_rl, 100, 80/3.6, false, 50);
+    int e27rl_3 = instance.n().add_edge(ost_switch3_rl, ost_switch2_rl, 60, 80/3.6, false, 50);
+    int e28rl_3 = instance.n().add_edge(ost_3_entry, ost_switch3_rl, 40, 80/3.6, false, 50);
 
     instance.n().add_successor(e24lr, e25lr);
     instance.n().add_successor(e25rl, e24rl);
@@ -1307,10 +1307,10 @@ TEST(Example, Stammstrecke) {
     instance.push_back_edge_to_route("S2Dachau", e2rl_exit);
 
     // s4 Geltendorf
-    instance.add_train("S4Geltendorf", 135, 140/3.6, 1, 0.9, 8.5*60, 0, ost_1_entry, 28*60, 0, pasing_exit);
+    instance.add_train("S4Geltendorf", 202, 140/3.6, 1, 0.9, 8.5*60, 0, ost_1_entry, 28*60, 0, pasing_exit);
     instance.add_stop("S4Geltendorf", "Rosenheimer Platz", 10*60, 10.5*60);
     instance.add_stop("S4Geltendorf", "Isartor", 12*60, 12.5*60);
-    instance.add_stop("S4Geltendorf", "Marienplatz", 13.5*60, 14*60);
+    instance.add_stop("S4Geltendorf", "Marienplatz", 13.75*60, 14.25*60);
     instance.add_stop("S4Geltendorf", "Karlsplatz", 15.5*60, 16*60);
     instance.add_stop("S4Geltendorf", "Hbf", 17.5*60, 18*60);
     instance.add_stop("S4Geltendorf", "Hackerbruecke", 19.25*60, 19.75*60);
@@ -1345,18 +1345,19 @@ TEST(Example, Stammstrecke) {
     instance.push_back_edge_to_route("S4Geltendorf", e3rl);
     instance.push_back_edge_to_route("S4Geltendorf", e2rl);
     instance.push_back_edge_to_route("S4Geltendorf", e1rl);
-    /**
+
     // S1 Freising
-    instance.add_train("S1Freising", 135, 140/3.6, 1, 0.9, 10.25*60, 0, ost_2_entry, 28.25*60, 20, laim_exit_nymphenburg);
-    instance.add_stop("S1Freising", "Rosenheimer Platz", 11.75*60, 12.25*60);
-    instance.add_stop("S1Freising", "Isartor", 13.75*60, 14.25*60);
+
+    instance.add_train("S1Freising", 135, 140/3.6, 1, 0.9, 10*60, 0, ost_2_entry, 27.75*60, 20, laim_exit_nymphenburg);
+    instance.add_stop("S1Freising", "Rosenheimer Platz", 11.5*60, 12*60);
+    instance.add_stop("S1Freising", "Isartor", 13.5*60, 14*60);
     instance.add_stop("S1Freising", "Marienplatz", 15.25*60, 15.75*60);
-    instance.add_stop("S1Freising", "Karlsplatz", 17.25*60, 17.75*60);
-    instance.add_stop("S1Freising", "Hbf", 19.25*60, 19.75*60);
-    instance.add_stop("S1Freising", "Hackerbruecke", 21*60, 21.5*60);
-    instance.add_stop("S1Freising", "Donnersbergerbruecke", 22.75*60, 23.25*60);
-    instance.add_stop("S1Freising", "Hirschgarten", 24.75*60, 25.25*60);
-    instance.add_stop("S1Freising", "Laim", 26.75*60, 27.25*60);
+    instance.add_stop("S1Freising", "Karlsplatz", 17*60, 17.5*60);
+    instance.add_stop("S1Freising", "Hbf", 19*60, 19.5*60);
+    instance.add_stop("S1Freising", "Hackerbruecke", 20.75*60, 21.25*60);
+    instance.add_stop("S1Freising", "Donnersbergerbruecke", 22.5*60, 23*60);
+    instance.add_stop("S1Freising", "Hirschgarten", 24.5*60, 25*60);
+    instance.add_stop("S1Freising", "Laim", 26.5*60, 27*60);
     instance.add_empty_route("S1Freising");
     instance.push_back_edge_to_route("S1Freising", e27rl_2);
     instance.push_back_edge_to_route("S1Freising", e26rl_23);
@@ -1541,18 +1542,18 @@ TEST(Example, Stammstrecke) {
     instance.push_back_edge_to_route("S3Deisenhofen", e25lr);
     instance.push_back_edge_to_route("S3Deisenhofen", e26lr_4);
     instance.push_back_edge_to_route("S3Deisenhofen", e27lr_4);
-    /**
+
     // S8 Airport
-    instance.add_train("S8Airport", 202, 140/3.6, 1, 0.9, 4.75*60, 0, pasing_entry, 24.5*60, 0, ost_5_exit);
-    instance.add_stop("S8Airport", "Laim", 7.25*60, 7.75*60);
-    instance.add_stop("S8Airport", "Hirschgarten", 9.25*60, 9.75*60);
-    instance.add_stop("S8Airport", "Donnersbergerbruecke", 11.25*60, 11.75*60);
-    instance.add_stop("S8Airport", "Hackerbruecke", 13*60, 13.5*60);
-    instance.add_stop("S8Airport", "Hbf", 15*60, 15.5*60);
-    instance.add_stop("S8Airport", "Karlsplatz", 17*60, 17.5*60);
-    instance.add_stop("S8Airport", "Marienplatz", 18.75*60, 19.25*60);
-    instance.add_stop("S8Airport", "Isartor", 20.5*60, 21*60);
-    instance.add_stop("S8Airport", "Rosenheimer Platz", 22.5*60, 23*60);
+    instance.add_train("S8Airport", 202, 140/3.6, 1, 0.9, 4.25*60, 0, pasing_entry, 24*60, 0, ost_5_exit);
+    instance.add_stop("S8Airport", "Laim", 6.75*60, 7.25*60);
+    instance.add_stop("S8Airport", "Hirschgarten", 8.75*60, 9.25*60);
+    instance.add_stop("S8Airport", "Donnersbergerbruecke", 10.75*60, 11.25*60);
+    instance.add_stop("S8Airport", "Hackerbruecke", 12.5*60, 13*60);
+    instance.add_stop("S8Airport", "Hbf", 14.5*60, 15*60);
+    instance.add_stop("S8Airport", "Karlsplatz", 16.5*60, 17*60);
+    instance.add_stop("S8Airport", "Marienplatz", 18.25*60, 18.75*60);
+    instance.add_stop("S8Airport", "Isartor", 20*60, 20.5*60);
+    instance.add_stop("S8Airport", "Rosenheimer Platz", 22*60, 22.5*60);
     instance.add_empty_route("S8Airport");
     instance.push_back_edge_to_route("S8Airport", e1lr);
     instance.push_back_edge_to_route("S8Airport", e2lr);
@@ -1583,15 +1584,15 @@ TEST(Example, Stammstrecke) {
     instance.push_back_edge_to_route("S8Airport", e26lr_5);
 
     // S1 Leuchtenbergring
-    instance.add_train("S1Leuchtenbergring", 135, 140/3.6, 1, 0.9, 9.25*60, 0, laim_entry, 26*60, 0, ost_4_exit);
-    instance.add_stop("S1Leuchtenbergring", "Hirschgarten", 10.75*60, 11.25*60);
-    instance.add_stop("S1Leuchtenbergring", "Donnersbergerbruecke", 12.75*60, 13.25*60);
-    instance.add_stop("S1Leuchtenbergring", "Hackerbruecke", 14.5*60, 15*60);
-    instance.add_stop("S1Leuchtenbergring", "Hbf", 16.5*60, 17*60);
-    instance.add_stop("S1Leuchtenbergring", "Karlsplatz", 18.5*60, 19*60);
-    instance.add_stop("S1Leuchtenbergring", "Marienplatz", 20.25*60, 20.75*60);
-    instance.add_stop("S1Leuchtenbergring", "Isartor", 22*60, 22.5*60);
-    instance.add_stop("S1Leuchtenbergring", "Rosenheimer Platz", 24*60, 24.5*60);
+    instance.add_train("S1Leuchtenbergring", 202, 140/3.6, 1, 0.9, 8.75*60, 0, laim_entry, 25.5*60, 0, ost_4_exit);
+    instance.add_stop("S1Leuchtenbergring", "Hirschgarten", 10.25*60, 10.75*60);
+    instance.add_stop("S1Leuchtenbergring", "Donnersbergerbruecke", 12.25*60, 12.75*60);
+    instance.add_stop("S1Leuchtenbergring", "Hackerbruecke", 14*60, 14.5*60);
+    instance.add_stop("S1Leuchtenbergring", "Hbf", 16*60, 16.5*60);
+    instance.add_stop("S1Leuchtenbergring", "Karlsplatz", 18*60, 18.5*60);
+    instance.add_stop("S1Leuchtenbergring", "Marienplatz", 19.75*60, 20.25*60);
+    instance.add_stop("S1Leuchtenbergring", "Isartor", 21.5*60, 22*60);
+    instance.add_stop("S1Leuchtenbergring", "Rosenheimer Platz", 23.5*60, 24*60);
     instance.add_empty_route("S1Leuchtenbergring");
     instance.push_back_edge_to_route("S1Leuchtenbergring", e4lr_entry);
     instance.push_back_edge_to_route("S1Leuchtenbergring", e5lr);
@@ -1620,16 +1621,16 @@ TEST(Example, Stammstrecke) {
     instance.push_back_edge_to_route("S1Leuchtenbergring", e27lr_4);
 
     // S4 Grafing
-    instance.add_train("S4Grafing", 135, 140/3.6, 1, 0.9, 7.75*60, 0, pasing_entry, 27.5*60, 0, ost_5_exit);
-    instance.add_stop("S4Grafing", "Laim", 10.25*60, 10.75*60);
-    instance.add_stop("S4Grafing", "Hirschgarten", 12.25*60, 12.75*60);
-    instance.add_stop("S4Grafing", "Donnersbergerbruecke", 14.25*60, 14.75*60);
-    instance.add_stop("S4Grafing", "Hackerbruecke", 16*60, 16.5*60);
-    instance.add_stop("S4Grafing", "Hbf", 18*60, 18.5*60);
-    instance.add_stop("S4Grafing", "Karlsplatz", 20*60, 20.5*60);
-    instance.add_stop("S4Grafing", "Marienplatz", 21.75*60, 22.25*60);
-    instance.add_stop("S4Grafing", "Isartor", 23.5*60, 24*60);
-    instance.add_stop("S4Grafing", "Rosenheimer Platz", 25.5*60, 26*60);
+    instance.add_train("S4Grafing", 135, 140/3.6, 1, 0.9, 7.25*60, 0, pasing_entry, 27*60, 0, ost_5_exit);
+    instance.add_stop("S4Grafing", "Laim", 9.75*60, 10.25*60);
+    instance.add_stop("S4Grafing", "Hirschgarten", 11.75*60, 12.25*60);
+    instance.add_stop("S4Grafing", "Donnersbergerbruecke", 13.75*60, 14.25*60);
+    instance.add_stop("S4Grafing", "Hackerbruecke", 15.5*60, 16*60);
+    instance.add_stop("S4Grafing", "Hbf", 17.5*60, 18*60);
+    instance.add_stop("S4Grafing", "Karlsplatz", 19.5*60, 20*60);
+    instance.add_stop("S4Grafing", "Marienplatz", 21.25*60, 21.75*60);
+    instance.add_stop("S4Grafing", "Isartor", 23*60, 23.5*60);
+    instance.add_stop("S4Grafing", "Rosenheimer Platz", 25*60, 25.5*60);
     instance.add_empty_route("S4Grafing");
     instance.push_back_edge_to_route("S4Grafing", e1lr);
     instance.push_back_edge_to_route("S4Grafing", e2lr);
@@ -1660,15 +1661,15 @@ TEST(Example, Stammstrecke) {
     instance.push_back_edge_to_route("S4Grafing", e26lr_5);
 
     // S2 Ost
-    instance.add_train("S2Ost", 135, 140/3.6, 1, 0.9, 12.25*60, 0, laim_entry, 29*60, 0, ost_5_exit);
-    instance.add_stop("S2Ost", "Hirschgarten", 13.75*60, 14.25*60);
-    instance.add_stop("S2Ost", "Donnersbergerbruecke", 15.75*60, 16.25*60);
-    instance.add_stop("S2Ost", "Hackerbruecke", 17.5*60, 18*60);
-    instance.add_stop("S2Ost", "Hbf", 19.5*60, 20*60);
-    instance.add_stop("S2Ost", "Karlsplatz", 21.5*60, 22*60);
-    instance.add_stop("S2Ost", "Marienplatz", 23.25*60, 23.75*60);
-    instance.add_stop("S2Ost", "Isartor", 25*60, 25.5*60);
-    instance.add_stop("S2Ost", "Rosenheimer Platz", 27*60, 27.5*60);
+    instance.add_train("S2Ost", 135, 140/3.6, 1, 0.9, 11.75*60, 0, laim_entry, 28.5*60, 0, ost_5_exit);
+    instance.add_stop("S2Ost", "Hirschgarten", 13.25*60, 13.75*60);
+    instance.add_stop("S2Ost", "Donnersbergerbruecke", 15.25*60, 15.75*60);
+    instance.add_stop("S2Ost", "Hackerbruecke", 17*60, 17.5*60);
+    instance.add_stop("S2Ost", "Hbf", 19*60, 19.5*60);
+    instance.add_stop("S2Ost", "Karlsplatz", 21*60, 21.5*60);
+    instance.add_stop("S2Ost", "Marienplatz", 22.75*60, 23.25*60);
+    instance.add_stop("S2Ost", "Isartor", 24.5*60, 25*60);
+    instance.add_stop("S2Ost", "Rosenheimer Platz", 26.5*60, 27*60);
     instance.add_empty_route("S2Ost");
     instance.push_back_edge_to_route("S2Ost", e4lr_entry);
     instance.push_back_edge_to_route("S2Ost", e5lr);
@@ -1694,7 +1695,7 @@ TEST(Example, Stammstrecke) {
     instance.push_back_edge_to_route("S2Ost", e24lr);
     instance.push_back_edge_to_route("S2Ost", e25lr);
     instance.push_back_edge_to_route("S2Ost", e26lr_5);
-    **/
+
     EXPECT_TRUE(instance.check_consistency(true));
     EXPECT_TRUE(instance.n().is_consistent_for_transformation());
 
@@ -1737,5 +1738,5 @@ TEST(Example, Stammstrecke) {
     EXPECT_EQ(ost2_donnersberger, donnersberger_expected);
     EXPECT_EQ(ost3_donnersberger, donnersberger_expected);
 
-    instance.export_instance("tmp/StammstreckeTmp");
+    //instance.export_instance("tmp/Stammstrecke16Trains");
 }
