@@ -322,7 +322,7 @@ TEST(Functionality, NetworkConsistency) {
 }
 
 TEST(Functionality, ReadNetwork) {
-    cda_rail::Network network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    cda_rail::Network network = cda_rail::Network::import_network("./example-networks/SimpleStation/network/");
 
     // Check vertices properties
     std::vector<std::string> vertex_names = {"l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
@@ -1459,7 +1459,7 @@ TEST(Functionality, FloydWarshall) {
 }
 
 TEST(Functionality, ReadTrains) {
-    auto trains = cda_rail::TrainList::import_trains("./example-networks/Fig11/timetable/");
+    auto trains = cda_rail::TrainList::import_trains("./example-networks/SimpleStation/timetable/");
 
     // Check if the all trains are imported
     EXPECT_EQ(trains.size(), 3);
@@ -1569,8 +1569,8 @@ TEST(Functionality, IsDirectory) {
 }
 
 TEST(Functionality, ReadStation) {
-    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
-    auto stations = cda_rail::StationList::import_stations("./example-networks/Fig11/timetable/", network);
+    auto network = cda_rail::Network::import_network("./example-networks/SimpleStation/network/");
+    auto stations = cda_rail::StationList::import_stations("./example-networks/SimpleStation/timetable/", network);
 
     // Check if the station is imported correctly
     EXPECT_EQ(stations.size(), 1);
@@ -1591,7 +1591,7 @@ TEST(Functionality, ReadStation) {
 }
 
 TEST(Functionality, WriteStations) {
-    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    auto network = cda_rail::Network::import_network("./example-networks/SimpleStation/network/");
     cda_rail::StationList stations;
 
     stations.add_station("S1");
@@ -1628,8 +1628,8 @@ TEST(Functionality, WriteStations) {
 }
 
 TEST(Functionality, ReadTimetable) {
-    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
-    auto timetable = cda_rail::Timetable::import_timetable("./example-networks/Fig11/timetable/", network);
+    auto network = cda_rail::Network::import_network("./example-networks/SimpleStation/network/");
+    auto timetable = cda_rail::Timetable::import_timetable("./example-networks/SimpleStation/timetable/", network);
 
     // Check if the timetable has the correct stations
     auto& stations = timetable.get_station_list();
@@ -1682,7 +1682,7 @@ TEST(Functionality, ReadTimetable) {
     auto& tr1_schedule = timetable.get_schedule("tr1");
     EXPECT_EQ(tr1_schedule.t_0, 120);
     EXPECT_EQ(tr1_schedule.v_0, 0);
-    EXPECT_EQ(tr1_schedule.t_n, 640);
+    EXPECT_EQ(tr1_schedule.t_n, 645);
     EXPECT_EQ(tr1_schedule.v_n, 16.67);
     EXPECT_EQ(network.get_vertex(tr1_schedule.entry).name, "l0");
     EXPECT_EQ(network.get_vertex(tr1_schedule.exit).name, "r0");
@@ -1720,13 +1720,13 @@ TEST(Functionality, ReadTimetable) {
     EXPECT_EQ(stop3.end, 300);
     EXPECT_EQ(stations.get_station(stop3.station).name, "Central");
 
-    EXPECT_EQ(timetable.maxT(), 640);
+    EXPECT_EQ(timetable.maxT(), 645);
 
     EXPECT_TRUE(timetable.check_consistency(network));
 }
 
 TEST(Functionality, WriteTimetable) {
-    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    auto network = cda_rail::Network::import_network("./example-networks/SimpleStation/network/");
     cda_rail::Timetable timetable;
 
     timetable.add_train("tr1", 100, 83.33, 2, 1,
@@ -1919,7 +1919,7 @@ TEST(Functionality, WriteTimetable) {
 }
 
 TEST(Functionality, RouteMap) {
-    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    auto network = cda_rail::Network::import_network("./example-networks/SimpleStation/network/");
     auto train_list = cda_rail::TrainList();
 
     train_list.add_train("tr1", 100, 83.33, 2, 1);
@@ -1980,9 +1980,9 @@ TEST(Functionality, RouteMap) {
 }
 
 TEST(Functionality, ImportRouteMap) {
-    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
-    auto train_list = cda_rail::TrainList::import_trains("./example-networks/Fig11/timetable/");
-    auto route_map = cda_rail::RouteMap::import_routes("./example-networks/Fig11/routes/", network);
+    auto network = cda_rail::Network::import_network("./example-networks/SimpleStation/network/");
+    auto train_list = cda_rail::TrainList::import_trains("./example-networks/SimpleStation/timetable/");
+    auto route_map = cda_rail::RouteMap::import_routes("./example-networks/SimpleStation/routes/", network);
 
     // Check if the route consists of thee trains with names "tr1", "tr2" and "tr3"
     EXPECT_EQ(route_map.size(), 3);
@@ -2058,7 +2058,7 @@ TEST(Functionality, ImportRouteMap) {
 }
 
 TEST(Functionality, ExportRouteMap) {
-    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    auto network = cda_rail::Network::import_network("./example-networks/SimpleStation/network/");
     auto train_list = cda_rail::TrainList();
     train_list.add_train("tr1", 100, 83.33, 2, 1);
     train_list.add_train("tr2", 100, 27.78, 2, 1);
@@ -2183,7 +2183,7 @@ TEST(Functionality, Iterators) {
     }
 
     // Create timetable
-    auto network = cda_rail::Network::import_network("./example-networks/Fig11/network/");
+    auto network = cda_rail::Network::import_network("./example-networks/SimpleStation/network/");
     cda_rail::Timetable timetable;
 
     timetable.add_train("tr1", 100, 83.33, 2, 1,

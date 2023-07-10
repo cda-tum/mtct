@@ -12,7 +12,7 @@ struct EdgeTarget {
 };
 
 TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
-    auto instance = cda_rail::instances::VSSGenerationTimetable::import_instance("./example-networks/Fig11/");
+    auto instance = cda_rail::instances::VSSGenerationTimetable::import_instance("./example-networks/SimpleStation/");
 
     // Expected network
     const auto& network = instance.n();
@@ -222,14 +222,14 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     // Check if the train tr1 is imported correctly
     auto tr1 = trains.get_train("tr1");
     EXPECT_EQ(tr1.name, "tr1");
-    EXPECT_EQ(tr1.length, 50);
+    EXPECT_EQ(tr1.length, 100);
     EXPECT_EQ(tr1.max_speed, 83.33);
     EXPECT_EQ(tr1.acceleration, 2);
     EXPECT_EQ(tr1.deceleration, 1);
     // Check if the train tr2 is imported correctly
     auto tr2 = trains.get_train("tr2");
     EXPECT_EQ(tr2.name, "tr2");
-    EXPECT_EQ(tr2.length, 50);
+    EXPECT_EQ(tr2.length, 100);
     EXPECT_EQ(tr2.max_speed, 27.78);
     EXPECT_EQ(tr2.acceleration, 2);
     EXPECT_EQ(tr2.deceleration, 1);
@@ -245,7 +245,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     auto& tr1_schedule = instance.get_schedule("tr1");
     EXPECT_EQ(tr1_schedule.t_0, 120);
     EXPECT_EQ(tr1_schedule.v_0, 0);
-    EXPECT_EQ(tr1_schedule.t_n, 640);
+    EXPECT_EQ(tr1_schedule.t_n, 645);
     EXPECT_EQ(tr1_schedule.v_n, 16.67);
     EXPECT_EQ(network.get_vertex(tr1_schedule.entry).name, "l0");
     EXPECT_EQ(network.get_vertex(tr1_schedule.exit).name, "r0");
@@ -356,7 +356,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
     EXPECT_TRUE(instance.check_consistency(false));
 
     // Check if maxT is correct
-    EXPECT_EQ(instance.maxT(), 640);
+    EXPECT_EQ(instance.maxT(), 645);
 }
 
 TEST(Functionality, VSSGenerationTimetableExport) {
@@ -478,7 +478,7 @@ TEST(Functionality, VSSGenerationTimetableExport) {
     // Check if the train tr1 is saved correctly
     auto tr1_read = trains_read.get_train("tr1");
     EXPECT_EQ(tr1_read.name, "tr1");
-    EXPECT_EQ(tr1_read.length, 25);
+    EXPECT_EQ(tr1_read.length, 50);
     EXPECT_EQ(tr1_read.max_speed, 10);
     EXPECT_EQ(tr1_read.acceleration, 2);
     EXPECT_EQ(tr1_read.deceleration, 2);
