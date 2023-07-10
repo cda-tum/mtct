@@ -15,11 +15,11 @@ int main(int argc, char** argv) {
 
     int delta_t = std::stoi(argv[3]);
     bool fix_routes = std::stoi(argv[4]);
-    bool discretize = std::stoi(argv[5]);
-    bool include_acceleration_deceleration = std::stoi(argv[6]);
-    bool include_breaking_distance = std::stoi(argv[7]);
+    bool discretize_vss_positions = std::stoi(argv[5]);
+    bool include_train_dynamics = std::stoi(argv[6]);
+    bool include_braking_curves = std::stoi(argv[7]);
     bool use_pwl = std::stoi(argv[8]);
-    bool use_cuts = std::stoi(argv[9]);
+    bool use_schedule_cuts = std::stoi(argv[9]);
     int timeout = std::stoi(argv[10]);
 
     std::cout << "The following parameters were passed to the toolkit:" << std::endl;
@@ -27,24 +27,24 @@ int main(int argc, char** argv) {
     if (fix_routes) {
         std::cout << "   routes are fixed" << std::endl;
     }
-    if (discretize) {
+    if (discretize_vss_positions) {
         std::cout << "   the graph is preprocessed" << std::endl;
     }
-    if (include_acceleration_deceleration) {
+    if (include_train_dynamics) {
         std::cout << "   acceleration and deceleration are included" << std::endl;
     }
-    if (include_breaking_distance) {
-        std::cout << "   breaking distance is included" << std::endl;
+    if (include_braking_curves) {
+        std::cout << "   braking distance is included" << std::endl;
     }
     if (use_pwl) {
         std::cout << "   piecewise linear functions are used" << std::endl;
     }
-    if (use_cuts) {
-        std::cout << "   cuts are used" << std::endl;
+    if (use_schedule_cuts) {
+        std::cout << "   schedule cuts are used" << std::endl;
     }
     std::cout << "   timeout: " << timeout << "s" << std::endl;
 
-    std::string file_name = model_name + "_" + std::to_string(delta_t) + "_" + std::to_string(fix_routes) + "_" + std::to_string(discretize) + "_" + std::to_string(include_acceleration_deceleration) + "_" + std::to_string(include_breaking_distance) + "_" + std::to_string(use_pwl) + "_" + std::to_string(use_cuts) + "_" + std::to_string(timeout);
+    std::string file_name = model_name + "_" + std::to_string(delta_t) + "_" + std::to_string(fix_routes) + "_" + std::to_string(discretize_vss_positions) + "_" + std::to_string(include_train_dynamics) + "_" + std::to_string(include_braking_curves) + "_" + std::to_string(use_pwl) + "_" + std::to_string(use_schedule_cuts) + "_" + std::to_string(timeout);
 
-    solver.solve(delta_t, fix_routes, discretize, include_acceleration_deceleration, include_breaking_distance, use_pwl, use_cuts, true,timeout, file_name);
+    solver.solve(delta_t, fix_routes, discretize_vss_positions, include_train_dynamics, include_braking_curves, use_pwl, use_schedule_cuts, timeout, true, true, file_name);
 }

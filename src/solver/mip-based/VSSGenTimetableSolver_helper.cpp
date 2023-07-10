@@ -80,13 +80,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::get_temporary_impossibility_
 }
 
 double
-cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(const int &tr, const int &time_steps, const double& v0, const double& a_max, const bool& breaking_distance) const {
+cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(const int &tr, const int &time_steps, const double& v0, const double& a_max, const bool& braking_distance) const {
     const auto& train_object = instance.get_train_list().get_train(tr);
     const auto& v_max = train_object.max_speed;
     const auto time_diff = time_steps * dt;
     double ret_val = 0;
     double final_speed = 0;
-    if (!this->include_acceleration_deceleration) {
+    if (!this->include_train_dynamics) {
         ret_val += time_diff * v_max;
         final_speed = v_max;
     } else if (time_diff < (v_max - v0)/a_max) {
@@ -97,7 +97,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(const
         ret_val += (time_diff - (v_max-v0)/a_max)*v_max; //int_{(v_max-v0)/a_max}^{time_diff} v_max dt
         final_speed = v_max;
     }
-    if (breaking_distance) {
+    if (braking_distance) {
         ret_val += final_speed*final_speed/(2*train_object.deceleration);
     }
     return ret_val;

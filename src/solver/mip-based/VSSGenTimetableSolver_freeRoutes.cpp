@@ -24,7 +24,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_vari
         const auto& tr_name = train_list.get_train(tr).name;
         const auto& tr_len = instance.get_train_list().get_train(tr_name).length;
         double len_out_ub = tr_len;
-        if (this->include_breaking_distances) {
+        if (this->include_braking_curves) {
             len_out_ub += get_max_brakelen(tr);
         }
         for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
@@ -64,7 +64,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_cons
     create_boundary_free_routes_constraints();
     create_free_routes_occupation_constraints();
     create_free_routes_no_overlap_entry_exit_constraints();
-    if (this->use_cuts) {
+    if (this->use_schedule_cuts) {
         create_free_routes_impossibility_cuts();
     }
 }
@@ -88,7 +88,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_posi
                 lhs += vars["e_mu"](tr, t, e) - vars["e_lda"](tr, t, e);
             }
             GRBLinExpr rhs = tr_len + (vars["v"](tr, t) + vars["v"](tr, t + 1)) * dt / 2;
-            if (this->include_breaking_distances) {
+            if (this->include_braking_curves) {
                 rhs += vars["brakelen"](tr, t);
             }
             model->addConstr(lhs, GRB_EQUAL, rhs, "train_pos_len_" + tr_name + "_" + std::to_string(t));
@@ -200,7 +200,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_over
                 lhs += vars["overlap"](tr, t, e);
             }
             GRBLinExpr rhs = tr_len;
-            if (this->include_breaking_distances) {
+            if (this->include_braking_curves) {
                 rhs += vars["brakelen"](tr, t);
             }
             model->addConstr(lhs, GRB_EQUAL, rhs, "train_pos_overlap_len_" + tr_name + "_" + std::to_string(t));
@@ -273,7 +273,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_boundary_free_ro
         model->addConstr(vars["len_in"](tr, t0), GRB_EQUAL, tr_len, "train_boundary_len_in_" + tr_name + "_" + std::to_string(t0));
         // len_out(tn) = tr_len + brakelen(tn) (if apllicable)
         GRBLinExpr rhs = tr_len;
-        if (this->include_breaking_distances) {
+        if (this->include_braking_curves) {
             rhs += vars["brakelen"](tr, tn);
         }
         model->addConstr(vars["len_out"](tr, tn), GRB_EQUAL, rhs,
@@ -343,7 +343,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_occu
         // x_in and x_out
         const auto& tr_len = train_list.get_train(tr_name).length;
         double len_out_ub = tr_len;
-        if (this->include_breaking_distances) {
+        if (this->include_braking_curves) {
             len_out_ub += get_max_brakelen(tr);
         }
         for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
@@ -383,7 +383,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_impo
 
             // maximum_dist_travelled
             const auto t_steps_before = t - before_after_struct.t_before + 1;
-            const auto dist_travelled_before = max_distance_travelled(tr, t_steps_before, before_after_struct.v_before, train_list.get_train(tr).acceleration, this->include_breaking_distances);
+            const auto dist_travelled_before = max_distance_travelled(tr, t_steps_before, before_after_struct.v_before, train_list.get_train(tr).acceleration, this->include_braking_curves);
             const auto t_steps_after = before_after_struct.t_after - t;
             const auto dist_travelled_after = max_distance_travelled(tr, t_steps_after, before_after_struct.v_after, train_list.get_train(tr).deceleration, false);
 

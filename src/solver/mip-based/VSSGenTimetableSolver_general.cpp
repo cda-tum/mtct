@@ -21,51 +21,70 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(const 
     instance = cda_rail::instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize, bool include_acceleration_deceleration, bool include_breaking_distances, bool use_pwl, bool use_cuts, bool debug, int time_limit, std::string file_name) {
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize_vss_positions, bool include_train_dynamics, bool include_braking_curves, bool use_pwl, bool use_schedule_cuts, int time_limit, bool debug, bool export_to_file, std::string file_name) {
     /**
-     * Solve the instance using Gurobi
+     * Solves initiated VSSGenerationTimetable instance using Gurobi and a flexible MILP formulation.
+     * The level of detail can be controlled using the parameters.
+     *
+     * @param delta_t: Length of discretized time intervals in seconds. Default: 15
+     * @param fix_routes: If true, the routes are fixed to the ones given in the instance. Otherwise, routing is part of the optimization. Default: true
+     * @param discretize_vss_positions: If true, the graphs edges are discretized in many short edges. VSS positions are then represented by vertices. If false, the VSS positions are encoded as continuous integers. Default: false
+     * @param include_train_dynamics: If true, the train dynamics (i.e., limited acceleration and deceleration) are included in the model. Default: true
+     * @param include_braking_curves: If true, the braking curves (i.e., the braking distance depending on the current speed has to be cleared) are included in the model. Default: true
+     * @param use_pwl: If true, the braking distances are approximated by piecewise linear functions with a fixed maximal error. Otherwise, they are modeled as quadratic functions and Gurobi's ability to solve these using spatial branching is used. Only relevant if include_braking_curves is true. Default: false
+     * @param use_schedule_cuts: If true, the formulation is strengthened using cuts implied by the schedule. Default: true
+     * @param time_limit: Time limit in seconds. No limit if negative. Default: -1
+     * @param debug: If true, (more detailed) debug output is printed. Default: false
+     * @param export_to_file: If true, the model is exported to a file. Default: false
+     * @param file_name: Name of the file (without extension) to which the model is exported (only if export_to_file is true). Default: "model"
      */
 
     decltype(std::chrono::high_resolution_clock::now()) start, model_created, model_solved;
     long long create_time, solve_time;
-    if (debug) {
+    if (debug || time_limit > 0) {
         start = std::chrono::high_resolution_clock::now();
     }
 
     // Save relevant variables
     dt = delta_t;
     this->fix_routes = fix_routes;
-    this->discretize = discretize;
-    this->include_acceleration_deceleration = include_acceleration_deceleration;
-    this->include_breaking_distances = include_breaking_distances;
+    this->discretize_vss_positions = discretize_vss_positions;
+    this->include_train_dynamics = include_train_dynamics;
+    this->include_braking_curves = include_braking_curves;
     this->use_pwl = use_pwl;
-    this->use_cuts = use_cuts;
+    this->use_schedule_cuts = use_schedule_cuts;
 
     if (this->fix_routes && !instance.has_route_for_every_train()) {
         throw std::runtime_error("Instance does not have a route for every train");
     }
 
     // Discretize if applicable
-    if (this->discretize) {
-        std::cout << "Preprocessing graph..." << std::endl;
+    if (this->discretize_vss_positions) {
+        std::cout << "Preprocessing graph...";
         instance.discretize();
+        std::cout << "DONE" << std::endl;
     }
 
-    std::cout << "Creating model..." << std::endl;
+    std::cout << "Creating model...";
 
     // Initialize other relevant variables
     if(debug) {
+        std::cout << std::endl;
         std::cout << "Initialize other relevant variables" << std::endl;
     }
+    // Time intervals under consideration
     num_t = instance.maxT() / dt;
     if (instance.maxT() % dt != 0) {
         num_t += 1;
     }
+    // Number of trains, edges, and vertices
     num_tr = instance.get_train_list().size();
     num_edges = instance.n().number_of_edges();
     num_vertices = instance.n().number_of_vertices();
+    // Sections that are not breakable
     unbreakable_sections = instance.n().unbreakable_sections();
-    if (this->discretize) {
+    // Sections/Edges that are breakable, i.e., VSS can be placed
+    if (this->discretize_vss_positions) {
         no_border_vss_sections = instance.n().no_border_vss_sections();
         num_breakable_sections = no_border_vss_sections.size();
         no_border_vss_vertices = instance.n().get_vertices_by_type(cda_rail::VertexType::NO_BORDER_VSS);
@@ -78,7 +97,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         num_breakable_sections = breakable_edges.size();
         relevant_edges = instance.n().relevant_breakable_edges();
     }
-
+    // Time intervals in which trains are active
     for (int i = 0; i < num_tr; ++i) {
         train_interval.emplace_back(instance.time_interval(i));
         train_interval.back().first /= dt;
@@ -89,7 +108,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
             train_interval.back().second /= dt;
         }
     }
-
+    // Pair bidirectional sections/edges to ensure only one direction is occupied at a time
     calculate_fwd_bwd_sections();
 
     // Create environment and model
@@ -116,20 +135,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         }
         create_free_routes_variables();
     }
-    if (this->discretize) {
+    if (this->discretize_vss_positions) {
         if(debug) {
-            std::cout << "Create discretized variables" << std::endl;
+            std::cout << "Create discretized VSS variables" << std::endl;
         }
         create_discretized_variables();
     } else {
         if(debug) {
-            std::cout << "Create non-discretized variables" << std::endl;
+            std::cout << "Create non-discretized VSS variables" << std::endl;
         }
         create_non_discretized_variables();
     }
-    if (this->include_breaking_distances) {
+    if (this->include_braking_curves) {
         if(debug) {
-            std::cout << "Create breaking distance variables" << std::endl;
+            std::cout << "Create braking distance variables" << std::endl;
         }
         create_brakelen_variables();
     }
@@ -156,49 +175,51 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
         }
         create_free_routes_constraints();
     }
-    if (this->discretize) {
+    if (this->discretize_vss_positions) {
         if(debug) {
-            std::cout << "Create discretized constraints" << std::endl;
+            std::cout << "Create discretized VSS constraints" << std::endl;
         }
         create_discretized_constraints();
     } else {
         if(debug) {
-            std::cout << "Create non-discretized constraints" << std::endl;
+            std::cout << "Create non-discretized VSS constraints" << std::endl;
         }
         create_non_discretized_constraints();
     }
-    if (this->include_acceleration_deceleration) {
+    if (this->include_train_dynamics) {
         if(debug) {
-            std::cout << "Create acceleration constraints" << std::endl;
+            std::cout << "Create train dynamic constraints" << std::endl;
         }
         create_acceleration_constraints();
     }
-    if (this->include_breaking_distances) {
+    if (this->include_braking_curves) {
         if(debug) {
-            std::cout << "Create breaking distance constraints" << std::endl;
+            std::cout << "Create braking distance constraints" << std::endl;
         }
         create_brakelen_constraints();
     }
 
+    std::cout << "DONE creating model" << std::endl;
+
     // Model created
-    if (debug) {
+    if (debug || time_limit > 0) {
         model_created = std::chrono::high_resolution_clock::now();
         create_time = std::chrono::duration_cast<std::chrono::milliseconds>(model_created - start).count();
-        std::cout << "Model created in " << create_time << " ms" << std::endl;
+
         auto time_left = time_limit - create_time/1000;
         if (time_left < 0) {
             time_left = 1;
         }
-        if (time_left >= 61) {
-            time_left -= 60;
-        }
-        std::cout << "Time left: " << time_left << " s" << std::endl;
         model->set(GRB_DoubleParam_TimeLimit, time_left);
+        if (debug) {
+            std::cout << "Model created in " << (create_time/1000.0)<< " s" << std::endl;
+            std::cout << "Time left: " << time_left << " s" << std::endl;
+        }
     }
 
     // Optimize
-    std::cout << "Model created. Optimizing..." << std::endl;
-    if (this->include_breaking_distances && !this->use_pwl) {
+    if (this->include_braking_curves && !this->use_pwl) {
+        // Non-convex constraints are present. Still, Gurobi can solve to optimality using spatial branching
         model->set(GRB_IntParam_NonConvex, 2);
     }
     model->optimize();
@@ -206,19 +227,24 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
     if (debug) {
         model_solved = std::chrono::high_resolution_clock::now();
         solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(model_solved - model_created).count();
-        std::cout << "Model created in " << create_time << " ms" << std::endl;
-        std::cout << "Model solved in " << solve_time << " ms" << std::endl;
-
-        std::cout << "Saving model and solution" << std::endl;
-
-        model->write(file_name + ".mps");
-        model->write(file_name + ".sol");
-
-        std::cout << "Objective: " << model->get(GRB_DoubleAttr_ObjVal) << std::endl;
+        std::cout << "Model created in " << (create_time/1000.0) << " s" << std::endl;
+        std::cout << "Model solved in " << (solve_time/1000.0) << " s" << std::endl;
     }
 
-    std::cout << "Done!" << std::endl;
+    if (export_to_file) {
+        std::cout << "Saving model and solution" << std::endl;
+        model->write(file_name + ".mps");
+        model->write(file_name + ".sol");
+    }
 
+    if (auto status = model->get(GRB_IntAttr_Status); status != GRB_OPTIMAL) {
+        std::cout << "No optimal solution found. Status: " << status << std::endl;
+        return;
+    }
+
+    if (debug) {
+        std::cout << "Objective: " << model->get(GRB_DoubleAttr_ObjVal) << std::endl;
+    }
 }
 
 
@@ -329,7 +355,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
 
     // sum over all b_i as in no_border_vss_vertices
     GRBLinExpr obj = 0;
-    if (discretize) {
+    if (discretize_vss_positions) {
         for (int i = 0; i < no_border_vss_vertices.size(); ++i) {
             obj += vars["b"](i);
         }
@@ -729,7 +755,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_speed_co
                     // v(tr,t+1) <= max_speed + (tr_speed - max_speed) * (1 - x(tr,t,e))
                     model->addConstr(vars["v"](tr, t+1), GRB_LESS_EQUAL, max_speed + (tr_speed - max_speed) * (1 - vars["x"](tr, t, e)), "v_max_speed_" + std::to_string(tr) + "_" + std::to_string((t+1)*dt) + "_" + std::to_string(e));
                     // If brakelens are included the speed is reduced before entering an edge, otherwise also include v(tr,t) <= max_speed + (tr_speed - max_speed) * (1 - x(tr,t,e))
-                    if (!this->include_breaking_distances) {
+                    if (!this->include_braking_curves) {
                         model->addConstr(vars["v"](tr, t), GRB_LESS_EQUAL, max_speed + (tr_speed - max_speed) * (1 - vars["x"](tr, t, e)), "v_max_speed2_" + std::to_string(tr) + "_" + std::to_string(t*dt) + "_" + std::to_string(e));
                     }
                 }
@@ -787,7 +813,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::calculate_fwd_bwd_secti
      * Calculate the forward and backward sections for each breakable section
      */
 
-    if (this -> discretize) {
+    if (this -> discretize_vss_positions) {
         calculate_fwd_bwd_sections_discretized();
     } else {
         calculate_fwd_bwd_sections_non_discretized();

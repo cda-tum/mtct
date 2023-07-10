@@ -9,7 +9,6 @@
 
 namespace cda_rail::solver::mip_based {
     class VSSGenTimetableSolver {
-        // TODO: Maybe add an abstract parent class later on
         private:
             cda_rail::instances::VSSGenerationTimetable instance;
 
@@ -19,7 +18,7 @@ namespace cda_rail::solver::mip_based {
             std::vector<std::pair<int, int>> train_interval;
             std::vector<std::pair<int, int>> breakable_edges_pairs;
             std::vector<int> no_border_vss_vertices, relevant_edges, breakable_edges;
-            bool fix_routes, discretize, include_acceleration_deceleration, include_breaking_distances, use_pwl, use_cuts;
+            bool fix_routes, discretize_vss_positions, include_train_dynamics, include_braking_curves, use_pwl, use_schedule_cuts;
             std::unordered_map<int, int> breakable_edge_indices;
             std::vector<std::pair<std::vector<int>, std::vector<int>>> fwd_bwd_sections;
 
@@ -93,7 +92,7 @@ namespace cda_rail::solver::mip_based {
             };
             [[nodiscard]] TemporaryImpossibilityStruct get_temporary_impossibility_struct(const int& tr, const int& t) const;
 
-            double max_distance_travelled(const int& tr, const int& time_steps, const double& v0, const double& a_max, const bool& breaking_distance) const;
+            double max_distance_travelled(const int& tr, const int& time_steps, const double& v0, const double& a_max, const bool& braking_distance) const;
 
         public:
             // Constructors
@@ -103,6 +102,6 @@ namespace cda_rail::solver::mip_based {
             explicit VSSGenTimetableSolver(const char* instance_path);
 
             // Methods
-            void solve(int delta_t = 15, bool fix_routes = true, bool discretize = false, bool include_acceleration_deceleration = true, bool include_breaking_distances = true, bool use_pwl = false, bool use_cuts = true, bool debug = false, int time_limit = 60*60, std::string file_name = "");
+            void solve(int delta_t = 15, bool fix_routes = true, bool discretize_vss_positions = false, bool include_train_dynamics = true, bool include_braking_curves = true, bool use_pwl = false, bool use_schedule_cuts = true, int time_limit = -1, bool debug = false, bool export_to_file = false, std::string file_name = "model");
     };
 }
