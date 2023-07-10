@@ -32,7 +32,7 @@ if(MSVC AND MT)
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
 endif()
 
-find_package(Gurobi REQUIRED)
+# find_package(Gurobi REQUIRED)
 
 if(NOT GUROBI_FOUND)
     message(WARNING "Did not find Gurobi")
