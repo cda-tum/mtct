@@ -209,13 +209,20 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool 
         create_time = std::chrono::duration_cast<std::chrono::milliseconds>(model_created - start).count();
 
         auto time_left = time_limit - create_time/1000;
-        if (time_left < 0) {
+        if (time_left < 0 && time_limit > 0) {
             time_left = 1;
         }
-        model->set(GRB_DoubleParam_TimeLimit, time_left);
+        if (time_limit > 0) {
+            model->set(GRB_DoubleParam_TimeLimit, time_left);
+        }
         if (debug) {
             std::cout << "Model created in " << (create_time/1000.0)<< " s" << std::endl;
-            std::cout << "Time left: " << time_left << " s" << std::endl;
+            std::cout << "Time left: ";
+            if (time_limit > 0) {
+                std::cout << time_left << " s" << std::endl;
+            } else {
+                std::cout << "No Limit" << std::endl;
+            }
         }
     }
 
