@@ -3,8 +3,9 @@
 
 #include "gtest/gtest.h"
 
-//TEST(Solver, GurobiVSSGenFixedRoute) {
-//    cda_rail::solver::mip_based::VSSGenTimetableSolver solver("./example-networks/Fig11/");
-//
-//    solver.solve(15, false, false, true, false, false, true);
-//}
+TEST(Solver, GurobiVSSGenFixedRoute) {
+    cda_rail::solver::mip_based::VSSGenTimetableSolver solver("./example-networks/SimpleStation/");
+
+   auto obj_val = solver.solve();
+   EXPECT_EQ(obj_val, 1);
+}
