@@ -102,6 +102,6 @@ namespace cda_rail::solver::mip_based {
             explicit VSSGenTimetableSolver(const char* instance_path);
 
             // Methods
-            void solve(int delta_t = 15, bool fix_routes = true, bool discretize_vss_positions = false, bool include_train_dynamics = true, bool include_braking_curves = true, bool use_pwl = false, bool use_schedule_cuts = true, int time_limit = -1, bool debug = false, bool export_to_file = false, std::string file_name = "model");
+            int solve(int delta_t = 15, bool fix_routes = true, bool discretize_vss_positions = false, bool include_train_dynamics = true, bool include_braking_curves = true, bool use_pwl = false, bool use_schedule_cuts = true, int time_limit = -1, bool debug = false, bool export_to_file = false, std::string file_name = "model");
     };
 }

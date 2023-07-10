@@ -21,7 +21,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(const 
     instance = cda_rail::instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize_vss_positions, bool include_train_dynamics, bool include_braking_curves, bool use_pwl, bool use_schedule_cuts, int time_limit, bool debug, bool export_to_file, std::string file_name) {
+int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool fix_routes, bool discretize_vss_positions, bool include_train_dynamics, bool include_braking_curves, bool use_pwl, bool use_schedule_cuts, int time_limit, bool debug, bool export_to_file, std::string file_name) {
     /**
      * Solves initiated VSSGenerationTimetable instance using Gurobi and a flexible MILP formulation.
      * The level of detail can be controlled using the parameters.
@@ -37,6 +37,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
      * @param debug: If true, (more detailed) debug output is printed. Default: false
      * @param export_to_file: If true, the model is exported to a file. Default: false
      * @param file_name: Name of the file (without extension) to which the model is exported (only if export_to_file is true). Default: "model"
+     *
+     * @return objective value, i.e., number of VSS borders created. -1 if no solution was found.
      */
 
     decltype(std::chrono::high_resolution_clock::now()) start, model_created, model_solved;
@@ -239,12 +241,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool
 
     if (auto status = model->get(GRB_IntAttr_Status); status != GRB_OPTIMAL) {
         std::cout << "No optimal solution found. Status: " << status << std::endl;
-        return;
+        return -1;
     }
 
+    int obj_val = round(model->get(GRB_DoubleAttr_ObjVal));
     if (debug) {
-        std::cout << "Objective: " << model->get(GRB_DoubleAttr_ObjVal) << std::endl;
+        std::cout << "Objective: " << obj_val << std::endl;
     }
+    return obj_val;
 }
 
 
