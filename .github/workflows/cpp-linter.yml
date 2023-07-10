@@ -23,7 +23,8 @@ jobs:
         run: |
           CC=clang-14 CXX=clang++-14 \
           cmake -S . -B build \
-          -DBUILD_TESTS=ON
+          -DBUILD_TESTS=ON \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
       - name: Run cpp-linter
         id: linter
         env:
