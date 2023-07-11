@@ -43,6 +43,7 @@ jobs:
           --files-changed-only=false \
           --ignore="build" \
           --database=build
+          --exclude="gurobi1002/"
       - name: Fail if linter found errors
         if: steps.linter.outputs.checks-failed > 0
         run: echo "Linter found errors" && exit 1
