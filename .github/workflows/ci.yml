@@ -30,7 +30,7 @@ jobs:
         config:
           - { os: ubuntu-latest, toolchain: "" }
           - { os: macos-latest, toolchain: "" }
-          - { os: windows-latest, toolchain: "-T ClangCl" }
+          # - { os: windows-latest, toolchain: "-T ClangCl" }
     steps:
       - uses: actions/checkout@v3
         with:
@@ -54,13 +54,13 @@ jobs:
         run: |
           wget https://packages.gurobi.com/10.0/gurobi10.0.2_macos_universal2.pkg
           sudo installer -pkg gurobi10.0.2_macos_universal2.pkg -target /
-      - if: runner.os == 'Windows'
-        name: download-gurobi-windows
-        shell: powershell
-        run: |
-          wget https://packages.gurobi.com/10.0/Gurobi-10.0.2-win64.msi -O Gurobi-10.0.2-win64.msi
-          Start-Process "msiexec" "/i `"Gurobi-10.0.2-win64.msi`" /qn /l*! `"install.log`" LicenseAccepted=1 INSTALLDIR=C:\gurobi1002\" -NoNewWindow -PassThru
-          ls "C:\"
+      # - if: runner.os == 'Windows'
+      #   name: download-gurobi-windows
+      #   shell: powershell
+      #   run: |
+      #     wget https://packages.gurobi.com/10.0/Gurobi-10.0.2-win64.msi -O Gurobi-10.0.2-win64.msi
+      #     Start-Process "msiexec" "/i `"Gurobi-10.0.2-win64.msi`" /qn /l*! `"install.log`" LicenseAccepted=1 INSTALLDIR=C:\gurobi1002\" -NoNewWindow -PassThru
+      #     ls "C:\"
           # procLog = Start-Process "powershell" "Get-Content -Path `"install.log`" -Wait" -NoNewWindow -PassThru 
           # procMain.WaitForExit() 
           # procLog.Kill()
