@@ -36,21 +36,33 @@ jobs:
         with:
           submodules: recursive
       - shell: bash
-        id: install-gurobi
-        env:
-          VERSION: 10.0.2
-        run: |
-          wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
-          tar -xvzf gurobi10.0.2_linux64.tar.gz
-          rm -rf gurobi10.0.2_linux64.tar.gz
-          ls . 
-      - shell: bash
         id: write-license
         env:
           LICENSE: ${{ secrets.LICENSE   }}
         run: |
           echo "$LICENSE" > $PWD/gurobi.lic
           echo "grb_license_file=$PWD/gurobi.lic" >> $GITHUB_OUTPUT
+      - if: runner.os == 'Linux'
+        name: download-gurobi-linux
+        shell: bash
+        run: |
+          wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
+          tar -xvzf gurobi10.0.2_linux64.tar.gz
+          rm -rf gurobi10.0.2_linux64.tar.gz
+      - if: runner.os == 'macOs'
+        name: download-gurobi-mac
+        shell: bash
+        run: |
+          wget https://packages.gurobi.com/10.0/gurobi10.0.2_macos_universal2.pkg
+          installer -pkg gurobi10.0.2_macos_universal2.pkg -target /
+          rm -rf gurobi10.0.2_macos_universal2.pkg
+      - if: runner.os == 'Windows'
+        name: download-gurobi-mac
+        shell: powershell
+        run: |
+          wet https://packages.gurobi.com/10.0/Gurobi-10.0.2-win64.msi
+          .\Gurobi-10.0.2-win64.msi 
+          rm -rf Gurobi-10.0.2-win64.msi
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
       - name: Build
