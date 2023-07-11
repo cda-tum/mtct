@@ -42,10 +42,17 @@ jobs:
       #     version: ${{ env.Z3_VERSION }}
       #   env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - shell: bash
+        id: write-license
+        env:
+          LICENSE: ${{ secrets.GUROBI_LICENSE   }}
+        run: |
+          echo "$LICENSE" > $PWD/gurobi.lic
+          echo "grb_license_file=$PWD/gurobi.lic" >> $GITHUB_OUTPUT
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
         env:
-          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+          GRB_LICENSE_FILE: ${{ steps.write-license.outputs.grb_license_file }}
       - name: Build
         run: cmake --build build --config Release
       - name: Test
