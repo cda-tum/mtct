@@ -59,9 +59,7 @@ jobs:
         shell: powershell
         run: |
           wget https://packages.gurobi.com/10.0/Gurobi-10.0.2-win64.msi -O Gurobi-10.0.2-win64.msi
-          ls .
           Start-Process "msiexec" "/i `"Gurobi-10.0.2-win64.msi`" /qn /l*! `"install.log`" LicenseAccepted=1 INSTALLDIR=C:\gurobi1002" -NoNewWindow -PassThru
-          cat .\install.log
           # procLog = Start-Process "powershell" "Get-Content -Path `"install.log`" -Wait" -NoNewWindow -PassThru 
           # procMain.WaitForExit() 
           # procLog.Kill()
