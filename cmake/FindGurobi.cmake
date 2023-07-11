@@ -11,7 +11,6 @@ find_library(GUROBI_LIBRARY
   PATH_SUFFIXES lib linux64/lib win64/lib mac64/lib)
 
 
-
 if(MSVC)
   set(MSVC_YEAR "2017")
   
@@ -37,15 +36,6 @@ else()
   set(GUROBI_CXX_DEBUG_LIBRARY ${GUROBI_CXX_LIBRARY})
 endif()
 
-# legacy support:
-set(GUROBI_INCLUDE_DIRS "${GUROBI_INCLUDE_DIR}")
-set(GUROBI_LIBRARIES Gurobi::GurobiC Gurobi::GurobiCXX)
-
 include(FindPackageHandleStandardArgs)
-<<<<<<< Updated upstream
-find_package_handle_standard_args(Gurobi  DEFAULT_MSG GUROBI_LIBRARY GUROBI_INCLUDE_DIR GUROBI_SRC_DIR)
-=======
+
 find_package_handle_standard_args(Gurobi DEFAULT_MSG GUROBI_LIBRARY GUROBI_INCLUDE_DIRS GUROBI_CXX_LIBRARY GUROBI_CXX_DEBUG_LIBRARY)
-
->>>>>>> Stashed changes
-
