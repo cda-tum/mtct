@@ -58,7 +58,7 @@ jobs:
         name: download-gurobi-windows
         shell: powershell
         run: |
-          wget https://packages.gurobi.com/10.0/Gurobi-10.0.2-win64.msi
+          wget https://packages.gurobi.com/10.0/Gurobi-10.0.2-win64.msi -O Gurobi-10.0.2-win64.msi
           ls .
           Start-Process "msiexec" "/i `"Gurobi-10.0.2-win64.msi`" /qn /l*! `"install.log`" LicenseAccepted=1 INSTALLDIR=C:\gurobi" -NoNewWindow -PassThru -wait
           cat .\install.log
