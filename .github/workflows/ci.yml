@@ -35,24 +35,23 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
-          # TODO Add Gurobi
-      # - name: Install Z3
-      #   uses: cda-tum/setup-z3@v1
-      #   with:
-      #     version: ${{ env.Z3_VERSION }}
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - shell: bash
+        id: install-gurobi
+        env:
+          VERSION: 10.0.2
+        run: |
+          wget https://packages.gurobi.com/10.0/gurobi$VERSION_linux64.tar.gz
+          tar -xvzf gurobi$VERSION_linux64.tar.gz
+          rm -rf gurobi$VERSION_linux64.tar.gz
       - shell: bash
         id: write-license
         env:
-          LICENSE: ${{ secrets.GUROBI_LICENSE   }}
+          LICENSE: ${{ secrets.LICENSE   }}
         run: |
           echo "$LICENSE" > $PWD/gurobi.lic
           echo "grb_license_file=$PWD/gurobi.lic" >> $GITHUB_OUTPUT
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
-        env:
-          GRB_LICENSE_FILE: ${{ steps.write-license.outputs.grb_license_file }}
       - name: Build
         run: cmake --build build --config Release
       - name: Test
