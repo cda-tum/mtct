@@ -59,7 +59,7 @@ jobs:
         shell: powershell
         run: |
           wget https://packages.gurobi.com/10.0/Gurobi-10.0.2-win64.msi
-          procMain = Start-Process "msiexec" "/i `"Gurobi-10.0.2-win64.msi`" /qn /l*! `"install.log`"" -NoNewWindow -PassThru
+          Start-Process "msiexec" "/i `"Gurobi-10.0.2-win64.msi`" /qn /l*! `"install.log`"" -NoNewWindow -PassThru
           # procLog = Start-Process "powershell" "Get-Content -Path `"install.log`" -Wait" -NoNewWindow -PassThru 
           # procMain.WaitForExit() 
           # procLog.Kill()
@@ -71,6 +71,7 @@ jobs:
             Gurobi-10.0.2-win64.msi
             gurobi10.0.2_macos_universal2.pkg
             gurobi10.0.2_linux64.tar.gz
+          key: gurobi
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
