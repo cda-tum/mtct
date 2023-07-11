@@ -40,9 +40,9 @@ jobs:
         env:
           VERSION: 10.0.2
         run: |
-          wget https://packages.gurobi.com/10.0/gurobi$VERSION_linux64.tar.gz
-          tar -xvzf gurobi$VERSION_linux64.tar.gz
-          rm -rf gurobi$VERSION_linux64.tar.gz
+          wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
+          tar -xvzf gurobi10.0.2_linux64.tar.gz
+          rm -rf gurobi10.0.2_linux64.tar.gz
       - shell: bash
         id: write-license
         env:
