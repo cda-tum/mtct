@@ -66,14 +66,14 @@ jobs:
           # procMain.WaitForExit() 
           # procLog.Kill()
 
-      - name: cache-gurobi
-        uses: actions/cache@v3
-        with:
-          path: |
-            Gurobi-10.0.2-win64.msi
-            gurobi10.0.2_macos_universal2.pkg
-            gurobi10.0.2_linux64.tar.gz
-          key: gurobi
+      # - name: cache-gurobi
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       Gurobi-10.0.2-win64.msi
+      #       gurobi10.0.2_macos_universal2.pkg
+      #       gurobi10.0.2_linux64.tar.gz
+      #     key: gurobi
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
