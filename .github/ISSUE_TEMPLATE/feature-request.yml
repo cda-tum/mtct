@@ -3,7 +3,7 @@ description: Suggest an idea
 title: "✨ <title>"
 labels: ["enhancement"]
 assignees:
-  - burgholzer
+  - sengels-tum
 body:
   - type: markdown
     attributes:
