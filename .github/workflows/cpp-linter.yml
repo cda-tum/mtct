@@ -41,9 +41,8 @@ jobs:
           --tidy-checks="" \
           --thread-comments=true \
           --files-changed-only=false \
-          --ignore="build" \
+          --ignore="build" "gurobi1002" \
           --database=build
-          --exclude="gurobi1002/"
       - name: Fail if linter found errors
         if: steps.linter.outputs.checks-failed > 0
         run: echo "Linter found errors" && exit 1
