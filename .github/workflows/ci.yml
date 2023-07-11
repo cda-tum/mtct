@@ -43,6 +43,7 @@ jobs:
           wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
           tar -xvzf gurobi10.0.2_linux64.tar.gz
           rm -rf gurobi10.0.2_linux64.tar.gz
+          ls . 
       - shell: bash
         id: write-license
         env:
