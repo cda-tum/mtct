@@ -11,32 +11,31 @@ find_library(GUROBI_LIBRARY
   PATH_SUFFIXES lib linux64/lib win64/lib mac64/lib)
 
 
-if(CXX)
-  if(MSVC)
-    set(MSVC_YEAR "2017")
-    
-    if(MT)
-      set(M_FLAG "mt")
-    else()
-      set(M_FLAG "md")
-    endif()
-    
-    find_library(GUROBI_CXX_LIBRARY
-      NAMES gurobi_c++${M_FLAG}${MSVC_YEAR}
-      HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME}
-      PATH_SUFFIXES lib)
-    find_library(GUROBI_CXX_DEBUG_LIBRARY
-      NAMES gurobi_c++${M_FLAG}d${MSVC_YEAR}
-      HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME}
-      PATH_SUFFIXES lib)
+if(MSVC)
+  set(MSVC_YEAR "2017")
+  
+  if(MT)
+    set(M_FLAG "mt")
   else()
-    find_library(GUROBI_CXX_LIBRARY
-      NAMES gurobi_c++
-      HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME}
-      PATH_SUFFIXES lib)
-    set(GUROBI_CXX_DEBUG_LIBRARY ${GUROBI_CXX_LIBRARY})
+    set(M_FLAG "md")
   endif()
+  
+  find_library(GUROBI_CXX_LIBRARY
+    NAMES gurobi_c++${M_FLAG}${MSVC_YEAR}
+    HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME} ${PROJECT_SOURCE_DIR}/gurobi${_GUROBI_KNOWN_VERSIONS}
+    PATH_SUFFIXES lib)
+  find_library(GUROBI_CXX_DEBUG_LIBRARY
+    NAMES gurobi_c++${M_FLAG}d${MSVC_YEAR}
+    HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME}
+    PATH_SUFFIXES lib linux64/lib win64/lib mac64/lib)
+else()
+  find_library(GUROBI_CXX_LIBRARY
+    NAMES gurobi_c++ 
+    HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME} ${PROJECT_SOURCE_DIR}/gurobi${_GUROBI_KNOWN_VERSIONS}
+    PATH_SUFFIXES lib linux64/lib win64/lib mac64/lib)
+  set(GUROBI_CXX_DEBUG_LIBRARY ${GUROBI_CXX_LIBRARY})
 endif()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Gurobi DEFAULT_MSG GUROBI_LIBRARY)
+
+find_package_handle_standard_args(Gurobi DEFAULT_MSG GUROBI_LIBRARY GUROBI_INCLUDE_DIRS GUROBI_CXX_LIBRARY GUROBI_CXX_DEBUG_LIBRARY)
