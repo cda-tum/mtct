@@ -41,6 +41,13 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool 
      * @return objective value, i.e., number of VSS borders created. -1 if no solution was found.
      */
 
+    if(const char* env_p = std::getenv("GRB_LICENSE_FILE")) {
+        std::cout << "Your GRB_LICENSE_FILE is: " << env_p << std::endl;
+    } else {
+        std::cout << "GRB_LICENSE_FILE is not set" << std::endl;
+    }
+    return -1;
+
     decltype(std::chrono::high_resolution_clock::now()) start, model_created, model_solved;
     long long create_time, solve_time;
     if (debug || time_limit > 0) {
