@@ -105,11 +105,9 @@ if(TARGET Gurobi::GurobiC AND GUROBI_CXX_SRC AND NOT TARGET Gurobi::GurobiCXX)
     # and set the SYSTEM flag for the include dirs of the Gurobi libs to suppress
     # warnings
     set_target_properties(GurobiCXX PROPERTIES POSITION_INDEPENDENT_CODE ON
-      INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-                             $<TARGET_PROPERTY:Gurobi::GurobiCXX,INTERFACE_INCLUDE_DIRECTORIES>)# cmake-lint: disable=C0307
-
+      INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:GurobiCXX,INTERFACE_INCLUDE_DIRECTORIES>)# cmake-lint: disable=C0307
 endif()
 
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Gurobi  DEFAULT_MSG GUROBI_LIBRARY GUROBI_INCLUDE_DIR GUROBI_SRC_DIR)
+find_package_handle_standard_args(Gurobi DEFAULT_MSG GUROBI_LIBRARY GUROBI_INCLUDE_DIR GUROBI_SRC_DIR)
