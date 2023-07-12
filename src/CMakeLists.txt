@@ -34,6 +34,7 @@ endif()
 set(tinyxml2_BUILD_TESTING OFF)
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/tinyxml2 extern/tinyxml2)
 
+target_link_libraries(${PROJECT_NAME} PUBLIC project_options)
 # add json
 set(json_BUILD_TESTING OFF)
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/json extern/json)
