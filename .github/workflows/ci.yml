@@ -19,7 +19,7 @@ defaults:
 env:
   CMAKE_BUILD_PARALLEL_LEVEL: 3
   CTEST_PARALLEL_LEVEL: 3
-  GRB_LICENSE_FILE: "$PWD"/gurobi.lic
+  GRB_LICENSE_FILE: ${{PWD}}/gurobi.lic
 
 jobs:
   cpp-tests:
