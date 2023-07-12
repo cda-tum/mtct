@@ -21,9 +21,10 @@ if (WIN32)
             ${GUROBI_BIN_DIR}/gurobi*.dll
             )
 else()
+    message("I am in ELSE")
     file(GLOB GUROBI_LIBRARY_LIST
             RELATIVE ${GUROBI_LIB_DIR}
-            ${GUROBI_LIB_DIR}/libgurobi*.(so/dylib)
+            ${GUROBI_LIB_DIR}/libgurobi*.dylib
             )
 endif()
 
