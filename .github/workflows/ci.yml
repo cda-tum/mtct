@@ -49,7 +49,11 @@ jobs:
         shell: bash
         run: |
           ls $PWD
+          echo "Github Output next"
           echo $GITHUB_OUTPUT
+          echo "Gurobi License File next"
+          echo $GRB_LICENSE_FILE
+          echo "catting Github Output next"
           cat $GITHUB_OUTPUT
       - if: runner.os == 'Linux'
         name: download-gurobi-linux
