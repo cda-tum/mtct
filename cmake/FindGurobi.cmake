@@ -3,7 +3,7 @@ set(_GUROBI_KNOWN_VERSIONS ${PROJECT_SOURCE_DIR}/gurobi1002 ${PROJECT_SOURCE_DIR
 find_path(GUROBI_HOME
         NAMES include/gurobi_c++.h include/gurobi_c.h gurobi_c++.h gurobi_c.h
         PATHS ${GUROBI_DIR} $ENV{GUROBI_HOME} ${_GUROBI_KNOWN_VERSIONS}
-        PATH_SUFFIXES include linux64 win64 mac64 macos macos_universal2
+        PATH_SUFFIXES include linux64 win64 mac64 macos macos_universal2 power64 armlinux64
         $ENV{GUROBI_HOME}
       )
 
