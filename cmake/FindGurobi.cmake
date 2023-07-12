@@ -1,24 +1,15 @@
 set(_GUROBI_KNOWN_VERSIONS ${PROJECT_SOURCE_DIR}/gurobi1002 ${PROJECT_SOURCE_DIR}/gurobi1001)
 
-find_path(GUROBI_INCLUDE_DIR
-  NAMES gurobi_c.h gurobi_c++.h
-  HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME} ${PROJECT_SOURCE_DIR}/gurobi${_GUROBI_KNOWN_VERSIONS}
-  PATH_SUFFIXES include linux64/include win64/include mac64/include)
+find_path(GUROBI_HOME
+        NAMES include/gurobi_c++.h include/gurobi_c.h gurobi_c++.h gurobi_c.h
+        PATHS ${GUROBI_DIR} $ENV{GUROBI_HOME} ${_GUROBI_KNOWN_VERSIONS}
+        PATH_SUFFIXES include linux64 win64 mac64
+        $ENV{GUROBI_HOME}
+      )
 
-find_library(GUROBI_LIBRARY
-  NAMES gurobi gurobi100 gurobi100
-  HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME} ${PROJECT_SOURCE_DIR}/gurobi${_GUROBI_KNOWN_VERSIONS}
-  PATH_SUFFIXES lib linux64/lib win64/lib mac64/lib)
-
-find_path(GUROBI_LIB_DIR
-  NAMES gurobi.jar
-  HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME} ${PROJECT_SOURCE_DIR}/gurobi${_GUROBI_KNOWN_VERSIONS}
-  PATH_SUFFIXES lib linux64/lib win64/lib mac64/lib)
-
-find_path(GUROBI_BIN_DIR
-  NAMES grbgetkey
-  HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME} ${PROJECT_SOURCE_DIR}/gurobi${_GUROBI_KNOWN_VERSIONS}
-  PATH_SUFFIXES bin linux64/bin win64/bin mac64/bin)
+set(GUROBI_INCLUDE_DIR "${GUROBI_HOME}/include")   
+set(GUROBI_BIN_DIR "${GUROBI_HOME}/bin")
+set(GUROBI_LIB_DIR "${GUROBI_HOME}/lib")
 
 if (WIN32)
     file(GLOB GUROBI_LIBRARY_LIST
