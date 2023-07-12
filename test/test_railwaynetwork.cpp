@@ -185,7 +185,7 @@ TEST(Functionality, NetworkSections) {
     int v7_v6 = network.add_edge("v7", "v6", 1, 1, false);
     int v6_v5 = network.add_edge("v6", "v5", 1, 1, false);
     int v5_v4 = network.add_edge("v5", "v4", 1, 1, false);
-    int v4_v31 = network.add_edge("v4", "v31", 1, 1, true);
+    network.add_edge("v4", "v31", 1, 1, true);
     int v31_v21 = network.add_edge("v31", "v21", 1, 1, false);
     int v21_v1 = network.add_edge("v21", "v1", 1, 1, false);
     int v1_v0 = network.add_edge("v1", "v0", 1, 1, false);
@@ -786,8 +786,8 @@ TEST(Functionality, SortPairs) {
     int v2_v3 = network.add_edge("v2", "v3", 100, 100, false);
     int v3_v4 = network.add_edge("v3", "v4", 100, 100, false);
     int v4_v3 = network.add_edge("v4", "v3", 100, 100, false);
-    int v4_v5 = network.add_edge("v4", "v5", 100, 100, false);
-    int v5_v4 = network.add_edge("v5", "v4", 100, 100, false);
+    network.add_edge("v4", "v5", 100, 100, false);
+    network.add_edge("v5", "v4", 100, 100, false);
 
     // Edge pairs
     std::vector<int> to_combine = {v3_v4, v4_v3, v2_v1, v1_v2, v1_v0, v0_v1, v2_v3};
@@ -2108,17 +2108,17 @@ TEST(Functionality, ExportRouteMap) {
 
 TEST(Functionality, RouteMapHelper) {
     cda_rail::Network network;
-    int v0 = network.add_vertex("v0", cda_rail::VertexType::TTD);
+    network.add_vertex("v0", cda_rail::VertexType::TTD);
     int v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
     int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
-    int v3 = network.add_vertex("v3", cda_rail::VertexType::TTD);
+    network.add_vertex("v3", cda_rail::VertexType::TTD);
 
-    int v0_v1 = network.add_edge("v0", "v1", 10, 5, false);
+    network.add_edge("v0", "v1", 10, 5, false);
     int v1_v2 = network.add_edge("v1", "v2", 20, 5, false);
     int v2_v3 = network.add_edge("v2", "v3", 30, 5, false);
     int v3_v2 = network.add_edge("v3", "v2", 30, 5, false);
     int v2_v1 = network.add_edge("v2", "v1", 20, 5, false);
-    int v1_v0 = network.add_edge("v1", "v0", 10, 5, false);
+    network.add_edge("v1", "v0", 10, 5, false);
 
     network.add_successor({"v0", "v1" }, {"v1", "v2"});
     network.add_successor({"v1", "v2" }, {"v2", "v3"});

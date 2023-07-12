@@ -275,7 +275,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_general_variable
     for (int i = 0; i < num_tr; ++i) {
         auto max_speed = instance.get_train_list().get_train(i).max_speed;
         auto tr_name = train_list.get_train(i).name;
-        auto r_size = instance.get_route(tr_name).size();
         for (int t = train_interval[i].first; t <= train_interval[i].second + 1; ++t) {
             vars["v"](i, t) = model->addVar(0, max_speed, 0, GRB_CONTINUOUS, "v_" + tr_name + "_" + std::to_string(t*dt));
         }
