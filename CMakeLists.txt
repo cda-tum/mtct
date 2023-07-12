@@ -23,6 +23,18 @@ macro(CHECK_SUBMODULE_PRESENT modulename)
 endmacro()
 
 include(cmake/StandardProjectSettings.cmake)
+if(NOT TARGET project_options)
+  # Use the options specified in CompilerOptions.cmake
+  add_library(project_options INTERFACE)
+
+  # Standard compiler options
+  include(cmake/CompilerOptions.cmake)
+  enable_project_options(project_options)
+
+  # Sanitizer options if supported by compiler
+  include(cmake/Sanitizers.cmake)
+  enable_sanitizers(project_options)
+endif()
 
 check_submodule_present("googletest")
 check_submodule_present("json")
