@@ -38,7 +38,7 @@ jobs:
       - shell: bash
         id: write-license
         env:
-          LICENSE: ${{ secrets.GUROBI_LICENSE   }}
+          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "grb_license_file=$PWD/gurobi.lic" >> $GITHUB_OUTPUT          
