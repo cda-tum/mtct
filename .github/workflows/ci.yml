@@ -19,7 +19,6 @@ defaults:
 env:
   CMAKE_BUILD_PARALLEL_LEVEL: 3
   CTEST_PARALLEL_LEVEL: 3
-  GUROBI_HOME: /Library/gurobi1002
 
 jobs:
   cpp-tests:
