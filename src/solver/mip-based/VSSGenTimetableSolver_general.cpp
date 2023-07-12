@@ -46,7 +46,11 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool 
     char **s = environ;
 
     for (; *s; s++) {
-        printf("%s\n", *s);
+        // Print every character of s with spaces between each character of s
+        for (char *c = *s; *c; c++) {
+            std::cout << *c << " ";
+        }
+        std::cout << std::endl;
     }
 
     return -1;
