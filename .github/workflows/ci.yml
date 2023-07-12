@@ -19,6 +19,7 @@ defaults:
 env:
   CMAKE_BUILD_PARALLEL_LEVEL: 3
   CTEST_PARALLEL_LEVEL: 3
+  GRB_LICENSE_FILE: /home/runner/work/rail/rail/gurobi.lic
 
 jobs:
   cpp-tests:
@@ -42,8 +43,6 @@ jobs:
           GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
-          echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> "$GITHUB_ENV"
-          echo $GRB_LICENSE_FILE
       - if: runner.os == 'Linux'
         name: download-gurobi-linux
         shell: bash
