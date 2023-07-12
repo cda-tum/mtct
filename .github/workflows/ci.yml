@@ -45,6 +45,7 @@ jobs:
         id: set-license-position
         run: |
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_OUTPUT
+          echo $GRB_LICENSE_FILE
       - name: debug-output
         shell: bash
         run: |
