@@ -96,3 +96,4 @@ jobs:
           gcov: true
           gcov_ignore: "extern/**/*"
           token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
