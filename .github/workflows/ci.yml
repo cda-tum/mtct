@@ -49,6 +49,7 @@ jobs:
         shell: bash
         run: |
           ls $PWD
+          echo $GITHUB_OUTPUT
       - if: runner.os == 'Linux'
         name: download-gurobi-linux
         shell: bash
