@@ -36,26 +36,11 @@ jobs:
         with:
           submodules: recursive
       - shell: bash
+        name: setup-gurobi-license
         id: write-license
-        env:
-          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
         run: |
-          echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
-      - shell: bash
-        id: set-license-position
-        run: |
-          echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_OUTPUT
-          echo $GRB_LICENSE_FILE
-      - name: debug-output
-        shell: bash
-        run: |
-          ls $PWD
-          echo "Github Output next"
-          echo $GITHUB_OUTPUT
-          echo "Gurobi License File next"
-          echo $GRB_LICENSE_FILE
-          echo "catting Github Output next"
-          cat $GITHUB_OUTPUT
+          echo "${{secrets.GUROBI_LICENSE}}" > $PWD/gurobi.lic
+          echo "grb_license_file=$PWD/gurobi.lic" >> $GITHUB_OUTPUT
       - if: runner.os == 'Linux'
         name: download-gurobi-linux
         shell: bash
