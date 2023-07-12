@@ -100,8 +100,14 @@ if(TARGET Gurobi::GurobiC AND GUROBI_CXX_SRC AND NOT TARGET Gurobi::GurobiCXX)
 
     target_include_directories(GurobiCXX PUBLIC ${GUROBI_INCLUDE_DIR})
     target_link_libraries(GurobiCXX PUBLIC Gurobi::GurobiC)
-    # We need to be able to link this into a shared library:
-    set_target_properties(GurobiCXX PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+    # We need to be able to link this into a shared library
+    # and set the SYSTEM flag for the include dirs of the Gurobi libs to suppress
+    # warnings
+    set_target_properties(GurobiCXX PROPERTIES POSITION_INDEPENDENT_CODE ON
+      INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+                             $<TARGET_PROPERTY:Gurobi::GurobiCXX,INTERFACE_INCLUDE_DIRECTORIES>)# cmake-lint: disable=C0307
+
 endif()
 
 
