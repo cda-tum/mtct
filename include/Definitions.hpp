@@ -42,12 +42,8 @@ namespace cda_rail {
         * @return Vector of all subsets of size k of the set {0, 1, ..., n-1} as pairs of indices
         */
 
-        // Throw an error if n < 0
-        if (n < 0) {
-            throw std::invalid_argument("n must be non-negative");
-        }
-        // Throw an error if k > n or k < 0
-        if (k > n || k < 0) {
+        // Throw an error if k > n
+        if (k > n) {
             throw std::invalid_argument("k must be between 0 and n");
         }
 
