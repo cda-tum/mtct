@@ -54,7 +54,7 @@ jobs:
         shell: bash
         run: |
           wget https://packages.gurobi.com/10.0/gurobi10.0.2_macos_universal2.pkg
-          sudo installer -pkg gurobi10.0.2_macos_universal2.pkg -target /
+          sudo installer -pkg gurobi10.0.2_macos_universal2.pkg
       # - if: runner.os == 'Windows'
       #   name: download-gurobi-windows
       #   shell: powershell
