@@ -48,12 +48,7 @@ jobs:
       - name: debug-output
         shell: bash
         run: |
-          for entry in "$PWD"/*
-          do
-            echo "$entry"
-          end
-          echo "END"
-          echo "$GITHUB_OUTPUT"
+          ls $PWD
       - if: runner.os == 'Linux'
         name: download-gurobi-linux
         shell: bash
