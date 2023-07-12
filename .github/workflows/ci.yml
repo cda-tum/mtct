@@ -19,7 +19,6 @@ defaults:
 env:
   CMAKE_BUILD_PARALLEL_LEVEL: 3
   CTEST_PARALLEL_LEVEL: 3
-  GUROBI_HOME: /Library/gurobi1002
 
 jobs:
   cpp-tests:
@@ -56,6 +55,7 @@ jobs:
         run: |
           wget https://packages.gurobi.com/10.0/gurobi10.0.2_macos_universal2.pkg
           sudo installer -pkg gurobi10.0.2_macos_universal2.pkg -target /
+          echo "GUROBI_HOME=/Library/gurobi1002/macos_universal2" >> $GITHUB_ENV
       # - if: runner.os == 'Windows'
       #   name: download-gurobi-windows
       #   shell: powershell
