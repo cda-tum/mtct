@@ -47,6 +47,7 @@ In that case you can manually set GUROBI_HOME in FindGurobi.cmake in the cmake d
 set(GUROBI_HOME "/home/opt/gurobi1001/linux64")
 ```
 at the beginning.
+Alternatively you can set the system environment variable GUROBI_HOME to the respective value.
 
 ### Usage
 
