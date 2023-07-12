@@ -1,1 +1,20 @@
-{"tr1": {"length": 100, "max_speed": 83.33, "acceleration": 2, "deceleration": 1} , "tr2": {"length": 100, "max_speed": 27.78, "acceleration": 2, "deceleration": 1}, "tr3": {"length": 250, "max_speed": 20.0, "acceleration": 2, "deceleration": 1}}
+{
+  "tr1": {
+    "length": 100,
+    "max_speed": 83.33,
+    "acceleration": 2,
+    "deceleration": 1
+  },
+  "tr2": {
+    "length": 100,
+    "max_speed": 27.78,
+    "acceleration": 2,
+    "deceleration": 1
+  },
+  "tr3": {
+    "length": 250,
+    "max_speed": 20.0,
+    "acceleration": 2,
+    "deceleration": 1
+  }
+}

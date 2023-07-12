@@ -1,1 +1,44 @@
-{"tr1lr":{"entry":"v1b","exit":"v14b","stops":null,"t_0":180,"t_n":960,"v_0":50.0,"v_n":50.0},"tr1rl":{"entry":"v14b","exit":"v1b","stops":null,"t_0":180,"t_n":960,"v_0":50.0,"v_n":50.0},"tr2lr":{"entry":"v1c","exit":"v14c","stops":[{"begin":30,"end":90,"station":"StationLeft"},{"begin":900,"end":960,"station":"StationRight"}],"t_0":0,"t_n":990,"v_0":25.0,"v_n":25.0},"tr2rl":{"entry":"v14a","exit":"v1a","stops":[{"begin":30,"end":90,"station":"StationRight"},{"begin":900,"end":960,"station":"StationLeft"}],"t_0":0,"t_n":990,"v_0":25.0,"v_n":25.0}}
+{
+  "tr1lr": {
+    "entry": "v1b",
+    "exit": "v14b",
+    "stops": null,
+    "t_0": 180,
+    "t_n": 960,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "tr1rl": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 180,
+    "t_n": 960,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "tr2lr": {
+    "entry": "v1c",
+    "exit": "v14c",
+    "stops": [
+      { "begin": 30, "end": 90, "station": "StationLeft" },
+      { "begin": 900, "end": 960, "station": "StationRight" }
+    ],
+    "t_0": 0,
+    "t_n": 990,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "tr2rl": {
+    "entry": "v14a",
+    "exit": "v1a",
+    "stops": [
+      { "begin": 30, "end": 90, "station": "StationRight" },
+      { "begin": 900, "end": 960, "station": "StationLeft" }
+    ],
+    "t_0": 0,
+    "t_n": 990,
+    "v_0": 25.0,
+    "v_n": 25.0
+  }
+}

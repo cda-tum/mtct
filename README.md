@@ -1,9 +1,11 @@
 # MTCT - Munich Train Control Toolkit
+
 ## CDA Rail - A tool for automated design of ETCS Hybrid Level 3 systems
 
 Developers: Stefan Engels, Tom Peham, and Robert Wille
 
 ### Overview
+
 The European Train Control System (ETCS) harmonizes many national train control systems.
 Additionally, new specifications strive to increase the capacity of existing railway infrastructure.
 ETCS Hybrid Level 3 (ETCS HL3) is of great practical interest to achieve shorter train following times.
@@ -21,6 +23,7 @@ The tool is under active development, and more features will follow.
 ### Installation
 
 #### System Requirements
+
 The tool has been tested under Windows 11 (64-bit) using the MSVC compiler.
 It should also be compatible with any current version of g++ supporting C++17 and a minimum CMake version of 3.19.
 
@@ -29,49 +32,58 @@ For academic purposes, Gurobi offers [free academic licenses](https://www.gurobi
 The project currently tests with Gurobi v10.0.1.
 
 #### Build
+
 To build the tool, go to the project folder and execute the following:
 
-1) Configure CMake
-    ```commandline
-    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-    ```
+1. Configure CMake
 
-2) Build the respective target.
-    ```commandline
+   ```commandline
+   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+   ```
+
+2. Build the respective target.
+   ```commandline
    cmake --build build --config Release
    ```
 
 Make sure that the OS environment variable GUROBI_HOME is set to the gurobi directory (only in some cases cmake will be able to find Gurobi without the environment variable set accordingly). Usually this should be:
-- ```C:/gurobi<VERSION>/win64``` for Windows systems
-- ```/home/opt/gurobi<VERSION>/linux64``` for Linux systems
-- ```/Library/gurobi<VERSION>/macos_universal2``` for MacOS systems
-where ```<VERSION>``` denotes the installes Gurobi version.
-In case of further problems it might help to set it manually in FindGurobi.cmake (cmake directory), e.g., by adding something like
+
+- `C:/gurobi<VERSION>/win64` for Windows systems
+- `/home/opt/gurobi<VERSION>/linux64` for Linux systems
+- `/Library/gurobi<VERSION>/macos_universal2` for MacOS systems
+  where `<VERSION>` denotes the installed Gurobi version.
+  In case of further problems it might help to set it manually in FindGurobi.cmake (cmake directory), e.g., by adding something like
+
 ```
 set(GUROBI_HOME "/home/opt/gurobi1001/linux64")
 ```
+
 at the beginning of the file.
 
 ### Usage
 
-Currently, the tool provides only basic access via the command line. ```rail_vss_generation_timetable_mip_testing``` provides access to solving a specified instance at different levels of accuracy and with a predefined timeout.
+Currently, the tool provides only basic access via the command line. `rail_vss_generation_timetable_mip_testing` provides access to solving a specified instance at different levels of accuracy and with a predefined timeout.
 It produces additional debugging output and saves the raw model and solution to a file.
 The syntax is as follows
+
 ```commandline
 .\build\apps\rail_vss_generation_timetable_mip_testing [model_name] [instance_path] [delta_t] [fix_routes] [discretize_vss_positions] [include_train_dynamics] [include_braking_curves] [use_pwl] [use_schedule_cuts] [timeout]
 ```
+
 The parameters meaning is as follows:
-- *delta_t*: Length of discretized time intervals in seconds.
-- *fix_routes*: If true, the routes are fixed to the ones given in the instance. Otherwise, routing is part of the optimization.
-- *discretize_vss_positions*: If true, the graphs edges are discretized in many short edges. VSS positions are then represented by vertices. If false, the VSS positions are encoded as continuous integers.
-- *include_train_dynamics*: If true, the train dynamics (i.e., limited acceleration and deceleration) are included in the model.
-- *include_braking_curves*: If true, the braking curves (i.e., the braking distance depending on the current speed has to be cleared) are included in the model.
-- *use_pwl*: If true, the braking distances are approximated by piecewise linear functions with a fixed maximal error. Otherwise, they are modeled as quadratic functions and Gurobi's ability to solve these using spatial branching is used. Only relevant if include_braking_curves is true.
-- *use_schedule_cuts*: If true, the formulation is strengthened using cuts implied by the schedule.
-- *time_limit*: Time limit in seconds. No limit if negative.
+
+- _delta_t_: Length of discretized time intervals in seconds.
+- _fix_routes_: If true, the routes are fixed to the ones given in the instance. Otherwise, routing is part of the optimization.
+- _discretize_vss_positions_: If true, the graphs edges are discretized in many short edges. VSS positions are then represented by vertices. If false, the VSS positions are encoded as continuous integers.
+- _include_train_dynamics_: If true, the train dynamics (i.e., limited acceleration and deceleration) are included in the model.
+- _include_braking_curves_: If true, the braking curves (i.e., the braking distance depending on the current speed has to be cleared) are included in the model.
+- _use_pwl_: If true, the braking distances are approximated by piecewise linear functions with a fixed maximal error. Otherwise, they are modeled as quadratic functions and Gurobi's ability to solve these using spatial branching is used. Only relevant if include_braking_curves is true.
+- _use_schedule_cuts_: If true, the formulation is strengthened using cuts implied by the schedule.
+- _time_limit_: Time limit in seconds. No limit if negative.
 
 Booleans have to be passed as numbers (0 = false or 1 = true).
-Hence, the instance *SimpleStation* can be solved using default values by the following command:
+Hence, the instance _SimpleStation_ can be solved using default values by the following command:
+
 ```commandline
 .\build\apps\rail_vss_generation_timetable_mip_testing SimpleStation .\test\example-networks\SimpleStation 15 1 0 1 1 0 1 -1
 ```
@@ -79,14 +91,16 @@ Hence, the instance *SimpleStation* can be solved using default values by the fo
 More command line functions will be added shortly.
 
 Additionally, one can call the public methods to create, save, load, and solve respective instances in C++ directly.
-For this, we refer to the source code's docstrings and example usages in the Google Tests found in the ```test``` folder.
+For this, we refer to the source code's docstrings and example usages in the Google Tests found in the `test` folder.
 
-Example networks can be found in ```test/example-networks/```.
+Example networks can be found in `test/example-networks/`.
 
 ## Contact Information
+
 If you have any questions, feel free to contact us via etcs.cda@xcit.tum.de or by creating an issue on GitHub.
 
 ## References
+
 [[1]](https://www.cda.cit.tum.de/files/eda/2021_date_automatic_design_verification_level3_etcs.pdf) Robert Wille and Tom Peham and Judith Przigoda and Nils Przigoda. **"Towards Automatic Design and Verification for Level 3 of the European Train Control System"**. Design, Automation and Test in Europe (DATE), 2021 ([pdf](https://www.cda.cit.tum.de/files/eda/2021_date_automatic_design_verification_level3_etcs.pdf))
 
 [[2]](https://www.cda.cit.tum.de/files/eda/2022_rssrail_optimal_railway_routing_using_virtual_subsections.pdf) Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Optimal Railway Routing Using Virtual Subsections"**. Reliability, Safety and Security of Railway Systems (RSSRail), 2022 ([pdf](https://www.cda.cit.tum.de/files/eda/2022_rssrail_optimal_railway_routing_using_virtual_subsections.pdf))

@@ -1,1 +1,29 @@
-{"tr1":{"entry":"v0","exit":"v3","stops":[{"begin":120,"end":180,"station":"Main Station"}],"t_0":0,"t_n":390,"v_0":55.0,"v_n":20.0},"tr2":{"entry":"v0","exit":"v3","stops":[{"begin":240,"end":270,"station":"Main Station"}],"t_0":90,"t_n":480,"v_0":55.0,"v_n":20.0},"tr3":{"entry":"v0","exit":"v3","stops":null,"t_0":180,"t_n":540,"v_0":25.0,"v_n":20.0}}
+{
+  "tr1": {
+    "entry": "v0",
+    "exit": "v3",
+    "stops": [{ "begin": 120, "end": 180, "station": "Main Station" }],
+    "t_0": 0,
+    "t_n": 390,
+    "v_0": 55.0,
+    "v_n": 20.0
+  },
+  "tr2": {
+    "entry": "v0",
+    "exit": "v3",
+    "stops": [{ "begin": 240, "end": 270, "station": "Main Station" }],
+    "t_0": 90,
+    "t_n": 480,
+    "v_0": 55.0,
+    "v_n": 20.0
+  },
+  "tr3": {
+    "entry": "v0",
+    "exit": "v3",
+    "stops": null,
+    "t_0": 180,
+    "t_n": 540,
+    "v_0": 25.0,
+    "v_n": 20.0
+  }
+}
