@@ -100,7 +100,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_free_routes_posi
             for (int v = 0; v < num_vertices; ++v) {
                 const auto out_edges = instance.n().out_edges(v);
                 const auto in_edges = instance.n().in_edges(v);
-                GRBLinExpr lhs = vars["x_v"](tr, t, v);
+                lhs = vars["x_v"](tr, t, v);
                 GRBLinExpr rhs_in = 0;
                 GRBLinExpr rhs_out = 0;
                 for (const auto& e : out_edges) {

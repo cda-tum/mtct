@@ -1274,25 +1274,25 @@ std::vector<std::pair<int, int>> cda_rail::Network::sort_edge_pairs (std::vector
     std::vector<std::pair<int, int>> ret_val;
 
     // Find starting vertex
-    int i;
-    for (i = 0; i < number_of_vertices(); ++i) {
-        if (vertex_neighbors[i].size() == 1) {
+    int j;
+    for (j = 0; j < number_of_vertices(); ++j) {
+        if (vertex_neighbors[j].size() == 1) {
             break;
         }
     }
 
     // Iterate over all edges
-    while (i < number_of_vertices()) {
+    while (j < number_of_vertices()) {
         // Check if done
-        if (vertex_neighbors[i].size() == 0) {
+        if (vertex_neighbors[j].size() == 0) {
            break;
         }
-        if (vertex_neighbors[i].size() > 1) {
+        if (vertex_neighbors[j].size() > 1) {
             throw std::runtime_error("Something went wrong, vertex has more than one neighbor still.");
         }
 
         // Process edge pair
-        const auto edge_pair_index = *vertex_neighbors[i].begin();
+        const auto edge_pair_index = *vertex_neighbors[j].begin();
         const auto& edge_pair = edge_pairs[edge_pair_index];
 
         const auto& edge = get_edge(edge_pair.first);
@@ -1300,13 +1300,13 @@ std::vector<std::pair<int, int>> cda_rail::Network::sort_edge_pairs (std::vector
         vertex_neighbors[edge.target].erase(edge_pair_index);
 
         // Get next vertex
-        if (edge.source != i && edge.target == i) {
+        if (edge.source != j && edge.target == j) {
             ret_val.emplace_back(edge_pair.second, edge_pair.first);
-            i = edge.source;
+            j = edge.source;
         }
-        else if (edge.target != i && edge.source == i) {
+        else if (edge.target != j && edge.source == j) {
             ret_val.emplace_back(edge_pair.first, edge_pair.second);
-            i = edge.target;
+            j = edge.target;
         } else {
             throw std::runtime_error("Something went wrong, source and target are not as expected.");
         }

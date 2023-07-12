@@ -20,7 +20,7 @@ namespace cda_rail {
             T& operator()(Args... args);
 
             template<typename... Args>
-            const T at(Args... args) const;
+            T at(Args... args) const;
 
             // Function to obtain shape, size and dimensions
             const std::vector<size_t>& get_shape() const { return shape; };
@@ -69,7 +69,7 @@ namespace cda_rail {
 
     template<typename T>
     template<typename... Args>
-    const T MultiArray<T>::at(Args... args) const {
+    T MultiArray<T>::at(Args... args) const {
         /**
          * Getter for an arbitrary number of dimensions.
          * The first parameter is the index of the first dimension.

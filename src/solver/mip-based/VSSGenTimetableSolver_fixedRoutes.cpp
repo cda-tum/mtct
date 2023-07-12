@@ -165,7 +165,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_route_sche
         const auto tr_name = train_list.get_train(tr).name;
         const auto& tr_schedule = instance.get_schedule(tr_name);
         const auto& tr_route = instance.get_route(tr_name);
-        const auto& tr_edges = tr_route.get_edges();
         for (const auto& tr_stop : tr_schedule.stops) {
             const auto t0 = tr_stop.begin / dt;
             const auto t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
@@ -190,7 +189,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_fixed_routes_imp
     for (int tr = 0; tr < train_list.size(); ++tr) {
         const auto tr_name = train_list.get_train(tr).name;
         const auto& tr_route = instance.get_route(tr_name);
-        const auto& tr_edges = tr_route.get_edges();
         for (int t = train_interval[tr].first; t <= train_interval[tr].second; ++t) {
             const auto before_after_struct = get_temporary_impossibility_struct(tr, t);
             if (!before_after_struct.to_use) {
