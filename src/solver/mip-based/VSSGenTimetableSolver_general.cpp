@@ -6,6 +6,8 @@
 #include <cmath>
 #include <chrono>
 
+extern char **environ;
+
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
         const cda_rail::instances::VSSGenerationTimetable &instance) : instance(instance) {}
 
@@ -40,6 +42,14 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(int delta_t, bool 
      *
      * @return objective value, i.e., number of VSS borders created. -1 if no solution was found.
      */
+
+    char **s = environ;
+
+    for (; *s; s++) {
+        printf("%s\n", *s);
+    }
+
+    return -1;
 
     decltype(std::chrono::high_resolution_clock::now()) start, model_created, model_solved;
     long long create_time, solve_time;
