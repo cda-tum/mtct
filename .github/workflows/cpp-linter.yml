@@ -41,7 +41,7 @@ jobs:
           --tidy-checks="" \
           --thread-comments=true \
           --files-changed-only=false \
-          --ignore="build" "gurobi1002" \
+          --ignore="build" \
           --database=build
       - name: Fail if linter found errors
         if: steps.linter.outputs.checks-failed > 0

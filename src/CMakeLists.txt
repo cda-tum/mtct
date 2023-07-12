@@ -26,6 +26,12 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_BINARY_DIR}/include)
 
 if(GUROBI_FOUND)
+  # the following sets the SYSTEM flag for the include dirs of the Gurobi libs to suppress
+  # warnings
+  set_target_properties(
+    Gurobi::GurobiCXX PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+                             $<TARGET_PROPERTY:Gurobi::GurobiCXX,INTERFACE_INCLUDE_DIRECTORIES>
+  )# cmake-lint: disable=C0307
     target_include_directories(${PROJECT_NAME} PUBLIC ${GUROBI_INCLUDE_DIR})
     target_link_libraries(${PROJECT_NAME} PUBLIC Gurobi::GurobiCXX)
 endif()
