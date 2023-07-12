@@ -63,7 +63,8 @@ if(BUILD_TESTS)
     include(cmake/PackageAddTest.cmake)
     include(GoogleTest)
     add_subdirectory(test)
-endif()
+  endif()
+
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_subdirectory(apps)
