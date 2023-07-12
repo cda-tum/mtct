@@ -11,10 +11,6 @@ set(GUROBI_INCLUDE_DIR "${GUROBI_HOME}/include")
 set(GUROBI_BIN_DIR "${GUROBI_HOME}/bin")
 set(GUROBI_LIB_DIR "${GUROBI_HOME}/lib")
 
-message("GUROBI_INCLUDE_DIR: ${GUROBI_INCLUDE_DIR}")
-message("GUROBI_BIN_DIR: ${GUROBI_BIN_DIR}")
-message("GUROBI_LIB_DIR: ${GUROBI_LIB_DIR}")
-
 if (WIN32)
     file(GLOB GUROBI_LIBRARY_LIST
             RELATIVE ${GUROBI_BIN_DIR}
@@ -26,8 +22,6 @@ else()
             ${GUROBI_LIB_DIR}/libgurobi*.(so/dylib)
             )
 endif()
-
-message("GUROBI_LIBRARY_LIST: ${GUROBI_LIBRARY_LIST}")
 
 # Ignore libgurobiXY_light.so, libgurobi.so (without version):
 string(REGEX MATCHALL
@@ -43,8 +37,7 @@ string(REGEX REPLACE
         "${GUROBI_LIBRARY_LIST}")
 list(LENGTH GUROBI_LIBRARY_VERSIONS GUROBI_NUMVER)
 
-message("GUROBI_LIBRARY_LIST: ${GUROBI_LIBRARY_LIST}")
-message("GUROBI LIB VERSIONS: ${GUROBI_LIBRARY_VERSIONS}")
+#message("GUROBI LIB VERSIONS: ${GUROBI_LIBRARY_VERSIONS}")
 
 if (GUROBI_NUMVER EQUAL 0)
     message(STATUS "Found no Gurobi library version, GUROBI_HOME = ${GUROBI_HOME}.")
