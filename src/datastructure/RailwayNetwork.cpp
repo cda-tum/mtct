@@ -7,6 +7,10 @@
 #include <fstream>
 #include <optional>
 #include <algorithm>
+#include <unordered_set>
+#include <stack>
+#include "MultiArray.hpp"
+#include <exception>
 
 using json = nlohmann::json;
 
@@ -652,4 +656,750 @@ cda_rail::Network::Network(const std::filesystem::path &p) {
 
     // Read successors
     this->read_successors(p);
+}
+
+bool cda_rail::Network::is_adjustable(int vertex_id) const {
+    /**
+     * Checks if a given vertex type is adjustable (if applicable for a certain algorithmic approach).
+     * A vertex is adjustable if all of the following conditions hold:
+     * - The vertex is of type NO_BORDER
+     * - The vertex has exactly two neighboring vertices
+     * In all other cases the vertex is not adjustable.
+     *
+     * @param vertex_id: The id of the vertex to check.
+     * @return: True if the vertex is adjustable, false otherwise.
+     */
+
+    // Check if vertex exists
+    if (!has_vertex(vertex_id)) {
+        throw std::invalid_argument("Vertex does not exist");
+    }
+
+    // Check if vertex is of type NO_BORDER
+    if (vertices[vertex_id].type != cda_rail::VertexType::NO_BORDER) {
+        return false;
+    }
+
+    // Check if vertex has exactly two neighbors
+    if (neighbors(vertex_id).size() != 2) {
+        return false;
+    }
+
+    // All conditions hold, vertex is adjustable
+    return true;
+}
+
+std::pair<std::vector<int>, std::vector<int>>
+cda_rail::Network::separate_edge_at(int edge_index, const std::vector<double>& distances_from_source) {
+    /**
+     * This function separates an edge at given distances from the source vertex. If the reverse edge exists it is separated analogously.
+     * In particular the following is done:
+     * - New vertices are created at the given distances from the source vertex and edges in between them.
+     * - The successors are updated accordingly.
+     * - The previous edge(s) are removed (implicitly).
+     *
+     * @param edge_index: The index of the edge to separate.
+     * @param distances_from_source: The distances from the source vertex at which to separate the edge.
+     * @return: A pair of vectors containing the indices of the new edges and reverse edges, where the latter might have size 0.
+     */
+
+    // Initialize return value
+    std::pair<std::vector<int>, std::vector<int>> return_edges;
+
+    // Check if edge exists
+    if (!has_edge(edge_index)) {
+        throw std::invalid_argument("Edge does not exist");
+    }
+
+    // Check if distances are specified
+    if (distances_from_source.empty()) {
+        throw std::invalid_argument("Distances are not specified");
+    }
+
+    // Check if distances are sorted
+    if (!std::is_sorted(distances_from_source.begin(), distances_from_source.end())) {
+        throw std::invalid_argument("Distances are not sorted");
+    }
+
+    const auto edge = get_edge(edge_index);
+
+    // Check if all distances are strictly between 0 and the length of the edge
+    if (distances_from_source.front() <= 0 || distances_from_source.back() >= edge.length) {
+        throw std::invalid_argument("Distances are not strictly between 0 and the length of the edge");
+    }
+
+    // Create new vertices
+    std::vector<int> new_vertices;
+    for (size_t i = 0; i < distances_from_source.size(); ++i) {
+        std::string vertex_name = get_vertex(edge.source).name + "_" + get_vertex(edge.target).name + "_" + std::to_string(i);
+        new_vertices.emplace_back(add_vertex(vertex_name, cda_rail::VertexType::NO_BORDER_VSS));
+    }
+
+    // Create new edges
+    auto& new_edges = return_edges.first;
+    new_edges.emplace_back(add_edge(edge.source, new_vertices.front(), distances_from_source.front(), edge.max_speed, false, edge.min_block_length));
+    for (size_t i = 1; i < distances_from_source.size(); ++i) {
+        new_edges.emplace_back(add_edge(new_vertices[i - 1], new_vertices[i], distances_from_source[i] - distances_from_source[i - 1], edge.max_speed, false, edge.min_block_length));
+    }
+    // Reuse edge_index as last edge to add
+    change_edge_property(edge_index, edge.length - distances_from_source.back(), "length");
+    change_edge_breakable(edge_index, false);
+    edges[edge_index].source = new_vertices.back();
+    new_edges.emplace_back(edge_index);
+
+    // Update successors, i.e.,
+    // - For every incoming edge into edge.source, replace edge_index by new_edges.front() if applicable
+    // - For every new_edge (except the last) add the next new_edge as single successor
+    // - For the last new edge add the same successors as edge_index had (this has alredy been done implicitly)
+    for (const auto& incoming_edge_index : in_edges(edge.source)) {
+        std::replace(successors[incoming_edge_index].begin(), successors[incoming_edge_index].end(), edge_index, new_edges.front());
+    }
+    for (size_t i = 0; i < new_edges.size() - 1; ++i) {
+        add_successor(new_edges[i], new_edges[i + 1]);
+    }
+
+    // If reverse edge exists, create new reverse edges
+    auto& new_reverse_edges = return_edges.second;
+    if (has_edge(edge.target, edge.source)) {
+        // Check if reverse edge has same length
+        const auto reverse_edge_index = get_edge_index(edge.target, edge.source);
+        const auto reverse_edge = get_edge(reverse_edge_index);
+        if (reverse_edge.length != edge.length) {
+            throw std::invalid_argument("Reverse edge has different length");
+        }
+
+        // Create new reverse edges
+        new_reverse_edges.emplace_back(add_edge(edge.target, new_vertices.back(), edge.length - distances_from_source.back(), reverse_edge.max_speed, false, reverse_edge.min_block_length));
+        for (size_t i = distances_from_source.size() - 1; i > 0; --i) {
+            new_reverse_edges.emplace_back(add_edge(new_vertices[i], new_vertices[i - 1], distances_from_source[i] - distances_from_source[i - 1], reverse_edge.max_speed, false, reverse_edge.min_block_length));
+        }
+        // Reuse edge index as last reverse edge to add
+        change_edge_property(reverse_edge_index, distances_from_source.front(), "length");
+        change_edge_breakable(reverse_edge_index, false);
+        edges[reverse_edge_index].source = new_vertices.front();
+        new_reverse_edges.emplace_back(reverse_edge_index);
+
+        // Update successors analogously
+        for (const auto& incoming_edge_index : in_edges(edge.target)) {
+            std::replace(successors[incoming_edge_index].begin(), successors[incoming_edge_index].end(), reverse_edge_index, new_reverse_edges.front());
+        }
+        for (size_t i = 0; i < new_reverse_edges.size() - 1; ++i) {
+            add_successor(new_reverse_edges[i], new_reverse_edges[i + 1]);
+        }
+    }
+
+    // Return
+    return return_edges;
+}
+
+std::pair<std::vector<int>, std::vector<int>> cda_rail::Network::separate_edge(int edge_index, cda_rail::SeparationType separation_type) {
+   /**
+    * Separates an edge (and possibly its reverse edge) according to the given number of new vertices.
+    *
+    * @param edge_index Index of the edge to separate.
+    * @param separation_type Type of separation.
+    */
+
+    // Check if graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
+    // Call function corresponding to separation type
+    if (separation_type == cda_rail::SeparationType::UNIFORM) {
+        return uniform_separate_edge(edge_index);
+    } else if (separation_type == cda_rail::SeparationType::CHEBYCHEV) {
+        return chebychev_separate_edge(edge_index);
+    } else {
+        throw std::invalid_argument("Separation type does not exist.");
+    }
+}
+
+std::pair<std::vector<int>, std::vector<int>> cda_rail::Network::uniform_separate_edge(int edge_index) {
+    /**
+     * Separates an edge (and possibly its reverse edge) uniformly according to the minimal block length.
+     */
+
+    // Check if graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
+    // Check if edge exists
+    if (!has_edge(edge_index)) {
+        throw std::invalid_argument("Edge does not exist");
+    }
+
+    // If the edge is not breakable throw an exception
+    if (!get_edge(edge_index).breakable) {
+        throw std::invalid_argument("Edge is not breakable");
+    }
+
+    // If the edge length is smaller than twice the minimum block length, nothing to separate
+    if (get_edge(edge_index).length < 2 * get_edge(edge_index).min_block_length) {
+        return std::make_pair(std::vector<int>(), std::vector<int>());
+    }
+
+    // Get edge to separate
+    const auto& edge = get_edge(edge_index);
+    // Get number of new vertices
+    double number_of_blocks = std::floor(edge.length / edge.min_block_length) ;
+
+    // Calculate distances
+    std::vector<double> distances_from_source;
+    for (int i = 1; i < number_of_blocks; ++i) {
+        distances_from_source.emplace_back(i * (edge.length / number_of_blocks));
+    }
+
+    return separate_edge_at(edge_index, distances_from_source);
+}
+
+std::pair<std::vector<int>, std::vector<int>> cda_rail::Network::chebychev_separate_edge(int edge_index) {
+    // TODO: Not implemented yet
+    throw std::runtime_error("Not implemented yet");
+}
+
+std::vector<int> cda_rail::Network::breakable_edges() const {
+    /**
+     * Returns indices of all brekable edges.
+     */
+    // Check if graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
+    std::vector<int> ret_val;
+    for (int i = 0; i < number_of_edges(); ++i) {
+        if (get_edge(i).breakable) {
+            ret_val.emplace_back(i);
+        }
+    }
+    return ret_val;
+}
+
+std::vector<int> cda_rail::Network::relevant_breakable_edges() const {
+    /**
+     * Returns inidices of all breakable edges, but only once per direction.
+     */
+    // Check if graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
+    std::vector<int> ret_val;
+    for (int i = 0; i < number_of_edges(); ++i) {
+        const auto& edge = get_edge(i);
+        if (edge.breakable) {
+            // add edge only if reverse edge does not exist or has larger index
+            if (!has_edge(edge.target, edge.source) || get_edge_index(edge.target, edge.source) > i) {
+                ret_val.emplace_back(i);
+            }
+        }
+    }
+    return ret_val;
+}
+
+std::vector<std::pair<int, std::vector<int>>> cda_rail::Network::discretize(cda_rail::SeparationType separation_type) {
+    /**
+     * Discretizes graph.
+     *
+     * @param separation_type Type of separation.
+     * @return Vector of pairs. The first element of the pair is the edge index of the original edge. The second element is a vector of edge indices of the new edges.
+     */
+
+    std::vector<std::pair<int, std::vector<int>>> ret_val;
+    for (int i : relevant_breakable_edges()) {
+        auto separated_edges = separate_edge(i, separation_type);
+        if (!separated_edges.first.empty()) {
+            ret_val.emplace_back(separated_edges.first.back(), separated_edges.first);
+        }
+        if (!separated_edges.second.empty()) {
+            ret_val.emplace_back(separated_edges.second.back(), separated_edges.second);
+        }
+    }
+    return ret_val;
+}
+
+bool cda_rail::Network::is_consistent_for_transformation() const {
+    /**
+     * Checks if the graph passes consistency checks needed for the transformations to work correctly.
+     * - If an edge is breakable it has a minimal block length that is strictly positive.
+     * - If an edge is breakable both it's source and target are type VSS or TTD
+     * - For bidirectional edges, the breakable and length attributes are the same for both directions.
+     * - Vertices of type NO_BORDER_VSS have at most two neighbors. These neighbors are not of type NO_BORDER.
+     *
+     * @return True if the graph is consistent, false otherwise.
+     */
+
+    // Check every edge
+    for (size_t i = 0; i < number_of_edges(); ++i) {
+        const auto& edge = get_edge(i);
+        // If the edge is breakable, check if the minimal block length is strictly positive
+        if (edge.breakable && edge.min_block_length <= 0) {
+            return false;
+        }
+        // If the edge is breakable, check if source or target are of type NO_BORDER then return false
+        if (edge.breakable && (get_vertex(edge.source).type == cda_rail::VertexType::NO_BORDER || get_vertex(edge.target).type == cda_rail::VertexType::NO_BORDER)) {
+            return false;
+        }
+        // If the reverse edge exists check if the breakable and length attributes are the same
+        if (has_edge(edge.target, edge.source)) {
+            const auto& reverse_edge = get_edge(edge.target, edge.source);
+            if (edge.breakable != reverse_edge.breakable || edge.length != reverse_edge.length) {
+                return false;
+            }
+        }
+    }
+
+    // Check every vertex
+    for (size_t i = 0; i < number_of_vertices(); ++i) {
+        // If the vertex is of type NO_BORDER_VSS check conditions
+        if (get_vertex(i).type == cda_rail::VertexType::NO_BORDER_VSS) {
+            // Get neighbors
+            const auto& v_neighbors = neighbors(i);
+            // Check if there are more than two neighbors
+            if (v_neighbors.size() > 2) {
+                return false;
+            }
+            // Check if neighbors are of type NO_BORDER
+            for (const auto& j : v_neighbors) {
+                if (get_vertex(j).type == cda_rail::VertexType::NO_BORDER) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+std::vector<std::vector<int>> cda_rail::Network::unbreakable_sections() const {
+    /**
+     * Returns a vector of vectors of edge indices. Each vector of edge indices represents an unbreakable section.
+     */
+
+    // Check if graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
+    // Initialize return value
+    std::vector<std::vector<int>> ret_val;
+
+    // Add all one edge sections
+    for (int i = 0; i < number_of_edges(); ++i) {
+        const auto& edge = get_edge(i);
+        if (!edge.breakable) {
+            if (!has_edge(edge.target, edge.source) || get_edge_index(edge.target, edge.source) > i) {
+                if (get_vertex(edge.source).type == cda_rail::VertexType::TTD ||
+                    get_vertex(edge.source).type == cda_rail::VertexType::VSS) {
+                    if (get_vertex(edge.target).type == cda_rail::VertexType::TTD ||
+                        get_vertex(edge.target).type == cda_rail::VertexType::VSS) {
+                        ret_val.emplace_back();
+                        ret_val.back().emplace_back(i);
+                        if (has_edge(edge.target, edge.source)) {
+                            ret_val.back().emplace_back(get_edge_index(edge.target, edge.source));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Get possible start vertices
+    std::unordered_set<int> vertices_to_visit;
+    for (int i = 0; i < number_of_vertices(); ++i) {
+        if (get_vertex(i).type == cda_rail::VertexType::NO_BORDER && neighbors(i).size() >= 1) {
+            vertices_to_visit.emplace(i);
+        }
+    }
+
+    dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NO_BORDER);
+
+    return ret_val;
+}
+
+std::vector<std::vector<int>> cda_rail::Network::no_border_vss_sections() const {
+    /**
+     * Returns a vector of vectors of edge indices. Each vector of edge indices represents a no border vss section.
+     * I.e., it includes sections containing NO_BORDER_VSS vertices that can be altered by an algorithm.
+     * These vertices have likely been created by a transformation in advance.
+     */
+
+    // Check if the graph is consistent for this function
+    if (!is_consistent_for_transformation()) {
+        throw std::invalid_argument("Graph is not consistent");
+    }
+
+    // Initialize return value
+    std::vector<std::vector<int>> ret_val;
+
+    // Get possible start vertices
+    std::unordered_set<int> vertices_to_visit;
+    for (int i = 0; i < number_of_vertices(); ++i) {
+        if (get_vertex(i).type == cda_rail::VertexType::NO_BORDER_VSS && neighbors(i).size() >= 1) {
+            vertices_to_visit.emplace(i);
+        }
+    }
+
+    dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NO_BORDER_VSS, {cda_rail::VertexType::NO_BORDER});
+
+    return ret_val;
+}
+
+void cda_rail::Network::dfs(std::vector<std::vector<int>> &ret_val, std::unordered_set<int> &vertices_to_visit,
+                            const cda_rail::VertexType& section_type,
+                            const std::vector<cda_rail::VertexType> error_types) const {
+    // For every section
+    while (!vertices_to_visit.empty()) {
+        // New section
+        ret_val.emplace_back();
+        // Stack for DFS
+        std::stack<int> stack;
+        stack.emplace(*vertices_to_visit.begin());
+        // List of visited vertices
+        std::vector<int> visited_vertices;
+
+        // Explore section DFS
+        while (!stack.empty()) {
+            // Get new vertex to visit
+            int current_vertex = stack.top();
+            stack.pop();
+            visited_vertices.emplace_back(current_vertex);
+            if (std::find(vertices_to_visit.begin(), vertices_to_visit.end(), current_vertex) !=
+                vertices_to_visit.end()) {
+                vertices_to_visit.erase(current_vertex);
+            }
+
+            const auto neighbor_vertices = neighbors(current_vertex);
+            for (const auto &neighbor: neighbor_vertices) {
+                // If neighboring vertex is of type NO_BORDER
+                if (get_vertex(neighbor).type == section_type) {
+                    // If vertex has not been visited yet, add it to stack
+                    if (std::find(visited_vertices.begin(), visited_vertices.end(), neighbor) ==
+                        visited_vertices.end()) {
+                        stack.emplace(neighbor);
+                    }
+                }
+                if (std::find(error_types.begin(), error_types.end(), get_vertex(neighbor).type) != error_types.end()) {
+                    throw std::runtime_error("This should never happen, but I found error type vertex");
+                }
+                // If current_vertex -> neighbor exists
+                if (has_edge(current_vertex, neighbor)) {
+                    const auto edge_index = get_edge_index(current_vertex, neighbor);
+                    // If edge is breakable throw error
+                    if (get_edge(edge_index).breakable) {
+                        throw std::runtime_error(
+                                "This should never happen, but I found a breakable edge in an unbreakable section");
+                    }
+                    // If edge is not yet in section add it
+                    if (std::find(ret_val.back().begin(), ret_val.back().end(), edge_index) == ret_val.back().end()) {
+                        ret_val.back().emplace_back(edge_index);
+                    }
+                }
+                // If neighbor -> current_vertex exists
+                if (has_edge(neighbor, current_vertex)) {
+                    const auto edge_index = get_edge_index(neighbor, current_vertex);
+                    // If edge is breakable throw error
+                    if (get_edge(edge_index).breakable) {
+                        throw std::runtime_error(
+                                "This should never happen, but I found a breakable edge in an unbreakable section");
+                    }
+                    // If edge is not yet in section add it
+                    if (std::find(ret_val.back().begin(), ret_val.back().end(), edge_index) == ret_val.back().end()) {
+                        ret_val.back().emplace_back(edge_index);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void cda_rail::Network::change_vertex_type(int index, cda_rail::VertexType new_type) {
+    /**
+     * Changes the type of a specific vertex.
+     *
+     * @param index: Index of the vertex to change
+     * @param new_type: New type of the vertex
+     */
+
+    if (!has_vertex(index)) {
+        throw std::invalid_argument("Vertex does not exist");
+    }
+    vertices[index].type = new_type;
+}
+
+std::vector<std::pair<int, int>> cda_rail::Network::combine_reverse_edges(const std::vector<int> &edges, bool sort) const {
+    /**
+     * Given a vector of edges, this function combines edges that are the reverse of each other.
+     * If no reverse of an edge exists, the second element will be -1, i.e., negative.
+     * A pair is only added once, i.e., the first index is always smaller than the second for uniqueness.
+     * The order of the edges is not preserved.
+     * It throws an error, if one of the edges does not exist.
+     *
+     * @param edges: Vector of edge indices
+     * @param sort: If true, the pairs are sorted by the neighboring relation. This only works if the edges correspond to a simple path!
+     * @return: Vector of pairs of edge indices
+     */
+
+    // Check if all edges exist
+    for (const auto& edge_index: edges) {
+        if (!has_edge(edge_index)) {
+            throw std::invalid_argument("Edge does not exist");
+        }
+    }
+
+    // Initialize return value
+    std::vector<std::pair<int, int>> ret_val;
+
+    // Iterate over all edges
+    for (const auto& edge_index: edges) {
+        const auto reverse_edge_index = get_reverse_edge_index(edge_index);
+        if (reverse_edge_index < 0 || reverse_edge_index > edge_index) {
+            ret_val.emplace_back(edge_index, reverse_edge_index);
+        }
+    }
+
+    if (sort) {
+        return sort_edge_pairs(ret_val);
+    }
+    return ret_val;
+}
+
+int cda_rail::Network::get_reverse_edge_index(int edge_index) const {
+    /**
+     * Gets the reverse index of an edge, -1 if it does not exist.
+     * Throws an error if the edge does not exist.
+     *
+     * @param edge: Index of the edge
+     * @return: Index of the reverse edge, -1 if it does not exist
+     */
+
+    if (!has_edge(edge_index)) {
+        throw std::invalid_argument("Edge does not exist");
+    }
+    const auto& edge = get_edge(edge_index);
+    if (has_edge(edge.target, edge.source)) {
+        return get_edge_index(edge.target, edge.source);
+    }
+    return -1;
+}
+
+const std::vector<int> cda_rail::Network::get_vertices_by_type(cda_rail::VertexType type) const {
+    /**
+     * Returns a vector of all vertices of a specific type.
+     *
+     * @param type: Type of the vertices
+     * @return: Vector of vertex indices
+     */
+
+    std::vector<int> ret_val;
+    for (int i = 0; i < vertices.size(); ++i) {
+        if (vertices[i].type == type) {
+            ret_val.emplace_back(i);
+        }
+    }
+    return ret_val;
+}
+
+std::optional<int>
+cda_rail::Network::common_vertex(const std::pair<int, int> &pair1, const std::pair<int, int> &pair2) const {
+    /**
+     * Returns the common vertex of two edge pairs, if it exists. Otherwise optional is empty.
+     * Throws an error if the pairs are not reverse of each other.
+     *
+     * @param pair1: First pair of edge indices
+     * @param pair2: Second pair of edge indices
+     */
+
+    // Initialize return value
+    std::optional<int> ret_val;
+
+    if (!has_edge(pair1.first) || !has_edge(pair2.first)) {
+        throw std::invalid_argument("Edge does not exist");
+    }
+
+    if (get_reverse_edge_index(pair1.first) != pair1.second) {
+        throw std::invalid_argument("First pair is not reverse of each other");
+    }
+    if (get_reverse_edge_index(pair2.first) != pair2.second) {
+        throw std::invalid_argument("Second pair is not reverse of each other");
+    }
+
+    const auto& edge1 = get_edge(pair1.first);
+    const auto& edge2 = get_edge(pair2.first);
+
+    if (edge1.source == edge2.source || edge1.source == edge2.target) {
+        ret_val = edge1.source;
+    } else if (edge1.target == edge2.source || edge1.target == edge2.target) {
+        ret_val = edge1.target;
+    }
+
+    return ret_val;
+}
+
+std::vector<std::pair<int, int>> cda_rail::Network::sort_edge_pairs (std::vector<std::pair<int, int>>& edge_pairs) const {
+    /**
+     * Sort a vector of edge pairs so that neighboring pairs are adjacent
+     *
+     * @param edges: Vector of edge pairs
+     */
+
+    // Check if all edges exist
+    for (const auto& edge_pair: edge_pairs) {
+        if (!has_edge(edge_pair.first)) {
+            throw std::invalid_argument("Edge does not exist");
+        }
+    }
+    // Check if all pairs are reverse of each other
+    for (const auto& edge_pair: edge_pairs) {
+        if (get_reverse_edge_index(edge_pair.first) != edge_pair.second) {
+            throw std::invalid_argument("Pairs are not reverse of each other");
+        }
+    }
+
+    // Initialize counting and helping maps
+    //std::unordered_map<int, int> vertex_occurrences;
+    std::unordered_map<int, std::unordered_set<int>> vertex_neighbors;
+
+    // Count occurrences of vertices
+    for (int i = 0; i < edge_pairs.size(); ++i) {
+        const auto& edge_pair = edge_pairs[i];
+        const auto& edge = get_edge(edge_pair.first);
+        vertex_neighbors[edge.source].emplace(i);
+        vertex_neighbors[edge.target].emplace(i);
+    }
+
+    // Initialize return value
+    std::vector<std::pair<int, int>> ret_val;
+
+    // Find starting vertex
+    int j;
+    for (j = 0; j < number_of_vertices(); ++j) {
+        if (vertex_neighbors[j].size() == 1) {
+            break;
+        }
+    }
+
+    // Iterate over all edges
+    while (j < number_of_vertices()) {
+        // Check if done
+        if (vertex_neighbors[j].size() == 0) {
+           break;
+        }
+        if (vertex_neighbors[j].size() > 1) {
+            throw std::runtime_error("Something went wrong, vertex has more than one neighbor still.");
+        }
+
+        // Process edge pair
+        const auto edge_pair_index = *vertex_neighbors[j].begin();
+        const auto& edge_pair = edge_pairs[edge_pair_index];
+
+        const auto& edge = get_edge(edge_pair.first);
+        vertex_neighbors[edge.source].erase(edge_pair_index);
+        vertex_neighbors[edge.target].erase(edge_pair_index);
+
+        // Get next vertex
+        if (edge.source != j && edge.target == j) {
+            ret_val.emplace_back(edge_pair.second, edge_pair.first);
+            j = edge.source;
+        }
+        else if (edge.target != j && edge.source == j) {
+            ret_val.emplace_back(edge_pair.first, edge_pair.second);
+            j = edge.target;
+        } else {
+            throw std::runtime_error("Something went wrong, source and target are not as expected.");
+        }
+    }
+
+    for (int i = 0; i < number_of_vertices(); ++i) {
+        if (vertex_neighbors[i].size() > 0) {
+            throw std::runtime_error("Something went wrong, not everything was processed.");
+        }
+    }
+
+    return ret_val;
+
+}
+
+std::vector<int> cda_rail::Network::inverse_edges(const std::vector<int> &edge_indices,
+                                                  const std::vector<int> &edges_to_consider) const {
+    /**
+     * Returns a vector of edge indices that are the inverse of the given edge indices, i.e.,
+     * return edges_to_consider - edge_indices
+     *
+     * @param edge_indices: Vector of edge indices
+     * @param edges_to_consider: Vector of edge indices to consider
+     * @return: Vector of edge indices that are the inverse of the given edge indices
+     */
+
+    // Initialize return value
+    std::vector<int> ret_val;
+
+    // Check if all edges exist
+    for (const auto& edge_index: edge_indices) {
+        if (!has_edge(edge_index)) {
+            throw std::invalid_argument("Edge does not exist");
+        }
+    }
+    for (const auto& edge_index: edges_to_consider) {
+        if (!has_edge(edge_index)) {
+            throw std::invalid_argument("Edge does not exist");
+        }
+    }
+
+    // ret_val = edges_to_consider - edge_indices
+    for (const auto& edge_index: edges_to_consider) {
+        if (std::find(edge_indices.begin(), edge_indices.end(), edge_index) == edge_indices.end()) {
+            ret_val.emplace_back(edge_index);
+        }
+    }
+
+    return ret_val;
+}
+
+int cda_rail::Network::max_vss_on_edge(int index) const {
+    /**
+     * Returns how many vss can be placed on a certain edge at most.
+     */
+
+    const auto& edge = get_edge(index);
+    if (!edge.breakable || edge.min_block_length == 0) {
+        return 0;
+    }
+    return static_cast<int>(std::floor(edge.length / edge.min_block_length));
+}
+
+cda_rail::MultiArray<double> cda_rail::Network::all_edge_pairs_shortest_paths() const {
+    /**
+     * Calculates all shortest paths between all edges.
+     * Given e0 = (v0, v1) and e1 = (v2, v3), the distance refers to the distance between v1 and v3 by only using valid successors.
+     * If v0 or v2 are of interest the value has to be post-processed accordingly.
+     * The distance is std::numeric_limits<double>::max()/3 if no path exists.
+     * This methods uses the Floyd-Warshall algorithm.
+     */
+    // Initialize return value
+    MultiArray<double> ret_val(number_of_edges(), number_of_edges());
+    for (int u = 0; u < number_of_edges(); ++u) {
+        for (int v = 0; v < number_of_edges(); ++v) {
+            if (u == v) {
+                ret_val(u, v) = 0;
+            } else if (is_valid_successor(u, v)) {
+                ret_val(u, v) = get_edge(v).length;
+            } else {
+                ret_val(u, v) = INF;
+            }
+        }
+    }
+
+    // Floyd-Warshall iterations
+    for (int k = 0; k < number_of_edges(); ++k) {
+        for (int i = 0; i < number_of_edges(); ++i) {
+            for (int j = 0; j < number_of_edges(); ++j) {
+                ret_val(i, j) = std::min(ret_val(i, j), ret_val(i, k) + ret_val(k, j));
+            }
+        }
+    }
+
+    return ret_val;
 }

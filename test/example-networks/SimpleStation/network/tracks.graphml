@@ -42,19 +42,19 @@
     <edge source="l0" target="l1">
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
-      <data key="d3">0.0</data>
+      <data key="d3">10.0</data>
       <data key="d4">True</data>
     </edge>
     <edge source="l1" target="l2">
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
-      <data key="d3">0.0</data>
+      <data key="d3">10.0</data>
       <data key="d4">True</data>
     </edge>
     <edge source="l1" target="l0">
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
-      <data key="d3">0.0</data>
+      <data key="d3">10.0</data>
       <data key="d4">True</data>
     </edge>
     <edge source="l2" target="l3">
@@ -66,7 +66,7 @@
     <edge source="l2" target="l1">
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
-      <data key="d3">0.0</data>
+      <data key="d3">10.0</data>
       <data key="d4">True</data>
     </edge>
     <edge source="l3" target="g00">
@@ -90,13 +90,13 @@
     <edge source="r0" target="r1">
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
-      <data key="d3">0.0</data>
+      <data key="d3">10.0</data>
       <data key="d4">True</data>
     </edge>
     <edge source="r1" target="r0">
       <data key="d1">500.0</data>
       <data key="d2">27.77777777777778</data>
-      <data key="d3">0.0</data>
+      <data key="d3">10.0</data>
       <data key="d4">True</data>
     </edge>
     <edge source="r1" target="r2">
@@ -126,7 +126,7 @@
     <edge source="g00" target="g01">
       <data key="d1">300.0</data>
       <data key="d2">27.77777777777778</data>
-      <data key="d3">0.0</data>
+      <data key="d3">10.0</data>
       <data key="d4">True</data>
     </edge>
     <edge source="g00" target="l3">
@@ -144,13 +144,13 @@
     <edge source="g01" target="g00">
       <data key="d1">300.0</data>
       <data key="d2">27.77777777777778</data>
-      <data key="d3">0.0</data>
+      <data key="d3">10.0</data>
       <data key="d4">True</data>
     </edge>
     <edge source="g10" target="g11">
       <data key="d1">300.0</data>
       <data key="d2">27.77777777777778</data>
-      <data key="d3">0.0</data>
+      <data key="d3">10.0</data>
       <data key="d4">True</data>
     </edge>
     <edge source="g10" target="l3">
@@ -168,7 +168,7 @@
     <edge source="g11" target="g10">
       <data key="d1">300.0</data>
       <data key="d2">27.77777777777778</data>
-      <data key="d3">0.0</data>
+      <data key="d3">10.0</data>
       <data key="d4">True</data>
     </edge>
   </graph>

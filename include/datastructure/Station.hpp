@@ -63,5 +63,7 @@ namespace cda_rail {
             [[nodiscard]] static cda_rail::StationList import_stations(const std::string& path, const cda_rail::Network& network) {return StationList(path, network);};
             [[nodiscard]] static cda_rail::StationList import_stations(const char* path, const cda_rail::Network& network) {return StationList(path, network);};
             [[nodiscard]] static cda_rail::StationList import_stations(const std::filesystem::path& p, const cda_rail::Network& network) {return StationList(p, network);};
+
+            void update_after_discretization(const std::vector<std::pair<int, std::vector<int>>>& new_edges);
     };
 }

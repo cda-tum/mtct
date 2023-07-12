@@ -4,7 +4,9 @@ if(NOT TARGET gtest OR NOT TARGET gmock)
             ON
             CACHE BOOL "" FORCE)
     add_subdirectory(
-            ${PROJECT_SOURCE_DIR}/extern/googletest "extern/googletest" EXCLUDE_FROM_ALL)
+      ${PROJECT_SOURCE_DIR}/extern/googletest "extern/googletest" EXCLUDE_FROM_ALL)
+    set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES FOLDER extern)
 endif()
 
-package_add_test(${PROJECT_NAME}_test ${PROJECT_NAME} test_railwaynetwork.cpp test_probleminstances.cpp)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+package_add_test(${PROJECT_NAME}_test ${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/test_railwaynetwork.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test_probleminstances.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test_multiarray.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi_vss_gen.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test_helper.cpp)

@@ -13,6 +13,12 @@ add_library(
         datastructure/Route.cpp
         ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
         probleminstances/VSSGenerationTimetable.cpp
+        ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
+        ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
+        solver/mip-based/VSSGenTimetableSolver_general.cpp
+        solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
+        solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
+        solver/mip-based/VSSGenTimetableSolver_helper.cpp
 )
 
 # set include directories
@@ -20,14 +26,15 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_BINARY_DIR}/include)
 
 if(GUROBI_FOUND)
-    target_include_directories(${PROJECT_NAME} PUBLIC ${GUROBI_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} PUBLIC GUROBI_CXX_LIBRARY GUROBI_LIBRARY)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${GUROBI_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} PUBLIC Gurobi::GurobiCXX)
 endif()
 
 # add tinyxml2
 set(tinyxml2_BUILD_TESTING OFF)
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/tinyxml2 extern/tinyxml2)
 
+target_link_libraries(${PROJECT_NAME} PUBLIC project_options)
 # add json
 set(json_BUILD_TESTING OFF)
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/json extern/json)

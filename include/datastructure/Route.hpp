@@ -22,11 +22,27 @@ namespace cda_rail {
             void remove_first_edge();
             void remove_last_edge();
 
+            [[nodiscard]] double length(const cda_rail::Network& network) const;
+            [[nodiscard]] std::pair<double, double> edge_pos(int edge, const cda_rail::Network& network) const;
+            [[nodiscard]] std::pair<double, double> edge_pos(int source, int target, const cda_rail::Network& network) const{
+                return edge_pos(network.get_edge_index(source, target), network);
+            };
+            [[nodiscard]] std::pair<double, double> edge_pos(const std::string& source, const std::string& target, const cda_rail::Network& network) const {
+                return edge_pos(network.get_edge_index(source, target), network);
+            };
+
+            [[nodiscard]] std::pair<double, double> edge_pos(const std::vector<int>& edges, const cda_rail::Network& network) const;
+
             [[nodiscard]] int get_edge(int route_index) const;
             [[nodiscard]] const cda_rail::Edge& get_edge(int route_index, const cda_rail::Network& network) const;
             [[nodiscard]] int size() const {return edges.size();};
+            [[nodiscard]] const std::vector<int>& get_edges() const {return edges;};
+
+            bool contains_edge(int edge_index) const {return std::find(edges.begin(), edges.end(), edge_index) != edges.end();};
 
             [[nodiscard]] bool check_consistency(const cda_rail::Network& network) const;
+
+            void update_after_discretization(const std::vector<std::pair<int, std::vector<int>>>& new_edges);
     };
 
     class RouteMap {
@@ -68,6 +84,20 @@ namespace cda_rail {
             [[nodiscard]] int size() const {return routes.size();};
             [[nodiscard]] const Route& get_route(const std::string& train_name) const;
 
+            [[nodiscard]] double length(const std::string& train_name, const cda_rail::Network& network) const;
+            [[nodiscard]] std::pair<double, double> edge_pos(const std::string& train_name, int edge, const cda_rail::Network& network) const {
+                return get_route(train_name).edge_pos(edge, network);
+            };
+            [[nodiscard]] std::pair<double, double> edge_pos(const std::string& train_name, int source, int target, const cda_rail::Network& network) const {
+                return get_route(train_name).edge_pos(source, target, network);
+            };
+            [[nodiscard]] std::pair<double, double> edge_pos(const std::string& train_name, const std::string& source, const std::string& target, const cda_rail::Network& network) const {
+                return get_route(train_name).edge_pos(source, target, network);
+            };
+            [[nodiscard]] std::pair<double, double> edge_pos(const std::string& train_name, const std::vector<int>& edges, const cda_rail::Network& network) const {
+                return get_route(train_name).edge_pos(edges, network);
+            };
+
             [[nodiscard]] bool check_consistency(const cda_rail::TrainList& trains, const cda_rail::Network& network, bool every_train_must_have_route = true) const;
 
             void export_routes(const std::filesystem::path& p, const cda_rail::Network& network) const;
@@ -77,5 +107,7 @@ namespace cda_rail {
             [[nodiscard]] static RouteMap import_routes(const std::filesystem::path& p, const cda_rail::Network& network) {return RouteMap(p, network);};
             [[nodiscard]] static RouteMap import_routes(const std::string& path, const cda_rail::Network& network) {return RouteMap(path, network);};
             [[nodiscard]] static RouteMap import_routes(const char* path, const cda_rail::Network& network) {return RouteMap(path, network);};
+
+            void update_after_discretization(const std::vector<std::pair<int, std::vector<int>>>& new_edges);
     };
 }

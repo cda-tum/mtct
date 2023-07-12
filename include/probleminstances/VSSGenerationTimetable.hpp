@@ -54,6 +54,10 @@ namespace cda_rail::instances{
             [[nodiscard]] const Schedule& get_schedule(int index) const {return timetable.get_schedule(index);};
             [[nodiscard]] const Schedule& get_schedule(const std::string& train_name) const {return timetable.get_schedule(train_name);};
 
+            [[nodiscard]] int maxT() const {return timetable.maxT();};
+            [[nodiscard]] std::pair<int, int> time_interval(int train_index) const {return timetable.time_interval(train_index);};
+            [[nodiscard]] std::pair<int, int> time_interval(const std::string& train_name) const {return timetable.time_interval(train_name);};
+
             void sort_stops() {timetable.sort_stops();};
 
             // RouteMap functions
@@ -73,6 +77,20 @@ namespace cda_rail::instances{
             [[nodiscard]] bool has_route(const std::string& train_name) const {return routes.has_route(train_name);};
             [[nodiscard]] int route_map_size() const {return routes.size();};
             [[nodiscard]] const Route& get_route(const std::string& train_name) const {return routes.get_route(train_name);};
+
+            [[nodiscard]] double route_length(const std::string& train_name) const {return routes.length(train_name, network);};
+            [[nodiscard]] std::pair<double, double> route_edge_pos(const std::string& train_name, int edge) const {
+                return routes.edge_pos(train_name, edge, network);
+            };
+            [[nodiscard]] std::pair<double, double> route_edge_pos(const std::string& train_name, int source, int target) const {
+                return routes.edge_pos(train_name, source, target, network);
+            };
+            [[nodiscard]] std::pair<double, double> route_edge_pos(const std::string& train_name, const std::string& source, const std::string& target) const {
+                return routes.edge_pos(train_name, source, target, network);
+            };
+            [[nodiscard]] std::pair<double, double> route_edge_pos(const std::string& train_name, const std::vector<int>& edges) const {
+                return routes.edge_pos(train_name, edges, network);
+            };
 
             // General Consistency Check
             [[nodiscard]] bool check_consistency(bool every_train_must_have_route = true) const {
@@ -94,5 +112,20 @@ namespace cda_rail::instances{
             [[nodiscard]] static VSSGenerationTimetable import_instance(const char* path, bool every_train_must_have_route = true) {
                 return VSSGenerationTimetable(path, every_train_must_have_route);
             };
+
+            // Transformation functions
+            void discretize(cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
+
+            // Helper
+            std::vector<int> trains_in_section(const std::vector<int>& section) const;
+            std::vector<int> trains_at_t(int t) const;
+            std::vector<int> trains_at_t(int t, const std::vector<int>& trains_to_consider) const;
+            bool has_route_for_every_train() const;
+            std::vector<int> trains_on_edge(int edge_id, bool fixed_routes) const;
+            std::vector<int> trains_on_edge(int edge_id, bool fixed_routes, const std::vector<int>& trains_to_consider) const;
+            std::vector<int> edges_used_by_train(int train_id, bool fixed_routes) const {
+                return edges_used_by_train(get_train_list().get_train(train_id).name, fixed_routes);
+            };
+            std::vector<int> edges_used_by_train(const std::string& train_name, bool fixed_routes) const;
     };
 }

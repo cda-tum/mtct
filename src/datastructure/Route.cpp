@@ -3,6 +3,7 @@
 #include "Definitions.hpp"
 #include "nlohmann/json.hpp"
 #include <fstream>
+#include <exception>
 
 using json = nlohmann::json;
 
@@ -118,6 +119,106 @@ bool cda_rail::Route::check_consistency(const cda_rail::Network& network) const 
         }
     }
     return true;
+}
+
+double cda_rail::Route::length(const cda_rail::Network &network) const {
+    /***
+     * Returns the length of the route, i.e., the sum of the lengths of all edges.
+     * Throws an error if an edge does not exist in the network.
+     *
+     * @param network The network to which the route belongs.
+     * @return The length of the route.
+     */
+
+    double length = 0;
+    for (int i = 0; i < edges.size(); i++) {
+        length += network.get_edge(edges[i]).length;
+    }
+    return length;
+}
+
+void cda_rail::Route::update_after_discretization(const std::vector<std::pair<int, std::vector<int>>> &new_edges) {
+    /**
+     * This method updates the route after the discretization of the network accordingly.
+     * For every pair (v, {v_1, ..., v_n}), v is replaced by v_1, ..., v_n.
+     *
+     * @param new_edges The new edges of the network.
+     */
+
+    const auto old_edges = edges;
+    edges.clear();
+    for (const auto &old_edge : old_edges) {
+        bool replaced = false;
+        for (const auto [track, new_tracks] : new_edges) {
+            if (old_edge == track) {
+                edges.insert(edges.end(), new_tracks.begin(), new_tracks.end());
+                replaced = true;
+                break;
+            }
+        }
+        if (!replaced) {
+            edges.emplace_back(old_edge);
+        }
+    }
+}
+
+std::pair<double, double> cda_rail::Route::edge_pos(int edge, const cda_rail::Network &network) const {
+    /**
+     * Returns the position of the given edge in the route, i.e., the distance from the route start to the source and target respectively.
+     *
+     * @param edge The edge to get the position of.
+     * @param network The network to which the edge belongs.
+     * @return The position of the edge in the route.
+     */
+
+    if (!network.has_edge(edge)) {
+        throw std::invalid_argument("Edge does not exist.");
+    }
+
+    // Initialize return values
+    std::pair<double, double> return_pos = {0, 0};
+    bool edge_found = false;
+    for (int i = 0; i < edges.size(); i++) {
+        return_pos.second += network.get_edge(edges[i]).length;
+        if (edges[i] == edge) {
+            edge_found = true;
+            break;
+        }
+        return_pos.first += network.get_edge(edges[i]).length;
+    }
+
+    if (!edge_found) {
+        throw std::invalid_argument("Edge does not exist in route.");
+    }
+
+    return return_pos;
+
+}
+
+std::pair<double, double>
+cda_rail::Route::edge_pos(const std::vector<int> &edges, const cda_rail::Network &network) const {
+    /**
+     * Returns the minimal start and maximal end position of the given edges in the route. Throws an error only if none of the edges exists in the route.
+     */
+
+    // Initialize return values
+    std::pair<double, double> return_pos = {length(network) + 1, -1};
+
+    // Iterate over all edges
+    for (const auto &edge : edges) {
+        if (!contains_edge(edge)) {
+            continue;
+        }
+        const auto [start_pos, end_pos] = edge_pos(edge, network);
+        return_pos.first = std::min(return_pos.first, start_pos);
+        return_pos.second = std::max(return_pos.second, end_pos);
+    }
+
+    if (return_pos.first > return_pos.second) {
+        throw std::runtime_error("None of the edges exists in the route.");
+    }
+
+    return return_pos;
 }
 
 void cda_rail::RouteMap::add_empty_route(const std::string &train_name) {
@@ -383,5 +484,26 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path &p, const cda_rail::Net
         for (auto& edge : route) {
             this->push_back_edge(name, edge[0].get<std::string>(), edge[1].get<std::string>(), network);
         }
+    }
+}
+
+double cda_rail::RouteMap::length(const std::string &train_name, const cda_rail::Network &network) const {
+    /**
+     * Returns the length of the route of the given train.
+     */
+
+    return get_route(train_name).length(network);
+}
+
+void cda_rail::RouteMap::update_after_discretization(const std::vector<std::pair<int, std::vector<int>>> &new_edges) {
+    /**
+     * This method updates the routes after the discretization of the network accordingly.
+     * For every pair (v, {v_1, ..., v_n}), v is replaced by v_1, ..., v_n.
+     *
+     * @param new_edges The new edges of the network.
+     */
+
+    for (auto& [train_name, route] : routes) {
+        route.update_after_discretization(new_edges);
     }
 }

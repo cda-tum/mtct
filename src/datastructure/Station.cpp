@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <exception>
 #include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
@@ -102,6 +103,33 @@ cda_rail::StationList::StationList(const std::filesystem::path &p, const cda_rai
         this->add_station(name);
         for (const auto& edge : edges) {
             this->add_track_to_station(name, edge[0].get<std::string>(), edge[1].get<std::string>(), network);
+        }
+    }
+}
+
+void
+cda_rail::StationList::update_after_discretization(const std::vector<std::pair<int, std::vector<int>>> &new_edges) {
+    /**
+     * This method updates the timetable after the discretization of the network accordingly.
+     * For every pair (v, {v_1, ..., v_n}), v is replaced by v_1, ..., v_n.
+     * Concretely, the following changes are made:
+     * - For every station, the tracks are replaced by the new edges if applicable.
+     *
+     * @param new_edges The new edges of the network as returned from cda_rail::Network::discretize.
+     */
+
+    for (auto& [name, station] : stations) {
+        auto& tracks = station.tracks;
+        const auto size = tracks.size();
+        for (int i = 0; i < size; ++i) {
+            for (const auto& [track, new_tracks] : new_edges) {
+                if (tracks[i] == track) {
+                    tracks[i] = new_tracks[0];
+                    for (int j = 1; j < new_tracks.size(); ++j) {
+                        tracks.emplace_back(new_tracks[j]);
+                    }
+                }
+            }
         }
     }
 }

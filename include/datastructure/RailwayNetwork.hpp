@@ -8,6 +8,9 @@
 #include <tinyxml2.h>
 #include <filesystem>
 #include "Definitions.hpp"
+#include <unordered_set>
+#include <numeric>
+#include "MultiArray.hpp"
 
 namespace cda_rail {
     struct Vertex {
@@ -33,18 +36,18 @@ namespace cda_rail {
          * @param length Length of vertex (in m)
          * @param max_speed Speed limit of vertex (in m/s)
          * @param breakable Boolean indicating if VSS can be placed on this edge
-         * @param min_block_length Minimum block length (in m). Optional, default 0.
+         * @param min_block_length Minimum block length (in m). Optional, default 1.
          */
         int source;
         int target;
         double length;
         double max_speed;
         bool breakable;
-        double min_block_length = 0;
+        double min_block_length = 1;
 
         // Constructors
         Edge() = default;
-        Edge(int source, int target, double length, double max_speed, bool breakable, double min_block_length = 0) :
+        Edge(int source, int target, double length, double max_speed, bool breakable, double min_block_length = 1) :
             source(source), target(target), length(length), max_speed(max_speed), breakable(breakable), min_block_length(min_block_length) {};
     };
 
@@ -70,6 +73,16 @@ namespace cda_rail {
             void export_successors_python(const std::filesystem::path& p) const;
             void export_successors_cpp(const std::filesystem::path& p) const;
             void write_successor_set_to_file(std::ofstream& file, int i) const;
+
+            std::pair<std::vector<int>, std::vector<int>> separate_edge_at(int edge_index, const std::vector<double>& distances_from_source);
+            std::pair<std::vector<int>, std::vector<int>> uniform_separate_edge(int edge_index);
+            std::pair<std::vector<int>, std::vector<int>> chebychev_separate_edge(int edge_index);
+
+            // helper function
+            void dfs(std::vector<std::vector<int>>& ret_val, std::unordered_set<int>& vertices_to_visit,
+                     const cda_rail::VertexType& section_type,
+                     const std::vector<cda_rail::VertexType> error_types = {}) const;
+            std::vector<std::pair<int, int>> sort_edge_pairs (std::vector<std::pair<int, int>>& edge_pairs) const;
         public:
             // Constructors
             Network() = default;
@@ -87,9 +100,11 @@ namespace cda_rail {
             const std::vector<Vertex>& get_vertices() const {return vertices;};
             const std::vector<Edge>& get_edges() const {return edges;};
 
+            const std::vector<int> get_vertices_by_type(cda_rail::VertexType type) const;
+
             int add_vertex(const std::string& name, VertexType type);
-            int add_edge(int source,int target, double length, double max_speed, bool breakable, double min_block_length = 0);
-            int add_edge(const std::string& source_name, const std::string& target_name, double length, double max_speed, bool breakable, double min_block_length = 0) {
+            int add_edge(int source,int target, double length, double max_speed, bool breakable, double min_block_length = 1);
+            int add_edge(const std::string& source_name, const std::string& target_name, double length, double max_speed, bool breakable, double min_block_length = 1) {
                 return add_edge(get_vertex_index(source_name), get_vertex_index(target_name), length,
                                 max_speed, breakable, min_block_length);
             };
@@ -134,13 +149,17 @@ namespace cda_rail {
             };
 
             [[nodiscard]] bool has_vertex(int index) const {return (index >= 0 && index < vertices.size());};
-            [[nodiscard]] bool has_vertex(const std::string& name) const {return vertex_name_to_index.find(name) != vertex_name_to_index.end();};
+            [[nodiscard]] bool has_vertex(const std::string& name) const {
+                return vertex_name_to_index.find(name) != vertex_name_to_index.end();
+            };
             [[nodiscard]] bool has_edge(int index) const {return (index >= 0 && index < edges.size());};
             [[nodiscard]] bool has_edge(int source_id, int target_id) const;
             [[nodiscard]] bool has_edge(const std::string& source_name, const std::string& target_name) const;
 
             void change_vertex_name(int index, const std::string& new_name);
             void change_vertex_name(const std::string& old_name, const std::string& new_name) {change_vertex_name(get_vertex_index(old_name), new_name);};
+            void change_vertex_type(int index, cda_rail::VertexType new_type);
+            void change_vertex_type(const std::string& name, cda_rail::VertexType new_type) {change_vertex_type(get_vertex_index(name), new_type);};
 
             void change_edge_property(int index, double value, const std::string& property);
             void change_edge_property(int source_id, int target_id, double value, const std::string& property) {change_edge_property(get_edge_index(source_id, target_id), value, property);};
@@ -167,6 +186,14 @@ namespace cda_rail {
             [[nodiscard]] int number_of_vertices() const {return vertices.size();};
             [[nodiscard]] int number_of_edges() const {return edges.size();};
 
+            [[nodiscard]] int max_vss_on_edge(int index) const;
+            [[nodiscard]] int max_vss_on_edge(int source, int target) const {
+                return max_vss_on_edge(get_edge_index(source, target));
+            };
+            [[nodiscard]] int max_vss_on_edge(const std::string& source, const std::string& target) const {
+                return max_vss_on_edge(get_edge_index(source, target));
+            };
+
             [[nodiscard]] static Network import_network(const std::string& path) {return Network(path);};
             [[nodiscard]] static Network import_network(const char* path) {return Network(path);};
             [[nodiscard]] static Network import_network(const std::filesystem::path& p) {return Network(p);};
@@ -175,6 +202,41 @@ namespace cda_rail {
             void export_network(const std::filesystem::path& p) const;
 
             [[nodiscard]] bool is_valid_successor(int e0, int e1) const;
+
+            [[nodiscard]] bool is_adjustable(int vertex_id) const;
+            [[nodiscard]] bool is_adjustable(const std::string& vertex_name) const { return is_adjustable(get_vertex_index(vertex_name)); };
+
+            bool is_consistent_for_transformation() const;
+
+            // Get special edges
+            [[nodiscard]] std::vector<int> breakable_edges() const;
+            [[nodiscard]] std::vector<int> relevant_breakable_edges() const;
+            [[nodiscard]] std::vector<std::vector<int>> unbreakable_sections() const;
+            [[nodiscard]] std::vector<std::vector<int>> no_border_vss_sections() const;
+            [[nodiscard]] std::vector<std::pair<int, int>> combine_reverse_edges(const std::vector<int>& edges, bool sort = false) const;
+            [[nodiscard]] int get_reverse_edge_index(int edge_index) const;
+            [[nodiscard]] std::optional<int> common_vertex(const std::pair<int, int>& pair1, const std::pair<int, int>& pair2) const;
+
+            std::vector<int> inverse_edges(const std::vector<int>& edge_indices) const {
+                const auto& edge_number = number_of_edges();
+                std::vector<int> edges_to_consider(edge_number);
+                std::iota(edges_to_consider.begin(), edges_to_consider.end(), 0);
+                return inverse_edges(edge_indices, edges_to_consider);
+            };
+            std::vector<int> inverse_edges(const std::vector<int>& edge_indices, const std::vector<int>& edges_to_consider) const;
+
+            // Transformation functions
+            std::pair<std::vector<int>, std::vector<int>> separate_edge(int edge_index, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
+            std::pair<std::vector<int>, std::vector<int>> separate_edge(int source_id, int target_id, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM) {
+                return separate_edge(get_edge_index(source_id, target_id), separation_type);
+            };
+            std::pair<std::vector<int>, std::vector<int>> separate_edge(const std::string& source_name, const std::string& target_name, cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM) {
+                return separate_edge(get_edge_index(source_name, target_name), separation_type);
+            };
+
+            std::vector<std::pair<int, std::vector<int>>> discretize(cda_rail::SeparationType separation_type = cda_rail::SeparationType::UNIFORM);
+
+            MultiArray<double> all_edge_pairs_shortest_paths() const;
     };
 
     // HELPER
