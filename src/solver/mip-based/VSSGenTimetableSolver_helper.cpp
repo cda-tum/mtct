@@ -62,7 +62,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   for (const auto& tr_stop : tr_schedule.stops) {
     const auto t0 = tr_stop.begin / dt;
-    const auto t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
+    const auto t1 = ceil(static_cast<double>(tr_stop.end) / dt);
     if (t >= t0 && t <= t1) {
       s.to_use = false;
       return s;
