@@ -4,7 +4,6 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "nlohmann/json.hpp"
 
-#include <exception>
 #include <fstream>
 
 using json = nlohmann::json;
@@ -141,8 +140,8 @@ double cda_rail::Route::length(const cda_rail::Network& network) const {
    */
 
   double length = 0;
-  for (int i = 0; i < edges.size(); i++) {
-    length += network.get_edge(edges[i]).length;
+  for (int const edge : edges) {
+    length += network.get_edge(edge).length;
   }
   return length;
 }
@@ -161,7 +160,7 @@ void cda_rail::Route::update_after_discretization(
   edges.clear();
   for (const auto& old_edge : old_edges) {
     bool replaced = false;
-    for (const auto [track, new_tracks] : new_edges) {
+    for (const auto& [track, new_tracks] : new_edges) {
       if (old_edge == track) {
         edges.insert(edges.end(), new_tracks.begin(), new_tracks.end());
         replaced = true;
@@ -192,13 +191,13 @@ cda_rail::Route::edge_pos(int edge, const cda_rail::Network& network) const {
   // Initialize return values
   std::pair<double, double> return_pos = {0, 0};
   bool                      edge_found = false;
-  for (int i = 0; i < edges.size(); i++) {
-    return_pos.second += network.get_edge(edges[i]).length;
-    if (edges[i] == edge) {
+  for (const int i : edges) {
+    return_pos.second += network.get_edge(i).length;
+    if (i == edge) {
       edge_found = true;
       break;
     }
-    return_pos.first += network.get_edge(edges[i]).length;
+    return_pos.first += network.get_edge(i).length;
   }
 
   if (!edge_found) {
@@ -209,18 +208,19 @@ cda_rail::Route::edge_pos(int edge, const cda_rail::Network& network) const {
 }
 
 std::pair<double, double>
-cda_rail::Route::edge_pos(const std::vector<int>&  edges,
+cda_rail::Route::edge_pos(const std::vector<int>&  edges_to_consider,
                           const cda_rail::Network& network) const {
   /**
-   * Returns the minimal start and maximal end position of the given edges in
-   * the route. Throws an error only if none of the edges exists in the route.
+   * Returns the minimal start and maximal end position of the given
+   * edges_to_consider in the route. Throws an error only if none of the
+   * edges_to_consider exists in the route.
    */
 
   // Initialize return values
   std::pair<double, double> return_pos = {length(network) + 1, -1};
 
-  // Iterate over all edges
-  for (const auto& edge : edges) {
+  // Iterate over all edges_to_consider
+  for (const auto& edge : edges_to_consider) {
     if (!contains_edge(edge)) {
       continue;
     }
@@ -230,7 +230,8 @@ cda_rail::Route::edge_pos(const std::vector<int>&  edges,
   }
 
   if (return_pos.first > return_pos.second) {
-    throw std::runtime_error("None of the edges exists in the route.");
+    throw std::runtime_error(
+        "None of the edges_to_consider exists in the route.");
   }
 
   return return_pos;
@@ -331,21 +332,13 @@ bool cda_rail::RouteMap::check_consistency(
     return false;
   }
 
-  // Iterate through all elements in the route map.
-  for (auto& [name, route] : routes) {
-    // If the train does not exist, then the route map is not valid.
-    if (!trains.has_train(name)) {
-      return false;
-    }
-
-    // If the route is not valid, then the route map is not valid.
-    if (!route.check_consistency(network)) {
-      return false;
-    }
-  }
-
-  // All checks passed
-  return true;
+  // If all of [name, route] in routes fulfill trains.has_train(name) and
+  // route.check_consistency(network) return true, else return false.
+  return std::all_of(routes.begin(), routes.end(),
+                     [&trains, &network](const auto& route) {
+                       return trains.has_train(route.first) &&
+                              route.second.check_consistency(network);
+                     });
 }
 
 void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
@@ -365,10 +358,10 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
   }
 
   json j;
-  for (auto& [name, route] : routes) {
+  for (const auto& [name, route] : routes) {
     std::vector<std::pair<std::string, std::string>> route_edges;
     for (int i = 0; i < route.size(); i++) {
-      auto& edge = route.get_edge(i, network);
+      const auto& edge = route.get_edge(i, network);
       route_edges.emplace_back(network.get_vertex(edge.source).name,
                                network.get_vertex(edge.target).name);
     }
@@ -515,7 +508,7 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
   std::ifstream file(p / "routes.json");
   json          data = json::parse(file);
 
-  for (auto& [name, route] : data.items()) {
+  for (const auto& [name, route] : data.items()) {
     this->add_empty_route(name);
     for (auto& edge : route) {
       this->push_back_edge(name, edge[0].get<std::string>(),

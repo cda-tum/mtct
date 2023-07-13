@@ -5,7 +5,6 @@
 #include "nlohmann/json.hpp"
 
 #include <algorithm>
-#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -33,7 +32,7 @@ int cda_rail::Timetable::add_train(const std::string& name, int length,
   if (train_list.has_train(name)) {
     throw std::invalid_argument("Train already exists.");
   }
-  int index =
+  int const index =
       train_list.add_train(name, length, max_speed, acceleration, deceleration);
   schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
   return index;
@@ -164,7 +163,7 @@ bool cda_rail::Timetable::check_consistency(
   }
 
   // Check if all edges of stations are valid edges of the network
-  for (auto station_name : station_list.get_station_names()) {
+  for (const auto& station_name : station_list.get_station_names()) {
     const auto& station = station_list.get_station(station_name);
     for (auto track : station.tracks) {
       if (!network.has_edge(track)) {
@@ -232,7 +231,7 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
 
   // Parse the schedules
   for (int i = 0; i < this->train_list.size(); i++) {
-    auto& tr = this->train_list.get_train(i);
+    const auto& tr = this->train_list.get_train(i);
     if (!data.contains(tr.name)) {
       throw std::invalid_argument("Schedule for train " + tr.name +
                                   " not found.");
@@ -284,6 +283,6 @@ std::pair<int, int> cda_rail::Timetable::time_interval(int train_index) const {
     throw std::invalid_argument("Train does not exist.");
   }
 
-  auto& schedule = schedules.at(train_index);
+  const auto& schedule = schedules.at(train_index);
   return {schedule.t_0, schedule.t_n};
 }

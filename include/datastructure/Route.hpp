@@ -50,7 +50,7 @@ public:
   };
 
   [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::vector<int>&  edges,
+  edge_pos(const std::vector<int>&  edges_to_consider,
            const cda_rail::Network& network) const;
 
   [[nodiscard]] int get_edge(int route_index) const;

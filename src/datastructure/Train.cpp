@@ -3,7 +3,6 @@
 #include "Definitions.hpp"
 #include "nlohmann/json.hpp"
 
-#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -69,7 +68,7 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
   json          data = json::parse(f);
 
   // Add the trains
-  for (auto& [name, train] : data.items()) {
+  for (const auto& [name, train] : data.items()) {
     this->add_train(name, train["length"], train["max_speed"],
                     train["acceleration"], train["deceleration"]);
   }

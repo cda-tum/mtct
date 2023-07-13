@@ -4,12 +4,10 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "nlohmann/json.hpp"
 
-#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 using json = nlohmann::json;
 
@@ -51,7 +49,7 @@ void cda_rail::StationList::export_stations(
    * @param network The network reference to use for the edge names.
    */
 
-  std::filesystem::path p(path);
+  std::filesystem::path const p(path);
   export_stations(p, network);
 }
 
@@ -85,6 +83,7 @@ std::vector<std::string> cda_rail::StationList::get_station_names() const {
    */
 
   std::vector<std::string> names;
+  names.reserve(stations.size());
   for (const auto& [name, station] : stations) {
     names.emplace_back(name);
   }
