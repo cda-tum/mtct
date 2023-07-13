@@ -2,8 +2,6 @@
 #include "gurobi_c++.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
-#include <exception>
-
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_variables() {
   /**
@@ -337,7 +335,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     model->addConstr(vars["len_in"](tr, t0), GRB_EQUAL, tr_len,
                      "train_boundary_len_in_" + tr_name + "_" +
                          std::to_string(t0));
-    // len_out(tn) = tr_len + brakelen(tn) (if apllicable)
+    // len_out(tn) = tr_len + brakelen(tn) (if applicable)
     GRBLinExpr rhs = tr_len;
     if (this->include_braking_curves) {
       rhs += vars["brakelen"](tr, tn);
@@ -488,7 +486,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       for (int e = 0; e < num_edges; ++e) {
         const auto& e_len = instance.n().get_edge(e).length;
 
-        double dist_before, dist_after;
+        double dist_before;
+        double dist_after;
 
         // Constraint inferred from before position
         if (before_after_struct.t_before <= train_interval[tr].first) {

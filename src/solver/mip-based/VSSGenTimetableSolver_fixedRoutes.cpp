@@ -3,7 +3,6 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <cmath>
-#include <exception>
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_fixed_routes_variables() {
@@ -35,7 +34,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       vars["lda"](tr, t_steps) =
           model->addVar(-tr_len, r_len, 0, GRB_CONTINUOUS,
                         "lda_" + tr_name + "_" + std::to_string(t));
-      for (int edge_id : instance.edges_used_by_train(tr_name, fix_routes)) {
+      for (int const edge_id :
+           instance.edges_used_by_train(tr_name, fix_routes)) {
         const auto& edge = instance.n().get_edge(edge_id);
         const auto& edge_name =
             "[" + instance.n().get_vertex(edge.source).name + "," +
@@ -252,7 +252,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
 
       // Before and after position
-      double before_max, after_min;
+      double before_max = NAN;
+      double after_min  = NAN;
       if (before_after_struct.t_before <= train_interval[tr].first) {
         before_max = 0;
       } else {

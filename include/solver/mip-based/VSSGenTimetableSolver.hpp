@@ -13,12 +13,12 @@ private:
   cda_rail::instances::VSSGenerationTimetable instance;
 
   // Instance variables
-  int                              dt;
-  int                              num_t;
-  int                              num_tr;
-  int                              num_edges;
-  int                              num_vertices;
-  int                              num_breakable_sections;
+  int                              dt                     = -1;
+  int                              num_t                  = -1;
+  int                              num_tr                 = -1;
+  int                              num_edges              = -1;
+  int                              num_vertices           = -1;
+  int                              num_breakable_sections = -1;
   std::vector<std::vector<int>>    unbreakable_sections;
   std::vector<std::vector<int>>    no_border_vss_sections;
   std::vector<std::pair<int, int>> train_interval;
@@ -26,12 +26,12 @@ private:
   std::vector<int>                 no_border_vss_vertices;
   std::vector<int>                 relevant_edges;
   std::vector<int>                 breakable_edges;
-  bool                             fix_routes;
-  bool                             discretize_vss_positions;
-  bool                             include_train_dynamics;
-  bool                             include_braking_curves;
-  bool                             use_pwl;
-  bool                             use_schedule_cuts;
+  bool                             fix_routes               = false;
+  bool                             discretize_vss_positions = false;
+  bool                             include_train_dynamics   = false;
+  bool                             include_braking_curves   = false;
+  bool                             use_pwl                  = false;
+  bool                             use_schedule_cuts        = false;
   std::unordered_map<int, int>     breakable_edge_indices;
   std::vector<std::pair<std::vector<int>, std::vector<int>>> fwd_bwd_sections;
 
@@ -119,18 +119,19 @@ private:
 public:
   // Constructors
   explicit VSSGenTimetableSolver(
-      const cda_rail::instances::VSSGenerationTimetable& instance);
+      cda_rail::instances::VSSGenerationTimetable instance);
   explicit VSSGenTimetableSolver(const std::filesystem::path& instance_path);
   explicit VSSGenTimetableSolver(const std::string& instance_path);
   explicit VSSGenTimetableSolver(const char* instance_path);
 
   // Methods
-  int solve(int delta_t = 15, bool fix_routes = true,
-            bool discretize_vss_positions = false,
-            bool include_train_dynamics   = true,
-            bool include_braking_curves = true, bool use_pwl = false,
-            bool use_schedule_cuts = true, int time_limit = -1,
-            bool debug = false, bool export_to_file = false,
-            std::string file_name = "model");
+  int solve(int delta_t = 15, bool fix_routes_input = true,
+            bool discretize_vss_positions_input = false,
+            bool include_train_dynamics_input   = true,
+            bool include_braking_curves_input   = true,
+            bool use_pwl_input = false, bool use_schedule_cuts_input = true,
+            int time_limit = -1, bool debug = false,
+            bool               export_to_file = false,
+            const std::string& file_name      = "model");
 };
 } // namespace cda_rail::solver::mip_based

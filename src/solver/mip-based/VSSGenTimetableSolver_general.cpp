@@ -3,13 +3,12 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <chrono>
-#include <cmath>
-#include <exception>
 #include <memory>
+#include <utility>
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
-    const cda_rail::instances::VSSGenerationTimetable& instance)
-    : instance(instance) {}
+    cda_rail::instances::VSSGenerationTimetable instance)
+    : instance(std::move(instance)) {}
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
     const std::filesystem::path& instance_path) {
@@ -30,10 +29,10 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
 }
 
 int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
-    int delta_t, bool fix_routes, bool discretize_vss_positions,
-    bool include_train_dynamics, bool include_braking_curves, bool use_pwl,
-    bool use_schedule_cuts, int time_limit, bool debug, bool export_to_file,
-    std::string file_name) {
+    int delta_t, bool fix_routes_input, bool discretize_vss_positions_input,
+    bool include_train_dynamics_input, bool include_braking_curves_input,
+    bool use_pwl_input, bool use_schedule_cuts_input, int time_limit,
+    bool debug, bool export_to_file, const std::string& file_name) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
    * flexible MILP formulation. The level of detail can be controlled using the
@@ -41,23 +40,25 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    *
    * @param delta_t: Length of discretized time intervals in seconds. Default:
    * 15
-   * @param fix_routes: If true, the routes are fixed to the ones given in the
-   * instance. Otherwise, routing is part of the optimization. Default: true
-   * @param discretize_vss_positions: If true, the graphs edges are discretized
-   * in many short edges. VSS positions are then represented by vertices. If
-   * false, the VSS positions are encoded as continuous integers. Default: false
-   * @param include_train_dynamics: If true, the train dynamics (i.e., limited
-   * acceleration and deceleration) are included in the model. Default: true
-   * @param include_braking_curves: If true, the braking curves (i.e., the
+   * @param fix_routes_input: If true, the routes are fixed to the ones given in
+   * the instance. Otherwise, routing is part of the optimization. Default: true
+   * @param discretize_vss_positions_input: If true, the graphs edges are
+   * discretized in many short edges. VSS positions are then represented by
+   * vertices. If false, the VSS positions are encoded as continuous integers.
+   * Default: false
+   * @param include_train_dynamics_input: If true, the train dynamics (i.e.,
+   * limited acceleration and deceleration) are included in the model. Default:
+   * true
+   * @param include_braking_curves_input: If true, the braking curves (i.e., the
    * braking distance depending on the current speed has to be cleared) are
    * included in the model. Default: true
-   * @param use_pwl: If true, the braking distances are approximated by
+   * @param use_pwl_input: If true, the braking distances are approximated by
    * piecewise linear functions with a fixed maximal error. Otherwise, they are
    * modeled as quadratic functions and Gurobi's ability to solve these using
-   * spatial branching is used. Only relevant if include_braking_curves is true.
-   * Default: false
-   * @param use_schedule_cuts: If true, the formulation is strengthened using
-   * cuts implied by the schedule. Default: true
+   * spatial branching is used. Only relevant if include_braking_curves_input is
+   * true. Default: false
+   * @param use_schedule_cuts_input: If true, the formulation is strengthened
+   * using cuts implied by the schedule. Default: true
    * @param time_limit: Time limit in seconds. No limit if negative. Default: -1
    * @param debug: If true, (more detailed) debug output is printed. Default:
    * false
@@ -70,22 +71,23 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * solution was found.
    */
 
-  decltype(std::chrono::high_resolution_clock::now()) start, model_created,
-      model_solved;
-  long long create_time = 0;
-  long long solve_time  = 0;
+  decltype(std::chrono::high_resolution_clock::now()) start;
+  decltype(std::chrono::high_resolution_clock::now()) model_created;
+  decltype(std::chrono::high_resolution_clock::now()) model_solved;
+  long long                                           create_time = 0;
+  long long                                           solve_time  = 0;
   if (debug || time_limit > 0) {
     start = std::chrono::high_resolution_clock::now();
   }
 
   // Save relevant variables
   dt                             = delta_t;
-  this->fix_routes               = fix_routes;
-  this->discretize_vss_positions = discretize_vss_positions;
-  this->include_train_dynamics   = include_train_dynamics;
-  this->include_braking_curves   = include_braking_curves;
-  this->use_pwl                  = use_pwl;
-  this->use_schedule_cuts        = use_schedule_cuts;
+  this->fix_routes               = fix_routes_input;
+  this->discretize_vss_positions = discretize_vss_positions_input;
+  this->include_train_dynamics   = include_train_dynamics_input;
+  this->include_braking_curves   = include_braking_curves_input;
+  this->use_pwl                  = use_pwl_input;
+  this->use_schedule_cuts        = use_schedule_cuts_input;
 
   if (this->fix_routes && !instance.has_route_for_every_train()) {
     throw std::runtime_error("Instance does not have a route for every train");
@@ -292,7 +294,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     return -1;
   }
 
-  int obj_val = round(model->get(GRB_DoubleAttr_ObjVal));
+  int const obj_val = round(model->get(GRB_DoubleAttr_ObjVal));
   if (debug) {
     std::cout << "Objective: " << obj_val << std::endl;
   }
@@ -324,7 +326,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                         "v_" + tr_name + "_" + std::to_string(t * dt));
     }
     for (int t = train_interval[i].first; t <= train_interval[i].second; ++t) {
-      for (int edge_id : instance.edges_used_by_train(tr_name, fix_routes)) {
+      for (int const edge_id :
+           instance.edges_used_by_train(tr_name, fix_routes)) {
         const auto& edge = instance.n().get_edge(edge_id);
         const auto& edge_name =
             "[" + instance.n().get_vertex(edge.source).name + "," +
@@ -479,7 +482,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         const auto& tr2_interval = train_interval[tr2];
         const auto& tr2_name  = instance.get_train_list().get_train(tr2).name;
         const auto& tr2_route = instance.get_route(tr2_name);
-        std::pair<int, int> t_interval = {
+        std::pair<int, int> const t_interval = {
             std::max(tr1_interval.first, tr2_interval.first),
             std::min(tr1_interval.second, tr2_interval.second)};
         // Iterate over all time steps where both trains can potentially be on
@@ -524,7 +527,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                       "No common vertex found, this should not have happened");
                 }
                 // Find index of v_overlap in no_border_vss_vertices
-                int v_overlap_index =
+                int const v_overlap_index =
                     std::find(no_border_vss_vertices.begin(),
                               no_border_vss_vertices.end(), v_overlap.value()) -
                     no_border_vss_vertices.begin();
@@ -564,14 +567,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& sec       = unbreakable_sections[sec_index];
     const auto& tr_on_sec = instance.trains_in_section(sec);
     // tr is on section if it occupies at least one edge of the section
-    for (int tr : tr_on_sec) {
+    for (int const tr : tr_on_sec) {
       const auto& tr_interval = train_interval[tr];
       const auto& tr_name     = instance.get_train_list().get_train(tr).name;
       const auto& tr_route    = instance.get_route(tr_name);
       for (int t = tr_interval.first; t <= tr_interval.second; ++t) {
         GRBLinExpr lhs   = 0;
         int        count = 0;
-        for (int e_index : sec) {
+        for (int const e_index : sec) {
           if (tr_route.contains_edge(e_index)) {
             lhs += vars["x"](tr, t, e_index);
             count++;
@@ -591,7 +594,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (int t = 0; t <= num_t; ++t) {
       const auto tr_to_consider = instance.trains_at_t(t * dt, tr_on_sec);
       GRBLinExpr lhs            = 0;
-      for (int tr : tr_to_consider) {
+      for (int const tr : tr_to_consider) {
         lhs += vars["x_sec"](tr, t, sec_index);
       }
       model->addConstr(lhs <= 1, "unbreakable_section" +
@@ -629,7 +632,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         }
         if (t >= t0 && t < t1) { // because otherwise the front corresponds to
                                  // t1+dt which is allowed outside
-          for (int e : inverse_stop_edges) {
+          for (int const e : inverse_stop_edges) {
             model->addConstr(vars["x"](tr, t, e) == 0,
                              "station_x_" + tr_name + "_" + std::to_string(t) +
                                  "_" + std::to_string(e));
@@ -638,7 +641,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         // At least on station edge must be occupied, this also holds for the
         // leaving and entering time interval
         GRBLinExpr lhs = 0;
-        for (int e : stop_edges) {
+        for (int const e : stop_edges) {
           // If e in tr_edges
           if (std::find(tr_edges.begin(), tr_edges.end(), e) !=
               tr_edges.end()) {
@@ -905,18 +908,18 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_max_speed =
         instance.get_train_list().get_train(tr).max_speed;
     if (this->use_pwl) {
-      const int N = std::ceil(
+      const int n = std::ceil(
           tr_max_speed / (2 * std::sqrt(2 * tr_deceleration * ABS_PWL_ERROR)));
-      std::unique_ptr<double[]> xpts(new double[N + 1]);
-      std::unique_ptr<double[]> ypts(new double[N + 1]);
-      for (int i = 0; i <= N; ++i) {
-        xpts[i] = i * tr_max_speed / N;
+      auto const xpts = std::make_unique<double[]>(n + 1);
+      auto const ypts = std::make_unique<double[]>(n + 1);
+      for (int i = 0; i <= n; ++i) {
+        xpts[i] = i * tr_max_speed / n;
         ypts[i] = xpts[i] * xpts[i] / (2 * tr_deceleration);
       }
       for (int t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         model->addGenConstrPWL(vars["v"](tr, t + 1), vars["brakelen"](tr, t),
-                               N + 1, xpts.get(), ypts.get(),
+                               n + 1, xpts.get(), ypts.get(),
                                "brakelen_" + std::to_string(tr) + "_" +
                                    std::to_string(t));
       }

@@ -1,9 +1,6 @@
-#include "MultiArray.hpp"
-#include "gurobi_c++.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <cmath>
-#include <exception>
 #include <unordered_map>
 
 std::vector<int>
@@ -95,7 +92,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(
   const auto& v_max        = train_object.max_speed;
   const auto  time_diff    = time_steps * dt;
   double      ret_val      = 0;
-  double      final_speed  = 0;
+  double      final_speed  = NAN;
   if (!this->include_train_dynamics) {
     ret_val += time_diff * v_max;
     final_speed = v_max;
@@ -125,10 +122,10 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
    * time
    */
 
-  auto compare_entry = [this](int tr1, int tr2) -> bool {
+  auto compare_entry = [this](int tr1, int tr2) {
     return train_interval[tr1].first < train_interval[tr2].first;
   };
-  auto compare_exit = [this](int tr1, int tr2) -> bool {
+  auto compare_exit = [this](int tr1, int tr2) {
     return train_interval[tr1].second > train_interval[tr2].second;
   };
 
