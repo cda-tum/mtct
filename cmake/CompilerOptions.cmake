@@ -5,8 +5,7 @@ function(enable_project_options target_name)
 
   # Option to enable time tracing with clang
   if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-    option(ENABLE_BUILD_WITH_TIME_TRACE
-           "Enable -ftime-trace to generate time tracing .json files on clang" OFF)
+    option(ENABLE_BUILD_WITH_TIME_TRACE "Enable -ftime-trace to generate time tracing .json files on clang" OFF)
     if(ENABLE_BUILD_WITH_TIME_TRACE)
       target_compile_options(${target_name} INTERFACE -ftime-trace)
     endif()
@@ -37,13 +36,12 @@ function(enable_project_options target_name)
     endif()
 
     # enable some more optimizations in release mode
-    target_compile_options(${target_name} INTERFACE $<$<CONFIG:RELEASE>:-fno-math-errno
-                                                    -ffinite-math-only -fno-trapping-math>)
+    target_compile_options(${target_name} INTERFACE $<$<CONFIG:RELEASE>:-fno-math-errno -ffinite-math-only
+                                                    -fno-trapping-math>)
 
     # enable some more options for better debugging
-    target_compile_options(
-      ${target_name} INTERFACE $<$<CONFIG:DEBUG>:-fno-omit-frame-pointer
-                               -fno-optimize-sibling-calls -fno-inline-functions>)
+    target_compile_options(${target_name} INTERFACE $<$<CONFIG:DEBUG>:-fno-omit-frame-pointer
+                                                    -fno-optimize-sibling-calls -fno-inline-functions>)
   endif()
 
   option(BINDINGS "Configure for building Python bindings")
