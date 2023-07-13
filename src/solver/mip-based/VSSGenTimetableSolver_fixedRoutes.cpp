@@ -2,7 +2,7 @@
 #include "gurobi_c++.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
-#include <math.h>
+#include <cmath>
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_fixed_routes_variables() {

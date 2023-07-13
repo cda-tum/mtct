@@ -1,6 +1,6 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
-#include <math.h>
+#include <cmath>
 #include <unordered_map>
 
 std::vector<int>
