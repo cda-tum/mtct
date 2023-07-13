@@ -23,11 +23,11 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
   std::vector<std::string> vertex_names = {
       "l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
   std::vector<cda_rail::VertexType> type = {
-      cda_rail::VertexType::TTD,       cda_rail::VertexType::TTD,
-      cda_rail::VertexType::TTD,       cda_rail::VertexType::NO_BORDER,
-      cda_rail::VertexType::TTD,       cda_rail::VertexType::TTD,
-      cda_rail::VertexType::NO_BORDER, cda_rail::VertexType::TTD,
-      cda_rail::VertexType::TTD,       cda_rail::VertexType::TTD,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::NoBorder,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
+      cda_rail::VertexType::NoBorder, cda_rail::VertexType::TTD,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
       cda_rail::VertexType::TTD};
 
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
@@ -368,7 +368,7 @@ TEST(Functionality, VSSGenerationTimetableExport) {
   // Add a simple network to the instance
   instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
   instance.n().add_vertex("v1", cda_rail::VertexType::VSS);
-  instance.n().add_vertex("v2", cda_rail::VertexType::NO_BORDER);
+  instance.n().add_vertex("v2", cda_rail::VertexType::NoBorder);
 
   instance.n().add_edge("v0", "v1", 100, 10, true, 10);
   instance.n().add_edge("v1", "v2", 200, 20, false);
@@ -963,7 +963,7 @@ TEST(Example, Stammstrecke) {
   int hackerbruecke_switch_4 = instance.n().add_vertex(
       "HackerbrueckeSwitch4", cda_rail::VertexType::TTD);
   int hackerbruecke_switch_c = instance.n().add_vertex(
-      "HackerbrueckeSwitchC", cda_rail::VertexType::NO_BORDER);
+      "HackerbrueckeSwitchC", cda_rail::VertexType::NoBorder);
   int hackerbruecke_1l =
       instance.n().add_vertex("Hackerbruecke1L", cda_rail::VertexType::TTD);
   int hackerbruecke_2l =

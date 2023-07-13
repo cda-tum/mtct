@@ -714,7 +714,7 @@ bool cda_rail::Network::is_adjustable(int vertex_id) const {
    * Checks if a given vertex type is adjustable (if applicable for a certain
    * algorithmic approach). A vertex is adjustable if all of the following
    * conditions hold:
-   * - The vertex is of type NO_BORDER
+   * - The vertex is of type NoBorder
    * - The vertex has exactly two neighboring vertices
    * In all other cases the vertex is not adjustable.
    *
@@ -727,8 +727,8 @@ bool cda_rail::Network::is_adjustable(int vertex_id) const {
     throw std::invalid_argument("Vertex does not exist");
   }
 
-  // Check if vertex is of type NO_BORDER
-  if (vertices[vertex_id].type != cda_rail::VertexType::NO_BORDER) {
+  // Check if vertex is of type NoBorder
+  if (vertices[vertex_id].type != cda_rail::VertexType::NoBorder) {
     return false;
   }
 
@@ -795,7 +795,7 @@ cda_rail::Network::separate_edge_at(
                               get_vertex(edge.target).name + "_" +
                               std::to_string(i);
     new_vertices.emplace_back(
-        add_vertex(vertex_name, cda_rail::VertexType::NO_BORDER_VSS));
+        add_vertex(vertex_name, cda_rail::VertexType::NoBorderVss));
   }
 
   // Create new edges
@@ -1024,8 +1024,8 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
    * - If an edge is breakable both it's source and target are type VSS or TTD
    * - For bidirectional edges, the breakable and length attributes are the same
    * for both directions.
-   * - Vertices of type NO_BORDER_VSS have at most two neighbors. These
-   * neighbors are not of type NO_BORDER.
+   * - Vertices of type NoBorderVss have at most two neighbors. These
+   * neighbors are not of type NoBorder.
    *
    * @return True if the graph is consistent, false otherwise.
    */
@@ -1038,11 +1038,11 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
     if (edge.breakable && edge.min_block_length <= 0) {
       return false;
     }
-    // If the edge is breakable, check if source or target are of type NO_BORDER
+    // If the edge is breakable, check if source or target are of type NoBorder
     // then return false
     if (edge.breakable &&
-        (get_vertex(edge.source).type == cda_rail::VertexType::NO_BORDER ||
-         get_vertex(edge.target).type == cda_rail::VertexType::NO_BORDER)) {
+        (get_vertex(edge.source).type == cda_rail::VertexType::NoBorder ||
+         get_vertex(edge.target).type == cda_rail::VertexType::NoBorder)) {
       return false;
     }
     // If the reverse edge exists check if the breakable and length attributes
@@ -1058,17 +1058,17 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
 
   // Check every vertex
   for (size_t i = 0; i < number_of_vertices(); ++i) {
-    // If the vertex is of type NO_BORDER_VSS check conditions
-    if (get_vertex(i).type == cda_rail::VertexType::NO_BORDER_VSS) {
+    // If the vertex is of type NoBorderVss check conditions
+    if (get_vertex(i).type == cda_rail::VertexType::NoBorderVss) {
       // Get neighbors
       const auto& v_neighbors = neighbors(i);
       // Check if there are more than two neighbors
       if (v_neighbors.size() > 2) {
         return false;
       }
-      // Check if neighbors are of type NO_BORDER
+      // Check if neighbors are of type NoBorder
       for (const auto& j : v_neighbors) {
-        if (get_vertex(j).type == cda_rail::VertexType::NO_BORDER) {
+        if (get_vertex(j).type == cda_rail::VertexType::NoBorder) {
           return false;
         }
       }
@@ -1117,13 +1117,13 @@ std::vector<std::vector<int>> cda_rail::Network::unbreakable_sections() const {
   // Get possible start vertices
   std::unordered_set<int> vertices_to_visit;
   for (int i = 0; i < number_of_vertices(); ++i) {
-    if (get_vertex(i).type == cda_rail::VertexType::NO_BORDER &&
+    if (get_vertex(i).type == cda_rail::VertexType::NoBorder &&
         neighbors(i).size() >= 1) {
       vertices_to_visit.emplace(i);
     }
   }
 
-  dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NO_BORDER);
+  dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NoBorder);
 
   return ret_val;
 }
@@ -1133,7 +1133,7 @@ cda_rail::Network::no_border_vss_sections() const {
   /**
    * Returns a vector of vectors of edge indices. Each vector of edge indices
    * represents a no border vss section. I.e., it includes sections containing
-   * NO_BORDER_VSS vertices that can be altered by an algorithm. These vertices
+   * NoBorderVss vertices that can be altered by an algorithm. These vertices
    * have likely been created by a transformation in advance.
    */
 
@@ -1148,14 +1148,14 @@ cda_rail::Network::no_border_vss_sections() const {
   // Get possible start vertices
   std::unordered_set<int> vertices_to_visit;
   for (int i = 0; i < number_of_vertices(); ++i) {
-    if (get_vertex(i).type == cda_rail::VertexType::NO_BORDER_VSS &&
+    if (get_vertex(i).type == cda_rail::VertexType::NoBorderVss &&
         neighbors(i).size() >= 1) {
       vertices_to_visit.emplace(i);
     }
   }
 
-  dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NO_BORDER_VSS,
-      {cda_rail::VertexType::NO_BORDER});
+  dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NoBorderVss,
+      {cda_rail::VertexType::NoBorder});
 
   return ret_val;
 }
@@ -1188,7 +1188,7 @@ void cda_rail::Network::dfs(
 
       const auto neighbor_vertices = neighbors(current_vertex);
       for (const auto& neighbor : neighbor_vertices) {
-        // If neighboring vertex is of type NO_BORDER
+        // If neighboring vertex is of type NoBorder
         if (get_vertex(neighbor).type == section_type) {
           // If vertex has not been visited yet, add it to stack
           if (std::find(visited_vertices.begin(), visited_vertices.end(),

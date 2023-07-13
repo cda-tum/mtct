@@ -18,7 +18,7 @@ struct Vertex {
   /**
    * Vertex object
    * @param name Name of the vertex
-   * @param type Type of the vertex (NO_BORDER, VSS, TTD)
+   * @param type Type of the vertex (NoBorder, VSS, TTD)
    */
 
   std::string name;

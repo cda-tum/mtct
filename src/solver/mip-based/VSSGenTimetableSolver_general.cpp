@@ -121,7 +121,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     no_border_vss_sections = instance.n().no_border_vss_sections();
     num_breakable_sections = no_border_vss_sections.size();
     no_border_vss_vertices =
-        instance.n().get_vertices_by_type(cda_rail::VertexType::NO_BORDER_VSS);
+        instance.n().get_vertices_by_type(cda_rail::VertexType::NoBorderVss);
   } else {
     breakable_edges = instance.n().breakable_edges();
     for (int i = 0; i < breakable_edges.size(); ++i) {
@@ -458,7 +458,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_discretized_constraints() {
   /**
-   * Creates VSS constraints, i.e., on NO_BORDER_VSS sections two trains must be
+   * Creates VSS constraints, i.e., on NoBorderVss sections two trains must be
    * separated by a chosen vertex.
    */
 

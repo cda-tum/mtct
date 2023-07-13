@@ -20,7 +20,7 @@ struct EdgeTarget {
 
 TEST(Functionality, NetworkFunctions) {
   cda_rail::Network network;
-  int v0 = network.add_vertex("v0", cda_rail::VertexType::NO_BORDER);
+  int v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
   int v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
   int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
 
@@ -163,14 +163,14 @@ TEST(Functionality, NetworkSections) {
 
   // Add vertices
   network.add_vertex("v0", cda_rail::VertexType::TTD);
-  network.add_vertex("v1", cda_rail::VertexType::NO_BORDER);
+  network.add_vertex("v1", cda_rail::VertexType::NoBorder);
   network.add_vertex("v20", cda_rail::VertexType::TTD);
-  network.add_vertex("v21", cda_rail::VertexType::NO_BORDER);
-  network.add_vertex("v30", cda_rail::VertexType::NO_BORDER);
+  network.add_vertex("v21", cda_rail::VertexType::NoBorder);
+  network.add_vertex("v30", cda_rail::VertexType::NoBorder);
   network.add_vertex("v31", cda_rail::VertexType::VSS);
   network.add_vertex("v4", cda_rail::VertexType::TTD);
   network.add_vertex("v5", cda_rail::VertexType::VSS);
-  network.add_vertex("v6", cda_rail::VertexType::NO_BORDER_VSS);
+  network.add_vertex("v6", cda_rail::VertexType::NoBorderVss);
   network.add_vertex("v7", cda_rail::VertexType::TTD);
 
   // Add edges v0 -> v1 -> v20 -> v30 -> v4 -> v5 -> v6 -> v7
@@ -297,7 +297,7 @@ TEST(Functionality, NetworkConsistency) {
 
   // Add vertices
   network.add_vertex("v0", cda_rail::VertexType::TTD);
-  network.add_vertex("v1", cda_rail::VertexType::NO_BORDER_VSS);
+  network.add_vertex("v1", cda_rail::VertexType::NoBorderVss);
   network.add_vertex("v2", cda_rail::VertexType::TTD);
   network.add_vertex("v3", cda_rail::VertexType::VSS);
 
@@ -307,12 +307,12 @@ TEST(Functionality, NetworkConsistency) {
 
   EXPECT_FALSE(network.is_consistent_for_transformation());
 
-  network.change_vertex_type("v1", cda_rail::VertexType::NO_BORDER);
+  network.change_vertex_type("v1", cda_rail::VertexType::NoBorder);
 
   EXPECT_TRUE(network.is_consistent_for_transformation());
 
-  network.add_vertex("v4", cda_rail::VertexType::NO_BORDER);
-  network.add_vertex("v5", cda_rail::VertexType::NO_BORDER_VSS);
+  network.add_vertex("v4", cda_rail::VertexType::NoBorder);
+  network.add_vertex("v5", cda_rail::VertexType::NoBorderVss);
   network.add_vertex("v6", cda_rail::VertexType::VSS);
 
   network.add_edge("v2", "v4", 100, 100, false);
@@ -321,7 +321,7 @@ TEST(Functionality, NetworkConsistency) {
 
   EXPECT_FALSE(network.is_consistent_for_transformation());
 
-  network.change_vertex_type("v5", cda_rail::VertexType::NO_BORDER);
+  network.change_vertex_type("v5", cda_rail::VertexType::NoBorder);
 
   EXPECT_TRUE(network.is_consistent_for_transformation());
 
@@ -335,7 +335,7 @@ TEST(Functionality, NetworkConsistency) {
 
   EXPECT_TRUE(network.is_consistent_for_transformation());
 
-  network.change_vertex_type("v7", cda_rail::VertexType::NO_BORDER);
+  network.change_vertex_type("v7", cda_rail::VertexType::NoBorder);
 
   EXPECT_FALSE(network.is_consistent_for_transformation());
 
@@ -367,11 +367,11 @@ TEST(Functionality, ReadNetwork) {
   std::vector<std::string> vertex_names = {
       "l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
   std::vector<cda_rail::VertexType> type = {
-      cda_rail::VertexType::TTD,       cda_rail::VertexType::TTD,
-      cda_rail::VertexType::TTD,       cda_rail::VertexType::NO_BORDER,
-      cda_rail::VertexType::TTD,       cda_rail::VertexType::TTD,
-      cda_rail::VertexType::NO_BORDER, cda_rail::VertexType::TTD,
-      cda_rail::VertexType::TTD,       cda_rail::VertexType::TTD,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::NoBorder,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
+      cda_rail::VertexType::NoBorder, cda_rail::VertexType::TTD,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
       cda_rail::VertexType::TTD};
 
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
@@ -541,7 +541,7 @@ TEST(Functionality, ReadNetwork) {
 
 TEST(Functionality, WriteNetwork) {
   cda_rail::Network network;
-  network.add_vertex("v0", cda_rail::VertexType::NO_BORDER);
+  network.add_vertex("v0", cda_rail::VertexType::NoBorder);
   network.add_vertex("v1", cda_rail::VertexType::VSS);
   network.add_vertex("v2", cda_rail::VertexType::TTD);
 
@@ -647,17 +647,17 @@ TEST(Functionality, NetworkEdgeSeparation) {
 
   // Check if the vertices are correct
   // All old vertices still exist. Additionally vertices v1_v2_0 to v1_v2_2 have
-  // been added with type NO_BORDER Hence, in total there are 9 vertices.
+  // been added with type NoBorder Hence, in total there are 9 vertices.
   EXPECT_EQ(network.number_of_vertices(), 9);
   EXPECT_TRUE(network.has_vertex("v1_v2_0"));
   EXPECT_TRUE(network.has_vertex("v1_v2_1"));
   EXPECT_TRUE(network.has_vertex("v1_v2_2"));
   EXPECT_EQ(network.get_vertex("v1_v2_0").type,
-            cda_rail::VertexType::NO_BORDER_VSS);
+            cda_rail::VertexType::NoBorderVss);
   EXPECT_EQ(network.get_vertex("v1_v2_1").type,
-            cda_rail::VertexType::NO_BORDER_VSS);
+            cda_rail::VertexType::NoBorderVss);
   EXPECT_EQ(network.get_vertex("v1_v2_2").type,
-            cda_rail::VertexType::NO_BORDER_VSS);
+            cda_rail::VertexType::NoBorderVss);
   EXPECT_TRUE(network.has_vertex("v00"));
   EXPECT_TRUE(network.has_vertex("v01"));
   EXPECT_TRUE(network.has_vertex("v1"));
@@ -877,9 +877,9 @@ TEST(Functionality, SortPairs) {
   cda_rail::Network network;
   // Add vertices
   network.add_vertex("v0", cda_rail::VertexType::TTD);
-  network.add_vertex("v1", cda_rail::VertexType::NO_BORDER_VSS);
-  network.add_vertex("v2", cda_rail::VertexType::NO_BORDER_VSS);
-  network.add_vertex("v3", cda_rail::VertexType::NO_BORDER_VSS);
+  network.add_vertex("v1", cda_rail::VertexType::NoBorderVss);
+  network.add_vertex("v2", cda_rail::VertexType::NoBorderVss);
+  network.add_vertex("v3", cda_rail::VertexType::NoBorderVss);
   network.add_vertex("v4", cda_rail::VertexType::TTD);
   network.add_vertex("v5", cda_rail::VertexType::TTD);
 
@@ -959,17 +959,17 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
 
   // Check if the vertices are correct
   // All old vertices still exist. Additionally vertices v1_v2_0 to v1_v2_2 have
-  // been added with type NO_BORDER Hence, in total there are 9 vertices.
+  // been added with type NoBorder Hence, in total there are 9 vertices.
   EXPECT_EQ(network.number_of_vertices(), 9);
   EXPECT_TRUE(network.has_vertex("v1_v2_0"));
   EXPECT_TRUE(network.has_vertex("v1_v2_1"));
   EXPECT_TRUE(network.has_vertex("v1_v2_2"));
   EXPECT_EQ(network.get_vertex("v1_v2_0").type,
-            cda_rail::VertexType::NO_BORDER_VSS);
+            cda_rail::VertexType::NoBorderVss);
   EXPECT_EQ(network.get_vertex("v1_v2_1").type,
-            cda_rail::VertexType::NO_BORDER_VSS);
+            cda_rail::VertexType::NoBorderVss);
   EXPECT_EQ(network.get_vertex("v1_v2_2").type,
-            cda_rail::VertexType::NO_BORDER_VSS);
+            cda_rail::VertexType::NoBorderVss);
   EXPECT_TRUE(network.has_vertex("v00"));
   EXPECT_TRUE(network.has_vertex("v01"));
   EXPECT_TRUE(network.has_vertex("v1"));
@@ -1336,22 +1336,21 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
 
 TEST(Functionality, NetworkVerticesByType) {
   cda_rail::Network network;
-  // Add vertices of each type NO_BORDER (1x), TTD (2x), VSS (3x), NO_BORDER_VSS
+  // Add vertices of each type NoBorder (1x), TTD (2x), VSS (3x), NoBorderVss
   // (4x)
-  auto v1  = network.add_vertex("v1", cda_rail::VertexType::NO_BORDER);
+  auto v1  = network.add_vertex("v1", cda_rail::VertexType::NoBorder);
   auto v2  = network.add_vertex("v2", cda_rail::VertexType::TTD);
   auto v3  = network.add_vertex("v3", cda_rail::VertexType::TTD);
   auto v4  = network.add_vertex("v4", cda_rail::VertexType::VSS);
   auto v5  = network.add_vertex("v5", cda_rail::VertexType::VSS);
   auto v6  = network.add_vertex("v6", cda_rail::VertexType::VSS);
-  auto v7  = network.add_vertex("v7", cda_rail::VertexType::NO_BORDER_VSS);
-  auto v8  = network.add_vertex("v8", cda_rail::VertexType::NO_BORDER_VSS);
-  auto v9  = network.add_vertex("v9", cda_rail::VertexType::NO_BORDER_VSS);
-  auto v10 = network.add_vertex("v10", cda_rail::VertexType::NO_BORDER_VSS);
+  auto v7  = network.add_vertex("v7", cda_rail::VertexType::NoBorderVss);
+  auto v8  = network.add_vertex("v8", cda_rail::VertexType::NoBorderVss);
+  auto v9  = network.add_vertex("v9", cda_rail::VertexType::NoBorderVss);
+  auto v10 = network.add_vertex("v10", cda_rail::VertexType::NoBorderVss);
 
   // Check if the vertices are in the correct sets
-  auto no_border =
-      network.get_vertices_by_type(cda_rail::VertexType::NO_BORDER);
+  auto no_border = network.get_vertices_by_type(cda_rail::VertexType::NoBorder);
   EXPECT_EQ(no_border.size(), 1);
   EXPECT_TRUE(std::find(no_border.begin(), no_border.end(), v1) !=
               no_border.end());
@@ -1368,7 +1367,7 @@ TEST(Functionality, NetworkVerticesByType) {
   EXPECT_TRUE(std::find(vss.begin(), vss.end(), v6) != vss.end());
 
   auto no_border_vss =
-      network.get_vertices_by_type(cda_rail::VertexType::NO_BORDER_VSS);
+      network.get_vertices_by_type(cda_rail::VertexType::NoBorderVss);
   EXPECT_EQ(no_border_vss.size(), 4);
   EXPECT_TRUE(std::find(no_border_vss.begin(), no_border_vss.end(), v7) !=
               no_border_vss.end());
