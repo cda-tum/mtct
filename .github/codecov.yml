@@ -19,7 +19,3 @@ parsers:
     branch_detection:
       conditional: no
       loop: no
-
-codecov:
-  notify:
-    after_n_builds: 3
