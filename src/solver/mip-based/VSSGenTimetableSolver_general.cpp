@@ -3,6 +3,7 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <memory>
 #include <utility>
 
