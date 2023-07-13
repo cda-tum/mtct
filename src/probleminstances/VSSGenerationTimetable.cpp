@@ -3,7 +3,6 @@
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
-#include <exception>
 #include <numeric>
 
 void cda_rail::instances::VSSGenerationTimetable::export_instance(
@@ -125,7 +124,7 @@ std::vector<int> cda_rail::instances::VSSGenerationTimetable::trains_at_t(
   }
 
   std::vector<int> trains;
-  for (int tr : trains_to_consider) {
+  for (int const tr : trains_to_consider) {
     const auto& interval = timetable.time_interval(tr);
     if (interval.first <= t && t < interval.second) {
       trains.push_back(tr);
@@ -141,12 +140,10 @@ bool cda_rail::instances::VSSGenerationTimetable::has_route_for_every_train()
    * Checks if every train has a route.
    */
 
-  for (const auto& tr : get_train_list()) {
-    if (!has_route(tr.name) || get_route(tr.name).size() == 0) {
-      return false;
-    }
-  }
-  return true;
+  return std::all_of(get_train_list().begin(), get_train_list().end(),
+                     [this](const auto& tr) {
+                       return has_route(tr.name) && !get_route(tr.name).empty();
+                     });
 }
 
 std::vector<int>
@@ -187,7 +184,7 @@ std::vector<int> cda_rail::instances::VSSGenerationTimetable::trains_on_edge(
     return trains_to_consider;
   }
   std::vector<int> return_trains;
-  for (int tr : trains_to_consider) {
+  for (int const tr : trains_to_consider) {
     const auto& tr_route = this->get_route(get_train_list().get_train(tr).name);
     if (tr_route.contains_edge(edge_id)) {
       return_trains.push_back(tr);

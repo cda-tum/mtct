@@ -57,6 +57,7 @@ public:
   [[nodiscard]] const cda_rail::Edge&
   get_edge(int route_index, const cda_rail::Network& network) const;
   [[nodiscard]] int                     size() const { return edges.size(); };
+  [[nodiscard]] bool                    empty() const { return edges.empty(); };
   [[nodiscard]] const std::vector<int>& get_edges() const { return edges; };
 
   [[nodiscard]] bool contains_edge(int edge_index) const {
@@ -121,6 +122,7 @@ public:
     return routes.find(train_name) != routes.end();
   };
   [[nodiscard]] int          size() const { return routes.size(); };
+  [[nodiscard]] bool         empty() const { return routes.empty(); };
   [[nodiscard]] const Route& get_route(const std::string& train_name) const;
 
   [[nodiscard]] double length(const std::string&       train_name,
