@@ -646,8 +646,8 @@ TEST(Functionality, NetworkEdgeSeparation) {
   EXPECT_EQ(new_edges.second.size(), 0);
 
   // Check if the vertices are correct
-  // All old vertices still exist. Additionally vertices v1_v2_0 to v1_v2_2 have
-  // been added with type NoBorder Hence, in total there are 9 vertices.
+  // All old vertices still exist. Additionally, vertices v1_v2_0 to v1_v2_2
+  // have been added with type NoBorder Hence, in total there are 9 vertices.
   EXPECT_EQ(network.number_of_vertices(), 9);
   EXPECT_TRUE(network.has_vertex("v1_v2_0"));
   EXPECT_TRUE(network.has_vertex("v1_v2_1"));
@@ -958,8 +958,8 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
   EXPECT_EQ(new_edges.second.size(), 4);
 
   // Check if the vertices are correct
-  // All old vertices still exist. Additionally vertices v1_v2_0 to v1_v2_2 have
-  // been added with type NoBorder Hence, in total there are 9 vertices.
+  // All old vertices still exist. Additionally, vertices v1_v2_0 to v1_v2_2
+  // have been added with type NoBorder Hence, in total there are 9 vertices.
   EXPECT_EQ(network.number_of_vertices(), 9);
   EXPECT_TRUE(network.has_vertex("v1_v2_0"));
   EXPECT_TRUE(network.has_vertex("v1_v2_1"));
@@ -2229,7 +2229,7 @@ TEST(Functionality, ImportRouteMap) {
   auto route_map = cda_rail::RouteMap::import_routes(
       "./example-networks/SimpleStation/routes/", network);
 
-  // Check if the route consists of thee trains with names "tr1", "tr2" and
+  // Check if the route consists of three trains with names "tr1", "tr2" and
   // "tr3"
   EXPECT_EQ(route_map.size(), 3);
   EXPECT_TRUE(route_map.has_route("tr1"));

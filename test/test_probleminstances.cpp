@@ -1994,6 +1994,4 @@ TEST(Example, Stammstrecke) {
   EXPECT_EQ(ost1_donnersberger, donnersberger_expected);
   EXPECT_EQ(ost2_donnersberger, donnersberger_expected);
   EXPECT_EQ(ost3_donnersberger, donnersberger_expected);
-
-  // instance.export_instance("tmp/Stammstrecke16Trains");
 }
