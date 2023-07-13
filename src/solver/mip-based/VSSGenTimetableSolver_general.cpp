@@ -106,8 +106,8 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     std::cout << "Initialize other relevant variables" << std::endl;
   }
   // Time intervals under consideration
-  num_t = instance.maxT() / dt;
-  if (instance.maxT() % dt != 0) {
+  num_t = instance.max_t() / dt;
+  if (instance.max_t() % dt != 0) {
     num_t += 1;
   }
   // Number of trains, edges, and vertices
@@ -121,7 +121,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     no_border_vss_sections = instance.n().no_border_vss_sections();
     num_breakable_sections = no_border_vss_sections.size();
     no_border_vss_vertices =
-        instance.n().get_vertices_by_type(cda_rail::VertexType::NoBorderVss);
+        instance.n().get_vertices_by_type(cda_rail::VertexType::NoBorderVSS);
   } else {
     breakable_edges = instance.n().breakable_edges();
     for (int i = 0; i < breakable_edges.size(); ++i) {
@@ -458,7 +458,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_discretized_constraints() {
   /**
-   * Creates VSS constraints, i.e., on NoBorderVss sections two trains must be
+   * Creates VSS constraints, i.e., on NoBorderVSS sections two trains must be
    * separated by a chosen vertex.
    */
 

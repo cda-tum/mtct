@@ -11,6 +11,7 @@
 #include <tinyxml2.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace cda_rail {
@@ -18,15 +19,15 @@ struct Vertex {
   /**
    * Vertex object
    * @param name Name of the vertex
-   * @param type Type of the vertex (NoBorder, VSS, TTD)
+   * @param type Type of the vertex (NoBorder, VSS, TTD, NoBorderVSS)
    */
 
   std::string name;
   VertexType  type;
 
   // Constructors
-  Vertex() = default;
-  Vertex(const std::string& name, VertexType type) : name(name), type(type){};
+  Vertex(std::string name, VertexType type)
+      : name(std::move(name)), type(type){};
 };
 
 struct Edge {
@@ -47,7 +48,6 @@ struct Edge {
   double min_block_length = 1;
 
   // Constructors
-  Edge() = default;
   Edge(int source, int target, double length, double max_speed, bool breakable,
        double min_block_length = 1)
       : source(source), target(target), length(length), max_speed(max_speed),
@@ -96,19 +96,21 @@ private:
   chebychev_separate_edge(int edge_index);
 
   // helper function
-  void dfs(std::vector<std::vector<int>>&          ret_val,
-           std::unordered_set<int>&                vertices_to_visit,
-           const cda_rail::VertexType&             section_type,
-           const std::vector<cda_rail::VertexType> error_types = {}) const;
+  void dfs(std::vector<std::vector<int>>&    ret_val,
+           std::unordered_set<int>&          vertices_to_visit,
+           const cda_rail::VertexType&       section_type,
+           std::vector<cda_rail::VertexType> error_types = {}) const;
   std::vector<std::pair<int, int>>
   sort_edge_pairs(std::vector<std::pair<int, int>>& edge_pairs) const;
 
 public:
   // Constructors
   Network() = default;
-  Network(const std::filesystem::path& p);
-  Network(const std::string& path) : Network(std::filesystem::path(path)){};
-  Network(const char* path) : Network(std::filesystem::path(path)){};
+
+  explicit Network(const std::filesystem::path& p);
+  explicit Network(const std::string& path)
+      : Network(std::filesystem::path(path)){};
+  explicit Network(const char* path) : Network(std::filesystem::path(path)){};
 
   // Rule of 5
   Network(const Network& other)                = default;
@@ -117,10 +119,13 @@ public:
   Network& operator=(Network&& other) noexcept = default;
   ~Network()                                   = default;
 
-  const std::vector<Vertex>& get_vertices() const { return vertices; };
-  const std::vector<Edge>&   get_edges() const { return edges; };
+  [[nodiscard]] const std::vector<Vertex>& get_vertices() const {
+    return vertices;
+  };
+  [[nodiscard]] const std::vector<Edge>& get_edges() const { return edges; };
 
-  const std::vector<int> get_vertices_by_type(cda_rail::VertexType type) const;
+  [[nodiscard]] const std::vector<int>
+  get_vertices_by_type(cda_rail::VertexType type) const;
 
   int add_vertex(const std::string& name, VertexType type);
   int add_edge(int source, int target, double length, double max_speed,
@@ -292,7 +297,7 @@ public:
     return is_adjustable(get_vertex_index(vertex_name));
   };
 
-  bool is_consistent_for_transformation() const;
+  [[nodiscard]] bool is_consistent_for_transformation() const;
 
   // Get special edges
   [[nodiscard]] std::vector<int>              breakable_edges() const;
@@ -306,13 +311,14 @@ public:
   common_vertex(const std::pair<int, int>& pair1,
                 const std::pair<int, int>& pair2) const;
 
-  std::vector<int> inverse_edges(const std::vector<int>& edge_indices) const {
+  [[nodiscard]] std::vector<int>
+  inverse_edges(const std::vector<int>& edge_indices) const {
     const auto&      edge_number = number_of_edges();
     std::vector<int> edges_to_consider(edge_number);
     std::iota(edges_to_consider.begin(), edges_to_consider.end(), 0);
     return inverse_edges(edge_indices, edges_to_consider);
   };
-  std::vector<int>
+  [[nodiscard]] std::vector<int>
   inverse_edges(const std::vector<int>& edge_indices,
                 const std::vector<int>& edges_to_consider) const;
 
@@ -338,7 +344,7 @@ public:
   discretize(cda_rail::SeparationType separation_type =
                  cda_rail::SeparationType::UNIFORM);
 
-  MultiArray<double> all_edge_pairs_shortest_paths() const;
+  [[nodiscard]] MultiArray<double> all_edge_pairs_shortest_paths() const;
 };
 
 // HELPER

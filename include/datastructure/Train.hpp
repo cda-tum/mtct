@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace cda_rail {
@@ -22,10 +23,9 @@ struct Train {
   double      deceleration;
 
   // Constructors
-  Train() = default;
-  Train(const std::string& name, int length, double max_speed,
-        double acceleration, double deceleration)
-      : name(name), length(length), max_speed(max_speed),
+  Train(std::string name, int length, double max_speed, double acceleration,
+        double deceleration)
+      : name(std::move(name)), length(length), max_speed(max_speed),
         acceleration(acceleration), deceleration(deceleration){};
 };
 
@@ -40,9 +40,12 @@ private:
 public:
   // Constructors
   TrainList() = default;
-  TrainList(const std::filesystem::path& p);
-  TrainList(const std::string& path) : TrainList(std::filesystem::path(path)){};
-  TrainList(const char* path) : TrainList(std::filesystem::path(path)){};
+
+  explicit TrainList(const std::filesystem::path& p);
+  explicit TrainList(const std::string& path)
+      : TrainList(std::filesystem::path(path)){};
+  explicit TrainList(const char* path)
+      : TrainList(std::filesystem::path(path)){};
 
   // Rule of 5
   TrainList(const TrainList& other)                = default;
@@ -53,10 +56,10 @@ public:
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
-  auto begin() const { return trains.begin(); };
-  auto end() const { return trains.end(); };
-  auto rbegin() const { return trains.rbegin(); };
-  auto rend() const { return trains.rend(); };
+  [[nodiscard]] auto begin() const { return trains.begin(); };
+  [[nodiscard]] auto end() const { return trains.end(); };
+  [[nodiscard]] auto rbegin() const { return trains.rbegin(); };
+  [[nodiscard]] auto rend() const { return trains.rend(); };
 
   int add_train(const std::string& name, int length, double max_speed,
                 double acceleration, double deceleration);

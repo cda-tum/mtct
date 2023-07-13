@@ -42,8 +42,8 @@ public:
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
-  auto begin() const { return stations.begin(); };
-  auto end() const { return stations.end(); };
+  [[nodiscard]] auto begin() const { return stations.begin(); };
+  [[nodiscard]] auto end() const { return stations.end(); };
 
   void add_station(const std::string& name) {
     stations[name] = cda_rail::Station{name};
@@ -79,16 +79,16 @@ public:
                        const cda_rail::Network&     network) const;
   [[nodiscard]] static cda_rail::StationList
   import_stations(const std::string& path, const cda_rail::Network& network) {
-    return StationList(path, network);
+    return {path, network};
   };
   [[nodiscard]] static cda_rail::StationList
   import_stations(const char* path, const cda_rail::Network& network) {
-    return StationList(path, network);
+    return {path, network};
   };
   [[nodiscard]] static cda_rail::StationList
   import_stations(const std::filesystem::path& p,
                   const cda_rail::Network&     network) {
-    return StationList(p, network);
+    return {p, network};
   };
 
   void update_after_discretization(

@@ -795,7 +795,7 @@ cda_rail::Network::separate_edge_at(
                               get_vertex(edge.target).name + "_" +
                               std::to_string(i);
     new_vertices.emplace_back(
-        add_vertex(vertex_name, cda_rail::VertexType::NoBorderVss));
+        add_vertex(vertex_name, cda_rail::VertexType::NoBorderVSS));
   }
 
   // Create new edges
@@ -1024,7 +1024,7 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
    * - If an edge is breakable both it's source and target are type VSS or TTD
    * - For bidirectional edges, the breakable and length attributes are the same
    * for both directions.
-   * - Vertices of type NoBorderVss have at most two neighbors. These
+   * - Vertices of type NoBorderVSS have at most two neighbors. These
    * neighbors are not of type NoBorder.
    *
    * @return True if the graph is consistent, false otherwise.
@@ -1058,8 +1058,8 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
 
   // Check every vertex
   for (size_t i = 0; i < number_of_vertices(); ++i) {
-    // If the vertex is of type NoBorderVss check conditions
-    if (get_vertex(i).type == cda_rail::VertexType::NoBorderVss) {
+    // If the vertex is of type NoBorderVSS check conditions
+    if (get_vertex(i).type == cda_rail::VertexType::NoBorderVSS) {
       // Get neighbors
       const auto& v_neighbors = neighbors(i);
       // Check if there are more than two neighbors
@@ -1133,7 +1133,7 @@ cda_rail::Network::no_border_vss_sections() const {
   /**
    * Returns a vector of vectors of edge indices. Each vector of edge indices
    * represents a no border vss section. I.e., it includes sections containing
-   * NoBorderVss vertices that can be altered by an algorithm. These vertices
+   * NoBorderVSS vertices that can be altered by an algorithm. These vertices
    * have likely been created by a transformation in advance.
    */
 
@@ -1148,13 +1148,13 @@ cda_rail::Network::no_border_vss_sections() const {
   // Get possible start vertices
   std::unordered_set<int> vertices_to_visit;
   for (int i = 0; i < number_of_vertices(); ++i) {
-    if (get_vertex(i).type == cda_rail::VertexType::NoBorderVss &&
+    if (get_vertex(i).type == cda_rail::VertexType::NoBorderVSS &&
         neighbors(i).size() >= 1) {
       vertices_to_visit.emplace(i);
     }
   }
 
-  dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NoBorderVss,
+  dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NoBorderVSS,
       {cda_rail::VertexType::NoBorder});
 
   return ret_val;

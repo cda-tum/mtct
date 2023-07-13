@@ -20,9 +20,9 @@ public:
   template <typename... Args> T at(Args... args) const;
 
   // Function to obtain shape, size and dimensions
-  const std::vector<size_t>& get_shape() const { return shape; };
-  size_t                     size() const { return data.size(); };
-  size_t                     dimensions() const { return shape.size(); };
+  [[nodiscard]] const std::vector<size_t>& get_shape() const { return shape; };
+  [[nodiscard]] size_t                     size() const { return data.size(); };
+  [[nodiscard]] size_t dimensions() const { return shape.size(); };
 };
 
 template <typename T>
@@ -111,7 +111,8 @@ T MultiArray<T>::at(Args... args) const {
 
 template <typename T>
 template <typename... Args>
-MultiArray<T>::MultiArray(Args... args) {
+MultiArray<T>::MultiArray(Args... args)
+    : shape({static_cast<size_t>(args)...}) {
   /**
    * Constructor for an arbitrary number of dimensions.
    * The first parameter is the size of the first dimension.
@@ -121,14 +122,11 @@ MultiArray<T>::MultiArray(Args... args) {
    * @param args Sizes of the remaining dimensions
    */
 
-  // Set the shape
-  shape = {static_cast<size_t>(args)...};
-
   // If shape has only one element, allocate data
   // The overall size of the array is the product of all elements in shape.
   size_t cap = 1;
-  for (size_t i = 0; i < shape.size(); ++i) {
-    cap *= shape[i];
+  for (auto& shape_dim : shape) {
+    cap *= shape_dim;
   }
   data = std::vector<T>(cap);
 }

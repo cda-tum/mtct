@@ -13,14 +13,26 @@ private:
   cda_rail::instances::VSSGenerationTimetable instance;
 
   // Instance variables
-  int dt, num_t, num_tr, num_edges, num_vertices, num_breakable_sections;
-  std::vector<std::vector<int>>    unbreakable_sections, no_border_vss_sections;
+  int                              dt;
+  int                              num_t;
+  int                              num_tr;
+  int                              num_edges;
+  int                              num_vertices;
+  int                              num_breakable_sections;
+  std::vector<std::vector<int>>    unbreakable_sections;
+  std::vector<std::vector<int>>    no_border_vss_sections;
   std::vector<std::pair<int, int>> train_interval;
   std::vector<std::pair<int, int>> breakable_edges_pairs;
-  std::vector<int> no_border_vss_vertices, relevant_edges, breakable_edges;
-  bool             fix_routes, discretize_vss_positions, include_train_dynamics,
-      include_braking_curves, use_pwl, use_schedule_cuts;
-  std::unordered_map<int, int> breakable_edge_indices;
+  std::vector<int>                 no_border_vss_vertices;
+  std::vector<int>                 relevant_edges;
+  std::vector<int>                 breakable_edges;
+  bool                             fix_routes;
+  bool                             discretize_vss_positions;
+  bool                             include_train_dynamics;
+  bool                             include_braking_curves;
+  bool                             use_pwl;
+  bool                             use_schedule_cuts;
+  std::unordered_map<int, int>     breakable_edge_indices;
   std::vector<std::pair<std::vector<int>, std::vector<int>>> fwd_bwd_sections;
 
   // Gurobi variables
@@ -76,27 +88,33 @@ private:
   void set_objective();
 
   // Helper functions
-  std::vector<int> unbreakable_section_indices(int train_index) const;
-  void             calculate_fwd_bwd_sections();
-  void             calculate_fwd_bwd_sections_discretized();
-  void             calculate_fwd_bwd_sections_non_discretized();
-  double           get_max_brakelen(const int& tr) const;
+  [[nodiscard]] std::vector<int>
+                       unbreakable_section_indices(int train_index) const;
+  void                 calculate_fwd_bwd_sections();
+  void                 calculate_fwd_bwd_sections_discretized();
+  void                 calculate_fwd_bwd_sections_non_discretized();
+  [[nodiscard]] double get_max_brakelen(const int& tr) const;
 
-  std::pair<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
+  [[nodiscard]] std::pair<std::vector<std::vector<int>>,
+                          std::vector<std::vector<int>>>
   common_entry_exit_vertices() const;
 
   struct TemporaryImpossibilityStruct {
     bool             to_use;
-    int              t_before, t_after;
-    double           v_before, v_after;
-    std::vector<int> edges_before, edges_after;
+    int              t_before;
+    int              t_after;
+    double           v_before;
+    double           v_after;
+    std::vector<int> edges_before;
+    std::vector<int> edges_after;
   };
   [[nodiscard]] TemporaryImpossibilityStruct
   get_temporary_impossibility_struct(const int& tr, const int& t) const;
 
-  double max_distance_travelled(const int& tr, const int& time_steps,
-                                const double& v0, const double& a_max,
-                                const bool& braking_distance) const;
+  [[nodiscard]] double
+  max_distance_travelled(const int& tr, const int& time_steps, const double& v0,
+                         const double& a_max,
+                         const bool&   braking_distance) const;
 
 public:
   // Constructors

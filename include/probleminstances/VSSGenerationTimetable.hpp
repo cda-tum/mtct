@@ -13,14 +13,14 @@ private:
 public:
   // Constructors
   VSSGenerationTimetable() = default;
-  VSSGenerationTimetable(const std::filesystem::path& p,
-                         bool every_train_must_have_route = true);
-  VSSGenerationTimetable(const std::string& path,
-                         bool               every_train_must_have_route = true)
+  explicit VSSGenerationTimetable(const std::filesystem::path& p,
+                                  bool every_train_must_have_route = true);
+  explicit VSSGenerationTimetable(const std::string& path,
+                                  bool every_train_must_have_route = true)
       : VSSGenerationTimetable(std::filesystem::path(path),
                                every_train_must_have_route){};
-  VSSGenerationTimetable(const char* path,
-                         bool        every_train_must_have_route = true)
+  explicit VSSGenerationTimetable(const char* path,
+                                  bool every_train_must_have_route = true)
       : VSSGenerationTimetable(std::filesystem::path(path),
                                every_train_must_have_route){};
 
@@ -88,7 +88,7 @@ public:
     return timetable.get_schedule(train_name);
   };
 
-  [[nodiscard]] int                 maxT() const { return timetable.maxT(); };
+  [[nodiscard]] int                 max_t() const { return timetable.max_t(); };
   [[nodiscard]] std::pair<int, int> time_interval(int train_index) const {
     return timetable.time_interval(train_index);
   };
@@ -204,20 +204,23 @@ public:
                       cda_rail::SeparationType::UNIFORM);
 
   // Helper
-  std::vector<int> trains_in_section(const std::vector<int>& section) const;
-  std::vector<int> trains_at_t(int t) const;
-  std::vector<int>
-       trains_at_t(int t, const std::vector<int>& trains_to_consider) const;
-  bool has_route_for_every_train() const;
-  std::vector<int> trains_on_edge(int edge_id, bool fixed_routes) const;
-  std::vector<int>
-                   trains_on_edge(int edge_id, bool fixed_routes,
-                                  const std::vector<int>& trains_to_consider) const;
-  std::vector<int> edges_used_by_train(int train_id, bool fixed_routes) const {
+  [[nodiscard]] std::vector<int>
+  trains_in_section(const std::vector<int>& section) const;
+  [[nodiscard]] std::vector<int> trains_at_t(int t) const;
+  [[nodiscard]] std::vector<int>
+  trains_at_t(int t, const std::vector<int>& trains_to_consider) const;
+  [[nodiscard]] bool             has_route_for_every_train() const;
+  [[nodiscard]] std::vector<int> trains_on_edge(int  edge_id,
+                                                bool fixed_routes) const;
+  [[nodiscard]] std::vector<int>
+                                 trains_on_edge(int edge_id, bool fixed_routes,
+                                                const std::vector<int>& trains_to_consider) const;
+  [[nodiscard]] std::vector<int> edges_used_by_train(int  train_id,
+                                                     bool fixed_routes) const {
     return edges_used_by_train(get_train_list().get_train(train_id).name,
                                fixed_routes);
   };
-  std::vector<int> edges_used_by_train(const std::string& train_name,
-                                       bool               fixed_routes) const;
+  [[nodiscard]] std::vector<int>
+  edges_used_by_train(const std::string& train_name, bool fixed_routes) const;
 };
 } // namespace cda_rail::instances

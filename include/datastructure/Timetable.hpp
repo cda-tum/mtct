@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace cda_rail {
@@ -37,9 +38,8 @@ struct ScheduledStop {
   }
 
   // Constructor
-  ScheduledStop() = default;
-  ScheduledStop(int begin, int end, const std::string& station)
-      : begin(begin), end(end), station(station) {}
+  ScheduledStop(int begin, int end, std::string station)
+      : begin(begin), end(end), station(std::move(station)) {}
 };
 
 struct Schedule {
@@ -64,9 +64,9 @@ struct Schedule {
   std::vector<ScheduledStop> stops = {};
 
   // Constructor
-  Schedule() = default;
+  Schedule() : t_0(-1), v_0(-1), entry(-1), t_n(-1), v_n(-1), exit(-1) {}
   Schedule(int t_0, double v_0, int entry, int t_n, double v_n, int exit,
-           const std::vector<ScheduledStop> stops = {})
+           const std::vector<ScheduledStop>& stops = {})
       : t_0(t_0), v_0(v_0), entry(entry), t_n(t_n), v_n(v_n), exit(exit),
         stops(stops) {}
 };
@@ -147,7 +147,7 @@ public:
     return get_schedule(train_list.get_train_index(train_name));
   };
 
-  [[nodiscard]] int                 maxT() const;
+  [[nodiscard]] int                 max_t() const;
   [[nodiscard]] std::pair<int, int> time_interval(int train_index) const;
   [[nodiscard]] std::pair<int, int>
   time_interval(const std::string& train_name) const {
@@ -170,16 +170,16 @@ public:
                         const cda_rail::Network&     network) const;
   [[nodiscard]] static cda_rail::Timetable
   import_timetable(const std::string& path, const cda_rail::Network& network) {
-    return Timetable(path, network);
+    return {path, network};
   };
   [[nodiscard]] static cda_rail::Timetable
   import_timetable(const std::filesystem::path& p,
                    const cda_rail::Network&     network) {
-    return Timetable(p, network);
+    return {p, network};
   };
   [[nodiscard]] static cda_rail::Timetable
   import_timetable(const char* path, const cda_rail::Network& network) {
-    return Timetable(path, network);
+    return {path, network};
   };
 
   void update_after_discretization(

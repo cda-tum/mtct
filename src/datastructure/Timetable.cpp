@@ -258,7 +258,7 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
   this->sort_stops();
 }
 
-int cda_rail::Timetable::maxT() const {
+int cda_rail::Timetable::max_t() const {
   int ret = 0;
   for (const auto& schedule : schedules) {
     if (schedule.t_n > ret) {

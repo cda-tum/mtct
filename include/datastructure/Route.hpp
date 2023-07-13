@@ -59,7 +59,7 @@ public:
   [[nodiscard]] int                     size() const { return edges.size(); };
   [[nodiscard]] const std::vector<int>& get_edges() const { return edges; };
 
-  bool contains_edge(int edge_index) const {
+  [[nodiscard]] bool contains_edge(int edge_index) const {
     return std::find(edges.begin(), edges.end(), edge_index) != edges.end();
   };
 
@@ -91,8 +91,8 @@ public:
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
-  auto begin() const { return routes.begin(); };
-  auto end() const { return routes.end(); };
+  [[nodiscard]] auto begin() const { return routes.begin(); };
+  [[nodiscard]] auto end() const { return routes.end(); };
 
   void add_empty_route(const std::string& train_name);
   void add_empty_route(const std::string&         train_name,
@@ -164,15 +164,15 @@ public:
   [[nodiscard]] static RouteMap
   import_routes(const std::filesystem::path& p,
                 const cda_rail::Network&     network) {
-    return RouteMap(p, network);
+    return {p, network};
   };
   [[nodiscard]] static RouteMap
   import_routes(const std::string& path, const cda_rail::Network& network) {
-    return RouteMap(path, network);
+    return {path, network};
   };
   [[nodiscard]] static RouteMap
   import_routes(const char* path, const cda_rail::Network& network) {
-    return RouteMap(path, network);
+    return {path, network};
   };
 
   void update_after_discretization(
