@@ -7,11 +7,11 @@ set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
 set(CMAKE_CXX_STANDARD 17)
 
 project(
-        rail
-        LANGUAGES CXX
-        DESCRIPTION "")
+  rail
+  LANGUAGES CXX
+  DESCRIPTION "")
 
-      # check whether the submodule ``modulename`` is correctly cloned in the ``/extern`` directory.
+# check whether the submodule ``modulename`` is correctly cloned in the ``/extern`` directory.
 macro(CHECK_SUBMODULE_PRESENT modulename)
   if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/${modulename}/CMakeLists.txt")
     message(
@@ -44,16 +44,16 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Visual Studio compiler with static runtime libraries
 if(MSVC AND MT)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
 endif()
 
 find_package(Gurobi REQUIRED)
 
 if(NOT GUROBI_FOUND)
-    message(WARNING "Did not find Gurobi")
+  message(WARNING "Did not find Gurobi")
 endif()
 
 # add main library code
@@ -62,13 +62,12 @@ add_subdirectory(src)
 # add test code
 option(BUILD_TESTS "Also build tests for rail project")
 if(BUILD_TESTS)
-    enable_testing()
-    include(cmake/PackageAddTest.cmake)
-    include(GoogleTest)
-    add_subdirectory(test)
-  endif()
-
+  enable_testing()
+  include(cmake/PackageAddTest.cmake)
+  include(GoogleTest)
+  add_subdirectory(test)
+endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    add_subdirectory(apps)
+  add_subdirectory(apps)
 endif()

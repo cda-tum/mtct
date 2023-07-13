@@ -1,1 +1,26 @@
-{"tr1lr":{"acceleration":2.0,"deceleration":2.0,"length":400,"max_speed":50.0},"tr1rl":{"acceleration":2.0,"deceleration":2.0,"length":400,"max_speed":50.0},"tr2lr":{"acceleration":1.5,"deceleration":1.5,"length":400,"max_speed":34.0},"tr2rl":{"acceleration":1.5,"deceleration":1.5,"length":400,"max_speed":34.0}}
+{
+  "tr1lr": {
+    "acceleration": 2.0,
+    "deceleration": 2.0,
+    "length": 400,
+    "max_speed": 50.0
+  },
+  "tr1rl": {
+    "acceleration": 2.0,
+    "deceleration": 2.0,
+    "length": 400,
+    "max_speed": 50.0
+  },
+  "tr2lr": {
+    "acceleration": 1.5,
+    "deceleration": 1.5,
+    "length": 400,
+    "max_speed": 34.0
+  },
+  "tr2rl": {
+    "acceleration": 1.5,
+    "deceleration": 1.5,
+    "length": 400,
+    "max_speed": 34.0
+  }
+}
