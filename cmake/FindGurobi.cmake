@@ -1,64 +1,88 @@
-set(GUROBI_KNOWN_VERSIONS ${PROJECT_SOURCE_DIR}/gurobi1002 ${PROJECT_SOURCE_DIR}/gurobi1001)
-
-find_path(
-  GUROBI_HOME
-  NAMES include/gurobi_c++.h include/gurobi_c.h gurobi_c++.h gurobi_c.h
-  PATHS ${GUROBI_DIR} $ENV{GUROBI_HOME} ${GUROBI_KNOWN_VERSIONS}
-  PATH_SUFFIXES include linux64 win64 mac64 $ENV{GUROBI_HOME})
-
-set(GUROBI_INCLUDE_DIR "${GUROBI_HOME}/include")
-set(GUROBI_BIN_DIR "${GUROBI_HOME}/bin")
-set(GUROBI_LIB_DIR "${GUROBI_HOME}/lib")
-
-if(WIN32)
-  file(
-    GLOB GUROBI_LIBRARY_LIST
-    RELATIVE ${GUROBI_BIN_DIR}
-    ${GUROBI_BIN_DIR}/gurobi*.dll)
-else()
-  file(
-    GLOB GUROBI_LIBRARY_LIST
-    RELATIVE ${GUROBI_LIB_DIR}
-    ${GUROBI_LIB_DIR}/libgurobi*.so)
+set(GUROBI_HOME
+    ""
+    CACHE PATH "Home of the gurobi distribution.")
+if(DEFINED ENV{GUROBI_HOME})
+  set(GUROBI_HOME $ENV{GUROBI_HOME})
+  message(STATUS "GUROBI_HOME from environment: ${GUROBI_HOME}")
 endif()
 
-# Ignore libgurobiXY_light.so, libgurobi.so (without version):
-string(REGEX MATCHALL "gurobi([0-9]+)\\..*" GUROBI_LIBRARY_LIST "${GUROBI_LIBRARY_LIST}")
+if(GUROBI_HOME STREQUAL "")
+  if(UNIX AND NOT APPLE)
+    set(GUROBI_HOME_DEFAULT_PATHS "/home/opt/gurobi*" "/opt/gurobi*")
+    set(GUROBI_PLATFORM "linux64")
+  elseif(APPLE)
+    set(GUROBI_HOME_DEFAULT_PATHS "/Library/gurobi*")
+    set(GUROBI_PLATFORM "macos_universal2")
+  elseif(WIN32)
+    set(GUROBI_HOME_DEFAULT_PATHS "C:/gurobi*")
+    set(GUROBI_PLATFORM "win64")
+  endif()
 
-string(REGEX REPLACE ".*gurobi([0-9]+)\\..*" "\\1" GUROBI_LIBRARY_VERSIONS "${GUROBI_LIBRARY_LIST}")
-list(LENGTH GUROBI_LIBRARY_VERSIONS GUROBI_NUMVER)
-
-# message("GUROBI LIB VERSIONS: ${GUROBI_LIBRARY_VERSIONS}")
-
-if(GUROBI_NUMVER EQUAL 0)
-  message(STATUS "Found no Gurobi library version, GUROBI_HOME = ${GUROBI_HOME}.")
-elseif(GUROBI_NUMVER EQUAL 1)
-  list(GET GUROBI_LIBRARY_VERSIONS 0 GUROBI_LIBRARY_VERSION)
-else()
-  # none or more than one versioned library -let's try without suffix, maybe the user added a symlink to the desired
-  # library
-  message(STATUS "Found more than one Gurobi library version (${GUROBI_LIBRARY_VERSIONS})" +
-                 ", trying without suffix. Set GUROBI_LIBRARY if you want to pick a certain one.")
-  set(GUROBI_LIBRARY_VERSION "")
+  # Append the project root to the default paths
+  list(APPEND GUROBI_HOME_DEFAULT_PATHS "${PROJECT_SOURCE_DIR}/gurobi*")
+  foreach(path IN LISTS GUROBI_HOME_DEFAULT_PATHS)
+    file(GLOB GUROBI_HOME_DEFAULT_PATH ${path}/${GUROBI_PLATFORM})
+    list(SORT GUROBI_HOME_DEFAULT_PATH)
+    list(GET GUROBI_HOME_DEFAULT_PATH -1 GUROBI_HOME)
+    # Eagerly abort on the first found library
+    if(GUROBI_HOME)
+      break()
+    endif()
+  endforeach()
+  if(NOT GUROBI_HOME STREQUAL "")
+    message(STATUS "GUROBI_HOME from default path: ${GUROBI_HOME}")
+  endif()
 endif()
 
+if(GUROBI_HOME STREQUAL "")
+  message(WARNING "Could not find GUROBI_HOME. Please set it manually.")
+endif()
+
+if(UNIX AND NOT APPLE)
+  set(LIBRARY_EXTENSION so)
+  set(LIBRARY_PATH_SUFFIXES lib bin)
+elseif(APPLE)
+  set(LIBRARY_EXTENSION dylib)
+  set(LIBRARY_PATH_SUFFIXES lib bin)
+elseif(WIN32)
+  set(LIBRARY_EXTENSION dll)
+  set(LIBRARY_PATH_SUFFIXES bin)
+endif()
+
+foreach(suffix IN LISTS LIBRARY_PATH_SUFFIXES)
+  set(GLOB_EXPRESSION "${GUROBI_HOME}/${suffix}/*gurobi*.${LIBRARY_EXTENSION}")
+  file(GLOB TEMP_LIBRARIES ${GLOB_EXPRESSION})
+  foreach(library ${TEMP_LIBRARIES})
+    # The `_light` library is a stripped down version of the library that is not used by us
+    if(NOT ${library} MATCHES "_light")
+      list(APPEND LIBRARIES ${library})
+    endif()
+  endforeach()
+endforeach()
+
+# Get the last library (latest version)
+list(SORT LIBRARIES)
+list(GET LIBRARIES -1 GUROBI_LIBRARY)
+mark_as_advanced(GUROBI_LIBRARY)
+
+# on Windows there is a separate import library in the /lib directory
 if(WIN32)
-  find_library(
-    GUROBI_LIBRARY
-    NAMES "gurobi${GUROBI_LIBRARY_VERSION}"
-    PATHS ${GUROBI_BIN_DIR})
+  get_filename_component(GUROBI_LIBRARY_NAME ${GUROBI_LIBRARY} NAME_WE)
   find_library(
     GUROBI_IMPLIB
-    NAMES "gurobi${GUROBI_LIBRARY_VERSION}"
-    PATHS ${GUROBI_LIB_DIR})
+    NAMES ${GUROBI_LIBRARY_NAME}
+    PATHS ${GUROBI_HOME}
+    PATH_SUFFIXES lib)
   mark_as_advanced(GUROBI_IMPLIB)
-else()
-  find_library(
-    GUROBI_LIBRARY
-    NAMES "gurobi${GUROBI_LIBRARY_VERSION}"
-    PATHS ${GUROBI_LIB_DIR})
 endif()
-mark_as_advanced(GUROBI_LIBRARY)
+
+find_path(
+  GUROBI_INCLUDE_DIR
+  NAMES gurobi_c++.h gurobi_c.h
+  PATHS ${GUROBI_HOME}
+  PATH_SUFFIXES include
+  NO_DEFAULT_PATH)
+mark_as_advanced(GUROBI_INCLUDE_DIR)
 
 if(GUROBI_LIBRARY AND NOT TARGET Gurobi::GurobiC)
   add_library(Gurobi::GurobiC SHARED IMPORTED)
