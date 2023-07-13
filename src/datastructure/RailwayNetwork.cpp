@@ -931,7 +931,8 @@ cda_rail::Network::uniform_separate_edge(int edge_index) {
   // Get edge to separate
   const auto& edge = get_edge(edge_index);
   // Get number of new vertices
-  double const number_of_blocks = floor(edge.length / edge.min_block_length);
+  double const number_of_blocks =
+      std::floor(edge.length / edge.min_block_length);
 
   // Calculate distances
   std::vector<double> distances_from_source;
@@ -1491,7 +1492,7 @@ int cda_rail::Network::max_vss_on_edge(int index) const {
   if (!edge.breakable || edge.min_block_length == 0) {
     return 0;
   }
-  return static_cast<int>(floor(edge.length / edge.min_block_length));
+  return static_cast<int>(std::floor(edge.length / edge.min_block_length));
 }
 
 cda_rail::MultiArray<double>

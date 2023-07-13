@@ -620,7 +620,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_edges = instance.edges_used_by_train(tr, this->fix_routes);
     for (const auto& tr_stop : tr_schedule.stops) {
       const auto  t0 = tr_stop.begin / dt;
-      const auto  t1 = ceil(static_cast<double>(tr_stop.end) / dt);
+      const auto  t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
       const auto& stop_edges =
           instance.get_station_list().get_station(tr_stop.station).tracks;
       const auto inverse_stop_edges =
@@ -908,8 +908,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_max_speed =
         instance.get_train_list().get_train(tr).max_speed;
     if (this->use_pwl) {
-      const int  n    = ceil(tr_max_speed /
-                             (2 * std::sqrt(2 * tr_deceleration * ABS_PWL_ERROR)));
+      const int n = std::ceil(
+          tr_max_speed / (2 * std::sqrt(2 * tr_deceleration * ABS_PWL_ERROR)));
       auto const xpts = std::make_unique<double[]>(n + 1);
       auto const ypts = std::make_unique<double[]>(n + 1);
       for (int i = 0; i <= n; ++i) {
