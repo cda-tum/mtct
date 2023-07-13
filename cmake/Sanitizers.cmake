@@ -32,8 +32,7 @@ function(enable_sanitizers target_name)
       if("address" IN_LIST sanitizers
          OR "thread" IN_LIST sanitizers
          OR "leak" IN_LIST sanitizers)
-        message(
-          WARNING "Memory sanitizer does not work with Address, Thread and Leak sanitizer enabled")
+        message(WARNING "Memory sanitizer does not work with Address, Thread and Leak sanitizer enabled")
       else()
         list(APPEND sanitizers "memory")
       endif()
