@@ -46,9 +46,3 @@ jobs:
       - name: Fail if linter found errors
         if: steps.linter.outputs.checks-failed > 0
         run: echo "Linter found errors" && exit 1
-
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: pre-commit/action@v3.0.0
