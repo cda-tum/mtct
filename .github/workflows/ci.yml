@@ -67,10 +67,13 @@ jobs:
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
           New-Item -itemType directory gurobi
-          msiexec.exe /a ${{ env.GUROBI_FILE }} /qb /LV! install.log TARGETDIR=$PWD\gurobi
-          Start-Sleep -s 60
-          ls $PWD
-          cat install.log
+          $proc = Start-Process msiexec.exe -ArgumentList "/a ${{ env.GUROBI_FILE }} /qb /L*! install.log TARGETDIR=$PWD\gurobi" -NoNewWindow -PassThru
+          Start-Sleep -s 1
+          $procLog = Start-Process "powershell" "Get-Content -Path `"install.log`" -Wait" -NoNewWindow -PassThru
+          $proc.WaitForExit()
+          $procLog.Kill()
+          echo "GUROBI_HOME=$PWD\gurobi\$GUROBI_VERSION_FOLDER\win64" >> $GITHUB_ENV
+          ls $PWD\gurobi
 
       # - name: cache-gurobi
       #   uses: actions/cache@v3
