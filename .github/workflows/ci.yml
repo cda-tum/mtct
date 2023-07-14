@@ -21,6 +21,7 @@ env:
   CTEST_PARALLEL_LEVEL: 3
   GUROBI_VERSION_SHORT: "10.0"
   GUROBI_VERSION: "10.0.2"
+  GUROBI_VERSION_FOLDER: "gurobi1002"
 
 jobs:
   cpp-tests:
@@ -65,8 +66,11 @@ jobs:
           GUROBI_FILE: Gurobi-${{ env.GUROBI_VERSION }}-win64.msi
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
-          $proc = Start-Process msiexec.exe -ArgumentList "/a ${{ env.GUROBI_FILE }} /qb TARGETDIR=$PWD/gurobi_tmp" -NoNewWindow -PassThru
+          $proc = Start-Process msiexec.exe -ArgumentList "/a ${{ env.GUROBI_FILE }} /qb /L*! install.log TARGETDIR=$PWD/gurobi_tmp" -NoNewWindow -PassThru
+          $procLog = Start-Process "powershell" "Get-Content -Path `"install.log`" -Wait" -NoNewWindow -PassThru
           $proc.WaitForExit()
+          $procLog.Kill()
+          echo "GUROBI_HOME=$PWD/gurobi_tmp/$GUROBI_VERSION_FOLDER/win64" >> $GITHUB_ENV
           ls $PWD/gurobi_tmp
 
       # - name: cache-gurobi
