@@ -65,7 +65,9 @@ jobs:
           GUROBI_FILE: Gurobi-${{ env.GUROBI_VERSION }}-win64.msi
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
-          ls $PWD
+          $proc = Start-Process msiexec.exe -ArgumentList "/a ${{ env.GUROBI_FILE }} /qb TARGETDIR=$PWD/gurobi_tmp" -NoNewWindow -PassThru
+          $proc.WaitForExit()
+          ls $PWD/gurobi_tmp
 
       # - name: cache-gurobi
       #   uses: actions/cache@v3
