@@ -47,6 +47,7 @@ To build the tool, go to the project folder and execute the following:
    ```
 
 When compiling, CMake automatically searches for Gurobi at the default locations, i.e.,
+
 - `C:/gurobi<VERSION>/win64` for Windows systems
 - `/home/opt/gurobi<VERSION>/linux64` for Linux systems
 - `/Library/gurobi<VERSION>/macos_universal2` for MacOS systems
