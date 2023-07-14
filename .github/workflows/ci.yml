@@ -68,10 +68,14 @@ jobs:
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
           New-Item -itemType directory gurobi
           $proc = Start-Process msiexec.exe -ArgumentList "/a ${{ env.GUROBI_FILE }} /qb /L*! install.log TARGETDIR=$PWD\gurobi" -NoNewWindow -PassThru
-          Start-Sleep -s 1
-          $procLog = Start-Process "powershell" "Get-Content -Path `"install.log`" -Wait" -NoNewWindow -PassThru
-          $proc.WaitForExit()
-          $procLog.Kill()
+          $timeouted = $null
+          $proc | Wait-Process -Timeout 120 -ErrorAction SilentlyContinue -ErrorVariable timeouted
+          if ($timeouted)
+          {
+            echo "TIMEOUT"
+            $proc.Kill()
+          }
+          cat install.log
           ls $PWD\gurobi
       - if: runner.os == 'Windows'
         name: set-gurobi-home
