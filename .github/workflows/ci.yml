@@ -72,8 +72,12 @@ jobs:
           $procLog = Start-Process "powershell" "Get-Content -Path `"install.log`" -Wait" -NoNewWindow -PassThru
           $proc.WaitForExit()
           $procLog.Kill()
-          echo "GUROBI_HOME=$PWD/gurobi/$GUROBI_VERSION_FOLDER/win64" >> $GITHUB_ENV
           ls $PWD\gurobi
+      - if: runner.os == 'Windows'
+        name: set-gurobi-home
+        id: gurobi-home
+        run: |
+          echo "GUROBI_HOME=$PWD/gurobi/$GUROBI_VERSION_FOLDER/win64" >> $GITHUB_ENV
 
       # - name: cache-gurobi
       #   uses: actions/cache@v3
