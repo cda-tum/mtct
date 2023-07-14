@@ -65,13 +65,6 @@ jobs:
           GUROBI_FILE: Gurobi-${{ env.GUROBI_VERSION }}-win64.msi
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
-          ls $PWD
-      - if: runner.os == 'Windows'
-        name: install-gurobi-windows
-        shell: powershell
-        env:
-          GUROBI_FILE: Gurobi-${{ env.GUROBI_VERSION }}-win64.msi
-        run: |
           echo "Start running ${{ env.GUROBI_FILE }}"
           $proc = Start-Process "msiexec" "/i `"${{ env.GUROBI_FILE }}`" /qn /l*! `"install.log`" LicenseAccepted=1" -NoNewWindow -PassThru
           echo "Wait for exit"
