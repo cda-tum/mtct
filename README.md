@@ -46,19 +46,15 @@ To build the tool, go to the project folder and execute the following:
    cmake --build build --config Release
    ```
 
-Make sure that the OS environment variable GUROBI_HOME is set to the gurobi directory (only in some cases cmake will be able to find Gurobi without the environment variable set accordingly). Usually this should be:
+When compiling, CMake automatically searches for Gurobi at the default locations, i.e.,
 
 - `C:/gurobi<VERSION>/win64` for Windows systems
 - `/home/opt/gurobi<VERSION>/linux64` for Linux systems
 - `/Library/gurobi<VERSION>/macos_universal2` for MacOS systems
   where `<VERSION>` denotes the installed Gurobi version.
-  In case of further problems it might help to set it manually in FindGurobi.cmake (cmake directory), e.g., by adding something like
 
-```
-set(GUROBI_HOME "/home/opt/gurobi1001/linux64")
-```
-
-at the beginning of the file.
+If this does not work, please set the OS environment variable GUROBI_HOME to the respective install directory.
+This way, CMake can find Gurobi even in non-standard directories.
 
 ### Usage
 
