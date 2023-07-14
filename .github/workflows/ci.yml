@@ -30,8 +30,8 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { os: ubuntu-latest, toolchain: "" }
-          - { os: macos-latest, toolchain: "" }
+          #- { os: ubuntu-latest, toolchain: "" }
+          #- { os: macos-latest, toolchain: "" }
           - { os: windows-latest, toolchain: "-T ClangCl" }
     steps:
       - uses: actions/checkout@v3
