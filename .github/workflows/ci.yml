@@ -66,13 +66,13 @@ jobs:
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           echo "Start running ${{ env.GUROBI_FILE }}"
-          $proc = Start-Process "msiexec" "/i `"${{ env.GUROBI_FILE }}`" /qn /l*! `"install.log`" LicenseAccepted=1 -NoNewWindow -PassThru
+          $proc = Start-Process "msiexec" "/i `"${{ env.GUROBI_FILE }}`" /qn /l*! `"install.log`"" LicenseAccepted=1 -NoNewWindow -PassThru
           $procLog = Start-Process "powershell" "Get-Content -Path `"install.log`" -Wait" -NoNewWindow -PassThru
           echo "Wait for exit"
           $proc.WaitForExit
           $procLog.Kill()
           echo "Done. C directory has"
-          ls C:\
+          ls "C:\"
 
       # - name: cache-gurobi
       #   uses: actions/cache@v3
