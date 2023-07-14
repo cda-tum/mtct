@@ -72,7 +72,7 @@ jobs:
           $proc.WaitForExit
           $procLog.Kill()
           echo "Done. C directory has"
-          ls "C:/"
+          ls C:\
 
       # - name: cache-gurobi
       #   uses: actions/cache@v3
