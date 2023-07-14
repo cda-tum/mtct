@@ -66,7 +66,7 @@ jobs:
           GUROBI_FILE: Gurobi-${{ env.GUROBI_VERSION }}-win64.msi
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
-          msiexec.exe /a ${{ env.GUROBI_FILE }} /qb /L*! install.log TARGETDIR=$PWD/gurobi_tmp
+          msiexec.exe /a ${{ env.GUROBI_FILE }} /qb /LV! install.log TARGETDIR=$PWD/gurobi_tmp
           Start-Sleep -s 60
           ls $PWD
           cat install.log
