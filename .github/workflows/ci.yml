@@ -32,7 +32,7 @@ jobs:
         config:
           - { os: ubuntu-latest, toolchain: "" }
           - { os: macos-latest, toolchain: "" }
-          # - { os: windows-latest, toolchain: "-T ClangCl" }
+          - { os: windows-latest, toolchain: "-T ClangCl" }
     steps:
       - uses: actions/checkout@v3
         with:
@@ -58,16 +58,21 @@ jobs:
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           sudo installer -pkg ${{ env.GUROBI_FILE }} -target /
-      # - if: runner.os == 'Windows'
-      #   name: download-gurobi-windows
-      #   shell: powershell
-      #   run: |
-      #     wget https://packages.gurobi.com/10.0/Gurobi-10.0.2-win64.msi -O Gurobi-10.0.2-win64.msi
-      #     Start-Process "msiexec" "/i `"Gurobi-10.0.2-win64.msi`" /qn /l*! `"install.log`" LicenseAccepted=1 INSTALLDIR=C:\gurobi1002\" -NoNewWindow -PassThru
-      #     ls "C:\"
-      # procLog = Start-Process "powershell" "Get-Content -Path `"install.log`" -Wait" -NoNewWindow -PassThru
-      # procMain.WaitForExit()
-      # procLog.Kill()
+      - if: runner.os == 'Windows'
+        name: download-gurobi-windows
+        shell: powershell
+        env:
+          GUROBI_FILE: Gurobi-${{ env.GUROBI_VERSION }}-win64.msi
+        run: |
+          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
+          echo "Start running ${{ env.GUROBI_FILE }}"
+          $proc = Start-Process "msiexec" "/i `"${{ env.GUROBI_FILE }}`" /qn /l*! `"install.log`" LicenseAccepted=1 -NoNewWindow -PassThru
+          $procLog = Start-Process "powershell" "Get-Content -Path `"install.log`" -Wait" -NoNewWindow -PassThru
+          echo "Wait for exit"
+          $proc.WaitForExit
+          $procLog.Kill()
+          echo "Done. C directory has"
+          ls "C:\"
 
       # - name: cache-gurobi
       #   uses: actions/cache@v3
