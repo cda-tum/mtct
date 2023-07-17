@@ -1,4 +1,3 @@
-/**
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
@@ -12,4 +11,3 @@ TEST(Solver, GurobiVSSGenFixedRoute) {
       solver.solve(15, true, false, true, true, false, true, -1, true);
   EXPECT_EQ(obj_val, 1);
 }
-**/
