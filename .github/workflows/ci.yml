@@ -78,8 +78,8 @@ jobs:
           cat install.log
           ls $PWD\gurobi
       - if: runner.os == 'Windows'
-        name: set-gurobi-home
-        id: gurobi-home
+        name: set-gurobi-env-variables
+        id: gurobi-env-variables
         shell: powershell
         run: |
           echo "GUROBI_HOME=$PWD\gurobi\$env:GUROBI_VERSION_FOLDER\win64" >> $env:GITHUB_ENV
