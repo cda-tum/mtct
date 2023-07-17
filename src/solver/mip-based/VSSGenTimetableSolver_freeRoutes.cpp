@@ -486,8 +486,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       for (int e = 0; e < num_edges; ++e) {
         const auto& e_len = instance.n().get_edge(e).length;
 
-        double dist_before;
-        double dist_after;
+        double dist_before = NAN;
+        double dist_after  = NAN;
 
         // Constraint inferred from before position
         if (before_after_struct.t_before <= train_interval[tr].first) {
