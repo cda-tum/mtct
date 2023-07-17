@@ -151,7 +151,13 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     std::cout << "Create environment and model" << std::endl;
   }
   env.emplace(true);
+  if (debug) {
+    std::cout << "TMP2" << std::endl;
+  }
   env->start();
+  if (debug) {
+    std::cout << "TMP3" << std::endl;
+  }
   model.emplace(env.value());
 
   // Create variables
