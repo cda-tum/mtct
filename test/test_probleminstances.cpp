@@ -1180,10 +1180,10 @@ TEST(Example, Stammstrecke) {
   instance.add_track_to_station("Isartor", e21rl);
 
   // Isartor -> Rosenheimer Platz
-  int isartor_switchR_lr =
-      instance.n().add_vertex("IsartorSwitchR_LR", cda_rail::VertexType::TTD);
-  int isartor_switchR_rl =
-      instance.n().add_vertex("IsartorSwitchR_RL", cda_rail::VertexType::TTD);
+  int isartor_switch_r_lr =
+      instance.n().add_vertex("IsartorSwitch_R_LR", cda_rail::VertexType::TTD);
+  int isartor_switch_r_rl =
+      instance.n().add_vertex("IsartorSwitch_R_RL", cda_rail::VertexType::TTD);
   int rosenheimer_1l =
       instance.n().add_vertex("Rosenheimer1L", cda_rail::VertexType::TTD);
   int rosenheimer_2l =
@@ -1193,15 +1193,15 @@ TEST(Example, Stammstrecke) {
   int rosenheimer_2r =
       instance.n().add_vertex("Rosenheimer2R", cda_rail::VertexType::TTD);
 
-  int e22lr = instance.n().add_edge(isartor_1r, isartor_switchR_lr, 100,
+  int e22lr = instance.n().add_edge(isartor_1r, isartor_switch_r_lr, 100,
                                     80 / 3.6, false, 50);
-  int e23lr = instance.n().add_edge(isartor_switchR_lr, rosenheimer_1l, 592,
+  int e23lr = instance.n().add_edge(isartor_switch_r_lr, rosenheimer_1l, 592,
                                     80 / 3.6, true, 50);
   int e24lr = instance.n().add_edge(rosenheimer_1l, rosenheimer_1r, 206,
                                     80 / 3.6, true, 25);
-  int e22rl = instance.n().add_edge(isartor_switchR_rl, isartor_2r, 150,
+  int e22rl = instance.n().add_edge(isartor_switch_r_rl, isartor_2r, 150,
                                     80 / 3.6, false, 50);
-  int e23rl = instance.n().add_edge(rosenheimer_2l, isartor_switchR_rl, 542,
+  int e23rl = instance.n().add_edge(rosenheimer_2l, isartor_switch_r_rl, 542,
                                     80 / 3.6, true, 50);
   int e24rl = instance.n().add_edge(rosenheimer_2r, rosenheimer_2l, 206,
                                     80 / 3.6, true, 25);
@@ -1211,10 +1211,10 @@ TEST(Example, Stammstrecke) {
   int switch_it_2 = instance.n().add_edge(isartor_switch_rl, isartor_switch_lr,
                                           50, 60 / 3.6, false, 50);
   int switch_it_3 = instance.n().add_edge(
-      isartor_switchR_lr, isartor_switchR_rl, 50, 60 / 3.6, false, 50);
+      isartor_switch_r_lr, isartor_switch_r_rl, 50, 60 / 3.6, false, 50);
   int switch_it_4 = instance.n().add_edge(
-      isartor_switchR_rl, isartor_switchR_lr, 50, 60 / 3.6, false, 50);
-  int tmp_1 = instance.n().add_edge(isartor_switchR_lr, isartor_1r, 100,
+      isartor_switch_r_rl, isartor_switch_r_lr, 50, 60 / 3.6, false, 50);
+  int tmp_1 = instance.n().add_edge(isartor_switch_r_lr, isartor_1r, 100,
                                     80 / 3.6, false, 50);
   int tmp_2 =
       instance.n().add_edge(isartor_1r, isartor_1l, 209, 80 / 3.6, true, 25);

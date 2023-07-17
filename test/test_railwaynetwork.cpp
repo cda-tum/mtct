@@ -379,8 +379,8 @@ TEST(Functionality, ReadNetwork) {
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
   for (int i = 0; i < vertex_names.size(); i++) {
-    const std::string      v_name = vertex_names[i];
-    const cda_rail::Vertex v      = network.get_vertex(v_name);
+    const std::string       v_name = vertex_names[i];
+    const cda_rail::Vertex& v      = network.get_vertex(v_name);
     EXPECT_EQ(v.name, v_name);
     EXPECT_EQ(v.type, type[i]);
   }
