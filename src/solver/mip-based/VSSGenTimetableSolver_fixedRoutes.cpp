@@ -191,9 +191,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         GRBVar clause[2];
         clause[0] = vars["x_lda"](tr, t, edge_id);
         clause[1] = vars["x_mu"](tr, t, edge_id);
-        model->addGenConstrAnd(vars["x"](tr, t, edge_id), clause, 2,
-                               "x_" + tr_name + "_" + std::to_string(t) + "_" +
-                                   std::to_string(edge_id));
+        model->addGenConstrAnd(
+            vars["x"](tr, t, edge_id), clause, 2,
+            "x_" + tr_name + "_" + std::to_string(t) + "_" +
+                std::to_string(
+                    edge_id)); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
       }
     }
   }
