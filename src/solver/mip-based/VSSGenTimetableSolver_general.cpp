@@ -7,6 +7,8 @@
 #include <memory>
 #include <utility>
 
+// NOLINTBEGIN(performance-inefficient-string-concatenation)
+
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
     cda_rail::instances::VSSGenerationTimetable instance)
     : instance(std::move(instance)) {}
@@ -1121,3 +1123,5 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                      "final_speed_" + tr_name);
   }
 }
+
+// NOLINTEND(performance-inefficient-string-concatenation)

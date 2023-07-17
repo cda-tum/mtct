@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+// NOLINTBEGIN(performance-inefficient-string-concatenation)
+
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_variables() {
   /**
@@ -661,3 +663,5 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     }
   }
 }
+
+// NOLINTEND(performance-inefficient-string-concatenation)
