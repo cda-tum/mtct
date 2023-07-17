@@ -10,6 +10,6 @@
 [submodule "extern/json"]
 	path = extern/json
 	url = https://github.com/nlohmann/json.git
-[submodule "extern/gsl"]
-	path = extern/gsl
+[submodule "extern/gls"]
+	path = extern/gls
 	url = https://github.com/microsoft/GSL.git
