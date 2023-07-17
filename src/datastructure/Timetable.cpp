@@ -11,18 +11,20 @@
 
 using json = nlohmann::json;
 
-const cda_rail::Schedule& cda_rail::Timetable::get_schedule(int index) const {
+const cda_rail::Schedule&
+cda_rail::Timetable::get_schedule(size_t index) const {
   if (!train_list.has_train(index)) {
     throw std::invalid_argument("Train does not exist.");
   }
   return schedules.at(index);
 }
 
-int cda_rail::Timetable::add_train(const std::string& name, int length,
-                                   double max_speed, double acceleration,
-                                   double deceleration, int t_0, double v_0,
-                                   int entry, int t_n, double v_n, int exit,
-                                   const cda_rail::Network& network) {
+size_t cda_rail::Timetable::add_train(const std::string& name, int length,
+                                      double max_speed, double acceleration,
+                                      double deceleration, int t_0, double v_0,
+                                      size_t entry, int t_n, double v_n,
+                                      size_t                   exit,
+                                      const cda_rail::Network& network) {
   if (!network.has_vertex(entry)) {
     throw std::invalid_argument("Entry vertex does not exist.");
   }
@@ -38,7 +40,7 @@ int cda_rail::Timetable::add_train(const std::string& name, int length,
   return index;
 }
 
-void cda_rail::Timetable::add_stop(int                train_index,
+void cda_rail::Timetable::add_stop(size_t             train_index,
                                    const std::string& station_name, int begin,
                                    int end, bool sort) {
   if (!train_list.has_train(train_index)) {
@@ -107,7 +109,7 @@ void cda_rail::Timetable::export_timetable(
   station_list.export_stations(p, network);
 
   json j;
-  for (int i = 0; i < schedules.size(); ++i) {
+  for (size_t i = 0; i < schedules.size(); ++i) {
     const auto& schedule = schedules.at(i);
     json        stops;
 
@@ -184,8 +186,8 @@ bool cda_rail::Timetable::check_consistency(
 
   // Check if all stops are comparable by < or >
   for (const auto& schedule : schedules) {
-    for (int i = 0; i < schedule.stops.size(); ++i) {
-      for (int j = i + 1; j < schedule.stops.size(); ++j) {
+    for (size_t i = 0; i < schedule.stops.size(); ++i) {
+      for (size_t j = i + 1; j < schedule.stops.size(); ++j) {
         if (!(schedule.stops.at(i) < schedule.stops.at(j)) &&
             !(schedule.stops.at(j) < schedule.stops.at(i))) {
           return false;
@@ -230,7 +232,7 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
   json          data = json::parse(f);
 
   // Parse the schedules
-  for (int i = 0; i < this->train_list.size(); i++) {
+  for (size_t i = 0; i < this->train_list.size(); i++) {
     const auto& tr = this->train_list.get_train(i);
     if (!data.contains(tr.name)) {
       throw std::invalid_argument("Schedule for train " + tr.name +

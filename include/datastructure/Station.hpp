@@ -13,8 +13,8 @@ struct Station {
    * @param name Name of the station
    * @param tracks Unordered set of edges that define the station.
    */
-  std::string      name;
-  std::vector<int> tracks = {};
+  std::string         name;
+  std::vector<size_t> tracks = {};
 };
 
 class StationList {
@@ -57,10 +57,10 @@ public:
   [[nodiscard]] size_t size() const { return stations.size(); };
   [[nodiscard]] std::vector<std::string> get_station_names() const;
 
-  void add_track_to_station(const std::string& name, int track,
+  void add_track_to_station(const std::string& name, size_t track,
                             const cda_rail::Network& network);
-  void add_track_to_station(const std::string& name, int source, int target,
-                            const cda_rail::Network& network) {
+  void add_track_to_station(const std::string& name, size_t source,
+                            size_t target, const cda_rail::Network& network) {
     add_track_to_station(name, network.get_edge_index(source, target), network);
   };
   void add_track_to_station(const std::string& name, const std::string& source,
@@ -92,6 +92,6 @@ public:
   };
 
   void update_after_discretization(
-      const std::vector<std::pair<int, std::vector<int>>>& new_edges);
+      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges);
 };
 } // namespace cda_rail

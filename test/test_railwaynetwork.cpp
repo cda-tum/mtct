@@ -121,10 +121,10 @@ TEST(Functionality, NetworkFunctions) {
   EXPECT_TRUE(network.get_edge(1).breakable);
 
   // out and in edges tests
-  const std::vector<int> expected_out{1, 2};
-  const std::vector<int> expected_in{0};
-  const std::vector<int> expected_neighbors{0, 2};
-  auto                   out_edges_1 = network.out_edges(1);
+  const std::vector<size_t> expected_out{1, 2};
+  const std::vector<size_t> expected_in{0};
+  const std::vector<size_t> expected_neighbors{0, 2};
+  auto                      out_edges_1 = network.out_edges(1);
   std::sort(out_edges_1.begin(), out_edges_1.end());
   EXPECT_EQ(out_edges_1, expected_out);
   auto out_edges_v1 = network.out_edges("v1");
@@ -144,7 +144,7 @@ TEST(Functionality, NetworkFunctions) {
   EXPECT_EQ(neighbors_v1, expected_neighbors);
 
   // successor tests
-  const std::vector<int> expected_successors{1};
+  const std::vector<size_t> expected_successors{1};
   EXPECT_EQ(network.get_successors(0), expected_successors);
   EXPECT_EQ(network.get_successors(0, 1), expected_successors);
   EXPECT_EQ(network.get_successors("v0", "v1"), expected_successors);
@@ -228,7 +228,7 @@ TEST(Functionality, NetworkSections) {
   int s0 = -1;
   int s1 = -1;
   int s2 = -1;
-  for (int i = 0; i < unbreakable_sections.size(); i++) {
+  for (size_t i = 0; i < unbreakable_sections.size(); i++) {
     if (std::find(unbreakable_sections[i].begin(),
                   unbreakable_sections[i].end(),
                   v0_v1) != unbreakable_sections[i].end()) {
@@ -378,7 +378,7 @@ TEST(Functionality, ReadNetwork) {
 
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
-  for (int i = 0; i < vertex_names.size(); i++) {
+  for (size_t i = 0; i < vertex_names.size(); i++) {
     const std::string       v_name = vertex_names[i];
     const cda_rail::Vertex& v      = network.get_vertex(v_name);
     EXPECT_EQ(v.name, v_name);
@@ -422,7 +422,7 @@ TEST(Functionality, ReadNetwork) {
   }
 
   // Check successors
-  std::vector<int> successors_target;
+  std::vector<size_t> successors_target;
 
   // l0,l1
   successors_target.clear();
@@ -571,7 +571,7 @@ TEST(Functionality, WriteNetwork) {
 
   // check vertices
   EXPECT_EQ(network.number_of_vertices(), network_read.number_of_vertices());
-  for (int i = 0; i < network.number_of_vertices(); ++i) {
+  for (size_t i = 0; i < network.number_of_vertices(); ++i) {
     EXPECT_TRUE(network_read.has_vertex(network.get_vertex(i).name));
     EXPECT_EQ(network_read.get_vertex(network.get_vertex(i).name).type,
               network.get_vertex(i).type);
@@ -579,7 +579,7 @@ TEST(Functionality, WriteNetwork) {
 
   // check edges
   EXPECT_EQ(network.number_of_edges(), network_read.number_of_edges());
-  for (int i = 0; i < network.number_of_edges(); ++i) {
+  for (size_t i = 0; i < network.number_of_edges(); ++i) {
     const auto& source_vertex = network.get_vertex(network.get_edge(i).source);
     const auto& target_vertex = network.get_vertex(network.get_edge(i).target);
     EXPECT_TRUE(network_read.has_edge(source_vertex.name, target_vertex.name));
@@ -592,9 +592,9 @@ TEST(Functionality, WriteNetwork) {
   }
 
   // check successors
-  for (int i = 0; i < network.number_of_edges(); ++i) {
-    const auto&      successors_target = network.get_successors(i);
-    std::vector<int> successors_target_transformed;
+  for (size_t i = 0; i < network.number_of_edges(); ++i) {
+    const auto&         successors_target = network.get_successors(i);
+    std::vector<size_t> successors_target_transformed;
     for (auto successor : successors_target) {
       const auto&       e      = network.get_edge(successor);
       const std::string source = network.get_vertex(e.source).name;
@@ -886,27 +886,27 @@ TEST(Functionality, SortPairs) {
   network.add_vertex("v5", cda_rail::VertexType::TTD);
 
   // Add edges
-  int v0_v1 = network.add_edge("v0", "v1", 100, 100, false);
-  int v2_v1 = network.add_edge("v2", "v1", 100, 100, false);
-  int v1_v0 = network.add_edge("v1", "v0", 100, 100, false);
-  int v1_v2 = network.add_edge("v1", "v2", 100, 100, false);
-  int v2_v3 = network.add_edge("v2", "v3", 100, 100, false);
-  int v3_v4 = network.add_edge("v3", "v4", 100, 100, false);
-  int v4_v3 = network.add_edge("v4", "v3", 100, 100, false);
+  auto v0_v1 = network.add_edge("v0", "v1", 100, 100, false);
+  auto v2_v1 = network.add_edge("v2", "v1", 100, 100, false);
+  auto v1_v0 = network.add_edge("v1", "v0", 100, 100, false);
+  auto v1_v2 = network.add_edge("v1", "v2", 100, 100, false);
+  auto v2_v3 = network.add_edge("v2", "v3", 100, 100, false);
+  auto v3_v4 = network.add_edge("v3", "v4", 100, 100, false);
+  auto v4_v3 = network.add_edge("v4", "v3", 100, 100, false);
   network.add_edge("v4", "v5", 100, 100, false);
   network.add_edge("v5", "v4", 100, 100, false);
 
   // Edge pairs
-  const std::vector<int> to_combine = {v3_v4, v4_v3, v2_v1, v1_v2,
-                                       v1_v0, v0_v1, v2_v3};
+  const std::vector<size_t> to_combine = {v3_v4, v4_v3, v2_v1, v1_v2,
+                                          v1_v0, v0_v1, v2_v3};
   const auto& combined_edges = network.combine_reverse_edges(to_combine, true);
 
   // Check correctness
-  std::vector<std::pair<int, int>> expected_combined_edges = {
+  std::vector<std::pair<size_t, size_t>> expected_combined_edges = {
       {v0_v1, v1_v0}, {v1_v2, v2_v1}, {v2_v3, -1}, {v3_v4, v4_v3}};
   EXPECT_EQ(combined_edges.size(), expected_combined_edges.size());
-  int expected_index = 0;
-  int expected_incr  = 1;
+  size_t expected_index = 0;
+  size_t expected_incr  = 1;
   if (combined_edges[0] != expected_combined_edges[0]) {
     expected_index = combined_edges.size() - 1;
     expected_incr  = -1;
@@ -1412,7 +1412,8 @@ TEST(Functionality, ReverseIndices) {
                 std::make_pair(std::min(e12, e21), std::max(e12, e21))) !=
       edges_combined.end());
   EXPECT_TRUE(std::find(edges_combined.begin(), edges_combined.end(),
-                        std::make_pair(e23, -1)) != edges_combined.end());
+                        std::make_pair(e23, (size_t)-1)) !=
+              edges_combined.end());
   EXPECT_TRUE(
       std::find(edges_combined.begin(), edges_combined.end(),
                 std::make_pair(std::min(e34, e43), std::max(e34, e43))) !=
@@ -1819,11 +1820,11 @@ TEST(Functionality, ReadStation) {
   const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
-  std::vector<int> track_ids{network.get_edge_index("g00", "g01"),
-                             network.get_edge_index("g10", "g11"),
-                             network.get_edge_index("g01", "g00"),
-                             network.get_edge_index("g11", "g10")};
-  auto             station_tracks = station.tracks;
+  std::vector<size_t> track_ids{network.get_edge_index("g00", "g01"),
+                                network.get_edge_index("g10", "g11"),
+                                network.get_edge_index("g01", "g00"),
+                                network.get_edge_index("g11", "g10")};
+  auto                station_tracks = station.tracks;
   std::sort(station_tracks.begin(), station_tracks.end());
   std::sort(track_ids.begin(), track_ids.end());
   EXPECT_EQ(station_tracks, track_ids);
@@ -1854,15 +1855,15 @@ TEST(Functionality, WriteStations) {
   const auto& s1 = stations_read.get_station("S1");
   EXPECT_EQ(s1.name, "S1");
   EXPECT_EQ(s1.tracks.size(), 1);
-  const std::vector<int> s1_tracks{network.get_edge_index("l0", "l1")};
+  const std::vector<size_t> s1_tracks{network.get_edge_index("l0", "l1")};
   EXPECT_EQ(s1.tracks, s1_tracks);
 
   const auto& s2 = stations_read.get_station("S2");
   EXPECT_EQ(s2.name, "S2");
   EXPECT_EQ(s2.tracks.size(), 2);
-  std::vector<int> s2_tracks_target{network.get_edge_index("l0", "l1"),
-                                    network.get_edge_index("l1", "l2")};
-  auto             s2_tracks = s2.tracks;
+  std::vector<size_t> s2_tracks_target{network.get_edge_index("l0", "l1"),
+                                       network.get_edge_index("l1", "l2")};
+  auto                s2_tracks = s2.tracks;
   std::sort(s2_tracks.begin(), s2_tracks.end());
   std::sort(s2_tracks_target.begin(), s2_tracks_target.end());
   EXPECT_EQ(s2_tracks, s2_tracks_target);
@@ -1883,11 +1884,11 @@ TEST(Functionality, ReadTimetable) {
   const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
-  std::vector<int> track_ids_target{network.get_edge_index("g00", "g01"),
-                                    network.get_edge_index("g10", "g11"),
-                                    network.get_edge_index("g01", "g00"),
-                                    network.get_edge_index("g11", "g10")};
-  auto             track_ids = station.tracks;
+  std::vector<size_t> track_ids_target{network.get_edge_index("g00", "g01"),
+                                       network.get_edge_index("g10", "g11"),
+                                       network.get_edge_index("g01", "g00"),
+                                       network.get_edge_index("g11", "g10")};
+  auto                track_ids = station.tracks;
   std::sort(track_ids.begin(), track_ids.end());
   std::sort(track_ids_target.begin(), track_ids_target.end());
   EXPECT_EQ(track_ids, track_ids_target);
@@ -2007,18 +2008,19 @@ TEST(Functionality, WriteTimetable) {
   const auto& st1 = stations.get_station("Station1");
   EXPECT_EQ(st1.name, "Station1");
   EXPECT_EQ(st1.tracks.size(), 4);
-  std::vector<int> s1_expected_tracks = {network.get_edge_index("g00", "g01"),
-                                         network.get_edge_index("g10", "g11"),
-                                         network.get_edge_index("g01", "g00"),
-                                         network.get_edge_index("g11", "g10")};
-  auto             st1_tracks         = st1.tracks;
+  std::vector<size_t> s1_expected_tracks = {
+      network.get_edge_index("g00", "g01"),
+      network.get_edge_index("g10", "g11"),
+      network.get_edge_index("g01", "g00"),
+      network.get_edge_index("g11", "g10")};
+  auto st1_tracks = st1.tracks;
   std::sort(st1_tracks.begin(), st1_tracks.end());
   std::sort(s1_expected_tracks.begin(), s1_expected_tracks.end());
   EXPECT_EQ(st1_tracks, s1_expected_tracks);
   const auto& st2 = stations.get_station("Station2");
   EXPECT_EQ(st2.name, "Station2");
   EXPECT_EQ(st2.tracks.size(), 1);
-  const std::vector<int> s2_expected_tracks = {
+  const std::vector<size_t> s2_expected_tracks = {
       network.get_edge_index("r1", "r0")};
   EXPECT_EQ(st2.tracks, s2_expected_tracks);
 
@@ -2364,15 +2366,15 @@ TEST(Functionality, ExportRouteMap) {
 TEST(Functionality, RouteMapHelper) {
   cda_rail::Network network;
   network.add_vertex("v0", cda_rail::VertexType::TTD);
-  const int v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
-  const int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
   network.add_vertex("v3", cda_rail::VertexType::TTD);
 
   network.add_edge("v0", "v1", 10, 5, false);
-  const int v1_v2 = network.add_edge("v1", "v2", 20, 5, false);
-  const int v2_v3 = network.add_edge("v2", "v3", 30, 5, false);
-  const int v3_v2 = network.add_edge("v3", "v2", 30, 5, false);
-  const int v2_v1 = network.add_edge("v2", "v1", 20, 5, false);
+  const auto v1_v2 = network.add_edge("v1", "v2", 20, 5, false);
+  const auto v2_v3 = network.add_edge("v2", "v3", 30, 5, false);
+  const auto v3_v2 = network.add_edge("v3", "v2", 30, 5, false);
+  const auto v2_v1 = network.add_edge("v2", "v1", 20, 5, false);
   network.add_edge("v1", "v0", 10, 5, false);
 
   network.add_successor({"v0", "v1"}, {"v1", "v2"});

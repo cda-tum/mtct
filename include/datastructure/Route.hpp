@@ -10,11 +10,11 @@
 namespace cda_rail {
 class Route {
 private:
-  std::vector<int> edges;
+  std::vector<size_t> edges;
 
 public:
-  void push_back_edge(int edge_index, const cda_rail::Network& network);
-  void push_back_edge(int source, int target,
+  void push_back_edge(size_t edge_index, const cda_rail::Network& network);
+  void push_back_edge(size_t source, size_t target,
                       const cda_rail::Network& network) {
     push_back_edge(network.get_edge_index(source, target), network);
   };
@@ -23,8 +23,8 @@ public:
     push_back_edge(network.get_edge_index(source, target), network);
   };
 
-  void push_front_edge(int edge_index, const cda_rail::Network& network);
-  void push_front_edge(int source, int target,
+  void push_front_edge(size_t edge_index, const cda_rail::Network& network);
+  void push_front_edge(size_t source, size_t target,
                        const cda_rail::Network& network) {
     push_front_edge(network.get_edge_index(source, target), network);
   };
@@ -38,9 +38,10 @@ public:
 
   [[nodiscard]] double length(const cda_rail::Network& network) const;
   [[nodiscard]] std::pair<double, double>
-  edge_pos(int edge, const cda_rail::Network& network) const;
+  edge_pos(size_t edge, const cda_rail::Network& network) const;
   [[nodiscard]] std::pair<double, double>
-  edge_pos(int source, int target, const cda_rail::Network& network) const {
+  edge_pos(size_t source, size_t target,
+           const cda_rail::Network& network) const {
     return edge_pos(network.get_edge_index(source, target), network);
   };
   [[nodiscard]] std::pair<double, double>
@@ -50,24 +51,24 @@ public:
   };
 
   [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::vector<int>&  edges_to_consider,
-           const cda_rail::Network& network) const;
+  edge_pos(const std::vector<size_t>& edges_to_consider,
+           const cda_rail::Network&   network) const;
 
-  [[nodiscard]] int get_edge(int route_index) const;
+  [[nodiscard]] size_t get_edge(size_t route_index) const;
   [[nodiscard]] const cda_rail::Edge&
-  get_edge(int route_index, const cda_rail::Network& network) const;
-  [[nodiscard]] size_t                  size() const { return edges.size(); };
-  [[nodiscard]] bool                    empty() const { return edges.empty(); };
-  [[nodiscard]] const std::vector<int>& get_edges() const { return edges; };
+  get_edge(size_t route_index, const cda_rail::Network& network) const;
+  [[nodiscard]] size_t size() const { return edges.size(); };
+  [[nodiscard]] bool   empty() const { return edges.empty(); };
+  [[nodiscard]] const std::vector<size_t>& get_edges() const { return edges; };
 
-  [[nodiscard]] bool contains_edge(int edge_index) const {
+  [[nodiscard]] bool contains_edge(size_t edge_index) const {
     return std::find(edges.begin(), edges.end(), edge_index) != edges.end();
   };
 
   [[nodiscard]] bool check_consistency(const cda_rail::Network& network) const;
 
   void update_after_discretization(
-      const std::vector<std::pair<int, std::vector<int>>>& new_edges);
+      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges);
 };
 
 class RouteMap {
@@ -99,18 +100,18 @@ public:
   void add_empty_route(const std::string&         train_name,
                        const cda_rail::TrainList& trains);
 
-  void push_back_edge(const std::string& train_name, int edge_index,
+  void push_back_edge(const std::string& train_name, size_t edge_index,
                       const cda_rail::Network& network);
-  void push_back_edge(const std::string& train_name, int source, int target,
-                      const cda_rail::Network& network);
+  void push_back_edge(const std::string& train_name, size_t source,
+                      size_t target, const cda_rail::Network& network);
   void push_back_edge(const std::string& train_name, const std::string& source,
                       const std::string&       target,
                       const cda_rail::Network& network);
 
-  void push_front_edge(const std::string& train_name, int edge_index,
+  void push_front_edge(const std::string& train_name, size_t edge_index,
                        const cda_rail::Network& network);
-  void push_front_edge(const std::string& train_name, int source, int target,
-                       const cda_rail::Network& network);
+  void push_front_edge(const std::string& train_name, size_t source,
+                       size_t target, const cda_rail::Network& network);
   void push_front_edge(const std::string& train_name, const std::string& source,
                        const std::string&       target,
                        const cda_rail::Network& network);
@@ -128,12 +129,12 @@ public:
   [[nodiscard]] double length(const std::string&       train_name,
                               const cda_rail::Network& network) const;
   [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::string& train_name, int edge,
+  edge_pos(const std::string& train_name, size_t edge,
            const cda_rail::Network& network) const {
     return get_route(train_name).edge_pos(edge, network);
   };
   [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::string& train_name, int source, int target,
+  edge_pos(const std::string& train_name, size_t source, size_t target,
            const cda_rail::Network& network) const {
     return get_route(train_name).edge_pos(source, target, network);
   };
@@ -143,7 +144,7 @@ public:
     return get_route(train_name).edge_pos(source, target, network);
   };
   [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::string& train_name, const std::vector<int>& edges,
+  edge_pos(const std::string& train_name, const std::vector<size_t>& edges,
            const cda_rail::Network& network) const {
     return get_route(train_name).edge_pos(edges, network);
   };
@@ -178,6 +179,6 @@ public:
   };
 
   void update_after_discretization(
-      const std::vector<std::pair<int, std::vector<int>>>& new_edges);
+      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges);
 };
 } // namespace cda_rail

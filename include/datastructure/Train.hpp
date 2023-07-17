@@ -17,7 +17,7 @@ struct Train {
    */
 
   std::string name;
-  int         length;
+  double      length;
   double      max_speed;
   double      acceleration;
   double      deceleration;
@@ -34,8 +34,8 @@ class TrainList {
    * TrainList class
    */
 private:
-  std::vector<Train>                   trains;
-  std::unordered_map<std::string, int> train_name_to_index;
+  std::vector<Train>                      trains;
+  std::unordered_map<std::string, size_t> train_name_to_index;
 
 public:
   // Constructors
@@ -61,12 +61,12 @@ public:
   [[nodiscard]] auto rbegin() const { return trains.rbegin(); };
   [[nodiscard]] auto rend() const { return trains.rend(); };
 
-  int add_train(const std::string& name, int length, double max_speed,
-                double acceleration, double deceleration);
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration);
   [[nodiscard]] size_t size() const { return trains.size(); };
 
-  [[nodiscard]] int          get_train_index(const std::string& name) const;
-  [[nodiscard]] const Train& get_train(int index) const;
+  [[nodiscard]] size_t       get_train_index(const std::string& name) const;
+  [[nodiscard]] const Train& get_train(size_t index) const;
   [[nodiscard]] const Train& get_train(const std::string& name) const {
     return get_train(get_train_index(name));
   };
@@ -74,7 +74,7 @@ public:
   [[nodiscard]] bool has_train(const std::string& name) const {
     return train_name_to_index.find(name) != train_name_to_index.end();
   };
-  [[nodiscard]] bool has_train(int index) const {
+  [[nodiscard]] bool has_train(size_t index) const {
     return (index >= 0 && index < trains.size());
   };
 

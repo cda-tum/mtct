@@ -8,7 +8,7 @@
 
 using json = nlohmann::json;
 
-void cda_rail::Route::push_back_edge(int                      edge_index,
+void cda_rail::Route::push_back_edge(size_t                   edge_index,
                                      const cda_rail::Network& network) {
   /**
    * Adds the edge to the end of the route.
@@ -28,7 +28,7 @@ void cda_rail::Route::push_back_edge(int                      edge_index,
   edges.emplace_back(edge_index);
 }
 
-void cda_rail::Route::push_front_edge(int                      edge_index,
+void cda_rail::Route::push_front_edge(size_t                   edge_index,
                                       const cda_rail::Network& network) {
   /**
    * Adds the edge to the beginning of the route.
@@ -73,7 +73,7 @@ void cda_rail::Route::remove_last_edge() {
   edges.pop_back();
 }
 
-int cda_rail::Route::get_edge(int route_index) const {
+size_t cda_rail::Route::get_edge(size_t route_index) const {
   /**
    * Returns the edge at the given index.
    * Throws an error if the index is out of range.
@@ -89,7 +89,7 @@ int cda_rail::Route::get_edge(int route_index) const {
 }
 
 const cda_rail::Edge&
-cda_rail::Route::get_edge(int                      route_index,
+cda_rail::Route::get_edge(size_t                   route_index,
                           const cda_rail::Network& network) const {
   /**
    * Returns the edge at the given index.
@@ -122,7 +122,7 @@ bool cda_rail::Route::check_consistency(
   if (edges.empty()) {
     return true;
   }
-  for (int i = 0; i < edges.size() - 1; i++) {
+  for (size_t i = 0; i < edges.size() - 1; i++) {
     if (!network.is_valid_successor(edges[i], edges[i + 1])) {
       return false;
     }
@@ -140,14 +140,14 @@ double cda_rail::Route::length(const cda_rail::Network& network) const {
    */
 
   double length = 0;
-  for (int const edge : edges) {
+  for (const auto edge : edges) {
     length += network.get_edge(edge).length;
   }
   return length;
 }
 
 void cda_rail::Route::update_after_discretization(
-    const std::vector<std::pair<int, std::vector<int>>>& new_edges) {
+    const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
   /**
    * This method updates the route after the discretization of the network
    * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
@@ -174,7 +174,7 @@ void cda_rail::Route::update_after_discretization(
 }
 
 std::pair<double, double>
-cda_rail::Route::edge_pos(int edge, const cda_rail::Network& network) const {
+cda_rail::Route::edge_pos(size_t edge, const cda_rail::Network& network) const {
   /**
    * Returns the position of the given edge in the route, i.e., the distance
    * from the route start to the source and target respectively.
@@ -208,8 +208,8 @@ cda_rail::Route::edge_pos(int edge, const cda_rail::Network& network) const {
 }
 
 std::pair<double, double>
-cda_rail::Route::edge_pos(const std::vector<int>&  edges_to_consider,
-                          const cda_rail::Network& network) const {
+cda_rail::Route::edge_pos(const std::vector<size_t>& edges_to_consider,
+                          const cda_rail::Network&   network) const {
   /**
    * Returns the minimal start and maximal end position of the given
    * edges_to_consider in the route. Throws an error only if none of the
@@ -373,7 +373,7 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
 }
 
 void cda_rail::RouteMap::push_back_edge(const std::string&       train_name,
-                                        int                      edge_index,
+                                        size_t                   edge_index,
                                         const cda_rail::Network& network) {
   /**
    * Adds the edge to the end of the route of the given train.
@@ -391,7 +391,7 @@ void cda_rail::RouteMap::push_back_edge(const std::string&       train_name,
 }
 
 void cda_rail::RouteMap::push_back_edge(const std::string& train_name,
-                                        int source, int target,
+                                        size_t source, size_t target,
                                         const cda_rail::Network& network) {
   /**
    * Adds the edge to the end of the route of the given train.
@@ -430,7 +430,7 @@ void cda_rail::RouteMap::push_back_edge(const std::string&       train_name,
 }
 
 void cda_rail::RouteMap::push_front_edge(const std::string&       train_name,
-                                         int                      edge_index,
+                                         size_t                   edge_index,
                                          const cda_rail::Network& network) {
   /**
    * Adds the edge to the front of the route of the given train.
@@ -448,7 +448,7 @@ void cda_rail::RouteMap::push_front_edge(const std::string&       train_name,
 }
 
 void cda_rail::RouteMap::push_front_edge(const std::string& train_name,
-                                         int source, int target,
+                                         size_t source, size_t target,
                                          const cda_rail::Network& network) {
   /**
    * Adds the edge to the front of the route of the given train.
@@ -527,7 +527,7 @@ double cda_rail::RouteMap::length(const std::string&       train_name,
 }
 
 void cda_rail::RouteMap::update_after_discretization(
-    const std::vector<std::pair<int, std::vector<int>>>& new_edges) {
+    const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
   /**
    * This method updates the routes after the discretization of the network
    * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,

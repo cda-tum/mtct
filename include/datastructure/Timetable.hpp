@@ -57,15 +57,15 @@ struct Schedule {
    */
   int                        t_0;
   double                     v_0;
-  int                        entry;
+  size_t                     entry;
   int                        t_n;
   double                     v_n;
-  int                        exit;
+  size_t                     exit;
   std::vector<ScheduledStop> stops = {};
 
   // Constructor
   Schedule() : t_0(-1), v_0(-1), entry(-1), t_n(-1), v_n(-1), exit(-1) {}
-  Schedule(int t_0, double v_0, int entry, int t_n, double v_n, int exit,
+  Schedule(int t_0, double v_0, size_t entry, int t_n, double v_n, size_t exit,
            std::vector<ScheduledStop> stops = {})
       : t_0(t_0), v_0(v_0), entry(entry), t_n(t_n), v_n(v_n), exit(exit),
         stops(std::move(stops)) {}
@@ -98,14 +98,14 @@ public:
   Timetable& operator=(Timetable&& other) noexcept = default;
   ~Timetable()                                     = default;
 
-  int add_train(const std::string& name, int length, double max_speed,
-                double acceleration, double deceleration, int t_0, double v_0,
-                int entry, int t_n, double v_n, int exit,
-                const cda_rail::Network& network);
-  int add_train(const std::string& name, int length, double max_speed,
-                double acceleration, double deceleration, int t_0, double v_0,
-                const std::string& entry, int t_n, double v_n,
-                const std::string& exit, const cda_rail::Network& network) {
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, int t_0,
+                   double v_0, size_t entry, int t_n, double v_n, size_t exit,
+                   const cda_rail::Network& network);
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, int t_0,
+                   double v_0, const std::string& entry, int t_n, double v_n,
+                   const std::string& exit, const cda_rail::Network& network) {
     return add_train(name, length, max_speed, acceleration, deceleration, t_0,
                      v_0, network.get_vertex_index(entry), t_n, v_n,
                      network.get_vertex_index(exit), network);
@@ -113,12 +113,12 @@ public:
 
   void add_station(const std::string& name) { station_list.add_station(name); };
 
-  void add_track_to_station(const std::string& name, int track,
+  void add_track_to_station(const std::string& name, size_t track,
                             const cda_rail::Network& network) {
     station_list.add_track_to_station(name, track, network);
   };
-  void add_track_to_station(const std::string& name, int source, int target,
-                            const cda_rail::Network& network) {
+  void add_track_to_station(const std::string& name, size_t source,
+                            size_t target, const cda_rail::Network& network) {
     station_list.add_track_to_station(name, source, target, network);
   };
   void add_track_to_station(const std::string& name, const std::string& source,
@@ -127,7 +127,7 @@ public:
     station_list.add_track_to_station(name, source, target, network);
   };
 
-  void add_stop(int train_index, const std::string& station_name, int begin,
+  void add_stop(size_t train_index, const std::string& station_name, int begin,
                 int end, bool sort = true);
   void add_stop(const std::string& train_name, const std::string& station_name,
                 int begin, int end, bool sort = true) {
@@ -141,7 +141,7 @@ public:
   [[nodiscard]] const cda_rail::TrainList& get_train_list() const {
     return train_list;
   };
-  [[nodiscard]] const Schedule& get_schedule(int index) const;
+  [[nodiscard]] const Schedule& get_schedule(size_t index) const;
   [[nodiscard]] const Schedule&
   get_schedule(const std::string& train_name) const {
     return get_schedule(train_list.get_train_index(train_name));
@@ -183,7 +183,7 @@ public:
   };
 
   void update_after_discretization(
-      const std::vector<std::pair<int, std::vector<int>>>& new_edges) {
+      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
     station_list.update_after_discretization(new_edges);
   };
 };

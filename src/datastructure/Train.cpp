@@ -9,9 +9,9 @@
 
 using json = nlohmann::json;
 
-int cda_rail::TrainList::add_train(const std::string& name, int length,
-                                   double max_speed, double acceleration,
-                                   double deceleration) {
+size_t cda_rail::TrainList::add_train(const std::string& name, int length,
+                                      double max_speed, double acceleration,
+                                      double deceleration) {
   if (has_train(name)) {
     throw std::invalid_argument("Train already exists.");
   }
@@ -20,14 +20,14 @@ int cda_rail::TrainList::add_train(const std::string& name, int length,
   return train_name_to_index[name];
 }
 
-int cda_rail::TrainList::get_train_index(const std::string& name) const {
+size_t cda_rail::TrainList::get_train_index(const std::string& name) const {
   if (!has_train(name)) {
     throw std::invalid_argument("Train does not exist.");
   }
   return train_name_to_index.at(name);
 }
 
-const cda_rail::Train& cda_rail::TrainList::get_train(int index) const {
+const cda_rail::Train& cda_rail::TrainList::get_train(size_t index) const {
   if (!has_train(index)) {
     throw std::invalid_argument("Train does not exist.");
   }

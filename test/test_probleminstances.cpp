@@ -32,7 +32,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
 
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
-  for (int i = 0; i < vertex_names.size(); i++) {
+  for (size_t i = 0; i < vertex_names.size(); i++) {
     std::string      v_name = vertex_names[i];
     cda_rail::Vertex v      = network.get_vertex(v_name);
     EXPECT_EQ(v.name, v_name);
@@ -76,7 +76,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
   }
 
   // Check successors
-  std::vector<int> successors_target;
+  std::vector<size_t> successors_target;
 
   // l0,l1
   successors_target.clear();
@@ -203,11 +203,11 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
   const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
-  std::vector<int> track_ids{network.get_edge_index("g00", "g01"),
-                             network.get_edge_index("g10", "g11"),
-                             network.get_edge_index("g01", "g00"),
-                             network.get_edge_index("g11", "g10")};
-  auto             tracks_read = station.tracks;
+  std::vector<size_t> track_ids{network.get_edge_index("g00", "g01"),
+                                network.get_edge_index("g10", "g11"),
+                                network.get_edge_index("g01", "g00"),
+                                network.get_edge_index("g11", "g10")};
+  auto                tracks_read = station.tracks;
   std::sort(tracks_read.begin(), tracks_read.end());
   std::sort(track_ids.begin(), track_ids.end());
   EXPECT_EQ(tracks_read, track_ids);
@@ -418,7 +418,7 @@ TEST(Functionality, VSSGenerationTimetableExport) {
   const auto& network      = instance.n();
   const auto& network_read = instance_read.n();
   EXPECT_EQ(network.number_of_vertices(), network_read.number_of_vertices());
-  for (int i = 0; i < network.number_of_vertices(); ++i) {
+  for (size_t i = 0; i < network.number_of_vertices(); ++i) {
     EXPECT_TRUE(network_read.has_vertex(network.get_vertex(i).name));
     EXPECT_EQ(network_read.get_vertex(network.get_vertex(i).name).type,
               network.get_vertex(i).type);
@@ -426,7 +426,7 @@ TEST(Functionality, VSSGenerationTimetableExport) {
 
   // check edges
   EXPECT_EQ(network.number_of_edges(), network_read.number_of_edges());
-  for (int i = 0; i < network.number_of_edges(); ++i) {
+  for (size_t i = 0; i < network.number_of_edges(); ++i) {
     const auto& source_vertex = network.get_vertex(network.get_edge(i).source);
     const auto& target_vertex = network.get_vertex(network.get_edge(i).target);
     EXPECT_TRUE(network_read.has_edge(source_vertex.name, target_vertex.name));
@@ -439,9 +439,9 @@ TEST(Functionality, VSSGenerationTimetableExport) {
   }
 
   // check successors
-  for (int i = 0; i < network.number_of_edges(); ++i) {
-    const auto&      successors_target = network.get_successors(i);
-    std::vector<int> successors_target_transformed;
+  for (size_t i = 0; i < network.number_of_edges(); ++i) {
+    const auto&         successors_target = network.get_successors(i);
+    std::vector<size_t> successors_target_transformed;
     for (auto successor : successors_target) {
       const auto& e      = network.get_edge(successor);
       std::string source = network.get_vertex(e.source).name;
@@ -479,8 +479,8 @@ TEST(Functionality, VSSGenerationTimetableExport) {
   EXPECT_EQ(st2_read.tracks.size(), 2);
   auto tracks_st2_read = st2_read.tracks;
   auto tracks_st2_target =
-      std::vector<int>({network_read.get_edge_index("v1", "v2"),
-                        network_read.get_edge_index("v2", "v1")});
+      std::vector<size_t>({network_read.get_edge_index("v1", "v2"),
+                           network_read.get_edge_index("v2", "v1")});
   std::sort(tracks_st2_read.begin(), tracks_st2_read.end());
   std::sort(tracks_st2_target.begin(), tracks_st2_target.end());
   EXPECT_EQ(tracks_st2_read, tracks_st2_target);
@@ -630,12 +630,12 @@ TEST(Functionality, HelperFunctions) {
   instance.n().add_vertex("v4", cda_rail::VertexType::VSS);
 
   // Add edges
-  int v0_v1 = instance.n().add_edge("v0", "v1", 100, 100, false);
-  int v1_v2 = instance.n().add_edge("v1", "v2", 100, 100, false);
-  int v2_v3 = instance.n().add_edge("v2", "v3", 100, 100, false);
-  int v3_v4 = instance.n().add_edge("v3", "v4", 100, 100, false);
-  int v1_v4 = instance.n().add_edge("v1", "v4", 100, 100, false);
-  int v2_v4 = instance.n().add_edge("v2", "v4", 100, 100, false);
+  const auto v0_v1 = instance.n().add_edge("v0", "v1", 100, 100, false);
+  const auto v1_v2 = instance.n().add_edge("v1", "v2", 100, 100, false);
+  const auto v2_v3 = instance.n().add_edge("v2", "v3", 100, 100, false);
+  const auto v3_v4 = instance.n().add_edge("v3", "v4", 100, 100, false);
+  const auto v1_v4 = instance.n().add_edge("v1", "v4", 100, 100, false);
+  const auto v2_v4 = instance.n().add_edge("v2", "v4", 100, 100, false);
 
   // Add successors
   instance.n().add_successor(v0_v1, v1_v2);
@@ -645,9 +645,9 @@ TEST(Functionality, HelperFunctions) {
   instance.n().add_successor(v0_v1, v1_v4);
 
   // Add trains
-  int tr1 = instance.add_train("tr1", 100, 100, 2, 2, 0, 10, 0, 200, 10, 1);
-  int tr2 = instance.add_train("tr2", 100, 100, 2, 2, 60, 10, 0, 120, 10, 1);
-  int tr3 = instance.add_train("tr3", 100, 100, 2, 2, 80, 10, 0, 150, 10, 1);
+  auto tr1 = instance.add_train("tr1", 100, 100, 2, 2, 0, 10, 0, 200, 10, 1);
+  auto tr2 = instance.add_train("tr2", 100, 100, 2, 2, 60, 10, 0, 120, 10, 1);
+  auto tr3 = instance.add_train("tr3", 100, 100, 2, 2, 80, 10, 0, 150, 10, 1);
 
   EXPECT_FALSE(instance.has_route_for_every_train());
 
