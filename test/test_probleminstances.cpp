@@ -200,7 +200,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
   EXPECT_TRUE(stations.has_station("Central"));
 
   // Check if the station is imported correctly
-  auto& station = stations.get_station("Central");
+  const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
   std::vector<int> track_ids{network.get_edge_index("g00", "g01"),
@@ -241,7 +241,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
   EXPECT_EQ(tr3.deceleration, 1);
 
   // Check the schedule of tr1
-  auto& tr1_schedule = instance.get_schedule("tr1");
+  const auto& tr1_schedule = instance.get_schedule("tr1");
   EXPECT_EQ(tr1_schedule.t_0, 120);
   EXPECT_EQ(tr1_schedule.v_0, 0);
   EXPECT_EQ(tr1_schedule.t_n, 645);
@@ -249,13 +249,13 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
   EXPECT_EQ(network.get_vertex(tr1_schedule.entry).name, "l0");
   EXPECT_EQ(network.get_vertex(tr1_schedule.exit).name, "r0");
   EXPECT_EQ(tr1_schedule.stops.size(), 1);
-  auto& stop = tr1_schedule.stops[0];
+  const auto& stop = tr1_schedule.stops[0];
   EXPECT_EQ(stop.begin, 240);
   EXPECT_EQ(stop.end, 300);
   EXPECT_EQ(stations.get_station(stop.station).name, "Central");
 
   // Check the schedule of tr2
-  auto& tr2_schedule = instance.get_schedule("tr2");
+  const auto& tr2_schedule = instance.get_schedule("tr2");
   EXPECT_EQ(tr2_schedule.t_0, 0);
   EXPECT_EQ(tr2_schedule.v_0, 0);
   EXPECT_EQ(tr2_schedule.t_n, 420);
@@ -263,13 +263,13 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
   EXPECT_EQ(network.get_vertex(tr2_schedule.entry).name, "l0");
   EXPECT_EQ(network.get_vertex(tr2_schedule.exit).name, "r0");
   EXPECT_EQ(tr2_schedule.stops.size(), 1);
-  auto& stop2 = tr2_schedule.stops[0];
+  const auto& stop2 = tr2_schedule.stops[0];
   EXPECT_EQ(stop2.begin, 120);
   EXPECT_EQ(stop2.end, 300);
   EXPECT_EQ(stations.get_station(stop2.station).name, "Central");
 
   // Check the schedule of tr3
-  auto& tr3_schedule = instance.get_schedule("tr3");
+  const auto& tr3_schedule = instance.get_schedule("tr3");
   EXPECT_EQ(tr3_schedule.t_0, 0);
   EXPECT_EQ(tr3_schedule.v_0, 0);
   EXPECT_EQ(tr3_schedule.t_n, 420);
@@ -277,7 +277,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
   EXPECT_EQ(network.get_vertex(tr3_schedule.entry).name, "r0");
   EXPECT_EQ(network.get_vertex(tr3_schedule.exit).name, "l0");
   EXPECT_EQ(tr3_schedule.stops.size(), 1);
-  auto& stop3 = tr3_schedule.stops[0];
+  const auto& stop3 = tr3_schedule.stops[0];
   EXPECT_EQ(stop3.begin, 180);
   EXPECT_EQ(stop3.end, 300);
   EXPECT_EQ(stations.get_station(stop3.station).name, "Central");
@@ -292,7 +292,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
 
   // Check if the route for tr1 consists of eight edges passing vertices
   // l0-l1-l2-l3-g00-g01-r2-r1-r0 in this order.
-  auto& route = instance.get_route("tr1");
+  const auto& route = instance.get_route("tr1");
   EXPECT_EQ(route.size(), 8);
   EXPECT_EQ(network.get_vertex(route.get_edge(0, network).source).name, "l0");
   EXPECT_EQ(network.get_vertex(route.get_edge(0, network).target).name, "l1");
@@ -313,7 +313,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
 
   // Check if the route for tr2 consists of eight edges passing vertices
   // l0-l1-l2-l3-g00-g01-r2-r1-r0 in this order.
-  auto& route2 = instance.get_route("tr2");
+  const auto& route2 = instance.get_route("tr2");
   EXPECT_EQ(route2.size(), 8);
   EXPECT_EQ(network.get_vertex(route2.get_edge(0, network).source).name, "l0");
   EXPECT_EQ(network.get_vertex(route2.get_edge(0, network).target).name, "l1");
@@ -334,7 +334,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
 
   // Check if the route for tr3 consists of eight edges passing vertices
   // r0-r1-r2-g11-g10-l3-l2-l1 in this order.
-  auto& route3 = instance.get_route("tr3");
+  const auto& route3 = instance.get_route("tr3");
   EXPECT_EQ(route3.size(), 8);
   EXPECT_EQ(network.get_vertex(route3.get_edge(0, network).source).name, "r0");
   EXPECT_EQ(network.get_vertex(route3.get_edge(0, network).target).name, "r1");
@@ -461,20 +461,20 @@ TEST(Functionality, VSSGenerationTimetableExport) {
 
   // Check if the imported timetable is the same as the original timetable
   // Check if the timetable has the correct stations
-  auto& stations_read = instance_read.get_station_list();
+  const auto& stations_read = instance_read.get_station_list();
   EXPECT_EQ(stations_read.size(), 2);
   EXPECT_TRUE(stations_read.has_station("s0"));
   EXPECT_TRUE(stations_read.has_station("s1"));
 
   // Check if the stations are imported correctly
-  auto& st1_read = stations_read.get_station("s0");
+  const auto& st1_read = stations_read.get_station("s0");
   EXPECT_EQ(st1_read.name, "s0");
   EXPECT_EQ(st1_read.tracks.size(), 1);
   EXPECT_EQ(network_read.get_edge(*st1_read.tracks.begin()).source,
             network_read.get_vertex_index("v0"));
   EXPECT_EQ(network_read.get_edge(*st1_read.tracks.begin()).target,
             network_read.get_vertex_index("v1"));
-  auto& st2_read = stations_read.get_station("s1");
+  const auto& st2_read = stations_read.get_station("s1");
   EXPECT_EQ(st2_read.name, "s1");
   EXPECT_EQ(st2_read.tracks.size(), 2);
   auto tracks_st2_read = st2_read.tracks;
@@ -486,12 +486,12 @@ TEST(Functionality, VSSGenerationTimetableExport) {
   EXPECT_EQ(tracks_st2_read, tracks_st2_target);
 
   // Check if the timetable has the correct trains
-  auto& trains_read = instance_read.get_train_list();
+  const auto& trains_read = instance_read.get_train_list();
   EXPECT_EQ(trains_read.size(), 1);
   EXPECT_TRUE(trains_read.has_train("tr1"));
 
   // Check if the train tr1 is saved correctly
-  auto tr1_read = trains_read.get_train("tr1");
+  const auto& tr1_read = trains_read.get_train("tr1");
   EXPECT_EQ(tr1_read.name, "tr1");
   EXPECT_EQ(tr1_read.length, 50);
   EXPECT_EQ(tr1_read.max_speed, 10);
@@ -499,7 +499,7 @@ TEST(Functionality, VSSGenerationTimetableExport) {
   EXPECT_EQ(tr1_read.deceleration, 2);
 
   // Check if the schedule of tr1 is saved correctly
-  auto& tr1_schedule_read = instance_read.get_schedule("tr1");
+  const auto& tr1_schedule_read = instance_read.get_schedule("tr1");
   EXPECT_EQ(tr1_schedule_read.t_0, 0);
   EXPECT_EQ(tr1_schedule_read.v_0, 0);
   EXPECT_EQ(tr1_schedule_read.t_n, 600);
@@ -507,11 +507,11 @@ TEST(Functionality, VSSGenerationTimetableExport) {
   EXPECT_EQ(network.get_vertex(tr1_schedule_read.entry).name, "v0");
   EXPECT_EQ(network.get_vertex(tr1_schedule_read.exit).name, "v2");
   EXPECT_EQ(tr1_schedule_read.stops.size(), 2);
-  auto& stop1_read = tr1_schedule_read.stops[0];
+  const auto& stop1_read = tr1_schedule_read.stops[0];
   EXPECT_EQ(stop1_read.begin, 60);
   EXPECT_EQ(stop1_read.end, 120);
   EXPECT_EQ(stations_read.get_station(stop1_read.station).name, "s0");
-  auto& stop2_read = tr1_schedule_read.stops[1];
+  const auto& stop2_read = tr1_schedule_read.stops[1];
   EXPECT_EQ(stop2_read.begin, 200);
   EXPECT_EQ(stop2_read.end, 260);
   EXPECT_EQ(stations_read.get_station(stop2_read.station).name, "s1");
@@ -765,7 +765,8 @@ TEST(Functionality, HelperFunctions) {
   EXPECT_EQ(trains_at_190_only_2_3.size(), 0);
 
   // Get Trains on section v1 - v2 - v3 - v4
-  auto trains_on_section = instance.trains_in_section({v1_v2, v2_v3, v3_v4});
+  const auto trains_on_section =
+      instance.trains_in_section({v1_v2, v2_v3, v3_v4});
 
   // Expect tr1 and tr3 to be on the section
   EXPECT_EQ(trains_on_section.size(), 2);
