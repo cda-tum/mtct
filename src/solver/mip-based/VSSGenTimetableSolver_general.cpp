@@ -77,8 +77,8 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   decltype(std::chrono::high_resolution_clock::now()) start;
   decltype(std::chrono::high_resolution_clock::now()) model_created;
   decltype(std::chrono::high_resolution_clock::now()) model_solved;
-  long long                                           create_time = 0;
-  long long                                           solve_time  = 0;
+  int64_t                                             create_time = 0;
+  int64_t                                             solve_time  = 0;
   if (debug || time_limit > 0) {
     start = std::chrono::high_resolution_clock::now();
   }
