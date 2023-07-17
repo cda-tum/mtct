@@ -20,14 +20,14 @@ struct EdgeTarget {
 
 TEST(Functionality, NetworkFunctions) {
   cda_rail::Network network;
-  int v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
-  int v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
-  int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const int v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  const int v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
+  const int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
 
-  int e0 = network.add_edge("v0", "v1", 1, 2, false, 0);
-  int e1 = network.add_edge("v1", "v2", 3, 4, true, 1.5);
-  int e2 = network.add_edge("v1", "v0", 1, 2, false, 0);
-  int e3 = network.add_edge("v2", "v0", 10, 20, true, 2);
+  const int e0 = network.add_edge("v0", "v1", 1, 2, false, 0);
+  const int e1 = network.add_edge("v1", "v2", 3, 4, true, 1.5);
+  const int e2 = network.add_edge("v1", "v0", 1, 2, false, 0);
+  const int e3 = network.add_edge("v2", "v0", 10, 20, true, 2);
 
   network.add_successor(network.get_edge_index("v0", "v1"),
                         network.get_edge_index("v1", "v2"));
@@ -121,10 +121,10 @@ TEST(Functionality, NetworkFunctions) {
   EXPECT_TRUE(network.get_edge(1).breakable);
 
   // out and in edges tests
-  std::vector<int> expected_out{1, 2};
-  std::vector<int> expected_in{0};
-  std::vector<int> expected_neighbors{0, 2};
-  auto             out_edges_1 = network.out_edges(1);
+  const std::vector<int> expected_out{1, 2};
+  const std::vector<int> expected_in{0};
+  const std::vector<int> expected_neighbors{0, 2};
+  auto                   out_edges_1 = network.out_edges(1);
   std::sort(out_edges_1.begin(), out_edges_1.end());
   EXPECT_EQ(out_edges_1, expected_out);
   auto out_edges_v1 = network.out_edges("v1");
@@ -144,7 +144,7 @@ TEST(Functionality, NetworkFunctions) {
   EXPECT_EQ(neighbors_v1, expected_neighbors);
 
   // successor tests
-  std::vector<int> expected_successors{1};
+  const std::vector<int> expected_successors{1};
   EXPECT_EQ(network.get_successors(0), expected_successors);
   EXPECT_EQ(network.get_successors(0, 1), expected_successors);
   EXPECT_EQ(network.get_successors("v0", "v1"), expected_successors);
@@ -175,23 +175,23 @@ TEST(Functionality, NetworkSections) {
 
   // Add edges v0 -> v1 -> v20 -> v30 -> v4 -> v5 -> v6 -> v7
   // All unbreakable other properties not relevant
-  int v0_v1   = network.add_edge("v0", "v1", 1, 1, false);
-  int v1_v20  = network.add_edge("v1", "v20", 1, 1, false);
-  int v20_v30 = network.add_edge("v20", "v30", 1, 1, false);
-  int v30_v4  = network.add_edge("v30", "v4", 1, 1, false);
-  int v4_v5   = network.add_edge("v4", "v5", 1, 1, false);
-  int v5_v6   = network.add_edge("v5", "v6", 1, 1, false);
-  int v6_v7   = network.add_edge("v6", "v7", 1, 1, false);
+  const int v0_v1   = network.add_edge("v0", "v1", 1, 1, false);
+  const int v1_v20  = network.add_edge("v1", "v20", 1, 1, false);
+  const int v20_v30 = network.add_edge("v20", "v30", 1, 1, false);
+  const int v30_v4  = network.add_edge("v30", "v4", 1, 1, false);
+  const int v4_v5   = network.add_edge("v4", "v5", 1, 1, false);
+  const int v5_v6   = network.add_edge("v5", "v6", 1, 1, false);
+  const int v6_v7   = network.add_edge("v6", "v7", 1, 1, false);
 
   // Add edges v7 -> v6 -> v5 -> v4 -> v31 -> v21 -> v1 -> v0
   // v4 -> v31 breakable, all other unbreakable
-  int v7_v6 = network.add_edge("v7", "v6", 1, 1, false);
-  int v6_v5 = network.add_edge("v6", "v5", 1, 1, false);
-  int v5_v4 = network.add_edge("v5", "v4", 1, 1, false);
+  const int v7_v6 = network.add_edge("v7", "v6", 1, 1, false);
+  const int v6_v5 = network.add_edge("v6", "v5", 1, 1, false);
+  const int v5_v4 = network.add_edge("v5", "v4", 1, 1, false);
   network.add_edge("v4", "v31", 1, 1, true);
-  int v31_v21 = network.add_edge("v31", "v21", 1, 1, false);
-  int v21_v1  = network.add_edge("v21", "v1", 1, 1, false);
-  int v1_v0   = network.add_edge("v1", "v0", 1, 1, false);
+  const int v31_v21 = network.add_edge("v31", "v21", 1, 1, false);
+  const int v21_v1  = network.add_edge("v21", "v1", 1, 1, false);
+  const int v1_v0   = network.add_edge("v1", "v0", 1, 1, false);
 
   auto no_border_vss_sections = network.no_border_vss_sections();
 
@@ -213,8 +213,8 @@ TEST(Functionality, NetworkSections) {
                         no_border_vss_sections[0].end(),
                         v6_v5) != no_border_vss_sections[0].end());
 
-  std::pair<int, int> pair1 = std::make_pair(v5_v6, v6_v5);
-  std::pair<int, int> pair2 = std::make_pair(v6_v7, v7_v6);
+  const std::pair<int, int> pair1 = std::make_pair(v5_v6, v6_v5);
+  const std::pair<int, int> pair2 = std::make_pair(v6_v7, v7_v6);
   EXPECT_TRUE(network.common_vertex(pair1, pair2) ==
               network.get_vertex_index("v6"));
 
@@ -362,7 +362,7 @@ TEST(Functionality, NetworkConsistency) {
 }
 
 TEST(Functionality, ReadNetwork) {
-  cda_rail::Network network = cda_rail::Network::import_network(
+  const cda_rail::Network network = cda_rail::Network::import_network(
       "./example-networks/SimpleStation/network/");
 
   // Check vertices properties
@@ -379,8 +379,8 @@ TEST(Functionality, ReadNetwork) {
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
   for (int i = 0; i < vertex_names.size(); i++) {
-    std::string      v_name = vertex_names[i];
-    cda_rail::Vertex v      = network.get_vertex(v_name);
+    const std::string      v_name = vertex_names[i];
+    const cda_rail::Vertex v      = network.get_vertex(v_name);
     EXPECT_EQ(v.name, v_name);
     EXPECT_EQ(v.type, type[i]);
   }
@@ -412,7 +412,7 @@ TEST(Functionality, ReadNetwork) {
 
   EXPECT_EQ(network.number_of_edges(), edge_targets.size());
   for (const auto& edge : edge_targets) {
-    cda_rail::Edge e = network.get_edge(edge.source, edge.target);
+    const cda_rail::Edge e = network.get_edge(edge.source, edge.target);
     EXPECT_EQ(network.get_vertex(e.source).name, edge.source);
     EXPECT_EQ(network.get_vertex(e.target).name, edge.target);
     EXPECT_EQ(e.length, edge.length);
@@ -596,16 +596,16 @@ TEST(Functionality, WriteNetwork) {
     const auto&      successors_target = network.get_successors(i);
     std::vector<int> successors_target_transformed;
     for (auto successor : successors_target) {
-      const auto& e      = network.get_edge(successor);
-      std::string source = network.get_vertex(e.source).name;
-      std::string target = network.get_vertex(e.target).name;
+      const auto&       e      = network.get_edge(successor);
+      const std::string source = network.get_vertex(e.source).name;
+      const std::string target = network.get_vertex(e.target).name;
       successors_target_transformed.emplace_back(
           network_read.get_edge_index(source, target));
     }
-    const auto& e      = network.get_edge(i);
-    std::string source = network.get_vertex(e.source).name;
-    std::string target = network.get_vertex(e.target).name;
-    auto        successors_target_transformed_read =
+    const auto&       e      = network.get_edge(i);
+    const std::string source = network.get_vertex(e.source).name;
+    const std::string target = network.get_vertex(e.target).name;
+    auto              successors_target_transformed_read =
         network_read.get_successors(source, target);
     std::sort(successors_target_transformed.begin(),
               successors_target_transformed.end());
@@ -627,11 +627,11 @@ TEST(Functionality, NetworkEdgeSeparation) {
   network.add_vertex("v31", cda_rail::VertexType::TTD);
 
   // Add edges
-  int v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
-  int v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
-  int v1_v2  = network.add_edge("v1", "v2", 44, 100, true, 10);
-  int v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
-  int v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
+  const int v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
+  const int v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
+  const int v1_v2  = network.add_edge("v1", "v2", 44, 100, true, 10);
+  const int v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
+  const int v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
 
   // Add successors
   network.add_successor(v00_v1, v1_v2);
@@ -897,9 +897,9 @@ TEST(Functionality, SortPairs) {
   network.add_edge("v5", "v4", 100, 100, false);
 
   // Edge pairs
-  std::vector<int> to_combine = {v3_v4, v4_v3, v2_v1, v1_v2,
-                                 v1_v0, v0_v1, v2_v3};
-  const auto& combined_edges  = network.combine_reverse_edges(to_combine, true);
+  const std::vector<int> to_combine = {v3_v4, v4_v3, v2_v1, v1_v2,
+                                       v1_v0, v0_v1, v2_v3};
+  const auto& combined_edges = network.combine_reverse_edges(to_combine, true);
 
   // Check correctness
   std::vector<std::pair<int, int>> expected_combined_edges = {
@@ -928,17 +928,17 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
   network.add_vertex("v31", cda_rail::VertexType::TTD);
 
   // Add edges
-  int v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
-  int v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
-  int v1_v2  = network.add_edge("v1", "v2", 44, 100, true, 10);
-  int v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
-  int v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
+  const int v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
+  const int v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
+  const int v1_v2  = network.add_edge("v1", "v2", 44, 100, true, 10);
+  const int v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
+  const int v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
   // Add reverse edges
-  int v1_v00 = network.add_edge("v1", "v00", 100, 100, false);
-  int v1_v01 = network.add_edge("v1", "v01", 100, 100, false);
-  int v2_v1  = network.add_edge("v2", "v1", 44, 100, true, 10);
-  int v30_v2 = network.add_edge("v30", "v2", 100, 100, false);
-  int v31_v2 = network.add_edge("v31", "v2", 100, 100, false);
+  const int v1_v00 = network.add_edge("v1", "v00", 100, 100, false);
+  const int v1_v01 = network.add_edge("v1", "v01", 100, 100, false);
+  const int v2_v1  = network.add_edge("v2", "v1", 44, 100, true, 10);
+  const int v30_v2 = network.add_edge("v30", "v2", 100, 100, false);
+  const int v31_v2 = network.add_edge("v31", "v2", 100, 100, false);
 
   // Add successors
   network.add_successor(v00_v1, v1_v2);
@@ -1461,23 +1461,23 @@ TEST(Functionality, FloydWarshall) {
 
   // Add the following edges
   // v1 v2 of length 100
-  int v1_v2 = network.add_edge("v1", "v2", 100, 10, false);
+  const int v1_v2 = network.add_edge("v1", "v2", 100, 10, false);
   // v2 v3 in both directions of length 200
-  int v2_v3 = network.add_edge("v2", "v3", 200, 10, false);
-  int v3_v2 = network.add_edge("v3", "v2", 200, 10, false);
+  const int v2_v3 = network.add_edge("v2", "v3", 200, 10, false);
+  const int v3_v2 = network.add_edge("v3", "v2", 200, 10, false);
   // v3 v4 in both directions of length 300
-  int v3_v4 = network.add_edge("v3", "v4", 300, 10, false);
-  int v4_v3 = network.add_edge("v4", "v3", 300, 10, false);
+  const int v3_v4 = network.add_edge("v3", "v4", 300, 10, false);
+  const int v4_v3 = network.add_edge("v4", "v3", 300, 10, false);
   // v4 v5 in both directions of length 400
-  int v4_v5 = network.add_edge("v4", "v5", 400, 10, false);
-  int v5_v4 = network.add_edge("v5", "v4", 400, 10, false);
+  const int v4_v5 = network.add_edge("v4", "v5", 400, 10, false);
+  const int v5_v4 = network.add_edge("v5", "v4", 400, 10, false);
   // v4 v1 of length 500
-  int v4_v1 = network.add_edge("v4", "v1", 500, 10, false);
+  const int v4_v1 = network.add_edge("v4", "v1", 500, 10, false);
   // v3 v5 of length 500
-  int v3_v5 = network.add_edge("v3", "v5", 500, 10, false);
+  const int v3_v5 = network.add_edge("v3", "v5", 500, 10, false);
   // v5 v6 in both directions of length 1000
-  int v5_v6 = network.add_edge("v5", "v6", 1000, 10, false);
-  int v6_v5 = network.add_edge("v6", "v5", 1000, 10, false);
+  const int v5_v6 = network.add_edge("v5", "v6", 1000, 10, false);
+  const int v6_v5 = network.add_edge("v6", "v5", 1000, 10, false);
 
   // Add successor edges
   network.add_successor(v1_v2, v2_v3);
@@ -1730,10 +1730,10 @@ TEST(Functionality, ReadTrains) {
 
 TEST(Functionality, WriteTrains) {
   // Create a train list
-  auto trains    = cda_rail::TrainList();
-  int  tr1_index = trains.add_train("tr1", 100, 83.33, 2, 1);
-  int  tr2_index = trains.add_train("tr2", 100, 27.78, 2, 1);
-  int  tr3_index = trains.add_train("tr3", 250, 20, 2, 1);
+  auto      trains    = cda_rail::TrainList();
+  const int tr1_index = trains.add_train("tr1", 100, 83.33, 2, 1);
+  const int tr2_index = trains.add_train("tr2", 100, 27.78, 2, 1);
+  const int tr3_index = trains.add_train("tr3", 250, 20, 2, 1);
 
   // check the train indices
   EXPECT_EQ(trains.get_train_index("tr1"), tr1_index);
@@ -1816,7 +1816,7 @@ TEST(Functionality, ReadStation) {
   EXPECT_TRUE(stations.has_station("Central"));
 
   // Check if the station is imported correctly
-  auto& station = stations.get_station("Central");
+  const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
   std::vector<int> track_ids{network.get_edge_index("g00", "g01"),
@@ -1851,13 +1851,13 @@ TEST(Functionality, WriteStations) {
   EXPECT_TRUE(stations_read.has_station("S1"));
   EXPECT_TRUE(stations_read.has_station("S2"));
 
-  auto& s1 = stations_read.get_station("S1");
+  const auto& s1 = stations_read.get_station("S1");
   EXPECT_EQ(s1.name, "S1");
   EXPECT_EQ(s1.tracks.size(), 1);
-  std::vector<int> s1_tracks{network.get_edge_index("l0", "l1")};
+  const std::vector<int> s1_tracks{network.get_edge_index("l0", "l1")};
   EXPECT_EQ(s1.tracks, s1_tracks);
 
-  auto& s2 = stations_read.get_station("S2");
+  const auto& s2 = stations_read.get_station("S2");
   EXPECT_EQ(s2.name, "S2");
   EXPECT_EQ(s2.tracks.size(), 2);
   std::vector<int> s2_tracks_target{network.get_edge_index("l0", "l1"),
@@ -1875,12 +1875,12 @@ TEST(Functionality, ReadTimetable) {
       "./example-networks/SimpleStation/timetable/", network);
 
   // Check if the timetable has the correct stations
-  auto& stations = timetable.get_station_list();
+  const auto& stations = timetable.get_station_list();
   EXPECT_EQ(stations.size(), 1);
   EXPECT_TRUE(stations.has_station("Central"));
 
   // Check if the station is imported correctly
-  auto& station = stations.get_station("Central");
+  const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
   std::vector<int> track_ids_target{network.get_edge_index("g00", "g01"),
@@ -1893,7 +1893,7 @@ TEST(Functionality, ReadTimetable) {
   EXPECT_EQ(track_ids, track_ids_target);
 
   // Check if the timetable has the correct trains
-  auto& trains = timetable.get_train_list();
+  const auto& trains = timetable.get_train_list();
   // Check if the all trains are imported
   EXPECT_EQ(trains.size(), 3);
   EXPECT_TRUE(trains.has_train("tr1"));
@@ -1922,7 +1922,7 @@ TEST(Functionality, ReadTimetable) {
   EXPECT_EQ(tr3.deceleration, 1);
 
   // Check the schedule of tr1
-  auto& tr1_schedule = timetable.get_schedule("tr1");
+  const auto& tr1_schedule = timetable.get_schedule("tr1");
   EXPECT_EQ(tr1_schedule.t_0, 120);
   EXPECT_EQ(tr1_schedule.v_0, 0);
   EXPECT_EQ(tr1_schedule.t_n, 645);
@@ -1930,13 +1930,13 @@ TEST(Functionality, ReadTimetable) {
   EXPECT_EQ(network.get_vertex(tr1_schedule.entry).name, "l0");
   EXPECT_EQ(network.get_vertex(tr1_schedule.exit).name, "r0");
   EXPECT_EQ(tr1_schedule.stops.size(), 1);
-  auto& stop = tr1_schedule.stops[0];
+  const auto& stop = tr1_schedule.stops[0];
   EXPECT_EQ(stop.begin, 240);
   EXPECT_EQ(stop.end, 300);
   EXPECT_EQ(stations.get_station(stop.station).name, "Central");
 
   // Check the schedule of tr2
-  auto& tr2_schedule = timetable.get_schedule("tr2");
+  const auto& tr2_schedule = timetable.get_schedule("tr2");
   EXPECT_EQ(tr2_schedule.t_0, 0);
   EXPECT_EQ(tr2_schedule.v_0, 0);
   EXPECT_EQ(tr2_schedule.t_n, 420);
@@ -1944,13 +1944,13 @@ TEST(Functionality, ReadTimetable) {
   EXPECT_EQ(network.get_vertex(tr2_schedule.entry).name, "l0");
   EXPECT_EQ(network.get_vertex(tr2_schedule.exit).name, "r0");
   EXPECT_EQ(tr2_schedule.stops.size(), 1);
-  auto& stop2 = tr2_schedule.stops[0];
+  const auto& stop2 = tr2_schedule.stops[0];
   EXPECT_EQ(stop2.begin, 120);
   EXPECT_EQ(stop2.end, 300);
   EXPECT_EQ(stations.get_station(stop2.station).name, "Central");
 
   // Check the schedule of tr3
-  auto& tr3_schedule = timetable.get_schedule("tr3");
+  const auto& tr3_schedule = timetable.get_schedule("tr3");
   EXPECT_EQ(tr3_schedule.t_0, 0);
   EXPECT_EQ(tr3_schedule.v_0, 0);
   EXPECT_EQ(tr3_schedule.t_n, 420);
@@ -1958,7 +1958,7 @@ TEST(Functionality, ReadTimetable) {
   EXPECT_EQ(network.get_vertex(tr3_schedule.entry).name, "r0");
   EXPECT_EQ(network.get_vertex(tr3_schedule.exit).name, "l0");
   EXPECT_EQ(tr3_schedule.stops.size(), 1);
-  auto& stop3 = tr3_schedule.stops[0];
+  const auto& stop3 = tr3_schedule.stops[0];
   EXPECT_EQ(stop3.begin, 180);
   EXPECT_EQ(stop3.end, 300);
   EXPECT_EQ(stations.get_station(stop3.station).name, "Central");
@@ -1978,7 +1978,7 @@ TEST(Functionality, WriteTimetable) {
   timetable.add_train("tr2", 100, 27.78, 2, 1, 0, 0, "r0", 300, 20, "l0",
                       network);
 
-  std::pair<int, int> time_interval_expected{0, 300};
+  const std::pair<int, int> time_interval_expected{0, 300};
 
   EXPECT_EQ(timetable.time_interval("tr1"), time_interval_expected);
   EXPECT_EQ(timetable.time_interval("tr2"), time_interval_expected);
@@ -1998,13 +1998,13 @@ TEST(Functionality, WriteTimetable) {
 
   // Check if the timetable is as expected
   // Check if the timetable has the correct stations
-  auto& stations = timetable.get_station_list();
+  const auto& stations = timetable.get_station_list();
   EXPECT_EQ(stations.size(), 2);
   EXPECT_TRUE(stations.has_station("Station1"));
   EXPECT_TRUE(stations.has_station("Station2"));
 
   // Check if the stations are imported correctly
-  auto& st1 = stations.get_station("Station1");
+  const auto& st1 = stations.get_station("Station1");
   EXPECT_EQ(st1.name, "Station1");
   EXPECT_EQ(st1.tracks.size(), 4);
   std::vector<int> s1_expected_tracks = {network.get_edge_index("g00", "g01"),
@@ -2015,14 +2015,15 @@ TEST(Functionality, WriteTimetable) {
   std::sort(st1_tracks.begin(), st1_tracks.end());
   std::sort(s1_expected_tracks.begin(), s1_expected_tracks.end());
   EXPECT_EQ(st1_tracks, s1_expected_tracks);
-  auto& st2 = stations.get_station("Station2");
+  const auto& st2 = stations.get_station("Station2");
   EXPECT_EQ(st2.name, "Station2");
   EXPECT_EQ(st2.tracks.size(), 1);
-  std::vector<int> s2_expected_tracks = {network.get_edge_index("r1", "r0")};
+  const std::vector<int> s2_expected_tracks = {
+      network.get_edge_index("r1", "r0")};
   EXPECT_EQ(st2.tracks, s2_expected_tracks);
 
   // Check if the timetable has the correct trains
-  auto& trains = timetable.get_train_list();
+  const auto& trains = timetable.get_train_list();
   EXPECT_EQ(trains.size(), 2);
   EXPECT_TRUE(trains.has_train("tr1"));
   EXPECT_TRUE(trains.has_train("tr2"));
@@ -2043,7 +2044,7 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(tr2.deceleration, 1);
 
   // Check if the schedule of tr1 is saved correctly
-  auto& tr1_schedule = timetable.get_schedule("tr1");
+  const auto& tr1_schedule = timetable.get_schedule("tr1");
   EXPECT_EQ(tr1_schedule.t_0, 0);
   EXPECT_EQ(tr1_schedule.v_0, 0);
   EXPECT_EQ(tr1_schedule.t_n, 300);
@@ -2051,17 +2052,17 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(network.get_vertex(tr1_schedule.entry).name, "l0");
   EXPECT_EQ(network.get_vertex(tr1_schedule.exit).name, "r0");
   EXPECT_EQ(tr1_schedule.stops.size(), 2);
-  auto& stop1 = tr1_schedule.stops[0];
+  const auto& stop1 = tr1_schedule.stops[0];
   EXPECT_EQ(stop1.begin, 100);
   EXPECT_EQ(stop1.end, 160);
   EXPECT_EQ(stations.get_station(stop1.station).name, "Station1");
-  auto& stop2 = tr1_schedule.stops[1];
+  const auto& stop2 = tr1_schedule.stops[1];
   EXPECT_EQ(stop2.begin, 200);
   EXPECT_EQ(stop2.end, 260);
   EXPECT_EQ(stations.get_station(stop2.station).name, "Station2");
 
   // Check if the schedule of tr2 is saved correctly
-  auto& tr2_schedule = timetable.get_schedule("tr2");
+  const auto& tr2_schedule = timetable.get_schedule("tr2");
   EXPECT_EQ(tr2_schedule.t_0, 0);
   EXPECT_EQ(tr2_schedule.v_0, 0);
   EXPECT_EQ(tr2_schedule.t_n, 300);
@@ -2069,7 +2070,7 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(network.get_vertex(tr2_schedule.entry).name, "r0");
   EXPECT_EQ(network.get_vertex(tr2_schedule.exit).name, "l0");
   EXPECT_EQ(tr2_schedule.stops.size(), 1);
-  auto& stop3 = tr2_schedule.stops[0];
+  const auto& stop3 = tr2_schedule.stops[0];
   EXPECT_EQ(stop3.begin, 160);
   EXPECT_EQ(stop3.end, 220);
   EXPECT_EQ(stations.get_station(stop3.station).name, "Station1");
@@ -2086,19 +2087,19 @@ TEST(Functionality, WriteTimetable) {
 
   // Check if the timetable is as expected
   // Check if the timetable has the correct stations
-  auto& stations_read = timetable_read.get_station_list();
+  const auto& stations_read = timetable_read.get_station_list();
   EXPECT_EQ(stations_read.size(), 2);
   EXPECT_TRUE(stations_read.has_station("Station1"));
   EXPECT_TRUE(stations_read.has_station("Station2"));
 
   // Check if the stations are imported correctly
-  auto& st1_read = stations_read.get_station("Station1");
+  const auto& st1_read = stations_read.get_station("Station1");
   EXPECT_EQ(st1_read.name, "Station1");
   EXPECT_EQ(st1_read.tracks.size(), 4);
   auto st1_read_tracks = st1_read.tracks;
   std::sort(st1_read_tracks.begin(), st1_read_tracks.end());
   EXPECT_EQ(st1_read_tracks, s1_expected_tracks);
-  auto& st2_read = stations_read.get_station("Station2");
+  const auto& st2_read = stations_read.get_station("Station2");
   EXPECT_EQ(st2_read.name, "Station2");
   EXPECT_EQ(st2_read.tracks.size(), 1);
   auto st2_read_tracks = st2_read.tracks;
@@ -2106,7 +2107,7 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(st2_read_tracks, s2_expected_tracks);
 
   // Check if the timetable has the correct trains
-  auto& trains_read = timetable_read.get_train_list();
+  const auto& trains_read = timetable_read.get_train_list();
   EXPECT_EQ(trains_read.size(), 2);
   EXPECT_TRUE(trains_read.has_train("tr1"));
   EXPECT_TRUE(trains_read.has_train("tr2"));
@@ -2127,7 +2128,7 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(tr2_read.deceleration, 1);
 
   // Check if the schedule of tr1 is saved correctly
-  auto& tr1_schedule_read = timetable_read.get_schedule("tr1");
+  const auto& tr1_schedule_read = timetable_read.get_schedule("tr1");
   EXPECT_EQ(tr1_schedule_read.t_0, 0);
   EXPECT_EQ(tr1_schedule_read.v_0, 0);
   EXPECT_EQ(tr1_schedule_read.t_n, 300);
@@ -2135,17 +2136,17 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(network.get_vertex(tr1_schedule_read.entry).name, "l0");
   EXPECT_EQ(network.get_vertex(tr1_schedule_read.exit).name, "r0");
   EXPECT_EQ(tr1_schedule_read.stops.size(), 2);
-  auto& stop1_read = tr1_schedule_read.stops[0];
+  const auto& stop1_read = tr1_schedule_read.stops[0];
   EXPECT_EQ(stop1_read.begin, 100);
   EXPECT_EQ(stop1_read.end, 160);
   EXPECT_EQ(stations_read.get_station(stop1_read.station).name, "Station1");
-  auto& stop2_read = tr1_schedule_read.stops[1];
+  const auto& stop2_read = tr1_schedule_read.stops[1];
   EXPECT_EQ(stop2_read.begin, 200);
   EXPECT_EQ(stop2_read.end, 260);
   EXPECT_EQ(stations_read.get_station(stop2_read.station).name, "Station2");
 
   // Check if the schedule of tr2 is saved correctly
-  auto& tr2_schedule_read = timetable_read.get_schedule("tr2");
+  const auto& tr2_schedule_read = timetable_read.get_schedule("tr2");
   EXPECT_EQ(tr2_schedule_read.t_0, 0);
   EXPECT_EQ(tr2_schedule_read.v_0, 0);
   EXPECT_EQ(tr2_schedule_read.t_n, 300);
@@ -2153,7 +2154,7 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(network.get_vertex(tr2_schedule_read.entry).name, "r0");
   EXPECT_EQ(network.get_vertex(tr2_schedule_read.exit).name, "l0");
   EXPECT_EQ(tr2_schedule_read.stops.size(), 1);
-  auto& stop3_read = tr2_schedule_read.stops[0];
+  const auto& stop3_read = tr2_schedule_read.stops[0];
   EXPECT_EQ(stop3_read.begin, 160);
   EXPECT_EQ(stop3_read.end, 220);
   EXPECT_EQ(stations_read.get_station(stop3_read.station).name, "Station1");
@@ -2182,7 +2183,7 @@ TEST(Functionality, RouteMap) {
 
   // Check if route consists of three edges passing vertices l0-l1-l2-l3 in this
   // order.
-  auto& route = route_map.get_route("tr1");
+  const auto& route = route_map.get_route("tr1");
   EXPECT_EQ(route.size(), 3);
   EXPECT_EQ(network.get_vertex(route.get_edge(0, network).source).name, "l0");
   EXPECT_EQ(network.get_vertex(route.get_edge(0, network).target).name, "l1");
@@ -2204,7 +2205,7 @@ TEST(Functionality, RouteMap) {
 
   // Check if route consists of two edges passing vertices r0-r1-r2 in this
   // order.
-  auto& route2 = route_map.get_route("tr2");
+  const auto& route2 = route_map.get_route("tr2");
   EXPECT_EQ(route2.size(), 2);
   EXPECT_EQ(network.get_vertex(route2.get_edge(0, network).source).name, "r0");
   EXPECT_EQ(network.get_vertex(route2.get_edge(0, network).target).name, "r1");
@@ -2240,7 +2241,7 @@ TEST(Functionality, ImportRouteMap) {
 
   // Check if the route for tr1 consists of eight edges passing vertices
   // l0-l1-l2-l3-g00-g01-r2-r1-r0 in this order.
-  auto& route = route_map.get_route("tr1");
+  const auto& route = route_map.get_route("tr1");
   EXPECT_EQ(route.size(), 8);
   EXPECT_EQ(network.get_vertex(route.get_edge(0, network).source).name, "l0");
   EXPECT_EQ(network.get_vertex(route.get_edge(0, network).target).name, "l1");
@@ -2261,7 +2262,7 @@ TEST(Functionality, ImportRouteMap) {
 
   // Check if the route for tr2 consists of eight edges passing vertices
   // l0-l1-l2-l3-g00-g01-r2-r1-r0 in this order.
-  auto& route2 = route_map.get_route("tr2");
+  const auto& route2 = route_map.get_route("tr2");
   EXPECT_EQ(route2.size(), 8);
   EXPECT_EQ(network.get_vertex(route2.get_edge(0, network).source).name, "l0");
   EXPECT_EQ(network.get_vertex(route2.get_edge(0, network).target).name, "l1");
@@ -2282,7 +2283,7 @@ TEST(Functionality, ImportRouteMap) {
 
   // Check if the route for tr3 consists of eight edges passing vertices
   // r0-r1-r2-g11-g10-l3-l2-l1 in this order.
-  auto& route3 = route_map.get_route("tr3");
+  const auto& route3 = route_map.get_route("tr3");
   EXPECT_EQ(route3.size(), 8);
   EXPECT_EQ(network.get_vertex(route3.get_edge(0, network).source).name, "r0");
   EXPECT_EQ(network.get_vertex(route3.get_edge(0, network).target).name, "r1");
@@ -2336,7 +2337,7 @@ TEST(Functionality, ExportRouteMap) {
 
   // Check if the route for tr1 consists of three edges passing vertices
   // l0-l1-l2-l3 in this order.
-  auto& route1 = route_map_read.get_route("tr1");
+  const auto& route1 = route_map_read.get_route("tr1");
   EXPECT_EQ(route1.size(), 3);
   EXPECT_EQ(network.get_vertex(route1.get_edge(0, network).source).name, "l0");
   EXPECT_EQ(network.get_vertex(route1.get_edge(0, network).target).name, "l1");
@@ -2347,7 +2348,7 @@ TEST(Functionality, ExportRouteMap) {
 
   // Check if the route for tr2 consists of two edges passing vertices r0-r1-r2
   // in this order.
-  auto& route2 = route_map_read.get_route("tr2");
+  const auto& route2 = route_map_read.get_route("tr2");
   EXPECT_EQ(route2.size(), 2);
   EXPECT_EQ(network.get_vertex(route2.get_edge(0, network).source).name, "r0");
   EXPECT_EQ(network.get_vertex(route2.get_edge(0, network).target).name, "r1");
@@ -2363,15 +2364,15 @@ TEST(Functionality, ExportRouteMap) {
 TEST(Functionality, RouteMapHelper) {
   cda_rail::Network network;
   network.add_vertex("v0", cda_rail::VertexType::TTD);
-  int v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
-  int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const int v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
   network.add_vertex("v3", cda_rail::VertexType::TTD);
 
   network.add_edge("v0", "v1", 10, 5, false);
-  int v1_v2 = network.add_edge("v1", "v2", 20, 5, false);
-  int v2_v3 = network.add_edge("v2", "v3", 30, 5, false);
-  int v3_v2 = network.add_edge("v3", "v2", 30, 5, false);
-  int v2_v1 = network.add_edge("v2", "v1", 20, 5, false);
+  const int v1_v2 = network.add_edge("v1", "v2", 20, 5, false);
+  const int v2_v3 = network.add_edge("v2", "v3", 30, 5, false);
+  const int v3_v2 = network.add_edge("v3", "v2", 30, 5, false);
+  const int v2_v1 = network.add_edge("v2", "v1", 20, 5, false);
   network.add_edge("v1", "v0", 10, 5, false);
 
   network.add_successor({"v0", "v1"}, {"v1", "v2"});
@@ -2383,20 +2384,20 @@ TEST(Functionality, RouteMapHelper) {
   route_map.push_back_edge("tr1", "v1", "v2", network);
   route_map.push_back_edge("tr1", "v2", "v3", network);
 
-  const auto&               tr1_map    = route_map.get_route("tr1");
-  const auto&               tr1_e1_pos = tr1_map.edge_pos("v0", "v1", network);
-  std::pair<double, double> expected_tr1_e1_pos = {0, 10};
+  const auto& tr1_map    = route_map.get_route("tr1");
+  const auto& tr1_e1_pos = tr1_map.edge_pos("v0", "v1", network);
+  const std::pair<double, double> expected_tr1_e1_pos = {0, 10};
   EXPECT_EQ(tr1_e1_pos, expected_tr1_e1_pos);
-  const auto&               tr1_e2_pos = tr1_map.edge_pos(v1, v2, network);
-  std::pair<double, double> expected_tr1_e2_pos = {10, 30};
+  const auto& tr1_e2_pos = tr1_map.edge_pos(v1, v2, network);
+  const std::pair<double, double> expected_tr1_e2_pos = {10, 30};
   EXPECT_EQ(tr1_e2_pos, expected_tr1_e2_pos);
-  const auto&               tr1_e3_pos = tr1_map.edge_pos(v2_v3, network);
-  std::pair<double, double> expected_tr1_e3_pos = {30, 60};
+  const auto&                     tr1_e3_pos = tr1_map.edge_pos(v2_v3, network);
+  const std::pair<double, double> expected_tr1_e3_pos = {30, 60};
   EXPECT_EQ(tr1_e3_pos, expected_tr1_e3_pos);
 
   const auto& station_pos =
       tr1_map.edge_pos({v1_v2, v2_v1, v2_v3, v3_v2}, network);
-  std::pair<double, double> expected_station_pos = {10, 60};
+  const std::pair<double, double> expected_station_pos = {10, 60};
   EXPECT_EQ(station_pos, expected_station_pos);
 
   EXPECT_EQ(tr1_map.length(network), 60);
