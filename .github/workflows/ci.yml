@@ -84,6 +84,12 @@ jobs:
         run: |
           echo "GUROBI_HOME=$PWD\gurobi\$GUROBI_VERSION_FOLDER\win64" >> $env:GITHUB_ENV
           echo "$PWD\gurobi\$GUROBI_VERSION_FOLDER\win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - if: runner.os == 'Windows'
+        name: print-variables
+        shell: powershell
+        run: |
+          echo $env:GUROBI_HOME
+          echo $env:PATH
 
       # - name: cache-gurobi
       #   uses: actions/cache@v3
