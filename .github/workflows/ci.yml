@@ -82,6 +82,7 @@ jobs:
         id: gurobi-home
         run: |
           echo "GUROBI_HOME=$PWD/gurobi/$GUROBI_VERSION_FOLDER/win64" >> $GITHUB_ENV
+          echo $PATH
 
       # - name: cache-gurobi
       #   uses: actions/cache@v3
