@@ -190,6 +190,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                              "_" + std::to_string(edge_id));
 
         // x = x_lda AND x_mu
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
         GRBVar clause[2];
         clause[0] = vars["x_lda"](tr, t, edge_id);
         clause[1] = vars["x_mu"](tr, t, edge_id);
