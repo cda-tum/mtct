@@ -56,6 +56,10 @@ When compiling, CMake automatically searches for Gurobi at the default locations
 If this does not work, please set the OS environment variable GUROBI_HOME to the respective install directory.
 This way, CMake can find Gurobi even in non-standard directories.
 
+If you are using Windows, make sure that Gurobi's `bin` folder, i.e., `<installdir>\bin`, is appended to the `Path` environmental variable.
+The above variables are usually automatically set, if Gurobi is installed using the installer with administrator privileges.
+Otherwise, they have to be set manually, see also https://support.gurobi.com/hc/en-us/articles/360060996432-How-do-I-install-Gurobi-on-Windows-without-administrator-credentials-
+
 ### Usage
 
 Currently, the tool provides only basic access via the command line. `rail_vss_generation_timetable_mip_testing` provides access to solving a specified instance at different levels of accuracy and with a predefined timeout.
