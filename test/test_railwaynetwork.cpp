@@ -225,7 +225,9 @@ TEST(Functionality, NetworkSections) {
   EXPECT_EQ(unbreakable_sections.size(), 3);
   // One section should contain v0_v1, one should contain v20_v30, and one
   // should contain v4_v5
-  int s0 = -1, s1 = -1, s2 = -1;
+  int s0 = -1;
+  int s1 = -1;
+  int s2 = -1;
   for (int i = 0; i < unbreakable_sections.size(); i++) {
     if (std::find(unbreakable_sections[i].begin(),
                   unbreakable_sections[i].end(),
@@ -909,8 +911,8 @@ TEST(Functionality, SortPairs) {
     expected_index = combined_edges.size() - 1;
     expected_incr  = -1;
   }
-  for (int i = 0; i < combined_edges.size(); ++i) {
-    EXPECT_EQ(combined_edges[i], expected_combined_edges[expected_index]);
+  for (const auto& combined_edge : combined_edges) {
+    EXPECT_EQ(combined_edge, expected_combined_edges[expected_index]);
     expected_index += expected_incr;
   }
 }
