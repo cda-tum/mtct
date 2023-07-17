@@ -66,9 +66,9 @@ struct Schedule {
   // Constructor
   Schedule() : t_0(-1), v_0(-1), entry(-1), t_n(-1), v_n(-1), exit(-1) {}
   Schedule(int t_0, double v_0, int entry, int t_n, double v_n, int exit,
-           const std::vector<ScheduledStop>& stops = {})
+           std::vector<ScheduledStop> stops = {})
       : t_0(t_0), v_0(v_0), entry(entry), t_n(t_n), v_n(v_n), exit(exit),
-        stops(stops) {}
+        stops(std::move(stops)) {}
 };
 
 class Timetable {
