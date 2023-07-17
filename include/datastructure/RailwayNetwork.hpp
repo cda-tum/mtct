@@ -266,8 +266,8 @@ public:
     return neighbors(get_vertex_index(name));
   };
 
-  [[nodiscard]] int number_of_vertices() const { return vertices.size(); };
-  [[nodiscard]] int number_of_edges() const { return edges.size(); };
+  [[nodiscard]] size_t number_of_vertices() const { return vertices.size(); };
+  [[nodiscard]] size_t number_of_edges() const { return edges.size(); };
 
   [[nodiscard]] int max_vss_on_edge(int index) const;
   [[nodiscard]] int max_vss_on_edge(int source, int target) const {

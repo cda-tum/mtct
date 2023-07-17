@@ -63,7 +63,7 @@ public:
 
   int add_train(const std::string& name, int length, double max_speed,
                 double acceleration, double deceleration);
-  [[nodiscard]] int size() const { return trains.size(); };
+  [[nodiscard]] size_t size() const { return trains.size(); };
 
   [[nodiscard]] int          get_train_index(const std::string& name) const;
   [[nodiscard]] const Train& get_train(int index) const;

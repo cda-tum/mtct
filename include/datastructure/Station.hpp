@@ -54,7 +54,7 @@ public:
   };
   [[nodiscard]] const Station& get_station(const std::string& name) const;
 
-  [[nodiscard]] int size() const { return stations.size(); };
+  [[nodiscard]] size_t size() const { return stations.size(); };
   [[nodiscard]] std::vector<std::string> get_station_names() const;
 
   void add_track_to_station(const std::string& name, int track,
