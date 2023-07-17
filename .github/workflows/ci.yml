@@ -78,12 +78,10 @@ jobs:
           cat install.log
           ls $PWD\gurobi
       - if: runner.os == 'Windows'
-        name: set-gurobi-variables
-        id: gurobi-variables
+        name: set-gurobi-home
+        id: gurobi-home
         run: |
           echo "GUROBI_HOME=$PWD/gurobi/$GUROBI_VERSION_FOLDER/win64" >> $GITHUB_ENV
-          echo "$PWD/gurobi/$GUROBI_VERSION_FOLDER/win64/bin" >> $GITHUB_PATH
-          echo $PATH
 
       # - name: cache-gurobi
       #   uses: actions/cache@v3
