@@ -894,9 +894,9 @@ cda_rail::Network::separate_edge(int                      edge_index,
   if (separation_type == cda_rail::SeparationType::UNIFORM) {
     return uniform_separate_edge(edge_index);
   }
-  if (separation_type == cda_rail::SeparationType::CHEBYCHEV) {
-    return chebychev_separate_edge(edge_index);
-  }
+  // if (separation_type == cda_rail::SeparationType::CHEBYCHEV) {
+  //   return chebychev_separate_edge(edge_index);
+  // }
   throw std::invalid_argument("Separation type does not exist.");
 }
 
@@ -943,11 +943,13 @@ cda_rail::Network::uniform_separate_edge(int edge_index) {
   return separate_edge_at(edge_index, distances_from_source);
 }
 
+/**
 std::pair<std::vector<int>, std::vector<int>>
 cda_rail::Network::chebychev_separate_edge(int edge_index) {
   // TODO: Not implemented yet
   throw std::runtime_error("Not implemented yet");
 }
+ **/
 
 std::vector<int> cda_rail::Network::breakable_edges() const {
   /**
