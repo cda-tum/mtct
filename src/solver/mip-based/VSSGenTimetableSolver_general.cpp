@@ -913,12 +913,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     if (this->use_pwl) {
       const int n = std::ceil(
           tr_max_speed / (2 * std::sqrt(2 * tr_deceleration * ABS_PWL_ERROR)));
-      auto const xpts = std::make_unique<double[]>(
-          n +
-          1); // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
-      auto const ypts = std::make_unique<double[]>(
-          n +
-          1); // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
+      // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
+      auto const xpts = std::make_unique<double[]>(n + 1);
+      auto const ypts = std::make_unique<double[]>(n + 1);
+      // NOLINTEND(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
       for (int i = 0; i <= n; ++i) {
         xpts[i] = i * tr_max_speed / n;
         ypts[i] = xpts[i] * xpts[i] / (2 * tr_deceleration);

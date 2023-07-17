@@ -1295,6 +1295,8 @@ TEST(Example, Stammstrecke) {
   instance.n().add_successor(e28rl_3, e27rl_3);
   instance.n().add_successor(e27rl_3, e26rl_23);
 
+  // NOLINTBEGIN(bugprone-swapped-arguments)
+
   // Add S2 Petershausen
   instance.add_train("S2Petershausen", 135, 140 / 3.6, 1, 0.9, 0, 0,
                      ost_2_entry, 17.25 * 60, 20, laim_exit_nymphenburg);
@@ -1940,6 +1942,8 @@ TEST(Example, Stammstrecke) {
   instance.push_back_edge_to_route("S2Ost", e24lr);
   instance.push_back_edge_to_route("S2Ost", e25lr);
   instance.push_back_edge_to_route("S2Ost", e26lr_5);
+
+  // NOLINTEND(bugprone-swapped-arguments)
 
   EXPECT_TRUE(instance.check_consistency(true));
   EXPECT_TRUE(instance.n().is_consistent_for_transformation());
