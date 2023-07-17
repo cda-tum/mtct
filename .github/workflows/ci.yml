@@ -80,8 +80,10 @@ jobs:
       - if: runner.os == 'Windows'
         name: set-gurobi-home
         id: gurobi-home
+        shell: powershell
         run: |
-          echo "GUROBI_HOME=$PWD/gurobi/$GUROBI_VERSION_FOLDER/win64" >> $GITHUB_ENV
+          echo "GUROBI_HOME=$PWD\gurobi\$GUROBI_VERSION_FOLDER\win64" >> $env:GITHUB_ENV
+          echo "$PWD\gurobi\$GUROBI_VERSION_FOLDER\win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       # - name: cache-gurobi
       #   uses: actions/cache@v3
