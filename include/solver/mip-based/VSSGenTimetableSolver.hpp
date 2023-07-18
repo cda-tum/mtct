@@ -5,6 +5,7 @@
 #include "unordered_map"
 
 #include <filesystem>
+#include <optional>
 #include <string>
 
 namespace cda_rail::solver::mip_based {
@@ -13,26 +14,27 @@ private:
   cda_rail::instances::VSSGenerationTimetable instance;
 
   // Instance variables
-  int                                    dt                     = -1;
-  int                                    num_t                  = -1;
-  size_t                                 num_tr                 = -1;
-  size_t                                 num_edges              = -1;
-  size_t                                 num_vertices           = -1;
-  size_t                                 num_breakable_sections = -1;
-  std::vector<std::vector<size_t>>       unbreakable_sections;
-  std::vector<std::vector<size_t>>       no_border_vss_sections;
-  std::vector<std::pair<int, int>>       train_interval;
-  std::vector<std::pair<size_t, size_t>> breakable_edges_pairs;
-  std::vector<size_t>                    no_border_vss_vertices;
-  std::vector<size_t>                    relevant_edges;
-  std::vector<size_t>                    breakable_edges;
-  bool                                   fix_routes               = false;
-  bool                                   discretize_vss_positions = false;
-  bool                                   include_train_dynamics   = false;
-  bool                                   include_braking_curves   = false;
-  bool                                   use_pwl                  = false;
-  bool                                   use_schedule_cuts        = false;
-  std::unordered_map<size_t, size_t>     breakable_edge_indices;
+  int                              dt                     = -1;
+  int                              num_t                  = -1;
+  size_t                           num_tr                 = -1;
+  size_t                           num_edges              = -1;
+  size_t                           num_vertices           = -1;
+  size_t                           num_breakable_sections = -1;
+  std::vector<std::vector<size_t>> unbreakable_sections;
+  std::vector<std::vector<size_t>> no_border_vss_sections;
+  std::vector<std::pair<int, int>> train_interval;
+  std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
+                                     breakable_edges_pairs;
+  std::vector<size_t>                no_border_vss_vertices;
+  std::vector<size_t>                relevant_edges;
+  std::vector<size_t>                breakable_edges;
+  bool                               fix_routes               = false;
+  bool                               discretize_vss_positions = false;
+  bool                               include_train_dynamics   = false;
+  bool                               include_braking_curves   = false;
+  bool                               use_pwl                  = false;
+  bool                               use_schedule_cuts        = false;
+  std::unordered_map<size_t, size_t> breakable_edge_indices;
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
       fwd_bwd_sections;
 

@@ -1248,12 +1248,13 @@ void cda_rail::Network::change_vertex_type(size_t               index,
   vertices[index].type = new_type;
 }
 
-std::vector<std::pair<size_t, size_t>> cda_rail::Network::combine_reverse_edges(
+std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
+cda_rail::Network::combine_reverse_edges(
     const std::vector<size_t>& edges_to_consider, bool sort) const {
   /**
    * Given a vector of edges_to_consider, this function combines
    * edges_to_consider that are the reverse of each other. If no reverse of an
-   * edge exists, the second element will be -1, i.e., negative. A pair is only
+   * edge exists, the second element will be empty. A pair is only
    * added once, i.e., the first index is always smaller than the second for
    * uniqueness. The order of the edges_to_consider is not preserved. It throws
    * an error, if one of the edges_to_consider does not exist.
@@ -1272,12 +1273,12 @@ std::vector<std::pair<size_t, size_t>> cda_rail::Network::combine_reverse_edges(
   }
 
   // Initialize return value
-  std::vector<std::pair<size_t, size_t>> ret_val;
+  std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>> ret_val;
 
   // Iterate over all edges_to_consider
   for (const auto& edge_index : edges_to_consider) {
     const auto reverse_edge_index = get_reverse_edge_index(edge_index);
-    if (reverse_edge_index < 0 || reverse_edge_index > edge_index) {
+    if (!reverse_edge_index.has_value() || reverse_edge_index > edge_index) {
       ret_val.emplace_back(edge_index, reverse_edge_index);
     }
   }
@@ -1288,13 +1289,14 @@ std::vector<std::pair<size_t, size_t>> cda_rail::Network::combine_reverse_edges(
   return ret_val;
 }
 
-size_t cda_rail::Network::get_reverse_edge_index(size_t edge_index) const {
+std::optional<size_t>
+cda_rail::Network::get_reverse_edge_index(size_t edge_index) const {
   /**
-   * Gets the reverse index of an edge, -1 if it does not exist.
-   * Throws an error if the edge does not exist.
+   * Gets the reverse index of an edge. Empty if the reverse edge does not
+   * exist. Throws an error if the edge does not exist.
    *
    * @param edge: Index of the edge
-   * @return: Index of the reverse edge, -1 if it does not exist
+   * @return: Index of the reverse edge, empty if it does not exist
    */
 
   if (!has_edge(edge_index)) {
@@ -1305,7 +1307,7 @@ size_t cda_rail::Network::get_reverse_edge_index(size_t edge_index) const {
       has_edge(edge.target, edge.source)) {
     return get_edge_index(edge.target, edge.source);
   }
-  return -1;
+  return {};
 }
 
 std::vector<size_t>
@@ -1326,9 +1328,10 @@ cda_rail::Network::get_vertices_by_type(cda_rail::VertexType type) const {
   return ret_val;
 }
 
-std::optional<size_t>
-cda_rail::Network::common_vertex(const std::pair<size_t, size_t>& pair1,
-                                 const std::pair<size_t, size_t>& pair2) const {
+std::optional<size_t> cda_rail::Network::common_vertex(
+    const std::pair<std::optional<size_t>, std::optional<size_t>>& pair1,
+    const std::pair<std::optional<size_t>, std::optional<size_t>>& pair2)
+    const {
   /**
    * Returns the common vertex of two edge pairs, if it exists. Otherwise
    * optional is empty. Throws an error if the pairs are not reverse of each
@@ -1341,7 +1344,11 @@ cda_rail::Network::common_vertex(const std::pair<size_t, size_t>& pair1,
   // Initialize return value
   std::optional<size_t> ret_val;
 
-  if (!has_edge(pair1.first) || !has_edge(pair2.first)) {
+  if (!pair1.first.has_value() || !pair2.first.has_value()) {
+    throw std::invalid_argument("Pairs first entry is empty");
+  }
+
+  if (!has_edge(pair1.first.value()) || !has_edge(pair2.first.value())) {
     throw std::invalid_argument("Edge does not exist");
   }
 
@@ -1352,9 +1359,9 @@ cda_rail::Network::common_vertex(const std::pair<size_t, size_t>& pair1,
     throw std::invalid_argument("Second pair is not reverse of each other");
   }
 
-  const auto& edge1 = get_edge(pair1.first);
+  const auto& edge1 = get_edge(pair1.first.value());
 
-  if (const auto& edge2 = get_edge(pair2.first);
+  if (const auto& edge2 = get_edge(pair2.first.value());
       edge1.source == edge2.source || edge1.source == edge2.target) {
     ret_val = edge1.source;
   } else if (edge1.target == edge2.source || edge1.target == edge2.target) {
@@ -1364,8 +1371,10 @@ cda_rail::Network::common_vertex(const std::pair<size_t, size_t>& pair1,
   return ret_val;
 }
 
-std::vector<std::pair<size_t, size_t>> cda_rail::Network::sort_edge_pairs(
-    std::vector<std::pair<size_t, size_t>>& edge_pairs) const {
+std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
+cda_rail::Network::sort_edge_pairs(
+    std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
+        edge_pairs) const {
   /**
    * Sort a vector of edge pairs so that neighboring pairs are adjacent
    *
@@ -1374,7 +1383,10 @@ std::vector<std::pair<size_t, size_t>> cda_rail::Network::sort_edge_pairs(
 
   // Check if all edges exist
   for (const auto& edge_pair : edge_pairs) {
-    if (!has_edge(edge_pair.first)) {
+    if (!edge_pair.first.has_value()) {
+      throw std::invalid_argument("Edge pair first entry is empty");
+    }
+    if (!has_edge(edge_pair.first.value())) {
       throw std::invalid_argument("Edge does not exist");
     }
   }
@@ -1392,13 +1404,13 @@ std::vector<std::pair<size_t, size_t>> cda_rail::Network::sort_edge_pairs(
   // Count occurrences of vertices
   for (size_t i = 0; i < edge_pairs.size(); ++i) {
     const auto& edge_pair = edge_pairs[i];
-    const auto& edge      = get_edge(edge_pair.first);
+    const auto& edge      = get_edge(edge_pair.first.value());
     vertex_neighbors[edge.source].emplace(i);
     vertex_neighbors[edge.target].emplace(i);
   }
 
   // Initialize return value
-  std::vector<std::pair<size_t, size_t>> ret_val;
+  std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>> ret_val;
 
   // Find starting vertex
   size_t j = 0;
@@ -1423,7 +1435,7 @@ std::vector<std::pair<size_t, size_t>> cda_rail::Network::sort_edge_pairs(
     const auto  edge_pair_index = *vertex_neighbors[j].begin();
     const auto& edge_pair       = edge_pairs[edge_pair_index];
 
-    const auto& edge = get_edge(edge_pair.first);
+    const auto& edge = get_edge(edge_pair.first.value());
     vertex_neighbors[edge.source].erase(edge_pair_index);
     vertex_neighbors[edge.target].erase(edge_pair_index);
 

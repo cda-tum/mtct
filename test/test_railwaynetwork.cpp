@@ -6,6 +6,7 @@
 
 #include "gtest/gtest.h"
 #include <algorithm>
+#include <optional>
 
 using json = nlohmann::json;
 
@@ -213,8 +214,8 @@ TEST(Functionality, NetworkSections) {
                         no_border_vss_sections[0].end(),
                         v6_v5) != no_border_vss_sections[0].end());
 
-  const std::pair<int, int> pair1 = std::make_pair(v5_v6, v6_v5);
-  const std::pair<int, int> pair2 = std::make_pair(v6_v7, v7_v6);
+  const std::pair<size_t, size_t> pair1 = std::make_pair(v5_v6, v6_v5);
+  const std::pair<size_t, size_t> pair2 = std::make_pair(v6_v7, v7_v6);
   EXPECT_TRUE(network.common_vertex(pair1, pair2) ==
               network.get_vertex_index("v6"));
 
@@ -902,8 +903,9 @@ TEST(Functionality, SortPairs) {
   const auto& combined_edges = network.combine_reverse_edges(to_combine, true);
 
   // Check correctness
-  std::vector<std::pair<size_t, size_t>> expected_combined_edges = {
-      {v0_v1, v1_v0}, {v1_v2, v2_v1}, {v2_v3, -1}, {v3_v4, v4_v3}};
+  std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
+      expected_combined_edges = {
+          {v0_v1, v1_v0}, {v1_v2, v2_v1}, {v2_v3, {}}, {v3_v4, v4_v3}};
   EXPECT_EQ(combined_edges.size(), expected_combined_edges.size());
   size_t expected_index = 0;
   size_t expected_incr  = 1;
@@ -1396,27 +1398,30 @@ TEST(Functionality, ReverseIndices) {
 
   // Check if the reverse indices are correct
   EXPECT_EQ(network.get_reverse_edge_index(e12), e21);
-  EXPECT_EQ(network.get_reverse_edge_index(e23), -1);
+  EXPECT_EQ(network.get_reverse_edge_index(e23), std::optional<size_t>());
   EXPECT_EQ(network.get_reverse_edge_index(e34), e43);
   EXPECT_EQ(network.get_reverse_edge_index(e43), e34);
   EXPECT_EQ(network.get_reverse_edge_index(e21), e12);
 
-  std::vector edges          = {e12, e23, e34, e43, e21};
-  auto        edges_combined = network.combine_reverse_edges(edges);
+  const std::vector edges          = {e12, e23, e34, e43, e21};
+  const auto        edges_combined = network.combine_reverse_edges(edges);
   // Expect three edge sets
   EXPECT_EQ(edges_combined.size(), 3);
   // Expect the following pairs to exist: (min(e12, e21), max(e12, e21)), (e23,
   // -1), and (min(e34, e43), max(e34, e43))
   EXPECT_TRUE(
       std::find(edges_combined.begin(), edges_combined.end(),
-                std::make_pair(std::min(e12, e21), std::max(e12, e21))) !=
+                std::make_pair(std::optional<size_t>(std::min(e12, e21)),
+                               std::optional<size_t>(std::max(e12, e21)))) !=
       edges_combined.end());
   EXPECT_TRUE(std::find(edges_combined.begin(), edges_combined.end(),
-                        std::make_pair(e23, (size_t)-1)) !=
+                        std::make_pair(std::optional<size_t>(e23),
+                                       std::optional<size_t>())) !=
               edges_combined.end());
   EXPECT_TRUE(
       std::find(edges_combined.begin(), edges_combined.end(),
-                std::make_pair(std::min(e34, e43), std::max(e34, e43))) !=
+                std::make_pair(std::optional<size_t>(std::min(e34, e43)),
+                               std::optional<size_t>(std::max(e34, e43)))) !=
       edges_combined.end());
 }
 

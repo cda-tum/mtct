@@ -505,23 +505,23 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
               GRBLinExpr lhs = 2;
               if (tr1_route.contains_edge(
                       no_border_vss_section_sorted[e1].first)) {
-                lhs -=
-                    vars["x"](tr1, t, no_border_vss_section_sorted[e1].first);
+                lhs -= vars["x"](
+                    tr1, t, no_border_vss_section_sorted[e1].first.value());
               }
               if (tr1_route.contains_edge(
                       no_border_vss_section_sorted[e1].second)) {
-                lhs -=
-                    vars["x"](tr1, t, no_border_vss_section_sorted[e1].second);
+                lhs -= vars["x"](
+                    tr1, t, no_border_vss_section_sorted[e1].second.value());
               }
               if (tr2_route.contains_edge(
                       no_border_vss_section_sorted[e2].first)) {
-                lhs -=
-                    vars["x"](tr2, t, no_border_vss_section_sorted[e2].first);
+                lhs -= vars["x"](
+                    tr2, t, no_border_vss_section_sorted[e2].first.value());
               }
               if (tr2_route.contains_edge(
                       no_border_vss_section_sorted[e2].second)) {
-                lhs -=
-                    vars["x"](tr2, t, no_border_vss_section_sorted[e2].second);
+                lhs -= vars["x"](
+                    tr2, t, no_border_vss_section_sorted[e2].second.value());
               }
 
               // Overlapping vertices
@@ -551,9 +551,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                   lhs >= 1,
                   "vss_" + tr1_name + "_" + tr2_name + "_" + std::to_string(t) +
                       "_" +
-                      std::to_string(no_border_vss_section_sorted[e1].first) +
+                      std::to_string(
+                          no_border_vss_section_sorted[e1].first.value()) +
                       "_" +
-                      std::to_string(no_border_vss_section_sorted[e2].first));
+                      std::to_string(
+                          no_border_vss_section_sorted[e2].first.value()));
             }
           }
         }
@@ -768,23 +770,25 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   // Connect position of reverse edges
   for (const auto& e_pair : breakable_edges_pairs) {
-    if (e_pair.second < 0) {
+    if (!e_pair.second.has_value() || !e_pair.first.has_value()) {
       continue;
     }
-    const auto vss_number_e = instance.n().max_vss_on_edge(e_pair.first);
-    if (instance.n().max_vss_on_edge(e_pair.second) != vss_number_e) {
-      throw std::runtime_error("VSS number of edges " +
-                               std::to_string(e_pair.first) + " and " +
-                               std::to_string(e_pair.second) + " do not match");
+    const auto vss_number_e =
+        instance.n().max_vss_on_edge(e_pair.first.value());
+    if (instance.n().max_vss_on_edge(e_pair.second.value()) != vss_number_e) {
+      throw std::runtime_error(
+          "VSS number of edges " + std::to_string(e_pair.first.value()) +
+          " and " + std::to_string(e_pair.second.value()) + " do not match");
     }
-    const auto& e_len = instance.n().get_edge(e_pair.first).length;
+    const auto& e_len = instance.n().get_edge(e_pair.first.value()).length;
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       model->addConstr(
-          vars["b_pos"](breakable_edge_indices[e_pair.first], vss) +
-              vars["b_pos"](breakable_edge_indices[e_pair.second], vss),
+          vars["b_pos"](breakable_edge_indices[e_pair.first.value()], vss) +
+              vars["b_pos"](breakable_edge_indices[e_pair.second.value()], vss),
           GRB_EQUAL, e_len,
-          "b_pos_reverse_" + std::to_string(e_pair.first) + "_" +
-              std::to_string(vss) + "_" + std::to_string(e_pair.second) + "_" +
+          "b_pos_reverse_" + std::to_string(e_pair.first.value()) + "_" +
+              std::to_string(vss) + "_" +
+              std::to_string(e_pair.second.value()) + "_" +
               std::to_string(vss));
     }
   }
@@ -1066,10 +1070,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     bool bwd_found = false;
     for (size_t i = 0;
          i < vss_section_sorted.size() && !fwd_found && !bwd_found; ++i) {
-      if (vss_section_sorted[i].first != -1) {
+      if (vss_section_sorted[i].first.has_value()) {
         fwd_found = true;
       }
-      if (vss_section_sorted[i].second != -1) {
+      if (vss_section_sorted[i].second.has_value()) {
         bwd_found = true;
       }
     }
@@ -1078,11 +1082,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     }
     fwd_bwd_sections.emplace_back();
     for (const auto& e : vss_section_sorted) {
-      if (e.first != -1) {
-        fwd_bwd_sections.back().first.emplace_back(e.first);
+      if (e.first.has_value()) {
+        fwd_bwd_sections.back().first.emplace_back(e.first.value());
       }
-      if (e.second != -1) {
-        fwd_bwd_sections.back().second.emplace_back(e.second);
+      if (e.second.has_value()) {
+        fwd_bwd_sections.back().second.emplace_back(e.second.value());
       }
     }
   }
@@ -1091,12 +1095,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     calculate_fwd_bwd_sections_non_discretized() {
   for (const auto& edge_pair : breakable_edges_pairs) {
-    if (edge_pair.first == -1 || edge_pair.second == -1) {
+    if (!edge_pair.first.has_value() || !edge_pair.second.has_value()) {
       continue;
     }
     fwd_bwd_sections.emplace_back();
-    fwd_bwd_sections.back().first.emplace_back(edge_pair.first);
-    fwd_bwd_sections.back().second.emplace_back(edge_pair.second);
+    fwd_bwd_sections.back().first.emplace_back(edge_pair.first.value());
+    fwd_bwd_sections.back().second.emplace_back(edge_pair.second.value());
   }
 }
 

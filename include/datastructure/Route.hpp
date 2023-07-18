@@ -3,6 +3,7 @@
 #include "datastructure/Train.hpp"
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -64,6 +65,9 @@ public:
   [[nodiscard]] bool contains_edge(size_t edge_index) const {
     return std::find(edges.begin(), edges.end(), edge_index) != edges.end();
   };
+  [[nodiscard]] bool contains_edge(std::optional<size_t> edge_index) const {
+    return edge_index.has_value() && contains_edge(edge_index.value());
+  }
 
   [[nodiscard]] bool check_consistency(const cda_rail::Network& network) const;
 

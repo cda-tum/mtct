@@ -105,8 +105,10 @@ private:
            std::unordered_set<size_t>&              vertices_to_visit,
            const cda_rail::VertexType&              section_type,
            const std::vector<cda_rail::VertexType>& error_types) const;
-  std::vector<std::pair<size_t, size_t>>
-  sort_edge_pairs(std::vector<std::pair<size_t, size_t>>& edge_pairs) const;
+  std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
+  sort_edge_pairs(
+      std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
+          edge_pairs) const;
 
 public:
   // Constructors
@@ -312,13 +314,29 @@ public:
   [[nodiscard]] std::vector<size_t> relevant_breakable_edges() const;
   [[nodiscard]] std::vector<std::vector<size_t>> unbreakable_sections() const;
   [[nodiscard]] std::vector<std::vector<size_t>> no_border_vss_sections() const;
-  [[nodiscard]] std::vector<std::pair<size_t, size_t>>
+  [[nodiscard]] std::vector<
+      std::pair<std::optional<size_t>, std::optional<size_t>>>
   combine_reverse_edges(const std::vector<size_t>& edges_to_consider,
                         bool                       sort = false) const;
-  [[nodiscard]] size_t get_reverse_edge_index(size_t edge_index) const;
+  [[nodiscard]] std::optional<size_t>
+  get_reverse_edge_index(size_t edge_index) const;
+  [[nodiscard]] std::optional<size_t>
+  get_reverse_edge_index(std::optional<size_t> edge_index) const {
+    return edge_index.has_value() ? get_reverse_edge_index(edge_index.value())
+                                  : std::optional<size_t>();
+  }
+  [[nodiscard]] std::optional<size_t> common_vertex(
+      const std::pair<std::optional<size_t>, std::optional<size_t>>& pair1,
+      const std::pair<std::optional<size_t>, std::optional<size_t>>& pair2)
+      const;
   [[nodiscard]] std::optional<size_t>
   common_vertex(const std::pair<size_t, size_t>& pair1,
-                const std::pair<size_t, size_t>& pair2) const;
+                const std::pair<size_t, size_t>& pair2) const {
+    return common_vertex(std::make_pair(std::optional<size_t>(pair1.first),
+                                        std::optional<size_t>(pair1.second)),
+                         std::make_pair(std::optional<size_t>(pair2.first),
+                                        std::optional<size_t>(pair2.second)));
+  }
 
   [[nodiscard]] std::vector<size_t>
   inverse_edges(const std::vector<size_t>& edge_indices) const {
