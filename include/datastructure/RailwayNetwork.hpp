@@ -201,13 +201,13 @@ public:
   };
 
   [[nodiscard]] bool has_vertex(size_t index) const {
-    return (index >= 0 && index < vertices.size());
+    return (index < vertices.size());
   };
   [[nodiscard]] bool has_vertex(const std::string& name) const {
     return vertex_name_to_index.find(name) != vertex_name_to_index.end();
   };
   [[nodiscard]] bool has_edge(size_t index) const {
-    return (index >= 0 && index < edges.size());
+    return (index < edges.size());
   };
   [[nodiscard]] bool has_edge(size_t source_id, size_t target_id) const;
   [[nodiscard]] bool has_edge(const std::string& source_name,

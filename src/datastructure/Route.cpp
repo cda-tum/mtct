@@ -82,7 +82,7 @@ size_t cda_rail::Route::get_edge(size_t route_index) const {
    * @return The edge at the given index.
    */
 
-  if (route_index < 0 || route_index >= edges.size()) {
+  if (route_index >= edges.size()) {
     throw std::invalid_argument("Index out of range.");
   }
   return edges[route_index];
@@ -100,7 +100,7 @@ cda_rail::Route::get_edge(size_t                   route_index,
    * @return The edge at the given index.
    */
 
-  if (route_index < 0 || route_index >= edges.size()) {
+  if (route_index >= edges.size()) {
     throw std::invalid_argument("Index out of range.");
   }
   return network.get_edge(edges[route_index]);

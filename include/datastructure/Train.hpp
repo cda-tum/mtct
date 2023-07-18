@@ -75,7 +75,7 @@ public:
     return train_name_to_index.find(name) != train_name_to_index.end();
   };
   [[nodiscard]] bool has_train(size_t index) const {
-    return (index >= 0 && index < trains.size());
+    return (index < trains.size());
   };
 
   void export_trains(const std::string& path) const {
