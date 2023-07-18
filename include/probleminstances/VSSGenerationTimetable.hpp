@@ -36,14 +36,14 @@ public:
   [[nodiscard]] cda_rail::Network& n() { return network; };
 
   // Timetable functions
-  size_t add_train(const std::string& name, double length, double max_speed,
+  size_t add_train(const std::string& name, int length, double max_speed,
                    double acceleration, double deceleration, int t_0,
                    double v_0, size_t entry, int t_n, double v_n, size_t exit) {
     return timetable.add_train(name, length, max_speed, acceleration,
                                deceleration, t_0, v_0, entry, t_n, v_n, exit,
                                network);
   };
-  size_t add_train(const std::string& name, double length, double max_speed,
+  size_t add_train(const std::string& name, int length, double max_speed,
                    double acceleration, double deceleration, int t_0,
                    double v_0, const std::string& entry, int t_n, double v_n,
                    const std::string& exit) {
