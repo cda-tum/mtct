@@ -1731,10 +1731,10 @@ TEST(Functionality, ReadTrains) {
 
 TEST(Functionality, WriteTrains) {
   // Create a train list
-  auto      trains    = cda_rail::TrainList();
-  const int tr1_index = trains.add_train("tr1", 100, 83.33, 2, 1);
-  const int tr2_index = trains.add_train("tr2", 100, 27.78, 2, 1);
-  const int tr3_index = trains.add_train("tr3", 250, 20, 2, 1);
+  auto       trains    = cda_rail::TrainList();
+  const auto tr1_index = trains.add_train("tr1", 100, 83.33, 2, 1);
+  const auto tr2_index = trains.add_train("tr2", 100, 27.78, 2, 1);
+  const auto tr3_index = trains.add_train("tr3", 250, 20, 2, 1);
 
   // check the train indices
   EXPECT_EQ(trains.get_train_index("tr1"), tr1_index);
