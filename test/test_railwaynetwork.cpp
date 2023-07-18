@@ -226,9 +226,9 @@ TEST(Functionality, NetworkSections) {
   EXPECT_EQ(unbreakable_sections.size(), 3);
   // One section should contain v0_v1, one should contain v20_v30, and one
   // should contain v4_v5
-  int s0 = -1;
-  int s1 = -1;
-  int s2 = -1;
+  std::optional<size_t> s0;
+  std::optional<size_t> s1;
+  std::optional<size_t> s2;
   for (size_t i = 0; i < unbreakable_sections.size(); i++) {
     if (std::find(unbreakable_sections[i].begin(),
                   unbreakable_sections[i].end(),
@@ -247,6 +247,9 @@ TEST(Functionality, NetworkSections) {
     }
   }
   // s0, s1 and s2 should be all different and within [0, 2]
+  EXPECT_TRUE(s0.has_value());
+  EXPECT_TRUE(s1.has_value());
+  EXPECT_TRUE(s2.has_value());
   EXPECT_NE(s0, s1);
   EXPECT_NE(s0, s2);
   EXPECT_NE(s1, s2);
@@ -257,42 +260,46 @@ TEST(Functionality, NetworkSections) {
   EXPECT_LE(s1, 2);
   EXPECT_LE(s2, 2);
 
+  const auto s0_val = s0.value();
+  const auto s1_val = s1.value();
+  const auto s2_val = s2.value();
+
   // Section s0 should contain 5 edges, namely v0 -> v1, v1 -> v20, v31 -> v21,
   // v21 -> v1, v1 -> v0
-  EXPECT_EQ(unbreakable_sections[s0].size(), 5);
-  EXPECT_TRUE(std::find(unbreakable_sections[s0].begin(),
-                        unbreakable_sections[s0].end(),
-                        v0_v1) != unbreakable_sections[s0].end());
-  EXPECT_TRUE(std::find(unbreakable_sections[s0].begin(),
-                        unbreakable_sections[s0].end(),
-                        v1_v20) != unbreakable_sections[s0].end());
-  EXPECT_TRUE(std::find(unbreakable_sections[s0].begin(),
-                        unbreakable_sections[s0].end(),
-                        v31_v21) != unbreakable_sections[s0].end());
-  EXPECT_TRUE(std::find(unbreakable_sections[s0].begin(),
-                        unbreakable_sections[s0].end(),
-                        v21_v1) != unbreakable_sections[s0].end());
-  EXPECT_TRUE(std::find(unbreakable_sections[s0].begin(),
-                        unbreakable_sections[s0].end(),
-                        v1_v0) != unbreakable_sections[s0].end());
+  EXPECT_EQ(unbreakable_sections[s0_val].size(), 5);
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v0_v1) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v1_v20) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v31_v21) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v21_v1) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v1_v0) != unbreakable_sections[s0_val].end());
 
   // Section s1 should contain 2 edges, namely v20 -> v30 -> v4
-  EXPECT_EQ(unbreakable_sections[s1].size(), 2);
-  EXPECT_TRUE(std::find(unbreakable_sections[s1].begin(),
-                        unbreakable_sections[s1].end(),
-                        v20_v30) != unbreakable_sections[s1].end());
-  EXPECT_TRUE(std::find(unbreakable_sections[s1].begin(),
-                        unbreakable_sections[s1].end(),
-                        v30_v4) != unbreakable_sections[s1].end());
+  EXPECT_EQ(unbreakable_sections[s1_val].size(), 2);
+  EXPECT_TRUE(std::find(unbreakable_sections[s1_val].begin(),
+                        unbreakable_sections[s1_val].end(),
+                        v20_v30) != unbreakable_sections[s1_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s1_val].begin(),
+                        unbreakable_sections[s1_val].end(),
+                        v30_v4) != unbreakable_sections[s1_val].end());
 
   // Section s2 should contain 2 edges, namely v4 -> v5 and the reverse
-  EXPECT_EQ(unbreakable_sections[s2].size(), 2);
-  EXPECT_TRUE(std::find(unbreakable_sections[s2].begin(),
-                        unbreakable_sections[s2].end(),
-                        v4_v5) != unbreakable_sections[s2].end());
-  EXPECT_TRUE(std::find(unbreakable_sections[s2].begin(),
-                        unbreakable_sections[s2].end(),
-                        v5_v4) != unbreakable_sections[s2].end());
+  EXPECT_EQ(unbreakable_sections[s2_val].size(), 2);
+  EXPECT_TRUE(std::find(unbreakable_sections[s2_val].begin(),
+                        unbreakable_sections[s2_val].end(),
+                        v4_v5) != unbreakable_sections[s2_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s2_val].begin(),
+                        unbreakable_sections[s2_val].end(),
+                        v5_v4) != unbreakable_sections[s2_val].end());
 }
 
 TEST(Functionality, NetworkConsistency) {
