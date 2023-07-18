@@ -85,7 +85,7 @@ private:
   void export_graphml(const std::filesystem::path& p) const;
   void export_successors_python(const std::filesystem::path& p) const;
   void export_successors_cpp(const std::filesystem::path& p) const;
-  void write_successor_set_to_file(std::ofstream& file, int i) const;
+  void write_successor_set_to_file(std::ofstream& file, size_t i) const;
 
   std::pair<std::vector<size_t>, std::vector<size_t>>
   separate_edge_at(size_t                     edge_index,

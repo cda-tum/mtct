@@ -66,7 +66,7 @@ public:
     timetable.add_track_to_station(name, source, target, network);
   };
 
-  void add_stop(int train_index, const std::string& station_name, int begin,
+  void add_stop(size_t train_index, const std::string& station_name, int begin,
                 int end, bool sort = true) {
     timetable.add_stop(train_index, station_name, begin, end, sort);
   };
@@ -81,7 +81,7 @@ public:
   [[nodiscard]] const cda_rail::TrainList& get_train_list() const {
     return timetable.get_train_list();
   };
-  [[nodiscard]] const Schedule& get_schedule(int index) const {
+  [[nodiscard]] const Schedule& get_schedule(size_t index) const {
     return timetable.get_schedule(index);
   };
   [[nodiscard]] const Schedule&
@@ -90,7 +90,7 @@ public:
   };
 
   [[nodiscard]] int                 max_t() const { return timetable.max_t(); };
-  [[nodiscard]] std::pair<int, int> time_interval(int train_index) const {
+  [[nodiscard]] std::pair<int, int> time_interval(size_t train_index) const {
     return timetable.time_interval(train_index);
   };
   [[nodiscard]] std::pair<int, int>

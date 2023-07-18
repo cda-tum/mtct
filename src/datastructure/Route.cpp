@@ -191,7 +191,7 @@ cda_rail::Route::edge_pos(size_t edge, const cda_rail::Network& network) const {
   // Initialize return values
   std::pair<double, double> return_pos = {0, 0};
   bool                      edge_found = false;
-  for (const int i : edges) {
+  for (const auto i : edges) {
     return_pos.second += network.get_edge(i).length;
     if (i == edge) {
       edge_found = true;

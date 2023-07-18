@@ -217,10 +217,10 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
     std::string source_name;
     std::string target_name;
     cda_rail::Network::extract_vertices_from_key(key, source_name, target_name);
-    int const edge_id_in = get_edge_index(source_name, target_name);
+    auto const edge_id_in = get_edge_index(source_name, target_name);
     for (auto& tuple : val) {
-      int const edge_id_out = get_edge_index(tuple[0].get<std::string>(),
-                                             tuple[1].get<std::string>());
+      auto const edge_id_out = get_edge_index(tuple[0].get<std::string>(),
+                                              tuple[1].get<std::string>());
       add_successor(edge_id_in, edge_id_out);
     }
   }
@@ -582,7 +582,7 @@ void cda_rail::Network::export_successors_python(
 }
 
 void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,
-                                                    int            i) const {
+                                                    size_t         i) const {
   /**
    * Write the successor set to the given file.
    * @param file: The file to write to.
@@ -938,7 +938,7 @@ cda_rail::Network::uniform_separate_edge(size_t edge_index) {
 
   // Calculate distances
   std::vector<double> distances_from_source;
-  for (size_t i = 1; i < number_of_blocks; ++i) {
+  for (int i = 1; i < number_of_blocks; ++i) {
     distances_from_source.emplace_back(i * (edge.length / number_of_blocks));
   }
 

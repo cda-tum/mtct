@@ -34,7 +34,7 @@ size_t cda_rail::Timetable::add_train(const std::string& name, int length,
   if (train_list.has_train(name)) {
     throw std::invalid_argument("Train already exists.");
   }
-  int const index =
+  auto const index =
       train_list.add_train(name, length, max_speed, acceleration, deceleration);
   schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
   return index;
@@ -269,7 +269,8 @@ int cda_rail::Timetable::max_t() const {
   return ret;
 }
 
-std::pair<int, int> cda_rail::Timetable::time_interval(int train_index) const {
+std::pair<int, int>
+cda_rail::Timetable::time_interval(size_t train_index) const {
   /**
    * This method returns the time interval of a train schedule, i.e., the time
    * at which it enters the network and the time at which it leaves the network.
