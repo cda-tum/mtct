@@ -20,14 +20,14 @@ struct EdgeTarget {
 
 TEST(Functionality, NetworkFunctions) {
   cda_rail::Network network;
-  const int v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
-  const int v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
-  const int v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
 
-  const int e0 = network.add_edge("v0", "v1", 1, 2, false, 0);
-  const int e1 = network.add_edge("v1", "v2", 3, 4, true, 1.5);
-  const int e2 = network.add_edge("v1", "v0", 1, 2, false, 0);
-  const int e3 = network.add_edge("v2", "v0", 10, 20, true, 2);
+  const auto e0 = network.add_edge("v0", "v1", 1, 2, false, 0);
+  const auto e1 = network.add_edge("v1", "v2", 3, 4, true, 1.5);
+  const auto e2 = network.add_edge("v1", "v0", 1, 2, false, 0);
+  const auto e3 = network.add_edge("v2", "v0", 10, 20, true, 2);
 
   network.add_successor(network.get_edge_index("v0", "v1"),
                         network.get_edge_index("v1", "v2"));
@@ -175,23 +175,23 @@ TEST(Functionality, NetworkSections) {
 
   // Add edges v0 -> v1 -> v20 -> v30 -> v4 -> v5 -> v6 -> v7
   // All unbreakable other properties not relevant
-  const int v0_v1   = network.add_edge("v0", "v1", 1, 1, false);
-  const int v1_v20  = network.add_edge("v1", "v20", 1, 1, false);
-  const int v20_v30 = network.add_edge("v20", "v30", 1, 1, false);
-  const int v30_v4  = network.add_edge("v30", "v4", 1, 1, false);
-  const int v4_v5   = network.add_edge("v4", "v5", 1, 1, false);
-  const int v5_v6   = network.add_edge("v5", "v6", 1, 1, false);
-  const int v6_v7   = network.add_edge("v6", "v7", 1, 1, false);
+  const auto v0_v1   = network.add_edge("v0", "v1", 1, 1, false);
+  const auto v1_v20  = network.add_edge("v1", "v20", 1, 1, false);
+  const auto v20_v30 = network.add_edge("v20", "v30", 1, 1, false);
+  const auto v30_v4  = network.add_edge("v30", "v4", 1, 1, false);
+  const auto v4_v5   = network.add_edge("v4", "v5", 1, 1, false);
+  const auto v5_v6   = network.add_edge("v5", "v6", 1, 1, false);
+  const auto v6_v7   = network.add_edge("v6", "v7", 1, 1, false);
 
   // Add edges v7 -> v6 -> v5 -> v4 -> v31 -> v21 -> v1 -> v0
   // v4 -> v31 breakable, all other unbreakable
-  const int v7_v6 = network.add_edge("v7", "v6", 1, 1, false);
-  const int v6_v5 = network.add_edge("v6", "v5", 1, 1, false);
-  const int v5_v4 = network.add_edge("v5", "v4", 1, 1, false);
+  const auto v7_v6 = network.add_edge("v7", "v6", 1, 1, false);
+  const auto v6_v5 = network.add_edge("v6", "v5", 1, 1, false);
+  const auto v5_v4 = network.add_edge("v5", "v4", 1, 1, false);
   network.add_edge("v4", "v31", 1, 1, true);
-  const int v31_v21 = network.add_edge("v31", "v21", 1, 1, false);
-  const int v21_v1  = network.add_edge("v21", "v1", 1, 1, false);
-  const int v1_v0   = network.add_edge("v1", "v0", 1, 1, false);
+  const auto v31_v21 = network.add_edge("v31", "v21", 1, 1, false);
+  const auto v21_v1  = network.add_edge("v21", "v1", 1, 1, false);
+  const auto v1_v0   = network.add_edge("v1", "v0", 1, 1, false);
 
   auto no_border_vss_sections = network.no_border_vss_sections();
 
@@ -627,11 +627,11 @@ TEST(Functionality, NetworkEdgeSeparation) {
   network.add_vertex("v31", cda_rail::VertexType::TTD);
 
   // Add edges
-  const int v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
-  const int v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
-  const int v1_v2  = network.add_edge("v1", "v2", 44, 100, true, 10);
-  const int v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
-  const int v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
+  const auto v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
+  const auto v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
+  const auto v1_v2  = network.add_edge("v1", "v2", 44, 100, true, 10);
+  const auto v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
+  const auto v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
 
   // Add successors
   network.add_successor(v00_v1, v1_v2);
@@ -886,13 +886,13 @@ TEST(Functionality, SortPairs) {
   network.add_vertex("v5", cda_rail::VertexType::TTD);
 
   // Add edges
-  auto v0_v1 = network.add_edge("v0", "v1", 100, 100, false);
-  auto v2_v1 = network.add_edge("v2", "v1", 100, 100, false);
-  auto v1_v0 = network.add_edge("v1", "v0", 100, 100, false);
-  auto v1_v2 = network.add_edge("v1", "v2", 100, 100, false);
-  auto v2_v3 = network.add_edge("v2", "v3", 100, 100, false);
-  auto v3_v4 = network.add_edge("v3", "v4", 100, 100, false);
-  auto v4_v3 = network.add_edge("v4", "v3", 100, 100, false);
+  const auto v0_v1 = network.add_edge("v0", "v1", 100, 100, false);
+  const auto v2_v1 = network.add_edge("v2", "v1", 100, 100, false);
+  const auto v1_v0 = network.add_edge("v1", "v0", 100, 100, false);
+  const auto v1_v2 = network.add_edge("v1", "v2", 100, 100, false);
+  const auto v2_v3 = network.add_edge("v2", "v3", 100, 100, false);
+  const auto v3_v4 = network.add_edge("v3", "v4", 100, 100, false);
+  const auto v4_v3 = network.add_edge("v4", "v3", 100, 100, false);
   network.add_edge("v4", "v5", 100, 100, false);
   network.add_edge("v5", "v4", 100, 100, false);
 
@@ -928,17 +928,17 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
   network.add_vertex("v31", cda_rail::VertexType::TTD);
 
   // Add edges
-  const int v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
-  const int v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
-  const int v1_v2  = network.add_edge("v1", "v2", 44, 100, true, 10);
-  const int v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
-  const int v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
+  const auto v00_v1 = network.add_edge("v00", "v1", 100, 100, false);
+  const auto v01_v1 = network.add_edge("v01", "v1", 100, 100, false);
+  const auto v1_v2  = network.add_edge("v1", "v2", 44, 100, true, 10);
+  const auto v2_v30 = network.add_edge("v2", "v30", 100, 100, false);
+  const auto v2_v31 = network.add_edge("v2", "v31", 100, 100, false);
   // Add reverse edges
-  const int v1_v00 = network.add_edge("v1", "v00", 100, 100, false);
-  const int v1_v01 = network.add_edge("v1", "v01", 100, 100, false);
-  const int v2_v1  = network.add_edge("v2", "v1", 44, 100, true, 10);
-  const int v30_v2 = network.add_edge("v30", "v2", 100, 100, false);
-  const int v31_v2 = network.add_edge("v31", "v2", 100, 100, false);
+  const auto v1_v00 = network.add_edge("v1", "v00", 100, 100, false);
+  const auto v1_v01 = network.add_edge("v1", "v01", 100, 100, false);
+  const auto v2_v1  = network.add_edge("v2", "v1", 44, 100, true, 10);
+  const auto v30_v2 = network.add_edge("v30", "v2", 100, 100, false);
+  const auto v31_v2 = network.add_edge("v31", "v2", 100, 100, false);
 
   // Add successors
   network.add_successor(v00_v1, v1_v2);
@@ -1340,16 +1340,16 @@ TEST(Functionality, NetworkVerticesByType) {
   cda_rail::Network network;
   // Add vertices of each type NoBorder (1x), TTD (2x), VSS (3x), NoBorderVSS
   // (4x)
-  auto v1  = network.add_vertex("v1", cda_rail::VertexType::NoBorder);
-  auto v2  = network.add_vertex("v2", cda_rail::VertexType::TTD);
-  auto v3  = network.add_vertex("v3", cda_rail::VertexType::TTD);
-  auto v4  = network.add_vertex("v4", cda_rail::VertexType::VSS);
-  auto v5  = network.add_vertex("v5", cda_rail::VertexType::VSS);
-  auto v6  = network.add_vertex("v6", cda_rail::VertexType::VSS);
-  auto v7  = network.add_vertex("v7", cda_rail::VertexType::NoBorderVSS);
-  auto v8  = network.add_vertex("v8", cda_rail::VertexType::NoBorderVSS);
-  auto v9  = network.add_vertex("v9", cda_rail::VertexType::NoBorderVSS);
-  auto v10 = network.add_vertex("v10", cda_rail::VertexType::NoBorderVSS);
+  const auto v1  = network.add_vertex("v1", cda_rail::VertexType::NoBorder);
+  const auto v2  = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3  = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v4  = network.add_vertex("v4", cda_rail::VertexType::VSS);
+  const auto v5  = network.add_vertex("v5", cda_rail::VertexType::VSS);
+  const auto v6  = network.add_vertex("v6", cda_rail::VertexType::VSS);
+  const auto v7  = network.add_vertex("v7", cda_rail::VertexType::NoBorderVSS);
+  const auto v8  = network.add_vertex("v8", cda_rail::VertexType::NoBorderVSS);
+  const auto v9  = network.add_vertex("v9", cda_rail::VertexType::NoBorderVSS);
+  const auto v10 = network.add_vertex("v10", cda_rail::VertexType::NoBorderVSS);
 
   // Check if the vertices are in the correct sets
   auto no_border = network.get_vertices_by_type(cda_rail::VertexType::NoBorder);
@@ -1388,11 +1388,11 @@ TEST(Functionality, ReverseIndices) {
   network.add_vertex("v3", cda_rail::VertexType::TTD);
   network.add_vertex("v4", cda_rail::VertexType::TTD);
 
-  auto e12 = network.add_edge("v1", "v2", 100, 10, false);
-  auto e23 = network.add_edge("v2", "v3", 100, 10, false);
-  auto e34 = network.add_edge("v3", "v4", 100, 10, false);
-  auto e43 = network.add_edge("v4", "v3", 100, 10, false);
-  auto e21 = network.add_edge("v2", "v1", 100, 10, false);
+  const auto e12 = network.add_edge("v1", "v2", 100, 10, false);
+  const auto e23 = network.add_edge("v2", "v3", 100, 10, false);
+  const auto e34 = network.add_edge("v3", "v4", 100, 10, false);
+  const auto e43 = network.add_edge("v4", "v3", 100, 10, false);
+  const auto e21 = network.add_edge("v2", "v1", 100, 10, false);
 
   // Check if the reverse indices are correct
   EXPECT_EQ(network.get_reverse_edge_index(e12), e21);
@@ -1462,23 +1462,23 @@ TEST(Functionality, FloydWarshall) {
 
   // Add the following edges
   // v1 v2 of length 100
-  const int v1_v2 = network.add_edge("v1", "v2", 100, 10, false);
+  const auto v1_v2 = network.add_edge("v1", "v2", 100, 10, false);
   // v2 v3 in both directions of length 200
-  const int v2_v3 = network.add_edge("v2", "v3", 200, 10, false);
-  const int v3_v2 = network.add_edge("v3", "v2", 200, 10, false);
+  const auto v2_v3 = network.add_edge("v2", "v3", 200, 10, false);
+  const auto v3_v2 = network.add_edge("v3", "v2", 200, 10, false);
   // v3 v4 in both directions of length 300
-  const int v3_v4 = network.add_edge("v3", "v4", 300, 10, false);
-  const int v4_v3 = network.add_edge("v4", "v3", 300, 10, false);
+  const auto v3_v4 = network.add_edge("v3", "v4", 300, 10, false);
+  const auto v4_v3 = network.add_edge("v4", "v3", 300, 10, false);
   // v4 v5 in both directions of length 400
-  const int v4_v5 = network.add_edge("v4", "v5", 400, 10, false);
-  const int v5_v4 = network.add_edge("v5", "v4", 400, 10, false);
+  const auto v4_v5 = network.add_edge("v4", "v5", 400, 10, false);
+  const auto v5_v4 = network.add_edge("v5", "v4", 400, 10, false);
   // v4 v1 of length 500
-  const int v4_v1 = network.add_edge("v4", "v1", 500, 10, false);
+  const auto v4_v1 = network.add_edge("v4", "v1", 500, 10, false);
   // v3 v5 of length 500
-  const int v3_v5 = network.add_edge("v3", "v5", 500, 10, false);
+  const auto v3_v5 = network.add_edge("v3", "v5", 500, 10, false);
   // v5 v6 in both directions of length 1000
-  const int v5_v6 = network.add_edge("v5", "v6", 1000, 10, false);
-  const int v6_v5 = network.add_edge("v6", "v5", 1000, 10, false);
+  const auto v5_v6 = network.add_edge("v5", "v6", 1000, 10, false);
+  const auto v6_v5 = network.add_edge("v6", "v5", 1000, 10, false);
 
   // Add successor edges
   network.add_successor(v1_v2, v2_v3);

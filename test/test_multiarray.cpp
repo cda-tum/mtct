@@ -4,7 +4,7 @@
 #include <iostream>
 
 TEST(Functionality, MultiArray) {
-  cda_rail::MultiArray<int> a1(1, 2, 3);
+  cda_rail::MultiArray<size_t> a1(1, 2, 3);
 
   // Set elements
   for (size_t i = 0; i < 1; ++i) {

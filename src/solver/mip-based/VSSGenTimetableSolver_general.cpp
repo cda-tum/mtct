@@ -253,10 +253,10 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       time_left = 1;
     }
     if (time_limit > 0) {
-      model->set(GRB_DoubleParam_TimeLimit, time_left);
+      model->set(GRB_DoubleParam_TimeLimit, (double)time_left);
     }
     if (debug) {
-      std::cout << "Model created in " << (create_time / 1000.0) << " s"
+      std::cout << "Model created in " << ((double)create_time / 1000.0) << " s"
                 << std::endl;
       std::cout << "Time left: ";
       if (time_limit > 0) {
@@ -280,9 +280,9 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     solve_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
                      model_solved - model_created)
                      .count();
-    std::cout << "Model created in " << (create_time / 1000.0) << " s"
+    std::cout << "Model created in " << ((double)create_time / 1000.0) << " s"
               << std::endl;
-    std::cout << "Model solved in " << (solve_time / 1000.0) << " s"
+    std::cout << "Model solved in " << ((double)solve_time / 1000.0) << " s"
               << std::endl;
   }
 
@@ -297,7 +297,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     return -1;
   }
 
-  int const obj_val = round(model->get(GRB_DoubleAttr_ObjVal));
+  int const obj_val = (int)round(model->get(GRB_DoubleAttr_ObjVal));
   if (debug) {
     std::cout << "Objective: " << obj_val << std::endl;
   }
@@ -531,7 +531,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                       "No common vertex found, this should not have happened");
                 }
                 // Find index of v_overlap in no_border_vss_vertices
-                int const v_overlap_index =
+                auto const v_overlap_index =
                     std::find(no_border_vss_vertices.begin(),
                               no_border_vss_vertices.end(), v_overlap.value()) -
                     no_border_vss_vertices.begin();
@@ -919,7 +919,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       auto const ypts = std::make_unique<double[]>(n + 1);
       // NOLINTEND(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
       for (size_t i = 0; i <= n; ++i) {
-        xpts[i] = i * tr_max_speed / n;
+        xpts[i] = (double)i * tr_max_speed / n;
         ypts[i] = xpts[i] * xpts[i] / (2 * tr_deceleration);
       }
       for (int t = train_interval[tr].first; t <= train_interval[tr].second;

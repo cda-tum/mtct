@@ -834,44 +834,50 @@ TEST(Example, Stammstrecke) {
   cda_rail::instances::VSSGenerationTimetable instance;
 
   // Pasing -> Laim
-  int pasing_entry =
+  const auto pasing_entry =
       instance.n().add_vertex("PasingEntry", cda_rail::VertexType::TTD);
-  int pasing_exit =
+  const auto pasing_exit =
       instance.n().add_vertex("PasingExit", cda_rail::VertexType::TTD);
-  int pasing_switch_1 =
+  const auto pasing_switch_1 =
       instance.n().add_vertex("PasingSwitch1", cda_rail::VertexType::TTD);
-  int pasing_switch_2 =
+  const auto pasing_switch_2 =
       instance.n().add_vertex("PasingSwitch2", cda_rail::VertexType::TTD);
-  int laim_1l = instance.n().add_vertex("Laim1L", cda_rail::VertexType::TTD);
-  int laim_3l = instance.n().add_vertex("Laim3L", cda_rail::VertexType::TTD);
-  int laim_1r = instance.n().add_vertex("Laim1R", cda_rail::VertexType::TTD);
-  int laim_entry =
+  const auto laim_1l =
+      instance.n().add_vertex("Laim1L", cda_rail::VertexType::TTD);
+  const auto laim_3l =
+      instance.n().add_vertex("Laim3L", cda_rail::VertexType::TTD);
+  const auto laim_1r =
+      instance.n().add_vertex("Laim1R", cda_rail::VertexType::TTD);
+  const auto laim_entry =
       instance.n().add_vertex("LaimEntry", cda_rail::VertexType::TTD);
-  int laim_3r = instance.n().add_vertex("Laim3R", cda_rail::VertexType::TTD);
-  int laim_switch_nymphenburg = instance.n().add_vertex(
+  const auto laim_3r =
+      instance.n().add_vertex("Laim3R", cda_rail::VertexType::TTD);
+  const auto laim_switch_nymphenburg = instance.n().add_vertex(
       "LaimSwitchNymphenburg", cda_rail::VertexType::TTD);
-  int laim_exit_nymphenburg =
+  const auto laim_exit_nymphenburg =
       instance.n().add_vertex("LaimExitNymphenburg", cda_rail::VertexType::TTD);
 
-  int e1lr = instance.n().add_edge(pasing_entry, pasing_switch_1, 280,
-                                   120 / 3.6, true, 50);
-  int e1rl = instance.n().add_edge(pasing_switch_2, pasing_exit, 160, 120 / 3.6,
-                                   true, 50);
-  int e2lr = instance.n().add_edge(pasing_switch_1, laim_1l, 2812, 120 / 3.6,
-                                   true, 50);
-  int e2rl = instance.n().add_edge(laim_switch_nymphenburg, pasing_switch_2,
-                                   2562, 120 / 3.6, true, 50);
-  int e3rl = instance.n().add_edge(laim_3l, laim_switch_nymphenburg, 370,
-                                   120 / 3.6, true, 50);
-  int e2rl_exit = instance.n().add_edge(
+  const auto e1lr = instance.n().add_edge(pasing_entry, pasing_switch_1, 280,
+                                          120 / 3.6, true, 50);
+  const auto e1rl = instance.n().add_edge(pasing_switch_2, pasing_exit, 160,
+                                          120 / 3.6, true, 50);
+  const auto e2lr = instance.n().add_edge(pasing_switch_1, laim_1l, 2812,
+                                          120 / 3.6, true, 50);
+  const auto e2rl = instance.n().add_edge(
+      laim_switch_nymphenburg, pasing_switch_2, 2562, 120 / 3.6, true, 50);
+  const auto e3rl = instance.n().add_edge(laim_3l, laim_switch_nymphenburg, 370,
+                                          120 / 3.6, true, 50);
+  const auto e2rl_exit = instance.n().add_edge(
       laim_switch_nymphenburg, laim_exit_nymphenburg, 30, 100 / 3.6, false, 50);
-  int e3lr = instance.n().add_edge(laim_1l, laim_1r, 210, 120 / 3.6, true, 25);
-  int e4rl = instance.n().add_edge(laim_3r, laim_3l, 210, 120 / 3.6, true, 25);
+  const auto e3lr =
+      instance.n().add_edge(laim_1l, laim_1r, 210, 120 / 3.6, true, 25);
+  const auto e4rl =
+      instance.n().add_edge(laim_3r, laim_3l, 210, 120 / 3.6, true, 25);
 
-  int switch_e1 = instance.n().add_edge(pasing_switch_1, pasing_switch_2, 120,
-                                        80 / 3.6, false, 50);
-  int switch_e2 = instance.n().add_edge(pasing_switch_2, pasing_switch_1, 120,
-                                        80 / 3.6, false, 50);
+  const auto switch_e1 = instance.n().add_edge(pasing_switch_1, pasing_switch_2,
+                                               120, 80 / 3.6, false, 50);
+  const auto switch_e2 = instance.n().add_edge(pasing_switch_2, pasing_switch_1,
+                                               120, 80 / 3.6, false, 50);
   instance.n().add_successor(switch_e1, e1rl);
   instance.n().add_successor(switch_e2, e2lr);
 
@@ -887,29 +893,29 @@ TEST(Example, Stammstrecke) {
   instance.add_track_to_station("Laim", e4rl);
 
   // Laim -> Hirschgarten
-  int laim_switch_hirschgarten = instance.n().add_vertex(
+  const auto laim_switch_hirschgarten = instance.n().add_vertex(
       "LaimSwitchHirschgarten", cda_rail::VertexType::TTD);
-  int hirschgarten_1l =
+  const auto hirschgarten_1l =
       instance.n().add_vertex("Hirschgarten1L", cda_rail::VertexType::TTD);
-  int hirschgarten_2l =
+  const auto hirschgarten_2l =
       instance.n().add_vertex("Hirschgarten2L", cda_rail::VertexType::TTD);
-  int hirschgarten_1r =
+  const auto hirschgarten_1r =
       instance.n().add_vertex("Hirschgarten1R", cda_rail::VertexType::TTD);
-  int hirschgarten_2r =
+  const auto hirschgarten_2r =
       instance.n().add_vertex("Hirschgarten2R", cda_rail::VertexType::TTD);
 
-  int e4lr       = instance.n().add_edge(laim_1r, laim_switch_hirschgarten, 200,
-                                         100 / 3.6, true, 50);
-  int e4lr_entry = instance.n().add_edge(laim_entry, laim_switch_hirschgarten,
-                                         200, 100 / 3.6, true, 50);
-  int e5lr = instance.n().add_edge(laim_switch_hirschgarten, hirschgarten_1l,
-                                   692, 100 / 3.6, true, 50);
-  int e6lr = instance.n().add_edge(hirschgarten_1l, hirschgarten_1r, 205,
-                                   100 / 3.6, true, 25);
-  int e5rl =
+  const auto e4lr = instance.n().add_edge(laim_1r, laim_switch_hirschgarten,
+                                          200, 100 / 3.6, true, 50);
+  const auto e4lr_entry = instance.n().add_edge(
+      laim_entry, laim_switch_hirschgarten, 200, 100 / 3.6, true, 50);
+  const auto e5lr = instance.n().add_edge(
+      laim_switch_hirschgarten, hirschgarten_1l, 692, 100 / 3.6, true, 50);
+  const auto e6lr = instance.n().add_edge(hirschgarten_1l, hirschgarten_1r, 205,
+                                          100 / 3.6, true, 25);
+  const auto e5rl =
       instance.n().add_edge(hirschgarten_2l, laim_3r, 892, 100 / 3.6, true, 50);
-  int e6rl = instance.n().add_edge(hirschgarten_2r, hirschgarten_2l, 205,
-                                   100 / 3.6, true, 25);
+  const auto e6rl = instance.n().add_edge(hirschgarten_2r, hirschgarten_2l, 205,
+                                          100 / 3.6, true, 25);
 
   instance.n().add_successor(e3lr, e4lr);
   instance.n().add_successor(e5rl, e4rl);
@@ -924,23 +930,23 @@ TEST(Example, Stammstrecke) {
   instance.add_track_to_station("Hirschgarten", e6rl);
 
   // Hirschgarten -> Donnersbergerbruecke
-  int donnersbergerbruecke_1l = instance.n().add_vertex(
+  const auto donnersbergerbruecke_1l = instance.n().add_vertex(
       "Donnersbergerbruecke1L", cda_rail::VertexType::TTD);
-  int donnersbergerbruecke_2l = instance.n().add_vertex(
+  const auto donnersbergerbruecke_2l = instance.n().add_vertex(
       "Donnersbergerbruecke2L", cda_rail::VertexType::TTD);
-  int donnersbergerbruecke_1r = instance.n().add_vertex(
+  const auto donnersbergerbruecke_1r = instance.n().add_vertex(
       "Donnersbergerbruecke1R", cda_rail::VertexType::TTD);
-  int donnersbergerbruecke_2r = instance.n().add_vertex(
+  const auto donnersbergerbruecke_2r = instance.n().add_vertex(
       "Donnersbergerbruecke2R", cda_rail::VertexType::TTD);
 
-  int e7lr = instance.n().add_edge(hirschgarten_1r, donnersbergerbruecke_1l,
-                                   1095, 100 / 3.6, true, 50);
-  int e8lr =
+  const auto e7lr = instance.n().add_edge(
+      hirschgarten_1r, donnersbergerbruecke_1l, 1095, 100 / 3.6, true, 50);
+  const auto e8lr =
       instance.n().add_edge(donnersbergerbruecke_1l, donnersbergerbruecke_1r,
                             205, 100 / 3.6, true, 25);
-  int e7rl = instance.n().add_edge(donnersbergerbruecke_2l, hirschgarten_2r,
-                                   1095, 100 / 3.6, true, 50);
-  int e8rl =
+  const auto e7rl = instance.n().add_edge(
+      donnersbergerbruecke_2l, hirschgarten_2r, 1095, 100 / 3.6, true, 50);
+  const auto e8rl =
       instance.n().add_edge(donnersbergerbruecke_2r, donnersbergerbruecke_2l,
                             205, 100 / 3.6, true, 25);
 
@@ -955,83 +961,83 @@ TEST(Example, Stammstrecke) {
   instance.add_track_to_station("Donnersbergerbruecke", e8rl);
 
   // Donnersbergerbruecke -> Hackerbruecke
-  int hackerbruecke_switch_1 = instance.n().add_vertex(
+  const auto hackerbruecke_switch_1 = instance.n().add_vertex(
       "HackerbrueckeSwitch1", cda_rail::VertexType::TTD);
-  int hackerbruecke_switch_2 = instance.n().add_vertex(
+  const auto hackerbruecke_switch_2 = instance.n().add_vertex(
       "HackerbrueckeSwitch2", cda_rail::VertexType::TTD);
-  int hackerbruecke_switch_3 = instance.n().add_vertex(
+  const auto hackerbruecke_switch_3 = instance.n().add_vertex(
       "HackerbrueckeSwitch3", cda_rail::VertexType::TTD);
-  int hackerbruecke_switch_4 = instance.n().add_vertex(
+  const auto hackerbruecke_switch_4 = instance.n().add_vertex(
       "HackerbrueckeSwitch4", cda_rail::VertexType::TTD);
-  int hackerbruecke_switch_c = instance.n().add_vertex(
+  const auto hackerbruecke_switch_c = instance.n().add_vertex(
       "HackerbrueckeSwitchC", cda_rail::VertexType::NoBorder);
-  int hackerbruecke_1l =
+  const auto hackerbruecke_1l =
       instance.n().add_vertex("Hackerbruecke1L", cda_rail::VertexType::TTD);
-  int hackerbruecke_2l =
+  const auto hackerbruecke_2l =
       instance.n().add_vertex("Hackerbruecke2L", cda_rail::VertexType::TTD);
-  int hackerbruecke_1r =
+  const auto hackerbruecke_1r =
       instance.n().add_vertex("Hackerbruecke1R", cda_rail::VertexType::TTD);
-  int hackerbruecke_2r =
+  const auto hackerbruecke_2r =
       instance.n().add_vertex("Hackerbruecke2R", cda_rail::VertexType::TTD);
-  int hackerbruecke_switch_entry = instance.n().add_vertex(
+  const auto hackerbruecke_switch_entry = instance.n().add_vertex(
       "HackerbrueckeSwitchEntry", cda_rail::VertexType::TTD);
-  int hackerbruecke_switch_exit = instance.n().add_vertex(
+  const auto hackerbruecke_switch_exit = instance.n().add_vertex(
       "HackerbrueckeSwitchExit", cda_rail::VertexType::TTD);
-  int donnersberger_entry =
+  const auto donnersberger_entry =
       instance.n().add_vertex("DonnersbergerEntry", cda_rail::VertexType::TTD);
-  int donnersberger_exit =
+  const auto donnersberger_exit =
       instance.n().add_vertex("DonnersbergerExit", cda_rail::VertexType::TTD);
 
-  int e9lr_a =
+  const auto e9lr_a =
       instance.n().add_edge(donnersbergerbruecke_1r, hackerbruecke_switch_entry,
                             210, 100 / 3.6, true, 50);
-  int e9lr_b =
+  const auto e9lr_b =
       instance.n().add_edge(hackerbruecke_switch_entry, hackerbruecke_switch_1,
                             294, 100 / 3.6, true, 50);
-  int e9lr_entry =
+  const auto e9lr_entry =
       instance.n().add_edge(donnersberger_entry, hackerbruecke_switch_entry,
                             210, 100 / 3.6, true, 50);
-  int e10lr =
+  const auto e10lr =
       instance.n().add_edge(hackerbruecke_switch_1, hackerbruecke_switch_2, 150,
                             100 / 3.6, false, 50);
-  int e11lr = instance.n().add_edge(hackerbruecke_switch_2, hackerbruecke_1l,
-                                    40, 100 / 3.6, false, 50);
-  int e12lr = instance.n().add_edge(hackerbruecke_1l, hackerbruecke_1r, 207,
-                                    100 / 3.6, true, 25);
-  int e9rl_a =
+  const auto e11lr = instance.n().add_edge(
+      hackerbruecke_switch_2, hackerbruecke_1l, 40, 100 / 3.6, false, 50);
+  const auto e12lr = instance.n().add_edge(hackerbruecke_1l, hackerbruecke_1r,
+                                           207, 100 / 3.6, true, 25);
+  const auto e9rl_a =
       instance.n().add_edge(hackerbruecke_switch_exit, donnersbergerbruecke_2r,
                             210, 100 / 3.6, true, 50);
-  int e9rl_b =
+  const auto e9rl_b =
       instance.n().add_edge(hackerbruecke_switch_4, hackerbruecke_switch_exit,
                             294, 100 / 3.6, true, 50);
-  int e9rl_exit = instance.n().add_edge(
+  const auto e9rl_exit = instance.n().add_edge(
       hackerbruecke_switch_exit, donnersberger_exit, 210, 100 / 3.6, true, 50);
-  int e10rl =
+  const auto e10rl =
       instance.n().add_edge(hackerbruecke_switch_3, hackerbruecke_switch_4, 150,
                             100 / 3.6, false, 50);
-  int e11rl = instance.n().add_edge(hackerbruecke_2l, hackerbruecke_switch_3,
-                                    40, 100 / 3.6, false, 50);
-  int e12rl = instance.n().add_edge(hackerbruecke_2r, hackerbruecke_2l, 207,
-                                    100 / 3.6, true, 25);
+  const auto e11rl = instance.n().add_edge(
+      hackerbruecke_2l, hackerbruecke_switch_3, 40, 100 / 3.6, false, 50);
+  const auto e12rl = instance.n().add_edge(hackerbruecke_2r, hackerbruecke_2l,
+                                           207, 100 / 3.6, true, 25);
 
   instance.n().add_successor(e9rl_b, e9rl_exit);
   instance.n().add_successor(e9lr_entry, e9lr_b);
 
-  int switch_e3 = instance.n().add_edge(
+  const auto switch_e3 = instance.n().add_edge(
       hackerbruecke_switch_1, hackerbruecke_switch_c, 75, 80 / 3.6, false, 50);
-  int switch_e4 = instance.n().add_edge(
+  const auto switch_e4 = instance.n().add_edge(
       hackerbruecke_switch_2, hackerbruecke_switch_c, 75, 80 / 3.6, false, 50);
-  int switch_e5 = instance.n().add_edge(
+  const auto switch_e5 = instance.n().add_edge(
       hackerbruecke_switch_3, hackerbruecke_switch_c, 75, 80 / 3.6, false, 50);
-  int switch_e6 = instance.n().add_edge(
+  const auto switch_e6 = instance.n().add_edge(
       hackerbruecke_switch_4, hackerbruecke_switch_c, 75, 80 / 3.6, false, 50);
-  int switch_e7 = instance.n().add_edge(
+  const auto switch_e7 = instance.n().add_edge(
       hackerbruecke_switch_c, hackerbruecke_switch_1, 75, 80 / 3.6, false, 50);
-  int switch_e8 = instance.n().add_edge(
+  const auto switch_e8 = instance.n().add_edge(
       hackerbruecke_switch_c, hackerbruecke_switch_2, 75, 80 / 3.6, false, 50);
-  int switch_e9 = instance.n().add_edge(
+  const auto switch_e9 = instance.n().add_edge(
       hackerbruecke_switch_c, hackerbruecke_switch_3, 75, 80 / 3.6, false, 50);
-  int switch_e10 = instance.n().add_edge(
+  const auto switch_e10 = instance.n().add_edge(
       hackerbruecke_switch_c, hackerbruecke_switch_4, 75, 80 / 3.6, false, 50);
 
   instance.n().add_successor(switch_e3, switch_e9);
@@ -1060,17 +1066,23 @@ TEST(Example, Stammstrecke) {
   instance.add_track_to_station("Hackerbruecke", e12rl);
 
   // Hackerbruecke -> Hbf
-  int hbf_1l = instance.n().add_vertex("Hbf1L", cda_rail::VertexType::TTD);
-  int hbf_2l = instance.n().add_vertex("Hbf2L", cda_rail::VertexType::TTD);
-  int hbf_1r = instance.n().add_vertex("Hbf1R", cda_rail::VertexType::TTD);
-  int hbf_2r = instance.n().add_vertex("Hbf2R", cda_rail::VertexType::TTD);
+  const auto hbf_1l =
+      instance.n().add_vertex("Hbf1L", cda_rail::VertexType::TTD);
+  const auto hbf_2l =
+      instance.n().add_vertex("Hbf2L", cda_rail::VertexType::TTD);
+  const auto hbf_1r =
+      instance.n().add_vertex("Hbf1R", cda_rail::VertexType::TTD);
+  const auto hbf_2r =
+      instance.n().add_vertex("Hbf2R", cda_rail::VertexType::TTD);
 
-  int e13lr =
+  const auto e13lr =
       instance.n().add_edge(hackerbruecke_1r, hbf_1l, 591, 80 / 3.6, true, 50);
-  int e14lr = instance.n().add_edge(hbf_1l, hbf_1r, 210, 80 / 3.6, true, 25);
-  int e13rl =
+  const auto e14lr =
+      instance.n().add_edge(hbf_1l, hbf_1r, 210, 80 / 3.6, true, 25);
+  const auto e13rl =
       instance.n().add_edge(hbf_2l, hackerbruecke_2r, 591, 80 / 3.6, true, 50);
-  int e14rl = instance.n().add_edge(hbf_2r, hbf_2l, 210, 80 / 3.6, true, 25);
+  const auto e14rl =
+      instance.n().add_edge(hbf_2r, hbf_2l, 210, 80 / 3.6, true, 25);
 
   instance.n().add_successor(e12lr, e13lr);
   instance.n().add_successor(e13rl, e12rl);
@@ -1083,23 +1095,23 @@ TEST(Example, Stammstrecke) {
   instance.add_track_to_station("Hbf", e14rl);
 
   // Hbf -> Karlsplatz
-  int karlsplatz_1l =
+  const auto karlsplatz_1l =
       instance.n().add_vertex("Karlsplatz1L", cda_rail::VertexType::TTD);
-  int karlsplatz_2l =
+  const auto karlsplatz_2l =
       instance.n().add_vertex("Karlsplatz2L", cda_rail::VertexType::TTD);
-  int karlsplatz_1r =
+  const auto karlsplatz_1r =
       instance.n().add_vertex("Karlsplatz1R", cda_rail::VertexType::TTD);
-  int karlsplatz_2r =
+  const auto karlsplatz_2r =
       instance.n().add_vertex("Karlsplatz2R", cda_rail::VertexType::TTD);
 
-  int e15lr =
+  const auto e15lr =
       instance.n().add_edge(hbf_1r, karlsplatz_1l, 292, 80 / 3.6, true, 50);
-  int e16lr = instance.n().add_edge(karlsplatz_1l, karlsplatz_1r, 206, 80 / 3.6,
-                                    true, 25);
-  int e15rl =
+  const auto e16lr = instance.n().add_edge(karlsplatz_1l, karlsplatz_1r, 206,
+                                           80 / 3.6, true, 25);
+  const auto e15rl =
       instance.n().add_edge(karlsplatz_2l, hbf_2r, 292, 80 / 3.6, true, 50);
-  int e16rl = instance.n().add_edge(karlsplatz_2r, karlsplatz_2l, 206, 80 / 3.6,
-                                    true, 25);
+  const auto e16rl = instance.n().add_edge(karlsplatz_2r, karlsplatz_2l, 206,
+                                           80 / 3.6, true, 25);
 
   instance.n().add_successor(e14lr, e15lr);
   instance.n().add_successor(e15rl, e14rl);
@@ -1112,23 +1124,23 @@ TEST(Example, Stammstrecke) {
   instance.add_track_to_station("Karlsplatz", e16rl);
 
   // Karlsplatz -> Marienplatz
-  int marienplatz_1l =
+  const auto marienplatz_1l =
       instance.n().add_vertex("Marienplatz1L", cda_rail::VertexType::TTD);
-  int marienplatz_2l =
+  const auto marienplatz_2l =
       instance.n().add_vertex("Marienplatz2L", cda_rail::VertexType::TTD);
-  int marienplatz_1r =
+  const auto marienplatz_1r =
       instance.n().add_vertex("Marienplatz1R", cda_rail::VertexType::TTD);
-  int marienplatz_2r =
+  const auto marienplatz_2r =
       instance.n().add_vertex("Marienplatz2R", cda_rail::VertexType::TTD);
 
-  int e17lr = instance.n().add_edge(karlsplatz_1r, marienplatz_1l, 494,
-                                    80 / 3.6, true, 50);
-  int e18lr = instance.n().add_edge(marienplatz_1l, marienplatz_1r, 205,
-                                    80 / 3.6, true, 25);
-  int e17rl = instance.n().add_edge(marienplatz_2l, karlsplatz_2r, 494,
-                                    80 / 3.6, true, 50);
-  int e18rl = instance.n().add_edge(marienplatz_2r, marienplatz_2l, 205,
-                                    80 / 3.6, true, 25);
+  const auto e17lr = instance.n().add_edge(karlsplatz_1r, marienplatz_1l, 494,
+                                           80 / 3.6, true, 50);
+  const auto e18lr = instance.n().add_edge(marienplatz_1l, marienplatz_1r, 205,
+                                           80 / 3.6, true, 25);
+  const auto e17rl = instance.n().add_edge(marienplatz_2l, karlsplatz_2r, 494,
+                                           80 / 3.6, true, 50);
+  const auto e18rl = instance.n().add_edge(marienplatz_2r, marienplatz_2l, 205,
+                                           80 / 3.6, true, 25);
 
   instance.n().add_successor(e16lr, e17lr);
   instance.n().add_successor(e17rl, e16rl);
@@ -1141,30 +1153,30 @@ TEST(Example, Stammstrecke) {
   instance.add_track_to_station("Marienplatz", e18rl);
 
   // Marienplatz -> Isartor
-  int isartor_switch_lr =
+  const auto isartor_switch_lr =
       instance.n().add_vertex("IsartorSwitchLR", cda_rail::VertexType::TTD);
-  int isartor_switch_rl =
+  const auto isartor_switch_rl =
       instance.n().add_vertex("IsartorSwitchRL", cda_rail::VertexType::TTD);
-  int isartor_1l =
+  const auto isartor_1l =
       instance.n().add_vertex("Isartor1L", cda_rail::VertexType::TTD);
-  int isartor_2l =
+  const auto isartor_2l =
       instance.n().add_vertex("Isartor2L", cda_rail::VertexType::TTD);
-  int isartor_1r =
+  const auto isartor_1r =
       instance.n().add_vertex("Isartor1R", cda_rail::VertexType::TTD);
-  int isartor_2r =
+  const auto isartor_2r =
       instance.n().add_vertex("Isartor2R", cda_rail::VertexType::TTD);
 
-  int e19lr = instance.n().add_edge(marienplatz_1r, isartor_switch_lr, 393,
-                                    80 / 3.6, true, 50);
-  int e20lr = instance.n().add_edge(isartor_switch_lr, isartor_1l, 100,
-                                    80 / 3.6, false, 50);
-  int e21lr =
+  const auto e19lr = instance.n().add_edge(marienplatz_1r, isartor_switch_lr,
+                                           393, 80 / 3.6, true, 50);
+  const auto e20lr = instance.n().add_edge(isartor_switch_lr, isartor_1l, 100,
+                                           80 / 3.6, false, 50);
+  const auto e21lr =
       instance.n().add_edge(isartor_1l, isartor_1r, 209, 80 / 3.6, true, 25);
-  int e19rl = instance.n().add_edge(isartor_switch_rl, marienplatz_2r, 343,
-                                    80 / 3.6, true, 50);
-  int e20rl = instance.n().add_edge(isartor_2l, isartor_switch_rl, 150,
-                                    80 / 3.6, false, 50);
-  int e21rl =
+  const auto e19rl = instance.n().add_edge(isartor_switch_rl, marienplatz_2r,
+                                           343, 80 / 3.6, true, 50);
+  const auto e20rl = instance.n().add_edge(isartor_2l, isartor_switch_rl, 150,
+                                           80 / 3.6, false, 50);
+  const auto e21rl =
       instance.n().add_edge(isartor_2r, isartor_2l, 209, 80 / 3.6, true, 25);
 
   instance.n().add_successor(e18lr, e19lr);
@@ -1180,46 +1192,46 @@ TEST(Example, Stammstrecke) {
   instance.add_track_to_station("Isartor", e21rl);
 
   // Isartor -> Rosenheimer Platz
-  int isartor_switch_r_lr =
+  const auto isartor_switch_r_lr =
       instance.n().add_vertex("IsartorSwitch_R_LR", cda_rail::VertexType::TTD);
-  int isartor_switch_r_rl =
+  const auto isartor_switch_r_rl =
       instance.n().add_vertex("IsartorSwitch_R_RL", cda_rail::VertexType::TTD);
-  int rosenheimer_1l =
+  const auto rosenheimer_1l =
       instance.n().add_vertex("Rosenheimer1L", cda_rail::VertexType::TTD);
-  int rosenheimer_2l =
+  const auto rosenheimer_2l =
       instance.n().add_vertex("Rosenheimer2L", cda_rail::VertexType::TTD);
-  int rosenheimer_1r =
+  const auto rosenheimer_1r =
       instance.n().add_vertex("Rosenheimer1R", cda_rail::VertexType::TTD);
-  int rosenheimer_2r =
+  const auto rosenheimer_2r =
       instance.n().add_vertex("Rosenheimer2R", cda_rail::VertexType::TTD);
 
-  int e22lr = instance.n().add_edge(isartor_1r, isartor_switch_r_lr, 100,
-                                    80 / 3.6, false, 50);
-  int e23lr = instance.n().add_edge(isartor_switch_r_lr, rosenheimer_1l, 592,
-                                    80 / 3.6, true, 50);
-  int e24lr = instance.n().add_edge(rosenheimer_1l, rosenheimer_1r, 206,
-                                    80 / 3.6, true, 25);
-  int e22rl = instance.n().add_edge(isartor_switch_r_rl, isartor_2r, 150,
-                                    80 / 3.6, false, 50);
-  int e23rl = instance.n().add_edge(rosenheimer_2l, isartor_switch_r_rl, 542,
-                                    80 / 3.6, true, 50);
-  int e24rl = instance.n().add_edge(rosenheimer_2r, rosenheimer_2l, 206,
-                                    80 / 3.6, true, 25);
+  const auto e22lr = instance.n().add_edge(isartor_1r, isartor_switch_r_lr, 100,
+                                           80 / 3.6, false, 50);
+  const auto e23lr = instance.n().add_edge(isartor_switch_r_lr, rosenheimer_1l,
+                                           592, 80 / 3.6, true, 50);
+  const auto e24lr = instance.n().add_edge(rosenheimer_1l, rosenheimer_1r, 206,
+                                           80 / 3.6, true, 25);
+  const auto e22rl = instance.n().add_edge(isartor_switch_r_rl, isartor_2r, 150,
+                                           80 / 3.6, false, 50);
+  const auto e23rl = instance.n().add_edge(rosenheimer_2l, isartor_switch_r_rl,
+                                           542, 80 / 3.6, true, 50);
+  const auto e24rl = instance.n().add_edge(rosenheimer_2r, rosenheimer_2l, 206,
+                                           80 / 3.6, true, 25);
 
-  int switch_it_1 = instance.n().add_edge(isartor_switch_lr, isartor_switch_rl,
-                                          50, 60 / 3.6, false, 50);
-  int switch_it_2 = instance.n().add_edge(isartor_switch_rl, isartor_switch_lr,
-                                          50, 60 / 3.6, false, 50);
-  int switch_it_3 = instance.n().add_edge(
+  const auto switch_it_1 = instance.n().add_edge(
+      isartor_switch_lr, isartor_switch_rl, 50, 60 / 3.6, false, 50);
+  const auto switch_it_2 = instance.n().add_edge(
+      isartor_switch_rl, isartor_switch_lr, 50, 60 / 3.6, false, 50);
+  const auto switch_it_3 = instance.n().add_edge(
       isartor_switch_r_lr, isartor_switch_r_rl, 50, 60 / 3.6, false, 50);
-  int switch_it_4 = instance.n().add_edge(
+  const auto switch_it_4 = instance.n().add_edge(
       isartor_switch_r_rl, isartor_switch_r_lr, 50, 60 / 3.6, false, 50);
-  int tmp_1 = instance.n().add_edge(isartor_switch_r_lr, isartor_1r, 100,
-                                    80 / 3.6, false, 50);
-  int tmp_2 =
+  const auto tmp_1 = instance.n().add_edge(isartor_switch_r_lr, isartor_1r, 100,
+                                           80 / 3.6, false, 50);
+  const auto tmp_2 =
       instance.n().add_edge(isartor_1r, isartor_1l, 209, 80 / 3.6, true, 25);
-  int tmp_3 = instance.n().add_edge(isartor_1l, isartor_switch_lr, 100,
-                                    80 / 3.6, false, 50);
+  const auto tmp_3 = instance.n().add_edge(isartor_1l, isartor_switch_lr, 100,
+                                           80 / 3.6, false, 50);
   instance.n().add_successor(switch_it_2, e20lr);
   instance.n().add_successor(e22lr, switch_it_3);
   instance.n().add_successor(e23rl, switch_it_4);
@@ -1241,47 +1253,47 @@ TEST(Example, Stammstrecke) {
   instance.add_track_to_station("Rosenheimer Platz", e24rl);
 
   // Rosenheimer Platz -> Ostbahnhof
-  int ost_switch4_lr =
+  const auto ost_switch4_lr =
       instance.n().add_vertex("OstSwitch4_LR", cda_rail::VertexType::TTD);
-  int ost_switch5_lr =
+  const auto ost_switch5_lr =
       instance.n().add_vertex("OstSwitch5_LR", cda_rail::VertexType::TTD);
-  int ost_switch1_rl =
+  const auto ost_switch1_rl =
       instance.n().add_vertex("OstSwitch1_RL", cda_rail::VertexType::TTD);
-  int ost_switch2_rl =
+  const auto ost_switch2_rl =
       instance.n().add_vertex("OstSwitch2_RL", cda_rail::VertexType::TTD);
-  int ost_switch3_rl =
+  const auto ost_switch3_rl =
       instance.n().add_vertex("OstSwitch3_RL", cda_rail::VertexType::TTD);
-  int ost_1_entry =
+  const auto ost_1_entry =
       instance.n().add_vertex("Ost1Entry", cda_rail::VertexType::TTD);
-  int ost_2_entry =
+  const auto ost_2_entry =
       instance.n().add_vertex("Ost2Entry", cda_rail::VertexType::TTD);
-  int ost_3_entry =
+  const auto ost_3_entry =
       instance.n().add_vertex("Ost3Entry", cda_rail::VertexType::TTD);
-  int ost_4_exit =
+  const auto ost_4_exit =
       instance.n().add_vertex("Ost4Exit", cda_rail::VertexType::TTD);
-  int ost_5_exit =
+  const auto ost_5_exit =
       instance.n().add_vertex("Ost5Exit", cda_rail::VertexType::TTD);
 
-  int e25lr   = instance.n().add_edge(rosenheimer_1r, ost_switch5_lr, 792,
-                                      80 / 3.6, true, 50);
-  int e26lr_4 = instance.n().add_edge(ost_switch5_lr, ost_switch4_lr, 60,
-                                      80 / 3.6, false, 50);
-  int e27lr_4 = instance.n().add_edge(ost_switch4_lr, ost_4_exit, 40, 80 / 3.6,
-                                      false, 50);
-  int e26lr_5 = instance.n().add_edge(ost_switch5_lr, ost_5_exit, 100, 80 / 3.6,
-                                      false, 50);
-  int e25rl   = instance.n().add_edge(ost_switch1_rl, rosenheimer_2r, 752,
-                                      80 / 3.6, true, 50);
-  int e26rl_1 = instance.n().add_edge(ost_1_entry, ost_switch1_rl, 140,
-                                      80 / 3.6, false, 50);
-  int e26rl_23 = instance.n().add_edge(ost_switch2_rl, ost_switch1_rl, 40,
-                                       80 / 3.6, false, 50);
-  int e27rl_2  = instance.n().add_edge(ost_2_entry, ost_switch2_rl, 100,
-                                       80 / 3.6, false, 50);
-  int e27rl_3  = instance.n().add_edge(ost_switch3_rl, ost_switch2_rl, 60,
-                                       80 / 3.6, false, 50);
-  int e28rl_3 = instance.n().add_edge(ost_3_entry, ost_switch3_rl, 40, 80 / 3.6,
-                                      false, 50);
+  const auto e25lr = instance.n().add_edge(rosenheimer_1r, ost_switch5_lr, 792,
+                                           80 / 3.6, true, 50);
+  const auto e26lr_4 = instance.n().add_edge(ost_switch5_lr, ost_switch4_lr, 60,
+                                             80 / 3.6, false, 50);
+  const auto e27lr_4 = instance.n().add_edge(ost_switch4_lr, ost_4_exit, 40,
+                                             80 / 3.6, false, 50);
+  const auto e26lr_5 = instance.n().add_edge(ost_switch5_lr, ost_5_exit, 100,
+                                             80 / 3.6, false, 50);
+  const auto e25rl = instance.n().add_edge(ost_switch1_rl, rosenheimer_2r, 752,
+                                           80 / 3.6, true, 50);
+  const auto e26rl_1  = instance.n().add_edge(ost_1_entry, ost_switch1_rl, 140,
+                                              80 / 3.6, false, 50);
+  const auto e26rl_23 = instance.n().add_edge(ost_switch2_rl, ost_switch1_rl,
+                                              40, 80 / 3.6, false, 50);
+  const auto e27rl_2  = instance.n().add_edge(ost_2_entry, ost_switch2_rl, 100,
+                                              80 / 3.6, false, 50);
+  const auto e27rl_3 = instance.n().add_edge(ost_switch3_rl, ost_switch2_rl, 60,
+                                             80 / 3.6, false, 50);
+  const auto e28rl_3 = instance.n().add_edge(ost_3_entry, ost_switch3_rl, 40,
+                                             80 / 3.6, false, 50);
 
   instance.n().add_successor(e24lr, e25lr);
   instance.n().add_successor(e25rl, e24rl);
