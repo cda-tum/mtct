@@ -397,7 +397,8 @@ public:
   std::vector<std::pair<size_t, std::vector<size_t>>>
   discretize(SeparationType separation_type = SeparationType::UNIFORM);
 
-  [[nodiscard]] MultiArray<double> all_edge_pairs_shortest_paths() const;
+  [[nodiscard]] std::vector<std::vector<double>>
+  all_edge_pairs_shortest_paths() const;
 };
 
 // HELPER

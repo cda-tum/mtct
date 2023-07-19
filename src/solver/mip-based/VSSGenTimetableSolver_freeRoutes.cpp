@@ -498,11 +498,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           const auto e_before =
               instance.n().out_edges(instance.get_schedule(tr).entry)[0];
           const auto& e_len_before = instance.n().get_edge(e_before).length;
-          dist_before = apsp.at(e_before, e) + e_len_before - e_len;
+          dist_before              = apsp[e_before][e] + e_len_before - e_len;
         } else {
           dist_before = INF;
           for (const auto& e_tmp : before_after_struct.edges_before) {
-            const auto tmp_val = apsp.at(e_tmp, e) - e_len;
+            const auto tmp_val = apsp[e_tmp][e] - e_len;
             if (tmp_val < dist_before) {
               dist_before = tmp_val;
             }
@@ -530,12 +530,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         if (before_after_struct.t_after >= train_interval[tr].second) {
           const auto e_after =
               instance.n().in_edges(instance.get_schedule(tr).exit)[0];
-          dist_after = apsp.at(e, e_after);
+          dist_after = apsp[e][e_after];
         } else {
           dist_after = INF;
           for (const auto& e_tmp : before_after_struct.edges_after) {
             const auto tmp_val =
-                apsp.at(e, e_tmp) - instance.n().get_edge(e_tmp).length;
+                apsp[e][e_tmp] - instance.n().get_edge(e_tmp).length;
             if (tmp_val < dist_after) {
               dist_after = tmp_val;
             }

@@ -1962,34 +1962,34 @@ TEST(Example, Stammstrecke) {
 
   auto pairs = instance.n().all_edge_pairs_shortest_paths();
 
-  auto pasing_ost4 = pairs(e1lr, e27lr_4) + instance.n().get_edge(e1lr).length;
-  auto pasing_ost5 = pairs(e1lr, e26lr_5) + instance.n().get_edge(e1lr).length;
+  auto pasing_ost4 = pairs[e1lr][e27lr_4] + instance.n().get_edge(e1lr).length;
+  auto pasing_ost5 = pairs[e1lr][e26lr_5] + instance.n().get_edge(e1lr).length;
   auto laim_ost4 =
-      pairs(e4lr_entry, e27lr_4) + instance.n().get_edge(e4lr_entry).length;
+      pairs[e4lr_entry][e27lr_4] + instance.n().get_edge(e4lr_entry).length;
   auto laim_ost5 =
-      pairs(e4lr_entry, e26lr_5) + instance.n().get_edge(e4lr_entry).length;
+      pairs[e4lr_entry][e26lr_5] + instance.n().get_edge(e4lr_entry).length;
   auto donnersberger_ost4 =
-      pairs(e9lr_entry, e27lr_4) + instance.n().get_edge(e9lr_entry).length;
+      pairs[e9lr_entry][e27lr_4] + instance.n().get_edge(e9lr_entry).length;
   auto donnersberger_ost5 =
-      pairs(e9lr_entry, e26lr_5) + instance.n().get_edge(e9lr_entry).length;
+      pairs[e9lr_entry][e26lr_5] + instance.n().get_edge(e9lr_entry).length;
   auto ost1_pasing =
-      pairs(e26rl_1, e1rl) + instance.n().get_edge(e26rl_1).length;
+      pairs[e26rl_1][e1rl] + instance.n().get_edge(e26rl_1).length;
   auto ost2_pasing =
-      pairs(e27rl_2, e1rl) + instance.n().get_edge(e27rl_2).length;
+      pairs[e27rl_2][e1rl] + instance.n().get_edge(e27rl_2).length;
   auto ost3_pasing =
-      pairs(e28rl_3, e1rl) + instance.n().get_edge(e28rl_3).length;
+      pairs[e28rl_3][e1rl] + instance.n().get_edge(e28rl_3).length;
   auto ost1_laim =
-      pairs(e26rl_1, e2rl_exit) + instance.n().get_edge(e26rl_1).length;
+      pairs[e26rl_1][e2rl_exit] + instance.n().get_edge(e26rl_1).length;
   auto ost2_laim =
-      pairs(e27rl_2, e2rl_exit) + instance.n().get_edge(e27rl_2).length;
+      pairs[e27rl_2][e2rl_exit] + instance.n().get_edge(e27rl_2).length;
   auto ost3_laim =
-      pairs(e28rl_3, e2rl_exit) + instance.n().get_edge(e28rl_3).length;
+      pairs[e28rl_3][e2rl_exit] + instance.n().get_edge(e28rl_3).length;
   auto ost1_donnersberger =
-      pairs(e26rl_1, e9rl_a) + instance.n().get_edge(e26rl_1).length;
+      pairs[e26rl_1][e9rl_a] + instance.n().get_edge(e26rl_1).length;
   auto ost2_donnersberger =
-      pairs(e27rl_2, e9rl_a) + instance.n().get_edge(e27rl_2).length;
+      pairs[e27rl_2][e9rl_a] + instance.n().get_edge(e27rl_2).length;
   auto ost3_donnersberger =
-      pairs(e28rl_3, e9rl_a) + instance.n().get_edge(e28rl_3).length;
+      pairs[e28rl_3][e9rl_a] + instance.n().get_edge(e28rl_3).length;
 
   int full_expected          = 11090;
   int laim_expected_lr       = 7788;

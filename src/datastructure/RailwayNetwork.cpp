@@ -1520,7 +1520,7 @@ int cda_rail::Network::max_vss_on_edge(size_t index) const {
   return static_cast<int>(std::floor(edge.length / edge.min_block_length));
 }
 
-cda_rail::MultiArray<double>
+std::vector<std::vector<double>>
 cda_rail::Network::all_edge_pairs_shortest_paths() const {
   /**
    * Calculates all shortest paths between all edges.
@@ -1531,16 +1531,18 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
    * the Floyd-Warshall algorithm.
    */
   // Initialize return value
-  MultiArray<double> ret_val(number_of_edges(), number_of_edges());
+  std::vector<std::vector<double>> ret_val(
+      number_of_edges(), std::vector<double>(number_of_edges(), INF));
+
   for (size_t u = 0; u < number_of_edges(); ++u) {
     for (size_t v = 0; v < number_of_edges(); ++v) {
       if (u == v) {
-        ret_val(u, v) = 0;
+        ret_val[u][v] = 0;
       } else if (is_valid_successor(u, v)) {
-        ret_val(u, v) = get_edge(v).length;
-      } else {
-        ret_val(u, v) = INF;
-      }
+        ret_val[u][v] = get_edge(v).length;
+      } // else {
+      //  ret_val[u][v] = INF;
+      //}
     }
   }
 
@@ -1548,7 +1550,7 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
   for (size_t k = 0; k < number_of_edges(); ++k) {
     for (size_t i = 0; i < number_of_edges(); ++i) {
       for (size_t j = 0; j < number_of_edges(); ++j) {
-        ret_val(i, j) = std::min(ret_val(i, j), ret_val(i, k) + ret_val(k, j));
+        ret_val[i][j] = std::min(ret_val[i][j], ret_val[i][k] + ret_val[k][j]);
       }
     }
   }
