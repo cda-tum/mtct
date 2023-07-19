@@ -137,11 +137,10 @@ double cda_rail::Route::length(const Network& network) const {
    * @return The length of the route.
    */
 
-  double length = 0;
-  for (const auto edge : edges) {
-    length += network.get_edge(edge).length;
-  }
-  return length;
+  return std::accumulate(edges.begin(), edges.end(), 0.0,
+                         [&network](double sum, size_t edge) {
+                           return sum + network.get_edge(edge).length;
+                         });
 }
 
 void cda_rail::Route::update_after_discretization(
