@@ -258,13 +258,22 @@ public:
                                  new_min_block_length);
   }
 
-  void change_edge_breakable(size_t index, bool value);
-  void change_edge_breakable(size_t source_id, size_t target_id, bool value) {
-    change_edge_breakable(get_edge_index(source_id, target_id), value);
+  void set_edge_breakable(size_t index);
+  void set_edge_unbreakable(size_t index);
+
+  void set_edge_breakable(size_t source_id, size_t target_id) {
+    set_edge_breakable(get_edge_index(source_id, target_id));
   };
-  void change_edge_breakable(const std::string& source_name,
-                             const std::string& target_name, bool value) {
-    change_edge_breakable(get_edge_index(source_name, target_name), value);
+  void set_edge_breakable(const std::string& source_name,
+                          const std::string& target_name) {
+    set_edge_breakable(get_edge_index(source_name, target_name));
+  };
+  void set_edge_unbreakable(size_t source_id, size_t target_id) {
+    set_edge_unbreakable(get_edge_index(source_id, target_id));
+  };
+  void set_edge_unbreakable(const std::string& source_name,
+                            const std::string& target_name) {
+    set_edge_unbreakable(get_edge_index(source_name, target_name));
   };
 
   [[nodiscard]] std::vector<size_t> out_edges(size_t index) const;

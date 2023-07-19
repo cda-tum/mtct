@@ -409,11 +409,18 @@ void cda_rail::Network::change_edge_min_block_length(
   edges[index].min_block_length = new_min_block_length;
 }
 
-void cda_rail::Network::change_edge_breakable(size_t index, bool value) {
+void cda_rail::Network::set_edge_breakable(size_t index) {
   if (!has_edge(index)) {
     throw std::out_of_range("Edge does not exist");
   }
-  edges[index].breakable = value;
+  edges[index].breakable = true;
+}
+
+void cda_rail::Network::set_edge_unbreakable(size_t index) {
+  if (!has_edge(index)) {
+    throw std::out_of_range("Edge does not exist");
+  }
+  edges[index].breakable = false;
 }
 
 std::vector<size_t> cda_rail::Network::out_edges(size_t index) const {
@@ -818,7 +825,8 @@ cda_rail::Network::separate_edge_at(
   }
   // Reuse edge_index as last edge to add
   change_edge_length(edge_index, edge.length - distances_from_source.back());
-  change_edge_breakable(edge_index, false);
+  set_edge_unbreakable(edge_index);
+  ;
   edges[edge_index].source = new_vertices.back();
   new_edges.emplace_back(edge_index);
 
@@ -861,7 +869,8 @@ cda_rail::Network::separate_edge_at(
     }
     // Reuse edge index as last reverse edge to add
     change_edge_length(reverse_edge_index, distances_from_source.front());
-    change_edge_breakable(reverse_edge_index, false);
+    set_edge_unbreakable(reverse_edge_index);
+    ;
     edges[reverse_edge_index].source = new_vertices.front();
     new_reverse_edges.emplace_back(reverse_edge_index);
 

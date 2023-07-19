@@ -114,11 +114,11 @@ TEST(Functionality, NetworkFunctions) {
   EXPECT_EQ(network.get_edge(0).max_speed, 9);
   network.change_edge_min_block_length("v0", "v1", 10);
   EXPECT_EQ(network.get_edge(0).min_block_length, 10);
-  network.change_edge_breakable(1, true);
+  network.set_edge_breakable(1);
   EXPECT_TRUE(network.get_edge(1).breakable);
-  network.change_edge_breakable(1, 2, false);
+  network.set_edge_unbreakable(1, 2);
   EXPECT_FALSE(network.get_edge(1).breakable);
-  network.change_edge_breakable("v1", "v2", true);
+  network.set_edge_breakable("v1", "v2");
   EXPECT_TRUE(network.get_edge(1).breakable);
 
   // out and in edges tests
@@ -364,7 +364,7 @@ TEST(Functionality, NetworkConsistency) {
 
   EXPECT_TRUE(network.is_consistent_for_transformation());
 
-  network.change_edge_breakable("v8", "v7", true);
+  network.set_edge_breakable("v8", "v7");
 
   EXPECT_FALSE(network.is_consistent_for_transformation());
 }
