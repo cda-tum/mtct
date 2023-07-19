@@ -386,20 +386,27 @@ void cda_rail::Network::change_vertex_name(size_t             index,
   vertex_name_to_index[new_name] = index;
 }
 
-void cda_rail::Network::change_edge_property(size_t index, double value,
-                                             const std::string& property) {
+void cda_rail::Network::change_edge_length(size_t index, double new_length) {
   if (!has_edge(index)) {
     throw std::out_of_range("Edge does not exist");
   }
-  if (property == "length") {
-    edges[index].length = value;
-  } else if (property == "max_speed") {
-    edges[index].max_speed = value;
-  } else if (property == "min_block_length") {
-    edges[index].min_block_length = value;
-  } else {
-    throw std::invalid_argument("Property does not exist");
+  edges[index].length = new_length;
+}
+
+void cda_rail::Network::change_edge_max_speed(size_t index,
+                                              double new_max_speed) {
+  if (!has_edge(index)) {
+    throw std::out_of_range("Edge does not exist");
   }
+  edges[index].max_speed = new_max_speed;
+}
+
+void cda_rail::Network::change_edge_min_block_length(
+    size_t index, double new_min_block_length) {
+  if (!has_edge(index)) {
+    throw std::out_of_range("Edge does not exist");
+  }
+  edges[index].min_block_length = new_min_block_length;
 }
 
 void cda_rail::Network::change_edge_breakable(size_t index, bool value) {
@@ -810,8 +817,7 @@ cda_rail::Network::separate_edge_at(
                  edge.max_speed, false, edge.min_block_length));
   }
   // Reuse edge_index as last edge to add
-  change_edge_property(edge_index, edge.length - distances_from_source.back(),
-                       "length");
+  change_edge_length(edge_index, edge.length - distances_from_source.back());
   change_edge_breakable(edge_index, false);
   edges[edge_index].source = new_vertices.back();
   new_edges.emplace_back(edge_index);
@@ -854,8 +860,7 @@ cda_rail::Network::separate_edge_at(
           reverse_edge.max_speed, false, reverse_edge.min_block_length));
     }
     // Reuse edge index as last reverse edge to add
-    change_edge_property(reverse_edge_index, distances_from_source.front(),
-                         "length");
+    change_edge_length(reverse_edge_index, distances_from_source.front());
     change_edge_breakable(reverse_edge_index, false);
     edges[reverse_edge_index].source = new_vertices.front();
     new_reverse_edges.emplace_back(reverse_edge_index);

@@ -224,18 +224,40 @@ public:
     change_vertex_type(get_vertex_index(name), new_type);
   };
 
-  void change_edge_property(size_t index, double value,
-                            const std::string& property);
-  void change_edge_property(size_t source_id, size_t target_id, double value,
-                            const std::string& property) {
-    change_edge_property(get_edge_index(source_id, target_id), value, property);
+  void change_edge_length(size_t index, double new_length);
+  void change_edge_max_speed(size_t index, double new_max_speed);
+  void change_edge_min_block_length(size_t index, double new_min_block_length);
+
+  void change_edge_length(size_t source_id, size_t target_id,
+                          double new_length) {
+    change_edge_length(get_edge_index(source_id, target_id), new_length);
   };
-  void change_edge_property(const std::string& source_name,
-                            const std::string& target_name, double value,
-                            const std::string& property) {
-    change_edge_property(get_edge_index(source_name, target_name), value,
-                         property);
+  void change_edge_length(const std::string& source_name,
+                          const std::string& target_name, double new_length) {
+    change_edge_length(get_edge_index(source_name, target_name), new_length);
   };
+  void change_edge_max_speed(size_t source_id, size_t target_id,
+                             double new_max_speed) {
+    change_edge_max_speed(get_edge_index(source_id, target_id), new_max_speed);
+  }
+  void change_edge_max_speed(const std::string& source_name,
+                             const std::string& target_name,
+                             double             new_max_speed) {
+    change_edge_max_speed(get_edge_index(source_name, target_name),
+                          new_max_speed);
+  }
+  void change_edge_min_block_length(size_t source_id, size_t target_id,
+                                    double new_min_block_length) {
+    change_edge_min_block_length(get_edge_index(source_id, target_id),
+                                 new_min_block_length);
+  }
+  void change_edge_min_block_length(const std::string& source_name,
+                                    const std::string& target_name,
+                                    double             new_min_block_length) {
+    change_edge_min_block_length(get_edge_index(source_name, target_name),
+                                 new_min_block_length);
+  }
+
   void change_edge_breakable(size_t index, bool value);
   void change_edge_breakable(size_t source_id, size_t target_id, bool value) {
     change_edge_breakable(get_edge_index(source_id, target_id), value);

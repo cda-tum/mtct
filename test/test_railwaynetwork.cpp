@@ -96,23 +96,23 @@ TEST(Functionality, NetworkFunctions) {
   EXPECT_TRUE(network.has_vertex("v0"));
 
   // change edge properties tests
-  network.change_edge_property(0, 2, "length");
+  network.change_edge_length(0, 2);
   EXPECT_EQ(network.get_edge(0).length, 2);
-  network.change_edge_property(0, 3, "max_speed");
+  network.change_edge_max_speed(0, 3);
   EXPECT_EQ(network.get_edge(0).max_speed, 3);
-  network.change_edge_property(0, 4, "min_block_length");
+  network.change_edge_min_block_length(0, 4);
   EXPECT_EQ(network.get_edge(0).min_block_length, 4);
-  network.change_edge_property(0, 1, 5, "length");
+  network.change_edge_length(0, 1, 5);
   EXPECT_EQ(network.get_edge(0).length, 5);
-  network.change_edge_property(0, 1, 6, "max_speed");
+  network.change_edge_max_speed(0, 1, 6);
   EXPECT_EQ(network.get_edge(0).max_speed, 6);
-  network.change_edge_property(0, 1, 7, "min_block_length");
+  network.change_edge_min_block_length(0, 1, 7);
   EXPECT_EQ(network.get_edge(0).min_block_length, 7);
-  network.change_edge_property("v0", "v1", 8, "length");
+  network.change_edge_length("v0", "v1", 8);
   EXPECT_EQ(network.get_edge(0).length, 8);
-  network.change_edge_property("v0", "v1", 9, "max_speed");
+  network.change_edge_max_speed("v0", "v1", 9);
   EXPECT_EQ(network.get_edge(0).max_speed, 9);
-  network.change_edge_property("v0", "v1", 10, "min_block_length");
+  network.change_edge_min_block_length("v0", "v1", 10);
   EXPECT_EQ(network.get_edge(0).min_block_length, 10);
   network.change_edge_breakable(1, true);
   EXPECT_TRUE(network.get_edge(1).breakable);
@@ -341,7 +341,7 @@ TEST(Functionality, NetworkConsistency) {
 
   EXPECT_FALSE(network.is_consistent_for_transformation());
 
-  network.change_edge_property("v6", "v7", 1, "min_block_length");
+  network.change_edge_min_block_length("v6", "v7", 1);
 
   EXPECT_TRUE(network.is_consistent_for_transformation());
 
@@ -360,7 +360,7 @@ TEST(Functionality, NetworkConsistency) {
 
   EXPECT_FALSE(network.is_consistent_for_transformation());
 
-  network.change_edge_property("v8", "v7", 100, "length");
+  network.change_edge_length("v8", "v7", 100);
 
   EXPECT_TRUE(network.is_consistent_for_transformation());
 
