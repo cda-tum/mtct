@@ -826,7 +826,6 @@ cda_rail::Network::separate_edge_at(
   // Reuse edge_index as last edge to add
   change_edge_length(edge_index, edge.length - distances_from_source.back());
   set_edge_unbreakable(edge_index);
-  ;
   edges[edge_index].source = new_vertices.back();
   new_edges.emplace_back(edge_index);
 
@@ -870,7 +869,6 @@ cda_rail::Network::separate_edge_at(
     // Reuse edge index as last reverse edge to add
     change_edge_length(reverse_edge_index, distances_from_source.front());
     set_edge_unbreakable(reverse_edge_index);
-    ;
     edges[reverse_edge_index].source = new_vertices.front();
     new_reverse_edges.emplace_back(reverse_edge_index);
 
