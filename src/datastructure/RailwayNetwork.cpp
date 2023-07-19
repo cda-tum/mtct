@@ -1195,7 +1195,7 @@ void cda_rail::Network::dfs(std::vector<std::vector<size_t>>& ret_val,
 
       const auto neighbor_vertices = neighbors(current_vertex);
       for (const auto& neighbor : neighbor_vertices) {
-        // If neighboring vertex is of type NoBorder and
+        // If neighboring vertex is of type passed through section_type and
         // If vertex has not been visited yet, add it to stack
         if (get_vertex(neighbor).type == section_type &&
             std::find(visited_vertices.begin(), visited_vertices.end(),
