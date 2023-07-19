@@ -6,9 +6,9 @@
 namespace cda_rail::instances {
 class VSSGenerationTimetable {
 private:
-  cda_rail::Network   network;
-  cda_rail::Timetable timetable;
-  cda_rail::RouteMap  routes;
+  Network   network;
+  Timetable timetable;
+  RouteMap  routes;
 
 public:
   // Constructors
@@ -33,7 +33,7 @@ public:
   ~VSSGenerationTimetable()                                         = default;
 
   // Network functions, i.e., network is accessible via n() as a reference
-  [[nodiscard]] cda_rail::Network& n() { return network; };
+  [[nodiscard]] Network& n() { return network; };
 
   // Timetable functions
   size_t add_train(const std::string& name, int length, double max_speed,
@@ -75,10 +75,10 @@ public:
     timetable.add_stop(train_name, station_name, begin, end, sort);
   };
 
-  [[nodiscard]] const cda_rail::StationList& get_station_list() const {
+  [[nodiscard]] const StationList& get_station_list() const {
     return timetable.get_station_list();
   };
-  [[nodiscard]] const cda_rail::TrainList& get_train_list() const {
+  [[nodiscard]] const TrainList& get_train_list() const {
     return timetable.get_train_list();
   };
   [[nodiscard]] const Schedule& get_schedule(size_t index) const {
@@ -204,8 +204,7 @@ public:
   };
 
   // Transformation functions
-  void discretize(cda_rail::SeparationType separation_type =
-                      cda_rail::SeparationType::UNIFORM);
+  void discretize(SeparationType separation_type = SeparationType::UNIFORM);
 
   // Helper
   [[nodiscard]] std::vector<size_t>

@@ -98,13 +98,13 @@ private:
   // helper function
   void dfs(std::vector<std::vector<size_t>>& ret_val,
            std::unordered_set<size_t>&       vertices_to_visit,
-           const cda_rail::VertexType&       section_type) const {
+           const VertexType&                 section_type) const {
     dfs(ret_val, vertices_to_visit, section_type, {});
   };
-  void dfs(std::vector<std::vector<size_t>>&        ret_val,
-           std::unordered_set<size_t>&              vertices_to_visit,
-           const cda_rail::VertexType&              section_type,
-           const std::vector<cda_rail::VertexType>& error_types) const;
+  void dfs(std::vector<std::vector<size_t>>& ret_val,
+           std::unordered_set<size_t>&       vertices_to_visit,
+           const VertexType&                 section_type,
+           const std::vector<VertexType>&    error_types) const;
   std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
   sort_edge_pairs(
       std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
@@ -131,8 +131,7 @@ public:
   };
   [[nodiscard]] const std::vector<Edge>& get_edges() const { return edges; };
 
-  [[nodiscard]] std::vector<size_t>
-  get_vertices_by_type(cda_rail::VertexType type) const;
+  [[nodiscard]] std::vector<size_t> get_vertices_by_type(VertexType type) const;
 
   size_t add_vertex(const std::string& name, VertexType type);
   size_t add_edge(size_t source, size_t target, double length, double max_speed,
@@ -220,9 +219,8 @@ public:
                           const std::string& new_name) {
     change_vertex_name(get_vertex_index(old_name), new_name);
   };
-  void change_vertex_type(size_t index, cda_rail::VertexType new_type);
-  void change_vertex_type(const std::string&   name,
-                          cda_rail::VertexType new_type) {
+  void change_vertex_type(size_t index, VertexType new_type);
+  void change_vertex_type(const std::string& name, VertexType new_type) {
     change_vertex_type(get_vertex_index(name), new_type);
   };
 
@@ -351,25 +349,22 @@ public:
 
   // Transformation functions
   std::pair<std::vector<size_t>, std::vector<size_t>>
-  separate_edge(size_t edge_index, cda_rail::SeparationType separation_type =
-                                       cda_rail::SeparationType::UNIFORM);
+  separate_edge(size_t         edge_index,
+                SeparationType separation_type = SeparationType::UNIFORM);
   std::pair<std::vector<size_t>, std::vector<size_t>>
   separate_edge(size_t source_id, size_t target_id,
-                cda_rail::SeparationType separation_type =
-                    cda_rail::SeparationType::UNIFORM) {
+                SeparationType separation_type = SeparationType::UNIFORM) {
     return separate_edge(get_edge_index(source_id, target_id), separation_type);
   };
   std::pair<std::vector<size_t>, std::vector<size_t>>
   separate_edge(const std::string& source_name, const std::string& target_name,
-                cda_rail::SeparationType separation_type =
-                    cda_rail::SeparationType::UNIFORM) {
+                SeparationType separation_type = SeparationType::UNIFORM) {
     return separate_edge(get_edge_index(source_name, target_name),
                          separation_type);
   };
 
   std::vector<std::pair<size_t, std::vector<size_t>>>
-  discretize(cda_rail::SeparationType separation_type =
-                 cda_rail::SeparationType::UNIFORM);
+  discretize(SeparationType separation_type = SeparationType::UNIFORM);
 
   [[nodiscard]] MultiArray<double> all_edge_pairs_shortest_paths() const;
 };

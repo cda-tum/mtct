@@ -85,15 +85,13 @@ public:
     export_trains(std::filesystem::path(path));
   };
   void export_trains(const std::filesystem::path& p) const;
-  [[nodiscard]] static cda_rail::TrainList
-  import_trains(const std::string& path) {
+  [[nodiscard]] static TrainList import_trains(const std::string& path) {
     return TrainList(path);
   };
-  [[nodiscard]] static cda_rail::TrainList import_trains(const char* path) {
+  [[nodiscard]] static TrainList import_trains(const char* path) {
     return TrainList(path);
   };
-  [[nodiscard]] static cda_rail::TrainList
-  import_trains(const std::filesystem::path& p) {
+  [[nodiscard]] static TrainList import_trains(const std::filesystem::path& p) {
     return TrainList(p);
   };
 };

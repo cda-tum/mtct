@@ -19,8 +19,9 @@ cda_rail::StationList::get_station(const std::string& name) const {
   return stations.at(name);
 }
 
-void cda_rail::StationList::add_track_to_station(
-    const std::string& name, size_t track, const cda_rail::Network& network) {
+void cda_rail::StationList::add_track_to_station(const std::string& name,
+                                                 size_t             track,
+                                                 const Network&     network) {
   if (!has_station(name)) {
     throw std::invalid_argument("Station does not exist.");
   }
@@ -36,8 +37,8 @@ void cda_rail::StationList::add_track_to_station(
   stations.at(name).tracks.emplace_back(track);
 }
 
-void cda_rail::StationList::export_stations(
-    const std::string& path, const cda_rail::Network& network) const {
+void cda_rail::StationList::export_stations(const std::string& path,
+                                            const Network&     network) const {
   /**
    * This method exports all stations to a file. The file is a json file with
    * the following structure:
@@ -53,9 +54,9 @@ void cda_rail::StationList::export_stations(
   export_stations(p, network);
 }
 
-void cda_rail::StationList::export_stations(
-    const std::filesystem::path& p, const cda_rail::Network& network) const {
-  if (!cda_rail::is_directory_and_create(p)) {
+void cda_rail::StationList::export_stations(const std::filesystem::path& p,
+                                            const Network& network) const {
+  if (!is_directory_and_create(p)) {
     throw std::runtime_error("Could not create directory " + p.string());
   }
 
@@ -91,7 +92,7 @@ std::vector<std::string> cda_rail::StationList::get_station_names() const {
 }
 
 cda_rail::StationList::StationList(const std::filesystem::path& p,
-                                   const cda_rail::Network&     network) {
+                                   const Network&               network) {
   /**
    * This method constructs the object and imports all stations from a file. The
    * file is a json file with the structure described in export_stations. Hereby

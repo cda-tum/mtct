@@ -11,7 +11,7 @@
 namespace cda_rail::solver::mip_based {
 class VSSGenTimetableSolver {
 private:
-  cda_rail::instances::VSSGenerationTimetable instance;
+  instances::VSSGenerationTimetable instance;
 
   // Instance variables
   int                              dt                     = -1;
@@ -121,8 +121,7 @@ private:
 
 public:
   // Constructors
-  explicit VSSGenTimetableSolver(
-      cda_rail::instances::VSSGenerationTimetable instance);
+  explicit VSSGenTimetableSolver(instances::VSSGenerationTimetable instance);
   explicit VSSGenTimetableSolver(const std::filesystem::path& instance_path);
   explicit VSSGenTimetableSolver(const std::string& instance_path);
   explicit VSSGenTimetableSolver(const char* instance_path);

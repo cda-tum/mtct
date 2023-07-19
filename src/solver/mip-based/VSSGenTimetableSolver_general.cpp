@@ -10,25 +10,22 @@
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
-    cda_rail::instances::VSSGenerationTimetable instance)
+    instances::VSSGenerationTimetable instance)
     : instance(std::move(instance)) {}
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
     const std::filesystem::path& instance_path) {
-  instance = cda_rail::instances::VSSGenerationTimetable::import_instance(
-      instance_path);
+  instance = instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
     const std::string& instance_path) {
-  instance = cda_rail::instances::VSSGenerationTimetable::import_instance(
-      instance_path);
+  instance = instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
     const char* instance_path) {
-  instance = cda_rail::instances::VSSGenerationTimetable::import_instance(
-      instance_path);
+  instance = instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
 int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
@@ -126,7 +123,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     no_border_vss_sections = instance.n().no_border_vss_sections();
     num_breakable_sections = no_border_vss_sections.size();
     no_border_vss_vertices =
-        instance.n().get_vertices_by_type(cda_rail::VertexType::NoBorderVSS);
+        instance.n().get_vertices_by_type(VertexType::NoBorderVSS);
   } else {
     breakable_edges = instance.n().breakable_edges();
     for (size_t i = 0; i < breakable_edges.size(); ++i) {

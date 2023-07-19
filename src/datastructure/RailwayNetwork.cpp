@@ -132,7 +132,7 @@ void cda_rail::Network::add_edges_from_graphml(
     while (graphml_data != nullptr) {
       if (graphml_data->Attribute("key") == breakable) {
         std::string tmp = graphml_data->GetText();
-        cda_rail::to_bool_optional(tmp, e_breakable);
+        to_bool_optional(tmp, e_breakable);
       } else if (graphml_data->Attribute("key") == min_block_length) {
         e_min_block_length = std::stod(graphml_data->GetText());
       } else if (graphml_data->Attribute("key") == max_speed) {
@@ -175,8 +175,8 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   std::string max_speed;
   std::string min_block_length;
   std::string type;
-  cda_rail::Network::get_keys(graphml_body, breakable, length, max_speed,
-                              min_block_length, type);
+  Network::get_keys(graphml_body, breakable, length, max_speed,
+                    min_block_length, type);
   if (breakable.empty() || length.empty() || max_speed.empty() ||
       min_block_length.empty() || type.empty()) {
     throw std::runtime_error("Error reading graphml file");
@@ -216,7 +216,7 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
   for (const auto& [key, val] : data.items()) {
     std::string source_name;
     std::string target_name;
-    cda_rail::Network::extract_vertices_from_key(key, source_name, target_name);
+    Network::extract_vertices_from_key(key, source_name, target_name);
     auto const edge_id_in = get_edge_index(source_name, target_name);
     for (auto& tuple : val) {
       auto const edge_id_out = get_edge_index(tuple[0].get<std::string>(),
@@ -625,7 +625,7 @@ void cda_rail::Network::export_network(const std::filesystem::path& p) const {
    */
 
   // Create the directory if it does not exist.
-  if (!cda_rail::is_directory_and_create(p)) {
+  if (!is_directory_and_create(p)) {
     throw std::runtime_error("Could not create directory " + p.string());
   }
 
@@ -729,7 +729,7 @@ bool cda_rail::Network::is_adjustable(size_t vertex_id) const {
   }
 
   // Check if vertex is of type NoBorder
-  if (vertices[vertex_id].type != cda_rail::VertexType::NoBorder) {
+  if (vertices[vertex_id].type != VertexType::NoBorder) {
     return false;
   }
 
@@ -795,8 +795,7 @@ cda_rail::Network::separate_edge_at(
     std::string const vertex_name = get_vertex(edge.source).name + "_" +
                                     get_vertex(edge.target).name + "_" +
                                     std::to_string(i);
-    new_vertices.emplace_back(
-        add_vertex(vertex_name, cda_rail::VertexType::NoBorderVSS));
+    new_vertices.emplace_back(add_vertex(vertex_name, VertexType::NoBorderVSS));
   }
 
   // Create new edges
@@ -877,8 +876,8 @@ cda_rail::Network::separate_edge_at(
 }
 
 std::pair<std::vector<size_t>, std::vector<size_t>>
-cda_rail::Network::separate_edge(size_t                   edge_index,
-                                 cda_rail::SeparationType separation_type) {
+cda_rail::Network::separate_edge(size_t         edge_index,
+                                 SeparationType separation_type) {
   /**
    * Separates an edge (and possibly its reverse edge) according to the given
    * number of new vertices.
@@ -893,10 +892,10 @@ cda_rail::Network::separate_edge(size_t                   edge_index,
   }
 
   // Call function corresponding to separation type
-  if (separation_type == cda_rail::SeparationType::UNIFORM) {
+  if (separation_type == SeparationType::UNIFORM) {
     return uniform_separate_edge(edge_index);
   }
-  // if (separation_type == cda_rail::SeparationType::CHEBYCHEV) {
+  // if (separation_type == SeparationType::CHEBYCHEV) {
   //   return chebychev_separate_edge(edge_index);
   // }
   throw std::invalid_argument("Separation type does not exist.");
@@ -993,7 +992,7 @@ std::vector<size_t> cda_rail::Network::relevant_breakable_edges() const {
 }
 
 std::vector<std::pair<size_t, std::vector<size_t>>>
-cda_rail::Network::discretize(cda_rail::SeparationType separation_type) {
+cda_rail::Network::discretize(SeparationType separation_type) {
   /**
    * Discretizes graph.
    *
@@ -1043,8 +1042,8 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
     // If the edge is breakable, check if source or target are of type NoBorder
     // then return false
     if (edge.breakable &&
-        (get_vertex(edge.source).type == cda_rail::VertexType::NoBorder ||
-         get_vertex(edge.target).type == cda_rail::VertexType::NoBorder)) {
+        (get_vertex(edge.source).type == VertexType::NoBorder ||
+         get_vertex(edge.target).type == VertexType::NoBorder)) {
       return false;
     }
     // If the reverse edge exists check if the breakable and length attributes
@@ -1061,7 +1060,7 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
   // Check every vertex
   for (size_t i = 0; i < number_of_vertices(); ++i) {
     // If the vertex is of type NoBorderVSS check conditions
-    if (get_vertex(i).type == cda_rail::VertexType::NoBorderVSS) {
+    if (get_vertex(i).type == VertexType::NoBorderVSS) {
       // Get neighbors
       const auto& v_neighbors = neighbors(i);
       // Check if there are more than two neighbors
@@ -1070,7 +1069,7 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
       }
       // Check if neighbors are of type NoBorder
       for (const auto& j : v_neighbors) {
-        if (get_vertex(j).type == cda_rail::VertexType::NoBorder) {
+        if (get_vertex(j).type == VertexType::NoBorder) {
           return false;
         }
       }
@@ -1101,10 +1100,10 @@ cda_rail::Network::unbreakable_sections() const {
     if (!edge.breakable &&
         ((!has_edge(edge.target, edge.source) ||
           get_edge_index(edge.target, edge.source) > i)) &&
-        (get_vertex(edge.source).type == cda_rail::VertexType::TTD ||
-         get_vertex(edge.source).type == cda_rail::VertexType::VSS) &&
-        (get_vertex(edge.target).type == cda_rail::VertexType::TTD ||
-         get_vertex(edge.target).type == cda_rail::VertexType::VSS)) {
+        (get_vertex(edge.source).type == VertexType::TTD ||
+         get_vertex(edge.source).type == VertexType::VSS) &&
+        (get_vertex(edge.target).type == VertexType::TTD ||
+         get_vertex(edge.target).type == VertexType::VSS)) {
       ret_val.emplace_back();
       ret_val.back().emplace_back(i);
       if (has_edge(edge.target, edge.source)) {
@@ -1116,13 +1115,12 @@ cda_rail::Network::unbreakable_sections() const {
   // Get possible start vertices
   std::unordered_set<size_t> vertices_to_visit;
   for (size_t i = 0; i < number_of_vertices(); ++i) {
-    if (get_vertex(i).type == cda_rail::VertexType::NoBorder &&
-        !neighbors(i).empty()) {
+    if (get_vertex(i).type == VertexType::NoBorder && !neighbors(i).empty()) {
       vertices_to_visit.emplace(i);
     }
   }
 
-  dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NoBorder);
+  dfs(ret_val, vertices_to_visit, VertexType::NoBorder);
 
   return ret_val;
 }
@@ -1147,23 +1145,22 @@ cda_rail::Network::no_border_vss_sections() const {
   // Get possible start vertices
   std::unordered_set<size_t> vertices_to_visit;
   for (size_t i = 0; i < number_of_vertices(); ++i) {
-    if (get_vertex(i).type == cda_rail::VertexType::NoBorderVSS &&
+    if (get_vertex(i).type == VertexType::NoBorderVSS &&
         !neighbors(i).empty()) {
       vertices_to_visit.emplace(i);
     }
   }
 
-  dfs(ret_val, vertices_to_visit, cda_rail::VertexType::NoBorderVSS,
-      {cda_rail::VertexType::NoBorder});
+  dfs(ret_val, vertices_to_visit, VertexType::NoBorderVSS,
+      {VertexType::NoBorder});
 
   return ret_val;
 }
 
-void cda_rail::Network::dfs(
-    std::vector<std::vector<size_t>>&        ret_val,
-    std::unordered_set<size_t>&              vertices_to_visit,
-    const cda_rail::VertexType&              section_type,
-    const std::vector<cda_rail::VertexType>& error_types) const {
+void cda_rail::Network::dfs(std::vector<std::vector<size_t>>& ret_val,
+                            std::unordered_set<size_t>&       vertices_to_visit,
+                            const VertexType&                 section_type,
+                            const std::vector<VertexType>& error_types) const {
   // For every section
   while (!vertices_to_visit.empty()) {
     // New section
@@ -1233,8 +1230,7 @@ void cda_rail::Network::dfs(
   }
 }
 
-void cda_rail::Network::change_vertex_type(size_t               index,
-                                           cda_rail::VertexType new_type) {
+void cda_rail::Network::change_vertex_type(size_t index, VertexType new_type) {
   /**
    * Changes the type of a specific vertex.
    *
@@ -1311,7 +1307,7 @@ cda_rail::Network::get_reverse_edge_index(size_t edge_index) const {
 }
 
 std::vector<size_t>
-cda_rail::Network::get_vertices_by_type(cda_rail::VertexType type) const {
+cda_rail::Network::get_vertices_by_type(VertexType type) const {
   /**
    * Returns a vector of all vertices of a specific type.
    *

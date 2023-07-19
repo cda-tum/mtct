@@ -23,8 +23,7 @@ size_t cda_rail::Timetable::add_train(const std::string& name, int length,
                                       double max_speed, double acceleration,
                                       double deceleration, int t_0, double v_0,
                                       size_t entry, int t_n, double v_n,
-                                      size_t                   exit,
-                                      const cda_rail::Network& network) {
+                                      size_t exit, const Network& network) {
   if (!network.has_vertex(entry)) {
     throw std::invalid_argument("Entry vertex does not exist.");
   }
@@ -84,8 +83,8 @@ void cda_rail::Timetable::sort_stops() {
   }
 }
 
-void cda_rail::Timetable::export_timetable(
-    const std::filesystem::path& p, const cda_rail::Network& network) const {
+void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
+                                           const Network& network) const {
   /**
    * This method exports the timetable to a directory. In particular the
    * following files are created:
@@ -101,7 +100,7 @@ void cda_rail::Timetable::export_timetable(
    *  @param p The path to the directory where the files should be created.
    */
 
-  if (!cda_rail::is_directory_and_create(p)) {
+  if (!is_directory_and_create(p)) {
     throw std::runtime_error("Could not create directory " + p.string());
   }
 
@@ -133,13 +132,12 @@ void cda_rail::Timetable::export_timetable(
   file << j << std::endl;
 }
 
-void cda_rail::Timetable::set_train_list(const cda_rail::TrainList& tl) {
+void cda_rail::Timetable::set_train_list(const TrainList& tl) {
   train_list = tl;
-  schedules  = std::vector<cda_rail::Schedule>(tl.size());
+  schedules  = std::vector<Schedule>(tl.size());
 }
 
-bool cda_rail::Timetable::check_consistency(
-    const cda_rail::Network& network) const {
+bool cda_rail::Timetable::check_consistency(const Network& network) const {
   /**
    * This method checks if the timetable is consistent with the network, i.e.,
    * if the following holds:
@@ -200,7 +198,7 @@ bool cda_rail::Timetable::check_consistency(
 }
 
 cda_rail::Timetable::Timetable(const std::filesystem::path& p,
-                               const cda_rail::Network&     network) {
+                               const Network&               network) {
   /**
    * This method constructs the object and imports a timetable from a directory.
    * In particular the following files are read:
@@ -224,8 +222,8 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
   }
 
   // Import the train list and the station list
-  this->set_train_list(cda_rail::TrainList::import_trains(p));
-  this->station_list = cda_rail::StationList::import_stations(p, network);
+  this->set_train_list(TrainList::import_trains(p));
+  this->station_list = StationList::import_stations(p, network);
 
   // Read the schedules file
   std::ifstream f(p / "schedules.json");

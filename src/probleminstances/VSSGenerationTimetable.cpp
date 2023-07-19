@@ -35,17 +35,16 @@ cda_rail::instances::VSSGenerationTimetable::VSSGenerationTimetable(
    * @param p the path to the folder where the instance should be imported from
    */
 
-  this->network = cda_rail::Network::import_network(p / "network");
-  this->timetable =
-      cda_rail::Timetable::import_timetable(p / "timetable", this->network);
-  this->routes = cda_rail::RouteMap::import_routes(p / "routes", this->network);
+  this->network   = Network::import_network(p / "network");
+  this->timetable = Timetable::import_timetable(p / "timetable", this->network);
+  this->routes    = RouteMap::import_routes(p / "routes", this->network);
   if (!this->check_consistency(every_train_must_have_route)) {
     throw std::runtime_error("The imported instance is not consistent.");
   }
 }
 
 void cda_rail::instances::VSSGenerationTimetable::discretize(
-    cda_rail::SeparationType separation_type) {
+    SeparationType separation_type) {
   /**
    * This method discretizes the network. It updates the timetable and the
    * routes accordingly.

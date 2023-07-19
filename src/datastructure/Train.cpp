@@ -35,7 +35,7 @@ const cda_rail::Train& cda_rail::TrainList::get_train(size_t index) const {
 }
 
 void cda_rail::TrainList::export_trains(const std::filesystem::path& p) const {
-  if (!cda_rail::is_directory_and_create(p)) {
+  if (!is_directory_and_create(p)) {
     throw std::runtime_error("Could not create directory " + p.string());
   }
 
