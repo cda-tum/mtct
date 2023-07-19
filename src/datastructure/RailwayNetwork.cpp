@@ -780,7 +780,7 @@ cda_rail::Network::separate_edge_at(
     throw std::invalid_argument("Distances are not sorted");
   }
 
-  const auto& edge = get_edge(edge_index);
+  const auto edge = get_edge(edge_index);
 
   // Check if all distances are strictly between 0 and the length of the edge
   if (distances_from_source.front() <= 0 ||
