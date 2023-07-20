@@ -153,21 +153,24 @@ void cda_rail::Route::update_after_discretization(
    * @param new_edges The new edges of the network.
    */
 
-  const auto old_edges = edges;
-  edges.clear();
-  for (const auto& old_edge : old_edges) {
+  std::vector<size_t> edges_updated;
+  for (const auto& old_edge : edges) {
     bool replaced = false;
     for (const auto& [track, new_tracks] : new_edges) {
       if (old_edge == track) {
-        edges.insert(edges.end(), new_tracks.begin(), new_tracks.end());
+        edges_updated.insert(edges_updated.end(), new_tracks.begin(),
+                             new_tracks.end());
         replaced = true;
         break;
       }
     }
     if (!replaced) {
-      edges.emplace_back(old_edge);
+      edges_updated.emplace_back(old_edge);
     }
   }
+
+  // Move edges_updated into edges without copying
+  edges = std::move(edges_updated);
 }
 
 std::pair<double, double>
