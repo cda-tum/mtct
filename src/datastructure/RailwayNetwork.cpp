@@ -1516,9 +1516,7 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
         ret_val[u][v] = 0;
       } else if (is_valid_successor(u, v)) {
         ret_val[u][v] = get_edge(v).length;
-      } // else {
-      //  ret_val[u][v] = INF;
-      //}
+      }
     }
   }
 
