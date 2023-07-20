@@ -71,6 +71,11 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * solution was found.
    */
 
+  if (!instance.n().is_consistent_for_transformation()) {
+    throw std::runtime_error(
+        "Graph is not consistent. Please check the given instance.");
+  }
+
   decltype(std::chrono::high_resolution_clock::now()) start;
   decltype(std::chrono::high_resolution_clock::now()) model_created;
   decltype(std::chrono::high_resolution_clock::now()) model_solved;

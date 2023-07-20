@@ -920,16 +920,6 @@ cda_rail::Network::uniform_separate_edge(size_t edge_index) {
    * the minimal block length.
    */
 
-  // Check if graph is consistent for this function
-  if (!is_consistent_for_transformation()) {
-    throw std::invalid_argument("Graph is not consistent");
-  }
-
-  // Check if edge exists
-  if (!has_edge(edge_index)) {
-    throw std::invalid_argument("Edge does not exist");
-  }
-
   // If the edge is not breakable throw an exception
   if (!get_edge(edge_index).breakable) {
     throw std::invalid_argument("Edge is not breakable");
@@ -968,10 +958,6 @@ std::vector<size_t> cda_rail::Network::breakable_edges() const {
   /**
    * Returns indices of all breakable edges.
    */
-  // Check if graph is consistent for this function
-  if (!is_consistent_for_transformation()) {
-    throw std::invalid_argument("Graph is not consistent");
-  }
 
   std::vector<size_t> ret_val;
   for (size_t i = 0; i < number_of_edges(); ++i) {
@@ -986,10 +972,6 @@ std::vector<size_t> cda_rail::Network::relevant_breakable_edges() const {
   /**
    * Returns indices of all breakable edges, but only once per direction.
    */
-  // Check if graph is consistent for this function
-  if (!is_consistent_for_transformation()) {
-    throw std::invalid_argument("Graph is not consistent");
-  }
 
   std::vector<size_t> ret_val;
   for (size_t i = 0; i < number_of_edges(); ++i) {
@@ -1098,11 +1080,6 @@ cda_rail::Network::unbreakable_sections() const {
    * represents an unbreakable section.
    */
 
-  // Check if graph is consistent for this function
-  if (!is_consistent_for_transformation()) {
-    throw std::invalid_argument("Graph is not consistent");
-  }
-
   // Initialize return value
   std::vector<std::vector<size_t>> ret_val;
 
@@ -1145,11 +1122,6 @@ cda_rail::Network::no_border_vss_sections() const {
    * NoBorderVSS vertices that can be altered by an algorithm. These vertices
    * have likely been created by a transformation in advance.
    */
-
-  // Check if the graph is consistent for this function
-  if (!is_consistent_for_transformation()) {
-    throw std::invalid_argument("Graph is not consistent");
-  }
 
   // Initialize return value
   std::vector<std::vector<size_t>> ret_val;
