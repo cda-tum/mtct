@@ -1274,10 +1274,9 @@ cda_rail::Network::combine_reverse_edges(
    */
 
   // Check if all edges_to_consider exist
-  for (const auto& edge_index : edges_to_consider) {
-    if (!has_edge(edge_index)) {
-      throw std::invalid_argument("Edge does not exist");
-    }
+  if (!std::all_of(edges_to_consider.begin(), edges_to_consider.end(),
+                   [this](size_t i) { return has_edge(i); })) {
+    throw std::invalid_argument("Edge does not exist");
   }
 
   // Initialize return value
@@ -1390,19 +1389,26 @@ cda_rail::Network::sort_edge_pairs(
    */
 
   // Check if all edges exist
-  for (const auto& edge_pair : edge_pairs) {
-    if (!edge_pair.first.has_value()) {
-      throw std::invalid_argument("Edge pair first entry is empty");
-    }
-    if (!has_edge(edge_pair.first.value())) {
-      throw std::invalid_argument("Edge does not exist");
-    }
+  if (!std::all_of(edge_pairs.begin(), edge_pairs.end(),
+                   [this](const auto& edge_pair) {
+                     return edge_pair.first.has_value();
+                   })) {
+    throw std::invalid_argument("Edge pair first entry is empty");
   }
+  if (!std::all_of(edge_pairs.begin(), edge_pairs.end(),
+                   [this](const auto& edge_pair) {
+                     return has_edge(edge_pair.first.value());
+                   })) {
+    throw std::invalid_argument("Edge does not exist");
+  }
+
   // Check if all pairs are reverse of each other
-  for (const auto& edge_pair : edge_pairs) {
-    if (get_reverse_edge_index(edge_pair.first) != edge_pair.second) {
-      throw std::invalid_argument("Pairs are not reverse of each other");
-    }
+  if (!std::all_of(edge_pairs.begin(), edge_pairs.end(),
+                   [this](const auto& edge_pair) {
+                     return get_reverse_edge_index(edge_pair.first.value()) ==
+                            edge_pair.second;
+                   })) {
+    throw std::invalid_argument("Pairs are not reverse of each other");
   }
 
   // Initialize counting and helping maps
@@ -1487,15 +1493,13 @@ std::vector<size_t> cda_rail::Network::inverse_edges(
   std::vector<size_t> ret_val;
 
   // Check if all edges exist
-  for (const auto& edge_index : edge_indices) {
-    if (!has_edge(edge_index)) {
-      throw std::invalid_argument("Edge does not exist");
-    }
+  if (!std::all_of(edge_indices.begin(), edge_indices.end(),
+                   [this](size_t i) { return has_edge(i); })) {
+    throw std::invalid_argument("Edge does not exist");
   }
-  for (const auto& edge_index : edges_to_consider) {
-    if (!has_edge(edge_index)) {
-      throw std::invalid_argument("Edge does not exist");
-    }
+  if (!std::all_of(edges_to_consider.begin(), edges_to_consider.end(),
+                   [this](size_t i) { return has_edge(i); })) {
+    throw std::invalid_argument("Edge does not exist");
   }
 
   for (const auto& edge_index : edges_to_consider) {
