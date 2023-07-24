@@ -1,6 +1,7 @@
 add_library(
   ${PROJECT_NAME}
   ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
+  ${PROJECT_SOURCE_DIR}/include/CustomExceptions.hpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/RailwayNetwork.hpp
   datastructure/RailwayNetwork.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Train.hpp
