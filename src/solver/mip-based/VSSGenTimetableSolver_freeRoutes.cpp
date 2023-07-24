@@ -12,7 +12,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * This method creates the variables needed if the routes are not fixed.
    */
 
-  // Create MultiArrays
   vars["overlap"] = MultiArray<GRBVar>(num_tr, num_t - 1, num_edges);
   vars["x_v"]     = MultiArray<GRBVar>(num_tr, num_t, num_vertices);
   vars["len_in"]  = MultiArray<GRBVar>(num_tr, num_t);
@@ -22,7 +21,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   vars["e_lda"]   = MultiArray<GRBVar>(num_tr, num_t, num_edges);
   vars["e_mu"]    = MultiArray<GRBVar>(num_tr, num_t, num_edges);
 
-  // Iterate over all trains
   const auto& train_list = instance.get_train_list();
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).name;
@@ -76,6 +74,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_constraints() {
+  /**
+   * Create constraints that are only present if routes are not fixed.
+   */
   create_free_routes_position_constraints();
   create_free_routes_overlap_constraints();
   create_boundary_free_routes_constraints();
@@ -464,7 +465,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   const auto apsp = instance.n().all_edge_pairs_shortest_paths();
 
-  // Iterate over all trains
   const auto& train_list = instance.get_train_list();
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     const auto tr_name = train_list.get_train(tr).name;

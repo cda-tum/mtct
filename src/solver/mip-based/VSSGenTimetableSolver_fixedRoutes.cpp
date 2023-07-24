@@ -12,7 +12,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * Creates variables connected to the fixed route version of the problem
    */
 
-  // Create MultiArrays
   vars["lda"]   = MultiArray<GRBVar>(num_tr, num_t);
   vars["mu"]    = MultiArray<GRBVar>(num_tr, num_t);
   vars["x_lda"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);

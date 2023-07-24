@@ -85,8 +85,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     start = std::chrono::high_resolution_clock::now();
   }
 
-  // Save relevant variables
-  dt                             = delta_t;
+  this->dt                       = delta_t;
   this->fix_routes               = fix_routes_input;
   this->discretize_vss_positions = discretize_vss_positions_input;
   this->include_train_dynamics   = include_train_dynamics_input;
@@ -98,7 +97,6 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     throw std::runtime_error("Instance does not have a route for every train");
   }
 
-  // Discretize if applicable
   if (this->discretize_vss_positions) {
     std::cout << "Preprocessing graph...";
     instance.discretize();
@@ -107,23 +105,22 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   std::cout << "Creating model...";
 
-  // Initialize other relevant variables
   if (debug) {
     std::cout << std::endl;
     std::cout << "Initialize other relevant variables" << std::endl;
   }
-  // Time intervals under consideration
+
   num_t = instance.max_t() / dt;
   if (instance.max_t() % dt != 0) {
     num_t += 1;
   }
-  // Number of trains, edges, and vertices
+
   num_tr       = instance.get_train_list().size();
   num_edges    = instance.n().number_of_edges();
   num_vertices = instance.n().number_of_vertices();
-  // Sections that are not breakable
+
   unbreakable_sections = instance.n().unbreakable_sections();
-  // Sections/Edges that are breakable, i.e., VSS can be placed
+
   if (this->discretize_vss_positions) {
     no_border_vss_sections = instance.n().no_border_vss_sections();
     num_breakable_sections = no_border_vss_sections.size();
@@ -138,7 +135,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     num_breakable_sections = breakable_edges.size();
     relevant_edges         = instance.n().relevant_breakable_edges();
   }
-  // Time intervals in which trains are active
+
   for (size_t i = 0; i < num_tr; ++i) {
     train_interval.emplace_back(instance.time_interval(i));
     train_interval.back().first /= dt;
@@ -149,11 +146,9 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       train_interval.back().second /= dt;
     }
   }
-  // Pair bidirectional sections/edges to ensure only one direction is occupied
-  // at a time
+
   calculate_fwd_bwd_sections();
 
-  // Create environment and model
   if (debug) {
     std::cout << "Create environment and model" << std::endl;
   }
@@ -161,7 +156,6 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   env->start();
   model.emplace(env.value());
 
-  // Create variables
   if (debug) {
     std::cout << "Create general variables" << std::endl;
   }
@@ -195,13 +189,11 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     create_brakelen_variables();
   }
 
-  // Set objective
   if (debug) {
     std::cout << "Set objective" << std::endl;
   }
   set_objective();
 
-  // Create constraints
   if (debug) {
     std::cout << "Create general constraints" << std::endl;
   }
@@ -243,7 +235,6 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   std::cout << "DONE creating model" << std::endl;
 
-  // Model created
   if (debug || time_limit > 0) {
     model_created = std::chrono::high_resolution_clock::now();
     create_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -270,7 +261,6 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
   }
 
-  // Optimize
   if (this->include_braking_curves && !this->use_pwl) {
     // Non-convex constraints are present. Still, Gurobi can solve to optimality
     // using spatial branching
@@ -316,7 +306,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * Creates general variables that are independent of the fixed route
    */
 
-  // Create MultiArrays
   vars["v"] = MultiArray<GRBVar>(num_tr, num_t + 1);
   vars["x"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
   vars["x_sec"] =
@@ -371,10 +360,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * Creates variables connected to the VSS decisions of the problem
    */
 
-  // Create MultiArrays
   vars["b"] = MultiArray<GRBVar>(no_border_vss_vertices.size());
 
-  // Create variables
   for (size_t i = 0; i < no_border_vss_vertices.size(); ++i) {
     const auto& v_name =
         instance.n().get_vertex(no_border_vss_vertices[i]).name;
@@ -393,7 +380,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     max_vss = std::max(max_vss, instance.n().max_vss_on_edge(e));
   }
 
-  // Create MultiArrays
   vars["b_pos"] = MultiArray<GRBVar>(num_breakable_sections, max_vss);
   vars["b_front"] =
       MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
@@ -474,13 +460,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * separated by a chosen vertex.
    */
 
-  // Iterate over all non-border VSS sections
   for (const auto& no_border_vss_section : no_border_vss_sections) {
     const auto tr_on_section =
         instance.trains_in_section(no_border_vss_section);
     const auto no_border_vss_section_sorted =
         instance.n().combine_reverse_edges(no_border_vss_section, true);
-    // Iterate over all pairs of trains on the section
     for (size_t i = 0; i < tr_on_section.size(); ++i) {
       const auto& tr1          = tr_on_section[i];
       const auto& tr1_interval = train_interval[tr1];
@@ -494,10 +478,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         std::pair<int, int> const t_interval = {
             std::max(tr1_interval.first, tr2_interval.first),
             std::min(tr1_interval.second, tr2_interval.second)};
-        // Iterate over all time steps where both trains can potentially be on
-        // the section
         for (int t = t_interval.first; t <= t_interval.second; ++t) {
-          // Iterate over all pairs of edges in the section
           for (size_t e1 = 0; e1 < no_border_vss_section_sorted.size(); ++e1) {
             for (size_t e2 = 0; e2 < no_border_vss_section_sorted.size();
                  ++e2) {
@@ -526,7 +507,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                     tr2, t, no_border_vss_section_sorted[e2].second.value());
               }
 
-              // Overlapping vertices
               for (size_t e_overlap = std::min(e1, e2);
                    e_overlap < std::max(e1, e2); ++e_overlap) {
                 const auto& v_overlap = instance.n().common_vertex(
@@ -536,7 +516,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                   throw std::runtime_error(
                       "No common vertex found, this should not have happened");
                 }
-                // Find index of v_overlap in no_border_vss_vertices
+
                 auto const v_overlap_index =
                     std::find(no_border_vss_vertices.begin(),
                               no_border_vss_vertices.end(), v_overlap.value()) -
@@ -573,7 +553,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * on an unbreakable section at a time.
    */
 
-  // Iterate over all unbreakable sections
   for (size_t sec_index = 0; sec_index < unbreakable_sections.size();
        ++sec_index) {
     const auto& sec       = unbreakable_sections[sec_index];
@@ -624,7 +603,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * - the speed is 0
    */
 
-  // Iterate over all trains
   const auto& train_list = instance.get_train_list();
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     const auto  tr_name     = train_list.get_train(tr).name;
@@ -674,7 +652,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * the trains.
    */
 
-  // Iterate over all trains
   const auto& train_list = instance.get_train_list();
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     // Iterate over all time steps
@@ -701,10 +678,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * This method creates the variables corresponding to breaking distances.
    */
 
-  // Create MultiArrays
   vars["brakelen"] = MultiArray<GRBVar>(num_tr, num_t);
-
-  // Iterate over all trains
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto  max_break_len = get_max_brakelen(tr);
     const auto& tr_name       = instance.get_train_list().get_train(tr).name;
@@ -747,6 +721,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_general_constraints() {
+  /**
+   * These constraints appear only when the graph is not discretized, but are
+   * general enough to appear in all model variants.
+   */
   // VSS can only be used if it is non-zero
   for (size_t i = 0; i < relevant_edges.size(); ++i) {
     const auto& e               = relevant_edges[i];
@@ -915,6 +893,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_brakelen_constraints() {
+  /**
+   * Creates the constraints related to braking distances.
+   */
   // break_len(tr, t) = v(tr, t+1)^2 / (2*tr_deceleration)
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_deceleration =
@@ -994,8 +975,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * prevents trains from blocking each other, since reversing trains is not
    * modelled.
    */
-  // Connect y_sec and x
 
+  // Connect y_sec and x
   for (int t = 0; t < num_t; ++t) {
     const auto tr_at_t = instance.trains_at_t(t * dt);
     for (size_t i = 0; i < fwd_bwd_sections.size(); ++i) {
@@ -1065,6 +1046,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     calculate_fwd_bwd_sections_discretized() {
+  /**
+   * For every section, cluster forward and backward edges.
+   */
   for (const auto& vss_section : no_border_vss_sections) {
     const auto vss_section_sorted =
         instance.n().combine_reverse_edges(vss_section, true);
@@ -1096,6 +1080,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     calculate_fwd_bwd_sections_non_discretized() {
+  /**
+   * For every section, cluster forward and backward edges.
+   */
   for (const auto& edge_pair : breakable_edges_pairs) {
     if (!edge_pair.first.has_value() || !edge_pair.second.has_value()) {
       continue;
@@ -1108,6 +1095,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 double cda_rail::solver::mip_based::VSSGenTimetableSolver::get_max_brakelen(
     const size_t& tr) const {
+  /**
+   * Returns the maximum braking distance of a train.
+   */
   const auto& tr_deceleration =
       instance.get_train_list().get_train(tr).deceleration;
   const auto& tr_max_speed = instance.get_train_list().get_train(tr).max_speed;

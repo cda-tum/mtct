@@ -67,9 +67,7 @@ cda_rail::instances::VSSGenerationTimetable::trains_in_section(
    * @return the trains that traverse the given section
    */
 
-  // Initialize the vector of trains
   std::vector<size_t> tr_in_sec;
-
   for (size_t i = 0; i < get_train_list().size(); ++i) {
     auto tr_name        = get_train_list().get_train(i).name;
     auto tr_route       = get_route(tr_name).get_edges();
@@ -138,6 +136,8 @@ bool cda_rail::instances::VSSGenerationTimetable::has_route_for_every_train()
     const {
   /**
    * Checks if every train has a route.
+   *
+   * @return true if every train has a route, false otherwise
    */
 
   return std::all_of(get_train_list().begin(), get_train_list().end(),
@@ -150,7 +150,13 @@ std::vector<size_t>
 cda_rail::instances::VSSGenerationTimetable::edges_used_by_train(
     const std::string& train_name, bool fixed_routes) const {
   /**
-   * Returns edges used by a specific train.
+   * Returns edges potentially used by a specific train.
+   *
+   * @param train_name the name of the train
+   * @param fixed_routes specifies if the routes are fixed, if not returns all
+   * edges
+   *
+   * @return edges potentially used by a specific train
    */
 
   if (!fixed_routes) {
@@ -164,6 +170,15 @@ cda_rail::instances::VSSGenerationTimetable::edges_used_by_train(
 
 std::vector<size_t> cda_rail::instances::VSSGenerationTimetable::trains_on_edge(
     size_t edge_id, bool fixed_routes) const {
+  /**
+   * Returns all trains that are present on a specific edge at any time.
+   *
+   * @param edge_id the id of the edge
+   * @param fixed_routes specifies if the routes are fixed, if not returns all
+   * trains
+   *
+   * @return all trains that are present on a specific edge at any time
+   */
   std::vector<size_t> trains_to_consider(get_train_list().size());
   std::iota(trains_to_consider.begin(), trains_to_consider.end(), 0);
   return trains_on_edge(edge_id, fixed_routes, trains_to_consider);
@@ -173,7 +188,16 @@ std::vector<size_t> cda_rail::instances::VSSGenerationTimetable::trains_on_edge(
     size_t edge_id, bool fixed_routes,
     const std::vector<size_t>& trains_to_consider) const {
   /**
-   * Returns all trains that are present on a specific edge.
+   * Returns all trains that are present on a specific edge, but only consider a
+   * subset of trains.
+   *
+   * @param edge_id the id of the edge
+   * @param fixed_routes specifies if the routes are fixed, if not returns all
+   * trains
+   * @param trains_to_consider the trains to consider
+   *
+   * @return all trains that are present on a specific edge, but only consider a
+   * subset of trains
    */
 
   if (!network.has_edge(edge_id)) {

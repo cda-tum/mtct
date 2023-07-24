@@ -12,6 +12,17 @@ using json = nlohmann::json;
 size_t cda_rail::TrainList::add_train(const std::string& name, int length,
                                       double max_speed, double acceleration,
                                       double deceleration) {
+  /**
+   * Add a train to the list of trains.
+   *
+   * @param name The name of the train.
+   * @param length The length of the train in m.
+   * @param max_speed The maximum speed of the train in m/s.
+   * @param acceleration The acceleration of the train in m/s^2.
+   * @param deceleration The deceleration of the train in m/s^2.
+   *
+   * @return The index of the train in the list of trains.
+   */
   if (has_train(name)) {
     throw std::invalid_argument("Train already exists.");
   }
@@ -21,6 +32,13 @@ size_t cda_rail::TrainList::add_train(const std::string& name, int length,
 }
 
 size_t cda_rail::TrainList::get_train_index(const std::string& name) const {
+  /**
+   * Returns the index of the train with the given name.
+   *
+   * @param name The name of the train.
+   *
+   * @return The index of the train with the given name.
+   */
   if (!has_train(name)) {
     throw std::invalid_argument("Train does not exist.");
   }
@@ -28,6 +46,13 @@ size_t cda_rail::TrainList::get_train_index(const std::string& name) const {
 }
 
 const cda_rail::Train& cda_rail::TrainList::get_train(size_t index) const {
+  /**
+   * Returns the train with the given index.
+   *
+   * @param index The index of the train.
+   *
+   * @return The train with the given index.
+   */
   if (!has_train(index)) {
     throw std::invalid_argument("Train does not exist.");
   }
@@ -35,6 +60,11 @@ const cda_rail::Train& cda_rail::TrainList::get_train(size_t index) const {
 }
 
 void cda_rail::TrainList::export_trains(const std::filesystem::path& p) const {
+  /**
+   * This method exports all trains to a directory in trains.json.
+   *
+   * @param p The path to the directory to export to.
+   */
   if (!is_directory_and_create(p)) {
     throw std::runtime_error("Could not create directory " + p.string());
   }
@@ -63,11 +93,9 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
     throw std::invalid_argument("Path does not exist.");
   }
 
-  // Read the file
   std::ifstream f((p / "trains.json"));
   json          data = json::parse(f);
 
-  // Add the trains
   for (const auto& [name, train] : data.items()) {
     this->add_train(name, train["length"], train["max_speed"],
                     train["acceleration"], train["deceleration"]);

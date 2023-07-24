@@ -79,7 +79,7 @@ size_t cda_rail::Route::get_edge(size_t route_index) const {
    * Throws an error if the index is out of range.
    *
    * @param route_index The index of the edge to return.
-   * @return The edge at the given index.
+   * @return The edge index at the given index.
    */
 
   if (route_index >= edges.size()) {
@@ -169,7 +169,6 @@ void cda_rail::Route::update_after_discretization(
     }
   }
 
-  // Move edges_updated into edges without copying
   edges = std::move(edges_updated);
 }
 
@@ -188,7 +187,6 @@ cda_rail::Route::edge_pos(size_t edge, const Network& network) const {
     throw std::invalid_argument("Edge does not exist.");
   }
 
-  // Initialize return values
   std::pair<double, double> return_pos = {0, 0};
   bool                      edge_found = false;
   for (const auto i : edges) {
@@ -214,12 +212,15 @@ cda_rail::Route::edge_pos(const std::vector<size_t>& edges_to_consider,
    * Returns the minimal start and maximal end position of the given
    * edges_to_consider in the route. Throws an error only if none of the
    * edges_to_consider exists in the route.
+   *
+   * @param edges_to_consider The edges to consider.
+   * @param network The network to which the edges belong.
+   *
+   * @return Start and end location of edge within the route.
    */
 
-  // Initialize return values
   std::pair<double, double> return_pos = {length(network) + 1, -1};
 
-  // Iterate over all edges_to_consider
   for (const auto& edge : edges_to_consider) {
     if (!contains_edge(edge)) {
       continue;
@@ -303,6 +304,8 @@ cda_rail::RouteMap::get_route(const std::string& train_name) const {
    * Throws an error if the train does not have a route.
    *
    * @param train_name The name of the train.
+   *
+   * @return The route of the given train.
    */
 
   if (routes.find(train_name) == routes.end()) {
@@ -327,13 +330,10 @@ bool cda_rail::RouteMap::check_consistency(
    * @return True if the route map is valid, false otherwise.
    */
 
-  // If every train must have a route the sizes must be equal.
   if (every_train_must_have_route && routes.size() != trains.size()) {
     return false;
   }
 
-  // If all of [name, route] in routes fulfill trains.has_train(name) and
-  // route.check_consistency(network) return true, else return false.
   return std::all_of(routes.begin(), routes.end(),
                      [&trains, &network](const auto& route) {
                        return trains.has_train(route.first) &&
@@ -521,6 +521,11 @@ double cda_rail::RouteMap::length(const std::string& train_name,
                                   const Network&     network) const {
   /**
    * Returns the length of the route of the given train.
+   *
+   * @param train_name The name of the train.
+   * @param network The network to which the routes belong.
+   *
+   * @return The length of the route of the given train.
    */
 
   return get_route(train_name).length(network);

@@ -13,6 +13,13 @@ using json = nlohmann::json;
 
 const cda_rail::Station&
 cda_rail::StationList::get_station(const std::string& name) const {
+  /**
+   * Returns the station with the given name.
+   *
+   * @param name The name of the station.
+   *
+   * @return The station with the given name.
+   */
   if (!has_station(name)) {
     throw std::invalid_argument("Station does not exist.");
   }
@@ -22,6 +29,13 @@ cda_rail::StationList::get_station(const std::string& name) const {
 void cda_rail::StationList::add_track_to_station(const std::string& name,
                                                  size_t             track,
                                                  const Network&     network) {
+  /**
+   * Add a specified track to a specified station.
+   *
+   * @param name The name of the station.
+   * @param track The index of the track to add.
+   * @param network The network reference to use for the edge names.
+   */
   if (!has_station(name)) {
     throw std::invalid_argument("Station does not exist.");
   }
@@ -56,6 +70,12 @@ void cda_rail::StationList::export_stations(const std::string& path,
 
 void cda_rail::StationList::export_stations(const std::filesystem::path& p,
                                             const Network& network) const {
+  /**
+   * This method exports all stations to a directory in stations.json.
+   *
+   * @param p The path to the directory to export to.
+   * @param network The network reference to use for the edge names.
+   */
   if (!is_directory_and_create(p)) {
     throw std::runtime_error("Could not create directory " + p.string());
   }
