@@ -113,4 +113,18 @@ public:
 private:
   std::string error_message;
 };
+
+class StationNotExistentException : public std::exception {
+public:
+  StationNotExistentException()
+      : error_message("Some station specified does not exist.") {}
+  explicit StationNotExistentException(const std::string& station_name)
+      : error_message("Station " + station_name + " does not exist.") {}
+  [[nodiscard]] const char* what() const noexcept override {
+    return error_message.c_str();
+  }
+
+private:
+  std::string error_message;
+};
 } // namespace cda_rail::exceptions

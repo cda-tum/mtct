@@ -1,5 +1,6 @@
 #include "datastructure/Station.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "nlohmann/json.hpp"
@@ -21,7 +22,7 @@ cda_rail::StationList::get_station(const std::string& name) const {
    * @return The station with the given name.
    */
   if (!has_station(name)) {
-    throw std::invalid_argument("Station does not exist.");
+    throw exceptions::StationNotExistentException(name);
   }
   return stations.at(name);
 }
@@ -37,10 +38,10 @@ void cda_rail::StationList::add_track_to_station(const std::string& name,
    * @param network The network reference to use for the edge names.
    */
   if (!has_station(name)) {
-    throw std::invalid_argument("Station does not exist.");
+    throw exceptions::StationNotExistentException(name);
   }
   if (!network.has_edge(track)) {
-    throw std::invalid_argument("Track does not exist.");
+    throw exceptions::EdgeNotExistentException(track);
   }
   // If stations.at(name).tracks already contains track, nothing happens.
   if (std::find(stations.at(name).tracks.begin(),
@@ -77,7 +78,8 @@ void cda_rail::StationList::export_stations(const std::filesystem::path& p,
    * @param network The network reference to use for the edge names.
    */
   if (!is_directory_and_create(p)) {
-    throw std::runtime_error("Could not create directory " + p.string());
+    throw exceptions::ExportException("Could not create directory " +
+                                      p.string());
   }
 
   json j;
@@ -123,10 +125,10 @@ cda_rail::StationList::StationList(const std::filesystem::path& p,
    */
 
   if (!std::filesystem::exists(p)) {
-    throw std::invalid_argument("Path does not exist.");
+    throw exceptions::ImportException("Path does not exist.");
   }
   if (!std::filesystem::is_directory(p)) {
-    throw std::invalid_argument("Path is not a directory.");
+    throw exceptions::ImportException("Path is not a directory.");
   }
 
   std::ifstream file(p / "stations.json");
