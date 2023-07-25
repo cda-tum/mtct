@@ -1265,7 +1265,7 @@ void cda_rail::Network::dfs(std::vector<std::vector<size_t>>& ret_val,
         }
         if (std::find(error_types.begin(), error_types.end(),
                       get_vertex(neighbor).type) != error_types.end()) {
-          throw std::runtime_error(
+          throw exceptions::ConsistencyException(
               "This should never happen, but I found error type vertex");
         }
 
@@ -1273,7 +1273,7 @@ void cda_rail::Network::dfs(std::vector<std::vector<size_t>>& ret_val,
           const auto edge_index = get_edge_index(current_vertex, neighbor);
           // If edge is breakable throw error
           if (get_edge(edge_index).breakable) {
-            throw std::runtime_error(
+            throw exceptions::ConsistencyException(
                 "This should never happen, but I found a breakable edge in an "
                 "unbreakable section");
           }
@@ -1288,7 +1288,7 @@ void cda_rail::Network::dfs(std::vector<std::vector<size_t>>& ret_val,
           const auto edge_index = get_edge_index(neighbor, current_vertex);
 
           if (get_edge(edge_index).breakable) {
-            throw std::runtime_error(
+            throw exceptions::ConsistencyException(
                 "This should never happen, but I found a breakable edge in an "
                 "unbreakable section");
           }
@@ -1490,7 +1490,7 @@ cda_rail::Network::sort_edge_pairs(
       break;
     }
     if (vertex_neighbors[j].size() > 1) {
-      throw std::runtime_error(
+      throw exceptions::ConsistencyException(
           "Something went wrong, vertex has more than one neighbor still.");
     }
 
@@ -1508,14 +1508,14 @@ cda_rail::Network::sort_edge_pairs(
       ret_val.emplace_back(edge_pair.first, edge_pair.second);
       j = edge.target;
     } else {
-      throw std::runtime_error(
+      throw exceptions::ConsistencyException(
           "Something went wrong, source and target are not as expected.");
     }
   }
 
   for (size_t i = 0; i < number_of_vertices(); ++i) {
     if (!vertex_neighbors[i].empty()) {
-      throw std::runtime_error(
+      throw exceptions::ConsistencyException(
           "Something went wrong, not everything was processed.");
     }
   }
