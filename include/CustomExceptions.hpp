@@ -96,4 +96,21 @@ public:
 private:
   std::string error_message;
 };
+
+class TrainNotExistentException : public std::exception {
+public:
+  TrainNotExistentException()
+      : error_message("Some train specified does not exist.") {}
+  explicit TrainNotExistentException(const std::string& train_name)
+      : error_message("Train " + train_name + " does not exist.") {}
+  explicit TrainNotExistentException(size_t train_id)
+      : error_message("Train with ID " + std::to_string(train_id) +
+                      " does not exist.") {}
+  [[nodiscard]] const char* what() const noexcept override {
+    return error_message.c_str();
+  }
+
+private:
+  std::string error_message;
+};
 } // namespace cda_rail::exceptions

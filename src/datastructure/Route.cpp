@@ -1,5 +1,6 @@
 #include "datastructure/Route.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "nlohmann/json.hpp"
@@ -20,10 +21,10 @@ void cda_rail::Route::push_back_edge(size_t         edge_index,
    */
 
   if (!network.has_edge(edge_index)) {
-    throw std::invalid_argument("Edge does not exist.");
+    throw exceptions::EdgeNotExistentException(edge_index);
   }
   if (!edges.empty() && !network.is_valid_successor(edges.back(), edge_index)) {
-    throw std::invalid_argument("Edge is not a valid successor.");
+    throw exceptions::ConsistencyException("Edge is not a valid successor.");
   }
   edges.emplace_back(edge_index);
 }
@@ -40,11 +41,11 @@ void cda_rail::Route::push_front_edge(size_t         edge_index,
    */
 
   if (!network.has_edge(edge_index)) {
-    throw std::invalid_argument("Edge does not exist.");
+    throw exceptions::EdgeNotExistentException(edge_index);
   }
   if (!edges.empty() &&
       !network.is_valid_successor(edge_index, edges.front())) {
-    throw std::invalid_argument("Edge is not a valid predecessor.");
+    throw exceptions::ConsistencyException("Edge is not a valid predecessor.");
   }
   edges.insert(edges.begin(), edge_index);
 }
@@ -56,7 +57,7 @@ void cda_rail::Route::remove_first_edge() {
    */
 
   if (edges.empty()) {
-    throw std::invalid_argument("Route is empty.");
+    throw exceptions::ConsistencyException("Route is empty.");
   }
   edges.erase(edges.begin());
 }
@@ -68,7 +69,7 @@ void cda_rail::Route::remove_last_edge() {
    */
 
   if (edges.empty()) {
-    throw std::invalid_argument("Route is empty.");
+    throw exceptions::ConsistencyException("Route is empty.");
   }
   edges.pop_back();
 }
@@ -83,7 +84,7 @@ size_t cda_rail::Route::get_edge(size_t route_index) const {
    */
 
   if (route_index >= edges.size()) {
-    throw std::invalid_argument("Index out of range.");
+    throw exceptions::InvalidInputException("Index out of range.");
   }
   return edges[route_index];
 }
@@ -100,7 +101,7 @@ const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
    */
 
   if (route_index >= edges.size()) {
-    throw std::invalid_argument("Index out of range.");
+    throw exceptions::InvalidInputException("Index out of range.");
   }
   return network.get_edge(edges[route_index]);
 }
@@ -184,7 +185,7 @@ cda_rail::Route::edge_pos(size_t edge, const Network& network) const {
    */
 
   if (!network.has_edge(edge)) {
-    throw std::invalid_argument("Edge does not exist.");
+    throw exceptions::EdgeNotExistentException(edge);
   }
 
   std::pair<double, double> return_pos = {0, 0};
@@ -199,7 +200,7 @@ cda_rail::Route::edge_pos(size_t edge, const Network& network) const {
   }
 
   if (!edge_found) {
-    throw std::invalid_argument("Edge does not exist in route.");
+    throw exceptions::ConsistencyException("Edge does not exist in route.");
   }
 
   return return_pos;
@@ -231,7 +232,7 @@ cda_rail::Route::edge_pos(const std::vector<size_t>& edges_to_consider,
   }
 
   if (return_pos.first > return_pos.second) {
-    throw std::runtime_error(
+    throw exceptions::ConsistencyException(
         "None of the edges_to_consider exists in the route.");
   }
 
@@ -247,7 +248,7 @@ void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
    */
 
   if (routes.find(train_name) != routes.end()) {
-    throw std::invalid_argument("Train already has a route.");
+    throw exceptions::InvalidInputException("Train already has a route.");
   }
   routes[train_name] = Route();
 }
@@ -264,7 +265,7 @@ void cda_rail::RouteMap::add_empty_route(const std::string& train_name,
    */
 
   if (!trains.has_train(train_name)) {
-    throw std::invalid_argument("Train does not exist.");
+    throw exceptions::TrainNotExistentException(train_name);
   }
   add_empty_route(train_name);
 }
@@ -278,7 +279,7 @@ void cda_rail::RouteMap::remove_first_edge(const std::string& train_name) {
    */
 
   if (routes.find(train_name) == routes.end()) {
-    throw std::invalid_argument("Train does not have a route.");
+    throw exceptions::ConsistencyException("Train does not have a route.");
   }
   routes[train_name].remove_first_edge();
 }
@@ -292,7 +293,7 @@ void cda_rail::RouteMap::remove_last_edge(const std::string& train_name) {
    */
 
   if (routes.find(train_name) == routes.end()) {
-    throw std::invalid_argument("Train does not have a route.");
+    throw exceptions::ConsistencyException("Train does not have a route.");
   }
   routes[train_name].remove_last_edge();
 }
@@ -309,7 +310,7 @@ cda_rail::RouteMap::get_route(const std::string& train_name) const {
    */
 
   if (routes.find(train_name) == routes.end()) {
-    throw std::invalid_argument("Train does not have a route.");
+    throw exceptions::ConsistencyException("Train does not have a route.");
   }
   return routes.at(train_name);
 }
@@ -354,7 +355,8 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
    */
 
   if (!is_directory_and_create(p)) {
-    throw std::runtime_error("Could not create directory " + p.string());
+    throw exceptions::ExportException("Could not create directory " +
+                                      p.string());
   }
 
   json j;
@@ -385,7 +387,7 @@ void cda_rail::RouteMap::push_back_edge(const std::string& train_name,
    */
 
   if (routes.find(train_name) == routes.end()) {
-    throw std::invalid_argument("Train does not have a route.");
+    throw exceptions::ConsistencyException("Train does not have a route.");
   }
   routes[train_name].push_back_edge(edge_index, network);
 }
@@ -404,7 +406,7 @@ void cda_rail::RouteMap::push_back_edge(const std::string& train_name,
    */
 
   if (routes.find(train_name) == routes.end()) {
-    throw std::invalid_argument("Train does not have a route.");
+    throw exceptions::ConsistencyException("Train does not have a route.");
   }
   routes[train_name].push_back_edge(source, target, network);
 }
@@ -424,7 +426,7 @@ void cda_rail::RouteMap::push_back_edge(const std::string& train_name,
    */
 
   if (routes.find(train_name) == routes.end()) {
-    throw std::invalid_argument("Train does not have a route.");
+    throw exceptions::ConsistencyException("Train does not have a route.");
   }
   routes[train_name].push_back_edge(source, target, network);
 }
@@ -442,7 +444,7 @@ void cda_rail::RouteMap::push_front_edge(const std::string& train_name,
    */
 
   if (routes.find(train_name) == routes.end()) {
-    throw std::invalid_argument("Train does not have a route.");
+    throw exceptions::ConsistencyException("Train does not have a route.");
   }
   routes[train_name].push_front_edge(edge_index, network);
 }
@@ -461,7 +463,7 @@ void cda_rail::RouteMap::push_front_edge(const std::string& train_name,
    */
 
   if (routes.find(train_name) == routes.end()) {
-    throw std::invalid_argument("Train does not have a route.");
+    throw exceptions::ConsistencyException("Train does not have a route.");
   }
   routes[train_name].push_front_edge(source, target, network);
 }
@@ -481,7 +483,7 @@ void cda_rail::RouteMap::push_front_edge(const std::string& train_name,
    */
 
   if (routes.find(train_name) == routes.end()) {
-    throw std::invalid_argument("Train does not have a route.");
+    throw exceptions::ConsistencyException("Train does not have a route.");
   }
   routes[train_name].push_front_edge(source, target, network);
 }
@@ -499,10 +501,10 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
    */
 
   if (!std::filesystem::exists(p)) {
-    throw std::invalid_argument("Path does not exist.");
+    throw exceptions::ImportException("Path does not exist.");
   }
   if (!std::filesystem::is_directory(p)) {
-    throw std::invalid_argument("Path is not a directory.");
+    throw exceptions::ImportException("Path is not a directory.");
   }
 
   std::ifstream file(p / "routes.json");
