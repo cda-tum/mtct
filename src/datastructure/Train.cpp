@@ -1,5 +1,6 @@
 #include "datastructure/Train.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "nlohmann/json.hpp"
 
@@ -24,7 +25,7 @@ size_t cda_rail::TrainList::add_train(const std::string& name, int length,
    * @return The index of the train in the list of trains.
    */
   if (has_train(name)) {
-    throw std::invalid_argument("Train already exists.");
+    throw exceptions::ConsistencyException("Train already exists.");
   }
   trains.emplace_back(name, length, max_speed, acceleration, deceleration);
   train_name_to_index[name] = trains.size() - 1;
@@ -40,7 +41,7 @@ size_t cda_rail::TrainList::get_train_index(const std::string& name) const {
    * @return The index of the train with the given name.
    */
   if (!has_train(name)) {
-    throw std::invalid_argument("Train does not exist.");
+    throw exceptions::TrainNotExistentException(name);
   }
   return train_name_to_index.at(name);
 }
@@ -54,7 +55,7 @@ const cda_rail::Train& cda_rail::TrainList::get_train(size_t index) const {
    * @return The train with the given index.
    */
   if (!has_train(index)) {
-    throw std::invalid_argument("Train does not exist.");
+    throw exceptions::TrainNotExistentException(index);
   }
   return trains.at(index);
 }
@@ -66,7 +67,8 @@ void cda_rail::TrainList::export_trains(const std::filesystem::path& p) const {
    * @param p The path to the directory to export to.
    */
   if (!is_directory_and_create(p)) {
-    throw std::runtime_error("Could not create directory " + p.string());
+    throw exceptions::ExportException("Could not create directory " +
+                                      p.string());
   }
 
   json j;
@@ -87,10 +89,10 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
    */
 
   if (!std::filesystem::is_directory(p)) {
-    throw std::invalid_argument("Path is not a directory.");
+    throw exceptions::ImportException("Path is not a directory.");
   }
   if (!std::filesystem::exists(p)) {
-    throw std::invalid_argument("Path does not exist.");
+    throw exceptions::ImportException("Path does not exist.");
   }
 
   std::ifstream f((p / "trains.json"));
