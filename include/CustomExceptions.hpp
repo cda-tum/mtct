@@ -127,4 +127,21 @@ public:
 private:
   std::string error_message;
 };
+
+class ScheduleNotExistentException : public std::exception {
+public:
+  ScheduleNotExistentException()
+      : error_message("Some schedule specified does not exist.") {}
+  explicit ScheduleNotExistentException(const std::string& schedule_name)
+      : error_message("Schedule " + schedule_name + " does not exist.") {}
+  explicit ScheduleNotExistentException(size_t schedule_id)
+      : error_message("Schedule with ID " + std::to_string(schedule_id) +
+                      " does not exist.") {}
+  [[nodiscard]] const char* what() const noexcept override {
+    return error_message.c_str();
+  }
+
+private:
+  std::string error_message;
+};
 } // namespace cda_rail::exceptions

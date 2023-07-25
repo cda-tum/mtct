@@ -1,5 +1,6 @@
 #include "datastructure/Timetable.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/Station.hpp"
 #include "nlohmann/json.hpp"
@@ -21,7 +22,7 @@ cda_rail::Timetable::get_schedule(size_t index) const {
    * @return The schedule of the train.
    */
   if (!train_list.has_train(index)) {
-    throw std::invalid_argument("Train does not exist.");
+    throw exceptions::TrainNotExistentException(index);
   }
   return schedules.at(index);
 }
@@ -51,13 +52,13 @@ size_t cda_rail::Timetable::add_train(const std::string& name, int length,
    * @return The index of the train in the train list.
    */
   if (!network.has_vertex(entry)) {
-    throw std::invalid_argument("Entry vertex does not exist.");
+    throw exceptions::VertexNotExistentException(entry);
   }
   if (!network.has_vertex(exit)) {
-    throw std::invalid_argument("Exit vertex does not exist.");
+    throw exceptions::VertexNotExistentException(exit);
   }
   if (train_list.has_train(name)) {
-    throw std::invalid_argument("Train already exists.");
+    throw exceptions::ConsistencyException("Train already exists.");
   }
   auto const index =
       train_list.add_train(name, length, max_speed, acceleration, deceleration);
@@ -79,26 +80,28 @@ void cda_rail::Timetable::add_stop(size_t             train_index,
    * @param sort If true, the stops are sorted after insertion.
    */
   if (!train_list.has_train(train_index)) {
-    throw std::invalid_argument("Train does not exist.");
+    throw exceptions::TrainNotExistentException(train_index);
   }
   if (!station_list.has_station(station_name)) {
-    throw std::invalid_argument("Station does not exist.");
+    throw exceptions::StationNotExistentException(station_name);
   }
   if (begin < 0 || end < 0) {
-    throw std::invalid_argument("Time cannot be negative.");
+    throw exceptions::InvalidInputException("Time cannot be negative.");
   }
   if (begin >= end) {
-    throw std::invalid_argument("End time has to be after the start time.");
+    throw exceptions::ConsistencyException(
+        "End time has to be after the start time.");
   }
 
   auto& stops_reference = schedules.at(train_index).stops;
   for (const auto& stop : stops_reference) {
     if (stop.station == station_name) {
-      throw std::invalid_argument("Train already stops at station.");
+      throw exceptions::ConsistencyException("Train already stops at station.");
     }
 
     if (begin <= stop.end && end >= stop.begin) {
-      throw std::invalid_argument("Train has another stop at this time.");
+      throw exceptions::ConsistencyException(
+          "Train has another stop at this time.");
     }
   }
 
@@ -137,7 +140,8 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
    */
 
   if (!is_directory_and_create(p)) {
-    throw std::runtime_error("Could not create directory " + p.string());
+    throw exceptions::ExportException("Could not create directory " +
+                                      p.string());
   }
 
   train_list.export_trains(p);
@@ -255,10 +259,10 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
    */
 
   if (!std::filesystem::exists(p)) {
-    throw std::invalid_argument("Path does not exist.");
+    throw exceptions::ImportException("Path does not exist.");
   }
   if (!std::filesystem::is_directory(p)) {
-    throw std::invalid_argument("Path is not a directory.");
+    throw exceptions::ImportException("Path is not a directory.");
   }
 
   this->set_train_list(TrainList::import_trains(p));
@@ -270,8 +274,7 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
   for (size_t i = 0; i < this->train_list.size(); i++) {
     const auto& tr = this->train_list.get_train(i);
     if (!data.contains(tr.name)) {
-      throw std::invalid_argument("Schedule for train " + tr.name +
-                                  " not found.");
+      throw exceptions::ScheduleNotExistentException(tr.name);
     }
     auto& schedule_data       = data[tr.name];
     this->schedules.at(i).t_0 = schedule_data["t_0"];
@@ -322,7 +325,7 @@ cda_rail::Timetable::time_interval(size_t train_index) const {
    */
 
   if (!train_list.has_train(train_index)) {
-    throw std::invalid_argument("Train does not exist.");
+    throw exceptions::TrainNotExistentException(train_index);
   }
 
   const auto& schedule = schedules.at(train_index);
