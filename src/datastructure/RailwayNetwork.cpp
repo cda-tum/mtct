@@ -96,7 +96,7 @@ void cda_rail::Network::add_vertices_from_graphml(
       graphml_data = graphml_data->NextSiblingElement("data");
     }
     if (!v_type.has_value()) {
-      throw std::runtime_error("Error reading graphml file");
+      throw exceptions::ImportException("graphml");
     }
     this->add_vertex(name, static_cast<VertexType>(v_type.value()));
     graphml_node = graphml_node->NextSiblingElement("node");
@@ -143,7 +143,7 @@ void cda_rail::Network::add_edges_from_graphml(
     }
     if (!e_length.has_value() || !e_max_speed.has_value() ||
         !e_breakable.has_value() || !e_min_block_length.has_value()) {
-      throw std::runtime_error("Error reading graphml file");
+      throw exceptions::ImportException("graphml");
     }
     this->add_edge(source_name, target_name, e_length.value(),
                    e_max_speed.value(), e_breakable.value(),
@@ -161,7 +161,7 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   tinyxml2::XMLDocument graph_xml;
   graph_xml.LoadFile((p / "tracks.graphml").string().c_str());
   if (graph_xml.Error()) {
-    throw std::runtime_error("Error reading graphml file");
+    throw exceptions::ImportException("graphml");
   }
 
   tinyxml2::XMLElement* graphml_body = graph_xml.FirstChildElement("graphml");
@@ -175,14 +175,13 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
                     min_block_length, type);
   if (breakable.empty() || length.empty() || max_speed.empty() ||
       min_block_length.empty() || type.empty()) {
-    throw std::runtime_error("Error reading graphml file");
+    throw exceptions::ImportException("graphml");
   }
 
   const tinyxml2::XMLElement* graphml_graph =
       graphml_body->FirstChildElement("graph");
   if ((graphml_graph->Attribute("edgedefault")) != std::string("directed")) {
-    throw std::runtime_error(
-        "Graph is not directed. Not all properties present.");
+    throw exceptions::InvalidInputException("Graph is not directed");
   }
 
   const tinyxml2::XMLElement* graphml_node =
@@ -226,7 +225,7 @@ size_t cda_rail::Network::add_vertex(const std::string& name, VertexType type) {
    * @return Index of vertex
    */
   if (has_vertex(name)) {
-    throw std::invalid_argument("Vertex already exists");
+    throw exceptions::InvalidInputException("Vertex already exists");
   }
   vertices.emplace_back(name, type);
   vertex_name_to_index[name] = vertices.size() - 1;
@@ -248,7 +247,7 @@ size_t cda_rail::Network::add_edge(size_t source, size_t target, double length,
    * @return Index of edge
    */
   if (source == target) {
-    throw std::invalid_argument("Source and target are the same");
+    throw exceptions::InvalidInputException("Source and target are the same");
   }
   if (!has_vertex(source)) {
     throw exceptions::VertexNotExistentException(source);
@@ -257,7 +256,7 @@ size_t cda_rail::Network::add_edge(size_t source, size_t target, double length,
     throw exceptions::VertexNotExistentException(target);
   }
   if (has_edge(source, target)) {
-    throw std::invalid_argument("Edge already exists");
+    throw exceptions::InvalidInputException("Edge already exists");
   }
   edges.emplace_back(source, target, length, max_speed, breakable,
                      min_block_length);
@@ -279,7 +278,9 @@ void cda_rail::Network::add_successor(size_t edge_in, size_t edge_out) {
     throw exceptions::EdgeNotExistentException(edge_out);
   }
   if (edges[edge_in].target != edges[edge_out].source) {
-    throw std::invalid_argument("Edges are not adjacent");
+    throw exceptions::ConsistencyException("Edge " + std::to_string(edge_out) +
+                                           " is not adjacent to " +
+                                           std::to_string(edge_in));
   }
 
   // If successors[edges] already contains edge_out, do nothing
@@ -433,7 +434,7 @@ void cda_rail::Network::change_vertex_name(size_t             index,
     throw exceptions::VertexNotExistentException(index);
   }
   if (has_vertex(new_name)) {
-    throw std::invalid_argument("Vertex with new name already exists");
+    throw exceptions::InvalidInputException("Vertex already exists");
   }
   vertex_name_to_index.erase(vertices[index].name);
   vertices[index].name           = new_name;
@@ -733,7 +734,8 @@ void cda_rail::Network::export_network(const std::filesystem::path& p) const {
    */
 
   if (!is_directory_and_create(p)) {
-    throw std::runtime_error("Could not create directory " + p.string());
+    throw exceptions::ExportException("Could not create directory " +
+                                      p.string());
   }
 
   export_graphml(p);
@@ -807,10 +809,10 @@ cda_rail::Network::Network(const std::filesystem::path& p) {
    */
 
   if (!std::filesystem::exists(p)) {
-    throw std::runtime_error("Path does not exist");
+    throw exceptions::ImportException("Path does not exist");
   }
   if (!std::filesystem::is_directory(p)) {
-    throw std::runtime_error("Path is not a directory");
+    throw exceptions::ImportException("Path is not a directory");
   }
 
   this->read_graphml(p);
@@ -869,19 +871,19 @@ cda_rail::Network::separate_edge_at(
   }
 
   if (distances_from_source.empty()) {
-    throw std::invalid_argument("Distances are not specified");
+    throw exceptions::InvalidInputException("Distances are not specified");
   }
 
   if (!std::is_sorted(distances_from_source.begin(),
                       distances_from_source.end())) {
-    throw std::invalid_argument("Distances are not sorted");
+    throw exceptions::ConsistencyException("Distances are not sorted");
   }
 
   const auto edge = get_edge(edge_index);
 
   if (distances_from_source.front() <= 0 ||
       distances_from_source.back() >= edge.length) {
-    throw std::invalid_argument(
+    throw exceptions::ConsistencyException(
         "Distances are not strictly between 0 and the length of the edge");
   }
 
@@ -931,7 +933,8 @@ cda_rail::Network::separate_edge_at(
     const auto reverse_edge_index = get_edge_index(edge.target, edge.source);
     const auto reverse_edge       = get_edge(reverse_edge_index);
     if (reverse_edge.length != edge.length) {
-      throw std::invalid_argument("Reverse edge has different length");
+      throw exceptions::ConsistencyException(
+          "Reverse edge has different length");
     }
 
     new_reverse_edges.emplace_back(
@@ -976,7 +979,7 @@ cda_rail::Network::separate_edge(size_t         edge_index,
    */
 
   if (!is_consistent_for_transformation()) {
-    throw std::invalid_argument("Graph is not consistent");
+    throw exceptions::ConsistencyException();
   }
 
   if (separation_type == SeparationType::UNIFORM) {
@@ -985,7 +988,7 @@ cda_rail::Network::separate_edge(size_t         edge_index,
   // if (separation_type == SeparationType::CHEBYCHEV) {
   //   return chebychev_separate_edge(edge_index);
   // }
-  throw std::invalid_argument("Separation type does not exist.");
+  throw exceptions::InvalidInputException("Separation type does not exist.");
 }
 
 std::pair<std::vector<size_t>, std::vector<size_t>>
@@ -1001,7 +1004,7 @@ cda_rail::Network::uniform_separate_edge(size_t edge_index) {
 
   // If the edge is not breakable throw an exception
   if (!get_edge(edge_index).breakable) {
-    throw std::invalid_argument("Edge is not breakable");
+    throw exceptions::ConsistencyException("Edge is not breakable");
   }
 
   // If the edge length is smaller than twice the minimum block length, nothing
@@ -1405,7 +1408,7 @@ std::optional<size_t> cda_rail::Network::common_vertex(
    */
 
   if (!pair1.first.has_value() || !pair2.first.has_value()) {
-    throw std::invalid_argument("Pairs first entry is empty");
+    throw exceptions::InvalidInputException("Pairs first entry is empty");
   }
 
   if (!has_edge(pair1.first.value()) || !has_edge(pair2.first.value())) {
@@ -1413,10 +1416,12 @@ std::optional<size_t> cda_rail::Network::common_vertex(
   }
 
   if (get_reverse_edge_index(pair1.first) != pair1.second) {
-    throw std::invalid_argument("First pair is not reverse of each other");
+    throw exceptions::ConsistencyException(
+        "First pair is not reverse of each other");
   }
   if (get_reverse_edge_index(pair2.first) != pair2.second) {
-    throw std::invalid_argument("Second pair is not reverse of each other");
+    throw exceptions::ConsistencyException(
+        "Second pair is not reverse of each other");
   }
 
   std::optional<size_t> ret_val;
@@ -1443,11 +1448,10 @@ cda_rail::Network::sort_edge_pairs(
    * @return: Sorted vector of edge pairs
    */
 
-  if (!std::all_of(edge_pairs.begin(), edge_pairs.end(),
-                   [this](const auto& edge_pair) {
-                     return edge_pair.first.has_value();
-                   })) {
-    throw std::invalid_argument("Edge pair first entry is empty");
+  if (!std::all_of(
+          edge_pairs.begin(), edge_pairs.end(),
+          [](const auto& edge_pair) { return edge_pair.first.has_value(); })) {
+    throw exceptions::InvalidInputException("Edge pair first entry is empty");
   }
   if (!std::all_of(edge_pairs.begin(), edge_pairs.end(),
                    [this](const auto& edge_pair) {
@@ -1461,7 +1465,8 @@ cda_rail::Network::sort_edge_pairs(
                      return get_reverse_edge_index(edge_pair.first.value()) ==
                             edge_pair.second;
                    })) {
-    throw std::invalid_argument("Pairs are not reverse of each other");
+    throw exceptions::ConsistencyException(
+        "Pairs are not reverse of each other");
   }
 
   std::unordered_map<size_t, std::unordered_set<size_t>> vertex_neighbors;

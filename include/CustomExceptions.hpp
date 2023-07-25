@@ -3,6 +3,58 @@
 #include <utility>
 
 namespace cda_rail::exceptions {
+class ExportException : public std::exception {
+public:
+  ExportException() : error_message("Export failed.") {}
+  explicit ExportException(std::string message)
+      : error_message(std::move(message)) {}
+  [[nodiscard]] const char* what() const noexcept override {
+    return error_message.c_str();
+  }
+
+private:
+  std::string error_message;
+};
+
+class ConsistencyException : public std::exception {
+public:
+  ConsistencyException() : error_message("Consistency check failed.") {}
+  explicit ConsistencyException(std::string message)
+      : error_message(std::move(message)) {}
+  [[nodiscard]] const char* what() const noexcept override {
+    return error_message.c_str();
+  }
+
+private:
+  std::string error_message;
+};
+
+class InvalidInputException : public std::exception {
+public:
+  InvalidInputException() : error_message("Invalid input.") {}
+  explicit InvalidInputException(std::string message)
+      : error_message(std::move(message)) {}
+  [[nodiscard]] const char* what() const noexcept override {
+    return error_message.c_str();
+  }
+
+private:
+  std::string error_message;
+};
+
+class ImportException : public std::exception {
+public:
+  ImportException() : error_message("Import failed.") {}
+  explicit ImportException(const std::string& import_name)
+      : error_message("Import of " + import_name + " failed.") {}
+  [[nodiscard]] const char* what() const noexcept override {
+    return error_message.c_str();
+  }
+
+private:
+  std::string error_message;
+};
+
 class VertexNotExistentException : public std::exception {
 public:
   VertexNotExistentException()
