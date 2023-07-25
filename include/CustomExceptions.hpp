@@ -12,7 +12,7 @@ public:
   explicit VertexNotExistentException(size_t vertex_id)
       : error_message("Vertex with ID " + std::to_string(vertex_id) +
                       " does not exist") {}
-  [[nodiscard]] const char* what() const override {
+  [[nodiscard]] const char* what() const noexcept override {
     return error_message.c_str();
   }
 
@@ -37,7 +37,7 @@ public:
                                     const std::string& target)
       : error_message("Edge connecting " + source + "->" + target +
                       " does not exist.") {}
-  [[nodiscard]] const char* what() const override {
+  [[nodiscard]] const char* what() const noexcept override {
     return error_message.c_str();
   }
 
