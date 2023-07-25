@@ -1,5 +1,6 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
@@ -17,7 +18,8 @@ void cda_rail::instances::VSSGenerationTimetable::export_instance(
    */
 
   if (!cda_rail::is_directory_and_create(p)) {
-    throw std::runtime_error("Could not create directory " + p.string());
+    throw exceptions::ExportException("Could not create directory " +
+                                      p.string());
   }
   network.export_network(p / "network");
   timetable.export_timetable(p / "timetable", network);
@@ -39,7 +41,7 @@ cda_rail::instances::VSSGenerationTimetable::VSSGenerationTimetable(
   this->timetable = Timetable::import_timetable(p / "timetable", this->network);
   this->routes    = RouteMap::import_routes(p / "routes", this->network);
   if (!this->check_consistency(every_train_must_have_route)) {
-    throw std::runtime_error("The imported instance is not consistent.");
+    throw exceptions::ConsistencyException();
   }
 }
 
@@ -112,12 +114,11 @@ std::vector<size_t> cda_rail::instances::VSSGenerationTimetable::trains_at_t(
    */
 
   if (t < 0) {
-    throw std::invalid_argument("t must be non-negative.");
+    throw exceptions::InvalidInputException("t must be non-negative.");
   }
   for (auto tr : trains_to_consider) {
     if (!get_train_list().has_train(tr)) {
-      throw std::invalid_argument(
-          "trains_to_consider contains a train that does not exist.");
+      throw exceptions::TrainNotExistentException();
     }
   }
 
@@ -201,7 +202,7 @@ std::vector<size_t> cda_rail::instances::VSSGenerationTimetable::trains_on_edge(
    */
 
   if (!network.has_edge(edge_id)) {
-    throw std::invalid_argument("edge_id does not exist.");
+    throw exceptions::EdgeNotExistentException(edge_id);
   }
 
   if (!fixed_routes) {
