@@ -251,10 +251,10 @@ size_t cda_rail::Network::add_edge(size_t source, size_t target, double length,
     throw std::invalid_argument("Source and target are the same");
   }
   if (!has_vertex(source)) {
-    throw exceptions::vertex_not_existent_exception(source);
+    throw exceptions::VertexNotExistentException(source);
   }
   if (!has_vertex(target)) {
-    throw exceptions::vertex_not_existent_exception(target);
+    throw exceptions::VertexNotExistentException(target);
   }
   if (has_edge(source, target)) {
     throw std::invalid_argument("Edge already exists");
@@ -273,10 +273,10 @@ void cda_rail::Network::add_successor(size_t edge_in, size_t edge_out) {
    * @param edge_out Edge to add as successor
    */
   if (!has_edge(edge_in)) {
-    throw exceptions::edge_not_existent_exception(edge_in);
+    throw exceptions::EdgeNotExistentException(edge_in);
   }
   if (!has_edge(edge_out)) {
-    throw exceptions::edge_not_existent_exception(edge_out);
+    throw exceptions::EdgeNotExistentException(edge_out);
   }
   if (edges[edge_in].target != edges[edge_out].source) {
     throw std::invalid_argument("Edges are not adjacent");
@@ -300,7 +300,7 @@ const cda_rail::Vertex& cda_rail::Network::get_vertex(size_t index) const {
    * @return Vertex
    */
   if (!has_vertex(index)) {
-    throw exceptions::vertex_not_existent_exception(index);
+    throw exceptions::VertexNotExistentException(index);
   }
   return vertices[index];
 }
@@ -314,7 +314,7 @@ size_t cda_rail::Network::get_vertex_index(const std::string& name) const {
    * @return Index of vertex
    */
   if (!has_vertex(name)) {
-    throw exceptions::vertex_not_existent_exception(name);
+    throw exceptions::VertexNotExistentException(name);
   }
   return vertex_name_to_index.at(name);
 }
@@ -328,7 +328,7 @@ const cda_rail::Edge& cda_rail::Network::get_edge(size_t index) const {
    * @return Edge
    */
   if (!has_edge(index)) {
-    throw exceptions::edge_not_existent_exception(index);
+    throw exceptions::EdgeNotExistentException(index);
   }
   return edges[index];
 }
@@ -344,17 +344,17 @@ const cda_rail::Edge& cda_rail::Network::get_edge(size_t source_id,
    * @return Edge
    */
   if (!has_vertex(source_id)) {
-    throw exceptions::vertex_not_existent_exception(source_id);
+    throw exceptions::VertexNotExistentException(source_id);
   }
   if (!has_vertex(target_id)) {
-    throw exceptions::vertex_not_existent_exception(target_id);
+    throw exceptions::VertexNotExistentException(target_id);
   }
   for (const auto& edge : edges) {
     if (edge.source == source_id && edge.target == target_id) {
       return edge;
     }
   }
-  throw exceptions::edge_not_existent_exception(source_id, target_id);
+  throw exceptions::EdgeNotExistentException(source_id, target_id);
 }
 
 size_t cda_rail::Network::get_edge_index(size_t source_id,
@@ -368,17 +368,17 @@ size_t cda_rail::Network::get_edge_index(size_t source_id,
    * @return Index of edge
    */
   if (!has_vertex(source_id)) {
-    throw exceptions::vertex_not_existent_exception(source_id);
+    throw exceptions::VertexNotExistentException(source_id);
   }
   if (!has_vertex(target_id)) {
-    throw exceptions::vertex_not_existent_exception(target_id);
+    throw exceptions::VertexNotExistentException(target_id);
   }
   for (size_t i = 0; i < edges.size(); i++) {
     if (edges[i].source == source_id && edges[i].target == target_id) {
       return i;
     }
   }
-  throw exceptions::edge_not_existent_exception(source_id, target_id);
+  throw exceptions::EdgeNotExistentException(source_id, target_id);
 }
 
 bool cda_rail::Network::has_edge(size_t source_id, size_t target_id) const {
@@ -391,10 +391,10 @@ bool cda_rail::Network::has_edge(size_t source_id, size_t target_id) const {
    * @return True if edge exists, false otherwise
    */
   if (!has_vertex(source_id)) {
-    throw exceptions::vertex_not_existent_exception(source_id);
+    throw exceptions::VertexNotExistentException(source_id);
   }
   if (!has_vertex(target_id)) {
-    throw exceptions::vertex_not_existent_exception(target_id);
+    throw exceptions::VertexNotExistentException(target_id);
   }
   return std::any_of(
       edges.begin(), edges.end(), [source_id, target_id](const Edge& edge) {
@@ -413,10 +413,10 @@ bool cda_rail::Network::has_edge(const std::string& source_name,
    * @return True if edge exists, false otherwise
    */
   if (!has_vertex(source_name)) {
-    throw exceptions::vertex_not_existent_exception(source_name);
+    throw exceptions::VertexNotExistentException(source_name);
   }
   if (!has_vertex(target_name)) {
-    throw exceptions::vertex_not_existent_exception(target_name);
+    throw exceptions::VertexNotExistentException(target_name);
   }
   return has_edge(get_vertex_index(source_name), get_vertex_index(target_name));
 }
@@ -430,7 +430,7 @@ void cda_rail::Network::change_vertex_name(size_t             index,
    * @param new_name New name of vertex
    */
   if (!has_vertex(index)) {
-    throw exceptions::vertex_not_existent_exception(index);
+    throw exceptions::VertexNotExistentException(index);
   }
   if (has_vertex(new_name)) {
     throw std::invalid_argument("Vertex with new name already exists");
@@ -448,7 +448,7 @@ void cda_rail::Network::change_edge_length(size_t index, double new_length) {
    * @param new_length New length of edge
    */
   if (!has_edge(index)) {
-    throw exceptions::edge_not_existent_exception(index);
+    throw exceptions::EdgeNotExistentException(index);
   }
   edges[index].length = new_length;
 }
@@ -462,7 +462,7 @@ void cda_rail::Network::change_edge_max_speed(size_t index,
    * @param new_max_speed New max speed of edge
    */
   if (!has_edge(index)) {
-    throw exceptions::edge_not_existent_exception(index);
+    throw exceptions::EdgeNotExistentException(index);
   }
   edges[index].max_speed = new_max_speed;
 }
@@ -476,7 +476,7 @@ void cda_rail::Network::change_edge_min_block_length(
    * @param new_min_block_length New min block length of edge
    */
   if (!has_edge(index)) {
-    throw exceptions::edge_not_existent_exception(index);
+    throw exceptions::EdgeNotExistentException(index);
   }
   edges[index].min_block_length = new_min_block_length;
 }
@@ -488,7 +488,7 @@ void cda_rail::Network::set_edge_breakable(size_t index) {
    * @param index Index of edge
    */
   if (!has_edge(index)) {
-    throw exceptions::edge_not_existent_exception(index);
+    throw exceptions::EdgeNotExistentException(index);
   }
   edges[index].breakable = true;
 }
@@ -500,7 +500,7 @@ void cda_rail::Network::set_edge_unbreakable(size_t index) {
    * @param index Index of edge
    */
   if (!has_edge(index)) {
-    throw exceptions::edge_not_existent_exception(index);
+    throw exceptions::EdgeNotExistentException(index);
   }
   edges[index].breakable = false;
 }
@@ -514,7 +514,7 @@ std::vector<size_t> cda_rail::Network::out_edges(size_t index) const {
    * @return Vector of indices of edges leaving the vertex
    */
   if (!has_vertex(index)) {
-    throw exceptions::vertex_not_existent_exception(index);
+    throw exceptions::VertexNotExistentException(index);
   }
   std::vector<size_t> out_edges;
   for (size_t i = 0; i < edges.size(); ++i) {
@@ -534,7 +534,7 @@ std::vector<size_t> cda_rail::Network::in_edges(size_t index) const {
    * @return Vector of indices of edges entering the vertex
    */
   if (!has_vertex(index)) {
-    throw exceptions::vertex_not_existent_exception(index);
+    throw exceptions::VertexNotExistentException(index);
   }
   std::vector<size_t> in_edges;
   for (size_t i = 0; i < edges.size(); ++i) {
@@ -555,7 +555,7 @@ cda_rail::Network::get_successors(size_t index) const {
    * @return Vector of indices of successors
    */
   if (!has_edge(index)) {
-    throw exceptions::edge_not_existent_exception(index);
+    throw exceptions::EdgeNotExistentException(index);
   }
   return successors[index];
 }
@@ -756,10 +756,10 @@ bool cda_rail::Network::is_valid_successor(size_t e0, size_t e1) const {
    * @return: True if e1 is a valid successor of e0, false otherwise.
    */
   if (!has_edge(e0)) {
-    throw exceptions::edge_not_existent_exception(e0);
+    throw exceptions::EdgeNotExistentException(e0);
   }
   if (!has_edge(e1)) {
-    throw exceptions::edge_not_existent_exception(e1);
+    throw exceptions::EdgeNotExistentException(e1);
   }
 
   if (edges[e0].target != edges[e1].source) {
@@ -778,7 +778,7 @@ std::vector<size_t> cda_rail::Network::neighbors(size_t index) const {
    * @return Vector of vertex indices of neighbors
    */
   if (!has_vertex(index)) {
-    throw exceptions::vertex_not_existent_exception(index);
+    throw exceptions::VertexNotExistentException(index);
   }
   std::vector<size_t> neighbors;
   auto                e_out = out_edges(index);
@@ -831,7 +831,7 @@ bool cda_rail::Network::is_adjustable(size_t vertex_id) const {
    */
 
   if (!has_vertex(vertex_id)) {
-    throw exceptions::vertex_not_existent_exception(vertex_id);
+    throw exceptions::VertexNotExistentException(vertex_id);
   }
 
   if (vertices[vertex_id].type != VertexType::NoBorder) {
@@ -865,7 +865,7 @@ cda_rail::Network::separate_edge_at(
    */
 
   if (!has_edge(edge_index)) {
-    throw exceptions::edge_not_existent_exception(edge_index);
+    throw exceptions::EdgeNotExistentException(edge_index);
   }
 
   if (distances_from_source.empty()) {
@@ -1309,7 +1309,7 @@ void cda_rail::Network::change_vertex_type(size_t index, VertexType new_type) {
    */
 
   if (!has_vertex(index)) {
-    throw exceptions::vertex_not_existent_exception(index);
+    throw exceptions::VertexNotExistentException(index);
   }
   vertices[index].type = new_type;
 }
@@ -1333,7 +1333,7 @@ cda_rail::Network::combine_reverse_edges(
 
   if (!std::all_of(edges_to_consider.begin(), edges_to_consider.end(),
                    [this](size_t i) { return has_edge(i); })) {
-    throw exceptions::edge_not_existent_exception();
+    throw exceptions::EdgeNotExistentException();
   }
 
   std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>> ret_val;
@@ -1361,7 +1361,7 @@ cda_rail::Network::get_reverse_edge_index(size_t edge_index) const {
    */
 
   if (!has_edge(edge_index)) {
-    throw exceptions::edge_not_existent_exception(edge_index);
+    throw exceptions::EdgeNotExistentException(edge_index);
   }
 
   if (const auto& edge = get_edge(edge_index);
@@ -1409,7 +1409,7 @@ std::optional<size_t> cda_rail::Network::common_vertex(
   }
 
   if (!has_edge(pair1.first.value()) || !has_edge(pair2.first.value())) {
-    throw exceptions::edge_not_existent_exception();
+    throw exceptions::EdgeNotExistentException();
   }
 
   if (get_reverse_edge_index(pair1.first) != pair1.second) {
@@ -1453,7 +1453,7 @@ cda_rail::Network::sort_edge_pairs(
                    [this](const auto& edge_pair) {
                      return has_edge(edge_pair.first.value());
                    })) {
-    throw exceptions::edge_not_existent_exception();
+    throw exceptions::EdgeNotExistentException();
   }
 
   if (!std::all_of(edge_pairs.begin(), edge_pairs.end(),
@@ -1533,11 +1533,11 @@ std::vector<size_t> cda_rail::Network::inverse_edges(
 
   if (!std::all_of(edge_indices.begin(), edge_indices.end(),
                    [this](size_t i) { return has_edge(i); })) {
-    throw exceptions::edge_not_existent_exception();
+    throw exceptions::EdgeNotExistentException();
   }
   if (!std::all_of(edges_to_consider.begin(), edges_to_consider.end(),
                    [this](size_t i) { return has_edge(i); })) {
-    throw exceptions::edge_not_existent_exception();
+    throw exceptions::EdgeNotExistentException();
   }
 
   std::vector<size_t> ret_val;

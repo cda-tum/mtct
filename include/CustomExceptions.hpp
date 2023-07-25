@@ -1,39 +1,47 @@
 #include <exception>
 #include <string>
+#include <utility>
 
 namespace cda_rail::exceptions {
-class vertex_not_existent_exception : public std::exception {
+class VertexNotExistentException : public std::exception {
 public:
-  vertex_not_existent_exception() : vertex_name(" passed to function ") {}
-  vertex_not_existent_exception(const std::string& vertex_name)
-      : vertex_name(vertex_name) {}
-  vertex_not_existent_exception(size_t vertex_id)
-      : vertex_name(std::to_string(vertex_id)) {}
-  const char* what() const noexcept override {
-    return ("Vertex " + vertex_name + " does not exist").c_str();
+  VertexNotExistentException()
+      : error_message("Some vertex specified does not exist.") {}
+  explicit VertexNotExistentException(const std::string& vertex_name)
+      : error_message("Vertex " + vertex_name + " does not exist") {}
+  explicit VertexNotExistentException(size_t vertex_id)
+      : error_message("Vertex with ID " + std::to_string(vertex_id) +
+                      " does not exist") {}
+  [[nodiscard]] const char* what() const override {
+    return error_message.c_str();
   }
 
 private:
-  std::string vertex_name;
+  std::string error_message;
 };
 
-class edge_not_existent_exception : public std::exception {
+class EdgeNotExistentException : public std::exception {
 public:
-  edge_not_existent_exception() : edge_name(" passed to function ") {}
-  edge_not_existent_exception(const std::string& edge_name)
-      : edge_name(edge_name) {}
-  edge_not_existent_exception(size_t edge_id)
-      : edge_name(std::to_string(edge_id)) {}
-  edge_not_existent_exception(size_t source, size_t target)
-      : edge_name(std::to_string(source) + " -> " + std::to_string(target)) {}
-  edge_not_existent_exception(const std::string& source,
-                              const std::string& target)
-      : edge_name(source + " -> " + target) {}
-  const char* what() const noexcept override {
-    return ("Edge " + edge_name + " does not exist").c_str();
+  EdgeNotExistentException()
+      : error_message("Some edge specified does not exist.") {}
+  explicit EdgeNotExistentException(const std::string& edge_name)
+      : error_message("Edge " + edge_name + " does not exist.") {}
+  explicit EdgeNotExistentException(size_t edge_id)
+      : error_message("Edge with ID " + std::to_string(edge_id) +
+                      " does not exist.") {}
+  explicit EdgeNotExistentException(size_t source, size_t target)
+      : error_message("Edge connecting vertices with IDs " +
+                      std::to_string(source) + "->" + std::to_string(target) +
+                      " does not exist.") {}
+  explicit EdgeNotExistentException(const std::string& source,
+                                    const std::string& target)
+      : error_message("Edge connecting " + source + "->" + target +
+                      " does not exist.") {}
+  [[nodiscard]] const char* what() const override {
+    return error_message.c_str();
   }
 
 private:
-  std::string edge_name;
+  std::string error_message;
 };
 } // namespace cda_rail::exceptions
