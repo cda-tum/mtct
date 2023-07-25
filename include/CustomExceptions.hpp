@@ -3,6 +3,19 @@
 #include <utility>
 
 namespace cda_rail::exceptions {
+class ModelCreationException : public std::exception {
+public:
+  ModelCreationException() : error_message("Model creation failed.") {}
+  explicit ModelCreationException(std::string message)
+      : error_message(std::move(message)) {}
+  [[nodiscard]] const char* what() const noexcept override {
+    return error_message.c_str();
+  }
+
+private:
+  std::string error_message;
+};
+
 class ExportException : public std::exception {
 public:
   ExportException() : error_message("Export failed.") {}

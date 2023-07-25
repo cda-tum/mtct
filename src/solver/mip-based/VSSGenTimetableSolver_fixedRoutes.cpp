@@ -1,3 +1,4 @@
+#include "CustomExceptions.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
@@ -356,7 +357,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       const auto& tr1_entry = train_interval[tr_list[i]].first;
       const auto& tr2_entry = train_interval[tr_list[i + 1]].first;
       if (tr1_entry >= tr2_entry) {
-        throw std::runtime_error(
+        throw exceptions::ModelCreationException(
             "Something went wrong with trains " + std::to_string(tr_list[i]) +
             " and " + std::to_string(tr_list[i + 1]) + " at common entry");
       }
@@ -377,7 +378,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       const auto& tr1_exit = train_interval[tr_list[i]].second;
       const auto& tr2_exit = train_interval[tr_list[i + 1]].second;
       if (tr1_exit <= tr2_exit) {
-        throw std::runtime_error(
+        throw exceptions::ModelCreationException(
             "Something went wrong with trains " + std::to_string(tr_list[i]) +
             " and " + std::to_string(tr_list[i + 1]) + " at common exit");
       }

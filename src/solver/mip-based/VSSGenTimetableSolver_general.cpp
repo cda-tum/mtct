@@ -1,3 +1,4 @@
+#include "CustomExceptions.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
@@ -72,8 +73,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    */
 
   if (!instance.n().is_consistent_for_transformation()) {
-    throw std::runtime_error(
-        "Graph is not consistent. Please check the given instance.");
+    throw exceptions::ConsistencyException();
   }
 
   decltype(std::chrono::high_resolution_clock::now()) start;
@@ -94,7 +94,8 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   this->use_schedule_cuts        = use_schedule_cuts_input;
 
   if (this->fix_routes && !instance.has_route_for_every_train()) {
-    throw std::runtime_error("Instance does not have a route for every train");
+    throw exceptions::ConsistencyException(
+        "Instance does not have a route for every train");
   }
 
   if (this->discretize_vss_positions) {
@@ -513,7 +514,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                     no_border_vss_section_sorted[e_overlap],
                     no_border_vss_section_sorted[e_overlap + 1]);
                 if (!v_overlap.has_value()) {
-                  throw std::runtime_error(
+                  throw exceptions::ConsistencyException(
                       "No common vertex found, this should not have happened");
                 }
 
@@ -522,7 +523,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                               no_border_vss_vertices.end(), v_overlap.value()) -
                     no_border_vss_vertices.begin();
                 if (v_overlap_index >= no_border_vss_vertices.size()) {
-                  throw std::runtime_error(
+                  throw exceptions::ConsistencyException(
                       "Vertex not found in no_border_vss_vertices, this should "
                       "not have happened");
                 }
@@ -756,7 +757,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto vss_number_e =
         instance.n().max_vss_on_edge(e_pair.first.value());
     if (instance.n().max_vss_on_edge(e_pair.second.value()) != vss_number_e) {
-      throw std::runtime_error(
+      throw exceptions::ConsistencyException(
           "VSS number of edges " + std::to_string(e_pair.first.value()) +
           " and " + std::to_string(e_pair.second.value()) + " do not match");
     }
