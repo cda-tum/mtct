@@ -1,3 +1,6 @@
+[![codecov](https://img.shields.io/codecov/c/github/cda-tum/mtct?label=Coverage&logo=codecov&style=flat-square)](https://codecov.io/gh/cda-tum/mtct)
+[![License](https://img.shields.io/github/license/cda-tum/mtct?label=License&style=flat-square)](https://github.com/cda-tum/mtct/blob/main/LICENSE.txt)
+
 # MTCT - Munich Train Control Toolkit
 
 ## CDA Rail - A tool for automated design of ETCS Hybrid Level 3 systems
