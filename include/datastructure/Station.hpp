@@ -13,8 +13,8 @@ struct Station {
    * @param name Name of the station
    * @param tracks Unordered set of edges that define the station.
    */
-  std::string      name;
-  std::vector<int> tracks = {};
+  std::string         name;
+  std::vector<size_t> tracks = {};
 };
 
 class StationList {
@@ -27,10 +27,10 @@ private:
 public:
   // Constructors
   StationList() = default;
-  StationList(const std::filesystem::path& p, const cda_rail::Network& network);
-  StationList(const std::string& path, const cda_rail::Network& network)
+  StationList(const std::filesystem::path& p, const Network& network);
+  StationList(const std::string& path, const Network& network)
       : StationList(std::filesystem::path(path), network){};
-  StationList(const char* path, const cda_rail::Network& network)
+  StationList(const char* path, const Network& network)
       : StationList(std::filesystem::path(path), network){};
 
   // Rule of 5
@@ -42,56 +42,50 @@ public:
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
-  auto begin() const { return stations.begin(); };
-  auto end() const { return stations.end(); };
+  [[nodiscard]] auto begin() const { return stations.begin(); };
+  [[nodiscard]] auto end() const { return stations.end(); };
 
-  void add_station(const std::string& name) {
-    stations[name] = cda_rail::Station{name};
-  };
+  void add_station(const std::string& name) { stations[name] = Station{name}; };
 
   [[nodiscard]] bool has_station(const std::string& name) const {
     return stations.find(name) != stations.end();
   };
   [[nodiscard]] const Station& get_station(const std::string& name) const;
 
-  [[nodiscard]] int size() const { return stations.size(); };
+  [[nodiscard]] size_t size() const { return stations.size(); };
   [[nodiscard]] std::vector<std::string> get_station_names() const;
 
-  void add_track_to_station(const std::string& name, int track,
-                            const cda_rail::Network& network);
-  void add_track_to_station(const std::string& name, int source, int target,
-                            const cda_rail::Network& network) {
+  void add_track_to_station(const std::string& name, size_t track,
+                            const Network& network);
+  void add_track_to_station(const std::string& name, size_t source,
+                            size_t target, const Network& network) {
     add_track_to_station(name, network.get_edge_index(source, target), network);
   };
   void add_track_to_station(const std::string& name, const std::string& source,
-                            const std::string&       target,
-                            const cda_rail::Network& network) {
+                            const std::string& target, const Network& network) {
     add_track_to_station(name, network.get_edge_index(source, target), network);
   };
 
-  void export_stations(const std::string&       path,
-                       const cda_rail::Network& network) const;
-  void export_stations(const char*              path,
-                       const cda_rail::Network& network) const {
+  void export_stations(const std::string& path, const Network& network) const;
+  void export_stations(const char* path, const Network& network) const {
     export_stations(std::filesystem::path(path), network);
   };
   void export_stations(const std::filesystem::path& p,
-                       const cda_rail::Network&     network) const;
-  [[nodiscard]] static cda_rail::StationList
-  import_stations(const std::string& path, const cda_rail::Network& network) {
-    return StationList(path, network);
+                       const Network&               network) const;
+  [[nodiscard]] static StationList import_stations(const std::string& path,
+                                                   const Network&     network) {
+    return {path, network};
   };
-  [[nodiscard]] static cda_rail::StationList
-  import_stations(const char* path, const cda_rail::Network& network) {
-    return StationList(path, network);
+  [[nodiscard]] static StationList import_stations(const char*    path,
+                                                   const Network& network) {
+    return {path, network};
   };
-  [[nodiscard]] static cda_rail::StationList
-  import_stations(const std::filesystem::path& p,
-                  const cda_rail::Network&     network) {
-    return StationList(p, network);
+  [[nodiscard]] static StationList
+  import_stations(const std::filesystem::path& p, const Network& network) {
+    return {p, network};
   };
 
   void update_after_discretization(
-      const std::vector<std::pair<int, std::vector<int>>>& new_edges);
+      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges);
 };
 } // namespace cda_rail

@@ -1,6 +1,7 @@
 add_library(
   ${PROJECT_NAME}
   ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
+  ${PROJECT_SOURCE_DIR}/include/CustomExceptions.hpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/RailwayNetwork.hpp
   datastructure/RailwayNetwork.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Train.hpp
@@ -38,3 +39,8 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/extern/json extern/json)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC tinyxml2::tinyxml2)
 target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
+
+# add gsl
+add_subdirectory(${PROJECT_SOURCE_DIR}/extern/gsl extern/gsl)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC Microsoft.GSL::GSL)

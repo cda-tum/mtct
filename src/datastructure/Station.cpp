@@ -1,33 +1,47 @@
 #include "datastructure/Station.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "nlohmann/json.hpp"
 
-#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 using json = nlohmann::json;
 
 const cda_rail::Station&
 cda_rail::StationList::get_station(const std::string& name) const {
+  /**
+   * Returns the station with the given name.
+   *
+   * @param name The name of the station.
+   *
+   * @return The station with the given name.
+   */
   if (!has_station(name)) {
-    throw std::invalid_argument("Station does not exist.");
+    throw exceptions::StationNotExistentException(name);
   }
   return stations.at(name);
 }
 
-void cda_rail::StationList::add_track_to_station(
-    const std::string& name, int track, const cda_rail::Network& network) {
+void cda_rail::StationList::add_track_to_station(const std::string& name,
+                                                 size_t             track,
+                                                 const Network&     network) {
+  /**
+   * Add a specified track to a specified station.
+   *
+   * @param name The name of the station.
+   * @param track The index of the track to add.
+   * @param network The network reference to use for the edge names.
+   */
   if (!has_station(name)) {
-    throw std::invalid_argument("Station does not exist.");
+    throw exceptions::StationNotExistentException(name);
   }
   if (!network.has_edge(track)) {
-    throw std::invalid_argument("Track does not exist.");
+    throw exceptions::EdgeNotExistentException(track);
   }
   // If stations.at(name).tracks already contains track, nothing happens.
   if (std::find(stations.at(name).tracks.begin(),
@@ -38,8 +52,8 @@ void cda_rail::StationList::add_track_to_station(
   stations.at(name).tracks.emplace_back(track);
 }
 
-void cda_rail::StationList::export_stations(
-    const std::string& path, const cda_rail::Network& network) const {
+void cda_rail::StationList::export_stations(const std::string& path,
+                                            const Network&     network) const {
   /**
    * This method exports all stations to a file. The file is a json file with
    * the following structure:
@@ -51,14 +65,21 @@ void cda_rail::StationList::export_stations(
    * @param network The network reference to use for the edge names.
    */
 
-  std::filesystem::path p(path);
+  std::filesystem::path const p(path);
   export_stations(p, network);
 }
 
-void cda_rail::StationList::export_stations(
-    const std::filesystem::path& p, const cda_rail::Network& network) const {
-  if (!cda_rail::is_directory_and_create(p)) {
-    throw std::runtime_error("Could not create directory " + p.string());
+void cda_rail::StationList::export_stations(const std::filesystem::path& p,
+                                            const Network& network) const {
+  /**
+   * This method exports all stations to a directory in stations.json.
+   *
+   * @param p The path to the directory to export to.
+   * @param network The network reference to use for the edge names.
+   */
+  if (!is_directory_and_create(p)) {
+    throw exceptions::ExportException("Could not create directory " +
+                                      p.string());
   }
 
   json j;
@@ -85,6 +106,7 @@ std::vector<std::string> cda_rail::StationList::get_station_names() const {
    */
 
   std::vector<std::string> names;
+  names.reserve(stations.size());
   for (const auto& [name, station] : stations) {
     names.emplace_back(name);
   }
@@ -92,7 +114,7 @@ std::vector<std::string> cda_rail::StationList::get_station_names() const {
 }
 
 cda_rail::StationList::StationList(const std::filesystem::path& p,
-                                   const cda_rail::Network&     network) {
+                                   const Network&               network) {
   /**
    * This method constructs the object and imports all stations from a file. The
    * file is a json file with the structure described in export_stations. Hereby
@@ -103,10 +125,10 @@ cda_rail::StationList::StationList(const std::filesystem::path& p,
    */
 
   if (!std::filesystem::exists(p)) {
-    throw std::invalid_argument("Path does not exist.");
+    throw exceptions::ImportException("Path does not exist.");
   }
   if (!std::filesystem::is_directory(p)) {
-    throw std::invalid_argument("Path is not a directory.");
+    throw exceptions::ImportException("Path is not a directory.");
   }
 
   std::ifstream file(p / "stations.json");
@@ -122,7 +144,7 @@ cda_rail::StationList::StationList(const std::filesystem::path& p,
 }
 
 void cda_rail::StationList::update_after_discretization(
-    const std::vector<std::pair<int, std::vector<int>>>& new_edges) {
+    const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
   /**
    * This method updates the timetable after the discretization of the network
    * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
@@ -137,11 +159,11 @@ void cda_rail::StationList::update_after_discretization(
   for (auto& [name, station] : stations) {
     auto&      tracks = station.tracks;
     const auto size   = tracks.size();
-    for (int i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
       for (const auto& [track, new_tracks] : new_edges) {
         if (tracks[i] == track) {
           tracks[i] = new_tracks[0];
-          for (int j = 1; j < new_tracks.size(); ++j) {
+          for (size_t j = 1; j < new_tracks.size(); ++j) {
             tracks.emplace_back(new_tracks[j]);
           }
         }

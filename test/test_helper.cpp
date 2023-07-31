@@ -8,7 +8,7 @@ TEST(Functionality, Subsets) {
   // Expect 6 choose 2 number of elements
   EXPECT_EQ(subsets_of_size_3.size(), 20);
   // Expect all elements to have size 3
-  for (auto& subset : subsets_of_size_3) {
+  for (auto const& subset : subsets_of_size_3) {
     EXPECT_EQ(subset.size(), 3);
   }
   // Expect to find all subsets of size 3

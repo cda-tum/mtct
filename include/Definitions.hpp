@@ -8,7 +8,7 @@ const double INF           = std::numeric_limits<double>::max() / 3;
 const double ABS_PWL_ERROR = 10;
 
 // Constants for vertex type
-enum class VertexType { NO_BORDER = 0, VSS = 1, TTD = 2, NO_BORDER_VSS = 3 };
+enum class VertexType { NoBorder = 0, VSS = 1, TTD = 2, NoBorderVSS = 3 };
 enum class SeparationType { UNIFORM, CHEBYCHEV };
 
 // Helper functions
@@ -53,7 +53,7 @@ static std::vector<std::vector<size_t>> subsets_of_size_k_indices(size_t n,
 
   // If k = 0, return the empty set
   if (k == 0) {
-    return std::vector<std::vector<size_t>>();
+    return {};
   }
 
   // If k = n, return the set {0, 1, ..., n-1}
@@ -84,6 +84,7 @@ static std::vector<std::pair<size_t, size_t>>
 subsets_of_size_2_indices(size_t n) {
   auto subsets = subsets_of_size_k_indices(n, 2);
   std::vector<std::pair<size_t, size_t>> subsets_of_pairs;
+  subsets_of_pairs.reserve(subsets.size());
   for (auto& subset : subsets) {
     subsets_of_pairs.emplace_back(subset[0], subset[1]);
   }

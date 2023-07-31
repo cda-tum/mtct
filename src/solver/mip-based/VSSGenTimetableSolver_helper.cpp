@@ -1,14 +1,11 @@
-#include "MultiArray.hpp"
-#include "gurobi_c++.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <cmath>
-#include <exception>
 #include <unordered_map>
 
-std::vector<int>
+std::vector<size_t>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
-    int train_index) const {
+    size_t train_index) const {
   /**
    * This function returns the indices of the unbreakable sections that are
    * traversed by the train with index train_index
@@ -16,15 +13,16 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
    * @return vector of indices
    */
 
-  std::vector<int> indices;
+  std::vector<size_t> indices;
   const auto& tr_name  = instance.get_train_list().get_train(train_index).name;
   const auto& tr_route = instance.get_route(tr_name).get_edges();
-  for (int i = 0; i < unbreakable_sections.size(); ++i) {
+  for (size_t i = 0; i < unbreakable_sections.size(); ++i) {
     bool edge_found = false;
     // If unbreakable_section[i] (of type vector) and tr_route (of type vector)
     // overlap (have a common element), add i to indices
-    for (int j0 = 0; j0 < unbreakable_sections[i].size() && !edge_found; ++j0) {
-      for (int j1 = 0; j1 < tr_route.size() && !edge_found; ++j1) {
+    for (size_t j0 = 0; j0 < unbreakable_sections[i].size() && !edge_found;
+         ++j0) {
+      for (size_t j1 = 0; j1 < tr_route.size() && !edge_found; ++j1) {
         if (unbreakable_sections[i][j0] == tr_route[j1]) {
           indices.push_back(i);
           edge_found = true;
@@ -38,7 +36,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::TemporaryImpossibilityStruct
 cda_rail::solver::mip_based::VSSGenTimetableSolver::
-    get_temporary_impossibility_struct(const int& tr, const int& t) const {
+    get_temporary_impossibility_struct(const size_t& tr, const int& t) const {
   /**
    * This returns a struct containing information about the previous and
    * following station.
@@ -65,7 +63,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   for (const auto& tr_stop : tr_schedule.stops) {
     const auto t0 = tr_stop.begin / dt;
-    const auto t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
+    const auto t1 =
+        static_cast<int>(std::ceil(static_cast<double>(tr_stop.end) / dt));
     if (t >= t0 && t <= t1) {
       s.to_use = false;
       return s;
@@ -89,13 +88,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 double
 cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(
-    const int& tr, const int& time_steps, const double& v0, const double& a_max,
-    const bool& braking_distance) const {
+    const size_t& tr, const int& time_steps, const double& v0,
+    const double& a_max, const bool& braking_distance) const {
   const auto& train_object = instance.get_train_list().get_train(tr);
   const auto& v_max        = train_object.max_speed;
   const auto  time_diff    = time_steps * dt;
   double      ret_val      = 0;
-  double      final_speed  = 0;
+  double      final_speed  = NAN;
   if (!this->include_train_dynamics) {
     ret_val += time_diff * v_max;
     final_speed = v_max;
@@ -117,7 +116,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(
   return ret_val;
 }
 
-std::pair<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
+std::pair<std::vector<std::vector<size_t>>, std::vector<std::vector<size_t>>>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
     const {
   /**
@@ -125,19 +124,19 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
    * time
    */
 
-  auto compare_entry = [this](int tr1, int tr2) -> bool {
+  auto compare_entry = [this](size_t tr1, size_t tr2) {
     return train_interval[tr1].first < train_interval[tr2].first;
   };
-  auto compare_exit = [this](int tr1, int tr2) -> bool {
+  auto compare_exit = [this](size_t tr1, size_t tr2) {
     return train_interval[tr1].second > train_interval[tr2].second;
   };
 
-  std::pair<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
-                                            ret_val;
-  std::unordered_map<int, std::vector<int>> entry_vertices;
-  std::unordered_map<int, std::vector<int>> exit_vertices;
+  std::pair<std::vector<std::vector<size_t>>, std::vector<std::vector<size_t>>>
+                                                  ret_val;
+  std::unordered_map<size_t, std::vector<size_t>> entry_vertices;
+  std::unordered_map<size_t, std::vector<size_t>> exit_vertices;
 
-  for (int tr = 0; tr < num_tr; ++tr) {
+  for (size_t tr = 0; tr < num_tr; ++tr) {
     entry_vertices[instance.get_schedule(tr).entry].push_back(tr);
     exit_vertices[instance.get_schedule(tr).exit].push_back(tr);
   }

@@ -6,21 +6,21 @@
 namespace cda_rail::instances {
 class VSSGenerationTimetable {
 private:
-  cda_rail::Network   network;
-  cda_rail::Timetable timetable;
-  cda_rail::RouteMap  routes;
+  Network   network;
+  Timetable timetable;
+  RouteMap  routes;
 
 public:
   // Constructors
   VSSGenerationTimetable() = default;
-  VSSGenerationTimetable(const std::filesystem::path& p,
-                         bool every_train_must_have_route = true);
-  VSSGenerationTimetable(const std::string& path,
-                         bool               every_train_must_have_route = true)
+  explicit VSSGenerationTimetable(const std::filesystem::path& p,
+                                  bool every_train_must_have_route = true);
+  explicit VSSGenerationTimetable(const std::string& path,
+                                  bool every_train_must_have_route = true)
       : VSSGenerationTimetable(std::filesystem::path(path),
                                every_train_must_have_route){};
-  VSSGenerationTimetable(const char* path,
-                         bool        every_train_must_have_route = true)
+  explicit VSSGenerationTimetable(const char* path,
+                                  bool every_train_must_have_route = true)
       : VSSGenerationTimetable(std::filesystem::path(path),
                                every_train_must_have_route){};
 
@@ -33,20 +33,20 @@ public:
   ~VSSGenerationTimetable()                                         = default;
 
   // Network functions, i.e., network is accessible via n() as a reference
-  [[nodiscard]] cda_rail::Network& n() { return network; };
+  [[nodiscard]] Network& n() { return network; };
 
   // Timetable functions
-  int add_train(const std::string& name, int length, double max_speed,
-                double acceleration, double deceleration, int t_0, double v_0,
-                int entry, int t_n, double v_n, int exit) {
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, int t_0,
+                   double v_0, size_t entry, int t_n, double v_n, size_t exit) {
     return timetable.add_train(name, length, max_speed, acceleration,
                                deceleration, t_0, v_0, entry, t_n, v_n, exit,
                                network);
   };
-  int add_train(const std::string& name, int length, double max_speed,
-                double acceleration, double deceleration, int t_0, double v_0,
-                const std::string& entry, int t_n, double v_n,
-                const std::string& exit) {
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, int t_0,
+                   double v_0, const std::string& entry, int t_n, double v_n,
+                   const std::string& exit) {
     return timetable.add_train(name, length, max_speed, acceleration,
                                deceleration, t_0, v_0, entry, t_n, v_n, exit,
                                network);
@@ -54,10 +54,11 @@ public:
 
   void add_station(const std::string& name) { timetable.add_station(name); };
 
-  void add_track_to_station(const std::string& name, int track) {
+  void add_track_to_station(const std::string& name, size_t track) {
     timetable.add_track_to_station(name, track, network);
   };
-  void add_track_to_station(const std::string& name, int source, int target) {
+  void add_track_to_station(const std::string& name, size_t source,
+                            size_t target) {
     timetable.add_track_to_station(name, source, target, network);
   };
   void add_track_to_station(const std::string& name, const std::string& source,
@@ -65,7 +66,7 @@ public:
     timetable.add_track_to_station(name, source, target, network);
   };
 
-  void add_stop(int train_index, const std::string& station_name, int begin,
+  void add_stop(size_t train_index, const std::string& station_name, int begin,
                 int end, bool sort = true) {
     timetable.add_stop(train_index, station_name, begin, end, sort);
   };
@@ -74,13 +75,13 @@ public:
     timetable.add_stop(train_name, station_name, begin, end, sort);
   };
 
-  [[nodiscard]] const cda_rail::StationList& get_station_list() const {
+  [[nodiscard]] const StationList& get_station_list() const {
     return timetable.get_station_list();
   };
-  [[nodiscard]] const cda_rail::TrainList& get_train_list() const {
+  [[nodiscard]] const TrainList& get_train_list() const {
     return timetable.get_train_list();
   };
-  [[nodiscard]] const Schedule& get_schedule(int index) const {
+  [[nodiscard]] const Schedule& get_schedule(size_t index) const {
     return timetable.get_schedule(index);
   };
   [[nodiscard]] const Schedule&
@@ -88,8 +89,8 @@ public:
     return timetable.get_schedule(train_name);
   };
 
-  [[nodiscard]] int                 maxT() const { return timetable.maxT(); };
-  [[nodiscard]] std::pair<int, int> time_interval(int train_index) const {
+  [[nodiscard]] int                 max_t() const { return timetable.max_t(); };
+  [[nodiscard]] std::pair<int, int> time_interval(size_t train_index) const {
     return timetable.time_interval(train_index);
   };
   [[nodiscard]] std::pair<int, int>
@@ -104,11 +105,12 @@ public:
     routes.add_empty_route(train_name, get_train_list());
   };
 
-  void push_back_edge_to_route(const std::string& train_name, int edge_index) {
+  void push_back_edge_to_route(const std::string& train_name,
+                               size_t             edge_index) {
     routes.push_back_edge(train_name, edge_index, network);
   };
-  void push_back_edge_to_route(const std::string& train_name, int source,
-                               int target) {
+  void push_back_edge_to_route(const std::string& train_name, size_t source,
+                               size_t target) {
     routes.push_back_edge(train_name, source, target, network);
   };
   void push_back_edge_to_route(const std::string& train_name,
@@ -117,11 +119,12 @@ public:
     routes.push_back_edge(train_name, source, target, network);
   };
 
-  void push_front_edge_to_route(const std::string& train_name, int edge_index) {
+  void push_front_edge_to_route(const std::string& train_name,
+                                size_t             edge_index) {
     routes.push_front_edge(train_name, edge_index, network);
   };
-  void push_front_edge_to_route(const std::string& train_name, int source,
-                                int target) {
+  void push_front_edge_to_route(const std::string& train_name, size_t source,
+                                size_t target) {
     routes.push_front_edge(train_name, source, target, network);
   };
   void push_front_edge_to_route(const std::string& train_name,
@@ -140,7 +143,7 @@ public:
   [[nodiscard]] bool has_route(const std::string& train_name) const {
     return routes.has_route(train_name);
   };
-  [[nodiscard]] int          route_map_size() const { return routes.size(); };
+  [[nodiscard]] size_t       route_map_size() const { return routes.size(); };
   [[nodiscard]] const Route& get_route(const std::string& train_name) const {
     return routes.get_route(train_name);
   };
@@ -149,11 +152,12 @@ public:
     return routes.length(train_name, network);
   };
   [[nodiscard]] std::pair<double, double>
-  route_edge_pos(const std::string& train_name, int edge) const {
+  route_edge_pos(const std::string& train_name, size_t edge) const {
     return routes.edge_pos(train_name, edge, network);
   };
   [[nodiscard]] std::pair<double, double>
-  route_edge_pos(const std::string& train_name, int source, int target) const {
+  route_edge_pos(const std::string& train_name, size_t source,
+                 size_t target) const {
     return routes.edge_pos(train_name, source, target, network);
   };
   [[nodiscard]] std::pair<double, double>
@@ -162,8 +166,8 @@ public:
     return routes.edge_pos(train_name, source, target, network);
   };
   [[nodiscard]] std::pair<double, double>
-  route_edge_pos(const std::string&      train_name,
-                 const std::vector<int>& edges) const {
+  route_edge_pos(const std::string&         train_name,
+                 const std::vector<size_t>& edges) const {
     return routes.edge_pos(train_name, edges, network);
   };
 
@@ -200,24 +204,26 @@ public:
   };
 
   // Transformation functions
-  void discretize(cda_rail::SeparationType separation_type =
-                      cda_rail::SeparationType::UNIFORM);
+  void discretize(SeparationType separation_type = SeparationType::UNIFORM);
 
   // Helper
-  std::vector<int> trains_in_section(const std::vector<int>& section) const;
-  std::vector<int> trains_at_t(int t) const;
-  std::vector<int>
-       trains_at_t(int t, const std::vector<int>& trains_to_consider) const;
-  bool has_route_for_every_train() const;
-  std::vector<int> trains_on_edge(int edge_id, bool fixed_routes) const;
-  std::vector<int>
-                   trains_on_edge(int edge_id, bool fixed_routes,
-                                  const std::vector<int>& trains_to_consider) const;
-  std::vector<int> edges_used_by_train(int train_id, bool fixed_routes) const {
+  [[nodiscard]] std::vector<size_t>
+  trains_in_section(const std::vector<size_t>& section) const;
+  [[nodiscard]] std::vector<size_t> trains_at_t(int t) const;
+  [[nodiscard]] std::vector<size_t>
+  trains_at_t(int t, const std::vector<size_t>& trains_to_consider) const;
+  [[nodiscard]] bool                has_route_for_every_train() const;
+  [[nodiscard]] std::vector<size_t> trains_on_edge(size_t edge_id,
+                                                   bool   fixed_routes) const;
+  [[nodiscard]] std::vector<size_t>
+  trains_on_edge(size_t edge_id, bool fixed_routes,
+                 const std::vector<size_t>& trains_to_consider) const;
+  [[nodiscard]] std::vector<size_t>
+  edges_used_by_train(size_t train_id, bool fixed_routes) const {
     return edges_used_by_train(get_train_list().get_train(train_id).name,
                                fixed_routes);
   };
-  std::vector<int> edges_used_by_train(const std::string& train_name,
-                                       bool               fixed_routes) const;
+  [[nodiscard]] std::vector<size_t>
+  edges_used_by_train(const std::string& train_name, bool fixed_routes) const;
 };
 } // namespace cda_rail::instances
