@@ -1142,10 +1142,11 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
         return false;
       }
 
-      for (const auto& j : v_neighbors) {
-        if (get_vertex(j).type == VertexType::NoBorder) {
-          return false;
-        }
+      if (std::any_of(v_neighbors.begin(), v_neighbors.end(),
+                      [this](const auto& j) {
+                        return this->get_vertex(j).type == VertexType::NoBorder;
+                      })) {
+        return false;
       }
     }
   }
