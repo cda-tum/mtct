@@ -1,5 +1,5 @@
 ![OS](https://img.shields.io/badge/os-linux%20%7C%20macos%20%7C%20windows-blue?style=flat-square)
-[![License](https://img.shields.io/github/license/cda-tum/mtct?label=License&style=flat-square)](https://github.com/cda-tum/mtct/blob/main/LICENSE.txt)
+[![License](https://img.shields.io/github/license/cda-tum/mtct?label=License&style=flat-square)](https://github.com/cda-tum/mtct/blob/main/LICENSE)
 [![C++](https://github.com/cda-tum/mtct/actions/workflows/ci.yml/badge.svg)](https://github.com/cda-tum/mtct/actions/workflows/ci.yml)
 [![codecov](https://img.shields.io/codecov/c/github/cda-tum/mtct?label=Coverage&logo=codecov&style=flat-square)](https://codecov.io/gh/cda-tum/mtct)
 
