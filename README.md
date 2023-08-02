@@ -1,7 +1,9 @@
-![OS](https://img.shields.io/badge/os-linux%20%7C%20macos%20%7C%20windows-blue?style=flat-square)
-[![License](https://img.shields.io/github/license/cda-tum/mtct?label=License&style=flat-square)](https://github.com/cda-tum/mtct/blob/main/LICENSE)
-[![C++](https://github.com/cda-tum/mtct/actions/workflows/ci.yml/badge.svg)](https://github.com/cda-tum/mtct/actions/workflows/ci.yml)
+[![Ubuntu C++](https://github.com/cda-tum/mtct/actions/workflows/ubuntu.yml?label=Ubuntu&logo=ubuntu&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/ubuntu.yml)
+[![macOS C++](https://github.com/cda-tum/mtct/actions/workflows/macos.yml?label=macOS&logo=apple&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/macos.yml)
+[![Windows C++](https://github.com/cda-tum/mtct/actions/workflows/windows.yml?label=Windows&logo=windows&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/windows.yml)
+[![CodeQL](https://github.com/cda-tum/mtct/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/cda-tum/mtct/actions/workflows/codeql-analysis.yml)
 [![codecov](https://img.shields.io/codecov/c/github/cda-tum/rail?label=Coverage&logo=codecov&style=flat-square)](https://codecov.io/gh/cda-tum/rail)
+[![License](https://img.shields.io/github/license/cda-tum/mtct?label=License&style=flat-square)](https://github.com/cda-tum/mtct/blob/main/LICENSE)
 
 # MTCT - Munich Train Control Toolkit
 
