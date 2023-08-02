@@ -6,6 +6,26 @@
 #include <iostream>
 #include <string>
 
+TEST(Solver, GurobiVSSGenDeltaT) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  std::cout << "--------------------- TEST 1 ---------------------------"
+            << std::endl;
+  auto obj_val_1 = solver.solve(30, true, cda_rail::VSSModel::CONTINUOUS);
+  std::cout << "--------------------- TEST 2 ---------------------------"
+            << std::endl;
+  auto obj_val_2 = solver.solve(30, false, cda_rail::VSSModel::CONTINUOUS);
+  std::cout << "--------------------- TEST 3 ---------------------------"
+            << std::endl;
+  auto obj_val_3 =
+      solver.solve(30, true, cda_rail::VSSModel::DISCRETE, false, false);
+
+  EXPECT_EQ(obj_val_1, 1);
+  EXPECT_EQ(obj_val_2, 1);
+  EXPECT_EQ(obj_val_3, 1);
+}
+
 TEST(Solver, GurobiVSSGenDefault) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
