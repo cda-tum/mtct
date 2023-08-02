@@ -28,12 +28,12 @@ private:
   std::vector<size_t>                no_border_vss_vertices;
   std::vector<size_t>                relevant_edges;
   std::vector<size_t>                breakable_edges;
-  bool                               fix_routes               = false;
-  bool                               discretize_vss_positions = false;
-  bool                               include_train_dynamics   = false;
-  bool                               include_braking_curves   = false;
-  bool                               use_pwl                  = false;
-  bool                               use_schedule_cuts        = false;
+  bool                               fix_routes = false;
+  VSSModel                           vss_model  = VSSModel::CONTINUOUS;
+  bool                               include_train_dynamics = false;
+  bool                               include_braking_curves = false;
+  bool                               use_pwl                = false;
+  bool                               use_schedule_cuts      = false;
   std::unordered_map<size_t, size_t> breakable_edge_indices;
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
       fwd_bwd_sections;
@@ -128,9 +128,9 @@ public:
 
   // Methods
   int solve(int delta_t = 15, bool fix_routes_input = true,
-            bool discretize_vss_positions_input = false,
-            bool include_train_dynamics_input   = true,
-            bool include_braking_curves_input   = true,
+            VSSModel vss_model_input              = VSSModel::CONTINUOUS,
+            bool     include_train_dynamics_input = true,
+            bool     include_braking_curves_input = true,
             bool use_pwl_input = false, bool use_schedule_cuts_input = true,
             int time_limit = -1, bool debug = false,
             bool               export_to_file = false,

@@ -1,3 +1,4 @@
+#include "Definitions.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <gsl/span>
@@ -59,7 +60,9 @@ int main(int argc, char** argv) {
       std::to_string(static_cast<int>(use_schedule_cuts)) + "_" +
       std::to_string(timeout);
 
-  solver.solve(delta_t, fix_routes, discretize_vss_positions,
+  solver.solve(delta_t, fix_routes,
+               discretize_vss_positions ? cda_rail::VSSModel::DISCRETE
+                                        : cda_rail::VSSModel::CONTINUOUS,
                include_train_dynamics, include_braking_curves, use_pwl,
                use_schedule_cuts, timeout, true, true, file_name);
 }

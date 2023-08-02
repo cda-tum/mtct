@@ -30,7 +30,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
 }
 
 int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
-    int delta_t, bool fix_routes_input, bool discretize_vss_positions_input,
+    int delta_t, bool fix_routes_input, VSSModel vss_model_input,
     bool include_train_dynamics_input, bool include_braking_curves_input,
     bool use_pwl_input, bool use_schedule_cuts_input, int time_limit,
     bool debug, bool export_to_file, const std::string& file_name) {
@@ -85,20 +85,20 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     start = std::chrono::high_resolution_clock::now();
   }
 
-  this->dt                       = delta_t;
-  this->fix_routes               = fix_routes_input;
-  this->discretize_vss_positions = discretize_vss_positions_input;
-  this->include_train_dynamics   = include_train_dynamics_input;
-  this->include_braking_curves   = include_braking_curves_input;
-  this->use_pwl                  = use_pwl_input;
-  this->use_schedule_cuts        = use_schedule_cuts_input;
+  this->dt                     = delta_t;
+  this->fix_routes             = fix_routes_input;
+  this->vss_model              = vss_model_input;
+  this->include_train_dynamics = include_train_dynamics_input;
+  this->include_braking_curves = include_braking_curves_input;
+  this->use_pwl                = use_pwl_input;
+  this->use_schedule_cuts      = use_schedule_cuts_input;
 
   if (this->fix_routes && !instance.has_route_for_every_train()) {
     throw exceptions::ConsistencyException(
         "Instance does not have a route for every train");
   }
 
-  if (this->discretize_vss_positions) {
+  if (this->vss_model == VSSModel::DISCRETE) {
     std::cout << "Preprocessing graph...";
     instance.discretize();
     std::cout << "DONE" << std::endl;
@@ -122,7 +122,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   unbreakable_sections = instance.n().unbreakable_sections();
 
-  if (this->discretize_vss_positions) {
+  if (this->vss_model == VSSModel::DISCRETE) {
     no_border_vss_sections = instance.n().no_border_vss_sections();
     num_breakable_sections = no_border_vss_sections.size();
     no_border_vss_vertices =
@@ -172,7 +172,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
     create_free_routes_variables();
   }
-  if (this->discretize_vss_positions) {
+  if (this->vss_model == VSSModel::DISCRETE) {
     if (debug) {
       std::cout << "Create discretized VSS variables" << std::endl;
     }
@@ -210,7 +210,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
     create_free_routes_constraints();
   }
-  if (this->discretize_vss_positions) {
+  if (this->vss_model == VSSModel::DISCRETE) {
     if (debug) {
       std::cout << "Create discretized VSS constraints" << std::endl;
     }
@@ -438,7 +438,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
 
   // sum over all b_i as in no_border_vss_vertices
   GRBLinExpr obj = 0;
-  if (discretize_vss_positions) {
+  if (vss_model == VSSModel::DISCRETE) {
     for (size_t i = 0; i < no_border_vss_vertices.size(); ++i) {
       obj += vars["b"](i);
     }
@@ -1038,7 +1038,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * Calculate the forward and backward sections for each breakable section
    */
 
-  if (this->discretize_vss_positions) {
+  if (this->vss_model == VSSModel::DISCRETE) {
     calculate_fwd_bwd_sections_discretized();
   } else {
     calculate_fwd_bwd_sections_non_discretized();

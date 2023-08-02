@@ -11,6 +11,9 @@ const double ABS_PWL_ERROR = 10;
 enum class VertexType { NoBorder = 0, VSS = 1, TTD = 2, NoBorderVSS = 3 };
 enum class SeparationType { UNIFORM, CHEBYCHEV };
 
+// Constant for VSS modeling
+enum class VSSModel { DISCRETE = 0, CONTINUOUS = 1, UNIFORM = 2 };
+
 // Helper functions
 
 static bool is_directory_and_create(const std::filesystem::path& p) {
