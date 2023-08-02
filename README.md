@@ -2,7 +2,7 @@
 [![macOS C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/macos.yml?label=macOS&logo=apple&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/macos.yml)
 [![Windows C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/windows.yml?label=Windows&logo=windows&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/windows.yml)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/codeql-analysis.yml?label=CodeQL&logo=github&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/codeql-analysis.yml)
-[![codecov](https://img.shields.io/codecov/c/github/cda-tum/rail?label=Coverage&logo=codecov&style=flat-square)](https://codecov.io/gh/cda-tum/rail)
+[![codecov](https://img.shields.io/codecov/c/github/cda-tum/mtct?label=Coverage&logo=codecov&style=flat-square)](https://codecov.io/gh/cda-tum/mtct)
 [![License](https://img.shields.io/github/license/cda-tum/mtct?label=License&style=flat-square)](https://github.com/cda-tum/mtct/blob/main/LICENSE)
 
 # MTCT - Munich Train Control Toolkit
