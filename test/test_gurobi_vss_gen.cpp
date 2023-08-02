@@ -3,6 +3,16 @@
 #include "gtest/gtest.h"
 #include <string>
 
+TEST(Solver, GurobiVSSDiscretizeInstanceWithoutChange) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  const auto num_vertices =
+      solver.get_instance().const_n().number_of_vertices();
+  solver.solve(30, true, true);
+  EXPECT_EQ(num_vertices, solver.get_instance().const_n().number_of_vertices());
+}
+
 TEST(Solver, GurobiVSSGenDeltaTDefault) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
