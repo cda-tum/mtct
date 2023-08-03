@@ -2,7 +2,7 @@ name: windows
 
 on:
   workflow_run:
-    workflows: [macos]
+    workflows: ["macos"]
     types:
       - completed
   workflow_dispatch:

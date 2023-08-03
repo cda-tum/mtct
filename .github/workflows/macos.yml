@@ -2,7 +2,7 @@ name: macos
 
 on:
   workflow_run:
-    workflows: [ubuntu]
+    workflows: ["ubuntu"]
     types:
       - completed
   workflow_dispatch:
