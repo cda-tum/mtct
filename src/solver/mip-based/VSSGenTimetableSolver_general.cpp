@@ -1133,7 +1133,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup(
     const std::optional<instances::VSSGenerationTimetable>& old_instance) {
   if (old_instance.has_value()) {
-    instance = std::move(old_instance.value());
+    instance = old_instance.value();
   }
   dt                     = -1;
   num_t                  = -1;
