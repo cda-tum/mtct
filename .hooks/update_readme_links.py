@@ -2,7 +2,7 @@
 
 import subprocess
 
-current_branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip()
+current_branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode('utf-8')
 print("Current branch:", current_branch)
 
 
