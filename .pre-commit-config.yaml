@@ -61,7 +61,6 @@ repos:
     hooks:
       - id: update-readme-links
         name: Update README.md Links
-        entry: |
-          sed -E -i "s|(/mtct/[^?]*\?label=[^&]*&logo=[^&]*&style=flat-square&branch=)([^&]*)|\1\$(git rev-parse --abbrev-ref HEAD)|g" README.md
-        language: system
+        entry: ./.hooks/update_readme_links.py
+        language: python
         pass_filenames: false
