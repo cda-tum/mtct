@@ -16,19 +16,19 @@ codecov = f"[![codecov](https://img.shields.io/codecov/c/github/cda-tum/mtct?lab
 lines = open("README.md").readlines()
 with open("README.md", "w") as f:
     for line in lines:
-        if ubuntu[:20] in line:
+        if ubuntu[:20] in line and ubuntu not in line:
             print(f"Replacing {line} with {ubuntu}")
             f.write(ubuntu)
-        elif macos[:20] in line:
+        elif macos[:20] in line and macos not in line:
             print(f"Replacing {line} with {macos}")
             f.write(macos)
-        elif windows[:20] in line:
+        elif windows[:20] in line and windows not in line:
             print(f"Replacing {line} with {windows}")
             f.write(windows)
-        elif codeql[:20] in line:
+        elif codeql[:20] in line and codeql not in line:
             print(f"Replacing {line} with {codeql}")
             f.write(codeql)
-        elif codecov[:20] in line:
+        elif codecov[:20] in line and codecov not in line:
             print(f"Replacing {line} with {codecov}")
             f.write(codecov)
         else:
