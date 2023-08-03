@@ -1,8 +1,8 @@
-[![Ubuntu C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/ubuntu.yml?label=Ubuntu&logo=ubuntu&style=flat-square?branch=badges-current-branch)](https://github.com/cda-tum/mtct/actions/workflows/ubuntu.yml)
-[![macOS C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/macos.yml?label=macOS&logo=apple&style=flat-square?branch=badges-current-branch)](https://github.com/cda-tum/mtct/actions/workflows/macos.yml)
-[![Windows C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/windows.yml?label=Windows&logo=windows&style=flat-square?branch=badges-current-branch)](https://github.com/cda-tum/mtct/actions/workflows/windows.yml)
-[![CodeQL](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/codeql-analysis.yml?label=CodeQL&logo=github&style=flat-square?branch=badges-current-branch)](https://github.com/cda-tum/mtct/actions/workflows/codeql-analysis.yml)
-[![codecov](https://img.shields.io/codecov/c/github/cda-tum/mtct?label=Coverage&logo=codecov&style=flat-square?branch=badges-current-branch)](https://codecov.io/gh/cda-tum/mtct)
+[![Ubuntu C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/ubuntu.yml?label=Ubuntu&logo=ubuntu&style=flat-square?branch=badges-current-branch)](https://github.com/cda-tum/mtct/actions/workflows/ubuntu.yml?query=branch%3Abadges-current-branch)
+[![macOS C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/macos.yml?label=macOS&logo=apple&style=flat-square?branch=badges-current-branch)](https://github.com/cda-tum/mtct/actions/workflows/macos.yml?query=branch%3Abadges-current-branch)
+[![Windows C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/windows.yml?label=Windows&logo=windows&style=flat-square?branch=badges-current-branch)](https://github.com/cda-tum/mtct/actions/workflows/windows.yml?query=branch%3Abadges-current-branch)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/codeql-analysis.yml?label=CodeQL&logo=github&style=flat-square?branch=badges-current-branch)](https://github.com/cda-tum/mtct/actions/workflows/codeql-analysis.yml?query=branch%3Abadges-current-branch)
+[![codecov](https://img.shields.io/codecov/c/github/cda-tum/mtct?label=Coverage&logo=codecov&style=flat-square?branch=badges-current-branch)](https://codecov.io/gh/cda-tum/mtct/tree/badges-current-branch)
 [![License](https://img.shields.io/github/license/cda-tum/mtct?label=License&style=flat-square)](https://github.com/cda-tum/mtct/blob/main/LICENSE)
 
 # MTCT - Munich Train Control Toolkit
