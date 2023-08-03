@@ -26,7 +26,7 @@ jobs:
       - name: This is a standalone job
         run: echo "This job doesn't depend on any other job"
   cpp-tests-macos:
-    name: macos-latest
+    name: cpp-tests-macos
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
@@ -52,4 +52,5 @@ jobs:
       - name: Test
         run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
   call-windows:
+    needs: cpp-tests-macos
     uses: ./.github/workflows/windows.yml

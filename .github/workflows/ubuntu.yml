@@ -30,7 +30,7 @@ jobs:
       - name: This is a standalone job
         run: echo "This job doesn't depend on any other job"
   cpp-tests-ubuntu:
-    name: ubuntu-latest
+    name: cpp-tests-ubuntu
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -56,4 +56,5 @@ jobs:
       - name: Test
         run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
   call-macos:
+    needs: cpp-tests-ubuntu
     uses: ./.github/workflows/macos.yml

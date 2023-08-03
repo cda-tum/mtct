@@ -26,7 +26,7 @@ jobs:
       - name: This is a standalone job
         run: echo "This job doesn't depend on any other job"
   cpp-tests-windows:
-    name: windows-latest
+    name: cpp-tests-windows
     runs-on:
       os: windows-latest
       toolchain: "-T ClangCl"
@@ -71,4 +71,5 @@ jobs:
       - name: Test
         run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
   call-coverage:
+    needs: cpp-tests-windows
     uses: ./.github/workflows/coverage.yml
