@@ -21,13 +21,12 @@ env:
 
 jobs:
   cpp-tests-windows:
-    name: ${{ matrix.config.os }}
-    runs-on: ${{ matrix.config.os }}
+    name: windows-latest
+    runs-on:
+      os: windows-latest
+      toolchain: "-T ClangCl"
     strategy:
       fail-fast: false
-      matrix:
-        config:
-          - { os: windows-latest, toolchain: "-T ClangCl" }
     steps:
       - uses: actions/checkout@v3
         with:

@@ -21,13 +21,10 @@ env:
 
 jobs:
   cpp-tests-macos:
-    name: ${{ matrix.config.os }}
-    runs-on: ${{ matrix.config.os }}
+    name: macos-latest
+    runs-on: macos-latest
     strategy:
       fail-fast: false
-      matrix:
-        config:
-          - { os: macos-latest, toolchain: "" }
     steps:
       - uses: actions/checkout@v3
         with:
