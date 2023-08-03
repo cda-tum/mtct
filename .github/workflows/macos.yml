@@ -1,10 +1,11 @@
 name: macos
 
 on:
-  workflow_run:
-    workflows: [ubuntu]
-    types:
-      - completed
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -26,6 +27,7 @@ jobs:
   cpp-tests-macos:
     name: ${{ matrix.config.os }}
     runs-on: ${{ matrix.config.os }}
+    needs: cpp-tests-ubuntu
     strategy:
       fail-fast: false
       matrix:
