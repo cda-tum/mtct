@@ -1,11 +1,10 @@
 name: windows
 
 on:
-  pull_request:
-  merge_group:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [macos]
+    types:
+      - completed
   workflow_dispatch:
 
 concurrency:
@@ -27,7 +26,6 @@ jobs:
   cpp-tests-windows:
     name: ${{ matrix.config.os }}
     runs-on: ${{ matrix.config.os }}
-    needs: cpp-tests-macos
     strategy:
       fail-fast: false
       matrix:

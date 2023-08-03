@@ -1,11 +1,10 @@
 name: coverage
 
 on:
-  pull_request:
-  merge_group:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [windows]
+    types:
+      - completed
   workflow_dispatch:
 
 concurrency:
@@ -27,7 +26,6 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-    needs: cpp-tests-windows
     steps:
       - uses: actions/checkout@v3
         with:
