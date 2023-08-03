@@ -26,6 +26,7 @@ env:
 jobs:
   cpp-tests:
     name: Tests ${{ matrix.config.os }}
+    concurrency: gurobi
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false

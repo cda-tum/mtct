@@ -26,6 +26,7 @@ env:
 jobs:
   coverage:
     name: Coverage
+    concurrency: gurobi
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
