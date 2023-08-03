@@ -1,0 +1,157 @@
+name: C++ CI
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CMAKE_BUILD_PARALLEL_LEVEL: 3
+  CTEST_PARALLEL_LEVEL: 3
+  GUROBI_VERSION_SHORT: "10.0"
+  GUROBI_VERSION: "10.0.2"
+  GUROBI_VERSION_FOLDER: "gurobi1002"
+
+jobs:
+  cpp-ubuntu-latest:
+    name: cpp-ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: setup-gurobi-license
+        id: write-license
+        env:
+          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
+        run: |
+          echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
+          echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
+      - name: download-gurobi-linux
+        env:
+          GUROBI_FILE: gurobi${{ env.GUROBI_VERSION }}_linux64.tar.gz
+        run: |
+          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
+          tar -xvzf ${{ env.GUROBI_FILE }}
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Test
+        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
+  cpp-macos-latest:
+    name: cpp-macos-latest
+    runs-on: macos-latest
+    needs: cpp-ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: setup-gurobi-license
+        id: write-license
+        env:
+          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
+        run: |
+          echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
+          echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
+      - name: download-gurobi-mac
+        env:
+          GUROBI_FILE: gurobi${{ env.GUROBI_VERSION }}_macos_universal2.pkg
+        run: |
+          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
+          sudo installer -pkg ${{ env.GUROBI_FILE }} -target /
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Test
+        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
+  cpp-windows-latest:
+    name: cpp-windows-latest
+    runs-on: windows-latest
+    needs: cpp-macos-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: setup-gurobi-license
+        id: write-license
+        env:
+          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
+        run: |
+          echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
+          echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
+      - name: download-gurobi-windows
+        shell: powershell
+        env:
+          GUROBI_FILE: Gurobi-${{ env.GUROBI_VERSION }}-win64.msi
+        run: |
+          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
+          New-Item -itemType directory gurobi
+          $proc = Start-Process msiexec.exe -ArgumentList "/a ${{ env.GUROBI_FILE }} /qb /L*! install.log TARGETDIR=$PWD\gurobi" -NoNewWindow -PassThru
+          $timeouted = $null
+          $proc | Wait-Process -Timeout 120 -ErrorAction SilentlyContinue -ErrorVariable timeouted
+          if ($timeouted)
+          {
+            echo "TIMEOUT"
+            $proc.Kill()
+          }
+          cat install.log
+          ls $PWD\gurobi
+      - name: set-gurobi-env-variables
+        id: gurobi-env-variables
+        shell: powershell
+        run: |
+          echo "GUROBI_HOME=$PWD\gurobi\$env:GUROBI_VERSION_FOLDER\win64" >> $env:GITHUB_ENV
+          echo "$PWD\gurobi\$env:GUROBI_VERSION_FOLDER\win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Test
+        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    needs: cpp-windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: setup-gurobi-license
+        id: write-license
+        env:
+          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
+        run: |
+          echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
+          echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
+      - name: download-gurobi-linux
+        env:
+          GUROBI_FILE: gurobi${{ env.GUROBI_VERSION }}_linux64.tar.gz
+        run: |
+          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
+          tar -xvzf ${{ env.GUROBI_FILE }}
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DENABLE_COVERAGE=ON
+      - name: Build
+        run: cmake --build build --config Debug --target rail_test
+      - name: Test
+        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: true
+          gcov: true
+          gcov_ignore: "extern/**/*"
+          token: ${{ secrets.CODECOV_TOKEN }}

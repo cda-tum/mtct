@@ -1,6 +1,5 @@
-[![Ubuntu C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/ubuntu.yml?label=Ubuntu&logo=ubuntu&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/ubuntu.yml)
-[![macOS C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/macos.yml?label=macOS&logo=apple&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/macos.yml)
-[![Windows C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/windows.yml?label=Windows&logo=windows&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/windows.yml)
+![OS](https://img.shields.io/badge/os-linux%20%7C%20macos%20%7C%20windows-blue?style=flat-square)
+[![C++](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/cpp-ci.yml?label=c%2B%2B&logo=github&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/cpp-ci.yml)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/codeql-analysis.yml?label=CodeQL&logo=github&style=flat-square)](https://github.com/cda-tum/mtct/actions/workflows/codeql-analysis.yml)
 [![codecov](https://img.shields.io/codecov/c/github/cda-tum/mtct?label=Coverage&logo=codecov&style=flat-square)](https://codecov.io/gh/cda-tum/mtct)
 [![License](https://img.shields.io/github/license/cda-tum/mtct?label=License&style=flat-square)](https://github.com/cda-tum/mtct/blob/main/LICENSE)
