@@ -24,11 +24,8 @@ env:
   GUROBI_VERSION_FOLDER: "gurobi1002"
 
 jobs:
-  cpp-tests-windows:
+  cpp-tests:
     name: Tests ${{ matrix.config.os }}
-    concurrency:
-      group: gurobi
-      cancel-in-progress: false
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
