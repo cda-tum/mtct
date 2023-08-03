@@ -27,8 +27,6 @@ jobs:
   cpp-tests-ubuntu:
     name: ubuntu-latest
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - uses: actions/checkout@v3
         with:
