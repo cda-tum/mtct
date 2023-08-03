@@ -1,4 +1,4 @@
-name: Windows C++
+name: windows
 
 on:
   pull_request:
