@@ -20,6 +20,11 @@ env:
   GUROBI_VERSION_FOLDER: "gurobi1002"
 
 jobs:
+  standalone:
+    runs-on: macos-latest
+    steps:
+      - name: This is a standalone job
+        run: echo "This job doesn't depend on any other job"
   cpp-tests-macos:
     name: macos-latest
     runs-on: macos-latest
