@@ -2,7 +2,8 @@ name: coverage
 
 on:
   workflow_run:
-    workflows: [windows]
+    workflows:
+      - windows
     types:
       - completed
 
