@@ -64,3 +64,4 @@ repos:
         entry: ./.hooks/update_readme_links.py
         language: python
         pass_filenames: false
+        verbose: true
