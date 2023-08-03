@@ -2,7 +2,7 @@ name: coverage
 
 on:
   workflow_run:
-    workflows: [ubuntu]
+    workflows: [windows]
     types:
       - completed
 
@@ -24,9 +24,6 @@ env:
 jobs:
   coverage:
     name: Coverage
-    concurrency:
-      group: gurobi
-      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

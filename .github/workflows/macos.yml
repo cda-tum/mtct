@@ -2,7 +2,7 @@ name: macos
 
 on:
   workflow_run:
-    workflows: [windows]
+    workflows: [ubuntu]
     types:
       - completed
 
@@ -24,9 +24,6 @@ env:
 jobs:
   cpp-tests-macos:
     name: Tests ${{ matrix.config.os }}
-    concurrency:
-      group: gurobi
-      cancel-in-progress: false
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false

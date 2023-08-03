@@ -1,10 +1,12 @@
 name: ubuntu
 
 on:
-  workflow_run:
-    workflows: [macos]
-    types:
-      - completed
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -24,9 +26,6 @@ env:
 jobs:
   cpp-tests-ubuntu:
     name: Tests ${{ matrix.config.os }}
-    concurrency:
-      group: gurobi
-      cancel-in-progress: false
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
