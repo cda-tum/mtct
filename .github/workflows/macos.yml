@@ -1,10 +1,7 @@
 name: macos
 
 on:
-  workflow_run:
-    workflows: ["ubuntu"]
-    types:
-      - completed
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
@@ -54,3 +51,5 @@ jobs:
         run: cmake --build build --config Release
       - name: Test
         run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
+  call-windows:
+    uses: ./.github/workflows/windows.yml
