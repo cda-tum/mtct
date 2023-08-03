@@ -3,7 +3,8 @@ name: macos
 on:
   workflow_run:
     workflows: [ubuntu]
-    types: [completed]
+    types:
+      - completed
   workflow_dispatch:
 
 concurrency:

@@ -3,7 +3,8 @@ name: coverage
 on:
   workflow_run:
     workflows: [windows]
-    types: [completed]
+    types:
+      - completed
   workflow_dispatch:
 
 concurrency:
