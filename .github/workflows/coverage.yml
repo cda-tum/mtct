@@ -1,7 +1,11 @@
-name: coverage
+name: Coverage C++
 
 on:
-  workflow_call:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -20,11 +24,6 @@ env:
   GUROBI_VERSION_FOLDER: "gurobi1002"
 
 jobs:
-  standalone:
-    runs-on: macos-latest
-    steps:
-      - name: This is a standalone job
-        run: echo "This job doesn't depend on any other job"
   coverage:
     name: Coverage
     runs-on: ubuntu-latest

@@ -1,4 +1,4 @@
-name: ubuntu
+name: Ubuntu C++
 
 on:
   pull_request:
@@ -24,14 +24,14 @@ env:
   GUROBI_VERSION_FOLDER: "gurobi1002"
 
 jobs:
-  standalone:
-    runs-on: macos-latest
-    steps:
-      - name: This is a standalone job
-        run: echo "This job doesn't depend on any other job"
-  cpp-tests-ubuntu:
-    name: cpp-tests-ubuntu
-    runs-on: ubuntu-latest
+  cpp-tests:
+    name: Tests ${{ matrix.config.os }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { os: ubuntu-latest, toolchain: "" }
     steps:
       - uses: actions/checkout@v3
         with:
@@ -55,6 +55,3 @@ jobs:
         run: cmake --build build --config Release
       - name: Test
         run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
-  call-macos:
-    needs: cpp-tests-ubuntu
-    uses: ./.github/workflows/macos.yml
