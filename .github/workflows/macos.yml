@@ -2,10 +2,8 @@ name: macos
 
 on:
   workflow_run:
-    workflows:
-      - ubuntu
-    types:
-      - completed
+    workflows: [ubuntu-latest]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
@@ -25,7 +23,7 @@ env:
 
 jobs:
   cpp-tests-macos:
-    name: Tests ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }}
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false

@@ -25,7 +25,7 @@ env:
 
 jobs:
   cpp-tests-ubuntu:
-    name: Tests ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }}
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false

@@ -2,10 +2,8 @@ name: windows
 
 on:
   workflow_run:
-    workflows:
-      - macos
-    types:
-      - completed
+    workflows: [macos]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
@@ -25,7 +23,7 @@ env:
 
 jobs:
   cpp-tests-windows:
-    name: Tests ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }}
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
