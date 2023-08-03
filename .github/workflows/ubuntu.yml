@@ -24,14 +24,9 @@ env:
   GUROBI_VERSION_FOLDER: "gurobi1002"
 
 jobs:
-  cpp-tests:
-    name: Tests ${{ matrix.config.os }}
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - { os: ubuntu-latest, toolchain: "" }
+  cpp-ubuntu-latest:
+    name: cpp-ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:

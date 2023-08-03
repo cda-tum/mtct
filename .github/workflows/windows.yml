@@ -24,14 +24,9 @@ env:
   GUROBI_VERSION_FOLDER: "gurobi1002"
 
 jobs:
-  cpp-tests:
-    name: Tests ${{ matrix.config.os }}
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - { os: windows-latest, toolchain: "-T ClangCl" }
+  cpp-windows-latest:
+    name: cpp-windows-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -66,6 +61,13 @@ jobs:
         run: |
           echo "GUROBI_HOME=$PWD\gurobi\$env:GUROBI_VERSION_FOLDER\win64" >> $env:GITHUB_ENV
           echo "$PWD\gurobi\$env:GUROBI_VERSION_FOLDER\win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: wait-umacos
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          check-name: "cpp-macos-latest"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
       - name: Build

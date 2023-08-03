@@ -24,14 +24,9 @@ env:
   GUROBI_VERSION_FOLDER: "gurobi1002"
 
 jobs:
-  cpp-tests:
-    name: Tests ${{ matrix.config.os }}
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - { os: macos-latest, toolchain: "" }
+  cpp-macos-latest:
+    name: cpp-macos-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -49,6 +44,13 @@ jobs:
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           sudo installer -pkg ${{ env.GUROBI_FILE }} -target /
+      - name: wait-ubuntu
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          check-name: "cpp-ubuntu-latest"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
       - name: Build
