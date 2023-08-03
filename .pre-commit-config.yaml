@@ -12,6 +12,15 @@ ci:
   autofix_commit_msg: "🎨 pre-commit fixes"
 
 repos:
+  - repo: local
+    hooks:
+      - id: update-readme-links
+        name: Update README.md Links
+        entry: ./.hooks/update_readme_links.py
+        language: python
+        pass_filenames: false
+        verbose: true
+
   # Standard hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: "v4.4.0"
@@ -56,12 +65,3 @@ repos:
     hooks:
       - id: prettier
         types_or: [yaml, markdown, html, css, scss, javascript, json]
-
-  - repo: local
-    hooks:
-      - id: update-readme-links
-        name: Update README.md Links
-        entry: ./.hooks/update_readme_links.py
-        language: python
-        pass_filenames: false
-        verbose: true
