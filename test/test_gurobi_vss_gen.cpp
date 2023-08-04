@@ -93,7 +93,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree) {
   std::cout << "--------------------- TEST 1 ---------------------------"
             << std::endl;
   auto obj_val_1 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS, true,
-                                true, false, true, 60, true, true, "test_1");
+                                true, false, true, 180, true, true, "test_1");
   EXPECT_TRUE(std::filesystem::exists("test_1.mps"));
   EXPECT_TRUE(std::filesystem::exists("test_1.sol"));
   std::filesystem::remove("test_1.mps");
@@ -104,27 +104,27 @@ TEST(Solver, GurobiVSSGenModelDetailFree) {
   std::cout << "--------------------- TEST 2 ---------------------------"
             << std::endl;
   auto obj_val_2 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS, true,
-                                true, false, true, 60, true, false);
+                                true, false, true, 180, true, false);
 
   std::cout << "--------------------- TEST 3 ---------------------------"
             << std::endl;
   auto obj_val_3 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS, true,
-                                true, false, false, 60, true, false);
+                                true, false, false, 180, true, false);
 
   std::cout << "--------------------- TEST 4 ---------------------------"
             << std::endl;
   auto obj_val_4 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS, true,
-                                true, true, true, 60, true, false);
+                                true, true, true, 180, true, false);
 
   std::cout << "--------------------- TEST 5 ---------------------------"
             << std::endl;
   auto obj_val_5 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS, true,
-                                false, false, true, 60, true, false);
+                                false, false, true, 180, true, false);
 
   std::cout << "--------------------- TEST 6 ---------------------------"
             << std::endl;
   auto obj_val_6 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS,
-                                false, false, false, true, 60, true, false);
+                                false, false, false, true, 180, true, false);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val_1, 1);
@@ -140,7 +140,7 @@ TEST(Solver, GurobiVSSGenVSSDiscrete) {
       "./example-networks/SimpleStation/");
 
   auto obj_val = solver.solve(15, true, cda_rail::VSSModel::DISCRETE, false,
-                              false, false, true, 180, true, false);
+                              false, false, true, 240, true, false);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val, 1);
