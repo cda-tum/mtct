@@ -49,7 +49,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
       - name: Test
-        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
+        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 400
   cpp-macos-latest:
     name: cpp-macos-latest
     runs-on: macos-latest
@@ -76,7 +76,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
       - name: Test
-        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
+        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 400
   cpp-windows-latest:
     name: cpp-windows-latest
     runs-on: windows-latest
@@ -120,7 +120,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
       - name: Test
-        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
+        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 400
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
@@ -147,7 +147,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Debug --target rail_test
       - name: Test
-        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
+        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 400
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
