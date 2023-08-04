@@ -291,7 +291,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     return -1;
   }
 
-  int const obj_val =
+  auto const obj_val =
       static_cast<int>(round(model->get(GRB_DoubleAttr_ObjVal)));
   if (debug) {
     std::cout << "Objective: " << obj_val << std::endl;
@@ -394,9 +394,21 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
+    const bool relevant =
+        std::find(relevant_edges.begin(), relevant_edges.end(), e) !=
+        relevant_edges.end();
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
+      auto   ub = edge_len;
+      double lb = 0.0;
+      if (vss_model == VSSModel::UNIFORM) {
+        if (relevant) {
+          ub *= static_cast<double>(vss) + 1.0;
+        } else {
+          lb = -static_cast<double>(vss) * edge_len;
+        }
+      }
       vars["b_pos"](i, vss) =
-          model->addVar(0, edge_len, 0, GRB_CONTINUOUS,
+          model->addVar(lb, ub, 0, GRB_CONTINUOUS,
                         "b_pos_" + edge_name + "_" + std::to_string(vss));
       for (size_t tr = 0; tr < num_tr; ++tr) {
         for (int t = train_interval[tr].first; t <= train_interval[tr].second;
