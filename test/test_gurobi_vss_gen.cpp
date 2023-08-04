@@ -60,7 +60,7 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
   std::cout << "--------------------- TEST 3 ---------------------------"
             << std::endl;
   auto obj_val_3 = solver.solve(15, true, cda_rail::VSSModel::CONTINUOUS, true,
-                                true, false, false, 60, true, false);
+                                false, false, false, 60, true, false);
 
   std::cout << "--------------------- TEST 4 ---------------------------"
             << std::endl;
@@ -110,40 +110,34 @@ TEST(Solver, GurobiVSSGenModelDetailFree12) {
   EXPECT_EQ(obj_val_2, 1);
 }
 
-TEST(Solver, GurobiVSSGenModelDetailFree34) {
+TEST(Solver, GurobiVSSGenModelDetailFree3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 3 ---------------------------"
             << std::endl;
   auto obj_val_3 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS, true,
-                                true, false, false, 180, true, false);
+                                true, true, true, 180, true, false);
+
+  EXPECT_EQ(obj_val_3, 1);
+}
+
+TEST(Solver, GurobiVSSGenModelDetailFree45) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 4 ---------------------------"
             << std::endl;
   auto obj_val_4 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS, true,
-                                true, true, true, 180, true, false);
-
-  EXPECT_EQ(obj_val_3, 1);
-  EXPECT_EQ(obj_val_4, 1);
-}
-
-TEST(Solver, GurobiVSSGenModelDetailFree56) {
-  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+                                false, false, true, 180, true, false);
 
   std::cout << "--------------------- TEST 5 ---------------------------"
             << std::endl;
-  auto obj_val_5 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS, true,
-                                false, false, true, 180, true, false);
-
-  std::cout << "--------------------- TEST 6 ---------------------------"
-            << std::endl;
-  auto obj_val_6 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS,
+  auto obj_val_5 = solver.solve(15, false, cda_rail::VSSModel::CONTINUOUS,
                                 false, false, false, true, 180, true, false);
 
+  EXPECT_EQ(obj_val_4, 1);
   EXPECT_EQ(obj_val_5, 1);
-  EXPECT_EQ(obj_val_6, 1);
 }
 
 TEST(Solver, GurobiVSSGenVSSDiscrete) {
