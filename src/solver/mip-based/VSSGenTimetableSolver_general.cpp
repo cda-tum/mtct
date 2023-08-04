@@ -43,10 +43,8 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * 15
    * @param fix_routes_input: If true, the routes are fixed to the ones given in
    * the instance. Otherwise, routing is part of the optimization. Default: true
-   * @param discretize_vss_positions_input: If true, the graphs edges are
-   * discretized in many short edges. VSS positions are then represented by
-   * vertices. If false, the VSS positions are encoded as continuous integers.
-   * Default: false
+   * @param vss_model_input: Denotes, how the VSS borders are modelled in the
+   * solution process. Default: VSSModel::CONTINUOUS
    * @param include_train_dynamics_input: If true, the train dynamics (i.e.,
    * limited acceleration and deceleration) are included in the model. Default:
    * true
