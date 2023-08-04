@@ -384,7 +384,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
   vars["b_rear"] =
       MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
-  vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
+
+  if (vss_model == VSSModel::UNIFORM) {
+    vars["num_vss_segments"] = MultiArray<GRBVar>(relevant_edges.size());
+  } else {
+    vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
+  }
 
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
     const auto& e            = breakable_edges[i];
@@ -433,10 +438,16 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
-    for (size_t vss = 0; vss < vss_number_e; ++vss) {
-      vars["b_used"](i, vss) =
-          model->addVar(0, 1, 0, GRB_BINARY,
-                        "b_used_" + edge_name + "_" + std::to_string(vss));
+
+    if (vss_model == VSSModel::UNIFORM) {
+      vars["num_vss_segments"](i) = model->addVar(
+          1, vss_number_e + 1, 0, GRB_INTEGER, "num_vss_segments_" + edge_name);
+    } else {
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        vars["b_used"](i, vss) =
+            model->addVar(0, 1, 0, GRB_BINARY,
+                          "b_used_" + edge_name + "_" + std::to_string(vss));
+      }
     }
   }
 }
@@ -452,7 +463,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
     for (size_t i = 0; i < no_border_vss_vertices.size(); ++i) {
       obj += vars["b"](i);
     }
-  } else {
+  } else if (vss_model == VSSModel::CONTINUOUS) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
       const auto& e            = relevant_edges[i];
       const auto  vss_number_e = instance.n().max_vss_on_edge(e);
@@ -460,6 +471,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
         obj += vars["b_used"](i, vss);
       }
     }
+  } else if (vss_model == VSSModel::UNIFORM) {
+    for (size_t i = 0; i < relevant_edges.size(); ++i) {
+      obj += (vars["num_vss_segments"](i) - 1);
+    }
+  } else {
+    throw std::logic_error("Objective for vss model type not implemented");
   }
   model->setObjective(obj, GRB_MINIMIZE);
 }

@@ -320,9 +320,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
            ++t) {
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           // mu(tr, t) - edge_pos.first <= b_pos(e_index, vss) + mu_ub * (1 -
-          // b_front(tr, t, e_index, vss)) lda(tr, t) - edge_pos.first + (r_len
-          // + tr_len + e_len) * (1 - b_rear(tr, t, e_index, vss)) >=
-          // b_pos(e_index, vss)
+          // b_front(tr, t, e_index, vss))
+
+          // lda(tr, t) - edge_pos.first + (r_len + tr_len + e_len) * (1 -
+          // b_rear(tr, t, e_index, vss)) >= b_pos(e_index, vss)
           model->addConstr(
               vars["mu"](tr, t) - edge_pos.first, GRB_LESS_EQUAL,
               vars["b_pos"](e_index, vss) +
