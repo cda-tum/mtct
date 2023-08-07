@@ -472,7 +472,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
             "edge_type_" + edge_name + "_" + std::to_string(sep_type));
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           vars["frac_vss_segments"](i, sep_type, vss) = model->addVar(
-              0, vss + 1, 0, GRB_CONTINUOUS,
+              0, static_cast<double>(vss + 1), 0, GRB_CONTINUOUS,
               "frac_vss_segments_" + edge_name + "_" + std::to_string(vss) +
                   "_" + std::to_string(sep_type));
         }
