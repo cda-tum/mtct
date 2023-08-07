@@ -63,6 +63,10 @@ int main(int argc, char** argv) {
   solver.solve(delta_t, fix_routes,
                discretize_vss_positions ? cda_rail::VSSModel::DISCRETE
                                         : cda_rail::VSSModel::CONTINUOUS,
+               discretize_vss_positions
+                   ? std::vector<cda_rail::SeparationType>(
+                         {cda_rail::SeparationType::UNIFORM})
+                   : std::vector<cda_rail::SeparationType>(),
                include_train_dynamics, include_braking_curves, use_pwl,
                use_schedule_cuts, timeout, true, true, file_name);
 }

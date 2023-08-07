@@ -31,6 +31,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
 
 int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     int delta_t, bool fix_routes_input, VSSModel vss_model_input,
+    std::vector<SeparationType> separation_types_input,
     bool include_train_dynamics_input, bool include_braking_curves_input,
     bool use_pwl_input, bool use_schedule_cuts_input, int time_limit,
     bool debug, bool export_to_file, const std::string& file_name) {
@@ -74,6 +75,21 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     throw exceptions::ConsistencyException();
   }
 
+  if (vss_model_input == VSSModel::DISCRETE &&
+      separation_types_input.size() != 1) {
+    throw exceptions::ConsistencyException(
+        "Discrete VSS model only supports exactly one separation type");
+  }
+  if (vss_model_input == VSSModel::CONTINUOUS &&
+      !separation_types_input.empty()) {
+    throw exceptions::ConsistencyException(
+        "Continuous VSS model does not support separation types");
+  }
+  if (vss_model_input == VSSModel::LIMITED && separation_types_input.empty()) {
+    throw exceptions::ConsistencyException(
+        "Limited VSS model requires at least one separation type");
+  }
+
   decltype(std::chrono::high_resolution_clock::now()) start;
   decltype(std::chrono::high_resolution_clock::now()) model_created;
   decltype(std::chrono::high_resolution_clock::now()) model_solved;
@@ -86,6 +102,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   this->dt                     = delta_t;
   this->fix_routes             = fix_routes_input;
   this->vss_model              = vss_model_input;
+  this->separation_types       = separation_types_input;
   this->include_train_dynamics = include_train_dynamics_input;
   this->include_braking_curves = include_braking_curves_input;
   this->use_pwl                = use_pwl_input;
@@ -98,7 +115,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   if (this->vss_model == VSSModel::DISCRETE) {
     std::cout << "Preprocessing graph...";
-    instance.discretize();
+    instance.discretize(separation_types.front());
     std::cout << "DONE" << std::endl;
   }
 
@@ -385,7 +402,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   vars["b_rear"] =
       MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
 
-  if (vss_model == VSSModel::UNIFORM) {
+  if (vss_model == VSSModel::LIMITED) {
     vars["num_vss_segments"] = MultiArray<GRBVar>(relevant_edges.size());
   } else {
     vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
@@ -405,7 +422,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       auto   ub = edge_len;
       double lb = 0.0;
-      if (vss_model == VSSModel::UNIFORM) {
+      if (vss_model == VSSModel::LIMITED) {
         if (relevant) {
           ub *= static_cast<double>(vss) + 1.0;
         } else {
@@ -439,7 +456,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
 
-    if (vss_model == VSSModel::UNIFORM) {
+    if (vss_model == VSSModel::LIMITED) {
       vars["num_vss_segments"](i) = model->addVar(
           1, vss_number_e + 1, 0, GRB_INTEGER, "num_vss_segments_" + edge_name);
     } else {
@@ -471,7 +488,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
         obj += vars["b_used"](i, vss);
       }
     }
-  } else if (vss_model == VSSModel::UNIFORM) {
+  } else if (vss_model == VSSModel::LIMITED) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
       obj += (vars["num_vss_segments"](i) - 1);
     }

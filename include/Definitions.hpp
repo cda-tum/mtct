@@ -9,10 +9,10 @@ const double ABS_PWL_ERROR = 10;
 
 // Constants for vertex type
 enum class VertexType { NoBorder = 0, VSS = 1, TTD = 2, NoBorderVSS = 3 };
-enum class SeparationType { UNIFORM, CHEBYCHEV };
+enum class SeparationType { UNIFORM = 0, CHEBYCHEV = 1 };
 
 // Constant for VSS modeling
-enum class VSSModel { DISCRETE = 0, CONTINUOUS = 1, UNIFORM = 2 };
+enum class VSSModel { DISCRETE = 0, CONTINUOUS = 1, LIMITED = 2 };
 
 // Helper functions
 
