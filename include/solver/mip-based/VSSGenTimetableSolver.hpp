@@ -120,6 +120,14 @@ private:
                          const double& v0, const double& a_max,
                          const bool& braking_distance) const;
 
+  [[nodiscard]] double lower_bound_frac(size_t         relevant_edge_index,
+                                        SeparationType type, size_t vss_index);
+  [[nodiscard]] double upper_bound_frac(size_t         relevant_edge_index,
+                                        SeparationType type, size_t vss_index);
+
+  [[nodiscard]] double lower_bound_bpos(size_t edge_index, size_t vss_index);
+  [[nodiscard]] double upper_bound_bpos(size_t edge_index, size_t vss_index);
+
 public:
   // Constructors
   explicit VSSGenTimetableSolver(instances::VSSGenerationTimetable instance);
