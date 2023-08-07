@@ -324,15 +324,16 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
           // lda(tr, t) - edge_pos.first + (r_len + tr_len + e_len) * (1 -
           // b_rear(tr, t, e_index, vss)) >= b_pos(e_index, vss)
-          model->addConstr(
-              vars["mu"](tr, t) - edge_pos.first, GRB_LESS_EQUAL,
-              vars["b_pos"](e_index, vss) +
-                  mu_ub * (1 - vars["b_front"](tr, t, e_index, vss)),
-              "b_pos_front_" + std::to_string(tr) + "_" + std::to_string(t) +
-                  "_" + std::to_string(e) + "_" + std::to_string(vss));
+          const auto M1 = mu_ub - lower_bound_bpos(e, vss);
+          model->addConstr(vars["mu"](tr, t) - edge_pos.first, GRB_LESS_EQUAL,
+                           vars["b_pos"](e_index, vss) +
+                               M1 * (1 - vars["b_front"](tr, t, e_index, vss)),
+                           "b_pos_front_" + std::to_string(tr) + "_" +
+                               std::to_string(t) + "_" + std::to_string(e) +
+                               "_" + std::to_string(vss));
+          const auto M2 = r_len + tr_len + upper_bound_bpos(e, vss);
           model->addConstr(vars["lda"](tr, t) - edge_pos.first +
-                               (r_len + tr_len + e_len) *
-                                   (1 - vars["b_rear"](tr, t, e_index, vss)),
+                               M2 * (1 - vars["b_rear"](tr, t, e_index, vss)),
                            GRB_GREATER_EQUAL, vars["b_pos"](e_index, vss),
                            "b_pos_rear_" + std::to_string(tr) + "_" +
                                std::to_string(t) + "_" + std::to_string(e) +

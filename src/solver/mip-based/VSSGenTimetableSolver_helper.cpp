@@ -228,6 +228,10 @@ double cda_rail::solver::mip_based::VSSGenTimetableSolver::lower_bound_bpos(
     return 0;
   }
 
+  if (vss_model != VSSModel::LIMITED) {
+    throw std::logic_error("Not implemented for VSS model specified.");
+  }
+
   const auto relevant_edge_index =
       std::find(relevant_edges.begin(), relevant_edges.end(), edge_index);
   if (relevant_edge_index != relevant_edges.end()) {
@@ -274,6 +278,10 @@ double cda_rail::solver::mip_based::VSSGenTimetableSolver::upper_bound_bpos(
 
   if (vss_model == VSSModel::CONTINUOUS) {
     return e_len;
+  }
+
+  if (vss_model != VSSModel::LIMITED) {
+    throw std::logic_error("Not implemented for VSS model specified.");
   }
 
   const auto relevant_edge_index =

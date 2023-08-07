@@ -426,15 +426,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         std::find(relevant_edges.begin(), relevant_edges.end(), e) !=
         relevant_edges.end();
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
-      auto   ub = edge_len;
-      double lb = 0.0;
-      if (vss_model == VSSModel::LIMITED) {
-        if (relevant) {
-          ub *= static_cast<double>(vss) + 1.0;
-        } else {
-          lb = -static_cast<double>(vss) * edge_len;
-        }
-      }
+      const auto& lb = lower_bound_bpos(e, vss);
+      const auto& ub = upper_bound_bpos(e, vss);
       vars["b_pos"](i, vss) =
           model->addVar(lb, ub, 0, GRB_CONTINUOUS,
                         "b_pos_" + edge_name + "_" + std::to_string(vss));
@@ -471,8 +464,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
             0, 1, 0, GRB_BINARY,
             "edge_type_" + edge_name + "_" + std::to_string(sep_type));
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
+          const auto& lb =
+              lower_bound_frac(i, separation_types.at(sep_type), vss);
+          const auto& ub =
+              upper_bound_frac(i, separation_types.at(sep_type), vss);
           vars["frac_vss_segments"](i, sep_type, vss) = model->addVar(
-              0, static_cast<double>(vss + 1), 0, GRB_CONTINUOUS,
+              lb, ub, 0, GRB_CONTINUOUS,
               "frac_vss_segments_" + edge_name + "_" + std::to_string(vss) +
                   "_" + std::to_string(sep_type));
         }
@@ -789,24 +786,26 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * general enough to appear in all model variants.
    */
   // VSS can only be used if it is non-zero
-  for (size_t i = 0; i < relevant_edges.size(); ++i) {
-    const auto& e               = relevant_edges[i];
-    const auto& e_index         = breakable_edge_indices[e];
-    const auto  vss_number_e    = instance.n().max_vss_on_edge(e);
-    const auto& e_len           = instance.n().get_edge(e).length;
-    const auto& min_block_len_e = instance.n().get_edge(e).min_block_length;
-    for (size_t vss = 0; vss < vss_number_e; ++vss) {
-      model->addConstr(e_len * vars["b_used"](i, vss), GRB_GREATER_EQUAL,
-                       vars["b_pos"](e_index, vss),
-                       "b_used_" + std::to_string(e) + "_" +
-                           std::to_string(vss));
-      // Also remove redundant solutions
-      if (vss < vss_number_e - 1) {
-        model->addConstr(vars["b_pos"](e_index, vss), GRB_GREATER_EQUAL,
-                         vars["b_pos"](e_index, vss + 1) +
-                             vars["b_used"](i, vss + 1) * min_block_len_e,
-                         "b_used_decreasing_" + std::to_string(e) + "_" +
+  if (vss_model == VSSModel::CONTINUOUS) {
+    for (size_t i = 0; i < relevant_edges.size(); ++i) {
+      const auto& e               = relevant_edges[i];
+      const auto& e_index         = breakable_edge_indices[e];
+      const auto  vss_number_e    = instance.n().max_vss_on_edge(e);
+      const auto& e_len           = instance.n().get_edge(e).length;
+      const auto& min_block_len_e = instance.n().get_edge(e).min_block_length;
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        model->addConstr(e_len * vars["b_used"](i, vss), GRB_GREATER_EQUAL,
+                         vars["b_pos"](e_index, vss),
+                         "b_used_" + std::to_string(e) + "_" +
                              std::to_string(vss));
+        // Also remove redundant solutions
+        if (vss < vss_number_e - 1) {
+          model->addConstr(vars["b_pos"](e_index, vss), GRB_GREATER_EQUAL,
+                           vars["b_pos"](e_index, vss + 1) +
+                               vars["b_used"](i, vss + 1) * min_block_len_e,
+                           "b_used_decreasing_" + std::to_string(e) + "_" +
+                               std::to_string(vss));
+        }
       }
     }
   }
