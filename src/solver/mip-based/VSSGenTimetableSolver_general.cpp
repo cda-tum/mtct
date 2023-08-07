@@ -46,6 +46,8 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * the instance. Otherwise, routing is part of the optimization. Default: true
    * @param vss_model_input: Denotes, how the VSS borders are modelled in the
    * solution process. Default: VSSModel::CONTINUOUS
+   * @param separation_types_input: The separation types used, if the graph is
+   * discretized or the VSS modeling is limited. Default: {}
    * @param include_train_dynamics_input: If true, the train dynamics (i.e.,
    * limited acceleration and deceleration) are included in the model. Default:
    * true
