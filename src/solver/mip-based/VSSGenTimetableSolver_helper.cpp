@@ -1,3 +1,4 @@
+#include "CustomExceptions.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <cmath>
@@ -155,4 +156,149 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
   }
 
   return ret_val;
+}
+
+double cda_rail::solver::mip_based::VSSGenTimetableSolver::lower_bound_frac(
+    size_t relevant_edge_index, cda_rail::SeparationType type,
+    size_t vss_index) {
+  if (relevant_edge_index > relevant_edges.size()) {
+    throw exceptions::EdgeNotExistentException(relevant_edge_index);
+  }
+
+  const auto& e            = relevant_edges.at(relevant_edge_index);
+  const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+
+  if (vss_index >= vss_number_e) {
+    throw exceptions::ConsistencyException("vss_index too large");
+  }
+
+  if (type == SeparationType::UNIFORM) {
+    // frac = (vss_index + 1) / n
+    // 1 <= n <= vss_number_e + 1
+    // frac >= (vss_index + 1) / (vss_number_e + 1)
+    return (static_cast<double>(vss_index) + 1) /
+           (static_cast<double>(vss_number_e) + 1);
+  }
+
+  throw std::logic_error("Not implemented for type specified.");
+}
+
+double cda_rail::solver::mip_based::VSSGenTimetableSolver::upper_bound_frac(
+    size_t relevant_edge_index, cda_rail::SeparationType type,
+    size_t vss_index) {
+  if (relevant_edge_index > relevant_edges.size()) {
+    throw exceptions::EdgeNotExistentException(relevant_edge_index);
+  }
+
+  const auto& e            = relevant_edges.at(relevant_edge_index);
+  const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+
+  if (vss_index >= vss_number_e) {
+    throw exceptions::ConsistencyException("vss_index too large");
+  }
+
+  if (type == SeparationType::UNIFORM) {
+    // frac = (vss_index + 1) / n
+    // 1 <= n <= vss_number_e + 1
+    // frac <= (vss_index + 1) / 1
+    return (static_cast<double>(vss_index) + 1);
+  }
+
+  throw std::logic_error("Not implemented for type specified.");
+}
+
+double cda_rail::solver::mip_based::VSSGenTimetableSolver::lower_bound_bpos(
+    size_t edge_index, size_t vss_index, bool consider_reverse) {
+  if (vss_model == VSSModel::DISCRETE) {
+    throw exceptions::ConsistencyException(
+        "bpos does not exist for discrete VSS model");
+  }
+  if (!instance.n().has_edge(edge_index)) {
+    throw exceptions::EdgeNotExistentException(edge_index);
+  }
+
+  const auto  vss_number_e = instance.n().max_vss_on_edge(edge_index);
+  const auto& e_len        = instance.n().get_edge(edge_index).length;
+
+  if (vss_index >= vss_number_e) {
+    throw exceptions::ConsistencyException("vss_index too large");
+  }
+
+  if (vss_model == VSSModel::CONTINUOUS) {
+    return 0;
+  }
+
+  const auto relevant_edge_index =
+      std::find(relevant_edges.begin(), relevant_edges.end(), edge_index);
+  if (relevant_edge_index != relevant_edges.end()) {
+    // bpos >= e_len * min_{type \in separation_types}
+    // lower_bound_frac(relevant_edge_index, type, vss_index)
+    double min_frac = INF;
+    for (const auto& type : separation_types) {
+      min_frac = std::min(min_frac, lower_bound_frac(relevant_edge_index -
+                                                         relevant_edges.begin(),
+                                                     type, vss_index));
+    }
+    return e_len * min_frac;
+  }
+
+  if (!consider_reverse) {
+    throw exceptions::ConsistencyException(
+        "Edge is not relevant but has to be");
+  }
+
+  const auto& reverse_e = instance.n().get_reverse_edge_index(edge_index);
+  if (!reverse_e.has_value()) {
+    throw exceptions::ConsistencyException(
+        "Edge has no reverse edge, but is also not relevant.");
+  }
+  return e_len - upper_bound_bpos(reverse_e.value(), vss_index, false);
+}
+
+double cda_rail::solver::mip_based::VSSGenTimetableSolver::upper_bound_bpos(
+    size_t edge_index, size_t vss_index, bool consider_reverse) {
+  if (vss_model == VSSModel::DISCRETE) {
+    throw exceptions::ConsistencyException(
+        "bpos does not exist for discrete VSS model");
+  }
+  if (!instance.n().has_edge(edge_index)) {
+    throw exceptions::EdgeNotExistentException(edge_index);
+  }
+
+  const auto  vss_number_e = instance.n().max_vss_on_edge(edge_index);
+  const auto& e_len        = instance.n().get_edge(edge_index).length;
+
+  if (vss_index >= vss_number_e) {
+    throw exceptions::ConsistencyException("vss_index too large");
+  }
+
+  if (vss_model == VSSModel::CONTINUOUS) {
+    return e_len;
+  }
+
+  const auto relevant_edge_index =
+      std::find(relevant_edges.begin(), relevant_edges.end(), edge_index);
+  if (relevant_edge_index != relevant_edges.end()) {
+    // bpos <= e_len * max_{type \in separation_types}
+    // upper_bound_frac(relevant_edge_index, type, vss_index)
+    double max_frac = 0;
+    for (const auto& type : separation_types) {
+      max_frac = std::max(max_frac, upper_bound_frac(relevant_edge_index -
+                                                         relevant_edges.begin(),
+                                                     type, vss_index));
+    }
+    return e_len * max_frac;
+  }
+
+  if (!consider_reverse) {
+    throw exceptions::ConsistencyException(
+        "Edge is not relevant but has to be");
+  }
+
+  const auto& reverse_e = instance.n().get_reverse_edge_index(edge_index);
+  if (!reverse_e.has_value()) {
+    throw exceptions::ConsistencyException(
+        "Edge has no reverse edge, but is also not relevant.");
+  }
+  return e_len - lower_bound_bpos(reverse_e.value(), vss_index, false);
 }
