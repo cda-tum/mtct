@@ -405,7 +405,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
 
   if (vss_model == VSSModel::LIMITED) {
-    vars["num_vss_segments"] = MultiArray<GRBVar>(relevant_edges.size());
+    vars["num_vss_segments"]  = MultiArray<GRBVar>(relevant_edges.size());
+    vars["frac_vss_segments"] = MultiArray<GRBVar>(
+        relevant_edges.size(), max_vss, separation_types.size());
+    vars["edge_type"] =
+        MultiArray<GRBVar>(relevant_edges.size(), separation_types.size());
   } else {
     vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
   }
@@ -461,6 +465,18 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     if (vss_model == VSSModel::LIMITED) {
       vars["num_vss_segments"](i) = model->addVar(
           1, vss_number_e + 1, 0, GRB_INTEGER, "num_vss_segments_" + edge_name);
+      for (size_t sep_type = 0; sep_type < separation_types.size();
+           ++sep_type) {
+        vars["edge_type"](i, sep_type) = model->addVar(
+            0, 1, 0, GRB_BINARY,
+            "edge_type_" + edge_name + "_" + std::to_string(sep_type));
+        for (size_t vss = 0; vss < vss_number_e; ++vss) {
+          vars["frac_vss_segments"] = model->addVar(
+              0, vss + 1, 0, GRB_CONTINUOUS,
+              "frac_vss_segments_" + edge_name + "_" + std::to_string(vss) +
+                  "_" + std::to_string(sep_type));
+        }
+      }
     } else {
       for (size_t vss = 0; vss < vss_number_e; ++vss) {
         vars["b_used"](i, vss) =
