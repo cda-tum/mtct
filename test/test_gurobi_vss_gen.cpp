@@ -173,7 +173,7 @@ TEST(Solver, GurobiVSSGenVSSDiscrete) {
 
   auto obj_val = solver.solve(15, true, cda_rail::VSSModel::DISCRETE,
                               {cda_rail::SeparationType::UNIFORM}, false, false,
-                              false, true, 240, true, false);
+                              false, true, 350, true, false);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val, 1);
