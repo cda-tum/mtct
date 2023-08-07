@@ -31,7 +31,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
 
 int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     int delta_t, bool fix_routes_input, VSSModel vss_model_input,
-    std::vector<SeparationType> separation_types_input,
+    const std::vector<SeparationType>& separation_types_input,
     bool include_train_dynamics_input, bool include_braking_curves_input,
     bool use_pwl_input, bool use_schedule_cuts_input, int time_limit,
     bool debug, bool export_to_file, const std::string& file_name) {

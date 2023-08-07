@@ -129,10 +129,10 @@ public:
 
   // Methods
   int solve(int delta_t = 15, bool fix_routes_input = true,
-            VSSModel                    vss_model_input = VSSModel::CONTINUOUS,
-            std::vector<SeparationType> separation_types_input       = {},
-            bool                        include_train_dynamics_input = true,
-            bool                        include_braking_curves_input = true,
+            VSSModel vss_model_input = VSSModel::CONTINUOUS,
+            const std::vector<SeparationType>& separation_types_input = {},
+            bool include_train_dynamics_input                         = true,
+            bool include_braking_curves_input                         = true,
             bool use_pwl_input = false, bool use_schedule_cuts_input = true,
             int time_limit = -1, bool debug = false,
             bool               export_to_file = false,
