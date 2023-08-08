@@ -422,9 +422,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
-    const bool relevant =
-        std::find(relevant_edges.begin(), relevant_edges.end(), e) !=
-        relevant_edges.end();
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       const auto& lb = lower_bound_bpos(e, vss);
       const auto& ub = upper_bound_bpos(e, vss);
