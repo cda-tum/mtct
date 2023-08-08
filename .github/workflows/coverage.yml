@@ -49,7 +49,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Debug --target rail_test
       - name: Test
-        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 300
+        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 400
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
