@@ -774,6 +774,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   } else {
     create_non_discretized_free_route_constraints();
   }
+  if (vss_model == VSSModel::LIMITED) {
+    create_non_discretized_fraction_constraints();
+  }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
@@ -945,6 +948,49 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         model->addConstr(rhs, GRB_LESS_EQUAL, 1,
                          "b_front_rear_limit_" + std::to_string(t) + "_" +
                              std::to_string(e) + "_" + std::to_string(vss));
+      }
+    }
+  }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_non_discretized_fraction_constraints() {
+  for (size_t i = 0; i < relevant_edges.size(); ++i) {
+    const auto& e            = relevant_edges[i];
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    const auto& edge         = instance.n().get_edge(e);
+    const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
+    const auto& breakable_e_index = breakable_edge_indices.at(e);
+
+    if (vss_model == VSSModel::LIMITED) {
+      // sum edge_type(i,*) = 1
+      GRBLinExpr lhs_sum_edge_type            = 0;
+      bool       add_constraint_sum_edge_type = false;
+      for (size_t sep_type_index = 0; sep_type_index < separation_types.size();
+           ++sep_type_index) {
+        lhs_sum_edge_type += vars["edge_type"](i, sep_type_index);
+        add_constraint_sum_edge_type = true;
+        const auto& sep_type         = separation_types.at(sep_type_index);
+        for (size_t vss = 0; vss < vss_number_e; ++vss) {
+          if (sep_type == SeparationType::UNIFORM) {
+            // frac_vss_segments(i, sep_type_index, vss) * num_vss_segments(i) =
+            // vss + 1
+            model->addQConstr(
+                vars["frac_vss_segments"](i, sep_type_index, vss) *
+                    vars["num_vss_segments"](i),
+                GRB_EQUAL, vss + 1,
+                "frac_vss_segments_value_constraint_" + edge_name + "_" +
+                    std::to_string(sep_type_index) + "_" + std::to_string(vss));
+          } else {
+            throw std::logic_error("Separation type not implemented");
+          }
+        }
+      }
+      if (add_constraint_sum_edge_type) {
+        model->addConstr(lhs_sum_edge_type, GRB_EQUAL, 1,
+                         "sum_edge_type_" + edge_name);
       }
     }
   }
