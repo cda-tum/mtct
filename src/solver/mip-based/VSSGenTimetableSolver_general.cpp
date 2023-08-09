@@ -969,6 +969,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
     const auto& breakable_e_index = breakable_edge_indices.at(e);
+    const auto& e_len             = instance.n().get_edge(e).length;
 
     if (vss_model == VSSModel::LIMITED) {
       // sum edge_type(i,*) = 1
@@ -1041,6 +1042,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
               "frac_type_prod_ub_" + edge_name + "_" +
                   std::to_string(sep_type_index) + "_" + std::to_string(vss));
         }
+        lhs *= e_len;
         model->addConstr(lhs, GRB_EQUAL, vars["b_pos"](breakable_e_index, vss),
                          "b_pos_limited_" + edge_name + "_" +
                              std::to_string(vss));
