@@ -410,6 +410,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         relevant_edges.size(), separation_types.size(), max_vss);
     vars["edge_type"] =
         MultiArray<GRBVar>(relevant_edges.size(), separation_types.size());
+    vars["frac_type"] = MultiArray<GRBVar>(relevant_edges.size(),
+                                           separation_types.size(), max_vss);
   } else {
     vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
   }
@@ -467,8 +469,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
               upper_bound_frac(i, separation_types.at(sep_type), vss);
           vars["frac_vss_segments"](i, sep_type, vss) = model->addVar(
               lb, ub, 0, GRB_CONTINUOUS,
-              "frac_vss_segments_" + edge_name + "_" + std::to_string(vss) +
-                  "_" + std::to_string(sep_type));
+              "frac_vss_segments_" + edge_name + "_" +
+                  std::to_string(sep_type) + "_" + std::to_string(vss));
+          vars["frac_type"](i, sep_type, vss) = model->addVar(
+              std::min(0.0, lb), std::max(0.0, ub), 0, GRB_CONTINUOUS,
+              "frac_type_" + edge_name + "_" + std::to_string(sep_type) + "_" +
+                  std::to_string(vss));
         }
       }
     } else {
