@@ -33,7 +33,8 @@ public:
   ~VSSGenerationTimetable()                                         = default;
 
   // Network functions, i.e., network is accessible via n() as a reference
-  [[nodiscard]] Network& n() { return network; };
+  [[nodiscard]] Network&       n() { return network; };
+  [[nodiscard]] const Network& const_n() const { return network; };
 
   // Timetable functions
   size_t add_train(const std::string& name, int length, double max_speed,

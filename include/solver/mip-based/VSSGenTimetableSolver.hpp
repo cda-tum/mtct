@@ -119,6 +119,9 @@ private:
                          const double& v0, const double& a_max,
                          const bool& braking_distance) const;
 
+  void
+  cleanup(const std::optional<instances::VSSGenerationTimetable>& old_instance);
+
 public:
   // Constructors
   explicit VSSGenTimetableSolver(instances::VSSGenerationTimetable instance);
@@ -135,5 +138,9 @@ public:
             int time_limit = -1, bool debug = false,
             bool               export_to_file = false,
             const std::string& file_name      = "model");
+
+  const instances::VSSGenerationTimetable& get_instance() const {
+    return instance;
+  }
 };
 } // namespace cda_rail::solver::mip_based
