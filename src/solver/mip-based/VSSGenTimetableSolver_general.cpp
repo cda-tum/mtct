@@ -980,7 +980,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
             model->addQConstr(
                 vars["frac_vss_segments"](i, sep_type_index, vss) *
                     vars["num_vss_segments"](i),
-                GRB_EQUAL, vss + 1,
+                GRB_EQUAL, static_cast<double>(vss) + 1,
                 "frac_vss_segments_value_constraint_" + edge_name + "_" +
                     std::to_string(sep_type_index) + "_" + std::to_string(vss));
           } else {
