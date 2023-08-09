@@ -301,8 +301,8 @@ TEST(Solver, SimpleStationLimitedUniform) {
       "./example-networks/SimpleStation/");
 
   const auto obj_val = solver.solve(15, true, cda_rail::VSSModel::LIMITED,
-                                    {cda_rail::SeparationType::UNIFORM}, false,
-                                    false, false, true, 375, true, false);
+                                    {cda_rail::SeparationType::UNIFORM}, true,
+                                    true, false, true, 60, true, false);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val, 1);
