@@ -998,6 +998,53 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         model->addConstr(lhs_sum_edge_type, GRB_EQUAL, 1,
                          "sum_edge_type_" + edge_name);
       }
+
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        // b_pos(breakable_e_index, vss) = e_len * sum_{separation_types}
+        // frac_type(i, sep_type_index, vss)
+        GRBLinExpr lhs = 0;
+        for (size_t sep_type_index = 0;
+             sep_type_index < separation_types.size(); ++sep_type_index) {
+          lhs += vars["frac_vss_segments"](i, sep_type_index, vss);
+
+          // Make sure that frac_type(i, sep_type_index, vss) =
+          // frac_vss_segments(i, sep_type_index, vss) * edge_type(i,
+          // sep_type_index) by standard linearization
+          const auto lb =
+              lower_bound_frac(i, separation_types.at(sep_type_index), vss);
+          const auto ub =
+              upper_bound_frac(i, separation_types.at(sep_type_index), vss);
+          // frac_type = 0 if edge_type = 0
+          model->addConstr(
+              lb * vars["edge_type"](i, sep_type_index), GRB_LESS_EQUAL,
+              vars["frac_type"](i, sep_type_index, vss),
+              "frac_type_0_lb_" + edge_name + "_" +
+                  std::to_string(sep_type_index) + "_" + std::to_string(vss));
+          model->addConstr(
+              vars["frac_type"](i, sep_type_index, vss), GRB_LESS_EQUAL,
+              ub * vars["edge_type"](i, sep_type_index),
+              "frac_type_0_ub_" + edge_name + "_" +
+                  std::to_string(sep_type_index) + "_" + std::to_string(vss));
+          // frac_type = frac_vss_segments if edge_type = 1
+          model->addConstr(
+              (lb - ub) * (1 - vars["edge_type"](i, sep_type_index)),
+              GRB_LESS_EQUAL,
+              vars["frac_type"](i, sep_type_index, vss) -
+                  vars["frac_vss_segments"](i, sep_type_index, vss),
+              "frac_type_prod_lb_" + edge_name + "_" +
+                  std::to_string(sep_type_index) + "_" + std::to_string(vss));
+          model->addConstr(
+              vars["frac_type"](i, sep_type_index, vss) -
+                  vars["frac_vss_segments"](i, sep_type_index, vss),
+              GRB_LESS_EQUAL,
+              (ub - lb) * (1 - vars["edge_type"](i, sep_type_index)),
+              "frac_type_prod_ub_" + edge_name + "_" +
+                  std::to_string(sep_type_index) + "_" + std::to_string(vss));
+        }
+        model->addConstr(lhs, GRB_EQUAL, vars["b_pos"](breakable_e_index, vss),
+                         "b_pos_limited_" + edge_name + "_" +
+                             std::to_string(vss));
+      }
     }
   }
 }
