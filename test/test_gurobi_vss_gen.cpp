@@ -295,3 +295,15 @@ TEST(Solver, Stammstrecke16FixedContinuous) {
   EXPECT_EQ(obj_val_dynamics, 15);
   EXPECT_EQ(obj_val_braking, 15);
 }
+
+TEST(Solver, SimpleStationLimitedUniform) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  const auto obj_val = solver.solve(15, true, cda_rail::VSSModel::LIMITED,
+                                    {cda_rail::SeparationType::UNIFORM}, false,
+                                    false, false, true, 375, true, false);
+
+  // Check if all objective values are 1
+  EXPECT_EQ(obj_val, 1);
+}
