@@ -279,7 +279,8 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
   }
 
-  if (this->include_braking_curves && !this->use_pwl) {
+  if ((this->include_braking_curves && !this->use_pwl) ||
+      vss_model == VSSModel::LIMITED) {
     // Non-convex constraints are present. Still, Gurobi can solve to optimality
     // using spatial branching
     model->set(GRB_IntParam_NonConvex, 2);
