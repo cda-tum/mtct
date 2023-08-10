@@ -130,6 +130,8 @@ private:
                                         bool consider_reverse = true);
   [[nodiscard]] double upper_bound_bpos(size_t edge_index, size_t vss_index,
                                         bool consider_reverse = true);
+  void
+  cleanup(const std::optional<instances::VSSGenerationTimetable>& old_instance);
 
 public:
   // Constructors
@@ -148,5 +150,9 @@ public:
             int time_limit = -1, bool debug = false,
             bool               export_to_file = false,
             const std::string& file_name      = "model");
+
+  const instances::VSSGenerationTimetable& get_instance() const {
+    return instance;
+  }
 };
 } // namespace cda_rail::solver::mip_based
