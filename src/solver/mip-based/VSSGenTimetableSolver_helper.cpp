@@ -310,3 +310,34 @@ double cda_rail::solver::mip_based::VSSGenTimetableSolver::upper_bound_bpos(
   }
   return e_len - lower_bound_bpos(reverse_e.value(), vss_index, false);
 }
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup(
+    const std::optional<instances::VSSGenerationTimetable>& old_instance) {
+  if (old_instance.has_value()) {
+    instance = old_instance.value();
+  }
+  dt                     = -1;
+  num_t                  = -1;
+  num_tr                 = -1;
+  num_edges              = -1;
+  num_vertices           = -1;
+  num_breakable_sections = -1;
+  unbreakable_sections.clear();
+  no_border_vss_sections.clear();
+  train_interval.clear();
+  breakable_edges_pairs.clear();
+  no_border_vss_vertices.clear();
+  relevant_edges.clear();
+  breakable_edges.clear();
+  fix_routes             = false;
+  vss_model              = VSSModel::CONTINUOUS;
+  separation_types       = {};
+  include_train_dynamics = false;
+  use_pwl                = false;
+  use_schedule_cuts      = false;
+  breakable_edge_indices.clear();
+  fwd_bwd_sections.clear();
+  env.reset();
+  model.reset();
+  vars.clear();
+}
