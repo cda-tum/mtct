@@ -6,7 +6,7 @@
 
 # MTCT - Munich Train Control Toolkit
 
-## CDA Rail - A tool for automated design of ETCS Hybrid Level 3 systems
+## A Tool for Automated Design of ETCS Hybrid Level 3 Systems
 
 Developers: Stefan Engels, Tom Peham, and Robert Wille
 
