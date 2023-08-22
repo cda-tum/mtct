@@ -1,4 +1,5 @@
 #include "Definitions.hpp"
+#include "VSSModel.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <gsl/span>
@@ -60,13 +61,13 @@ int main(int argc, char** argv) {
       std::to_string(static_cast<int>(use_schedule_cuts)) + "_" +
       std::to_string(timeout);
 
-  solver.solve(delta_t, fix_routes,
-               discretize_vss_positions ? cda_rail::VSSModel::DISCRETE
-                                        : cda_rail::VSSModel::CONTINUOUS,
-               discretize_vss_positions
-                   ? std::vector<cda_rail::SeparationType>(
-                         {cda_rail::SeparationType::UNIFORM})
-                   : std::vector<cda_rail::SeparationType>(),
-               include_train_dynamics, include_braking_curves, use_pwl,
-               use_schedule_cuts, timeout, true, true, file_name);
+  cda_rail::vss::Model vss_model =
+      discretize_vss_positions
+          ? cda_rail::vss::Model(cda_rail::vss::ModelType::DISCRETE,
+                                 {&cda_rail::vss::functions::uniform})
+          : cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS);
+
+  solver.solve(delta_t, fix_routes, vss_model, include_train_dynamics,
+               include_braking_curves, use_pwl, use_schedule_cuts, timeout,
+               true, true, file_name);
 }

@@ -1,4 +1,5 @@
 #include "Definitions.hpp"
+#include "VSSModel.hpp"
 
 #include "gtest/gtest.h"
 #include <iostream>
@@ -107,4 +108,24 @@ TEST(Functionality, Subsets) {
   EXPECT_TRUE(std::find(subsets_of_size_2.begin(), subsets_of_size_2.end(),
                         std::pair<size_t, size_t>(3, 4)) !=
               subsets_of_size_2.end());
+}
+
+TEST(VSSModel, ConsistencyExceptions) {
+  const auto& f = cda_rail::vss::functions::uniform;
+
+  EXPECT_THROW(auto model =
+                   cda_rail::vss::Model(cda_rail::vss::ModelType::DISCRETE),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(auto model = cda_rail::vss::Model(
+                   cda_rail::vss::ModelType::DISCRETE, {&f, &f}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(auto model = cda_rail::vss::Model(
+                   cda_rail::vss::ModelType::CONTINUOUS, {&f}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(auto model = cda_rail::vss::Model(
+                   cda_rail::vss::ModelType::CONTINUOUS, {&f, &f}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(auto model =
+                   cda_rail::vss::Model(cda_rail::vss::ModelType::INFERRED),
+               cda_rail::exceptions::ConsistencyException);
 }

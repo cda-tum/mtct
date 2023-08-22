@@ -1,5 +1,6 @@
 #pragma once
 #include "MultiArray.hpp"
+#include "VSSModel.hpp"
 #include "gurobi_c++.h"
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "unordered_map"
@@ -24,17 +25,16 @@ private:
   std::vector<std::vector<size_t>> no_border_vss_sections;
   std::vector<std::pair<int, int>> train_interval;
   std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
-                                     breakable_edges_pairs;
-  std::vector<size_t>                no_border_vss_vertices;
-  std::vector<size_t>                relevant_edges;
-  std::vector<size_t>                breakable_edges;
-  bool                               fix_routes       = false;
-  VSSModel                           vss_model        = VSSModel::CONTINUOUS;
-  std::vector<SeparationType>        separation_types = {};
-  bool                               include_train_dynamics = false;
-  bool                               include_braking_curves = false;
-  bool                               use_pwl                = false;
-  bool                               use_schedule_cuts      = false;
+                      breakable_edges_pairs;
+  std::vector<size_t> no_border_vss_vertices;
+  std::vector<size_t> relevant_edges;
+  std::vector<size_t> breakable_edges;
+  bool                fix_routes = false;
+  vss::Model          vss_model  = vss::Model(vss::ModelType::CONTINUOUS);
+  bool                include_train_dynamics = false;
+  bool                include_braking_curves = false;
+  bool                use_pwl                = false;
+  bool                use_schedule_cuts      = false;
   std::unordered_map<size_t, size_t> breakable_edge_indices;
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
       fwd_bwd_sections;
@@ -121,15 +121,6 @@ private:
                          const double& v0, const double& a_max,
                          const bool& braking_distance) const;
 
-  [[nodiscard]] double lower_bound_frac(size_t         relevant_edge_index,
-                                        SeparationType type, size_t vss_index);
-  [[nodiscard]] double upper_bound_frac(size_t         relevant_edge_index,
-                                        SeparationType type, size_t vss_index);
-
-  [[nodiscard]] double lower_bound_bpos(size_t edge_index, size_t vss_index,
-                                        bool consider_reverse = true);
-  [[nodiscard]] double upper_bound_bpos(size_t edge_index, size_t vss_index,
-                                        bool consider_reverse = true);
   void
   cleanup(const std::optional<instances::VSSGenerationTimetable>& old_instance);
 
@@ -142,10 +133,9 @@ public:
 
   // Methods
   int solve(int delta_t = 15, bool fix_routes_input = true,
-            VSSModel vss_model_input = VSSModel::CONTINUOUS,
-            const std::vector<SeparationType>& separation_types_input = {},
-            bool include_train_dynamics_input                         = true,
-            bool include_braking_curves_input                         = true,
+            vss::Model model_input = vss::Model(vss::ModelType::CONTINUOUS),
+            bool       include_train_dynamics_input = true,
+            bool       include_braking_curves_input = true,
             bool use_pwl_input = false, bool use_schedule_cuts_input = true,
             int time_limit = -1, bool debug = false,
             bool               export_to_file = false,

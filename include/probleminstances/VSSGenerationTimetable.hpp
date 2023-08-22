@@ -1,4 +1,5 @@
 #pragma once
+#include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
@@ -205,7 +206,7 @@ public:
   };
 
   // Transformation functions
-  void discretize(SeparationType separation_type = SeparationType::UNIFORM);
+  void discretize(vss::SeparationFunction sep_func = &vss::functions::uniform);
 
   // Helper
   [[nodiscard]] std::vector<size_t>

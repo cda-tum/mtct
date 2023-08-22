@@ -324,14 +324,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
           // lda(tr, t) - edge_pos.first + (r_len + tr_len + e_len) * (1 -
           // b_rear(tr, t, e_index, vss)) >= b_pos(e_index, vss)
-          const auto m1 = mu_ub - lower_bound_bpos(e, vss);
+          const auto m1 = mu_ub;
           model->addConstr(vars["mu"](tr, t) - edge_pos.first, GRB_LESS_EQUAL,
                            vars["b_pos"](e_index, vss) +
                                m1 * (1 - vars["b_front"](tr, t, e_index, vss)),
                            "b_pos_front_" + std::to_string(tr) + "_" +
                                std::to_string(t) + "_" + std::to_string(e) +
                                "_" + std::to_string(vss));
-          const auto m2 = r_len + tr_len + upper_bound_bpos(e, vss);
+          const auto m2 = r_len + tr_len + e_len;
           model->addConstr(vars["lda"](tr, t) - edge_pos.first +
                                m2 * (1 - vars["b_rear"](tr, t, e_index, vss)),
                            GRB_GREATER_EQUAL, vars["b_pos"](e_index, vss),

@@ -966,8 +966,8 @@ cda_rail::Network::separate_edge_at(
 }
 
 std::pair<std::vector<size_t>, std::vector<size_t>>
-cda_rail::Network::separate_edge(size_t         edge_index,
-                                 SeparationType separation_type) {
+cda_rail::Network::separate_edge(size_t                  edge_index,
+                                 vss::SeparationFunction sep_func) {
   /**
    * Separates an edge (and possibly its reverse edge) according to the given
    * number of new vertices.
@@ -981,60 +981,25 @@ cda_rail::Network::separate_edge(size_t         edge_index,
   if (!is_consistent_for_transformation()) {
     throw exceptions::ConsistencyException();
   }
-
-  if (separation_type == SeparationType::UNIFORM) {
-    return uniform_separate_edge(edge_index);
-  }
-  // if (separation_type == SeparationType::CHEBYCHEV) {
-  //   return chebychev_separate_edge(edge_index);
-  // }
-  throw exceptions::InvalidInputException("Separation type does not exist.");
-}
-
-std::pair<std::vector<size_t>, std::vector<size_t>>
-cda_rail::Network::uniform_separate_edge(size_t edge_index) {
-  /**
-   * Separates an edge (and possibly its reverse edge) uniformly according to
-   * the minimal block length.
-   *
-   * @param edge_index Index of the edge to separate.
-   *
-   * @return Pair of vectors of indices of new edges and reverse edges.
-   */
-
-  // If the edge is not breakable throw an exception
   if (!get_edge(edge_index).breakable) {
     throw exceptions::ConsistencyException("Edge is not breakable");
-  }
-
-  // If the edge length is smaller than twice the minimum block length, nothing
-  // to separate
-  if (get_edge(edge_index).length < 2 * get_edge(edge_index).min_block_length) {
-    return std::make_pair(std::vector<size_t>(), std::vector<size_t>());
   }
 
   // Get edge to separate
   const auto& edge = get_edge(edge_index);
   // Get number of new vertices
-  double const number_of_blocks =
-      std::floor(edge.length / edge.min_block_length);
+  double const number_of_blocks = vss::functions::max_n_blocks(
+      sep_func, edge.min_block_length / edge.length);
 
   // Calculate distances
   std::vector<double> distances_from_source;
-  for (int i = 1; i < number_of_blocks; ++i) {
-    distances_from_source.emplace_back(i * (edge.length / number_of_blocks));
+  for (int i = 0; i < number_of_blocks - 1; ++i) {
+    distances_from_source.emplace_back(edge.length *
+                                       sep_func(i, number_of_blocks));
   }
 
   return separate_edge_at(edge_index, distances_from_source);
 }
-
-/**
-std::pair<std::vector<int>, std::vector<int>>
-cda_rail::Network::chebychev_separate_edge(int edge_index) {
-  // TODO: Not implemented yet
-  throw std::runtime_error("Not implemented yet");
-}
- **/
 
 std::vector<size_t> cda_rail::Network::breakable_edges() const {
   /**
@@ -1072,7 +1037,7 @@ std::vector<size_t> cda_rail::Network::relevant_breakable_edges() const {
 }
 
 std::vector<std::pair<size_t, std::vector<size_t>>>
-cda_rail::Network::discretize(SeparationType separation_type) {
+cda_rail::Network::discretize(vss::SeparationFunction sep_func) {
   /**
    * Discretizes the graphs edges to allow for VSS borders only at specified
    * positions / vertices.
@@ -1085,7 +1050,7 @@ cda_rail::Network::discretize(SeparationType separation_type) {
 
   std::vector<std::pair<size_t, std::vector<size_t>>> ret_val;
   for (size_t const i : relevant_breakable_edges()) {
-    auto separated_edges = separate_edge(i, separation_type);
+    auto separated_edges = separate_edge(i, sep_func);
     if (!separated_edges.first.empty()) {
       ret_val.emplace_back(separated_edges.first.back(), separated_edges.first);
     }
