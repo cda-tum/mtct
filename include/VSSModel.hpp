@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
@@ -27,22 +28,25 @@ namespace functions {
 
 [[nodiscard]] static size_t max_n_blocks(const SeparationFunction& sep_func,
                                          double                    min_frac) {
-  if (min_frac < 0 || min_frac > 1) {
+  const auto eps = 10 * std::numeric_limits<double>::epsilon();
+
+  if (min_frac + eps < 0 || min_frac > 1 + eps) {
     throw std::invalid_argument("min_frac must be in [0, 1].");
   }
 
-  for (size_t n = 2; static_cast<double>(n) <= 1 / min_frac; ++n) {
-    if (sep_func(0, n) < min_frac || 1 - sep_func(n - 2, n) < min_frac) {
+  for (size_t n = 2; static_cast<double>(n) <= 1 / min_frac + eps; ++n) {
+    if (sep_func(0, n) + eps < min_frac ||
+        1 - sep_func(n - 2, n) + eps < min_frac) {
       return n - 1;
     }
     for (size_t i = 1; i < n - 1; ++i) {
-      if (sep_func(i, n) - sep_func(i - 1, n) < min_frac) {
+      if (sep_func(i, n) - sep_func(i - 1, n) + eps < min_frac) {
         return n - 1;
       }
     }
   }
 
-  return static_cast<size_t>(std::floor(1 / min_frac));
+  return static_cast<size_t>(std::floor(1 / min_frac + eps));
 }
 } // namespace functions
 
