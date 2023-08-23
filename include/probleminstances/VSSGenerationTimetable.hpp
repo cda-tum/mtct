@@ -243,7 +243,7 @@ private:
 
 public:
   // Constructor
-  explicit SolVSSGenerationTimetable(const VSSGenerationTimetable instance);
+  explicit SolVSSGenerationTimetable(VSSGenerationTimetable instance);
   SolVSSGenerationTimetable() = delete;
 
   // Getter
@@ -261,16 +261,16 @@ public:
     return get_vss_pos(instance.const_n().get_edge_index(source, target));
   };
 
-  [[nodiscard]] const double get_train_pos(size_t train_id, int time) const;
-  [[nodiscard]] const double get_train_pos(const std::string& train_name,
-                                           int                time) const {
+  [[nodiscard]] double get_train_pos(size_t train_id, int time) const;
+  [[nodiscard]] double get_train_pos(const std::string& train_name,
+                                     int                time) const {
     return get_train_pos(instance.get_train_list().get_train_index(train_name),
                          time);
   }
 
-  [[nodiscard]] const double get_train_speed(size_t train_id, int time) const;
-  [[nodiscard]] const double get_train_speed(const std::string& train_name,
-                                             int                time) const {
+  [[nodiscard]] double get_train_speed(size_t train_id, int time) const;
+  [[nodiscard]] double get_train_speed(const std::string& train_name,
+                                       int                time) const {
     return get_train_speed(
         instance.get_train_list().get_train_index(train_name), time);
   }
@@ -328,14 +328,14 @@ public:
     add_vss_pos(instance.const_n().get_edge_index(source, target), pos);
   };
 
-  void set_vss_pos(size_t edge_id, const std::vector<double> pos);
+  void set_vss_pos(size_t edge_id, std::vector<double> pos);
   void set_vss_pos(size_t source, size_t target,
                    const std::vector<double> pos) {
     set_vss_pos(instance.const_n().get_edge_index(source, target),
                 std::move(pos));
   };
   void set_vss_pos(const std::string& source, const std::string& target,
-                   const std::vector<double> pos) {
+                   std::vector<double> pos) {
     set_vss_pos(instance.const_n().get_edge_index(source, target),
                 std::move(pos));
   };
