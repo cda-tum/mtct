@@ -1,3 +1,4 @@
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "VSSModel.hpp"
 
@@ -8,10 +9,6 @@ TEST(Functionality, Subsets) {
   auto subsets_of_size_3 = cda_rail::subsets_of_size_k_indices(6, 3);
   // Expect 6 choose 2 number of elements
   EXPECT_EQ(subsets_of_size_3.size(), 20);
-  // Expect all elements to have size 3
-  for (auto const& subset : subsets_of_size_3) {
-    EXPECT_EQ(subset.size(), 3);
-  }
   // Expect to find all subsets of size 3
   EXPECT_TRUE(std::find(subsets_of_size_3.begin(), subsets_of_size_3.end(),
                         std::vector<size_t>({0, 1, 2})) !=
@@ -110,22 +107,32 @@ TEST(Functionality, Subsets) {
               subsets_of_size_2.end());
 }
 
-TEST(VSSModel, ConsistencyExceptions) {
+TEST(VSSModel, Consistency) {
   const auto& f = cda_rail::vss::functions::uniform;
 
-  EXPECT_THROW(auto model =
-                   cda_rail::vss::Model(cda_rail::vss::ModelType::DISCRETE),
-               cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(auto model = cda_rail::vss::Model(
-                   cda_rail::vss::ModelType::DISCRETE, {&f, &f}),
-               cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(auto model = cda_rail::vss::Model(
-                   cda_rail::vss::ModelType::CONTINUOUS, {&f}),
-               cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(auto model = cda_rail::vss::Model(
-                   cda_rail::vss::ModelType::CONTINUOUS, {&f, &f}),
-               cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(auto model =
-                   cda_rail::vss::Model(cda_rail::vss::ModelType::INFERRED),
-               cda_rail::exceptions::ConsistencyException);
+  auto model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete);
+  EXPECT_FALSE(model.check_consistency());
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete, {&f, &f});
+  EXPECT_FALSE(model.check_consistency());
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {&f});
+  EXPECT_FALSE(model.check_consistency());
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {&f, &f});
+  EXPECT_FALSE(model.check_consistency());
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred);
+  EXPECT_FALSE(model.check_consistency());
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt);
+  EXPECT_FALSE(model.check_consistency());
+
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete, {&f});
+  EXPECT_TRUE(model.check_consistency());
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous);
+  EXPECT_TRUE(model.check_consistency());
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred, {&f});
+  EXPECT_TRUE(model.check_consistency());
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred, {&f, &f});
+  EXPECT_TRUE(model.check_consistency());
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt, {&f});
+  EXPECT_TRUE(model.check_consistency());
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt, {&f, &f});
+  EXPECT_TRUE(model.check_consistency());
 }

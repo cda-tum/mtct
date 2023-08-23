@@ -206,7 +206,8 @@ public:
   };
 
   // Transformation functions
-  void discretize(vss::SeparationFunction sep_func = &vss::functions::uniform);
+  void discretize(
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
 
   // Helper
   [[nodiscard]] std::vector<size_t>

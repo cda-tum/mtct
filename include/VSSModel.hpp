@@ -1,5 +1,4 @@
 #pragma once
-#include "CustomExceptions.hpp"
 
 #include <cmath>
 #include <functional>
@@ -11,10 +10,10 @@ namespace cda_rail::vss {
 using SeparationFunction = std::function<double(size_t, size_t)>;
 
 enum class ModelType {
-  DISCRETE     = 0,
-  CONTINUOUS   = 1,
-  INFERRED     = 2,
-  INFERRED_ALT = 3
+  Discrete    = 0,
+  Continuous  = 1,
+  Inferred    = 2,
+  InferredAlt = 3
 };
 
 namespace functions {
@@ -55,46 +54,13 @@ private:
   ModelType                       model_type;
   std::vector<SeparationFunction> separation_functions = {};
 
-  [[nodiscard]] bool check_consistency() const {
-    // The following must hold
-    // DISCRETE -> 1 separation function
-    if (model_type == ModelType::DISCRETE && separation_functions.size() == 1) {
-      return true;
-    }
-    // CONTINUOUS -> no further information
-    if (model_type == ModelType::CONTINUOUS && separation_functions.empty()) {
-      return true;
-    }
-    // PREDEFINED -> >= 1 separation function
-    if (model_type == ModelType::INFERRED && !separation_functions.empty()) {
-      return true;
-    }
-    // CUSTOM -> >= 1 separation functions
-    if (model_type == ModelType::INFERRED_ALT &&
-        !separation_functions.empty()) {
-      return true;
-    }
-
-    return false;
-  }
-
 public:
   // Constructors
-  explicit Model(ModelType model_type_input) : model_type(model_type_input) {
-    if (!check_consistency()) {
-      throw cda_rail::exceptions::ConsistencyException(
-          "Model type and separation types/functions are not consistent.");
-    }
-  }
+  explicit Model(ModelType model_type_input) : model_type(model_type_input) {}
   explicit Model(ModelType                       model_type_input,
                  std::vector<SeparationFunction> separation_functions_input)
       : model_type(model_type_input),
-        separation_functions(std::move(separation_functions_input)) {
-    if (!check_consistency()) {
-      throw cda_rail::exceptions::ConsistencyException(
-          "Model type and separation types/functions are not consistent.");
-    }
-  }
+        separation_functions(std::move(separation_functions_input)) {}
   // No default constructor
   Model() = delete;
 
@@ -106,6 +72,29 @@ public:
       throw std::logic_error("Model has no separation functions.");
     }
     return separation_functions;
+  }
+
+  // Helper
+  [[nodiscard]] bool check_consistency() const {
+    // The following must hold
+    // Discrete -> 1 separation function
+    if (model_type == ModelType::Discrete && separation_functions.size() == 1) {
+      return true;
+    }
+    // Continuous -> no further information
+    if (model_type == ModelType::Continuous && separation_functions.empty()) {
+      return true;
+    }
+    // PREDEFINED -> >= 1 separation function
+    if (model_type == ModelType::Inferred && !separation_functions.empty()) {
+      return true;
+    }
+    // CUSTOM -> >= 1 separation functions
+    if (model_type == ModelType::InferredAlt && !separation_functions.empty()) {
+      return true;
+    }
+
+    return false;
   }
 };
 } // namespace cda_rail::vss

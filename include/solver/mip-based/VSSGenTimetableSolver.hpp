@@ -30,7 +30,7 @@ private:
   std::vector<size_t> relevant_edges;
   std::vector<size_t> breakable_edges;
   bool                fix_routes = false;
-  vss::Model          vss_model  = vss::Model(vss::ModelType::CONTINUOUS);
+  vss::Model          vss_model  = vss::Model(vss::ModelType::Continuous);
   bool                include_train_dynamics = false;
   bool                include_braking_curves = false;
   bool                use_pwl                = false;
@@ -133,7 +133,7 @@ public:
 
   // Methods
   int solve(int delta_t = 15, bool fix_routes_input = true,
-            vss::Model model_input = vss::Model(vss::ModelType::CONTINUOUS),
+            vss::Model model_input = vss::Model(vss::ModelType::Continuous),
             bool       include_train_dynamics_input = true,
             bool       include_braking_curves_input = true,
             bool use_pwl_input = false, bool use_schedule_cuts_input = true,

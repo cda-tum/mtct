@@ -376,17 +376,17 @@ public:
                 const std::vector<size_t>& edges_to_consider) const;
 
   // Transformation functions
-  std::pair<std::vector<size_t>, std::vector<size_t>>
-  separate_edge(size_t                  edge_index,
-                vss::SeparationFunction sep_func = &vss::functions::uniform);
-  std::pair<std::vector<size_t>, std::vector<size_t>>
-  separate_edge(size_t source_id, size_t target_id,
-                vss::SeparationFunction sep_func = &vss::functions::uniform) {
+  std::pair<std::vector<size_t>, std::vector<size_t>> separate_edge(
+      size_t                         edge_index,
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
+  std::pair<std::vector<size_t>, std::vector<size_t>> separate_edge(
+      size_t source_id, size_t target_id,
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
     return separate_edge(get_edge_index(source_id, target_id), sep_func);
   };
-  std::pair<std::vector<size_t>, std::vector<size_t>>
-  separate_edge(const std::string& source_name, const std::string& target_name,
-                vss::SeparationFunction sep_func = &vss::functions::uniform) {
+  std::pair<std::vector<size_t>, std::vector<size_t>> separate_edge(
+      const std::string& source_name, const std::string& target_name,
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
     return separate_edge(get_edge_index(source_name, target_name), sep_func);
   };
 

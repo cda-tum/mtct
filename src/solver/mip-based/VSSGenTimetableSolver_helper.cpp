@@ -177,7 +177,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup(
   relevant_edges.clear();
   breakable_edges.clear();
   fix_routes             = false;
-  vss_model              = vss::Model(vss::ModelType::CONTINUOUS);
+  vss_model              = vss::Model(vss::ModelType::Continuous);
   include_train_dynamics = false;
   use_pwl                = false;
   use_schedule_cuts      = false;

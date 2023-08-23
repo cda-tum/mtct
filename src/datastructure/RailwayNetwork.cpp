@@ -966,8 +966,8 @@ cda_rail::Network::separate_edge_at(
 }
 
 std::pair<std::vector<size_t>, std::vector<size_t>>
-cda_rail::Network::separate_edge(size_t                  edge_index,
-                                 vss::SeparationFunction sep_func) {
+cda_rail::Network::separate_edge(size_t                         edge_index,
+                                 const vss::SeparationFunction& sep_func) {
   /**
    * Separates an edge (and possibly its reverse edge) according to the given
    * number of new vertices.
@@ -988,11 +988,12 @@ cda_rail::Network::separate_edge(size_t                  edge_index,
   // Get edge to separate
   const auto& edge = get_edge(edge_index);
   // Get number of new vertices
-  double const number_of_blocks = vss::functions::max_n_blocks(
+  const auto number_of_blocks = vss::functions::max_n_blocks(
       sep_func, edge.min_block_length / edge.length);
 
   // Calculate distances
   std::vector<double> distances_from_source;
+  distances_from_source.reserve(number_of_blocks - 1);
   for (int i = 0; i < number_of_blocks - 1; ++i) {
     distances_from_source.emplace_back(edge.length *
                                        sep_func(i, number_of_blocks));

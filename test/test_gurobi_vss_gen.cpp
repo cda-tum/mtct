@@ -13,7 +13,7 @@ TEST(Solver, GurobiVSSDiscretizeInstanceWithoutChange) {
   const auto num_vertices =
       solver.get_instance().const_n().number_of_vertices();
   solver.solve(30, true,
-               cda_rail::vss::Model(cda_rail::vss::ModelType::DISCRETE,
+               cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                                     {cda_rail::vss::functions::uniform}));
   EXPECT_EQ(num_vertices, solver.get_instance().const_n().number_of_vertices());
 }
@@ -52,16 +52,16 @@ TEST(Solver, GurobiVSSGenDeltaT) {
   std::cout << "--------------------- TEST 1 ---------------------------"
             << std::endl;
   const auto obj_val_1 = solver.solve(
-      30, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS));
+      30, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous));
   std::cout << "--------------------- TEST 2 ---------------------------"
             << std::endl;
   const auto obj_val_2 = solver.solve(
-      30, false, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS));
+      30, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous));
   std::cout << "--------------------- TEST 3 ---------------------------"
             << std::endl;
   const auto obj_val_3 =
       solver.solve(30, true,
-                   cda_rail::vss::Model(cda_rail::vss::ModelType::DISCRETE,
+                   cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                                         {&cda_rail::vss::functions::uniform}),
                    false, false);
 
@@ -88,7 +88,7 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
   std::cout << "--------------------- TEST 1 ---------------------------"
             << std::endl;
   const auto obj_val_1 = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, false, true, 60, true, true, "test_1");
   EXPECT_TRUE(std::filesystem::exists("test_1.mps"));
   EXPECT_TRUE(std::filesystem::exists("test_1.sol"));
@@ -100,31 +100,31 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
   std::cout << "--------------------- TEST 2 ---------------------------"
             << std::endl;
   const auto obj_val_2 = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, false, true, 60, true, false);
 
   std::cout << "--------------------- TEST 3 ---------------------------"
             << std::endl;
   const auto obj_val_3 = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, false, false, false, 60, true, false);
 
   std::cout << "--------------------- TEST 4 ---------------------------"
             << std::endl;
   const auto obj_val_4 = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, true, true, 60, true, false);
 
   std::cout << "--------------------- TEST 5 ---------------------------"
             << std::endl;
   const auto obj_val_5 = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, false, false, true, 60, true, false);
 
   std::cout << "--------------------- TEST 6 ---------------------------"
             << std::endl;
   const auto obj_val_6 = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       false, false, false, true, 60, true, false);
 
   // Check if all objective values are 1
@@ -143,7 +143,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree1) {
   std::cout << "--------------------- TEST 1 ---------------------------"
             << std::endl;
   const auto obj_val_1 = solver.solve(
-      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, false, true, 280, true, true, "test_1");
   EXPECT_TRUE(std::filesystem::exists("test_1.mps"));
   EXPECT_TRUE(std::filesystem::exists("test_1.sol"));
@@ -162,7 +162,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree2) {
   std::cout << "--------------------- TEST 2 ---------------------------"
             << std::endl;
   const auto obj_val_2 = solver.solve(
-      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, false, true, 280, true, false);
 
   EXPECT_EQ(obj_val_2, 1);
@@ -175,7 +175,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree3) {
   std::cout << "--------------------- TEST 3 ---------------------------"
             << std::endl;
   const auto obj_val_3 = solver.solve(
-      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, true, true, 280, true, false);
 
   EXPECT_EQ(obj_val_3, 1);
@@ -188,7 +188,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree4) {
   std::cout << "--------------------- TEST 4 ---------------------------"
             << std::endl;
   const auto obj_val_4 = solver.solve(
-      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, false, false, true, 280, true, false);
 
   EXPECT_EQ(obj_val_4, 1);
@@ -201,7 +201,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree5) {
   std::cout << "--------------------- TEST 5 ---------------------------"
             << std::endl;
   const auto obj_val_5 = solver.solve(
-      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       false, false, false, true, 280, true, false);
 
   EXPECT_EQ(obj_val_5, 1);
@@ -213,7 +213,7 @@ TEST(Solver, GurobiVSSGenVSSDiscrete) {
 
   const auto obj_val =
       solver.solve(15, true,
-                   cda_rail::vss::Model(cda_rail::vss::ModelType::DISCRETE,
+                   cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                                         {&cda_rail::vss::functions::uniform}),
                    false, false, false, true, 375, true, false);
 
@@ -226,13 +226,13 @@ TEST(Solver, OvertakeFixedContinuous) {
       "./example-networks/Overtake/");
 
   const auto obj_val_base = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       false, false, false, true, 120, false, false);
   const auto obj_val_dynamics = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, false, false, true, 120, false, false);
   const auto obj_val_braking = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, false, true, 120, false, false);
 
   EXPECT_EQ(obj_val_base, 8);
@@ -245,13 +245,13 @@ TEST(Solver, OvertakeFreeContinuous) {
       "./example-networks/Overtake/");
 
   const auto obj_val_base = solver.solve(
-      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       false, false, false, true, 120, false, false);
   const auto obj_val_dynamics = solver.solve(
-      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, false, false, true, 120, false, false);
   const auto obj_val_braking = solver.solve(
-      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, false, true, 120, false, false);
 
   EXPECT_EQ(obj_val_base, 8);
@@ -264,13 +264,13 @@ TEST(Solver, Stammstrecke4FixedContinuous) {
       "./example-networks/Stammstrecke4Trains/");
 
   const auto obj_val_base = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       false, false, false, true, 120, false, false);
   const auto obj_val_dynamics = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, false, false, true, 120, false, false);
   const auto obj_val_braking = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, false, true, 120, false, false);
 
   EXPECT_EQ(obj_val_base, 0);
@@ -283,13 +283,13 @@ TEST(Solver, Stammstrecke8FixedContinuous) {
       "./example-networks/Stammstrecke8Trains/");
 
   const auto obj_val_base = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       false, false, false, true, 120, false, false);
   const auto obj_val_dynamics = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, false, false, true, 120, false, false);
   const auto obj_val_braking = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, false, true, 120, false, false);
 
   EXPECT_EQ(obj_val_base, 0);
@@ -302,13 +302,13 @@ TEST(Solver, Stammstrecke16FixedContinuous) {
       "./example-networks/Stammstrecke16Trains/");
 
   const auto obj_val_base = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       false, false, false, true, 120, false, false);
   const auto obj_val_dynamics = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, false, false, true, 120, false, false);
   const auto obj_val_braking = solver.solve(
-      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::CONTINUOUS),
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
       true, true, false, true, 120, false, false);
 
   EXPECT_EQ(obj_val_base, 0);
@@ -322,7 +322,7 @@ TEST(Solver, SimpleStationLimitedUniform) {
 
   const auto obj_val =
       solver.solve(15, true,
-                   cda_rail::vss::Model(cda_rail::vss::ModelType::INFERRED,
+                   cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
                                         {&cda_rail::vss::functions::uniform}),
                    true, true, false, true, 60, true, false);
 

@@ -45,7 +45,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * @param fix_routes_input: If true, the routes are fixed to the ones given in
    * the instance. Otherwise, routing is part of the optimization. Default: true
    * @param vss_model_input: Denotes, how the VSS borders are modelled in the
-   * solution process. Default: VSSModel::CONTINUOUS
+   * solution process. Default: VSSModel::Continuous
    * @param separation_types_input: The separation types used, if the graph is
    * discretized or the VSS modeling is limited. Default: {}
    * @param include_train_dynamics_input: If true, the train dynamics (i.e.,
@@ -73,6 +73,11 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * solution was found.
    */
 
+  if (!vss_model_input.check_consistency()) {
+    throw cda_rail::exceptions::ConsistencyException(
+        "Model type and separation types/functions are not consistent.");
+  }
+
   if (!instance.n().is_consistent_for_transformation()) {
     throw exceptions::ConsistencyException();
   }
@@ -88,7 +93,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   this->dt                     = delta_t;
   this->fix_routes             = fix_routes_input;
-  this->vss_model              = vss_model_input;
+  this->vss_model              = std::move(vss_model_input);
   this->include_train_dynamics = include_train_dynamics_input;
   this->include_braking_curves = include_braking_curves_input;
   this->use_pwl                = use_pwl_input;
@@ -100,7 +105,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   }
 
   std::optional<instances::VSSGenerationTimetable> old_instance;
-  if (this->vss_model.get_model_type() == vss::ModelType::DISCRETE) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     std::cout << "Preprocessing graph...";
     old_instance = instance;
     instance.discretize(this->vss_model.get_separation_functions().front());
@@ -125,7 +130,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   unbreakable_sections = instance.n().unbreakable_sections();
 
-  if (this->vss_model.get_model_type() == vss::ModelType::DISCRETE) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     no_border_vss_sections = instance.n().no_border_vss_sections();
     num_breakable_sections = no_border_vss_sections.size();
     no_border_vss_vertices =
@@ -175,7 +180,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
     create_free_routes_variables();
   }
-  if (this->vss_model.get_model_type() == vss::ModelType::DISCRETE) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     if (debug) {
       std::cout << "Create discretized VSS variables" << std::endl;
     }
@@ -213,7 +218,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
     create_free_routes_constraints();
   }
-  if (this->vss_model.get_model_type() == vss::ModelType::DISCRETE) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     if (debug) {
       std::cout << "Create discretized VSS constraints" << std::endl;
     }
@@ -393,7 +398,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   vars["b_rear"] =
       MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
 
-  if (this->vss_model.get_model_type() == vss::ModelType::INFERRED) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
     vars["num_vss_segments"]  = MultiArray<GRBVar>(relevant_edges.size());
     vars["frac_vss_segments"] = MultiArray<GRBVar>(
         relevant_edges.size(),
@@ -446,7 +451,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
 
-    if (this->vss_model.get_model_type() == vss::ModelType::INFERRED) {
+    if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
       vars["num_vss_segments"](i) = model->addVar(
           1, vss_number_e + 1, 0, GRB_INTEGER, "num_vss_segments_" + edge_name);
       for (size_t sep_type = 0;
@@ -485,11 +490,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
 
   // sum over all b_i as in no_border_vss_vertices
   GRBLinExpr obj = 0;
-  if (vss_model.get_model_type() == vss::ModelType::DISCRETE) {
+  if (vss_model.get_model_type() == vss::ModelType::Discrete) {
     for (size_t i = 0; i < no_border_vss_vertices.size(); ++i) {
       obj += vars["b"](i);
     }
-  } else if (vss_model.get_model_type() == vss::ModelType::CONTINUOUS) {
+  } else if (vss_model.get_model_type() == vss::ModelType::Continuous) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
       const auto& e            = relevant_edges[i];
       const auto  vss_number_e = instance.n().max_vss_on_edge(e);
@@ -497,7 +502,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
         obj += vars["b_used"](i, vss);
       }
     }
-  } else if (vss_model.get_model_type() == vss::ModelType::INFERRED) {
+  } else if (vss_model.get_model_type() == vss::ModelType::Inferred) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
       obj += (vars["num_vss_segments"](i) - 1);
     }
@@ -771,7 +776,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   } else {
     create_non_discretized_free_route_constraints();
   }
-  if (vss_model.get_model_type() == vss::ModelType::INFERRED) {
+  if (vss_model.get_model_type() == vss::ModelType::Inferred) {
     create_non_discretized_fraction_constraints();
   }
 }
@@ -783,7 +788,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * general enough to appear in all model variants.
    */
   // VSS can only be used if it is non-zero
-  if (vss_model.get_model_type() == vss::ModelType::CONTINUOUS) {
+  if (vss_model.get_model_type() == vss::ModelType::Continuous) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
       const auto& e               = relevant_edges[i];
       const auto& e_index         = breakable_edge_indices[e];
@@ -962,7 +967,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& breakable_e_index = breakable_edge_indices.at(e);
     const auto& e_len             = instance.n().get_edge(e).length;
 
-    if (vss_model.get_model_type() == vss::ModelType::INFERRED) {
+    if (vss_model.get_model_type() == vss::ModelType::Inferred) {
       // sum edge_type(i,*) = 1
       GRBLinExpr lhs_sum_edge_type            = 0;
       bool       add_constraint_sum_edge_type = false;
@@ -1191,7 +1196,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * Calculate the forward and backward sections for each breakable section
    */
 
-  if (this->vss_model.get_model_type() == vss::ModelType::DISCRETE) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     calculate_fwd_bwd_sections_discretized();
   } else {
     calculate_fwd_bwd_sections_non_discretized();
