@@ -229,4 +229,135 @@ public:
   [[nodiscard]] std::vector<size_t>
   edges_used_by_train(const std::string& train_name, bool fixed_routes) const;
 };
+
+class SolVSSGenerationTimetable {
+private:
+  VSSGenerationTimetable           instance;
+  std::vector<std::vector<double>> vss_pos     = {};
+  std::vector<std::vector<double>> train_pos   = {};
+  std::vector<std::vector<double>> train_speed = {};
+
+  SolutionStatus status;
+  double         obj;
+  bool           postprocessed;
+
+public:
+  // Constructor
+  explicit SolVSSGenerationTimetable(const VSSGenerationTimetable instance);
+  SolVSSGenerationTimetable() = delete;
+
+  // Getter
+  [[nodiscard]] const VSSGenerationTimetable& get_instance() const {
+    return instance;
+  };
+
+  [[nodiscard]] const std::vector<double>& get_vss_pos(size_t edge_id) const;
+  [[nodiscard]] const std::vector<double>& get_vss_pos(size_t source,
+                                                       size_t target) const {
+    return get_vss_pos(instance.const_n().get_edge_index(source, target));
+  };
+  [[nodiscard]] const std::vector<double>&
+  get_vss_pos(const std::string& source, const std::string& target) const {
+    return get_vss_pos(instance.const_n().get_edge_index(source, target));
+  };
+
+  [[nodiscard]] const double get_train_pos(size_t train_id, int time) const;
+  [[nodiscard]] const double get_train_pos(const std::string& train_name,
+                                           int                time) const {
+    return get_train_pos(instance.get_train_list().get_train_index(train_name),
+                         time);
+  }
+
+  [[nodiscard]] const double get_train_speed(size_t train_id, int time) const;
+  [[nodiscard]] const double get_train_speed(const std::string& train_name,
+                                             int                time) const {
+    return get_train_speed(
+        instance.get_train_list().get_train_index(train_name), time);
+  }
+
+  [[nodiscard]] SolutionStatus get_status() const { return status; };
+  [[nodiscard]] double         get_obj() const { return obj; };
+  [[nodiscard]] bool get_postprocessed() const { return postprocessed; };
+
+  // RouteMap functions
+  void add_empty_route(const std::string& train_name) {
+    instance.add_empty_route(train_name);
+  };
+
+  void push_back_edge_to_route(const std::string& train_name,
+                               size_t             edge_index) {
+    instance.push_back_edge_to_route(train_name, edge_index);
+  };
+  void push_back_edge_to_route(const std::string& train_name, size_t source,
+                               size_t target) {
+    instance.push_back_edge_to_route(train_name, source, target);
+  };
+  void push_back_edge_to_route(const std::string& train_name,
+                               const std::string& source,
+                               const std::string& target) {
+    instance.push_back_edge_to_route(train_name, source, target);
+  };
+
+  void push_front_edge_to_route(const std::string& train_name,
+                                size_t             edge_index) {
+    instance.push_front_edge_to_route(train_name, edge_index);
+  };
+  void push_front_edge_to_route(const std::string& train_name, size_t source,
+                                size_t target) {
+    instance.push_front_edge_to_route(train_name, source, target);
+  };
+  void push_front_edge_to_route(const std::string& train_name,
+                                const std::string& source,
+                                const std::string& target) {
+    instance.push_front_edge_to_route(train_name, source, target);
+  };
+
+  void remove_first_edge_from_route(const std::string& train_name) {
+    instance.remove_first_edge_from_route(train_name);
+  };
+  void remove_last_edge_from_route(const std::string& train_name) {
+    instance.remove_last_edge_from_route(train_name);
+  };
+
+  void add_vss_pos(size_t edge_id, double pos);
+  void add_vss_pos(size_t source, size_t target, double pos) {
+    add_vss_pos(instance.const_n().get_edge_index(source, target), pos);
+  };
+  void add_vss_pos(const std::string& source, const std::string& target,
+                   double pos) {
+    add_vss_pos(instance.const_n().get_edge_index(source, target), pos);
+  };
+
+  void set_vss_pos(size_t edge_id, const std::vector<double> pos);
+  void set_vss_pos(size_t source, size_t target,
+                   const std::vector<double> pos) {
+    set_vss_pos(instance.const_n().get_edge_index(source, target),
+                std::move(pos));
+  };
+  void set_vss_pos(const std::string& source, const std::string& target,
+                   const std::vector<double> pos) {
+    set_vss_pos(instance.const_n().get_edge_index(source, target),
+                std::move(pos));
+  };
+
+  void reset_vss_pos(size_t edge_id);
+  void reset_vss_pos(size_t source, size_t target) {
+    reset_vss_pos(instance.const_n().get_edge_index(source, target));
+  };
+  void reset_vss_pos(const std::string& source, const std::string& target) {
+    reset_vss_pos(instance.const_n().get_edge_index(source, target));
+  };
+
+  void add_train_pos(size_t train_id, int time, double pos);
+  void add_train_pos(const std::string& train_name, int time, double pos) {
+    add_train_pos(instance.get_train_list().get_train_index(train_name), time,
+                  pos);
+  };
+
+  void add_train_speed(size_t train_id, int time, double speed);
+  void add_train_speed(const std::string& train_name, int time, double speed) {
+    add_train_speed(instance.get_train_list().get_train_index(train_name), time,
+                    speed);
+  };
+};
 } // namespace cda_rail::instances
