@@ -390,8 +390,8 @@ public:
     return separate_edge(get_edge_index(source_name, target_name), sep_func);
   };
 
-  std::vector<std::pair<size_t, std::vector<size_t>>>
-  discretize(vss::SeparationFunction sep_func = &vss::functions::uniform);
+  std::vector<std::pair<size_t, std::vector<size_t>>> discretize(
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
 
   [[nodiscard]] std::vector<std::vector<double>>
   all_edge_pairs_shortest_paths() const;

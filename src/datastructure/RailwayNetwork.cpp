@@ -1038,7 +1038,7 @@ std::vector<size_t> cda_rail::Network::relevant_breakable_edges() const {
 }
 
 std::vector<std::pair<size_t, std::vector<size_t>>>
-cda_rail::Network::discretize(vss::SeparationFunction sep_func) {
+cda_rail::Network::discretize(const vss::SeparationFunction& sep_func) {
   /**
    * Discretizes the graphs edges to allow for VSS borders only at specified
    * positions / vertices.
