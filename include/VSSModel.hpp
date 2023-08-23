@@ -1,6 +1,7 @@
 #pragma once
 #include "CustomExceptions.hpp"
 
+#include <cmath>
 #include <functional>
 #include <stdexcept>
 #include <vector>
