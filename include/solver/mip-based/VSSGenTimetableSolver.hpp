@@ -106,18 +106,18 @@ private:
 
   struct TemporaryImpossibilityStruct {
     bool                to_use;
-    int                 t_before;
-    int                 t_after;
+    size_t              t_before;
+    size_t              t_after;
     double              v_before;
     double              v_after;
     std::vector<size_t> edges_before;
     std::vector<size_t> edges_after;
   };
   [[nodiscard]] TemporaryImpossibilityStruct
-  get_temporary_impossibility_struct(const size_t& tr, const int& t) const;
+  get_temporary_impossibility_struct(const size_t& tr, const size_t& t) const;
 
   [[nodiscard]] double
-  max_distance_travelled(const size_t& tr, const int& time_steps,
+  max_distance_travelled(const size_t& tr, const size_t& time_steps,
                          const double& v0, const double& a_max,
                          const bool& braking_distance) const;
 

@@ -636,8 +636,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     }
 
     for (size_t t = 0; t <= num_t; ++t) {
-      const auto tr_to_consider = instance.trains_at_t(t * dt, tr_on_sec);
-      GRBLinExpr lhs            = 0;
+      const auto tr_to_consider =
+          instance.trains_at_t(static_cast<int>(t) * dt, tr_on_sec);
+      GRBLinExpr lhs = 0;
       for (auto const tr : tr_to_consider) {
         lhs += vars["x_sec"](tr, t, sec_index);
       }
@@ -876,7 +877,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       GRBLinExpr lhs_rear          = 0;
       GRBLinExpr rhs               = -1;
       bool       create_constraint = false;
-      for (const auto& tr : instance.trains_at_t(t * dt, tr_on_e)) {
+      for (const auto& tr :
+           instance.trains_at_t(static_cast<int>(t) * dt, tr_on_e)) {
         create_constraint = true;
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           lhs_front += vars["b_front"](tr, t, e_index, vss);
@@ -936,7 +938,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         // vss) <= 1
         GRBLinExpr lhs = 0;
         GRBLinExpr rhs = 0;
-        for (const auto& tr : instance.trains_at_t(t * dt, tr_on_e)) {
+        for (const auto& tr :
+             instance.trains_at_t(static_cast<int>(t) * dt, tr_on_e)) {
           lhs += vars["b_front"](tr, t, e_index, vss);
           rhs += vars["b_rear"](tr, t, e_index, vss);
         }
@@ -1133,7 +1136,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   // Connect y_sec and x
   for (size_t t = 0; t < num_t; ++t) {
-    const auto tr_at_t = instance.trains_at_t(t * dt);
+    const auto tr_at_t = instance.trains_at_t(static_cast<int>(t) * dt);
     for (size_t i = 0; i < fwd_bwd_sections.size(); ++i) {
       // y_sec_fwd(t,i) >= x(tr, t, e) for all e in fwd_bwd_sections[i].first
       // and applicable trains y_sec_fwd(t,i) <= sum x(tr, t, e)

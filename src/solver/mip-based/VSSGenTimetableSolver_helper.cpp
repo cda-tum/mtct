@@ -37,7 +37,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::TemporaryImpossibilityStruct
 cda_rail::solver::mip_based::VSSGenTimetableSolver::
-    get_temporary_impossibility_struct(const size_t& tr, const int& t) const {
+    get_temporary_impossibility_struct(const size_t& tr,
+                                       const size_t& t) const {
   /**
    * This returns a struct containing information about the previous and
    * following station.
@@ -89,11 +90,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 double
 cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(
-    const size_t& tr, const int& time_steps, const double& v0,
+    const size_t& tr, const size_t& time_steps, const double& v0,
     const double& a_max, const bool& braking_distance) const {
   const auto& train_object = instance.get_train_list().get_train(tr);
   const auto& v_max        = train_object.max_speed;
-  const auto  time_diff    = time_steps * dt;
+  const auto  time_diff    = static_cast<int>(time_steps) * dt;
   double      ret_val      = 0;
   double      final_speed  = NAN;
   if (!this->include_train_dynamics) {
