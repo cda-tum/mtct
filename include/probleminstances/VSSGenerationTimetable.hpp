@@ -6,6 +6,7 @@
 #include "datastructure/Timetable.hpp"
 
 #include <ctime>
+#include <filesystem>
 
 namespace cda_rail::instances {
 class VSSGenerationTimetable {
