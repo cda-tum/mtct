@@ -5,6 +5,8 @@
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 
+#include <ctime>
+
 namespace cda_rail::instances {
 class VSSGenerationTimetable {
 private:
@@ -244,6 +246,9 @@ public:
 
 class SolVSSGenerationTimetable {
 private:
+  const std::string name;
+  int               id;
+
   VSSGenerationTimetable           instance;
   std::vector<std::vector<double>> vss_pos;
 
@@ -257,7 +262,9 @@ private:
 
 public:
   // Constructor
-  explicit SolVSSGenerationTimetable(VSSGenerationTimetable instance, int dt);
+  explicit SolVSSGenerationTimetable(
+      VSSGenerationTimetable instance, int dt, std::string name = "solution",
+      int id = static_cast<int>(std::time(nullptr)));
   SolVSSGenerationTimetable() = delete;
 
   // Getter
@@ -380,5 +387,7 @@ public:
     add_train_speed(instance.get_train_list().get_train_index(train_name), time,
                     speed);
   };
+
+  bool check_consistency() const;
 };
 } // namespace cda_rail::instances

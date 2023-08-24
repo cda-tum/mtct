@@ -3,8 +3,9 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
-    cda_rail::instances::VSSGenerationTimetable instance, int dt)
-    : instance(std::move(instance)), dt(dt) {
+    cda_rail::instances::VSSGenerationTimetable instance, int dt,
+    std::string name, int id)
+    : instance(std::move(instance)), dt(dt), name(std::move(name)), id(id) {
   vss_pos = std::vector<std::vector<double>>(
       this->instance.const_n().number_of_edges());
 
@@ -215,4 +216,43 @@ void cda_rail::instances::SolVSSGenerationTimetable::add_train_speed(
   const auto tr_t0   = instance.time_index_interval(train_id, dt, true).first;
   const auto t_index = static_cast<size_t>(time / dt) - tr_t0;
   train_speed.at(train_id).at(t_index) = speed;
+}
+
+bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
+  if (status == SolutionStatus::Unknown) {
+    return false;
+  }
+  if (obj < 0) {
+    return false;
+  }
+  if (dt < 0) {
+    return false;
+  }
+  if (!instance.check_consistency(true)) {
+    return false;
+  }
+  for (const auto& train_pos_vec : train_pos) {
+    for (const auto& pos : train_pos_vec) {
+      if (pos < 0) {
+        return false;
+      }
+    }
+  }
+  for (size_t tr_id = 0; tr_id < train_speed.size(); ++tr_id) {
+    const auto& train = instance.get_train_list().get_train(tr_id);
+    for (double t : train_speed.at(tr_id)) {
+      if (t < 0 || t > train.max_speed) {
+        return false;
+      }
+    }
+  }
+  for (size_t edge_id = 0; edge_id < vss_pos.size(); ++edge_id) {
+    const auto& edge = instance.const_n().get_edge(edge_id);
+    for (const auto& pos : vss_pos.at(edge_id)) {
+      if (pos < 0 || pos > edge.length) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
