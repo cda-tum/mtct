@@ -392,5 +392,15 @@ public:
   };
 
   bool check_consistency() const;
+
+  void export_solution(const std::filesystem::path& p,
+                       bool export_instance = true) const;
+  void export_solution(const std::string& path,
+                       bool               export_instance = true) const {
+    export_solution(std::filesystem::path(path), export_instance);
+  };
+  void export_solution(const char* path, bool export_instance = true) const {
+    export_solution(std::filesystem::path(path), export_instance);
+  };
 };
 } // namespace cda_rail::instances
