@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <limits>
 #include <vector>
 
 namespace cda_rail {
@@ -95,4 +96,11 @@ subsets_of_size_2_indices(size_t n) {
   }
   return subsets_of_pairs;
 }
+
+// Template type T
+template <typename T> bool approx_equal(T a, T b, T factor = 10) {
+  const auto eps = factor * std::numeric_limits<T>::epsilon();
+  return a - b < eps && b - a < eps;
+}
+
 } // namespace cda_rail

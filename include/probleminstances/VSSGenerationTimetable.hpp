@@ -1,4 +1,5 @@
 #pragma once
+#include "CustomExceptions.hpp"
 #include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
@@ -264,7 +265,12 @@ public:
     return instance;
   };
 
-  [[nodiscard]] const std::vector<double>& get_vss_pos(size_t edge_id) const;
+  [[nodiscard]] const std::vector<double>& get_vss_pos(size_t edge_id) const {
+    if (!instance.const_n().has_edge(edge_id)) {
+      throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
+    }
+    return vss_pos.at(edge_id);
+  };
   [[nodiscard]] const std::vector<double>& get_vss_pos(size_t source,
                                                        size_t target) const {
     return get_vss_pos(instance.const_n().get_edge_index(source, target));
@@ -332,13 +338,16 @@ public:
     instance.remove_last_edge_from_route(train_name);
   };
 
-  void add_vss_pos(size_t edge_id, double pos);
-  void add_vss_pos(size_t source, size_t target, double pos) {
-    add_vss_pos(instance.const_n().get_edge_index(source, target), pos);
+  void add_vss_pos(size_t edge_id, double pos, bool reverse_edge = true);
+  void add_vss_pos(size_t source, size_t target, double pos,
+                   bool reverse_edge = true) {
+    add_vss_pos(instance.const_n().get_edge_index(source, target), pos,
+                reverse_edge);
   };
   void add_vss_pos(const std::string& source, const std::string& target,
-                   double pos) {
-    add_vss_pos(instance.const_n().get_edge_index(source, target), pos);
+                   double pos, bool reverse_edge = true) {
+    add_vss_pos(instance.const_n().get_edge_index(source, target), pos,
+                reverse_edge);
   };
 
   void set_vss_pos(size_t edge_id, std::vector<double> pos);
