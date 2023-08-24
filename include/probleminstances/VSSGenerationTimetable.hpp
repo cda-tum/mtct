@@ -329,8 +329,7 @@ public:
   };
 
   void set_vss_pos(size_t edge_id, std::vector<double> pos);
-  void set_vss_pos(size_t source, size_t target,
-                   const std::vector<double> pos) {
+  void set_vss_pos(size_t source, size_t target, std::vector<double> pos) {
     set_vss_pos(instance.const_n().get_edge_index(source, target),
                 std::move(pos));
   };
