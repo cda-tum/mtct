@@ -164,11 +164,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup(
     instance = old_instance.value();
   }
   dt                     = -1;
-  num_t                  = -1;
-  num_tr                 = -1;
-  num_edges              = -1;
-  num_vertices           = -1;
-  num_breakable_sections = -1;
+  num_t                  = 0;
+  num_tr                 = 0;
+  num_edges              = 0;
+  num_vertices           = 0;
+  num_breakable_sections = 0;
   unbreakable_sections.clear();
   no_border_vss_sections.clear();
   train_interval.clear();

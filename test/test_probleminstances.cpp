@@ -676,6 +676,62 @@ TEST(Functionality, HelperFunctions) {
 
   EXPECT_TRUE(instance.has_route_for_every_train());
 
+  // Check time intervals
+  EXPECT_EQ(instance.time_interval("tr1").first, 0);
+  EXPECT_EQ(instance.time_interval("tr1").second, 200);
+  EXPECT_EQ(instance.time_interval("tr2").first, 60);
+  EXPECT_EQ(instance.time_interval("tr2").second, 120);
+  EXPECT_EQ(instance.time_interval("tr3").first, 80);
+  EXPECT_EQ(instance.time_interval("tr3").second, 150);
+  EXPECT_EQ(instance.time_interval(tr1).first, 0);
+  EXPECT_EQ(instance.time_interval(tr1).second, 200);
+  EXPECT_EQ(instance.time_interval(tr2).first, 60);
+  EXPECT_EQ(instance.time_interval(tr2).second, 120);
+  EXPECT_EQ(instance.time_interval(tr3).first, 80);
+  EXPECT_EQ(instance.time_interval(tr3).second, 150);
+
+  EXPECT_EQ(instance.time_index_interval("tr1", 15).first, 0);
+  EXPECT_EQ(instance.time_index_interval("tr1", 15).second, 14);
+  EXPECT_EQ(instance.time_index_interval("tr1", 15, false).second, 13);
+  EXPECT_EQ(instance.time_index_interval("tr1", 15, true).second, 14);
+  EXPECT_EQ(instance.time_index_interval("tr1", 15, false).first, 0);
+  EXPECT_EQ(instance.time_index_interval("tr1", 15, true).first, 0);
+
+  EXPECT_EQ(instance.time_index_interval("tr2", 15).first, 4);
+  EXPECT_EQ(instance.time_index_interval("tr2", 15).second, 8);
+  EXPECT_EQ(instance.time_index_interval("tr2", 15, false).second, 7);
+  EXPECT_EQ(instance.time_index_interval("tr2", 15, true).second, 8);
+  EXPECT_EQ(instance.time_index_interval("tr2", 15, false).first, 4);
+  EXPECT_EQ(instance.time_index_interval("tr2", 15, true).first, 4);
+
+  EXPECT_EQ(instance.time_index_interval("tr3", 15).first, 5);
+  EXPECT_EQ(instance.time_index_interval("tr3", 15).second, 10);
+  EXPECT_EQ(instance.time_index_interval("tr3", 15, false).second, 9);
+  EXPECT_EQ(instance.time_index_interval("tr3", 15, true).second, 10);
+  EXPECT_EQ(instance.time_index_interval("tr3", 15, false).first, 5);
+  EXPECT_EQ(instance.time_index_interval("tr3", 15, true).first, 5);
+
+  EXPECT_EQ(instance.time_index_interval(tr1, 15).first, 0);
+  EXPECT_EQ(instance.time_index_interval(tr1, 15).second, 14);
+  EXPECT_EQ(instance.time_index_interval(tr1, 15, false).second, 13);
+  EXPECT_EQ(instance.time_index_interval(tr1, 15, true).second, 14);
+  EXPECT_EQ(instance.time_index_interval(tr1, 15, false).first, 0);
+  EXPECT_EQ(instance.time_index_interval(tr1, 15, true).first, 0);
+
+  EXPECT_EQ(instance.time_index_interval(tr2, 15).first, 4);
+  EXPECT_EQ(instance.time_index_interval(tr2, 15).second, 8);
+  EXPECT_EQ(instance.time_index_interval(tr2, 15, false).second, 7);
+  EXPECT_EQ(instance.time_index_interval(tr2, 15, true).second, 8);
+  EXPECT_EQ(instance.time_index_interval(tr2, 15, false).first, 4);
+  EXPECT_EQ(instance.time_index_interval(tr2, 15, true).first, 4);
+
+  EXPECT_EQ(instance.time_index_interval(tr3, 15).first, 5);
+  EXPECT_EQ(instance.time_index_interval(tr3, 15).second, 10);
+  EXPECT_EQ(instance.time_index_interval(tr3, 15, false).second, 9);
+  EXPECT_EQ(instance.time_index_interval(tr3, 15, true).second, 10);
+  EXPECT_EQ(instance.time_index_interval(tr3, 15, false).first, 5);
+  EXPECT_EQ(instance.time_index_interval(tr3, 15, true).first, 5);
+
   // Trains at time t
   const auto trains_at_0 = instance.trains_at_t(0);
   EXPECT_EQ(trains_at_0.size(), 1);

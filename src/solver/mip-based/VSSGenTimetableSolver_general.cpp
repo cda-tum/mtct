@@ -119,7 +119,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     std::cout << "Initialize other relevant variables" << std::endl;
   }
 
-  num_t = instance.max_t() / dt;
+  num_t = static_cast<size_t>(instance.max_t() / dt);
   if (instance.max_t() % dt != 0) {
     num_t += 1;
   }
@@ -146,14 +146,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   }
 
   for (size_t i = 0; i < num_tr; ++i) {
-    train_interval.emplace_back(instance.time_interval(i));
-    train_interval.back().first /= dt;
-    if (train_interval.back().second % dt == 0) {
-      train_interval.back().second /= dt;
-      train_interval.back().second -= 1;
-    } else {
-      train_interval.back().second /= dt;
-    }
+    train_interval.emplace_back(instance.time_index_interval(i, dt, false));
   }
 
   calculate_fwd_bwd_sections();
@@ -329,13 +322,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t i = 0; i < num_tr; ++i) {
     auto max_speed = instance.get_train_list().get_train(i).max_speed;
     auto tr_name   = train_list.get_train(i).name;
-    for (int t = train_interval[i].first; t <= train_interval[i].second + 1;
+    for (size_t t = train_interval[i].first; t <= train_interval[i].second + 1;
          ++t) {
       vars["v"](i, t) =
           model->addVar(0, max_speed, 0, GRB_CONTINUOUS,
                         "v_" + tr_name + "_" + std::to_string(t * dt));
     }
-    for (int t = train_interval[i].first; t <= train_interval[i].second; ++t) {
+    for (size_t t = train_interval[i].first; t <= train_interval[i].second;
+         ++t) {
       for (auto const edge_id :
            instance.edges_used_by_train(tr_name, fix_routes)) {
         const auto& edge = instance.n().get_edge(edge_id);
@@ -354,7 +348,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
     }
   }
-  for (int t = 0; t < num_t; ++t) {
+  for (size_t t = 0; t < num_t; ++t) {
     for (size_t i = 0; i < fwd_bwd_sections.size(); ++i) {
       vars["y_sec_fwd"](t, i) = model->addVar(
           0, 1, 0, GRB_BINARY,
@@ -428,8 +422,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           model->addVar(lb, ub, 0, GRB_CONTINUOUS,
                         "b_pos_" + edge_name + "_" + std::to_string(vss));
       for (size_t tr = 0; tr < num_tr; ++tr) {
-        for (int t = train_interval[tr].first; t <= train_interval[tr].second;
-             ++t) {
+        for (size_t t = train_interval[tr].first;
+             t <= train_interval[tr].second; ++t) {
           vars["b_front"](tr, t, i, vss) = model->addVar(
               0, 1, 0, GRB_BINARY,
               "b_front_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
@@ -534,10 +528,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         const auto& tr2_interval = train_interval[tr2];
         const auto& tr2_name  = instance.get_train_list().get_train(tr2).name;
         const auto& tr2_route = instance.get_route(tr2_name);
-        std::pair<int, int> const t_interval = {
+        std::pair<size_t, size_t> const t_interval = {
             std::max(tr1_interval.first, tr2_interval.first),
             std::min(tr1_interval.second, tr2_interval.second)};
-        for (int t = t_interval.first; t <= t_interval.second; ++t) {
+        for (size_t t = t_interval.first; t <= t_interval.second; ++t) {
           for (size_t e1 = 0; e1 < no_border_vss_section_sorted.size(); ++e1) {
             for (size_t e2 = 0; e2 < no_border_vss_section_sorted.size();
                  ++e2) {
@@ -621,7 +615,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       const auto& tr_interval = train_interval[tr];
       const auto& tr_name     = instance.get_train_list().get_train(tr).name;
       const auto& tr_route    = instance.get_route(tr_name);
-      for (int t = tr_interval.first; t <= tr_interval.second; ++t) {
+      for (size_t t = tr_interval.first; t <= tr_interval.second; ++t) {
         GRBLinExpr lhs   = 0;
         int        count = 0;
         for (auto const e_index : sec) {
@@ -641,7 +635,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
     }
 
-    for (int t = 0; t <= num_t; ++t) {
+    for (size_t t = 0; t <= num_t; ++t) {
       const auto tr_to_consider = instance.trains_at_t(t * dt, tr_on_sec);
       GRBLinExpr lhs            = 0;
       for (auto const tr : tr_to_consider) {
@@ -668,13 +662,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_schedule = instance.get_schedule(tr_name);
     const auto& tr_edges = instance.edges_used_by_train(tr, this->fix_routes);
     for (const auto& tr_stop : tr_schedule.stops) {
-      const auto  t0 = tr_stop.begin / dt;
-      const auto  t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
+      const auto t0 = static_cast<size_t>(tr_stop.begin / dt);
+      const auto t1 =
+          static_cast<size_t>(std::ceil(static_cast<double>(tr_stop.end) / dt));
       const auto& stop_edges =
           instance.get_station_list().get_station(tr_stop.station).tracks;
       const auto inverse_stop_edges =
           instance.n().inverse_edges(stop_edges, tr_edges);
-      for (int t = t0 - 1; t <= t1; ++t) {
+      for (size_t t = t0 - 1; t <= t1; ++t) {
         if (t >= t0) {
           model->addConstr(vars["v"](tr, t) == 0, "station_speed_" + tr_name +
                                                       "_" + std::to_string(t));
@@ -715,7 +710,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     // Iterate over all time steps
     const auto& tr_object = train_list.get_train(tr);
-    for (int t = train_interval[tr].first; t <= train_interval[tr].second;
+    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
          ++t) {
       // v(t+1) - v(t) <= acceleration * dt
       model->addConstr(vars["v"](tr, t + 1) - vars["v"](tr, t) <=
@@ -741,7 +736,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto  max_break_len = get_max_brakelen(tr);
     const auto& tr_name       = instance.get_train_list().get_train(tr).name;
-    for (int t = train_interval[tr].first; t <= train_interval[tr].second;
+    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
          ++t) {
       vars["brakelen"](tr, t) =
           model->addVar(0, max_break_len, 0, GRB_CONTINUOUS,
@@ -849,7 +844,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (const auto& e : instance.edges_used_by_train(tr, this->fix_routes)) {
       const auto& e_index      = breakable_edge_indices[e];
       const auto  vss_number_e = instance.n().max_vss_on_edge(e);
-      for (int t = train_interval[tr].first; t <= train_interval[tr].second;
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           // x(tr,t,e) >= b_front(tr,t,e_index,vss)
@@ -874,7 +869,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& e            = breakable_edges[e_index];
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
     const auto& tr_on_e      = instance.trains_on_edge(e, this->fix_routes);
-    for (int t = 0; t < num_t; ++t) {
+    for (size_t t = 0; t < num_t; ++t) {
       // sum_(tr,vss) b_front(tr, t, e_index, vss) >= sum_(tr) x(tr, t, e) - 1
       // sum_(tr,vss) b_rear(tr, t, e_index, vss) >= sum_(tr) x(tr, t, e) - 1
       GRBLinExpr lhs_front         = 0;
@@ -907,7 +902,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   // At most one border used per train
   for (size_t tr = 0; tr < num_tr; ++tr) {
-    for (int t = train_interval[tr].first; t < train_interval[tr].second; ++t) {
+    for (size_t t = train_interval[tr].first; t < train_interval[tr].second;
+         ++t) {
       // sum_(e,vss) b_front(tr, t, e_index, vss) <= 1
       // sum_(e,vss) b_rear(tr, t, e_index, vss) <= 1
       GRBLinExpr lhs_front = 0;
@@ -934,7 +930,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& e            = breakable_edges[e_index];
     const auto  tr_on_e      = instance.trains_on_edge(e, this->fix_routes);
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
-    for (int t = 0; t < num_t; ++t) {
+    for (size_t t = 0; t < num_t; ++t) {
       for (size_t vss = 0; vss < vss_number_e; ++vss) {
         // sum_tr b_front(tr, t, e_index, vss) = sum_tr b_rear(tr, t, e_index,
         // vss) <= 1
@@ -1072,7 +1068,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         xpts[i] = static_cast<double>(i) * tr_max_speed / n;
         ypts[i] = xpts[i] * xpts[i] / (2 * tr_deceleration);
       }
-      for (int t = train_interval[tr].first; t <= train_interval[tr].second;
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         model->addGenConstrPWL(vars["v"](tr, t + 1), vars["brakelen"](tr, t),
                                n + 1, xpts.get(), ypts.get(),
@@ -1080,7 +1076,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                    std::to_string(t));
       }
     } else {
-      for (int t = train_interval[tr].first; t <= train_interval[tr].second;
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         model->addQConstr(vars["brakelen"](tr, t), GRB_EQUAL,
                           (1 / (2 * tr_deceleration)) * vars["v"](tr, t + 1) *
@@ -1103,8 +1099,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (const auto e : instance.edges_used_by_train(tr, this->fix_routes)) {
       const auto& max_speed = instance.n().get_edge(e).max_speed;
       if (max_speed < tr_speed) {
-        for (int t = train_interval[tr].first; t <= train_interval[tr].second;
-             ++t) {
+        for (size_t t = train_interval[tr].first;
+             t <= train_interval[tr].second; ++t) {
           // v(tr,t+1) <= max_speed + (tr_speed - max_speed) * (1 - x(tr,t,e))
           model->addConstr(
               vars["v"](tr, t + 1), GRB_LESS_EQUAL,
@@ -1136,7 +1132,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    */
 
   // Connect y_sec and x
-  for (int t = 0; t < num_t; ++t) {
+  for (size_t t = 0; t < num_t; ++t) {
     const auto tr_at_t = instance.trains_at_t(t * dt);
     for (size_t i = 0; i < fwd_bwd_sections.size(); ++i) {
       // y_sec_fwd(t,i) >= x(tr, t, e) for all e in fwd_bwd_sections[i].first
@@ -1180,7 +1176,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   }
 
   // Only one direction occupied
-  for (int t = 0; t < num_t; ++t) {
+  for (size_t t = 0; t < num_t; ++t) {
     for (size_t i = 0; i < fwd_bwd_sections.size(); ++i) {
       // y_sec_fwd(t,i) + y_sec_bwd(t, i) <= 1
       model->addConstr(

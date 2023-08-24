@@ -12,7 +12,8 @@ enum class SolutionStatus {
   Optimal    = 0,
   Feasible   = 1,
   Infeasible = 2,
-  Timeout    = 3
+  Timeout    = 3,
+  Unknown    = 4
 };
 
 // Helper functions

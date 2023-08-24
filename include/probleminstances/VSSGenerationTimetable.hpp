@@ -100,6 +100,17 @@ public:
     return timetable.time_interval(train_name);
   };
 
+  [[nodiscard]] std::pair<size_t, size_t>
+  time_index_interval(size_t train_index, int dt,
+                      bool tn_inclusive = true) const {
+    return timetable.time_index_interval(train_index, dt, tn_inclusive);
+  }
+  [[nodiscard]] std::pair<size_t, size_t>
+  time_index_interval(const std::string& train_name, int dt,
+                      bool tn_inclusive = true) const {
+    return timetable.time_index_interval(train_name, dt, tn_inclusive);
+  }
+
   void sort_stops() { timetable.sort_stops(); };
 
   // RouteMap functions
@@ -233,17 +244,19 @@ public:
 class SolVSSGenerationTimetable {
 private:
   VSSGenerationTimetable           instance;
-  std::vector<std::vector<double>> vss_pos     = {};
-  std::vector<std::vector<double>> train_pos   = {};
-  std::vector<std::vector<double>> train_speed = {};
+  std::vector<std::vector<double>> vss_pos;
 
-  SolutionStatus status;
-  double         obj;
-  bool           postprocessed;
+  int                              dt = -1;
+  std::vector<std::vector<double>> train_pos;
+  std::vector<std::vector<double>> train_speed;
+
+  SolutionStatus status        = SolutionStatus::Unknown;
+  double         obj           = -1;
+  bool           postprocessed = false;
 
 public:
   // Constructor
-  explicit SolVSSGenerationTimetable(VSSGenerationTimetable instance);
+  explicit SolVSSGenerationTimetable(VSSGenerationTimetable instance, int dt);
   SolVSSGenerationTimetable() = delete;
 
   // Getter

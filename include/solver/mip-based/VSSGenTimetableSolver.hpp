@@ -15,15 +15,15 @@ private:
   instances::VSSGenerationTimetable instance;
 
   // Instance variables
-  int                              dt                     = -1;
-  int                              num_t                  = -1;
-  size_t                           num_tr                 = -1;
-  size_t                           num_edges              = -1;
-  size_t                           num_vertices           = -1;
-  size_t                           num_breakable_sections = -1;
-  std::vector<std::vector<size_t>> unbreakable_sections;
-  std::vector<std::vector<size_t>> no_border_vss_sections;
-  std::vector<std::pair<int, int>> train_interval;
+  int                                    dt                     = -1;
+  size_t                                 num_t                  = 0;
+  size_t                                 num_tr                 = 0;
+  size_t                                 num_edges              = 0;
+  size_t                                 num_vertices           = 0;
+  size_t                                 num_breakable_sections = 0;
+  std::vector<std::vector<size_t>>       unbreakable_sections;
+  std::vector<std::vector<size_t>>       no_border_vss_sections;
+  std::vector<std::pair<size_t, size_t>> train_interval;
   std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
                       breakable_edges_pairs;
   std::vector<size_t> no_border_vss_vertices;
@@ -141,7 +141,7 @@ public:
             bool               export_to_file = false,
             const std::string& file_name      = "model");
 
-  const instances::VSSGenerationTimetable& get_instance() const {
+  [[nodiscard]] const instances::VSSGenerationTimetable& get_instance() const {
     return instance;
   }
 };
