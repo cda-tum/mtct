@@ -12,7 +12,7 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
   train_speed.reserve(this->instance.get_train_list().size());
 
   for (size_t tr = 0; tr < this->instance.get_train_list().size(); ++tr) {
-    const auto tr_interval      = instance.time_index_interval(tr, dt, true);
+    const auto tr_interval = this->instance.time_index_interval(tr, dt, true);
     const auto tr_interval_size = tr_interval.second - tr_interval.first + 1;
     train_pos.emplace_back(tr_interval_size, -1);
     train_speed.emplace_back(tr_interval_size, -1);
