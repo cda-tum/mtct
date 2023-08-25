@@ -1,6 +1,11 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "nlohmann/json.hpp"
 #include "probleminstances/VSSGenerationTimetable.hpp"
+
+#include <fstream>
+
+using json = nlohmann::json;
 
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
     cda_rail::instances::VSSGenerationTimetable instance, int dt)
@@ -254,4 +259,73 @@ bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
     }
   }
   return true;
+}
+
+void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
+    const std::filesystem::path& p, bool export_instance) const {
+  /**
+   * This method exports the solution object to a specific path. This includes
+   * the following:
+   * - If export_instance is true, the instance is exported to the path p /
+   * instance
+   * - If export_instance is false, the routes are exported to the path p /
+   * routes
+   * - dt, status, obj, and postprocessed are exported to p / solution /
+   * data.json
+   * - train_pos and train_speed are exported to p / solution / train_pos.json
+   * and p / solution / train_speed.json The method throws a
+   * ConsistencyException if the solution is not consistent.
+   *
+   * @param p the path to the folder where the solution should be exported
+   * @param export_instance whether the instance should be exported next to the
+   * solution
+   */
+
+  if (!check_consistency()) {
+    throw exceptions::ConsistencyException();
+  }
+
+  if (!is_directory_and_create(p / "solution")) {
+    throw exceptions::ExportException("Could not create directory " +
+                                      p.string());
+  }
+
+  if (export_instance) {
+    instance.export_instance(p / "instance");
+  } else {
+    instance.routes.export_routes(p / "routes", instance.const_n());
+  }
+
+  json data;
+  data["dt"]            = dt;
+  data["status"]        = static_cast<int>(status);
+  data["obj"]           = obj;
+  data["postprocessed"] = postprocessed;
+  std::ofstream data_file(p / "solution" / "data.json");
+  data_file << data << std::endl;
+  data_file.close();
+
+  json train_pos_json;
+  json train_speed_json;
+  for (size_t tr_id = 0; tr_id < instance.get_train_list().size(); ++tr_id) {
+    const auto& train       = instance.get_train_list().get_train(tr_id);
+    const auto  tr_interval = instance.time_index_interval(tr_id, dt, true);
+    json        train_pos_json_tmp;
+    json        train_speed_json_tmp;
+    for (size_t t_id = 0; t_id < train_pos.at(tr_id).size(); ++t_id) {
+      const auto t            = static_cast<int>(tr_interval.first + t_id) * dt;
+      train_pos_json_tmp[t]   = train_pos.at(tr_id).at(t_id);
+      train_speed_json_tmp[t] = train_speed.at(tr_id).at(t_id);
+    }
+    train_pos_json[train.name]   = train_pos_json_tmp;
+    train_speed_json[train.name] = train_speed_json_tmp;
+  }
+
+  std::ofstream train_pos_file(p / "solution" / "train_pos.json");
+  train_pos_file << train_pos_json << std::endl;
+  train_pos_file.close();
+
+  std::ofstream train_speed_file(p / "solution" / "train_speed.json");
+  train_speed_file << train_speed_json << std::endl;
+  train_speed_file.close();
 }

@@ -14,6 +14,8 @@ private:
   Timetable timetable;
   RouteMap  routes;
 
+  friend class SolVSSGenerationTimetable;
+
 public:
   // Constructors
   VSSGenerationTimetable() = default;
