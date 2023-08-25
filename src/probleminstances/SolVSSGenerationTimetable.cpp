@@ -3,9 +3,8 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
-    cda_rail::instances::VSSGenerationTimetable instance, int dt,
-    std::string name, int id)
-    : instance(std::move(instance)), dt(dt), name(std::move(name)), id(id) {
+    cda_rail::instances::VSSGenerationTimetable instance, int dt)
+    : instance(std::move(instance)), dt(dt) {
   vss_pos = std::vector<std::vector<double>>(
       this->instance.const_n().number_of_edges());
 
