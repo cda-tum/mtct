@@ -7,6 +7,8 @@
 
 using json = nlohmann::json;
 
+// NOLINTBEGIN(performance-inefficient-string-concatenation)
+
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
     cda_rail::instances::VSSGenerationTimetable instance, int dt)
     : instance(std::move(instance)), dt(dt) {
@@ -419,3 +421,5 @@ void cda_rail::instances::SolVSSGenerationTimetable::initialize_vectors() {
     train_speed.emplace_back(tr_interval_size, -1);
   }
 }
+
+// NOLINTEND(performance-inefficient-string-concatenation)

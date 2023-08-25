@@ -12,6 +12,8 @@ struct EdgeTarget {
   double      min_block_length;
 };
 
+// NOLINTBEGIN(clang-diagnostic-unused-result)
+
 TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
   auto instance = cda_rail::instances::VSSGenerationTimetable::import_instance(
       "./example-networks/SimpleStation/");
@@ -2257,6 +2259,7 @@ TEST(Functionality, SolVSSGenerationTimetable) {
           "tmp_sol2", instance);
   std::filesystem::remove_all("./tmp_sol2");
 
+  // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
   tr1   = sol1_read.get_instance().get_train_list().get_train_index("tr1");
   tr2   = sol1_read.get_instance().get_train_list().get_train_index("tr2");
   v0    = sol1_read.get_instance().const_n().get_vertex_index("v0");
@@ -2266,6 +2269,7 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   v1_v2 = sol1_read.get_instance().const_n().get_edge_index(v1, v2);
   v1_v0 = sol1_read.get_instance().const_n().get_edge_index(v1, v0);
   v2_v1 = sol1_read.get_instance().const_n().get_edge_index(v2, v1);
+  // NOLINTEND(clang-analyzer-deadcode.DeadStores)
   EXPECT_TRUE(sol1_read.check_consistency());
   EXPECT_EQ(sol1_read.get_obj(), 0);
   EXPECT_EQ(sol1_read.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -2322,6 +2326,7 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_EQ(sol1_read.get_train_speed(tr1, 30), 5);
   EXPECT_EQ(sol1_read.get_train_speed(tr2, 258), 7);
 
+  // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
   tr1   = sol2_read.get_instance().get_train_list().get_train_index("tr1");
   tr2   = sol2_read.get_instance().get_train_list().get_train_index("tr2");
   v0    = sol2_read.get_instance().const_n().get_vertex_index("v0");
@@ -2331,6 +2336,7 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   v1_v2 = sol2_read.get_instance().const_n().get_edge_index(v1, v2);
   v1_v0 = sol2_read.get_instance().const_n().get_edge_index(v1, v0);
   v2_v1 = sol2_read.get_instance().const_n().get_edge_index(v2, v1);
+  // NOLINTEND(clang-analyzer-deadcode.DeadStores)
   EXPECT_TRUE(sol2_read.check_consistency());
   EXPECT_EQ(sol2_read.get_obj(), 0);
   EXPECT_EQ(sol2_read.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -2387,3 +2393,5 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_EQ(sol2_read.get_train_speed(tr1, 30), 5);
   EXPECT_EQ(sol2_read.get_train_speed(tr2, 258), 7);
 }
+
+// NOLINTEND(clang-diagnostic-unused-result)
