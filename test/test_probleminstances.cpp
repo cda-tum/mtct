@@ -2154,4 +2154,38 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   sol1.set_status(cda_rail::SolutionStatus::Optimal);
 
   EXPECT_TRUE(sol1.check_consistency());
+
+  sol1.add_vss_pos("v0", "v1", 20, true);
+  sol1.add_vss_pos(v0, v1, 30, true);
+  sol1.add_vss_pos(v0_v1, 60, false);
+  sol1.add_vss_pos(v1_v2, 100, false);
+
+  EXPECT_THROW(sol1.add_vss_pos(v0_v1 + v1_v2 + v2_v1 + v1_v0 + 1, 30, false),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW(sol1.add_vss_pos("v0", "v1", 0, false),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_vss_pos(v0, v1, 100, true),
+               cda_rail::exceptions::ConsistencyException);
+
+  EXPECT_TRUE(sol1.check_consistency());
+
+  sol1.remove_first_edge_from_route("tr1");
+  EXPECT_FALSE(sol1.check_consistency());
+  sol1.push_front_edge_to_route("tr1", "v0", "v1");
+  EXPECT_TRUE(sol1.check_consistency());
+
+  // Check instance
+  EXPECT_EQ(sol1.get_obj(), 0);
+  EXPECT_EQ(sol1.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol1.get_postprocessed(), true);
+  EXPECT_EQ(sol1.get_instance().time_index_interval("tr1", 60, true).first, 0);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr1, 60, true).second, 2);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr1, 60, false).second, 1);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr2, 60, true).first, 3);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr2, 60, true).second, 5);
+  EXPECT_EQ(sol1.get_instance().time_index_interval("tr2", 60, false).second,
+            4);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr2, 30, true).first, 6);
+  EXPECT_EQ(sol1.get_instance().time_index_interval("tr2", 30, true).second, 9);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr2, 30, false).second, 8);
 }
