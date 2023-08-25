@@ -2251,10 +2251,10 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   const auto sol1_read =
       cda_rail::instances::SolVSSGenerationTimetable::import_solution(
           "tmp_sol1");
+  std::filesystem::remove_all("./tmp_sol1");
   const auto sol2_read =
       cda_rail::instances::SolVSSGenerationTimetable::import_solution(
           "tmp_sol2", instance);
-  std::filesystem::remove_all("./tmp_sol1");
   std::filesystem::remove_all("./tmp_sol2");
 
   tr1   = sol1_read.get_instance().get_train_list().get_train_index("tr1");
