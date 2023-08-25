@@ -13,15 +13,7 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
   vss_pos = std::vector<std::vector<double>>(
       this->instance.const_n().number_of_edges());
 
-  train_pos.reserve(this->instance.get_train_list().size());
-  train_speed.reserve(this->instance.get_train_list().size());
-
-  for (size_t tr = 0; tr < this->instance.get_train_list().size(); ++tr) {
-    const auto tr_interval = this->instance.time_index_interval(tr, dt, true);
-    const auto tr_interval_size = tr_interval.second - tr_interval.first + 1;
-    train_pos.emplace_back(tr_interval_size, -1);
-    train_speed.emplace_back(tr_interval_size, -1);
-  }
+  this->initialize_vectors();
 }
 
 double
@@ -269,7 +261,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
    * - If export_instance is true, the instance is exported to the path p /
    * instance
    * - If export_instance is false, the routes are exported to the path p /
-   * routes
+   * instance / routes
    * - dt, status, obj, and postprocessed are exported to p / solution /
    * data.json
    * - train_pos and train_speed are exported to p / solution / train_pos.json
@@ -293,7 +285,8 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
   if (export_instance) {
     instance.export_instance(p / "instance");
   } else {
-    instance.routes.export_routes(p / "routes", instance.const_n());
+    instance.routes.export_routes(p / "instance" / "routes",
+                                  instance.const_n());
   }
 
   json data;
@@ -328,4 +321,73 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
   std::ofstream train_speed_file(p / "solution" / "train_speed.json");
   train_speed_file << train_speed_json << std::endl;
   train_speed_file.close();
+}
+
+cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
+    const std::filesystem::path&          p,
+    std::optional<VSSGenerationTimetable> instance) {
+  if (!std::filesystem::exists(p)) {
+    throw exceptions::ImportException("Path does not exist");
+  }
+  if (!std::filesystem::is_directory(p)) {
+    throw exceptions::ImportException("Path is not a directory");
+  }
+
+  bool const import_routes = instance.has_value();
+  this->instance = instance.value_or(VSSGenerationTimetable(p / "instance"));
+
+  if (import_routes) {
+    this->instance.routes =
+        RouteMap(p / "instance" / "routes", this->instance.const_n());
+  }
+
+  if (!this->instance.check_consistency(true)) {
+    throw exceptions::ConsistencyException(
+        "Imported instance is not consistent");
+  }
+
+  // Read data
+  std::ifstream data_file(p / "solution" / "data.json");
+  json          data  = json::parse(data_file);
+  this->dt            = data["dt"].get<int>();
+  this->status        = static_cast<SolutionStatus>(data["status"].get<int>());
+  this->obj           = data["obj"].get<double>();
+  this->postprocessed = data["postprocessed"].get<bool>();
+
+  this->initialize_vectors();
+
+  // Read train_pos
+  std::ifstream train_pos_file(p / "solution" / "train_pos.json");
+  json          train_pos_json = json::parse(train_pos_file);
+  for (const auto& [tr_name, tr_pos_json] : train_pos_json.items()) {
+    for (const auto& [t, pos] : tr_pos_json.items()) {
+      this->add_train_pos(tr_name, std::stoi(t), pos.get<double>());
+    }
+  }
+
+  // Read train_speed
+  std::ifstream train_speed_file(p / "solution" / "train_speed.json");
+  json          train_speed_json = json::parse(train_speed_file);
+  for (const auto& [tr_name, tr_speed_json] : train_speed_json.items()) {
+    for (const auto& [t, speed] : tr_speed_json.items()) {
+      this->add_train_speed(tr_name, std::stoi(t), speed.get<double>());
+    }
+  }
+
+  if (!this->check_consistency()) {
+    throw exceptions::ConsistencyException(
+        "Imported solution object is not consistent");
+  }
+}
+
+void cda_rail::instances::SolVSSGenerationTimetable::initialize_vectors() {
+  train_pos.reserve(this->instance.get_train_list().size());
+  train_speed.reserve(this->instance.get_train_list().size());
+
+  for (size_t tr = 0; tr < this->instance.get_train_list().size(); ++tr) {
+    const auto tr_interval = this->instance.time_index_interval(tr, dt, true);
+    const auto tr_interval_size = tr_interval.second - tr_interval.first + 1;
+    train_pos.emplace_back(tr_interval_size, -1);
+    train_speed.emplace_back(tr_interval_size, -1);
+  }
 }

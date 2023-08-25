@@ -260,9 +260,15 @@ private:
   double         obj           = -1;
   bool           postprocessed = false;
 
+  void initialize_vectors();
+
 public:
   // Constructor
   explicit SolVSSGenerationTimetable(VSSGenerationTimetable instance, int dt);
+  explicit SolVSSGenerationTimetable(
+      const std::filesystem::path&          p,
+      std::optional<VSSGenerationTimetable> instance =
+          std::optional<VSSGenerationTimetable>());
   SolVSSGenerationTimetable() = delete;
 
   // Getter
@@ -402,18 +408,20 @@ public:
   [[nodiscard]] static SolVSSGenerationTimetable
   import_solution(const std::filesystem::path&          p,
                   std::optional<VSSGenerationTimetable> instance =
-                      std::optional<VSSGenerationTimetable>());
+                      std::optional<VSSGenerationTimetable>()) {
+    return SolVSSGenerationTimetable(p, std::move(instance));
+  };
   [[nodiscard]] static SolVSSGenerationTimetable
   import_solution(const std::string&                    path,
                   std::optional<VSSGenerationTimetable> instance =
                       std::optional<VSSGenerationTimetable>()) {
-    return import_solution(std::filesystem::path(path), instance);
+    return import_solution(std::filesystem::path(path), std::move(instance));
   };
   [[nodiscard]] static SolVSSGenerationTimetable
   import_solution(const char*                           path,
                   std::optional<VSSGenerationTimetable> instance =
                       std::optional<VSSGenerationTimetable>()) {
-    return import_solution(std::filesystem::path(path), instance);
+    return import_solution(std::filesystem::path(path), std::move(instance));
   };
 };
 } // namespace cda_rail::instances
