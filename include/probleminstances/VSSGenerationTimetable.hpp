@@ -301,9 +301,7 @@ public:
   [[nodiscard]] SolutionStatus get_status() const { return status; };
   [[nodiscard]] double         get_obj() const { return obj; };
   [[nodiscard]] bool get_postprocessed() const { return postprocessed; };
-  [[nodiscard]] const std::string& get_name() const { return name; };
-  [[nodiscard]] int                get_id() const { return id; };
-  [[nodiscard]] int                get_dt() const { return dt; };
+  [[nodiscard]] int  get_dt() const { return dt; };
 
   // RouteMap functions
   void add_empty_route(const std::string& train_name) {
