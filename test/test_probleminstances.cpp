@@ -2170,8 +2170,14 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_TRUE(sol1.check_consistency());
 
   sol1.remove_first_edge_from_route("tr1");
-  EXPECT_FALSE(sol1.check_consistency());
   sol1.push_front_edge_to_route("tr1", "v0", "v1");
+  sol1.remove_first_edge_from_route("tr1");
+  sol1.push_front_edge_to_route("tr1", v0, v1);
+  sol1.remove_first_edge_from_route("tr2");
+  sol1.push_front_edge_to_route("tr2", v2_v1);
+  sol1.remove_last_edge_from_route("tr2");
+  sol1.push_back_edge_to_route("tr2", "v1", "v0");
+
   EXPECT_TRUE(sol1.check_consistency());
 
   // Check instance
@@ -2188,4 +2194,21 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_EQ(sol1.get_instance().time_index_interval(tr2, 30, true).first, 6);
   EXPECT_EQ(sol1.get_instance().time_index_interval("tr2", 30, true).second, 9);
   EXPECT_EQ(sol1.get_instance().time_index_interval(tr2, 30, false).second, 8);
+  EXPECT_EQ(sol1.get_vss_pos(v0_v1), std::vector<double>({20, 30, 60}));
+  EXPECT_EQ(sol1.get_vss_pos(v1, v2), std::vector<double>({100}));
+  EXPECT_EQ(sol1.get_vss_pos("v1", "v0"), std::vector<double>({70, 80}));
+  EXPECT_EQ(sol1.get_vss_pos(v2_v1), std::vector<double>());
+  EXPECT_EQ(sol1.get_train_pos(tr1, 0), 0);
+  EXPECT_EQ(sol1.get_train_pos("tr1", 60), 300);
+  EXPECT_EQ(sol1.get_train_pos(tr1, 120), 750);
+  EXPECT_EQ(sol1.get_train_pos(tr2, 180), 0);
+  EXPECT_EQ(sol1.get_train_pos("tr2", 240), 300);
+  EXPECT_EQ(sol1.get_train_pos(tr2, 300), 600);
+  EXPECT_THROW(sol1.get_train_pos(tr2, 60),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.get_train_pos(tr2, 360),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.get_train_pos(tr1 + tr2 + 1, 60),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_EQ(sol1.get_train_pos(tr1, 30), 75);
 }
