@@ -341,7 +341,11 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
   }
 
   bool const import_routes = instance.has_value();
-  this->instance = instance.value_or(VSSGenerationTimetable(p / "instance"));
+  if (instance.has_value()) {
+    this->instance = instance.value();
+  } else {
+    this->instance = VSSGenerationTimetable(p / "instance");
+  }
 
   if (import_routes) {
     this->instance.routes =
