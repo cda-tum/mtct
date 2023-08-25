@@ -158,8 +158,8 @@ void cda_rail::instances::SolVSSGenerationTimetable::add_train_pos(
     throw exceptions::TrainNotExistentException(train_id);
   }
 
-  if (instance.time_interval(train_id).first > time ||
-      instance.time_interval(train_id).second < time) {
+  const auto& [t0, tn] = instance.time_index_interval(train_id, dt, true);
+  if (t0 * dt > time || tn * dt < time) {
     throw exceptions::ConsistencyException("Train " + std::to_string(train_id) +
                                            " is not scheduled at time " +
                                            std::to_string(time));
@@ -196,8 +196,8 @@ void cda_rail::instances::SolVSSGenerationTimetable::add_train_speed(
         ")");
   }
 
-  if (instance.time_interval(train_id).first > time ||
-      instance.time_interval(train_id).second < time) {
+  const auto& [t0, tn] = instance.time_index_interval(train_id, dt, true);
+  if (t0 * dt > time || tn * dt < time) {
     throw exceptions::ConsistencyException("Train " + std::to_string(train_id) +
                                            " is not scheduled at time " +
                                            std::to_string(time));
