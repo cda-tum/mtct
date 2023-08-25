@@ -2184,6 +2184,7 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_EQ(sol1.get_obj(), 0);
   EXPECT_EQ(sol1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol1.get_postprocessed(), true);
+  EXPECT_EQ(sol1.get_dt(), 60);
   EXPECT_EQ(sol1.get_instance().time_index_interval("tr1", 60, true).first, 0);
   EXPECT_EQ(sol1.get_instance().time_index_interval(tr1, 60, true).second, 2);
   EXPECT_EQ(sol1.get_instance().time_index_interval(tr1, 60, false).second, 1);
@@ -2206,9 +2207,45 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_EQ(sol1.get_train_pos(tr2, 300), 600);
   EXPECT_THROW(sol1.get_train_pos(tr2, 60),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(sol1.get_train_pos(tr2, 360),
+  EXPECT_THROW(sol1.get_train_pos("tr2", 360),
                cda_rail::exceptions::ConsistencyException);
   EXPECT_THROW(sol1.get_train_pos(tr1 + tr2 + 1, 60),
                cda_rail::exceptions::TrainNotExistentException);
   EXPECT_EQ(sol1.get_train_pos(tr1, 30), 75);
+  EXPECT_EQ(sol1.get_train_pos(tr2, 258), 453);
+  EXPECT_EQ(sol1.get_train_speed(tr1, 0), 0);
+  EXPECT_EQ(sol1.get_train_speed("tr1", 60), 10);
+  EXPECT_EQ(sol1.get_train_speed(tr1, 120), 5);
+  EXPECT_EQ(sol1.get_train_speed(tr2, 180), 0);
+  EXPECT_EQ(sol1.get_train_speed("tr2", 240), 10);
+  EXPECT_EQ(sol1.get_train_speed(tr2, 300), 0);
+  EXPECT_THROW(sol1.get_train_speed(tr2, 60),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.get_train_speed("tr2", 360),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.get_train_speed(tr1 + tr2 + 1, 60),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_EQ(sol1.get_train_speed(tr1, 30), 5);
+  EXPECT_EQ(sol1.get_train_speed(tr2, 258), 7);
+
+  std::vector<double> vss_pos        = {20, 30, 60};
+  std::vector<double> vss_pos_simple = {40};
+  std::vector<double> vss_pos_empty  = {};
+
+  sol1.set_vss_pos(v0_v1, vss_pos_simple);
+  EXPECT_EQ(sol1.get_vss_pos(v0_v1), vss_pos_simple);
+  sol1.reset_vss_pos(v0_v1);
+  EXPECT_EQ(sol1.get_vss_pos(v0_v1), vss_pos_empty);
+  sol1.set_vss_pos(v0, v1, vss_pos_simple);
+  EXPECT_EQ(sol1.get_vss_pos(v0, v1), vss_pos_simple);
+  sol1.reset_vss_pos(v0, v1);
+  EXPECT_EQ(sol1.get_vss_pos(v0, v1), vss_pos_empty);
+  sol1.set_vss_pos("v0", "v1", vss_pos_simple);
+  EXPECT_EQ(sol1.get_vss_pos("v0", "v1"), vss_pos_simple);
+  sol1.reset_vss_pos("v0", "v1");
+  EXPECT_EQ(sol1.get_vss_pos("v0", "v1"), vss_pos_empty);
+  sol1.set_vss_pos(v0_v1, vss_pos);
+  EXPECT_EQ(sol1.get_vss_pos(v0_v1), vss_pos);
+
+  sol1.export_solution("tmp_sol");
 }
