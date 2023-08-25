@@ -10,9 +10,6 @@ using json = nlohmann::json;
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
     cda_rail::instances::VSSGenerationTimetable instance, int dt)
     : instance(std::move(instance)), dt(dt) {
-  vss_pos = std::vector<std::vector<double>>(
-      this->instance.const_n().number_of_edges());
-
   this->initialize_vectors();
 }
 
@@ -264,6 +261,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
    * instance / routes
    * - dt, status, obj, and postprocessed are exported to p / solution /
    * data.json
+   * - vss_pos is exported to p / solution / vss_pos.json
    * - train_pos and train_speed are exported to p / solution / train_pos.json
    * and p / solution / train_speed.json The method throws a
    * ConsistencyException if the solution is not consistent.
@@ -297,6 +295,15 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
   std::ofstream data_file(p / "solution" / "data.json");
   data_file << data << std::endl;
   data_file.close();
+
+  json vss_pos_json;
+  for (size_t edge_id = 0; edge_id < instance.const_n().number_of_edges();
+       ++edge_id) {
+    const auto& edge = instance.const_n().get_edge(edge_id);
+    const auto& v0   = instance.const_n().get_vertex(edge.source).name;
+    const auto& v1   = instance.const_n().get_vertex(edge.target).name;
+    vss_pos_json["('" + v0 + "', '" + v1 + "')"] = vss_pos.at(edge_id);
+  }
 
   json train_pos_json;
   json train_speed_json;
@@ -381,6 +388,8 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
 }
 
 void cda_rail::instances::SolVSSGenerationTimetable::initialize_vectors() {
+  vss_pos = std::vector<std::vector<double>>(
+      this->instance.const_n().number_of_edges());
   train_pos.reserve(this->instance.get_train_list().size());
   train_speed.reserve(this->instance.get_train_list().size());
 
