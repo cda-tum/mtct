@@ -45,7 +45,7 @@ cda_rail::instances::SolVSSGenerationTimetable::get_train_pos(size_t train_id,
 
   if (approx_equal(x_2 - x_1, 0.5 * dt * (v_1 + v_2))) {
     const auto a   = (v_2 - v_1) / dt;
-    const auto tau = time - static_cast<double>(t_1) * dt;
+    const auto tau = time - static_cast<double>(t0 + t_1) * dt;
     return x_1 + v_1 * tau + 0.5 * a * tau * tau;
   }
 
@@ -82,7 +82,7 @@ double cda_rail::instances::SolVSSGenerationTimetable::get_train_speed(
 
   if (approx_equal(x_2 - x_1, 0.5 * dt * (v_1 + v_2))) {
     const auto a   = (v_2 - v_1) / dt;
-    const auto tau = time - static_cast<double>(t_1) * dt;
+    const auto tau = time - static_cast<double>(t0 + t_1) * dt;
     return v_1 + a * tau;
   }
 
