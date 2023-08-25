@@ -370,7 +370,7 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
   // Read vss_pos
   std::ifstream vss_pos_file(p / "solution" / "vss_pos.json");
   json          vss_pos_json = json::parse(vss_pos_file);
-  for (const auto& [key, val] : data.items()) {
+  for (const auto& [key, val] : vss_pos_json.items()) {
     std::string source_name;
     std::string target_name;
     extract_vertices_from_key(key, source_name, target_name);
