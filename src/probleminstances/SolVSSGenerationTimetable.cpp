@@ -367,6 +367,17 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
 
   this->initialize_vectors();
 
+  // Read vss_pos
+  std::ifstream vss_pos_file(p / "solution" / "vss_pos.json");
+  json          vss_pos_json = json::parse(vss_pos_file);
+  for (const auto& [key, val] : data.items()) {
+    std::string source_name;
+    std::string target_name;
+    extract_vertices_from_key(key, source_name, target_name);
+    const auto vss_pos_vector = val.get<std::vector<double>>();
+    set_vss_pos(source_name, target_name, vss_pos_vector);
+  }
+
   // Read train_pos
   std::ifstream train_pos_file(p / "solution" / "train_pos.json");
   json          train_pos_json = json::parse(train_pos_file);
