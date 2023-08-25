@@ -306,9 +306,9 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
     json        train_pos_json_tmp;
     json        train_speed_json_tmp;
     for (size_t t_id = 0; t_id < train_pos.at(tr_id).size(); ++t_id) {
-      const auto t            = static_cast<int>(tr_interval.first + t_id) * dt;
-      train_pos_json_tmp[t]   = train_pos.at(tr_id).at(t_id);
-      train_speed_json_tmp[t] = train_speed.at(tr_id).at(t_id);
+      const auto t = static_cast<int>(tr_interval.first + t_id) * dt;
+      train_pos_json_tmp[std::to_string(t)]   = train_pos.at(tr_id).at(t_id);
+      train_speed_json_tmp[std::to_string(t)] = train_speed.at(tr_id).at(t_id);
     }
     train_pos_json[train.name]   = train_pos_json_tmp;
     train_speed_json[train.name] = train_speed_json_tmp;
