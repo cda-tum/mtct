@@ -266,8 +266,8 @@ public:
   // Constructor
   explicit SolVSSGenerationTimetable(VSSGenerationTimetable instance, int dt);
   explicit SolVSSGenerationTimetable(
-      const std::filesystem::path&          p,
-      std::optional<VSSGenerationTimetable> instance =
+      const std::filesystem::path&                 p,
+      const std::optional<VSSGenerationTimetable>& instance =
           std::optional<VSSGenerationTimetable>());
   SolVSSGenerationTimetable() = delete;
 
@@ -406,22 +406,22 @@ public:
   };
 
   [[nodiscard]] static SolVSSGenerationTimetable
-  import_solution(const std::filesystem::path&          p,
-                  std::optional<VSSGenerationTimetable> instance =
+  import_solution(const std::filesystem::path&                 p,
+                  const std::optional<VSSGenerationTimetable>& instance =
                       std::optional<VSSGenerationTimetable>()) {
-    return SolVSSGenerationTimetable(p, std::move(instance));
+    return SolVSSGenerationTimetable(p, instance);
   };
   [[nodiscard]] static SolVSSGenerationTimetable
-  import_solution(const std::string&                    path,
-                  std::optional<VSSGenerationTimetable> instance =
+  import_solution(const std::string&                           path,
+                  const std::optional<VSSGenerationTimetable>& instance =
                       std::optional<VSSGenerationTimetable>()) {
-    return import_solution(std::filesystem::path(path), std::move(instance));
+    return import_solution(std::filesystem::path(path), instance);
   };
   [[nodiscard]] static SolVSSGenerationTimetable
-  import_solution(const char*                           path,
-                  std::optional<VSSGenerationTimetable> instance =
+  import_solution(const char*                                  path,
+                  const std::optional<VSSGenerationTimetable>& instance =
                       std::optional<VSSGenerationTimetable>()) {
-    return import_solution(std::filesystem::path(path), std::move(instance));
+    return import_solution(std::filesystem::path(path), instance);
   };
 };
 } // namespace cda_rail::instances

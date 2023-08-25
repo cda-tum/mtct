@@ -324,8 +324,8 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
 }
 
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
-    const std::filesystem::path&          p,
-    std::optional<VSSGenerationTimetable> instance) {
+    const std::filesystem::path&                 p,
+    const std::optional<VSSGenerationTimetable>& instance) {
   if (!std::filesystem::exists(p)) {
     throw exceptions::ImportException("Path does not exist");
   }
