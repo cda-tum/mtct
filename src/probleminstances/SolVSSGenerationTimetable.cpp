@@ -305,6 +305,10 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
     vss_pos_json["('" + v0 + "', '" + v1 + "')"] = vss_pos.at(edge_id);
   }
 
+  std::ofstream vss_pos_file(p / "solution" / "vss_pos.json");
+  vss_pos_file << vss_pos_json << std::endl;
+  vss_pos_file.close();
+
   json train_pos_json;
   json train_speed_json;
   for (size_t tr_id = 0; tr_id < instance.get_train_list().size(); ++tr_id) {
