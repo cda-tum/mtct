@@ -2147,5 +2147,11 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_THROW(sol1.add_train_speed(tr1, 60, 11),
                cda_rail::exceptions::ConsistencyException);
 
+  EXPECT_FALSE(sol1.check_consistency());
+
+  sol1.set_obj(0);
+  sol1.set_postprocessed(true);
+  sol1.set_status(cda_rail::SolutionStatus::Optimal);
+
   EXPECT_TRUE(sol1.check_consistency());
 }
