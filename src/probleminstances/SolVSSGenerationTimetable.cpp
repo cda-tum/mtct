@@ -23,8 +23,8 @@ cda_rail::instances::SolVSSGenerationTimetable::get_train_pos(size_t train_id,
     throw exceptions::TrainNotExistentException(train_id);
   }
 
-  if (instance.get_schedule(train_id).t_0 > time ||
-      instance.get_schedule(train_id).t_n < time) {
+  const auto& [t0, tn] = instance.time_index_interval(train_id, dt, true);
+  if (t0 * dt > time || tn * dt < time) {
     throw exceptions::ConsistencyException("Train " + std::to_string(train_id) +
                                            " is not scheduled at time " +
                                            std::to_string(time));
@@ -60,8 +60,8 @@ double cda_rail::instances::SolVSSGenerationTimetable::get_train_speed(
     throw exceptions::TrainNotExistentException(train_id);
   }
 
-  if (instance.get_schedule(train_id).t_0 > time ||
-      instance.get_schedule(train_id).t_n < time) {
+  const auto& [t0, tn] = instance.time_index_interval(train_id, dt, true);
+  if (t0 * dt > time || tn * dt < time) {
     throw exceptions::ConsistencyException("Train " + std::to_string(train_id) +
                                            " is not scheduled at time " +
                                            std::to_string(time));
@@ -72,7 +72,7 @@ double cda_rail::instances::SolVSSGenerationTimetable::get_train_speed(
     return train_speed.at(train_id).at(t_index);
   }
 
-  const auto t_1 = static_cast<size_t>(std::floor(time / dt));
+  const auto t_1 = static_cast<size_t>(std::floor(time / dt)) - t0;
   const auto t_2 = t_1 + 1;
 
   const auto x_1 = train_pos.at(train_id).at(t_1);
