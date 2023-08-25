@@ -31,11 +31,11 @@ cda_rail::instances::SolVSSGenerationTimetable::get_train_pos(size_t train_id,
   }
 
   if (time % dt == 0) {
-    const auto t_index = static_cast<size_t>(time / dt);
+    const auto t_index = static_cast<size_t>(time / dt) - t0;
     return train_pos.at(train_id).at(t_index);
   }
 
-  const auto t_1 = static_cast<size_t>(std::floor(time / dt));
+  const auto t_1 = static_cast<size_t>(std::floor(time / dt)) - t0;
   const auto t_2 = t_1 + 1;
 
   const auto x_1 = train_pos.at(train_id).at(t_1);
@@ -68,7 +68,7 @@ double cda_rail::instances::SolVSSGenerationTimetable::get_train_speed(
   }
 
   if (time % dt == 0) {
-    const auto t_index = static_cast<size_t>(time / dt);
+    const auto t_index = static_cast<size_t>(time / dt) - t0;
     return train_speed.at(train_id).at(t_index);
   }
 
