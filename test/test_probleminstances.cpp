@@ -2068,3 +2068,84 @@ TEST(Example, Stammstrecke) {
   EXPECT_EQ(ost2_donnersberger, donnersberger_expected);
   EXPECT_EQ(ost3_donnersberger, donnersberger_expected);
 }
+
+TEST(Functionality, SolVSSGenerationTimetable) {
+  cda_rail::instances::VSSGenerationTimetable instance;
+
+  // Add a simple network to the instance
+  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::VSS);
+  const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::NoBorder);
+
+  const auto v0_v1 = instance.n().add_edge("v0", "v1", 100, 10, true, 10);
+  const auto v1_v2 = instance.n().add_edge("v1", "v2", 200, 20, false);
+  const auto v1_v0 = instance.n().add_edge("v1", "v0", 100, 10, true, 10);
+  const auto v2_v1 = instance.n().add_edge("v2", "v1", 200, 20, false);
+
+  instance.n().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.n().add_successor({"v2", "v1"}, {"v1", "v0"});
+
+  // Add a simple timetable to the instance
+  const auto tr1 =
+      instance.add_train("tr1", 50, 10, 2, 2, 0, 0, "v0", 120, 5, "v2");
+  const auto tr2 =
+      instance.add_train("tr2", 50, 10, 2, 2, 180, 0, "v2", 270, 0, "v0");
+
+  // Check the consistency of the instance
+  EXPECT_TRUE(instance.check_consistency(false));
+
+  cda_rail::instances::SolVSSGenerationTimetable sol1(instance, 60);
+
+  EXPECT_FALSE(sol1.check_consistency());
+
+  sol1.add_empty_route("tr1");
+  sol1.add_empty_route("tr2");
+  sol1.push_back_edge_to_route("tr1", "v0", "v1");
+  sol1.push_back_edge_to_route("tr1", v1, v2);
+  sol1.push_back_edge_to_route("tr2", v2_v1);
+  sol1.push_back_edge_to_route("tr2", "v1", "v0");
+
+  EXPECT_FALSE(sol1.check_consistency());
+
+  sol1.add_train_pos("tr1", 0, 0);
+  sol1.add_train_pos("tr1", 60, 300);
+  sol1.add_train_pos(tr1, 120, 750);
+  sol1.add_train_pos(tr2, 180, 0);
+  sol1.add_train_pos("tr2", 240, 300);
+  sol1.add_train_pos(tr2, 300, 600);
+
+  EXPECT_THROW(sol1.add_train_pos(tr1, 0, -1),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_pos(tr1 + tr2 + 1, 60, 0),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(sol1.add_train_pos(tr2, 60, 0),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_pos(tr2, 360, 0),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_pos(tr1, 30, 0),
+               cda_rail::exceptions::ConsistencyException);
+
+  EXPECT_FALSE(sol1.check_consistency());
+
+  sol1.add_train_speed("tr1", 0, 0);
+  sol1.add_train_speed("tr1", 60, 10);
+  sol1.add_train_speed(tr1, 120, 5);
+  sol1.add_train_speed(tr2, 180, 0);
+  sol1.add_train_speed("tr2", 240, 10);
+  sol1.add_train_speed(tr2, 300, 0);
+
+  EXPECT_THROW(sol1.add_train_speed(tr1, 0, -1),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_speed(tr1 + tr2 + 1, 60, 0),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(sol1.add_train_speed(tr2, 60, 0),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_speed(tr2, 360, 0),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_speed(tr1, 30, 0),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_speed(tr1, 60, 11),
+               cda_rail::exceptions::ConsistencyException);
+
+  EXPECT_TRUE(sol1.check_consistency());
+}
