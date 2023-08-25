@@ -16,27 +16,6 @@
 
 using json = nlohmann::json;
 
-void cda_rail::Network::extract_vertices_from_key(const std::string& key,
-                                                  std::string& source_name,
-                                                  std::string& target_name) {
-  /**
-   * Extract source and target names from key.
-   * @param key Key
-   * @param source_name Source name, used as return value
-   * @param target_name Target name, used as return value
-   *
-   * The variables are passed by reference and are modified in place.
-   */
-
-  size_t const first_quote  = key.find_first_of('\'');
-  size_t const second_quote = key.find_first_of('\'', first_quote + 1);
-  source_name = key.substr(first_quote + 1, second_quote - first_quote - 1);
-
-  size_t const third_quote  = key.find_first_of('\'', second_quote + 1);
-  size_t const fourth_quote = key.find_first_of('\'', third_quote + 1);
-  target_name = key.substr(third_quote + 1, fourth_quote - third_quote - 1);
-}
-
 void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
                                  std::string& breakable, std::string& length,
                                  std::string& max_speed,
@@ -206,7 +185,7 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
   for (const auto& [key, val] : data.items()) {
     std::string source_name;
     std::string target_name;
-    Network::extract_vertices_from_key(key, source_name, target_name);
+    extract_vertices_from_key(key, source_name, target_name);
     auto const edge_id_in = get_edge_index(source_name, target_name);
     for (auto& tuple : val) {
       auto const edge_id_out = get_edge_index(tuple[0].get<std::string>(),

@@ -79,9 +79,6 @@ private:
                               const std::string&          max_speed,
                               const std::string&          min_block_length);
   void read_successors(const std::filesystem::path& p);
-  static void extract_vertices_from_key(const std::string& key,
-                                        std::string&       source_name,
-                                        std::string&       target_name);
 
   void export_graphml(const std::filesystem::path& p) const;
   void export_successors_python(const std::filesystem::path& p) const;

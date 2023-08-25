@@ -103,4 +103,25 @@ template <typename T> bool approx_equal(T a, T b, T factor = 10) {
   return a - b < eps && b - a < eps;
 }
 
+static void extract_vertices_from_key(const std::string& key,
+                                      std::string&       source_name,
+                                      std::string&       target_name) {
+  /**
+   * Extract source and target names from key.
+   * @param key Key
+   * @param source_name Source name, used as return value
+   * @param target_name Target name, used as return value
+   *
+   * The variables are passed by reference and are modified in place.
+   */
+
+  size_t const first_quote  = key.find_first_of('\'');
+  size_t const second_quote = key.find_first_of('\'', first_quote + 1);
+  source_name = key.substr(first_quote + 1, second_quote - first_quote - 1);
+
+  size_t const third_quote  = key.find_first_of('\'', second_quote + 1);
+  size_t const fourth_quote = key.find_first_of('\'', third_quote + 1);
+  target_name = key.substr(third_quote + 1, fourth_quote - third_quote - 1);
+}
+
 } // namespace cda_rail
