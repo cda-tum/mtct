@@ -6,6 +6,7 @@
 #include "datastructure/Timetable.hpp"
 
 #include <filesystem>
+#include <optional>
 
 namespace cda_rail::instances {
 class VSSGenerationTimetable {
@@ -396,6 +397,23 @@ public:
   };
   void export_solution(const char* path, bool export_instance = true) const {
     export_solution(std::filesystem::path(path), export_instance);
+  };
+
+  [[nodiscard]] static SolVSSGenerationTimetable
+  import_solution(const std::filesystem::path&          p,
+                  std::optional<VSSGenerationTimetable> instance =
+                      std::optional<VSSGenerationTimetable>());
+  [[nodiscard]] static SolVSSGenerationTimetable
+  import_solution(const std::string&                    path,
+                  std::optional<VSSGenerationTimetable> instance =
+                      std::optional<VSSGenerationTimetable>()) {
+    return import_solution(std::filesystem::path(path), instance);
+  };
+  [[nodiscard]] static SolVSSGenerationTimetable
+  import_solution(const char*                           path,
+                  std::optional<VSSGenerationTimetable> instance =
+                      std::optional<VSSGenerationTimetable>()) {
+    return import_solution(std::filesystem::path(path), instance);
   };
 };
 } // namespace cda_rail::instances
