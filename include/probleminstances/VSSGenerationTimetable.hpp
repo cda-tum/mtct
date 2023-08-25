@@ -309,6 +309,11 @@ public:
   [[nodiscard]] double         get_obj() const { return obj; };
   [[nodiscard]] bool get_postprocessed() const { return postprocessed; };
   [[nodiscard]] int  get_dt() const { return dt; };
+  void set_status(SolutionStatus new_status) { status = new_status; };
+  void set_obj(double new_obj) { obj = new_obj; };
+  void set_postprocessed(bool new_postprocessed) {
+    postprocessed = new_postprocessed;
+  };
 
   // RouteMap functions
   void add_empty_route(const std::string& train_name) {
