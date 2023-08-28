@@ -5,6 +5,8 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <fstream>
+#include <unordered_set>
+#include <vector>
 
 using json = nlohmann::json;
 
@@ -561,6 +563,44 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
   }
 
   sol_obj.set_obj(obj);
+
+  if (!fix_routes) {
+    sol_obj.reset_routes();
+    if (debug) {
+      std::cout << "Extracting routes" << std::endl;
+    }
+    for (size_t tr = 0; tr < num_tr; ++tr) {
+      const auto train = instance.get_train_list().get_train(tr);
+      sol_obj.add_empty_route(train.name);
+      size_t current_vertex = instance.get_schedule(tr).entry;
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
+           ++t) {
+        std::unordered_set<size_t> edge_list;
+        for (int e = 0; e < num_edges; ++e) {
+          const auto tr_on_edge =
+              vars.at("x").at(tr, t, e).get(GRB_DoubleAttr_X) > 0.5;
+          if (tr_on_edge && edge_list.count(e) == 0) {
+            edge_list.emplace(e);
+          }
+        }
+        while (!edge_list.empty()) {
+          bool edge_added = false;
+          for (const auto& e : edge_list) {
+            if (instance.const_n().get_edge(e).source == current_vertex) {
+              sol_obj.push_back_edge_to_route(train.name, e);
+              current_vertex = instance.const_n().get_edge(e).target;
+              edge_list.erase(e);
+              break;
+            }
+          }
+          if (!edge_added) {
+            throw exceptions::ConsistencyException(
+                "Error while extracting routes");
+          }
+        }
+      }
+    }
+  }
 
   if (export_option == ExportOption::ExportSolution ||
       export_option == ExportOption::ExportSolutionWithInstance ||
