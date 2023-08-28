@@ -481,6 +481,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     const auto  e_index      = relevant_edges.at(r_e_index);
     const auto  vss_number_e = instance.const_n().max_vss_on_edge(e_index);
     const auto& e            = instance.const_n().get_edge(e_index);
+    const auto  reverse_edge_index =
+        instance.const_n().get_reverse_edge_index(e_index);
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       bool b_used = false;
 
@@ -491,6 +493,54 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         b_used =
             vars.at("num_vss_segments").at(r_e_index).get(GRB_DoubleAttr_X) >
             static_cast<double>(vss) + 1.5;
+      }
+
+      if (postprocess && b_used) {
+        if (debug) {
+          const auto& source = instance.const_n().get_vertex(e.source).name;
+          const auto& target = instance.const_n().get_vertex(e.target).name;
+          std::cout << "Postprocessing on " << source << " to " << target
+                    << std::endl;
+        }
+        b_used = false;
+        for (size_t tr = 0; tr < num_tr; ++tr) {
+          for (size_t t = train_interval.at(tr).first;
+               t <= train_interval.at(tr).second; ++t) {
+            const auto front1 =
+                vars.at("b_front")
+                    .at(tr, t, breakable_edge_indices.at(e_index), vss)
+                    .get(GRB_DoubleAttr_X) > 0.5;
+            const auto rear1 =
+                vars.at("b_rear")
+                    .at(tr, t, breakable_edge_indices.at(e_index), vss)
+                    .get(GRB_DoubleAttr_X) > 0.5;
+            const auto front2 =
+                reverse_edge_index.has_value()
+                    ? vars.at("b_front")
+                              .at(tr, t,
+                                  breakable_edge_indices.at(
+                                      reverse_edge_index.value()),
+                                  vss)
+                              .get(GRB_DoubleAttr_X) > 0.5
+                    : false;
+            const auto rear2 =
+                reverse_edge_index.value()
+                    ? vars.at("b_rear")
+                              .at(tr, t,
+                                  breakable_edge_indices.at(
+                                      reverse_edge_index.value()),
+                                  vss)
+                              .get(GRB_DoubleAttr_X) > 0.5
+                    : false;
+            if (front1 || rear1 || front2 || rear2) {
+              b_used = true;
+              break;
+            }
+          }
+          if (b_used) {
+            break;
+          }
+        }
       }
 
       if (!b_used) {
