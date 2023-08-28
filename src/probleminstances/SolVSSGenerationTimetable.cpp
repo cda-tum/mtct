@@ -550,8 +550,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         continue;
       }
 
-      const auto b_pos_val =
-          vars.at("b_pos").at(r_e_index, vss).get(GRB_DoubleAttr_X);
+      const auto b_pos_val = vars.at("b_pos")
+                                 .at(breakable_edge_indices.at(e_index), vss)
+                                 .get(GRB_DoubleAttr_X);
       if (debug) {
         const auto& source = instance.const_n().get_vertex(e.source).name;
         const auto& target = instance.const_n().get_vertex(e.target).name;
