@@ -286,17 +286,15 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   }
 
   if (export_option == ExportOption::ExportLP ||
-      export_option == ExportOption::ExportSolutionAndLP) {
+      export_option == ExportOption::ExportSolutionAndLP ||
+      export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
     std::cout << "Saving model and solution" << std::endl;
     model->write(name + ".mps");
     model->write(name + ".sol");
   }
 
   const auto sol_object =
-      extract_solution(postprocess, debug,
-                       (export_option == ExportOption::ExportSolution ||
-                        export_option == ExportOption::ExportSolutionAndLP),
-                       name, old_instance);
+      extract_solution(postprocess, debug, export_option, name, old_instance);
 
   cleanup(old_instance);
 

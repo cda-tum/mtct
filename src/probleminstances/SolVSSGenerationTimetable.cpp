@@ -427,7 +427,8 @@ void cda_rail::instances::SolVSSGenerationTimetable::initialize_vectors() {
 
 cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
-    bool postprocess, bool debug, bool export_solution, const std::string& name,
+    bool postprocess, bool debug, ExportOption export_option,
+    const std::string&                                      name,
     const std::optional<instances::VSSGenerationTimetable>& old_instance)
     const {
   if (debug) {
@@ -462,11 +463,63 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     return sol_obj;
   }
 
+  if (vss_model.get_model_type() == vss::ModelType::Discrete) {
+    // TODO: Implement
+    return sol_obj;
+  }
+
   const auto mip_obj_val =
       static_cast<int>(round(model->get(GRB_DoubleAttr_ObjVal)));
   sol_obj.set_mip_obj(mip_obj_val);
   if (debug) {
     std::cout << "MIP objective: " << mip_obj_val << std::endl;
+  }
+
+  int obj = 0;
+
+  for (size_t r_e_index = 0; r_e_index < relevant_edges.size(); ++r_e_index) {
+    const auto  e_index      = relevant_edges.at(r_e_index);
+    const auto  vss_number_e = instance.const_n().max_vss_on_edge(e_index);
+    const auto& e            = instance.const_n().get_edge(e_index);
+    for (size_t vss = 0; vss < vss_number_e; ++vss) {
+      bool b_used = false;
+
+      if (vss_model.get_model_type() == vss::ModelType::Continuous) {
+        b_used =
+            vars.at("b_used").at(r_e_index, vss).get(GRB_DoubleAttr_X) > 0.5;
+      } else if (vss_model.get_model_type() == vss::ModelType::Inferred) {
+        b_used =
+            vars.at("num_vss_segments").at(r_e_index).get(GRB_DoubleAttr_X) >
+            static_cast<double>(vss) + 1.5;
+      }
+
+      if (!b_used) {
+        continue;
+      }
+
+      const auto b_pos_val =
+          vars.at("b_pos").at(r_e_index, vss).get(GRB_DoubleAttr_X);
+      if (debug) {
+        const auto& source = instance.const_n().get_vertex(e.source).name;
+        const auto& target = instance.const_n().get_vertex(e.target).name;
+        std::cout << "Add VSS at " << b_pos_val << " on " << source << " to "
+                  << target << std::endl;
+      }
+      sol_obj.add_vss_pos(e_index, b_pos_val, true);
+      ++obj;
+    }
+  }
+
+  sol_obj.set_obj(obj);
+
+  if (export_option == ExportOption::ExportSolution ||
+      export_option == ExportOption::ExportSolutionWithInstance ||
+      export_option == ExportOption::ExportSolutionAndLP ||
+      export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
+    const bool export_instance =
+        (export_option == ExportOption::ExportSolutionWithInstance ||
+         export_option == ExportOption::ExportSolutionWithInstanceAndLP);
+    sol_obj.export_solution(name, export_instance);
   }
 
   return sol_obj;

@@ -17,10 +17,12 @@ enum class SolutionStatus {
   Unknown    = 4
 };
 enum class ExportOption {
-  NoExport            = 0,
-  ExportSolution      = 1,
-  ExportLP            = 2,
-  ExportSolutionAndLP = 3
+  NoExport                        = 0,
+  ExportSolution                  = 1,
+  ExportSolutionWithInstance      = 2,
+  ExportLP                        = 3,
+  ExportSolutionAndLP             = 4,
+  ExportSolutionWithInstanceAndLP = 5
 };
 
 // Helper functions

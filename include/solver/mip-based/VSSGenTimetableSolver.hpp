@@ -125,7 +125,7 @@ private:
   cleanup(const std::optional<instances::VSSGenerationTimetable>& old_instance);
 
   instances::SolVSSGenerationTimetable
-  extract_solution(bool postprocess, bool debug, bool export_solution,
+  extract_solution(bool postprocess, bool debug, ExportOption export_option,
                    const std::string& name,
                    const std::optional<instances::VSSGenerationTimetable>&
                        old_instance) const;
