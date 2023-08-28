@@ -283,6 +283,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     std::cout << "Model solved in "
               << (static_cast<double>(solve_time) / 1000.0) << " s"
               << std::endl;
+    std::cout << "Total time "
+              << (static_cast<double>(create_time + solve_time) / 1000.0)
+              << " s" << std::endl;
   }
 
   if (export_option == ExportOption::ExportLP ||
