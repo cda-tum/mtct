@@ -611,6 +611,33 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     }
   }
 
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto  train  = instance.get_train_list().get_train(tr);
+    const auto& tr_len = train.length;
+    for (auto t = train_interval[tr].first; t <= train_interval[tr].second;
+         ++t) {
+      double train_pos = -1;
+      if (fix_routes) {
+        train_pos = vars.at("lda").at(tr, t).get(GRB_DoubleAttr_X) + tr_len;
+      } else {
+        // TODO: Free Routes
+      }
+      sol_obj.add_train_pos(tr, t * dt, train_pos);
+    }
+
+    auto   t         = train_interval[tr].second + 1;
+    double train_pos = -1;
+    if (fix_routes) {
+      train_pos = vars.at("mu").at(tr, t - 1).get(GRB_DoubleAttr_X);
+    } else {
+      // TODO: Free Routes
+    }
+    if (include_braking_curves) {
+      train_pos -= vars.at("brakelen").at(tr, t - 1).get(GRB_DoubleAttr_X);
+    }
+    sol_obj.add_train_pos(tr, t * dt, train_pos);
+  }
+
   if (export_option == ExportOption::ExportSolution ||
       export_option == ExportOption::ExportSolutionWithInstance ||
       export_option == ExportOption::ExportSolutionAndLP ||
