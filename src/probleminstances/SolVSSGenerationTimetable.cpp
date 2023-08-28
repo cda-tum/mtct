@@ -621,7 +621,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
       if (fix_routes) {
         train_pos = vars.at("lda").at(tr, t).get(GRB_DoubleAttr_X);
       } else {
-        const bool len_in = vars.at("len_in").at(tr, t).get(GRB_DoubleAttr_X);
+        const double len_in = vars.at("len_in").at(tr, t).get(GRB_DoubleAttr_X);
         if (len_in > 10 * std::numeric_limits<double>::epsilon()) {
           train_pos = -len_in;
         } else {
