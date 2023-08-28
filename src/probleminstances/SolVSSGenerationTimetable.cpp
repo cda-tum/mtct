@@ -558,7 +558,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
                   << target << std::endl;
       }
       sol_obj.add_vss_pos(e_index, b_pos_val, true);
-      ++obj;
+      obj += 1;
     }
   }
 
