@@ -30,11 +30,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
   instance = instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
-int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
+cda_rail::instances::SolVSSGenerationTimetable
+cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     int delta_t, bool fix_routes_input, vss::Model vss_model_input,
     bool include_train_dynamics_input, bool include_braking_curves_input,
-    bool use_pwl_input, bool use_schedule_cuts_input, int time_limit,
-    bool debug, bool export_to_file, const std::string& file_name) {
+    bool use_pwl_input, bool use_schedule_cuts_input, bool postprocess,
+    int time_limit, bool debug, ExportOption export_option,
+    const std::string& name) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
    * flexible MILP formulation. The level of detail can be controlled using the
@@ -283,26 +285,22 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
               << std::endl;
   }
 
-  if (export_to_file) {
+  if (export_option == ExportOption::ExportLP ||
+      export_option == ExportOption::ExportSolutionAndLP) {
     std::cout << "Saving model and solution" << std::endl;
-    model->write(file_name + ".mps");
-    model->write(file_name + ".sol");
+    model->write(name + ".mps");
+    model->write(name + ".sol");
   }
 
-  if (auto status = model->get(GRB_IntAttr_Status); status != GRB_OPTIMAL) {
-    std::cout << "No optimal solution found. Status: " << status << std::endl;
-    return -1;
-  }
-
-  auto const obj_val =
-      static_cast<int>(round(model->get(GRB_DoubleAttr_ObjVal)));
-  if (debug) {
-    std::cout << "Objective: " << obj_val << std::endl;
-  }
+  const auto sol_object =
+      extract_solution(postprocess, debug,
+                       (export_option == ExportOption::ExportSolution ||
+                        export_option == ExportOption::ExportSolutionAndLP),
+                       name, old_instance);
 
   cleanup(old_instance);
 
-  return obj_val;
+  return sol_object;
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::

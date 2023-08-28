@@ -258,6 +258,7 @@ private:
 
   SolutionStatus status        = SolutionStatus::Unknown;
   double         obj           = -1;
+  double         mip_obj       = -1;
   bool           postprocessed = false;
 
   void initialize_vectors();
@@ -307,10 +308,12 @@ public:
 
   [[nodiscard]] SolutionStatus get_status() const { return status; };
   [[nodiscard]] double         get_obj() const { return obj; };
+  [[nodiscard]] double         get_mip_obj() const { return mip_obj; };
   [[nodiscard]] bool get_postprocessed() const { return postprocessed; };
   [[nodiscard]] int  get_dt() const { return dt; };
   void set_status(SolutionStatus new_status) { status = new_status; };
   void set_obj(double new_obj) { obj = new_obj; };
+  void set_mip_obj(double new_mip_obj) { mip_obj = new_mip_obj; };
   void set_postprocessed(bool new_postprocessed) {
     postprocessed = new_postprocessed;
   };

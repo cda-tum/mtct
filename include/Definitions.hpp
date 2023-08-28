@@ -16,6 +16,12 @@ enum class SolutionStatus {
   Timeout    = 3,
   Unknown    = 4
 };
+enum class ExportOption {
+  NoExport            = 0,
+  ExportSolution      = 1,
+  ExportLP            = 2,
+  ExportSolutionAndLP = 3
+};
 
 // Helper functions
 

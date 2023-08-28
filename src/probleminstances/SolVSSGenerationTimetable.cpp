@@ -2,6 +2,7 @@
 #include "Definitions.hpp"
 #include "nlohmann/json.hpp"
 #include "probleminstances/VSSGenerationTimetable.hpp"
+#include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <fstream>
 
@@ -293,6 +294,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
   data["dt"]            = dt;
   data["status"]        = static_cast<int>(status);
   data["obj"]           = obj;
+  data["mip_obj"]       = mip_obj;
   data["postprocessed"] = postprocessed;
   std::ofstream data_file(p / "solution" / "data.json");
   data_file << data << std::endl;
@@ -369,6 +371,7 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
   this->dt            = data["dt"].get<int>();
   this->status        = static_cast<SolutionStatus>(data["status"].get<int>());
   this->obj           = data["obj"].get<double>();
+  this->mip_obj       = data["mip_obj"].get<double>();
   this->postprocessed = data["postprocessed"].get<bool>();
 
   this->initialize_vectors();
@@ -419,6 +422,51 @@ void cda_rail::instances::SolVSSGenerationTimetable::initialize_vectors() {
     const auto tr_interval_size = tr_interval.second - tr_interval.first + 1;
     train_pos.emplace_back(tr_interval_size, -1);
     train_speed.emplace_back(tr_interval_size, -1);
+  }
+}
+
+cda_rail::instances::SolVSSGenerationTimetable
+cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
+    bool postprocess, bool debug, bool export_solution, const std::string& name,
+    const std::optional<instances::VSSGenerationTimetable>& old_instance)
+    const {
+  if (debug) {
+    std::cout << "Extracting solution object..." << std::endl;
+  }
+
+  auto sol_obj = instances::SolVSSGenerationTimetable(
+      (old_instance.has_value() ? old_instance.value() : instance), dt);
+
+  const auto grb_status = model->get(GRB_IntAttr_Status);
+
+  if (grb_status == GRB_OPTIMAL) {
+    std::cout << "Solution status: Optimal" << std::endl;
+    sol_obj.set_status(SolutionStatus::Optimal);
+  } else if (grb_status == GRB_INFEASIBLE) {
+    std::cout << "Solution status: Infeasible" << std::endl;
+    sol_obj.set_status(SolutionStatus::Infeasible);
+  } else if (grb_status == GRB_TIME_LIMIT &&
+             model->get(GRB_IntAttr_SolCount) >= 1) {
+    std::cout << "Solution status: Feasible (optimality unknown)" << std::endl;
+    sol_obj.set_status(SolutionStatus::Feasible);
+  } else if (grb_status == GRB_TIME_LIMIT &&
+             model->get(GRB_IntAttr_SolCount) == 0) {
+    std::cout << "Solution status: Timeout (Feasibility unknown)" << std::endl;
+    sol_obj.set_status(SolutionStatus::Timeout);
+  } else {
+    throw exceptions::ConsistencyException(
+        "Gurobi status code " + std::to_string(grb_status) + " unknown.");
+  }
+
+  if (const auto sol_count = model->get(GRB_IntAttr_SolCount); sol_count <= 1) {
+    return sol_obj;
+  }
+
+  const auto mip_obj_val =
+      static_cast<int>(round(model->get(GRB_DoubleAttr_ObjVal)));
+  sol_obj.set_mip_obj(mip_obj_val);
+  if (debug) {
+    std::cout << "MIP objective: " << mip_obj_val << std::endl;
   }
 }
 

@@ -2151,6 +2151,7 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_FALSE(sol1.check_consistency());
 
   sol1.set_obj(0);
+  sol1.set_mip_obj(1);
   sol1.set_postprocessed(true);
   sol1.set_status(cda_rail::SolutionStatus::Optimal);
 
@@ -2183,6 +2184,7 @@ TEST(Functionality, SolVSSGenerationTimetable) {
 
   // Check instance
   EXPECT_EQ(sol1.get_obj(), 0);
+  EXPECT_EQ(sol1.get_mip_obj(), 1);
   EXPECT_EQ(sol1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol1.get_postprocessed(), true);
   EXPECT_EQ(sol1.get_dt(), 60);
@@ -2272,6 +2274,7 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   // NOLINTEND(clang-analyzer-deadcode.DeadStores)
   EXPECT_TRUE(sol1_read.check_consistency());
   EXPECT_EQ(sol1_read.get_obj(), 0);
+  EXPECT_EQ(sol1_read.get_mip_obj(), 1);
   EXPECT_EQ(sol1_read.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol1_read.get_postprocessed(), true);
   EXPECT_EQ(sol1_read.get_dt(), 60);
@@ -2339,6 +2342,7 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   // NOLINTEND(clang-analyzer-deadcode.DeadStores)
   EXPECT_TRUE(sol2_read.check_consistency());
   EXPECT_EQ(sol2_read.get_obj(), 0);
+  EXPECT_EQ(sol2_read.get_mip_obj(), 1);
   EXPECT_EQ(sol2_read.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol2_read.get_postprocessed(), true);
   EXPECT_EQ(sol2_read.get_dt(), 60);

@@ -68,6 +68,6 @@ int main(int argc, char** argv) {
           : cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous);
 
   solver.solve(delta_t, fix_routes, vss_model, include_train_dynamics,
-               include_braking_curves, use_pwl, use_schedule_cuts, timeout,
-               true, true, file_name);
+               include_braking_curves, use_pwl, use_schedule_cuts, false,
+               timeout, true, cda_rail::ExportOption::ExportLP, file_name);
 }

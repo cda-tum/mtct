@@ -124,6 +124,12 @@ private:
   void
   cleanup(const std::optional<instances::VSSGenerationTimetable>& old_instance);
 
+  instances::SolVSSGenerationTimetable
+  extract_solution(bool postprocess, bool debug, bool export_solution,
+                   const std::string& name,
+                   const std::optional<instances::VSSGenerationTimetable>&
+                       old_instance) const;
+
 public:
   // Constructors
   explicit VSSGenTimetableSolver(instances::VSSGenerationTimetable instance);
@@ -132,14 +138,15 @@ public:
   explicit VSSGenTimetableSolver(const char* instance_path);
 
   // Methods
-  int solve(int delta_t = 15, bool fix_routes_input = true,
-            vss::Model model_input = vss::Model(vss::ModelType::Continuous),
-            bool       include_train_dynamics_input = true,
-            bool       include_braking_curves_input = true,
-            bool use_pwl_input = false, bool use_schedule_cuts_input = true,
-            int time_limit = -1, bool debug = false,
-            bool               export_to_file = false,
-            const std::string& file_name      = "model");
+  instances::SolVSSGenerationTimetable
+  solve(int delta_t = 15, bool fix_routes_input = true,
+        vss::Model model_input = vss::Model(vss::ModelType::Continuous),
+        bool       include_train_dynamics_input = true,
+        bool include_braking_curves_input = true, bool use_pwl_input = false,
+        bool use_schedule_cuts_input = true, bool postprocess = false,
+        int time_limit = -1, bool debug = false,
+        ExportOption       export_option = ExportOption::NoExport,
+        const std::string& name          = "model_sol");
 
   [[nodiscard]] const instances::VSSGenerationTimetable& get_instance() const {
     return instance;
