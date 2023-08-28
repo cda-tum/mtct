@@ -524,7 +524,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
                               .get(GRB_DoubleAttr_X) > 0.5
                     : false;
             const auto rear2 =
-                reverse_edge_index.value()
+                reverse_edge_index.has_value()
                     ? vars.at("b_rear")
                               .at(tr, t,
                                   breakable_edge_indices.at(
