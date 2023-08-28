@@ -607,7 +607,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     for (size_t t = train_interval[tr].first;
          t <= train_interval[tr].second + 1; ++t) {
       const auto train_speed_val = vars.at("v").at(tr, t).get(GRB_DoubleAttr_X);
-      sol_obj.add_train_speed(tr, t * dt, train_speed_val);
+      sol_obj.add_train_speed(tr, static_cast<int>(t) * dt, train_speed_val);
     }
   }
 
