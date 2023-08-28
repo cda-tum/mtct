@@ -319,6 +319,13 @@ public:
   };
 
   // RouteMap functions
+  void reset_routes() {
+    for (const auto& tr : instance.get_train_list()) {
+      if (instance.has_route(tr.name)) {
+        instance.routes.remove_route(tr.name);
+      }
+    }
+  }
   void add_empty_route(const std::string& train_name) {
     instance.add_empty_route(train_name);
   };

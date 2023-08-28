@@ -2182,6 +2182,19 @@ TEST(Functionality, SolVSSGenerationTimetable) {
 
   EXPECT_TRUE(sol1.check_consistency());
 
+  sol1.reset_routes();
+
+  EXPECT_FALSE(sol1.check_consistency());
+  EXPECT_FALSE(sol1.get_instance().has_route("tr1"));
+  EXPECT_FALSE(sol1.get_instance().has_route("tr2"));
+
+  sol1.add_empty_route("tr1");
+  sol1.add_empty_route("tr2");
+  sol1.push_back_edge_to_route("tr1", "v0", "v1");
+  sol1.push_back_edge_to_route("tr1", v1, v2);
+  sol1.push_back_edge_to_route("tr2", v2_v1);
+  sol1.push_back_edge_to_route("tr2", "v1", "v0");
+
   // Check instance
   EXPECT_EQ(sol1.get_obj(), 0);
   EXPECT_EQ(sol1.get_mip_obj(), 1);
