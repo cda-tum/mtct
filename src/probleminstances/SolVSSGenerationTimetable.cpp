@@ -4,6 +4,7 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
+#include <cmath>
 #include <fstream>
 #include <unordered_set>
 #include <vector>
@@ -465,16 +466,16 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     return sol_obj;
   }
 
-  if (vss_model.get_model_type() == vss::ModelType::Discrete) {
-    // TODO: Implement
-    return sol_obj;
-  }
-
   const auto mip_obj_val =
-      static_cast<int>(round(model->get(GRB_DoubleAttr_ObjVal)));
+      static_cast<int>(std::round(model->get(GRB_DoubleAttr_ObjVal)));
   sol_obj.set_mip_obj(mip_obj_val);
   if (debug) {
     std::cout << "MIP objective: " << mip_obj_val << std::endl;
+  }
+
+  if (vss_model.get_model_type() == vss::ModelType::Discrete) {
+    // TODO: Implement
+    return sol_obj;
   }
 
   int obj = 0;
