@@ -603,6 +603,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     }
   }
 
+  // TODO: Extract train positions and velocities
+
   if (export_option == ExportOption::ExportSolution ||
       export_option == ExportOption::ExportSolutionWithInstance ||
       export_option == ExportOption::ExportSolutionAndLP ||
