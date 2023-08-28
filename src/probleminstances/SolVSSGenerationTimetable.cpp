@@ -468,6 +468,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
   if (debug) {
     std::cout << "MIP objective: " << mip_obj_val << std::endl;
   }
+
+  return sol_obj;
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)
