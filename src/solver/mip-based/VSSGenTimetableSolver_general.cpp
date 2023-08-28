@@ -293,7 +293,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     model->write(name + ".sol");
   }
 
-  const auto sol_object =
+  auto sol_object =
       extract_solution(postprocess, debug, export_option, name, old_instance);
 
   cleanup(old_instance);
