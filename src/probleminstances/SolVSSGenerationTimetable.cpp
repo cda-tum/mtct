@@ -585,19 +585,17 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
             edge_list.emplace(e);
           }
         }
-        while (!edge_list.empty()) {
-          bool edge_added = false;
+        bool edge_added = true;
+        while (!edge_list.empty() && edge_added) {
+          edge_added = false;
           for (const auto& e : edge_list) {
             if (instance.const_n().get_edge(e).source == current_vertex) {
               sol_obj.push_back_edge_to_route(train.name, e);
               current_vertex = instance.const_n().get_edge(e).target;
               edge_list.erase(e);
+              edge_added = true;
               break;
             }
-          }
-          if (!edge_added) {
-            throw exceptions::ConsistencyException(
-                "Error while extracting routes");
           }
         }
       }
