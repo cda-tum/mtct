@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <fstream>
+#include <limits>
 #include <unordered_set>
 #include <vector>
 
@@ -616,13 +617,32 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     const auto& tr_len = train.length;
     for (auto t = train_interval[tr].first; t <= train_interval[tr].second;
          ++t) {
-      double train_pos = -1;
+      double train_pos = instance.route_length(train.name);
       if (fix_routes) {
-        train_pos = vars.at("lda").at(tr, t).get(GRB_DoubleAttr_X) + tr_len;
+        train_pos = vars.at("lda").at(tr, t).get(GRB_DoubleAttr_X);
       } else {
-        // TODO: Free Routes
+        const bool len_in = vars.at("len_in").at(tr, t).get(GRB_DoubleAttr_X);
+        if (len_in > 10 * std::numeric_limits<double>::epsilon()) {
+          train_pos = -len_in;
+        } else {
+          for (auto e_index : instance.get_route(train.name).get_edges()) {
+            const bool e_used =
+                vars.at("x").at(tr, t, e_index).get(GRB_DoubleAttr_X) > 0.5;
+            if (e_used) {
+              const double lda_val =
+                  vars.at("e_lda").at(tr, t, e_index).get(GRB_DoubleAttr_X);
+              const double e_pos =
+                  instance.route_edge_pos(train.name, e_index).first;
+              if (lda_val + e_pos < train_pos) {
+                train_pos = lda_val + e_pos;
+              }
+            }
+          }
+        }
       }
-      sol_obj.add_train_pos(tr, t * dt, train_pos);
+
+      train_pos += tr_len;
+      sol_obj.add_train_pos(tr, static_cast<int>(t) * dt, train_pos);
     }
 
     auto   t         = train_interval[tr].second + 1;
@@ -630,12 +650,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     if (fix_routes) {
       train_pos = vars.at("mu").at(tr, t - 1).get(GRB_DoubleAttr_X);
     } else {
-      // TODO: Free Routes
+      train_pos = instance.route_length(train.name) +
+                  vars.at("len_out").at(tr, t - 1).get(GRB_DoubleAttr_X);
     }
     if (include_braking_curves) {
       train_pos -= vars.at("brakelen").at(tr, t - 1).get(GRB_DoubleAttr_X);
     }
-    sol_obj.add_train_pos(tr, t * dt, train_pos);
+    sol_obj.add_train_pos(tr, static_cast<int>(t) * dt, train_pos);
   }
 
   if (export_option == ExportOption::ExportSolution ||
