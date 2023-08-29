@@ -136,3 +136,38 @@ TEST(VSSModel, Consistency) {
   model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt, {&f, &f});
   EXPECT_TRUE(model.check_consistency());
 }
+
+TEST(VSSModel, Functions) {
+  const auto& f1 = cda_rail::vss::functions::uniform;
+  const auto& f2 = cda_rail::vss::functions::chebyshev;
+
+  EXPECT_EQ(f1(0, 1), 1);
+  EXPECT_EQ(f1(1, 1), 1);
+  EXPECT_EQ(f1(0, 2), 0.5);
+  EXPECT_EQ(f1(1, 2), 1);
+  EXPECT_EQ(f1(2, 2), 1);
+  EXPECT_EQ(f1(0, 3), 1.0 / 3.0);
+  EXPECT_EQ(f1(1, 3), 2.0 / 3.0);
+  EXPECT_EQ(f1(2, 3), 1);
+  EXPECT_EQ(f1(3, 3), 1);
+  EXPECT_EQ(f1(0, 4), 0.25);
+  EXPECT_EQ(f1(1, 4), 0.5);
+  EXPECT_EQ(f1(2, 4), 0.75);
+  EXPECT_EQ(f1(3, 4), 1);
+  EXPECT_EQ(f1(4, 4), 1);
+
+  EXPECT_EQ(f2(0, 1), 1);
+  EXPECT_EQ(f2(1, 1), 1);
+  EXPECT_EQ(f2(0, 2), 0.5);
+  EXPECT_EQ(f2(1, 2), 1);
+  EXPECT_EQ(f2(2, 2), 1);
+  EXPECT_EQ(cda_rail::round_to(f2(0, 3), 1e-5), 0.14645);
+  EXPECT_EQ(cda_rail::round_to(f2(1, 3), 1e-5), 0.85355);
+  EXPECT_EQ(f2(2, 3), 1);
+  EXPECT_EQ(f2(3, 3), 1);
+  EXPECT_EQ(cda_rail::round_to(f2(0, 4), 1e-5), 0.06699);
+  EXPECT_EQ(cda_rail::round_to(f2(1, 4), 1e-5), 0.5);
+  EXPECT_EQ(cda_rail::round_to(f2(2, 4), 1e-5), 0.93301);
+  EXPECT_EQ(f2(3, 4), 1);
+  EXPECT_EQ(f2(4, 4), 1);
+}

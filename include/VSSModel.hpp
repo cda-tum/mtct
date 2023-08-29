@@ -25,6 +25,17 @@ namespace functions {
   return ret_val;
 }
 
+[[nodiscard]] static double chebyshev(size_t i, size_t n) {
+  if (i >= n - 1) {
+    return 1;
+  }
+
+  const auto   n_points = static_cast<double>(n) - 1;
+  const auto   k        = n_points - static_cast<double>(i);
+  const double pi       = 3.14159265358979323846;
+  return 0.5 + 0.5 * std::cos((2 * k - 1) * pi / (2 * n_points));
+}
+
 [[nodiscard]] static size_t max_n_blocks(const SeparationFunction& sep_func,
                                          double                    min_frac) {
   const auto eps = 10 * std::numeric_limits<double>::epsilon();
