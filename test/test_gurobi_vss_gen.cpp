@@ -431,7 +431,7 @@ TEST(Solver, Stammstrecke16FixedContinuous) {
   EXPECT_EQ(obj_val_braking.get_mip_obj(), 15);
 }
 
-TEST(Solver, SimpleStationLimitedUniform) {
+TEST(Solver, SimpleStationInferredUniform) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
 
