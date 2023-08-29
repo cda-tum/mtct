@@ -1005,7 +1005,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         for (size_t sep_type_index = 0;
              sep_type_index < vss_model.get_separation_functions().size();
              ++sep_type_index) {
-          lhs += vars["frac_vss_segments"](i, sep_type_index, vss);
+          lhs += vars["frac_type"](i, sep_type_index, vss);
 
           // Make sure that frac_type(i, sep_type_index, vss) =
           // frac_vss_segments(i, sep_type_index, vss) * edge_type(i,
