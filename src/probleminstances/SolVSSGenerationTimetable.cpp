@@ -102,7 +102,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::add_vss_pos(
 
   const auto& edge = instance.const_n().get_edge(edge_id);
 
-  if (pos <= 0 + EPS || pos + EPS >= edge.length) {
+  if (pos <= EPS || pos + EPS >= edge.length) {
     throw exceptions::ConsistencyException(
         "VSS position " + std::to_string(pos) + " is not on edge " +
         std::to_string(edge_id));
@@ -131,7 +131,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::set_vss_pos(
   const auto& edge = instance.const_n().get_edge(edge_id);
 
   for (const auto& p : pos) {
-    if (p + EPS < 0 || p > edge.length + EPS) {
+    if (p <= EPS || p + EPS >= edge.length) {
       throw exceptions::ConsistencyException(
           "VSS position " + std::to_string(p) + " is not on edge " +
           std::to_string(edge_id));
