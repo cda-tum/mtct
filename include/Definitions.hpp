@@ -143,7 +143,8 @@ static double round_to(double value, double tolerance) {
    * @return Rounded value
    */
 
-  return std::round(value / tolerance) * tolerance;
+  const auto factor = std::round(1 / tolerance);
+  return std::round(value * factor) / factor;
 }
 
 } // namespace cda_rail
