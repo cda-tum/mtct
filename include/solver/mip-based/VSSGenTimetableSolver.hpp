@@ -81,6 +81,7 @@ private:
   void create_non_discretized_free_route_constraints();
   void create_non_discretized_fixed_route_constraints();
   void create_non_discretized_fraction_constraints();
+  void create_non_discretized_alt_fraction_constraints();
 
   void create_free_routes_position_constraints();
   void create_free_routes_overlap_constraints();

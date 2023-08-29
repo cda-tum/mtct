@@ -402,8 +402,15 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     vars["frac_type"] = MultiArray<GRBVar>(
         relevant_edges.size(),
         this->vss_model.get_separation_functions().size(), max_vss);
-  } else {
+  } else if (this->vss_model.get_model_type() == vss::ModelType::Continuous) {
     vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
+  } else if (this->vss_model.get_model_type() == vss::ModelType::InferredAlt) {
+    vars["type_num_vss_segments"] = MultiArray<GRBVar>(
+        relevant_edges.size(),
+        this->vss_model.get_separation_functions().size(), max_vss);
+  } else {
+    throw exceptions::ConsistencyException(
+        "Model type not supported for non-discretized graph");
   }
 
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
@@ -466,11 +473,23 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                   std::to_string(vss));
         }
       }
-    } else {
+    } else if (this->vss_model.get_model_type() == vss::ModelType::Continuous) {
       for (size_t vss = 0; vss < vss_number_e; ++vss) {
         vars["b_used"](i, vss) =
             model->addVar(0, 1, 0, GRB_BINARY,
                           "b_used_" + edge_name + "_" + std::to_string(vss));
+      }
+    } else if (this->vss_model.get_model_type() ==
+               vss::ModelType::InferredAlt) {
+      for (size_t sep_type = 0;
+           sep_type < this->vss_model.get_separation_functions().size();
+           ++sep_type) {
+        for (size_t vss = 0; vss < vss_number_e; ++vss) {
+          vars["type_num_vss_segments"](i, sep_type, vss) = model->addVar(
+              0, 1, 0, GRB_BINARY,
+              "type_num_vss_segments_" + edge_name + "_" +
+                  std::to_string(sep_type) + "_" + std::to_string(vss));
+        }
       }
     }
   }
@@ -498,6 +517,18 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
   } else if (vss_model.get_model_type() == vss::ModelType::Inferred) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
       obj += (vars["num_vss_segments"](i) - 1);
+    }
+  } else if (vss_model.get_model_type() == vss::ModelType::InferredAlt) {
+    for (size_t i = 0; i < relevant_edges.size(); ++i) {
+      const auto& e            = relevant_edges[i];
+      const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        for (size_t sep_type = 0;
+             sep_type < this->vss_model.get_separation_functions().size();
+             ++sep_type) {
+          obj += (vss + 1) * vars["type_num_vss_segments"](i, sep_type, vss);
+        }
+      }
     }
   } else {
     throw std::logic_error("Objective for vss model type not implemented");
@@ -773,6 +804,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   }
   if (vss_model.get_model_type() == vss::ModelType::Inferred) {
     create_non_discretized_fraction_constraints();
+  } else if (vss_model.get_model_type() == vss::ModelType::InferredAlt) {
+    create_non_discretized_alt_fraction_constraints();
   }
 }
 
@@ -1044,6 +1077,55 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                          "b_pos_limited_" + edge_name + "_" +
                              std::to_string(vss));
       }
+    }
+  }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_non_discretized_alt_fraction_constraints() {
+  if (vss_model.get_model_type() != vss::ModelType::InferredAlt) {
+    return;
+  }
+
+  for (size_t i = 0; i < relevant_edges.size(); ++i) {
+    const auto& e            = relevant_edges[i];
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    const auto& edge         = instance.n().get_edge(e);
+    const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
+    const auto& breakable_e_index = breakable_edge_indices.at(e);
+    const auto& e_len             = instance.n().get_edge(e).length;
+
+    // Only choose one edge type and number per edge
+    GRBLinExpr lhs_sum_edge_type = 0;
+    for (size_t sep_type_index = 0;
+         sep_type_index < vss_model.get_separation_functions().size();
+         ++sep_type_index) {
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        lhs_sum_edge_type +=
+            vars["type_num_vss_segments"](i, sep_type_index, vss);
+      }
+    }
+    model->addConstr(lhs_sum_edge_type, GRB_LESS_EQUAL, 1,
+                     "sum_edge_vss_type_" + edge_name);
+
+    // Set b_pos accordingly
+    for (size_t vss = 0; vss < vss_number_e; ++vss) {
+      GRBLinExpr rhs = 0;
+      for (size_t sep_type_index = 0;
+           sep_type_index < vss_model.get_separation_functions().size();
+           ++sep_type_index) {
+        const auto& sep_func =
+            vss_model.get_separation_functions().at(sep_type_index);
+        for (size_t num_vss = 0; num_vss < vss_number_e; ++num_vss) {
+          rhs += vars["type_num_vss_segments"](i, sep_type_index, num_vss) *
+                 e_len * sep_func(vss, num_vss + 1);
+        }
+      }
+      model->addConstr(vars["b_pos"](breakable_e_index, vss), GRB_EQUAL, rhs,
+                       "b_pos_alt_limited_" + edge_name + "_" +
+                           std::to_string(vss));
     }
   }
 }
