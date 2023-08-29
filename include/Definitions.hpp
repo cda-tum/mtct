@@ -6,6 +6,7 @@
 namespace cda_rail {
 // Constants
 const double INF           = std::numeric_limits<double>::max() / 3;
+const double EPS           = 10 * std::numeric_limits<double>::epsilon();
 const double ABS_PWL_ERROR = 10;
 
 enum class VertexType { NoBorder = 0, VSS = 1, TTD = 2, NoBorderVSS = 3 };
@@ -130,6 +131,19 @@ static void extract_vertices_from_key(const std::string& key,
   size_t const third_quote  = key.find_first_of('\'', second_quote + 1);
   size_t const fourth_quote = key.find_first_of('\'', third_quote + 1);
   target_name = key.substr(third_quote + 1, fourth_quote - third_quote - 1);
+}
+
+static double round_to(double value, double decimal_places) {
+  /**
+   * Round value to the given number of decimal places.
+   * @param value Value to be rounded
+   * @param decimal_places Number of decimal places
+   *
+   * @return Rounded value
+   */
+
+  double const factor = std::pow(10, decimal_places);
+  return std::round(value * factor) / factor;
 }
 
 } // namespace cda_rail

@@ -6,7 +6,6 @@
 
 #include <cmath>
 #include <fstream>
-#include <limits>
 #include <unordered_set>
 #include <vector>
 
@@ -103,7 +102,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::add_vss_pos(
 
   const auto& edge = instance.const_n().get_edge(edge_id);
 
-  if (pos <= 0 || pos >= edge.length) {
+  if (pos + EPS <= 0 || pos >= edge.length + EPS) {
     throw exceptions::ConsistencyException(
         "VSS position " + std::to_string(pos) + " is not on edge " +
         std::to_string(edge_id));
@@ -132,7 +131,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::set_vss_pos(
   const auto& edge = instance.const_n().get_edge(edge_id);
 
   for (const auto& p : pos) {
-    if (p < 0 || p > edge.length) {
+    if (p + EPS < 0 || p > edge.length + EPS) {
       throw exceptions::ConsistencyException(
           "VSS position " + std::to_string(p) + " is not on edge " +
           std::to_string(edge_id));
@@ -153,7 +152,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::reset_vss_pos(
 
 void cda_rail::instances::SolVSSGenerationTimetable::add_train_pos(
     size_t train_id, int time, double pos) {
-  if (pos < 0) {
+  if (pos + EPS < 0) {
     throw exceptions::ConsistencyException(
         "Train position " + std::to_string(pos) + " is negative");
   }
@@ -186,11 +185,11 @@ void cda_rail::instances::SolVSSGenerationTimetable::add_train_speed(
     throw exceptions::TrainNotExistentException(train_id);
   }
 
-  if (speed < 0) {
+  if (speed + EPS < 0) {
     throw exceptions::ConsistencyException(
         "Train speed " + std::to_string(speed) + " is negative");
   }
-  if (speed > instance.get_train_list().get_train(train_id).max_speed) {
+  if (speed > instance.get_train_list().get_train(train_id).max_speed + EPS) {
     throw exceptions::ConsistencyException(
         "Train speed " + std::to_string(speed) +
         " is greater than the maximum speed of train " +
@@ -222,7 +221,7 @@ bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
   if (status == SolutionStatus::Unknown) {
     return false;
   }
-  if (obj < 0) {
+  if (obj + EPS < 0) {
     return false;
   }
   if (dt < 0) {
@@ -233,15 +232,15 @@ bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
   }
   for (const auto& train_pos_vec : train_pos) {
     for (const auto& pos : train_pos_vec) {
-      if (pos < 0) {
+      if (pos + EPS < 0) {
         return false;
       }
     }
   }
   for (size_t tr_id = 0; tr_id < train_speed.size(); ++tr_id) {
     const auto& train = instance.get_train_list().get_train(tr_id);
-    for (double t : train_speed.at(tr_id)) {
-      if (t < 0 || t > train.max_speed) {
+    for (double v : train_speed.at(tr_id)) {
+      if (v + EPS < 0 || v > train.max_speed + EPS) {
         return false;
       }
     }
@@ -249,7 +248,7 @@ bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
   for (size_t edge_id = 0; edge_id < vss_pos.size(); ++edge_id) {
     const auto& edge = instance.const_n().get_edge(edge_id);
     for (const auto& pos : vss_pos.at(edge_id)) {
-      if (pos < 0 || pos > edge.length) {
+      if (pos + EPS < 0 || pos > edge.length + EPS) {
         return false;
       }
     }
@@ -445,27 +444,39 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
   const auto grb_status = model->get(GRB_IntAttr_Status);
 
   if (grb_status == GRB_OPTIMAL) {
-    std::cout << "Solution status: Optimal" << std::endl;
+    if (debug) {
+      std::cout << "Solution status: Optimal" << std::endl;
+    }
     sol_obj.set_status(SolutionStatus::Optimal);
   } else if (grb_status == GRB_INFEASIBLE) {
-    std::cout << "Solution status: Infeasible" << std::endl;
+    if (debug) {
+      std::cout << "Solution status: Infeasible" << std::endl;
+    }
     sol_obj.set_status(SolutionStatus::Infeasible);
   } else if (grb_status == GRB_TIME_LIMIT &&
              model->get(GRB_IntAttr_SolCount) >= 1) {
-    std::cout << "Solution status: Feasible (optimality unknown)" << std::endl;
+    if (debug) {
+      std::cout << "Solution status: Feasible (optimality unknown)"
+                << std::endl;
+    }
     sol_obj.set_status(SolutionStatus::Feasible);
   } else if (grb_status == GRB_TIME_LIMIT &&
              model->get(GRB_IntAttr_SolCount) == 0) {
-    std::cout << "Solution status: Timeout (Feasibility unknown)" << std::endl;
+    if (debug) {
+      std::cout << "Solution status: Timeout (Feasibility unknown)"
+                << std::endl;
+    }
     sol_obj.set_status(SolutionStatus::Timeout);
   } else {
     throw exceptions::ConsistencyException(
         "Gurobi status code " + std::to_string(grb_status) + " unknown.");
   }
 
-  if (const auto sol_count = model->get(GRB_IntAttr_SolCount); sol_count <= 1) {
+  if (const auto sol_count = model->get(GRB_IntAttr_SolCount); sol_count < 1) {
     return sol_obj;
   }
+
+  const auto GRB_EPS = model->get(GRB_DoubleParam_IntFeasTol);
 
   const auto mip_obj_val =
       static_cast<int>(std::round(model->get(GRB_DoubleAttr_ObjVal)));
@@ -551,9 +562,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         continue;
       }
 
-      const auto b_pos_val = vars.at("b_pos")
-                                 .at(breakable_edge_indices.at(e_index), vss)
-                                 .get(GRB_DoubleAttr_X);
+      const auto b_pos_val =
+          round_to(vars.at("b_pos")
+                       .at(breakable_edge_indices.at(e_index), vss)
+                       .get(GRB_DoubleAttr_X),
+                   GRB_EPS);
       if (debug) {
         const auto& source = instance.const_n().get_vertex(e.source).name;
         const auto& target = instance.const_n().get_vertex(e.target).name;
@@ -611,7 +624,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     const auto train = instance.get_train_list().get_train(tr);
     for (size_t t = train_interval[tr].first;
          t <= train_interval[tr].second + 1; ++t) {
-      const auto train_speed_val = vars.at("v").at(tr, t).get(GRB_DoubleAttr_X);
+      const auto train_speed_val =
+          round_to(vars.at("v").at(tr, t).get(GRB_DoubleAttr_X), GRB_EPS);
       sol_obj.add_train_speed(tr, static_cast<int>(t) * dt, train_speed_val);
     }
   }
@@ -626,8 +640,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
       if (fix_routes) {
         train_pos = vars.at("lda").at(tr, t).get(GRB_DoubleAttr_X);
       } else {
-        const double len_in = vars.at("len_in").at(tr, t).get(GRB_DoubleAttr_X);
-        if (len_in > 10 * std::numeric_limits<double>::epsilon()) {
+        const double len_in = round_to(
+            vars.at("len_in").at(tr, t).get(GRB_DoubleAttr_X), GRB_EPS);
+        if (len_in > EPS) {
           train_pos = -len_in;
         } else {
           for (auto e_index :
@@ -635,8 +650,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
             const bool e_used =
                 vars.at("x").at(tr, t, e_index).get(GRB_DoubleAttr_X) > 0.5;
             if (e_used) {
-              const double lda_val =
-                  vars.at("e_lda").at(tr, t, e_index).get(GRB_DoubleAttr_X);
+              const double lda_val = round_to(
+                  vars.at("e_lda").at(tr, t, e_index).get(GRB_DoubleAttr_X),
+                  GRB_EPS);
               const double e_pos = sol_obj.get_instance()
                                        .route_edge_pos(train.name, e_index)
                                        .first;
@@ -655,14 +671,18 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     auto   t_final         = train_interval[tr].second + 1;
     double train_pos_final = -1;
     if (fix_routes) {
-      train_pos_final = vars.at("mu").at(tr, t_final - 1).get(GRB_DoubleAttr_X);
+      train_pos_final = round_to(
+          vars.at("mu").at(tr, t_final - 1).get(GRB_DoubleAttr_X), GRB_EPS);
     } else {
       train_pos_final =
-          r_len + vars.at("len_out").at(tr, t_final - 1).get(GRB_DoubleAttr_X);
+          r_len +
+          round_to(vars.at("len_out").at(tr, t_final - 1).get(GRB_DoubleAttr_X),
+                   GRB_EPS);
     }
     if (include_braking_curves) {
-      train_pos_final -=
-          vars.at("brakelen").at(tr, t_final - 1).get(GRB_DoubleAttr_X);
+      train_pos_final -= round_to(
+          vars.at("brakelen").at(tr, t_final - 1).get(GRB_DoubleAttr_X),
+          GRB_EPS);
     }
     sol_obj.add_train_pos(tr, static_cast<int>(t_final) * dt, train_pos_final);
   }
