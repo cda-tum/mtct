@@ -487,6 +487,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
 
   if (vss_model.get_model_type() == vss::ModelType::Discrete) {
     // TODO: Implement
+    sol_obj.set_obj(mip_obj_val);
     return sol_obj;
   }
 
