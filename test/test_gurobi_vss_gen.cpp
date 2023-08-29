@@ -482,3 +482,21 @@ TEST(Solver, SimpleStationInferredBoth) {
   EXPECT_EQ(obj_val.get_obj(), 1);
   EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
+
+TEST(Solver, SimpleStationInferredAltBoth) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  const auto obj_val =
+      solver.solve(15, true,
+                   cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
+                                        {&cda_rail::vss::functions::uniform,
+                                         &cda_rail::vss::functions::chebyshev}),
+                   true, true, false, true, false, 60, true,
+                   cda_rail::ExportOption::NoExport);
+
+  // Check if all objective values are 1
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 1);
+  EXPECT_EQ(obj_val.get_mip_obj(), 1);
+}
