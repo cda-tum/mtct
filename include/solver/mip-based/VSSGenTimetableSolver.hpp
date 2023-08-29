@@ -146,7 +146,7 @@ public:
         bool use_schedule_cuts_input = true, bool postprocess = false,
         int time_limit = -1, bool debug = false,
         ExportOption       export_option = ExportOption::NoExport,
-        const std::string& name          = "model_sol");
+        const std::string& name          = "model");
 
   [[nodiscard]] const instances::VSSGenerationTimetable& get_instance() const {
     return instance;
