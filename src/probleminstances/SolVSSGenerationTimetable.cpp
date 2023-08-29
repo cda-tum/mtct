@@ -476,7 +476,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     return sol_obj;
   }
 
-  const auto GRB_EPS = model->get(GRB_DoubleParam_IntFeasTol);
+  const auto grb_eps = model->get(GRB_DoubleParam_IntFeasTol);
 
   const auto mip_obj_val =
       static_cast<int>(std::round(model->get(GRB_DoubleAttr_ObjVal)));
@@ -566,7 +566,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
           round_to(vars.at("b_pos")
                        .at(breakable_edge_indices.at(e_index), vss)
                        .get(GRB_DoubleAttr_X),
-                   GRB_EPS);
+                   grb_eps);
       if (debug) {
         const auto& source = instance.const_n().get_vertex(e.source).name;
         const auto& target = instance.const_n().get_vertex(e.target).name;
@@ -625,7 +625,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     for (size_t t = train_interval[tr].first;
          t <= train_interval[tr].second + 1; ++t) {
       const auto train_speed_val =
-          round_to(vars.at("v").at(tr, t).get(GRB_DoubleAttr_X), GRB_EPS);
+          round_to(vars.at("v").at(tr, t).get(GRB_DoubleAttr_X), grb_eps);
       sol_obj.add_train_speed(tr, static_cast<int>(t) * dt, train_speed_val);
     }
   }
@@ -641,7 +641,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         train_pos = vars.at("lda").at(tr, t).get(GRB_DoubleAttr_X);
       } else {
         const double len_in = round_to(
-            vars.at("len_in").at(tr, t).get(GRB_DoubleAttr_X), GRB_EPS);
+            vars.at("len_in").at(tr, t).get(GRB_DoubleAttr_X), grb_eps);
         if (len_in > EPS) {
           train_pos = -len_in;
         } else {
@@ -652,7 +652,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
             if (e_used) {
               const double lda_val = round_to(
                   vars.at("e_lda").at(tr, t, e_index).get(GRB_DoubleAttr_X),
-                  GRB_EPS);
+                  grb_eps);
               const double e_pos = sol_obj.get_instance()
                                        .route_edge_pos(train.name, e_index)
                                        .first;
@@ -672,17 +672,17 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     double train_pos_final = -1;
     if (fix_routes) {
       train_pos_final = round_to(
-          vars.at("mu").at(tr, t_final - 1).get(GRB_DoubleAttr_X), GRB_EPS);
+          vars.at("mu").at(tr, t_final - 1).get(GRB_DoubleAttr_X), grb_eps);
     } else {
       train_pos_final =
           r_len +
           round_to(vars.at("len_out").at(tr, t_final - 1).get(GRB_DoubleAttr_X),
-                   GRB_EPS);
+                   grb_eps);
     }
     if (include_braking_curves) {
       train_pos_final -= round_to(
           vars.at("brakelen").at(tr, t_final - 1).get(GRB_DoubleAttr_X),
-          GRB_EPS);
+          grb_eps);
     }
     sol_obj.add_train_pos(tr, static_cast<int>(t_final) * dt, train_pos_final);
   }
