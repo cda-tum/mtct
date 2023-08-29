@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include <filesystem>
 #include <limits>
 #include <vector>
