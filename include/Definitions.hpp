@@ -134,7 +134,7 @@ static void extract_vertices_from_key(const std::string& key,
   target_name = key.substr(third_quote + 1, fourth_quote - third_quote - 1);
 }
 
-static double round_to(double value, double decimal_places) {
+static double round_to(double value, double tolerance) {
   /**
    * Round value to the given number of decimal places.
    * @param value Value to be rounded
@@ -143,8 +143,7 @@ static double round_to(double value, double decimal_places) {
    * @return Rounded value
    */
 
-  double const factor = std::pow(10, decimal_places);
-  return std::round(value * factor) / factor;
+  return std::round(value / tolerance) * tolerance;
 }
 
 } // namespace cda_rail
