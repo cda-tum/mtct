@@ -136,9 +136,9 @@ static void extract_vertices_from_key(const std::string& key,
 
 static double round_to(double value, double tolerance) {
   /**
-   * Round value to the given number of decimal places.
+   * Round value to the given the tolerance, e.g., 1e-5.
    * @param value Value to be rounded
-   * @param decimal_places Number of decimal places
+   * @param tolerance Tolerance
    *
    * @return Rounded value
    */
