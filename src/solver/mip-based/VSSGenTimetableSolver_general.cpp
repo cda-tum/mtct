@@ -1118,8 +1118,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
            ++sep_type_index) {
         const auto& sep_func =
             vss_model.get_separation_functions().at(sep_type_index);
-        for (size_t num_vss = 0; num_vss < vss_number_e; ++num_vss) {
-          rhs += vars["type_num_vss_segments"](i, sep_type_index, num_vss) *
+        for (size_t num_vss = 1; num_vss <= vss_number_e; ++num_vss) {
+          rhs += vars["type_num_vss_segments"](i, sep_type_index, num_vss - 1) *
                  e_len * sep_func(vss, num_vss + 1);
         }
       }

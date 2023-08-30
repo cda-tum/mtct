@@ -509,6 +509,25 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         b_used =
             vars.at("num_vss_segments").at(r_e_index).get(GRB_DoubleAttr_X) >
             static_cast<double>(vss) + 1.5;
+      } else if (vss_model.get_model_type() == vss::ModelType::InferredAlt) {
+        // if any of "type_num_vss_segments"(r_e_index, sep_type_index, num_vss)
+        // is > 0.5 for vss <= num_vss < vss_number_e for sep_type_index = 0,
+        // ..., num_sep_types - 1 then b_used = true
+        for (size_t sep_type_index = 0;
+             sep_type_index < vss_model.get_separation_functions().size();
+             ++sep_type_index) {
+          for (size_t num_vss = vss; num_vss < vss_number_e; ++num_vss) {
+            if (vars.at("type_num_vss_segments")
+                    .at(r_e_index, sep_type_index, num_vss)
+                    .get(GRB_DoubleAttr_X) > 0.5) {
+              b_used = true;
+              break;
+            }
+          }
+          if (b_used) {
+            break;
+          }
+        }
       }
 
       if (postprocess && b_used) {
