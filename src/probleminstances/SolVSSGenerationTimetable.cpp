@@ -599,6 +599,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
   }
 
   sol_obj.set_obj(obj);
+  sol_obj.set_postprocessed(postprocess);
 
   if (!fix_routes) {
     sol_obj.reset_routes();
@@ -670,9 +671,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
             const bool e_used =
                 vars.at("x").at(tr, t, e_index).get(GRB_DoubleAttr_X) > 0.5;
             if (e_used) {
-              const double lda_val = round_to(
-                  vars.at("e_lda").at(tr, t, e_index).get(GRB_DoubleAttr_X),
-                  grb_eps);
+              const double lda_val =
+                  vars.at("e_lda").at(tr, t, e_index).get(GRB_DoubleAttr_X);
               const double e_pos = sol_obj.get_instance()
                                        .route_edge_pos(train.name, e_index)
                                        .first;
@@ -685,6 +685,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
       }
 
       train_pos += tr_len;
+      train_pos = round_to(train_pos, grb_eps);
       sol_obj.add_train_pos(tr, static_cast<int>(t) * dt, train_pos);
     }
 
