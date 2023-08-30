@@ -526,7 +526,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
         for (size_t sep_type = 0;
              sep_type < this->vss_model.get_separation_functions().size();
              ++sep_type) {
-          obj += (vss + 1) * vars["type_num_vss_segments"](i, sep_type, vss);
+          obj += (static_cast<double>(vss) + 1) *
+                 vars["type_num_vss_segments"](i, sep_type, vss);
         }
       }
     }
