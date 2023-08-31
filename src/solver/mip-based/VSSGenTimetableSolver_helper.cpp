@@ -184,7 +184,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup(
   use_schedule_cuts      = false;
   breakable_edge_indices.clear();
   fwd_bwd_sections.clear();
-  env.reset();
-  model.reset();
   vars.clear();
+  model.reset();
+  env.reset();
 }
