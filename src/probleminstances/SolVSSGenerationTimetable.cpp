@@ -430,7 +430,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::initialize_vectors() {
 
 cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
-    bool postprocess, bool debug, const std::string& name,
+    bool postprocess, bool debug,
     const std::optional<instances::VSSGenerationTimetable>& old_instance)
     const {
   if (debug) {
