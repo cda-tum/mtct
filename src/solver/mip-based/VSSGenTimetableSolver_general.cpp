@@ -36,7 +36,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     bool include_train_dynamics_input, bool include_braking_curves_input,
     bool use_pwl_input, bool use_schedule_cuts_input, bool postprocess,
     int time_limit, bool debug, ExportOption export_option,
-    const std::string& name) {
+    const std::string& name, const std::string& p) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
    * flexible MILP formulation. The level of detail can be controlled using the
@@ -292,14 +292,26 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       export_option == ExportOption::ExportSolutionAndLP ||
       export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
     std::cout << "Saving model and solution" << std::endl;
-    model->write(name + ".mps");
-    model->write(name + ".sol");
+    std::filesystem::path path = p;
+    model->write((path / (name + ".mps")).string());
+    model->write((path / (name + ".sol")).string());
   }
 
-  auto sol_object =
-      extract_solution(postprocess, debug, export_option, name, old_instance);
+  auto sol_object = extract_solution(postprocess, debug, name, old_instance);
 
   cleanup(old_instance);
+
+  if (export_option == ExportOption::ExportSolution ||
+      export_option == ExportOption::ExportSolutionWithInstance ||
+      export_option == ExportOption::ExportSolutionAndLP ||
+      export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
+    const bool export_instance =
+        (export_option == ExportOption::ExportSolutionWithInstance ||
+         export_option == ExportOption::ExportSolutionWithInstanceAndLP);
+    std::filesystem::path path = p;
+    path /= name;
+    sol_object.export_solution(path, export_instance);
+  }
 
   return sol_object;
 }

@@ -5,8 +5,8 @@
 #include <gsl/span>
 
 int main(int argc, char** argv) {
-  if (argc != 13) {
-    std::cout << "Expected 12 arguments, got " << argc - 1 << std::endl;
+  if (argc < 13 || argc > 14) {
+    std::cout << "Expected 12 or 13 arguments, got " << argc - 1 << std::endl;
     std::exit(-1);
   }
 
@@ -29,6 +29,7 @@ int main(int argc, char** argv) {
   const bool        use_schedule_cuts      = std::stoi(args[10]) != 0;
   const bool        postprocess            = std::stoi(args[11]) != 0;
   const int         timeout                = std::stoi(args[12]);
+  const std::string output_path            = (argc == 14 ? args[13] : "");
 
   std::cout << "The following parameters were passed to the toolkit:"
             << std::endl;
@@ -95,5 +96,6 @@ int main(int argc, char** argv) {
   solver.solve(delta_t, fix_routes, vss_model, include_train_dynamics,
                include_braking_curves, use_pwl, use_schedule_cuts, postprocess,
                timeout, true,
-               cda_rail::ExportOption::ExportSolutionWithInstance, file_name);
+               cda_rail::ExportOption::ExportSolutionWithInstance, file_name,
+               output_path);
 }

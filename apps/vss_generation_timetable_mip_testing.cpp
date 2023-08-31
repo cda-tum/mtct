@@ -5,8 +5,8 @@
 #include <gsl/span>
 
 int main(int argc, char** argv) {
-  if (argc != 11) {
-    std::cout << "Expected 10 arguments, got " << argc - 1 << std::endl;
+  if (argc < 11 || argc > 12) {
+    std::cout << "Expected 10 or 11 arguments, got " << argc - 1 << std::endl;
     std::exit(-1);
   }
 
@@ -19,14 +19,15 @@ int main(int argc, char** argv) {
   std::cout << "Instance " << model_name << " loaded at " << instance_path
             << std::endl;
 
-  const int  delta_t                  = std::stoi(args[3]);
-  const bool fix_routes               = std::stoi(args[4]) != 0;
-  const bool discretize_vss_positions = std::stoi(args[5]) != 0;
-  const bool include_train_dynamics   = std::stoi(args[6]) != 0;
-  const bool include_braking_curves   = std::stoi(args[7]) != 0;
-  const bool use_pwl                  = std::stoi(args[8]) != 0;
-  const bool use_schedule_cuts        = std::stoi(args[9]) != 0;
-  const int  timeout                  = std::stoi(args[10]);
+  const int         delta_t                  = std::stoi(args[3]);
+  const bool        fix_routes               = std::stoi(args[4]) != 0;
+  const bool        discretize_vss_positions = std::stoi(args[5]) != 0;
+  const bool        include_train_dynamics   = std::stoi(args[6]) != 0;
+  const bool        include_braking_curves   = std::stoi(args[7]) != 0;
+  const bool        use_pwl                  = std::stoi(args[8]) != 0;
+  const bool        use_schedule_cuts        = std::stoi(args[9]) != 0;
+  const int         timeout                  = std::stoi(args[10]);
+  const std::string output_path              = (argc == 12 ? args[11] : "");
 
   std::cout << "The following parameters were passed to the toolkit:"
             << std::endl;
@@ -70,5 +71,6 @@ int main(int argc, char** argv) {
   solver.solve(delta_t, fix_routes, vss_model, include_train_dynamics,
                include_braking_curves, use_pwl, use_schedule_cuts, false,
                timeout, true,
-               cda_rail::ExportOption::ExportSolutionWithInstance, file_name);
+               cda_rail::ExportOption::ExportSolutionWithInstance, file_name,
+               output_path);
 }

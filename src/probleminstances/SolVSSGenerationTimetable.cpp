@@ -430,8 +430,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::initialize_vectors() {
 
 cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
-    bool postprocess, bool debug, ExportOption export_option,
-    const std::string&                                      name,
+    bool postprocess, bool debug, const std::string& name,
     const std::optional<instances::VSSGenerationTimetable>& old_instance)
     const {
   if (debug) {
@@ -706,16 +705,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
           grb_eps);
     }
     sol_obj.add_train_pos(tr, static_cast<int>(t_final) * dt, train_pos_final);
-  }
-
-  if (export_option == ExportOption::ExportSolution ||
-      export_option == ExportOption::ExportSolutionWithInstance ||
-      export_option == ExportOption::ExportSolutionAndLP ||
-      export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
-    const bool export_instance =
-        (export_option == ExportOption::ExportSolutionWithInstance ||
-         export_option == ExportOption::ExportSolutionWithInstanceAndLP);
-    sol_obj.export_solution(name, export_instance);
   }
 
   return sol_obj;
