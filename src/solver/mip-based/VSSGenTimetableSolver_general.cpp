@@ -152,6 +152,20 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     train_interval.emplace_back(instance.time_index_interval(i, dt, false));
   }
 
+  if (iterative_vss_input &&
+      vss_model_input.get_model_type() == vss::ModelType::Discrete) {
+    throw exceptions::ConsistencyException(
+        "Iterative VSS not supported for discrete VSS model");
+  }
+
+  max_vss_per_edge_in_iteration.resize(relevant_edges.size(), 0);
+  for (size_t i = 0; i < relevant_edges.size(); ++i) {
+    const auto& e            = relevant_edges.at(i);
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    max_vss_per_edge_in_iteration[i] =
+        iterative_vss_input ? std::min(vss_number_e, 2) : vss_number_e;
+  }
+
   calculate_fwd_bwd_sections();
 
   if (debug) {
@@ -467,6 +481,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
       vars["num_vss_segments"](i) = model->addVar(
           1, vss_number_e + 1, 0, GRB_INTEGER, "num_vss_segments_" + edge_name);
+
+      if (iterative_vss &&
+          vss_number_e + 1 > max_vss_per_edge_in_iteration.at(i)) {
+        vars["num_vss_segments"](i).set(
+            GRB_DoubleAttr_UB, max_vss_per_edge_in_iteration.at(i) + 1);
+      }
+
       for (size_t sep_type = 0;
            sep_type < this->vss_model.get_separation_functions().size();
            ++sep_type) {
@@ -491,6 +512,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         vars["b_used"](i, vss) =
             model->addVar(0, 1, 0, GRB_BINARY,
                           "b_used_" + edge_name + "_" + std::to_string(vss));
+        if (iterative_vss && vss >= max_vss_per_edge_in_iteration.at(i)) {
+          vars["b_used"](i, vss).set(GRB_DoubleAttr_UB, 0);
+        }
       }
     } else if (this->vss_model.get_model_type() ==
                vss::ModelType::InferredAlt) {
@@ -502,6 +526,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
               0, 1, 0, GRB_BINARY,
               "type_num_vss_segments_" + edge_name + "_" +
                   std::to_string(sep_type) + "_" + std::to_string(vss));
+
+          if (iterative_vss && vss >= max_vss_per_edge_in_iteration.at(i)) {
+            vars["type_num_vss_segments"](i, sep_type, vss)
+                .set(GRB_DoubleAttr_UB, 0);
+          }
         }
       }
     }
