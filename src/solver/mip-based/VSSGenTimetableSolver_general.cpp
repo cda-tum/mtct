@@ -100,6 +100,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   this->include_braking_curves = include_braking_curves_input;
   this->use_pwl                = use_pwl_input;
   this->use_schedule_cuts      = use_schedule_cuts_input;
+  this->iterative_vss          = iterative_vss_input;
 
   if (this->fix_routes && !instance.has_route_for_every_train()) {
     throw exceptions::ConsistencyException(

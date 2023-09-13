@@ -35,6 +35,8 @@ private:
   bool                include_braking_curves = false;
   bool                use_pwl                = false;
   bool                use_schedule_cuts      = false;
+  bool                iterative_vss          = false;
+  std::vector<size_t> max_vss_per_edge_in_iteration;
   std::unordered_map<size_t, size_t> breakable_edge_indices;
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
       fwd_bwd_sections;
