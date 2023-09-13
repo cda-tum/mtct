@@ -94,8 +94,8 @@ int main(int argc, char** argv) {
                                  sep_functions);
 
   solver.solve(delta_t, fix_routes, vss_model, include_train_dynamics,
-               include_braking_curves, use_pwl, use_schedule_cuts, postprocess,
-               timeout, true,
+               include_braking_curves, use_pwl, use_schedule_cuts, false,
+               postprocess, timeout, true,
                cda_rail::ExportOption::ExportSolutionWithInstance, file_name,
                output_path);
 }

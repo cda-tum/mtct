@@ -143,8 +143,8 @@ public:
         vss::Model model_input = vss::Model(vss::ModelType::Continuous),
         bool       include_train_dynamics_input = true,
         bool include_braking_curves_input = true, bool use_pwl_input = false,
-        bool use_schedule_cuts_input = true, bool postprocess = false,
-        int time_limit = -1, bool debug = false,
+        bool use_schedule_cuts_input = true, bool iterative_vss_input = false,
+        bool postprocess = false, int time_limit = -1, bool debug = false,
         ExportOption       export_option = ExportOption::NoExport,
         const std::string& name = "model", const std::string& p = "");
 

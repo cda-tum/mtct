@@ -34,8 +34,8 @@ cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     int delta_t, bool fix_routes_input, vss::Model vss_model_input,
     bool include_train_dynamics_input, bool include_braking_curves_input,
-    bool use_pwl_input, bool use_schedule_cuts_input, bool postprocess,
-    int time_limit, bool debug, ExportOption export_option,
+    bool use_pwl_input, bool use_schedule_cuts_input, bool iterative_vss_input,
+    bool postprocess, int time_limit, bool debug, ExportOption export_option,
     const std::string& name, const std::string& p) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
