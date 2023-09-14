@@ -153,7 +153,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   }
 
   if (iterative_vss_input &&
-      vss_model_input.get_model_type() == vss::ModelType::Discrete) {
+      vss_model.get_model_type() == vss::ModelType::Discrete) {
     throw exceptions::ConsistencyException(
         "Iterative VSS not supported for discrete VSS model");
   }
@@ -485,7 +485,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       if (iterative_vss &&
           vss_number_e + 1 > max_vss_per_edge_in_iteration.at(i)) {
         vars["num_vss_segments"](i).set(
-            GRB_DoubleAttr_UB, max_vss_per_edge_in_iteration.at(i) + 1);
+            GRB_DoubleAttr_UB,
+            static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1);
       }
 
       for (size_t sep_type = 0;
