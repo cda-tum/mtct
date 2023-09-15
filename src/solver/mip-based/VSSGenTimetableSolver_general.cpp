@@ -309,9 +309,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       }
 
       // Check if new solution is better, possibly refine model and reoptimize
-      const auto& obj_lb =
-          *std::min_element(max_vss_per_edge_in_iteration.begin(),
-                            max_vss_per_edge_in_iteration.end());
+      auto obj_lb = max_vss_per_edge_in_iteration.at(0);
+      for (int i = 1; i < relevant_edges.size(); ++i) {
+        if (max_vss_per_edge_in_iteration.at(i) < obj_lb) {
+          obj_lb = max_vss_per_edge_in_iteration.at(i);
+        }
+      }
+
       std::optional<double> obj_ub;
       // If solution count is >= 1 then obj_ub is the objective function value
       if (model->get(GRB_IntAttr_SolCount) >= 1) {
