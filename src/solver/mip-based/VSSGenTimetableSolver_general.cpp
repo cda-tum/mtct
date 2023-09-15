@@ -35,8 +35,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     int delta_t, bool fix_routes_input, vss::Model vss_model_input,
     bool include_train_dynamics_input, bool include_braking_curves_input,
     bool use_pwl_input, bool use_schedule_cuts_input, bool iterative_vss_input,
-    bool postprocess, int time_limit, bool debug, ExportOption export_option,
-    const std::string& name, const std::string& p) {
+    bool postprocess, int time_limit, bool debug_input,
+    ExportOption export_option, const std::string& name, const std::string& p) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
    * flexible MILP formulation. The level of detail can be controlled using the
@@ -74,6 +74,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * @return objective value, i.e., number of VSS borders created. -1 if no
    * solution was found.
    */
+
+  this->debug = debug_input;
 
   if (!vss_model_input.check_consistency()) {
     throw cda_rail::exceptions::ConsistencyException(
@@ -285,7 +287,103 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     // using spatial branching
     model->set(GRB_IntParam_NonConvex, 2);
   }
-  model->optimize();
+
+  std::optional<instances::SolVSSGenerationTimetable> sol_object;
+
+  bool reoptimize = true;
+  while (reoptimize) {
+    reoptimize = false;
+    model->optimize();
+
+    if (iterative_vss) {
+      if (!sol_object.has_value()) {
+        sol_object = extract_solution(postprocess, debug, old_instance);
+      }
+
+      // In case of timeout break
+      if (model->get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
+        if (debug) {
+          std::cout << "Break because of timeout" << std::endl;
+        }
+        break;
+      }
+
+      // Check if new solution is better, possibly refine model and reoptimize
+      const auto& obj_lb =
+          *std::min_element(max_vss_per_edge_in_iteration.begin(),
+                            max_vss_per_edge_in_iteration.end());
+      std::optional<double> obj_ub;
+      // If solution count is >= 1 then obj_ub is the objective function value
+      if (model->get(GRB_IntAttr_SolCount) >= 1) {
+        obj_ub     = model->get(GRB_DoubleAttr_ObjVal);
+        sol_object = extract_solution(postprocess, debug, old_instance);
+      }
+
+      if (obj_ub.has_value() && obj_lb >= obj_ub.value()) {
+        if (debug) {
+          std::cout << "Break because obj_lb (" << obj_lb << ") >= obj_ub ("
+                    << obj_ub.value() << ")" << std::endl;
+        }
+        break;
+      }
+
+      bool only_tight = (model->get(GRB_IntAttr_Status) == GRB_OPTIMAL);
+      for (int i = 0; i < relevant_edges.size(); ++i) {
+        if (double_vss(i, only_tight)) {
+          reoptimize = true;
+        }
+      }
+
+      if (!reoptimize) {
+        if (debug) {
+          std::cout << "Break because no more VSS can be added" << std::endl;
+        }
+        break;
+      }
+
+      model->addConstr(objective_expr >= obj_lb);
+      if (debug) {
+        std::cout << "Added constraint: obj >= " << obj_lb << std::endl;
+      }
+      if (obj_ub.has_value()) {
+        model->addConstr(objective_expr <= obj_ub.value());
+        if (debug) {
+          std::cout << "Added constraint: obj <= " << obj_ub.value()
+                    << std::endl;
+        }
+      }
+
+      if (time_limit > 0) {
+        const auto current_time = std::chrono::high_resolution_clock::now();
+        const auto current_time_span =
+            std::chrono::duration_cast<std::chrono::milliseconds>(current_time -
+                                                                  start)
+                .count();
+
+        auto time_left = time_limit - current_time_span / 1000;
+
+        if (time_left < 0) {
+          reoptimize = false;
+          if (debug) {
+            std::cout << "Break because of timeout" << std::endl;
+          }
+        }
+
+        model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
+
+        if (debug) {
+          std::cout << "Next iterations limit: ";
+          if (time_limit > 0) {
+            std::cout << time_left << " s" << std::endl;
+          } else {
+            std::cout << "No Limit" << std::endl;
+          }
+        }
+      }
+
+      model->update();
+    }
+  }
 
   if (debug) {
     model_solved = std::chrono::high_resolution_clock::now();
@@ -312,7 +410,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     model->write((path / (name + ".sol")).string());
   }
 
-  auto sol_object = extract_solution(postprocess, debug, old_instance);
+  if (!iterative_vss) {
+    sol_object = extract_solution(postprocess, debug, old_instance);
+  }
 
   cleanup(old_instance);
 
@@ -325,10 +425,10 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
          export_option == ExportOption::ExportSolutionWithInstanceAndLP);
     std::filesystem::path path = p;
     path /= name;
-    sol_object.export_solution(path, export_instance);
+    sol_object->export_solution(path, export_instance);
   }
 
-  return sol_object;
+  return sol_object.value();
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
@@ -544,22 +644,22 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
    */
 
   // sum over all b_i as in no_border_vss_vertices
-  GRBLinExpr obj = 0;
+  objective_expr = 0;
   if (vss_model.get_model_type() == vss::ModelType::Discrete) {
     for (size_t i = 0; i < no_border_vss_vertices.size(); ++i) {
-      obj += vars["b"](i);
+      objective_expr += vars["b"](i);
     }
   } else if (vss_model.get_model_type() == vss::ModelType::Continuous) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
       const auto& e            = relevant_edges[i];
       const auto  vss_number_e = instance.n().max_vss_on_edge(e);
       for (size_t vss = 0; vss < vss_number_e; ++vss) {
-        obj += vars["b_used"](i, vss);
+        objective_expr += vars["b_used"](i, vss);
       }
     }
   } else if (vss_model.get_model_type() == vss::ModelType::Inferred) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
-      obj += (vars["num_vss_segments"](i) - 1);
+      objective_expr += (vars["num_vss_segments"](i) - 1);
     }
   } else if (vss_model.get_model_type() == vss::ModelType::InferredAlt) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
@@ -569,15 +669,15 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
         for (size_t sep_type = 0;
              sep_type < this->vss_model.get_separation_functions().size();
              ++sep_type) {
-          obj += (static_cast<double>(vss) + 1) *
-                 vars["type_num_vss_segments"](i, sep_type, vss);
+          objective_expr += (static_cast<double>(vss) + 1) *
+                            vars["type_num_vss_segments"](i, sep_type, vss);
         }
       }
     }
   } else {
     throw std::logic_error("Objective for vss model type not implemented");
   }
-  model->setObjective(obj, GRB_MINIMIZE);
+  model->setObjective(objective_expr, GRB_MINIMIZE);
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::

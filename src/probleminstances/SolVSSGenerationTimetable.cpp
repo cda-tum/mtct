@@ -221,6 +221,10 @@ bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
   if (status == SolutionStatus::Unknown) {
     return false;
   }
+  if (status == SolutionStatus::Infeasible ||
+      status == SolutionStatus::Timeout) {
+    return true;
+  }
   if (obj + EPS < 0) {
     return false;
   }

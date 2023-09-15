@@ -15,6 +15,7 @@ private:
   instances::VSSGenerationTimetable instance;
 
   // Instance variables
+  bool                                   debug                  = false;
   int                                    dt                     = -1;
   size_t                                 num_t                  = 0;
   size_t                                 num_tr                 = 0;
@@ -45,6 +46,7 @@ private:
   std::optional<GRBEnv>                               env;
   std::optional<GRBModel>                             model;
   std::unordered_map<std::string, MultiArray<GRBVar>> vars;
+  GRBLinExpr                                          objective_expr;
 
   // Variable functions
   void create_general_variables();
@@ -132,6 +134,10 @@ private:
                    const std::optional<instances::VSSGenerationTimetable>&
                        old_instance) const;
 
+  bool double_vss(size_t relevant_edge_index, bool only_if_tight = false);
+  bool is_vss_used(size_t relevant_edge_index, size_t vss_index) const;
+  void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss);
+
 public:
   // Constructors
   explicit VSSGenTimetableSolver(instances::VSSGenerationTimetable instance);
@@ -146,7 +152,7 @@ public:
         bool       include_train_dynamics_input = true,
         bool include_braking_curves_input = true, bool use_pwl_input = false,
         bool use_schedule_cuts_input = true, bool iterative_vss_input = false,
-        bool postprocess = false, int time_limit = -1, bool debug = false,
+        bool postprocess = false, int time_limit = -1, bool debug_input = false,
         ExportOption       export_option = ExportOption::NoExport,
         const std::string& name = "model", const std::string& p = "");
 

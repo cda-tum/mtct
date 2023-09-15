@@ -184,7 +184,96 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup(
   use_schedule_cuts      = false;
   breakable_edge_indices.clear();
   fwd_bwd_sections.clear();
+  objective_expr = 0;
   vars.clear();
   model.reset();
   env.reset();
+}
+
+bool cda_rail::solver::mip_based::VSSGenTimetableSolver::double_vss(
+    size_t relevant_edge_index, bool only_if_tight) {
+  const auto& e            = relevant_edges.at(relevant_edge_index);
+  const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+  const auto& current_vss_number_e =
+      max_vss_per_edge_in_iteration.at(relevant_edge_index);
+
+  if (current_vss_number_e >= vss_number_e) {
+    return false;
+  }
+  if (only_if_tight &&
+      !is_vss_used(relevant_edge_index, current_vss_number_e - 1)) {
+    return false;
+  }
+
+  const size_t new_vss_number_e = 2 * current_vss_number_e > vss_number_e
+                                      ? vss_number_e
+                                      : 2 * current_vss_number_e;
+  update_max_vss_on_edge(relevant_edge_index, new_vss_number_e);
+  return true;
+}
+
+bool cda_rail::solver::mip_based::VSSGenTimetableSolver::is_vss_used(
+    size_t relevant_edge_index, size_t vss_index) const {
+  if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
+    return vars.at("num_vss_segments")
+               .at(relevant_edge_index)
+               .get(GRB_DoubleAttr_X) > static_cast<double>(vss_index) + 1.5;
+  }
+  if (this->vss_model.get_model_type() == vss::ModelType::Continuous) {
+    return vars.at("b_used")
+               .at(relevant_edge_index, vss_index)
+               .get(GRB_DoubleAttr_X) > 0.5;
+  }
+  if (this->vss_model.get_model_type() == vss::ModelType::InferredAlt) {
+    for (size_t vss = 0; vss <= vss_index; ++vss) {
+      for (size_t sep_type = 0;
+           sep_type < this->vss_model.get_separation_functions().size();
+           ++sep_type) {
+        if (vars.at("type_num_vss_segments")
+                .at(relevant_edge_index, sep_type, vss)
+                .get(GRB_DoubleAttr_X) > 0.5) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  return false;
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
+    size_t relevant_edge_index, size_t new_max_vss) {
+  const auto& e            = relevant_edges.at(relevant_edge_index);
+  const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+  max_vss_per_edge_in_iteration[relevant_edge_index] = new_max_vss;
+
+  if (debug) {
+    const auto& u =
+        instance.n().get_vertex(instance.n().get_edge(e).source).name;
+    const auto& v =
+        instance.n().get_vertex(instance.n().get_edge(e).target).name;
+    std::cout << "Double possible VSS on edge " << u << " -> " << v << " from "
+              << vss_number_e << " to " << new_max_vss << std::endl;
+  }
+
+  if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
+    vars.at("num_vss_segments")(relevant_edge_index)
+        .set(GRB_DoubleAttr_UB, static_cast<double>(new_max_vss) + 1);
+  }
+  if (this->vss_model.get_model_type() == vss::ModelType::Continuous) {
+    for (size_t vss = 0; vss < vss_number_e; ++vss) {
+      vars.at("b_used")(relevant_edge_index, vss)
+          .set(GRB_DoubleAttr_UB, static_cast<double>(vss < new_max_vss));
+    }
+  }
+  if (this->vss_model.get_model_type() == vss::ModelType::InferredAlt) {
+    for (size_t vss = 0; vss < vss_number_e; ++vss) {
+      for (size_t sep_type = 0;
+           sep_type < this->vss_model.get_separation_functions().size();
+           ++sep_type) {
+        vars.at("type_num_vss_segments")(relevant_edge_index, sep_type, vss)
+            .set(GRB_DoubleAttr_UB, static_cast<double>(vss < new_max_vss));
+      }
+    }
+  }
 }
