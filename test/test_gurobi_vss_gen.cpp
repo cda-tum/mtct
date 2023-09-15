@@ -500,3 +500,17 @@ TEST(Solver, SimpleStationInferredAltBoth) {
   EXPECT_EQ(obj_val.get_obj(), 1);
   EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
+
+TEST(Solver, IterativeContinuousSingleTrack) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SingleTrack/");
+
+  const auto obj_val = solver.solve(
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+      true, true, false, true, true, false, 60, true,
+      cda_rail::ExportOption::NoExport);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 9);
+  EXPECT_EQ(obj_val.get_mip_obj(), 9);
+}
