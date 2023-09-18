@@ -323,7 +323,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         sol_object = extract_solution(postprocess, debug, old_instance);
       }
 
-      if (obj_ub.has_value() && obj_lb >= obj_ub.value()) {
+      if (obj_ub.has_value() && static_cast<double>(obj_lb) >= obj_ub.value()) {
         if (debug) {
           std::cout << "Break because obj_lb (" << obj_lb << ") >= obj_ub ("
                     << obj_ub.value() << ")" << std::endl;
@@ -345,7 +345,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
-      model->addConstr(objective_expr >= obj_lb);
+      model->addConstr(objective_expr >= static_cast<double>(obj_lb));
       if (debug) {
         std::cout << "Added constraint: obj >= " << obj_lb << std::endl;
       }
@@ -377,11 +377,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
         if (debug) {
           std::cout << "Next iterations limit: ";
-          if (time_limit > 0) {
-            std::cout << time_left << " s" << std::endl;
-          } else {
-            std::cout << "No Limit" << std::endl;
-          }
+          std::cout << time_left << " s" << std::endl;
         }
       }
 
