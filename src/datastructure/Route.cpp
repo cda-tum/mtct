@@ -547,10 +547,3 @@ void cda_rail::RouteMap::update_after_discretization(
     route.update_after_discretization(new_edges);
   }
 }
-
-void cda_rail::RouteMap::remove_route(const std::string& train_name) {
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes.erase(train_name);
-}

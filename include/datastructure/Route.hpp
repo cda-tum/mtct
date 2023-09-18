@@ -117,8 +117,6 @@ public:
   void remove_first_edge(const std::string& train_name);
   void remove_last_edge(const std::string& train_name);
 
-  void remove_route(const std::string& train_name);
-
   [[nodiscard]] bool has_route(const std::string& train_name) const {
     return routes.find(train_name) != routes.end();
   };

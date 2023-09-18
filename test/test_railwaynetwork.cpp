@@ -1,5 +1,4 @@
 #include "Definitions.hpp"
-#include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
@@ -650,7 +649,7 @@ TEST(Functionality, NetworkEdgeSeparation) {
 
   // Separate edge v1_v2 uniformly
   auto new_edges =
-      network.separate_edge("v1", "v2", &cda_rail::vss::functions::uniform);
+      network.separate_edge("v1", "v2", cda_rail::SeparationType::UNIFORM);
 
   // There are 4 new forward edges and no new reverse edges
   EXPECT_EQ(new_edges.first.size(), 4);
@@ -963,7 +962,7 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
 
   // Separate edge v1_v2 uniformly
   auto new_edges =
-      network.separate_edge("v1", "v2", &cda_rail::vss::functions::uniform);
+      network.separate_edge("v1", "v2", cda_rail::SeparationType::UNIFORM);
 
   // There are 4 new edges forward and 4 new edges reverse
   EXPECT_EQ(new_edges.first.size(), 4);
