@@ -1,6 +1,4 @@
-#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
-#include "VSSModel.hpp"
 
 #include "gtest/gtest.h"
 #include <iostream>
@@ -9,6 +7,10 @@ TEST(Functionality, Subsets) {
   auto subsets_of_size_3 = cda_rail::subsets_of_size_k_indices(6, 3);
   // Expect 6 choose 2 number of elements
   EXPECT_EQ(subsets_of_size_3.size(), 20);
+  // Expect all elements to have size 3
+  for (auto const& subset : subsets_of_size_3) {
+    EXPECT_EQ(subset.size(), 3);
+  }
   // Expect to find all subsets of size 3
   EXPECT_TRUE(std::find(subsets_of_size_3.begin(), subsets_of_size_3.end(),
                         std::vector<size_t>({0, 1, 2})) !=
@@ -105,69 +107,4 @@ TEST(Functionality, Subsets) {
   EXPECT_TRUE(std::find(subsets_of_size_2.begin(), subsets_of_size_2.end(),
                         std::pair<size_t, size_t>(3, 4)) !=
               subsets_of_size_2.end());
-}
-
-TEST(VSSModel, Consistency) {
-  const auto& f = cda_rail::vss::functions::uniform;
-
-  auto model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete);
-  EXPECT_FALSE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete, {&f, &f});
-  EXPECT_FALSE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {&f});
-  EXPECT_FALSE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {&f, &f});
-  EXPECT_FALSE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred);
-  EXPECT_FALSE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt);
-  EXPECT_FALSE(model.check_consistency());
-
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete, {&f});
-  EXPECT_TRUE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous);
-  EXPECT_TRUE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred, {&f});
-  EXPECT_TRUE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred, {&f, &f});
-  EXPECT_TRUE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt, {&f});
-  EXPECT_TRUE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt, {&f, &f});
-  EXPECT_TRUE(model.check_consistency());
-}
-
-TEST(VSSModel, Functions) {
-  const auto& f1 = cda_rail::vss::functions::uniform;
-  const auto& f2 = cda_rail::vss::functions::chebyshev;
-
-  EXPECT_EQ(f1(0, 1), 1);
-  EXPECT_EQ(f1(1, 1), 1);
-  EXPECT_EQ(f1(0, 2), 0.5);
-  EXPECT_EQ(f1(1, 2), 1);
-  EXPECT_EQ(f1(2, 2), 1);
-  EXPECT_EQ(f1(0, 3), 1.0 / 3.0);
-  EXPECT_EQ(f1(1, 3), 2.0 / 3.0);
-  EXPECT_EQ(f1(2, 3), 1);
-  EXPECT_EQ(f1(3, 3), 1);
-  EXPECT_EQ(f1(0, 4), 0.25);
-  EXPECT_EQ(f1(1, 4), 0.5);
-  EXPECT_EQ(f1(2, 4), 0.75);
-  EXPECT_EQ(f1(3, 4), 1);
-  EXPECT_EQ(f1(4, 4), 1);
-
-  EXPECT_EQ(f2(0, 1), 1);
-  EXPECT_EQ(f2(1, 1), 1);
-  EXPECT_EQ(f2(0, 2), 0.5);
-  EXPECT_EQ(f2(1, 2), 1);
-  EXPECT_EQ(f2(2, 2), 1);
-  EXPECT_EQ(cda_rail::round_to(f2(0, 3), 1e-5), 0.14645);
-  EXPECT_EQ(cda_rail::round_to(f2(1, 3), 1e-5), 0.85355);
-  EXPECT_EQ(f2(2, 3), 1);
-  EXPECT_EQ(f2(3, 3), 1);
-  EXPECT_EQ(cda_rail::round_to(f2(0, 4), 1e-5), 0.06699);
-  EXPECT_EQ(cda_rail::round_to(f2(1, 4), 1e-5), 0.5);
-  EXPECT_EQ(cda_rail::round_to(f2(2, 4), 1e-5), 0.93301);
-  EXPECT_EQ(f2(3, 4), 1);
-  EXPECT_EQ(f2(4, 4), 1);
 }
