@@ -46,7 +46,7 @@ cda_rail::instances::VSSGenerationTimetable::VSSGenerationTimetable(
 }
 
 void cda_rail::instances::VSSGenerationTimetable::discretize(
-    const vss::SeparationFunction& sep_func) {
+    SeparationType separation_type) {
   /**
    * This method discretizes the network. It updates the timetable and the
    * routes accordingly.
@@ -54,7 +54,7 @@ void cda_rail::instances::VSSGenerationTimetable::discretize(
    * @param separation_type the type of separation to be used
    */
 
-  const auto new_edges = network.discretize(sep_func);
+  const auto new_edges = network.discretize(separation_type);
   timetable.update_after_discretization(new_edges);
   routes.update_after_discretization(new_edges);
 }
