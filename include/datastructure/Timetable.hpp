@@ -150,6 +150,15 @@ public:
   time_interval(const std::string& train_name) const {
     return time_interval(train_list.get_train_index(train_name));
   };
+  [[nodiscard]] std::pair<size_t, size_t>
+  time_index_interval(size_t train_index, int dt,
+                      bool tn_inclusive = true) const;
+  [[nodiscard]] std::pair<size_t, size_t>
+  time_index_interval(const std::string& train_name, int dt,
+                      bool tn_inclusive = true) const {
+    return time_index_interval(train_list.get_train_index(train_name), dt,
+                               tn_inclusive);
+  };
 
   void sort_stops();
 
