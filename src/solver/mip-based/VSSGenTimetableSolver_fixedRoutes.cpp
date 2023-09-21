@@ -342,6 +342,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
     }
   }
+
+  if (vss_model.get_only_stop_at_vss()) {
+    create_non_discretized_fixed_routes_only_stop_at_vss_constraints();
+  }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
@@ -396,6 +400,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
     }
   }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_non_discretized_fixed_routes_only_stop_at_vss_constraints() {
+  throw std::runtime_error("Not implemented");
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)

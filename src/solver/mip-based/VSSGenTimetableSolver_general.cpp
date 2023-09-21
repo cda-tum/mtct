@@ -209,6 +209,12 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
     create_brakelen_variables();
   }
+  if (vss_model.get_only_stop_at_vss()) {
+    if (debug) {
+      std::cout << "Create only stop at VSS variables" << std::endl;
+    }
+    create_only_stop_at_vss_variables();
+  }
 
   if (debug) {
     std::cout << "Set objective" << std::endl;
@@ -1504,6 +1510,25 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     model->addConstr(vars["v"](i, train_interval[i].second + 1) == final_speed,
                      "final_speed_" + tr_name);
   }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_only_stop_at_vss_variables() {
+  if (vss_model.get_model_type() == vss::ModelType::Discrete) {
+    create_discretized_only_stop_at_vss_variables();
+  } else {
+    create_non_discretized_only_stop_at_vss_variables();
+  }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_discretized_only_stop_at_vss_variables() {
+  throw std::runtime_error("Not implemented");
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_non_discretized_only_stop_at_vss_variables() {
+  throw std::runtime_error("Not implemented");
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)
