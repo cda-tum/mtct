@@ -63,6 +63,7 @@ namespace functions {
 class Model {
 private:
   ModelType                       model_type;
+  bool                            only_stop_at_vss     = false;
   std::vector<SeparationFunction> separation_functions = {};
 
 public:
@@ -72,11 +73,20 @@ public:
                  std::vector<SeparationFunction> separation_functions_input)
       : model_type(model_type_input),
         separation_functions(std::move(separation_functions_input)) {}
+  explicit Model(ModelType                       model_type_input,
+                 std::vector<SeparationFunction> separation_functions_input,
+                 bool                            only_stop_at_vss_input)
+      : model_type(model_type_input),
+        separation_functions(std::move(separation_functions_input)),
+        only_stop_at_vss(only_stop_at_vss_input) {}
   // No default constructor
   Model() = delete;
 
   // Getters
   [[nodiscard]] const ModelType& get_model_type() const { return model_type; }
+  [[nodiscard]] const bool       get_only_stop_at_vss() const {
+    return only_stop_at_vss;
+  }
   [[nodiscard]] const std::vector<SeparationFunction>&
   get_separation_functions() const {
     if (separation_functions.empty()) {
