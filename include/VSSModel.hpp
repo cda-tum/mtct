@@ -84,9 +84,7 @@ public:
 
   // Getters
   [[nodiscard]] const ModelType& get_model_type() const { return model_type; }
-  [[nodiscard]] const bool       get_only_stop_at_vss() const {
-    return only_stop_at_vss;
-  }
+  [[nodiscard]] bool get_only_stop_at_vss() const { return only_stop_at_vss; }
   [[nodiscard]] const std::vector<SeparationFunction>&
   get_separation_functions() const {
     if (separation_functions.empty()) {
