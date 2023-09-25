@@ -1134,6 +1134,94 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
     }
   }
+
+  // A border is only usable if the VSS is used
+  for (size_t e_index = 0; e_index < breakable_edges.size(); ++e_index) {
+    const auto& e = breakable_edges[e_index];
+    for (const auto& tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto vss_number_e = instance.n().max_vss_on_edge(e);
+      // Get index of e in relevant_edges array
+      const auto find_index =
+          std::find(relevant_edges.begin(), relevant_edges.end(), e);
+      auto e_index_relevant = find_index - relevant_edges.begin();
+      // If edge not found check reverse edge
+      if (find_index == relevant_edges.end()) {
+        const auto reverse_e = instance.n().get_reverse_edge_index(e).value();
+        const auto find_index_reverse =
+            std::find(relevant_edges.begin(), relevant_edges.end(), reverse_e);
+        if (find_index_reverse == relevant_edges.end()) {
+          throw exceptions::ConsistencyException(
+              "Edge " + std::to_string(e) + " and its reverse edge " +
+              std::to_string(reverse_e) + " not found in relevant_edges");
+        }
+        e_index_relevant = find_index_reverse - relevant_edges.begin();
+      }
+
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
+           ++t) {
+        for (size_t vss = 0; vss < vss_number_e; ++vss) {
+          if (vss_model.get_model_type() == vss::ModelType::Continuous) {
+            // b_front(tr, t, e_index, vss) <= b_used(e_index_relevant, vss)
+            model->addConstr(vars["b_front"](tr, t, e_index, vss),
+                             GRB_LESS_EQUAL,
+                             vars["b_used"](e_index_relevant, vss),
+                             "b_front_b_used_" + std::to_string(tr) + "_" +
+                                 std::to_string(t) + "_" + std::to_string(e) +
+                                 "_" + std::to_string(vss));
+            // b_rear(tr, t, e_index, vss) <= b_used(e_index_relevant, vss)
+            model->addConstr(vars["b_rear"](tr, t, e_index, vss),
+                             GRB_LESS_EQUAL,
+                             vars["b_used"](e_index_relevant, vss),
+                             "b_rear_b_used_" + std::to_string(tr) + "_" +
+                                 std::to_string(t) + "_" + std::to_string(e) +
+                                 "_" + std::to_string(vss));
+          } else if (vss_model.get_model_type() == vss::ModelType::Inferred) {
+            // b_front(tr, t, e_index, vss) <=
+            // (num_vss_segments(e_index_relevant) - 1) / (vss + 1)
+            model->addConstr(
+                vars["b_front"](tr, t, e_index, vss), GRB_LESS_EQUAL,
+                (vars["num_vss_segments"](e_index_relevant) - 1) / (vss + 1),
+                "b_front_num_vss_segments_" + std::to_string(tr) + "_" +
+                    std::to_string(t) + "_" + std::to_string(e) + "_" +
+                    std::to_string(vss));
+            // b_rear(tr, t, e_index, vss) <=
+            // (num_vss_segments(e_index_relevant) - 1) / (vss + 1)
+            model->addConstr(
+                vars["b_rear"](tr, t, e_index, vss), GRB_LESS_EQUAL,
+                (vars["num_vss_segments"](e_index_relevant) - 1) / (vss + 1),
+                "b_rear_num_vss_segments_" + std::to_string(tr) + "_" +
+                    std::to_string(t) + "_" + std::to_string(e) + "_" +
+                    std::to_string(vss));
+          } else if (vss_model.get_model_type() ==
+                     vss::ModelType::InferredAlt) {
+            // b_front(tr, t, e_index, vss) <= sum
+            // type_num_vss_segments(e_index_relevant, *, <= vss)
+            GRBLinExpr rhs = 0;
+            for (size_t sep_type_index = 0;
+                 sep_type_index < vss_model.get_separation_functions().size();
+                 ++sep_type_index) {
+              for (size_t vss2 = 0; vss2 <= vss; ++vss2) {
+                rhs += vars["type_num_vss_segments"](e_index_relevant,
+                                                     sep_type_index, vss2);
+              }
+            }
+            model->addConstr(vars["b_front"](tr, t, e_index, vss),
+                             GRB_LESS_EQUAL, rhs,
+                             "b_front_num_vss_segments_" + std::to_string(tr) +
+                                 "_" + std::to_string(t) + "_" +
+                                 std::to_string(e) + "_" + std::to_string(vss));
+            // b_rear(tr, t, e_index, vss) <= sum
+            // type_num_vss_segments(e_index_relevant, *, <= vss)
+            model->addConstr(vars["b_rear"](tr, t, e_index, vss),
+                             GRB_LESS_EQUAL, rhs,
+                             "b_rear_num_vss_segments_" + std::to_string(tr) +
+                                 "_" + std::to_string(t) + "_" +
+                                 std::to_string(e) + "_" + std::to_string(vss));
+          }
+        }
+      }
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
