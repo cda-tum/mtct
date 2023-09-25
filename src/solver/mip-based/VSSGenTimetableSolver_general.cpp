@@ -1023,10 +1023,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    */
 
   // Border only usable by a train if it is on the edge
-  for (size_t tr = 0; tr < num_tr; ++tr) {
-    for (const auto& e : instance.edges_used_by_train(tr, this->fix_routes)) {
-      const auto& e_index      = breakable_edge_indices[e];
-      const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+  for (size_t e_index = 0; e_index < breakable_edges.size(); ++e_index) {
+    const auto& e = breakable_edges[e_index];
+    for (const auto& tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto vss_number_e = instance.n().max_vss_on_edge(e);
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
