@@ -664,7 +664,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "]";
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
-        for (size_t t = train_interval[tr].first;
+        for (size_t t = train_interval[tr].first + 2;
              t <= train_interval[tr].second; ++t) {
           vars["b_tight"](tr, t, i, vss) = model->addVar(
               0, 1, 0, GRB_BINARY,
@@ -677,8 +677,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   for (size_t e = 0; e < num_edges; ++e) {
     for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
-      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
-           ++t) {
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
         vars["e_tight"](tr, t, e) =
             model->addVar(0, 1, 0, GRB_BINARY,
                           "e_tight_" + std::to_string(tr) + "_" +
@@ -1000,6 +1000,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_fraction_constraints();
   } else if (vss_model.get_model_type() == vss::ModelType::InferredAlt) {
     create_non_discretized_alt_fraction_constraints();
+  }
+  if (vss_model.get_only_stop_at_vss()) {
+    create_non_discretized_general_only_stop_at_vss_constraints();
   }
 }
 
@@ -1649,15 +1652,181 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_only_stop_at_vss_variables() {
   if (vss_model.get_model_type() == vss::ModelType::Discrete) {
-    create_discretized_only_stop_at_vss_variables();
+    throw exceptions::ConsistencyException(
+        "Only stop at VSS variables are not supported for discretized VSS "
+        "models");
   } else {
     create_non_discretized_only_stop_at_vss_variables();
   }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
-    create_discretized_only_stop_at_vss_variables() {
-  throw std::runtime_error("Not implemented");
+    create_non_discretized_general_only_stop_at_vss_constraints() {
+  const double M = (1 / GRB_EPS) * 10;
+
+  // At most one b_tight can be true per train and time
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    for (size_t t = train_interval[tr].first + 2;
+         t <= train_interval[tr].second; ++t) {
+      GRBLinExpr lhs = 0;
+      for (const auto& e : instance.edges_used_by_train(tr, this->fix_routes)) {
+        if (!instance.const_n().get_edge(e).breakable) {
+          continue;
+        }
+        const auto& vss_e     = instance.const_n().max_vss_on_edge(e);
+        const auto& e_b_index = breakable_edge_indices.at(e);
+        for (size_t vss = 0; vss < vss_e; ++vss) {
+          lhs += vars["b_tight"](tr, t, e_b_index, vss);
+        }
+      }
+      model->addConstr(lhs, GRB_LESS_EQUAL, 1,
+                       "b_tight_max_one_" + std::to_string(tr) + "_" +
+                           std::to_string(t));
+    }
+  }
+
+  // On every breakable edge at most one b_tight or e_tight can be one per train
+  // and time
+  for (size_t i = 0; i < breakable_edges.size(); ++i) {
+    const auto& e     = breakable_edges[i];
+    const auto& vss_e = instance.const_n().max_vss_on_edge(e);
+    const auto& edge  = instance.const_n().get_edge(e);
+    const auto& edge_name =
+        "[" + instance.const_n().get_vertex(edge.source).name + "," +
+        instance.const_n().get_vertex(edge.target).name + "]";
+    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
+        GRBLinExpr lhs = vars["e_tight"](tr, t, e);
+        for (size_t vss = 0; vss < vss_e; ++vss) {
+          lhs += vars["b_tight"](tr, t, i, vss);
+        }
+        model->addConstr(lhs, GRB_LESS_EQUAL, 1,
+                         "b_tight_e_tight_max_one_" + std::to_string(tr) + "_" +
+                             std::to_string(t) + "_" + edge_name);
+      }
+    }
+  }
+
+  // On every edge at least one b_tight or e_tight must be one if train is
+  // present and speed is 0 per train, time, and edge
+  for (size_t e = 0; e < num_edges; ++e) {
+    const auto& edge = instance.const_n().get_edge(e);
+    const auto& edge_name =
+        "[" + instance.const_n().get_vertex(edge.source).name + "," +
+        instance.const_n().get_vertex(edge.target).name + "]";
+    std::optional<size_t> breakable_e_index;
+    std::optional<size_t> vss_e;
+    if (edge.breakable) {
+      breakable_e_index = breakable_edge_indices.at(e);
+      vss_e             = instance.const_n().max_vss_on_edge(e);
+    }
+
+    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
+        GRBLinExpr lhs = vars["e_tight"](tr, t, e);
+        if (breakable_e_index.has_value()) {
+          for (size_t vss = 0; vss < vss_e.value(); ++vss) {
+            lhs += vars["b_tight"](tr, t, breakable_e_index.value(), vss);
+          }
+        }
+        model->addConstr(lhs, GRB_GREATER_EQUAL,
+                         vars["x"](tr, t - 1, e) - M * vars["v"](tr, t),
+                         "b_tight_e_tight_min_one_" + std::to_string(tr) + "_" +
+                             std::to_string(t) + "_" + edge_name);
+      }
+    }
+  }
+
+  // On every edge that is not breakable and does not end with a border at least
+  // one out edge has to be used if it is used and v = 0
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& edge_used_tr =
+        instance.edges_used_by_train(tr, this->fix_routes);
+    for (size_t e : edge_used_tr) {
+      const auto& edge = instance.const_n().get_edge(e);
+      const auto& edge_name =
+          "[" + instance.const_n().get_vertex(edge.source).name + "," +
+          instance.const_n().get_vertex(edge.target).name + "]";
+      if (edge.breakable || instance.const_n().get_vertex(edge.target).type !=
+                                VertexType::NoBorder) {
+        continue;
+      }
+
+      const auto&         delta_out = instance.const_n().get_successors(e);
+      std::vector<size_t> delta_out_tr;
+      for (const auto& e_out : delta_out) {
+        if (std::find(edge_used_tr.begin(), edge_used_tr.end(), e_out) !=
+            edge_used_tr.end()) {
+          delta_out_tr.emplace_back(e_out);
+        }
+      }
+
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
+        GRBLinExpr lhs = 0;
+        for (const auto& e_out : delta_out_tr) {
+          lhs += vars["x"](tr, t - 1, e_out);
+        }
+        model->addConstr(lhs, GRB_GREATER_EQUAL,
+                         vars["x"](tr, t - 1, e) - M * vars["v"](tr, t),
+                         "no_stop_on_non-border_edge_ending_" +
+                             std::to_string(tr) + "_" + std::to_string(t) +
+                             "_" + edge_name);
+      }
+    }
+  }
+
+  // b cannot be tight if it is not front. If v = 0 then it has to be
+  for (size_t i = 0; i < breakable_edges.size(); ++i) {
+    const auto& e    = breakable_edges[i];
+    const auto& edge = instance.const_n().get_edge(e);
+    const auto& edge_name =
+        "[" + instance.const_n().get_vertex(edge.source).name + "," +
+        instance.const_n().get_vertex(edge.target).name + "]";
+    const auto& vss_e = instance.const_n().max_vss_on_edge(e);
+    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
+        for (size_t vss = 0; vss < vss_e; ++vss) {
+          model->addConstr(vars["b_tight"](tr, t, i, vss), GRB_LESS_EQUAL,
+                           vars["b_front"](tr, t, i, vss),
+                           "b_tight_not_front_1_" + std::to_string(tr) + "_" +
+                               std::to_string(t) + "_" + edge_name);
+          model->addConstr(vars["b_tight"](tr, t, i, vss), GRB_GREATER_EQUAL,
+                           vars["b_front"](tr, t, i, vss) -
+                               M * vars["v"](tr, t),
+                           "b_tight_not_front_2_" + std::to_string(tr) + "_" +
+                               std::to_string(t) + "_" + edge_name);
+        }
+      }
+    }
+  }
+
+  // At least any one tight if speed is 0
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& edge_used_tr =
+        instance.edges_used_by_train(tr, this->fix_routes);
+    for (size_t t = train_interval[tr].first + 2;
+         t <= train_interval[tr].second; ++t) {
+      GRBLinExpr lhs = 0;
+      for (size_t e : edge_used_tr) {
+        lhs += vars["e_tight"](tr, t, e);
+        const auto& edge = instance.const_n().get_edge(e);
+        if (!edge.breakable) {
+          continue;
+        }
+        const auto& vss_e = instance.const_n().max_vss_on_edge(e);
+        for (size_t vss = 0; vss < vss_e; ++vss) {
+          lhs += vars["b_tight"](tr, t, breakable_edge_indices.at(e), vss);
+        }
+      }
+      model->addConstr(lhs, GRB_GREATER_EQUAL, 1 - M * vars["v"](tr, t),
+                       "at_least_one_tight_if_stopped_" + std::to_string(tr) +
+                           "_" + std::to_string(t));
+    }
+  }
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)

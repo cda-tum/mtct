@@ -56,7 +56,6 @@ private:
   void create_non_discretized_variables();
   void create_brakelen_variables();
   void create_only_stop_at_vss_variables();
-  void create_discretized_only_stop_at_vss_variables();
   void create_non_discretized_only_stop_at_vss_variables();
 
   // Constraint functions
@@ -89,6 +88,7 @@ private:
   void create_non_discretized_fixed_route_constraints();
   void create_non_discretized_fraction_constraints();
   void create_non_discretized_alt_fraction_constraints();
+  void create_non_discretized_general_only_stop_at_vss_constraints();
   void create_non_discretized_free_routes_only_stop_at_vss_constraints();
   void create_non_discretized_fixed_routes_only_stop_at_vss_constraints();
 
