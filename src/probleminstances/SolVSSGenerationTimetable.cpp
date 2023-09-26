@@ -432,6 +432,38 @@ void cda_rail::instances::SolVSSGenerationTimetable::initialize_vectors() {
   }
 }
 
+std::vector<double>
+cda_rail::instances::SolVSSGenerationTimetable::get_valid_border_stops(
+    size_t train_id) const {
+  const auto& tr_name  = instance.get_train_list().get_train(train_id).name;
+  const auto& tr_route = instance.get_route(tr_name);
+  const auto& tr_route_edges = tr_route.get_edges();
+
+  std::vector<double> valid_border_stops;
+  valid_border_stops.emplace_back(0);
+  for (const auto& e : tr_route_edges) {
+    const auto& edge            = instance.const_n().get_edge(e);
+    const auto& e_target        = instance.const_n().get_vertex(edge.target);
+    const auto [e_start, e_end] = tr_route.edge_pos(e, instance.const_n());
+
+    const auto& vss_on_e = get_vss_pos(e);
+    for (const auto& vss : vss_on_e) {
+      if (vss > EPS && vss < edge.length - EPS) {
+        valid_border_stops.emplace_back(e_start + vss);
+      }
+    }
+
+    if (e_target.type != VertexType::NoBorder) {
+      valid_border_stops.emplace_back(e_end);
+    }
+  }
+
+  // Sort return value
+  std::sort(valid_border_stops.begin(), valid_border_stops.end());
+
+  return valid_border_stops;
+}
+
 cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     bool postprocess, bool debug,
