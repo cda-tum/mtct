@@ -644,6 +644,50 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   }
 }
 
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_non_discretized_only_stop_at_vss_variables() {
+  int max_vss = 0;
+  for (const auto& e : breakable_edges) {
+    max_vss = std::max(max_vss, instance.n().max_vss_on_edge(e));
+  }
+
+  vars["b_tight"] =
+      MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
+  vars["e_tight"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
+
+  for (size_t i = 0; i < breakable_edges.size(); ++i) {
+    const auto& e            = breakable_edges[i];
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    const auto& edge         = instance.n().get_edge(e);
+    const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
+    for (size_t vss = 0; vss < vss_number_e; ++vss) {
+      for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+        for (size_t t = train_interval[tr].first;
+             t <= train_interval[tr].second; ++t) {
+          vars["b_tight"](tr, t, i, vss) = model->addVar(
+              0, 1, 0, GRB_BINARY,
+              "b_tight_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
+                  "_" + edge_name + "_" + std::to_string(vss));
+        }
+      }
+    }
+  }
+
+  for (size_t e = 0; e < num_edges; ++e) {
+    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
+           ++t) {
+        vars["e_tight"](tr, t, e) =
+            model->addVar(0, 1, 0, GRB_BINARY,
+                          "e_tight_" + std::to_string(tr) + "_" +
+                              std::to_string(t * dt) + "_" + std::to_string(e));
+      }
+    }
+  }
+}
+
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
   /**
    * Sets the objective function of the problem
@@ -1613,11 +1657,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_discretized_only_stop_at_vss_variables() {
-  throw std::runtime_error("Not implemented");
-}
-
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::
-    create_non_discretized_only_stop_at_vss_variables() {
   throw std::runtime_error("Not implemented");
 }
 
