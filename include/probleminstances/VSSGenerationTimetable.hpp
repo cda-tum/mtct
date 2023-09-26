@@ -298,9 +298,9 @@ public:
     return get_train_pos(instance.get_train_list().get_train_index(train_name),
                          time);
   }
-  [[nodiscrad]] std::vector<double>
+  [[nodiscard]] std::vector<double>
   get_valid_border_stops(size_t train_id) const;
-  [[nodiscrad]] std::vector<double>
+  [[nodiscard]] std::vector<double>
   get_valid_border_stops(const std::string& train_name) const {
     return get_valid_border_stops(
         instance.get_train_list().get_train_index(train_name));
