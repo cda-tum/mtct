@@ -1178,20 +1178,22 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           } else if (vss_model.get_model_type() == vss::ModelType::Inferred) {
             // b_front(tr, t, e_index, vss) <=
             // (num_vss_segments(e_index_relevant) - 1) / (vss + 1)
-            model->addConstr(
-                vars["b_front"](tr, t, e_index, vss), GRB_LESS_EQUAL,
-                (vars["num_vss_segments"](e_index_relevant) - 1) / (vss + 1),
-                "b_front_num_vss_segments_" + std::to_string(tr) + "_" +
-                    std::to_string(t) + "_" + std::to_string(e) + "_" +
-                    std::to_string(vss));
+            model->addConstr(vars["b_front"](tr, t, e_index, vss),
+                             GRB_LESS_EQUAL,
+                             (vars["num_vss_segments"](e_index_relevant) - 1) /
+                                 (static_cast<double>(vss) + 1),
+                             "b_front_num_vss_segments_" + std::to_string(tr) +
+                                 "_" + std::to_string(t) + "_" +
+                                 std::to_string(e) + "_" + std::to_string(vss));
             // b_rear(tr, t, e_index, vss) <=
             // (num_vss_segments(e_index_relevant) - 1) / (vss + 1)
-            model->addConstr(
-                vars["b_rear"](tr, t, e_index, vss), GRB_LESS_EQUAL,
-                (vars["num_vss_segments"](e_index_relevant) - 1) / (vss + 1),
-                "b_rear_num_vss_segments_" + std::to_string(tr) + "_" +
-                    std::to_string(t) + "_" + std::to_string(e) + "_" +
-                    std::to_string(vss));
+            model->addConstr(vars["b_rear"](tr, t, e_index, vss),
+                             GRB_LESS_EQUAL,
+                             (vars["num_vss_segments"](e_index_relevant) - 1) /
+                                 (static_cast<double>(vss) + 1),
+                             "b_rear_num_vss_segments_" + std::to_string(tr) +
+                                 "_" + std::to_string(t) + "_" +
+                                 std::to_string(e) + "_" + std::to_string(vss));
           } else if (vss_model.get_model_type() ==
                      vss::ModelType::InferredAlt) {
             // b_front(tr, t, e_index, vss) <= sum
