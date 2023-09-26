@@ -547,14 +547,14 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed) {
     for (size_t t = t0 + 1; t <= tn; ++t) {
       const auto& train_speed =
           obj_val.get_train_speed(tr, t * obj_val.get_dt());
-      if (train_speed > cda_rail::EPS) {
+      if (train_speed > cda_rail::GRB_EPS) {
         continue;
       }
       const auto& tr_pos = obj_val.get_train_pos(tr, t * obj_val.get_dt());
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
-        if (std::abs(stop - tr_pos) < cda_rail::EPS) {
+        if (std::abs(stop - tr_pos) < cda_rail::GRB_EPS) {
           found = true;
           break;
         }
@@ -599,14 +599,14 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree) {
     for (size_t t = t0 + 1; t <= tn; ++t) {
       const auto& train_speed =
           obj_val.get_train_speed(tr, t * obj_val.get_dt());
-      if (train_speed > cda_rail::EPS) {
+      if (train_speed > cda_rail::GRB_EPS) {
         continue;
       }
       const auto& tr_pos = obj_val.get_train_pos(tr, t * obj_val.get_dt());
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
-        if (std::abs(stop - tr_pos) < cda_rail::EPS) {
+        if (std::abs(stop - tr_pos) < cda_rail::GRB_EPS) {
           found = true;
           break;
         }
