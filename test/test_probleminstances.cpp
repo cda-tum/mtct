@@ -2162,6 +2162,16 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   sol1.add_vss_pos(v0_v1, 60, false);
   sol1.add_vss_pos(v1_v2, 100, false);
 
+  const auto& allowed_stops_1 = sol1.get_valid_border_stops("tr1");
+  // Expect array with entries 0, 20, 30, 60, 100, 200 in this order
+  EXPECT_EQ(allowed_stops_1.size(), 6);
+  EXPECT_EQ(allowed_stops_1, std::vector<double>({0, 20, 30, 60, 100, 200}));
+
+  const auto& allowed_stops_2 = sol1.get_valid_border_stops(tr2);
+  // Expect array with entries 0, 200, 270, 280, 300 in this order
+  EXPECT_EQ(allowed_stops_2.size(), 5);
+  EXPECT_EQ(allowed_stops_2, std::vector<double>({0, 200, 270, 280, 300}));
+
   EXPECT_THROW(sol1.add_vss_pos(v0_v1 + v1_v2 + v2_v1 + v1_v0 + 1, 30, false),
                cda_rail::exceptions::EdgeNotExistentException);
   EXPECT_THROW(sol1.add_vss_pos("v0", "v1", 0, false),
