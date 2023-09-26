@@ -560,7 +560,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       vars["b_pos"](i, vss) =
           model->addVar(lb, ub, 0, GRB_CONTINUOUS,
                         "b_pos_" + edge_name + "_" + std::to_string(vss));
-      for (size_t tr = 0; tr < num_tr; ++tr) {
+      for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
         for (size_t t = train_interval[tr].first;
              t <= train_interval[tr].second; ++t) {
           vars["b_front"](tr, t, i, vss) = model->addVar(
