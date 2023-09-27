@@ -664,25 +664,31 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "]";
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+        const auto& tr_name = instance.get_train_list().get_train(tr).name;
         for (size_t t = train_interval[tr].first + 2;
              t <= train_interval[tr].second; ++t) {
           vars["b_tight"](tr, t, i, vss) = model->addVar(
               0, 1, 0, GRB_BINARY,
-              "b_tight_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
-                  "_" + edge_name + "_" + std::to_string(vss));
+              "b_tight_" + tr_name + "_" + std::to_string(t * dt) + "_" +
+                  edge_name + "_" + std::to_string(vss));
         }
       }
     }
   }
 
   for (size_t e = 0; e < num_edges; ++e) {
+    const auto& edge      = instance.n().get_edge(e);
+    const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
     for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
         vars["e_tight"](tr, t, e) =
             model->addVar(0, 1, 0, GRB_BINARY,
-                          "e_tight_" + std::to_string(tr) + "_" +
-                              std::to_string(t * dt) + "_" + std::to_string(e));
+                          "e_tight_" + tr_name + "_" + std::to_string(t * dt) +
+                              "_" + edge_name);
       }
     }
   }
