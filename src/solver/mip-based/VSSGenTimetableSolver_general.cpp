@@ -1674,6 +1674,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   // At most one b_tight can be true per train and time
   for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
     for (size_t t = train_interval[tr].first + 2;
          t <= train_interval[tr].second; ++t) {
       GRBLinExpr lhs = 0;
@@ -1688,8 +1689,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         }
       }
       model->addConstr(lhs, GRB_LESS_EQUAL, 1,
-                       "b_tight_max_one_" + std::to_string(tr) + "_" +
-                           std::to_string(t));
+                       "b_tight_max_one_" + tr_name + "_" +
+                           std::to_string(t * dt));
     }
   }
 
@@ -1703,6 +1704,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         "[" + instance.const_n().get_vertex(edge.source).name + "," +
         instance.const_n().get_vertex(edge.target).name + "]";
     for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
         GRBLinExpr lhs = vars["e_tight"](tr, t, e);
@@ -1710,8 +1712,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           lhs += vars["b_tight"](tr, t, i, vss);
         }
         model->addConstr(lhs, GRB_LESS_EQUAL, 1,
-                         "b_tight_e_tight_max_one_" + std::to_string(tr) + "_" +
-                             std::to_string(t) + "_" + edge_name);
+                         "b_tight_e_tight_max_one_" + tr_name + "_" +
+                             std::to_string(t * dt) + "_" + edge_name);
       }
     }
   }
@@ -1731,6 +1733,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     }
 
     for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
         GRBLinExpr lhs = vars["e_tight"](tr, t, e);
@@ -1741,8 +1744,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         }
         model->addConstr(lhs, GRB_GREATER_EQUAL,
                          vars["x"](tr, t - 1, e) - M * vars["v"](tr, t),
-                         "b_tight_e_tight_min_one_" + std::to_string(tr) + "_" +
-                             std::to_string(t) + "_" + edge_name);
+                         "b_tight_e_tight_min_one_" + tr_name + "_" +
+                             std::to_string(t * dt) + "_" + edge_name);
       }
     }
   }
@@ -1750,6 +1753,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   // On every edge that is not breakable and does not end with a border at least
   // one out edge has to be used if it is used and v = 0
   for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
     const auto& edge_used_tr =
         instance.edges_used_by_train(tr, this->fix_routes);
     for (size_t e : edge_used_tr) {
@@ -1779,9 +1783,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         }
         model->addConstr(lhs, GRB_GREATER_EQUAL,
                          vars["x"](tr, t - 1, e) - M * vars["v"](tr, t),
-                         "no_stop_on_non-border_edge_ending_" +
-                             std::to_string(tr) + "_" + std::to_string(t) +
-                             "_" + edge_name);
+                         "no_stop_on_non-border_edge_ending_" + tr_name + "_" +
+                             std::to_string(t * dt) + "_" + edge_name);
       }
     }
   }
@@ -1795,20 +1798,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         instance.const_n().get_vertex(edge.target).name + "]";
     const auto& vss_e = instance.const_n().max_vss_on_edge(e);
     for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
         for (size_t vss = 0; vss < vss_e; ++vss) {
           model->addConstr(vars["b_tight"](tr, t, i, vss), GRB_LESS_EQUAL,
                            vars["b_front"](tr, t, i, vss),
-                           "b_tight_not_front_1_" + std::to_string(tr) + "_" +
-                               std::to_string(t) + "_" + edge_name + "_" +
+                           "b_tight_not_front_1_" + tr_name + "_" +
+                               std::to_string(t * dt) + "_" + edge_name + "_" +
                                std::to_string(vss));
-          model->addConstr(vars["b_tight"](tr, t, i, vss), GRB_GREATER_EQUAL,
-                           vars["b_front"](tr, t, i, vss) -
-                               M * vars["v"](tr, t),
-                           "b_tight_not_front_2_" + std::to_string(tr) + "_" +
-                               std::to_string(t) + "_" + edge_name + "_" +
-                               std::to_string(vss));
+          model->addConstr(
+              vars["b_tight"](tr, t, i, vss), GRB_GREATER_EQUAL,
+              vars["b_front"](tr, t, i, vss) - M * vars["v"](tr, t),
+              "b_tight_not_front_2_" + tr_name + "_" + std::to_string(t * dt) +
+                  "_" + edge_name + "_" + std::to_string(vss));
         }
       }
     }
@@ -1816,6 +1819,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   // At least any one tight if speed is 0
   for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
     const auto& edge_used_tr =
         instance.edges_used_by_train(tr, this->fix_routes);
     for (size_t t = train_interval[tr].first + 2;
@@ -1833,8 +1837,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         }
       }
       model->addConstr(lhs, GRB_GREATER_EQUAL, 1 - M * vars["v"](tr, t),
-                       "at_least_one_tight_if_stopped_" + std::to_string(tr) +
-                           "_" + std::to_string(t));
+                       "at_least_one_tight_if_stopped_" + tr_name + "_" +
+                           std::to_string(t * dt));
     }
   }
 }

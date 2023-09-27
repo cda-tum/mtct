@@ -683,20 +683,21 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& e_len = edge.length;
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+        const auto& tr_name = instance.get_train_list().get_train(tr).name;
         for (size_t t = train_interval[tr].first + 2;
              t <= train_interval[tr].second; ++t) {
           model->addConstr(vars["e_mu"](tr, t - 1, e), GRB_GREATER_EQUAL,
                            vars["b_pos"](i, vss) -
                                e_len * (1 - vars["b_tight"](tr, t, i, vss)),
-                           "tight_vss_border_constraint_1_" +
-                               std::to_string(tr) + "_" + std::to_string(t) +
-                               "_" + edge_name + "_" + std::to_string(vss));
+                           "tight_vss_border_constraint_1_" + tr_name + "_" +
+                               std::to_string(t * dt) + "_" + edge_name + "_" +
+                               std::to_string(vss));
           model->addConstr(vars["e_mu"](tr, t - 1, e), GRB_LESS_EQUAL,
                            vars["b_pos"](i, vss) +
                                e_len * (1 - vars["b_tight"](tr, t, i, vss)),
-                           "tight_vss_border_constraint_2_" +
-                               std::to_string(tr) + "_" + std::to_string(t) +
-                               "_" + edge_name + "_" + std::to_string(vss));
+                           "tight_vss_border_constraint_2_" + tr_name + "_" +
+                               std::to_string(t * dt) + "_" + edge_name + "_" +
+                               std::to_string(vss));
         }
       }
     }
@@ -710,12 +711,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "]";
     const auto& e_len = edge.length;
     for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
         model->addConstr(vars["e_mu"](tr, t - 1, e), GRB_GREATER_EQUAL,
                          e_len * vars["e_tight"](tr, t, e),
-                         "tight_ttd_border_constraint_" + std::to_string(tr) +
-                             "_" + std::to_string(t) + "_" + edge_name);
+                         "tight_ttd_border_constraint_" + tr_name + "_" +
+                             std::to_string(t * dt) + "_" + edge_name);
       }
     }
   }
