@@ -544,7 +544,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed) {
 
     const auto& [t0, tn] =
         obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
-    for (int t = t0 + 1; t <= tn; ++t) {
+    for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
       const auto& train_speed =
           obj_val.get_train_speed(tr, t * obj_val.get_dt());
       if (train_speed > cda_rail::GRB_EPS) {
@@ -596,7 +596,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree) {
 
     const auto& [t0, tn] =
         obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
-    for (int t = t0 + 1; t <= tn; ++t) {
+    for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
       const auto& train_speed =
           obj_val.get_train_speed(tr, t * obj_val.get_dt());
       if (train_speed > cda_rail::GRB_EPS) {
