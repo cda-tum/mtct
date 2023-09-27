@@ -693,7 +693,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                "_" + edge_name + "_" + std::to_string(vss));
           model->addConstr(vars["e_mu"](tr, t - 1, e), GRB_LESS_EQUAL,
                            vars["b_pos"](i, vss) +
-                               e_len * vars["b_tight"](tr, t, i, vss),
+                               e_len * (1 - vars["b_tight"](tr, t, i, vss)),
                            "tight_vss_border_constraint_2_" +
                                std::to_string(tr) + "_" + std::to_string(t) +
                                "_" + edge_name + "_" + std::to_string(vss));
