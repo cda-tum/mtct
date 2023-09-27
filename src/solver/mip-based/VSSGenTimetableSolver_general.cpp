@@ -1793,12 +1793,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           model->addConstr(vars["b_tight"](tr, t, i, vss), GRB_LESS_EQUAL,
                            vars["b_front"](tr, t, i, vss),
                            "b_tight_not_front_1_" + std::to_string(tr) + "_" +
-                               std::to_string(t) + "_" + edge_name);
+                               std::to_string(t) + "_" + edge_name + "_" +
+                               std::to_string(vss));
           model->addConstr(vars["b_tight"](tr, t, i, vss), GRB_GREATER_EQUAL,
                            vars["b_front"](tr, t, i, vss) -
                                M * vars["v"](tr, t),
                            "b_tight_not_front_2_" + std::to_string(tr) + "_" +
-                               std::to_string(t) + "_" + edge_name);
+                               std::to_string(t) + "_" + edge_name + "_" +
+                               std::to_string(vss));
         }
       }
     }
