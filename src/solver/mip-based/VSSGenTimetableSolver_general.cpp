@@ -1651,18 +1651,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_only_stop_at_vss_variables() {
-  if (vss_model.get_model_type() == vss::ModelType::Discrete) {
+  if (vss_model.get_model_type() != vss::ModelType::Discrete) {
+    create_non_discretized_only_stop_at_vss_variables();
+  } else {
     throw exceptions::ConsistencyException(
         "Only stop at VSS variables are not supported for discretized VSS "
         "models");
-  } else {
-    create_non_discretized_only_stop_at_vss_variables();
   }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_general_only_stop_at_vss_constraints() {
+  // NOLINTBEGIN(readability-identifier-naming)
   const double M = (1 / GRB_EPS) * 10;
+  // NOLINTEND(readability-identifier-naming)
 
   // At most one b_tight can be true per train and time
   for (size_t tr = 0; tr < num_tr; ++tr) {

@@ -534,7 +534,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed) {
     const auto& allowed_stops = obj_val.get_valid_border_stops(tr);
 
     // put values of allowed_stops into string separated by comma
-    std::string allowed_stops_str = "";
+    std::string allowed_stops_str;
     for (const auto& stop : allowed_stops) {
       allowed_stops_str += std::to_string(stop) + ", ";
     }
@@ -544,7 +544,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed) {
 
     const auto& [t0, tn] =
         obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
-    for (size_t t = t0 + 1; t <= tn; ++t) {
+    for (int t = t0 + 1; t <= tn; ++t) {
       const auto& train_speed =
           obj_val.get_train_speed(tr, t * obj_val.get_dt());
       if (train_speed > cda_rail::GRB_EPS) {
@@ -586,7 +586,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree) {
     const auto& allowed_stops = obj_val.get_valid_border_stops(tr);
 
     // put values of allowed_stops into string separated by comma
-    std::string allowed_stops_str = "";
+    std::string allowed_stops_str;
     for (const auto& stop : allowed_stops) {
       allowed_stops_str += std::to_string(stop) + ", ";
     }
@@ -596,7 +596,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree) {
 
     const auto& [t0, tn] =
         obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
-    for (size_t t = t0 + 1; t <= tn; ++t) {
+    for (int t = t0 + 1; t <= tn; ++t) {
       const auto& train_speed =
           obj_val.get_train_speed(tr, t * obj_val.get_dt());
       if (train_speed > cda_rail::GRB_EPS) {
