@@ -1669,7 +1669,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_general_only_stop_at_vss_constraints() {
   // NOLINTBEGIN(readability-identifier-naming)
-  const double M = (1 / GRB_EPS);
+  const double M = (1 / V_MIN);
   // NOLINTEND(readability-identifier-naming)
 
   // At most one b_tight can be true per train and time
