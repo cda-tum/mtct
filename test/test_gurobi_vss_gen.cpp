@@ -522,7 +522,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
   const auto obj_val = solver.solve(
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      false, false, false, true, false, false, 60, true);
+      false, false, false, true, false, false, 240, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -576,7 +576,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
   const auto obj_val = solver.solve(
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      true, false, false, true, false, false, 60, true);
+      true, false, false, true, false, false, 240, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -630,7 +630,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
   const auto obj_val = solver.solve(
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      true, true, false, true, false, false, 60, true);
+      true, true, false, true, false, false, 240, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -684,7 +684,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
   const auto obj_val = solver.solve(
       15, false,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      false, false, false, true, false, false, 60, true);
+      false, false, false, true, false, false, 240, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -738,7 +738,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
   const auto obj_val = solver.solve(
       15, false,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      true, false, false, true, false, false, 60, true);
+      true, false, false, true, false, false, 240, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -792,7 +792,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
   const auto obj_val = solver.solve(
       15, false,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      true, true, false, true, false, false, 60, true);
+      true, true, false, true, false, false, 240, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
