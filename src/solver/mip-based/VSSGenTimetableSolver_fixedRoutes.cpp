@@ -404,7 +404,67 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_fixed_routes_only_stop_at_vss_constraints() {
-  throw std::runtime_error("Not implemented");
+  // For every breakable edge position exactly b_pos if tight
+  for (size_t i = 0; i < breakable_edges.size(); ++i) {
+    const auto& e            = breakable_edges[i];
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    const auto& edge         = instance.n().get_edge(e);
+    const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
+    const auto& e_len = edge.length;
+    for (size_t vss = 0; vss < vss_number_e; ++vss) {
+      for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+        const auto& tr_name  = instance.get_train_list().get_train(tr).name;
+        const auto  edge_pos = instance.route_edge_pos(tr_name, e);
+        const auto  r_len    = instance.route_length(tr_name);
+        const auto& tr_len   = instance.get_train_list().get_train(tr).length;
+        double      mu_ub    = r_len + tr_len;
+        if (this->include_braking_curves) {
+          mu_ub += get_max_brakelen(tr);
+        }
+        for (size_t t = train_interval[tr].first + 2;
+             t <= train_interval[tr].second; ++t) {
+          model->addConstr(vars["mu"](tr, t - 1) - edge_pos.first,
+                           GRB_GREATER_EQUAL,
+                           vars["b_pos"](i, vss) -
+                               r_len * (1 - vars["b_tight"](tr, t, i, vss)),
+                           "tight_vss_border_constraint_1_" + tr_name + "_" +
+                               std::to_string(t * dt) + "_" + edge_name + "_" +
+                               std::to_string(vss));
+          model->addConstr(vars["mu"](tr, t - 1) - edge_pos.first,
+                           GRB_LESS_EQUAL,
+                           vars["b_pos"](i, vss) +
+                               mu_ub * (1 - vars["b_tight"](tr, t, i, vss)),
+                           "tight_vss_border_constraint_2_" + tr_name + "_" +
+                               std::to_string(t * dt) + "_" + edge_name + "_" +
+                               std::to_string(vss));
+        }
+      }
+    }
+  }
+
+  // Analog for every edge ending
+  for (size_t e = 0; e < num_edges; ++e) {
+    const auto& edge      = instance.n().get_edge(e);
+    const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
+    const auto& e_len = edge.length;
+    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto& tr_name  = instance.get_train_list().get_train(tr).name;
+      const auto  edge_pos = instance.route_edge_pos(tr_name, e);
+      const auto  r_len    = instance.route_length(tr_name);
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
+        model->addConstr(vars["mu"](tr, t - 1), GRB_GREATER_EQUAL,
+                         edge_pos.second -
+                             r_len * (1 - vars["e_tight"](tr, t, e)),
+                         "tight_ttd_border_constraint_" + tr_name + "_" +
+                             std::to_string(t * dt) + "_" + edge_name);
+      }
+    }
+  }
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)
