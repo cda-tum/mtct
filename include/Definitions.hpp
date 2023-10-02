@@ -9,7 +9,7 @@ namespace cda_rail {
 const double INF                = std::numeric_limits<double>::max() / 3;
 const double EPS                = 10 * std::numeric_limits<double>::epsilon();
 const double GRB_EPS            = 1e-4;
-const double V_MIN              = 10 * GRB_EPS;
+const double V_MIN              = 0.3;
 const double ROUNDING_PRECISION = 1;
 const double STOP_TOLERANCE     = 5;
 const double ABS_PWL_ERROR      = 10;
