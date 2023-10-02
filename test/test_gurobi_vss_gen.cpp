@@ -556,7 +556,8 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
-        if (std::abs(stop - tr_pos) < cda_rail::GRB_EPS) {
+        if (std::abs(stop - tr_pos) <
+            cda_rail::GRB_EPS + cda_rail::STOP_TOLERANCE) {
           found = true;
           break;
         }
@@ -610,7 +611,8 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
-        if (std::abs(stop - tr_pos) < cda_rail::GRB_EPS) {
+        if (std::abs(stop - tr_pos) <
+            cda_rail::GRB_EPS + cda_rail::STOP_TOLERANCE) {
           found = true;
           break;
         }
@@ -664,7 +666,8 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
-        if (std::abs(stop - tr_pos) < cda_rail::GRB_EPS) {
+        if (std::abs(stop - tr_pos) <
+            cda_rail::GRB_EPS + cda_rail::STOP_TOLERANCE) {
           found = true;
           break;
         }
@@ -718,7 +721,8 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree) {
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
-        if (std::abs(stop - tr_pos) < cda_rail::GRB_EPS) {
+        if (std::abs(stop - tr_pos) <
+            cda_rail::GRB_EPS + cda_rail::STOP_TOLERANCE) {
           found = true;
           break;
         }

@@ -687,7 +687,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         for (size_t t = train_interval[tr].first + 2;
              t <= train_interval[tr].second; ++t) {
           model->addConstr(vars["e_mu"](tr, t - 1, e), GRB_GREATER_EQUAL,
-                           vars["b_pos"](i, vss) -
+                           vars["b_pos"](i, vss) - STOP_TOLERANCE -
                                e_len * (1 - vars["b_tight"](tr, t, i, vss)),
                            "tight_vss_border_constraint_1_" + tr_name + "_" +
                                std::to_string(t * dt) + "_" + edge_name + "_" +
@@ -715,7 +715,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
         model->addConstr(vars["e_mu"](tr, t - 1, e), GRB_GREATER_EQUAL,
-                         e_len * vars["e_tight"](tr, t, e),
+                         e_len * vars["e_tight"](tr, t, e) - STOP_TOLERANCE,
                          "tight_ttd_border_constraint_" + tr_name + "_" +
                              std::to_string(t * dt) + "_" + edge_name);
       }
