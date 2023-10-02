@@ -352,12 +352,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
-      model->addConstr(objective_expr >= static_cast<double>(obj_lb));
+      model->addConstr(objective_expr, GRB_GREATER_EQUAL,
+                       static_cast<double>(obj_lb));
       if (debug) {
         std::cout << "Added constraint: obj >= " << obj_lb << std::endl;
       }
       if (obj_ub.has_value()) {
-        model->addConstr(objective_expr <= obj_ub.value());
+        model->addConstr(objective_expr, GRB_LESS_EQUAL, obj_ub.value());
         if (debug) {
           std::cout << "Added constraint: obj <= " << obj_ub.value()
                     << std::endl;
