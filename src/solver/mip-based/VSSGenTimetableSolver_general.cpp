@@ -329,7 +329,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         sol_object = extract_solution(postprocess, debug, old_instance);
       }
 
-      if (obj_ub.has_value() && static_cast<double>(obj_lb) >= obj_ub.value()) {
+      if (obj_ub.has_value() &&
+          static_cast<double>(obj_lb) + GRB_EPS >= obj_ub.value()) {
         if (debug) {
           std::cout << "Break because obj_lb (" << obj_lb << ") >= obj_ub ("
                     << obj_ub.value() << ")" << std::endl;
