@@ -412,7 +412,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
-    const auto& e_len = edge.length;
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
         const auto& tr_name  = instance.get_train_list().get_train(tr).name;
@@ -450,7 +449,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name +
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
-    const auto& e_len = edge.length;
     for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
       const auto& tr_name  = instance.get_train_list().get_train(tr).name;
       const auto  edge_pos = instance.route_edge_pos(tr_name, e);
