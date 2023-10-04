@@ -13,7 +13,7 @@
   </picture>
 </p>
 
-## A Tool for Automated Design of ETCS Systems with Hybrid Train Detection (formerly ETCS Hybrid Level 3) Systems
+## A Tool for Automated Design of ETCS Systems with Hybrid Train Detection (formerly ETCS Hybrid Level 3)
 
 Developers: Stefan Engels, Tom Peham, and Robert Wille
 
