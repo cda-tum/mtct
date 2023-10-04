@@ -6,7 +6,14 @@
 
 # MTCT - Munich Train Control Toolkit
 
-## A Tool for Automated Design of ETCS Hybrid Level 3 Systems
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="_img/mtct-logo-light-medium.png" width="60%">
+    <img src="_img/mtct-logo-light-medium.png" width="60%">
+  </picture>
+</p>
+
+## A Tool for Automated Design of ETCS Systems with Hybrid Train Detection (formerly ETCS Hybrid Level 3) Systems
 
 Developers: Stefan Engels, Tom Peham, and Robert Wille
 
