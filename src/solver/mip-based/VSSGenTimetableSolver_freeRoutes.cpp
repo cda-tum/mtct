@@ -721,6 +721,22 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
     }
   }
+
+  // Fix lenout problem
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
+    const auto& tr_len  = instance.get_train_list().get_train(tr_name).length;
+    const auto& max_brakelen =
+        include_braking_curves ? get_max_brakelen(tr) : 0;
+    for (size_t t = train_interval[tr].first + 2;
+         t <= train_interval[tr].second; ++t) {
+      // len_out(t-1) <= M * v(t) with M = (tr_len + max_brakelen) / V_MIN
+      const auto M = (tr_len + max_brakelen) / V_MIN;
+      model->addConstr(
+          vars["len_out"](tr, t - 1), GRB_LESS_EQUAL, M * vars["v"](tr, t),
+          "tight_len_out_constraint_" + tr_name + "_" + std::to_string(t * dt));
+    }
+  }
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)
