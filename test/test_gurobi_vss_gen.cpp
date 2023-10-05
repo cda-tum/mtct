@@ -680,7 +680,62 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
   }
 }
 
-TEST(Solver, OnlyStopAtBoundariesContinuousFree) {
+TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  const auto obj_val = solver.solve(
+      15, false,
+      cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
+      false, false, false, true, false, false, 240, true);
+
+  // Check if all objective values are 1
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 1);
+  EXPECT_EQ(obj_val.get_mip_obj(), 1);
+
+  for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
+       ++tr) {
+    const auto& allowed_stops = obj_val.get_valid_border_stops(tr);
+    const auto& tr_name =
+        obj_val.get_instance().get_train_list().get_train(tr).name;
+
+    // put values of allowed_stops into string separated by comma
+    std::string allowed_stops_str;
+    for (const auto& stop : allowed_stops) {
+      allowed_stops_str += std::to_string(stop) + ", ";
+    }
+    // remove last comma
+    allowed_stops_str =
+        allowed_stops_str.substr(0, allowed_stops_str.size() - 2);
+
+    const auto& [t0, tn] =
+        obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
+    for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
+      const auto& train_speed =
+          obj_val.get_train_speed(tr, t * obj_val.get_dt());
+      if (train_speed > cda_rail::GRB_EPS) {
+        continue;
+      }
+      const auto& tr_pos = obj_val.get_train_pos(tr, t * obj_val.get_dt());
+      // Expect any of allowed_stops to be within EPS of tr_pos
+      bool found = false;
+      for (const auto& stop : allowed_stops) {
+        if (std::abs(stop - tr_pos) <
+            cda_rail::GRB_EPS + cda_rail::STOP_TOLERANCE) {
+          found = true;
+          break;
+        }
+      }
+      EXPECT_TRUE(found) << "Error on train " << tr_name << " (id=" << tr
+                         << ") at time " << t * obj_val.get_dt()
+                         << " with speed " << train_speed << " and position "
+                         << tr_pos << ". Allowed stops: " << allowed_stops_str;
+    }
+  }
+}
+
+TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
 
@@ -688,6 +743,61 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree) {
       15, false,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
       true, false, false, true, false, false, 240, true);
+
+  // Check if all objective values are 1
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 1);
+  EXPECT_EQ(obj_val.get_mip_obj(), 1);
+
+  for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
+       ++tr) {
+    const auto& allowed_stops = obj_val.get_valid_border_stops(tr);
+    const auto& tr_name =
+        obj_val.get_instance().get_train_list().get_train(tr).name;
+
+    // put values of allowed_stops into string separated by comma
+    std::string allowed_stops_str;
+    for (const auto& stop : allowed_stops) {
+      allowed_stops_str += std::to_string(stop) + ", ";
+    }
+    // remove last comma
+    allowed_stops_str =
+        allowed_stops_str.substr(0, allowed_stops_str.size() - 2);
+
+    const auto& [t0, tn] =
+        obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
+    for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
+      const auto& train_speed =
+          obj_val.get_train_speed(tr, t * obj_val.get_dt());
+      if (train_speed > cda_rail::GRB_EPS) {
+        continue;
+      }
+      const auto& tr_pos = obj_val.get_train_pos(tr, t * obj_val.get_dt());
+      // Expect any of allowed_stops to be within EPS of tr_pos
+      bool found = false;
+      for (const auto& stop : allowed_stops) {
+        if (std::abs(stop - tr_pos) <
+            cda_rail::GRB_EPS + cda_rail::STOP_TOLERANCE) {
+          found = true;
+          break;
+        }
+      }
+      EXPECT_TRUE(found) << "Error on train " << tr_name << " (id=" << tr
+                         << ") at time " << t * obj_val.get_dt()
+                         << " with speed " << train_speed << " and position "
+                         << tr_pos << ". Allowed stops: " << allowed_stops_str;
+    }
+  }
+}
+
+TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  const auto obj_val = solver.solve(
+      15, false,
+      cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
+      true, true, false, true, true, false, 240, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
