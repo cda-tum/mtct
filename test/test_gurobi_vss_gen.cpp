@@ -841,6 +841,19 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
                          << ") at time " << t * obj_val.get_dt()
                          << " with speed " << train_speed << " and position "
                          << tr_pos << ". Allowed stops: " << allowed_stops_str;
+      if (!found) {
+        // Trains positions are:
+        std::cout << "Train positions of train " << tr_name << " (id=" << tr
+                  << "):" << std::endl;
+        const auto& tr_interval = obj_val.get_instance().time_index_interval(
+            tr, obj_val.get_dt(), true);
+        for (auto t_index = tr_interval.first; t_index <= tr_interval.second;
+             ++t_index) {
+          std::cout << "t=" << (t_index * obj_val.get_dt()) << ": "
+                    << obj_val.get_train_pos(tr, t_index * obj_val.get_dt())
+                    << std::endl;
+        }
+      }
     }
   }
 }
