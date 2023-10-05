@@ -850,6 +850,8 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
         for (auto t_index = tr_interval.first; t_index <= tr_interval.second;
              ++t_index) {
           std::cout << "t=" << (t_index * obj_val.get_dt()) << ": "
+                    << obj_val.get_train_speed(tr, t_index * obj_val.get_dt())
+                    << "m/s at "
                     << obj_val.get_train_pos(tr, t_index * obj_val.get_dt())
                     << std::endl;
         }
