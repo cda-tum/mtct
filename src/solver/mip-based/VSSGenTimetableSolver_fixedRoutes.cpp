@@ -413,7 +413,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
-      for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      for (const auto tr : instance.trains_on_edge(e, this->fix_routes)) {
         const auto& tr_name  = instance.get_train_list().get_train(tr).name;
         const auto  edge_pos = instance.route_edge_pos(tr_name, e);
         const auto  r_len    = instance.route_length(tr_name);
@@ -449,7 +449,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name +
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
-    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+    for (const auto tr : instance.trains_on_edge(e, this->fix_routes)) {
       const auto& tr_name  = instance.get_train_list().get_train(tr).name;
       const auto  edge_pos = instance.route_edge_pos(tr_name, e);
       const auto  r_len    = instance.route_length(tr_name);
@@ -461,6 +461,22 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                          "tight_ttd_border_constraint_" + tr_name + "_" +
                              std::to_string(t * dt) + "_" + edge_name);
       }
+    }
+  }
+
+  // Cannot stop after route end
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_object    = instance.get_train_list().get_train(tr);
+    const auto& tr_name      = tr_object.name;
+    const auto  r_len        = instance.route_length(tr_name);
+    const auto& tr_len       = tr_object.length;
+    const auto  max_brakelen = get_max_brakelen(tr);
+    for (size_t t = train_interval[tr].first + 2;
+         t <= train_interval[tr].second; ++t) {
+      model->addConstr(vars["mu"](tr, t - 1), GRB_LESS_EQUAL,
+                       r_len + (tr_len + max_brakelen) * vars["stopped"](tr, t),
+                       "len_out_tight_if_stopped_" + tr_name + "_" +
+                           std::to_string(t * dt));
     }
   }
 }
