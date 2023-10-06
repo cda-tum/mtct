@@ -422,20 +422,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     sol_object = extract_solution(postprocess, debug, old_instance);
   }
 
-  if (instance.get_train_list().has_train("tr3") && !fix_routes) {
-    const auto tr3 = instance.get_train_list().get_train_index("tr3");
-    std::cout << "tr3 RELEVANT VARIABLES" << std::endl;
-    const auto& tr_interval = instance.time_index_interval(tr3, dt, true);
-    for (auto t_index = tr_interval.first + 1; t_index <= tr_interval.second;
-         ++t_index) {
-      const auto& len_out =
-          vars["len_out"](tr3, t_index - 1).get(GRB_DoubleAttr_X);
-      const auto& v = vars["v"](tr3, t_index).get(GRB_DoubleAttr_X);
-      std::cout << "t " << t_index << " (=" << t_index * dt << "): "
-                << "len_out (t-1): " << len_out << " v (t): " << v << std::endl;
-    }
-  }
-
   cleanup(old_instance);
 
   if (export_option == ExportOption::ExportSolution ||
@@ -448,6 +434,20 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     std::filesystem::path path = p;
     path /= name;
     sol_object->export_solution(path, export_instance);
+  }
+
+  if (instance.get_train_list().has_train("tr3")) {
+    const auto tr3 = instance.get_train_list().get_train_index("tr3");
+    std::cout << "tr3 RELEVANT VARIABLES" << std::endl;
+    const auto& tr_interval = instance.time_index_interval(tr3, dt, true);
+    for (auto t_index = tr_interval.first + 1; t_index <= tr_interval.second;
+         ++t_index) {
+      const auto& len_out =
+          vars["len_out"](tr3, t_index - 1).get(GRB_DoubleAttr_X);
+      const auto& v = vars["v"](tr3, t_index).get(GRB_DoubleAttr_X);
+      std::cout << "t " << t_index << " (=" << t_index * dt << "): "
+                << "len_out (t-1): " << len_out << " v (t): " << v << std::endl;
+    }
   }
 
   return sol_object.value();
