@@ -731,9 +731,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (size_t t = train_interval[tr].first + 2;
          t <= train_interval[tr].second; ++t) {
       // len_out(t-1) <= M * v(t) with M = (tr_len + max_brakelen) / V_MIN
-      const auto M = (tr_len + max_brakelen) / V_MIN;
+      const auto m = (tr_len + max_brakelen) / V_MIN;
       model->addConstr(
-          vars["len_out"](tr, t - 1), GRB_LESS_EQUAL, M * vars["v"](tr, t),
+          vars["len_out"](tr, t - 1), GRB_LESS_EQUAL, m * vars["v"](tr, t),
           "tight_len_out_constraint_" + tr_name + "_" + std::to_string(t * dt));
     }
   }
