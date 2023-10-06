@@ -728,13 +728,16 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_len  = instance.get_train_list().get_train(tr_name).length;
     const auto& max_brakelen =
         include_braking_curves ? get_max_brakelen(tr) : 0;
+    // NOLINTBEGIN(readability-identifier-naming)
+    const double M = tr_len + max_brakelen;
+    // NOLINTEND(readability-identifier-naming)
     for (size_t t = train_interval[tr].first + 2;
          t <= train_interval[tr].second; ++t) {
       // len_out(t-1) <= M * v(t) with M = (tr_len + max_brakelen) / V_MIN
-      const auto m = (tr_len + max_brakelen) / V_MIN;
-      model->addConstr(
-          vars["len_out"](tr, t - 1), GRB_LESS_EQUAL, m * vars["v"](tr, t),
-          "tight_len_out_constraint_" + tr_name + "_" + std::to_string(t * dt));
+      model->addConstr(vars["len_out"](tr, t - 1), GRB_LESS_EQUAL,
+                       M * vars["stopped"](tr, t),
+                       "tight_len_out_constraint_" + tr_name + "_" +
+                           std::to_string(t * dt));
     }
   }
 }

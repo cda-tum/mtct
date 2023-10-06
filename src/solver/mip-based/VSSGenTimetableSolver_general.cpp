@@ -452,6 +452,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   vars["y_sec_fwd"] = MultiArray<GRBVar>(num_t, fwd_bwd_sections.size());
   vars["y_sec_bwd"] = MultiArray<GRBVar>(num_t, fwd_bwd_sections.size());
 
+  if (vss_model.get_only_stop_at_vss()) {
+    vars["stopped"] = MultiArray<GRBVar>(num_tr, num_t);
+  }
+
   auto train_list = instance.get_train_list();
   for (size_t i = 0; i < num_tr; ++i) {
     auto max_speed = instance.get_train_list().get_train(i).max_speed;
@@ -989,6 +993,22 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   create_general_speed_constraints();
   create_reverse_occupation_constraints();
   create_general_boundary_constraints();
+
+  if (vss_model.get_only_stop_at_vss()) {
+    for (size_t tr = 0; tr < num_tr; ++tr) {
+      const auto& tr_speed = instance.get_train_list().get_train(tr).max_speed;
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
+           ++t) {
+        // v(tr,t) = 0 iff stopped(tr,t) = 0 otherwise v(tr,t) >= V_MIN
+        model->addConstr(
+            vars["v"](tr, t), GRB_GREATER_EQUAL, V_MIN * vars["stopped"](tr, t),
+            "v_min_" + std::to_string(tr) + "_" + std::to_string(t * dt));
+        model->addConstr(
+            vars["v"](tr, t), GRB_LESS_EQUAL, tr_speed * vars["stopped"](tr, t),
+            "v_max_" + std::to_string(tr) + "_" + std::to_string(t * dt));
+      }
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
@@ -1659,6 +1679,18 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_only_stop_at_vss_variables() {
+  vars["stopped"] = MultiArray<GRBVar>(num_tr, num_t);
+
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
+    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
+         ++t) {
+      vars["stopped"](tr, t) =
+          model->addVar(0, 1, 0, GRB_BINARY,
+                        "stopped_" + tr_name + "_" + std::to_string(t * dt));
+    }
+  }
+
   if (vss_model.get_model_type() != vss::ModelType::Discrete) {
     create_non_discretized_only_stop_at_vss_variables();
   } else {
@@ -1670,10 +1702,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_general_only_stop_at_vss_constraints() {
-  // NOLINTBEGIN(readability-identifier-naming)
-  const double M = (1 / V_MIN);
-  // NOLINTEND(readability-identifier-naming)
-
   // At most one b_tight can be true per train and time
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = instance.get_train_list().get_train(tr).name;
@@ -1745,7 +1773,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           }
         }
         model->addConstr(lhs, GRB_GREATER_EQUAL,
-                         vars["x"](tr, t - 1, e) - M * vars["v"](tr, t),
+                         vars["x"](tr, t - 1, e) - vars["stopped"](tr, t),
                          "b_tight_e_tight_min_one_" + tr_name + "_" +
                              std::to_string(t * dt) + "_" + edge_name);
       }
@@ -1784,7 +1812,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           lhs += vars["x"](tr, t - 1, e_out);
         }
         model->addConstr(lhs, GRB_GREATER_EQUAL,
-                         vars["x"](tr, t - 1, e) - M * vars["v"](tr, t),
+                         vars["x"](tr, t - 1, e) - vars["stopped"](tr, t),
                          "no_stop_on_non-border_edge_ending_" + tr_name + "_" +
                              std::to_string(t * dt) + "_" + edge_name);
       }
@@ -1811,7 +1839,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                std::to_string(vss));
           model->addConstr(
               vars["b_tight"](tr, t, i, vss), GRB_GREATER_EQUAL,
-              vars["b_front"](tr, t, i, vss) - M * vars["v"](tr, t),
+              vars["b_front"](tr, t, i, vss) - vars["stopped"](tr, t),
               "b_tight_not_front_2_" + tr_name + "_" + std::to_string(t * dt) +
                   "_" + edge_name + "_" + std::to_string(vss));
         }
@@ -1838,7 +1866,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           lhs += vars["b_tight"](tr, t, breakable_edge_indices.at(e), vss);
         }
       }
-      model->addConstr(lhs, GRB_GREATER_EQUAL, 1 - M * vars["v"](tr, t),
+      model->addConstr(lhs, GRB_GREATER_EQUAL, 1 - vars["stopped"](tr, t),
                        "at_least_one_tight_if_stopped_" + tr_name + "_" +
                            std::to_string(t * dt));
     }
