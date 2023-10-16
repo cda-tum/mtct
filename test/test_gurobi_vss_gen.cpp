@@ -281,6 +281,50 @@ TEST(Solver, GurobiVSSGenVSSDiscrete) {
   EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
+TEST(Solver, GurobiVSSGenTim) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver1(
+      "./example-networks/SimpleStation/");
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver2(
+      "./example-networks/SimpleStation_TMP1/");
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver3(
+      "./example-networks/SimpleStation_TMP2/");
+
+  std::cout << "--------------------- TEST 1 ---------------------------"
+            << std::endl;
+
+  EXPECT_TRUE(solver1.get_instance().get_train_list().get_train("tr1").tim);
+  EXPECT_TRUE(solver1.get_instance().get_train_list().get_train("tr2").tim);
+  EXPECT_TRUE(solver1.get_instance().get_train_list().get_train("tr3").tim);
+
+  const auto obj_val_1 = solver1.solve(15);
+  std::cout << "--------------------- TEST 2 ---------------------------"
+            << std::endl;
+
+  EXPECT_FALSE(solver1.get_instance().get_train_list().get_train("tr1").tim);
+  EXPECT_TRUE(solver1.get_instance().get_train_list().get_train("tr2").tim);
+  EXPECT_TRUE(solver1.get_instance().get_train_list().get_train("tr3").tim);
+
+  const auto obj_val_2 = solver2.solve(15);
+  std::cout << "--------------------- TEST 3 ---------------------------"
+            << std::endl;
+
+  EXPECT_TRUE(solver1.get_instance().get_train_list().get_train("tr1").tim);
+  EXPECT_FALSE(solver1.get_instance().get_train_list().get_train("tr2").tim);
+  EXPECT_TRUE(solver1.get_instance().get_train_list().get_train("tr3").tim);
+
+  const auto obj_val_3 = solver3.solve(15);
+
+  EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Infeasible);
+
+  EXPECT_EQ(obj_val_1.get_obj(), 1);
+  EXPECT_EQ(obj_val_2.get_obj(), 1);
+
+  EXPECT_EQ(obj_val_1.get_mip_obj(), 1);
+  EXPECT_EQ(obj_val_2.get_mip_obj(), 1);
+}
+
 TEST(Solver, OvertakeFixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/Overtake/");
