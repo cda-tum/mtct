@@ -1724,6 +1724,7 @@ TEST(Functionality, ReadTrains) {
   EXPECT_EQ(tr1.max_speed, 83.33);
   EXPECT_EQ(tr1.acceleration, 2);
   EXPECT_EQ(tr1.deceleration, 1);
+  EXPECT_TRUE(tr1.tim);
 
   // Check if the train tr2 is imported correctly
   auto tr2 = trains.get_train("tr2");
@@ -1732,6 +1733,7 @@ TEST(Functionality, ReadTrains) {
   EXPECT_EQ(tr2.max_speed, 27.78);
   EXPECT_EQ(tr2.acceleration, 2);
   EXPECT_EQ(tr2.deceleration, 1);
+  EXPECT_TRUE(tr2.tim);
 
   // Check if the train tr3 is imported correctly
   auto tr3 = trains.get_train("tr3");
@@ -1740,6 +1742,7 @@ TEST(Functionality, ReadTrains) {
   EXPECT_EQ(tr3.max_speed, 20);
   EXPECT_EQ(tr3.acceleration, 2);
   EXPECT_EQ(tr3.deceleration, 1);
+  EXPECT_TRUE(tr3.tim);
 }
 
 TEST(Functionality, WriteTrains) {
@@ -1777,6 +1780,7 @@ TEST(Functionality, WriteTrains) {
   EXPECT_EQ(tr1.max_speed, 83.33);
   EXPECT_EQ(tr1.acceleration, 2);
   EXPECT_EQ(tr1.deceleration, 1);
+  EXPECT_TRUE(tr1.tim);
 
   // Check if the train tr2 is imported correctly
   auto tr2 = trains_read.get_train("tr2");
@@ -1785,6 +1789,7 @@ TEST(Functionality, WriteTrains) {
   EXPECT_EQ(tr2.max_speed, 27.78);
   EXPECT_EQ(tr2.acceleration, 2);
   EXPECT_EQ(tr2.deceleration, 1);
+  EXPECT_TRUE(tr2.tim);
 
   // Check if the train tr3 is imported correctly
   auto tr3 = trains_read.get_train("tr3");
@@ -1793,6 +1798,7 @@ TEST(Functionality, WriteTrains) {
   EXPECT_EQ(tr3.max_speed, 20);
   EXPECT_EQ(tr3.acceleration, 2);
   EXPECT_EQ(tr3.deceleration, 1);
+  EXPECT_TRUE(tr3.tim);
 }
 
 TEST(Functionality, IsDirectory) {

@@ -3,96 +3,112 @@
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 135,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S1Leuchtenbergring": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 202,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S2Dachau": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 202,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S2Erding": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 135,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S2Ost": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 135,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S2Petershausen": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 135,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S3Deisenhofen": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 135,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S3Mammendorf": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 135,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S4Geltendorf": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 202,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S4Grafing": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 135,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S6Ebersberg": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 135,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S6Tutzing": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 202,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S7Aying": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 202,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S7Wolfratshausen": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 135,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S8Airport": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 202,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   },
   "S8Germering": {
     "acceleration": 1.0,
     "deceleration": 0.9,
     "length": 135,
-    "max_speed": 38.888888888888886
+    "max_speed": 38.888888888888886,
+    "tim": true
   }
 }

@@ -3,12 +3,14 @@
     "acceleration": 1.0,
     "deceleration": 1.5,
     "length": 300,
-    "max_speed": 85.0
+    "max_speed": 85.0,
+    "tim": true
   },
   "tr2": {
     "acceleration": 1.0,
     "deceleration": 1.5,
     "length": 300,
-    "max_speed": 85.0
+    "max_speed": 85.0,
+    "tim": true
   }
 }
