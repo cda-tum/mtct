@@ -59,6 +59,26 @@ public:
                                deceleration, t_0, v_0, entry, t_n, v_n, exit,
                                network);
   };
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, bool tim, int t_0,
+                   double v_0, size_t entry, int t_n, double v_n, size_t exit) {
+    return timetable.add_train(name, length, max_speed, acceleration,
+                               deceleration, tim, t_0, v_0, entry, t_n, v_n,
+                               exit, network);
+  };
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, bool tim, int t_0,
+                   double v_0, const std::string& entry, int t_n, double v_n,
+                   const std::string& exit) {
+    return timetable.add_train(name, length, max_speed, acceleration,
+                               deceleration, tim, t_0, v_0, entry, t_n, v_n,
+                               exit, network);
+  };
+
+  Train& editable_tr(size_t index) { return timetable.editable_tr(index); };
+  Train& editable_tr(const std::string& name) {
+    return timetable.editable_tr(name);
+  };
 
   void add_station(const std::string& name) { timetable.add_station(name); };
 

@@ -29,9 +29,10 @@ cda_rail::Timetable::get_schedule(size_t index) const {
 
 size_t cda_rail::Timetable::add_train(const std::string& name, int length,
                                       double max_speed, double acceleration,
-                                      double deceleration, int t_0, double v_0,
-                                      size_t entry, int t_n, double v_n,
-                                      size_t exit, const Network& network) {
+                                      double deceleration, bool tim, int t_0,
+                                      double v_0, size_t entry, int t_n,
+                                      double v_n, size_t exit,
+                                      const Network& network) {
   /**
    * This method adds a train to the timetable. The train is specified by its
    * parameters.
@@ -60,8 +61,8 @@ size_t cda_rail::Timetable::add_train(const std::string& name, int length,
   if (train_list.has_train(name)) {
     throw exceptions::ConsistencyException("Train already exists.");
   }
-  auto const index =
-      train_list.add_train(name, length, max_speed, acceleration, deceleration);
+  auto const index = train_list.add_train(name, length, max_speed, acceleration,
+                                          deceleration, tim);
   schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
   return index;
 }

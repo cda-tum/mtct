@@ -101,14 +101,33 @@ public:
   size_t add_train(const std::string& name, int length, double max_speed,
                    double acceleration, double deceleration, int t_0,
                    double v_0, size_t entry, int t_n, double v_n, size_t exit,
-                   const Network& network);
+                   const Network& network) {
+    return add_train(name, length, max_speed, acceleration, deceleration, true,
+                     t_0, v_0, entry, t_n, v_n, exit, network);
+  };
   size_t add_train(const std::string& name, int length, double max_speed,
                    double acceleration, double deceleration, int t_0,
                    double v_0, const std::string& entry, int t_n, double v_n,
                    const std::string& exit, const Network& network) {
-    return add_train(name, length, max_speed, acceleration, deceleration, t_0,
-                     v_0, network.get_vertex_index(entry), t_n, v_n,
+    return add_train(name, length, max_speed, acceleration, deceleration, true,
+                     t_0, v_0, entry, t_n, v_n, exit, network);
+  };
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, bool tim, int t_0,
+                   double v_0, size_t entry, int t_n, double v_n, size_t exit,
+                   const Network& network);
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, bool tim, int t_0,
+                   double v_0, const std::string& entry, int t_n, double v_n,
+                   const std::string& exit, const Network& network) {
+    return add_train(name, length, max_speed, acceleration, deceleration, tim,
+                     t_0, v_0, network.get_vertex_index(entry), t_n, v_n,
                      network.get_vertex_index(exit), network);
+  };
+
+  Train& editable_tr(size_t index) { return train_list.editable_tr(index); };
+  Train& editable_tr(const std::string& name) {
+    return train_list.editable_tr(name);
   };
 
   void add_station(const std::string& name) { station_list.add_station(name); };

@@ -72,6 +72,11 @@ public:
     return get_train(get_train_index(name));
   };
 
+  [[nodiscard]] Train& editable_tr(size_t index);
+  [[nodiscard]] Train& editable_tr(const std::string& name) {
+    return editable_tr(get_train_index(name));
+  };
+
   [[nodiscard]] bool has_train(const std::string& name) const {
     return train_name_to_index.find(name) != train_name_to_index.end();
   };

@@ -1801,6 +1801,30 @@ TEST(Functionality, WriteTrains) {
   EXPECT_TRUE(tr3.tim);
 }
 
+TEST(Functionality, EditTrains) {
+  // Create a train list
+  auto       trains    = cda_rail::TrainList();
+  const auto tr1_index = trains.add_train("tr1", 100, 83.33, 2, 1, false);
+
+  EXPECT_EQ(trains.get_train("tr1").length, 100);
+  EXPECT_EQ(trains.get_train(tr1_index).max_speed, 83.33);
+  EXPECT_EQ(trains.get_train("tr1").acceleration, 2);
+  EXPECT_EQ(trains.get_train(tr1_index).deceleration, 1);
+  EXPECT_FALSE(trains.get_train("tr1").tim);
+
+  trains.editable_tr("tr1").length           = 200;
+  trains.editable_tr(tr1_index).max_speed    = 50;
+  trains.editable_tr("tr1").acceleration     = 3;
+  trains.editable_tr(tr1_index).deceleration = 2;
+  trains.editable_tr("tr1").tim              = true;
+
+  EXPECT_EQ(trains.get_train("tr1").length, 200);
+  EXPECT_EQ(trains.get_train(tr1_index).max_speed, 50);
+  EXPECT_EQ(trains.get_train("tr1").acceleration, 3);
+  EXPECT_EQ(trains.get_train(tr1_index).deceleration, 2);
+  EXPECT_TRUE(trains.get_train("tr1").tim);
+}
+
 TEST(Functionality, IsDirectory) {
   EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory"));
   EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory"));

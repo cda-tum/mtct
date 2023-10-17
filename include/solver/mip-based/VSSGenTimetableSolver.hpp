@@ -164,5 +164,8 @@ public:
   [[nodiscard]] const instances::VSSGenerationTimetable& get_instance() const {
     return instance;
   }
+  [[nodiscard]] instances::VSSGenerationTimetable& editable_instance() {
+    return instance;
+  }
 };
 } // namespace cda_rail::solver::mip_based

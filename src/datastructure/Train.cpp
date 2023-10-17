@@ -60,6 +60,20 @@ const cda_rail::Train& cda_rail::TrainList::get_train(size_t index) const {
   return trains.at(index);
 }
 
+cda_rail::Train& cda_rail::TrainList::editable_tr(size_t index) {
+  /**
+   * Returns the train with the given index.
+   *
+   * @param index The index of the train.
+   *
+   * @return The train with the given index.
+   */
+  if (!has_train(index)) {
+    throw exceptions::TrainNotExistentException(index);
+  }
+  return trains.at(index);
+}
+
 void cda_rail::TrainList::export_trains(const std::filesystem::path& p) const {
   /**
    * This method exports all trains to a directory in trains.json.
