@@ -326,6 +326,122 @@ TEST(Solver, GurobiVSSGenTim) {
   EXPECT_EQ(obj_val_2.get_mip_obj(), 1);
 }
 
+TEST(Solver, GurobiVSSGenTimFixed) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  std::cout << "--------------------- TEST 1 ---------------------------"
+            << std::endl;
+
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+
+  const auto obj_val_1 = solver.solve(15, true);
+  std::cout << "--------------------- TEST 2 ---------------------------"
+            << std::endl;
+
+  solver.editable_instance().editable_tr("tr1").tim = false;
+
+  EXPECT_FALSE(solver.get_instance().get_train_list().get_train("tr1").tim);
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+
+  const auto obj_val_2 = solver.solve(15, true);
+  std::cout << "--------------------- TEST 3 ---------------------------"
+            << std::endl;
+
+  solver.editable_instance().editable_tr("tr1").tim = true;
+  solver.editable_instance().editable_tr("tr2").tim = false;
+
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
+  EXPECT_FALSE(solver.get_instance().get_train_list().get_train("tr2").tim);
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+
+  const auto obj_val_3 = solver.solve(15, true);
+
+  EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Infeasible);
+
+  EXPECT_EQ(obj_val_1.get_obj(), 1);
+  EXPECT_EQ(obj_val_2.get_obj(), 1);
+
+  EXPECT_EQ(obj_val_1.get_mip_obj(), 1);
+  EXPECT_EQ(obj_val_2.get_mip_obj(), 1);
+}
+
+TEST(Solver, GurobiVSSGenTimDiscrete1) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  std::cout << "--------------------- TEST 1 ---------------------------"
+            << std::endl;
+
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+
+  const auto obj_val_1 =
+      solver.solve(15, true,
+                   cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                        {&cda_rail::vss::functions::uniform}),
+                   false, false, false, true, false, false, 375, true,
+                   cda_rail::ExportOption::NoExport);
+
+  EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_1.get_obj(), 1);
+  EXPECT_EQ(obj_val_1.get_mip_obj(), 1);
+}
+
+TEST(Solver, GurobiVSSGenTimDiscrete2) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  std::cout << "--------------------- TEST 2 ---------------------------"
+            << std::endl;
+
+  solver.editable_instance().editable_tr("tr1").tim = false;
+
+  EXPECT_FALSE(solver.get_instance().get_train_list().get_train("tr1").tim);
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+
+  const auto obj_val_2 =
+      solver.solve(15, true,
+                   cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                        {&cda_rail::vss::functions::uniform}),
+                   false, false, false, true, false, false, 375, true,
+                   cda_rail::ExportOption::NoExport);
+
+  EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_2.get_obj(), 1);
+  EXPECT_EQ(obj_val_2.get_mip_obj(), 1);
+}
+
+TEST(Solver, GurobiVSSGenTimDiscrete3) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  std::cout << "--------------------- TEST 3 ---------------------------"
+            << std::endl;
+
+  solver.editable_instance().editable_tr("tr2").tim = false;
+
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
+  EXPECT_FALSE(solver.get_instance().get_train_list().get_train("tr2").tim);
+  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+
+  const auto obj_val_3 =
+      solver.solve(15, true,
+                   cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                        {&cda_rail::vss::functions::uniform}),
+                   false, false, false, true, false, false, 375, true,
+                   cda_rail::ExportOption::NoExport);
+
+  EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Infeasible);
+}
+
 TEST(Solver, OvertakeFixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/Overtake/");
