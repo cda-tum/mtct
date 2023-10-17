@@ -1360,8 +1360,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   }
 
   // At most one non-tim train can be on any breakable edge
-  for (size_t e_index = 0; e_index < breakable_edges.size(); ++e_index) {
-    const auto& e       = breakable_edges[e_index];
+  for (const auto& e : breakable_edges) {
     const auto  tr_on_e = instance.trains_on_edge(e, this->fix_routes);
     const auto& edge    = instance.n().get_edge(e);
     const auto& v0      = instance.n().get_vertex(edge.source);
