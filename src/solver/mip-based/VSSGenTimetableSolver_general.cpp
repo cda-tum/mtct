@@ -1358,6 +1358,28 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
     }
   }
+
+  // At most one non-tim train can be on any breakable edge
+  for (size_t e_index = 0; e_index < breakable_edges.size(); ++e_index) {
+    const auto& e       = breakable_edges[e_index];
+    const auto  tr_on_e = instance.trains_on_edge(e, this->fix_routes);
+    const auto& edge    = instance.n().get_edge(e);
+    const auto& v0      = instance.n().get_vertex(edge.source);
+    const auto& v1      = instance.n().get_vertex(edge.target);
+    const auto  e_name  = "[" + v0.name + "," + v1.name + "]";
+    for (size_t t = 0; t < num_t; ++t) {
+      GRBLinExpr lhs = 0;
+      for (const auto& tr :
+           instance.trains_at_t(static_cast<int>(t) * dt, tr_on_e)) {
+        if (!instance.get_train_list().get_train(tr).tim) {
+          lhs += vars["x"](tr, t, e);
+        }
+      }
+      model->addConstr(lhs, GRB_LESS_EQUAL, 1,
+                       "non_tim_train_on_edge_" + e_name + "_" +
+                           std::to_string(static_cast<int>(t) * dt));
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
