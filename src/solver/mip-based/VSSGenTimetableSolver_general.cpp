@@ -774,25 +774,35 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
               if (e1 == e2) {
                 continue;
               }
-              GRBLinExpr lhs = 2;
+              GRBLinExpr lhs        = 2;
+              GRBLinExpr lhs_first  = 0;
+              GRBLinExpr lhs_second = 0;
               if (tr1_route.contains_edge(
                       no_border_vss_section_sorted[e1].first)) {
                 lhs -= vars["x"](
+                    tr1, t, no_border_vss_section_sorted[e1].first.value());
+                lhs_first += vars["x"](
                     tr1, t, no_border_vss_section_sorted[e1].first.value());
               }
               if (tr1_route.contains_edge(
                       no_border_vss_section_sorted[e1].second)) {
                 lhs -= vars["x"](
                     tr1, t, no_border_vss_section_sorted[e1].second.value());
+                lhs_second += vars["x"](
+                    tr1, t, no_border_vss_section_sorted[e1].second.value());
               }
               if (tr2_route.contains_edge(
                       no_border_vss_section_sorted[e2].first)) {
                 lhs -= vars["x"](
                     tr2, t, no_border_vss_section_sorted[e2].first.value());
+                lhs_first += vars["x"](
+                    tr2, t, no_border_vss_section_sorted[e2].first.value());
               }
               if (tr2_route.contains_edge(
                       no_border_vss_section_sorted[e2].second)) {
                 lhs -= vars["x"](
+                    tr2, t, no_border_vss_section_sorted[e2].second.value());
+                lhs_second += vars["x"](
                     tr2, t, no_border_vss_section_sorted[e2].second.value());
               }
 
@@ -827,6 +837,39 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                       "_" +
                       std::to_string(
                           no_border_vss_section_sorted[e2].first.value()));
+
+              if ((!instance.get_train_list().get_train(tr1).tim &&
+                   (e1 > e2)) ||
+                  (!instance.get_train_list().get_train(tr2).tim &&
+                   (e2 > e1))) {
+                // lhs_first <= 1
+                model->addConstr(
+                    lhs_first <= 1,
+                    "vss_tim_first_" + tr1_name + "_" + tr2_name + "_" +
+                        std::to_string(t) + "_" +
+                        std::to_string(
+                            no_border_vss_section_sorted[e1].first.value()) +
+                        "_" +
+                        std::to_string(
+                            no_border_vss_section_sorted[e2].first.value()) +
+                        "_first");
+              }
+              if ((!instance.get_train_list().get_train(tr2).tim &&
+                   (e1 > e2)) ||
+                  (!instance.get_train_list().get_train(tr1).tim &&
+                   (e2 > e1))) {
+                // lhs_second <= 1
+                model->addConstr(
+                    lhs_second <= 1,
+                    "vss_tim_second_" + tr1_name + "_" + tr2_name + "_" +
+                        std::to_string(t) + "_" +
+                        std::to_string(
+                            no_border_vss_section_sorted[e1].first.value()) +
+                        "_" +
+                        std::to_string(
+                            no_border_vss_section_sorted[e2].first.value()) +
+                        "_first");
+              }
             }
           }
         }
