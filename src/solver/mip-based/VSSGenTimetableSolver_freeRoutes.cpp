@@ -590,13 +590,16 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                   "_" + std::to_string(t) + "_" + std::to_string(e) + "_" +
                   std::to_string(vss));
           // b_pos(e_index) <= e_lda(e) + M2 * (1 - b_rear(e_index))
-          const auto m2 = e_len;
-          model->addConstr(vars["b_pos"](e_index, vss), GRB_LESS_EQUAL,
-                           vars["e_lda"](tr, t, e) +
-                               m2 * (1 - vars["b_rear"](tr, t, e_index, vss)),
-                           "train_occupation_free_routes_vss_b_pos_mu_b_rear_" +
-                               tr_name + "_" + std::to_string(t) + "_" +
-                               std::to_string(e) + "_" + std::to_string(vss));
+          if (instance.get_train_list().get_train(tr).tim) {
+            const auto m2 = e_len;
+            model->addConstr(
+                vars["b_pos"](e_index, vss), GRB_LESS_EQUAL,
+                vars["e_lda"](tr, t, e) +
+                    m2 * (1 - vars["b_rear"](tr, t, e_index, vss)),
+                "train_occupation_free_routes_vss_b_pos_mu_b_rear_" + tr_name +
+                    "_" + std::to_string(t) + "_" + std::to_string(e) + "_" +
+                    std::to_string(vss));
+          }
         }
       }
     }

@@ -573,10 +573,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
               0, 1, 0, GRB_BINARY,
               "b_front_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
                   "_" + edge_name + "_" + std::to_string(vss));
-          vars["b_rear"](tr, t, i, vss) = model->addVar(
-              0, 1, 0, GRB_BINARY,
-              "b_rear_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
-                  "_" + edge_name + "_" + std::to_string(vss));
+          if (instance.get_train_list().get_train(tr).tim) {
+            vars["b_rear"](tr, t, i, vss) = model->addVar(
+                0, 1, 0, GRB_BINARY,
+                "b_rear_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
+                    "_" + edge_name + "_" + std::to_string(vss));
+          }
         }
       }
     }
@@ -1155,11 +1157,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                std::to_string(t) + "_" + std::to_string(e) +
                                "_" + std::to_string(vss));
           // x(tr,t,e) >= b_rear(tr,t,e_index,vss)
-          model->addConstr(vars["x"](tr, t, e), GRB_GREATER_EQUAL,
-                           vars["b_rear"](tr, t, e_index, vss),
-                           "x_b_rear_" + std::to_string(tr) + "_" +
-                               std::to_string(t) + "_" + std::to_string(e) +
-                               "_" + std::to_string(vss));
+          if (instance.get_train_list().get_train(tr).tim) {
+            model->addConstr(vars["x"](tr, t, e), GRB_GREATER_EQUAL,
+                             vars["b_rear"](tr, t, e_index, vss),
+                             "x_b_rear_" + std::to_string(tr) + "_" +
+                                 std::to_string(t) + "_" + std::to_string(e) +
+                                 "_" + std::to_string(vss));
+          }
         }
       }
     }
@@ -1182,7 +1186,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         create_constraint = true;
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           lhs_front += vars["b_front"](tr, t, e_index, vss);
-          lhs_rear += vars["b_rear"](tr, t, e_index, vss);
+          if (instance.get_train_list().get_train(tr).tim) {
+            lhs_rear += vars["b_rear"](tr, t, e_index, vss);
+          }
         }
         rhs += vars["x"](tr, t, e);
       }
@@ -1215,7 +1221,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         const auto  vss_number_e = instance.n().max_vss_on_edge(e);
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           lhs_front += vars["b_front"](tr, t, e_index, vss);
-          lhs_rear += vars["b_rear"](tr, t, e_index, vss);
+          if (instance.get_train_list().get_train(tr).tim) {
+            lhs_rear += vars["b_rear"](tr, t, e_index, vss);
+          }
         }
       }
       model->addConstr(lhs_front, GRB_LESS_EQUAL, 1,
@@ -1241,7 +1249,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         for (const auto& tr :
              instance.trains_at_t(static_cast<int>(t) * dt, tr_on_e)) {
           lhs += vars["b_front"](tr, t, e_index, vss);
-          rhs += vars["b_rear"](tr, t, e_index, vss);
+          if (instance.get_train_list().get_train(tr).tim) {
+            rhs += vars["b_rear"](tr, t, e_index, vss);
+          }
         }
         model->addConstr(lhs, GRB_EQUAL, rhs,
                          "b_front_rear_" + std::to_string(t) + "_" +
@@ -1287,12 +1297,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                  std::to_string(t) + "_" + std::to_string(e) +
                                  "_" + std::to_string(vss));
             // b_rear(tr, t, e_index, vss) <= b_used(e_index_relevant, vss)
-            model->addConstr(vars["b_rear"](tr, t, e_index, vss),
-                             GRB_LESS_EQUAL,
-                             vars["b_used"](e_index_relevant, vss),
-                             "b_rear_b_used_" + std::to_string(tr) + "_" +
-                                 std::to_string(t) + "_" + std::to_string(e) +
-                                 "_" + std::to_string(vss));
+            if (instance.get_train_list().get_train(tr).tim) {
+              model->addConstr(vars["b_rear"](tr, t, e_index, vss),
+                               GRB_LESS_EQUAL,
+                               vars["b_used"](e_index_relevant, vss),
+                               "b_rear_b_used_" + std::to_string(tr) + "_" +
+                                   std::to_string(t) + "_" + std::to_string(e) +
+                                   "_" + std::to_string(vss));
+            }
           } else if (vss_model.get_model_type() == vss::ModelType::Inferred) {
             // b_front(tr, t, e_index, vss) <=
             // (num_vss_segments(e_index_relevant) - 1) / (vss + 1)
@@ -1305,13 +1317,15 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                  std::to_string(e) + "_" + std::to_string(vss));
             // b_rear(tr, t, e_index, vss) <=
             // (num_vss_segments(e_index_relevant) - 1) / (vss + 1)
-            model->addConstr(vars["b_rear"](tr, t, e_index, vss),
-                             GRB_LESS_EQUAL,
-                             (vars["num_vss_segments"](e_index_relevant) - 1) /
-                                 (static_cast<double>(vss) + 1),
-                             "b_rear_num_vss_segments_" + std::to_string(tr) +
-                                 "_" + std::to_string(t) + "_" +
-                                 std::to_string(e) + "_" + std::to_string(vss));
+            if (instance.get_train_list().get_train(tr).tim) {
+              model->addConstr(
+                  vars["b_rear"](tr, t, e_index, vss), GRB_LESS_EQUAL,
+                  (vars["num_vss_segments"](e_index_relevant) - 1) /
+                      (static_cast<double>(vss) + 1),
+                  "b_rear_num_vss_segments_" + std::to_string(tr) + "_" +
+                      std::to_string(t) + "_" + std::to_string(e) + "_" +
+                      std::to_string(vss));
+            }
           } else if (vss_model.get_model_type() ==
                      vss::ModelType::InferredAlt) {
             // b_front(tr, t, e_index, vss) <= sum
@@ -1332,11 +1346,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                  std::to_string(e) + "_" + std::to_string(vss));
             // b_rear(tr, t, e_index, vss) <= sum
             // type_num_vss_segments(e_index_relevant, *, <= vss)
-            model->addConstr(vars["b_rear"](tr, t, e_index, vss),
-                             GRB_LESS_EQUAL, rhs,
-                             "b_rear_num_vss_segments_" + std::to_string(tr) +
-                                 "_" + std::to_string(t) + "_" +
-                                 std::to_string(e) + "_" + std::to_string(vss));
+            if (instance.get_train_list().get_train(tr).tim) {
+              model->addConstr(
+                  vars["b_rear"](tr, t, e_index, vss), GRB_LESS_EQUAL, rhs,
+                  "b_rear_num_vss_segments_" + std::to_string(tr) + "_" +
+                      std::to_string(t) + "_" + std::to_string(e) + "_" +
+                      std::to_string(vss));
+            }
           }
         }
       }

@@ -331,13 +331,15 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                            "b_pos_front_" + std::to_string(tr) + "_" +
                                std::to_string(t) + "_" + std::to_string(e) +
                                "_" + std::to_string(vss));
-          const auto m2 = r_len + tr_len + e_len;
-          model->addConstr(vars["lda"](tr, t) - edge_pos.first +
-                               m2 * (1 - vars["b_rear"](tr, t, e_index, vss)),
-                           GRB_GREATER_EQUAL, vars["b_pos"](e_index, vss),
-                           "b_pos_rear_" + std::to_string(tr) + "_" +
-                               std::to_string(t) + "_" + std::to_string(e) +
-                               "_" + std::to_string(vss));
+          if (instance.get_train_list().get_train(tr).tim) {
+            const auto m2 = r_len + tr_len + e_len;
+            model->addConstr(vars["lda"](tr, t) - edge_pos.first +
+                                 m2 * (1 - vars["b_rear"](tr, t, e_index, vss)),
+                             GRB_GREATER_EQUAL, vars["b_pos"](e_index, vss),
+                             "b_pos_rear_" + std::to_string(tr) + "_" +
+                                 std::to_string(t) + "_" + std::to_string(e) +
+                                 "_" + std::to_string(vss));
+          }
         }
       }
     }
