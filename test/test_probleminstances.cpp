@@ -12,7 +12,7 @@ struct EdgeTarget {
   double      min_block_length;
 };
 
-// NOLINTBEGIN(clang-diagnostic-unused-result)
+// NOLINTBEGIN(clang-diagnostic-unused-result,google-readability-function-size,readability-function-size)
 
 void check_instance_import(
     const cda_rail::instances::VSSGenerationTimetable& instance) {
@@ -2443,4 +2443,4 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_EQ(sol2_read.get_train_speed(tr2, 258), 7);
 }
 
-// NOLINTEND(clang-diagnostic-unused-result)
+// NOLINTEND(clang-diagnostic-unused-result,google-readability-function-size,readability-function-size)

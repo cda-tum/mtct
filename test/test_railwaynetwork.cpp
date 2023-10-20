@@ -21,6 +21,8 @@ struct EdgeTarget {
   double      min_block_length;
 };
 
+// NOLINTBEGIN(clang-diagnostic-unused-result)
+
 TEST(Functionality, NetworkFunctions) {
   cda_rail::Network network;
   const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
@@ -2731,3 +2733,5 @@ TEST(Functionality, Iterators) {
   //    EXPECT_EQ(&schedule, &timetable.get_schedule(name));
   //}
 }
+
+// NOLINTEND(clang-diagnostic-unused-result)

@@ -6,6 +6,8 @@
 #include <cmath>
 #include <iostream>
 
+// NOLINTBEGIN(clang-diagnostic-unused-result)
+
 TEST(Functionality, Subsets) {
   auto subsets_of_size_3 = cda_rail::subsets_of_size_k_indices(6, 3);
   // Expect 6 choose 2 number of elements
@@ -192,3 +194,5 @@ TEST(VSSModel, Functions) {
 
   EXPECT_EQ(cda_rail::vss::functions::max_n_blocks(f3, 0.25), 3);
 }
+
+// NOLINTEND(clang-diagnostic-unused-result)
