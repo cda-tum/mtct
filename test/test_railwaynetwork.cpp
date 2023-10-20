@@ -1954,8 +1954,8 @@ TEST(Functionality, EditTrains) {
 
 TEST(Functionality, TrainExceptions) {
   // Create a train list
-  auto       trains    = cda_rail::TrainList();
-  const auto tr1_index = trains.add_train("tr1", 100, 83.33, 2, 1, false);
+  auto trains = cda_rail::TrainList();
+  trains.add_train("tr1", 100, 83.33, 2, 1, false);
   EXPECT_THROW(trains.add_train("tr1", 100, 83.33, 2, 1, false),
                cda_rail::exceptions::ConsistencyException);
   EXPECT_THROW(trains.get_train_index("tr2"),
@@ -2625,7 +2625,7 @@ TEST(Functionality, RouteMapHelper) {
   const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
   network.add_vertex("v3", cda_rail::VertexType::TTD);
 
-  const auto v0_v1 = network.add_edge("v0", "v1", 10, 5, false);
+  network.add_edge("v0", "v1", 10, 5, false);
   const auto v1_v2 = network.add_edge("v1", "v2", 20, 5, false);
   const auto v2_v3 = network.add_edge("v2", "v3", 30, 5, false);
   const auto v3_v2 = network.add_edge("v3", "v2", 30, 5, false);
