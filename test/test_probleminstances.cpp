@@ -14,12 +14,9 @@ struct EdgeTarget {
 
 // NOLINTBEGIN(clang-diagnostic-unused-result)
 
-TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
-  auto instance = cda_rail::instances::VSSGenerationTimetable::import_instance(
-      "./example-networks/SimpleStation/");
-
-  // Expected network
-  const auto& network = instance.n();
+void check_instance_import(
+    const cda_rail::instances::VSSGenerationTimetable& instance) {
+  const auto& network = instance.const_n();
 
   // Check vertices properties
   std::vector<std::string> vertex_names = {
@@ -362,6 +359,31 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
 
   // Check if max_t is correct
   EXPECT_EQ(instance.max_t(), 645);
+}
+
+TEST(Functionality, VSSGenerationTimetabbleInstanceImport1) {
+  auto instance = cda_rail::instances::VSSGenerationTimetable::import_instance(
+      "./example-networks/SimpleStation/");
+
+  check_instance_import(instance);
+}
+
+TEST(Functionality, VSSGenerationTimetabbleInstanceImport2) {
+  std::string p("./example-networks/SimpleStation/");
+
+  auto instance =
+      cda_rail::instances::VSSGenerationTimetable::import_instance(p);
+
+  check_instance_import(instance);
+}
+
+TEST(Functionality, VSSGenerationTimetabbleInstanceImport3) {
+  std::filesystem::path p("./example-networks/SimpleStation/");
+
+  auto instance =
+      cda_rail::instances::VSSGenerationTimetable::import_instance(p);
+
+  check_instance_import(instance);
 }
 
 TEST(Functionality, VSSGenerationTimetableExport) {
