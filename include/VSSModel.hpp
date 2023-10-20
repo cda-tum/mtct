@@ -40,8 +40,8 @@ namespace functions {
                                          double                    min_frac) {
   const auto eps = 10 * std::numeric_limits<double>::epsilon();
 
-  if (min_frac + eps < 0 || min_frac > 1 + eps) {
-    throw std::invalid_argument("min_frac must be in [0, 1].");
+  if (min_frac - eps <= 0 || min_frac > 1 + eps) {
+    throw std::invalid_argument("min_frac must be in (0, 1].");
   }
 
   for (size_t n = 2; static_cast<double>(n) <= 1 / min_frac + eps; ++n) {

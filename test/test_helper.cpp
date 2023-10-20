@@ -3,6 +3,7 @@
 #include "VSSModel.hpp"
 
 #include "gtest/gtest.h"
+#include <cmath>
 #include <iostream>
 
 TEST(Functionality, Subsets) {
@@ -170,4 +171,24 @@ TEST(VSSModel, Functions) {
   EXPECT_EQ(cda_rail::round_to(f2(2, 4), 1e-5), 0.93301);
   EXPECT_EQ(f2(3, 4), 1);
   EXPECT_EQ(f2(4, 4), 1);
+
+  EXPECT_EQ(cda_rail::vss::functions::max_n_blocks(f1, 0.1), 10);
+  EXPECT_EQ(cda_rail::vss::functions::max_n_blocks(f1, 1), 1);
+  EXPECT_EQ(cda_rail::vss::functions::max_n_blocks(f2, 0.1), 3);
+
+  EXPECT_THROW(cda_rail::vss::functions::max_n_blocks(f1, -0.1),
+               std::invalid_argument);
+  EXPECT_THROW(cda_rail::vss::functions::max_n_blocks(f1, 0),
+               std::invalid_argument);
+  EXPECT_THROW(cda_rail::vss::functions::max_n_blocks(f1, 1.1),
+               std::invalid_argument);
+
+  const cda_rail::vss::SeparationFunction f3 = [](size_t i, size_t n) {
+    if (i >= n) {
+      return 1.0;
+    }
+    return 1 - std::pow(2, -(static_cast<double>(i) + 1));
+  };
+
+  EXPECT_EQ(cda_rail::vss::functions::max_n_blocks(f3, 0.25), 3);
 }
