@@ -252,8 +252,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
         instance.n().get_vertex(instance.n().get_edge(e).source).name;
     const auto& v =
         instance.n().get_vertex(instance.n().get_edge(e).target).name;
-    std::cout << "Double possible VSS on edge " << u << " -> " << v << " from "
-              << vss_number_e << " to " << new_max_vss << std::endl;
+    std::cout << "Double possible VSS on edge " << u << " -> " << v << " to "
+              << new_max_vss << std::endl;
   }
 
   if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {

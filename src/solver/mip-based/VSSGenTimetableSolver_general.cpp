@@ -297,6 +297,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   std::optional<instances::SolVSSGenerationTimetable> sol_object;
 
   bool reoptimize = true;
+
+  double obj_ub = 0;
+  for (int i = 0; i < relevant_edges.size(); ++i) {
+    obj_ub += instance.const_n().max_vss_on_edge(relevant_edges.at(i));
+  }
+  double obj_lb = 0;
+
   while (reoptimize) {
     reoptimize = false;
     model->optimize();
@@ -314,55 +321,60 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
-      // Check if new solution is better, possibly refine model and reoptimize
-      auto obj_lb = max_vss_per_edge_in_iteration.at(0);
-      for (int i = 1; i < relevant_edges.size(); ++i) {
-        if (max_vss_per_edge_in_iteration.at(i) < obj_lb) {
-          obj_lb = max_vss_per_edge_in_iteration.at(i);
-        }
-      }
-
-      std::optional<double> obj_ub;
       // If solution count is >= 1 then obj_ub is the objective function value
       if (model->get(GRB_IntAttr_SolCount) >= 1) {
         obj_ub     = model->get(GRB_DoubleAttr_ObjVal);
         sol_object = extract_solution(postprocess, debug, old_instance);
       }
 
-      if (obj_ub.has_value() &&
-          static_cast<double>(obj_lb) + GRB_EPS >= obj_ub.value()) {
+      auto obj_lb_tmp = obj_ub + 1;
+      for (int i = 0; i < relevant_edges.size(); ++i) {
+        if (max_vss_per_edge_in_iteration.at(i) < obj_lb_tmp &&
+            max_vss_per_edge_in_iteration.at(i) <
+                instance.const_n().max_vss_on_edge(relevant_edges.at(i))) {
+          obj_lb_tmp = max_vss_per_edge_in_iteration.at(i);
+        }
+      }
+      if (obj_lb_tmp > obj_lb) {
+        obj_lb = obj_lb_tmp;
+      }
+
+      if (obj_lb + GRB_EPS >= obj_ub) {
         if (debug) {
           std::cout << "Break because obj_lb (" << obj_lb << ") >= obj_ub ("
-                    << obj_ub.value() << ")" << std::endl;
+                    << obj_ub << ")" << std::endl;
         }
         break;
       }
 
-      bool only_tight = (model->get(GRB_IntAttr_Status) == GRB_OPTIMAL);
+      bool try_only_tight = (model->get(GRB_IntAttr_Status) == GRB_OPTIMAL);
+      std::vector<size_t> vss_to_add_later;
       for (int i = 0; i < relevant_edges.size(); ++i) {
-        if (double_vss(i, only_tight)) {
+        if (double_vss(i, try_only_tight)) {
           reoptimize = true;
+        } else {
+          vss_to_add_later.push_back(i);
+        }
+      }
+      if (!reoptimize) {
+        for (auto i : vss_to_add_later) {
+          if (double_vss(i, false)) {
+            reoptimize = true;
+          }
         }
       }
 
       if (!reoptimize) {
-        if (debug) {
-          std::cout << "Break because no more VSS can be added" << std::endl;
-        }
-        break;
+        throw exceptions::ConsistencyException(
+            "No VSS could be added but obj_lb < obj_ub, which should never "
+            "happen");
       }
 
-      model->addConstr(objective_expr, GRB_GREATER_EQUAL,
-                       static_cast<double>(obj_lb));
+      model->addConstr(objective_expr, GRB_GREATER_EQUAL, obj_lb);
+      model->addConstr(objective_expr, GRB_LESS_EQUAL, obj_ub);
       if (debug) {
         std::cout << "Added constraint: obj >= " << obj_lb << std::endl;
-      }
-      if (obj_ub.has_value()) {
-        model->addConstr(objective_expr, GRB_LESS_EQUAL, obj_ub.value());
-        if (debug) {
-          std::cout << "Added constraint: obj <= " << obj_ub.value()
-                    << std::endl;
-        }
+        std::cout << "Added constraint: obj <= " << obj_ub << std::endl;
       }
 
       if (time_limit > 0) {
