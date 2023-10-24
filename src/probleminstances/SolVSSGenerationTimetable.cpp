@@ -466,7 +466,7 @@ cda_rail::instances::SolVSSGenerationTimetable::get_valid_border_stops(
 
 cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
-    bool postprocess, bool debug,
+    bool postprocess, bool debug, bool full_model,
     const std::optional<instances::VSSGenerationTimetable>& old_instance)
     const {
   if (debug) {
@@ -476,9 +476,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
   auto sol_obj = instances::SolVSSGenerationTimetable(
       (old_instance.has_value() ? old_instance.value() : instance), dt);
 
-  const auto grb_status = model->get(GRB_IntAttr_Status);
-
-  if (grb_status == GRB_OPTIMAL) {
+  if (const auto grb_status = model->get(GRB_IntAttr_Status);
+      full_model && grb_status == GRB_OPTIMAL) {
     if (debug) {
       std::cout << "Solution status: Optimal" << std::endl;
     }
@@ -488,8 +487,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
       std::cout << "Solution status: Infeasible" << std::endl;
     }
     sol_obj.set_status(SolutionStatus::Infeasible);
-  } else if (grb_status == GRB_TIME_LIMIT &&
-             model->get(GRB_IntAttr_SolCount) >= 1) {
+  } else if (model->get(GRB_IntAttr_SolCount) >= 1) {
     if (debug) {
       std::cout << "Solution status: Feasible (optimality unknown)"
                 << std::endl;
@@ -507,7 +505,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         "Gurobi status code " + std::to_string(grb_status) + " unknown.");
   }
 
-  if (const auto sol_count = model->get(GRB_IntAttr_SolCount); sol_count < 1) {
+  if (const auto sol_count = model->get(GRB_IntAttr_SolCount);
+      sol_count < 0.5) {
     return sol_obj;
   }
 

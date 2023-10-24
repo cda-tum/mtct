@@ -298,7 +298,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   bool reoptimize = true;
 
-  double obj_ub = 0.0;
+  double obj_ub = 1.0;
   for (const auto& e : relevant_edges) {
     obj_ub += instance.const_n().max_vss_on_edge(e);
   }
@@ -308,12 +308,21 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     reoptimize = false;
     model->optimize();
 
-    if (iterative_vss) {
-      if (!sol_object.has_value()) {
-        sol_object = extract_solution(postprocess, debug, old_instance);
+    if (model->get(GRB_IntAttr_SolCount) >= 1) {
+      const auto obj_tmp = model->get(GRB_DoubleAttr_ObjVal);
+      if (obj_tmp < obj_ub) {
+        obj_ub = obj_tmp;
+        sol_object =
+            extract_solution(postprocess, debug, !iterative_vss, old_instance);
       }
+    }
 
-      // In case of timeout break
+    if (!sol_object.has_value()) {
+      sol_object =
+          extract_solution(postprocess, debug, !iterative_vss, old_instance);
+    }
+
+    if (iterative_vss) {
       if (model->get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
         if (debug) {
           std::cout << "Break because of timeout" << std::endl;
@@ -321,13 +330,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
-      // If solution count is >= 1 then obj_ub is the objective function value
-      if (model->get(GRB_IntAttr_SolCount) >= 1) {
-        obj_ub     = model->get(GRB_DoubleAttr_ObjVal);
-        sol_object = extract_solution(postprocess, debug, old_instance);
-      }
-
-      auto obj_lb_tmp = obj_ub + 1;
+      auto obj_lb_tmp = obj_ub;
       for (int i = 0; i < relevant_edges.size(); ++i) {
         if (static_cast<double>(max_vss_per_edge_in_iteration.at(i)) <
                 obj_lb_tmp &&
@@ -343,8 +346,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       if (obj_lb + GRB_EPS >= obj_ub) {
         if (debug) {
           std::cout << "Break because obj_lb (" << obj_lb << ") >= obj_ub ("
-                    << obj_ub << ")" << std::endl;
+                    << obj_ub << ") -> Proven optimal" << std::endl;
         }
+        sol_object->set_status(SolutionStatus::Optimal);
         break;
       }
 
@@ -429,10 +433,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     std::filesystem::path path = p;
     model->write((path / (name + ".mps")).string());
     model->write((path / (name + ".sol")).string());
-  }
-
-  if (!iterative_vss) {
-    sol_object = extract_solution(postprocess, debug, old_instance);
   }
 
   cleanup(old_instance);
