@@ -889,10 +889,10 @@ TEST(Functionality, NetworkEdgeSeparation) {
 
 TEST(Functionality, NetworkExceptions) {
   cda_rail::Network network;
-  const auto&       v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto        v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
   EXPECT_THROW(network.add_vertex("v1", cda_rail::VertexType::TTD),
                cda_rail::exceptions::InvalidInputException);
-  const auto& v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
 
   EXPECT_THROW(network.add_edge(v1, v1, 300, 50, true, 5),
                cda_rail::exceptions::InvalidInputException);
@@ -900,14 +900,14 @@ TEST(Functionality, NetworkExceptions) {
                cda_rail::exceptions::VertexNotExistentException);
   EXPECT_THROW(network.add_edge(v1, 10, 300, 50, true, 5),
                cda_rail::exceptions::VertexNotExistentException);
-  const auto& v1_v2 = network.add_edge(v1, v2, 300, 50, true, 5);
+  const auto v1_v2 = network.add_edge(v1, v2, 300, 50, true, 5);
   EXPECT_THROW(network.add_edge(v1, v2, 300, 50, true, 5),
                cda_rail::exceptions::InvalidInputException);
 
-  const auto& v3    = network.add_vertex("v3", cda_rail::VertexType::TTD);
-  const auto& v4    = network.add_vertex("v4", cda_rail::VertexType::TTD);
-  const auto& v2_v3 = network.add_edge("v2", "v3", 300, 50, true, 5);
-  const auto& v3_v4 = network.add_edge("v3", "v4", 300, 50, true, 5);
+  const auto v3    = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v4    = network.add_vertex("v4", cda_rail::VertexType::TTD);
+  const auto v2_v3 = network.add_edge("v2", "v3", 300, 50, true, 5);
+  const auto v3_v4 = network.add_edge(v3, v4, 300, 50, true, 5);
 
   EXPECT_THROW(network.add_successor(v1_v2, 10),
                cda_rail::exceptions::EdgeNotExistentException);
@@ -987,12 +987,12 @@ TEST(Functionality, NetworkExceptions) {
 TEST(Functionality, NetworkVertexIsAdjustable) {
   cda_rail::Network network;
 
-  const auto& v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
-  const auto& v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
-  const auto& v3 = network.add_vertex("v3", cda_rail::VertexType::NoBorder);
-  const auto& v4 = network.add_vertex("v4", cda_rail::VertexType::NoBorder);
-  const auto& v5 = network.add_vertex("v5", cda_rail::VertexType::TTD);
-  const auto& v6 = network.add_vertex("v6", cda_rail::VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", cda_rail::VertexType::NoBorder);
+  const auto v4 = network.add_vertex("v4", cda_rail::VertexType::NoBorder);
+  const auto v5 = network.add_vertex("v5", cda_rail::VertexType::TTD);
+  const auto v6 = network.add_vertex("v6", cda_rail::VertexType::TTD);
 
   network.add_edge(v1, v2, 100, 100, false);
   network.add_edge(v2, v3, 100, 100, false);
@@ -2665,17 +2665,17 @@ TEST(Functionality, RouteMapHelper) {
                cda_rail::exceptions::InvalidInputException);
 
   const auto& tr1_map    = route_map.get_route("tr1");
-  const auto& tr1_e1_pos = tr1_map.edge_pos("v0", "v1", network);
+  const auto  tr1_e1_pos = tr1_map.edge_pos("v0", "v1", network);
   const std::pair<double, double> expected_tr1_e1_pos = {0, 10};
   EXPECT_EQ(tr1_e1_pos, expected_tr1_e1_pos);
-  const auto& tr1_e2_pos = tr1_map.edge_pos(v1, v2, network);
+  const auto tr1_e2_pos = tr1_map.edge_pos(v1, v2, network);
   const std::pair<double, double> expected_tr1_e2_pos = {10, 30};
   EXPECT_EQ(tr1_e2_pos, expected_tr1_e2_pos);
-  const auto&                     tr1_e3_pos = tr1_map.edge_pos(v2_v3, network);
+  const auto                      tr1_e3_pos = tr1_map.edge_pos(v2_v3, network);
   const std::pair<double, double> expected_tr1_e3_pos = {30, 60};
   EXPECT_EQ(tr1_e3_pos, expected_tr1_e3_pos);
 
-  const auto& station_pos =
+  const auto station_pos =
       tr1_map.edge_pos({v1_v2, v2_v1, v2_v3, v3_v2}, network);
   const std::pair<double, double> expected_station_pos = {10, 60};
   EXPECT_EQ(station_pos, expected_station_pos);

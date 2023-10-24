@@ -298,9 +298,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   bool reoptimize = true;
 
-  double obj_ub = 0;
-  for (int i = 0; i < relevant_edges.size(); ++i) {
-    obj_ub += instance.const_n().max_vss_on_edge(relevant_edges.at(i));
+  double obj_ub = 0.0;
+  for (const auto& e : relevant_edges) {
+    obj_ub += instance.const_n().max_vss_on_edge(e);
   }
   double obj_lb = 0;
 
@@ -329,10 +329,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
       auto obj_lb_tmp = obj_ub + 1;
       for (int i = 0; i < relevant_edges.size(); ++i) {
-        if (max_vss_per_edge_in_iteration.at(i) < obj_lb_tmp &&
+        if (static_cast<double>(max_vss_per_edge_in_iteration.at(i)) <
+                obj_lb_tmp &&
             max_vss_per_edge_in_iteration.at(i) <
                 instance.const_n().max_vss_on_edge(relevant_edges.at(i))) {
-          obj_lb_tmp = max_vss_per_edge_in_iteration.at(i);
+          obj_lb_tmp = static_cast<double>(max_vss_per_edge_in_iteration.at(i));
         }
       }
       if (obj_lb_tmp > obj_lb) {
