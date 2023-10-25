@@ -167,7 +167,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     const auto& e            = relevant_edges.at(i);
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
     max_vss_per_edge_in_iteration[i] =
-        iterative_vss_input ? std::min(vss_number_e, 2) : vss_number_e;
+        iterative_vss_input ? std::min(vss_number_e, 1) : vss_number_e;
   }
 
   calculate_fwd_bwd_sections();
