@@ -140,8 +140,7 @@ private:
                    const std::optional<instances::VSSGenerationTimetable>&
                        old_instance) const;
 
-  bool double_vss(size_t relevant_edge_index, bool only_if_tight = false);
-  bool is_vss_used(size_t relevant_edge_index, size_t vss_index) const;
+  bool update_vss(size_t relevant_edge_index, double obj_ub);
   void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss);
 
 public:

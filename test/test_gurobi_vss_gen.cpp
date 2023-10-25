@@ -676,6 +676,20 @@ TEST(Solver, IterativeContinuousSingleTrack) {
   EXPECT_EQ(obj_val.get_mip_obj(), 9);
 }
 
+TEST(Solver, IterativeContinuousStammstrecke4) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/Stammstrecke4Trains/");
+
+  const auto obj_val = solver.solve(
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+      true, true, false, true, true, cda_rail::OptimalityStrategy::Optimal,
+      false, 60, true, cda_rail::ExportOption::NoExport);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 6);
+  EXPECT_EQ(obj_val.get_mip_obj(), 6);
+}
+
 TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");

@@ -344,7 +344,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
                 obj_lb_tmp &&
             max_vss_per_edge_in_iteration.at(i) <
                 instance.const_n().max_vss_on_edge(relevant_edges.at(i))) {
-          obj_lb_tmp = static_cast<double>(max_vss_per_edge_in_iteration.at(i));
+          obj_lb_tmp =
+              static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1;
         }
       }
       if (obj_lb_tmp > obj_lb) {
@@ -360,27 +361,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
-      if (optimality_strategy == OptimalityStrategy::TradeOff) {
+      if (optimality_strategy == OptimalityStrategy::Optimal) {
         for (int i = 0; i < relevant_edges.size(); ++i) {
-          if (double_vss(i, true)) {
+          if (update_vss(i, obj_ub)) {
             reoptimize = true;
           }
-        }
-      } else if (optimality_strategy == OptimalityStrategy::Optimal) {
-        for (int i = 0; i < relevant_edges.size(); ++i) {
-          if (double_vss(i, false)) {
-            reoptimize = true;
-          }
-        }
-        if (!reoptimize) {
-          // Model was already full, hence solution is optimal
-          if (debug) {
-            std::cout << "Break because no more VSS can be added, hence, "
-                         "proving optimality"
-                      << std::endl;
-          }
-          sol_object->set_status(SolutionStatus::Optimal);
-          break;
         }
       }
 
