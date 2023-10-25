@@ -312,6 +312,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     if (optimality_strategy == OptimalityStrategy::Feasible) {
       model->set(GRB_IntParam_SolutionLimit, 1);
       model->set(GRB_IntParam_MIPFocus, 1);
+      if (debug) {
+        std::cout << "Settings focussing on feasibility" << std::endl;
+      }
     }
 
     model->optimize();
@@ -361,11 +364,19 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
-      if (optimality_strategy == OptimalityStrategy::Optimal) {
-        for (int i = 0; i < relevant_edges.size(); ++i) {
-          if (update_vss(i, obj_ub)) {
-            reoptimize = true;
-          }
+      if (optimality_strategy != OptimalityStrategy::Optimal &&
+          (model->get(GRB_IntAttr_SolCount) >= 1)) {
+        if (debug) {
+          std::cout << "Break because of feasible solution and not searching "
+                       "for optimality."
+                    << std::endl;
+        }
+        break;
+      }
+
+      for (int i = 0; i < relevant_edges.size(); ++i) {
+        if (update_vss(i, obj_ub)) {
+          reoptimize = true;
         }
       }
 
