@@ -5,8 +5,8 @@
 #include <gsl/span>
 
 int main(int argc, char** argv) {
-  if (argc < 12 || argc > 13) {
-    std::cout << "Expected 11 or 12 arguments, got " << argc - 1 << std::endl;
+  if (argc < 13 || argc > 14) {
+    std::cout << "Expected 12 or 13 arguments, got " << argc - 1 << std::endl;
     std::exit(-1);
   }
 
@@ -19,16 +19,19 @@ int main(int argc, char** argv) {
   std::cout << "Instance " << model_name << " loaded at " << instance_path
             << std::endl;
 
-  const int         delta_t                = std::stoi(args[3]);
-  const bool        fix_routes             = std::stoi(args[4]) != 0;
-  const std::string type                   = args[5];
-  const bool        include_train_dynamics = std::stoi(args[6]) != 0;
-  const bool        include_braking_curves = std::stoi(args[7]) != 0;
-  const bool        use_pwl                = std::stoi(args[8]) != 0;
-  const bool        use_schedule_cuts      = std::stoi(args[9]) != 0;
-  const bool        iterate_vss            = std::stoi(args[10]) != 0;
-  const int         timeout                = std::stoi(args[11]);
-  const std::string output_path            = (argc == 13 ? args[12] : "");
+  const int         delta_t                 = std::stoi(args[3]);
+  const bool        fix_routes              = std::stoi(args[4]) != 0;
+  const std::string type                    = args[5];
+  const bool        include_train_dynamics  = std::stoi(args[6]) != 0;
+  const bool        include_braking_curves  = std::stoi(args[7]) != 0;
+  const bool        use_pwl                 = std::stoi(args[8]) != 0;
+  const bool        use_schedule_cuts       = std::stoi(args[9]) != 0;
+  const bool        iterate_vss             = std::stoi(args[10]) != 0;
+  const int         timeout                 = std::stoi(args[11]);
+  const int         optimality_strategy_int = std::stoi(args[12]);
+  const auto        optimality_strategy =
+      static_cast<cda_rail::OptimalityStrategy>(optimality_strategy_int);
+  const std::string output_path = (argc == 14 ? args[13] : "");
 
   std::cout << "The following parameters were passed to the toolkit:"
             << std::endl;
@@ -84,18 +87,19 @@ int main(int argc, char** argv) {
 
   std::optional<cda_rail::vss::Model> vss_model;
   if (type == "continuous") {
-    vss_model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous);
+    vss_model =
+        cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true);
   } else if (type.length() >= 4 && type.substr(type.length() - 4) == "_alt") {
     vss_model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
-                                     sep_functions);
+                                     sep_functions, true);
   } else {
-    vss_model =
-        cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred, sep_functions);
+    vss_model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
+                                     sep_functions, true);
   }
 
   solver.solve(delta_t, fix_routes, vss_model.value(), include_train_dynamics,
                include_braking_curves, use_pwl, use_schedule_cuts, iterate_vss,
-               false, timeout, true,
+               cda_rail::OptimalityStrategy::Optimal, false, timeout, true,
                cda_rail::ExportOption::ExportSolutionWithInstance, file_name,
                output_path);
 }

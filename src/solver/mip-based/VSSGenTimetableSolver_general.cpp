@@ -35,8 +35,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     int delta_t, bool fix_routes_input, vss::Model vss_model_input,
     bool include_train_dynamics_input, bool include_braking_curves_input,
     bool use_pwl_input, bool use_schedule_cuts_input, bool iterative_vss_input,
-    bool postprocess, int time_limit, bool debug_input,
-    ExportOption export_option, const std::string& name, const std::string& p) {
+    OptimalityStrategy optimality_strategy_input, bool postprocess,
+    int time_limit, bool debug_input, ExportOption export_option,
+    const std::string& name, const std::string& p) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
    * flexible MILP formulation. The level of detail can be controlled using the
@@ -103,6 +104,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   this->use_pwl                = use_pwl_input;
   this->use_schedule_cuts      = use_schedule_cuts_input;
   this->iterative_vss          = iterative_vss_input;
+  this->optimality_strategy    = optimality_strategy_input;
 
   if (this->fix_routes && !instance.has_route_for_every_train()) {
     throw exceptions::ConsistencyException(
@@ -306,6 +308,12 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   while (reoptimize) {
     reoptimize = false;
+
+    if (optimality_strategy == OptimalityStrategy::Feasible) {
+      model->set(GRB_IntParam_SolutionLimit, 1);
+      model->set(GRB_IntParam_MIPFocus, 1);
+    }
+
     model->optimize();
 
     if (model->get(GRB_IntAttr_SolCount) >= 1) {
@@ -352,27 +360,35 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
-      bool try_only_tight = (model->get(GRB_IntAttr_Status) == GRB_OPTIMAL);
-      std::vector<size_t> vss_to_add_later;
-      for (int i = 0; i < relevant_edges.size(); ++i) {
-        if (double_vss(i, try_only_tight)) {
-          reoptimize = true;
-        } else {
-          vss_to_add_later.push_back(i);
+      if (optimality_strategy == OptimalityStrategy::Heuristic) {
+        for (int i = 0; i < relevant_edges.size(); ++i) {
+          if (double_vss(i, true)) {
+            reoptimize = true;
+          }
         }
-      }
-      if (!reoptimize) {
-        for (auto i : vss_to_add_later) {
+      } else if (optimality_strategy == OptimalityStrategy::Optimal) {
+        for (int i = 0; i < relevant_edges.size(); ++i) {
           if (double_vss(i, false)) {
             reoptimize = true;
           }
         }
+        if (!reoptimize) {
+          // Model was already full, hence solution is optimal
+          if (debug) {
+            std::cout << "Break because no more VSS can be added, hence, "
+                         "proving optimality"
+                      << std::endl;
+          }
+          sol_object->set_status(SolutionStatus::Optimal);
+          break;
+        }
       }
 
       if (!reoptimize) {
-        throw exceptions::ConsistencyException(
-            "No VSS could be added but obj_lb < obj_ub, which should never "
-            "happen");
+        if (debug) {
+          std::cout << "Break because no more VSS can be added" << std::endl;
+        }
+        break;
       }
 
       model->addConstr(objective_expr, GRB_GREATER_EQUAL, obj_lb);

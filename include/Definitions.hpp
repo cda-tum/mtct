@@ -30,6 +30,7 @@ enum class ExportOption {
   ExportSolutionAndLP             = 4,
   ExportSolutionWithInstanceAndLP = 5
 };
+enum class OptimalityStrategy { Optimal = 0, TradeOff = 1, Feasible = 2 };
 
 // Helper functions
 

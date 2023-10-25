@@ -37,6 +37,7 @@ private:
   bool                use_pwl                = false;
   bool                use_schedule_cuts      = false;
   bool                iterative_vss          = false;
+  OptimalityStrategy  optimality_strategy    = OptimalityStrategy::Optimal;
   std::vector<size_t> max_vss_per_edge_in_iteration;
   std::unordered_map<size_t, size_t> breakable_edge_indices;
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
@@ -157,6 +158,8 @@ public:
         bool       include_train_dynamics_input = true,
         bool include_braking_curves_input = true, bool use_pwl_input = false,
         bool use_schedule_cuts_input = true, bool iterative_vss_input = false,
+        OptimalityStrategy optimality_strategy_input =
+            OptimalityStrategy::Optimal,
         bool postprocess = false, int time_limit = -1, bool debug_input = false,
         ExportOption       export_option = ExportOption::NoExport,
         const std::string& name = "model", const std::string& p = "");
