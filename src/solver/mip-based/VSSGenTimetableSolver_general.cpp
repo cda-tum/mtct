@@ -360,7 +360,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
-      if (optimality_strategy == OptimalityStrategy::Heuristic) {
+      if (optimality_strategy == OptimalityStrategy::TradeOff) {
         for (int i = 0; i < relevant_edges.size(); ++i) {
           if (double_vss(i, true)) {
             reoptimize = true;
