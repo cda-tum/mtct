@@ -73,6 +73,15 @@ int main(int argc, char** argv) {
   if (iterate_vss) {
     std::cout << "   VSS is iterated" << std::endl;
   }
+  if (optimality_strategy == cda_rail::OptimalityStrategy::Optimal) {
+    std::cout << "   optimality strategy: optimal" << std::endl;
+  } else if (optimality_strategy == cda_rail::OptimalityStrategy::TradeOff) {
+    std::cout << "   optimality strategy: trade-off" << std::endl;
+  } else if (optimality_strategy == cda_rail::OptimalityStrategy::Feasible) {
+    std::cout << "   optimality strategy: feasible" << std::endl;
+  } else {
+    std::cout << "   optimality strategy: unknown" << std::endl;
+  }
   std::cout << "   timeout: " << timeout << "s" << std::endl;
 
   const std::string file_name =
