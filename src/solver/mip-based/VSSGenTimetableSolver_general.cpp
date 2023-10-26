@@ -355,7 +355,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         obj_lb = obj_lb_tmp;
       }
 
-      if (obj_lb + GRB_EPS >= obj_ub) {
+      if (obj_lb + GRB_EPS >= obj_ub &&
+          (model->get(GRB_IntAttr_SolCount) >= 1)) {
         if (debug) {
           std::cout << "Break because obj_lb (" << obj_lb << ") >= obj_ub ("
                     << obj_ub << ") -> Proven optimal" << std::endl;
