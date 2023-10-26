@@ -27,10 +27,10 @@ int main(int argc, char** argv) {
   const bool        use_pwl                 = std::stoi(args[8]) != 0;
   const bool        use_schedule_cuts       = std::stoi(args[9]) != 0;
   const bool        iterate_vss             = std::stoi(args[10]) != 0;
-  const int         timeout                 = std::stoi(args[11]);
-  const int         optimality_strategy_int = std::stoi(args[12]);
+  const int         optimality_strategy_int = std::stoi(args[11]);
   const auto        optimality_strategy =
       static_cast<cda_rail::OptimalityStrategy>(optimality_strategy_int);
+  const int         timeout     = std::stoi(args[12]);
   const std::string output_path = (argc == 14 ? args[13] : "");
 
   std::cout << "The following parameters were passed to the toolkit:"
@@ -87,13 +87,14 @@ int main(int argc, char** argv) {
 
   std::optional<cda_rail::vss::Model> vss_model;
   if (type == "continuous") {
-    vss_model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous);
+    vss_model =
+        cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true);
   } else if (type.length() >= 4 && type.substr(type.length() - 4) == "_alt") {
     vss_model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
-                                     sep_functions);
+                                     sep_functions, true);
   } else {
-    vss_model =
-        cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred, sep_functions);
+    vss_model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
+                                     sep_functions, true);
   }
 
   solver.solve(delta_t, fix_routes, vss_model.value(), include_train_dynamics,
