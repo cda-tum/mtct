@@ -83,6 +83,7 @@ int main(int argc, char** argv) {
       std::to_string(static_cast<int>(use_pwl)) + "_" +
       std::to_string(static_cast<int>(use_schedule_cuts)) + "_" +
       std::to_string(static_cast<int>(iterate_vss)) + "_" +
+      std::to_string(static_cast<int>(optimality_strategy_int)) + "_" +
       std::to_string(timeout);
 
   std::optional<cda_rail::vss::Model> vss_model;
