@@ -303,6 +303,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
   data["obj"]           = obj;
   data["mip_obj"]       = mip_obj;
   data["postprocessed"] = postprocessed;
+  data["has_solution"]  = has_sol;
   std::ofstream data_file(p / "solution" / "data.json");
   data_file << data << std::endl;
   data_file.close();
@@ -380,6 +381,7 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
   this->obj           = data["obj"].get<double>();
   this->mip_obj       = data["mip_obj"].get<double>();
   this->postprocessed = data["postprocessed"].get<bool>();
+  this->has_sol       = data["has_solution"].get<bool>();
 
   this->initialize_vectors();
 
@@ -522,6 +524,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     sol_obj.set_obj(mip_obj_val);
     return sol_obj;
   }
+
+  sol_obj.set_solution_found();
 
   int obj = 0;
 

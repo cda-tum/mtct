@@ -280,6 +280,7 @@ private:
   double         obj           = -1;
   double         mip_obj       = -1;
   bool           postprocessed = false;
+  bool           has_sol       = false;
 
   void initialize_vectors();
 
@@ -338,12 +339,15 @@ public:
   [[nodiscard]] double         get_mip_obj() const { return mip_obj; };
   [[nodiscard]] bool get_postprocessed() const { return postprocessed; };
   [[nodiscard]] int  get_dt() const { return dt; };
+  [[nodiscard]] bool has_solution() const { return has_sol; };
   void set_status(SolutionStatus new_status) { status = new_status; };
   void set_obj(double new_obj) { obj = new_obj; };
   void set_mip_obj(double new_mip_obj) { mip_obj = new_mip_obj; };
   void set_postprocessed(bool new_postprocessed) {
     postprocessed = new_postprocessed;
   };
+  void set_solution_found() { has_sol = true; };
+  void set_solution_not_found() { has_sol = false; };
 
   // RouteMap functions
   void reset_routes() {

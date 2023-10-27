@@ -2295,6 +2295,14 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   sol1.set_vss_pos(v0_v1, vss_pos);
   EXPECT_EQ(sol1.get_vss_pos(v0_v1), vss_pos);
 
+  EXPECT_FALSE(sol1.has_solution());
+  sol1.set_solution_found();
+  EXPECT_TRUE(sol1.has_solution());
+  sol1.set_solution_not_found();
+  EXPECT_FALSE(sol1.has_solution());
+  sol1.set_solution_found();
+  EXPECT_TRUE(sol1.has_solution());
+
   sol1.export_solution("tmp_sol1", true);
   sol1.export_solution("tmp_sol2", false);
   const auto sol1_read =
@@ -2305,6 +2313,9 @@ TEST(Functionality, SolVSSGenerationTimetable) {
       cda_rail::instances::SolVSSGenerationTimetable::import_solution(
           "tmp_sol2", instance);
   std::filesystem::remove_all("./tmp_sol2");
+
+  EXPECT_TRUE(sol1_read.has_solution());
+  EXPECT_TRUE(sol2_read.has_solution());
 
   // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
   tr1   = sol1_read.get_instance().get_train_list().get_train_index("tr1");
