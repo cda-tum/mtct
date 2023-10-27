@@ -1124,6 +1124,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                          vars["b_pos"](e_index, vss),
                          "b_used_" + std::to_string(e) + "_" +
                              std::to_string(vss));
+        model->addConstr(vars["b_pos"](e_index, vss), GRB_GREATER_EQUAL,
+                         vars["b_used"](i, vss) * min_block_len_e,
+                         "b_used_min_value_if_used_" + std::to_string(e) + "_" +
+                             std::to_string(vss));
         // Also remove redundant solutions
         if (vss < vss_number_e - 1) {
           model->addConstr(vars["b_pos"](e_index, vss), GRB_GREATER_EQUAL,
