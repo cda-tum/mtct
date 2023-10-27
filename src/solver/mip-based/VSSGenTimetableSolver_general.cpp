@@ -341,9 +341,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
-      auto obj_lb_tmp = obj_ub;
+      auto obj_lb_tmp = model->get(GRB_DoubleAttr_ObjBound);
       for (int i = 0; i < relevant_edges.size(); ++i) {
-        if (static_cast<double>(max_vss_per_edge_in_iteration.at(i)) <
+        if (static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1 <
                 obj_lb_tmp &&
             max_vss_per_edge_in_iteration.at(i) <
                 instance.const_n().max_vss_on_edge(relevant_edges.at(i))) {
