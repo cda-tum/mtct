@@ -581,8 +581,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
     const auto& e            = breakable_edges[i];
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
-    const auto& edge_len     = instance.n().get_edge(e).length;
     const auto& edge         = instance.n().get_edge(e);
+    const auto& edge_len     = edge.length;
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
