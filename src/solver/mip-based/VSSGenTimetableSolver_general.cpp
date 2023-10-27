@@ -338,6 +338,14 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         if (debug) {
           std::cout << "Break because of timeout" << std::endl;
         }
+        if (sol_object->has_solution()) {
+          if (debug) {
+            std::cout << "However, use previous obtained solution" << std::endl;
+          }
+          break;
+        }
+        sol_object =
+            extract_solution(postprocess, debug, !iterative_vss, old_instance);
         break;
       }
 
