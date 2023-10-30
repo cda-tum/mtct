@@ -111,7 +111,7 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
             << std::endl;
   const auto obj_val_1 = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::ExportLP, "test_1");
   EXPECT_TRUE(std::filesystem::exists("test_1.mps"));
   EXPECT_TRUE(std::filesystem::exists("test_1.sol"));
@@ -124,35 +124,35 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
             << std::endl;
   const auto obj_val_2 = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   std::cout << "--------------------- TEST 3 ---------------------------"
             << std::endl;
   const auto obj_val_3 = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, false, false, false, false, cda_rail::OptimalityStrategy::Optimal,
+      true, false, false, false, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   std::cout << "--------------------- TEST 4 ---------------------------"
             << std::endl;
   const auto obj_val_4 = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, true, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, true, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   std::cout << "--------------------- TEST 5 ---------------------------"
             << std::endl;
   const auto obj_val_5 = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   std::cout << "--------------------- TEST 6 ---------------------------"
             << std::endl;
   const auto obj_val_6 = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   // Check if all objective values are 1
@@ -186,7 +186,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree1) {
             << std::endl;
   const auto obj_val_1 = solver.solve(
       15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 280, true, cda_rail::ExportOption::ExportLP, "test_1");
   EXPECT_TRUE(std::filesystem::exists("test_1.mps"));
   EXPECT_TRUE(std::filesystem::exists("test_1.sol"));
@@ -208,7 +208,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree2) {
             << std::endl;
   const auto obj_val_2 = solver.solve(
       15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 280, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -224,7 +224,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree3) {
             << std::endl;
   const auto obj_val_3 = solver.solve(
       15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, true, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, true, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 280, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -240,7 +240,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree4) {
             << std::endl;
   const auto obj_val_4 = solver.solve(
       15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 280, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_4.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -256,7 +256,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree5) {
             << std::endl;
   const auto obj_val_5 = solver.solve(
       15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 280, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_5.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -272,7 +272,7 @@ TEST(Solver, GurobiVSSGenVSSDiscrete) {
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                            {&cda_rail::vss::functions::uniform}),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 375, true, cda_rail::ExportOption::NoExport);
 
   // Check if all objective values are 1
@@ -386,7 +386,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete1) {
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                            {&cda_rail::vss::functions::uniform}),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 375, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -411,7 +411,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete2) {
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                            {&cda_rail::vss::functions::uniform}),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 375, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -436,7 +436,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete3) {
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                            {&cda_rail::vss::functions::uniform}),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 375, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Infeasible);
@@ -448,15 +448,15 @@ TEST(Solver, OvertakeFixedContinuous) {
 
   const auto obj_val_base = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
   const auto obj_val_dynamics = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
   const auto obj_val_braking = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -478,15 +478,15 @@ TEST(Solver, OvertakeFreeContinuous) {
 
   const auto obj_val_base = solver.solve(
       15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
   const auto obj_val_dynamics = solver.solve(
       15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
   const auto obj_val_braking = solver.solve(
       15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -508,15 +508,15 @@ TEST(Solver, Stammstrecke4FixedContinuous) {
 
   const auto obj_val_base = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
   const auto obj_val_dynamics = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
   const auto obj_val_braking = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -538,15 +538,15 @@ TEST(Solver, Stammstrecke8FixedContinuous) {
 
   const auto obj_val_base = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
   const auto obj_val_dynamics = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
   const auto obj_val_braking = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -568,15 +568,15 @@ TEST(Solver, Stammstrecke16FixedContinuous) {
 
   const auto obj_val_base = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
   const auto obj_val_dynamics = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
   const auto obj_val_braking = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 120, false, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -600,7 +600,7 @@ TEST(Solver, SimpleStationInferredUniform) {
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
                            {&cda_rail::vss::functions::uniform}),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   // Check if all objective values are 1
@@ -617,7 +617,7 @@ TEST(Solver, SimpleStationInferredChebychev) {
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
                            {&cda_rail::vss::functions::chebyshev}),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   // Check if all objective values are 1
@@ -635,7 +635,7 @@ TEST(Solver, SimpleStationInferredBoth) {
       cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
                            {&cda_rail::vss::functions::uniform,
                             &cda_rail::vss::functions::chebyshev}),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   // Check if all objective values are 1
@@ -653,7 +653,7 @@ TEST(Solver, SimpleStationInferredAltBoth) {
       cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
                            {&cda_rail::vss::functions::uniform,
                             &cda_rail::vss::functions::chebyshev}),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   // Check if all objective values are 1
@@ -668,7 +668,7 @@ TEST(Solver, IterativeContinuousSingleTrack) {
 
   const auto obj_val = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, true, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {true, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -682,7 +682,7 @@ TEST(Solver, IterativeContinuousStammstrecke4) {
 
   const auto obj_val = solver.solve(
       15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-      true, true, false, true, true, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {true, cda_rail::OptimalityStrategy::Optimal},
       false, 60, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -697,7 +697,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
   const auto obj_val = solver.solve(
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 240, true);
 
   // Check if all objective values are 1
@@ -753,7 +753,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
   const auto obj_val = solver.solve(
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      true, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 240, true);
 
   // Check if all objective values are 1
@@ -809,7 +809,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
   const auto obj_val = solver.solve(
       15, true,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      true, true, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 240, true);
 
   // Check if all objective values are 1
@@ -865,7 +865,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
   const auto obj_val = solver.solve(
       15, false,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      false, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      false, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 240, true);
 
   // Check if all objective values are 1
@@ -921,7 +921,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
   const auto obj_val = solver.solve(
       15, false,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      true, false, false, true, false, cda_rail::OptimalityStrategy::Optimal,
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
       false, 240, true);
 
   // Check if all objective values are 1
@@ -977,7 +977,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
   const auto obj_val = solver.solve(
       15, false,
       cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-      true, true, false, true, true, cda_rail::OptimalityStrategy::Optimal,
+      true, true, false, true, {true, cda_rail::OptimalityStrategy::Optimal},
       false, 240, true);
 
   // Check if all objective values are 1
