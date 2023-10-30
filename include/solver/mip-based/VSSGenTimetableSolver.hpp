@@ -10,6 +10,14 @@
 #include <string>
 
 namespace cda_rail::solver::mip_based {
+struct SolverStrategy {
+  bool                         iterative_approach = false;
+  cda_rail::OptimalityStrategy optimality_strategy =
+      cda_rail::OptimalityStrategy::Optimal;
+  int    initial_value = 1;
+  double factor        = 2;
+};
+
 class VSSGenTimetableSolver {
 private:
   instances::VSSGenerationTimetable instance;
@@ -32,12 +40,14 @@ private:
   std::vector<size_t> breakable_edges;
   bool                fix_routes = false;
   vss::Model          vss_model  = vss::Model(vss::ModelType::Continuous);
-  bool                include_train_dynamics = false;
-  bool                include_braking_curves = false;
-  bool                use_pwl                = false;
-  bool                use_schedule_cuts      = false;
-  bool                iterative_vss          = false;
-  OptimalityStrategy  optimality_strategy    = OptimalityStrategy::Optimal;
+  bool                include_train_dynamics      = false;
+  bool                include_braking_curves      = false;
+  bool                use_pwl                     = false;
+  bool                use_schedule_cuts           = false;
+  bool                iterative_vss               = false;
+  OptimalityStrategy  optimality_strategy         = OptimalityStrategy::Optimal;
+  int                 iterative_initial_vss_value = 1;
+  double              iterative_factor            = 2;
   std::vector<size_t> max_vss_per_edge_in_iteration;
   std::unordered_map<size_t, size_t> breakable_edge_indices;
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
@@ -156,10 +166,9 @@ public:
         vss::Model model_input = vss::Model(vss::ModelType::Continuous),
         bool       include_train_dynamics_input = true,
         bool include_braking_curves_input = true, bool use_pwl_input = false,
-        bool use_schedule_cuts_input = true, bool iterative_vss_input = false,
-        OptimalityStrategy optimality_strategy_input =
-            OptimalityStrategy::Optimal,
-        bool postprocess = false, int time_limit = -1, bool debug_input = false,
+        bool           use_schedule_cuts_input = true,
+        SolverStrategy solver_strategy_input = {}, bool postprocess = false,
+        int time_limit = -1, bool debug_input = false,
         ExportOption       export_option = ExportOption::NoExport,
         const std::string& name = "model", const std::string& p = "");
 

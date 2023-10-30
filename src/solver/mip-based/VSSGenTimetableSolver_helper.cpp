@@ -197,9 +197,12 @@ bool cda_rail::solver::mip_based::VSSGenTimetableSolver::update_vss(
   const auto& current_vss_number_e =
       max_vss_per_edge_in_iteration.at(relevant_edge_index);
 
-  auto target_vss_number_e = (model->get(GRB_IntAttr_SolCount) >= 1)
-                                 ? static_cast<size_t>(std::round(obj_ub - 1))
-                                 : 2 * current_vss_number_e;
+  auto target_vss_number_e =
+      (model->get(GRB_IntAttr_SolCount) >= 1)
+          ? static_cast<size_t>(std::round(obj_ub - 1))
+          : static_cast<size_t>(
+                std::ceil(iterative_factor * std::max(current_vss_number_e,
+                                                      static_cast<size_t>(1))));
 
   if (target_vss_number_e >= vss_number_e) {
     target_vss_number_e = vss_number_e;

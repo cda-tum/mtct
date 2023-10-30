@@ -34,10 +34,10 @@ cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     int delta_t, bool fix_routes_input, vss::Model vss_model_input,
     bool include_train_dynamics_input, bool include_braking_curves_input,
-    bool use_pwl_input, bool use_schedule_cuts_input, bool iterative_vss_input,
-    OptimalityStrategy optimality_strategy_input, bool postprocess,
-    int time_limit, bool debug_input, ExportOption export_option,
-    const std::string& name, const std::string& p) {
+    bool use_pwl_input, bool use_schedule_cuts_input,
+    SolverStrategy solver_strategy_input, bool postprocess, int time_limit,
+    bool debug_input, ExportOption export_option, const std::string& name,
+    const std::string& p) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
    * flexible MILP formulation. The level of detail can be controlled using the
@@ -96,15 +96,22 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     start = std::chrono::high_resolution_clock::now();
   }
 
-  this->dt                     = delta_t;
-  this->fix_routes             = fix_routes_input;
-  this->vss_model              = std::move(vss_model_input);
-  this->include_train_dynamics = include_train_dynamics_input;
-  this->include_braking_curves = include_braking_curves_input;
-  this->use_pwl                = use_pwl_input;
-  this->use_schedule_cuts      = use_schedule_cuts_input;
-  this->iterative_vss          = iterative_vss_input;
-  this->optimality_strategy    = optimality_strategy_input;
+  this->dt                          = delta_t;
+  this->fix_routes                  = fix_routes_input;
+  this->vss_model                   = std::move(vss_model_input);
+  this->include_train_dynamics      = include_train_dynamics_input;
+  this->include_braking_curves      = include_braking_curves_input;
+  this->use_pwl                     = use_pwl_input;
+  this->use_schedule_cuts           = use_schedule_cuts_input;
+  this->iterative_vss               = solver_strategy_input.iterative_approach;
+  this->optimality_strategy         = solver_strategy_input.optimality_strategy;
+  this->iterative_initial_vss_value = solver_strategy_input.initial_value;
+  this->iterative_factor            = solver_strategy_input.factor;
+
+  if (this->iterative_vss && this->iterative_factor <= 1) {
+    throw exceptions::ConsistencyException(
+        "iterative_factor must be greater than 1");
+  }
 
   if (this->fix_routes && !instance.has_route_for_every_train()) {
     throw exceptions::ConsistencyException(
@@ -156,8 +163,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     train_interval.emplace_back(instance.time_index_interval(i, dt, false));
   }
 
-  if (iterative_vss_input &&
-      vss_model.get_model_type() == vss::ModelType::Discrete) {
+  if (iterative_vss && vss_model.get_model_type() == vss::ModelType::Discrete) {
     throw exceptions::ConsistencyException(
         "Iterative VSS not supported for discrete VSS model");
   }
@@ -167,7 +173,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     const auto& e            = relevant_edges.at(i);
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
     max_vss_per_edge_in_iteration[i] =
-        iterative_vss_input ? std::min(vss_number_e, 1) : vss_number_e;
+        iterative_vss ? std::min(vss_number_e, iterative_initial_vss_value)
+                      : vss_number_e;
   }
 
   calculate_fwd_bwd_sections();
