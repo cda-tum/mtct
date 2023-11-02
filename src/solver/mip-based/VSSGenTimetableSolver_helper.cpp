@@ -191,7 +191,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup(
 }
 
 bool cda_rail::solver::mip_based::VSSGenTimetableSolver::update_vss(
-    size_t relevant_edge_index, double obj_ub) {
+    size_t relevant_edge_index, double obj_ub, GRBLinExpr& cut_expr) {
   const auto& e            = relevant_edges.at(relevant_edge_index);
   const auto  vss_number_e = instance.n().max_vss_on_edge(e);
   const auto& current_vss_number_e =
@@ -212,12 +212,12 @@ bool cda_rail::solver::mip_based::VSSGenTimetableSolver::update_vss(
     return false;
   }
 
-  update_max_vss_on_edge(relevant_edge_index, target_vss_number_e);
+  update_max_vss_on_edge(relevant_edge_index, target_vss_number_e, cut_expr);
   return true;
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
-    size_t relevant_edge_index, size_t new_max_vss) {
+    size_t relevant_edge_index, size_t new_max_vss, GRBLinExpr& cut_expr) {
   const auto& e            = relevant_edges.at(relevant_edge_index);
   const auto  vss_number_e = instance.n().max_vss_on_edge(e);
   const auto  old_max_vss =
@@ -236,20 +236,60 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
   if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
     vars.at("num_vss_segments")(relevant_edge_index)
         .set(GRB_DoubleAttr_UB, static_cast<double>(new_max_vss) + 1);
+    if (this->iterative_include_cuts && new_max_vss > old_max_vss) {
+      const auto b =
+          model->addVar(0, 1, 0, GRB_BINARY,
+                        "binary_cut_" + std::to_string(relevant_edge_index) +
+                            "_" + std::to_string(old_max_vss));
+      // b = 1 iff num_vss_segments(relevant_edge_index) >= old_max_vss + 1
+      model->addConstr(vars.at("num_vss_segments")(relevant_edge_index) -
+                               static_cast<double>(old_max_vss) <=
+                           (vss_number_e + 1) * b,
+                       "binary_cut_relation_" +
+                           std::to_string(relevant_edge_index) + "_" +
+                           std::to_string(old_max_vss) + "_1");
+      model->addConstr(
+          static_cast<double>(old_max_vss + 1) -
+                  vars.at("num_vss_segments")(relevant_edge_index) <=
+              (vss_number_e) * (1 - b),
+          "binary_cut_relation_" + std::to_string(relevant_edge_index) + "_" +
+              std::to_string(old_max_vss) + "_2");
+      cut_expr += b;
+      if (debug) {
+        std::cout << "Add binary_cut_" << relevant_edge_index << "_"
+                  << old_max_vss << "to cut_expr" << std::endl;
+      }
+    }
   }
   if (this->vss_model.get_model_type() == vss::ModelType::Continuous) {
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       vars.at("b_used")(relevant_edge_index, vss)
           .set(GRB_DoubleAttr_UB, static_cast<double>(vss < new_max_vss));
     }
+    if (this->iterative_include_cuts && new_max_vss > old_max_vss) {
+      cut_expr += vars.at("b_used")(relevant_edge_index, old_max_vss);
+      if (debug) {
+        std::cout << "Add b_used(" << relevant_edge_index << "," << old_max_vss
+                  << ") to cut_expr" << std::endl;
+      }
+    }
   }
   if (this->vss_model.get_model_type() == vss::ModelType::InferredAlt) {
-    for (size_t vss = 0; vss < vss_number_e; ++vss) {
-      for (size_t sep_type = 0;
-           sep_type < this->vss_model.get_separation_functions().size();
-           ++sep_type) {
+    for (size_t sep_type = 0;
+         sep_type < this->vss_model.get_separation_functions().size();
+         ++sep_type) {
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
         vars.at("type_num_vss_segments")(relevant_edge_index, sep_type, vss)
             .set(GRB_DoubleAttr_UB, static_cast<double>(vss < new_max_vss));
+      }
+      if (this->iterative_include_cuts && new_max_vss > old_max_vss) {
+        cut_expr += vars.at("type_num_vss_segments")(relevant_edge_index,
+                                                     sep_type, old_max_vss);
+        if (debug) {
+          std::cout << "Add type_num_vss_segments(" << relevant_edge_index
+                    << "," << sep_type << "," << old_max_vss << ") to cut_expr"
+                    << std::endl;
+        }
       }
     }
   }

@@ -16,6 +16,7 @@ struct SolverStrategy {
       cda_rail::OptimalityStrategy::Optimal;
   int    initial_value = 1;
   double factor        = 2;
+  bool   include_cuts  = true;
 };
 
 class VSSGenTimetableSolver {
@@ -48,6 +49,7 @@ private:
   OptimalityStrategy  optimality_strategy         = OptimalityStrategy::Optimal;
   int                 iterative_initial_vss_value = 1;
   double              iterative_factor            = 2;
+  bool                iterative_include_cuts      = true;
   std::vector<size_t> max_vss_per_edge_in_iteration;
   std::unordered_map<size_t, size_t> breakable_edge_indices;
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
@@ -150,8 +152,10 @@ private:
                    const std::optional<instances::VSSGenerationTimetable>&
                        old_instance) const;
 
-  bool update_vss(size_t relevant_edge_index, double obj_ub);
-  void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss);
+  bool update_vss(size_t relevant_edge_index, double obj_ub,
+                  GRBLinExpr& cut_expr);
+  void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss,
+                              GRBLinExpr& cut_expr);
 
 public:
   // Constructors

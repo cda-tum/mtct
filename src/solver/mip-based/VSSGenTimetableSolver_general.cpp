@@ -107,6 +107,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   this->optimality_strategy         = solver_strategy_input.optimality_strategy;
   this->iterative_initial_vss_value = solver_strategy_input.initial_value;
   this->iterative_factor            = solver_strategy_input.factor;
+  this->iterative_include_cuts      = solver_strategy_input.include_cuts;
 
   if (this->iterative_vss && this->iterative_factor <= 1) {
     throw exceptions::ConsistencyException(
@@ -311,8 +312,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   for (const auto& e : relevant_edges) {
     obj_ub += instance.const_n().max_vss_on_edge(e);
   }
-  double obj_lb = 0;
-
+  double obj_lb           = 0;
+  size_t iteration_number = 0;
   while (reoptimize) {
     reoptimize = false;
 
@@ -325,6 +326,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
 
     model->optimize();
+    iteration_number += 1;
 
     if (model->get(GRB_IntAttr_SolCount) >= 1) {
       const auto obj_tmp = model->get(GRB_DoubleAttr_ObjVal);
@@ -370,8 +372,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         obj_lb = obj_lb_tmp;
       }
 
-      if (obj_lb + GRB_EPS >= obj_ub &&
-          (model->get(GRB_IntAttr_SolCount) >= 1)) {
+      if (obj_lb + GRB_EPS >= obj_ub && (sol_object->has_solution())) {
         if (debug) {
           std::cout << "Break because obj_lb (" << obj_lb << ") >= obj_ub ("
                     << obj_ub << ") -> Proven optimal" << std::endl;
@@ -390,8 +391,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
+      GRBLinExpr cut_expr = 0;
       for (int i = 0; i < relevant_edges.size(); ++i) {
-        if (update_vss(i, obj_ub)) {
+        if (update_vss(i, obj_ub, cut_expr)) {
           reoptimize = true;
         }
       }
@@ -403,11 +405,23 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         break;
       }
 
-      model->addConstr(objective_expr, GRB_GREATER_EQUAL, obj_lb);
-      model->addConstr(objective_expr, GRB_LESS_EQUAL, obj_ub);
+      model->addConstr(objective_expr, GRB_GREATER_EQUAL, obj_lb,
+                       "obj_lb_" + std::to_string(obj_lb) + "_" +
+                           std::to_string(iteration_number));
+      model->addConstr(objective_expr, GRB_LESS_EQUAL, obj_ub,
+                       "obj_ub_" + std::to_string(obj_ub) + "_" +
+                           std::to_string(iteration_number));
       if (debug) {
         std::cout << "Added constraint: obj >= " << obj_lb << std::endl;
         std::cout << "Added constraint: obj <= " << obj_ub << std::endl;
+      }
+
+      if (this->iterative_include_cuts) {
+        model->addConstr(cut_expr, GRB_GREATER_EQUAL, 1,
+                         "cut_" + std::to_string(iteration_number));
+        if (debug) {
+          std::cout << "Added constraint: cut_expr >= 1" << std::endl;
+        }
       }
 
       if (time_limit > 0) {
