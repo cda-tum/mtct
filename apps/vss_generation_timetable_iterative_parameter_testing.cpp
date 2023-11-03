@@ -31,9 +31,9 @@ int main(int argc, char** argv) {
   const int         factor       = std::stoi(args[9]);
   const bool        include_cuts = std::stoi(args[10]) != 0;
   const int         timeout      = std::stoi(args[11]);
-  const std::string output_path  = (argc == 13 ? args[12] : "");
+  const std::string output_path  = (argc >= 13 ? args[12] : "");
   const std::string file_name =
-      (argc == 14
+      (argc >= 14
            ? args[13]
            : model_name + "_" + std::to_string(delta_t) + "_" +
                  std::to_string(static_cast<int>(fix_routes)) + "_" +
