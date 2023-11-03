@@ -103,6 +103,46 @@ TEST(Solver, GurobiVSSGenDefault) {
   EXPECT_EQ(obj_val_default.get_mip_obj(), 1);
 }
 
+TEST(Solver, GurobiVSSGenDefaultInstance) {
+  cda_rail::instances::VSSGenerationTimetable instance(
+      "./example-networks/SimpleStation/");
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  // Test various options
+  std::cout << "--------------------- DEFAULT ---------------------------"
+            << std::endl;
+  const auto obj_val_default = solver.solve();
+  EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_default.get_obj(), 1);
+  EXPECT_EQ(obj_val_default.get_mip_obj(), 1);
+}
+
+TEST(Solver, GurobiVSSGenDefaultInstancePath) {
+  std::filesystem::path instance_path("./example-networks/SimpleStation/");
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance_path);
+
+  // Test various options
+  std::cout << "--------------------- DEFAULT ---------------------------"
+            << std::endl;
+  const auto obj_val_default = solver.solve();
+  EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_default.get_obj(), 1);
+  EXPECT_EQ(obj_val_default.get_mip_obj(), 1);
+}
+
+TEST(Solver, GurobiVSSGenDefaultInstanceString) {
+  std::string instance_path("./example-networks/SimpleStation/");
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance_path);
+
+  // Test various options
+  std::cout << "--------------------- DEFAULT ---------------------------"
+            << std::endl;
+  const auto obj_val_default = solver.solve();
+  EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_default.get_obj(), 1);
+  EXPECT_EQ(obj_val_default.get_mip_obj(), 1);
+}
+
 TEST(Solver, GurobiVSSGenModelDetailFixed) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
