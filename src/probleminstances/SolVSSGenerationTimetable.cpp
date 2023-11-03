@@ -586,7 +586,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
                     .at(tr, t, breakable_edge_indices.at(e_index), vss)
                     .get(GRB_DoubleAttr_X) > 0.5;
             const auto front2 =
-                reverse_edge_index.has_value()
+                (reverse_edge_index.has_value() &&
+                 !instance
+                      .trains_on_edge(reverse_edge_index.value(), fix_routes,
+                                      {tr})
+                      .empty())
                     ? vars.at("b_front")
                               .at(tr, t,
                                   breakable_edge_indices.at(
@@ -595,7 +599,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
                               .get(GRB_DoubleAttr_X) > 0.5
                     : false;
             const auto rear2 =
-                reverse_edge_index.has_value()
+                (reverse_edge_index.has_value() &&
+                 !instance
+                      .trains_on_edge(reverse_edge_index.value(), fix_routes,
+                                      {tr})
+                      .empty())
                     ? vars.at("b_rear")
                               .at(tr, t,
                                   breakable_edge_indices.at(
