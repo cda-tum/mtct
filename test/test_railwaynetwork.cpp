@@ -2360,6 +2360,48 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(stations_read.get_station(stop3_read.station).name, "Station1");
 }
 
+TEST(Functionality, TimetableConsistency) {
+  auto network = cda_rail::Network::import_network(
+      "./example-networks/SimpleStation/network/");
+  auto network1 = cda_rail::Network::import_network(
+      "./example-networks/SimpleStation/network/");
+  network1.add_edge("l0", "r1", 100, 10, false);
+  auto network2 = cda_rail::Network::import_network(
+      "./example-networks/SimpleStation/network/");
+  network2.add_edge("r0", "l1", 100, 10, false);
+  cda_rail::Network network3;
+  cda_rail::Network network4;
+  network4.add_vertex("l0", cda_rail::VertexType::TTD);
+  network4.add_vertex("l1", cda_rail::VertexType::TTD);
+  network4.add_vertex("l2", cda_rail::VertexType::TTD);
+  network4.add_vertex("l3", cda_rail::VertexType::TTD);
+  network4.add_vertex("r0", cda_rail::VertexType::TTD);
+  network4.add_vertex("r1", cda_rail::VertexType::TTD);
+  network4.add_vertex("r2", cda_rail::VertexType::TTD);
+  network4.add_vertex("r3", cda_rail::VertexType::TTD);
+  network4.add_vertex("g00", cda_rail::VertexType::TTD);
+  network4.add_vertex("g01", cda_rail::VertexType::TTD);
+  network4.add_vertex("g10", cda_rail::VertexType::TTD);
+  network4.add_vertex("g11", cda_rail::VertexType::TTD);
+  cda_rail::Timetable timetable;
+
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", "g00", "g01", network);
+
+  const auto l0 = network.get_vertex_index("l0");
+  const auto r0 = network.get_vertex_index("r0");
+
+  const auto tr1 = timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, l0, 300,
+                                       20, r0, network);
+  timetable.add_stop(tr1, "Station1", 0, 60);
+
+  EXPECT_TRUE(timetable.check_consistency(network));
+  EXPECT_FALSE(timetable.check_consistency(network1));
+  EXPECT_FALSE(timetable.check_consistency(network2));
+  EXPECT_FALSE(timetable.check_consistency(network3));
+  EXPECT_FALSE(timetable.check_consistency(network4));
+}
+
 TEST(Functionality, TimetableExceptions) {
   auto network = cda_rail::Network::import_network(
       "./example-networks/SimpleStation/network/");
