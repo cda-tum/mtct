@@ -193,6 +193,34 @@ TEST(VSSModel, Functions) {
   };
 
   EXPECT_EQ(cda_rail::vss::functions::max_n_blocks(f3, 0.25), 3);
+
+  const cda_rail::vss::SeparationFunction f4 = [](size_t i, size_t n) {
+    if (i >= n) {
+      return 1.0;
+    }
+    if (n == 1) {
+      return 0.5;
+    }
+    if (n == 2) {
+      if (i == 0) {
+        return 0.35;
+      }
+      return 0.6;
+    }
+    if (n == 3) {
+      if (i == 0) {
+        return 0.3;
+      }
+      if (i == 1) {
+        return 0.5;
+      }
+      return 0.75;
+    }
+
+    return cda_rail::vss::functions::uniform(i, n);
+  };
+
+  EXPECT_EQ(cda_rail::vss::functions::max_n_blocks(f4, 0.25), 2);
 }
 
 TEST(Exceptions, Content) {
