@@ -39,10 +39,9 @@ int main(int argc, char** argv) {
                  std::to_string(static_cast<int>(fix_routes)) + "_" +
                  std::to_string(static_cast<int>(include_braking_curves)) +
                  "_" + std::to_string(static_cast<int>(iterate_vss)) + "_" +
-                 std::to_string(static_cast<int>(optimality_strategy_int)) +
-                 "_" + std::to_string(initial_vss) + "_" +
-                 std::to_string(factor) + "_" +
-                 std::to_string(static_cast<int>(include_cuts)) + "_" +
+                 std::to_string(optimality_strategy_int) + "_" +
+                 std::to_string(initial_vss) + "_" + std::to_string(factor) +
+                 "_" + std::to_string(static_cast<int>(include_cuts)) + "_" +
                  std::to_string(timeout));
 
   std::cout << "The following parameters were passed to the toolkit:"
