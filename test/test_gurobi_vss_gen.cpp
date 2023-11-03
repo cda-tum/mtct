@@ -609,6 +609,55 @@ TEST(Solver, SimpleStationInferredUniform) {
   EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
+TEST(Solver, SimpleStationInferredUniformPostprocess) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  const auto obj_val = solver.solve(
+      15, false,
+      cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
+                           {&cda_rail::vss::functions::uniform}),
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
+      true, 60, true, cda_rail::ExportOption::NoExport);
+
+  // Check if all objective values are 1
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 1);
+  EXPECT_EQ(obj_val.get_mip_obj(), 1);
+}
+
+TEST(Solver, SimpleStationInferredAltUniformPostprocess) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  const auto obj_val = solver.solve(
+      15, false,
+      cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
+                           {&cda_rail::vss::functions::uniform}),
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
+      true, 60, true, cda_rail::ExportOption::NoExport);
+
+  // Check if all objective values are 1
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 1);
+  EXPECT_EQ(obj_val.get_mip_obj(), 1);
+}
+
+TEST(Solver, SimpleStationContinuousPostprocess) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  const auto obj_val = solver.solve(
+      15, false, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+      true, false, false, true, {false, cda_rail::OptimalityStrategy::Optimal},
+      true, 60, true, cda_rail::ExportOption::NoExport);
+
+  // Check if all objective values are 1
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 1);
+  EXPECT_EQ(obj_val.get_mip_obj(), 1);
+}
+
 TEST(Solver, SimpleStationInferredChebychev) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");

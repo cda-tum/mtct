@@ -2179,6 +2179,18 @@ TEST(Functionality, SolVSSGenerationTimetable) {
 
   EXPECT_TRUE(sol1.check_consistency());
 
+  sol1.set_status(cda_rail::SolutionStatus::Infeasible);
+  EXPECT_FALSE(sol1.check_consistency());
+  sol1.set_status(cda_rail::SolutionStatus::Timeout);
+  EXPECT_FALSE(sol1.check_consistency());
+  sol1.set_status(cda_rail::SolutionStatus::Optimal);
+
+  sol1.set_obj(-1);
+  EXPECT_FALSE(sol1.check_consistency());
+  sol1.set_obj(0);
+
+  EXPECT_TRUE(sol1.check_consistency());
+
   sol1.add_vss_pos("v0", "v1", 20, true);
   sol1.add_vss_pos(v0, v1, 30, true);
   sol1.add_vss_pos(v0_v1, 60, false);
