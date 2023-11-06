@@ -784,13 +784,14 @@ TEST(Solver, IterativeContinuousSimpleStationInferred) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
 
-  const auto obj_val =
-      solver.solve(15, true,
-                   cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
-                                        {&cda_rail::vss::functions::uniform}),
-                   true, false, false, true,
-                   {true, cda_rail::OptimalityStrategy::Optimal, 0, 2, true},
-                   false, 60, true, cda_rail::ExportOption::NoExport);
+  const auto obj_val = solver.solve(
+      15, true,
+      cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
+                           {&cda_rail::vss::functions::uniform}),
+      true, false, false, true,
+      {true, cda_rail::OptimalityStrategy::Optimal,
+       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
+      false, 60, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
@@ -801,13 +802,14 @@ TEST(Solver, IterativeContinuousSimpleStationInferredAlt) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
 
-  const auto obj_val =
-      solver.solve(15, true,
-                   cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
-                                        {&cda_rail::vss::functions::uniform}),
-                   true, false, false, true,
-                   {true, cda_rail::OptimalityStrategy::Optimal, 0, 2, true},
-                   false, 60, true, cda_rail::ExportOption::NoExport);
+  const auto obj_val = solver.solve(
+      15, true,
+      cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
+                           {&cda_rail::vss::functions::uniform}),
+      true, false, false, true,
+      {true, cda_rail::OptimalityStrategy::Optimal,
+       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
+      false, 60, true, cda_rail::ExportOption::NoExport);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);

@@ -10,13 +10,16 @@
 #include <string>
 
 namespace cda_rail::solver::mip_based {
+enum class UpdateStrategy { Fixed = 0, Relative = 1 };
+
 struct SolverStrategy {
   bool                         iterative_approach = false;
   cda_rail::OptimalityStrategy optimality_strategy =
       cda_rail::OptimalityStrategy::Optimal;
-  int    initial_value = 1;
-  double factor        = 2;
-  bool   include_cuts  = true;
+  UpdateStrategy update_strategy = UpdateStrategy::Fixed;
+  double         initial_value   = 1;
+  double         update_value    = 2;
+  bool           include_cuts    = true;
 };
 
 class VSSGenTimetableSolver {
@@ -41,15 +44,16 @@ private:
   std::vector<size_t> breakable_edges;
   bool                fix_routes = false;
   vss::Model          vss_model  = vss::Model(vss::ModelType::Continuous);
-  bool                include_train_dynamics      = false;
-  bool                include_braking_curves      = false;
-  bool                use_pwl                     = false;
-  bool                use_schedule_cuts           = false;
-  bool                iterative_vss               = false;
-  OptimalityStrategy  optimality_strategy         = OptimalityStrategy::Optimal;
-  int                 iterative_initial_vss_value = 1;
-  double              iterative_factor            = 2;
-  bool                iterative_include_cuts      = true;
+  bool                include_train_dynamics    = false;
+  bool                include_braking_curves    = false;
+  bool                use_pwl                   = false;
+  bool                use_schedule_cuts         = false;
+  bool                iterative_vss             = false;
+  OptimalityStrategy  optimality_strategy       = OptimalityStrategy::Optimal;
+  UpdateStrategy      iterative_update_strategy = UpdateStrategy::Fixed;
+  int                 iterative_initial_value   = 1;
+  double              iterative_update_value    = 2;
+  bool                iterative_include_cuts    = true;
   std::vector<size_t> max_vss_per_edge_in_iteration;
   std::unordered_map<size_t, size_t> breakable_edge_indices;
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>

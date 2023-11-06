@@ -96,22 +96,32 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     start = std::chrono::high_resolution_clock::now();
   }
 
-  this->dt                          = delta_t;
-  this->fix_routes                  = fix_routes_input;
-  this->vss_model                   = std::move(vss_model_input);
-  this->include_train_dynamics      = include_train_dynamics_input;
-  this->include_braking_curves      = include_braking_curves_input;
-  this->use_pwl                     = use_pwl_input;
-  this->use_schedule_cuts           = use_schedule_cuts_input;
-  this->iterative_vss               = solver_strategy_input.iterative_approach;
-  this->optimality_strategy         = solver_strategy_input.optimality_strategy;
-  this->iterative_initial_vss_value = solver_strategy_input.initial_value;
-  this->iterative_factor            = solver_strategy_input.factor;
-  this->iterative_include_cuts      = solver_strategy_input.include_cuts;
+  this->dt                        = delta_t;
+  this->fix_routes                = fix_routes_input;
+  this->vss_model                 = std::move(vss_model_input);
+  this->include_train_dynamics    = include_train_dynamics_input;
+  this->include_braking_curves    = include_braking_curves_input;
+  this->use_pwl                   = use_pwl_input;
+  this->use_schedule_cuts         = use_schedule_cuts_input;
+  this->iterative_vss             = solver_strategy_input.iterative_approach;
+  this->optimality_strategy       = solver_strategy_input.optimality_strategy;
+  this->iterative_update_strategy = solver_strategy_input.update_strategy;
+  this->iterative_initial_value   = solver_strategy_input.initial_value;
+  this->iterative_update_value    = solver_strategy_input.update_value;
+  this->iterative_include_cuts    = solver_strategy_input.include_cuts;
 
-  if (this->iterative_vss && this->iterative_factor <= 1) {
-    throw exceptions::ConsistencyException(
-        "iterative_factor must be greater than 1");
+  if (this->iterative_vss) {
+    if (this->iterative_update_strategy == UpdateStrategy::Fixed &&
+        this->iterative_update_value <= 1) {
+      throw exceptions::ConsistencyException(
+          "iterative_update_value must be greater than 1");
+    }
+    if (this->iterative_update_strategy == UpdateStrategy::Relative &&
+        (this->iterative_update_value <= 0 ||
+         this->iterative_update_value >= 1)) {
+      throw exceptions::ConsistencyException(
+          "iterative_update_value must be between 0 and 1");
+    }
   }
 
   if (this->fix_routes && !instance.has_route_for_every_train()) {
@@ -173,9 +183,21 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   for (size_t i = 0; i < relevant_edges.size(); ++i) {
     const auto& e            = relevant_edges.at(i);
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
-    max_vss_per_edge_in_iteration[i] =
-        iterative_vss ? std::min(vss_number_e, iterative_initial_vss_value)
-                      : vss_number_e;
+    if (iterative_vss) {
+      if (iterative_update_strategy == UpdateStrategy::Fixed) {
+        max_vss_per_edge_in_iteration[i] = std::min(
+            vss_number_e, static_cast<int>(std::ceil(iterative_initial_value)));
+      } else if (iterative_update_strategy == UpdateStrategy::Relative) {
+        max_vss_per_edge_in_iteration[i] = std::min(
+            vss_number_e,
+            static_cast<int>(std::ceil(iterative_initial_value *
+                                       static_cast<double>(vss_number_e))));
+      } else {
+        throw exceptions::ConsistencyException("Unknown update strategy");
+      }
+    } else {
+      max_vss_per_edge_in_iteration[i] = vss_number_e;
+    }
   }
 
   calculate_fwd_bwd_sections();
@@ -408,17 +430,25 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       model->addConstr(objective_expr, GRB_GREATER_EQUAL, obj_lb,
                        "obj_lb_" + std::to_string(obj_lb) + "_" +
                            std::to_string(iteration_number));
-      model->addConstr(objective_expr, GRB_LESS_EQUAL, obj_ub,
+      model->addConstr(objective_expr, GRB_LESS_EQUAL,
+                       (iterative_include_cuts && sol_object->has_solution())
+                           ? obj_ub - 1
+                           : obj_ub,
                        "obj_ub_" + std::to_string(obj_ub) + "_" +
                            std::to_string(iteration_number));
       if (debug) {
         std::cout << "Added constraint: obj >= " << obj_lb << std::endl;
-        std::cout << "Added constraint: obj <= " << obj_ub << std::endl;
+        std::cout << "Added constraint: obj <= "
+                  << ((iterative_include_cuts && sol_object->has_solution())
+                          ? obj_ub - 1
+                          : obj_ub)
+                  << std::endl;
       }
 
       if (this->iterative_include_cuts) {
         model->addConstr(cut_expr, GRB_GREATER_EQUAL, 1,
                          "cut_" + std::to_string(iteration_number));
+        model->reset(1);
         if (debug) {
           std::cout << "Added constraint: cut_expr >= 1" << std::endl;
         }
