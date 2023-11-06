@@ -51,7 +51,7 @@ private:
   bool                iterative_vss             = false;
   OptimalityStrategy  optimality_strategy       = OptimalityStrategy::Optimal;
   UpdateStrategy      iterative_update_strategy = UpdateStrategy::Fixed;
-  int                 iterative_initial_value   = 1;
+  double              iterative_initial_value   = 1;
   double              iterative_update_value    = 2;
   bool                iterative_include_cuts    = true;
   std::vector<size_t> max_vss_per_edge_in_iteration;
