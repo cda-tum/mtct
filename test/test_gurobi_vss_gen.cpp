@@ -780,6 +780,39 @@ TEST(Solver, IterativeContinuousSingleTrack) {
   EXPECT_EQ(obj_val.get_mip_obj(), 9);
 }
 
+TEST(Solver, IterativeContinuousSingleTrackCuts) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SingleTrack/");
+
+  const auto obj_val = solver.solve(
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+      true, true, false, true,
+      {true, cda_rail::OptimalityStrategy::Optimal,
+       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 1, 2, true},
+      false, 60, true, cda_rail::ExportOption::NoExport);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 9);
+  EXPECT_EQ(obj_val.get_mip_obj(), 9);
+}
+
+TEST(Solver, IterativeContinuousSingleRelative) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SingleTrack/");
+
+  const auto obj_val = solver.solve(
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+      true, true, false, true,
+      {true, cda_rail::OptimalityStrategy::Optimal,
+       cda_rail::solver::mip_based::UpdateStrategy::Relative, 0.025, 0.05,
+       true},
+      false, 60, true, cda_rail::ExportOption::NoExport);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 9);
+  EXPECT_EQ(obj_val.get_mip_obj(), 9);
+}
+
 TEST(Solver, IterativeContinuousSimpleStationInferred) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
