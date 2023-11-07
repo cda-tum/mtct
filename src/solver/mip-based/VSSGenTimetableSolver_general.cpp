@@ -48,9 +48,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * @param fix_routes_input: If true, the routes are fixed to the ones given in
    * the instance. Otherwise, routing is part of the optimization. Default: true
    * @param vss_model_input: Denotes, how the VSS borders are modelled in the
-   * solution process. Default: VSSModel::Continuous
-   * @param separation_types_input: The separation types used, if the graph is
-   * discretized or the VSS modeling is limited. Default: {}
+   * solution process. Default uses VSSModel::Continuous
    * @param include_train_dynamics_input: If true, the train dynamics (i.e.,
    * limited acceleration and deceleration) are included in the model. Default:
    * true
@@ -64,16 +62,22 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * true. Default: false
    * @param use_schedule_cuts_input: If true, the formulation is strengthened
    * using cuts implied by the schedule. Default: true
+   * @param solver_strategy_input: Specify information on the algorithm to use,
+   * i.e., if an iterative approach should be done and if so using which
+   * parameters. By default the iterative approach is not used.
+   * @param postprocess: If true, the solution is postprocessed to remove
+   * potentially unused VSS. Default: false
    * @param time_limit: Time limit in seconds. No limit if negative. Default: -1
    * @param debug: If true, (more detailed) debug output is printed. Default:
    * false
-   * @param export_to_file: If true, the model is exported to a file. Default:
-   * false
-   * @param file_name: Name of the file (without extension) to which the model
-   * is exported (only if export_to_file is true). Default: "model"
+   * @param export_option: Denotes if the solution and/or Gurobi model is
+   * exported. Default: NoExport
+   * @param name: Name of the file (without extension) to which the model is
+   * exported. Default: "model"
+   * @param p: Path to which the model is exported. Default: "", i.e., the
+   * current working directory
    *
-   * @return objective value, i.e., number of VSS borders created. -1 if no
-   * solution was found.
+   * @return Solution object containing status, objective value, and solution
    */
 
   this->debug = debug_input;
