@@ -472,6 +472,15 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
           if (debug) {
             std::cout << "Break because of timeout" << std::endl;
           }
+          if (sol_object->has_solution()) {
+            if (debug) {
+              std::cout << "However, use previous obtained solution"
+                        << std::endl;
+            }
+            break;
+          }
+          sol_object->set_status(SolutionStatus::Timeout);
+          break;
         }
 
         model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
