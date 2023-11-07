@@ -468,7 +468,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         auto time_left = time_limit - current_time_span / 1000;
 
         if (time_left < 0) {
-          reoptimize = false;
           if (debug) {
             std::cout << "Break because of timeout" << std::endl;
           }
