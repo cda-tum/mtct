@@ -831,6 +831,46 @@ TEST(Solver, IterativeContinuousSimpleStationInferred) {
   EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
+TEST(Solver, IterativeContinuousFeasible) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/Stammstrecke4Trains/");
+
+  const auto obj_val = solver.solve(
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+      true, true, false, true, {true, cda_rail::OptimalityStrategy::Feasible},
+      false, 60, true, cda_rail::ExportOption::NoExport);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Feasible);
+  EXPECT_GE(obj_val.get_obj(), 6);
+  EXPECT_GE(obj_val.get_mip_obj(), 6);
+}
+
+TEST(Solver, IterativeTimeout1) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleNetwork/");
+
+  const auto obj_val = solver.solve(
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+      true, true, false, true, {true, cda_rail::OptimalityStrategy::Optimal},
+      false, 1, true, cda_rail::ExportOption::NoExport);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Timeout);
+}
+
+TEST(Solver, IterativeTimeout2) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleNetwork/");
+
+  const auto obj_val = solver.solve(
+      15, true, cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+      true, true, false, true,
+      {true, cda_rail::OptimalityStrategy::Optimal,
+       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 5, 2, true},
+      false, 1, true, cda_rail::ExportOption::NoExport);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Timeout);
+}
+
 TEST(Solver, IterativeContinuousSimpleStationInferredAlt) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
