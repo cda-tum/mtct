@@ -77,8 +77,10 @@ int main(int argc, char** argv) {
 
   cda_rail::vss::Model vss_model(cda_rail::vss::ModelType::Continuous);
 
-  solver.solve(delta_t, fix_routes, vss_model, include_train_dynamics,
-               include_braking_curves, use_pwl, use_schedule_cuts,
-               {iterate_vss, optimality_strategy}, false, timeout, true,
-               cda_rail::ExportOption::ExportSolution, file_name, output_path);
+  solver.solve(
+      {delta_t, fix_routes, include_train_dynamics, include_braking_curves},
+      {vss_model, use_pwl, use_schedule_cuts},
+      {iterate_vss, optimality_strategy},
+      {false, cda_rail::ExportOption::ExportSolution, file_name, output_path},
+      timeout, true);
 }

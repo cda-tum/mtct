@@ -90,10 +90,10 @@ int main(int argc, char** argv) {
 
   cda_rail::vss::Model vss_model(cda_rail::vss::ModelType::Continuous);
 
-  solver.solve(delta_t, fix_routes, vss_model, true, include_braking_curves,
-               false, true,
-               {iterate_vss, optimality_strategy, update_strategy, initial_vss,
-                update_value, include_cuts},
-               false, timeout, true, cda_rail::ExportOption::ExportSolution,
-               file_name, output_path);
+  solver.solve(
+      {delta_t, fix_routes, true, include_braking_curves}, {vss_model},
+      {iterate_vss, optimality_strategy, update_strategy, initial_vss,
+       update_value, include_cuts},
+      {false, cda_rail::ExportOption::ExportSolution, file_name, output_path},
+      timeout, true);
 }

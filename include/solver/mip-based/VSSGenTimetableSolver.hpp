@@ -22,6 +22,26 @@ struct SolverStrategy {
   bool           include_cuts    = true;
 };
 
+struct ModelDetail {
+  int  delta_t        = 15;
+  bool fix_routes     = true;
+  bool train_dynamics = true;
+  bool braking_curves = true;
+};
+
+struct ModelSettings {
+  vss::Model model_type        = vss::Model();
+  bool       use_pwl           = false;
+  bool       use_schedule_cuts = true;
+};
+
+struct SolutionSettings {
+  bool         postprocess   = false;
+  ExportOption export_option = ExportOption::NoExport;
+  std::string  name          = "model";
+  std::string  path          = "";
+};
+
 class VSSGenTimetableSolver {
 private:
   instances::VSSGenerationTimetable instance;
@@ -54,6 +74,8 @@ private:
   double              iterative_initial_value   = 1;
   double              iterative_update_value    = 2;
   bool                iterative_include_cuts    = true;
+  bool                postprocess               = false;
+  ExportOption        export_option             = ExportOption::NoExport;
   std::vector<size_t> max_vss_per_edge_in_iteration;
   std::unordered_map<size_t, size_t> breakable_edge_indices;
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
@@ -170,15 +192,11 @@ public:
 
   // Methods
   instances::SolVSSGenerationTimetable
-  solve(int delta_t = 15, bool fix_routes_input = true,
-        vss::Model model_input = vss::Model(vss::ModelType::Continuous),
-        bool       include_train_dynamics_input = true,
-        bool include_braking_curves_input = true, bool use_pwl_input = false,
-        bool           use_schedule_cuts_input = true,
-        SolverStrategy solver_strategy_input = {}, bool postprocess = false,
-        int time_limit = -1, bool debug_input = false,
-        ExportOption       export_option = ExportOption::NoExport,
-        const std::string& name = "model", const std::string& p = "");
+  solve(const ModelDetail&      model_detail      = {},
+        const ModelSettings&    model_settings    = {},
+        const SolverStrategy&   solver_strategy   = {},
+        const SolutionSettings& solution_settings = {}, int time_limit = -1,
+        bool debug_input = false);
 
   [[nodiscard]] const instances::VSSGenerationTimetable& get_instance() const {
     return instance;
@@ -187,4 +205,5 @@ public:
     return instance;
   }
 };
+
 } // namespace cda_rail::solver::mip_based

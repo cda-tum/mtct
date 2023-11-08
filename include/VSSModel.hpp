@@ -62,12 +62,13 @@ namespace functions {
 
 class Model {
 private:
-  ModelType                       model_type;
+  ModelType                       model_type           = ModelType::Continuous;
   bool                            only_stop_at_vss     = false;
   std::vector<SeparationFunction> separation_functions = {};
 
 public:
   // Constructors
+  explicit Model() {}
   explicit Model(ModelType model_type_input) : model_type(model_type_input) {}
   explicit Model(ModelType                       model_type_input,
                  std::vector<SeparationFunction> separation_functions_input)
@@ -79,8 +80,6 @@ public:
       : model_type(model_type_input),
         separation_functions(std::move(separation_functions_input)),
         only_stop_at_vss(only_stop_at_vss_input) {}
-  // No default constructor
-  Model() = delete;
 
   // Getters
   [[nodiscard]] const ModelType& get_model_type() const { return model_type; }

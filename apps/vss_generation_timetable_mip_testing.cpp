@@ -68,9 +68,11 @@ int main(int argc, char** argv) {
                                  {&cda_rail::vss::functions::uniform})
           : cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous);
 
-  solver.solve(delta_t, fix_routes, vss_model, include_train_dynamics,
-               include_braking_curves, use_pwl, use_schedule_cuts,
-               {false, cda_rail::OptimalityStrategy::Optimal}, false, timeout,
-               true, cda_rail::ExportOption::ExportSolutionWithInstance,
-               file_name, output_path);
+  solver.solve(
+      {delta_t, fix_routes, include_train_dynamics, include_braking_curves},
+      {vss_model, use_pwl, use_schedule_cuts},
+      {false, cda_rail::OptimalityStrategy::Optimal},
+      {false, cda_rail::ExportOption::ExportSolutionWithInstance, file_name,
+       output_path},
+      timeout, true);
 }

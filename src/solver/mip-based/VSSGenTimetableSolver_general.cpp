@@ -32,12 +32,10 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
 
 cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
-    int delta_t, bool fix_routes_input, vss::Model vss_model_input,
-    bool include_train_dynamics_input, bool include_braking_curves_input,
-    bool use_pwl_input, bool use_schedule_cuts_input,
-    SolverStrategy solver_strategy_input, bool postprocess, int time_limit,
-    bool debug_input, ExportOption export_option, const std::string& name,
-    const std::string& p) {
+    const ModelDetail& model_detail, const ModelSettings& model_settings,
+    const SolverStrategy&   solver_strategy,
+    const SolutionSettings& solution_settings, int time_limit,
+    bool debug_input) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
    * flexible MILP formulation. The level of detail can be controlled using the
@@ -82,7 +80,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   this->debug = debug_input;
 
-  if (!vss_model_input.check_consistency()) {
+  if (!model_settings.model_type.check_consistency()) {
     throw cda_rail::exceptions::ConsistencyException(
         "Model type and separation types/functions are not consistent.");
   }
@@ -100,19 +98,21 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     start = std::chrono::high_resolution_clock::now();
   }
 
-  this->dt                        = delta_t;
-  this->fix_routes                = fix_routes_input;
-  this->vss_model                 = std::move(vss_model_input);
-  this->include_train_dynamics    = include_train_dynamics_input;
-  this->include_braking_curves    = include_braking_curves_input;
-  this->use_pwl                   = use_pwl_input;
-  this->use_schedule_cuts         = use_schedule_cuts_input;
-  this->iterative_vss             = solver_strategy_input.iterative_approach;
-  this->optimality_strategy       = solver_strategy_input.optimality_strategy;
-  this->iterative_update_strategy = solver_strategy_input.update_strategy;
-  this->iterative_initial_value   = solver_strategy_input.initial_value;
-  this->iterative_update_value    = solver_strategy_input.update_value;
-  this->iterative_include_cuts    = solver_strategy_input.include_cuts;
+  this->dt                        = model_detail.delta_t;
+  this->fix_routes                = model_detail.fix_routes;
+  this->vss_model                 = std::move(model_settings.model_type);
+  this->include_train_dynamics    = model_detail.train_dynamics;
+  this->include_braking_curves    = model_detail.braking_curves;
+  this->use_pwl                   = model_settings.use_pwl;
+  this->use_schedule_cuts         = model_settings.use_pwl;
+  this->iterative_vss             = solver_strategy.iterative_approach;
+  this->optimality_strategy       = solver_strategy.optimality_strategy;
+  this->iterative_update_strategy = solver_strategy.update_strategy;
+  this->iterative_initial_value   = solver_strategy.initial_value;
+  this->iterative_update_value    = solver_strategy.update_value;
+  this->iterative_include_cuts    = solver_strategy.include_cuts;
+  this->postprocess               = solution_settings.postprocess;
+  this->export_option             = std::move(solution_settings.export_option);
 
   if (this->iterative_vss) {
     if (this->iterative_update_strategy == UpdateStrategy::Fixed &&
@@ -514,9 +514,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       export_option == ExportOption::ExportSolutionAndLP ||
       export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
     std::cout << "Saving model and solution" << std::endl;
-    std::filesystem::path path = p;
-    model->write((path / (name + ".mps")).string());
-    model->write((path / (name + ".sol")).string());
+    std::filesystem::path path = solution_settings.path;
+    model->write((path / (solution_settings.name + ".mps")).string());
+    model->write((path / (solution_settings.name + ".sol")).string());
   }
 
   cleanup(old_instance);
@@ -528,8 +528,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     const bool export_instance =
         (export_option == ExportOption::ExportSolutionWithInstance ||
          export_option == ExportOption::ExportSolutionWithInstanceAndLP);
-    std::filesystem::path path = p;
-    path /= name;
+    std::filesystem::path path = solution_settings.path;
+    path /= solution_settings.name;
     sol_object->export_solution(path, export_instance);
   }
 
