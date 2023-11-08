@@ -64,13 +64,10 @@ TEST(Solver, GurobiVSSGenDeltaT) {
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << std::endl;
-  const auto obj_val_1 = solver.solve(
-      {30, true}, {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous)});
+  const auto obj_val_2 = solver.solve({30, false});
   std::cout << "--------------------- TEST 2 ---------------------------"
             << std::endl;
-  const auto obj_val_2 = solver.solve(
-      {30, false},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous)});
+  const auto obj_val_1 = solver.solve({30, true});
   std::cout << "--------------------- TEST 3 ---------------------------"
             << std::endl;
   const auto obj_val_3 = solver.solve(
