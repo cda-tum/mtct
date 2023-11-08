@@ -104,7 +104,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   this->include_train_dynamics    = model_detail.train_dynamics;
   this->include_braking_curves    = model_detail.braking_curves;
   this->use_pwl                   = model_settings.use_pwl;
-  this->use_schedule_cuts         = model_settings.use_pwl;
+  this->use_schedule_cuts         = model_settings.use_schedule_cuts;
   this->iterative_vss             = solver_strategy.iterative_approach;
   this->optimality_strategy       = solver_strategy.optimality_strategy;
   this->iterative_update_strategy = solver_strategy.update_strategy;
