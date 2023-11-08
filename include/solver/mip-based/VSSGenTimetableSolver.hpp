@@ -39,7 +39,7 @@ struct SolutionSettings {
   bool         postprocess   = false;
   ExportOption export_option = ExportOption::NoExport;
   std::string  name          = "model";
-  std::string  path          = "";
+  std::string  path;
 };
 
 class VSSGenTimetableSolver {

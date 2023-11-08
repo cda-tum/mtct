@@ -68,7 +68,7 @@ private:
 
 public:
   // Constructors
-  explicit Model() {}
+  explicit Model() = default;
   explicit Model(ModelType model_type_input) : model_type(model_type_input) {}
   explicit Model(ModelType                       model_type_input,
                  std::vector<SeparationFunction> separation_functions_input)

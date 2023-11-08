@@ -100,7 +100,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   this->dt                        = model_detail.delta_t;
   this->fix_routes                = model_detail.fix_routes;
-  this->vss_model                 = std::move(model_settings.model_type);
+  this->vss_model                 = model_settings.model_type;
   this->include_train_dynamics    = model_detail.train_dynamics;
   this->include_braking_curves    = model_detail.braking_curves;
   this->use_pwl                   = model_settings.use_pwl;
@@ -112,7 +112,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   this->iterative_update_value    = solver_strategy.update_value;
   this->iterative_include_cuts    = solver_strategy.include_cuts;
   this->postprocess               = solution_settings.postprocess;
-  this->export_option             = std::move(solution_settings.export_option);
+  this->export_option             = solution_settings.export_option;
 
   if (this->iterative_vss) {
     if (this->iterative_update_strategy == UpdateStrategy::Fixed &&
