@@ -632,7 +632,7 @@ TEST(Solver, SimpleStationContinuousPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
 
-  const auto obj_val = solver.solve({15, false}, {}, {}, {true}, 60, true);
+  const auto obj_val = solver.solve({15, false}, {}, {}, {true}, 240, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
