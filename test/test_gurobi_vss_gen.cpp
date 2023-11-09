@@ -706,7 +706,8 @@ TEST(Solver, IterativeContinuousSingleTrack) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SingleTrack/");
 
-  const auto obj_val = solver.solve({}, {}, {}, {}, 60, true);
+  const auto obj_val = solver.solve(
+      {}, {}, {true, cda_rail::OptimalityStrategy::Optimal}, {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 9);
@@ -771,7 +772,7 @@ TEST(Solver, IterativeTimeout1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleNetwork/");
 
-  const auto obj_val = solver.solve({}, {}, {true}, {}, 30, true);
+  const auto obj_val = solver.solve({15, false}, {}, {true}, {}, 30, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Timeout);
 }
