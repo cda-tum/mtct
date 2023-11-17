@@ -338,8 +338,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   for (const auto& e : relevant_edges) {
     obj_ub += instance.const_n().max_vss_on_edge(e);
   }
-  double obj_lb           = 0;
-  size_t iteration_number = 0;
+  double obj_lb             = 0;
+  size_t iteration_number   = 0;
+  bool   add_iterative_cuts = iterative_include_cuts;
   while (reoptimize) {
     reoptimize = false;
 
@@ -360,6 +361,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         obj_ub = obj_tmp;
         sol_object =
             extract_solution(postprocess, debug, !iterative_vss, old_instance);
+        add_iterative_cuts = false;
       }
     }
 
@@ -434,22 +436,15 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       model->addConstr(objective_expr, GRB_GREATER_EQUAL, obj_lb,
                        "obj_lb_" + std::to_string(obj_lb) + "_" +
                            std::to_string(iteration_number));
-      model->addConstr(objective_expr, GRB_LESS_EQUAL,
-                       (iterative_include_cuts && sol_object->has_solution())
-                           ? obj_ub - 1
-                           : obj_ub,
+      model->addConstr(objective_expr, GRB_LESS_EQUAL, obj_ub,
                        "obj_ub_" + std::to_string(obj_ub) + "_" +
                            std::to_string(iteration_number));
       if (debug) {
         std::cout << "Added constraint: obj >= " << obj_lb << std::endl;
-        std::cout << "Added constraint: obj <= "
-                  << ((iterative_include_cuts && sol_object->has_solution())
-                          ? obj_ub - 1
-                          : obj_ub)
-                  << std::endl;
+        std::cout << "Added constraint: obj <= " << obj_ub << std::endl;
       }
 
-      if (this->iterative_include_cuts) {
+      if (add_iterative_cuts) {
         model->addConstr(cut_expr, GRB_GREATER_EQUAL, 1,
                          "cut_" + std::to_string(iteration_number));
         model->reset(1);
