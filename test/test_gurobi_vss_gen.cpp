@@ -842,7 +842,7 @@ TEST(Solver, IterativeContinuousStammstrecke4Cuts) {
   EXPECT_EQ(obj_val.get_mip_obj(), 6);
 }
 
-TEST(Solver, IterativeContinuousStammstrecke16Relative) {
+TEST(Solver, IterativeContinuousOvertakeRelative) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/Overtake/");
 
