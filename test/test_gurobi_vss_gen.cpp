@@ -745,7 +745,20 @@ TEST(Solver, IterativeContinuousSingleRelative) {
   EXPECT_EQ(obj_val.get_mip_obj(), 9);
 }
 
-TEST(Solver, IterativeContinuousSimpleStationInferred) {
+TEST(Solver, IterativeContinuousSimpleStationInferredCuts) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/SimpleStation/");
+
+  const auto obj_val = solver.solve(
+      {15, true, true, false},
+      {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
+                            {&cda_rail::vss::functions::uniform})},
+      {true, cda_rail::OptimalityStrategy::Optimal,
+       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
+      {}, 60, true);
+}
+
+TEST(Solver, IterativeContinuousSimpleStationCuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/SimpleStation/");
 
@@ -812,6 +825,36 @@ TEST(Solver, IterativeContinuousStammstrecke4) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 6);
   EXPECT_EQ(obj_val.get_mip_obj(), 6);
+}
+
+TEST(Solver, IterativeContinuousStammstrecke4Cuts) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/Stammstrecke4Trains/");
+
+  const auto obj_val = solver.solve(
+      {}, {},
+      {true, cda_rail::OptimalityStrategy::Optimal,
+       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
+      {}, 60, true);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 6);
+  EXPECT_EQ(obj_val.get_mip_obj(), 6);
+}
+
+TEST(Solver, IterativeContinuousStammstrecke16Relative) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/Overtake/");
+
+  const auto obj_val = solver.solve(
+      {}, {},
+      {true, cda_rail::OptimalityStrategy::Optimal,
+       cda_rail::solver::mip_based::UpdateStrategy::Relative, 0.05, 0.05, true},
+      {}, 60, true);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 14);
+  EXPECT_EQ(obj_val.get_mip_obj(), 14);
 }
 
 TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
