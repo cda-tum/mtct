@@ -41,39 +41,55 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * flexible MILP formulation. The level of detail can be controlled using the
    * parameters.
    *
-   * @param delta_t: Length of discretized time intervals in seconds. Default:
-   * 15
-   * @param fix_routes_input: If true, the routes are fixed to the ones given in
-   * the instance. Otherwise, routing is part of the optimization. Default: true
-   * @param vss_model_input: Denotes, how the VSS borders are modelled in the
-   * solution process. Default uses VSSModel::Continuous
-   * @param include_train_dynamics_input: If true, the train dynamics (i.e.,
-   * limited acceleration and deceleration) are included in the model. Default:
-   * true
-   * @param include_braking_curves_input: If true, the braking curves (i.e., the
-   * braking distance depending on the current speed has to be cleared) are
-   * included in the model. Default: true
-   * @param use_pwl_input: If true, the braking distances are approximated by
-   * piecewise linear functions with a fixed maximal error. Otherwise, they are
-   * modeled as quadratic functions and Gurobi's ability to solve these using
-   * spatial branching is used. Only relevant if include_braking_curves_input is
-   * true. Default: false
-   * @param use_schedule_cuts_input: If true, the formulation is strengthened
-   * using cuts implied by the schedule. Default: true
-   * @param solver_strategy_input: Specify information on the algorithm to use,
-   * i.e., if an iterative approach should be done and if so using which
-   * parameters. By default the iterative approach is not used.
-   * @param postprocess: If true, the solution is postprocessed to remove
-   * potentially unused VSS. Default: false
+   * @param model_detail: Contains information on the model detail, namely
+   * - delta_t: Length of discretized time intervals in seconds. Default: 15
+   * - fix_routes: If true, the routes are fixed to the ones given in the
+   * - train_dynamic: If true, the train dynamics (i.e., limited acceleration
+   * and deceleration) are included in the model. Default: true
+   * - braking_curves: If true, the braking curves (i.e., the braking distance
+   * depending on the current speed has to be cleared) are included in the
+   * model. Default: true
+   *
+   * @param model_settings: Contains information on the model settings, namely
+   * - model_type: Denotes, how the VSS borders are modelled in the solution
+   * process. Default uses VSSModel::Continuous
+   * - use_pwl: If true, the braking distances are approximated by piecewise
+   * linear functions with a fixed maximal error. Otherwise, they are modeled as
+   * quadratic functions and Gurobi's ability to solve these using spatial
+   * branching is used. Only relevant if include_braking_curves_input is true.
+   * Default: false
+   * - use_schedule_cuts: If true, the formulation is strengthened using cuts
+   * implied by the schedule. Default: true
+   *
+   * @param solver_strategy: Specify information on the algorithm's strategy to
+   * use, namely
+   * - iterative_approach: If true, the VSS is iterated to optimality. Default:
+   * false
+   * - optimality_strategy: Specify the optimality strategy to use. Default:
+   * Optimal
+   * - update_strategy: Specify the update strategy to use. Only relevant if
+   * iterative approach is used. Default: Fixed
+   * - initial_value: Specify the initial value or fraction to use. Only
+   * relevant if iterative approach is used. In case of fixed update, the value
+   * has to be an integer. Otherwise between 0 and 1. Default: 1
+   * - update_value: Specify the update value or fraction to use. Only relevant
+   * if iterative approach is used. In case of fixed update, the value has to be
+   * greater than 1, otherwise between 0 and 1. Default: 2
+   *
+   * @param solution_settings: Specify information on the solution, namely
+   * - postprocess: If true, the solution is postprocessed to remove potentially
+   * unused VSS. Default: false
+   * - export_option: Denotes if the solution and/or Gurobi model is exported.
+   * Default: NoExport
+   * - name: Name of the file (without extension) to which the model is
+   * exported. Default: "model"
+   * - path: Path to which the model is exported. Default: "", i.e., the current
+   * working directory
+   *
    * @param time_limit: Time limit in seconds. No limit if negative. Default: -1
+   *
    * @param debug: If true, (more detailed) debug output is printed. Default:
    * false
-   * @param export_option: Denotes if the solution and/or Gurobi model is
-   * exported. Default: NoExport
-   * @param name: Name of the file (without extension) to which the model is
-   * exported. Default: "model"
-   * @param p: Path to which the model is exported. Default: "", i.e., the
-   * current working directory
    *
    * @return Solution object containing status, objective value, and solution
    */
@@ -523,6 +539,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     const bool export_instance =
         (export_option == ExportOption::ExportSolutionWithInstance ||
          export_option == ExportOption::ExportSolutionWithInstanceAndLP);
+    std::cout << "Saving solution" << std::endl;
     std::filesystem::path path = solution_settings.path;
     path /= solution_settings.name;
     sol_object->export_solution(path, export_instance);
