@@ -147,15 +147,7 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << std::endl;
-  const auto obj_val_1 = solver.solve(
-      {}, {}, {}, {false, cda_rail::ExportOption::ExportLP, "test_1"}, 60,
-      true);
-  EXPECT_TRUE(std::filesystem::exists("test_1.mps"));
-  EXPECT_TRUE(std::filesystem::exists("test_1.sol"));
-  std::filesystem::remove("test_1.mps");
-  std::filesystem::remove("test_1.sol");
-  EXPECT_FALSE(std::filesystem::exists("test_1.mps"));
-  EXPECT_FALSE(std::filesystem::exists("test_1.sol"));
+  const auto obj_val_1 = solver.solve({}, {}, {}, {}, 60, true);
 
   std::cout << "--------------------- TEST 2 ---------------------------"
             << std::endl;
@@ -215,16 +207,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree1) {
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << std::endl;
-  const auto obj_val_1 = solver.solve(
-      {15, false}, {}, {}, {false, cda_rail::ExportOption::ExportLP, "test_1"},
-      280, true);
-
-  EXPECT_TRUE(std::filesystem::exists("test_1.mps"));
-  EXPECT_TRUE(std::filesystem::exists("test_1.sol"));
-  std::filesystem::remove("test_1.mps");
-  std::filesystem::remove("test_1.sol");
-  EXPECT_FALSE(std::filesystem::exists("test_1.mps"));
-  EXPECT_FALSE(std::filesystem::exists("test_1.sol"));
+  const auto obj_val_1 = solver.solve({15, false}, {}, {}, {}, 280, true);
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_1.get_obj(), 1);
@@ -1197,6 +1180,9 @@ TEST(Solver, SimpleStationExportOptions) {
   std::filesystem::remove_all("tmp4folder");
   std::filesystem::remove_all("tmp5folder");
   std::filesystem::remove_all("tmp6folder");
+  std::filesystem::remove_all("model");
+  std::filesystem::remove("model.mps");
+  std::filesystem::remove("model.sol");
 
   std::error_code ec;
 
@@ -1496,4 +1482,68 @@ TEST(Solver, SimpleStationExportOptions) {
   EXPECT_GT(std::filesystem::file_size("tmp6folder/tmp6file.sol", ec), 0);
   // Remove tmp6folder and its contents
   std::filesystem::remove_all("tmp6folder");
+
+  const auto obj_val7 = solver.solve(
+      {15, true, true, false}, {}, {},
+      {false, cda_rail::ExportOption::ExportSolutionWithInstanceAndLP}, 20,
+      false);
+
+  // Expect optimal value of 1
+  EXPECT_EQ(obj_val7.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val7.get_obj(), 1);
+  EXPECT_EQ(obj_val7.get_mip_obj(), 1);
+  // Expect relevant folders to exist
+  EXPECT_TRUE(std::filesystem::exists("model/instance"));
+  EXPECT_TRUE(std::filesystem::exists("model/solution"));
+  EXPECT_TRUE(std::filesystem::exists("model/instance/routes"));
+  EXPECT_TRUE(std::filesystem::exists("model/instance/network"));
+  EXPECT_TRUE(std::filesystem::exists("model/instance/timetable"));
+  // Expect relevant files to exist and be not empty
+  EXPECT_TRUE(std::filesystem::exists("model/instance/routes/routes.json"));
+  EXPECT_TRUE(std::filesystem::exists("model/instance/network/successors.txt"));
+  EXPECT_TRUE(
+      std::filesystem::exists("model/instance/network/successors_cpp.json"));
+  EXPECT_TRUE(std::filesystem::exists("model/instance/network/tracks.graphml"));
+  EXPECT_TRUE(
+      std::filesystem::exists("model/instance/timetable/schedules.json"));
+  EXPECT_TRUE(
+      std::filesystem::exists("model/instance/timetable/stations.json"));
+  EXPECT_TRUE(std::filesystem::exists("model/instance/timetable/trains.json"));
+  EXPECT_TRUE(std::filesystem::exists("model/solution/data.json"));
+  EXPECT_TRUE(std::filesystem::exists("model/solution/train_pos.json"));
+  EXPECT_TRUE(std::filesystem::exists("model/solution/train_speed.json"));
+  EXPECT_TRUE(std::filesystem::exists("model/solution/vss_pos.json"));
+  EXPECT_TRUE(std::filesystem::exists("model.mps"));
+  EXPECT_TRUE(std::filesystem::exists("model.sol"));
+  EXPECT_GT(std::filesystem::file_size("model/instance/routes/routes.json", ec),
+            0);
+  EXPECT_GT(
+      std::filesystem::file_size("model/instance/network/successors.txt", ec),
+      0);
+  EXPECT_GT(std::filesystem::file_size(
+                "model/instance/network/successors_cpp.json", ec),
+            0);
+  EXPECT_GT(
+      std::filesystem::file_size("model/instance/network/tracks.graphml", ec),
+      0);
+  EXPECT_GT(
+      std::filesystem::file_size("model/instance/timetable/schedules.json", ec),
+      0);
+  EXPECT_GT(
+      std::filesystem::file_size("model/instance/timetable/stations.json", ec),
+      0);
+  EXPECT_GT(
+      std::filesystem::file_size("model/instance/timetable/trains.json", ec),
+      0);
+  EXPECT_GT(std::filesystem::file_size("model/solution/data.json", ec), 0);
+  EXPECT_GT(std::filesystem::file_size("model/solution/train_pos.json", ec), 0);
+  EXPECT_GT(std::filesystem::file_size("model/solution/train_speed.json", ec),
+            0);
+  EXPECT_GT(std::filesystem::file_size("model/solution/vss_pos.json", ec), 0);
+  EXPECT_GT(std::filesystem::file_size("model.mps", ec), 0);
+  EXPECT_GT(std::filesystem::file_size("model.sol", ec), 0);
+  // Remove files and folders
+  std::filesystem::remove_all("model");
+  std::filesystem::remove("model.mps");
+  std::filesystem::remove("model.sol");
 }
