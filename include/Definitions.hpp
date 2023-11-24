@@ -44,6 +44,11 @@ static bool is_directory_and_create(const std::filesystem::path& p) {
    * @param p Path to the directory
    */
 
+  // If p is current directory, return true
+  if (p.empty()) {
+    return true;
+  }
+
   if (!std::filesystem::exists(p)) {
     std::error_code error_code;
     std::filesystem::create_directories(p, error_code);
