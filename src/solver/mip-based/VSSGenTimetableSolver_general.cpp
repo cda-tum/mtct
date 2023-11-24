@@ -526,11 +526,19 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
     std::cout << "Saving model and solution" << std::endl;
     std::filesystem::path path = solution_settings.path;
+
+    if (!is_directory_and_create(path)) {
+      throw exceptions::ExportException("Could not create directory " +
+                                        path.string());
+    }
+
     model->write((path / (solution_settings.name + ".mps")).string());
     model->write((path / (solution_settings.name + ".sol")).string());
   }
 
-  cleanup(old_instance);
+  if (old_instance.has_value()) {
+    instance = old_instance.value();
+  }
 
   if (export_option == ExportOption::ExportSolution ||
       export_option == ExportOption::ExportSolutionWithInstance ||
@@ -544,6 +552,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     path /= solution_settings.name;
     sol_object->export_solution(path, export_instance);
   }
+
+  cleanup();
 
   return sol_object.value();
 }

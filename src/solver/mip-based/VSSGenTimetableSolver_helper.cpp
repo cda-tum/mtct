@@ -159,11 +159,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
   return ret_val;
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup(
-    const std::optional<instances::VSSGenerationTimetable>& old_instance) {
-  if (old_instance.has_value()) {
-    instance = old_instance.value();
-  }
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup() {
   dt                     = -1;
   num_t                  = 0;
   num_tr                 = 0;
