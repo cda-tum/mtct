@@ -354,9 +354,12 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   for (const auto& e : relevant_edges) {
     obj_ub += instance.const_n().max_vss_on_edge(e);
   }
-  double obj_lb             = 0;
-  size_t iteration_number   = 0;
-  bool   add_iterative_cuts = iterative_include_cuts;
+  double obj_lb           = 0;
+  size_t iteration_number = 0;
+
+  std::vector<GRBConstr> iterative_cuts;
+  this->iterative_include_cuts_tmp = this->iterative_include_cuts;
+
   while (reoptimize) {
     reoptimize = false;
 
@@ -377,7 +380,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         obj_ub = obj_tmp;
         sol_object =
             extract_solution(postprocess, debug, !iterative_vss, old_instance);
-        add_iterative_cuts = false;
+        this->iterative_include_cuts_tmp = false;
       }
     }
 
@@ -460,13 +463,23 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         std::cout << "Added constraint: obj <= " << obj_ub << std::endl;
       }
 
-      if (add_iterative_cuts) {
-        model->addConstr(cut_expr, GRB_GREATER_EQUAL, 1,
-                         "cut_" + std::to_string(iteration_number));
+      if (this->iterative_include_cuts_tmp) {
+        iterative_cuts.push_back(
+            model->addConstr(cut_expr, GRB_GREATER_EQUAL, 1,
+                             "cut_" + std::to_string(iteration_number)));
         model->reset(1);
         if (debug) {
           std::cout << "Added constraint: cut_expr >= 1" << std::endl;
         }
+      } else {
+        if (debug) {
+          std::cout << "Remove " << iterative_cuts.size() << " cut constraints"
+                    << std::endl;
+        }
+        for (const auto& c : iterative_cuts) {
+          model->remove(c);
+        }
+        iterative_cuts.clear();
       }
 
       if (time_limit > 0) {

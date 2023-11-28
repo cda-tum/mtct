@@ -251,7 +251,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
   if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
     vars.at("num_vss_segments")(relevant_edge_index)
         .set(GRB_DoubleAttr_UB, static_cast<double>(new_max_vss) + 1);
-    if (this->iterative_include_cuts && new_max_vss > old_max_vss) {
+    if (this->iterative_include_cuts_tmp && new_max_vss > old_max_vss) {
       const auto b =
           model->addVar(0, 1, 0, GRB_BINARY,
                         "binary_cut_" + std::to_string(relevant_edge_index) +
@@ -281,7 +281,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
       vars.at("b_used")(relevant_edge_index, vss)
           .set(GRB_DoubleAttr_UB, static_cast<double>(vss < new_max_vss));
     }
-    if (this->iterative_include_cuts && new_max_vss > old_max_vss) {
+    if (this->iterative_include_cuts_tmp && new_max_vss > old_max_vss) {
       cut_expr += vars.at("b_used")(relevant_edge_index, old_max_vss);
       if (debug) {
         std::cout << "Add b_used(" << relevant_edge_index << "," << old_max_vss
@@ -297,7 +297,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
         vars.at("type_num_vss_segments")(relevant_edge_index, sep_type, vss)
             .set(GRB_DoubleAttr_UB, static_cast<double>(vss < new_max_vss));
       }
-      if (this->iterative_include_cuts && new_max_vss > old_max_vss) {
+      if (this->iterative_include_cuts_tmp && new_max_vss > old_max_vss) {
         cut_expr += vars.at("type_num_vss_segments")(relevant_edge_index,
                                                      sep_type, old_max_vss);
         if (debug) {
