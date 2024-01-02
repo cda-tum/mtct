@@ -6,7 +6,7 @@
 
 int main(int argc, char** argv) {
   if (argc < 13 || argc > 15) {
-    std::cout << "Expected 12 or 13 or 14 arguments, got " << argc - 1
+    std::cerr << "Expected 12 or 13 or 14 arguments, got " << argc - 1
               << std::endl;
     std::exit(-1);
   }
