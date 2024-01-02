@@ -3,11 +3,21 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <gsl/span>
+#include <plog/Appenders/ColorConsoleAppender.h>
+#include <plog/Formatters/TxtFormatter.h>
+#include <plog/Initializers/ConsoleInitializer.h>
+#include <plog/Log.h>
 
 int main(int argc, char** argv) {
+  // Only log to console using std::cerr and std::cout respectively unless
+  // initialized differently
+  if (!plog::get()) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+    plog::init(plog::debug, &consoleAppender);
+  }
+
   if (argc < 13 || argc > 15) {
-    std::cerr << "Expected 12 or 13 or 14 arguments, got " << argc - 1
-              << std::endl;
+    PLOGE << "Expected 12 or 13 or 14 arguments, got " << argc - 1;
     std::exit(-1);
   }
 
@@ -17,8 +27,7 @@ int main(int argc, char** argv) {
   const std::string                                  instance_path = args[2];
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance_path);
 
-  std::cout << "Instance " << model_name << " loaded at " << instance_path
-            << std::endl;
+  PLOGI << "Instance " << model_name << " loaded at " << instance_path;
 
   const int  delta_t                 = std::stoi(args[3]);
   const bool fix_routes              = std::stoi(args[4]) != 0;
@@ -50,43 +59,42 @@ int main(int argc, char** argv) {
                  std::to_string(static_cast<int>(include_cuts)) + "_" +
                  std::to_string(timeout));
 
-  std::cout << "The following parameters were passed to the toolkit:"
-            << std::endl;
-  std::cout << "   delta_t: " << delta_t << std::endl;
+  PLOGI << "The following parameters were passed to the toolkit:";
+  PLOGI << "   delta_t: " << delta_t;
   if (fix_routes) {
-    std::cout << "   routes are fixed" << std::endl;
+    PLOGI << "   routes are fixed";
   }
   if (include_braking_curves) {
-    std::cout << "   braking distance is included" << std::endl;
+    PLOGI << "   braking distance is included";
   }
   if (iterate_vss) {
-    std::cout << "   VSS is iterated to optimality" << std::endl;
-    std::cout << "      using initial value " << initial_vss << std::endl;
-    std::cout << "      and update value " << update_value << std::endl;
+    PLOGI << "   VSS is iterated to optimality";
+    PLOGI << "      using initial value " << initial_vss;
+    PLOGI << "      and update value " << update_value;
     if (update_strategy == cda_rail::solver::mip_based::UpdateStrategy::Fixed) {
-      std::cout << "      with fixed update strategy" << std::endl;
+      PLOGI << "      with fixed update strategy";
     } else if (update_strategy ==
                cda_rail::solver::mip_based::UpdateStrategy::Relative) {
-      std::cout << "      with relative update strategy" << std::endl;
+      PLOGI << "      with relative update strategy";
     } else {
-      std::cout << "      with unknown update strategy" << std::endl;
+      PLOGI << "      with unknown update strategy";
     }
     if (include_cuts) {
-      std::cout << "      and cuts are used" << std::endl;
+      PLOGI << "      and cuts are used";
     }
   }
   if (optimality_strategy == cda_rail::OptimalityStrategy::Optimal) {
-    std::cout << "   optimality strategy: optimal" << std::endl;
+    PLOGI << "   optimality strategy: optimal";
   } else if (optimality_strategy == cda_rail::OptimalityStrategy::TradeOff) {
-    std::cout << "   optimality strategy: trade-off" << std::endl;
+    PLOGI << "   optimality strategy: trade-off";
   } else if (optimality_strategy == cda_rail::OptimalityStrategy::Feasible) {
-    std::cout << "   optimality strategy: feasible" << std::endl;
+    PLOGI << "   optimality strategy: feasible";
   } else {
-    std::cout << "   optimality strategy: unknown" << std::endl;
+    PLOGI << "   optimality strategy: unknown";
   }
-  std::cout << "   timeout: " << timeout << "s" << std::endl;
-  std::cout << "   output path: " << output_path << std::endl;
-  std::cout << "   file name: " << file_name << std::endl;
+  PLOGI << "   timeout: " << timeout << "s";
+  PLOGI << "   output path: " << output_path;
+  PLOGI << "   file name: " << file_name;
 
   cda_rail::vss::Model vss_model(cda_rail::vss::ModelType::Continuous);
 

@@ -3,10 +3,21 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <gsl/span>
+#include <plog/Appenders/ColorConsoleAppender.h>
+#include <plog/Formatters/TxtFormatter.h>
+#include <plog/Initializers/ConsoleInitializer.h>
+#include <plog/Log.h>
 
 int main(int argc, char** argv) {
+  // Only log to console using std::cerr and std::cout respectively unless
+  // initialized differently
+  if (!plog::get()) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+    plog::init(plog::debug, &consoleAppender);
+  }
+
   if (argc < 11 || argc > 12) {
-    std::cerr << "Expected 10 or 11 arguments, got " << argc - 1 << std::endl;
+    PLOGE << "Expected 10 or 11 arguments, got " << argc - 1;
     std::exit(-1);
   }
 
@@ -16,8 +27,7 @@ int main(int argc, char** argv) {
   const std::string                                  instance_path = args[2];
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance_path);
 
-  std::cout << "Instance " << model_name << " loaded at " << instance_path
-            << std::endl;
+  PLOGI << "Instance " << model_name << " loaded at " << instance_path;
 
   const int         delta_t                  = std::stoi(args[3]);
   const bool        fix_routes               = std::stoi(args[4]) != 0;
@@ -29,28 +39,28 @@ int main(int argc, char** argv) {
   const int         timeout                  = std::stoi(args[10]);
   const std::string output_path              = (argc == 12 ? args[11] : "");
 
-  std::cout << "The following parameters were passed to the toolkit:"
-            << std::endl;
-  std::cout << "   delta_t: " << delta_t << std::endl;
+  PLOGI << "Solving instance " << model_name
+        << " with the following parameters:";
+  PLOGI << "   delta_t: " << delta_t;
   if (fix_routes) {
-    std::cout << "   routes are fixed" << std::endl;
+    PLOGI << "   routes are fixed";
   }
   if (discretize_vss_positions) {
-    std::cout << "   the graph is preprocessed" << std::endl;
+    PLOGI << "   the graph is preprocessed";
   }
   if (include_train_dynamics) {
-    std::cout << "   acceleration and deceleration are included" << std::endl;
+    PLOGI << "   acceleration and deceleration are included";
   }
   if (include_braking_curves) {
-    std::cout << "   braking distance is included" << std::endl;
+    PLOGI << "   braking distance is included";
   }
   if (use_pwl) {
-    std::cout << "   piecewise linear functions are used" << std::endl;
+    PLOGI << "   piecewise linear functions are used";
   }
   if (use_schedule_cuts) {
-    std::cout << "   schedule cuts are used" << std::endl;
+    PLOGI << "   schedule cuts are used";
   }
-  std::cout << "   timeout: " << timeout << "s" << std::endl;
+  PLOGI << "   timeout: " << timeout << "s";
 
   const std::string file_name =
       model_name + "_" + std::to_string(delta_t) + "_" +
