@@ -8,12 +8,14 @@
 #include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
 
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+
 int main(int argc, char** argv) {
   // Only log to console using std::cerr and std::cout respectively unless
   // initialized differently
-  if (!plog::get()) {
-    static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
-    plog::init(plog::debug, &consoleAppender);
+  if (plog::get() == nullptr) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+    plog::init(plog::debug, &console_appender);
   }
 
   if (argc < 12 || argc > 13) {
@@ -93,3 +95,5 @@ int main(int argc, char** argv) {
       {false, cda_rail::ExportOption::ExportSolution, file_name, output_path},
       timeout, true);
 }
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
