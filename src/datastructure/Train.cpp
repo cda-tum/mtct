@@ -12,7 +12,7 @@ using json = nlohmann::json;
 
 size_t cda_rail::TrainList::add_train(const std::string& name, int length,
                                       double max_speed, double acceleration,
-                                      double deceleration) {
+                                      double deceleration, bool tim) {
   /**
    * Add a train to the list of trains.
    *
@@ -27,7 +27,7 @@ size_t cda_rail::TrainList::add_train(const std::string& name, int length,
   if (has_train(name)) {
     throw exceptions::ConsistencyException("Train already exists.");
   }
-  trains.emplace_back(name, length, max_speed, acceleration, deceleration);
+  trains.emplace_back(name, length, max_speed, acceleration, deceleration, tim);
   train_name_to_index[name] = trains.size() - 1;
   return train_name_to_index[name];
 }
@@ -60,6 +60,20 @@ const cda_rail::Train& cda_rail::TrainList::get_train(size_t index) const {
   return trains.at(index);
 }
 
+cda_rail::Train& cda_rail::TrainList::editable_tr(size_t index) {
+  /**
+   * Returns the train with the given index.
+   *
+   * @param index The index of the train.
+   *
+   * @return The train with the given index.
+   */
+  if (!has_train(index)) {
+    throw exceptions::TrainNotExistentException(index);
+  }
+  return trains.at(index);
+}
+
 void cda_rail::TrainList::export_trains(const std::filesystem::path& p) const {
   /**
    * This method exports all trains to a directory in trains.json.
@@ -76,7 +90,8 @@ void cda_rail::TrainList::export_trains(const std::filesystem::path& p) const {
     j[train.name] = {{"length", train.length},
                      {"max_speed", train.max_speed},
                      {"acceleration", train.acceleration},
-                     {"deceleration", train.deceleration}};
+                     {"deceleration", train.deceleration},
+                     {"tim", train.tim}};
   }
 
   std::ofstream file(p / "trains.json");
@@ -99,7 +114,9 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
   json          data = json::parse(f);
 
   for (const auto& [name, train] : data.items()) {
+    const bool tim =
+        train.contains("tim") ? static_cast<bool>(train["tim"]) : true;
     this->add_train(name, train["length"], train["max_speed"],
-                    train["acceleration"], train["deceleration"]);
+                    train["acceleration"], train["deceleration"], tim);
   }
 }

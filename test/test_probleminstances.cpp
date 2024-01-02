@@ -12,12 +12,11 @@ struct EdgeTarget {
   double      min_block_length;
 };
 
-TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
-  auto instance = cda_rail::instances::VSSGenerationTimetable::import_instance(
-      "./example-networks/SimpleStation/");
+// NOLINTBEGIN(clang-diagnostic-unused-result,google-readability-function-size,readability-function-size)
 
-  // Expected network
-  const auto& network = instance.n();
+void check_instance_import(
+    const cda_rail::instances::VSSGenerationTimetable& instance) {
+  const auto& network = instance.const_n();
 
   // Check vertices properties
   std::vector<std::string> vertex_names = {
@@ -362,6 +361,31 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport) {
   EXPECT_EQ(instance.max_t(), 645);
 }
 
+TEST(Functionality, VSSGenerationTimetabbleInstanceImport1) {
+  auto instance = cda_rail::instances::VSSGenerationTimetable::import_instance(
+      "./example-networks/SimpleStation/");
+
+  check_instance_import(instance);
+}
+
+TEST(Functionality, VSSGenerationTimetabbleInstanceImport2) {
+  std::string p("./example-networks/SimpleStation/");
+
+  auto instance =
+      cda_rail::instances::VSSGenerationTimetable::import_instance(p);
+
+  check_instance_import(instance);
+}
+
+TEST(Functionality, VSSGenerationTimetabbleInstanceImport3) {
+  std::filesystem::path p("./example-networks/SimpleStation/");
+
+  auto instance =
+      cda_rail::instances::VSSGenerationTimetable::import_instance(p);
+
+  check_instance_import(instance);
+}
+
 TEST(Functionality, VSSGenerationTimetableExport) {
   cda_rail::instances::VSSGenerationTimetable instance;
 
@@ -675,6 +699,62 @@ TEST(Functionality, HelperFunctions) {
   instance.push_back_edge_to_route("tr3", "v2", "v4");
 
   EXPECT_TRUE(instance.has_route_for_every_train());
+
+  // Check time intervals
+  EXPECT_EQ(instance.time_interval("tr1").first, 0);
+  EXPECT_EQ(instance.time_interval("tr1").second, 200);
+  EXPECT_EQ(instance.time_interval("tr2").first, 60);
+  EXPECT_EQ(instance.time_interval("tr2").second, 120);
+  EXPECT_EQ(instance.time_interval("tr3").first, 80);
+  EXPECT_EQ(instance.time_interval("tr3").second, 150);
+  EXPECT_EQ(instance.time_interval(tr1).first, 0);
+  EXPECT_EQ(instance.time_interval(tr1).second, 200);
+  EXPECT_EQ(instance.time_interval(tr2).first, 60);
+  EXPECT_EQ(instance.time_interval(tr2).second, 120);
+  EXPECT_EQ(instance.time_interval(tr3).first, 80);
+  EXPECT_EQ(instance.time_interval(tr3).second, 150);
+
+  EXPECT_EQ(instance.time_index_interval("tr1", 15).first, 0);
+  EXPECT_EQ(instance.time_index_interval("tr1", 15).second, 14);
+  EXPECT_EQ(instance.time_index_interval("tr1", 15, false).second, 13);
+  EXPECT_EQ(instance.time_index_interval("tr1", 15, true).second, 14);
+  EXPECT_EQ(instance.time_index_interval("tr1", 15, false).first, 0);
+  EXPECT_EQ(instance.time_index_interval("tr1", 15, true).first, 0);
+
+  EXPECT_EQ(instance.time_index_interval("tr2", 15).first, 4);
+  EXPECT_EQ(instance.time_index_interval("tr2", 15).second, 8);
+  EXPECT_EQ(instance.time_index_interval("tr2", 15, false).second, 7);
+  EXPECT_EQ(instance.time_index_interval("tr2", 15, true).second, 8);
+  EXPECT_EQ(instance.time_index_interval("tr2", 15, false).first, 4);
+  EXPECT_EQ(instance.time_index_interval("tr2", 15, true).first, 4);
+
+  EXPECT_EQ(instance.time_index_interval("tr3", 15).first, 5);
+  EXPECT_EQ(instance.time_index_interval("tr3", 15).second, 10);
+  EXPECT_EQ(instance.time_index_interval("tr3", 15, false).second, 9);
+  EXPECT_EQ(instance.time_index_interval("tr3", 15, true).second, 10);
+  EXPECT_EQ(instance.time_index_interval("tr3", 15, false).first, 5);
+  EXPECT_EQ(instance.time_index_interval("tr3", 15, true).first, 5);
+
+  EXPECT_EQ(instance.time_index_interval(tr1, 15).first, 0);
+  EXPECT_EQ(instance.time_index_interval(tr1, 15).second, 14);
+  EXPECT_EQ(instance.time_index_interval(tr1, 15, false).second, 13);
+  EXPECT_EQ(instance.time_index_interval(tr1, 15, true).second, 14);
+  EXPECT_EQ(instance.time_index_interval(tr1, 15, false).first, 0);
+  EXPECT_EQ(instance.time_index_interval(tr1, 15, true).first, 0);
+
+  EXPECT_EQ(instance.time_index_interval(tr2, 15).first, 4);
+  EXPECT_EQ(instance.time_index_interval(tr2, 15).second, 8);
+  EXPECT_EQ(instance.time_index_interval(tr2, 15, false).second, 7);
+  EXPECT_EQ(instance.time_index_interval(tr2, 15, true).second, 8);
+  EXPECT_EQ(instance.time_index_interval(tr2, 15, false).first, 4);
+  EXPECT_EQ(instance.time_index_interval(tr2, 15, true).first, 4);
+
+  EXPECT_EQ(instance.time_index_interval(tr3, 15).first, 5);
+  EXPECT_EQ(instance.time_index_interval(tr3, 15).second, 10);
+  EXPECT_EQ(instance.time_index_interval(tr3, 15, false).second, 9);
+  EXPECT_EQ(instance.time_index_interval(tr3, 15, true).second, 10);
+  EXPECT_EQ(instance.time_index_interval(tr3, 15, false).first, 5);
+  EXPECT_EQ(instance.time_index_interval(tr3, 15, true).first, 5);
 
   // Trains at time t
   const auto trains_at_0 = instance.trains_at_t(0);
@@ -2012,3 +2092,378 @@ TEST(Example, Stammstrecke) {
   EXPECT_EQ(ost2_donnersberger, donnersberger_expected);
   EXPECT_EQ(ost3_donnersberger, donnersberger_expected);
 }
+
+TEST(Functionality, SolVSSGenerationTimetable) {
+  cda_rail::instances::VSSGenerationTimetable instance;
+
+  // Add a simple network to the instance
+  auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
+  auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::VSS);
+  auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::NoBorder);
+
+  auto v0_v1 = instance.n().add_edge("v0", "v1", 100, 10, true, 10);
+  auto v1_v2 = instance.n().add_edge("v1", "v2", 200, 20, false);
+  auto v1_v0 = instance.n().add_edge("v1", "v0", 100, 10, true, 10);
+  auto v2_v1 = instance.n().add_edge("v2", "v1", 200, 20, false);
+
+  instance.n().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.n().add_successor({"v2", "v1"}, {"v1", "v0"});
+
+  // Add a simple timetable to the instance
+  auto tr1 = instance.add_train("tr1", 50, 10, 2, 2, 0, 0, "v0", 120, 5, "v2");
+  auto tr2 =
+      instance.add_train("tr2", 50, 10, 2, 2, 180, 0, "v2", 270, 0, "v0");
+
+  // Check the consistency of the instance
+  EXPECT_TRUE(instance.check_consistency(false));
+
+  cda_rail::instances::SolVSSGenerationTimetable sol1(instance, 60);
+
+  EXPECT_FALSE(sol1.check_consistency());
+
+  sol1.add_empty_route("tr1");
+  sol1.add_empty_route("tr2");
+  sol1.push_back_edge_to_route("tr1", "v0", "v1");
+  sol1.push_back_edge_to_route("tr1", v1, v2);
+  sol1.push_back_edge_to_route("tr2", v2_v1);
+  sol1.push_back_edge_to_route("tr2", "v1", "v0");
+
+  EXPECT_FALSE(sol1.check_consistency());
+
+  sol1.add_train_pos("tr1", 0, 0);
+  sol1.add_train_pos("tr1", 60, 300);
+  sol1.add_train_pos(tr1, 120, 750);
+  sol1.add_train_pos(tr2, 180, 0);
+  sol1.add_train_pos("tr2", 240, 300);
+  sol1.add_train_pos(tr2, 300, 600);
+
+  EXPECT_THROW(sol1.add_train_pos(tr1, 0, -1),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_pos(tr1 + tr2 + 1, 60, 0),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(sol1.add_train_pos(tr2, 60, 0),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_pos(tr2, 360, 0),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_pos(tr1, 30, 0),
+               cda_rail::exceptions::ConsistencyException);
+
+  EXPECT_FALSE(sol1.check_consistency());
+
+  sol1.add_train_speed("tr1", 0, 0);
+  sol1.add_train_speed("tr1", 60, 10);
+  sol1.add_train_speed(tr1, 120, 5);
+  sol1.add_train_speed(tr2, 180, 0);
+  sol1.add_train_speed("tr2", 240, 10);
+  sol1.add_train_speed(tr2, 300, 0);
+
+  EXPECT_THROW(sol1.add_train_speed(tr1, 0, -1),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_speed(tr1 + tr2 + 1, 60, 0),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(sol1.add_train_speed(tr2, 60, 0),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_speed(tr2, 360, 0),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_speed(tr1, 30, 0),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_train_speed(tr1, 60, 11),
+               cda_rail::exceptions::ConsistencyException);
+
+  EXPECT_FALSE(sol1.check_consistency());
+
+  sol1.set_obj(0);
+  sol1.set_mip_obj(1);
+  sol1.set_postprocessed(true);
+  sol1.set_status(cda_rail::SolutionStatus::Optimal);
+
+  EXPECT_TRUE(sol1.check_consistency());
+
+  sol1.set_status(cda_rail::SolutionStatus::Infeasible);
+  EXPECT_TRUE(sol1.check_consistency());
+  sol1.set_status(cda_rail::SolutionStatus::Timeout);
+  EXPECT_TRUE(sol1.check_consistency());
+  sol1.set_status(cda_rail::SolutionStatus::Optimal);
+
+  sol1.set_obj(-1);
+  EXPECT_FALSE(sol1.check_consistency());
+  sol1.set_obj(0);
+
+  EXPECT_TRUE(sol1.check_consistency());
+
+  sol1.add_vss_pos("v0", "v1", 20, true);
+  sol1.add_vss_pos(v0, v1, 30, true);
+  sol1.add_vss_pos(v0_v1, 60, false);
+  sol1.add_vss_pos(v1_v2, 100, false);
+
+  const auto& allowed_stops_1 = sol1.get_valid_border_stops("tr1");
+  // Expect array with entries 0, 20, 30, 60, 100, 200 in this order
+  EXPECT_EQ(allowed_stops_1.size(), 6);
+  EXPECT_EQ(allowed_stops_1, std::vector<double>({0, 20, 30, 60, 100, 200}));
+
+  const auto& allowed_stops_2 = sol1.get_valid_border_stops(tr2);
+  // Expect array with entries 0, 200, 270, 280, 300 in this order
+  EXPECT_EQ(allowed_stops_2.size(), 5);
+  EXPECT_EQ(allowed_stops_2, std::vector<double>({0, 200, 270, 280, 300}));
+
+  EXPECT_THROW(sol1.add_vss_pos(v0_v1 + v1_v2 + v2_v1 + v1_v0 + 1, 30, false),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW(sol1.add_vss_pos("v0", "v1", 0, false),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.add_vss_pos(v0, v1, 100, true),
+               cda_rail::exceptions::ConsistencyException);
+
+  EXPECT_TRUE(sol1.check_consistency());
+
+  sol1.remove_first_edge_from_route("tr1");
+  sol1.push_front_edge_to_route("tr1", "v0", "v1");
+  sol1.remove_first_edge_from_route("tr1");
+  sol1.push_front_edge_to_route("tr1", v0, v1);
+  sol1.remove_first_edge_from_route("tr2");
+  sol1.push_front_edge_to_route("tr2", v2_v1);
+  sol1.remove_last_edge_from_route("tr2");
+  sol1.push_back_edge_to_route("tr2", "v1", "v0");
+
+  EXPECT_TRUE(sol1.check_consistency());
+
+  sol1.reset_routes();
+
+  EXPECT_FALSE(sol1.check_consistency());
+  EXPECT_FALSE(sol1.get_instance().has_route("tr1"));
+  EXPECT_FALSE(sol1.get_instance().has_route("tr2"));
+
+  sol1.add_empty_route("tr1");
+  sol1.add_empty_route("tr2");
+  sol1.push_back_edge_to_route("tr1", "v0", "v1");
+  sol1.push_back_edge_to_route("tr1", v1, v2);
+  sol1.push_back_edge_to_route("tr2", v2_v1);
+  sol1.push_back_edge_to_route("tr2", "v1", "v0");
+
+  // Check instance
+  EXPECT_EQ(sol1.get_obj(), 0);
+  EXPECT_EQ(sol1.get_mip_obj(), 1);
+  EXPECT_EQ(sol1.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol1.get_postprocessed(), true);
+  EXPECT_EQ(sol1.get_dt(), 60);
+  EXPECT_EQ(sol1.get_instance().time_index_interval("tr1", 60, true).first, 0);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr1, 60, true).second, 2);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr1, 60, false).second, 1);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr2, 60, true).first, 3);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr2, 60, true).second, 5);
+  EXPECT_EQ(sol1.get_instance().time_index_interval("tr2", 60, false).second,
+            4);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr2, 30, true).first, 6);
+  EXPECT_EQ(sol1.get_instance().time_index_interval("tr2", 30, true).second, 9);
+  EXPECT_EQ(sol1.get_instance().time_index_interval(tr2, 30, false).second, 8);
+  EXPECT_EQ(sol1.get_vss_pos(v0_v1), std::vector<double>({20, 30, 60}));
+  EXPECT_EQ(sol1.get_vss_pos(v1, v2), std::vector<double>({100}));
+  EXPECT_EQ(sol1.get_vss_pos("v1", "v0"), std::vector<double>({70, 80}));
+  EXPECT_EQ(sol1.get_vss_pos(v2_v1), std::vector<double>());
+  EXPECT_EQ(sol1.get_train_pos(tr1, 0), 0);
+  EXPECT_EQ(sol1.get_train_pos("tr1", 60), 300);
+  EXPECT_EQ(sol1.get_train_pos(tr1, 120), 750);
+  EXPECT_EQ(sol1.get_train_pos(tr2, 180), 0);
+  EXPECT_EQ(sol1.get_train_pos("tr2", 240), 300);
+  EXPECT_EQ(sol1.get_train_pos(tr2, 300), 600);
+  EXPECT_THROW(sol1.get_train_pos(tr2, 60),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.get_train_pos("tr2", 360),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.get_train_pos(tr1 + tr2 + 1, 60),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_EQ(sol1.get_train_pos(tr1, 30), 75);
+  EXPECT_EQ(sol1.get_train_pos(tr2, 258), 453);
+  EXPECT_EQ(sol1.get_train_speed(tr1, 0), 0);
+  EXPECT_EQ(sol1.get_train_speed("tr1", 60), 10);
+  EXPECT_EQ(sol1.get_train_speed(tr1, 120), 5);
+  EXPECT_EQ(sol1.get_train_speed(tr2, 180), 0);
+  EXPECT_EQ(sol1.get_train_speed("tr2", 240), 10);
+  EXPECT_EQ(sol1.get_train_speed(tr2, 300), 0);
+  EXPECT_THROW(sol1.get_train_speed(tr2, 60),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.get_train_speed("tr2", 360),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1.get_train_speed(tr1 + tr2 + 1, 60),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_EQ(sol1.get_train_speed(tr1, 30), 5);
+  EXPECT_EQ(sol1.get_train_speed(tr2, 258), 7);
+
+  std::vector<double> vss_pos        = {20, 30, 60};
+  std::vector<double> vss_pos_simple = {40};
+  std::vector<double> vss_pos_empty  = {};
+
+  sol1.set_vss_pos(v0_v1, vss_pos_simple);
+  EXPECT_EQ(sol1.get_vss_pos(v0_v1), vss_pos_simple);
+  sol1.reset_vss_pos(v0_v1);
+  EXPECT_EQ(sol1.get_vss_pos(v0_v1), vss_pos_empty);
+  sol1.set_vss_pos(v0, v1, vss_pos_simple);
+  EXPECT_EQ(sol1.get_vss_pos(v0, v1), vss_pos_simple);
+  sol1.reset_vss_pos(v0, v1);
+  EXPECT_EQ(sol1.get_vss_pos(v0, v1), vss_pos_empty);
+  sol1.set_vss_pos("v0", "v1", vss_pos_simple);
+  EXPECT_EQ(sol1.get_vss_pos("v0", "v1"), vss_pos_simple);
+  sol1.reset_vss_pos("v0", "v1");
+  EXPECT_EQ(sol1.get_vss_pos("v0", "v1"), vss_pos_empty);
+  sol1.set_vss_pos(v0_v1, vss_pos);
+  EXPECT_EQ(sol1.get_vss_pos(v0_v1), vss_pos);
+
+  EXPECT_FALSE(sol1.has_solution());
+  sol1.set_solution_found();
+  EXPECT_TRUE(sol1.has_solution());
+  sol1.set_solution_not_found();
+  EXPECT_FALSE(sol1.has_solution());
+  sol1.set_solution_found();
+  EXPECT_TRUE(sol1.has_solution());
+
+  sol1.export_solution("tmp_sol1", true);
+  sol1.export_solution("tmp_sol2", false);
+  const auto sol1_read =
+      cda_rail::instances::SolVSSGenerationTimetable::import_solution(
+          "tmp_sol1");
+  std::filesystem::remove_all("./tmp_sol1");
+  const auto sol2_read =
+      cda_rail::instances::SolVSSGenerationTimetable::import_solution(
+          "tmp_sol2", instance);
+  std::filesystem::remove_all("./tmp_sol2");
+
+  EXPECT_TRUE(sol1_read.has_solution());
+  EXPECT_TRUE(sol2_read.has_solution());
+
+  // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
+  tr1   = sol1_read.get_instance().get_train_list().get_train_index("tr1");
+  tr2   = sol1_read.get_instance().get_train_list().get_train_index("tr2");
+  v0    = sol1_read.get_instance().const_n().get_vertex_index("v0");
+  v1    = sol1_read.get_instance().const_n().get_vertex_index("v1");
+  v2    = sol1_read.get_instance().const_n().get_vertex_index("v2");
+  v0_v1 = sol1_read.get_instance().const_n().get_edge_index(v0, v1);
+  v1_v2 = sol1_read.get_instance().const_n().get_edge_index(v1, v2);
+  v1_v0 = sol1_read.get_instance().const_n().get_edge_index(v1, v0);
+  v2_v1 = sol1_read.get_instance().const_n().get_edge_index(v2, v1);
+  // NOLINTEND(clang-analyzer-deadcode.DeadStores)
+  EXPECT_TRUE(sol1_read.check_consistency());
+  EXPECT_EQ(sol1_read.get_obj(), 0);
+  EXPECT_EQ(sol1_read.get_mip_obj(), 1);
+  EXPECT_EQ(sol1_read.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol1_read.get_postprocessed(), true);
+  EXPECT_EQ(sol1_read.get_dt(), 60);
+  EXPECT_EQ(sol1_read.get_instance().time_index_interval("tr1", 60, true).first,
+            0);
+  EXPECT_EQ(sol1_read.get_instance().time_index_interval(tr1, 60, true).second,
+            2);
+  EXPECT_EQ(sol1_read.get_instance().time_index_interval(tr1, 60, false).second,
+            1);
+  EXPECT_EQ(sol1_read.get_instance().time_index_interval(tr2, 60, true).first,
+            3);
+  EXPECT_EQ(sol1_read.get_instance().time_index_interval(tr2, 60, true).second,
+            5);
+  EXPECT_EQ(
+      sol1_read.get_instance().time_index_interval("tr2", 60, false).second, 4);
+  EXPECT_EQ(sol1_read.get_instance().time_index_interval(tr2, 30, true).first,
+            6);
+  EXPECT_EQ(
+      sol1_read.get_instance().time_index_interval("tr2", 30, true).second, 9);
+  EXPECT_EQ(sol1_read.get_instance().time_index_interval(tr2, 30, false).second,
+            8);
+  EXPECT_EQ(sol1_read.get_vss_pos(v0_v1), std::vector<double>({20, 30, 60}));
+  EXPECT_EQ(sol1_read.get_vss_pos(v1, v2), std::vector<double>({100}));
+  EXPECT_EQ(sol1_read.get_vss_pos("v1", "v0"), std::vector<double>({70, 80}));
+  EXPECT_EQ(sol1_read.get_vss_pos(v2_v1), std::vector<double>());
+  EXPECT_EQ(sol1_read.get_train_pos(tr1, 0), 0);
+  EXPECT_EQ(sol1_read.get_train_pos("tr1", 60), 300);
+  EXPECT_EQ(sol1_read.get_train_pos(tr1, 120), 750);
+  EXPECT_EQ(sol1_read.get_train_pos(tr2, 180), 0);
+  EXPECT_EQ(sol1_read.get_train_pos("tr2", 240), 300);
+  EXPECT_EQ(sol1_read.get_train_pos(tr2, 300), 600);
+  EXPECT_THROW(sol1_read.get_train_pos(tr2, 60),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1_read.get_train_pos("tr2", 360),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1_read.get_train_pos(tr1 + tr2 + 1, 60),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_EQ(sol1_read.get_train_pos(tr1, 30), 75);
+  EXPECT_EQ(sol1_read.get_train_pos(tr2, 258), 453);
+  EXPECT_EQ(sol1_read.get_train_speed(tr1, 0), 0);
+  EXPECT_EQ(sol1_read.get_train_speed("tr1", 60), 10);
+  EXPECT_EQ(sol1_read.get_train_speed(tr1, 120), 5);
+  EXPECT_EQ(sol1_read.get_train_speed(tr2, 180), 0);
+  EXPECT_EQ(sol1_read.get_train_speed("tr2", 240), 10);
+  EXPECT_EQ(sol1_read.get_train_speed(tr2, 300), 0);
+  EXPECT_THROW(sol1_read.get_train_speed(tr2, 60),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1_read.get_train_speed("tr2", 360),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol1_read.get_train_speed(tr1 + tr2 + 1, 60),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_EQ(sol1_read.get_train_speed(tr1, 30), 5);
+  EXPECT_EQ(sol1_read.get_train_speed(tr2, 258), 7);
+
+  // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
+  tr1   = sol2_read.get_instance().get_train_list().get_train_index("tr1");
+  tr2   = sol2_read.get_instance().get_train_list().get_train_index("tr2");
+  v0    = sol2_read.get_instance().const_n().get_vertex_index("v0");
+  v1    = sol2_read.get_instance().const_n().get_vertex_index("v1");
+  v2    = sol2_read.get_instance().const_n().get_vertex_index("v2");
+  v0_v1 = sol2_read.get_instance().const_n().get_edge_index(v0, v1);
+  v1_v2 = sol2_read.get_instance().const_n().get_edge_index(v1, v2);
+  v1_v0 = sol2_read.get_instance().const_n().get_edge_index(v1, v0);
+  v2_v1 = sol2_read.get_instance().const_n().get_edge_index(v2, v1);
+  // NOLINTEND(clang-analyzer-deadcode.DeadStores)
+  EXPECT_TRUE(sol2_read.check_consistency());
+  EXPECT_EQ(sol2_read.get_obj(), 0);
+  EXPECT_EQ(sol2_read.get_mip_obj(), 1);
+  EXPECT_EQ(sol2_read.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol2_read.get_postprocessed(), true);
+  EXPECT_EQ(sol2_read.get_dt(), 60);
+  EXPECT_EQ(sol2_read.get_instance().time_index_interval("tr1", 60, true).first,
+            0);
+  EXPECT_EQ(sol2_read.get_instance().time_index_interval(tr1, 60, true).second,
+            2);
+  EXPECT_EQ(sol2_read.get_instance().time_index_interval(tr1, 60, false).second,
+            1);
+  EXPECT_EQ(sol2_read.get_instance().time_index_interval(tr2, 60, true).first,
+            3);
+  EXPECT_EQ(sol2_read.get_instance().time_index_interval(tr2, 60, true).second,
+            5);
+  EXPECT_EQ(
+      sol2_read.get_instance().time_index_interval("tr2", 60, false).second, 4);
+  EXPECT_EQ(sol2_read.get_instance().time_index_interval(tr2, 30, true).first,
+            6);
+  EXPECT_EQ(
+      sol2_read.get_instance().time_index_interval("tr2", 30, true).second, 9);
+  EXPECT_EQ(sol2_read.get_instance().time_index_interval(tr2, 30, false).second,
+            8);
+  EXPECT_EQ(sol2_read.get_vss_pos(v0_v1), std::vector<double>({20, 30, 60}));
+  EXPECT_EQ(sol2_read.get_vss_pos(v1, v2), std::vector<double>({100}));
+  EXPECT_EQ(sol2_read.get_vss_pos("v1", "v0"), std::vector<double>({70, 80}));
+  EXPECT_EQ(sol2_read.get_vss_pos(v2_v1), std::vector<double>());
+  EXPECT_EQ(sol2_read.get_train_pos(tr1, 0), 0);
+  EXPECT_EQ(sol2_read.get_train_pos("tr1", 60), 300);
+  EXPECT_EQ(sol2_read.get_train_pos(tr1, 120), 750);
+  EXPECT_EQ(sol2_read.get_train_pos(tr2, 180), 0);
+  EXPECT_EQ(sol2_read.get_train_pos("tr2", 240), 300);
+  EXPECT_EQ(sol2_read.get_train_pos(tr2, 300), 600);
+  EXPECT_THROW(sol2_read.get_train_pos(tr2, 60),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol2_read.get_train_pos("tr2", 360),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol2_read.get_train_pos(tr1 + tr2 + 1, 60),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_EQ(sol2_read.get_train_pos(tr1, 30), 75);
+  EXPECT_EQ(sol2_read.get_train_pos(tr2, 258), 453);
+  EXPECT_EQ(sol2_read.get_train_speed(tr1, 0), 0);
+  EXPECT_EQ(sol2_read.get_train_speed("tr1", 60), 10);
+  EXPECT_EQ(sol2_read.get_train_speed(tr1, 120), 5);
+  EXPECT_EQ(sol2_read.get_train_speed(tr2, 180), 0);
+  EXPECT_EQ(sol2_read.get_train_speed("tr2", 240), 10);
+  EXPECT_EQ(sol2_read.get_train_speed(tr2, 300), 0);
+  EXPECT_THROW(sol2_read.get_train_speed(tr2, 60),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol2_read.get_train_speed("tr2", 360),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol2_read.get_train_speed(tr1 + tr2 + 1, 60),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_EQ(sol2_read.get_train_speed(tr1, 30), 5);
+  EXPECT_EQ(sol2_read.get_train_speed(tr2, 258), 7);
+}
+
+// NOLINTEND(clang-diagnostic-unused-result,google-readability-function-size,readability-function-size)

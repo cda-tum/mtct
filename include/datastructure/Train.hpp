@@ -21,12 +21,13 @@ struct Train {
   double      max_speed;
   double      acceleration;
   double      deceleration;
+  bool        tim = true; // train integrity monitoring
 
   // Constructors
   Train(std::string name, int length, double max_speed, double acceleration,
-        double deceleration)
+        double deceleration, bool tim = true)
       : name(std::move(name)), length(length), max_speed(max_speed),
-        acceleration(acceleration), deceleration(deceleration){};
+        acceleration(acceleration), deceleration(deceleration), tim(tim){};
 };
 
 class TrainList {
@@ -62,13 +63,18 @@ public:
   [[nodiscard]] auto rend() const { return trains.rend(); };
 
   size_t add_train(const std::string& name, int length, double max_speed,
-                   double acceleration, double deceleration);
+                   double acceleration, double deceleration, bool tim = true);
   [[nodiscard]] size_t size() const { return trains.size(); };
 
   [[nodiscard]] size_t       get_train_index(const std::string& name) const;
   [[nodiscard]] const Train& get_train(size_t index) const;
   [[nodiscard]] const Train& get_train(const std::string& name) const {
     return get_train(get_train_index(name));
+  };
+
+  [[nodiscard]] Train& editable_tr(size_t index);
+  [[nodiscard]] Train& editable_tr(const std::string& name) {
+    return editable_tr(get_train_index(name));
   };
 
   [[nodiscard]] bool has_train(const std::string& name) const {

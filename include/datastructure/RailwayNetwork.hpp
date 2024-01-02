@@ -1,6 +1,7 @@
 #pragma once
 #include "Definitions.hpp"
 #include "MultiArray.hpp"
+#include "VSSModel.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -78,9 +79,6 @@ private:
                               const std::string&          max_speed,
                               const std::string&          min_block_length);
   void read_successors(const std::filesystem::path& p);
-  static void extract_vertices_from_key(const std::string& key,
-                                        std::string&       source_name,
-                                        std::string&       target_name);
 
   void export_graphml(const std::filesystem::path& p) const;
   void export_successors_python(const std::filesystem::path& p) const;
@@ -90,10 +88,6 @@ private:
   std::pair<std::vector<size_t>, std::vector<size_t>>
   separate_edge_at(size_t                     edge_index,
                    const std::vector<double>& distances_from_source);
-  std::pair<std::vector<size_t>, std::vector<size_t>>
-  uniform_separate_edge(size_t edge_index);
-  // std::pair<std::vector<int>, std::vector<int>> chebychev_separate_edge(int
-  // edge_index);
 
   // helper function
   void dfs(std::vector<std::vector<size_t>>& ret_val,
@@ -379,23 +373,22 @@ public:
                 const std::vector<size_t>& edges_to_consider) const;
 
   // Transformation functions
-  std::pair<std::vector<size_t>, std::vector<size_t>>
-  separate_edge(size_t         edge_index,
-                SeparationType separation_type = SeparationType::UNIFORM);
-  std::pair<std::vector<size_t>, std::vector<size_t>>
-  separate_edge(size_t source_id, size_t target_id,
-                SeparationType separation_type = SeparationType::UNIFORM) {
-    return separate_edge(get_edge_index(source_id, target_id), separation_type);
+  std::pair<std::vector<size_t>, std::vector<size_t>> separate_edge(
+      size_t                         edge_index,
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
+  std::pair<std::vector<size_t>, std::vector<size_t>> separate_edge(
+      size_t source_id, size_t target_id,
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
+    return separate_edge(get_edge_index(source_id, target_id), sep_func);
   };
-  std::pair<std::vector<size_t>, std::vector<size_t>>
-  separate_edge(const std::string& source_name, const std::string& target_name,
-                SeparationType separation_type = SeparationType::UNIFORM) {
-    return separate_edge(get_edge_index(source_name, target_name),
-                         separation_type);
+  std::pair<std::vector<size_t>, std::vector<size_t>> separate_edge(
+      const std::string& source_name, const std::string& target_name,
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
+    return separate_edge(get_edge_index(source_name, target_name), sep_func);
   };
 
-  std::vector<std::pair<size_t, std::vector<size_t>>>
-  discretize(SeparationType separation_type = SeparationType::UNIFORM);
+  std::vector<std::pair<size_t, std::vector<size_t>>> discretize(
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
 
   [[nodiscard]] std::vector<std::vector<double>>
   all_edge_pairs_shortest_paths() const;

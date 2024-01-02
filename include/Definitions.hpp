@@ -1,15 +1,36 @@
 #pragma once
+#include <cmath>
 #include <filesystem>
+#include <limits>
 #include <vector>
 
 namespace cda_rail {
 // Constants
-const double INF           = std::numeric_limits<double>::max() / 3;
-const double ABS_PWL_ERROR = 10;
+constexpr double INF     = std::numeric_limits<double>::max() / 3;
+constexpr double EPS     = 10 * std::numeric_limits<double>::epsilon();
+constexpr double GRB_EPS = 1e-4;
+constexpr double V_MIN   = 0.3;
+constexpr double ROUNDING_PRECISION = 1;
+constexpr double STOP_TOLERANCE     = 10;
+constexpr double ABS_PWL_ERROR      = 10;
 
-// Constants for vertex type
 enum class VertexType { NoBorder = 0, VSS = 1, TTD = 2, NoBorderVSS = 3 };
-enum class SeparationType { UNIFORM, CHEBYCHEV };
+enum class SolutionStatus {
+  Optimal    = 0,
+  Feasible   = 1,
+  Infeasible = 2,
+  Timeout    = 3,
+  Unknown    = 4
+};
+enum class ExportOption {
+  NoExport                        = 0,
+  ExportSolution                  = 1,
+  ExportSolutionWithInstance      = 2,
+  ExportLP                        = 3,
+  ExportSolutionAndLP             = 4,
+  ExportSolutionWithInstanceAndLP = 5
+};
+enum class OptimalityStrategy { Optimal = 0, TradeOff = 1, Feasible = 2 };
 
 // Helper functions
 
@@ -22,6 +43,11 @@ static bool is_directory_and_create(const std::filesystem::path& p) {
    *
    * @param p Path to the directory
    */
+
+  // If p is current directory, return true
+  if (p.empty()) {
+    return true;
+  }
 
   if (!std::filesystem::exists(p)) {
     std::error_code error_code;
@@ -90,4 +116,45 @@ subsets_of_size_2_indices(size_t n) {
   }
   return subsets_of_pairs;
 }
+
+// Template type T
+template <typename T> bool approx_equal(T a, T b, T factor = 10) {
+  const auto eps = factor * std::numeric_limits<T>::epsilon();
+  return a - b < eps && b - a < eps;
+}
+
+static void extract_vertices_from_key(const std::string& key,
+                                      std::string&       source_name,
+                                      std::string&       target_name) {
+  /**
+   * Extract source and target names from key.
+   * @param key Key
+   * @param source_name Source name, used as return value
+   * @param target_name Target name, used as return value
+   *
+   * The variables are passed by reference and are modified in place.
+   */
+
+  size_t const first_quote  = key.find_first_of('\'');
+  size_t const second_quote = key.find_first_of('\'', first_quote + 1);
+  source_name = key.substr(first_quote + 1, second_quote - first_quote - 1);
+
+  size_t const third_quote  = key.find_first_of('\'', second_quote + 1);
+  size_t const fourth_quote = key.find_first_of('\'', third_quote + 1);
+  target_name = key.substr(third_quote + 1, fourth_quote - third_quote - 1);
+}
+
+static double round_to(double value, double tolerance) {
+  /**
+   * Round value to the given the tolerance, e.g., 1e-5.
+   * @param value Value to be rounded
+   * @param tolerance Tolerance
+   *
+   * @return Rounded value
+   */
+
+  const auto factor = std::round(1 / tolerance);
+  return std::round(value * factor) / factor;
+}
+
 } // namespace cda_rail

@@ -75,7 +75,11 @@ Otherwise, they have to be set manually, see also https://support.gurobi.com/hc/
 
 ### Usage
 
-Currently, the tool provides only basic access via the command line. `rail_vss_generation_timetable_mip_testing` provides access to solving a specified instance at different levels of accuracy and with a predefined timeout.
+Currently, the tool provides only basic access via the command line and supports the generation of minimal VSS layouts. More command line functions will be added shortly. Example networks can be found in `test/example-networks/`.
+
+#### MILP based algorithm
+
+`rail_vss_generation_timetable_mip_testing` provides access to solving a specified instance at different levels of accuracy and with a predefined timeout.
 It produces additional debugging output and saves the raw model and solution to a file.
 The syntax is as follows
 
@@ -101,12 +105,38 @@ Hence, the instance _SimpleStation_ can be solved using default values by the fo
 .\build\apps\rail_vss_generation_timetable_mip_testing SimpleStation .\test\example-networks\SimpleStation 15 1 0 1 1 0 1 -1
 ```
 
-More command line functions will be added shortly.
+#### Iterative approach
+
+An iterative approach has been implemented, which can significantly improve the runtime. It uses the continuous model for placing VSS borders. The syntax is as follows
+
+```commandline
+.\build\apps\rail_vss_generation_timetable_mip_iterative_vss_testing [model_name] [instance_path] [delta_t] [fix_routes] [include_train_dynamics] [include_braking_curves] [use_pwl] [use_schedule_cuts] [iterate_vss] [optimality_strategy] [timeout] [output_path - optional]
+```
+
+The parameters meaning is as follows:
+
+- _delta_t_: Length of discretized time intervals in seconds.
+- _fix_routes_: If true, the routes are fixed to the ones given in the instance. Otherwise, routing is part of the optimization.
+- _include_train_dynamics_: If true, the train dynamics (i.e., limited acceleration and deceleration) are included in the model.
+- _include_braking_curves_: If true, the braking curves (i.e., the braking distance depending on the current speed has to be cleared) are included in the model.
+- _use_pwl_: If true, the braking distances are approximated by piecewise linear functions with a fixed maximal error. Otherwise, they are modeled as quadratic functions and Gurobi's ability to solve these using spatial branching is used. Only relevant if include_braking_curves is true.
+- _use_schedule_cuts_: If true, the formulation is strengthened using cuts implied by the schedule.
+- _iterate_vss_: If true, the solver proceeds iteratively, i.e., it will start by trying to solve a restricted model, which is easier to solve, and only slowly increases its size. In many cases, already on such restricted models the optimal solution can be found.
+- _optimality_strategy_: 0 (Optimal): The proven optimal solution is found; 1 (TradeOff): The restricted model is solved to optimality. The solution is returned even if it is not proven to be globally optimal. Experiments show that it is likely optimal, but the algorithm provides no guarantee; 2 (Feasible): The algorithm focuses only on finding a (probably good) feasible solution. It is likely not the optimal solution, but only close to optimal. No guarantee is provided.
+- _time_limit_: Time limit in seconds. No limit if negative.
+- _output_path_: The path in which the solution is written. The default is the current working directory.
+
+Booleans have to be passed as numbers (0 = false or 1 = true).
+Hence, the instance _SimpleStation_ can be solved using default values by the following command:
+
+```commandline
+.\build\apps\rail_vss_generation_timetable_mip_iterative_vss_testing SimpleStation .\test\example-networks\SimpleStation 15 1 1 1 0 1 1 0 -1
+```
+
+#### Access via C++
 
 Additionally, one can call the public methods to create, save, load, and solve respective instances in C++ directly.
 For this, we refer to the source code's docstrings and example usages in the Google Tests found in the `test` folder.
-
-Example networks can be found in `test/example-networks/`.
 
 ## Contact Information
 

@@ -29,9 +29,10 @@ cda_rail::Timetable::get_schedule(size_t index) const {
 
 size_t cda_rail::Timetable::add_train(const std::string& name, int length,
                                       double max_speed, double acceleration,
-                                      double deceleration, int t_0, double v_0,
-                                      size_t entry, int t_n, double v_n,
-                                      size_t exit, const Network& network) {
+                                      double deceleration, bool tim, int t_0,
+                                      double v_0, size_t entry, int t_n,
+                                      double v_n, size_t exit,
+                                      const Network& network) {
   /**
    * This method adds a train to the timetable. The train is specified by its
    * parameters.
@@ -60,8 +61,8 @@ size_t cda_rail::Timetable::add_train(const std::string& name, int length,
   if (train_list.has_train(name)) {
     throw exceptions::ConsistencyException("Train already exists.");
   }
-  auto const index =
-      train_list.add_train(name, length, max_speed, acceleration, deceleration);
+  auto const index = train_list.add_train(name, length, max_speed, acceleration,
+                                          deceleration, tim);
   schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
   return index;
 }
@@ -330,4 +331,37 @@ cda_rail::Timetable::time_interval(size_t train_index) const {
 
   const auto& schedule = schedules.at(train_index);
   return {schedule.t_0, schedule.t_n};
+}
+
+std::pair<size_t, size_t>
+cda_rail::Timetable::time_index_interval(size_t train_index, int dt,
+                                         bool tn_inclusive) const {
+  /**
+   * This method returns the time interval of a train schedule as indices given
+   * a time step length dt.
+   *
+   * @param train_index The index of the train in the train list.
+   * @param dt The time step length.
+   * @return A pair of integers (t_0, t_n) where t_0 is the time index at which
+   * the train enters the network and t_n is the time index at which the train
+   * leaves the network.
+   */
+
+  if (!train_list.has_train(train_index)) {
+    throw exceptions::TrainNotExistentException(train_index);
+  }
+
+  const auto& schedule = schedules.at(train_index);
+  const auto& t_0      = schedule.t_0;
+  const auto& t_n      = schedule.t_n;
+
+  if (t_0 < 0 || t_n < 0) {
+    throw exceptions::ConsistencyException("Time cannot be negative.");
+  }
+
+  const auto t_0_index = t_0 / dt;
+  const auto t_n_index =
+      (t_n % dt == 0 ? t_n / dt - 1 : t_n / dt) + (tn_inclusive ? 1 : 0);
+
+  return {static_cast<size_t>(t_0_index), static_cast<size_t>(t_n_index)};
 }

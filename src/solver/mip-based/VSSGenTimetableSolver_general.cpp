@@ -30,48 +30,76 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
   instance = instances::VSSGenerationTimetable::import_instance(instance_path);
 }
 
-int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
-    int delta_t, bool fix_routes_input, bool discretize_vss_positions_input,
-    bool include_train_dynamics_input, bool include_braking_curves_input,
-    bool use_pwl_input, bool use_schedule_cuts_input, int time_limit,
-    bool debug, bool export_to_file, const std::string& file_name) {
+cda_rail::instances::SolVSSGenerationTimetable
+cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
+    const ModelDetail& model_detail, const ModelSettings& model_settings,
+    const SolverStrategy&   solver_strategy,
+    const SolutionSettings& solution_settings, int time_limit,
+    bool debug_input) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
    * flexible MILP formulation. The level of detail can be controlled using the
    * parameters.
    *
-   * @param delta_t: Length of discretized time intervals in seconds. Default:
-   * 15
-   * @param fix_routes_input: If true, the routes are fixed to the ones given in
-   * the instance. Otherwise, routing is part of the optimization. Default: true
-   * @param discretize_vss_positions_input: If true, the graphs edges are
-   * discretized in many short edges. VSS positions are then represented by
-   * vertices. If false, the VSS positions are encoded as continuous integers.
+   * @param model_detail: Contains information on the model detail, namely
+   * - delta_t: Length of discretized time intervals in seconds. Default: 15
+   * - fix_routes: If true, the routes are fixed to the ones given in the
+   * - train_dynamic: If true, the train dynamics (i.e., limited acceleration
+   * and deceleration) are included in the model. Default: true
+   * - braking_curves: If true, the braking curves (i.e., the braking distance
+   * depending on the current speed has to be cleared) are included in the
+   * model. Default: true
+   *
+   * @param model_settings: Contains information on the model settings, namely
+   * - model_type: Denotes, how the VSS borders are modelled in the solution
+   * process. Default uses VSSModel::Continuous
+   * - use_pwl: If true, the braking distances are approximated by piecewise
+   * linear functions with a fixed maximal error. Otherwise, they are modeled as
+   * quadratic functions and Gurobi's ability to solve these using spatial
+   * branching is used. Only relevant if include_braking_curves_input is true.
    * Default: false
-   * @param include_train_dynamics_input: If true, the train dynamics (i.e.,
-   * limited acceleration and deceleration) are included in the model. Default:
-   * true
-   * @param include_braking_curves_input: If true, the braking curves (i.e., the
-   * braking distance depending on the current speed has to be cleared) are
-   * included in the model. Default: true
-   * @param use_pwl_input: If true, the braking distances are approximated by
-   * piecewise linear functions with a fixed maximal error. Otherwise, they are
-   * modeled as quadratic functions and Gurobi's ability to solve these using
-   * spatial branching is used. Only relevant if include_braking_curves_input is
-   * true. Default: false
-   * @param use_schedule_cuts_input: If true, the formulation is strengthened
-   * using cuts implied by the schedule. Default: true
+   * - use_schedule_cuts: If true, the formulation is strengthened using cuts
+   * implied by the schedule. Default: true
+   *
+   * @param solver_strategy: Specify information on the algorithm's strategy to
+   * use, namely
+   * - iterative_approach: If true, the VSS is iterated to optimality. Default:
+   * false
+   * - optimality_strategy: Specify the optimality strategy to use. Default:
+   * Optimal
+   * - update_strategy: Specify the update strategy to use. Only relevant if
+   * iterative approach is used. Default: Fixed
+   * - initial_value: Specify the initial value or fraction to use. Only
+   * relevant if iterative approach is used. In case of fixed update, the value
+   * has to be an integer. Otherwise between 0 and 1. Default: 1
+   * - update_value: Specify the update value or fraction to use. Only relevant
+   * if iterative approach is used. In case of fixed update, the value has to be
+   * greater than 1, otherwise between 0 and 1. Default: 2
+   *
+   * @param solution_settings: Specify information on the solution, namely
+   * - postprocess: If true, the solution is postprocessed to remove potentially
+   * unused VSS. Default: false
+   * - export_option: Denotes if the solution and/or Gurobi model is exported.
+   * Default: NoExport
+   * - name: Name of the file (without extension) to which the model is
+   * exported. Default: "model"
+   * - path: Path to which the model is exported. Default: "", i.e., the current
+   * working directory
+   *
    * @param time_limit: Time limit in seconds. No limit if negative. Default: -1
+   *
    * @param debug: If true, (more detailed) debug output is printed. Default:
    * false
-   * @param export_to_file: If true, the model is exported to a file. Default:
-   * false
-   * @param file_name: Name of the file (without extension) to which the model
-   * is exported (only if export_to_file is true). Default: "model"
    *
-   * @return objective value, i.e., number of VSS borders created. -1 if no
-   * solution was found.
+   * @return Solution object containing status, objective value, and solution
    */
+
+  this->debug = debug_input;
+
+  if (!model_settings.model_type.check_consistency()) {
+    throw cda_rail::exceptions::ConsistencyException(
+        "Model type and separation types/functions are not consistent.");
+  }
 
   if (!instance.n().is_consistent_for_transformation()) {
     throw exceptions::ConsistencyException();
@@ -86,13 +114,35 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     start = std::chrono::high_resolution_clock::now();
   }
 
-  this->dt                       = delta_t;
-  this->fix_routes               = fix_routes_input;
-  this->discretize_vss_positions = discretize_vss_positions_input;
-  this->include_train_dynamics   = include_train_dynamics_input;
-  this->include_braking_curves   = include_braking_curves_input;
-  this->use_pwl                  = use_pwl_input;
-  this->use_schedule_cuts        = use_schedule_cuts_input;
+  this->dt                        = model_detail.delta_t;
+  this->fix_routes                = model_detail.fix_routes;
+  this->vss_model                 = model_settings.model_type;
+  this->include_train_dynamics    = model_detail.train_dynamics;
+  this->include_braking_curves    = model_detail.braking_curves;
+  this->use_pwl                   = model_settings.use_pwl;
+  this->use_schedule_cuts         = model_settings.use_schedule_cuts;
+  this->iterative_vss             = solver_strategy.iterative_approach;
+  this->optimality_strategy       = solver_strategy.optimality_strategy;
+  this->iterative_update_strategy = solver_strategy.update_strategy;
+  this->iterative_initial_value   = solver_strategy.initial_value;
+  this->iterative_update_value    = solver_strategy.update_value;
+  this->iterative_include_cuts    = solver_strategy.include_cuts;
+  this->postprocess               = solution_settings.postprocess;
+  this->export_option             = solution_settings.export_option;
+
+  if (this->iterative_vss) {
+    if (this->iterative_update_strategy == UpdateStrategy::Fixed &&
+        this->iterative_update_value <= 1) {
+      throw exceptions::ConsistencyException(
+          "iterative_update_value must be greater than 1");
+    }
+    if (this->iterative_update_strategy == UpdateStrategy::Relative &&
+        (this->iterative_update_value <= 0 ||
+         this->iterative_update_value >= 1)) {
+      throw exceptions::ConsistencyException(
+          "iterative_update_value must be between 0 and 1");
+    }
+  }
 
   if (this->fix_routes && !instance.has_route_for_every_train()) {
     throw exceptions::ConsistencyException(
@@ -100,10 +150,10 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   }
 
   std::optional<instances::VSSGenerationTimetable> old_instance;
-  if (this->discretize_vss_positions) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     std::cout << "Preprocessing graph...";
     old_instance = instance;
-    instance.discretize();
+    instance.discretize(this->vss_model.get_separation_functions().front());
     std::cout << "DONE" << std::endl;
   }
 
@@ -114,7 +164,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     std::cout << "Initialize other relevant variables" << std::endl;
   }
 
-  num_t = instance.max_t() / dt;
+  num_t = static_cast<size_t>(instance.max_t() / dt);
   if (instance.max_t() % dt != 0) {
     num_t += 1;
   }
@@ -125,7 +175,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   unbreakable_sections = instance.n().unbreakable_sections();
 
-  if (this->discretize_vss_positions) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     no_border_vss_sections = instance.n().no_border_vss_sections();
     num_breakable_sections = no_border_vss_sections.size();
     no_border_vss_vertices =
@@ -141,13 +191,32 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   }
 
   for (size_t i = 0; i < num_tr; ++i) {
-    train_interval.emplace_back(instance.time_interval(i));
-    train_interval.back().first /= dt;
-    if (train_interval.back().second % dt == 0) {
-      train_interval.back().second /= dt;
-      train_interval.back().second -= 1;
+    train_interval.emplace_back(instance.time_index_interval(i, dt, false));
+  }
+
+  if (iterative_vss && vss_model.get_model_type() == vss::ModelType::Discrete) {
+    throw exceptions::ConsistencyException(
+        "Iterative VSS not supported for discrete VSS model");
+  }
+
+  max_vss_per_edge_in_iteration.resize(relevant_edges.size(), 0);
+  for (size_t i = 0; i < relevant_edges.size(); ++i) {
+    const auto& e            = relevant_edges.at(i);
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    if (iterative_vss) {
+      if (iterative_update_strategy == UpdateStrategy::Fixed) {
+        max_vss_per_edge_in_iteration[i] = std::min(
+            vss_number_e, static_cast<int>(std::ceil(iterative_initial_value)));
+      } else if (iterative_update_strategy == UpdateStrategy::Relative) {
+        max_vss_per_edge_in_iteration[i] = std::min(
+            vss_number_e,
+            static_cast<int>(std::ceil(iterative_initial_value *
+                                       static_cast<double>(vss_number_e))));
+      } else {
+        throw exceptions::ConsistencyException("Unknown update strategy");
+      }
     } else {
-      train_interval.back().second /= dt;
+      max_vss_per_edge_in_iteration[i] = vss_number_e;
     }
   }
 
@@ -175,7 +244,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
     create_free_routes_variables();
   }
-  if (this->discretize_vss_positions) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     if (debug) {
       std::cout << "Create discretized VSS variables" << std::endl;
     }
@@ -191,6 +260,12 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       std::cout << "Create braking distance variables" << std::endl;
     }
     create_brakelen_variables();
+  }
+  if (vss_model.get_only_stop_at_vss()) {
+    if (debug) {
+      std::cout << "Create only stop at VSS variables" << std::endl;
+    }
+    create_only_stop_at_vss_variables();
   }
 
   if (debug) {
@@ -213,7 +288,7 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
     create_free_routes_constraints();
   }
-  if (this->discretize_vss_positions) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     if (debug) {
       std::cout << "Create discretized VSS constraints" << std::endl;
     }
@@ -265,12 +340,183 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     }
   }
 
-  if (this->include_braking_curves && !this->use_pwl) {
+  if ((this->include_braking_curves && !this->use_pwl)) {
     // Non-convex constraints are present. Still, Gurobi can solve to optimality
     // using spatial branching
     model->set(GRB_IntParam_NonConvex, 2);
   }
-  model->optimize();
+
+  std::optional<instances::SolVSSGenerationTimetable> sol_object;
+
+  bool reoptimize = true;
+
+  double obj_ub = 1.0;
+  for (const auto& e : relevant_edges) {
+    obj_ub += instance.const_n().max_vss_on_edge(e);
+  }
+  double obj_lb           = 0;
+  size_t iteration_number = 0;
+
+  std::vector<GRBConstr> iterative_cuts;
+  this->iterative_include_cuts_tmp = this->iterative_include_cuts;
+
+  while (reoptimize) {
+    reoptimize = false;
+
+    if (optimality_strategy == OptimalityStrategy::Feasible) {
+      model->set(GRB_IntParam_SolutionLimit, 1);
+      model->set(GRB_IntParam_MIPFocus, 1);
+      if (debug) {
+        std::cout << "Settings focussing on feasibility" << std::endl;
+      }
+    }
+
+    model->optimize();
+    iteration_number += 1;
+
+    if (model->get(GRB_IntAttr_SolCount) >= 1) {
+      const auto obj_tmp = model->get(GRB_DoubleAttr_ObjVal);
+      if (obj_tmp < obj_ub) {
+        obj_ub = obj_tmp;
+        sol_object =
+            extract_solution(postprocess, debug, !iterative_vss, old_instance);
+        this->iterative_include_cuts_tmp = false;
+      }
+    }
+
+    if (!sol_object.has_value()) {
+      sol_object =
+          extract_solution(postprocess, debug, !iterative_vss, old_instance);
+    }
+
+    if (iterative_vss) {
+      if (model->get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
+        if (debug) {
+          std::cout << "Break because of timeout" << std::endl;
+        }
+        if (sol_object->has_solution()) {
+          if (debug) {
+            std::cout << "However, use previous obtained solution" << std::endl;
+          }
+          break;
+        }
+        sol_object =
+            extract_solution(postprocess, debug, !iterative_vss, old_instance);
+        break;
+      }
+
+      auto obj_lb_tmp = model->get(GRB_DoubleAttr_ObjBound);
+      for (int i = 0; i < relevant_edges.size(); ++i) {
+        if (static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1 <
+                obj_lb_tmp &&
+            max_vss_per_edge_in_iteration.at(i) <
+                instance.const_n().max_vss_on_edge(relevant_edges.at(i))) {
+          obj_lb_tmp =
+              static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1;
+        }
+      }
+      if (obj_lb_tmp > obj_lb) {
+        obj_lb = obj_lb_tmp;
+      }
+
+      if (obj_lb + GRB_EPS >= obj_ub && (sol_object->has_solution())) {
+        if (debug) {
+          std::cout << "Break because obj_lb (" << obj_lb << ") >= obj_ub ("
+                    << obj_ub << ") -> Proven optimal" << std::endl;
+        }
+        sol_object->set_status(SolutionStatus::Optimal);
+        break;
+      }
+
+      if (optimality_strategy != OptimalityStrategy::Optimal &&
+          (model->get(GRB_IntAttr_SolCount) >= 1)) {
+        if (debug) {
+          std::cout << "Break because of feasible solution and not searching "
+                       "for optimality."
+                    << std::endl;
+        }
+        break;
+      }
+
+      GRBLinExpr cut_expr = 0;
+      for (int i = 0; i < relevant_edges.size(); ++i) {
+        if (update_vss(i, obj_ub, cut_expr)) {
+          reoptimize = true;
+        }
+      }
+
+      if (!reoptimize) {
+        if (debug) {
+          std::cout << "Break because no more VSS can be added" << std::endl;
+        }
+        break;
+      }
+
+      model->addConstr(objective_expr, GRB_GREATER_EQUAL, obj_lb,
+                       "obj_lb_" + std::to_string(obj_lb) + "_" +
+                           std::to_string(iteration_number));
+      model->addConstr(objective_expr, GRB_LESS_EQUAL, obj_ub,
+                       "obj_ub_" + std::to_string(obj_ub) + "_" +
+                           std::to_string(iteration_number));
+      if (debug) {
+        std::cout << "Added constraint: obj >= " << obj_lb << std::endl;
+        std::cout << "Added constraint: obj <= " << obj_ub << std::endl;
+      }
+
+      if (this->iterative_include_cuts_tmp) {
+        iterative_cuts.push_back(
+            model->addConstr(cut_expr, GRB_GREATER_EQUAL, 1,
+                             "cut_" + std::to_string(iteration_number)));
+        model->reset(1);
+        if (debug) {
+          std::cout << "Added constraint: cut_expr >= 1" << std::endl;
+        }
+      } else {
+        if (debug) {
+          std::cout << "Remove " << iterative_cuts.size() << " cut constraints"
+                    << std::endl;
+        }
+        for (const auto& c : iterative_cuts) {
+          model->remove(c);
+        }
+        iterative_cuts.clear();
+      }
+
+      if (time_limit > 0) {
+        const auto current_time = std::chrono::high_resolution_clock::now();
+        const auto current_time_span =
+            std::chrono::duration_cast<std::chrono::milliseconds>(current_time -
+                                                                  start)
+                .count();
+
+        auto time_left = time_limit - current_time_span / 1000;
+
+        if (time_left < 0) {
+          if (debug) {
+            std::cout << "Break because of timeout" << std::endl;
+          }
+          if (sol_object->has_solution()) {
+            if (debug) {
+              std::cout << "However, use previous obtained solution"
+                        << std::endl;
+            }
+            break;
+          }
+          sol_object->set_status(SolutionStatus::Timeout);
+          break;
+        }
+
+        model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
+
+        if (debug) {
+          std::cout << "Next iterations limit: ";
+          std::cout << time_left << " s" << std::endl;
+        }
+      }
+
+      model->update();
+    }
+  }
 
   if (debug) {
     model_solved = std::chrono::high_resolution_clock::now();
@@ -283,28 +529,46 @@ int cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     std::cout << "Model solved in "
               << (static_cast<double>(solve_time) / 1000.0) << " s"
               << std::endl;
+    std::cout << "Total time "
+              << (static_cast<double>(create_time + solve_time) / 1000.0)
+              << " s" << std::endl;
   }
 
-  if (export_to_file) {
+  if (export_option == ExportOption::ExportLP ||
+      export_option == ExportOption::ExportSolutionAndLP ||
+      export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
     std::cout << "Saving model and solution" << std::endl;
-    model->write(file_name + ".mps");
-    model->write(file_name + ".sol");
+    std::filesystem::path path = solution_settings.path;
+
+    if (!is_directory_and_create(path)) {
+      throw exceptions::ExportException("Could not create directory " +
+                                        path.string());
+    }
+
+    model->write((path / (solution_settings.name + ".mps")).string());
+    model->write((path / (solution_settings.name + ".sol")).string());
   }
 
-  if (auto status = model->get(GRB_IntAttr_Status); status != GRB_OPTIMAL) {
-    std::cout << "No optimal solution found. Status: " << status << std::endl;
-    return -1;
+  if (old_instance.has_value()) {
+    instance = old_instance.value();
   }
 
-  int const obj_val =
-      static_cast<int>(round(model->get(GRB_DoubleAttr_ObjVal)));
-  if (debug) {
-    std::cout << "Objective: " << obj_val << std::endl;
+  if (export_option == ExportOption::ExportSolution ||
+      export_option == ExportOption::ExportSolutionWithInstance ||
+      export_option == ExportOption::ExportSolutionAndLP ||
+      export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
+    const bool export_instance =
+        (export_option == ExportOption::ExportSolutionWithInstance ||
+         export_option == ExportOption::ExportSolutionWithInstanceAndLP);
+    std::cout << "Saving solution" << std::endl;
+    std::filesystem::path path = solution_settings.path;
+    path /= solution_settings.name;
+    sol_object->export_solution(path, export_instance);
   }
 
-  cleanup(old_instance);
+  cleanup();
 
-  return obj_val;
+  return sol_object.value();
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
@@ -320,17 +584,22 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   vars["y_sec_fwd"] = MultiArray<GRBVar>(num_t, fwd_bwd_sections.size());
   vars["y_sec_bwd"] = MultiArray<GRBVar>(num_t, fwd_bwd_sections.size());
 
+  if (vss_model.get_only_stop_at_vss()) {
+    vars["stopped"] = MultiArray<GRBVar>(num_tr, num_t);
+  }
+
   auto train_list = instance.get_train_list();
   for (size_t i = 0; i < num_tr; ++i) {
     auto max_speed = instance.get_train_list().get_train(i).max_speed;
     auto tr_name   = train_list.get_train(i).name;
-    for (int t = train_interval[i].first; t <= train_interval[i].second + 1;
+    for (size_t t = train_interval[i].first; t <= train_interval[i].second + 1;
          ++t) {
       vars["v"](i, t) =
           model->addVar(0, max_speed, 0, GRB_CONTINUOUS,
                         "v_" + tr_name + "_" + std::to_string(t * dt));
     }
-    for (int t = train_interval[i].first; t <= train_interval[i].second; ++t) {
+    for (size_t t = train_interval[i].first; t <= train_interval[i].second;
+         ++t) {
       for (auto const edge_id :
            instance.edges_used_by_train(tr_name, fix_routes)) {
         const auto& edge = instance.n().get_edge(edge_id);
@@ -349,7 +618,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
     }
   }
-  for (int t = 0; t < num_t; ++t) {
+  for (size_t t = 0; t < num_t; ++t) {
     for (size_t i = 0; i < fwd_bwd_sections.size(); ++i) {
       vars["y_sec_fwd"](t, i) = model->addVar(
           0, 1, 0, GRB_BINARY,
@@ -392,31 +661,56 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
   vars["b_rear"] =
       MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
-  vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
+
+  if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
+    vars["num_vss_segments"]  = MultiArray<GRBVar>(relevant_edges.size());
+    vars["frac_vss_segments"] = MultiArray<GRBVar>(
+        relevant_edges.size(),
+        this->vss_model.get_separation_functions().size(), max_vss);
+    vars["edge_type"] =
+        MultiArray<GRBVar>(relevant_edges.size(),
+                           this->vss_model.get_separation_functions().size());
+    vars["frac_type"] = MultiArray<GRBVar>(
+        relevant_edges.size(),
+        this->vss_model.get_separation_functions().size(), max_vss);
+  } else if (this->vss_model.get_model_type() == vss::ModelType::Continuous) {
+    vars["b_used"] = MultiArray<GRBVar>(relevant_edges.size(), max_vss);
+  } else if (this->vss_model.get_model_type() == vss::ModelType::InferredAlt) {
+    vars["type_num_vss_segments"] = MultiArray<GRBVar>(
+        relevant_edges.size(),
+        this->vss_model.get_separation_functions().size(), max_vss);
+  } else {
+    throw exceptions::ConsistencyException(
+        "Model type not supported for non-discretized graph");
+  }
 
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
     const auto& e            = breakable_edges[i];
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
-    const auto& edge_len     = instance.n().get_edge(e).length;
     const auto& edge         = instance.n().get_edge(e);
+    const auto& edge_len     = edge.length;
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
+      const auto& lb = 0;
+      const auto& ub = edge_len;
       vars["b_pos"](i, vss) =
-          model->addVar(0, edge_len, 0, GRB_CONTINUOUS,
+          model->addVar(lb, ub, 0, GRB_CONTINUOUS,
                         "b_pos_" + edge_name + "_" + std::to_string(vss));
-      for (size_t tr = 0; tr < num_tr; ++tr) {
-        for (int t = train_interval[tr].first; t <= train_interval[tr].second;
-             ++t) {
+      for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+        for (size_t t = train_interval[tr].first;
+             t <= train_interval[tr].second; ++t) {
           vars["b_front"](tr, t, i, vss) = model->addVar(
               0, 1, 0, GRB_BINARY,
               "b_front_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
                   "_" + edge_name + "_" + std::to_string(vss));
-          vars["b_rear"](tr, t, i, vss) = model->addVar(
-              0, 1, 0, GRB_BINARY,
-              "b_rear_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
-                  "_" + edge_name + "_" + std::to_string(vss));
+          if (instance.get_train_list().get_train(tr).tim) {
+            vars["b_rear"](tr, t, i, vss) = model->addVar(
+                0, 1, 0, GRB_BINARY,
+                "b_rear_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
+                    "_" + edge_name + "_" + std::to_string(vss));
+          }
         }
       }
     }
@@ -429,10 +723,113 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
+
+    if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
+      vars["num_vss_segments"](i) = model->addVar(
+          1, vss_number_e + 1, 0, GRB_INTEGER, "num_vss_segments_" + edge_name);
+
+      if (iterative_vss &&
+          vss_number_e + 1 > max_vss_per_edge_in_iteration.at(i)) {
+        vars["num_vss_segments"](i).set(
+            GRB_DoubleAttr_UB,
+            static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1);
+      }
+
+      for (size_t sep_type = 0;
+           sep_type < this->vss_model.get_separation_functions().size();
+           ++sep_type) {
+        vars["edge_type"](i, sep_type) = model->addVar(
+            0, 1, 0, GRB_BINARY,
+            "edge_type_" + edge_name + "_" + std::to_string(sep_type));
+        for (size_t vss = 0; vss < vss_number_e; ++vss) {
+          const auto& lb                              = 0.0;
+          const auto& ub                              = 1.0;
+          vars["frac_vss_segments"](i, sep_type, vss) = model->addVar(
+              lb, ub, 0, GRB_CONTINUOUS,
+              "frac_vss_segments_" + edge_name + "_" +
+                  std::to_string(sep_type) + "_" + std::to_string(vss));
+          vars["frac_type"](i, sep_type, vss) = model->addVar(
+              lb, ub, 0, GRB_CONTINUOUS,
+              "frac_type_" + edge_name + "_" + std::to_string(sep_type) + "_" +
+                  std::to_string(vss));
+        }
+      }
+    } else if (this->vss_model.get_model_type() == vss::ModelType::Continuous) {
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        vars["b_used"](i, vss) =
+            model->addVar(0, 1, 0, GRB_BINARY,
+                          "b_used_" + edge_name + "_" + std::to_string(vss));
+        if (iterative_vss && vss >= max_vss_per_edge_in_iteration.at(i)) {
+          vars["b_used"](i, vss).set(GRB_DoubleAttr_UB, 0);
+        }
+      }
+    } else if (this->vss_model.get_model_type() ==
+               vss::ModelType::InferredAlt) {
+      for (size_t sep_type = 0;
+           sep_type < this->vss_model.get_separation_functions().size();
+           ++sep_type) {
+        for (size_t vss = 0; vss < vss_number_e; ++vss) {
+          vars["type_num_vss_segments"](i, sep_type, vss) = model->addVar(
+              0, 1, 0, GRB_BINARY,
+              "type_num_vss_segments_" + edge_name + "_" +
+                  std::to_string(sep_type) + "_" + std::to_string(vss));
+
+          if (iterative_vss && vss >= max_vss_per_edge_in_iteration.at(i)) {
+            vars["type_num_vss_segments"](i, sep_type, vss)
+                .set(GRB_DoubleAttr_UB, 0);
+          }
+        }
+      }
+    }
+  }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_non_discretized_only_stop_at_vss_variables() {
+  int max_vss = 0;
+  for (const auto& e : breakable_edges) {
+    max_vss = std::max(max_vss, instance.n().max_vss_on_edge(e));
+  }
+
+  vars["b_tight"] =
+      MultiArray<GRBVar>(num_tr, num_t, num_breakable_sections, max_vss);
+  vars["e_tight"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
+
+  for (size_t i = 0; i < breakable_edges.size(); ++i) {
+    const auto& e            = breakable_edges[i];
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    const auto& edge         = instance.n().get_edge(e);
+    const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
-      vars["b_used"](i, vss) =
-          model->addVar(0, 1, 0, GRB_BINARY,
-                        "b_used_" + edge_name + "_" + std::to_string(vss));
+      for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+        const auto& tr_name = instance.get_train_list().get_train(tr).name;
+        for (size_t t = train_interval[tr].first + 2;
+             t <= train_interval[tr].second; ++t) {
+          vars["b_tight"](tr, t, i, vss) = model->addVar(
+              0, 1, 0, GRB_BINARY,
+              "b_tight_" + tr_name + "_" + std::to_string(t * dt) + "_" +
+                  edge_name + "_" + std::to_string(vss));
+        }
+      }
+    }
+  }
+
+  for (size_t e = 0; e < num_edges; ++e) {
+    const auto& edge      = instance.n().get_edge(e);
+    const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
+    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto& tr_name = instance.get_train_list().get_train(tr).name;
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
+        vars["e_tight"](tr, t, e) =
+            model->addVar(0, 1, 0, GRB_BINARY,
+                          "e_tight_" + tr_name + "_" + std::to_string(t * dt) +
+                              "_" + edge_name);
+      }
     }
   }
 }
@@ -443,21 +840,40 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
    */
 
   // sum over all b_i as in no_border_vss_vertices
-  GRBLinExpr obj = 0;
-  if (discretize_vss_positions) {
+  objective_expr = 0;
+  if (vss_model.get_model_type() == vss::ModelType::Discrete) {
     for (size_t i = 0; i < no_border_vss_vertices.size(); ++i) {
-      obj += vars["b"](i);
+      objective_expr += vars["b"](i);
     }
-  } else {
+  } else if (vss_model.get_model_type() == vss::ModelType::Continuous) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
       const auto& e            = relevant_edges[i];
       const auto  vss_number_e = instance.n().max_vss_on_edge(e);
       for (size_t vss = 0; vss < vss_number_e; ++vss) {
-        obj += vars["b_used"](i, vss);
+        objective_expr += vars["b_used"](i, vss);
       }
     }
+  } else if (vss_model.get_model_type() == vss::ModelType::Inferred) {
+    for (size_t i = 0; i < relevant_edges.size(); ++i) {
+      objective_expr += (vars["num_vss_segments"](i) - 1);
+    }
+  } else if (vss_model.get_model_type() == vss::ModelType::InferredAlt) {
+    for (size_t i = 0; i < relevant_edges.size(); ++i) {
+      const auto& e            = relevant_edges[i];
+      const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        for (size_t sep_type = 0;
+             sep_type < this->vss_model.get_separation_functions().size();
+             ++sep_type) {
+          objective_expr += (static_cast<double>(vss) + 1) *
+                            vars["type_num_vss_segments"](i, sep_type, vss);
+        }
+      }
+    }
+  } else {
+    throw std::logic_error("Objective for vss model type not implemented");
   }
-  model->setObjective(obj, GRB_MINIMIZE);
+  model->setObjective(objective_expr, GRB_MINIMIZE);
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
@@ -482,35 +898,45 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         const auto& tr2_interval = train_interval[tr2];
         const auto& tr2_name  = instance.get_train_list().get_train(tr2).name;
         const auto& tr2_route = instance.get_route(tr2_name);
-        std::pair<int, int> const t_interval = {
+        std::pair<size_t, size_t> const t_interval = {
             std::max(tr1_interval.first, tr2_interval.first),
             std::min(tr1_interval.second, tr2_interval.second)};
-        for (int t = t_interval.first; t <= t_interval.second; ++t) {
+        for (size_t t = t_interval.first; t <= t_interval.second; ++t) {
           for (size_t e1 = 0; e1 < no_border_vss_section_sorted.size(); ++e1) {
             for (size_t e2 = 0; e2 < no_border_vss_section_sorted.size();
                  ++e2) {
               if (e1 == e2) {
                 continue;
               }
-              GRBLinExpr lhs = 2;
+              GRBLinExpr lhs        = 2;
+              GRBLinExpr lhs_first  = 0;
+              GRBLinExpr lhs_second = 0;
               if (tr1_route.contains_edge(
                       no_border_vss_section_sorted[e1].first)) {
                 lhs -= vars["x"](
+                    tr1, t, no_border_vss_section_sorted[e1].first.value());
+                lhs_first += vars["x"](
                     tr1, t, no_border_vss_section_sorted[e1].first.value());
               }
               if (tr1_route.contains_edge(
                       no_border_vss_section_sorted[e1].second)) {
                 lhs -= vars["x"](
                     tr1, t, no_border_vss_section_sorted[e1].second.value());
+                lhs_second += vars["x"](
+                    tr1, t, no_border_vss_section_sorted[e1].second.value());
               }
               if (tr2_route.contains_edge(
                       no_border_vss_section_sorted[e2].first)) {
                 lhs -= vars["x"](
                     tr2, t, no_border_vss_section_sorted[e2].first.value());
+                lhs_first += vars["x"](
+                    tr2, t, no_border_vss_section_sorted[e2].first.value());
               }
               if (tr2_route.contains_edge(
                       no_border_vss_section_sorted[e2].second)) {
                 lhs -= vars["x"](
+                    tr2, t, no_border_vss_section_sorted[e2].second.value());
+                lhs_second += vars["x"](
                     tr2, t, no_border_vss_section_sorted[e2].second.value());
               }
 
@@ -545,6 +971,39 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                       "_" +
                       std::to_string(
                           no_border_vss_section_sorted[e2].first.value()));
+
+              if ((!instance.get_train_list().get_train(tr1).tim &&
+                   (e1 > e2)) ||
+                  (!instance.get_train_list().get_train(tr2).tim &&
+                   (e2 > e1))) {
+                // lhs_first <= 1
+                model->addConstr(
+                    lhs_first <= 1,
+                    "vss_tim_first_" + tr1_name + "_" + tr2_name + "_" +
+                        std::to_string(t) + "_" +
+                        std::to_string(
+                            no_border_vss_section_sorted[e1].first.value()) +
+                        "_" +
+                        std::to_string(
+                            no_border_vss_section_sorted[e2].first.value()) +
+                        "_first");
+              }
+              if ((!instance.get_train_list().get_train(tr2).tim &&
+                   (e1 > e2)) ||
+                  (!instance.get_train_list().get_train(tr1).tim &&
+                   (e2 > e1))) {
+                // lhs_second <= 1
+                model->addConstr(
+                    lhs_second <= 1,
+                    "vss_tim_second_" + tr1_name + "_" + tr2_name + "_" +
+                        std::to_string(t) + "_" +
+                        std::to_string(
+                            no_border_vss_section_sorted[e1].first.value()) +
+                        "_" +
+                        std::to_string(
+                            no_border_vss_section_sorted[e2].first.value()) +
+                        "_first");
+              }
             }
           }
         }
@@ -569,7 +1028,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       const auto& tr_interval = train_interval[tr];
       const auto& tr_name     = instance.get_train_list().get_train(tr).name;
       const auto& tr_route    = instance.get_route(tr_name);
-      for (int t = tr_interval.first; t <= tr_interval.second; ++t) {
+      for (size_t t = tr_interval.first; t <= tr_interval.second; ++t) {
         GRBLinExpr lhs   = 0;
         int        count = 0;
         for (auto const e_index : sec) {
@@ -589,9 +1048,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
     }
 
-    for (int t = 0; t <= num_t; ++t) {
-      const auto tr_to_consider = instance.trains_at_t(t * dt, tr_on_sec);
-      GRBLinExpr lhs            = 0;
+    for (size_t t = 0; t <= num_t; ++t) {
+      const auto tr_to_consider =
+          instance.trains_at_t(static_cast<int>(t) * dt, tr_on_sec);
+      GRBLinExpr lhs = 0;
       for (auto const tr : tr_to_consider) {
         lhs += vars["x_sec"](tr, t, sec_index);
       }
@@ -616,13 +1076,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_schedule = instance.get_schedule(tr_name);
     const auto& tr_edges = instance.edges_used_by_train(tr, this->fix_routes);
     for (const auto& tr_stop : tr_schedule.stops) {
-      const auto  t0 = tr_stop.begin / dt;
-      const auto  t1 = std::ceil(static_cast<double>(tr_stop.end) / dt);
+      const auto t0 = static_cast<size_t>(tr_stop.begin / dt);
+      const auto t1 =
+          static_cast<size_t>(std::ceil(static_cast<double>(tr_stop.end) / dt));
       const auto& stop_edges =
           instance.get_station_list().get_station(tr_stop.station).tracks;
       const auto inverse_stop_edges =
           instance.n().inverse_edges(stop_edges, tr_edges);
-      for (int t = t0 - 1; t <= t1; ++t) {
+      for (size_t t = t0 - 1; t <= t1; ++t) {
         if (t >= t0) {
           model->addConstr(vars["v"](tr, t) == 0, "station_speed_" + tr_name +
                                                       "_" + std::to_string(t));
@@ -663,7 +1124,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     // Iterate over all time steps
     const auto& tr_object = train_list.get_train(tr);
-    for (int t = train_interval[tr].first; t <= train_interval[tr].second;
+    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
          ++t) {
       // v(t+1) - v(t) <= acceleration * dt
       model->addConstr(vars["v"](tr, t + 1) - vars["v"](tr, t) <=
@@ -689,7 +1150,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto  max_break_len = get_max_brakelen(tr);
     const auto& tr_name       = instance.get_train_list().get_train(tr).name;
-    for (int t = train_interval[tr].first; t <= train_interval[tr].second;
+    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
          ++t) {
       vars["brakelen"](tr, t) =
           model->addVar(0, max_break_len, 0, GRB_CONTINUOUS,
@@ -709,6 +1170,22 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   create_general_speed_constraints();
   create_reverse_occupation_constraints();
   create_general_boundary_constraints();
+
+  if (vss_model.get_only_stop_at_vss()) {
+    for (size_t tr = 0; tr < num_tr; ++tr) {
+      const auto& tr_speed = instance.get_train_list().get_train(tr).max_speed;
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
+           ++t) {
+        // v(tr,t) = 0 iff stopped(tr,t) = 0 otherwise v(tr,t) >= V_MIN
+        model->addConstr(
+            vars["v"](tr, t), GRB_GREATER_EQUAL, V_MIN * vars["stopped"](tr, t),
+            "v_min_" + std::to_string(tr) + "_" + std::to_string(t * dt));
+        model->addConstr(
+            vars["v"](tr, t), GRB_LESS_EQUAL, tr_speed * vars["stopped"](tr, t),
+            "v_max_" + std::to_string(tr) + "_" + std::to_string(t * dt));
+      }
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
@@ -724,6 +1201,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   } else {
     create_non_discretized_free_route_constraints();
   }
+  if (vss_model.get_model_type() == vss::ModelType::Inferred) {
+    create_non_discretized_fraction_constraints();
+  } else if (vss_model.get_model_type() == vss::ModelType::InferredAlt) {
+    create_non_discretized_alt_fraction_constraints();
+  }
+  if (vss_model.get_only_stop_at_vss()) {
+    create_non_discretized_general_only_stop_at_vss_constraints();
+  }
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
@@ -733,24 +1218,30 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * general enough to appear in all model variants.
    */
   // VSS can only be used if it is non-zero
-  for (size_t i = 0; i < relevant_edges.size(); ++i) {
-    const auto& e               = relevant_edges[i];
-    const auto& e_index         = breakable_edge_indices[e];
-    const auto  vss_number_e    = instance.n().max_vss_on_edge(e);
-    const auto& e_len           = instance.n().get_edge(e).length;
-    const auto& min_block_len_e = instance.n().get_edge(e).min_block_length;
-    for (size_t vss = 0; vss < vss_number_e; ++vss) {
-      model->addConstr(e_len * vars["b_used"](i, vss), GRB_GREATER_EQUAL,
-                       vars["b_pos"](e_index, vss),
-                       "b_used_" + std::to_string(e) + "_" +
-                           std::to_string(vss));
-      // Also remove redundant solutions
-      if (vss < vss_number_e - 1) {
-        model->addConstr(vars["b_pos"](e_index, vss), GRB_GREATER_EQUAL,
-                         vars["b_pos"](e_index, vss + 1) +
-                             vars["b_used"](i, vss + 1) * min_block_len_e,
-                         "b_used_decreasing_" + std::to_string(e) + "_" +
+  if (vss_model.get_model_type() == vss::ModelType::Continuous) {
+    for (size_t i = 0; i < relevant_edges.size(); ++i) {
+      const auto& e               = relevant_edges[i];
+      const auto& e_index         = breakable_edge_indices[e];
+      const auto  vss_number_e    = instance.n().max_vss_on_edge(e);
+      const auto& e_len           = instance.n().get_edge(e).length;
+      const auto& min_block_len_e = instance.n().get_edge(e).min_block_length;
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        model->addConstr(e_len * vars["b_used"](i, vss), GRB_GREATER_EQUAL,
+                         vars["b_pos"](e_index, vss),
+                         "b_used_" + std::to_string(e) + "_" +
                              std::to_string(vss));
+        model->addConstr(vars["b_pos"](e_index, vss), GRB_GREATER_EQUAL,
+                         vars["b_used"](i, vss) * min_block_len_e,
+                         "b_used_min_value_if_used_" + std::to_string(e) + "_" +
+                             std::to_string(vss));
+        // Also remove redundant solutions
+        if (vss < vss_number_e - 1) {
+          model->addConstr(vars["b_pos"](e_index, vss), GRB_GREATER_EQUAL,
+                           vars["b_pos"](e_index, vss + 1) +
+                               vars["b_used"](i, vss + 1) * min_block_len_e,
+                           "b_used_decreasing_" + std::to_string(e) + "_" +
+                               std::to_string(vss));
+        }
       }
     }
   }
@@ -788,11 +1279,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    */
 
   // Border only usable by a train if it is on the edge
-  for (size_t tr = 0; tr < num_tr; ++tr) {
-    for (const auto& e : instance.edges_used_by_train(tr, this->fix_routes)) {
-      const auto& e_index      = breakable_edge_indices[e];
-      const auto  vss_number_e = instance.n().max_vss_on_edge(e);
-      for (int t = train_interval[tr].first; t <= train_interval[tr].second;
+  for (size_t e_index = 0; e_index < breakable_edges.size(); ++e_index) {
+    const auto& e = breakable_edges[e_index];
+    for (const auto& tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto vss_number_e = instance.n().max_vss_on_edge(e);
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           // x(tr,t,e) >= b_front(tr,t,e_index,vss)
@@ -802,11 +1293,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                std::to_string(t) + "_" + std::to_string(e) +
                                "_" + std::to_string(vss));
           // x(tr,t,e) >= b_rear(tr,t,e_index,vss)
-          model->addConstr(vars["x"](tr, t, e), GRB_GREATER_EQUAL,
-                           vars["b_rear"](tr, t, e_index, vss),
-                           "x_b_rear_" + std::to_string(tr) + "_" +
-                               std::to_string(t) + "_" + std::to_string(e) +
-                               "_" + std::to_string(vss));
+          if (instance.get_train_list().get_train(tr).tim) {
+            model->addConstr(vars["x"](tr, t, e), GRB_GREATER_EQUAL,
+                             vars["b_rear"](tr, t, e_index, vss),
+                             "x_b_rear_" + std::to_string(tr) + "_" +
+                                 std::to_string(t) + "_" + std::to_string(e) +
+                                 "_" + std::to_string(vss));
+          }
         }
       }
     }
@@ -817,18 +1310,21 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& e            = breakable_edges[e_index];
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
     const auto& tr_on_e      = instance.trains_on_edge(e, this->fix_routes);
-    for (int t = 0; t < num_t; ++t) {
+    for (size_t t = 0; t < num_t; ++t) {
       // sum_(tr,vss) b_front(tr, t, e_index, vss) >= sum_(tr) x(tr, t, e) - 1
       // sum_(tr,vss) b_rear(tr, t, e_index, vss) >= sum_(tr) x(tr, t, e) - 1
       GRBLinExpr lhs_front         = 0;
       GRBLinExpr lhs_rear          = 0;
       GRBLinExpr rhs               = -1;
       bool       create_constraint = false;
-      for (const auto& tr : instance.trains_at_t(t * dt, tr_on_e)) {
+      for (const auto& tr :
+           instance.trains_at_t(static_cast<int>(t) * dt, tr_on_e)) {
         create_constraint = true;
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           lhs_front += vars["b_front"](tr, t, e_index, vss);
-          lhs_rear += vars["b_rear"](tr, t, e_index, vss);
+          if (instance.get_train_list().get_train(tr).tim) {
+            lhs_rear += vars["b_rear"](tr, t, e_index, vss);
+          }
         }
         rhs += vars["x"](tr, t, e);
       }
@@ -850,7 +1346,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   // At most one border used per train
   for (size_t tr = 0; tr < num_tr; ++tr) {
-    for (int t = train_interval[tr].first; t < train_interval[tr].second; ++t) {
+    for (size_t t = train_interval[tr].first; t < train_interval[tr].second;
+         ++t) {
       // sum_(e,vss) b_front(tr, t, e_index, vss) <= 1
       // sum_(e,vss) b_rear(tr, t, e_index, vss) <= 1
       GRBLinExpr lhs_front = 0;
@@ -860,7 +1357,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         const auto  vss_number_e = instance.n().max_vss_on_edge(e);
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           lhs_front += vars["b_front"](tr, t, e_index, vss);
-          lhs_rear += vars["b_rear"](tr, t, e_index, vss);
+          if (instance.get_train_list().get_train(tr).tim) {
+            lhs_rear += vars["b_rear"](tr, t, e_index, vss);
+          }
         }
       }
       model->addConstr(lhs_front, GRB_LESS_EQUAL, 1,
@@ -877,15 +1376,18 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& e            = breakable_edges[e_index];
     const auto  tr_on_e      = instance.trains_on_edge(e, this->fix_routes);
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
-    for (int t = 0; t < num_t; ++t) {
+    for (size_t t = 0; t < num_t; ++t) {
       for (size_t vss = 0; vss < vss_number_e; ++vss) {
         // sum_tr b_front(tr, t, e_index, vss) = sum_tr b_rear(tr, t, e_index,
         // vss) <= 1
         GRBLinExpr lhs = 0;
         GRBLinExpr rhs = 0;
-        for (const auto& tr : instance.trains_at_t(t * dt, tr_on_e)) {
+        for (const auto& tr :
+             instance.trains_at_t(static_cast<int>(t) * dt, tr_on_e)) {
           lhs += vars["b_front"](tr, t, e_index, vss);
-          rhs += vars["b_rear"](tr, t, e_index, vss);
+          if (instance.get_train_list().get_train(tr).tim) {
+            rhs += vars["b_rear"](tr, t, e_index, vss);
+          }
         }
         model->addConstr(lhs, GRB_EQUAL, rhs,
                          "b_front_rear_" + std::to_string(t) + "_" +
@@ -894,6 +1396,267 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                          "b_front_rear_limit_" + std::to_string(t) + "_" +
                              std::to_string(e) + "_" + std::to_string(vss));
       }
+    }
+  }
+
+  // A border is only usable if the VSS is used
+  for (size_t e_index = 0; e_index < breakable_edges.size(); ++e_index) {
+    const auto& e = breakable_edges[e_index];
+    for (const auto& tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto vss_number_e = instance.n().max_vss_on_edge(e);
+      // Get index of e in relevant_edges array
+      const auto find_index =
+          std::find(relevant_edges.begin(), relevant_edges.end(), e);
+      auto e_index_relevant = find_index - relevant_edges.begin();
+      // If edge not found check reverse edge
+      if (find_index == relevant_edges.end()) {
+        const auto reverse_e = instance.n().get_reverse_edge_index(e).value();
+        const auto find_index_reverse =
+            std::find(relevant_edges.begin(), relevant_edges.end(), reverse_e);
+        if (find_index_reverse == relevant_edges.end()) {
+          throw exceptions::ConsistencyException(
+              "Edge " + std::to_string(e) + " and its reverse edge " +
+              std::to_string(reverse_e) + " not found in relevant_edges");
+        }
+        e_index_relevant = find_index_reverse - relevant_edges.begin();
+      }
+
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
+           ++t) {
+        for (size_t vss = 0; vss < vss_number_e; ++vss) {
+          if (vss_model.get_model_type() == vss::ModelType::Continuous) {
+            // b_front(tr, t, e_index, vss) <= b_used(e_index_relevant, vss)
+            model->addConstr(vars["b_front"](tr, t, e_index, vss),
+                             GRB_LESS_EQUAL,
+                             vars["b_used"](e_index_relevant, vss),
+                             "b_front_b_used_" + std::to_string(tr) + "_" +
+                                 std::to_string(t) + "_" + std::to_string(e) +
+                                 "_" + std::to_string(vss));
+            // b_rear(tr, t, e_index, vss) <= b_used(e_index_relevant, vss)
+            if (instance.get_train_list().get_train(tr).tim) {
+              model->addConstr(vars["b_rear"](tr, t, e_index, vss),
+                               GRB_LESS_EQUAL,
+                               vars["b_used"](e_index_relevant, vss),
+                               "b_rear_b_used_" + std::to_string(tr) + "_" +
+                                   std::to_string(t) + "_" + std::to_string(e) +
+                                   "_" + std::to_string(vss));
+            }
+          } else if (vss_model.get_model_type() == vss::ModelType::Inferred) {
+            // b_front(tr, t, e_index, vss) <=
+            // (num_vss_segments(e_index_relevant) - 1) / (vss + 1)
+            model->addConstr(vars["b_front"](tr, t, e_index, vss),
+                             GRB_LESS_EQUAL,
+                             (vars["num_vss_segments"](e_index_relevant) - 1) /
+                                 (static_cast<double>(vss) + 1),
+                             "b_front_num_vss_segments_" + std::to_string(tr) +
+                                 "_" + std::to_string(t) + "_" +
+                                 std::to_string(e) + "_" + std::to_string(vss));
+            // b_rear(tr, t, e_index, vss) <=
+            // (num_vss_segments(e_index_relevant) - 1) / (vss + 1)
+            if (instance.get_train_list().get_train(tr).tim) {
+              model->addConstr(
+                  vars["b_rear"](tr, t, e_index, vss), GRB_LESS_EQUAL,
+                  (vars["num_vss_segments"](e_index_relevant) - 1) /
+                      (static_cast<double>(vss) + 1),
+                  "b_rear_num_vss_segments_" + std::to_string(tr) + "_" +
+                      std::to_string(t) + "_" + std::to_string(e) + "_" +
+                      std::to_string(vss));
+            }
+          } else if (vss_model.get_model_type() ==
+                     vss::ModelType::InferredAlt) {
+            // b_front(tr, t, e_index, vss) <= sum
+            // type_num_vss_segments(e_index_relevant, *, <= vss)
+            GRBLinExpr rhs = 0;
+            for (size_t sep_type_index = 0;
+                 sep_type_index < vss_model.get_separation_functions().size();
+                 ++sep_type_index) {
+              for (size_t vss2 = 0; vss2 <= vss; ++vss2) {
+                rhs += vars["type_num_vss_segments"](e_index_relevant,
+                                                     sep_type_index, vss2);
+              }
+            }
+            model->addConstr(vars["b_front"](tr, t, e_index, vss),
+                             GRB_LESS_EQUAL, rhs,
+                             "b_front_num_vss_segments_" + std::to_string(tr) +
+                                 "_" + std::to_string(t) + "_" +
+                                 std::to_string(e) + "_" + std::to_string(vss));
+            // b_rear(tr, t, e_index, vss) <= sum
+            // type_num_vss_segments(e_index_relevant, *, <= vss)
+            if (instance.get_train_list().get_train(tr).tim) {
+              model->addConstr(
+                  vars["b_rear"](tr, t, e_index, vss), GRB_LESS_EQUAL, rhs,
+                  "b_rear_num_vss_segments_" + std::to_string(tr) + "_" +
+                      std::to_string(t) + "_" + std::to_string(e) + "_" +
+                      std::to_string(vss));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // At most one non-tim train can be on any breakable edge
+  for (const auto& e : breakable_edges) {
+    const auto  tr_on_e = instance.trains_on_edge(e, this->fix_routes);
+    const auto& edge    = instance.n().get_edge(e);
+    const auto& v0      = instance.n().get_vertex(edge.source);
+    const auto& v1      = instance.n().get_vertex(edge.target);
+    const auto  e_name  = "[" + v0.name + "," + v1.name + "]";
+    for (size_t t = 0; t < num_t; ++t) {
+      GRBLinExpr lhs = 0;
+      for (const auto& tr :
+           instance.trains_at_t(static_cast<int>(t) * dt, tr_on_e)) {
+        if (!instance.get_train_list().get_train(tr).tim) {
+          lhs += vars["x"](tr, t, e);
+        }
+      }
+      model->addConstr(lhs, GRB_LESS_EQUAL, 1,
+                       "non_tim_train_on_edge_" + e_name + "_" +
+                           std::to_string(static_cast<int>(t) * dt));
+    }
+  }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_non_discretized_fraction_constraints() {
+  for (size_t i = 0; i < relevant_edges.size(); ++i) {
+    const auto& e            = relevant_edges[i];
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    const auto& edge         = instance.n().get_edge(e);
+    const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
+    const auto& breakable_e_index = breakable_edge_indices.at(e);
+    const auto& e_len             = instance.n().get_edge(e).length;
+
+    if (vss_model.get_model_type() == vss::ModelType::Inferred) {
+      // sum edge_type(i,*) = 1
+      GRBLinExpr lhs_sum_edge_type            = 0;
+      bool       add_constraint_sum_edge_type = false;
+      for (size_t sep_type_index = 0;
+           sep_type_index < vss_model.get_separation_functions().size();
+           ++sep_type_index) {
+        lhs_sum_edge_type += vars["edge_type"](i, sep_type_index);
+        add_constraint_sum_edge_type = true;
+        const auto& sep_func =
+            vss_model.get_separation_functions().at(sep_type_index);
+        for (size_t vss = 0; vss < vss_number_e; ++vss) {
+          // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
+          auto const xpts = std::make_unique<double[]>(vss_number_e + 1);
+          auto const ypts = std::make_unique<double[]>(vss_number_e + 1);
+          // NOLINTEND(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
+          for (size_t x = 0; x < vss_number_e + 1; ++x) {
+            xpts[x] = static_cast<double>(x) + 1;
+            ypts[x] = sep_func(vss, x + 1);
+          }
+          model->addGenConstrPWL(
+              vars["num_vss_segments"](i),
+              vars["frac_vss_segments"](i, sep_type_index, vss),
+              vss_number_e + 1, xpts.get(), ypts.get(),
+              "frac_vss_segments_value_constraint_" + edge_name + "_" +
+                  std::to_string(sep_type_index) + "_" + std::to_string(vss));
+        }
+      }
+      if (add_constraint_sum_edge_type) {
+        model->addConstr(lhs_sum_edge_type, GRB_EQUAL, 1,
+                         "sum_edge_type_" + edge_name);
+      }
+
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        // b_pos(breakable_e_index, vss) = e_len * sum_{separation_types}
+        // frac_type(i, sep_type_index, vss)
+        GRBLinExpr lhs = 0;
+        for (size_t sep_type_index = 0;
+             sep_type_index < vss_model.get_separation_functions().size();
+             ++sep_type_index) {
+          lhs += vars["frac_type"](i, sep_type_index, vss);
+
+          // Make sure that frac_type(i, sep_type_index, vss) =
+          // frac_vss_segments(i, sep_type_index, vss) * edge_type(i,
+          // sep_type_index) by standard linearization
+          const double lb = 0;
+          const double ub = 1;
+          // frac_type = 0 if edge_type = 0
+          model->addConstr(
+              lb * vars["edge_type"](i, sep_type_index), GRB_LESS_EQUAL,
+              vars["frac_type"](i, sep_type_index, vss),
+              "frac_type_0_lb_" + edge_name + "_" +
+                  std::to_string(sep_type_index) + "_" + std::to_string(vss));
+          model->addConstr(
+              vars["frac_type"](i, sep_type_index, vss), GRB_LESS_EQUAL,
+              ub * vars["edge_type"](i, sep_type_index),
+              "frac_type_0_ub_" + edge_name + "_" +
+                  std::to_string(sep_type_index) + "_" + std::to_string(vss));
+          // frac_type = frac_vss_segments if edge_type = 1
+          model->addConstr(
+              (lb - ub) * (1 - vars["edge_type"](i, sep_type_index)),
+              GRB_LESS_EQUAL,
+              vars["frac_type"](i, sep_type_index, vss) -
+                  vars["frac_vss_segments"](i, sep_type_index, vss),
+              "frac_type_prod_lb_" + edge_name + "_" +
+                  std::to_string(sep_type_index) + "_" + std::to_string(vss));
+          model->addConstr(
+              vars["frac_type"](i, sep_type_index, vss) -
+                  vars["frac_vss_segments"](i, sep_type_index, vss),
+              GRB_LESS_EQUAL,
+              (ub - lb) * (1 - vars["edge_type"](i, sep_type_index)),
+              "frac_type_prod_ub_" + edge_name + "_" +
+                  std::to_string(sep_type_index) + "_" + std::to_string(vss));
+        }
+        lhs *= e_len;
+        model->addConstr(lhs, GRB_EQUAL, vars["b_pos"](breakable_e_index, vss),
+                         "b_pos_limited_" + edge_name + "_" +
+                             std::to_string(vss));
+      }
+    }
+  }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_non_discretized_alt_fraction_constraints() {
+  if (vss_model.get_model_type() != vss::ModelType::InferredAlt) {
+    return;
+  }
+
+  for (size_t i = 0; i < relevant_edges.size(); ++i) {
+    const auto& e            = relevant_edges[i];
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    const auto& edge         = instance.n().get_edge(e);
+    const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
+    const auto& breakable_e_index = breakable_edge_indices.at(e);
+    const auto& e_len             = instance.n().get_edge(e).length;
+
+    // Only choose one edge type and number per edge
+    GRBLinExpr lhs_sum_edge_type = 0;
+    for (size_t sep_type_index = 0;
+         sep_type_index < vss_model.get_separation_functions().size();
+         ++sep_type_index) {
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        lhs_sum_edge_type +=
+            vars["type_num_vss_segments"](i, sep_type_index, vss);
+      }
+    }
+    model->addConstr(lhs_sum_edge_type, GRB_LESS_EQUAL, 1,
+                     "sum_edge_vss_type_" + edge_name);
+
+    // Set b_pos accordingly
+    for (size_t vss = 0; vss < vss_number_e; ++vss) {
+      GRBLinExpr rhs = 0;
+      for (size_t sep_type_index = 0;
+           sep_type_index < vss_model.get_separation_functions().size();
+           ++sep_type_index) {
+        const auto& sep_func =
+            vss_model.get_separation_functions().at(sep_type_index);
+        for (size_t num_vss = 1; num_vss <= vss_number_e; ++num_vss) {
+          rhs += vars["type_num_vss_segments"](i, sep_type_index, num_vss - 1) *
+                 e_len * sep_func(vss, num_vss + 1);
+        }
+      }
+      model->addConstr(vars["b_pos"](breakable_e_index, vss), GRB_EQUAL, rhs,
+                       "b_pos_alt_limited_" + edge_name + "_" +
+                           std::to_string(vss));
     }
   }
 }
@@ -920,7 +1683,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         xpts[i] = static_cast<double>(i) * tr_max_speed / n;
         ypts[i] = xpts[i] * xpts[i] / (2 * tr_deceleration);
       }
-      for (int t = train_interval[tr].first; t <= train_interval[tr].second;
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         model->addGenConstrPWL(vars["v"](tr, t + 1), vars["brakelen"](tr, t),
                                n + 1, xpts.get(), ypts.get(),
@@ -928,7 +1691,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                    std::to_string(t));
       }
     } else {
-      for (int t = train_interval[tr].first; t <= train_interval[tr].second;
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         model->addQConstr(vars["brakelen"](tr, t), GRB_EQUAL,
                           (1 / (2 * tr_deceleration)) * vars["v"](tr, t + 1) *
@@ -951,8 +1714,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (const auto e : instance.edges_used_by_train(tr, this->fix_routes)) {
       const auto& max_speed = instance.n().get_edge(e).max_speed;
       if (max_speed < tr_speed) {
-        for (int t = train_interval[tr].first; t <= train_interval[tr].second;
-             ++t) {
+        for (size_t t = train_interval[tr].first;
+             t <= train_interval[tr].second; ++t) {
           // v(tr,t+1) <= max_speed + (tr_speed - max_speed) * (1 - x(tr,t,e))
           model->addConstr(
               vars["v"](tr, t + 1), GRB_LESS_EQUAL,
@@ -984,8 +1747,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    */
 
   // Connect y_sec and x
-  for (int t = 0; t < num_t; ++t) {
-    const auto tr_at_t = instance.trains_at_t(t * dt);
+  for (size_t t = 0; t < num_t; ++t) {
+    const auto tr_at_t = instance.trains_at_t(static_cast<int>(t) * dt);
     for (size_t i = 0; i < fwd_bwd_sections.size(); ++i) {
       // y_sec_fwd(t,i) >= x(tr, t, e) for all e in fwd_bwd_sections[i].first
       // and applicable trains y_sec_fwd(t,i) <= sum x(tr, t, e)
@@ -1028,7 +1791,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   }
 
   // Only one direction occupied
-  for (int t = 0; t < num_t; ++t) {
+  for (size_t t = 0; t < num_t; ++t) {
     for (size_t i = 0; i < fwd_bwd_sections.size(); ++i) {
       // y_sec_fwd(t,i) + y_sec_bwd(t, i) <= 1
       model->addConstr(
@@ -1044,7 +1807,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * Calculate the forward and backward sections for each breakable section
    */
 
-  if (this->discretize_vss_positions) {
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     calculate_fwd_bwd_sections_discretized();
   } else {
     calculate_fwd_bwd_sections_non_discretized();
@@ -1130,34 +1893,200 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   }
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup(
-    const std::optional<instances::VSSGenerationTimetable>& old_instance) {
-  if (old_instance.has_value()) {
-    instance = old_instance.value();
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_only_stop_at_vss_variables() {
+  vars["stopped"] = MultiArray<GRBVar>(num_tr, num_t);
+
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
+    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
+         ++t) {
+      vars["stopped"](tr, t) =
+          model->addVar(0, 1, 0, GRB_BINARY,
+                        "stopped_" + tr_name + "_" + std::to_string(t * dt));
+    }
   }
-  dt                     = -1;
-  num_t                  = -1;
-  num_tr                 = -1;
-  num_edges              = -1;
-  num_vertices           = -1;
-  num_breakable_sections = -1;
-  unbreakable_sections.clear();
-  no_border_vss_sections.clear();
-  train_interval.clear();
-  breakable_edges_pairs.clear();
-  no_border_vss_vertices.clear();
-  relevant_edges.clear();
-  breakable_edges.clear();
-  fix_routes               = false;
-  discretize_vss_positions = false;
-  include_train_dynamics   = false;
-  use_pwl                  = false;
-  use_schedule_cuts        = false;
-  breakable_edge_indices.clear();
-  fwd_bwd_sections.clear();
-  env.reset();
-  model.reset();
-  vars.clear();
+
+  if (vss_model.get_model_type() != vss::ModelType::Discrete) {
+    create_non_discretized_only_stop_at_vss_variables();
+  } else {
+    throw exceptions::ConsistencyException(
+        "Only stop at VSS variables are not supported for discretized VSS "
+        "models");
+  }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    create_non_discretized_general_only_stop_at_vss_constraints() {
+  // At most one b_tight can be true per train and time
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
+    for (size_t t = train_interval[tr].first + 2;
+         t <= train_interval[tr].second; ++t) {
+      GRBLinExpr lhs = 0;
+      for (const auto& e : instance.edges_used_by_train(tr, this->fix_routes)) {
+        if (!instance.const_n().get_edge(e).breakable) {
+          continue;
+        }
+        const auto& vss_e     = instance.const_n().max_vss_on_edge(e);
+        const auto& e_b_index = breakable_edge_indices.at(e);
+        for (size_t vss = 0; vss < vss_e; ++vss) {
+          lhs += vars["b_tight"](tr, t, e_b_index, vss);
+        }
+      }
+      model->addConstr(lhs, GRB_LESS_EQUAL, 1,
+                       "b_tight_max_one_" + tr_name + "_" +
+                           std::to_string(t * dt));
+    }
+  }
+
+  // On every breakable edge at most one b_tight or e_tight can be one per train
+  // and time
+  for (size_t i = 0; i < breakable_edges.size(); ++i) {
+    const auto& e     = breakable_edges[i];
+    const auto& vss_e = instance.const_n().max_vss_on_edge(e);
+    const auto& edge  = instance.const_n().get_edge(e);
+    const auto& edge_name =
+        "[" + instance.const_n().get_vertex(edge.source).name + "," +
+        instance.const_n().get_vertex(edge.target).name + "]";
+    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto& tr_name = instance.get_train_list().get_train(tr).name;
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
+        GRBLinExpr lhs = vars["e_tight"](tr, t, e);
+        for (size_t vss = 0; vss < vss_e; ++vss) {
+          lhs += vars["b_tight"](tr, t, i, vss);
+        }
+        model->addConstr(lhs, GRB_LESS_EQUAL, 1,
+                         "b_tight_e_tight_max_one_" + tr_name + "_" +
+                             std::to_string(t * dt) + "_" + edge_name);
+      }
+    }
+  }
+
+  // On every edge at least one b_tight or e_tight must be one if train is
+  // present and speed is 0 per train, time, and edge
+  for (size_t e = 0; e < num_edges; ++e) {
+    const auto& edge = instance.const_n().get_edge(e);
+    const auto& edge_name =
+        "[" + instance.const_n().get_vertex(edge.source).name + "," +
+        instance.const_n().get_vertex(edge.target).name + "]";
+    std::optional<size_t> breakable_e_index;
+    std::optional<size_t> vss_e;
+    if (edge.breakable) {
+      breakable_e_index = breakable_edge_indices.at(e);
+      vss_e             = instance.const_n().max_vss_on_edge(e);
+    }
+
+    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto& tr_name = instance.get_train_list().get_train(tr).name;
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
+        GRBLinExpr lhs = vars["e_tight"](tr, t, e);
+        if (breakable_e_index.has_value()) {
+          for (size_t vss = 0; vss < vss_e.value(); ++vss) {
+            lhs += vars["b_tight"](tr, t, breakable_e_index.value(), vss);
+          }
+        }
+        model->addConstr(lhs, GRB_GREATER_EQUAL,
+                         vars["x"](tr, t - 1, e) - vars["stopped"](tr, t),
+                         "b_tight_e_tight_min_one_" + tr_name + "_" +
+                             std::to_string(t * dt) + "_" + edge_name);
+      }
+    }
+  }
+
+  // On every edge that is not breakable and does not end with a border at least
+  // one out edge has to be used if it is used and v = 0
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
+    const auto& edge_used_tr =
+        instance.edges_used_by_train(tr, this->fix_routes);
+    for (size_t e : edge_used_tr) {
+      const auto& edge = instance.const_n().get_edge(e);
+      const auto& edge_name =
+          "[" + instance.const_n().get_vertex(edge.source).name + "," +
+          instance.const_n().get_vertex(edge.target).name + "]";
+      if (edge.breakable || instance.const_n().get_vertex(edge.target).type !=
+                                VertexType::NoBorder) {
+        continue;
+      }
+
+      const auto&         delta_out = instance.const_n().get_successors(e);
+      std::vector<size_t> delta_out_tr;
+      for (const auto& e_out : delta_out) {
+        if (std::find(edge_used_tr.begin(), edge_used_tr.end(), e_out) !=
+            edge_used_tr.end()) {
+          delta_out_tr.emplace_back(e_out);
+        }
+      }
+
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
+        GRBLinExpr lhs = 0;
+        for (const auto& e_out : delta_out_tr) {
+          lhs += vars["x"](tr, t - 1, e_out);
+        }
+        model->addConstr(lhs, GRB_GREATER_EQUAL,
+                         vars["x"](tr, t - 1, e) - vars["stopped"](tr, t),
+                         "no_stop_on_non-border_edge_ending_" + tr_name + "_" +
+                             std::to_string(t * dt) + "_" + edge_name);
+      }
+    }
+  }
+
+  // b cannot be tight if it is not front. If v = 0 then it has to be
+  for (size_t i = 0; i < breakable_edges.size(); ++i) {
+    const auto& e    = breakable_edges[i];
+    const auto& edge = instance.const_n().get_edge(e);
+    const auto& edge_name =
+        "[" + instance.const_n().get_vertex(edge.source).name + "," +
+        instance.const_n().get_vertex(edge.target).name + "]";
+    const auto& vss_e = instance.const_n().max_vss_on_edge(e);
+    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      const auto& tr_name = instance.get_train_list().get_train(tr).name;
+      for (size_t t = train_interval[tr].first + 2;
+           t <= train_interval[tr].second; ++t) {
+        for (size_t vss = 0; vss < vss_e; ++vss) {
+          model->addConstr(vars["b_tight"](tr, t, i, vss), GRB_LESS_EQUAL,
+                           vars["b_front"](tr, t, i, vss),
+                           "b_tight_not_front_1_" + tr_name + "_" +
+                               std::to_string(t * dt) + "_" + edge_name + "_" +
+                               std::to_string(vss));
+          model->addConstr(
+              vars["b_tight"](tr, t, i, vss), GRB_GREATER_EQUAL,
+              vars["b_front"](tr, t, i, vss) - vars["stopped"](tr, t),
+              "b_tight_not_front_2_" + tr_name + "_" + std::to_string(t * dt) +
+                  "_" + edge_name + "_" + std::to_string(vss));
+        }
+      }
+    }
+  }
+
+  // At least any one tight if speed is 0
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
+    const auto& edge_used_tr =
+        instance.edges_used_by_train(tr, this->fix_routes);
+    for (size_t t = train_interval[tr].first + 2;
+         t <= train_interval[tr].second; ++t) {
+      GRBLinExpr lhs = 0;
+      for (size_t e : edge_used_tr) {
+        lhs += vars["e_tight"](tr, t, e);
+        const auto& edge = instance.const_n().get_edge(e);
+        if (!edge.breakable) {
+          continue;
+        }
+        const auto& vss_e = instance.const_n().max_vss_on_edge(e);
+        for (size_t vss = 0; vss < vss_e; ++vss) {
+          lhs += vars["b_tight"](tr, t, breakable_edge_indices.at(e), vss);
+        }
+      }
+      model->addConstr(lhs, GRB_GREATER_EQUAL, 1 - vars["stopped"](tr, t),
+                       "at_least_one_tight_if_stopped_" + tr_name + "_" +
+                           std::to_string(t * dt));
+    }
+  }
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)

@@ -1,6 +1,7 @@
 add_library(
   ${PROJECT_NAME}
   ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
+  ${PROJECT_SOURCE_DIR}/include/VSSModel.hpp
   ${PROJECT_SOURCE_DIR}/include/CustomExceptions.hpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/RailwayNetwork.hpp
   datastructure/RailwayNetwork.cpp
@@ -14,6 +15,7 @@ add_library(
   datastructure/Route.cpp
   ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
   probleminstances/VSSGenerationTimetable.cpp
+  probleminstances/SolVSSGenerationTimetable.cpp
   ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
   ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
   solver/mip-based/VSSGenTimetableSolver_general.cpp
