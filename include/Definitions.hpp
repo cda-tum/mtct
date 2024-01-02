@@ -6,13 +6,13 @@
 
 namespace cda_rail {
 // Constants
-const double INF                = std::numeric_limits<double>::max() / 3;
-const double EPS                = 10 * std::numeric_limits<double>::epsilon();
-const double GRB_EPS            = 1e-4;
-const double V_MIN              = 0.3;
-const double ROUNDING_PRECISION = 1;
-const double STOP_TOLERANCE     = 10;
-const double ABS_PWL_ERROR      = 10;
+constexpr double INF     = std::numeric_limits<double>::max() / 3;
+constexpr double EPS     = 10 * std::numeric_limits<double>::epsilon();
+constexpr double GRB_EPS = 1e-4;
+constexpr double V_MIN   = 0.3;
+constexpr double ROUNDING_PRECISION = 1;
+constexpr double STOP_TOLERANCE     = 10;
+constexpr double ABS_PWL_ERROR      = 10;
 
 enum class VertexType { NoBorder = 0, VSS = 1, TTD = 2, NoBorderVSS = 3 };
 enum class SolutionStatus {
