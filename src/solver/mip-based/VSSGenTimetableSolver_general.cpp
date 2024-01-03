@@ -258,7 +258,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   env->start();
   model.emplace(env.value());
 
-  // TODO: adjust Gurobi logging
+  MessageCallback message_callback = MessageCallback();
+  model->setCallback(&message_callback);
+  model->set(GRB_IntParam_LogToConsole, 0);
 
   PLOGD << "Create general variables";
   create_general_variables();

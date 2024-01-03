@@ -7,9 +7,27 @@
 
 #include <filesystem>
 #include <optional>
+#include <plog/Log.h>
 #include <string>
 
 namespace cda_rail::solver::mip_based {
+
+class MessageCallback : public GRBCallback {
+public:
+  explicit MessageCallback() {}
+
+protected:
+  void callback() override {
+    if (where == GRB_CB_MESSAGE) {
+      std::string msg = getStringInfo(GRB_CB_MSG_STRING);
+      if (!msg.empty() && msg.back() == '\n') {
+        msg.pop_back(); // Remove the last character (newline)
+      }
+      PLOGI << msg;
+    }
+  }
+};
+
 enum class UpdateStrategy { Fixed = 0, Relative = 1 };
 
 struct SolverStrategy {
