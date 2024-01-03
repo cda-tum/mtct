@@ -12,9 +12,11 @@
 
 namespace cda_rail::solver::mip_based {
 
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+
 class MessageCallback : public GRBCallback {
 public:
-  explicit MessageCallback() {}
+  explicit MessageCallback() = default;
 
 protected:
   void callback() override {
@@ -27,6 +29,8 @@ protected:
     }
   }
 };
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 enum class UpdateStrategy { Fixed = 0, Relative = 1 };
 
