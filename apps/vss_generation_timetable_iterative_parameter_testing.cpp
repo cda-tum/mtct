@@ -1,6 +1,5 @@
 #include "Definitions.hpp"
 #include "VSSModel.hpp"
-#include "plog/Logger.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <gsl/span>
