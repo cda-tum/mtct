@@ -47,7 +47,6 @@ private:
   instances::VSSGenerationTimetable instance;
 
   // Instance variables
-  bool                                   debug                  = false;
   int                                    dt                     = -1;
   size_t                                 num_t                  = 0;
   size_t                                 num_tr                 = 0;
@@ -174,7 +173,7 @@ private:
   void cleanup();
 
   instances::SolVSSGenerationTimetable
-  extract_solution(bool postprocess, bool debug, bool full_model,
+  extract_solution(bool postprocess, bool full_model,
                    const std::optional<instances::VSSGenerationTimetable>&
                        old_instance) const;
 

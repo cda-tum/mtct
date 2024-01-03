@@ -6,10 +6,13 @@
 
 #include <cmath>
 #include <fstream>
+#include <plog/Log.h>
 #include <unordered_set>
 #include <vector>
 
 using json = nlohmann::json;
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
@@ -468,41 +471,30 @@ cda_rail::instances::SolVSSGenerationTimetable::get_valid_border_stops(
 
 cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
-    bool postprocess, bool debug, bool full_model,
+    bool postprocess, bool full_model,
     const std::optional<instances::VSSGenerationTimetable>& old_instance)
     const {
-  if (debug) {
-    std::cout << "Extracting solution object..." << std::endl;
-  }
+  PLOGD << "Extracting solution object...";
 
   auto sol_obj = instances::SolVSSGenerationTimetable(
       (old_instance.has_value() ? old_instance.value() : instance), dt);
 
   if (const auto grb_status = model->get(GRB_IntAttr_Status);
       full_model && grb_status == GRB_OPTIMAL) {
-    if (debug) {
-      std::cout << "Solution status: Optimal" << std::endl;
-    }
+    PLOGD << "Solution status: Optimal";
     sol_obj.set_status(SolutionStatus::Optimal);
   } else if (grb_status == GRB_INFEASIBLE) {
-    if (debug) {
-      std::cout << "Solution status: Infeasible" << std::endl;
-    }
+    PLOGD << "Solution status: Infeasible";
     sol_obj.set_status(SolutionStatus::Infeasible);
   } else if (model->get(GRB_IntAttr_SolCount) >= 1) {
-    if (debug) {
-      std::cout << "Solution status: Feasible (optimality unknown)"
-                << std::endl;
-    }
+    PLOGD << "Solution status: Feasible (optimality unknown)";
     sol_obj.set_status(SolutionStatus::Feasible);
   } else if (grb_status == GRB_TIME_LIMIT &&
              model->get(GRB_IntAttr_SolCount) == 0) {
-    if (debug) {
-      std::cout << "Solution status: Timeout (Feasibility unknown)"
-                << std::endl;
-    }
+    PLOGD << "Solution status: Timeout (Feasibility unknown)";
     sol_obj.set_status(SolutionStatus::Timeout);
   } else {
+    PLOGE << "Solution status code " << grb_status << " unknown";
     throw exceptions::ConsistencyException(
         "Gurobi status code " + std::to_string(grb_status) + " unknown.");
   }
@@ -515,9 +507,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
   const auto mip_obj_val =
       static_cast<int>(std::round(model->get(GRB_DoubleAttr_ObjVal)));
   sol_obj.set_mip_obj(mip_obj_val);
-  if (debug) {
-    std::cout << "MIP objective: " << mip_obj_val << std::endl;
-  }
+  PLOGD << "MIP objective: " << mip_obj_val;
 
   if (vss_model.get_model_type() == vss::ModelType::Discrete) {
     // TODO: Implement
@@ -567,11 +557,10 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
       }
 
       if (postprocess && b_used) {
-        if (debug) {
+        IF_PLOG(plog::debug) {
           const auto& source = instance.const_n().get_vertex(e.source).name;
           const auto& target = instance.const_n().get_vertex(e.target).name;
-          std::cout << "Postprocessing on " << source << " to " << target
-                    << std::endl;
+          PLOGD << "Postprocessing on " << source << " to " << target;
         }
         b_used = false;
         for (size_t tr = 0; tr < num_tr; ++tr) {
@@ -631,11 +620,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
                        .at(breakable_edge_indices.at(e_index), vss)
                        .get(GRB_DoubleAttr_X),
                    ROUNDING_PRECISION);
-      if (debug) {
+      IF_PLOG(plog::debug) {
         const auto& source = instance.const_n().get_vertex(e.source).name;
         const auto& target = instance.const_n().get_vertex(e.target).name;
-        std::cout << "Add VSS at " << b_pos_val << " on " << source << " to "
-                  << target << std::endl;
+        PLOGD << "Add VSS at " << b_pos_val << " on " << source << " to "
+              << target;
       }
       sol_obj.add_vss_pos(e_index, b_pos_val, true);
       obj += 1;
@@ -647,9 +636,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
 
   if (!fix_routes) {
     sol_obj.reset_routes();
-    if (debug) {
-      std::cout << "Extracting routes" << std::endl;
-    }
+    PLOGD << "Extracting routes";
     for (size_t tr = 0; tr < num_tr; ++tr) {
       const auto train = instance.get_train_list().get_train(tr);
       sol_obj.add_empty_route(train.name);
@@ -759,3 +746,5 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)

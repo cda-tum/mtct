@@ -2,7 +2,10 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <cmath>
+#include <plog/Log.h>
 #include <unordered_map>
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 std::vector<size_t>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
@@ -239,13 +242,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
       max_vss_per_edge_in_iteration.at(relevant_edge_index);
   max_vss_per_edge_in_iteration[relevant_edge_index] = new_max_vss;
 
-  if (debug) {
+  IF_PLOG(plog::debug) {
     const auto& u =
         instance.n().get_vertex(instance.n().get_edge(e).source).name;
     const auto& v =
         instance.n().get_vertex(instance.n().get_edge(e).target).name;
-    std::cout << "Update possible VSS on edge " << u << " -> " << v << " from "
-              << old_max_vss << " to " << new_max_vss << std::endl;
+    PLOGD << "Update possible VSS on edge " << u << " -> " << v << " from "
+          << old_max_vss << " to " << new_max_vss;
   }
 
   if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
@@ -270,10 +273,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
           "binary_cut_relation_" + std::to_string(relevant_edge_index) + "_" +
               std::to_string(old_max_vss) + "_2");
       cut_expr += b;
-      if (debug) {
-        std::cout << "Add binary_cut_" << relevant_edge_index << "_"
-                  << old_max_vss << "to cut_expr" << std::endl;
-      }
+      PLOGD << "Add binary_cut_" << relevant_edge_index << "_" << old_max_vss
+            << "to cut_expr";
     }
   }
   if (this->vss_model.get_model_type() == vss::ModelType::Continuous) {
@@ -283,10 +284,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
     }
     if (this->iterative_include_cuts_tmp && new_max_vss > old_max_vss) {
       cut_expr += vars.at("b_used")(relevant_edge_index, old_max_vss);
-      if (debug) {
-        std::cout << "Add b_used(" << relevant_edge_index << "," << old_max_vss
-                  << ") to cut_expr" << std::endl;
-      }
+      PLOGD << "Add b_used(" << relevant_edge_index << "," << old_max_vss
+            << ") to cut_expr";
     }
   }
   if (this->vss_model.get_model_type() == vss::ModelType::InferredAlt) {
@@ -300,12 +299,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
       if (this->iterative_include_cuts_tmp && new_max_vss > old_max_vss) {
         cut_expr += vars.at("type_num_vss_segments")(relevant_edge_index,
                                                      sep_type, old_max_vss);
-        if (debug) {
-          std::cout << "Add type_num_vss_segments(" << relevant_edge_index
-                    << "," << sep_type << "," << old_max_vss << ") to cut_expr"
-                    << std::endl;
-        }
+        PLOGD << "Add type_num_vss_segments(" << relevant_edge_index << ","
+              << sep_type << "," << old_max_vss << ") to cut_expr";
       }
     }
   }
 }
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
