@@ -30,12 +30,10 @@ TEST(Logging, FileLogging) {
     std::filesystem::remove("tmp_log.log");
   }
 
-  std::unique_ptr<plog::IAppender> g_appender;
-  std::unique_ptr<plog::Logger<0>> g_logger;
-
-  g_appender.reset(
-      new plog::RollingFileAppender<plog::TxtFormatter>("tmp_log.log"));
-  g_logger.reset(new plog::Logger<0>(plog::debug));
+  auto g_appender =
+      std::make_unique<plog::RollingFileAppender<plog::TxtFormatter>>(
+          "tmp_log.log");
+  auto g_logger = std::make_unique<plog::Logger<0>>(plog::debug);
   g_logger->addAppender(g_appender.get());
 
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
