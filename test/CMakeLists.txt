@@ -15,4 +15,5 @@ package_add_test(
   ${CMAKE_CURRENT_SOURCE_DIR}/test_probleminstances.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_multiarray.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi_vss_gen.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_helper.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_helper.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_plog.cpp)

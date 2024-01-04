@@ -13,3 +13,6 @@
 [submodule "extern/gsl"]
 	path = extern/gsl
 	url = https://github.com/microsoft/GSL.git
+[submodule "extern/plog"]
+	path = extern/plog
+	url = https://github.com/SergiusTheBest/plog.git

@@ -3,10 +3,23 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <gsl/span>
+#include <plog/Appenders/ColorConsoleAppender.h>
+#include <plog/Formatters/TxtFormatter.h>
+#include <plog/Initializers/ConsoleInitializer.h>
+#include <plog/Log.h>
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 int main(int argc, char** argv) {
+  // Only log to console using std::cerr and std::cout respectively unless
+  // initialized differently
+  if (plog::get() == nullptr) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+    plog::init(plog::debug, &console_appender);
+  }
+
   if (argc < 12 || argc > 13) {
-    std::cerr << "Expected 11 or 12 arguments, got " << argc - 1 << std::endl;
+    PLOGE << "Expected 11 or 12 arguments, got " << argc - 1;
     std::exit(-1);
   }
 
@@ -16,8 +29,7 @@ int main(int argc, char** argv) {
   const std::string                                  instance_path = args[2];
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance_path);
 
-  std::cout << "Instance " << model_name << " loaded at " << instance_path
-            << std::endl;
+  PLOGI << "Instance " << model_name << " loaded at " << instance_path;
 
   const int  delta_t                 = std::stoi(args[3]);
   const bool fix_routes              = std::stoi(args[4]) != 0;
@@ -32,37 +44,36 @@ int main(int argc, char** argv) {
   const int         timeout     = std::stoi(args[11]);
   const std::string output_path = (argc == 13 ? args[12] : "");
 
-  std::cout << "The following parameters were passed to the toolkit:"
-            << std::endl;
-  std::cout << "   delta_t: " << delta_t << std::endl;
+  PLOGI << "The following parameters were passed to the toolkit:";
+  PLOGI << "   delta_t: " << delta_t;
   if (fix_routes) {
-    std::cout << "   routes are fixed" << std::endl;
+    PLOGI << "   routes are fixed";
   }
   if (include_train_dynamics) {
-    std::cout << "   acceleration and deceleration are included" << std::endl;
+    PLOGI << "   acceleration and deceleration are included";
   }
   if (include_braking_curves) {
-    std::cout << "   braking distance is included" << std::endl;
+    PLOGI << "   braking distance is included";
   }
   if (use_pwl) {
-    std::cout << "   piecewise linear functions are used" << std::endl;
+    PLOGI << "   piecewise linear functions are used";
   }
   if (use_schedule_cuts) {
-    std::cout << "   schedule cuts are used" << std::endl;
+    PLOGI << "   schedule cuts are used";
   }
   if (iterate_vss) {
-    std::cout << "   VSS is iterated" << std::endl;
+    PLOGI << "   VSS is iterated";
   }
   if (optimality_strategy == cda_rail::OptimalityStrategy::Optimal) {
-    std::cout << "   optimality strategy: optimal" << std::endl;
+    PLOGI << "   optimality strategy: optimal";
   } else if (optimality_strategy == cda_rail::OptimalityStrategy::TradeOff) {
-    std::cout << "   optimality strategy: trade-off" << std::endl;
+    PLOGI << "   optimality strategy: trade-off";
   } else if (optimality_strategy == cda_rail::OptimalityStrategy::Feasible) {
-    std::cout << "   optimality strategy: feasible" << std::endl;
+    PLOGI << "   optimality strategy: feasible";
   } else {
-    std::cout << "   optimality strategy: unknown" << std::endl;
+    PLOGI << "   optimality strategy: unknown";
   }
-  std::cout << "   timeout: " << timeout << "s" << std::endl;
+  PLOGI << "   timeout: " << timeout << "s";
 
   const std::string file_name =
       model_name + "_" + std::to_string(delta_t) + "_" +
@@ -84,3 +95,5 @@ int main(int argc, char** argv) {
       {false, cda_rail::ExportOption::ExportSolution, file_name, output_path},
       timeout, true);
 }
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)

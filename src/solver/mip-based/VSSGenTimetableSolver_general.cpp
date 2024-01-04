@@ -7,27 +7,50 @@
 #include <cmath>
 #include <memory>
 #include <optional>
+#include <plog/Appenders/ColorConsoleAppender.h>
+#include <plog/Formatters/TxtFormatter.h>
+#include <plog/Initializers/ConsoleInitializer.h>
+#include <plog/Log.h>
 #include <utility>
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
     instances::VSSGenerationTimetable instance)
-    : instance(std::move(instance)) {}
+    : instance(std::move(instance)) {
+  if (plog::get() == nullptr) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+    plog::init(plog::debug, &console_appender);
+  }
+}
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
     const std::filesystem::path& instance_path) {
   instance = instances::VSSGenerationTimetable::import_instance(instance_path);
+  if (plog::get() == nullptr) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+    plog::init(plog::debug, &console_appender);
+  }
 }
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
     const std::string& instance_path) {
   instance = instances::VSSGenerationTimetable::import_instance(instance_path);
+  if (plog::get() == nullptr) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+    plog::init(plog::debug, &console_appender);
+  }
 }
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
     const char* instance_path) {
   instance = instances::VSSGenerationTimetable::import_instance(instance_path);
+  if (plog::get() == nullptr) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+    plog::init(plog::debug, &console_appender);
+  }
 }
 
 cda_rail::instances::SolVSSGenerationTimetable
@@ -94,14 +117,21 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * @return Solution object containing status, objective value, and solution
    */
 
-  this->debug = debug_input;
+  if (plog::get() == nullptr) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+    plog::init(plog::debug, &console_appender);
+  }
+
+  plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
 
   if (!model_settings.model_type.check_consistency()) {
+    PLOGE << "Model type  and separation types/functions are not consistent.";
     throw cda_rail::exceptions::ConsistencyException(
         "Model type and separation types/functions are not consistent.");
   }
 
   if (!instance.n().is_consistent_for_transformation()) {
+    PLOGE << "Instance is not consistent for transformation.";
     throw exceptions::ConsistencyException();
   }
 
@@ -110,7 +140,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   decltype(std::chrono::high_resolution_clock::now()) model_solved;
   int64_t                                             create_time = 0;
   int64_t                                             solve_time  = 0;
-  if (debug || time_limit > 0) {
+  if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
     start = std::chrono::high_resolution_clock::now();
   }
 
@@ -133,36 +163,35 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   if (this->iterative_vss) {
     if (this->iterative_update_strategy == UpdateStrategy::Fixed &&
         this->iterative_update_value <= 1) {
+      PLOGE << "iterative_update_value must be greater than 1";
       throw exceptions::ConsistencyException(
           "iterative_update_value must be greater than 1");
     }
     if (this->iterative_update_strategy == UpdateStrategy::Relative &&
         (this->iterative_update_value <= 0 ||
          this->iterative_update_value >= 1)) {
+      PLOGE << "iterative_update_value must be between 0 and 1";
       throw exceptions::ConsistencyException(
           "iterative_update_value must be between 0 and 1");
     }
   }
 
   if (this->fix_routes && !instance.has_route_for_every_train()) {
+    PLOGE << "Instance does not have a route for every train";
     throw exceptions::ConsistencyException(
         "Instance does not have a route for every train");
   }
 
   std::optional<instances::VSSGenerationTimetable> old_instance;
   if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
-    std::cout << "Preprocessing graph...";
+    PLOGI << "Preprocessing graph...";
     old_instance = instance;
     instance.discretize(this->vss_model.get_separation_functions().front());
-    std::cout << "DONE" << std::endl;
+    PLOGI << "Preprocessing graph... DONE";
   }
 
-  std::cout << "Creating model...";
-
-  if (debug) {
-    std::cout << std::endl;
-    std::cout << "Initialize other relevant variables" << std::endl;
-  }
+  PLOGI << "Creating model...";
+  PLOGD << "Initialize other relevant variables";
 
   num_t = static_cast<size_t>(instance.max_t() / dt);
   if (instance.max_t() % dt != 0) {
@@ -195,6 +224,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   }
 
   if (iterative_vss && vss_model.get_model_type() == vss::ModelType::Discrete) {
+    PLOGE << "Iterative VSS not supported for discrete VSS model";
     throw exceptions::ConsistencyException(
         "Iterative VSS not supported for discrete VSS model");
   }
@@ -213,6 +243,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
             static_cast<int>(std::ceil(iterative_initial_value *
                                        static_cast<double>(vss_number_e))));
       } else {
+        PLOGE << "Unknown update strategy";
         throw exceptions::ConsistencyException("Unknown update strategy");
       }
     } else {
@@ -222,99 +253,70 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   calculate_fwd_bwd_sections();
 
-  if (debug) {
-    std::cout << "Create environment and model" << std::endl;
-  }
+  PLOGD << "Create Gurobi environment and model";
   env.emplace(true);
   env->start();
   model.emplace(env.value());
 
-  if (debug) {
-    std::cout << "Create general variables" << std::endl;
-  }
+  MessageCallback message_callback = MessageCallback();
+  model->setCallback(&message_callback);
+  model->set(GRB_IntParam_LogToConsole, 0);
+
+  PLOGD << "Create general variables";
   create_general_variables();
   if (this->fix_routes) {
-    if (debug) {
-      std::cout << "Create fixed routes variables" << std::endl;
-    }
+    PLOGD << "Create fixed routes variables";
     create_fixed_routes_variables();
   } else {
-    if (debug) {
-      std::cout << "Create free routes variables" << std::endl;
-    }
+    PLOGD << "Create free routes variables";
     create_free_routes_variables();
   }
   if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
-    if (debug) {
-      std::cout << "Create discretized VSS variables" << std::endl;
-    }
+    PLOGD << "Create discretized VSS variables";
     create_discretized_variables();
   } else {
-    if (debug) {
-      std::cout << "Create non-discretized VSS variables" << std::endl;
-    }
+    PLOGD << "Create non-discretized VSS variables";
     create_non_discretized_variables();
   }
   if (this->include_braking_curves) {
-    if (debug) {
-      std::cout << "Create braking distance variables" << std::endl;
-    }
+    PLOGD << "Create braking distance variables";
     create_brakelen_variables();
   }
   if (vss_model.get_only_stop_at_vss()) {
-    if (debug) {
-      std::cout << "Create only stop at VSS variables" << std::endl;
-    }
+    PLOGD << "Create only stop at VSS variables";
     create_only_stop_at_vss_variables();
   }
-
-  if (debug) {
-    std::cout << "Set objective" << std::endl;
-  }
+  PLOGD << "Set objective";
   set_objective();
 
-  if (debug) {
-    std::cout << "Create general constraints" << std::endl;
-  }
+  PLOGD << "Create general constraints";
   create_general_constraints();
   if (this->fix_routes) {
-    if (debug) {
-      std::cout << "Create fixed routes constraints" << std::endl;
-    }
+    PLOGD << "Create fixed routes constraints";
     create_fixed_routes_constraints();
   } else {
-    if (debug) {
-      std::cout << "Create free routes constraints" << std::endl;
-    }
+    PLOGD << "Create free routes constraints";
     create_free_routes_constraints();
   }
   if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
-    if (debug) {
-      std::cout << "Create discretized VSS constraints" << std::endl;
-    }
+    PLOGD << "Create discretized VSS constraints";
     create_discretized_constraints();
   } else {
-    if (debug) {
-      std::cout << "Create non-discretized VSS constraints" << std::endl;
-    }
+    PLOGD << "Create non-discretized VSS constraints";
     create_non_discretized_constraints();
   }
   if (this->include_train_dynamics) {
-    if (debug) {
-      std::cout << "Create train dynamic constraints" << std::endl;
-    }
+    PLOGD << "Create train dynamic constraints";
     create_acceleration_constraints();
   }
   if (this->include_braking_curves) {
-    if (debug) {
-      std::cout << "Create braking distance constraints" << std::endl;
-    }
+    PLOGD << "Create braking distance constraints";
     create_brakelen_constraints();
   }
 
-  std::cout << "DONE creating model" << std::endl;
+  PLOGI << "DONE creating model";
 
-  if (debug || time_limit > 0) {
+  if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
     model_created = std::chrono::high_resolution_clock::now();
     create_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
                       model_created - start)
@@ -327,16 +329,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     if (time_limit > 0) {
       model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
     }
-    if (debug) {
-      std::cout << "Model created in "
-                << (static_cast<double>(create_time) / 1000.0) << " s"
-                << std::endl;
-      std::cout << "Time left: ";
-      if (time_limit > 0) {
-        std::cout << time_left << " s" << std::endl;
-      } else {
-        std::cout << "No Limit" << std::endl;
-      }
+    PLOGD << "Model created in " << (static_cast<double>(create_time) / 1000.0)
+          << " s";
+    if (time_limit > 0) {
+      PLOGD << "Time left: " << time_left << " s";
+    } else {
+      PLOGD << "Time left: "
+            << "No Limit";
     }
   }
 
@@ -366,9 +365,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     if (optimality_strategy == OptimalityStrategy::Feasible) {
       model->set(GRB_IntParam_SolutionLimit, 1);
       model->set(GRB_IntParam_MIPFocus, 1);
-      if (debug) {
-        std::cout << "Settings focussing on feasibility" << std::endl;
-      }
+      PLOGD << "Settings focussing on feasibility";
     }
 
     model->optimize();
@@ -379,29 +376,24 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       if (obj_tmp < obj_ub) {
         obj_ub = obj_tmp;
         sol_object =
-            extract_solution(postprocess, debug, !iterative_vss, old_instance);
+            extract_solution(postprocess, !iterative_vss, old_instance);
         this->iterative_include_cuts_tmp = false;
       }
     }
 
     if (!sol_object.has_value()) {
-      sol_object =
-          extract_solution(postprocess, debug, !iterative_vss, old_instance);
+      sol_object = extract_solution(postprocess, !iterative_vss, old_instance);
     }
 
     if (iterative_vss) {
       if (model->get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
-        if (debug) {
-          std::cout << "Break because of timeout" << std::endl;
-        }
+        PLOGD << "Break because of timeout";
         if (sol_object->has_solution()) {
-          if (debug) {
-            std::cout << "However, use previous obtained solution" << std::endl;
-          }
+          PLOGD << "However, use previous obtained solution";
           break;
         }
         sol_object =
-            extract_solution(postprocess, debug, !iterative_vss, old_instance);
+            extract_solution(postprocess, !iterative_vss, old_instance);
         break;
       }
 
@@ -420,21 +412,16 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       }
 
       if (obj_lb + GRB_EPS >= obj_ub && (sol_object->has_solution())) {
-        if (debug) {
-          std::cout << "Break because obj_lb (" << obj_lb << ") >= obj_ub ("
-                    << obj_ub << ") -> Proven optimal" << std::endl;
-        }
+        PLOGD << "Break because obj_lb (" << obj_lb << ") >= obj_ub (" << obj_ub
+              << ") -> Proven optimal";
         sol_object->set_status(SolutionStatus::Optimal);
         break;
       }
 
       if (optimality_strategy != OptimalityStrategy::Optimal &&
           (model->get(GRB_IntAttr_SolCount) >= 1)) {
-        if (debug) {
-          std::cout << "Break because of feasible solution and not searching "
-                       "for optimality."
-                    << std::endl;
-        }
+        PLOGD << "Break because of feasible solution and not searching for "
+                 "optimality.";
         break;
       }
 
@@ -446,9 +433,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       }
 
       if (!reoptimize) {
-        if (debug) {
-          std::cout << "Break because no more VSS can be added" << std::endl;
-        }
+        PLOGD << "Break because no more VSS can be added";
         break;
       }
 
@@ -458,24 +443,17 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       model->addConstr(objective_expr, GRB_LESS_EQUAL, obj_ub,
                        "obj_ub_" + std::to_string(obj_ub) + "_" +
                            std::to_string(iteration_number));
-      if (debug) {
-        std::cout << "Added constraint: obj >= " << obj_lb << std::endl;
-        std::cout << "Added constraint: obj <= " << obj_ub << std::endl;
-      }
+      PLOGD << "Added constraint: obj >= " << obj_lb;
+      PLOGD << "Added constraint: obj <= " << obj_ub;
 
       if (this->iterative_include_cuts_tmp) {
         iterative_cuts.push_back(
             model->addConstr(cut_expr, GRB_GREATER_EQUAL, 1,
                              "cut_" + std::to_string(iteration_number)));
         model->reset(1);
-        if (debug) {
-          std::cout << "Added constraint: cut_expr >= 1" << std::endl;
-        }
+        PLOGD << "Added constraint: cut_expr >= 1";
       } else {
-        if (debug) {
-          std::cout << "Remove " << iterative_cuts.size() << " cut constraints"
-                    << std::endl;
-        }
+        PLOGD << "Remove " << iterative_cuts.size() << " cut constraints";
         for (const auto& c : iterative_cuts) {
           model->remove(c);
         }
@@ -492,14 +470,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
         auto time_left = time_limit - current_time_span / 1000;
 
         if (time_left < 0) {
-          if (debug) {
-            std::cout << "Break because of timeout" << std::endl;
-          }
+          PLOGD << "Break because of timeout";
           if (sol_object->has_solution()) {
-            if (debug) {
-              std::cout << "However, use previous obtained solution"
-                        << std::endl;
-            }
+            PLOGD << "However, use previous obtained solution";
             break;
           }
           sol_object->set_status(SolutionStatus::Timeout);
@@ -508,39 +481,34 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
         model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
 
-        if (debug) {
-          std::cout << "Next iterations limit: ";
-          std::cout << time_left << " s" << std::endl;
-        }
+        PLOGD << "Next iterations limit: " << time_left << " s";
       }
 
       model->update();
     }
   }
 
-  if (debug) {
+  IF_PLOG(plog::debug) {
     model_solved = std::chrono::high_resolution_clock::now();
     solve_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
                      model_solved - model_created)
                      .count();
-    std::cout << "Model created in "
-              << (static_cast<double>(create_time) / 1000.0) << " s"
-              << std::endl;
-    std::cout << "Model solved in "
-              << (static_cast<double>(solve_time) / 1000.0) << " s"
-              << std::endl;
-    std::cout << "Total time "
-              << (static_cast<double>(create_time + solve_time) / 1000.0)
-              << " s" << std::endl;
+    PLOGD << "Model created in " << (static_cast<double>(create_time) / 1000.0)
+          << " s";
+    PLOGD << "Model solved in " << (static_cast<double>(solve_time) / 1000.0)
+          << " s";
+    PLOGD << "Total time "
+          << (static_cast<double>(create_time + solve_time) / 1000.0) << " s";
   }
 
   if (export_option == ExportOption::ExportLP ||
       export_option == ExportOption::ExportSolutionAndLP ||
       export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
-    std::cout << "Saving model and solution" << std::endl;
+    PLOGI << "Saving model and solution";
     std::filesystem::path path = solution_settings.path;
 
     if (!is_directory_and_create(path)) {
+      PLOGE << "Could not create directory " << path.string();
       throw exceptions::ExportException("Could not create directory " +
                                         path.string());
     }
@@ -560,7 +528,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     const bool export_instance =
         (export_option == ExportOption::ExportSolutionWithInstance ||
          export_option == ExportOption::ExportSolutionWithInstanceAndLP);
-    std::cout << "Saving solution" << std::endl;
+    PLOGI << "Saving solution";
     std::filesystem::path path = solution_settings.path;
     path /= solution_settings.name;
     sol_object->export_solution(path, export_instance);
@@ -2090,3 +2058,5 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)

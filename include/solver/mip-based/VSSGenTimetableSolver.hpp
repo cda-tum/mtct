@@ -7,9 +7,31 @@
 
 #include <filesystem>
 #include <optional>
+#include <plog/Log.h>
 #include <string>
 
 namespace cda_rail::solver::mip_based {
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+
+class MessageCallback : public GRBCallback {
+public:
+  explicit MessageCallback() = default;
+
+protected:
+  void callback() override {
+    if (where == GRB_CB_MESSAGE) {
+      std::string msg = getStringInfo(GRB_CB_MSG_STRING);
+      if (!msg.empty() && msg.back() == '\n') {
+        msg.pop_back(); // Remove the last character (newline)
+      }
+      PLOGI << msg;
+    }
+  }
+};
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+
 enum class UpdateStrategy { Fixed = 0, Relative = 1 };
 
 struct SolverStrategy {
@@ -47,7 +69,6 @@ private:
   instances::VSSGenerationTimetable instance;
 
   // Instance variables
-  bool                                   debug                  = false;
   int                                    dt                     = -1;
   size_t                                 num_t                  = 0;
   size_t                                 num_tr                 = 0;
@@ -174,7 +195,7 @@ private:
   void cleanup();
 
   instances::SolVSSGenerationTimetable
-  extract_solution(bool postprocess, bool debug, bool full_model,
+  extract_solution(bool postprocess, bool full_model,
                    const std::optional<instances::VSSGenerationTimetable>&
                        old_instance) const;
 
