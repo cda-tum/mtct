@@ -12,6 +12,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  GUROBI_VERSION_SHORT: "10.0"
+  GUROBI_VERSION: "10.0.3"
+  GUROBI_VERSION_FOLDER: "gurobi1003"
+
 jobs:
   cpp-linter:
     runs-on: ubuntu-latest
@@ -20,10 +25,11 @@ jobs:
         with:
           submodules: recursive
       - name: download-gurobi-linux
-        shell: bash
+        env:
+          GUROBI_FILE: gurobi${{ env.GUROBI_VERSION }}_linux64.tar.gz
         run: |
-          wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
-          tar -xvzf gurobi10.0.2_linux64.tar.gz
+          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
+          tar -xvzf ${{ env.GUROBI_FILE }}
       - name: Generate compilation database
         run: |
           CC=clang-14 CXX=clang++-14 \
