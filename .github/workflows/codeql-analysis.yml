@@ -14,9 +14,6 @@ concurrency:
 
 env:
   CMAKE_BUILD_PARALLEL_LEVEL: 3
-  GUROBI_VERSION_SHORT: "10.0"
-  GUROBI_VERSION: "10.0.3"
-  GUROBI_VERSION_FOLDER: "gurobi1003"
 
 jobs:
   analyze:
@@ -36,10 +33,16 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+      - name: Read current gurobi Version
+        uses: zlatko-ms/varfiletoenv@v3
+        with:
+          paths: ./.github/gurobi_version.json
       - name: download-gurobi-linux
-        shell: bash
         env:
-          GUROBI_FILE: gurobi${{ env.GUROBI_VERSION }}_linux64.tar.gz
+          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
+          GUROBI_FILE: gurobi${{ env.gurobiVersion }}_linux64.tar.gz
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           tar -xvzf ${{ env.GUROBI_FILE }}
