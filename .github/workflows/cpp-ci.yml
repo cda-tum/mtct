@@ -41,9 +41,9 @@ jobs:
           paths: ./.github/gurobi_version.json
       - name: download-gurobi-linux
         env:
-          GUROBI_VERISON_SHORT: ${{ env.gurobiShortVersion }}
-          GUROBI_VERISON: ${{ env.gurobiVersion }}
-          GUROBI_VERISON_FOLDER: ${{ env.gurobiFolder }}
+          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
           GUROBI_FILE: gurobi${{ env.gurobiVersion }}_linux64.tar.gz
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
@@ -75,9 +75,9 @@ jobs:
           paths: ./.github/gurobi_version.json
       - name: download-gurobi-mac
         env:
-          GUROBI_VERISON_SHORT: ${{ env.gurobiShortVersion }}
-          GUROBI_VERISON: ${{ env.gurobiVersion }}
-          GUROBI_VERISON_FOLDER: ${{ env.gurobiFolder }}
+          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
           GUROBI_FILE: gurobi${{ env.gurobiVersion }}_macos_universal2.pkg
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
@@ -110,9 +110,9 @@ jobs:
       - name: download-gurobi-windows
         shell: powershell
         env:
-          GUROBI_VERISON_SHORT: ${{ env.gurobiShortVersion }}
-          GUROBI_VERISON: ${{ env.gurobiVersion }}
-          GUROBI_VERISON_FOLDER: ${{ env.gurobiFolder }}
+          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
           GUROBI_FILE: Gurobi-${{ env.gurobiVersion }}-win64.msi
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
@@ -160,9 +160,9 @@ jobs:
           paths: ./.github/gurobi_version.json
       - name: download-gurobi-linux
         env:
-          GUROBI_VERISON_SHORT: ${{ env.gurobiShortVersion }}
-          GUROBI_VERISON: ${{ env.gurobiVersion }}
-          GUROBI_VERISON_FOLDER: ${{ env.gurobiFolder }}
+          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
           GUROBI_FILE: gurobi${{ env.gurobiVersion }}_linux64.tar.gz
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
