@@ -25,6 +25,7 @@ jobs:
         with:
           submodules: recursive
       - name: download-gurobi-linux
+        shell: bash
         env:
           GUROBI_FILE: gurobi${{ env.GUROBI_VERSION }}_linux64.tar.gz
         run: |
