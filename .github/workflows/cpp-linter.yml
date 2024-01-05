@@ -22,8 +22,8 @@ jobs:
       - name: download-gurobi-linux
         shell: bash
         run: |
-          wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
-          tar -xvzf gurobi10.0.2_linux64.tar.gz
+          wget https://packages.gurobi.com/11.0/gurobi11.0.0_linux64.tar.gz
+          tar -xvzf gurobi11.0.0_linux64.tar.gz
       - name: Generate compilation database
         run: |
           CC=clang-14 CXX=clang++-14 \
