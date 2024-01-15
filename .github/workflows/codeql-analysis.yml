@@ -33,11 +33,19 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+      - name: Read current gurobi Version
+        uses: zlatko-ms/varfiletoenv@v3
+        with:
+          paths: ./.github/gurobi_version.json
       - name: download-gurobi-linux
-        shell: bash
+        env:
+          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
+          GUROBI_FILE: gurobi${{ env.gurobiVersion }}_linux64.tar.gz
         run: |
-          wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
-          tar -xvzf gurobi10.0.2_linux64.tar.gz
+          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
+          tar -xvzf ${{ env.GUROBI_FILE }}
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3

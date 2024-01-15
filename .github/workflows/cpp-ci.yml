@@ -19,9 +19,6 @@ defaults:
 env:
   CMAKE_BUILD_PARALLEL_LEVEL: 3
   CTEST_PARALLEL_LEVEL: 1
-  GUROBI_VERSION_SHORT: "10.0"
-  GUROBI_VERSION: "10.0.3"
-  GUROBI_VERSION_FOLDER: "gurobi1003"
 
 jobs:
   cpp-ubuntu-latest:
@@ -38,9 +35,16 @@ jobs:
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
+      - name: Read current gurobi Version
+        uses: zlatko-ms/varfiletoenv@v3
+        with:
+          paths: ./.github/gurobi_version.json
       - name: download-gurobi-linux
         env:
-          GUROBI_FILE: gurobi${{ env.GUROBI_VERSION }}_linux64.tar.gz
+          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
+          GUROBI_FILE: gurobi${{ env.gurobiVersion }}_linux64.tar.gz
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           tar -xvzf ${{ env.GUROBI_FILE }}
@@ -50,6 +54,14 @@ jobs:
         run: cmake --build build --config Release
       - name: Test
         run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 400
+      - name: Export variables for next jobs
+        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
+        with:
+          # Persist (store) our MAGIC_NUMBER ENV variable into our store, for the next jobs
+          variables: |
+            gurobiVersion=${{ env.gurobiVersion }}
+            gurobiShortVersion=${{ env.gurobiShortVersion }}
+            gurobiFolder=${{ env.gurobiFolder }}
   cpp-macos-latest:
     name: cpp-macos-latest
     runs-on: macos-latest
@@ -65,9 +77,21 @@ jobs:
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
+      - name: Import variables
+        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
+        with:
+          # List all variables you want to retrieve from the store
+          # XXX They'll be automatically added to your ENV
+          variables: |
+            gurobiVersion
+            gurobiShortVersion
+            gurobiFolder
       - name: download-gurobi-mac
         env:
-          GUROBI_FILE: gurobi${{ env.GUROBI_VERSION }}_macos_universal2.pkg
+          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
+          GUROBI_FILE: gurobi${{ env.gurobiVersion }}_macos_universal2.pkg
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           sudo installer -pkg ${{ env.GUROBI_FILE }} -target /
@@ -92,10 +116,22 @@ jobs:
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
+      - name: Import variables
+        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
+        with:
+          # List all variables you want to retrieve from the store
+          # XXX They'll be automatically added to your ENV
+          variables: |
+            gurobiVersion
+            gurobiShortVersion
+            gurobiFolder
       - name: download-gurobi-windows
         shell: powershell
         env:
-          GUROBI_FILE: Gurobi-${{ env.GUROBI_VERSION }}-win64.msi
+          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
+          GUROBI_FILE: Gurobi-${{ env.gurobiVersion }}-win64.msi
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
           New-Item -itemType directory gurobi
@@ -113,8 +149,8 @@ jobs:
         id: gurobi-env-variables
         shell: powershell
         run: |
-          echo "GUROBI_HOME=$PWD\gurobi\$env:GUROBI_VERSION_FOLDER\win64" >> $env:GITHUB_ENV
-          echo "$PWD\gurobi\$env:GUROBI_VERSION_FOLDER\win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "GUROBI_HOME=$PWD\gurobi\$env:gurobiFolder\win64" >> $env:GITHUB_ENV
+          echo "$PWD\gurobi\$env:gurobiFolder\win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
       - name: Build
@@ -136,9 +172,21 @@ jobs:
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
+      - name: Import variables
+        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
+        with:
+          # List all variables you want to retrieve from the store
+          # XXX They'll be automatically added to your ENV
+          variables: |
+            gurobiVersion
+            gurobiShortVersion
+            gurobiFolder
       - name: download-gurobi-linux
         env:
-          GUROBI_FILE: gurobi${{ env.GUROBI_VERSION }}_linux64.tar.gz
+          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
+          GUROBI_FILE: gurobi${{ env.gurobiVersion }}_linux64.tar.gz
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           tar -xvzf ${{ env.GUROBI_FILE }}
