@@ -1,0 +1,89 @@
+name: Gurobi Auto Updater
+
+on:
+  schedule:
+    - cron: '15 1 * * 3' # Every Wednesday at 1:15 AM UTC
+  workflow_dispatch:
+
+jobs:
+  update-gurobi-version:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Get Latest Gurobipy Version
+        id: get-latest-version
+        run: |
+          echo "NEW_VERSION=$(curl -s https://pypi.org/pypi/gurobipy/json | jq -r '.info.version')" >> $GITHUB_ENV
+
+      - name: Current Version
+        uses: zlatko-ms/varfiletoenv@v3
+        with:
+          paths: ./.github/gurobi_version.json
+
+      - name: Check if branch exists or version matches
+        id: check-branch-version
+        env:
+          NEW_VERSION: ${{ env.NEW_VERSION }}
+          GUROBI_VERSION: ${{ env.gurobiVersion }}
+        run: |
+          git fetch
+          echo "NEW_VERSION: $NEW_VERSION"
+          echo "GUROBI_VERSION: $GUROBI_VERSION"
+          if [[ $(git branch -a | grep "update-gurobi-$NEW_VERSION") ]]; then
+            echo "Branch update-gurobi-$NEW_VERSION already exists. Aborting workflow."
+            echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
+          elif [[ $NEW_VERSION == $GUROBI_VERSION ]]; then
+            echo "Gurobi version already included. Aborting workflow."
+            echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
+          else
+            echo "CONTINUE_WORKFLOW=true" >> $GITHUB_ENV
+          fi
+
+      - name: Create new branch
+        if: env.CONTINUE_WORKFLOW == 'true'
+        env:
+          NEW_VERSION: ${{ env.NEW_VERSION }}
+        run: |
+          git checkout -b update-gurobi-$NEW_VERSION
+          git push origin update-gurobi-$NEW_VERSION
+
+      - name: Update JSON File
+        if: env.CONTINUE_WORKFLOW == 'true'
+        env:
+          NEW_VERSION: ${{ env.NEW_VERSION }}
+        run: |
+          # Extract x.y.z format
+          X_Y_Z_VERSION=$(echo "$NEW_VERSION" | cut -d '.' -f 1-3)
+
+          # Extract x.y from x.y.z
+          X_Y_VERSION=$(echo "$X_Y_Z_VERSION" | cut -d '.' -f 1-2)
+
+          # Extract x.y.z without dots
+          X_Y_Z_VERSION_NO_DOTS=$(echo "$X_Y_Z_VERSION" | tr -d '.')
+
+          # Update the YAML file with the extracted versions
+          echo "{\"gurobiShortVersion\": \"$X_Y_VERSION\", \"gurobiVersion\": \"$X_Y_Z_VERSION\", \"gurobiFolder\": \"gurobi$X_Y_Z_VERSION_NO_DOTS\"}" > ./.github/gurobi_version.json
+          
+      - name: Commit and Push Changes
+        if: env.CONTINUE_WORKFLOW == 'true'
+        env:
+          NEW_VERSION: ${{ env.NEW_VERSION }}
+        run: |
+          git config --local user.email "actions-gurobi-updater@noreply.github.com"
+          git config --local user.name "GitHub Actions Gurobi Updater"
+          git add ./.github/gurobi_version.json
+          git commit -m "Update Gurobi version to $NEW_VERSION"
+          git push origin update-gurobi-$NEW_VERSION
+
+      - name: Create PR
+        if: env.CONTINUE_WORKFLOW == 'true'
+        env:
+          NEW_VERSION: ${{ env.NEW_VERSION }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create --title "Update Gurobi version to $NEW_VERSION" --body "This PR updates the Gurobi version to $NEW_VERSION" --reviewer sengels-tum --base main --head update-gurobi-$NEW_VERSION
