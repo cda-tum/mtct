@@ -51,7 +51,7 @@ jobs:
           git checkout -b update-gurobi-$NEW_VERSION
           git push origin update-gurobi-$NEW_VERSION
 
-      - name: Update JSON File
+      - name: Update JSON and Readme
         if: env.CONTINUE_WORKFLOW == 'true'
         env:
           NEW_VERSION: ${{ env.NEW_VERSION }}
@@ -67,7 +67,8 @@ jobs:
 
           # Update the YAML file with the extracted versions
           echo "{\"gurobiShortVersion\": \"$X_Y_VERSION\", \"gurobiVersion\": \"$X_Y_Z_VERSION\", \"gurobiFolder\": \"gurobi$X_Y_Z_VERSION_NO_DOTS\"}" > ./.github/gurobi_version.json
-          
+
+          sed -i "s/Gurobi v[0-9]\+\.[0-9]\+\.[0-9]\+/Gurobi v$X_Y_Z_VERSION/g" ./README.md
       - name: Commit and Push Changes
         if: env.CONTINUE_WORKFLOW == 'true'
         env:
@@ -76,6 +77,7 @@ jobs:
           git config --local user.email "actions-gurobi-updater@noreply.github.com"
           git config --local user.name "GitHub Actions Gurobi Updater"
           git add ./.github/gurobi_version.json
+          git add ./README.md
           git commit -m "Update Gurobi version to $NEW_VERSION"
           git push origin update-gurobi-$NEW_VERSION
 
