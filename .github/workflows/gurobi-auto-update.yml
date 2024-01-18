@@ -39,7 +39,7 @@ jobs:
             echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
           else
             echo "CONTINUE_WORKFLOW=true" >> $GITHUB_ENV
-            
+
             git checkout -b update-gurobi-$NEW_VERSION
             git push origin update-gurobi-$NEW_VERSION
 
@@ -62,7 +62,7 @@ jobs:
             git add ./.github/gurobi_version.json
             git add ./README.md
             git commit -m "Update Gurobi version to $NEW_VERSION"
-            git push origin update-gurobi-$NEW_VERSION            
+            git push origin update-gurobi-$NEW_VERSION
           fi
 
       - name: Create PR
