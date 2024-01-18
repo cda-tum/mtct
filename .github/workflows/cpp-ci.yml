@@ -57,7 +57,6 @@ jobs:
       - name: Export variables for next jobs
         uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
         with:
-          # Persist (store) our MAGIC_NUMBER ENV variable into our store, for the next jobs
           variables: |
             gurobiVersion=${{ env.gurobiVersion }}
             gurobiShortVersion=${{ env.gurobiShortVersion }}
@@ -80,8 +79,6 @@ jobs:
       - name: Import variables
         uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
         with:
-          # List all variables you want to retrieve from the store
-          # XXX They'll be automatically added to your ENV
           variables: |
             gurobiVersion
             gurobiShortVersion
@@ -119,8 +116,6 @@ jobs:
       - name: Import variables
         uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
         with:
-          # List all variables you want to retrieve from the store
-          # XXX They'll be automatically added to your ENV
           variables: |
             gurobiVersion
             gurobiShortVersion
@@ -175,8 +170,6 @@ jobs:
       - name: Import variables
         uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
         with:
-          # List all variables you want to retrieve from the store
-          # XXX They'll be automatically added to your ENV
           variables: |
             gurobiVersion
             gurobiShortVersion
