@@ -12,8 +12,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get Latest Gurobipy Version
         id: get-latest-version
@@ -25,13 +23,11 @@ jobs:
         with:
           paths: ./.github/gurobi_version.json
 
-      - name: Check if branch exists or version matches
-        id: check-branch-version
+      - name: Make Changes if Applicable
         env:
           NEW_VERSION: ${{ env.NEW_VERSION }}
           GUROBI_VERSION: ${{ env.gurobiVersion }}
         run: |
-          git fetch
           echo "NEW_VERSION: $NEW_VERSION"
           echo "GUROBI_VERSION: $GUROBI_VERSION"
           if [[ $(git branch -a | grep "update-gurobi-$NEW_VERSION") ]]; then
@@ -42,45 +38,31 @@ jobs:
             echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
           else
             echo "CONTINUE_WORKFLOW=true" >> $GITHUB_ENV
+            
+            git checkout -b update-gurobi-$NEW_VERSION
+            git push origin update-gurobi-$NEW_VERSION
+
+            # Extract x.y.z format
+            X_Y_Z_VERSION=$(echo "$NEW_VERSION" | cut -d '.' -f 1-3)
+
+            # Extract x.y from x.y.z
+            X_Y_VERSION=$(echo "$X_Y_Z_VERSION" | cut -d '.' -f 1-2)
+
+            # Extract x.y.z without dots
+            X_Y_Z_VERSION_NO_DOTS=$(echo "$X_Y_Z_VERSION" | tr -d '.')
+
+            # Update the YAML file with the extracted versions
+            echo "{\"gurobiShortVersion\": \"$X_Y_VERSION\", \"gurobiVersion\": \"$X_Y_Z_VERSION\", \"gurobiFolder\": \"gurobi$X_Y_Z_VERSION_NO_DOTS\"}" > ./.github/gurobi_version.json
+
+            sed -i "s/Gurobi v[0-9]\+\.[0-9]\+\.[0-9]\+/Gurobi v$X_Y_Z_VERSION/g" ./README.md
+
+            git config --local user.email "actions-gurobi-updater@noreply.github.com"
+            git config --local user.name "GitHub Actions Gurobi Updater"
+            git add ./.github/gurobi_version.json
+            git add ./README.md
+            git commit -m "Update Gurobi version to $NEW_VERSION"
+            git push origin update-gurobi-$NEW_VERSION            
           fi
-
-      - name: Create new branch
-        if: env.CONTINUE_WORKFLOW == 'true'
-        env:
-          NEW_VERSION: ${{ env.NEW_VERSION }}
-        run: |
-          git checkout -b update-gurobi-$NEW_VERSION
-          git push origin update-gurobi-$NEW_VERSION
-
-      - name: Update JSON and Readme
-        if: env.CONTINUE_WORKFLOW == 'true'
-        env:
-          NEW_VERSION: ${{ env.NEW_VERSION }}
-        run: |
-          # Extract x.y.z format
-          X_Y_Z_VERSION=$(echo "$NEW_VERSION" | cut -d '.' -f 1-3)
-
-          # Extract x.y from x.y.z
-          X_Y_VERSION=$(echo "$X_Y_Z_VERSION" | cut -d '.' -f 1-2)
-
-          # Extract x.y.z without dots
-          X_Y_Z_VERSION_NO_DOTS=$(echo "$X_Y_Z_VERSION" | tr -d '.')
-
-          # Update the YAML file with the extracted versions
-          echo "{\"gurobiShortVersion\": \"$X_Y_VERSION\", \"gurobiVersion\": \"$X_Y_Z_VERSION\", \"gurobiFolder\": \"gurobi$X_Y_Z_VERSION_NO_DOTS\"}" > ./.github/gurobi_version.json
-
-          sed -i "s/Gurobi v[0-9]\+\.[0-9]\+\.[0-9]\+/Gurobi v$X_Y_Z_VERSION/g" ./README.md
-      - name: Commit and Push Changes
-        if: env.CONTINUE_WORKFLOW == 'true'
-        env:
-          NEW_VERSION: ${{ env.NEW_VERSION }}
-        run: |
-          git config --local user.email "actions-gurobi-updater@noreply.github.com"
-          git config --local user.name "GitHub Actions Gurobi Updater"
-          git add ./.github/gurobi_version.json
-          git add ./README.md
-          git commit -m "Update Gurobi version to $NEW_VERSION"
-          git push origin update-gurobi-$NEW_VERSION
 
       - name: Create PR
         if: env.CONTINUE_WORKFLOW == 'true'
