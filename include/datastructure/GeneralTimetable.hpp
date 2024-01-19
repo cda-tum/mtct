@@ -1,8 +1,6 @@
 #pragma once
-#include "datastructure/RailwayNetwork.hpp"
-#include "datastructure/Station.hpp"
-#include "datastructure/Train.hpp"
 
+#include <string>
 #include <utility>
 
 namespace cda_rail {
@@ -37,8 +35,8 @@ struct GeneralScheduledStop {
   // Constructor
   GeneralScheduledStop(std::pair<int, int> begin, std::pair<int, int> end,
                        int min_stopping_time, std::string station)
-      : begin(begin), end(end), min_stopping_time(min_stopping_time),
-        station(std::move(station)) {}
+      : begin(std::move(begin)), end(std::move(end)),
+        min_stopping_time(min_stopping_time), station(std::move(station)) {}
 };
 
 } // namespace cda_rail
