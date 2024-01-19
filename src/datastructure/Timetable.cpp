@@ -155,8 +155,8 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
 
     for (const auto& stop : schedule.stops) {
       stops.push_back(
-          {{"begin", stop.begin},
-           {"end", stop.end},
+          {{"begin", stop.arrival()},
+           {"end", stop.departure()},
            {"station", station_list.get_station(stop.station).name}});
     }
     j[train_list.get_train(i).name] = {
