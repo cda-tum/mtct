@@ -8,6 +8,7 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/datastructure/Train.hpp
   datastructure/Train.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Timetable.hpp
+  ${PROJECT_SOURCE_DIR}/include/datastructure/GeneralTimetable.hpp
   datastructure/Timetable.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Station.hpp
   datastructure/Station.cpp

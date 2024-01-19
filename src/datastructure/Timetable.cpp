@@ -100,7 +100,7 @@ void cda_rail::Timetable::add_stop(size_t             train_index,
       throw exceptions::ConsistencyException("Train already stops at station.");
     }
 
-    if (begin <= stop.end && end >= stop.begin) {
+    if (begin <= stop.departure() && end >= stop.arrival()) {
       throw exceptions::ConsistencyException(
           "Train has another stop at this time.");
     }
@@ -222,8 +222,8 @@ bool cda_rail::Timetable::check_consistency(const Network& network) const {
 
   for (const auto& schedule : schedules) {
     for (const auto& stop : schedule.stops) {
-      if (stop.begin < schedule.t_0 || stop.end > schedule.t_n ||
-          stop.end < stop.begin) {
+      if (stop.arrival() < schedule.t_0 || stop.departure() > schedule.t_n ||
+          stop.departure() < stop.arrival()) {
         return false;
       }
     }

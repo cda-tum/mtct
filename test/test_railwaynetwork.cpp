@@ -2130,8 +2130,8 @@ TEST(Functionality, ReadTimetable) {
   EXPECT_EQ(network.get_vertex(tr1_schedule.exit).name, "r0");
   EXPECT_EQ(tr1_schedule.stops.size(), 1);
   const auto& stop = tr1_schedule.stops[0];
-  EXPECT_EQ(stop.begin, 240);
-  EXPECT_EQ(stop.end, 300);
+  EXPECT_EQ(stop.arrival(), 240);
+  EXPECT_EQ(stop.departure(), 300);
   EXPECT_EQ(stations.get_station(stop.station).name, "Central");
 
   // Check the schedule of tr2
@@ -2144,8 +2144,8 @@ TEST(Functionality, ReadTimetable) {
   EXPECT_EQ(network.get_vertex(tr2_schedule.exit).name, "r0");
   EXPECT_EQ(tr2_schedule.stops.size(), 1);
   const auto& stop2 = tr2_schedule.stops[0];
-  EXPECT_EQ(stop2.begin, 120);
-  EXPECT_EQ(stop2.end, 300);
+  EXPECT_EQ(stop2.arrival(), 120);
+  EXPECT_EQ(stop2.departure(), 300);
   EXPECT_EQ(stations.get_station(stop2.station).name, "Central");
 
   // Check the schedule of tr3
@@ -2158,8 +2158,8 @@ TEST(Functionality, ReadTimetable) {
   EXPECT_EQ(network.get_vertex(tr3_schedule.exit).name, "l0");
   EXPECT_EQ(tr3_schedule.stops.size(), 1);
   const auto& stop3 = tr3_schedule.stops[0];
-  EXPECT_EQ(stop3.begin, 180);
-  EXPECT_EQ(stop3.end, 300);
+  EXPECT_EQ(stop3.arrival(), 180);
+  EXPECT_EQ(stop3.departure(), 300);
   EXPECT_EQ(stations.get_station(stop3.station).name, "Central");
 
   EXPECT_EQ(timetable.max_t(), 645);
@@ -2253,12 +2253,12 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(network.get_vertex(tr1_schedule.exit).name, "r0");
   EXPECT_EQ(tr1_schedule.stops.size(), 2);
   const auto& stop1 = tr1_schedule.stops[0];
-  EXPECT_EQ(stop1.begin, 100);
-  EXPECT_EQ(stop1.end, 160);
+  EXPECT_EQ(stop1.arrival(), 100);
+  EXPECT_EQ(stop1.departure(), 160);
   EXPECT_EQ(stations.get_station(stop1.station).name, "Station1");
   const auto& stop2 = tr1_schedule.stops[1];
-  EXPECT_EQ(stop2.begin, 200);
-  EXPECT_EQ(stop2.end, 260);
+  EXPECT_EQ(stop2.arrival(), 200);
+  EXPECT_EQ(stop2.departure(), 260);
   EXPECT_EQ(stations.get_station(stop2.station).name, "Station2");
 
   // Check if the schedule of tr2 is saved correctly
@@ -2271,8 +2271,8 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(network.get_vertex(tr2_schedule.exit).name, "l0");
   EXPECT_EQ(tr2_schedule.stops.size(), 1);
   const auto& stop3 = tr2_schedule.stops[0];
-  EXPECT_EQ(stop3.begin, 160);
-  EXPECT_EQ(stop3.end, 220);
+  EXPECT_EQ(stop3.arrival(), 160);
+  EXPECT_EQ(stop3.departure(), 220);
   EXPECT_EQ(stations.get_station(stop3.station).name, "Station1");
 
   // Write timetable to directory
@@ -2337,12 +2337,12 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(network.get_vertex(tr1_schedule_read.exit).name, "r0");
   EXPECT_EQ(tr1_schedule_read.stops.size(), 2);
   const auto& stop1_read = tr1_schedule_read.stops[0];
-  EXPECT_EQ(stop1_read.begin, 100);
-  EXPECT_EQ(stop1_read.end, 160);
+  EXPECT_EQ(stop1_read.arrival(), 100);
+  EXPECT_EQ(stop1_read.departure(), 160);
   EXPECT_EQ(stations_read.get_station(stop1_read.station).name, "Station1");
   const auto& stop2_read = tr1_schedule_read.stops[1];
-  EXPECT_EQ(stop2_read.begin, 200);
-  EXPECT_EQ(stop2_read.end, 260);
+  EXPECT_EQ(stop2_read.arrival(), 200);
+  EXPECT_EQ(stop2_read.departure(), 260);
   EXPECT_EQ(stations_read.get_station(stop2_read.station).name, "Station2");
 
   // Check if the schedule of tr2 is saved correctly
@@ -2355,8 +2355,8 @@ TEST(Functionality, WriteTimetable) {
   EXPECT_EQ(network.get_vertex(tr2_schedule_read.exit).name, "l0");
   EXPECT_EQ(tr2_schedule_read.stops.size(), 1);
   const auto& stop3_read = tr2_schedule_read.stops[0];
-  EXPECT_EQ(stop3_read.begin, 160);
-  EXPECT_EQ(stop3_read.end, 220);
+  EXPECT_EQ(stop3_read.arrival(), 160);
+  EXPECT_EQ(stop3_read.departure(), 220);
   EXPECT_EQ(stations_read.get_station(stop3_read.station).name, "Station1");
 }
 

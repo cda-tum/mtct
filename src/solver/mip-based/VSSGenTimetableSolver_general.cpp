@@ -1044,9 +1044,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_schedule = instance.get_schedule(tr_name);
     const auto& tr_edges = instance.edges_used_by_train(tr, this->fix_routes);
     for (const auto& tr_stop : tr_schedule.stops) {
-      const auto t0 = static_cast<size_t>(tr_stop.begin / dt);
-      const auto t1 =
-          static_cast<size_t>(std::ceil(static_cast<double>(tr_stop.end) / dt));
+      const auto t0 = static_cast<size_t>(tr_stop.arrival() / dt);
+      const auto t1 = static_cast<size_t>(
+          std::ceil(static_cast<double>(tr_stop.departure()) / dt));
       const auto& stop_edges =
           instance.get_station_list().get_station(tr_stop.station).tracks;
       const auto inverse_stop_edges =

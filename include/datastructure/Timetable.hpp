@@ -1,4 +1,5 @@
 #pragma once
+#include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Station.hpp"
 #include "datastructure/Train.hpp"
@@ -10,36 +11,22 @@
 #include <vector>
 
 namespace cda_rail {
-struct ScheduledStop {
+struct ScheduledStop : GeneralScheduledStop {
   /**
-   * A scheduled stop.
+   * A scheduled stop with fixed times
    */
-  int         begin;
-  int         end;
-  std::string station;
 
-  bool operator<(const ScheduledStop& other) const {
-    return (end < other.begin);
+  [[nodiscard]] int arrival() const {
+    return GeneralScheduledStop::begin.first;
   }
-  bool operator>(const ScheduledStop& other) const {
-    return (begin > other.end);
-  }
-  bool operator==(const ScheduledStop& other) const {
-    return (begin == other.begin && end == other.end);
-  }
-  bool operator<=(const ScheduledStop& other) const {
-    return *this < other || *this == other;
-  }
-  bool operator>=(const ScheduledStop& other) const {
-    return *this > other || *this == other;
-  }
-  bool operator!=(const ScheduledStop& other) const {
-    return !(*this == other);
+  [[nodiscard]] int departure() const {
+    return GeneralScheduledStop::end.first;
   }
 
   // Constructor
   ScheduledStop(int begin, int end, std::string station)
-      : begin(begin), end(end), station(std::move(station)) {}
+      : GeneralScheduledStop({begin, begin}, {end, end}, end - begin,
+                             std::move(station)) {}
 };
 
 struct Schedule {
