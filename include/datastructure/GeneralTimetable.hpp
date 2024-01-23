@@ -1,5 +1,8 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
+
+#include <algorithm>
 #include <string>
 #include <type_traits>
 #include <utility>
