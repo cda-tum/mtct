@@ -41,7 +41,7 @@ public:
     return !(*this == other);
   }
 
-  bool conflicts(const GeneralScheduledStop& other) const {
+  [[nodiscard]] bool conflicts(const GeneralScheduledStop& other) const {
     // Same station name is also a conflict
     if (station == other.station) {
       return true;
@@ -58,7 +58,7 @@ public:
            interval2.first <= interval1.second;
   }
 
-  std::pair<int, int> get_forced_stopping_interval() const {
+  [[nodiscard]] std::pair<int, int> get_forced_stopping_interval() const {
     std::pair<int, int> interval = {begin.second, end.first};
     if (begin.first + min_stopping_time > interval.second) {
       interval.second = begin.first + min_stopping_time;
