@@ -94,22 +94,7 @@ void cda_rail::Timetable::add_stop(size_t             train_index,
         "End time has to be after the start time.");
   }
 
-  auto& stops_reference = schedules.at(train_index).stops;
-  for (const auto& stop : stops_reference) {
-    if (stop.station == station_name) {
-      throw exceptions::ConsistencyException("Train already stops at station.");
-    }
-
-    if (begin <= stop.departure() && end >= stop.arrival()) {
-      throw exceptions::ConsistencyException(
-          "Train has another stop at this time.");
-    }
-  }
-
-  stops_reference.emplace_back(begin, end, station_name);
-  if (sort) {
-    std::sort(stops_reference.begin(), stops_reference.end());
-  }
+  schedules.at(train_index).add_stop(sort, begin, end, station_name);
 }
 
 void cda_rail::Timetable::sort_stops() {
@@ -119,7 +104,7 @@ void cda_rail::Timetable::sort_stops() {
    */
 
   for (auto& schedule : schedules) {
-    std::sort(schedule.stops.begin(), schedule.stops.end());
+    schedule.sort_stops();
   }
 }
 
@@ -153,19 +138,20 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
     const auto& schedule = schedules.at(i);
     json        stops;
 
-    for (const auto& stop : schedule.stops) {
+    for (const auto& stop : schedule.get_stops()) {
       stops.push_back(
           {{"begin", stop.arrival()},
            {"end", stop.departure()},
-           {"station", station_list.get_station(stop.station).name}});
+           {"station",
+            station_list.get_station(stop.get_station_name()).name}});
     }
     j[train_list.get_train(i).name] = {
-        {"t_0", schedule.t_0},
-        {"v_0", schedule.v_0},
-        {"entry", network.get_vertex(schedule.entry).name},
-        {"t_n", schedule.t_n},
-        {"v_n", schedule.v_n},
-        {"exit", network.get_vertex(schedule.exit).name},
+        {"t_0", schedule.get_t_0()},
+        {"v_0", schedule.get_v_0()},
+        {"entry", network.get_vertex(schedule.get_entry()).name},
+        {"t_n", schedule.get_t_n()},
+        {"v_n", schedule.get_v_n()},
+        {"exit", network.get_vertex(schedule.get_exit()).name},
         {"stops", stops}};
   }
 
@@ -201,12 +187,12 @@ bool cda_rail::Timetable::check_consistency(const Network& network) const {
    */
 
   for (const auto& schedule : schedules) {
-    if (!network.has_vertex(schedule.entry) ||
-        !network.has_vertex(schedule.exit)) {
+    if (!network.has_vertex(schedule.get_entry()) ||
+        !network.has_vertex(schedule.get_exit())) {
       return false;
     }
-    if (network.neighbors(schedule.entry).size() != 1 ||
-        network.neighbors(schedule.exit).size() != 1) {
+    if (network.neighbors(schedule.get_entry()).size() != 1 ||
+        network.neighbors(schedule.get_exit()).size() != 1) {
       return false;
     }
   }
@@ -221,8 +207,9 @@ bool cda_rail::Timetable::check_consistency(const Network& network) const {
   }
 
   for (const auto& schedule : schedules) {
-    for (const auto& stop : schedule.stops) {
-      if (stop.arrival() < schedule.t_0 || stop.departure() > schedule.t_n ||
+    for (const auto& stop : schedule.get_stops()) {
+      if (stop.arrival() < schedule.get_t_0() ||
+          stop.departure() > schedule.get_t_n() ||
           stop.departure() < stop.arrival()) {
         return false;
       }
@@ -230,10 +217,10 @@ bool cda_rail::Timetable::check_consistency(const Network& network) const {
   }
 
   for (const auto& schedule : schedules) {
-    for (size_t i = 0; i < schedule.stops.size(); ++i) {
-      for (size_t j = i + 1; j < schedule.stops.size(); ++j) {
-        if (!(schedule.stops.at(i) < schedule.stops.at(j)) &&
-            !(schedule.stops.at(j) < schedule.stops.at(i))) {
+    for (size_t i = 0; i < schedule.get_stops().size(); ++i) {
+      for (size_t j = i + 1; j < schedule.get_stops().size(); ++j) {
+        if (!(schedule.get_stops().at(i) < schedule.get_stops().at(j)) &&
+            !(schedule.get_stops().at(j) < schedule.get_stops().at(i))) {
           return false;
         }
       }
@@ -277,15 +264,15 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
     if (!data.contains(tr.name)) {
       throw exceptions::ScheduleNotExistentException(tr.name);
     }
-    auto& schedule_data       = data[tr.name];
-    this->schedules.at(i).t_0 = schedule_data["t_0"];
-    this->schedules.at(i).v_0 = schedule_data["v_0"];
-    this->schedules.at(i).entry =
-        network.get_vertex_index(schedule_data["entry"]);
-    this->schedules.at(i).t_n = schedule_data["t_n"];
-    this->schedules.at(i).v_n = schedule_data["v_n"];
-    this->schedules.at(i).exit =
-        network.get_vertex_index(schedule_data["exit"]);
+    auto& schedule_data = data[tr.name];
+    this->schedules.at(i).set_t_0(static_cast<int>(schedule_data["t_0"]));
+    this->schedules.at(i).set_v_0(static_cast<int>(schedule_data["v_0"]));
+    this->schedules.at(i).set_entry(
+        network.get_vertex_index(schedule_data["entry"]));
+    this->schedules.at(i).set_t_n(static_cast<int>(schedule_data["t_n"]));
+    this->schedules.at(i).set_v_n(static_cast<int>(schedule_data["v_n"]));
+    this->schedules.at(i).set_exit(
+        network.get_vertex_index(schedule_data["exit"]));
 
     for (const auto& stop_data : schedule_data["stops"]) {
       this->add_stop(i, stop_data["station"].get<std::string>(),
@@ -306,8 +293,8 @@ int cda_rail::Timetable::max_t() const {
    */
   int ret = 0;
   for (const auto& schedule : schedules) {
-    if (schedule.t_n > ret) {
-      ret = schedule.t_n;
+    if (schedule.get_t_n() > ret) {
+      ret = schedule.get_t_n();
     }
   }
   return ret;
@@ -330,7 +317,7 @@ cda_rail::Timetable::time_interval(size_t train_index) const {
   }
 
   const auto& schedule = schedules.at(train_index);
-  return {schedule.t_0, schedule.t_n};
+  return {schedule.get_t_0(), schedule.get_t_n()};
 }
 
 std::pair<size_t, size_t>
@@ -352,8 +339,8 @@ cda_rail::Timetable::time_index_interval(size_t train_index, int dt,
   }
 
   const auto& schedule = schedules.at(train_index);
-  const auto& t_0      = schedule.t_0;
-  const auto& t_n      = schedule.t_n;
+  const auto& t_0      = schedule.get_t_0();
+  const auto& t_n      = schedule.get_t_n();
 
   if (t_0 < 0 || t_n < 0) {
     throw exceptions::ConsistencyException("Time cannot be negative.");

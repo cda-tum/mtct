@@ -640,7 +640,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     for (size_t tr = 0; tr < num_tr; ++tr) {
       const auto train = instance.get_train_list().get_train(tr);
       sol_obj.add_empty_route(train.name);
-      size_t current_vertex = instance.get_schedule(tr).entry;
+      size_t current_vertex = instance.get_schedule(tr).get_entry();
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         std::unordered_set<size_t> edge_list;

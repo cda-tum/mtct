@@ -63,10 +63,10 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::
   s.to_use   = true;
   s.t_before = train_interval[tr].first;
   s.t_after  = train_interval[tr].second + 1;
-  s.v_before = tr_schedule.v_0;
-  s.v_after  = tr_schedule.v_n;
+  s.v_before = tr_schedule.get_v_0();
+  s.v_after  = tr_schedule.get_v_n();
 
-  for (const auto& tr_stop : tr_schedule.stops) {
+  for (const auto& tr_stop : tr_schedule.get_stops()) {
     const auto t0 = tr_stop.arrival() / dt;
     const auto t1 = static_cast<int>(
         std::ceil(static_cast<double>(tr_stop.departure()) / dt));
@@ -75,15 +75,17 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::
       return s;
     }
     if (t0 < t && t0 > s.t_before) {
-      s.t_before = t0;
-      s.edges_before =
-          instance.get_station_list().get_station(tr_stop.station).tracks;
+      s.t_before     = t0;
+      s.edges_before = instance.get_station_list()
+                           .get_station(tr_stop.get_station_name())
+                           .tracks;
       s.v_before = 0;
     }
     if (t1 > t && t1 < s.t_after) {
-      s.t_after = t1;
-      s.edges_after =
-          instance.get_station_list().get_station(tr_stop.station).tracks;
+      s.t_after     = t1;
+      s.edges_after = instance.get_station_list()
+                          .get_station(tr_stop.get_station_name())
+                          .tracks;
       s.v_after = 0;
     }
   }
@@ -142,8 +144,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
   std::unordered_map<size_t, std::vector<size_t>> exit_vertices;
 
   for (size_t tr = 0; tr < num_tr; ++tr) {
-    entry_vertices[instance.get_schedule(tr).entry].push_back(tr);
-    exit_vertices[instance.get_schedule(tr).exit].push_back(tr);
+    entry_vertices[instance.get_schedule(tr).get_entry()].push_back(tr);
+    exit_vertices[instance.get_schedule(tr).get_exit()].push_back(tr);
   }
 
   for (auto& [_, tr_list] : entry_vertices) {

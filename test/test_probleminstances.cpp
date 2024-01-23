@@ -241,45 +241,45 @@ void check_instance_import(
 
   // Check the schedule of tr1
   const auto& tr1_schedule = instance.get_schedule("tr1");
-  EXPECT_EQ(tr1_schedule.t_0, 120);
-  EXPECT_EQ(tr1_schedule.v_0, 0);
-  EXPECT_EQ(tr1_schedule.t_n, 645);
-  EXPECT_EQ(tr1_schedule.v_n, 16.67);
-  EXPECT_EQ(network.get_vertex(tr1_schedule.entry).name, "l0");
-  EXPECT_EQ(network.get_vertex(tr1_schedule.exit).name, "r0");
-  EXPECT_EQ(tr1_schedule.stops.size(), 1);
-  const auto& stop = tr1_schedule.stops[0];
+  EXPECT_EQ(tr1_schedule.get_t_0(), 120);
+  EXPECT_EQ(tr1_schedule.get_v_0(), 0);
+  EXPECT_EQ(tr1_schedule.get_t_n(), 645);
+  EXPECT_EQ(tr1_schedule.get_v_n(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr1_schedule.get_entry()).name, "l0");
+  EXPECT_EQ(network.get_vertex(tr1_schedule.get_exit()).name, "r0");
+  EXPECT_EQ(tr1_schedule.get_stops().size(), 1);
+  const auto& stop = tr1_schedule.get_stops()[0];
   EXPECT_EQ(stop.arrival(), 240);
   EXPECT_EQ(stop.departure(), 300);
-  EXPECT_EQ(stations.get_station(stop.station).name, "Central");
+  EXPECT_EQ(stations.get_station(stop.get_station_name()).name, "Central");
 
   // Check the schedule of tr2
   const auto& tr2_schedule = instance.get_schedule("tr2");
-  EXPECT_EQ(tr2_schedule.t_0, 0);
-  EXPECT_EQ(tr2_schedule.v_0, 0);
-  EXPECT_EQ(tr2_schedule.t_n, 420);
-  EXPECT_EQ(tr2_schedule.v_n, 16.67);
-  EXPECT_EQ(network.get_vertex(tr2_schedule.entry).name, "l0");
-  EXPECT_EQ(network.get_vertex(tr2_schedule.exit).name, "r0");
-  EXPECT_EQ(tr2_schedule.stops.size(), 1);
-  const auto& stop2 = tr2_schedule.stops[0];
+  EXPECT_EQ(tr2_schedule.get_t_0(), 0);
+  EXPECT_EQ(tr2_schedule.get_v_0(), 0);
+  EXPECT_EQ(tr2_schedule.get_t_n(), 420);
+  EXPECT_EQ(tr2_schedule.get_v_n(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr2_schedule.get_entry()).name, "l0");
+  EXPECT_EQ(network.get_vertex(tr2_schedule.get_exit()).name, "r0");
+  EXPECT_EQ(tr2_schedule.get_stops().size(), 1);
+  const auto& stop2 = tr2_schedule.get_stops()[0];
   EXPECT_EQ(stop2.arrival(), 120);
   EXPECT_EQ(stop2.departure(), 300);
-  EXPECT_EQ(stations.get_station(stop2.station).name, "Central");
+  EXPECT_EQ(stations.get_station(stop2.get_station_name()).name, "Central");
 
   // Check the schedule of tr3
   const auto& tr3_schedule = instance.get_schedule("tr3");
-  EXPECT_EQ(tr3_schedule.t_0, 0);
-  EXPECT_EQ(tr3_schedule.v_0, 0);
-  EXPECT_EQ(tr3_schedule.t_n, 420);
-  EXPECT_EQ(tr3_schedule.v_n, 16.67);
-  EXPECT_EQ(network.get_vertex(tr3_schedule.entry).name, "r0");
-  EXPECT_EQ(network.get_vertex(tr3_schedule.exit).name, "l0");
-  EXPECT_EQ(tr3_schedule.stops.size(), 1);
-  const auto& stop3 = tr3_schedule.stops[0];
+  EXPECT_EQ(tr3_schedule.get_t_0(), 0);
+  EXPECT_EQ(tr3_schedule.get_v_0(), 0);
+  EXPECT_EQ(tr3_schedule.get_t_n(), 420);
+  EXPECT_EQ(tr3_schedule.get_v_n(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr3_schedule.get_entry()).name, "r0");
+  EXPECT_EQ(network.get_vertex(tr3_schedule.get_exit()).name, "l0");
+  EXPECT_EQ(tr3_schedule.get_stops().size(), 1);
+  const auto& stop3 = tr3_schedule.get_stops()[0];
   EXPECT_EQ(stop3.arrival(), 180);
   EXPECT_EQ(stop3.departure(), 300);
-  EXPECT_EQ(stations.get_station(stop3.station).name, "Central");
+  EXPECT_EQ(stations.get_station(stop3.get_station_name()).name, "Central");
 
   // Check the route  map
   // Check if the route consists of three trains with names "tr1", "tr2" and
@@ -412,10 +412,12 @@ TEST(Functionality, VSSGenerationTimetableExport) {
   instance.add_stop("tr1", "s1", 200, 260);
   instance.add_stop("tr1", "s0", 60, 120);
 
-  EXPECT_EQ(instance.get_station_list()
-                .get_station(instance.get_schedule("tr1").stops.at(0).station)
-                .name,
-            "s0");
+  EXPECT_EQ(
+      instance.get_station_list()
+          .get_station(
+              instance.get_schedule("tr1").get_stops().at(0).get_station_name())
+          .name,
+      "s0");
 
   // Add route to instance
   instance.add_empty_route("tr1");
@@ -524,21 +526,23 @@ TEST(Functionality, VSSGenerationTimetableExport) {
 
   // Check if the schedule of tr1 is saved correctly
   const auto& tr1_schedule_read = instance_read.get_schedule("tr1");
-  EXPECT_EQ(tr1_schedule_read.t_0, 0);
-  EXPECT_EQ(tr1_schedule_read.v_0, 0);
-  EXPECT_EQ(tr1_schedule_read.t_n, 600);
-  EXPECT_EQ(tr1_schedule_read.v_n, 5);
-  EXPECT_EQ(network.get_vertex(tr1_schedule_read.entry).name, "v0");
-  EXPECT_EQ(network.get_vertex(tr1_schedule_read.exit).name, "v2");
-  EXPECT_EQ(tr1_schedule_read.stops.size(), 2);
-  const auto& stop1_read = tr1_schedule_read.stops[0];
+  EXPECT_EQ(tr1_schedule_read.get_t_0(), 0);
+  EXPECT_EQ(tr1_schedule_read.get_v_0(), 0);
+  EXPECT_EQ(tr1_schedule_read.get_t_n(), 600);
+  EXPECT_EQ(tr1_schedule_read.get_v_n(), 5);
+  EXPECT_EQ(network.get_vertex(tr1_schedule_read.get_entry()).name, "v0");
+  EXPECT_EQ(network.get_vertex(tr1_schedule_read.get_exit()).name, "v2");
+  EXPECT_EQ(tr1_schedule_read.get_stops().size(), 2);
+  const auto& stop1_read = tr1_schedule_read.get_stops()[0];
   EXPECT_EQ(stop1_read.arrival(), 60);
   EXPECT_EQ(stop1_read.departure(), 120);
-  EXPECT_EQ(stations_read.get_station(stop1_read.station).name, "s0");
-  const auto& stop2_read = tr1_schedule_read.stops[1];
+  EXPECT_EQ(stations_read.get_station(stop1_read.get_station_name()).name,
+            "s0");
+  const auto& stop2_read = tr1_schedule_read.get_stops()[1];
   EXPECT_EQ(stop2_read.arrival(), 200);
   EXPECT_EQ(stop2_read.departure(), 260);
-  EXPECT_EQ(stations_read.get_station(stop2_read.station).name, "s1");
+  EXPECT_EQ(stations_read.get_station(stop2_read.get_station_name()).name,
+            "s1");
 
   // Check if the imported instance has the same route map as the original
   // instance Check if the route for tr1 consists of two edges passing v0-v1-v2
@@ -589,10 +593,12 @@ TEST(Functionality, Discretization) {
   instance.add_stop("tr1", "s1", 200, 260);
   instance.add_stop("tr1", "s0", 60, 120);
 
-  EXPECT_EQ(instance.get_station_list()
-                .get_station(instance.get_schedule("tr1").stops.at(0).station)
-                .name,
-            "s0");
+  EXPECT_EQ(
+      instance.get_station_list()
+          .get_station(
+              instance.get_schedule("tr1").get_stops().at(0).get_station_name())
+          .name,
+      "s0");
 
   // Add route to instance
   instance.add_empty_route("tr1");

@@ -215,11 +215,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     const auto  tr_name     = train_list.get_train(tr).name;
     const auto& tr_schedule = instance.get_schedule(tr_name);
-    for (const auto& tr_stop : tr_schedule.stops) {
+    for (const auto& tr_stop : tr_schedule.get_stops()) {
       const auto  t0 = tr_stop.arrival() / dt;
       const auto  t1 = std::ceil(static_cast<double>(tr_stop.departure()) / dt);
-      const auto& stop_edges =
-          instance.get_station_list().get_station(tr_stop.station).tracks;
+      const auto& stop_edges = instance.get_station_list()
+                                   .get_station(tr_stop.get_station_name())
+                                   .tracks;
       const auto& stop_pos = instance.route_edge_pos(tr_name, stop_edges);
       // Other cases follow by increasing of lambda and mu
       model->addConstr(vars["mu"](tr, t0 - 1) >= stop_pos.first,

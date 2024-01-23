@@ -11,11 +11,11 @@
 #include <vector>
 
 namespace cda_rail {
-struct ScheduledStop : GeneralScheduledStop {
+class ScheduledStop : public GeneralScheduledStop {
   /**
    * A scheduled stop with fixed times
    */
-
+public:
   [[nodiscard]] int arrival() const {
     return GeneralScheduledStop::begin.first;
   }
@@ -29,33 +29,27 @@ struct ScheduledStop : GeneralScheduledStop {
                              std::move(station)) {}
 };
 
-struct Schedule {
+class Schedule : public GeneralSchedule<ScheduledStop> {
   /**
-   * Schedule object
-   * @param t_0 start time of schedule in seconds
-   * @param v_0 initial velocity in m/s
-   * @param entry entry vertex index of the schedule
-   * @param t_n end time of schedule in seconds
-   * @param v_n target end velocity in m/s
-   * @param exit exit vertex index of the schedule
-   * @param stops vector of scheduled stops
-   *
-   * For stops in stations he has to occupy the station for the entire interval.
+   * Specific Schedule object
    */
-  int                        t_0;
-  double                     v_0;
-  size_t                     entry;
-  int                        t_n;
-  double                     v_n;
-  size_t                     exit;
-  std::vector<ScheduledStop> stops = {};
+private:
+  using GeneralSchedule::set_t_0;
+  using GeneralSchedule::set_t_n;
+
+public:
+  [[nodiscard]] int get_t_0() const { return GeneralSchedule::get_t_0().first; }
+  [[nodiscard]] int get_t_n() const { return GeneralSchedule::get_t_n().first; }
+
+  void set_t_0(int t_0) { GeneralSchedule::set_t_0({t_0, t_0}); }
+  void set_t_n(int t_n) { GeneralSchedule::set_t_n({t_n, t_n}); }
 
   // Constructor
-  Schedule() : t_0(-1), v_0(-1), entry(-1), t_n(-1), v_n(-1), exit(-1) {}
+  Schedule() : GeneralSchedule() {}
   Schedule(int t_0, double v_0, size_t entry, int t_n, double v_n, size_t exit,
            std::vector<ScheduledStop> stops = {})
-      : t_0(t_0), v_0(v_0), entry(entry), t_n(t_n), v_n(v_n), exit(exit),
-        stops(std::move(stops)) {}
+      : GeneralSchedule({t_0, t_0}, v_0, entry, {t_n, t_n}, v_n, exit,
+                        std::move(stops)) {}
 };
 
 class Timetable {

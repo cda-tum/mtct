@@ -1043,12 +1043,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  tr_name     = train_list.get_train(tr).name;
     const auto& tr_schedule = instance.get_schedule(tr_name);
     const auto& tr_edges = instance.edges_used_by_train(tr, this->fix_routes);
-    for (const auto& tr_stop : tr_schedule.stops) {
+    for (const auto& tr_stop : tr_schedule.get_stops()) {
       const auto t0 = static_cast<size_t>(tr_stop.arrival() / dt);
       const auto t1 = static_cast<size_t>(
           std::ceil(static_cast<double>(tr_stop.departure()) / dt));
-      const auto& stop_edges =
-          instance.get_station_list().get_station(tr_stop.station).tracks;
+      const auto& stop_edges = instance.get_station_list()
+                                   .get_station(tr_stop.get_station_name())
+                                   .tracks;
       const auto inverse_stop_edges =
           instance.n().inverse_edges(stop_edges, tr_edges);
       for (size_t t = t0 - 1; t <= t1; ++t) {
@@ -1850,8 +1851,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   auto train_list = instance.get_train_list();
   for (size_t i = 0; i < num_tr; ++i) {
     auto tr_name       = train_list.get_train(i).name;
-    auto initial_speed = instance.get_schedule(tr_name).v_0;
-    auto final_speed   = instance.get_schedule(tr_name).v_n;
+    auto initial_speed = instance.get_schedule(tr_name).get_v_0();
+    auto final_speed   = instance.get_schedule(tr_name).get_v_n();
     // initial_speed: v(train_interval[i].first) = initial_speed
     model->addConstr(vars["v"](i, train_interval[i].first) == initial_speed,
                      "initial_speed_" + tr_name);
