@@ -266,11 +266,11 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
     }
     auto& schedule_data = data[tr.name];
     this->schedules.at(i).set_t_0(static_cast<int>(schedule_data["t_0"]));
-    this->schedules.at(i).set_v_0(static_cast<int>(schedule_data["v_0"]));
+    this->schedules.at(i).set_v_0(static_cast<double>(schedule_data["v_0"]));
     this->schedules.at(i).set_entry(
         network.get_vertex_index(schedule_data["entry"]));
     this->schedules.at(i).set_t_n(static_cast<int>(schedule_data["t_n"]));
-    this->schedules.at(i).set_v_n(static_cast<int>(schedule_data["v_n"]));
+    this->schedules.at(i).set_v_n(static_cast<double>(schedule_data["v_n"]));
     this->schedules.at(i).set_exit(
         network.get_vertex_index(schedule_data["exit"]));
 
