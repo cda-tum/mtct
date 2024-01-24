@@ -53,17 +53,10 @@ public:
                         std::move(stops)) {}
 };
 
-class Timetable {
+class Timetable : public GeneralTimetable<Schedule> {
   /**
    * Timetable class
    */
-private:
-  StationList           station_list;
-  TrainList             train_list;
-  std::vector<Schedule> schedules;
-
-  void set_train_list(const TrainList& tl);
-
 public:
   // Constructors
   Timetable() = default;
@@ -80,69 +73,15 @@ public:
   Timetable& operator=(Timetable&& other) noexcept = default;
   ~Timetable()                                     = default;
 
-  size_t add_train(const std::string& name, int length, double max_speed,
-                   double acceleration, double deceleration, int t_0,
-                   double v_0, size_t entry, int t_n, double v_n, size_t exit,
-                   const Network& network) {
-    return add_train(name, length, max_speed, acceleration, deceleration, true,
-                     t_0, v_0, entry, t_n, v_n, exit, network);
-  };
-  size_t add_train(const std::string& name, int length, double max_speed,
-                   double acceleration, double deceleration, int t_0,
-                   double v_0, const std::string& entry, int t_n, double v_n,
-                   const std::string& exit, const Network& network) {
-    return add_train(name, length, max_speed, acceleration, deceleration, true,
-                     t_0, v_0, entry, t_n, v_n, exit, network);
-  };
-  size_t add_train(const std::string& name, int length, double max_speed,
-                   double acceleration, double deceleration, bool tim, int t_0,
-                   double v_0, size_t entry, int t_n, double v_n, size_t exit,
-                   const Network& network);
-  size_t add_train(const std::string& name, int length, double max_speed,
-                   double acceleration, double deceleration, bool tim, int t_0,
-                   double v_0, const std::string& entry, int t_n, double v_n,
-                   const std::string& exit, const Network& network) {
-    return add_train(name, length, max_speed, acceleration, deceleration, tim,
-                     t_0, v_0, network.get_vertex_index(entry), t_n, v_n,
-                     network.get_vertex_index(exit), network);
-  };
-
-  Train& editable_tr(size_t index) { return train_list.editable_tr(index); };
-  Train& editable_tr(const std::string& name) {
-    return train_list.editable_tr(name);
-  };
-
-  void add_station(const std::string& name) { station_list.add_station(name); };
-
-  void add_track_to_station(const std::string& name, size_t track,
-                            const Network& network) {
-    station_list.add_track_to_station(name, track, network);
-  };
-  void add_track_to_station(const std::string& name, size_t source,
-                            size_t target, const Network& network) {
-    station_list.add_track_to_station(name, source, target, network);
-  };
-  void add_track_to_station(const std::string& name, const std::string& source,
-                            const std::string& target, const Network& network) {
-    station_list.add_track_to_station(name, source, target, network);
-  };
-
+  using GeneralTimetable::add_stop;
   void add_stop(size_t train_index, const std::string& station_name, int begin,
-                int end, bool sort = true);
+                int end) {
+    GeneralTimetable::add_stop(train_index, station_name, true, begin, end);
+  };
   void add_stop(const std::string& train_name, const std::string& station_name,
-                int begin, int end, bool sort = true) {
-    add_stop(train_list.get_train_index(train_name), station_name, begin, end,
-             sort);
-  };
-
-  [[nodiscard]] const StationList& get_station_list() const {
-    return station_list;
-  };
-  [[nodiscard]] const TrainList& get_train_list() const { return train_list; };
-  [[nodiscard]] const Schedule&  get_schedule(size_t index) const;
-  [[nodiscard]] const Schedule&
-  get_schedule(const std::string& train_name) const {
-    return get_schedule(train_list.get_train_index(train_name));
+                int begin, int end) {
+    GeneralTimetable::add_stop(train_list.get_train_index(train_name),
+                               station_name, true, begin, end);
   };
 
   [[nodiscard]] int                 max_t() const;
@@ -160,8 +99,6 @@ public:
     return time_index_interval(train_list.get_train_index(train_name), dt,
                                tn_inclusive);
   };
-
-  void sort_stops();
 
   [[nodiscard]] bool check_consistency(const Network& network) const;
 
@@ -184,11 +121,6 @@ public:
   [[nodiscard]] static Timetable import_timetable(const char*    path,
                                                   const Network& network) {
     return {path, network};
-  };
-
-  void update_after_discretization(
-      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
-    station_list.update_after_discretization(new_edges);
   };
 };
 } // namespace cda_rail

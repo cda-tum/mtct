@@ -1,6 +1,9 @@
 #pragma once
 
 #include "CustomExceptions.hpp"
+#include "Station.hpp"
+#include "Timetable.hpp"
+#include "Train.hpp"
 
 #include <algorithm>
 #include <string>
@@ -79,7 +82,21 @@ public:
         min_stopping_time(min_stopping_time), station(std::move(station)) {}
 };
 
-template <typename T = GeneralScheduledStop> class GeneralSchedule {
+class BaseGeneralSchedule {
+  /**
+   * This class is only used for static_assert in GeneralTimetable.
+   * It should not be able to be inherited from outside of the specified friend
+   * classes.
+   */
+  template <typename T> friend class GeneralSchedule;
+
+private:
+  BaseGeneralSchedule()  = default;
+  ~BaseGeneralSchedule() = default;
+};
+
+template <typename T = GeneralScheduledStop>
+class GeneralSchedule : BaseGeneralSchedule {
   /**
    * General schedule object
    * @param t_0 start time of schedule in seconds
@@ -138,13 +155,182 @@ public:
   void sort_stops() { std::sort(stops.begin(), stops.end()); }
 
   // Constructor
+  // NOLINTBEGIN(readability-redundant-member-init)
   GeneralSchedule()
-      : t_0({-1, -1}), v_0(-1), entry(-1), t_n({-1, -1}), v_n(-1), exit(-1) {}
+      : BaseGeneralSchedule(), t_0({-1, -1}), v_0(-1), entry(-1), t_n({-1, -1}),
+        v_n(-1), exit(-1) {}
   GeneralSchedule(std::pair<int, int> t_0, double v_0, size_t entry,
                   std::pair<int, int> t_n, double v_n, size_t exit,
                   std::vector<T> stops = {})
-      : t_0(std::move(t_0)), v_0(v_0), entry(entry), t_n(std::move(t_n)),
-        v_n(v_n), exit(exit), stops(std::move(stops)) {}
+      : BaseGeneralSchedule(), t_0(std::move(t_0)), v_0(v_0), entry(entry),
+        t_n(std::move(t_n)), v_n(v_n), exit(exit), stops(std::move(stops)) {}
+  // NOLINTEND(readability-redundant-member-init)
+};
+
+template <typename T = GeneralSchedule<GeneralScheduledStop>>
+class GeneralTimetable {
+  /**
+   * General timetable class
+   */
+  static_assert(std::is_base_of_v<BaseGeneralSchedule, T>,
+                "T must be derived from BaseGeneralSchedule");
+
+protected:
+  StationList    station_list;
+  TrainList      train_list;
+  std::vector<T> schedules;
+
+  void set_train_list(const TrainList& tl) {
+    this->train_list = tl;
+    this->schedules  = std::vector<T>(tl.size());
+  }
+
+public:
+  Train& editable_tr(size_t index) { return train_list.editable_tr(index); };
+  Train& editable_tr(const std::string& name) {
+    return train_list.editable_tr(name);
+  };
+
+  void add_station(const std::string& name) { station_list.add_station(name); };
+
+  template <typename... Args>
+  void add_stop(size_t train_index, const std::string& station_name, bool sort,
+                Args... args) {
+    /**
+     * This method adds a stop to a train schedule. The stop is specified by its
+     * parameters.
+     *
+     * @param train_index The index of the train in the train list.
+     * @param station_name The name of the station.
+     * @param begin The time at which the train stops at the station in s.
+     * @param end The time at which the train leaves the station in s.
+     * @param sort If true, the stops are sorted after insertion.
+     */
+    if (!train_list.has_train(train_index)) {
+      throw exceptions::TrainNotExistentException(train_index);
+    }
+    if (!station_list.has_station(station_name)) {
+      throw exceptions::StationNotExistentException(station_name);
+    }
+
+    schedules.at(train_index).add_stop(sort, args..., station_name);
+  }
+  template <typename... Args>
+  void add_stop(const std::string& train_name, const std::string& station_name,
+                bool sort, Args... args) {
+    add_stop(train_list.get_train_index(train_name), station_name, sort,
+             args...);
+  };
+
+  void add_track_to_station(const std::string& name, size_t track,
+                            const Network& network) {
+    station_list.add_track_to_station(name, track, network);
+  };
+  void add_track_to_station(const std::string& name, size_t source,
+                            size_t target, const Network& network) {
+    station_list.add_track_to_station(name, source, target, network);
+  };
+  void add_track_to_station(const std::string& name, const std::string& source,
+                            const std::string& target, const Network& network) {
+    station_list.add_track_to_station(name, source, target, network);
+  };
+
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, int t_0,
+                   double v_0, size_t entry, int t_n, double v_n, size_t exit,
+                   const Network& network) {
+    return add_train(name, length, max_speed, acceleration, deceleration, true,
+                     t_0, v_0, entry, t_n, v_n, exit, network);
+  };
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, int t_0,
+                   double v_0, const std::string& entry, int t_n, double v_n,
+                   const std::string& exit, const Network& network) {
+    return add_train(name, length, max_speed, acceleration, deceleration, true,
+                     t_0, v_0, entry, t_n, v_n, exit, network);
+  };
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, bool tim, int t_0,
+                   double v_0, size_t entry, int t_n, double v_n, size_t exit,
+                   const Network& network) {
+    /**
+     * This method adds a train to the timetable. The train is specified by its
+     * parameters.
+     *
+     * @param name The name of the train.
+     * @param length The length of the train in m.
+     * @param max_speed The maximum speed of the train in m/s.
+     * @param acceleration The acceleration of the train in m/s^2.
+     * @param deceleration The deceleration of the train in m/s^2.
+     * @param t_0 The time at which the train enters the network in s.
+     * @param v_0 The speed at which the train enters the network in m/s.
+     * @param entry The index of the entry vertex in the network.
+     * @param t_n The time at which the train leaves the network in s.
+     * @param v_n The speed at which the train leaves the network in m/s.
+     * @param exit The index of the exit vertex in the network.
+     * @param network The network to which the timetable belongs.
+     *
+     * @return The index of the train in the train list.
+     */
+    if (!network.has_vertex(entry)) {
+      throw exceptions::VertexNotExistentException(entry);
+    }
+    if (!network.has_vertex(exit)) {
+      throw exceptions::VertexNotExistentException(exit);
+    }
+    if (train_list.has_train(name)) {
+      throw exceptions::ConsistencyException("Train already exists.");
+    }
+    auto const index = train_list.add_train(name, length, max_speed,
+                                            acceleration, deceleration, tim);
+    schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
+    return index;
+  }
+  size_t add_train(const std::string& name, int length, double max_speed,
+                   double acceleration, double deceleration, bool tim, int t_0,
+                   double v_0, const std::string& entry, int t_n, double v_n,
+                   const std::string& exit, const Network& network) {
+    return add_train(name, length, max_speed, acceleration, deceleration, tim,
+                     t_0, v_0, network.get_vertex_index(entry), t_n, v_n,
+                     network.get_vertex_index(exit), network);
+  };
+
+  [[nodiscard]] const StationList& get_station_list() const {
+    return station_list;
+  };
+  [[nodiscard]] const TrainList& get_train_list() const { return train_list; };
+  [[nodiscard]] const T&         get_schedule(size_t index) const {
+    /**
+     * This method returns the schedule of a train with given index.
+     *
+     * @param index The index of the train in the train list.
+     *
+     * @return The schedule of the train.
+     */
+    if (!train_list.has_train(index)) {
+      throw exceptions::TrainNotExistentException(index);
+    }
+    return schedules.at(index);
+  }
+  [[nodiscard]] const T& get_schedule(const std::string& train_name) const {
+    return get_schedule(train_list.get_train_index(train_name));
+  };
+
+  void sort_stops() {
+    /**
+     * This methods sorts all stops of all trains according to the operator < of
+     * ScheduledStop.
+     */
+
+    for (auto& schedule : schedules) {
+      schedule.sort_stops();
+    }
+  }
+
+  void update_after_discretization(
+      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
+    station_list.update_after_discretization(new_edges);
+  };
 };
 
 } // namespace cda_rail

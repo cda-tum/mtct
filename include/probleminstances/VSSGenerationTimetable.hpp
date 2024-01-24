@@ -96,11 +96,11 @@ public:
 
   void add_stop(size_t train_index, const std::string& station_name, int begin,
                 int end, bool sort = true) {
-    timetable.add_stop(train_index, station_name, begin, end, sort);
+    timetable.add_stop(train_index, station_name, sort, begin, end);
   };
   void add_stop(const std::string& train_name, const std::string& station_name,
                 int begin, int end, bool sort = true) {
-    timetable.add_stop(train_name, station_name, begin, end, sort);
+    timetable.add_stop(train_name, station_name, sort, begin, end);
   };
 
   [[nodiscard]] const StationList& get_station_list() const {

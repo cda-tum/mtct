@@ -12,102 +12,6 @@
 
 using json = nlohmann::json;
 
-const cda_rail::Schedule&
-cda_rail::Timetable::get_schedule(size_t index) const {
-  /**
-   * This method returns the schedule of a train with given index.
-   *
-   * @param index The index of the train in the train list.
-   *
-   * @return The schedule of the train.
-   */
-  if (!train_list.has_train(index)) {
-    throw exceptions::TrainNotExistentException(index);
-  }
-  return schedules.at(index);
-}
-
-size_t cda_rail::Timetable::add_train(const std::string& name, int length,
-                                      double max_speed, double acceleration,
-                                      double deceleration, bool tim, int t_0,
-                                      double v_0, size_t entry, int t_n,
-                                      double v_n, size_t exit,
-                                      const Network& network) {
-  /**
-   * This method adds a train to the timetable. The train is specified by its
-   * parameters.
-   *
-   * @param name The name of the train.
-   * @param length The length of the train in m.
-   * @param max_speed The maximum speed of the train in m/s.
-   * @param acceleration The acceleration of the train in m/s^2.
-   * @param deceleration The deceleration of the train in m/s^2.
-   * @param t_0 The time at which the train enters the network in s.
-   * @param v_0 The speed at which the train enters the network in m/s.
-   * @param entry The index of the entry vertex in the network.
-   * @param t_n The time at which the train leaves the network in s.
-   * @param v_n The speed at which the train leaves the network in m/s.
-   * @param exit The index of the exit vertex in the network.
-   * @param network The network to which the timetable belongs.
-   *
-   * @return The index of the train in the train list.
-   */
-  if (!network.has_vertex(entry)) {
-    throw exceptions::VertexNotExistentException(entry);
-  }
-  if (!network.has_vertex(exit)) {
-    throw exceptions::VertexNotExistentException(exit);
-  }
-  if (train_list.has_train(name)) {
-    throw exceptions::ConsistencyException("Train already exists.");
-  }
-  auto const index = train_list.add_train(name, length, max_speed, acceleration,
-                                          deceleration, tim);
-  schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
-  return index;
-}
-
-void cda_rail::Timetable::add_stop(size_t             train_index,
-                                   const std::string& station_name, int begin,
-                                   int end, bool sort) {
-  /**
-   * This method adds a stop to a train schedule. The stop is specified by its
-   * parameters.
-   *
-   * @param train_index The index of the train in the train list.
-   * @param station_name The name of the station.
-   * @param begin The time at which the train stops at the station in s.
-   * @param end The time at which the train leaves the station in s.
-   * @param sort If true, the stops are sorted after insertion.
-   */
-  if (!train_list.has_train(train_index)) {
-    throw exceptions::TrainNotExistentException(train_index);
-  }
-  if (!station_list.has_station(station_name)) {
-    throw exceptions::StationNotExistentException(station_name);
-  }
-  if (begin < 0 || end < 0) {
-    throw exceptions::InvalidInputException("Time cannot be negative.");
-  }
-  if (begin >= end) {
-    throw exceptions::ConsistencyException(
-        "End time has to be after the start time.");
-  }
-
-  schedules.at(train_index).add_stop(sort, begin, end, station_name);
-}
-
-void cda_rail::Timetable::sort_stops() {
-  /**
-   * This methods sorts all stops of all trains according to the operator < of
-   * ScheduledStop.
-   */
-
-  for (auto& schedule : schedules) {
-    schedule.sort_stops();
-  }
-}
-
 void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
                                            const Network& network) const {
   /**
@@ -157,16 +61,6 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
 
   std::ofstream file(p / "schedules.json");
   file << j << std::endl;
-}
-
-void cda_rail::Timetable::set_train_list(const TrainList& tl) {
-  /**
-   * This method sets the train list of the timetable.
-   *
-   * @param tl The train list to set.
-   */
-  train_list = tl;
-  schedules  = std::vector<Schedule>(tl.size());
 }
 
 bool cda_rail::Timetable::check_consistency(const Network& network) const {
@@ -275,9 +169,9 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
         network.get_vertex_index(schedule_data["exit"]));
 
     for (const auto& stop_data : schedule_data["stops"]) {
-      this->add_stop(i, stop_data["station"].get<std::string>(),
-                     stop_data["begin"].get<int>(), stop_data["end"].get<int>(),
-                     false);
+      this->add_stop(i, stop_data["station"].get<std::string>(), false,
+                     stop_data["begin"].get<int>(),
+                     stop_data["end"].get<int>());
     }
   }
 
