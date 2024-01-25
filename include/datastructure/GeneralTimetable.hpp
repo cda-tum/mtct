@@ -79,7 +79,36 @@ public:
   GeneralScheduledStop(std::pair<int, int> begin, std::pair<int, int> end,
                        int min_stopping_time, std::string station)
       : begin(std::move(begin)), end(std::move(end)),
-        min_stopping_time(min_stopping_time), station(std::move(station)) {}
+        min_stopping_time(min_stopping_time), station(std::move(station)) {
+    if (begin.second < begin.first) {
+      throw exceptions::InvalidInputException(
+          "Interval begin has negative length");
+    }
+    if (end.second < end.first) {
+      throw exceptions::InvalidInputException(
+          "Interval end has negative length");
+    }
+    if (min_stopping_time <= 0) {
+      throw exceptions::InvalidInputException(
+          "Minimum stopping time is non-positive");
+    }
+    if (begin.first < 0) {
+      throw exceptions::InvalidInputException(
+          "Interval begin has negative start time");
+    }
+    if (end.first < 0) {
+      throw exceptions::InvalidInputException(
+          "Interval end has negative start time");
+    }
+    if (end.second < begin.first) {
+      throw exceptions::InvalidInputException(
+          "Interval end starts before interval begin");
+    }
+    if (end.second - begin.first < min_stopping_time) {
+      throw exceptions::InvalidInputException(
+          "Maximal Interval is shorter than minimum stopping time");
+    }
+  }
 };
 
 class BaseGeneralSchedule {

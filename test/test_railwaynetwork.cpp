@@ -2448,9 +2448,9 @@ TEST(Functionality, TimetableExceptions) {
   EXPECT_THROW(timetable.add_stop(tr1, "Station1", 0, -1),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(timetable.add_stop(tr1, "Station1", 60, 0),
-               cda_rail::exceptions::ConsistencyException);
+               cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(timetable.add_stop(tr1, "Station1", 60, 60),
-               cda_rail::exceptions::ConsistencyException);
+               cda_rail::exceptions::InvalidInputException);
 
   timetable.add_stop(tr1, "Station1", 0, 60);
   EXPECT_THROW(timetable.add_stop(tr1, "Station1", 0, 60),
