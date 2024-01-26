@@ -28,7 +28,7 @@ protected:
   std::string         station;
 
 public:
-  [[nodiscard]] const static std::pair<int, int> time_type() {
+  [[nodiscard]] static std::pair<int, int> time_type() {
     // return the type of the desired time type
     return std::pair<int, int>();
   }

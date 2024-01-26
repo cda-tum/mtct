@@ -16,7 +16,7 @@ class ScheduledStop : public GeneralScheduledStop {
    * A scheduled stop with fixed times
    */
 public:
-  [[nodiscard]] const static int time_type() {
+  [[nodiscard]] static int time_type() {
     // return the type of the desired time type
     return int();
   }
