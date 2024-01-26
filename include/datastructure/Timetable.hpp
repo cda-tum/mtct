@@ -1,8 +1,6 @@
 #pragma once
 #include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
-#include "datastructure/Station.hpp"
-#include "datastructure/Train.hpp"
 
 #include <filesystem>
 #include <string>

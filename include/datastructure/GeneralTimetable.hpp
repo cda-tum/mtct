@@ -2,7 +2,6 @@
 
 #include "CustomExceptions.hpp"
 #include "Station.hpp"
-#include "Timetable.hpp"
 #include "Train.hpp"
 #include "nlohmann/json.hpp"
 
@@ -70,6 +69,7 @@ public:
            interval2.first <= interval1.second;
   }
 
+  // NOLINTBEGIN (readability-convert-member-functions-to-static)
   [[nodiscard]] std::pair<int, int> get_forced_stopping_interval() const {
     std::pair<int, int> interval = {begin.second, end.first};
     if (begin.first + min_stopping_time > interval.second) {
@@ -80,6 +80,7 @@ public:
     }
     return interval;
   }
+  // NOLINTEND (readability-convert-member-functions-to-static)
 
   [[nodiscard]] const std::pair<int, int>& get_begin() const { return begin; }
   [[nodiscard]] const std::pair<int, int>& get_end() const { return end; }
@@ -87,6 +88,7 @@ public:
   [[nodiscard]] const std::string& get_station_name() const { return station; }
 
   // Constructor
+  // NOLINTBEGIN (misc-unused-parameters)
   GeneralScheduledStop(std::pair<int, int> begin, std::pair<int, int> end,
                        int min_stopping_time, std::string station)
       : begin(std::move(begin)), end(std::move(end)),
@@ -120,6 +122,7 @@ public:
           "Maximal Interval is shorter than minimum stopping time");
     }
   }
+  // NOLINTEND (misc-unused-parameters)
 };
 
 class BaseGeneralSchedule {
@@ -282,7 +285,8 @@ public:
     this->station_list = StationList::import_stations(p, network);
 
     std::ifstream f(p / "schedules.json");
-    json          data = json::parse(f);
+    // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
+    json data = json::parse(f);
 
     for (size_t i = 0; i < this->train_list.size(); i++) {
       const auto& tr = this->train_list.get_train(i);
@@ -341,6 +345,7 @@ public:
     train_list.export_trains(p);
     station_list.export_stations(p, network);
 
+    // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
     json j;
     for (size_t i = 0; i < schedules.size(); ++i) {
       const auto& schedule = schedules.at(i);
