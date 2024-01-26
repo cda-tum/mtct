@@ -28,7 +28,7 @@ class GeneralScheduledStop {
 public:
   [[nodiscard]] static std::pair<int, int> time_type() {
     // return the type of the desired time type
-    return std::pair<int, int>();
+    return {};
   }
 
   bool operator<(const GeneralScheduledStop& other) const {
