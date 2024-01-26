@@ -90,31 +90,31 @@ public:
                        int min_stopping_time, std::string station)
       : begin(std::move(begin)), end(std::move(end)),
         min_stopping_time(min_stopping_time), station(std::move(station)) {
-    if (begin.second < begin.first) {
+    if (this->begin.second < this->begin.first) {
       throw exceptions::InvalidInputException(
           "Interval begin has negative length");
     }
-    if (end.second < end.first) {
+    if (this->end.second < this->end.first) {
       throw exceptions::InvalidInputException(
           "Interval end has negative length");
     }
-    if (min_stopping_time <= 0) {
+    if (this->min_stopping_time <= 0) {
       throw exceptions::InvalidInputException(
           "Minimum stopping time is non-positive");
     }
-    if (begin.first < 0) {
+    if (this->begin.first < 0) {
       throw exceptions::InvalidInputException(
           "Interval begin has negative start time");
     }
-    if (end.first < 0) {
+    if (this->end.first < 0) {
       throw exceptions::InvalidInputException(
           "Interval end has negative start time");
     }
-    if (end.second < begin.first) {
+    if (this->end.second < this->begin.first) {
       throw exceptions::InvalidInputException(
           "Interval end starts before interval begin");
     }
-    if (end.second - begin.first < min_stopping_time) {
+    if (this->end.second - this->begin.first < this->min_stopping_time) {
       throw exceptions::InvalidInputException(
           "Maximal Interval is shorter than minimum stopping time");
     }
