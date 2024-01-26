@@ -12,57 +12,6 @@
 
 using json = nlohmann::json;
 
-void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
-                                           const Network& network) const {
-  /**
-   * This method exports the timetable to a directory. In particular the
-   * following files are created:
-   * - trains.json according to the function defined in
-   * cda_rail::TrainList::export_trains
-   * - stations.json according to the function defined in
-   * cda_rail::StationList::export_stations
-   * - schedules.json of the following format:
-   *  {"tr1": {"t_0": t_0, "v_0": v_0, "entry": v_name, "t_n": t_n, "v_n": v_n,
-   * "exit": v_name, "stops": [{"begin": t_b, "end": t_e, "station": s_name},
-   * ...]}, ...}
-   *
-   *  @param p The path to the directory where the files should be created.
-   */
-
-  if (!is_directory_and_create(p)) {
-    throw exceptions::ExportException("Could not create directory " +
-                                      p.string());
-  }
-
-  train_list.export_trains(p);
-  station_list.export_stations(p, network);
-
-  json j;
-  for (size_t i = 0; i < schedules.size(); ++i) {
-    const auto& schedule = schedules.at(i);
-    json        stops;
-
-    for (const auto& stop : schedule.get_stops()) {
-      stops.push_back(
-          {{"begin", stop.arrival()},
-           {"end", stop.departure()},
-           {"station",
-            station_list.get_station(stop.get_station_name()).name}});
-    }
-    j[train_list.get_train(i).name] = {
-        {"t_0", schedule.get_t_0()},
-        {"v_0", schedule.get_v_0()},
-        {"entry", network.get_vertex(schedule.get_entry()).name},
-        {"t_n", schedule.get_t_n()},
-        {"v_n", schedule.get_v_n()},
-        {"exit", network.get_vertex(schedule.get_exit()).name},
-        {"stops", stops}};
-  }
-
-  std::ofstream file(p / "schedules.json");
-  file << j << std::endl;
-}
-
 bool cda_rail::Timetable::check_consistency(const Network& network) const {
   /**
    * This method checks if the timetable is consistent with the network, i.e.,
@@ -122,60 +71,6 @@ bool cda_rail::Timetable::check_consistency(const Network& network) const {
   }
 
   return true;
-}
-
-cda_rail::Timetable::Timetable(const std::filesystem::path& p,
-                               const Network&               network) {
-  /**
-   * This method constructs the object and imports a timetable from a directory.
-   * In particular the following files are read:
-   * - trains.json according to the function defined in
-   * cda_rail::TrainList::import_trains
-   * - stations.json according to the function defined in
-   * cda_rail::StationList::import_stations
-   * - schedules.json of the format described in
-   * cda_rail::Timetable::export_timetable
-   *
-   * @param p The path to the directory where the files should be read from.
-   * @param network The network to which the timetable belongs.
-   */
-
-  if (!std::filesystem::exists(p)) {
-    throw exceptions::ImportException("Path does not exist.");
-  }
-  if (!std::filesystem::is_directory(p)) {
-    throw exceptions::ImportException("Path is not a directory.");
-  }
-
-  this->set_train_list(TrainList::import_trains(p));
-  this->station_list = StationList::import_stations(p, network);
-
-  std::ifstream f(p / "schedules.json");
-  json          data = json::parse(f);
-
-  for (size_t i = 0; i < this->train_list.size(); i++) {
-    const auto& tr = this->train_list.get_train(i);
-    if (!data.contains(tr.name)) {
-      throw exceptions::ScheduleNotExistentException(tr.name);
-    }
-    auto& schedule_data = data[tr.name];
-    this->schedules.at(i).set_t_0(static_cast<int>(schedule_data["t_0"]));
-    this->schedules.at(i).set_v_0(static_cast<double>(schedule_data["v_0"]));
-    this->schedules.at(i).set_entry(
-        network.get_vertex_index(schedule_data["entry"]));
-    this->schedules.at(i).set_t_n(static_cast<int>(schedule_data["t_n"]));
-    this->schedules.at(i).set_v_n(static_cast<double>(schedule_data["v_n"]));
-    this->schedules.at(i).set_exit(
-        network.get_vertex_index(schedule_data["exit"]));
-
-    for (const auto& stop_data : schedule_data["stops"]) {
-      this->add_stop(i, stop_data["station"].get<std::string>(), false,
-                     stop_data["begin"].get<int>(),
-                     stop_data["end"].get<int>());
-    }
-  }
-
-  this->sort_stops();
 }
 
 int cda_rail::Timetable::max_t() const {

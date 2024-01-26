@@ -16,6 +16,11 @@ class ScheduledStop : public GeneralScheduledStop {
    * A scheduled stop with fixed times
    */
 public:
+  [[nodiscard]] const static int time_type() {
+    // return the type of the desired time type
+    return int();
+  }
+
   [[nodiscard]] int arrival() const {
     return GeneralScheduledStop::begin.first;
   }
@@ -60,7 +65,8 @@ class Timetable : public GeneralTimetable<Schedule> {
 public:
   // Constructors
   Timetable() = default;
-  Timetable(const std::filesystem::path& p, const Network& network);
+  Timetable(const std::filesystem::path& p, const Network& network)
+      : GeneralTimetable(p, network){};
   Timetable(const std::string& path, const Network& network)
       : Timetable(std::filesystem::path(path), network){};
   Timetable(const char* path, const Network& network)
@@ -102,14 +108,6 @@ public:
 
   [[nodiscard]] bool check_consistency(const Network& network) const;
 
-  void export_timetable(const std::string& path, const Network& network) const {
-    export_timetable(std::filesystem::path(path), network);
-  };
-  void export_timetable(const char* path, const Network& network) const {
-    export_timetable(std::filesystem::path(path), network);
-  };
-  void export_timetable(const std::filesystem::path& p,
-                        const Network&               network) const;
   [[nodiscard]] static Timetable import_timetable(const std::string& path,
                                                   const Network&     network) {
     return {path, network};
