@@ -21,7 +21,6 @@ class GeneralScheduledStop {
   /**
    * A (general) scheduled stop.
    */
-protected:
   std::pair<int, int> begin;
   std::pair<int, int> end;
   int                 min_stopping_time;
@@ -82,6 +81,8 @@ public:
     return interval;
   }
 
+  [[nodiscard]] const std::pair<int, int>& get_begin() const { return begin; }
+  [[nodiscard]] const std::pair<int, int>& get_end() const { return end; }
   [[nodiscard]] int get_min_stopping_time() const { return min_stopping_time; }
   [[nodiscard]] const std::string& get_station_name() const { return station; }
 
@@ -149,7 +150,6 @@ class GeneralSchedule : BaseGeneralSchedule {
   static_assert(std::is_base_of_v<GeneralScheduledStop, T>,
                 "T must be derived from GeneralScheduledStop");
 
-protected:
   std::pair<int, int> t_0;
   double              v_0;
   size_t              entry;
@@ -247,7 +247,7 @@ class GeneralTimetable {
 protected:
   StationList    station_list;
   TrainList      train_list;
-  std::vector<T> schedules;
+  std::vector<T> schedules = {};
 
   void set_train_list(const TrainList& tl) {
     this->train_list = tl;

@@ -15,6 +15,10 @@ class ScheduledStop : public GeneralScheduledStop {
   /**
    * A scheduled stop with fixed times
    */
+
+  using GeneralScheduledStop::get_begin;
+  using GeneralScheduledStop::get_end;
+
 public:
   [[nodiscard]] static int time_type() {
     // return the type of the desired time type
@@ -22,10 +26,10 @@ public:
   }
 
   [[nodiscard]] int arrival() const {
-    return GeneralScheduledStop::begin.first;
+    return GeneralScheduledStop::get_begin().first;
   }
   [[nodiscard]] int departure() const {
-    return GeneralScheduledStop::end.first;
+    return GeneralScheduledStop::get_end().first;
   }
 
   // Constructor
