@@ -69,7 +69,6 @@ public:
            interval2.first <= interval1.second;
   }
 
-  // NOLINTBEGIN (readability-convert-member-functions-to-static)
   [[nodiscard]] std::pair<int, int> get_forced_stopping_interval() const {
     std::pair<int, int> interval = {begin.second, end.first};
     if (begin.first + min_stopping_time > interval.second) {
@@ -80,7 +79,6 @@ public:
     }
     return interval;
   }
-  // NOLINTEND (readability-convert-member-functions-to-static)
 
   [[nodiscard]] const std::pair<int, int>& get_begin() const { return begin; }
   [[nodiscard]] const std::pair<int, int>& get_end() const { return end; }
@@ -88,7 +86,6 @@ public:
   [[nodiscard]] const std::string& get_station_name() const { return station; }
 
   // Constructor
-  // NOLINTBEGIN (misc-unused-parameters)
   GeneralScheduledStop(std::pair<int, int> begin, std::pair<int, int> end,
                        int min_stopping_time, std::string station)
       : begin(std::move(begin)), end(std::move(end)),
@@ -122,7 +119,6 @@ public:
           "Maximal Interval is shorter than minimum stopping time");
     }
   }
-  // NOLINTEND (misc-unused-parameters)
 };
 
 class BaseGeneralSchedule {
@@ -202,7 +198,6 @@ public:
   void sort_stops() { std::sort(stops.begin(), stops.end()); }
 
   // Constructor
-  // NOLINTBEGIN(readability-redundant-member-init,misc-unused-parameters)
   GeneralSchedule()
       : BaseGeneralSchedule(), t_0({-1, -1}), v_0(-1), entry(-1), t_n({-1, -1}),
         v_n(-1), exit(-1) {}
@@ -211,7 +206,6 @@ public:
                   std::vector<T> stops = {})
       : BaseGeneralSchedule(), t_0(std::move(t_0)), v_0(v_0), entry(entry),
         t_n(std::move(t_n)), v_n(v_n), exit(exit), stops(std::move(stops)) {}
-  // NOLINTEND(readability-redundant-member-init,misc-unused-parameters)
 };
 
 template <typename T = GeneralSchedule<GeneralScheduledStop>>
@@ -285,8 +279,7 @@ public:
     this->station_list = StationList::import_stations(p, network);
 
     std::ifstream f(p / "schedules.json");
-    // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-    json data = json::parse(f);
+    json          data = json::parse(f);
 
     for (size_t i = 0; i < this->train_list.size(); i++) {
       const auto& tr = this->train_list.get_train(i);
@@ -345,7 +338,6 @@ public:
     train_list.export_trains(p);
     station_list.export_stations(p, network);
 
-    // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
     json j;
     for (size_t i = 0; i < schedules.size(); ++i) {
       const auto& schedule = schedules.at(i);

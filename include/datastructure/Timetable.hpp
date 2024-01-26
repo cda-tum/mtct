@@ -52,7 +52,6 @@ public:
   void set_t_n(int t_n) { GeneralSchedule::set_t_n({t_n, t_n}); }
 
   // Constructor
-  // NOLINTNEXTLINE(readability-redundant-member-init)
   Schedule() : GeneralSchedule() {}
   Schedule(int t_0, double v_0, size_t entry, int t_n, double v_n, size_t exit,
            std::vector<ScheduledStop> stops = {})
