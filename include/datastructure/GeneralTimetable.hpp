@@ -184,7 +184,7 @@ public:
   void sort_stops() { std::sort(stops.begin(), stops.end()); }
 
   // Constructor
-  // NOLINTBEGIN(readability-redundant-member-init)
+  // NOLINTBEGIN(readability-redundant-member-init,misc-unused-parameters)
   GeneralSchedule()
       : BaseGeneralSchedule(), t_0({-1, -1}), v_0(-1), entry(-1), t_n({-1, -1}),
         v_n(-1), exit(-1) {}
@@ -193,7 +193,7 @@ public:
                   std::vector<T> stops = {})
       : BaseGeneralSchedule(), t_0(std::move(t_0)), v_0(v_0), entry(entry),
         t_n(std::move(t_n)), v_n(v_n), exit(exit), stops(std::move(stops)) {}
-  // NOLINTEND(readability-redundant-member-init)
+  // NOLINTEND(readability-redundant-member-init,misc-unused-parameters)
 };
 
 template <typename T = GeneralSchedule<GeneralScheduledStop>>
