@@ -1,5 +1,6 @@
 #pragma once
 #include "CustomExceptions.hpp"
+#include "GeneralProblemInstance.hpp"
 #include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
@@ -9,9 +10,8 @@
 #include <optional>
 
 namespace cda_rail::instances {
-class VSSGenerationTimetable {
+class VSSGenerationTimetable : public GeneralProblemInstance {
 private:
-  Network   network;
   Timetable timetable;
   RouteMap  routes;
 
@@ -38,10 +38,6 @@ public:
   operator=(const VSSGenerationTimetable& other)                    = default;
   VSSGenerationTimetable& operator=(VSSGenerationTimetable&& other) = default;
   ~VSSGenerationTimetable()                                         = default;
-
-  // Network functions, i.e., network is accessible via n() as a reference
-  [[nodiscard]] Network&       n() { return network; };
-  [[nodiscard]] const Network& const_n() const { return network; };
 
   // Timetable functions
   size_t add_train(const std::string& name, int length, double max_speed,
@@ -210,22 +206,19 @@ public:
     return routes.edge_pos(train_name, edges, network);
   };
 
+  [[nodiscard]] bool check_consistency() const override {
+    return check_consistency(true);
+  };
+
   // General Consistency Check
-  [[nodiscard]] bool
-  check_consistency(bool every_train_must_have_route = true) const {
+  [[nodiscard]] bool check_consistency(bool every_train_must_have_route) const {
     return (timetable.check_consistency(network) &&
             routes.check_consistency(get_train_list(), network,
                                      every_train_must_have_route));
   };
 
   // Export and import functions
-  void export_instance(const std::filesystem::path& p) const;
-  void export_instance(const std::string& path) const {
-    export_instance(std::filesystem::path(path));
-  };
-  void export_instance(const char* path) const {
-    export_instance(std::filesystem::path(path));
-  };
+  void export_instance(const std::filesystem::path& p) const override;
 
   [[nodiscard]] static VSSGenerationTimetable
   import_instance(const std::filesystem::path& p,
@@ -267,20 +260,17 @@ public:
   edges_used_by_train(const std::string& train_name, bool fixed_routes) const;
 };
 
-class SolVSSGenerationTimetable {
+class SolVSSGenerationTimetable
+    : public SolGeneralProblemInstance<VSSGenerationTimetable> {
 private:
-  VSSGenerationTimetable           instance;
   std::vector<std::vector<double>> vss_pos;
 
   int                              dt = -1;
   std::vector<std::vector<double>> train_pos;
   std::vector<std::vector<double>> train_speed;
 
-  SolutionStatus status        = SolutionStatus::Unknown;
-  double         obj           = -1;
-  double         mip_obj       = -1;
-  bool           postprocessed = false;
-  bool           has_sol       = false;
+  double mip_obj       = -1;
+  bool   postprocessed = false;
 
   void initialize_vectors();
 
@@ -294,10 +284,6 @@ public:
   SolVSSGenerationTimetable() = delete;
 
   // Getter
-  [[nodiscard]] const VSSGenerationTimetable& get_instance() const {
-    return instance;
-  };
-
   [[nodiscard]] const std::vector<double>& get_vss_pos(size_t edge_id) const {
     if (!instance.const_n().has_edge(edge_id)) {
       throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
@@ -334,20 +320,14 @@ public:
         instance.get_train_list().get_train_index(train_name), time);
   }
 
-  [[nodiscard]] SolutionStatus get_status() const { return status; };
-  [[nodiscard]] double         get_obj() const { return obj; };
-  [[nodiscard]] double         get_mip_obj() const { return mip_obj; };
-  [[nodiscard]] bool get_postprocessed() const { return postprocessed; };
-  [[nodiscard]] int  get_dt() const { return dt; };
-  [[nodiscard]] bool has_solution() const { return has_sol; };
-  void set_status(SolutionStatus new_status) { status = new_status; };
-  void set_obj(double new_obj) { obj = new_obj; };
+  [[nodiscard]] double get_mip_obj() const { return mip_obj; };
+  [[nodiscard]] bool   get_postprocessed() const { return postprocessed; };
+  [[nodiscard]] int    get_dt() const { return dt; };
+
   void set_mip_obj(double new_mip_obj) { mip_obj = new_mip_obj; };
   void set_postprocessed(bool new_postprocessed) {
     postprocessed = new_postprocessed;
   };
-  void set_solution_found() { has_sol = true; };
-  void set_solution_not_found() { has_sol = false; };
 
   // RouteMap functions
   void reset_routes() {
@@ -439,17 +419,10 @@ public:
                     speed);
   };
 
-  [[nodiscard]] bool check_consistency() const;
+  [[nodiscard]] bool check_consistency() const override;
 
   void export_solution(const std::filesystem::path& p,
-                       bool export_instance = true) const;
-  void export_solution(const std::string& path,
-                       bool               export_instance = true) const {
-    export_solution(std::filesystem::path(path), export_instance);
-  };
-  void export_solution(const char* path, bool export_instance = true) const {
-    export_solution(std::filesystem::path(path), export_instance);
-  };
+                       bool export_instance = true) const override;
 
   [[nodiscard]] static SolVSSGenerationTimetable
   import_solution(const std::filesystem::path&                 p,

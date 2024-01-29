@@ -14,6 +14,7 @@ add_library(
   datastructure/Station.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Route.hpp
   datastructure/Route.cpp
+  ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralProblemInstance.hpp
   ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
   probleminstances/VSSGenerationTimetable.cpp
   probleminstances/SolVSSGenerationTimetable.cpp

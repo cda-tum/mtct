@@ -18,7 +18,7 @@ using json = nlohmann::json;
 
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
     cda_rail::instances::VSSGenerationTimetable instance, int dt)
-    : instance(std::move(instance)), dt(dt) {
+    : SolGeneralProblemInstance<VSSGenerationTimetable>(instance), dt(dt) {
   this->initialize_vectors();
 }
 
