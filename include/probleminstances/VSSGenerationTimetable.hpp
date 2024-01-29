@@ -429,7 +429,7 @@ public:
                   const std::optional<VSSGenerationTimetable>& instance =
                       std::optional<VSSGenerationTimetable>()) {
     auto sol = SolVSSGenerationTimetable(p, instance);
-    if (sol.check_consistency()) {
+    if (!sol.check_consistency()) {
       throw exceptions::ConsistencyException(
           "Imported solution object is not consistent");
     }
