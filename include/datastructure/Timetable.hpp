@@ -41,6 +41,8 @@ class Schedule : public GeneralSchedule<ScheduledStop> {
    * Specific Schedule object
    */
 private:
+  using GeneralSchedule::get_t_0;
+  using GeneralSchedule::get_t_n;
   using GeneralSchedule::set_t_0;
   using GeneralSchedule::set_t_n;
 
