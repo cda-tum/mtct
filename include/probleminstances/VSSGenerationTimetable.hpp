@@ -422,13 +422,18 @@ public:
   [[nodiscard]] bool check_consistency() const override;
 
   void export_solution(const std::filesystem::path& p,
-                       bool export_instance = true) const override;
+                       bool export_instance) const override;
 
   [[nodiscard]] static SolVSSGenerationTimetable
   import_solution(const std::filesystem::path&                 p,
                   const std::optional<VSSGenerationTimetable>& instance =
                       std::optional<VSSGenerationTimetable>()) {
-    return SolVSSGenerationTimetable(p, instance);
+    auto sol = SolVSSGenerationTimetable(p, instance);
+    if (sol.check_consistency()) {
+      throw exceptions::ConsistencyException(
+          "Imported solution object is not consistent");
+    }
+    return sol;
   };
   [[nodiscard]] static SolVSSGenerationTimetable
   import_solution(const std::string&                           path,

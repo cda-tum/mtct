@@ -18,7 +18,8 @@ using json = nlohmann::json;
 
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
     cda_rail::instances::VSSGenerationTimetable instance, int dt)
-    : SolGeneralProblemInstance<VSSGenerationTimetable>(instance), dt(dt) {
+    : SolGeneralProblemInstance<VSSGenerationTimetable>(std::move(instance)),
+      dt(dt) {
   this->initialize_vectors();
 }
 
@@ -415,11 +416,6 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
     for (const auto& [t, speed] : tr_speed_json.items()) {
       this->add_train_speed(tr_name, std::stoi(t), speed.get<double>());
     }
-  }
-
-  if (!this->check_consistency()) {
-    throw exceptions::ConsistencyException(
-        "Imported solution object is not consistent");
   }
 }
 

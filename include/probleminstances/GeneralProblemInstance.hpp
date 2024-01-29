@@ -26,7 +26,9 @@ public:
     export_instance(std::filesystem::path(path));
   };
 
-  virtual bool check_consistency() const = 0;
+  [[nodiscard]] virtual bool check_consistency() const = 0;
+
+  virtual ~GeneralProblemInstance() = default;
 };
 
 template <typename T> class SolGeneralProblemInstance {
@@ -40,7 +42,8 @@ protected:
   bool           has_sol = false;
 
   SolGeneralProblemInstance() = default;
-  SolGeneralProblemInstance(T instance) : instance(std::move(instance)){};
+  explicit SolGeneralProblemInstance(T instance)
+      : instance(std::move(instance)){};
   SolGeneralProblemInstance(T instance, SolutionStatus status, double obj,
                             bool has_sol)
       : instance(std::move(instance)), status(status), obj(obj),
@@ -57,7 +60,11 @@ public:
   void set_solution_not_found() { has_sol = false; };
 
   virtual void export_solution(const std::filesystem::path& p,
-                               bool export_instance = true) const = 0;
+                               bool export_instance) const = 0;
+
+  void export_solution(const std::filesystem::path& p) const {
+    export_solution(p, true);
+  };
 
   void export_solution(const std::string& path,
                        bool               export_instance = true) const {
@@ -67,6 +74,8 @@ public:
     export_solution(std::filesystem::path(path), export_instance);
   };
 
-  virtual bool check_consistency() const = 0;
+  [[nodiscard]] virtual bool check_consistency() const = 0;
+
+  virtual ~SolGeneralProblemInstance() = default;
 };
 } // namespace cda_rail::instances
