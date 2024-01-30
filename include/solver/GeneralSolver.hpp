@@ -24,5 +24,7 @@ public:
   [[nodiscard]] T&       editable_instance() { return instance; }
 
   [[nodiscard]] virtual S solve() = 0;
+
+  virtual ~GeneralSolver() = default;
 };
 } // namespace cda_rail::solver

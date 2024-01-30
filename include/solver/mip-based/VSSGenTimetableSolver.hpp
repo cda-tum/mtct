@@ -13,10 +13,6 @@
 
 namespace cda_rail::solver::mip_based {
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
-
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
-
 enum class UpdateStrategy { Fixed = 0, Relative = 1 };
 
 struct SolverStrategy {

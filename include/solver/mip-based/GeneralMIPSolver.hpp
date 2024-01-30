@@ -11,6 +11,9 @@
 #include <unordered_map>
 
 namespace cda_rail::solver::mip_based {
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+
 class MessageCallback : public GRBCallback {
 public:
   explicit MessageCallback() = default;
@@ -26,6 +29,8 @@ protected:
     }
   }
 };
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 template <typename T, typename S>
 class GeneralMIPSolver : public GeneralSolver<T, S> {
