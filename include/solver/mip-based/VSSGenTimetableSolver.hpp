@@ -1,5 +1,6 @@
 #pragma once
-#include "MultiArray.hpp"
+#include "Definitions.hpp"
+#include "GeneralMIPSolver.hpp"
 #include "VSSModel.hpp"
 #include "gurobi_c++.h"
 #include "probleminstances/VSSGenerationTimetable.hpp"
@@ -7,28 +8,12 @@
 
 #include <filesystem>
 #include <optional>
-#include <plog/Log.h>
 #include <string>
+#include <utility>
 
 namespace cda_rail::solver::mip_based {
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
-
-class MessageCallback : public GRBCallback {
-public:
-  explicit MessageCallback() = default;
-
-protected:
-  void callback() override {
-    if (where == GRB_CB_MESSAGE) {
-      std::string msg = getStringInfo(GRB_CB_MSG_STRING);
-      if (!msg.empty() && msg.back() == '\n') {
-        msg.pop_back(); // Remove the last character (newline)
-      }
-      PLOGI << msg;
-    }
-  }
-};
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
@@ -64,10 +49,10 @@ struct SolutionSettings {
   std::string  path;
 };
 
-class VSSGenTimetableSolver {
+class VSSGenTimetableSolver
+    : public GeneralMIPSolver<instances::VSSGenerationTimetable,
+                              instances::SolVSSGenerationTimetable> {
 private:
-  instances::VSSGenerationTimetable instance;
-
   // Instance variables
   int                                    dt                     = -1;
   size_t                                 num_t                  = 0;
@@ -102,12 +87,6 @@ private:
   std::unordered_map<size_t, size_t> breakable_edge_indices;
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
       fwd_bwd_sections;
-
-  // Gurobi variables
-  std::optional<GRBEnv>                               env;
-  std::optional<GRBModel>                             model;
-  std::unordered_map<std::string, MultiArray<GRBVar>> vars;
-  GRBLinExpr                                          objective_expr;
 
   // Variable functions
   void create_general_variables();
@@ -194,7 +173,7 @@ private:
 
   void cleanup();
 
-  instances::SolVSSGenerationTimetable
+  [[nodiscard]] instances::SolVSSGenerationTimetable
   extract_solution(bool postprocess, bool full_model,
                    const std::optional<instances::VSSGenerationTimetable>&
                        old_instance) const;
@@ -213,17 +192,14 @@ public:
 
   // Methods
   instances::SolVSSGenerationTimetable
-  solve(const ModelDetail&      model_detail      = {},
+  solve(const ModelDetail&      model_detail,
         const ModelSettings&    model_settings    = {},
         const SolverStrategy&   solver_strategy   = {},
         const SolutionSettings& solution_settings = {}, int time_limit = -1,
         bool debug_input = false);
 
-  [[nodiscard]] const instances::VSSGenerationTimetable& get_instance() const {
-    return instance;
-  }
-  [[nodiscard]] instances::VSSGenerationTimetable& editable_instance() {
-    return instance;
+  instances::SolVSSGenerationTimetable solve() override {
+    return solve({}, {}, {}, {}, -1, false);
   }
 };
 

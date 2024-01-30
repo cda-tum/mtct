@@ -20,6 +20,8 @@ add_library(
   probleminstances/SolVSSGenerationTimetable.cpp
   ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
   ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
+  ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp
+  ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GeneralMIPSolver.hpp
   solver/mip-based/VSSGenTimetableSolver_general.cpp
   solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
   solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
