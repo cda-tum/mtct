@@ -19,6 +19,7 @@ struct EdgeTarget {
   double      max_speed;
   bool        breakable;
   double      min_block_length;
+  double      min_stop_block_length = 1;
 };
 
 // NOLINTBEGIN(clang-diagnostic-unused-result)
@@ -32,7 +33,7 @@ TEST(Functionality, NetworkFunctions) {
   const auto e0 = network.add_edge("v0", "v1", 1, 2, false, 0);
   const auto e1 = network.add_edge("v1", "v2", 3, 4, true, 1.5);
   const auto e2 = network.add_edge("v1", "v0", 1, 2, false, 0);
-  const auto e3 = network.add_edge("v2", "v0", 10, 20, true, 2);
+  const auto e3 = network.add_edge("v2", "v0", 10, 20, true, 2, 5);
 
   network.add_successor(network.get_edge_index("v0", "v1"),
                         network.get_edge_index("v1", "v2"));
@@ -124,6 +125,14 @@ TEST(Functionality, NetworkFunctions) {
   EXPECT_FALSE(network.get_edge(1).breakable);
   network.set_edge_breakable("v1", "v2");
   EXPECT_TRUE(network.get_edge(1).breakable);
+
+  EXPECT_EQ(network.get_edge(e0).min_stop_block_length, 1);
+  EXPECT_EQ(network.get_edge(e1).min_stop_block_length, 1);
+  EXPECT_EQ(network.get_edge(e2).min_stop_block_length, 1);
+  EXPECT_EQ(network.get_edge(e3).min_stop_block_length, 5);
+
+  network.change_edge_min_stop_block_length(e0, 2);
+  EXPECT_EQ(network.get_edge(e0).min_stop_block_length, 2);
 
   // out and in edges tests
   const std::vector<size_t> expected_out{1, 2};
@@ -404,8 +413,8 @@ TEST(Functionality, ReadNetwork) {
   edge_targets.push_back({"l2", "l3", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"l3", "g00", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"l3", "g10", 5, 27.77777777777778, false, 0});
-  edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 10});
-  edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 10});
+  edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 10, 150});
+  edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 10, 150});
   edge_targets.push_back({"g01", "r2", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"g11", "r2", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"r2", "r1", 5, 27.77777777777778, false, 0});
@@ -414,8 +423,8 @@ TEST(Functionality, ReadNetwork) {
   edge_targets.push_back({"r1", "r2", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"r2", "g01", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"r2", "g11", 5, 27.77777777777778, false, 0});
-  edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 10});
-  edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 10});
+  edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 10, 150});
+  edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 10, 150});
   edge_targets.push_back({"g00", "l3", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"g10", "l3", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"l3", "l2", 5, 27.77777777777778, false, 0});
@@ -431,6 +440,7 @@ TEST(Functionality, ReadNetwork) {
     EXPECT_EQ(e.max_speed, edge.max_speed);
     EXPECT_EQ(e.breakable, edge.breakable);
     EXPECT_EQ(e.min_block_length, edge.min_block_length);
+    EXPECT_EQ(e.min_stop_block_length, edge.min_stop_block_length);
   }
 
   // Check successors
@@ -562,7 +572,7 @@ TEST(Functionality, WriteNetwork) {
   network.add_edge("v0", "v1", 1, 2, true, 0);
   network.add_edge("v1", "v2", 3, 4, false, 1.5);
   network.add_edge("v1", "v0", 1, 2, true, 0);
-  network.add_edge("v2", "v0", 10, 20, false, 2);
+  network.add_edge("v2", "v0", 10, 20, false, 2, 5);
 
   network.add_successor(network.get_edge_index("v0", "v1"),
                         network.get_edge_index("v1", "v2"));
@@ -601,6 +611,8 @@ TEST(Functionality, WriteNetwork) {
     EXPECT_EQ(edge_read.length, network.get_edge(i).length);
     EXPECT_EQ(edge_read.max_speed, network.get_edge(i).max_speed);
     EXPECT_EQ(edge_read.min_block_length, network.get_edge(i).min_block_length);
+    EXPECT_EQ(edge_read.min_stop_block_length,
+              network.get_edge(i).min_stop_block_length);
   }
 
   // check successors

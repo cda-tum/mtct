@@ -46,13 +46,16 @@ struct Edge {
   double length;
   double max_speed;
   bool   breakable;
-  double min_block_length = 1;
+  double min_block_length      = 1;
+  double min_stop_block_length = 1;
 
   // Constructors
   Edge(size_t source, size_t target, double length, double max_speed,
-       bool breakable, double min_block_length = 1)
+       bool breakable, double min_block_length = 1,
+       double min_stop_block_length = 1)
       : source(source), target(target), length(length), max_speed(max_speed),
-        breakable(breakable), min_block_length(min_block_length){};
+        breakable(breakable), min_block_length(min_block_length),
+        min_stop_block_length(min_stop_block_length){};
 };
 
 class Network {
@@ -70,14 +73,15 @@ private:
   static void get_keys(tinyxml2::XMLElement* graphml_body,
                        std::string& breakable, std::string& length,
                        std::string& max_speed, std::string& min_block_length,
-                       std::string& type);
+                       std::string& min_stop_block_length, std::string& type);
   void add_vertices_from_graphml(const tinyxml2::XMLElement* graphml_node,
                                  const std::string&          type);
   void add_edges_from_graphml(const tinyxml2::XMLElement* graphml_edge,
                               const std::string&          breakable,
                               const std::string&          length,
                               const std::string&          max_speed,
-                              const std::string&          min_block_length);
+                              const std::string&          min_block_length,
+                              const std::string& min_stop_block_length);
   void read_successors(const std::filesystem::path& p);
 
   void export_graphml(const std::filesystem::path& p) const;
@@ -129,14 +133,15 @@ public:
 
   size_t add_vertex(const std::string& name, VertexType type);
   size_t add_edge(size_t source, size_t target, double length, double max_speed,
-                  bool breakable, double min_block_length = 1);
+                  bool breakable, double min_block_length = 1,
+                  double min_stop_block_length = 1);
   size_t add_edge(const std::string& source_name,
                   const std::string& target_name, double length,
-                  double max_speed, bool breakable,
-                  double min_block_length = 1) {
+                  double max_speed, bool breakable, double min_block_length = 1,
+                  double min_stop_block_length = 1) {
     return add_edge(get_vertex_index(source_name),
                     get_vertex_index(target_name), length, max_speed, breakable,
-                    min_block_length);
+                    min_block_length, min_stop_block_length);
   };
   void add_successor(size_t edge_in, size_t edge_out);
   void add_successor(const std::pair<size_t, size_t>& edge_in,
@@ -221,6 +226,8 @@ public:
   void change_edge_length(size_t index, double new_length);
   void change_edge_max_speed(size_t index, double new_max_speed);
   void change_edge_min_block_length(size_t index, double new_min_block_length);
+  void change_edge_min_stop_block_length(size_t index,
+                                         double new_min_stop_block_length);
 
   void change_edge_length(size_t source_id, size_t target_id,
                           double new_length) {

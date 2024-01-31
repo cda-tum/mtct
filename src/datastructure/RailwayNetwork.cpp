@@ -20,6 +20,7 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
                                  std::string& breakable, std::string& length,
                                  std::string& max_speed,
                                  std::string& min_block_length,
+                                 std::string& min_stop_block_length,
                                  std::string& type) {
   /**
    * Get keys from graphml file
@@ -28,6 +29,7 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
    * @param length Length key
    * @param max_speed Max speed key
    * @param min_block_length Min block length key
+   * @param min_stop_block_length Min stop block length key
    * @param type Type key
    *
    * The variables are passed by reference and are modified in place.
@@ -47,6 +49,9 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
       length = graphml_key->Attribute("id");
     } else if (graphml_key->Attribute("attr.name") == std::string("type")) {
       type = graphml_key->Attribute("id");
+    } else if (graphml_key->Attribute("attr.name") ==
+               std::string("min_stop_block_length")) {
+      min_stop_block_length = graphml_key->Attribute("id");
     }
     graphml_key = graphml_key->NextSiblingElement("key");
   }
@@ -85,7 +90,8 @@ void cda_rail::Network::add_vertices_from_graphml(
 void cda_rail::Network::add_edges_from_graphml(
     const tinyxml2::XMLElement* graphml_edge, const std::string& breakable,
     const std::string& length, const std::string& max_speed,
-    const std::string& min_block_length) {
+    const std::string& min_block_length,
+    const std::string& min_stop_block_length) {
   /**
    * Add edges from graphml file
    * @param graphml_edge Edge of graphml file
@@ -107,6 +113,7 @@ void cda_rail::Network::add_edges_from_graphml(
     std::optional<double> e_max_speed;
     std::optional<bool>   e_breakable;
     std::optional<double> e_min_block_length;
+    std::optional<double> e_min_stop_block_length;
     while (graphml_data != nullptr) {
       if (graphml_data->Attribute("key") == breakable) {
         std::string tmp = graphml_data->GetText();
@@ -117,6 +124,9 @@ void cda_rail::Network::add_edges_from_graphml(
         e_max_speed = std::stod(graphml_data->GetText());
       } else if (graphml_data->Attribute("key") == length) {
         e_length = std::stod(graphml_data->GetText());
+      } else if (!min_stop_block_length.empty() &&
+                 graphml_data->Attribute("key") == min_stop_block_length) {
+        e_min_stop_block_length = std::stod(graphml_data->GetText());
       }
       graphml_data = graphml_data->NextSiblingElement("data");
     }
@@ -124,9 +134,16 @@ void cda_rail::Network::add_edges_from_graphml(
         !e_breakable.has_value() || !e_min_block_length.has_value()) {
       throw exceptions::ImportException("graphml");
     }
-    this->add_edge(source_name, target_name, e_length.value(),
-                   e_max_speed.value(), e_breakable.value(),
-                   e_min_block_length.value());
+    if (e_min_stop_block_length.has_value()) {
+      this->add_edge(source_name, target_name, e_length.value(),
+                     e_max_speed.value(), e_breakable.value(),
+                     e_min_block_length.value(),
+                     e_min_stop_block_length.value());
+    } else {
+      this->add_edge(source_name, target_name, e_length.value(),
+                     e_max_speed.value(), e_breakable.value(),
+                     e_min_block_length.value());
+    }
     graphml_edge = graphml_edge->NextSiblingElement("edge");
   }
 }
@@ -149,9 +166,10 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   std::string length;
   std::string max_speed;
   std::string min_block_length;
+  std::string min_stop_block_length;
   std::string type;
   Network::get_keys(graphml_body, breakable, length, max_speed,
-                    min_block_length, type);
+                    min_block_length, min_stop_block_length, type);
   if (breakable.empty() || length.empty() || max_speed.empty() ||
       min_block_length.empty() || type.empty()) {
     throw exceptions::ImportException("graphml");
@@ -170,7 +188,7 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   const tinyxml2::XMLElement* graphml_edge =
       graphml_graph->FirstChildElement("edge");
   this->add_edges_from_graphml(graphml_edge, breakable, length, max_speed,
-                               min_block_length);
+                               min_block_length, min_stop_block_length);
 }
 
 void cda_rail::Network::read_successors(const std::filesystem::path& p) {
@@ -213,7 +231,8 @@ size_t cda_rail::Network::add_vertex(const std::string& name, VertexType type) {
 
 size_t cda_rail::Network::add_edge(size_t source, size_t target, double length,
                                    double max_speed, bool breakable,
-                                   double min_block_length) {
+                                   double min_block_length,
+                                   double min_stop_block_length) {
   /**
    * Add edge to network
    * @param source Source vertex
@@ -238,7 +257,7 @@ size_t cda_rail::Network::add_edge(size_t source, size_t target, double length,
     throw exceptions::InvalidInputException("Edge already exists");
   }
   edges.emplace_back(source, target, length, max_speed, breakable,
-                     min_block_length);
+                     min_block_length, min_stop_block_length);
   successors.emplace_back();
   return edges.size() - 1;
 }
@@ -461,6 +480,20 @@ void cda_rail::Network::change_edge_min_block_length(
   edges[index].min_block_length = new_min_block_length;
 }
 
+void cda_rail::Network::change_edge_min_stop_block_length(
+    size_t index, double new_min_stop_block_length) {
+  /**
+   * Change edge min stop block length
+   *
+   * @param index Index of edge
+   * @param new_min_stop_block_length New min block length of edge
+   */
+  if (!has_edge(index)) {
+    throw exceptions::EdgeNotExistentException(index);
+  }
+  edges[index].min_stop_block_length = new_min_stop_block_length;
+}
+
 void cda_rail::Network::set_edge_breakable(size_t index) {
   /**
    * Sets an edge to be breakable
@@ -570,11 +603,12 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
       << std::endl;
 
   // Write the key relations
-  std::string const breakable        = "d0";
-  std::string const length           = "d1";
-  std::string const max_speed        = "d2";
-  std::string const min_block_length = "d3";
-  std::string const type             = "d4";
+  std::string const breakable             = "d0";
+  std::string const length                = "d1";
+  std::string const max_speed             = "d2";
+  std::string const min_block_length      = "d3";
+  std::string const min_stop_block_length = "d4";
+  std::string const type                  = "d5";
   file << "<key id=\"" << breakable
        << R"(" for="edge" attr.name="breakable" attr.type="boolean"/>)"
        << std::endl;
@@ -587,6 +621,10 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   file << "<key id=\"" << min_block_length
        << R"(" for="edge" attr.name="min_block_length" attr.type="double"/>)"
        << std::endl;
+  file
+      << "<key id=\"" << min_stop_block_length
+      << R"(" for="edge" attr.name="min_stop_block_length" attr.type="double"/>)"
+      << std::endl;
   file << "<key id=\"" << type
        << R"(" for="edge" attr.name="type" attr.type="long"/>)" << std::endl;
 
@@ -613,6 +651,8 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
          << std::endl;
     file << "<data key=\"" << min_block_length << "\">" << edge.min_block_length
          << "</data>" << std::endl;
+    file << "<data key=\"" << min_stop_block_length << "\">"
+         << edge.min_stop_block_length << "</data>" << std::endl;
     file << "</edge>" << std::endl;
   }
 
