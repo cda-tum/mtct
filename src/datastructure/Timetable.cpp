@@ -62,8 +62,7 @@ bool cda_rail::Timetable::check_consistency(const Network& network) const {
   for (const auto& schedule : schedules) {
     for (size_t i = 0; i < schedule.get_stops().size(); ++i) {
       for (size_t j = i + 1; j < schedule.get_stops().size(); ++j) {
-        if (!(schedule.get_stops().at(i) < schedule.get_stops().at(j)) &&
-            !(schedule.get_stops().at(j) < schedule.get_stops().at(i))) {
+        if (schedule.get_stops().at(i).conflicts(schedule.get_stops().at(j))) {
           return false;
         }
       }

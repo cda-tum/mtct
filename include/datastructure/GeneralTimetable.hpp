@@ -178,6 +178,13 @@ public:
   void set_v_n(double v_n) { this->v_n = v_n; }
   void set_exit(size_t exit) { this->exit = exit; }
   void set_stops(std::vector<T> stops) { this->stops = std::move(stops); }
+  void remove_stop(const std::string& station_name) {
+    stops.erase(std::remove_if(stops.begin(), stops.end(),
+                               [&station_name](const auto& stop) {
+                                 return stop.get_station_name() == station_name;
+                               }),
+                stops.end());
+  }
 
   template <typename... Args> void add_stop(bool sort, Args... args) {
     const T new_stop(args...);
@@ -399,6 +406,20 @@ public:
     add_stop(train_list.get_train_index(train_name), station_name, sort,
              args...);
   };
+
+  void remove_stop(size_t train_index, const std::string& station_name) {
+    if (!train_list.has_train(train_index)) {
+      throw exceptions::TrainNotExistentException(train_index);
+    }
+    if (!station_list.has_station(station_name)) {
+      throw exceptions::StationNotExistentException(station_name);
+    }
+    schedules.at(train_index).remove_stop(station_name);
+  }
+  void remove_stop(const std::string& train_name,
+                   const std::string& station_name) {
+    remove_stop(train_list.get_train_index(train_name), station_name);
+  }
 
   void add_track_to_station(const std::string& name, size_t track,
                             const Network& network) {

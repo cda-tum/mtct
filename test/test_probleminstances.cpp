@@ -2472,4 +2472,56 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_EQ(sol2_read.get_train_speed(tr2, 258), 7);
 }
 
+TEST(ProblemInstances, TimetableConsistency) {
+  cda_rail::Network network1;
+  cda_rail::Network network2;
+
+  network1.add_vertex("v0", cda_rail::VertexType::TTD);
+  network1.add_vertex("v1", cda_rail::VertexType::TTD);
+  network2.add_vertex("v0", cda_rail::VertexType::TTD);
+  network2.add_vertex("v1", cda_rail::VertexType::TTD);
+  network2.add_vertex("v2", cda_rail::VertexType::TTD);
+
+  int e11 = network1.add_edge("v0", "v1", 100, 10, true, 10);
+  int e12 = network2.add_edge("v0", "v1", 100, 10, true, 10);
+  int e22 = network2.add_edge("v1", "v2", 100, 10, true, 10);
+
+  EXPECT_EQ(e11, e12);
+
+  cda_rail::Timetable timetable;
+  timetable.add_station("TestStation");
+  timetable.add_track_to_station("TestStation", e12, network2);
+
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_TRUE(timetable.check_consistency(network1));
+
+  timetable.add_track_to_station("TestStation", e22, network2);
+
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_FALSE(timetable.check_consistency(network1));
+
+  timetable.add_train("TestTrain", 100, 10, 1, 1, 10, 0, "v0", 60, 0, "v2",
+                      network2);
+  timetable.add_stop("TestTrain", "TestStation", 20, 30);
+
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 1);
+  EXPECT_TRUE(timetable.check_consistency(network2));
+
+  timetable.remove_stop("TestTrain", "TestStation");
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 0);
+
+  timetable.add_stop("TestTrain", "TestStation", 0, 20);
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 1);
+  EXPECT_FALSE(timetable.check_consistency(network2));
+
+  timetable.remove_stop("TestTrain", "TestStation");
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 0);
+
+  timetable.add_stop("TestTrain", "TestStation", 50, 70);
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 1);
+  EXPECT_FALSE(timetable.check_consistency(network2));
+}
+
 // NOLINTEND(clang-diagnostic-unused-result,google-readability-function-size,readability-function-size)
