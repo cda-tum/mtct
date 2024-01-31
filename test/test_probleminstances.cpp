@@ -10,6 +10,7 @@ struct EdgeTarget {
   double      max_speed;
   bool        breakable;
   double      min_block_length;
+  double      min_stop_block_length = 1;
 };
 
 // NOLINTBEGIN(clang-diagnostic-unused-result,google-readability-function-size,readability-function-size)
@@ -45,8 +46,8 @@ void check_instance_import(
   edge_targets.push_back({"l2", "l3", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"l3", "g00", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"l3", "g10", 5, 27.77777777777778, false, 0});
-  edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 10});
-  edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 10});
+  edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 10, 150});
+  edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 10, 150});
   edge_targets.push_back({"g01", "r2", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"g11", "r2", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"r2", "r1", 5, 27.77777777777778, false, 0});
@@ -55,8 +56,8 @@ void check_instance_import(
   edge_targets.push_back({"r1", "r2", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"r2", "g01", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"r2", "g11", 5, 27.77777777777778, false, 0});
-  edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 10});
-  edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 10});
+  edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 10, 150});
+  edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 10, 150});
   edge_targets.push_back({"g00", "l3", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"g10", "l3", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"l3", "l2", 5, 27.77777777777778, false, 0});
@@ -72,6 +73,7 @@ void check_instance_import(
     EXPECT_EQ(e.max_speed, edge.max_speed);
     EXPECT_EQ(e.breakable, edge.breakable);
     EXPECT_EQ(e.min_block_length, edge.min_block_length);
+    EXPECT_EQ(e.min_stop_block_length, edge.min_stop_block_length);
   }
 
   // Check successors
@@ -361,14 +363,14 @@ void check_instance_import(
   EXPECT_EQ(instance.max_t(), 645);
 }
 
-TEST(Functionality, VSSGenerationTimetabbleInstanceImport1) {
+TEST(Functionality, VSSGenerationTimetableInstanceImport1) {
   auto instance = cda_rail::instances::VSSGenerationTimetable::import_instance(
       "./example-networks/SimpleStation/");
 
   check_instance_import(instance);
 }
 
-TEST(Functionality, VSSGenerationTimetabbleInstanceImport2) {
+TEST(Functionality, VSSGenerationTimetableInstanceImport2) {
   std::string p("./example-networks/SimpleStation/");
 
   auto instance =
@@ -377,7 +379,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport2) {
   check_instance_import(instance);
 }
 
-TEST(Functionality, VSSGenerationTimetabbleInstanceImport3) {
+TEST(Functionality, VSSGenerationTimetableInstanceImport3) {
   std::filesystem::path p("./example-networks/SimpleStation/");
 
   auto instance =
