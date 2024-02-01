@@ -14,9 +14,6 @@ class ScheduledStop : public GeneralScheduledStop {
    * A scheduled stop with fixed times
    */
 
-  using GeneralScheduledStop::get_begin;
-  using GeneralScheduledStop::get_end;
-
 public:
   [[nodiscard]] static int time_type() {
     // return the type of the desired time type
@@ -24,10 +21,10 @@ public:
   }
 
   [[nodiscard]] int arrival() const {
-    return GeneralScheduledStop::get_begin().first;
+    return GeneralScheduledStop::get_begin_range().first;
   }
   [[nodiscard]] int departure() const {
-    return GeneralScheduledStop::get_end().first;
+    return GeneralScheduledStop::get_end_range().first;
   }
 
   // Constructor
@@ -40,18 +37,17 @@ class Schedule : public GeneralSchedule<ScheduledStop> {
   /**
    * Specific Schedule object
    */
-private:
-  using GeneralSchedule::get_t_0;
-  using GeneralSchedule::get_t_n;
-  using GeneralSchedule::set_t_0;
-  using GeneralSchedule::set_t_n;
 
 public:
-  [[nodiscard]] int get_t_0() const { return GeneralSchedule::get_t_0().first; }
-  [[nodiscard]] int get_t_n() const { return GeneralSchedule::get_t_n().first; }
+  [[nodiscard]] int get_t_0() const {
+    return GeneralSchedule::get_t_0_range().first;
+  }
+  [[nodiscard]] int get_t_n() const {
+    return GeneralSchedule::get_t_n_range().first;
+  }
 
-  void set_t_0(int t_0) { GeneralSchedule::set_t_0({t_0, t_0}); }
-  void set_t_n(int t_n) { GeneralSchedule::set_t_n({t_n, t_n}); }
+  void set_t_0(int t_0) { GeneralSchedule::set_t_0_range({t_0, t_0}); }
+  void set_t_n(int t_n) { GeneralSchedule::set_t_n_range({t_n, t_n}); }
 
   // Constructor
   // NOLINTNEXTLINE(readability-redundant-member-init)

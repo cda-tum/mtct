@@ -80,8 +80,10 @@ public:
     return interval;
   }
 
-  [[nodiscard]] const std::pair<int, int>& get_begin() const { return begin; }
-  [[nodiscard]] const std::pair<int, int>& get_end() const { return end; }
+  [[nodiscard]] const std::pair<int, int>& get_begin_range() const {
+    return begin;
+  }
+  [[nodiscard]] const std::pair<int, int>& get_end_range() const { return end; }
   [[nodiscard]] int get_min_stopping_time() const { return min_stopping_time; }
   [[nodiscard]] const std::string& get_station_name() const { return station; }
 
@@ -163,18 +165,18 @@ public:
     return T::time_type();
   }
 
-  [[nodiscard]] const std::pair<int, int>& get_t_0() const { return t_0; }
+  [[nodiscard]] const std::pair<int, int>& get_t_0_range() const { return t_0; }
   [[nodiscard]] double                     get_v_0() const { return v_0; }
   [[nodiscard]] size_t                     get_entry() const { return entry; }
-  [[nodiscard]] const std::pair<int, int>& get_t_n() const { return t_n; }
+  [[nodiscard]] const std::pair<int, int>& get_t_n_range() const { return t_n; }
   [[nodiscard]] double                     get_v_n() const { return v_n; }
   [[nodiscard]] size_t                     get_exit() const { return exit; }
   [[nodiscard]] const std::vector<T>&      get_stops() const { return stops; }
 
-  void set_t_0(std::pair<int, int> t_0) { this->t_0 = std::move(t_0); }
+  void set_t_0_range(std::pair<int, int> t_0) { this->t_0 = std::move(t_0); }
   void set_v_0(double v_0) { this->v_0 = v_0; }
   void set_entry(size_t entry) { this->entry = entry; }
-  void set_t_n(std::pair<int, int> t_n) { this->t_n = std::move(t_n); }
+  void set_t_n_range(std::pair<int, int> t_n) { this->t_n = std::move(t_n); }
   void set_v_n(double v_n) { this->v_n = v_n; }
   void set_exit(size_t exit) { this->exit = exit; }
   void set_stops(std::vector<T> stops) { this->stops = std::move(stops); }

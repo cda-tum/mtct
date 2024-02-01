@@ -25,8 +25,8 @@ TEST(GeneralAbstractDataStructure, GeneralScheduledStopExceptions) {
 
 TEST(GeneralAbstractDataStructure, GeneralScheduledStopConstructor) {
   cda_rail::GeneralScheduledStop stop({0, 2}, {3, 4}, 2, "Test");
-  EXPECT_EQ(stop.get_begin(), (std::pair<int, int>(0, 2)));
-  EXPECT_EQ(stop.get_end(), (std::pair<int, int>(3, 4)));
+  EXPECT_EQ(stop.get_begin_range(), (std::pair<int, int>(0, 2)));
+  EXPECT_EQ(stop.get_end_range(), (std::pair<int, int>(3, 4)));
   EXPECT_EQ(stop.get_min_stopping_time(), 2);
   EXPECT_EQ(stop.get_station_name(), "Test");
 }

@@ -12,6 +12,17 @@ class GeneralProblemInstance {
 protected:
   Network network;
 
+  GeneralProblemInstance() = default;
+  explicit GeneralProblemInstance(const Network& network) : network(network){};
+  virtual ~GeneralProblemInstance() = default;
+
+  void export_network(const std::filesystem::path& path) const {
+    if (!is_directory_and_create(path)) {
+      throw std::invalid_argument("Path is not a directory");
+    }
+    network.export_network(path / "Network");
+  }
+
 public:
   // Network functions, i.e., network is accessible via n() as a reference
   [[nodiscard]] Network&       n() { return network; };
@@ -27,8 +38,6 @@ public:
   };
 
   [[nodiscard]] virtual bool check_consistency() const = 0;
-
-  virtual ~GeneralProblemInstance() = default;
 };
 
 template <typename T> class SolGeneralProblemInstance {
