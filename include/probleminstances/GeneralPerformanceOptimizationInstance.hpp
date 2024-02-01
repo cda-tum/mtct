@@ -34,9 +34,10 @@ protected:
 
 public:
   GeneralPerformanceOptimizationInstance() = default;
-  explicit GeneralPerformanceOptimizationInstance(const Network&      network,
+  explicit GeneralPerformanceOptimizationInstance(Network             network,
                                                   GeneralTimetable<T> timetable)
-      : GeneralProblemInstance(network), timetable(std::move(timetable)) {
+      : GeneralProblemInstance(std::move(network)),
+        timetable(std::move(timetable)) {
     initialize_vectors();
   };
 

@@ -13,8 +13,8 @@ protected:
   Network network;
 
   GeneralProblemInstance() = default;
-  explicit GeneralProblemInstance(const Network& network) : network(network){};
-  virtual ~GeneralProblemInstance() = default;
+  explicit GeneralProblemInstance(Network network)
+      : network(std::move(network)){};
 
   void export_network(const std::filesystem::path& path) const {
     if (!is_directory_and_create(path)) {
@@ -38,6 +38,8 @@ public:
   };
 
   [[nodiscard]] virtual bool check_consistency() const = 0;
+
+  virtual ~GeneralProblemInstance() = default;
 };
 
 template <typename T> class SolGeneralProblemInstance {
