@@ -78,3 +78,5 @@ TEST(GeneralAbstractDataStructure, GeneralScheduledStopConflicts) {
   EXPECT_FALSE(stop5.conflicts(stop6));
   EXPECT_FALSE(stop6.conflicts(stop5));
 }
+
+TEST(GeneralAbstractDataStructure, GeneralPerformanceOptimizationInstance) {}
