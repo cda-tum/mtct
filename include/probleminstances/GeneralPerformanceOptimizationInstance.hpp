@@ -121,7 +121,9 @@ public:
     if (train_weights.size() != num_tr || train_optional.size() != num_tr) {
       return false;
     }
-    return true;
+    return lambda >= 0 &&
+           std::all_of(train_weights.begin(), train_weights.end(),
+                       [](double w) { return w >= 0; });
   };
 };
 } // namespace cda_rail::instances
