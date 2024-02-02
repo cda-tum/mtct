@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -25,6 +26,21 @@ class GeneralPerformanceOptimizationInstance : public GeneralProblemInstance {
         std::vector<bool>(timetable.get_train_list().size(), false);
   }
 
+  void set_train_optional_value(size_t train_index, bool val) {
+    if (!timetable.get_train_list().has_train(train_index)) {
+      throw std::invalid_argument("Train index out of bounds");
+    }
+    train_optional[train_index] = val;
+  };
+  void set_train_optional_value(const std::string& train_name, bool val) {
+    set_train_optional_value(
+        timetable.get_train_list().get_train_index(train_name), val);
+  };
+  void set_train_weight(const char* train_name, bool val) {
+    set_train_optional_value(
+        timetable.get_train_list().get_train_index(train_name), val);
+  };
+
 protected:
   GeneralTimetable<T> timetable;
   std::vector<double> train_weights;
@@ -39,6 +55,22 @@ public:
       : GeneralProblemInstance(std::move(network)),
         timetable(std::move(timetable)) {
     initialize_vectors();
+  };
+  explicit GeneralPerformanceOptimizationInstance(
+      const std::filesystem::path& path)
+      : GeneralProblemInstance(path),
+        timetable(GeneralTimetable<T>(path / "Timetable")) {
+    initialize_vectors();
+
+    std::ifstream file(path / "problem_data.json");
+    json          j = json::parse(file);
+    for (const auto& [train_name, weight] : j["train_weights"].items()) {
+      set_train_weight(train_name, static_cast<double>(weight));
+    }
+    for (const auto& [train_name, optional] : j["train_optional"].items()) {
+      set_train_optional_value(train_name, static_cast<bool>(optional));
+    }
+    lambda = static_cast<double>(j["lambda"]);
   };
 
   [[nodiscard]] const auto& get_timetable() const { return timetable; };
@@ -59,6 +91,8 @@ public:
                      weight);
   };
 
+  using GeneralProblemInstance::export_instance;
+
   void export_instance(const std::filesystem::path& path) const override {
     if (!is_directory_and_create(path)) {
       throw std::invalid_argument("Path is not a directory");
@@ -77,6 +111,17 @@ public:
 
     std::ofstream file(path / "problem_data.json");
     file << j << std::endl;
+  };
+
+  [[nodiscard]] bool check_consistency() const override {
+    if (!timetable.check_consistency()) {
+      return false;
+    }
+    const auto num_tr = timetable.get_train_list().size();
+    if (train_weights.size() != num_tr || train_optional.size() != num_tr) {
+      return false;
+    }
+    return true;
   };
 };
 } // namespace cda_rail::instances

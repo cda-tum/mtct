@@ -15,6 +15,8 @@ protected:
   GeneralProblemInstance() = default;
   explicit GeneralProblemInstance(Network network)
       : network(std::move(network)){};
+  explicit GeneralProblemInstance(const std::filesystem::path& path)
+      : network(Network(path / "Network")){};
 
   void export_network(const std::filesystem::path& path) const {
     if (!is_directory_and_create(path)) {
@@ -30,10 +32,10 @@ public:
 
   virtual void export_instance(const std::filesystem::path& path) const = 0;
 
-  void export_instance(const std::string& path) const {
+  virtual void export_instance(const std::string& path) const {
     export_instance(std::filesystem::path(path));
   };
-  void export_instance(const char* path) const {
+  virtual void export_instance(const char* path) const {
     export_instance(std::filesystem::path(path));
   };
 
