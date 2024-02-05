@@ -17,10 +17,10 @@
 using json = nlohmann::json;
 
 namespace cda_rail {
-template <typename, typename = void> struct has_get_stops : std::false_type {};
+template <typename, typename = void> struct HasGetStops : std::false_type {};
 
 template <typename T>
-struct has_get_stops<T, std::void_t<decltype(std::declval<T>().get_stops())>>
+struct HasGetStops<T, std::void_t<decltype(std::declval<T>().get_stops())>>
     : std::true_type {};
 
 class GeneralScheduledStop {
@@ -231,7 +231,7 @@ class GeneralTimetable {
    */
   static_assert(std::is_base_of_v<BaseGeneralSchedule, T>,
                 "T must be derived from BaseGeneralSchedule");
-  static_assert(has_get_stops<T>::value, "T must have a get_stops() method");
+  static_assert(HasGetStops<T>::value, "T must have a get_stops() method");
   using stop_type = typename std::remove_reference<
       decltype(std::declval<T>().get_stops())>::type::value_type;
   static_assert(std::is_base_of_v<GeneralScheduledStop, stop_type>,

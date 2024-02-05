@@ -73,7 +73,7 @@ public:
   Timetable(Timetable&& other) noexcept            = default;
   Timetable& operator=(const Timetable& other)     = default;
   Timetable& operator=(Timetable&& other) noexcept = default;
-  ~Timetable()                                     = default;
+  virtual ~Timetable()                             = default;
 
   using GeneralTimetable::add_stop;
   void add_stop(size_t train_index, const std::string& station_name, int begin,
