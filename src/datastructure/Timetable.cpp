@@ -12,6 +12,66 @@
 
 using json = nlohmann::json;
 
+bool cda_rail::Timetable::check_consistency(const Network& network) const {
+  /**
+   * This method checks if the timetable is consistent with the network, i.e.,
+   * if the following holds:
+   * - All vertices used as entry and exit points are valid vertices of the
+   * network
+   * - Entry and exit vertices have exactly one neighboring vertex
+   * - All edges of stations are valid edges of the network
+   * - All scheduled stops are comparable by < or >, hence not overlapping
+   * - All scheduled stops lie within t_0 and t_n
+   *
+   * @param network The network to which the timetable belongs.
+   *
+   * @return True if the timetable is consistent with the network, false
+   * otherwise.
+   */
+
+  for (const auto& schedule : schedules) {
+    if (!network.has_vertex(schedule.get_entry()) ||
+        !network.has_vertex(schedule.get_exit())) {
+      return false;
+    }
+    if (network.neighbors(schedule.get_entry()).size() != 1 ||
+        network.neighbors(schedule.get_exit()).size() != 1) {
+      return false;
+    }
+  }
+
+  for (const auto& station_name : station_list.get_station_names()) {
+    const auto& station = station_list.get_station(station_name);
+    for (auto track : station.tracks) {
+      if (!network.has_edge(track)) {
+        return false;
+      }
+    }
+  }
+
+  for (const auto& schedule : schedules) {
+    for (const auto& stop : schedule.get_stops()) {
+      if (stop.arrival() < schedule.get_t_0() ||
+          stop.departure() > schedule.get_t_n() ||
+          stop.departure() < stop.arrival()) {
+        return false;
+      }
+    }
+  }
+
+  for (const auto& schedule : schedules) {
+    for (size_t i = 0; i < schedule.get_stops().size(); ++i) {
+      for (size_t j = i + 1; j < schedule.get_stops().size(); ++j) {
+        if (schedule.get_stops().at(i).conflicts(schedule.get_stops().at(j))) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 int cda_rail::Timetable::max_t() const {
   /**
    * This method returns the maximum time of all trains, i.e., the time at which

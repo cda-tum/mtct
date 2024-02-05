@@ -39,11 +39,15 @@ class Schedule : public GeneralSchedule<ScheduledStop> {
    */
 
 public:
-  [[nodiscard]] int get_t_0() const { return get_t_0_range().first; }
-  [[nodiscard]] int get_t_n() const { return get_t_n_range().first; }
+  [[nodiscard]] int get_t_0() const {
+    return GeneralSchedule::get_t_0_range().first;
+  }
+  [[nodiscard]] int get_t_n() const {
+    return GeneralSchedule::get_t_n_range().first;
+  }
 
-  void set_t_0(int t_0) { set_t_0_range({t_0, t_0}); }
-  void set_t_n(int t_n) { set_t_n_range({t_n, t_n}); }
+  void set_t_0(int t_0) { GeneralSchedule::set_t_0_range({t_0, t_0}); }
+  void set_t_n(int t_n) { GeneralSchedule::set_t_n_range({t_n, t_n}); }
 
   // Constructor
   // NOLINTNEXTLINE(readability-redundant-member-init)
@@ -101,6 +105,8 @@ public:
     return time_index_interval(train_list.get_train_index(train_name), dt,
                                tn_inclusive);
   };
+
+  [[nodiscard]] bool check_consistency(const Network& network) const;
 
   [[nodiscard]] static Timetable import_timetable(const std::string& path,
                                                   const Network&     network) {

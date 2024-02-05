@@ -114,7 +114,7 @@ public:
   };
 
   [[nodiscard]] bool check_consistency() const override {
-    if (!timetable.check_consistency(network)) {
+    if (!timetable.check_consistency()) {
       return false;
     }
     const auto num_tr = timetable.get_train_list().size();

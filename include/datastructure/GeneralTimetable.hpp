@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CustomExceptions.hpp"
-#include "RailwayNetwork.hpp"
 #include "Station.hpp"
 #include "Train.hpp"
 #include "nlohmann/json.hpp"
@@ -17,12 +16,6 @@
 using json = nlohmann::json;
 
 namespace cda_rail {
-template <typename, typename = void> struct has_get_stops : std::false_type {};
-
-template <typename T>
-struct has_get_stops<T, std::void_t<decltype(std::declval<T>().get_stops())>>
-    : std::true_type {};
-
 class GeneralScheduledStop {
   /**
    * A (general) scheduled stop.
@@ -130,7 +123,21 @@ public:
   }
 };
 
-template <typename T = GeneralScheduledStop> class GeneralSchedule {
+class BaseGeneralSchedule {
+  /**
+   * This class is only used for static_assert in GeneralTimetable.
+   * It should not be able to be inherited from outside of the specified friend
+   * classes.
+   */
+  template <typename T> friend class GeneralSchedule;
+
+private:
+  BaseGeneralSchedule()  = default;
+  ~BaseGeneralSchedule() = default;
+};
+
+template <typename T = GeneralScheduledStop>
+class GeneralSchedule : BaseGeneralSchedule {
   /**
    * General schedule object
    * @param t_0 start time of schedule in seconds
@@ -153,12 +160,18 @@ template <typename T = GeneralScheduledStop> class GeneralSchedule {
   std::vector<T>      stops = {};
 
 public:
+  [[nodiscard]] static auto time_type() -> decltype(T::time_type()) {
+    // return the type of the desired time type
+    return T::time_type();
+  }
+
   [[nodiscard]] const std::pair<int, int>& get_t_0_range() const { return t_0; }
   [[nodiscard]] double                     get_v_0() const { return v_0; }
   [[nodiscard]] size_t                     get_entry() const { return entry; }
   [[nodiscard]] const std::pair<int, int>& get_t_n_range() const { return t_n; }
   [[nodiscard]] double                     get_v_n() const { return v_n; }
   [[nodiscard]] size_t                     get_exit() const { return exit; }
+  [[nodiscard]] const std::vector<T>&      get_stops() const { return stops; }
 
   void set_t_0_range(std::pair<int, int> t_0) { this->t_0 = std::move(t_0); }
   void set_v_0(double v_0) { this->v_0 = v_0; }
@@ -166,14 +179,6 @@ public:
   void set_t_n_range(std::pair<int, int> t_n) { this->t_n = std::move(t_n); }
   void set_v_n(double v_n) { this->v_n = v_n; }
   void set_exit(size_t exit) { this->exit = exit; }
-
-  [[nodiscard]] static auto time_type() -> decltype(T::time_type()) {
-    // return the type of the desired time type
-    return T::time_type();
-  }
-
-  [[nodiscard]] const std::vector<T>& get_stops() const { return stops; }
-
   void set_stops(std::vector<T> stops) { this->stops = std::move(stops); }
   void remove_stop(const std::string& station_name) {
     stops.erase(std::remove_if(stops.begin(), stops.end(),
@@ -203,12 +208,13 @@ public:
 
   // Constructor
   GeneralSchedule()
-      : t_0({-1, -1}), v_0(-1), entry(-1), t_n({-1, -1}), v_n(-1), exit(-1) {}
+      : BaseGeneralSchedule(), t_0({-1, -1}), v_0(-1), entry(-1), t_n({-1, -1}),
+        v_n(-1), exit(-1) {}
   GeneralSchedule(std::pair<int, int> t_0, double v_0, size_t entry,
                   std::pair<int, int> t_n, double v_n, size_t exit,
                   std::vector<T> stops = {})
-      : t_0(std::move(t_0)), v_0(v_0), entry(entry), t_n(std::move(t_n)),
-        v_n(v_n), exit(exit), stops(std::move(stops)) {}
+      : BaseGeneralSchedule(), t_0(std::move(t_0)), v_0(v_0), entry(entry),
+        t_n(std::move(t_n)), v_n(v_n), exit(exit), stops(std::move(stops)) {}
 };
 
 template <typename T = GeneralSchedule<GeneralScheduledStop>>
@@ -216,14 +222,8 @@ class GeneralTimetable {
   /**
    * General timetable class
    */
-  static_assert(has_get_stops<T>::value, "T must have a get_stops() method");
-  using stop_type =
-      typename decltype(std::declval<T>().get_stops())::value_type;
-  static_assert(std::is_base_of_v<GeneralScheduledStop, stop_type>,
-                "std::vector<S> returned by get_stops must have S being "
-                "derived from GeneralScheduledStop");
-  static_assert(std::is_base_of_v<GeneralSchedule<stop_type>, T>,
-                "T must be derived from GeneralSchedule<*>");
+  static_assert(std::is_base_of_v<BaseGeneralSchedule, T>,
+                "T must be derived from BaseGeneralSchedule");
 
   template <typename U, std::enable_if_t<std::is_same_v<U, int>, int> = 0>
   void parse_schedule_data(const json& schedule_data, const int i) {
@@ -532,67 +532,6 @@ public:
       const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
     station_list.update_after_discretization(new_edges);
   };
-
-  [[nodiscard]] virtual bool check_consistency(const Network& network) {
-    /**
-     * This method checks if the timetable is consistent with the network, i.e.,
-     * if the following holds:
-     * - All vertices used as entry and exit points are valid vertices of the
-     * network
-     * - Entry and exit vertices have exactly one neighboring vertex
-     * - All edges of stations are valid edges of the network
-     * - No two scheduled stops overlap
-     * - All scheduled stops lie within t_0 and t_n
-     *
-     * @param network The network to which the timetable belongs.
-     *
-     * @return True if the timetable is consistent with the network, false
-     * otherwise.
-     */
-
-    for (const auto& schedule : schedules) {
-      if (!network.has_vertex(schedule.get_entry()) ||
-          !network.has_vertex(schedule.get_exit())) {
-        return false;
-      }
-      if (network.neighbors(schedule.get_entry()).size() != 1 ||
-          network.neighbors(schedule.get_exit()).size() != 1) {
-        return false;
-      }
-    }
-
-    for (const auto& station_name : station_list.get_station_names()) {
-      const auto& station = station_list.get_station(station_name);
-      for (auto track : station.tracks) {
-        if (!network.has_edge(track)) {
-          return false;
-        }
-      }
-    }
-
-    for (const auto& schedule : schedules) {
-      for (const auto& stop : schedule.get_stops()) {
-        if (stop.get_begin_range().first < schedule.get_t_0_range().first ||
-            stop.get_end_range().second > schedule.get_t_n_range().second ||
-            stop.get_end_range().second < stop.get_begin_range().first) {
-          return false;
-        }
-      }
-    }
-
-    for (const auto& schedule : schedules) {
-      for (size_t i = 0; i < schedule.get_stops().size(); ++i) {
-        for (size_t j = i + 1; j < schedule.get_stops().size(); ++j) {
-          if (schedule.get_stops().at(i).conflicts(
-                  schedule.get_stops().at(j))) {
-            return false;
-          }
-        }
-      }
-    }
-
-    return true;
-  }
 };
 
 } // namespace cda_rail
