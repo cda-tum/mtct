@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CustomExceptions.hpp"
+#include "RailwayNetwork.hpp"
 #include "Station.hpp"
 #include "Train.hpp"
 #include "nlohmann/json.hpp"
@@ -16,6 +17,12 @@
 using json = nlohmann::json;
 
 namespace cda_rail {
+template <typename, typename = void> struct has_get_stops : std::false_type {};
+
+template <typename T>
+struct has_get_stops<T, std::void_t<decltype(std::declval<T>().get_stops())>>
+    : std::true_type {};
+
 class GeneralScheduledStop {
   /**
    * A (general) scheduled stop.
@@ -224,6 +231,15 @@ class GeneralTimetable {
    */
   static_assert(std::is_base_of_v<BaseGeneralSchedule, T>,
                 "T must be derived from BaseGeneralSchedule");
+  static_assert(has_get_stops<T>::value, "T must have a get_stops() method");
+  using stop_type = typename std::remove_reference<
+      decltype(std::declval<T>().get_stops())>::type::value_type;
+  static_assert(std::is_base_of_v<GeneralScheduledStop, stop_type>,
+                "std::vector<S> returned by get_stops must have S being "
+                "derived from GeneralScheduledStop");
+  static_assert(
+      std::is_base_of_v<GeneralSchedule<stop_type>, T>,
+      "T must be derived from GeneralSchedule with suitable stop type");
 
   template <typename U, std::enable_if_t<std::is_same_v<U, int>, int> = 0>
   void parse_schedule_data(const json& schedule_data, const int i) {
