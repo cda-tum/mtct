@@ -548,6 +548,67 @@ public:
       const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
     station_list.update_after_discretization(new_edges);
   };
+
+  [[nodiscard]] virtual bool check_consistency(const Network& network) const {
+    /**
+     * This method checks if the timetable is consistent with the network, i.e.,
+     * if the following holds:
+     * - All vertices used as entry and exit points are valid vertices of the
+     * network
+     * - Entry and exit vertices have exactly one neighboring vertex
+     * - All edges of stations are valid edges of the network
+     * - No two scheduled stops overlap
+     * - All scheduled stops lie within t_0 and t_n
+     *
+     * @param network The network to which the timetable belongs.
+     *
+     * @return True if the timetable is consistent with the network, false
+     * otherwise.
+     */
+
+    for (const auto& schedule : schedules) {
+      if (!network.has_vertex(schedule.get_entry()) ||
+          !network.has_vertex(schedule.get_exit())) {
+        return false;
+      }
+      if (network.neighbors(schedule.get_entry()).size() != 1 ||
+          network.neighbors(schedule.get_exit()).size() != 1) {
+        return false;
+      }
+    }
+
+    for (const auto& station_name : station_list.get_station_names()) {
+      const auto& station = station_list.get_station(station_name);
+      for (auto track : station.tracks) {
+        if (!network.has_edge(track)) {
+          return false;
+        }
+      }
+    }
+
+    for (const auto& schedule : schedules) {
+      for (const auto& stop : schedule.get_stops()) {
+        if (stop.get_begin_range().first < schedule.get_t_0_range().first ||
+            stop.get_end_range().second > schedule.get_t_n_range().second ||
+            stop.get_end_range().second < stop.get_begin_range().first) {
+          return false;
+        }
+      }
+    }
+
+    for (const auto& schedule : schedules) {
+      for (size_t i = 0; i < schedule.get_stops().size(); ++i) {
+        for (size_t j = i + 1; j < schedule.get_stops().size(); ++j) {
+          if (schedule.get_stops().at(i).conflicts(
+                  schedule.get_stops().at(j))) {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
 };
 
 } // namespace cda_rail

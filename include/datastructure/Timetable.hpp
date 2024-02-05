@@ -102,8 +102,6 @@ public:
                                tn_inclusive);
   };
 
-  [[nodiscard]] bool check_consistency(const Network& network) const;
-
   [[nodiscard]] static Timetable import_timetable(const std::string& path,
                                                   const Network&     network) {
     return {path, network};
