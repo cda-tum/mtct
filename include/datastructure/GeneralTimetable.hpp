@@ -524,9 +524,10 @@ public:
       typename = std::enable_if_t<!std::is_convertible_v<EntryN, size_t> &&
                                   !std::is_convertible_v<ExitN, size_t>>>
   size_t add_train(const TrainN& name, int length, double max_speed,
-                   double acceleration, double deceleration, bool tim, int t_0,
-                   double v_0, const EntryN& entry, int t_n, double v_n,
-                   const ExitN& exit, const Network& network) {
+                   double acceleration, double deceleration, bool tim,
+                   decltype(T::time_type()) t_0, double v_0,
+                   const EntryN& entry, decltype(T::time_type()) t_n,
+                   double v_n, const ExitN& exit, const Network& network) {
     return add_train(
         static_cast<std::string>(name), length, max_speed, acceleration,
         deceleration, tim, t_0, v_0,
