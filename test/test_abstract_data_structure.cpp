@@ -4,6 +4,8 @@
 #include "gtest/gtest.h"
 #include <utility>
 
+using namespace cda_rail;
+
 TEST(GeneralAbstractDataStructure, GeneralScheduledStopExceptions) {
   EXPECT_THROW(cda_rail::GeneralScheduledStop({10, 9}, {12, 15}, 1, "Test1"),
                cda_rail::exceptions::InvalidInputException);
@@ -77,4 +79,52 @@ TEST(GeneralAbstractDataStructure, GeneralScheduledStopConflicts) {
 
   EXPECT_FALSE(stop5.conflicts(stop6));
   EXPECT_FALSE(stop6.conflicts(stop5));
+}
+
+TEST(GeneralAbstractDataStructure, GeneralTimetable) {
+  Network network("./example-networks/SimpleStation/network/");
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+
+  const auto l0 = network.get_vertex_index("l0");
+  const auto r0 = network.get_vertex_index("r0");
+
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 1, true, {0, 60},
+                                       0, "l0", {360, 420}, 0, "r0", network);
+  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 1, false, {0, 60},
+                                       10, l0, {400, 460}, 5, r0, network);
+
+  EXPECT_EQ(timetable.get_train_list().get_train_index("Train1"), tr1);
+  EXPECT_EQ(timetable.get_train_list().get_train_index("Train2"), tr2);
+  EXPECT_EQ(timetable.get_train_list().get_train("Train1").name, "Train1");
+  EXPECT_EQ(timetable.get_train_list().get_train("Train1").length, 100);
+  EXPECT_EQ(timetable.get_train_list().get_train("Train1").max_speed, 10);
+  EXPECT_EQ(timetable.get_train_list().get_train("Train1").acceleration, 1);
+  EXPECT_EQ(timetable.get_train_list().get_train("Train1").deceleration, 1);
+  EXPECT_EQ(timetable.get_train_list().get_train("Train1").tim, true);
+
+  EXPECT_EQ(timetable.get_train_list().get_train("Train2").name, "Train2");
+  EXPECT_EQ(timetable.get_train_list().get_train("Train2").length, 100);
+  EXPECT_EQ(timetable.get_train_list().get_train("Train2").max_speed, 10);
+  EXPECT_EQ(timetable.get_train_list().get_train("Train2").acceleration, 1);
+  EXPECT_EQ(timetable.get_train_list().get_train("Train2").deceleration, 1);
+  EXPECT_EQ(timetable.get_train_list().get_train("Train2").tim, false);
+
+  EXPECT_EQ(timetable.get_schedule(tr1).get_t_0_range(),
+            (std::pair<int, int>(0, 60)));
+  EXPECT_EQ(timetable.get_schedule(tr1).get_t_n_range(),
+            (std::pair<int, int>(360, 420)));
+  EXPECT_EQ(timetable.get_schedule(tr1).get_v_0(), 0);
+  EXPECT_EQ(timetable.get_schedule(tr1).get_v_n(), 0);
+
+  EXPECT_EQ(timetable.get_schedule("Train2").get_t_0_range(),
+            (std::pair<int, int>(0, 60)));
+  EXPECT_EQ(timetable.get_schedule("Train2").get_t_n_range(),
+            (std::pair<int, int>(400, 460)));
+  EXPECT_EQ(timetable.get_schedule("Train2").get_v_0(), 10);
+  EXPECT_EQ(timetable.get_schedule("Train2").get_v_n(), 5);
+
+  EXPECT_TRUE(timetable.check_consistency(network));
+
+  // TODO: Add more tests
 }
