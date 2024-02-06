@@ -452,23 +452,37 @@ public:
     station_list.add_track_to_station(name, source, target, network);
   };
 
-  size_t add_train(const std::string& name, int length, double max_speed,
-                   double acceleration, double deceleration, int t_0,
-                   double v_0, size_t entry, int t_n, double v_n, size_t exit,
+  template <typename TrainN = std::string>
+  size_t add_train(const TrainN& name, int length, double max_speed,
+                   double acceleration, double deceleration,
+                   decltype(T::time_type()) t_0, double v_0, size_t entry,
+                   decltype(T::time_type()) t_n, double v_n, size_t exit,
                    const Network& network) {
-    return add_train(name, length, max_speed, acceleration, deceleration, true,
-                     t_0, v_0, entry, t_n, v_n, exit, network);
+    return add_train(static_cast<std::string>(name), length, max_speed,
+                     acceleration, deceleration, true, t_0, v_0, entry, t_n,
+                     v_n, exit, network);
   };
-  size_t add_train(const std::string& name, int length, double max_speed,
-                   double acceleration, double deceleration, int t_0,
-                   double v_0, const std::string& entry, int t_n, double v_n,
-                   const std::string& exit, const Network& network) {
-    return add_train(name, length, max_speed, acceleration, deceleration, true,
-                     t_0, v_0, entry, t_n, v_n, exit, network);
+  template <
+      typename TrainN = std::string, typename EntryN = std::string,
+      typename ExitN = std::string,
+      typename = std::enable_if_t<!std::is_convertible_v<EntryN, size_t> &&
+                                  !std::is_convertible_v<ExitN, size_t>>>
+  size_t add_train(const TrainN& name, int length, double max_speed,
+                   double acceleration, double deceleration,
+                   decltype(T::time_type()) t_0, double v_0,
+                   const EntryN& entry, decltype(T::time_type()) t_n,
+                   double v_n, const ExitN& exit, const Network& network) {
+    return add_train(
+        static_cast<std::string>(name), length, max_speed, acceleration,
+        deceleration, true, t_0, v_0,
+        network.get_vertex_index(static_cast<std::string>(entry)), t_n, v_n,
+        network.get_vertex_index(static_cast<std::string>(exit)), network);
   };
-  size_t add_train(const std::string& name, int length, double max_speed,
-                   double acceleration, double deceleration, bool tim, int t_0,
-                   double v_0, size_t entry, int t_n, double v_n, size_t exit,
+  template <typename TrainN = std::string>
+  size_t add_train(const TrainN& name, int length, double max_speed,
+                   double acceleration, double deceleration, bool tim,
+                   decltype(T::time_type()) t_0, double v_0, size_t entry,
+                   decltype(T::time_type()) t_n, double v_n, size_t exit,
                    const Network& network) {
     /**
      * This method adds a train to the timetable. The train is specified by its
@@ -495,21 +509,29 @@ public:
     if (!network.has_vertex(exit)) {
       throw exceptions::VertexNotExistentException(exit);
     }
-    if (train_list.has_train(name)) {
+    if (train_list.has_train(static_cast<std::string>(name))) {
       throw exceptions::ConsistencyException("Train already exists.");
     }
-    auto const index = train_list.add_train(name, length, max_speed,
-                                            acceleration, deceleration, tim);
+    auto const index =
+        train_list.add_train(static_cast<std::string>(name), length, max_speed,
+                             acceleration, deceleration, tim);
     schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
     return index;
   }
-  size_t add_train(const std::string& name, int length, double max_speed,
+  template <
+      typename TrainN = std::string, typename EntryN = std::string,
+      typename ExitN = std::string,
+      typename = std::enable_if_t<!std::is_convertible_v<EntryN, size_t> &&
+                                  !std::is_convertible_v<ExitN, size_t>>>
+  size_t add_train(const TrainN& name, int length, double max_speed,
                    double acceleration, double deceleration, bool tim, int t_0,
-                   double v_0, const std::string& entry, int t_n, double v_n,
-                   const std::string& exit, const Network& network) {
-    return add_train(name, length, max_speed, acceleration, deceleration, tim,
-                     t_0, v_0, network.get_vertex_index(entry), t_n, v_n,
-                     network.get_vertex_index(exit), network);
+                   double v_0, const EntryN& entry, int t_n, double v_n,
+                   const ExitN& exit, const Network& network) {
+    return add_train(
+        static_cast<std::string>(name), length, max_speed, acceleration,
+        deceleration, tim, t_0, v_0,
+        network.get_vertex_index(static_cast<std::string>(entry)), t_n, v_n,
+        network.get_vertex_index(static_cast<std::string>(exit)), network);
   };
 
   [[nodiscard]] const StationList& get_station_list() const {
