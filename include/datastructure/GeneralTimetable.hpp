@@ -398,6 +398,7 @@ public:
 
   template <typename... Args>
   void add_stop(size_t train_index, const std::string& station_name, bool sort,
+                decltype(T::time_type()) t0, decltype(T::time_type()) tn,
                 Args... args) {
     /**
      * This method adds a stop to a train schedule. The stop is specified by its
@@ -416,13 +417,19 @@ public:
       throw exceptions::StationNotExistentException(station_name);
     }
 
-    schedules.at(train_index).add_stop(sort, args..., station_name);
+    schedules.at(train_index).add_stop(sort, t0, tn, args..., station_name);
   }
-  template <typename... Args>
-  void add_stop(const std::string& train_name, const std::string& station_name,
-                bool sort, Args... args) {
-    add_stop(train_list.get_train_index(train_name), station_name, sort,
-             args...);
+  template <typename TrainType   = std::string,
+            typename StationType = std::string, typename... Args,
+            typename             = std::enable_if_t<
+                !std::is_convertible_v<TrainType, size_t> &&
+                std::is_convertible_v<TrainType, std::string> &&
+                std::is_convertible_v<StationType, std::string>>>
+  void add_stop(const TrainType& train_name, const StationType& station_name,
+                bool sort, decltype(T::time_type()) t0,
+                decltype(T::time_type()) tn, Args... args) {
+    add_stop(train_list.get_train_index(static_cast<std::string>(train_name)),
+             static_cast<std::string>(station_name), sort, t0, tn, args...);
   };
 
   void remove_stop(size_t train_index, const std::string& station_name) {
