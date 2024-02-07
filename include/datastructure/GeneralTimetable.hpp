@@ -445,7 +445,7 @@ public:
     if (!train_list.has_train(train_index)) {
       throw exceptions::TrainNotExistentException(train_index);
     }
-    if (!station_list.has_station(station_name)) {
+    if (!station_list.has_station(static_cast<std::string>(station_name))) {
       throw exceptions::StationNotExistentException(
           static_cast<std::string>(station_name));
     }
