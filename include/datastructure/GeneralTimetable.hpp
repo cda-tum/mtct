@@ -242,6 +242,51 @@ class GeneralTimetable {
       "T must be derived from GeneralSchedule with suitable stop type");
 
   template <typename U, std::enable_if_t<std::is_same_v<U, int>, int> = 0>
+  void add_json_data(json& j, const int i, const Network& network) const {
+    const auto& schedule = schedules.at(i);
+    json        stops;
+
+    for (const auto& stop : schedule.get_stops()) {
+      stops.push_back(
+          {{"begin", stop.arrival()},
+           {"end", stop.departure()},
+           {"station",
+            station_list.get_station(stop.get_station_name()).name}});
+    }
+    j[train_list.get_train(i).name] = {
+        {"t_0", schedule.get_t_0()},
+        {"v_0", schedule.get_v_0()},
+        {"entry", network.get_vertex(schedule.get_entry()).name},
+        {"t_n", schedule.get_t_n()},
+        {"v_n", schedule.get_v_n()},
+        {"exit", network.get_vertex(schedule.get_exit()).name},
+        {"stops", stops}};
+  }
+
+  template <typename U,
+            std::enable_if_t<std::is_same_v<U, std::pair<int, int>>, int> = 0>
+  void add_json_data(json& j, const int i, const Network& network) const {
+    const auto& schedule = schedules.at(i);
+    json        stops;
+
+    for (const auto& stop : schedule.get_stops()) {
+      stops.push_back(
+          {{"begin", stop.get_begin_range()},
+           {"end", stop.get_end_range()},
+           {"station",
+            station_list.get_station(stop.get_station_name()).name}});
+    }
+    j[train_list.get_train(i).name] = {
+        {"t_0", schedule.get_t_0_range()},
+        {"v_0", schedule.get_v_0()},
+        {"entry", network.get_vertex(schedule.get_entry()).name},
+        {"t_n", schedule.get_t_n_range()},
+        {"v_n", schedule.get_v_n()},
+        {"exit", network.get_vertex(schedule.get_exit()).name},
+        {"stops", stops}};
+  }
+
+  template <typename U, std::enable_if_t<std::is_same_v<U, int>, int> = 0>
   void parse_schedule_data(const json& schedule_data, const int i) {
     this->schedules.at(i).set_t_0(static_cast<int>(schedule_data["t_0"]));
     this->schedules.at(i).set_t_n(static_cast<int>(schedule_data["t_n"]));
@@ -254,10 +299,10 @@ class GeneralTimetable {
   template <typename U,
             std::enable_if_t<std::is_same_v<U, std::pair<int, int>>, int> = 0>
   void parse_schedule_data(const json& schedule_data, const int i) {
-    this->schedules.at(i).set_t_0({schedule_data["t_0"][0].get<int>(),
-                                   schedule_data["t_0"][1].get<int>()});
-    this->schedules.at(i).set_t_n({schedule_data["t_n"][0].get<int>(),
-                                   schedule_data["t_n"][1].get<int>()});
+    this->schedules.at(i).set_t_0_range({schedule_data["t_0"][0].get<int>(),
+                                         schedule_data["t_0"][1].get<int>()});
+    this->schedules.at(i).set_t_n_range({schedule_data["t_n"][0].get<int>(),
+                                         schedule_data["t_n"][1].get<int>()});
     for (const auto& stop_data : schedule_data["stops"]) {
       this->add_stop(
           i, stop_data["station"].get<std::string>(), false,
@@ -365,24 +410,7 @@ public:
 
     json j;
     for (size_t i = 0; i < schedules.size(); ++i) {
-      const auto& schedule = schedules.at(i);
-      json        stops;
-
-      for (const auto& stop : schedule.get_stops()) {
-        stops.push_back(
-            {{"begin", stop.arrival()},
-             {"end", stop.departure()},
-             {"station",
-              station_list.get_station(stop.get_station_name()).name}});
-      }
-      j[train_list.get_train(i).name] = {
-          {"t_0", schedule.get_t_0()},
-          {"v_0", schedule.get_v_0()},
-          {"entry", network.get_vertex(schedule.get_entry()).name},
-          {"t_n", schedule.get_t_n()},
-          {"v_n", schedule.get_v_n()},
-          {"exit", network.get_vertex(schedule.get_exit()).name},
-          {"stops", stops}};
+      add_json_data<decltype(T::time_type())>(j, i, network);
     }
 
     std::ofstream file(p / "schedules.json");
