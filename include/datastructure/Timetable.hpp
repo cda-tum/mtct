@@ -75,17 +75,6 @@ public:
   Timetable& operator=(Timetable&& other) noexcept = default;
   virtual ~Timetable()                             = default;
 
-  using GeneralTimetable::add_stop;
-  void add_stop(size_t train_index, const std::string& station_name, int begin,
-                int end) {
-    GeneralTimetable::add_stop(train_index, station_name, true, begin, end);
-  };
-  void add_stop(const std::string& train_name, const std::string& station_name,
-                int begin, int end) {
-    GeneralTimetable::add_stop(train_list.get_train_index(train_name),
-                               station_name, true, begin, end);
-  };
-
   [[nodiscard]] int                 max_t() const;
   [[nodiscard]] std::pair<int, int> time_interval(size_t train_index) const;
   [[nodiscard]] std::pair<int, int>
