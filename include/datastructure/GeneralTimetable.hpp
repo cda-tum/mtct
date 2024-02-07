@@ -452,7 +452,10 @@ public:
     station_list.add_track_to_station(name, source, target, network);
   };
 
-  template <typename TrainN = std::string>
+  template <
+      typename TrainN = std::string,
+      typename = std::enable_if_t<!std::is_convertible_v<TrainN, size_t> &&
+                                  std::is_convertible_v<TrainN, std::string>>>
   size_t add_train(const TrainN& name, int length, double max_speed,
                    double acceleration, double deceleration,
                    decltype(T::time_type()) t_0, double v_0, size_t entry,
@@ -465,8 +468,12 @@ public:
   template <
       typename TrainN = std::string, typename EntryN = std::string,
       typename ExitN = std::string,
-      typename = std::enable_if_t<!std::is_convertible_v<EntryN, size_t> &&
-                                  !std::is_convertible_v<ExitN, size_t>>>
+      typename = std::enable_if_t<!std::is_convertible_v<TrainN, size_t> &&
+                                  std::is_convertible_v<TrainN, std::string> &&
+                                  !std::is_convertible_v<EntryN, size_t> &&
+                                  std::is_convertible_v<EntryN, std::string> &&
+                                  !std::is_convertible_v<ExitN, size_t> &&
+                                  std::is_convertible_v<ExitN, std::string>>>
   size_t add_train(const TrainN& name, int length, double max_speed,
                    double acceleration, double deceleration,
                    decltype(T::time_type()) t_0, double v_0,
@@ -478,7 +485,10 @@ public:
         network.get_vertex_index(static_cast<std::string>(entry)), t_n, v_n,
         network.get_vertex_index(static_cast<std::string>(exit)), network);
   };
-  template <typename TrainN = std::string>
+  template <
+      typename TrainN = std::string,
+      typename = std::enable_if_t<!std::is_convertible_v<TrainN, size_t> &&
+                                  std::is_convertible_v<TrainN, std::string>>>
   size_t add_train(const TrainN& name, int length, double max_speed,
                    double acceleration, double deceleration, bool tim,
                    decltype(T::time_type()) t_0, double v_0, size_t entry,
@@ -521,8 +531,12 @@ public:
   template <
       typename TrainN = std::string, typename EntryN = std::string,
       typename ExitN = std::string,
-      typename = std::enable_if_t<!std::is_convertible_v<EntryN, size_t> &&
-                                  !std::is_convertible_v<ExitN, size_t>>>
+      typename = std::enable_if_t<!std::is_convertible_v<TrainN, size_t> &&
+                                  std::is_convertible_v<TrainN, std::string> &&
+                                  !std::is_convertible_v<EntryN, size_t> &&
+                                  std::is_convertible_v<EntryN, std::string> &&
+                                  !std::is_convertible_v<ExitN, size_t> &&
+                                  std::is_convertible_v<ExitN, std::string>>>
   size_t add_train(const TrainN& name, int length, double max_speed,
                    double acceleration, double deceleration, bool tim,
                    decltype(T::time_type()) t_0, double v_0,
