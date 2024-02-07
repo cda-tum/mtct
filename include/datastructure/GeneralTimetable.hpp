@@ -273,6 +273,7 @@ class GeneralTimetable {
       stops.push_back(
           {{"begin", stop.get_begin_range()},
            {"end", stop.get_end_range()},
+           {"min_stopping_time", stop.get_min_stopping_time()},
            {"station",
             station_list.get_station(stop.get_station_name()).name}});
     }
@@ -306,8 +307,9 @@ class GeneralTimetable {
     for (const auto& stop_data : schedule_data["stops"]) {
       this->add_stop(
           i, stop_data["station"].get<std::string>(), false,
-          stop_data["begin"][0].get<int>(), stop_data["begin"][1].get<int>(),
-          stop_data["end"][0].get<int>(), stop_data["end"][1].get<int>());
+          {stop_data["begin"][0].get<int>(), stop_data["begin"][1].get<int>()},
+          {stop_data["end"][0].get<int>(), stop_data["end"][1].get<int>()},
+          stop_data["min_stopping_time"].get<int>());
     }
   }
 
