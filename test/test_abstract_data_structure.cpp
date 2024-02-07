@@ -126,5 +126,27 @@ TEST(GeneralAbstractDataStructure, GeneralTimetable) {
 
   EXPECT_TRUE(timetable.check_consistency(network));
 
-  // TODO: Add more tests
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", "g00", "g01", network);
+  timetable.add_track_to_station("Station1", "g01", "g00", network);
+  timetable.add_track_to_station("Station1", "g10", "g11", network);
+  timetable.add_track_to_station("Station1", "g11", "g10", network);
+
+  EXPECT_TRUE(timetable.check_consistency(network));
+
+  timetable.add_stop("Train1", "Station1", {60, 120}, {120, 180}, 60);
+
+  EXPECT_TRUE(timetable.check_consistency(network));
+
+  EXPECT_THROW(
+      timetable.add_stop("Train1", "Station1", {180, 240}, {240, 300}, 60),
+      exceptions::ConsistencyException);
+
+  timetable.add_stop("Train2", "Station1", {400, 460}, {460, 520}, 60);
+
+  EXPECT_FALSE(timetable.check_consistency(network));
+
+  timetable.remove_stop("Train2", "Station1");
+
+  EXPECT_TRUE(timetable.check_consistency(network));
 }
