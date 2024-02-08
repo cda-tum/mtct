@@ -75,6 +75,40 @@ public:
 
   [[nodiscard]] const auto& get_timetable() const { return timetable; };
   [[nodiscard]] const auto& get_train_weights() const { return train_weights; };
+  [[nodiscard]] const auto& get_train_optional() const {
+    return train_optional;
+  };
+  [[nodiscard]] double get_lambda() const { return lambda; };
+
+  [[nodiscard]] double get_train_weight(size_t train_index) {
+    if (!timetable.get_train_list().has_train(train_index)) {
+      throw std::invalid_argument("Train index out of bounds");
+    }
+    return train_weights.at(train_index);
+  }
+  [[nodiscard]] double get_train_weight(const std::string& train_name) {
+    return get_train_weight(
+        timetable.get_train_list().get_train_index(train_name));
+  }
+  [[nodiscard]] double get_train_weight(const char* train_name) {
+    return get_train_weight(
+        timetable.get_train_list().get_train_index(train_name));
+  }
+
+  [[nodiscard]] bool get_train_optional(size_t train_index) {
+    if (!timetable.get_train_list().has_train(train_index)) {
+      throw std::invalid_argument("Train index out of bounds");
+    }
+    return train_optional.at(train_index);
+  }
+  [[nodiscard]] bool get_train_optional(const std::string& train_name) {
+    return get_train_optional(
+        timetable.get_train_list().get_train_index(train_name));
+  }
+  [[nodiscard]] bool get_train_optional(const char* train_name) {
+    return get_train_optional(
+        timetable.get_train_list().get_train_index(train_name));
+  }
 
   void set_train_weight(size_t train_index, double weight) {
     if (!timetable.get_train_list().has_train(train_index)) {
@@ -89,6 +123,43 @@ public:
   void set_train_weight(const char* train_name, double weight) {
     set_train_weight(timetable.get_train_list().get_train_index(train_name),
                      weight);
+  };
+
+  void set_train_optionality_value(size_t train_index, bool val) {
+    if (!timetable.get_train_list().has_train(train_index)) {
+      throw std::invalid_argument("Train index out of bounds");
+    }
+    train_optional[train_index] = val;
+  };
+  void set_train_optionality_value(const std::string& train_name, bool val) {
+    set_train_optionality_value(
+        timetable.get_train_list().get_train_index(train_name), val);
+  };
+  void set_train_optionality_value(const char* train_name, bool val) {
+    set_train_optionality_value(
+        timetable.get_train_list().get_train_index(train_name), val);
+  };
+  void set_train_optional(size_t train_index) {
+    set_train_optionality_value(train_index, true);
+  };
+  void set_train_optional(const std::string& train_name) {
+    set_train_optionality_value(
+        timetable.get_train_list().get_train_index(train_name), true);
+  };
+  void set_train_optional(const char* train_name) {
+    set_train_optionality_value(
+        timetable.get_train_list().get_train_index(train_name), true);
+  };
+  void set_train_mandatory(size_t train_index) {
+    set_train_optionality_value(train_index, false);
+  };
+  void set_train_mandatory(const std::string& train_name) {
+    set_train_optionality_value(
+        timetable.get_train_list().get_train_index(train_name), false);
+  };
+  void set_train_mandatory(const char* train_name) {
+    set_train_optionality_value(
+        timetable.get_train_list().get_train_index(train_name), false);
   };
 
   using GeneralProblemInstance::export_instance;
