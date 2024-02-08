@@ -446,6 +446,7 @@ public:
       throw exceptions::TrainNotExistentException(train_index);
     }
     if (!station_list.has_station(static_cast<std::string>(station_name))) {
+      // NOLINTNEXTLINE(google-readability-casting)
       throw exceptions::StationNotExistentException(
           static_cast<std::string>(station_name));
     }
