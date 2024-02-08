@@ -15,10 +15,18 @@ using json = nlohmann::json;
 
 namespace cda_rail::instances {
 
+template <typename, typename = void> struct HasTimeType : std::false_type {};
+
+template <typename T>
+struct HasTimeType<T, std::void_t<decltype(std::declval<T>().time_type())>>
+    : std::true_type {};
+
 template <typename T>
 class GeneralPerformanceOptimizationInstance : public GeneralProblemInstance {
   static_assert(std::is_base_of_v<BaseGeneralSchedule, T>,
                 "T must be a child of BaseGeneralSchedule");
+  static_assert(HasTimeType<T>::value, "T must have a time_type() method");
+  using TimeType = decltype(T::time_type());
 
   void initialize_vectors() {
     train_weights = std::vector<double>(timetable.get_train_list().size(), 1);
@@ -160,6 +168,34 @@ public:
   void set_train_mandatory(const char* train_name) {
     set_train_optionality_value(
         timetable.get_train_list().get_train_index(train_name), false);
+  };
+
+  Train& editable_tr(size_t index) { return timetable.editable_tr(index); };
+  Train& editable_tr(const std::string& name) {
+    return timetable.editable_tr(name);
+  };
+
+  template <typename... Args> size_t add_train(Args... args) {
+    return timetable.add_train(args..., network);
+  }
+
+  void add_station(const std::string& name) { timetable.add_station(name); };
+
+  template <typename... Args> size_t add_stop(Args... args) {
+    return timetable.add_stop(args...);
+  }
+
+  [[nodiscard]] const StationList& get_station_list() const {
+    return timetable.get_station_list();
+  };
+  [[nodiscard]] const TrainList& get_train_list() const {
+    return timetable.get_train_list();
+  };
+  [[nodiscard]] const auto& get_schedule(size_t index) const {
+    return timetable.get_schedule(index);
+  };
+  [[nodiscard]] const auto& get_schedule(const std::string& train_name) const {
+    return timetable.get_schedule(train_name);
   };
 
   using GeneralProblemInstance::export_instance;
