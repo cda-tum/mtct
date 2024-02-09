@@ -17,7 +17,7 @@ protected:
   T instance;
 
   GeneralSolver() = default;
-  explicit GeneralSolver(T instance) : instance(std::move(instance)){};
+  explicit GeneralSolver(const T& instance) : instance(instance){};
 
 public:
   [[nodiscard]] const T& get_instance() const { return instance; }

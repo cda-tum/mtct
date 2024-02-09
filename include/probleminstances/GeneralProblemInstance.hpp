@@ -312,12 +312,10 @@ protected:
   bool           has_sol = false;
 
   SolGeneralProblemInstance() = default;
-  explicit SolGeneralProblemInstance(T instance)
-      : instance(std::move(instance)){};
-  SolGeneralProblemInstance(T instance, SolutionStatus status, double obj,
-                            bool has_sol)
-      : instance(std::move(instance)), status(status), obj(obj),
-        has_sol(has_sol){};
+  explicit SolGeneralProblemInstance(const T& instance) : instance(instance){};
+  SolGeneralProblemInstance(const T& instance, SolutionStatus status,
+                            double obj, bool has_sol)
+      : instance(instance), status(status), obj(obj), has_sol(has_sol){};
 
 public:
   [[nodiscard]] const T&       get_instance() const { return instance; };
@@ -357,13 +355,12 @@ class SolGeneralProblemInstanceWithScheduleAndRoutes
 
 public:
   SolGeneralProblemInstanceWithScheduleAndRoutes() = default;
-  explicit SolGeneralProblemInstanceWithScheduleAndRoutes(T instance)
-      : SolGeneralProblemInstance<T>(std::move(instance)){};
-  SolGeneralProblemInstanceWithScheduleAndRoutes(T              instance,
+  explicit SolGeneralProblemInstanceWithScheduleAndRoutes(const T& instance)
+      : SolGeneralProblemInstance<T>(instance){};
+  SolGeneralProblemInstanceWithScheduleAndRoutes(const T&       instance,
                                                  SolutionStatus status,
                                                  double obj, bool has_sol)
-      : SolGeneralProblemInstance<T>(std::move(instance), status, obj,
-                                     has_sol){};
+      : SolGeneralProblemInstance<T>(instance, status, obj, has_sol){};
 
   // RouteMap functions
   void reset_routes() {

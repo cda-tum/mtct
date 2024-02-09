@@ -49,7 +49,7 @@ protected:
   GRBLinExpr                                          objective_expr;
 
   GeneralMIPSolver() = default;
-  explicit GeneralMIPSolver(T instance)
-      : GeneralSolver<T, S>(std::move(instance)){};
+  explicit GeneralMIPSolver(const T& instance)
+      : GeneralSolver<T, S>(instance){};
 };
 } // namespace cda_rail::solver::mip_based
