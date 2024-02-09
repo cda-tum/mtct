@@ -225,8 +225,28 @@ public:
     if (!timetable.check_consistency(this->const_n())) {
       return false;
     }
-    return (routes.check_consistency(get_train_list(), this->const_n(),
-                                     every_train_must_have_route));
+    if (!routes.check_consistency(get_train_list(), this->const_n(),
+                                  every_train_must_have_route)) {
+      return false;
+    };
+    for (size_t tr_index = 0; tr_index < timetable.get_train_list().size();
+         tr_index++) {
+      const auto& tr_name = timetable.get_train_list().get_train(tr_index).name;
+      if (routes.has_route(tr_name)) {
+        size_t entry = timetable.get_schedule(tr_index).get_entry();
+        size_t exit  = timetable.get_schedule(tr_index).get_exit();
+        if (routes.get_route(tr_name).get_edge(0, this->const_n()).source !=
+            entry) {
+          return false;
+        }
+        if (routes.get_route(tr_name)
+                .get_edge(routes.get_route(tr_name).size() - 1, this->const_n())
+                .target != exit) {
+          return false;
+        }
+      }
+    }
+    return true;
   };
 };
 
