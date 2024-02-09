@@ -81,7 +81,7 @@ protected:
   explicit GeneralProblemInstance(Network network)
       : network(std::move(network)){};
   explicit GeneralProblemInstance(const std::filesystem::path& path)
-      : network(Network(path / "Network")){};
+      : network(Network(path / "network")){};
 
   void export_network(const std::filesystem::path& path) const {
     if (!is_directory_and_create(path)) {
