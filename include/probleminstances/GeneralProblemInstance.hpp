@@ -16,63 +16,6 @@ template <typename T>
 struct HasTimeType<T, std::void_t<decltype(std::declval<T>().time_type())>>
     : std::true_type {};
 
-template <typename, typename = void> struct HasEditableTr : std::false_type {};
-template <typename T>
-struct HasEditableTr<T, std::void_t<decltype(std::declval<T>().editable_tr())>>
-    : std::true_type {};
-
-template <typename, typename = void> struct HasAddTrain : std::false_type {};
-template <typename T>
-struct HasAddTrain<T, std::void_t<decltype(std::declval<T>().add_train())>>
-    : std::true_type {};
-
-template <typename, typename = void> struct HasAddStation : std::false_type {};
-template <typename T>
-struct HasAddStation<T, std::void_t<decltype(std::declval<T>().add_station())>>
-    : std::true_type {};
-
-template <typename, typename = void> struct HasAddStop : std::false_type {};
-template <typename T>
-struct HasAddStop<T, std::void_t<decltype(std::declval<T>().add_stop())>>
-    : std::true_type {};
-
-template <typename, typename = void>
-struct HasGetTrainList : std::false_type {};
-template <typename T>
-struct HasGetTrainList<
-    T, std::void_t<decltype(std::declval<T>().get_train_list())>>
-    : std::true_type {};
-
-template <typename, typename = void>
-struct HasGetStationList : std::false_type {};
-template <typename T>
-struct HasGetStationList<
-    T, std::void_t<decltype(std::declval<T>().get_station_list())>>
-    : std::true_type {};
-
-template <typename, typename = void> struct HasGetSchedule : std::false_type {};
-template <typename T>
-struct HasGetSchedule<T,
-                      std::void_t<decltype(std::declval<T>().get_schedule())>>
-    : std::true_type {};
-
-template <typename, typename = void> struct HasMaxT : std::false_type {};
-template <typename T>
-struct HasMaxT<T, std::void_t<decltype(std::declval<T>().max_t())>>
-    : std::true_type {};
-
-template <typename, typename = void>
-struct HasTrainInterval : std::false_type {};
-template <typename T>
-struct HasTrainInterval<
-    T, std::void_t<decltype(std::declval<T>().get_train_interval())>>
-    : std::true_type {};
-
-template <typename, typename = void> struct HasSortStops : std::false_type {};
-template <typename T>
-struct HasSortStops<T, std::void_t<decltype(std::declval<T>().sort_stops())>>
-    : std::true_type {};
-
 class GeneralProblemInstance {
   Network network;
 
@@ -115,19 +58,6 @@ class GeneralProblemInstanceWithScheduleAndRoutes
   static_assert(std::is_base_of_v<BaseTimetable, T>,
                 "T must be a child of BaseTimeTable");
   static_assert(HasTimeType<T>::value, "T must have a time_type() method");
-  using TimeType = decltype(T::time_type());
-  // static_assert(HasEditableTr<T>::value, "T must have an editable_tr()
-  // method"); static_assert(HasAddTrain<T>::value, "T must have an add_train()
-  // method"); static_assert(HasAddStation<T>::value, "T must have an
-  // add_station() method"); static_assert(HasAddStop<T>::value, "T must have an
-  // add_stop() method"); static_assert(HasGetTrainList<T>::value, "T must have
-  // a get_train_list() method"); static_assert(HasGetStationList<T>::value, "T
-  // must have a get_station_list() method");
-  // static_assert(HasGetSchedule<T>::value, "T must have a get_schedule()
-  // method"); static_assert(HasMaxT<T>::value, "T must have a max_t() method");
-  // static_assert(HasTrainInterval<T>::value, "T must have a time_interval()
-  // method"); static_assert(HasSortStops<T>::value, "T must have a sort_stops()
-  // method");
 
   template <typename S>
   friend class SolGeneralProblemInstanceWithScheduleAndRoutes;

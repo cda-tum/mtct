@@ -22,7 +22,6 @@ class GeneralPerformanceOptimizationInstance
   static_assert(std::is_base_of_v<BaseGeneralSchedule, T>,
                 "T must be a child of BaseGeneralSchedule");
   static_assert(HasTimeType<T>::value, "T must have a time_type() method");
-  using TimeType = decltype(T::time_type());
 
   template <typename S> friend class SolGeneralPerformanceOptimizationInstance;
 
