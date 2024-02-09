@@ -67,11 +67,10 @@ class GeneralProblemInstanceWithScheduleAndRoutes
 
 protected:
   GeneralProblemInstanceWithScheduleAndRoutes() = default;
-  explicit GeneralProblemInstanceWithScheduleAndRoutes(Network  network,
-                                                       T        timetable,
-                                                       RouteMap routes)
-      : GeneralProblemInstance(std::move(network)),
-        timetable(std::move(timetable)), routes(std::move(routes)){};
+  explicit GeneralProblemInstanceWithScheduleAndRoutes(const Network& network,
+                                                       const T&       timetable,
+                                                       const RouteMap& routes)
+      : GeneralProblemInstance(network), timetable(timetable), routes(routes){};
   explicit GeneralProblemInstanceWithScheduleAndRoutes(
       const std::filesystem::path& path)
       : GeneralProblemInstance(path),

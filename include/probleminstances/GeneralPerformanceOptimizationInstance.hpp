@@ -40,9 +40,9 @@ protected:
 
 public:
   GeneralPerformanceOptimizationInstance() = default;
-  explicit GeneralPerformanceOptimizationInstance(Network             network,
-                                                  GeneralTimetable<T> timetable,
-                                                  RouteMap            routes)
+  explicit GeneralPerformanceOptimizationInstance(
+      const Network& network, const GeneralTimetable<T>& timetable,
+      const RouteMap& routes)
       : GeneralProblemInstanceWithScheduleAndRoutes<GeneralTimetable<T>>(
             network, timetable, routes) {
     initialize_vectors();
