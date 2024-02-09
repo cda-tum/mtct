@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Definitions.hpp"
 #include "GeneralProblemInstance.hpp"
 #include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
