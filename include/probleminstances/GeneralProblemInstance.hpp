@@ -372,49 +372,49 @@ public:
 
   // RouteMap functions
   void reset_routes() {
-    for (const auto& tr : instance.get_train_list()) {
-      if (instance.has_route(tr.name)) {
-        instance.routes.remove_route(tr.name);
+    for (const auto& tr : this->instance.get_train_list()) {
+      if (this->instance.has_route(tr.name)) {
+        this->instance.routes.remove_route(tr.name);
       }
     }
   }
   void add_empty_route(const std::string& train_name) {
-    instance.add_empty_route(train_name);
+    this->instance.add_empty_route(train_name);
   };
 
   void push_back_edge_to_route(const std::string& train_name,
                                size_t             edge_index) {
-    instance.push_back_edge_to_route(train_name, edge_index);
+    this->instance.push_back_edge_to_route(train_name, edge_index);
   };
   void push_back_edge_to_route(const std::string& train_name, size_t source,
                                size_t target) {
-    instance.push_back_edge_to_route(train_name, source, target);
+    this->instance.push_back_edge_to_route(train_name, source, target);
   };
   void push_back_edge_to_route(const std::string& train_name,
                                const std::string& source,
                                const std::string& target) {
-    instance.push_back_edge_to_route(train_name, source, target);
+    this->instance.push_back_edge_to_route(train_name, source, target);
   };
 
   void push_front_edge_to_route(const std::string& train_name,
                                 size_t             edge_index) {
-    instance.push_front_edge_to_route(train_name, edge_index);
+    this->instance.push_front_edge_to_route(train_name, edge_index);
   };
   void push_front_edge_to_route(const std::string& train_name, size_t source,
                                 size_t target) {
-    instance.push_front_edge_to_route(train_name, source, target);
+    this->instance.push_front_edge_to_route(train_name, source, target);
   };
   void push_front_edge_to_route(const std::string& train_name,
                                 const std::string& source,
                                 const std::string& target) {
-    instance.push_front_edge_to_route(train_name, source, target);
+    this->instance.push_front_edge_to_route(train_name, source, target);
   };
 
   void remove_first_edge_from_route(const std::string& train_name) {
-    instance.remove_first_edge_from_route(train_name);
+    this->instance.remove_first_edge_from_route(train_name);
   };
   void remove_last_edge_from_route(const std::string& train_name) {
-    instance.remove_last_edge_from_route(train_name);
+    this->instance.remove_last_edge_from_route(train_name);
   };
 };
 } // namespace cda_rail::instances
