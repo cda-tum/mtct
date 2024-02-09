@@ -168,10 +168,10 @@ public:
     json j;
     for (size_t i = 0; i < train_weights.size(); ++i) {
       j["train_weights"]
-       [this->get_timetable().get_train_list().get_train(i).get_name()] =
+       [this->get_timetable().get_train_list().get_train(i).name] =
            train_weights[i];
       j["train_optional"]
-       [this->get_timetable().get_train_list().get_train(i).get_name()] =
+       [this->get_timetable().get_train_list().get_train(i).name] =
            train_optional[i];
     }
     j["lambda"] = lambda;
