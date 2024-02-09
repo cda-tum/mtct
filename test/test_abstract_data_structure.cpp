@@ -1,5 +1,7 @@
 #include "CustomExceptions.hpp"
 #include "datastructure/GeneralTimetable.hpp"
+#include "datastructure/Route.hpp"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
 #include "gtest/gtest.h"
 #include <utility>
@@ -249,4 +251,88 @@ TEST(GeneralAbstractDataStructure, GeneralTimetableExportImport) {
                 .at(0)
                 .get_min_stopping_time(),
             60);
+}
+
+TEST(GeneralAbstractDataStructure,
+     GeneralPerformanceOptimizationInstanceConsistency) {
+  Network network("./example-networks/SimpleStation/network/");
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+
+  const auto l0 = network.get_vertex_index("l0");
+  const auto r0 = network.get_vertex_index("r0");
+
+  timetable.add_train("Train1", 100, 10, 1, 1, true, {0, 60}, 0, "l0",
+                      {360, 420}, 0, "r0", network);
+  timetable.add_train("Train2", 100, 10, 1, 1, false, {0, 60}, 10, l0,
+                      {400, 460}, 5, r0, network);
+
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", "g00", "g01", network);
+  timetable.add_track_to_station("Station1", "g01", "g00", network);
+  timetable.add_track_to_station("Station1", "g10", "g11", network);
+  timetable.add_track_to_station("Station1", "g11", "g10", network);
+  timetable.add_stop("Train1", "Station1", {60, 120}, {120, 180}, 60);
+
+  EXPECT_TRUE(timetable.check_consistency(network));
+
+  RouteMap routes;
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance<
+      GeneralSchedule<GeneralScheduledStop>>
+      instance(network, timetable, routes);
+
+  EXPECT_TRUE(instance.check_consistency(false));
+  EXPECT_FALSE(instance.check_consistency(true));
+  EXPECT_FALSE(instance.check_consistency());
+
+  instance.set_train_weight("Train2", 2);
+  instance.set_train_optional("Train1");
+
+  EXPECT_EQ(instance.get_train_weight("Train2"), 2);
+  EXPECT_EQ(instance.get_train_optional("Train1"), true);
+
+  instance.set_train_mandatory("Train1");
+
+  EXPECT_EQ(instance.get_train_optional("Train1"), false);
+
+  EXPECT_EQ(instance.get_lambda(), 1);
+
+  instance.set_lambda(2);
+
+  EXPECT_EQ(instance.get_lambda(), 2);
+
+  instance.add_empty_route("Train1");
+
+  instance.push_back_edge_to_route("Train1", "l0", "l1");
+
+  EXPECT_FALSE(instance.check_consistency(false));
+  EXPECT_FALSE(instance.check_consistency(true));
+  EXPECT_FALSE(instance.check_consistency());
+
+  instance.push_back_edge_to_route("Train1", "l1", "l2");
+  instance.push_back_edge_to_route("Train1", "l2", "l3");
+  instance.push_back_edge_to_route("Train1", "l3", "g00");
+  instance.push_back_edge_to_route("Train1", "g00", "g01");
+  instance.push_back_edge_to_route("Train1", "g01", "r2");
+  instance.push_back_edge_to_route("Train1", "r2", "r1");
+  instance.push_back_edge_to_route("Train1", "r1", "r0");
+
+  EXPECT_TRUE(instance.check_consistency(false));
+  EXPECT_FALSE(instance.check_consistency(true));
+  EXPECT_FALSE(instance.check_consistency());
+
+  instance.add_empty_route("Train2");
+  instance.push_back_edge_to_route("Train2", "l0", "l1");
+  instance.push_back_edge_to_route("Train2", "l1", "l2");
+  instance.push_back_edge_to_route("Train2", "l2", "l3");
+  instance.push_back_edge_to_route("Train2", "l3", "g00");
+  instance.push_back_edge_to_route("Train2", "g00", "g01");
+  instance.push_back_edge_to_route("Train2", "g01", "r2");
+  instance.push_back_edge_to_route("Train2", "r2", "r1");
+  instance.push_back_edge_to_route("Train2", "r1", "r0");
+
+  EXPECT_TRUE(instance.check_consistency(false));
+  EXPECT_TRUE(instance.check_consistency(true));
+  EXPECT_TRUE(instance.check_consistency());
 }
