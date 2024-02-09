@@ -99,6 +99,8 @@ public:
         this->get_timetable().get_train_list().get_train_index(train_name));
   }
 
+  void set_lambda(double new_lambda) { lambda = new_lambda; };
+
   void set_train_weight(size_t train_index, double weight) {
     if (!this->get_timetable().get_train_list().has_train(train_index)) {
       throw std::invalid_argument("Train index out of bounds");
