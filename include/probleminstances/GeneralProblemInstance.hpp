@@ -143,15 +143,10 @@ protected:
       : GeneralProblemInstance(std::move(network)),
         timetable(std::move(timetable)), routes(std::move(routes)){};
   explicit GeneralProblemInstanceWithScheduleAndRoutes(
-      const std::filesystem::path& path,
-      bool                         every_train_must_have_route = true)
+      const std::filesystem::path& path)
       : GeneralProblemInstance(path),
         timetable(T(path / "timetable", this->const_n())),
-        routes(RouteMap(path / "routes", this->const_n())) {
-    if (!this->check_consistency(every_train_must_have_route)) {
-      throw exceptions::ConsistencyException();
-    }
-  };
+        routes(RouteMap(path / "routes", this->const_n())){};
 
   [[nodiscard]] T&              editable_timetable() { return timetable; };
   [[nodiscard]] RouteMap&       editable_routes() { return routes; };

@@ -139,8 +139,10 @@ class BaseGeneralSchedule {
   template <typename T> friend class GeneralSchedule;
 
 private:
-  BaseGeneralSchedule()  = default;
-  ~BaseGeneralSchedule() = default;
+  BaseGeneralSchedule() = default;
+
+public:
+  virtual ~BaseGeneralSchedule() = default;
 };
 
 template <typename T = GeneralScheduledStop>

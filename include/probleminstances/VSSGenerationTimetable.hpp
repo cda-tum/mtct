@@ -17,18 +17,12 @@ class VSSGenerationTimetable
 public:
   // Constructors
   VSSGenerationTimetable() = default;
-  explicit VSSGenerationTimetable(const std::filesystem::path& p,
-                                  bool every_train_must_have_route = true)
-      : GeneralProblemInstanceWithScheduleAndRoutes<Timetable>(
-            p, every_train_must_have_route){};
-  explicit VSSGenerationTimetable(const std::string& path,
-                                  bool every_train_must_have_route = true)
-      : VSSGenerationTimetable(std::filesystem::path(path),
-                               every_train_must_have_route){};
-  explicit VSSGenerationTimetable(const char* path,
-                                  bool every_train_must_have_route = true)
-      : VSSGenerationTimetable(std::filesystem::path(path),
-                               every_train_must_have_route){};
+  explicit VSSGenerationTimetable(const std::filesystem::path& p)
+      : GeneralProblemInstanceWithScheduleAndRoutes<Timetable>(p){};
+  explicit VSSGenerationTimetable(const std::string& path)
+      : VSSGenerationTimetable(std::filesystem::path(path)){};
+  explicit VSSGenerationTimetable(const char* path)
+      : VSSGenerationTimetable(std::filesystem::path(path)){};
   ~VSSGenerationTimetable() = default;
 
   [[nodiscard]] std::pair<size_t, size_t>
@@ -50,16 +44,23 @@ public:
   [[nodiscard]] static VSSGenerationTimetable
   import_instance(const std::filesystem::path& p,
                   bool every_train_must_have_route = true) {
-    return VSSGenerationTimetable(p, every_train_must_have_route);
+    VSSGenerationTimetable return_instance(p);
+    if (!return_instance.check_consistency(every_train_must_have_route)) {
+      throw exceptions::ConsistencyException(
+          "Imported instance object is not consistent");
+    }
+    return return_instance;
   };
   [[nodiscard]] static VSSGenerationTimetable
   import_instance(const std::string& path,
                   bool               every_train_must_have_route = true) {
-    return VSSGenerationTimetable(path, every_train_must_have_route);
+    return import_instance(std::filesystem::path(path),
+                           every_train_must_have_route);
   };
   [[nodiscard]] static VSSGenerationTimetable
   import_instance(const char* path, bool every_train_must_have_route = true) {
-    return VSSGenerationTimetable(path, every_train_must_have_route);
+    return import_instance(std::filesystem::path(path),
+                           every_train_must_have_route);
   };
 
   // Transformation functions

@@ -24,12 +24,13 @@ class GeneralPerformanceOptimizationInstance
   static_assert(HasTimeType<T>::value, "T must have a time_type() method");
   using TimeType = decltype(T::time_type());
 
-  friend class SolGeneralPerformanceOptimizationInstance<T>;
+  template <typename S> friend class SolGeneralPerformanceOptimizationInstance;
 
   void initialize_vectors() {
-    train_weights = std::vector<double>(timetable.get_train_list().size(), 1);
+    train_weights =
+        std::vector<double>(this->get_timetable().get_train_list().size(), 1);
     train_optional =
-        std::vector<bool>(timetable.get_train_list().size(), false);
+        std::vector<bool>(this->get_timetable().get_train_list().size(), false);
   }
 
 protected:
