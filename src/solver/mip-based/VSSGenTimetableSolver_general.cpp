@@ -18,10 +18,9 @@
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
-    instances::VSSGenerationTimetable instance)
+    const instances::VSSGenerationTimetable& instance)
     : GeneralMIPSolver<instances::VSSGenerationTimetable,
-                       instances::SolVSSGenerationTimetable>(
-          std::move(instance)) {
+                       instances::SolVSSGenerationTimetable>(instance) {
   if (plog::get() == nullptr) {
     static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
     plog::init(plog::debug, &console_appender);

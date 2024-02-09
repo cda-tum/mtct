@@ -181,7 +181,8 @@ private:
 
 public:
   // Constructors
-  explicit VSSGenTimetableSolver(instances::VSSGenerationTimetable instance);
+  explicit VSSGenTimetableSolver(
+      const instances::VSSGenerationTimetable& instance);
   explicit VSSGenTimetableSolver(const std::filesystem::path& instance_path);
   explicit VSSGenTimetableSolver(const std::string& instance_path);
   explicit VSSGenTimetableSolver(const char* instance_path);

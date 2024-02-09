@@ -17,9 +17,9 @@ using json = nlohmann::json;
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
-    cda_rail::instances::VSSGenerationTimetable instance, int dt)
+    const cda_rail::instances::VSSGenerationTimetable& instance, int dt)
     : SolGeneralProblemInstanceWithScheduleAndRoutes<VSSGenerationTimetable>(
-          std::move(instance)),
+          instance),
       dt(dt) {
   this->initialize_vectors();
 }

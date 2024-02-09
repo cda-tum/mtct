@@ -236,10 +236,11 @@ class BaseTimetable {
   template <typename T> friend class GeneralTimetable;
 
 private:
-  BaseTimetable()  = default;
-  ~BaseTimetable() = default;
+  BaseTimetable() = default;
 
 public:
+  virtual ~BaseTimetable() = default;
+
   virtual void export_timetable(const std::filesystem::path& p,
                                 const Network&               network) const = 0;
 };

@@ -105,7 +105,8 @@ private:
 
 public:
   // Constructor
-  explicit SolVSSGenerationTimetable(VSSGenerationTimetable instance, int dt);
+  explicit SolVSSGenerationTimetable(const VSSGenerationTimetable& instance,
+                                     int                           dt);
   explicit SolVSSGenerationTimetable(
       const std::filesystem::path&                 p,
       const std::optional<VSSGenerationTimetable>& instance =
