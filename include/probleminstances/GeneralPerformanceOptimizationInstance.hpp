@@ -33,7 +33,6 @@ class GeneralPerformanceOptimizationInstance
         std::vector<bool>(this->get_timetable().get_train_list().size(), false);
   }
 
-protected:
   std::vector<double> train_weights;
   std::vector<bool>   train_optional;
   double lambda = 1; // Minutes of delay (of a weight one train) that are
