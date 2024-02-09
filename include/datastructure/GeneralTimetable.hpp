@@ -224,8 +224,26 @@ public:
         t_n(std::move(t_n)), v_n(v_n), exit(exit), stops(std::move(stops)) {}
 };
 
+class BaseTimetable {
+  /**
+   * This class is only used for static_assert in GeneralTimetable.
+   * It should not be able to be inherited from outside of the specified friend
+   * classes.
+   */
+
+  template <typename T> friend class GeneralTimetable;
+
+private:
+  BaseTimetable()  = default;
+  ~BaseTimetable() = default;
+
+public:
+  virtual void export_timetable(const std::filesystem::path& p,
+                                const Network&               network) const = 0;
+};
+
 template <typename T = GeneralSchedule<GeneralScheduledStop>>
-class GeneralTimetable {
+class GeneralTimetable : BaseTimetable {
   /**
    * General timetable class
    */
@@ -324,8 +342,14 @@ protected:
   }
 
 public:
+  [[nodiscard]] static auto time_type() -> decltype(T::time_type()) {
+    // return the type of the desired time type
+    return T::time_type();
+  }
+
   GeneralTimetable() = default;
-  GeneralTimetable(const std::filesystem::path& p, const Network& network) {
+  GeneralTimetable(const std::filesystem::path& p, const Network& network)
+      : BaseTimetable() {
     /**
      * This method constructs the object and imports a timetable from a
      * directory. In particular the following files are read:
@@ -385,7 +409,7 @@ public:
     export_timetable(std::filesystem::path(path), network);
   };
   void export_timetable(const std::filesystem::path& p,
-                        const Network&               network) const {
+                        const Network&               network) const override {
     /**
      * This method exports the general timetable to a directory. In particular
      * the following files are created:
@@ -630,6 +654,52 @@ public:
   }
   [[nodiscard]] const T& get_schedule(const std::string& train_name) const {
     return get_schedule(train_list.get_train_index(train_name));
+  };
+
+  [[nodiscard]] int max_t() const {
+    /**
+     * This method returns the maximum time of all trains, i.e., the time at
+     * which the last train leaves the network.
+     *
+     * @return The maximum time of all trains.
+     */
+    int ret = 0;
+    for (const auto& schedule : schedules) {
+      if (schedule.get_t_n_range().second > ret) {
+        ret = schedule.get_t_n_range().second;
+      }
+    }
+    return ret;
+  }
+
+  [[nodiscard]] std::pair<int, int> time_interval(size_t train_index) const {
+    /**
+     * This method returns the time interval of a train schedule, i.e., the time
+     * at which it enters the network and the time at which it leaves the
+     * network.
+     *
+     * @param train_index The index of the train in the train list.
+     * @return A pair of integers (t_0, t_n) where t_0 is the time at which the
+     * train enters the network and t_n is the time at which the train leaves
+     * the network.
+     */
+
+    if (!train_list.has_train(train_index)) {
+      throw exceptions::TrainNotExistentException(train_index);
+    }
+
+    const auto& schedule = schedules.at(train_index);
+    return {schedule.get_t_0_range().first, schedule.get_t_n_range().second};
+  };
+
+  template <
+      typename TrainN = std::string,
+      typename = std::enable_if_t<!std::is_convertible_v<TrainN, size_t> &&
+                                  std::is_convertible_v<TrainN, std::string>>>
+  [[nodiscard]] std::pair<int, int>
+  time_interval(const TrainN& train_name) const {
+    return time_interval(
+        train_list.get_train_index(static_cast<std::string>(train_name)));
   };
 
   void sort_stops() {

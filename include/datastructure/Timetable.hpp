@@ -67,20 +67,8 @@ public:
       : Timetable(std::filesystem::path(path), network){};
   Timetable(const char* path, const Network& network)
       : Timetable(std::filesystem::path(path), network){};
+  virtual ~Timetable() = default;
 
-  // Rule of 5
-  Timetable(const Timetable& other)                = default;
-  Timetable(Timetable&& other) noexcept            = default;
-  Timetable& operator=(const Timetable& other)     = default;
-  Timetable& operator=(Timetable&& other) noexcept = default;
-  virtual ~Timetable()                             = default;
-
-  [[nodiscard]] int                 max_t() const;
-  [[nodiscard]] std::pair<int, int> time_interval(size_t train_index) const;
-  [[nodiscard]] std::pair<int, int>
-  time_interval(const std::string& train_name) const {
-    return time_interval(train_list.get_train_index(train_name));
-  };
   [[nodiscard]] std::pair<size_t, size_t>
   time_index_interval(size_t train_index, int dt,
                       bool tn_inclusive = true) const;

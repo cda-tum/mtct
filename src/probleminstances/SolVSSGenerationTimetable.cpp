@@ -18,7 +18,8 @@ using json = nlohmann::json;
 
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
     cda_rail::instances::VSSGenerationTimetable instance, int dt)
-    : SolGeneralProblemInstance<VSSGenerationTimetable>(std::move(instance)),
+    : SolGeneralProblemInstanceWithScheduleAndRoutes<VSSGenerationTimetable>(
+          std::move(instance)),
       dt(dt) {
   this->initialize_vectors();
 }
@@ -297,8 +298,8 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
   if (export_instance) {
     instance.export_instance(p / "instance");
   } else {
-    instance.routes.export_routes(p / "instance" / "routes",
-                                  instance.const_n());
+    instance.const_routes().export_routes(p / "instance" / "routes",
+                                          instance.const_n());
   }
 
   json data;
@@ -368,7 +369,7 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
   }
 
   if (import_routes) {
-    this->instance.routes =
+    this->instance.editable_routes() =
         RouteMap(p / "instance" / "routes", this->instance.const_n());
   }
 

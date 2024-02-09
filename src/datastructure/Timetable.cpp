@@ -12,42 +12,6 @@
 
 using json = nlohmann::json;
 
-int cda_rail::Timetable::max_t() const {
-  /**
-   * This method returns the maximum time of all trains, i.e., the time at which
-   * the last train leaves the network.
-   *
-   * @return The maximum time of all trains.
-   */
-  int ret = 0;
-  for (const auto& schedule : schedules) {
-    if (schedule.get_t_n() > ret) {
-      ret = schedule.get_t_n();
-    }
-  }
-  return ret;
-}
-
-std::pair<int, int>
-cda_rail::Timetable::time_interval(size_t train_index) const {
-  /**
-   * This method returns the time interval of a train schedule, i.e., the time
-   * at which it enters the network and the time at which it leaves the network.
-   *
-   * @param train_index The index of the train in the train list.
-   * @return A pair of integers (t_0, t_n) where t_0 is the time at which the
-   * train enters the network and t_n is the time at which the train leaves the
-   * network.
-   */
-
-  if (!train_list.has_train(train_index)) {
-    throw exceptions::TrainNotExistentException(train_index);
-  }
-
-  const auto& schedule = schedules.at(train_index);
-  return {schedule.get_t_0(), schedule.get_t_n()};
-}
-
 std::pair<size_t, size_t>
 cda_rail::Timetable::time_index_interval(size_t train_index, int dt,
                                          bool tn_inclusive) const {

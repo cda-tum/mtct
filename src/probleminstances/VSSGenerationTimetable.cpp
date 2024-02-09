@@ -6,45 +6,6 @@
 
 #include <numeric>
 
-void cda_rail::instances::VSSGenerationTimetable::export_instance(
-    const std::filesystem::path& p) const {
-  /**
-   * Exports the instance to the given path, i.e.,
-   * - the network into the folder "network"
-   * - the timetable into the folder "timetable"
-   * - the routes into the folder "routes"
-   *
-   * @param p the path to the folder where the instance should be exported
-   */
-
-  if (!cda_rail::is_directory_and_create(p)) {
-    throw exceptions::ExportException("Could not create directory " +
-                                      p.string());
-  }
-  network.export_network(p / "network");
-  timetable.export_timetable(p / "timetable", network);
-  routes.export_routes(p / "routes", network);
-}
-
-cda_rail::instances::VSSGenerationTimetable::VSSGenerationTimetable(
-    const std::filesystem::path& p, bool every_train_must_have_route) {
-  /**
-   * Creates object and imports an instance from the given path, i.e.,
-   * - the network from the folder "network"
-   * - the timetable from the folder "timetable"
-   * - the routes from the folder "routes"
-   *
-   * @param p the path to the folder where the instance should be imported from
-   */
-
-  this->network   = Network::import_network(p / "network");
-  this->timetable = Timetable::import_timetable(p / "timetable", this->network);
-  this->routes    = RouteMap::import_routes(p / "routes", this->network);
-  if (!this->check_consistency(every_train_must_have_route)) {
-    throw exceptions::ConsistencyException();
-  }
-}
-
 void cda_rail::instances::VSSGenerationTimetable::discretize(
     const vss::SeparationFunction& sep_func) {
   /**
@@ -54,9 +15,9 @@ void cda_rail::instances::VSSGenerationTimetable::discretize(
    * @param separation_type the type of separation to be used
    */
 
-  const auto new_edges = network.discretize(sep_func);
-  timetable.update_after_discretization(new_edges);
-  routes.update_after_discretization(new_edges);
+  const auto new_edges = this->n().discretize(sep_func);
+  this->editable_timetable().update_after_discretization(new_edges);
+  this->editable_routes().update_after_discretization(new_edges);
 }
 
 std::vector<size_t>
@@ -124,7 +85,7 @@ std::vector<size_t> cda_rail::instances::VSSGenerationTimetable::trains_at_t(
 
   std::vector<size_t> trains;
   for (const auto tr : trains_to_consider) {
-    const auto& interval = timetable.time_interval(tr);
+    const auto& interval = this->get_timetable().time_interval(tr);
     if (interval.first <= t && t < interval.second) {
       trains.push_back(tr);
     }
@@ -162,7 +123,7 @@ cda_rail::instances::VSSGenerationTimetable::edges_used_by_train(
 
   if (!fixed_routes) {
     // return vector with values 0, 1, ..., num_edges-1
-    std::vector<size_t> return_edges(network.number_of_edges());
+    std::vector<size_t> return_edges(this->const_n().number_of_edges());
     std::iota(return_edges.begin(), return_edges.end(), 0);
     return return_edges;
   }
@@ -201,7 +162,7 @@ std::vector<size_t> cda_rail::instances::VSSGenerationTimetable::trains_on_edge(
    * subset of trains
    */
 
-  if (!network.has_edge(edge_id)) {
+  if (!this->const_n().has_edge(edge_id)) {
     throw exceptions::EdgeNotExistentException(edge_id);
   }
 
