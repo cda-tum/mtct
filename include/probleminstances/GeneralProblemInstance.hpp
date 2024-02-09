@@ -87,7 +87,7 @@ protected:
     if (!is_directory_and_create(path)) {
       throw std::invalid_argument("Path is not a directory");
     }
-    network.export_network(path / "Network");
+    network.export_network(path / "network");
   }
 
 public:
