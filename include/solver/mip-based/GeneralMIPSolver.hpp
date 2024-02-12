@@ -51,5 +51,10 @@ protected:
   GeneralMIPSolver() = default;
   explicit GeneralMIPSolver(const T& instance)
       : GeneralSolver<T, S>(instance){};
+  explicit GeneralMIPSolver(const std::filesystem::path& p)
+      : GeneralSolver<T, S>(p){};
+  explicit GeneralMIPSolver(const std::string& path)
+      : GeneralSolver<T, S>(path){};
+  explicit GeneralMIPSolver(const char* path) : GeneralSolver<T, S>(path){};
 };
 } // namespace cda_rail::solver::mip_based

@@ -18,6 +18,9 @@ protected:
 
   GeneralSolver() = default;
   explicit GeneralSolver(const T& instance) : instance(instance){};
+  explicit GeneralSolver(const std::filesystem::path& p) : instance(p){};
+  explicit GeneralSolver(const std::string& path) : instance(path){};
+  explicit GeneralSolver(const char* path) : instance(path){};
 
 public:
   [[nodiscard]] const T& get_instance() const { return instance; }
