@@ -2,6 +2,9 @@
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
+#include <filesystem>
+#include <string>
+
 namespace cda_rail::solver::mip_based {
 template <typename T>
 class GenPOMovingBlockMIPSolver
