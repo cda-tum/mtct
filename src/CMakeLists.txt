@@ -1,5 +1,7 @@
 add_library(
   ${PROJECT_NAME}
+  ${PROJECT_SOURCE_DIR}/include/EOMHelper.hpp
+  EOMHelper.cpp
   ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
   ${PROJECT_SOURCE_DIR}/include/VSSModel.hpp
   ${PROJECT_SOURCE_DIR}/include/CustomExceptions.hpp
