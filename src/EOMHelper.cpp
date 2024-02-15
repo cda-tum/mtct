@@ -5,8 +5,9 @@
 #include <algorithm>
 #include <cmath>
 
-double cda_rail::min_travel_time(double v_1, double v_2, double v_m, double a,
-                                 double d, double s, double x) {
+double cda_rail::min_travel_time_from_start(double v_1, double v_2, double v_m,
+                                            double a, double d, double s,
+                                            double x) {
   if (!possible_by_eom(v_1, v_2, a, d, s)) {
     throw exceptions::ConsistencyException(
         "Travel time not possible by equations of motion.");
@@ -59,11 +60,69 @@ double cda_rail::min_travel_time(double v_1, double v_2, double v_m, double a,
 
 double cda_rail::min_travel_time(double v_1, double v_2, double v_m, double a,
                                  double d, double s) {
-  return min_travel_time(v_1, v_2, v_m, a, d, s, s);
+  return min_travel_time_from_start(v_1, v_2, v_m, a, d, s, s);
 }
 
 bool cda_rail::possible_by_eom(double v_1, double v_2, double a, double d,
                                double s) {
   return v_1 <= v_2 ? (v_2 + v_1) * (v_2 - v_1) <= 2 * a * s
                     : (v_1 + v_2) * (v_1 - v_2) <= 2 * d * s;
+}
+
+double cda_rail::max_travel_time_from_start_no_stopping(double v_1, double v_2,
+                                                        double v_m, double a,
+                                                        double d, double s,
+                                                        double x) {
+  // v_m is minimal speed in this case
+
+  if (!possible_by_eom(v_1, v_2, a, d, s)) {
+    throw exceptions::ConsistencyException(
+        "Travel time not possible by equations of motion.");
+  }
+
+  const double s_1 =
+      (v_1 + v_m) * (v_1 - v_m) / (2 * d); // Distance to reach minimal speed
+  const double s_2 = s - ((v_2 + v_m) * (v_2 - v_m) / (2 * a));
+
+  if (s_2 >= s_1) {
+    // Decelerate to minimal speed. Keep constant until accelerating in the last
+    // moment.
+
+    const double x_1 = std::min(x, s_1);
+
+    // Time spent until x_1 is (sqrt(v_1^2-2*d*x_1)-v_1)/d
+    // Stable version: (2*x_1)/(sqrt(v_1^2-2*d*x_1)+v_1)
+    const double t_1 = (2 * x_1) / (std::sqrt(v_1 * v_1 - 2 * d * x_1) + v_1);
+
+    const double x_2 = std::min(std::max(x - s_1, 0.0), s_2 - s_1);
+    const double t_2 = x_2 / v_m; // constant
+
+    const double x_3 = std::min(std::max(x - s_2, 0.0), s - s_2);
+    // Time spent until x_3 is (sqrt(2*a*x_3+v_m^2)-v_m)/a
+    // Stable version: (2*x_3)/(sqrt(2*a*x_3+v_m^2)+v_m)
+    const double t_3 = (2 * x_3) / (std::sqrt(2 * a * x_3 + v_m * v_m) + v_m);
+    return t_1 + t_2 + t_3;
+  }
+
+  const double y = (2 * a * s + (v_1 + v_2) * (v_1 - v_2)) /
+                   (2 * (a + d)); // Distance at which accelerating starts if
+                                  // minimal speed is not reached
+
+  const double x_1 = std::min(x, y); // Decelerating part
+  const double t_1 = (2 * x_1) / (std::sqrt(v_1 * v_1 - 2 * d * x_1) + v_1);
+
+  const double v_t_squared =
+      v_1 * v_1 - 2 * d * y; // Minimal velocity reached before accelerating
+
+  const double x_2 =
+      std::min(std::max(x - y, 0.0), s - y); // Distance in accelerating part
+  const double t_2 = (2 * x_2) / (std::sqrt(2 * a * x_2 + v_t_squared) +
+                                  std::sqrt(v_t_squared));
+
+  return t_1 + t_2;
+}
+
+double cda_rail::max_travel_time_no_stopping(double v_1, double v_2, double v_m,
+                                             double a, double d, double s) {
+  return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s);
 }
