@@ -495,4 +495,66 @@ TEST(Helper, EoMMaximalTravelTimeNoStop2) {
                    8);
 }
 
+TEST(Helper, EoMMaximalTravelTimeNoStop3) {
+  // Start at speed 10
+  // Accelerates at rate 1.5 for 4 seconds until speed 16 is reached
+  // Theoretical minimal speed is 2
+  // Theoretical deceleration is 2
+
+  // Total distance travelled is 13*4 = 52
+
+  // After 0 seconds the distance travelled is 0
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
+                       10, 16, 2, 1.5, 2, 52, 0),
+                   0);
+
+  // After 2 seconds it has reached a speed of 13, hence, travelled 11.5*2 = 23
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
+                       10, 16, 2, 1.5, 2, 52, 23),
+                   2);
+
+  // After 4 seconds it has reached the end, hence, travelled 52
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
+                       10, 16, 2, 1.5, 2, 52, 52),
+                   4);
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_no_stopping(10, 16, 2, 1.5, 2, 52),
+                   4);
+}
+
+TEST(Helper, EoMMaximalTravelTimeNoStop4) {
+  // Train starts at speed 2, which is also the minimal speed
+  // It remains at this speed for 4 seconds
+  // Then it accelerates at rate 2 for 4 seconds until speed 10 is reached
+  // Theoretical deceleration is 3
+
+  // Total distance travelled is 2*4 + 6*4 = 32
+
+  // After 0 seconds the distance travelled is 0
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start_no_stopping(2, 10, 2, 2, 3, 32, 0),
+      0);
+
+  // After 2 seconds it has travelled 2*2 = 4
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start_no_stopping(2, 10, 2, 2, 3, 32, 4),
+      2);
+
+  // After 4 seconds it has travelled 2*4 = 8
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start_no_stopping(2, 10, 2, 2, 3, 32, 8),
+      4);
+
+  // After 6 seconds it has reached a speed of 6, hence, travelled 8+4*2 = 16
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start_no_stopping(2, 10, 2, 2, 3, 32, 16),
+      6);
+
+  // After 8 seconds it has reached the end, hence, travelled 32
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start_no_stopping(2, 10, 2, 2, 3, 32, 32),
+      8);
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_no_stopping(2, 10, 2, 2, 3, 32),
+                   8);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
