@@ -358,6 +358,58 @@ TEST(Helper, EoMMinimalTravelTime2) {
   EXPECT_DOUBLE_EQ(cda_rail::min_travel_time(5, 3, 15, 1.5, 2, 60), 8);
 }
 
+TEST(Helper, EoMMinimalTravelTime3) {
+  // Start at speed 10,
+  // decelerates at rate 2 for 4 seconds until speed 2 is reached.
+  // Theoretical maximal speed is 15.
+
+  // Total distance travelled is 6*4 = 24
+
+  // After 0 seconds the distance travelled is 0
+  EXPECT_DOUBLE_EQ(cda_rail::min_travel_time_from_start(10, 2, 15, 1, 2, 24, 0),
+                   0);
+
+  // After 2 seconds it has reached a speed of 6, hence, travelled 8*2 = 16
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_from_start(10, 2, 15, 1, 2, 24, 16), 2);
+
+  // Finally after 4 seconds it has reached the end, hence, travelled 24
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_from_start(10, 2, 15, 1, 2, 24, 24), 4);
+  EXPECT_DOUBLE_EQ(cda_rail::min_travel_time(10, 2, 15, 1, 2, 24), 4);
+}
+
+TEST(Helper, EoMMinimalTravelTime4) {
+  // Start at maximal speed 10,
+  // stay constant for 4 seconds,
+  // decelerates at rate 2 for 4 seconds until speed 2 is reached.
+  // Theoretical maximal speed is 10.
+  // Theoretical acceleration is 1.
+
+  // Total distance travelled is 10*4 + 6*4 = 64
+
+  // After 0 seconds the distance travelled is 0
+  EXPECT_DOUBLE_EQ(cda_rail::min_travel_time_from_start(10, 2, 10, 1, 2, 64, 0),
+                   0);
+
+  // After 2 seconds it has travelled 2*10 = 20
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_from_start(10, 2, 10, 1, 2, 64, 20), 2);
+
+  // After 4 seconds it has travelled 4*10 = 40
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_from_start(10, 2, 10, 1, 2, 64, 40), 4);
+
+  // After 6 seconds it has reached a speed of 6, hence, travelled 40+8*2 = 56
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_from_start(10, 2, 10, 1, 2, 64, 56), 6);
+
+  // Finally after 8 seconds it has reached the end, hence, travelled 64
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_from_start(10, 2, 10, 1, 2, 64, 64), 8);
+  EXPECT_DOUBLE_EQ(cda_rail::min_travel_time(10, 2, 10, 1, 2, 64), 8);
+}
+
 TEST(Helper, EoMMaximalTravelTimeNoStop1) {
   // Start at speed 10,
   // decelerates to minimal speed 2 at rate 2 for 4 seconds,
