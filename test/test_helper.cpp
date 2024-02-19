@@ -638,4 +638,50 @@ TEST(Helper, EoMMaximalTravelTimeNoStop6) {
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_no_stopping(0, 2, 5, 2, 1, 10), 4);
 }
 
+TEST(Helper, EoMMinimalTravelTimeToEnd) {
+  // Start at speed 10,
+  // accelerate at rate 2 for 5 seconds until maximal speed 20 is reached,
+  // keep maximal speed for 6 seconds,
+  // decelerate at rate 1.2 for 5 seconds until speed 14 is reached.
+
+  // Total distance travelled is 15*5+20*6+17*5 = 280
+
+  EXPECT_THROW(cda_rail::min_travel_time_to_end(10, 14, 20, 2, 1.2, 10, 0),
+               cda_rail::exceptions::ConsistencyException);
+
+  // After 0 seconds the distance travelled is 0, 16 seconds left
+  EXPECT_DOUBLE_EQ(cda_rail::min_travel_time_to_end(10, 14, 20, 2, 1.2, 280, 0),
+                   16);
+
+  // After 2 seconds it has reached a speed of 14, hence, travelled 12*2 = 24,
+  // 14 seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_to_end(10, 14, 20, 2, 1.2, 280, 24), 14);
+
+  // After 5 seconds it has reached a speed of 20, hence, travelled 15*5 = 75,
+  // 11 seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_to_end(10, 14, 20, 2, 1.2, 280, 75), 11);
+
+  // After 8 seconds it travelled additional 3 seconds at maximum speed, hence,
+  // 75+20*3 = 135, 8 seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_to_end(10, 14, 20, 2, 1.2, 280, 135), 8);
+
+  // After 11 seconds it travelled 6 seconds at maximum speed, hence, 75+20*6 =
+  // 195, 5 seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_to_end(10, 14, 20, 2, 1.2, 280, 195), 5);
+
+  // After 14 seconds it has reaced a speed of 16.4, hence, travelled 195+18.2*3
+  // = 249.6, 2 seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_to_end(10, 14, 20, 2, 1.2, 280, 249.6), 2);
+
+  // Finally after 16 seconds it has reached the end, hence, travelled 280, 0
+  // seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_travel_time_to_end(10, 14, 20, 2, 1.2, 280, 280), 0);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
