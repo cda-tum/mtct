@@ -222,6 +222,7 @@ double cda_rail::min_travel_time_to_end(double v_1, double v_2, double v_m,
                                         double x) {
   // Same as minimal travel time going the reverse direction with acceleration
   // and deceleration swapped
+  // NOLINTNEXTLINE(readability-suspicious-call-argument)
   return min_travel_time_from_start(v_2, v_1, v_m, d, a, s, s - x);
 }
 
@@ -231,6 +232,7 @@ double cda_rail::max_travel_time_to_end_no_stopping(double v_1, double v_2,
                                                     double x) {
   // Same as maximal travel time going the reverse direction with acceleration
   // and deceleration swapped
+  // NOLINTNEXTLINE(readability-suspicious-call-argument)
   return max_travel_time_from_start_no_stopping(v_2, v_1, v_m, d, a, s, s - x);
 }
 
@@ -239,6 +241,7 @@ double cda_rail::max_travel_time_to_end_stopping_allowed(double v_1, double v_2,
                                                          double s, double x) {
   // Same as maximal travel time going the reverse direction with acceleration
   // and deceleration swapped
+  // NOLINTNEXTLINE(readability-suspicious-call-argument)
   return max_travel_time_from_start_stopping_allowed(v_2, v_1, d, a, s, s - x);
 }
 
