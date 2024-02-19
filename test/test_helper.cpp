@@ -422,41 +422,59 @@ TEST(Helper, EoMMaximalTravelTimeNoStop1) {
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(10, 8, 2, 1.5, 2, 56, 0),
       0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 8, 2, 1.5, 2, 56, 0, false), 0);
 
   // After 2 seconds it has reached a speed of 6, hence, travelled 8*2 = 16
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 8, 2, 1.5, 2, 56, 16),
                    2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 8, 2, 1.5, 2, 56, 16, false), 2);
 
   // After 4 seconds it has reached a speed of 2, hence, travelled 6*4 = 24
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 8, 2, 1.5, 2, 56, 24),
                    4);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 8, 2, 1.5, 2, 56, 24, false), 4);
 
   // After 6 seconds it been constant for 2 seconds, hence, travelled 24+2*2 =
   // 28
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 8, 2, 1.5, 2, 56, 28),
                    6);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 8, 2, 1.5, 2, 56, 28, false), 6);
 
   // After 10 seconds it has been constant for 6 seconds, hence, travelled
   // 24+2*6 = 36
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 8, 2, 1.5, 2, 56, 36),
                    10);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 8, 2, 1.5, 2, 56, 36, false),
+      10);
 
   // After 12 seconds it has reached a speed of 5, hence, travelled 36+3.5*2 =
   // 43
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 8, 2, 1.5, 2, 56, 43),
                    12);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 8, 2, 1.5, 2, 56, 43, false),
+      12);
 
   // Finally after 14 seconds it has reached the end, hence, travelled 56
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 8, 2, 1.5, 2, 56, 56),
                    14);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 8, 2, 1.5, 2, 56, 56, false),
+      14);
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_no_stopping(10, 8, 2, 1.5, 2, 56),
                    14);
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time(10, 8, 2, 1.5, 2, 56, false), 14);
 }
 
 TEST(Helper, EoMMaximalTravelTimeNoStop2) {
@@ -471,28 +489,40 @@ TEST(Helper, EoMMaximalTravelTimeNoStop2) {
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(10, 9, 2, 1, 2, 53.5, 0),
       0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 9, 2, 1, 2, 53.5, 0, false), 0);
 
   // After 2 seconds it has reached a speed of 6, hence, travelled 8*2 = 16
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 9, 2, 1, 2, 53.5, 16),
                    2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 9, 2, 1, 2, 53.5, 16, false), 2);
 
   // After 3 seconds it has reached a speed of 4, hence, travelled 7*3 = 21
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 9, 2, 1, 2, 53.5, 21),
                    3);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 9, 2, 1, 2, 53.5, 21, false), 3);
 
   // After 5 seconds it has reached a speed of 6, hence, travelled 21+5*2 = 31
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 9, 2, 1, 2, 53.5, 31),
                    5);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 9, 2, 1, 2, 53.5, 31, false), 5);
 
   // Finally after 8 seconds it has reached the end, hence, travelled 53.5
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 9, 2, 1, 2, 53.5, 53.5),
                    8);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 9, 2, 1, 2, 53.5, 53.5, false),
+      8);
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_no_stopping(10, 9, 2, 1, 2, 53.5),
                    8);
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time(10, 9, 2, 1, 2, 53.5, false), 8);
 }
 
 TEST(Helper, EoMMaximalTravelTimeNoStop3) {
@@ -507,18 +537,27 @@ TEST(Helper, EoMMaximalTravelTimeNoStop3) {
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 16, 2, 1.5, 2, 52, 0),
                    0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 16, 2, 1.5, 2, 52, 0, false), 0);
 
   // After 2 seconds it has reached a speed of 13, hence, travelled 11.5*2 = 23
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 16, 2, 1.5, 2, 52, 23),
                    2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 16, 2, 1.5, 2, 52, 23, false),
+      2);
 
   // After 4 seconds it has reached the end, hence, travelled 52
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        10, 16, 2, 1.5, 2, 52, 52),
                    4);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 16, 2, 1.5, 2, 52, 52, false),
+      4);
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_no_stopping(10, 16, 2, 1.5, 2, 52),
                    4);
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time(10, 16, 2, 1.5, 2, 52, false), 4);
 }
 
 TEST(Helper, EoMMaximalTravelTimeNoStop4) {
@@ -533,28 +572,39 @@ TEST(Helper, EoMMaximalTravelTimeNoStop4) {
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(2, 10, 2, 2, 3, 32, 0),
       0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(2, 10, 2, 2, 3, 32, 0, false), 0);
 
   // After 2 seconds it has travelled 2*2 = 4
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(2, 10, 2, 2, 3, 32, 4),
       2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(2, 10, 2, 2, 3, 32, 4, false), 2);
 
   // After 4 seconds it has travelled 2*4 = 8
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(2, 10, 2, 2, 3, 32, 8),
       4);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(2, 10, 2, 2, 3, 32, 8, false), 4);
 
   // After 6 seconds it has reached a speed of 6, hence, travelled 8+4*2 = 16
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(2, 10, 2, 2, 3, 32, 16),
       6);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(2, 10, 2, 2, 3, 32, 16, false), 6);
 
   // After 8 seconds it has reached the end, hence, travelled 32
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(2, 10, 2, 2, 3, 32, 32),
       8);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(2, 10, 2, 2, 3, 32, 32, false), 8);
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_no_stopping(2, 10, 2, 2, 3, 32),
                    8);
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time(2, 10, 2, 2, 3, 32, false), 8);
 }
 
 TEST(Helper, EoMMaximalTravelTimeNoStop5) {
@@ -569,38 +619,54 @@ TEST(Helper, EoMMaximalTravelTimeNoStop5) {
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 0, 2, 1, 2, 11, 0),
       0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 0, 2, 1, 2, 11, 0, false), 0);
 
   // After 1 seconds it has reached a speed of 1, hence, travelled 0.5*1 = 0.5
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 0, 2, 1, 2, 11, 0.5),
       1);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 0, 2, 1, 2, 11, 0.5, false), 1);
 
   // After 2 seconds it has reached a speed of 2, hence, travelled 1*2 = 2
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 0, 2, 1, 2, 11, 2),
       2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 0, 2, 1, 2, 11, 2, false), 2);
 
   // After 4 seconds it has travelled 2 + 2*2 = 6
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 0, 2, 1, 2, 11, 6),
       4);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 0, 2, 1, 2, 11, 6, false), 4);
 
   // After 6 seconds it has travelled 2 + 2*4 = 10
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 0, 2, 1, 2, 11, 10),
       6);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 0, 2, 1, 2, 11, 10, false), 6);
 
   // After 6.5 seconds it has reached speed 1, hence travelled 10 + 1.5*0.5
   // = 10.75
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_no_stopping(
                        0, 0, 2, 1, 2, 11, 10.75),
                    6.5);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 0, 2, 1, 2, 11, 10.75, false),
+      6.5);
 
   // Finally after 7 seconds it has reached the end, hence, travelled 11
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 0, 2, 1, 2, 11, 11),
       7);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 0, 2, 1, 2, 11, 11, false), 7);
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_no_stopping(0, 0, 2, 1, 2, 11), 7);
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time(0, 0, 2, 1, 2, 11, false), 7);
 }
 
 TEST(Helper, EoMMaximalTravelTimeNoStop6) {
@@ -615,27 +681,38 @@ TEST(Helper, EoMMaximalTravelTimeNoStop6) {
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 2, 5, 2, 1, 10, 0),
       0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 2, 5, 2, 1, 10, 0, false), 0);
 
   // After 1 seconds it has reached a speed of 2, hence, travelled 1*1 = 1
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 2, 5, 2, 1, 10, 1),
       1);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 2, 5, 2, 1, 10, 1, false), 1);
 
   // After 2 seconds it has reached a speed of 4, hence, travelled 2*2 = 4
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 2, 5, 2, 1, 10, 4),
       2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 2, 5, 2, 1, 10, 4, false), 2);
 
   // After 3 seconds it has reached a speed of 3, hence, travelled 4+3.5*1 = 7.5
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 2, 5, 2, 1, 10, 7.5),
       3);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 2, 5, 2, 1, 10, 7.5, false), 3);
 
   // Finally after 4 seconds it has reached the end, hence, travelled 10
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start_no_stopping(0, 2, 5, 2, 1, 10, 10),
       4);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(0, 2, 5, 2, 1, 10, 10, false), 4);
   EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_no_stopping(0, 2, 5, 2, 1, 10), 4);
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time(0, 2, 5, 2, 1, 10, false), 4);
 }
 
 TEST(Helper, EoMMinimalTravelTimeToEnd) {
