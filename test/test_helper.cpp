@@ -761,4 +761,68 @@ TEST(Helper, EoMMinimalTravelTimeToEnd) {
       cda_rail::min_travel_time_to_end(10, 14, 20, 2, 1.2, 280, 280), 0);
 }
 
+TEST(Helper, EoMMaximalTravelTimeToEndNoStopping) {
+  // Start at speed 10,
+  // decelerates to minimal speed 2 at rate 2 for 4 seconds,
+  // keeps minimal speed for 6 seconds,
+  // accelerates at rate 1.5 for 4 seconds until speed 8 is reached.
+
+  // Total distance travelled is 6*4 + 2*6 + 5*4 = 56
+
+  // After 0 seconds the distance travelled is 0, 14 seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end_no_stopping(10, 8, 2, 1.5, 2, 56, 0),
+      14);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end(10, 8, 2, 1.5, 2, 56, 0, false), 14);
+
+  // After 2 seconds it has reached a speed of 6, hence, travelled 8*2 = 16, 12
+  // seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end_no_stopping(10, 8, 2, 1.5, 2, 56, 16),
+      12);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end(10, 8, 2, 1.5, 2, 56, 16, false), 12);
+
+  // After 4 seconds it has reached a speed of 2, hence, travelled 6*4 = 24, 10
+  // seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end_no_stopping(10, 8, 2, 1.5, 2, 56, 24),
+      10);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end(10, 8, 2, 1.5, 2, 56, 24, false), 10);
+
+  // After 6 seconds it been constant for 2 seconds, hence, travelled 24+2*2 =
+  // 28, 8 seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end_no_stopping(10, 8, 2, 1.5, 2, 56, 28),
+      8);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end(10, 8, 2, 1.5, 2, 56, 28, false), 8);
+
+  // After 10 seconds it has been constant for 6 seconds, hence, travelled
+  // 24+2*6 = 36, 4 seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end_no_stopping(10, 8, 2, 1.5, 2, 56, 36),
+      4);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end(10, 8, 2, 1.5, 2, 56, 36, false), 4);
+
+  // After 12 seconds it has reached a speed of 5, hence, travelled 36+3.5*2 =
+  // 43, 2 seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end_no_stopping(10, 8, 2, 1.5, 2, 56, 43),
+      2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end(10, 8, 2, 1.5, 2, 56, 43, false), 2);
+
+  // Finally after 14 seconds it has reached the end, hence, travelled 56, 0
+  // seconds left
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end_no_stopping(10, 8, 2, 1.5, 2, 56, 56),
+      0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end(10, 8, 2, 1.5, 2, 56, 56, false), 0);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
