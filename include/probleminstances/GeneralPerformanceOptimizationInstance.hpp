@@ -17,14 +17,10 @@ using json = nlohmann::json;
 
 namespace cda_rail::instances {
 
-template <typename T>
 class GeneralPerformanceOptimizationInstance
-    : public GeneralProblemInstanceWithScheduleAndRoutes<GeneralTimetable<T>> {
-  static_assert(std::is_base_of_v<BaseGeneralSchedule, T>,
-                "T must be a child of BaseGeneralSchedule");
-  static_assert(HasTimeType<T>::value, "T must have a time_type() method");
-
-  template <typename S> friend class SolGeneralPerformanceOptimizationInstance;
+    : public GeneralProblemInstanceWithScheduleAndRoutes<
+          GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>> {
+  friend class SolGeneralPerformanceOptimizationInstance;
 
   void initialize_vectors() {
     train_weights =
@@ -41,15 +37,18 @@ class GeneralPerformanceOptimizationInstance
 public:
   GeneralPerformanceOptimizationInstance() = default;
   explicit GeneralPerformanceOptimizationInstance(
-      const Network& network, const GeneralTimetable<T>& timetable,
-      const RouteMap& routes)
-      : GeneralProblemInstanceWithScheduleAndRoutes<GeneralTimetable<T>>(
+      const Network&                                                 network,
+      const GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>& timetable,
+      const RouteMap&                                                routes)
+      : GeneralProblemInstanceWithScheduleAndRoutes<
+            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>(
             network, timetable, routes) {
     initialize_vectors();
   };
   explicit GeneralPerformanceOptimizationInstance(
       const std::filesystem::path& path)
-      : GeneralProblemInstanceWithScheduleAndRoutes<GeneralTimetable<T>>(path) {
+      : GeneralProblemInstanceWithScheduleAndRoutes<
+            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>(path) {
     initialize_vectors();
 
     std::ifstream file(path / "problem_data.json");
@@ -164,8 +163,8 @@ public:
   using GeneralProblemInstance::export_instance;
 
   void export_instance(const std::filesystem::path& path) const override {
-    GeneralProblemInstanceWithScheduleAndRoutes<
-        GeneralTimetable<T>>::export_instance(path);
+    GeneralProblemInstanceWithScheduleAndRoutes<GeneralTimetable<
+        GeneralSchedule<GeneralScheduledStop>>>::export_instance(path);
 
     json j;
     for (size_t i = 0; i < train_weights.size(); ++i) {
@@ -188,7 +187,8 @@ public:
 
   [[nodiscard]] bool
   check_consistency(bool every_train_must_have_route) const override {
-    if (!GeneralProblemInstanceWithScheduleAndRoutes<GeneralTimetable<T>>::
+    if (!GeneralProblemInstanceWithScheduleAndRoutes<
+            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>::
             check_consistency(every_train_must_have_route)) {
       return false;
     }
@@ -202,23 +202,18 @@ public:
   };
 };
 
-template <typename T>
 class SolGeneralPerformanceOptimizationInstance
-    : public SolGeneralProblemInstance<
-          GeneralPerformanceOptimizationInstance<T>> {
-  static_assert(std::is_base_of_v<BaseGeneralSchedule, T>,
-                "T must be a child of BaseGeneralSchedule");
-
+    : public SolGeneralProblemInstance<GeneralPerformanceOptimizationInstance> {
 public:
   SolGeneralPerformanceOptimizationInstance() = default;
   explicit SolGeneralPerformanceOptimizationInstance(
-      GeneralPerformanceOptimizationInstance<T> instance)
-      : SolGeneralProblemInstance<GeneralPerformanceOptimizationInstance<T>>(
+      GeneralPerformanceOptimizationInstance instance)
+      : SolGeneralProblemInstance<GeneralPerformanceOptimizationInstance>(
             std::move(instance)){};
   SolGeneralPerformanceOptimizationInstance(
-      GeneralPerformanceOptimizationInstance<T> instance, SolutionStatus status,
+      GeneralPerformanceOptimizationInstance instance, SolutionStatus status,
       double obj, bool has_sol)
-      : SolGeneralProblemInstance<GeneralPerformanceOptimizationInstance<T>>(
+      : SolGeneralProblemInstance<GeneralPerformanceOptimizationInstance>(
             std::move(instance), status, obj, has_sol){};
 };
 

@@ -6,40 +6,33 @@
 #include <string>
 
 namespace cda_rail::solver::mip_based {
-template <typename T>
 class GenPOMovingBlockMIPSolver
     : public GeneralMIPSolver<
-          instances::GeneralPerformanceOptimizationInstance<T>,
-          instances::SolGeneralPerformanceOptimizationInstance<T>> {
-  static_assert(std::is_base_of_v<BaseGeneralSchedule, T>,
-                "T must be a child of BaseGeneralSchedule");
-  static_assert(instances::HasTimeType<T>::value,
-                "T must have a time_type() method");
-
+          instances::GeneralPerformanceOptimizationInstance,
+          instances::SolGeneralPerformanceOptimizationInstance> {
 public:
   GenPOMovingBlockMIPSolver() = default;
 
   explicit GenPOMovingBlockMIPSolver(
-      const instances::GeneralPerformanceOptimizationInstance<T>& instance)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance<T>,
-            instances::SolGeneralPerformanceOptimizationInstance<T>>(
+      const instances::GeneralPerformanceOptimizationInstance& instance)
+      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
+                         instances::SolGeneralPerformanceOptimizationInstance>(
             instance){};
 
   explicit GenPOMovingBlockMIPSolver(const std::filesystem::path& p)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance<T>,
-            instances::SolGeneralPerformanceOptimizationInstance<T>>(p){};
+      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
+                         instances::SolGeneralPerformanceOptimizationInstance>(
+            p){};
 
   explicit GenPOMovingBlockMIPSolver(const std::string& path)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance<T>,
-            instances::SolGeneralPerformanceOptimizationInstance<T>>(path){};
+      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
+                         instances::SolGeneralPerformanceOptimizationInstance>(
+            path){};
 
   explicit GenPOMovingBlockMIPSolver(const char* path)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance<T>,
-            instances::SolGeneralPerformanceOptimizationInstance<T>>(path){};
+      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
+                         instances::SolGeneralPerformanceOptimizationInstance>(
+            path){};
 
   ~GenPOMovingBlockMIPSolver() = default;
 };
