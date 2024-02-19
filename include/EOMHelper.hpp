@@ -11,22 +11,32 @@ double min_travel_time_from_start(double v_1, double v_2, double v_m, double a,
                                   double d, double s, double x);
 double min_travel_time(double v_1, double v_2, double v_m, double a, double d,
                        double s);
+double min_travel_time_to_end(double v_1, double v_2, double v_m, double a,
+                              double d, double s, double x);
 
 double max_travel_time_from_start_no_stopping(double v_1, double v_2,
                                               double v_m, double a, double d,
                                               double s, double x);
 double max_travel_time_no_stopping(double v_1, double v_2, double v_m, double a,
                                    double d, double s);
+double max_travel_time_to_end_no_stopping(double v_1, double v_2, double v_m,
+                                          double a, double d, double s,
+                                          double x);
 
 double max_travel_time_from_start_stopping_allowed(double v_1, double v_2,
                                                    double a, double d, double s,
                                                    double x);
 double max_travel_time_stopping_allowed(double v_1, double v_2, double a,
                                         double d, double s);
+double max_travel_time_to_end_stopping_allowed(double v_1, double v_2, double a,
+                                               double d, double s, double x);
 
 double max_travel_time_from_start(double v_1, double v_2, double v_m, double a,
                                   double d, double s, double x,
                                   bool stopping_allowed);
 double max_travel_time(double v_1, double v_2, double v_m, double a, double d,
                        double s, bool stopping_allowed);
+double max_travel_time_to_end(double v_1, double v_2, double v_m, double a,
+                              double d, double s, double x,
+                              bool stopping_allowed);
 } // namespace cda_rail
