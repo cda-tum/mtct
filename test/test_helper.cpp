@@ -6,6 +6,7 @@
 #include "gtest/gtest.h"
 #include <cmath>
 #include <iostream>
+#include <limits>
 
 // NOLINTBEGIN(clang-diagnostic-unused-result)
 
@@ -823,6 +824,61 @@ TEST(Helper, EoMMaximalTravelTimeToEndNoStopping) {
       0);
   EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_to_end(10, 8, 2, 1.5, 2, 56, 56, false), 0);
+}
+
+TEST(Helper, EoMMaximalTravelTimeStopping) {
+  // Start at speed 10,
+  // decelerates at rate 2 for 5 seconds until full stop
+  // accelerates at rate 1 for 5 seconds until speed 5 is reached
+  // Deceleration distance is 5*5 = 25
+  // Acceleration distance is 2.5*5 = 12.5
+
+  // Total distance travelled is at least 25+12.5 = 37.5, e.g., 40
+
+  // After 0 seconds the distance travelled is 0
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start_stopping_allowed(10, 5, 1, 2, 40, 0),
+      0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 5, 1, 1, 2, 40, 0, true), 0);
+
+  // After 2 seconds it has reached a speed of 6, hence, travelled 8*2 = 16
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_stopping_allowed(
+                       10, 5, 1, 2, 40, 16),
+                   2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 5, 1, 1, 2, 40, 16, true), 2);
+
+  // After 25m it came to a full stop
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_stopping_allowed(
+                       10, 5, 1, 2, 40, 25),
+                   std::numeric_limits<double>::infinity());
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_from_start(10, 5, 1, 1, 2, 40, 25, true),
+      std::numeric_limits<double>::infinity());
+
+  // Going backwards at 40-12.5 = 27.5 train can still stop
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end_stopping_allowed(10, 5, 1, 2, 40, 27.5),
+      std::numeric_limits<double>::infinity());
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end(10, 5, 1, 1, 2, 40, 27.5, true),
+      std::numeric_limits<double>::infinity());
+
+  // 2 seconds before the end, the train has speed 3. It will travel 4*2 = 8m,
+  // hence is at 40-8 = 32
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end_stopping_allowed(10, 5, 1, 2, 40, 32),
+      2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end(10, 5, 1, 1, 2, 40, 32, true), 2);
+
+  // At 40m the train is already at the end
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end_stopping_allowed(10, 5, 1, 2, 40, 40),
+      0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_travel_time_to_end(10, 5, 1, 1, 2, 40, 40, true), 0);
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)
