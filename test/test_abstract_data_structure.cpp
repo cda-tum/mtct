@@ -278,9 +278,8 @@ TEST(GeneralAbstractDataStructure,
 
   RouteMap routes;
 
-  cda_rail::instances::GeneralPerformanceOptimizationInstance<
-      GeneralSchedule<GeneralScheduledStop>>
-      instance(network, timetable, routes);
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
 
   EXPECT_TRUE(instance.check_consistency(false));
   EXPECT_FALSE(instance.check_consistency(true));
@@ -357,9 +356,8 @@ TEST(GeneralAbstractDataStructure,
 
   RouteMap routes;
 
-  cda_rail::instances::GeneralPerformanceOptimizationInstance<
-      GeneralSchedule<GeneralScheduledStop>>
-      instance(network, timetable, routes);
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
 
   instance.set_train_weight("Train2", 2);
   instance.set_train_optional("Train1");
@@ -387,9 +385,8 @@ TEST(GeneralAbstractDataStructure,
 
   instance.export_instance("./tmp/test-general-instance/");
 
-  cda_rail::instances::GeneralPerformanceOptimizationInstance<
-      GeneralSchedule<GeneralScheduledStop>>
-      instance_read("./tmp/test-general-instance/");
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance_read(
+      "./tmp/test-general-instance/");
   std::filesystem::remove_all("./tmp");
 
   EXPECT_TRUE(instance_read.check_consistency());
