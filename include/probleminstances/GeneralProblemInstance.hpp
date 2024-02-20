@@ -4,10 +4,13 @@
 #include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
+#include "nlohmann/json.hpp"
 
 #include <filesystem>
 #include <string>
 #include <type_traits>
+
+using json = nlohmann::json;
 
 namespace cda_rail::instances {
 
@@ -268,6 +271,43 @@ protected:
                             double obj, bool has_sol)
       : instance(instance), status(status), obj(obj), has_sol(has_sol){};
 
+  void export_general_solution_data(const std::filesystem::path& p,
+                                    bool export_instance,
+                                    bool export_data) const {
+    if (!is_directory_and_create(p / "solution")) {
+      throw exceptions::ExportException("Could not create directory " +
+                                        p.string());
+    }
+
+    if (export_instance) {
+      instance.export_instance(p / "instance");
+    }
+
+    if (export_data) {
+      json data;
+      data["status"]       = static_cast<int>(status);
+      data["obj"]          = obj;
+      data["has_solution"] = has_sol;
+      std::ofstream data_file(p / "solution" / "data.json");
+      data_file << data << std::endl;
+      data_file.close();
+    }
+  };
+
+  [[nodiscard]] json get_general_solution_data() const {
+    json data;
+    data["status"]       = static_cast<int>(status);
+    data["obj"]          = obj;
+    data["has_solution"] = has_sol;
+    return data;
+  };
+
+  void set_general_solution_data(const json& data) {
+    this->status  = static_cast<SolutionStatus>(data["status"].get<int>());
+    this->obj     = data["obj"].get<double>();
+    this->has_sol = data["has_solution"].get<bool>();
+  };
+
 public:
   [[nodiscard]] const T&       get_instance() const { return instance; };
   [[nodiscard]] SolutionStatus get_status() const { return status; };
@@ -303,6 +343,24 @@ class SolGeneralProblemInstanceWithScheduleAndRoutes
     : public SolGeneralProblemInstance<T> {
   static_assert(std::is_base_of<GeneralProblemInstance, T>::value,
                 "T must be a child of GeneralProblemInstance");
+
+protected:
+  void export_general_solution_data_with_routes(const std::filesystem::path& p,
+                                                bool export_instance,
+                                                bool export_data) const {
+    if (!is_directory_and_create(p / "solution")) {
+      throw exceptions::ExportException("Could not create directory " +
+                                        p.string());
+    }
+
+    if (!export_instance) {
+      this->get_instance().const_routes().export_routes(
+          p / "instance" / "routes", this->get_instance().const_n());
+    }
+
+    SolGeneralProblemInstance<T>::export_general_solution_data(
+        p, export_instance, export_data);
+  }
 
 public:
   SolGeneralProblemInstanceWithScheduleAndRoutes() = default;

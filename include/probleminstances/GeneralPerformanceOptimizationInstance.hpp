@@ -203,18 +203,20 @@ public:
 };
 
 class SolGeneralPerformanceOptimizationInstance
-    : public SolGeneralProblemInstance<GeneralPerformanceOptimizationInstance> {
+    : public SolGeneralProblemInstanceWithScheduleAndRoutes<
+          GeneralPerformanceOptimizationInstance> {
 public:
   SolGeneralPerformanceOptimizationInstance() = default;
   explicit SolGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance)
-      : SolGeneralProblemInstance<GeneralPerformanceOptimizationInstance>(
-            instance){};
+      : SolGeneralProblemInstanceWithScheduleAndRoutes<
+            GeneralPerformanceOptimizationInstance>(instance){};
   SolGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance,
       SolutionStatus status, double obj, bool has_sol)
-      : SolGeneralProblemInstance<GeneralPerformanceOptimizationInstance>(
-            instance, status, obj, has_sol){};
+      : SolGeneralProblemInstanceWithScheduleAndRoutes<
+            GeneralPerformanceOptimizationInstance>(instance, status, obj,
+                                                    has_sol){};
 };
 
 } // namespace cda_rail::instances

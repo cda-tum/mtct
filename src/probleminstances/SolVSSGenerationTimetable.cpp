@@ -295,20 +295,14 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
                                       p.string());
   }
 
-  if (export_instance) {
-    instance.export_instance(p / "instance");
-  } else {
-    instance.const_routes().export_routes(p / "instance" / "routes",
-                                          instance.const_n());
-  }
+  SolGeneralProblemInstanceWithScheduleAndRoutes<VSSGenerationTimetable>::
+      export_general_solution_data_with_routes(p, export_instance, false);
 
-  json data;
+  json data = SolGeneralProblemInstanceWithScheduleAndRoutes<
+      VSSGenerationTimetable>::get_general_solution_data();
   data["dt"]            = dt;
-  data["status"]        = static_cast<int>(status);
-  data["obj"]           = obj;
   data["mip_obj"]       = mip_obj;
   data["postprocessed"] = postprocessed;
-  data["has_solution"]  = has_sol;
   std::ofstream data_file(p / "solution" / "data.json");
   data_file << data << std::endl;
   data_file.close();
@@ -380,13 +374,12 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
 
   // Read data
   std::ifstream data_file(p / "solution" / "data.json");
-  json          data  = json::parse(data_file);
+  json          data = json::parse(data_file);
+  SolGeneralProblemInstanceWithScheduleAndRoutes<
+      VSSGenerationTimetable>::set_general_solution_data(data);
   this->dt            = data["dt"].get<int>();
-  this->status        = static_cast<SolutionStatus>(data["status"].get<int>());
-  this->obj           = data["obj"].get<double>();
   this->mip_obj       = data["mip_obj"].get<double>();
   this->postprocessed = data["postprocessed"].get<bool>();
-  this->has_sol       = data["has_solution"].get<bool>();
 
   this->initialize_vectors();
 
