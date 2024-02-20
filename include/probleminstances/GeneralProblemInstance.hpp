@@ -308,6 +308,17 @@ protected:
     this->has_sol = data["has_solution"].get<bool>();
   };
 
+  bool check_general_solution_data_consistency() const {
+    if (status == SolutionStatus::Unknown) {
+      return false;
+    }
+    if (status == SolutionStatus::Infeasible ||
+        status == SolutionStatus::Timeout) {
+      return true;
+    }
+    return obj + EPS >= 0;
+  }
+
 public:
   [[nodiscard]] const T&       get_instance() const { return instance; };
   [[nodiscard]] SolutionStatus get_status() const { return status; };

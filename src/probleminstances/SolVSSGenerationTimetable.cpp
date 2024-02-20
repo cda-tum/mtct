@@ -223,16 +223,11 @@ void cda_rail::instances::SolVSSGenerationTimetable::add_train_speed(
 }
 
 bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
-  if (status == SolutionStatus::Unknown) {
+  if (!SolGeneralProblemInstanceWithScheduleAndRoutes<
+          VSSGenerationTimetable>::check_general_solution_data_consistency()) {
     return false;
   }
-  if (status == SolutionStatus::Infeasible ||
-      status == SolutionStatus::Timeout) {
-    return true;
-  }
-  if (obj + EPS < 0) {
-    return false;
-  }
+
   if (dt < 0) {
     return false;
   }

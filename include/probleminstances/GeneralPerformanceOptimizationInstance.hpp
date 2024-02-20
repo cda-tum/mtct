@@ -9,6 +9,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -205,6 +206,10 @@ public:
 class SolGeneralPerformanceOptimizationInstance
     : public SolGeneralProblemInstanceWithScheduleAndRoutes<
           GeneralPerformanceOptimizationInstance> {
+  std::vector<std::map<double, double>> train_pos;
+  std::vector<std::map<double, double>> train_speed;
+  std::vector<bool>                     train_routed;
+
 public:
   SolGeneralPerformanceOptimizationInstance() = default;
   explicit SolGeneralPerformanceOptimizationInstance(
@@ -217,6 +222,10 @@ public:
       : SolGeneralProblemInstanceWithScheduleAndRoutes<
             GeneralPerformanceOptimizationInstance>(instance, status, obj,
                                                     has_sol){};
+
+  void               export_solution(const std::filesystem::path& p,
+                                     bool export_instance) const override;
+  [[nodiscard]] bool check_consistency() const override;
 };
 
 } // namespace cda_rail::instances
