@@ -338,6 +338,7 @@ TEST(GeneralAbstractDataStructure,
 
 TEST(GeneralAbstractDataStructure,
      GeneralPerformanceOptimizationInstanceExportImport) {
+  // Create instance members
   Network network("./example-networks/SimpleStation/network/");
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
@@ -356,8 +357,11 @@ TEST(GeneralAbstractDataStructure,
 
   RouteMap routes;
 
+  // Use above to create instance
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
+
+  // Make some changes to defaults and add train routes
 
   instance.set_train_weight("Train2", 2);
   instance.set_train_optional("Train1");
@@ -383,11 +387,15 @@ TEST(GeneralAbstractDataStructure,
   instance.push_back_edge_to_route("Train2", "r2", "r1");
   instance.push_back_edge_to_route("Train2", "r1", "r0");
 
+  // Export and import
+
   instance.export_instance("./tmp/test-general-instance/");
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance_read(
       "./tmp/test-general-instance/");
   std::filesystem::remove_all("./tmp");
+
+  // Check if imported instance is the same as the original
 
   EXPECT_TRUE(instance_read.check_consistency());
 
