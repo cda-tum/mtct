@@ -207,14 +207,14 @@ class SolGeneralPerformanceOptimizationInstance
 public:
   SolGeneralPerformanceOptimizationInstance() = default;
   explicit SolGeneralPerformanceOptimizationInstance(
-      GeneralPerformanceOptimizationInstance instance)
+      const GeneralPerformanceOptimizationInstance& instance)
       : SolGeneralProblemInstance<GeneralPerformanceOptimizationInstance>(
-            std::move(instance)){};
+            instance){};
   SolGeneralPerformanceOptimizationInstance(
-      GeneralPerformanceOptimizationInstance instance, SolutionStatus status,
-      double obj, bool has_sol)
+      const GeneralPerformanceOptimizationInstance& instance,
+      SolutionStatus status, double obj, bool has_sol)
       : SolGeneralProblemInstance<GeneralPerformanceOptimizationInstance>(
-            std::move(instance), status, obj, has_sol){};
+            instance, status, obj, has_sol){};
 };
 
 } // namespace cda_rail::instances
