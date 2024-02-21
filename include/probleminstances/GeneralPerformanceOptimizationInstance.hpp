@@ -210,22 +210,78 @@ class SolGeneralPerformanceOptimizationInstance
   std::vector<std::map<double, double>> train_speed;
   std::vector<bool>                     train_routed;
 
+  void initialize_vectors() {
+    train_pos.reserve(instance.get_timetable().get_train_list().size());
+    train_speed.reserve(instance.get_timetable().get_train_list().size());
+    train_routed = std::vector<bool>(
+        instance.get_timetable().get_train_list().size(), false);
+    for (size_t tr = 0; tr < this->instance.get_train_list().size(); ++tr) {
+      train_pos.emplace_back();
+      train_speed.emplace_back();
+    }
+  };
+
 public:
   SolGeneralPerformanceOptimizationInstance() = default;
   explicit SolGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance)
       : SolGeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralPerformanceOptimizationInstance>(instance){};
+            GeneralPerformanceOptimizationInstance>(instance) {
+    this->initialize_vectors();
+  };
   SolGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance,
       SolutionStatus status, double obj, bool has_sol)
       : SolGeneralProblemInstanceWithScheduleAndRoutes<
             GeneralPerformanceOptimizationInstance>(instance, status, obj,
-                                                    has_sol){};
+                                                    has_sol) {
+    this->initialize_vectors();
+  };
+  SolGeneralPerformanceOptimizationInstance(
+      const std::filesystem::path&                                 p,
+      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
+          std::optional<GeneralPerformanceOptimizationInstance>());
+
+  void add_train_pos(const std::string& tr_name, double t, double pos);
+  void add_train_speed(const std::string& tr_name, double t, double speed);
+  void set_train_routed(const std::string& tr_name) {
+    set_train_routed_value(tr_name, true);
+  }
+  void set_train_not_routed(const std::string& tr_name) {
+    set_train_routed_value(tr_name, false);
+  }
+  void set_train_routed_value(const std::string& tr_name, bool val);
 
   void               export_solution(const std::filesystem::path& p,
                                      bool export_instance) const override;
   [[nodiscard]] bool check_consistency() const override;
+
+  [[nodiscard]] static SolGeneralPerformanceOptimizationInstance
+  import_solution(
+      const std::filesystem::path&                                 p,
+      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
+          std::optional<GeneralPerformanceOptimizationInstance>()) {
+    auto sol = SolGeneralPerformanceOptimizationInstance(p, instance);
+    if (!sol.check_consistency()) {
+      throw exceptions::ConsistencyException(
+          "Imported solution object is not consistent");
+    }
+    return sol;
+  };
+  [[nodiscard]] static SolGeneralPerformanceOptimizationInstance
+  import_solution(
+      const std::string&                                           path,
+      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
+          std::optional<GeneralPerformanceOptimizationInstance>()) {
+    return import_solution(std::filesystem::path(path), instance);
+  };
+  [[nodiscard]] static SolGeneralPerformanceOptimizationInstance
+  import_solution(
+      const char*                                                  path,
+      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
+          std::optional<GeneralPerformanceOptimizationInstance>()) {
+    return import_solution(std::filesystem::path(path), instance);
+  };
 };
 
 } // namespace cda_rail::instances
