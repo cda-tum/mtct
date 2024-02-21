@@ -308,7 +308,7 @@ protected:
     this->has_sol = data["has_solution"].get<bool>();
   };
 
-  bool check_general_solution_data_consistency() const {
+  [[nodiscard]] bool check_general_solution_data_consistency() const {
     if (status == SolutionStatus::Unknown) {
       return false;
     }
