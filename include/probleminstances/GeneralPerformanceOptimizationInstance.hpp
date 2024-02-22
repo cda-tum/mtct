@@ -237,7 +237,7 @@ public:
                                                     has_sol) {
     this->initialize_vectors();
   };
-  SolGeneralPerformanceOptimizationInstance(
+  explicit SolGeneralPerformanceOptimizationInstance(
       const std::filesystem::path&                                 p,
       const std::optional<GeneralPerformanceOptimizationInstance>& instance =
           std::optional<GeneralPerformanceOptimizationInstance>());

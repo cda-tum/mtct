@@ -148,11 +148,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     this->train_routed[instance->get_train_list().get_train_index(tr_name)] =
         routed.get<bool>();
   }
-
-  if (!this->check_consistency()) {
-    throw exceptions::ConsistencyException(
-        "Imported solution object is not consistent");
-  }
 }
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
