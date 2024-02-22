@@ -197,3 +197,39 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
   train_routed.at(instance.get_train_list().get_train_index(tr_name)) = val;
 }
+
+double
+cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_pos(
+    const std::string& tr_name, double t) const {
+  if (!instance.get_train_list().has_train(tr_name)) {
+    throw exceptions::TrainNotExistentException(tr_name);
+  }
+  const auto tr_id = instance.get_train_list().get_train_index(tr_name);
+  if (train_pos.at(tr_id).count(t) > 0) {
+    return train_pos.at(tr_id).at(t);
+  }
+  throw exceptions::ConsistencyException("No position for train " + tr_name +
+                                         " at time " + std::to_string(t));
+}
+
+double
+cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_speed(
+    const std::string& tr_name, double t) const {
+  if (!instance.get_train_list().has_train(tr_name)) {
+    throw exceptions::TrainNotExistentException(tr_name);
+  }
+  const auto tr_id = instance.get_train_list().get_train_index(tr_name);
+  if (train_speed.at(tr_id).count(t) > 0) {
+    return train_speed.at(tr_id).at(t);
+  }
+  throw exceptions::ConsistencyException("No speed for train " + tr_name +
+                                         " at time " + std::to_string(t));
+}
+
+bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
+    get_train_routed(const std::string& tr_name) const {
+  if (!instance.get_train_list().has_train(tr_name)) {
+    throw exceptions::TrainNotExistentException(tr_name);
+  }
+  return train_routed.at(instance.get_train_list().get_train_index(tr_name));
+}

@@ -133,11 +133,12 @@ public:
 
   size_t add_vertex(const std::string& name, VertexType type);
   size_t add_edge(size_t source, size_t target, double length, double max_speed,
-                  bool breakable, double min_block_length = 1,
+                  bool breakable = true, double min_block_length = 1,
                   double min_stop_block_length = 1);
   size_t add_edge(const std::string& source_name,
                   const std::string& target_name, double length,
-                  double max_speed, bool breakable, double min_block_length = 1,
+                  double max_speed, bool breakable = true,
+                  double min_block_length      = 1,
                   double min_stop_block_length = 1) {
     return add_edge(get_vertex_index(source_name),
                     get_vertex_index(target_name), length, max_speed, breakable,

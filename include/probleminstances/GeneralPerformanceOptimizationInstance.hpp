@@ -242,6 +242,12 @@ public:
       const std::optional<GeneralPerformanceOptimizationInstance>& instance =
           std::optional<GeneralPerformanceOptimizationInstance>());
 
+  [[nodiscard]] double get_train_pos(const std::string& tr_name,
+                                     double             t) const;
+  [[nodiscard]] double get_train_speed(const std::string& tr_name,
+                                       double             t) const;
+  [[nodiscard]] bool   get_train_routed(const std::string& tr_name) const;
+
   void add_train_pos(const std::string& tr_name, double t, double pos);
   void add_train_speed(const std::string& tr_name, double t, double speed);
   void set_train_routed(const std::string& tr_name) {
@@ -282,6 +288,11 @@ public:
           std::optional<GeneralPerformanceOptimizationInstance>()) {
     return import_solution(std::filesystem::path(path), instance);
   };
+};
+
+class SolVSSGeneralPerformanceOptimizationInstance
+    : public SolGeneralPerformanceOptimizationInstance {
+  // TODO
 };
 
 } // namespace cda_rail::instances
