@@ -39,10 +39,12 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
   json train_pos_json;
   json train_speed_json;
+  json train_routed_json;
   for (size_t tr_id = 0; tr_id < instance.get_train_list().size(); ++tr_id) {
-    const auto& train            = instance.get_train_list().get_train(tr_id);
-    train_pos_json[train.name]   = train_pos.at(tr_id);
-    train_speed_json[train.name] = train_speed.at(tr_id);
+    const auto& train             = instance.get_train_list().get_train(tr_id);
+    train_pos_json[train.name]    = train_pos.at(tr_id);
+    train_speed_json[train.name]  = train_speed.at(tr_id);
+    train_routed_json[train.name] = train_routed.at(tr_id);
   }
 
   std::ofstream train_pos_file(p / "solution" / "train_pos.json");
@@ -52,6 +54,10 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   std::ofstream train_speed_file(p / "solution" / "train_speed.json");
   train_speed_file << train_speed_json << std::endl;
   train_speed_file.close();
+
+  std::ofstream train_routed_file(p / "solution" / "train_routed.json");
+  train_routed_file << train_routed_json << std::endl;
+  train_routed_file.close();
 }
 
 bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
@@ -76,6 +82,16 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     if (train_routed.at(tr_id) && train_pos.at(tr_id).size() < 2) {
       // At least two points of information are needed to recover the timing
       return false;
+    }
+
+    if (train_pos.size() != train_speed.size()) {
+      return false;
+    }
+
+    for (const auto& [t, pos] : train_pos.at(tr_id)) {
+      if (train_speed.at(tr_id).count(t) != 1) {
+        return false;
+      }
     }
   }
 
@@ -131,8 +147,9 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   std::ifstream train_pos_file(p / "solution" / "train_pos.json");
   json          train_pos_json = json::parse(train_pos_file);
   for (const auto& [tr_name, tr_pos_json] : train_pos_json.items()) {
-    for (const auto& [t, pos] : tr_pos_json.items()) {
-      this->add_train_pos(tr_name, std::stod(t), pos.get<double>());
+    for (const auto& [idx, pos_pair] : tr_pos_json.items()) {
+      const auto [t, pos] = pos_pair.get<std::pair<double, double>>();
+      this->add_train_pos(tr_name, t, pos);
     }
   }
 
@@ -140,8 +157,9 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   std::ifstream train_speed_file(p / "solution" / "train_speed.json");
   json          train_speed_json = json::parse(train_speed_file);
   for (const auto& [tr_name, tr_speed_json] : train_speed_json.items()) {
-    for (const auto& [t, speed] : tr_speed_json.items()) {
-      this->add_train_speed(tr_name, std::stod(t), speed.get<double>());
+    for (const auto& [idx, speed_pair] : tr_speed_json.items()) {
+      const auto [t, speed] = speed_pair.get<std::pair<double, double>>();
+      this->add_train_speed(tr_name, t, speed);
     }
   }
 
@@ -149,8 +167,8 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   std::ifstream train_routed_file(p / "solution" / "train_routed.json");
   json          train_routed_json = json::parse(train_routed_file);
   for (const auto& [tr_name, routed] : train_routed_json.items()) {
-    this->train_routed[instance->get_train_list().get_train_index(tr_name)] =
-        routed.get<bool>();
+    this->train_routed[this->instance.get_train_list().get_train_index(
+        tr_name)] = routed.get<bool>();
   }
 }
 
