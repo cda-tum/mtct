@@ -63,6 +63,23 @@ public:
     lambda = static_cast<double>(j["lambda"]);
   };
 
+  using T = GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>;
+
+  template <typename TrainN = std::string, typename EntryN = std::string,
+            typename ExitN = std::string>
+  size_t add_train(const TrainN& name, int length, double max_speed,
+                   double acceleration, double deceleration,
+                   decltype(T::time_type()) t_0, double v_0,
+                   const EntryN& entry, decltype(T::time_type()) t_n,
+                   double v_n, const ExitN& exit, double tr_weight = 1,
+                   bool tr_optional = false) {
+    train_weights.push_back(tr_weight);
+    train_optional.push_back(tr_optional);
+    return GeneralProblemInstanceWithScheduleAndRoutes<T>::add_train(
+        name, length, max_speed, acceleration, deceleration, t_0, v_0, entry,
+        t_n, v_n, exit);
+  }
+
   [[nodiscard]] const auto& get_train_weights() const { return train_weights; };
   [[nodiscard]] const auto& get_train_optional() const {
     return train_optional;

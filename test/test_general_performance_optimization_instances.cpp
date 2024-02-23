@@ -267,7 +267,7 @@ TEST(GeneralPerformanceOptimizationInstances,
 }
 
 TEST(GeneralPerformanceOptimizationInstances,
-     SolGeneralPerformanceOptimizationInstanceExportImport) {
+     SolGeneralPerformanceOptimizationInstanceConsistency) {
   instances::GeneralPerformanceOptimizationInstance instance;
 
   // Add a simple network to the instance
@@ -285,4 +285,53 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   const auto tr1 = instance.add_train("tr1", 50, 10, 2, 2, {0, 60}, 0, "v0",
                                       {120, 180}, 5, "v2");
+  const auto tr2 = instance.add_train("tr2", 50, 10, 2, 2, {120, 180}, 0, "v2",
+                                      {210, 270}, 0, "v0", 2, true);
+
+  // Check the consistency of the instance
+  EXPECT_TRUE(instance.check_consistency(false));
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+
+  EXPECT_FALSE(sol_instance.check_consistency());
+
+  sol_instance.set_obj(0.5);
+  sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
+
+  EXPECT_FALSE(sol_instance.check_consistency());
+
+  sol_instance.add_empty_route("tr1");
+  sol_instance.push_back_edge_to_route("tr1", "v0", "v1");
+  sol_instance.push_back_edge_to_route("tr1", v1, v2);
+
+  EXPECT_FALSE(sol_instance.check_consistency());
+
+  sol_instance.set_train_routed("tr1");
+
+  EXPECT_FALSE(sol_instance.check_consistency());
+
+  sol_instance.add_train_pos("tr1", 0, 0);
+  sol_instance.add_train_pos("tr1", 60, 100);
+
+  EXPECT_TRUE(sol_instance.check_consistency());
+
+  sol_instance.set_train_not_routed("tr1");
+
+  EXPECT_FALSE(sol_instance.check_consistency());
+
+  sol_instance.set_train_routed("tr1");
+
+  EXPECT_TRUE(sol_instance.check_consistency());
+
+  sol_instance.set_status(cda_rail::SolutionStatus::Infeasible);
+  EXPECT_TRUE(sol_instance.check_consistency());
+  sol_instance.set_status(cda_rail::SolutionStatus::Timeout);
+  EXPECT_TRUE(sol_instance.check_consistency());
+  sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
+
+  sol_instance.set_obj(-1);
+  EXPECT_FALSE(sol_instance.check_consistency());
+  sol_instance.set_obj(0);
+
+  EXPECT_TRUE(sol_instance.check_consistency());
 }

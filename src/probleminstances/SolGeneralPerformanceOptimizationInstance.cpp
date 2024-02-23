@@ -65,12 +65,16 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     return false;
   }
 
-  for (auto tr_id = 0; tr_id <= train_routed.size(); tr_id++) {
+  for (auto tr_id = 0; tr_id < train_routed.size(); tr_id++) {
     const auto& tr_name = instance.get_train_list().get_train(tr_id).name;
     if (train_routed.at(tr_id) && !instance.has_route(tr_name)) {
       return false;
     }
     if (!train_routed.at(tr_id) && !instance.get_train_optional().at(tr_id)) {
+      return false;
+    }
+    if (train_routed.at(tr_id) && train_pos.at(tr_id).size() < 2) {
+      // At least two points of information are needed to recover the timing
       return false;
     }
   }
