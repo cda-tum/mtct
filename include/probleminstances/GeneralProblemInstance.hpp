@@ -95,8 +95,16 @@ public:
     return timetable.editable_tr(name);
   };
 
-  template <typename... Args> size_t add_train(Args... args) {
-    return timetable.add_train(args..., this->const_n());
+  template <typename TrainN = std::string, typename EntryN = std::string,
+            typename ExitN = std::string>
+  size_t add_train(const TrainN& name, int length, double max_speed,
+                   double acceleration, double deceleration,
+                   decltype(T::time_type()) t_0, double v_0,
+                   const EntryN& entry, decltype(T::time_type()) t_n,
+                   double v_n, const ExitN& exit) {
+    return timetable.add_train(name, length, max_speed, acceleration,
+                               deceleration, t_0, v_0, entry, t_n, v_n, exit,
+                               this->const_n());
   }
 
   void add_station(const std::string& name) { timetable.add_station(name); };
