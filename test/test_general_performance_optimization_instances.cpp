@@ -8,6 +8,8 @@
 
 using namespace cda_rail;
 
+// NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
+
 TEST(GeneralPerformanceOptimizationInstances,
      GeneralPerformanceOptimizationInstanceConsistency) {
   Network network("./example-networks/SimpleStation/network/");
@@ -311,7 +313,18 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(sol_instance.check_consistency());
 
   sol_instance.add_train_pos("tr1", 0, 0);
+
+  EXPECT_FALSE(sol_instance.check_consistency());
+
+  sol_instance.add_train_speed("tr1", 0, 10);
+
+  EXPECT_FALSE(sol_instance.check_consistency());
+
   sol_instance.add_train_pos("tr1", 60, 100);
+
+  EXPECT_FALSE(sol_instance.check_consistency());
+
+  sol_instance.add_train_speed("tr1", 60, 5);
 
   EXPECT_TRUE(sol_instance.check_consistency());
 
@@ -335,3 +348,96 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   EXPECT_TRUE(sol_instance.check_consistency());
 }
+
+TEST(GeneralPerformanceOptimizationInstances,
+     SolGeneralPerformanceOptimizationInstanceExportImport) {
+  instances::GeneralPerformanceOptimizationInstance instance;
+
+  // Add a simple network to the instance
+  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::TTD);
+
+  const auto v0_v1 = instance.n().add_edge("v0", "v1", 100, 10);
+  const auto v1_v2 = instance.n().add_edge("v1", "v2", 200, 20);
+  const auto v1_v0 = instance.n().add_edge("v1", "v0", 100, 10);
+  const auto v2_v1 = instance.n().add_edge("v2", "v1", 200, 20);
+
+  instance.n().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.n().add_successor({"v2", "v1"}, {"v1", "v0"});
+
+  const auto tr1 = instance.add_train("tr1", 50, 10, 2, 2, {0, 60}, 0, "v0",
+                                      {120, 180}, 5, "v2");
+  const auto tr2 = instance.add_train("tr2", 50, 10, 2, 2, {120, 180}, 0, "v2",
+                                      {210, 270}, 0, "v0", 2, true);
+
+  // Check the consistency of the instance
+  EXPECT_TRUE(instance.check_consistency(false));
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+
+  sol_instance.set_obj(0.5);
+  sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
+
+  sol_instance.add_empty_route("tr1");
+  sol_instance.push_back_edge_to_route("tr1", "v0", "v1");
+  sol_instance.push_back_edge_to_route("tr1", v1, v2);
+
+  sol_instance.set_train_routed("tr1");
+
+  sol_instance.add_train_pos("tr1", 0, 0);
+  sol_instance.add_train_pos("tr1", 60, 100);
+  sol_instance.add_train_speed("tr1", 0, 10);
+  sol_instance.add_train_speed("tr1", 60, 5);
+
+  EXPECT_TRUE(sol_instance.check_consistency());
+
+  sol_instance.export_solution("./tmp/test-sol-instance-1", true);
+  sol_instance.export_solution("./tmp/test-sol-instance-2", false);
+  const auto sol1_read =
+      cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
+          import_solution("./tmp/test-sol-instance-1");
+  const auto sol2_read =
+      cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
+          import_solution("./tmp/test-sol-instance-2", instance);
+  std::filesystem::remove_all("./tmp");
+
+  EXPECT_TRUE(sol1_read.check_consistency());
+  EXPECT_TRUE(sol2_read.check_consistency());
+
+  EXPECT_EQ(sol1_read.get_obj(), 0.5);
+  EXPECT_EQ(sol1_read.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_TRUE(sol1_read.get_train_routed("tr1"));
+  EXPECT_EQ(sol1_read.get_train_pos("tr1", 0), 0);
+  EXPECT_EQ(sol1_read.get_train_pos("tr1", 60), 100);
+  EXPECT_EQ(sol1_read.get_train_speed("tr1", 0), 10);
+  EXPECT_EQ(sol1_read.get_train_speed("tr1", 60), 5);
+  EXPECT_TRUE(sol1_read.get_instance().has_route("tr1"));
+  const auto& tr1_route = sol1_read.get_instance().get_route("tr1");
+  EXPECT_EQ(tr1_route.size(), 2);
+  EXPECT_EQ(tr1_route.get_edge(0),
+            sol1_read.get_instance().const_n().get_edge_index("v0", "v1"));
+  EXPECT_EQ(tr1_route.get_edge(1),
+            sol1_read.get_instance().const_n().get_edge_index("v1", "v2"));
+  EXPECT_FALSE(sol1_read.get_train_routed("tr2"));
+  EXPECT_FALSE(sol1_read.get_instance().has_route("tr2"));
+
+  EXPECT_EQ(sol2_read.get_obj(), 0.5);
+  EXPECT_EQ(sol2_read.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_TRUE(sol2_read.get_train_routed("tr1"));
+  EXPECT_EQ(sol2_read.get_train_pos("tr1", 0), 0);
+  EXPECT_EQ(sol2_read.get_train_pos("tr1", 60), 100);
+  EXPECT_EQ(sol2_read.get_train_speed("tr1", 0), 10);
+  EXPECT_EQ(sol2_read.get_train_speed("tr1", 60), 5);
+  EXPECT_TRUE(sol2_read.get_instance().has_route("tr1"));
+  const auto& tr1_route2 = sol2_read.get_instance().get_route("tr1");
+  EXPECT_EQ(tr1_route2.size(), 2);
+  EXPECT_EQ(tr1_route2.get_edge(0),
+            sol2_read.get_instance().const_n().get_edge_index("v0", "v1"));
+  EXPECT_EQ(tr1_route2.get_edge(1),
+            sol2_read.get_instance().const_n().get_edge_index("v1", "v2"));
+  EXPECT_FALSE(sol2_read.get_train_routed("tr2"));
+  EXPECT_FALSE(sol2_read.get_instance().has_route("tr2"));
+}
+
+// NOLINTEND (clang-analyzer-deadcode.DeadStores)
