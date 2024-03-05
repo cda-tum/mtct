@@ -179,6 +179,11 @@ private:
   void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss,
                               GRBLinExpr& cut_expr);
 
+protected:
+  virtual void solve_init(int time_limit, bool debug_input) override {
+    GeneralMIPSolver::solve_init(time_limit, debug_input);
+  };
+
 public:
   // Constructors
   explicit VSSGenTimetableSolver(
