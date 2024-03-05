@@ -195,8 +195,8 @@ public:
         const SolutionSettings& solution_settings = {}, int time_limit = -1,
         bool debug_input = false);
 
-  instances::SolVSSGenerationTimetable
-  solve(int time_limit, bool debug_input = false) override {
+  instances::SolVSSGenerationTimetable solve(int  time_limit,
+                                             bool debug_input) override {
     return solve({}, {}, {}, {}, time_limit, debug_input);
   }
 };
