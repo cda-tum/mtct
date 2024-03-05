@@ -35,5 +35,8 @@ public:
             path){};
 
   ~GenPOMovingBlockMIPSolver() = default;
+
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
+  solve(int time_limit, bool debug_input = false) override;
 };
 } // namespace cda_rail::solver::mip_based

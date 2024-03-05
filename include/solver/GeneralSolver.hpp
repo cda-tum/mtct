@@ -26,7 +26,8 @@ public:
   [[nodiscard]] const T& get_instance() const { return instance; }
   [[nodiscard]] T&       editable_instance() { return instance; }
 
-  [[nodiscard]] virtual S solve() = 0;
+  [[nodiscard]] S         solve() { return solve(-1, false); };
+  [[nodiscard]] virtual S solve(int time_limit, bool debug_input = false) = 0;
 
   virtual ~GeneralSolver() = default;
 };
