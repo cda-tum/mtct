@@ -36,6 +36,7 @@ public:
 
   ~GenPOMovingBlockMIPSolver() = default;
 
+  using GeneralSolver::solve;
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(int time_limit, bool debug_input) override;
 };
