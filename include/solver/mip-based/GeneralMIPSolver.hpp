@@ -49,6 +49,12 @@ protected:
   GRBLinExpr                                          objective_expr;
 
   void solve_init_general_mip(int time_limit, bool debug_input) {
+    static MessageCallback message_callback = MessageCallback();
+    this->solve_init_general_mip(time_limit, debug_input, &message_callback);
+  };
+
+  void solve_init_general_mip(int time_limit, bool debug_input,
+                              GRBCallback* cb) {
     this->solve_init_general(time_limit, debug_input);
 
     PLOGD << "Create Gurobi environment and model";
@@ -56,8 +62,7 @@ protected:
     this->env->start();
     this->model.emplace(env.value());
 
-    static MessageCallback message_callback = MessageCallback();
-    this->model->setCallback(&message_callback);
+    this->model->setCallback(cb);
     this->model->set(GRB_IntParam_LogToConsole, 0);
   };
 
