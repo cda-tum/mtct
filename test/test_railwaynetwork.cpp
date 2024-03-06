@@ -19,7 +19,7 @@ struct EdgeTarget {
   double      max_speed;
   bool        breakable;
   double      min_block_length;
-  double      min_stop_block_length = 1;
+  double      min_stop_block_length = 100;
 };
 
 // NOLINTBEGIN(clang-diagnostic-unused-result)
@@ -126,9 +126,9 @@ TEST(Functionality, NetworkFunctions) {
   network.set_edge_breakable("v1", "v2");
   EXPECT_TRUE(network.get_edge(1).breakable);
 
-  EXPECT_EQ(network.get_edge(e0).min_stop_block_length, 1);
-  EXPECT_EQ(network.get_edge(e1).min_stop_block_length, 1);
-  EXPECT_EQ(network.get_edge(e2).min_stop_block_length, 1);
+  EXPECT_EQ(network.get_edge(e0).min_stop_block_length, 100);
+  EXPECT_EQ(network.get_edge(e1).min_stop_block_length, 100);
+  EXPECT_EQ(network.get_edge(e2).min_stop_block_length, 100);
   EXPECT_EQ(network.get_edge(e3).min_stop_block_length, 5);
 
   network.change_edge_min_stop_block_length(e0, 2);
