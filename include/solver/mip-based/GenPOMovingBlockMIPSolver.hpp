@@ -10,6 +10,11 @@ class GenPOMovingBlockMIPSolver
     : public GeneralMIPSolver<
           instances::GeneralPerformanceOptimizationInstance,
           instances::SolGeneralPerformanceOptimizationInstance> {
+protected:
+  void solve_init_gen_po_mb(int time_limit, bool debug_input) {
+    this->solve_init_general_mip(time_limit, debug_input);
+  };
+
 public:
   GenPOMovingBlockMIPSolver() = default;
 
