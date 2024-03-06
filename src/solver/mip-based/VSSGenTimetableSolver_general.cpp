@@ -125,6 +125,19 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
 
+  if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
+    start = std::chrono::high_resolution_clock::now();
+  }
+
+  PLOGD << "Create Gurobi environment and model";
+  env.emplace(true);
+  env->start();
+  model.emplace(env.value());
+
+  auto message_callback = MessageCallback();
+  model->setCallback(&message_callback);
+  model->set(GRB_IntParam_LogToConsole, 0);
+
   if (!model_settings.model_type.check_consistency()) {
     PLOGE << "Model type  and separation types/functions are not consistent.";
     throw cda_rail::exceptions::ConsistencyException(
@@ -134,15 +147,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   if (!instance.n().is_consistent_for_transformation()) {
     PLOGE << "Instance is not consistent for transformation.";
     throw exceptions::ConsistencyException();
-  }
-
-  decltype(std::chrono::high_resolution_clock::now()) start;
-  decltype(std::chrono::high_resolution_clock::now()) model_created;
-  decltype(std::chrono::high_resolution_clock::now()) model_solved;
-  int64_t                                             create_time = 0;
-  int64_t                                             solve_time  = 0;
-  if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
-    start = std::chrono::high_resolution_clock::now();
   }
 
   this->dt                        = model_detail.delta_t;
@@ -253,15 +257,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   }
 
   calculate_fwd_bwd_sections();
-
-  PLOGD << "Create Gurobi environment and model";
-  env.emplace(true);
-  env->start();
-  model.emplace(env.value());
-
-  MessageCallback message_callback = MessageCallback();
-  model->setCallback(&message_callback);
-  model->set(GRB_IntParam_LogToConsole, 0);
 
   PLOGD << "Create general variables";
   create_general_variables();
