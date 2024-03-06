@@ -56,7 +56,7 @@ protected:
     this->env->start();
     this->model.emplace(env.value());
 
-    MessageCallback message_callback = MessageCallback();
+    static MessageCallback message_callback = MessageCallback();
     this->model->setCallback(&message_callback);
     this->model->set(GRB_IntParam_LogToConsole, 0);
   };
