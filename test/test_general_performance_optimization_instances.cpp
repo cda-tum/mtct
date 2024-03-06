@@ -528,7 +528,11 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
 
   EXPECT_TRUE(instance.check_consistency());
 
+  // Discretize stop edges
+
   instance.discretize_stops();
+
+  // All stop edges should have been separated once ...
 
   EXPECT_TRUE(instance.const_n().has_vertex("g00_g01_0"));
   EXPECT_TRUE(instance.const_n().has_vertex("g10_g11_0"));
@@ -554,6 +558,9 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
   const auto& e6 = instance.const_n().get_edge("g10_g11_0", "g11");
   const auto& e7 = instance.const_n().get_edge("g11", "g10_g11_0");
   const auto& e8 = instance.const_n().get_edge("g10_g11_0", "g10");
+
+  // ... in the middle at 150m having carried over the properties of the
+  // original edge
 
   EXPECT_DOUBLE_EQ(e1.length, 150);
   EXPECT_DOUBLE_EQ(e1.min_stop_block_length, 150);
