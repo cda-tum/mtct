@@ -520,6 +520,38 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
   EXPECT_DOUBLE_EQ(e8.length, 150);
   EXPECT_DOUBLE_EQ(e8.min_stop_block_length, 150);
   EXPECT_TRUE(e8.breakable);
+
+  const auto& s1 = instance.get_station_list().get_station("Station1");
+  const auto& s2 = instance.get_station_list().get_station("Station2");
+
+  std::vector<size_t> s1_expected = {
+      instance.const_n().get_edge_index("g00", "g00_g01_0"),
+      instance.const_n().get_edge_index("g00_g01_0", "g01")};
+
+  std::vector<size_t> s2_expected = {
+      instance.const_n().get_edge_index("g00", "g00_g01_0"),
+      instance.const_n().get_edge_index("g00_g01_0", "g01"),
+      instance.const_n().get_edge_index("g10", "g10_g11_0"),
+      instance.const_n().get_edge_index("g10_g11_0", "g11"),
+      instance.const_n().get_edge_index("g11", "g10_g11_0"),
+      instance.const_n().get_edge_index("g10_g11_0", "g10")};
+
+  EXPECT_EQ(s1_expected.size(), s1.tracks.size());
+  EXPECT_EQ(s2_expected.size(), s2.tracks.size());
+
+  for (const auto& e : s1_expected) {
+    EXPECT_TRUE(std::find(s1.tracks.begin(), s1.tracks.end(), e) !=
+                s1.tracks.end())
+        << instance.const_n().get_edge(e).source << " to "
+        << instance.const_n().get_edge(e).target << " not found in station 1";
+  }
+
+  for (const auto& e : s2_expected) {
+    EXPECT_TRUE(std::find(s2.tracks.begin(), s2.tracks.end(), e) !=
+                s2.tracks.end())
+        << instance.const_n().get_edge(e).source << " to "
+        << instance.const_n().get_edge(e).target << " not found in station 2";
+  }
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
