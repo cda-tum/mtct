@@ -48,19 +48,6 @@ protected:
   std::unordered_map<std::string, MultiArray<GRBVar>> vars;
   GRBLinExpr                                          objective_expr;
 
-  virtual void solve_init(int time_limit, bool debug_input) override {
-    GeneralSolver::solve_init(time_limit, debug_input);
-
-    PLOGD << "Create Gurobi environment and model";
-    this->env.emplace(true);
-    this->env->start();
-    this->model.emplace(env.value());
-
-    MessageCallback message_callback = MessageCallback();
-    this->model->setCallback(&message_callback);
-    this->model->set(GRB_IntParam_LogToConsole, 0);
-  };
-
   GeneralMIPSolver() = default;
   explicit GeneralMIPSolver(const T& instance)
       : GeneralSolver<T, S>(instance){};

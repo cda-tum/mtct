@@ -118,7 +118,12 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * @return Solution object containing status, objective value, and solution
    */
 
-  this->solve_init(time_limit, debug_input);
+  if (plog::get() == nullptr) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+    plog::init(plog::debug, &console_appender);
+  }
+
+  plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
 
   if (!model_settings.model_type.check_consistency()) {
     PLOGE << "Model type  and separation types/functions are not consistent.";
@@ -129,6 +134,15 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   if (!instance.n().is_consistent_for_transformation()) {
     PLOGE << "Instance is not consistent for transformation.";
     throw exceptions::ConsistencyException();
+  }
+
+  decltype(std::chrono::high_resolution_clock::now()) start;
+  decltype(std::chrono::high_resolution_clock::now()) model_created;
+  decltype(std::chrono::high_resolution_clock::now()) model_solved;
+  int64_t                                             create_time = 0;
+  int64_t                                             solve_time  = 0;
+  if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
+    start = std::chrono::high_resolution_clock::now();
   }
 
   this->dt                        = model_detail.delta_t;
@@ -240,6 +254,15 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   calculate_fwd_bwd_sections();
 
+  PLOGD << "Create Gurobi environment and model";
+  env.emplace(true);
+  env->start();
+  model.emplace(env.value());
+
+  MessageCallback message_callback = MessageCallback();
+  model->setCallback(&message_callback);
+  model->set(GRB_IntParam_LogToConsole, 0);
+
   PLOGD << "Create general variables";
   create_general_variables();
   if (this->fix_routes) {
@@ -346,7 +369,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       PLOGD << "Settings focussing on feasibility";
     }
 
-    this->model->optimize();
+    model->optimize();
     iteration_number += 1;
 
     if (model->get(GRB_IntAttr_SolCount) >= 1) {
