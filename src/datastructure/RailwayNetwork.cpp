@@ -1609,7 +1609,8 @@ std::vector<std::pair<size_t, std::vector<size_t>>>
 cda_rail::Network::separate_stop_edges(const std::vector<size_t>& stop_edges) {
   std::vector<std::pair<size_t, std::vector<size_t>>> ret_val;
   for (size_t const i : stop_edges) {
-    if (!this->get_edge(i).breakable) {
+    const auto edge_object = get_edge(i);
+    if (2 * edge_object.min_stop_block_length > edge_object.length) {
       continue;
     }
     auto separated_edges = separate_stop_edge(i);
