@@ -49,7 +49,7 @@ protected:
   GRBLinExpr                                          objective_expr;
 
   void solve_init_general_mip(int time_limit, bool debug_input) {
-    static MessageCallback message_callback = MessageCallback();
+    static auto message_callback = MessageCallback();
     this->solve_init_general_mip(time_limit, debug_input, &message_callback);
   };
 
