@@ -90,8 +90,15 @@ private:
   void write_successor_set_to_file(std::ofstream& file, size_t i) const;
 
   std::pair<std::vector<size_t>, std::vector<size_t>>
+  separate_edge_private_helper(
+      size_t edge_index, double min_length,
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform,
+      bool                           new_edge_breakable = false);
+
+  std::pair<std::vector<size_t>, std::vector<size_t>>
   separate_edge_at(size_t                     edge_index,
-                   const std::vector<double>& distances_from_source);
+                   const std::vector<double>& distances_from_source,
+                   bool                       new_edge_breakable = false);
 
   // helper function
   void dfs(std::vector<std::vector<size_t>>& ret_val,
@@ -383,7 +390,10 @@ public:
   // Transformation functions
   std::pair<std::vector<size_t>, std::vector<size_t>> separate_edge(
       size_t                         edge_index,
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
+    return separate_edge_private_helper(
+        edge_index, get_edge(edge_index).min_block_length, sep_func);
+  };
   std::pair<std::vector<size_t>, std::vector<size_t>> separate_edge(
       size_t source_id, size_t target_id,
       const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
@@ -394,6 +404,15 @@ public:
       const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
     return separate_edge(get_edge_index(source_name, target_name), sep_func);
   };
+
+  std::pair<std::vector<size_t>, std::vector<size_t>>
+  separate_stop_edge(size_t edge_index) {
+    return separate_edge_private_helper(
+        edge_index, get_edge(edge_index).min_stop_block_length,
+        &vss::functions::uniform, true);
+  };
+  std::vector<std::pair<size_t, std::vector<size_t>>>
+  separate_stop_edges(const std::vector<size_t>& stop_edges);
 
   std::vector<std::pair<size_t, std::vector<size_t>>> discretize(
       const vss::SeparationFunction& sep_func = &vss::functions::uniform);

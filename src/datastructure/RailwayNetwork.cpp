@@ -868,7 +868,8 @@ bool cda_rail::Network::is_adjustable(size_t vertex_id) const {
 
 std::pair<std::vector<size_t>, std::vector<size_t>>
 cda_rail::Network::separate_edge_at(
-    size_t edge_index, const std::vector<double>& distances_from_source) {
+    size_t edge_index, const std::vector<double>& distances_from_source,
+    bool new_edge_breakable) {
   /**
    * This function separates an edge at given distances from the source vertex.
    * If the reverse edge exists it is separated analogously. In particular the
@@ -918,15 +919,18 @@ cda_rail::Network::separate_edge_at(
   auto& new_edges = return_edges.first;
   new_edges.emplace_back(add_edge(edge.source, new_vertices.front(),
                                   distances_from_source.front(), edge.max_speed,
-                                  false, edge.min_block_length));
+                                  new_edge_breakable, edge.min_block_length,
+                                  edge.min_stop_block_length));
   for (size_t i = 1; i < distances_from_source.size(); ++i) {
-    new_edges.emplace_back(
-        add_edge(new_vertices[i - 1], new_vertices[i],
-                 distances_from_source[i] - distances_from_source[i - 1],
-                 edge.max_speed, false, edge.min_block_length));
+    new_edges.emplace_back(add_edge(
+        new_vertices[i - 1], new_vertices[i],
+        distances_from_source[i] - distances_from_source[i - 1], edge.max_speed,
+        new_edge_breakable, edge.min_block_length, edge.min_stop_block_length));
   }
   change_edge_length(edge_index, edge.length - distances_from_source.back());
-  set_edge_unbreakable(edge_index);
+  if (!new_edge_breakable) {
+    set_edge_unbreakable(edge_index);
+  }
   edges[edge_index].source = new_vertices.back();
   new_edges.emplace_back(edge_index);
 
@@ -956,18 +960,22 @@ cda_rail::Network::separate_edge_at(
           "Reverse edge has different length");
     }
 
-    new_reverse_edges.emplace_back(
-        add_edge(edge.target, new_vertices.back(),
-                 edge.length - distances_from_source.back(),
-                 reverse_edge.max_speed, false, reverse_edge.min_block_length));
+    new_reverse_edges.emplace_back(add_edge(
+        edge.target, new_vertices.back(),
+        edge.length - distances_from_source.back(), reverse_edge.max_speed,
+        new_edge_breakable, reverse_edge.min_block_length,
+        reverse_edge.min_stop_block_length));
     for (size_t i = distances_from_source.size() - 1; i > 0; --i) {
       new_reverse_edges.emplace_back(add_edge(
           new_vertices[i], new_vertices[i - 1],
           distances_from_source[i] - distances_from_source[i - 1],
-          reverse_edge.max_speed, false, reverse_edge.min_block_length));
+          reverse_edge.max_speed, new_edge_breakable,
+          reverse_edge.min_block_length, reverse_edge.min_stop_block_length));
     }
     change_edge_length(reverse_edge_index, distances_from_source.front());
-    set_edge_unbreakable(reverse_edge_index);
+    if (!new_edge_breakable) {
+      set_edge_unbreakable(reverse_edge_index);
+    }
     edges[reverse_edge_index].source = new_vertices.front();
     new_reverse_edges.emplace_back(reverse_edge_index);
 
@@ -985,8 +993,9 @@ cda_rail::Network::separate_edge_at(
 }
 
 std::pair<std::vector<size_t>, std::vector<size_t>>
-cda_rail::Network::separate_edge(size_t                         edge_index,
-                                 const vss::SeparationFunction& sep_func) {
+cda_rail::Network::separate_edge_private_helper(
+    size_t edge_index, double min_length,
+    const vss::SeparationFunction& sep_func, bool new_edge_breakable) {
   /**
    * Separates an edge (and possibly its reverse edge) according to the given
    * number of new vertices.
@@ -1007,8 +1016,8 @@ cda_rail::Network::separate_edge(size_t                         edge_index,
   // Get edge to separate
   const auto& edge = get_edge(edge_index);
   // Get number of new vertices
-  const auto number_of_blocks = vss::functions::max_n_blocks(
-      sep_func, edge.min_block_length / edge.length);
+  const auto number_of_blocks =
+      vss::functions::max_n_blocks(sep_func, min_length / edge.length);
 
   // Calculate distances
   std::vector<double> distances_from_source;
@@ -1018,7 +1027,8 @@ cda_rail::Network::separate_edge(size_t                         edge_index,
                                        sep_func(i, number_of_blocks));
   }
 
-  return separate_edge_at(edge_index, distances_from_source);
+  return separate_edge_at(edge_index, distances_from_source,
+                          new_edge_breakable);
 }
 
 std::vector<size_t> cda_rail::Network::breakable_edges() const {
@@ -1592,5 +1602,24 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
     }
   }
 
+  return ret_val;
+}
+
+std::vector<std::pair<size_t, std::vector<size_t>>>
+cda_rail::Network::separate_stop_edges(const std::vector<size_t>& stop_edges) {
+  std::vector<std::pair<size_t, std::vector<size_t>>> ret_val;
+  for (size_t const i : stop_edges) {
+    if (!this->get_edge(i).breakable) {
+      continue;
+    }
+    auto separated_edges = separate_stop_edge(i);
+    if (!separated_edges.first.empty()) {
+      ret_val.emplace_back(separated_edges.first.back(), separated_edges.first);
+    }
+    if (!separated_edges.second.empty()) {
+      ret_val.emplace_back(separated_edges.second.back(),
+                           separated_edges.second);
+    }
+  }
   return ret_val;
 }

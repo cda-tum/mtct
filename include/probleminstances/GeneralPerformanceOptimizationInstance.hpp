@@ -178,6 +178,9 @@ public:
         false);
   };
 
+  // Transformation functions
+  void discretize_stops();
+
   using GeneralProblemInstance::export_instance;
 
   void export_instance(const std::filesystem::path& path) const override {
