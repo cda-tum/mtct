@@ -57,6 +57,7 @@ protected:
                               GRBCallback* cb) {
     this->solve_init_general(time_limit, debug_input);
 
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     PLOGD << "Create Gurobi environment and model";
     this->env.emplace(true);
     this->env->start();
