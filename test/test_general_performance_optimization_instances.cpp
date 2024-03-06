@@ -440,4 +440,30 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(sol2_read.get_instance().has_route("tr2"));
 }
 
+TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops) {
+  // Create instance members
+  Network network("./example-networks/SimpleStation/network/");
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", "g00", "g01", network);
+  timetable.add_track_to_station("Station1", "g01", "g00", network);
+  timetable.add_track_to_station("Station1", "g10", "g11", network);
+
+  timetable.add_station("Station2");
+  timetable.add_track_to_station("Station2", "g10", "g11", network);
+  timetable.add_track_to_station("Station2", "g11", "g10", network);
+
+  RouteMap routes;
+
+  // Use above to create instance
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  EXPECT_TRUE(instance.check_consistency());
+
+  instance.discretize_stops();
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
