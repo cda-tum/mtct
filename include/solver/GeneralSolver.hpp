@@ -2,11 +2,6 @@
 
 #include "probleminstances/GeneralProblemInstance.hpp"
 
-#include <chrono>
-#include <plog/Appenders/ColorConsoleAppender.h>
-#include <plog/Formatters/TxtFormatter.h>
-#include <plog/Initializers/ConsoleInitializer.h>
-#include <plog/Log.h>
 #include <type_traits>
 
 namespace cda_rail::solver {
@@ -19,12 +14,7 @@ template <typename T, typename S> class GeneralSolver {
       "S must be a child of SolGeneralProblemInstance<T>");
 
 protected:
-  T                                                   instance;
-  decltype(std::chrono::high_resolution_clock::now()) start;
-  decltype(std::chrono::high_resolution_clock::now()) model_created;
-  decltype(std::chrono::high_resolution_clock::now()) model_solved;
-  int64_t                                             create_time = 0;
-  int64_t                                             solve_time  = 0;
+  T instance;
 
   GeneralSolver() = default;
   explicit GeneralSolver(const T& instance) : instance(instance){};

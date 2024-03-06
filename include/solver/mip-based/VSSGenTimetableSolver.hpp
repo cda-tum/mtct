@@ -6,13 +6,8 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "unordered_map"
 
-#include <chrono>
 #include <filesystem>
 #include <optional>
-#include <plog/Appenders/ColorConsoleAppender.h>
-#include <plog/Formatters/TxtFormatter.h>
-#include <plog/Initializers/ConsoleInitializer.h>
-#include <plog/Log.h>
 #include <string>
 #include <utility>
 
