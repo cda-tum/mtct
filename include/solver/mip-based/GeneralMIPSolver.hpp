@@ -48,8 +48,8 @@ protected:
   std::unordered_map<std::string, MultiArray<GRBVar>> vars;
   GRBLinExpr                                          objective_expr;
 
-  virtual void solve_init(int time_limit, bool debug_input) override {
-    GeneralSolver::solve_init(time_limit, debug_input);
+  void solve_init_general_mip(int time_limit, bool debug_input) {
+    this->solve_init_general(time_limit, debug_input);
 
     PLOGD << "Create Gurobi environment and model";
     this->env.emplace(true);

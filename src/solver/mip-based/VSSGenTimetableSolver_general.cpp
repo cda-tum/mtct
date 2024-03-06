@@ -118,7 +118,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * @return Solution object containing status, objective value, and solution
    */
 
-  this->solve_init(time_limit, debug_input);
+  this->solve_init_vss_gen_timetable(time_limit, debug_input);
 
   if (!model_settings.model_type.check_consistency()) {
     PLOGE << "Model type  and separation types/functions are not consistent.";

@@ -180,8 +180,8 @@ private:
                               GRBLinExpr& cut_expr);
 
 protected:
-  virtual void solve_init(int time_limit, bool debug_input) override {
-    GeneralMIPSolver::solve_init(time_limit, debug_input);
+  void solve_init_vss_gen_timetable(int time_limit, bool debug_input) {
+    this->solve_init_general_mip(time_limit, debug_input);
   };
 
 public:

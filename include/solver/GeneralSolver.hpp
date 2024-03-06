@@ -26,7 +26,7 @@ protected:
   int64_t                                             create_time = 0;
   int64_t                                             solve_time  = 0;
 
-  virtual void solve_init(int time_limit, bool debug_input) {
+  void solve_init_general(int time_limit, bool debug_input) {
     if (plog::get() == nullptr) {
       static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
       plog::init(plog::debug, &console_appender);
