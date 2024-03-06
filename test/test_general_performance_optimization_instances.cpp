@@ -440,6 +440,72 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(sol2_read.get_instance().has_route("tr2"));
 }
 
+TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops1) {
+  // Create instance members
+  Network network("./example-networks/SimpleStation/network/");
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", "g00", "g01", network);
+
+  RouteMap routes;
+
+  // Use above to create instance
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  EXPECT_TRUE(instance.check_consistency());
+
+  instance.discretize_stops();
+
+  EXPECT_TRUE(instance.const_n().has_vertex("g00_g01_0"));
+  EXPECT_FALSE(instance.const_n().has_vertex("g10_g11_0"));
+  EXPECT_FALSE(instance.const_n().has_vertex("g00_g01_1"));
+  EXPECT_FALSE(instance.const_n().has_vertex("g11_g10_1"));
+
+  EXPECT_TRUE(instance.const_n().has_edge("g00", "g00_g01_0"));
+  EXPECT_TRUE(instance.const_n().has_edge("g00_g01_0", "g01"));
+  EXPECT_TRUE(instance.const_n().has_edge("g01", "g00_g01_0"));
+  EXPECT_TRUE(instance.const_n().has_edge("g00_g01_0", "g00"));
+
+  const auto& e1 = instance.const_n().get_edge("g00", "g00_g01_0");
+  const auto& e2 = instance.const_n().get_edge("g00_g01_0", "g01");
+  const auto& e3 = instance.const_n().get_edge("g01", "g00_g01_0");
+  const auto& e4 = instance.const_n().get_edge("g00_g01_0", "g00");
+
+  EXPECT_DOUBLE_EQ(e1.length, 150);
+  EXPECT_DOUBLE_EQ(e1.min_stop_block_length, 150);
+  EXPECT_TRUE(e1.breakable);
+
+  EXPECT_DOUBLE_EQ(e2.length, 150);
+  EXPECT_DOUBLE_EQ(e2.min_stop_block_length, 150);
+  EXPECT_TRUE(e2.breakable);
+
+  EXPECT_DOUBLE_EQ(e3.length, 150);
+  EXPECT_DOUBLE_EQ(e3.min_stop_block_length, 150);
+  EXPECT_TRUE(e3.breakable);
+
+  EXPECT_DOUBLE_EQ(e4.length, 150);
+  EXPECT_DOUBLE_EQ(e4.min_stop_block_length, 150);
+  EXPECT_TRUE(e4.breakable);
+
+  const auto& s1 = instance.get_station_list().get_station("Station1");
+
+  std::vector<size_t> s1_expected = {
+      instance.const_n().get_edge_index("g00", "g00_g01_0"),
+      instance.const_n().get_edge_index("g00_g01_0", "g01")};
+
+  EXPECT_EQ(s1_expected.size(), s1.tracks.size());
+
+  for (const auto& e : s1_expected) {
+    EXPECT_TRUE(std::find(s1.tracks.begin(), s1.tracks.end(), e) !=
+                s1.tracks.end())
+        << instance.const_n().get_edge(e).source << " to "
+        << instance.const_n().get_edge(e).target << " not found in station 1";
+  }
+}
+
 TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
   // Create instance members
   Network network("./example-networks/SimpleStation/network/");
