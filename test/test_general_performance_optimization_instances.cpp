@@ -440,7 +440,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(sol2_read.get_instance().has_route("tr2"));
 }
 
-TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops) {
+TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
   // Create instance members
   Network network("./example-networks/SimpleStation/network/");
 
@@ -448,10 +448,9 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops) {
 
   timetable.add_station("Station1");
   timetable.add_track_to_station("Station1", "g00", "g01", network);
-  timetable.add_track_to_station("Station1", "g01", "g00", network);
-  timetable.add_track_to_station("Station1", "g10", "g11", network);
 
   timetable.add_station("Station2");
+  timetable.add_track_to_station("Station2", "g00", "g01", network);
   timetable.add_track_to_station("Station2", "g10", "g11", network);
   timetable.add_track_to_station("Station2", "g11", "g10", network);
 
@@ -464,6 +463,63 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops) {
   EXPECT_TRUE(instance.check_consistency());
 
   instance.discretize_stops();
+
+  EXPECT_TRUE(instance.const_n().has_vertex("g00_g01_0"));
+  EXPECT_TRUE(instance.const_n().has_vertex("g10_g11_0"));
+  EXPECT_FALSE(instance.const_n().has_vertex("g00_g01_1"));
+  EXPECT_FALSE(instance.const_n().has_vertex("g11_g10_1"));
+
+  EXPECT_TRUE(instance.const_n().has_edge("g00", "g00_g01_0"));
+  EXPECT_TRUE(instance.const_n().has_edge("g00_g01_0", "g01"));
+  EXPECT_TRUE(instance.const_n().has_edge("g01", "g00_g01_0"));
+  EXPECT_TRUE(instance.const_n().has_edge("g00_g01_0", "g00"));
+
+  EXPECT_TRUE(instance.const_n().has_edge("g10", "g10_g11_0"));
+  EXPECT_TRUE(instance.const_n().has_edge("g10_g11_0", "g11"));
+  EXPECT_TRUE(instance.const_n().has_edge("g11", "g10_g11_0"));
+  EXPECT_TRUE(instance.const_n().has_edge("g10_g11_0", "g10"));
+
+  const auto& e1 = instance.const_n().get_edge("g00", "g00_g01_0");
+  const auto& e2 = instance.const_n().get_edge("g00_g01_0", "g01");
+  const auto& e3 = instance.const_n().get_edge("g01", "g00_g01_0");
+  const auto& e4 = instance.const_n().get_edge("g00_g01_0", "g00");
+
+  const auto& e5 = instance.const_n().get_edge("g10", "g10_g11_0");
+  const auto& e6 = instance.const_n().get_edge("g10_g11_0", "g11");
+  const auto& e7 = instance.const_n().get_edge("g11", "g10_g11_0");
+  const auto& e8 = instance.const_n().get_edge("g10_g11_0", "g10");
+
+  EXPECT_DOUBLE_EQ(e1.length, 150);
+  EXPECT_DOUBLE_EQ(e1.min_stop_block_length, 150);
+  EXPECT_TRUE(e1.breakable);
+
+  EXPECT_DOUBLE_EQ(e2.length, 150);
+  EXPECT_DOUBLE_EQ(e2.min_stop_block_length, 150);
+  EXPECT_TRUE(e2.breakable);
+
+  EXPECT_DOUBLE_EQ(e3.length, 150);
+  EXPECT_DOUBLE_EQ(e3.min_stop_block_length, 150);
+  EXPECT_TRUE(e3.breakable);
+
+  EXPECT_DOUBLE_EQ(e4.length, 150);
+  EXPECT_DOUBLE_EQ(e4.min_stop_block_length, 150);
+  EXPECT_TRUE(e4.breakable);
+
+  EXPECT_DOUBLE_EQ(e5.length, 150);
+  EXPECT_DOUBLE_EQ(e5.min_stop_block_length, 150);
+  EXPECT_TRUE(e5.breakable);
+
+  EXPECT_DOUBLE_EQ(e6.length, 150);
+  EXPECT_DOUBLE_EQ(e6.min_stop_block_length, 150);
+  EXPECT_TRUE(e6.breakable);
+
+  EXPECT_DOUBLE_EQ(e7.length, 150);
+  EXPECT_DOUBLE_EQ(e7.min_stop_block_length, 150);
+  EXPECT_TRUE(e7.breakable);
+
+  EXPECT_DOUBLE_EQ(e8.length, 150);
+  EXPECT_DOUBLE_EQ(e8.min_stop_block_length, 150);
+  EXPECT_TRUE(e8.breakable);
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
