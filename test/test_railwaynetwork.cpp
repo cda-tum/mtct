@@ -172,6 +172,96 @@ TEST(Functionality, NetworkFunctions) {
   EXPECT_FALSE(network.is_valid_successor(0, 2));
 }
 
+TEST(Functionality, NetworkPredecessor) {
+  // Create network
+
+  cda_rail::Network network;
+
+  const auto v_0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  const auto v_1 = network.add_vertex("v1", cda_rail::VertexType::NoBorder);
+  const auto v_2 = network.add_vertex("v2", cda_rail::VertexType::NoBorder);
+  const auto v_3 = network.add_vertex("v3", cda_rail::VertexType::NoBorder);
+  const auto v_4 = network.add_vertex("v4", cda_rail::VertexType::NoBorder);
+
+  const auto e_0_1 = network.add_edge(v_0, v_1, 100, 10);
+  const auto e_1_2 = network.add_edge(v_1, v_2, 50, 10);
+  const auto e_2_3 = network.add_edge(v_2, v_3, 50, 10);
+  const auto e_3_2 = network.add_edge(v_3, v_2, 50, 10);
+  const auto e_3_4 = network.add_edge(v_3, v_4, 100, 10);
+  const auto e_4_3 = network.add_edge(v_4, v_3, 100, 10);
+  const auto e_1_3 = network.add_edge(v_1, v_3, 100, 10);
+  const auto e_3_0 = network.add_edge(v_3, v_0, 400, 10);
+
+  network.add_successor(e_0_1, e_1_2);
+  network.add_successor(e_0_1, e_1_3);
+  network.add_successor(e_1_2, e_2_3);
+  network.add_successor(e_2_3, e_3_4);
+  network.add_successor(e_1_3, e_3_4);
+  network.add_successor(e_4_3, e_3_2);
+  network.add_successor(e_1_3, e_3_0);
+  network.add_successor(e_2_3, e_3_0);
+  network.add_successor(e_3_0, e_0_1);
+
+  // Predecessors of e_0_1 are e_3_0
+  const auto predecessors_0_1 = network.get_predecessors(e_0_1);
+  EXPECT_EQ(predecessors_0_1.size(), 1);
+  EXPECT_TRUE(std::find(predecessors_0_1.begin(), predecessors_0_1.end(),
+                        e_3_0) != predecessors_0_1.end())
+      << "e_3_0 is not a predecessor of e_0_1";
+
+  // Predecessors of e_1_2 is e_0_1
+  const auto predecessors_1_2 = network.get_predecessors(e_1_2);
+  EXPECT_EQ(predecessors_1_2.size(), 1);
+  EXPECT_TRUE(std::find(predecessors_1_2.begin(), predecessors_1_2.end(),
+                        e_0_1) != predecessors_1_2.end())
+      << "e_0_1 is not a predecessor of e_1_2";
+
+  // Predecessors of e_2_3 is e_1_2
+  const auto predecessors_2_3 = network.get_predecessors(e_2_3);
+  EXPECT_EQ(predecessors_2_3.size(), 1);
+  EXPECT_TRUE(std::find(predecessors_2_3.begin(), predecessors_2_3.end(),
+                        e_1_2) != predecessors_2_3.end())
+      << "e_1_2 is not a predecessor of e_2_3";
+
+  // Predecessors of e_3_2 is e_4_3
+  const auto predecessors_3_2 = network.get_predecessors(e_3_2);
+  EXPECT_EQ(predecessors_3_2.size(), 1);
+  EXPECT_TRUE(std::find(predecessors_3_2.begin(), predecessors_3_2.end(),
+                        e_4_3) != predecessors_3_2.end())
+      << "e_4_3 is not a predecessor of e_3_2";
+
+  // Predecessors of e_3_4 are e_2_3 and e_1_3
+  const auto predecessors_3_4 = network.get_predecessors(e_3_4);
+  EXPECT_EQ(predecessors_3_4.size(), 2);
+  EXPECT_TRUE(std::find(predecessors_3_4.begin(), predecessors_3_4.end(),
+                        e_2_3) != predecessors_3_4.end())
+      << "e_2_3 is not a predecessor of e_3_4";
+  EXPECT_TRUE(std::find(predecessors_3_4.begin(), predecessors_3_4.end(),
+                        e_1_3) != predecessors_3_4.end())
+      << "e_1_3 is not a predecessor of e_3_4";
+
+  // Predecessors of e_4_3 are None
+  const auto predecessors_4_3 = network.get_predecessors(e_4_3);
+  EXPECT_EQ(predecessors_4_3.size(), 0);
+
+  // Predecessors of e_1_3 is e_0_1
+  const auto predecessors_1_3 = network.get_predecessors(e_1_3);
+  EXPECT_EQ(predecessors_1_3.size(), 1);
+  EXPECT_TRUE(std::find(predecessors_1_3.begin(), predecessors_1_3.end(),
+                        e_0_1) != predecessors_1_3.end())
+      << "e_0_1 is not a predecessor of e_1_3";
+
+  // Predecessors of e_3_0 are e_1_3 and e_2_3
+  const auto predecessors_3_0 = network.get_predecessors(e_3_0);
+  EXPECT_EQ(predecessors_3_0.size(), 2);
+  EXPECT_TRUE(std::find(predecessors_3_0.begin(), predecessors_3_0.end(),
+                        e_1_3) != predecessors_3_0.end())
+      << "e_1_3 is not a predecessor of e_3_0";
+  EXPECT_TRUE(std::find(predecessors_3_0.begin(), predecessors_3_0.end(),
+                        e_2_3) != predecessors_3_0.end())
+      << "e_2_3 is not a predecessor of e_3_0";
+}
+
 TEST(Functionality, NetworkSections) {
   cda_rail::Network network;
 

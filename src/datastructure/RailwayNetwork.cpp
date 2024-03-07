@@ -573,6 +573,29 @@ cda_rail::Network::get_successors(size_t index) const {
   return successors[index];
 }
 
+const std::vector<size_t>
+cda_rail::Network::get_predecessors(size_t index) const {
+  /**
+   * Gets all predecessors of a given edge
+   *
+   * @param index Index of edge
+   *
+   * @return Vector of indices of predecessors
+   */
+  if (!has_edge(index)) {
+    throw exceptions::EdgeNotExistentException(index);
+  }
+  std::vector<size_t> ret_val;
+
+  for (const auto& e_1 : in_edges(get_edge(index).source)) {
+    if (is_valid_successor(e_1, index)) {
+      ret_val.push_back(e_1);
+    }
+  }
+
+  return ret_val;
+}
+
 void cda_rail::to_bool_optional(std::string& s, std::optional<bool>& b) {
   /**
    * Converts a string to an optional bool

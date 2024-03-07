@@ -293,6 +293,7 @@ public:
   [[nodiscard]] std::vector<size_t> in_edges(const std::string& name) const {
     return in_edges(get_vertex_index(name));
   };
+  [[nodiscard]] const std::vector<size_t>  get_predecessors(size_t index) const;
   [[nodiscard]] const std::vector<size_t>& get_successors(size_t index) const;
   [[nodiscard]] const std::vector<size_t>&
   get_successors(size_t source_id, size_t target_id) const {
