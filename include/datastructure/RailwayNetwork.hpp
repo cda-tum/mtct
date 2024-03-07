@@ -115,6 +115,11 @@ private:
       std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
           edge_pairs) const;
 
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_routes_of_given_length(std::optional<size_t> v_0,
+                             std::optional<size_t> e_0, double desired_length,
+                             bool reverse_direction) const;
+
 public:
   // Constructors
   Network() = default;
@@ -207,6 +212,23 @@ public:
     return get_edge_index(get_vertex_index(source_name),
                           get_vertex_index(target_name));
   };
+
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_paths_of_length_starting_in_vertex(size_t v, double desired_len) const {
+    return all_routes_of_given_length(v, std::nullopt, desired_len, false);
+  };
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_paths_of_length_starting_in_edge(size_t e, double desired_len) const {
+    return all_routes_of_given_length(std::nullopt, e, desired_len, false);
+  };
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_paths_of_length_ending_in_vertex(size_t v, double desired_len) const {
+    return all_routes_of_given_length(v, std::nullopt, desired_len, true);
+  };
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_paths_of_length_ending_in_edge(size_t e, double desired_len) const {
+    return all_routes_of_given_length(std::nullopt, e, desired_len, true);
+  }
 
   [[nodiscard]] bool has_vertex(size_t index) const {
     return (index < vertices.size());

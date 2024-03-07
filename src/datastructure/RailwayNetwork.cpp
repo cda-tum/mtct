@@ -1647,3 +1647,80 @@ cda_rail::Network::separate_stop_edges(const std::vector<size_t>& stop_edges) {
   }
   return ret_val;
 }
+
+std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
+    std::optional<size_t> v_0, std::optional<size_t> e_0, double desired_length,
+    bool reverse_direction) const {
+  /**
+   * Finds all routes from a specified starting point in the specified
+   * direction. The routes are of a specified length, i.e., at least that long,
+   * however removing the last edge results in a route that is too short.
+   *
+   * @param v_0: The index of the starting vertex. If specified, e_0 should be
+   * empty.
+   * @param e_0: The index of the starting edge. If specified, v_0 should be
+   * empty.
+   * @param desired_length: The desired length of the routes.
+   * @param reverse_direction: If true, the routes are in the reverse direction.
+   * Default is false, i.e., in edge order.
+   */
+
+  if (v_0.has_value() && e_0.has_value()) {
+    throw exceptions::InvalidInputException("Both v_0 and e_0 are specified");
+  }
+  if (!v_0.has_value() && !e_0.has_value()) {
+    throw exceptions::InvalidInputException(
+        "Neither v_0 nor e_0 are specified");
+  }
+
+  if (v_0.has_value() && !has_vertex(v_0.value())) {
+    throw exceptions::VertexNotExistentException(v_0.value());
+  }
+  if (e_0.has_value() && !has_edge(e_0.value())) {
+    throw exceptions::EdgeNotExistentException(e_0.value());
+  }
+
+  if (desired_length <= 0) {
+    throw exceptions::InvalidInputException(
+        "Desired length is not strictly positive");
+  }
+
+  const std::vector<size_t> edges_to_consider =
+      v_0.has_value()
+          ? (reverse_direction ? in_edges(v_0.value()) : out_edges(v_0.value()))
+          : std::vector<size_t>{e_0.value()};
+
+  std::vector<std::vector<size_t>> ret_val;
+
+  for (const auto& e_index : edges_to_consider) {
+    const auto& e     = get_edge(e_index);
+    const auto& e_len = e.length;
+
+    if (e_len >= desired_length) {
+      ret_val.emplace_back(1, e_index);
+      continue;
+    }
+
+    const auto next_edges =
+        reverse_direction ? in_edges(e.source) : out_edges(e.target);
+
+    for (const auto& e_next_index : next_edges) {
+      const auto paths_e_next =
+          all_routes_of_given_length(std::nullopt, e_next_index,
+                                     desired_length - e_len, reverse_direction);
+      for (const auto& path_e_next : paths_e_next) {
+        // If e_index already in path (cycle!), skip
+        if (std::find(path_e_next.begin(), path_e_next.end(), e_index) !=
+            path_e_next.end()) {
+          continue;
+        }
+        std::vector<size_t> path;
+        path.emplace_back(e_index);
+        path.insert(path.end(), path_e_next.begin(), path_e_next.end());
+        ret_val.push_back(path);
+      }
+    }
+  }
+
+  return ret_val;
+}
