@@ -1,4 +1,5 @@
 #pragma once
+#include "CustomExceptions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
 #include <filesystem>
@@ -58,8 +59,14 @@ public:
   [[nodiscard]] size_t size() const { return stations.size(); };
   [[nodiscard]] std::vector<std::string> get_station_names() const;
 
+  void add_track_to_station(const std::string& name, size_t track);
   void add_track_to_station(const std::string& name, size_t track,
-                            const Network& network);
+                            const Network& network) {
+    if (!network.has_edge(track)) {
+      throw exceptions::EdgeNotExistentException(track);
+    }
+    add_track_to_station(name, track);
+  };
   void add_track_to_station(const std::string& name, size_t source,
                             size_t target, const Network& network) {
     add_track_to_station(name, network.get_edge_index(source, target), network);
