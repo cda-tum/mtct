@@ -3374,4 +3374,20 @@ TEST(Functionality, Iterators) {
   //}
 }
 
+TEST(Functionality, IsFullyInStation) {
+  cda_rail::StationList stations;
+
+  stations.add_station("Station1");
+
+  stations.add_track_to_station("Station1", 0);
+  stations.add_track_to_station("Station1", 1);
+  stations.add_track_to_station("Station1", 3);
+
+  EXPECT_TRUE(stations.is_fully_in_station("Station1", {0}));
+  EXPECT_TRUE(stations.is_fully_in_station("Station1", {1}));
+  EXPECT_TRUE(stations.is_fully_in_station("Station1", {0, 1}));
+  EXPECT_TRUE(stations.is_fully_in_station("Station1", {0, 1, 3}));
+  EXPECT_FALSE(stations.is_fully_in_station("Station1", {0, 2}));
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
