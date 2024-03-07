@@ -573,8 +573,7 @@ cda_rail::Network::get_successors(size_t index) const {
   return successors[index];
 }
 
-const std::vector<size_t>
-cda_rail::Network::get_predecessors(size_t index) const {
+std::vector<size_t> cda_rail::Network::get_predecessors(size_t index) const {
   /**
    * Gets all predecessors of a given edge
    *
