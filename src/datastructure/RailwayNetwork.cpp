@@ -1708,11 +1708,18 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
           all_routes_of_given_length(std::nullopt, e_next_index,
                                      desired_length - e_len, reverse_direction);
       for (const auto& path_e_next : paths_e_next) {
-        // If e_index already in path (cycle!), skip
-        if (std::find(path_e_next.begin(), path_e_next.end(), e_index) !=
-            path_e_next.end()) {
+        // check for cycle
+        const auto edges_r = reverse_direction
+                                 ? in_edges(get_edge(e_index).target)
+                                 : out_edges(get_edge(e_index).source);
+        if (std::any_of(
+                edges_r.begin(), edges_r.end(), [&path_e_next](const auto& e) {
+                  return std::find(path_e_next.begin(), path_e_next.end(), e) !=
+                         path_e_next.end();
+                })) {
           continue;
         }
+
         std::vector<size_t> path;
         path.emplace_back(e_index);
         path.insert(path.end(), path_e_next.begin(), path_e_next.end());
