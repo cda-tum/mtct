@@ -1693,8 +1693,7 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
   std::vector<std::vector<size_t>> ret_val;
 
   for (const auto& e_index : edges_to_consider) {
-    const auto& e     = get_edge(e_index);
-    const auto& e_len = e.length;
+    const auto& e_len = get_edge(e_index).length;
 
     if (e_len >= desired_length) {
       ret_val.emplace_back(1, e_index);
@@ -1702,7 +1701,7 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
     }
 
     const auto next_edges =
-        reverse_direction ? in_edges(e.source) : out_edges(e.target);
+        reverse_direction ? get_predecessors(e_index) : get_successors(e_index);
 
     for (const auto& e_next_index : next_edges) {
       const auto paths_e_next =
