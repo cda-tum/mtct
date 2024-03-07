@@ -478,6 +478,11 @@ TEST(Functionality, NetworkForwardPathsFromVertex) {
   const auto forward_paths_12 =
       network.all_paths_of_length_starting_in_vertex(v_5, 1);
   EXPECT_EQ(forward_paths_12.size(), 0);
+
+  // Forward paths from v_1 with length 601 is None
+  const auto forward_paths_13 =
+      network.all_paths_of_length_starting_in_vertex(v_1, 601);
+  EXPECT_EQ(forward_paths_13.size(), 0);
 }
 
 TEST(Functionality, NetworkForwardPathsFromEdge) {
@@ -568,6 +573,11 @@ TEST(Functionality, NetworkForwardPathsFromEdge) {
               forward_paths_3.end())
       << "(e_1_3, e_3_0) is not in the forward paths from e_1_3 with length "
          "110";
+
+  // Forward path from e_1_2 with length 601 is None
+  const auto forward_paths_4 =
+      network.all_paths_of_length_starting_in_edge(e_1_2, 601);
+  EXPECT_EQ(forward_paths_4.size(), 0);
 }
 
 TEST(Functionality, NetworkBackwardPathsFromVertex) {
@@ -644,6 +654,11 @@ TEST(Functionality, NetworkBackwardPathsFromVertex) {
   const auto backward_paths_3 =
       network.all_paths_of_length_ending_in_vertex(v_0, 601);
   EXPECT_EQ(backward_paths_3.size(), 0);
+
+  // Backward paths from v_4 with length 701 is None
+  const auto backward_paths_4 =
+      network.all_paths_of_length_ending_in_vertex(v_4, 701);
+  EXPECT_EQ(backward_paths_4.size(), 0);
 }
 
 TEST(Functionality, NetworkBackwardPathsFromEdge) {
