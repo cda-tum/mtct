@@ -10,7 +10,7 @@ struct EdgeTarget {
   double      max_speed;
   bool        breakable;
   double      min_block_length;
-  double      min_stop_block_length = 1;
+  double      min_stop_block_length = 100;
 };
 
 // NOLINTBEGIN(clang-diagnostic-unused-result,google-readability-function-size,readability-function-size)
