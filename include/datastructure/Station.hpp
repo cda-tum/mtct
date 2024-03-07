@@ -40,6 +40,9 @@ public:
   StationList& operator=(StationList&& other)      = default;
   ~StationList()                                   = default;
 
+  [[nodiscard]] bool is_fully_in_station(const std::string&  station_name,
+                                         std::vector<size_t> edges) const;
+
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
   [[nodiscard]] auto begin() const { return stations.begin(); };

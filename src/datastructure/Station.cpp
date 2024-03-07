@@ -171,3 +171,18 @@ void cda_rail::StationList::update_after_discretization(
     }
   }
 }
+
+bool cda_rail::StationList::is_fully_in_station(
+    const std::string& station_name, std::vector<size_t> edges) const {
+  if (!has_station(station_name)) {
+    throw exceptions::StationNotExistentException(station_name);
+  }
+
+  const auto& station_tracks = get_station(station_name).tracks;
+
+  return std::all_of(
+      edges.begin(), edges.end(), [&station_tracks](size_t edge) {
+        return std::find(station_tracks.begin(), station_tracks.end(), edge) !=
+               station_tracks.end();
+      });
+}
