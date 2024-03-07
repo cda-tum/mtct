@@ -182,6 +182,7 @@ TEST(Functionality, NetworkPredecessor) {
   const auto v_2 = network.add_vertex("v2", cda_rail::VertexType::NoBorder);
   const auto v_3 = network.add_vertex("v3", cda_rail::VertexType::NoBorder);
   const auto v_4 = network.add_vertex("v4", cda_rail::VertexType::NoBorder);
+  const auto v_5 = network.add_vertex("v5", cda_rail::VertexType::NoBorder);
 
   const auto e_0_1 = network.add_edge(v_0, v_1, 100, 10);
   const auto e_1_2 = network.add_edge(v_1, v_2, 50, 10);
@@ -191,6 +192,7 @@ TEST(Functionality, NetworkPredecessor) {
   const auto e_4_3 = network.add_edge(v_4, v_3, 100, 10);
   const auto e_1_3 = network.add_edge(v_1, v_3, 100, 10);
   const auto e_3_0 = network.add_edge(v_3, v_0, 400, 10);
+  const auto e_4_5 = network.add_edge(v_4, v_5, 10, 10);
 
   network.add_successor(e_0_1, e_1_2);
   network.add_successor(e_0_1, e_1_3);
@@ -201,6 +203,7 @@ TEST(Functionality, NetworkPredecessor) {
   network.add_successor(e_1_3, e_3_0);
   network.add_successor(e_2_3, e_3_0);
   network.add_successor(e_3_0, e_0_1);
+  network.add_successor(e_3_4, e_4_5);
 
   // Predecessors of e_0_1 are e_3_0
   const auto predecessors_0_1 = network.get_predecessors(e_0_1);
@@ -260,6 +263,221 @@ TEST(Functionality, NetworkPredecessor) {
   EXPECT_TRUE(std::find(predecessors_3_0.begin(), predecessors_3_0.end(),
                         e_2_3) != predecessors_3_0.end())
       << "e_2_3 is not a predecessor of e_3_0";
+
+  // Predecessors of e_4_5 is e_3_4
+  const auto predecessors_4_5 = network.get_predecessors(e_4_5);
+  EXPECT_EQ(predecessors_4_5.size(), 1);
+  EXPECT_TRUE(std::find(predecessors_4_5.begin(), predecessors_4_5.end(),
+                        e_3_4) != predecessors_4_5.end())
+      << "e_3_4 is not a predecessor of e_4_5";
+}
+
+TEST(Functionality, NetworkForwardPathsFromVertex) {
+  // Create network
+
+  cda_rail::Network network;
+
+  const auto v_0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  const auto v_1 = network.add_vertex("v1", cda_rail::VertexType::NoBorder);
+  const auto v_2 = network.add_vertex("v2", cda_rail::VertexType::NoBorder);
+  const auto v_3 = network.add_vertex("v3", cda_rail::VertexType::NoBorder);
+  const auto v_4 = network.add_vertex("v4", cda_rail::VertexType::NoBorder);
+  const auto v_5 = network.add_vertex("v5", cda_rail::VertexType::NoBorder);
+
+  const auto e_0_1 = network.add_edge(v_0, v_1, 100, 10);
+  const auto e_1_2 = network.add_edge(v_1, v_2, 50, 10);
+  const auto e_2_3 = network.add_edge(v_2, v_3, 50, 10);
+  const auto e_3_2 = network.add_edge(v_3, v_2, 50, 10);
+  const auto e_3_4 = network.add_edge(v_3, v_4, 100, 10);
+  const auto e_4_3 = network.add_edge(v_4, v_3, 100, 10);
+  const auto e_1_3 = network.add_edge(v_1, v_3, 100, 10);
+  const auto e_3_0 = network.add_edge(v_3, v_0, 400, 10);
+  const auto e_4_5 = network.add_edge(v_4, v_5, 10, 10);
+
+  network.add_successor(e_0_1, e_1_2);
+  network.add_successor(e_0_1, e_1_3);
+  network.add_successor(e_1_2, e_2_3);
+  network.add_successor(e_2_3, e_3_4);
+  network.add_successor(e_1_3, e_3_4);
+  network.add_successor(e_4_3, e_3_2);
+  network.add_successor(e_1_3, e_3_0);
+  network.add_successor(e_2_3, e_3_0);
+  network.add_successor(e_3_0, e_0_1);
+  network.add_successor(e_3_4, e_4_5);
+
+  // Forward paths from v_0 with length 50 is e_0_1
+  const auto forward_paths_0 =
+      network.all_paths_of_length_starting_in_vertex(v_0, 50);
+  EXPECT_EQ(forward_paths_0.size(), 1);
+  EXPECT_TRUE(std::find(forward_paths_0.begin(), forward_paths_0.end(),
+                        std::vector<size_t>{e_0_1}) != forward_paths_0.end())
+      << "e_0_1 is not in the forward paths from v_0 with length 50";
+
+  // Forward paths from v_0 with length 100 is e_0_1
+  const auto forward_paths_1 =
+      network.all_paths_of_length_starting_in_vertex(v_0, 100);
+  EXPECT_EQ(forward_paths_1.size(), 1);
+  EXPECT_TRUE(std::find(forward_paths_1.begin(), forward_paths_1.end(),
+                        std::vector<size_t>{e_0_1}) != forward_paths_1.end())
+      << "e_0_1 is not in the forward paths from v_0 with length 100";
+
+  // Forward paths from v_0 with length 150 are (e_0_1,e_1_2) and (e_0_1, e_1_3)
+  const auto forward_paths_2 =
+      network.all_paths_of_length_starting_in_vertex(v_0, 150);
+  EXPECT_EQ(forward_paths_2.size(), 2);
+  EXPECT_TRUE(std::find(forward_paths_2.begin(), forward_paths_2.end(),
+                        std::vector<size_t>{e_0_1, e_1_2}) !=
+              forward_paths_2.end())
+      << "(e_0_1, e_1_2) is not in the forward paths from v_0 with length 150";
+  EXPECT_TRUE(std::find(forward_paths_2.begin(), forward_paths_2.end(),
+                        std::vector<size_t>{e_0_1, e_1_3}) !=
+              forward_paths_2.end())
+      << "(e_0_1, e_1_3) is not in the forward paths from v_0 with length 150";
+
+  // Forward paths from v_0 with length 180 are (e_0_1,e_1_2,e_2_3) and (e_0_1,
+  // e_1_3)
+  const auto forward_paths_3 =
+      network.all_paths_of_length_starting_in_vertex(v_0, 180);
+  EXPECT_EQ(forward_paths_3.size(), 2);
+  EXPECT_TRUE(std::find(forward_paths_3.begin(), forward_paths_3.end(),
+                        std::vector<size_t>{e_0_1, e_1_2, e_2_3}) !=
+              forward_paths_3.end())
+      << "(e_0_1, e_1_2, e_2_3) is not in the forward paths from v_0 with "
+         "length 180";
+  EXPECT_TRUE(std::find(forward_paths_3.begin(), forward_paths_3.end(),
+                        std::vector<size_t>{e_0_1, e_1_3}) !=
+              forward_paths_3.end())
+      << "(e_0_1, e_1_3) is not in the forward paths from v_0 with length 180";
+
+  // Forward paths from v_0 with length 300 are (e_0_1,e_1_2,e_2_3,e_3_4),
+  // (e_0_1, e_1_2, e_2_3, e_3_0), (e_0_1, e_1_3, e_3_4), and (e_0_1, e_1_3,
+  // e_3_0)
+  const auto forward_paths_4 =
+      network.all_paths_of_length_starting_in_vertex(v_0, 300);
+  EXPECT_EQ(forward_paths_4.size(), 4);
+  EXPECT_TRUE(std::find(forward_paths_4.begin(), forward_paths_4.end(),
+                        std::vector<size_t>{e_0_1, e_1_2, e_2_3, e_3_4}) !=
+              forward_paths_4.end())
+      << "(e_0_1, e_1_2, e_2_3, e_3_4) is not in the forward paths from v_0 "
+         "with length 300";
+  EXPECT_TRUE(std::find(forward_paths_4.begin(), forward_paths_4.end(),
+                        std::vector<size_t>{e_0_1, e_1_2, e_2_3, e_3_0}) !=
+              forward_paths_4.end())
+      << "(e_0_1, e_1_2, e_2_3, e_3_0) is not in the forward paths from v_0 "
+         "with length 300";
+  EXPECT_TRUE(std::find(forward_paths_4.begin(), forward_paths_4.end(),
+                        std::vector<size_t>{e_0_1, e_1_3, e_3_4}) !=
+              forward_paths_4.end())
+      << "(e_0_1, e_1_3, e_3_4) is not in the forward paths from v_0 with "
+         "length 300";
+  EXPECT_TRUE(std::find(forward_paths_4.begin(), forward_paths_4.end(),
+                        std::vector<size_t>{e_0_1, e_1_3, e_3_0}) !=
+              forward_paths_4.end())
+      << "(e_0_1, e_1_3, e_3_0) is not in the forward paths from v_0 with "
+         "length 300";
+
+  // Forward paths from v_0 with length 400 are (e_0_1, e_1_2, e_2_3, e_3_0) and
+  // (e_0_1, e_1_3, e_3_0)
+  const auto forward_paths_5 =
+      network.all_paths_of_length_starting_in_vertex(v_0, 400);
+  EXPECT_EQ(forward_paths_5.size(), 2);
+  EXPECT_TRUE(std::find(forward_paths_5.begin(), forward_paths_5.end(),
+                        std::vector<size_t>{e_0_1, e_1_2, e_2_3, e_3_0}) !=
+              forward_paths_5.end())
+      << "(e_0_1, e_1_2, e_2_3, e_3_0) is not in the forward paths from v_0 "
+         "with length 400";
+  EXPECT_TRUE(std::find(forward_paths_5.begin(), forward_paths_5.end(),
+                        std::vector<size_t>{e_0_1, e_1_3, e_3_0}) !=
+              forward_paths_5.end())
+      << "(e_0_1, e_1_3, e_3_0) is not in the forward paths from v_0 with "
+         "length 400";
+
+  // Forward paths from v_0 with length 600 are (e_0_1, e_1_2, e_2_3, e_3_0) and
+  // (e_0_1, e_1_3, e_3_0)
+  const auto forward_paths_6 =
+      network.all_paths_of_length_starting_in_vertex(v_0, 600);
+  EXPECT_EQ(forward_paths_6.size(), 2);
+  EXPECT_TRUE(std::find(forward_paths_6.begin(), forward_paths_6.end(),
+                        std::vector<size_t>{e_0_1, e_1_2, e_2_3, e_3_0}) !=
+              forward_paths_6.end())
+      << "(e_0_1, e_1_2, e_2_3, e_3_0) is not in the forward paths from v_0 "
+         "with length 600";
+  EXPECT_TRUE(std::find(forward_paths_6.begin(), forward_paths_6.end(),
+                        std::vector<size_t>{e_0_1, e_1_3, e_3_0}) !=
+              forward_paths_6.end())
+      << "(e_0_1, e_1_3, e_3_0) is not in the forward paths from v_0 with "
+         "length 600";
+
+  // Forward paths from v_0 with length 601 are None, due to cycle
+  const auto forward_paths_7 =
+      network.all_paths_of_length_starting_in_vertex(v_0, 601);
+  EXPECT_EQ(forward_paths_7.size(), 0);
+
+  // Forward paths from v_1 with length 25 are e_1_2 and e_1_3
+  const auto forward_paths_8 =
+      network.all_paths_of_length_starting_in_vertex(v_1, 25);
+  EXPECT_EQ(forward_paths_8.size(), 2);
+  EXPECT_TRUE(std::find(forward_paths_8.begin(), forward_paths_8.end(),
+                        std::vector<size_t>{e_1_2}) != forward_paths_8.end())
+      << "e_1_2 is not in the forward paths from v_1 with length 25";
+  EXPECT_TRUE(std::find(forward_paths_8.begin(), forward_paths_8.end(),
+                        std::vector<size_t>{e_1_3}) != forward_paths_8.end())
+      << "e_1_3 is not in the forward paths from v_1 with length 25";
+
+  // Forward paths from v_1 with length 250 are (e_1_2, e_2_3, e_3_4), (e_1_2,
+  // e_2_3, e_3_0), (e_1_3, e_3_4), and (e_1_3, e_3_0)
+  const auto forward_paths_9 =
+      network.all_paths_of_length_starting_in_vertex(v_1, 150);
+  EXPECT_EQ(forward_paths_9.size(), 4);
+  EXPECT_TRUE(std::find(forward_paths_9.begin(), forward_paths_9.end(),
+                        std::vector<size_t>{e_1_2, e_2_3, e_3_4}) !=
+              forward_paths_9.end())
+      << "(e_1_2, e_2_3, e_3_4) is not in the forward paths from v_1 with "
+         "length 150";
+  EXPECT_TRUE(std::find(forward_paths_9.begin(), forward_paths_9.end(),
+                        std::vector<size_t>{e_1_2, e_2_3, e_3_0}) !=
+              forward_paths_9.end())
+      << "(e_1_2, e_2_3, e_3_0) is not in the forward paths from v_1 with "
+         "length 150";
+  EXPECT_TRUE(std::find(forward_paths_9.begin(), forward_paths_9.end(),
+                        std::vector<size_t>{e_1_3, e_3_4}) !=
+              forward_paths_9.end())
+      << "(e_1_3, e_3_4) is not in the forward paths from v_1 with length 150";
+  EXPECT_TRUE(std::find(forward_paths_9.begin(), forward_paths_9.end(),
+                        std::vector<size_t>{e_1_3, e_3_0}) !=
+              forward_paths_9.end())
+      << "(e_1_3, e_3_0) is not in the forward paths from v_1 with length 150";
+
+  // Forward paths from v_3 with length 25 are e_3_2, e_3_0 and e_3_4
+  const auto forward_paths_10 =
+      network.all_paths_of_length_starting_in_vertex(v_3, 25);
+  EXPECT_EQ(forward_paths_10.size(), 3);
+  EXPECT_TRUE(std::find(forward_paths_10.begin(), forward_paths_10.end(),
+                        std::vector<size_t>{e_3_2}) != forward_paths_10.end())
+      << "e_3_2 is not in the forward paths from v_3 with length 25";
+  EXPECT_TRUE(std::find(forward_paths_10.begin(), forward_paths_10.end(),
+                        std::vector<size_t>{e_3_0}) != forward_paths_10.end())
+      << "e_3_0 is not in the forward paths from v_3 with length 25";
+  EXPECT_TRUE(std::find(forward_paths_10.begin(), forward_paths_10.end(),
+                        std::vector<size_t>{e_3_4}) != forward_paths_10.end())
+      << "e_3_4 is not in the forward paths from v_3 with length 25";
+
+  // Forward paths from v_3 with length 105 are (e_3_4,e_4_5) and e_3_0
+  const auto forward_paths_11 =
+      network.all_paths_of_length_starting_in_vertex(v_3, 105);
+  EXPECT_EQ(forward_paths_11.size(), 2);
+  EXPECT_TRUE(std::find(forward_paths_11.begin(), forward_paths_11.end(),
+                        std::vector<size_t>{e_3_4, e_4_5}) !=
+              forward_paths_11.end())
+      << "(e_3_4, e_4_5) is not in the forward paths from v_3 with length 105";
+  EXPECT_TRUE(std::find(forward_paths_11.begin(), forward_paths_11.end(),
+                        std::vector<size_t>{e_3_0}) != forward_paths_11.end())
+      << "e_3_0 is not in the forward paths from v_3 with length 105";
+
+  // Forward paths from v_5 with length 1 are None
+  const auto forward_paths_12 =
+      network.all_paths_of_length_starting_in_vertex(v_5, 1);
+  EXPECT_EQ(forward_paths_12.size(), 0);
 }
 
 TEST(Functionality, NetworkSections) {
