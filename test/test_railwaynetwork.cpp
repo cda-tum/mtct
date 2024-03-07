@@ -734,9 +734,9 @@ TEST(Functionality, NetworkBackwardPathsFromEdge) {
       << "(e_1_2, e_0_1, e_3_0) is not in the backward paths from e_1_2 with "
          "length 151";
 
-  // Backward paths from e_2_3 with length 151 is None
+  // Backward paths from e_3_2 with length 151 is None
   const auto backward_paths_5 =
-      network.all_paths_of_length_ending_in_edge(e_2_3, 151);
+      network.all_paths_of_length_ending_in_edge(e_3_2, 151);
   EXPECT_EQ(backward_paths_5.size(), 0);
 }
 
