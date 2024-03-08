@@ -229,7 +229,8 @@ public:
     return tr_in_sec;
   };
   [[nodiscard]] std::vector<size_t>
-  edges_used_by_train(const std::string& train_name, bool fixed_routes) const {
+  edges_used_by_train(const std::string& train_name, bool fixed_routes,
+                      bool error_if_no_route = true) const {
     /**
      * Returns edges potentially used by a specific train.
      *
@@ -240,7 +241,7 @@ public:
      * @return edges potentially used by a specific train
      */
 
-    if (!fixed_routes) {
+    if (!fixed_routes || (!error_if_no_route && !has_route(train_name))) {
       // return vector with values 0, 1, ..., num_edges-1
       std::vector<size_t> return_edges(this->const_n().number_of_edges());
       std::iota(return_edges.begin(), return_edges.end(), 0);
@@ -255,7 +256,8 @@ public:
   };
   [[nodiscard]] std::vector<size_t>
   trains_on_edge(size_t edge_id, bool fixed_routes,
-                 const std::vector<size_t>& trains_to_consider) const {
+                 const std::vector<size_t>& trains_to_consider,
+                 bool                       error_if_not_route = true) const {
     /**
      * Returns all trains that are present on a specific edge, but only consider
      * a subset of trains.
@@ -278,16 +280,26 @@ public:
     }
     std::vector<size_t> return_trains;
     for (const auto tr : trains_to_consider) {
-      const auto& tr_route =
-          this->get_route(get_train_list().get_train(tr).name);
-      if (tr_route.contains_edge(edge_id)) {
+      bool add_train = false;
+      if (!error_if_not_route &&
+          !has_route(get_train_list().get_train(tr).name)) {
+        add_train = true;
+      } else {
+        const auto& tr_route =
+            this->get_route(get_train_list().get_train(tr).name);
+        if (tr_route.contains_edge(edge_id)) {
+          add_train = true;
+        }
+      }
+      if (add_train) {
         return_trains.push_back(tr);
       }
     }
     return return_trains;
   };
-  [[nodiscard]] std::vector<size_t> trains_on_edge(size_t edge_id,
-                                                   bool   fixed_routes) const {
+  [[nodiscard]] std::vector<size_t>
+  trains_on_edge_mixed_routing(size_t edge_id, bool fixed_routes,
+                               bool error_if_not_route = true) const {
     /**
      * Returns all trains that are present on a specific edge at any time.
      *
@@ -299,7 +311,12 @@ public:
      */
     std::vector<size_t> trains_to_consider(get_train_list().size());
     std::iota(trains_to_consider.begin(), trains_to_consider.end(), 0);
-    return trains_on_edge(edge_id, fixed_routes, trains_to_consider);
+    return trains_on_edge(edge_id, fixed_routes, trains_to_consider,
+                          error_if_not_route);
+  }
+  [[nodiscard]] std::vector<size_t> trains_on_edge(size_t edge_id,
+                                                   bool   fixed_routes) const {
+    return trains_on_edge_mixed_routing(edge_id, fixed_routes, true);
   };
 
   [[nodiscard]] bool has_route(const std::string& train_name) const {
