@@ -12,6 +12,19 @@
 
 namespace cda_rail::solver::mip_based {
 
+struct SolutionSettings {
+  bool         postprocess   = false;
+  ExportOption export_option = ExportOption::NoExport;
+  std::string  name          = "model";
+  std::string  path;
+};
+
+struct SolutionSettingsMovingBlock {
+  ExportOption export_option = ExportOption::NoExport;
+  std::string  name          = "model";
+  std::string  path;
+};
+
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 class MessageCallback : public GRBCallback {

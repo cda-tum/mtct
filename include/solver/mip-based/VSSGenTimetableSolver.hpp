@@ -38,13 +38,6 @@ struct ModelSettings {
   bool       use_schedule_cuts = true;
 };
 
-struct SolutionSettings {
-  bool         postprocess   = false;
-  ExportOption export_option = ExportOption::NoExport;
-  std::string  name          = "model";
-  std::string  path;
-};
-
 class VSSGenTimetableSolver
     : public GeneralMIPSolver<instances::VSSGenerationTimetable,
                               instances::SolVSSGenerationTimetable> {

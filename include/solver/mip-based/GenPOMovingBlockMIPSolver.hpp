@@ -1,5 +1,6 @@
 #include "datastructure/GeneralTimetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "solver/GeneralSolver.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
 #include <filesystem>
@@ -10,6 +11,16 @@ class GenPOMovingBlockMIPSolver
     : public GeneralMIPSolver<
           instances::GeneralPerformanceOptimizationInstance,
           instances::SolGeneralPerformanceOptimizationInstance> {
+private:
+  SolutionSettings solution_settings;
+  size_t           num_tr;
+  size_t           num_edges;
+  size_t           num_vertices;
+  int              max_t;
+
+  void create_variables();
+  void create_timing_variables();
+
 protected:
   void solve_init_gen_po_mb(int time_limit, bool debug_input) {
     this->solve_init_general_mip(time_limit, debug_input);
@@ -43,6 +54,12 @@ public:
 
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
-  solve(int time_limit, bool debug_input) override;
+  solve(int time_limit, bool debug_input) override {
+    return solve({}, time_limit, debug_input);
+  };
+
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
+  solve(const SolutionSettingsMovingBlock& solution_settings, int time_limit,
+        bool debug_input);
 };
 } // namespace cda_rail::solver::mip_based
