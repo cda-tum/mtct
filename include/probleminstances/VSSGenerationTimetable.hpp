@@ -68,24 +68,10 @@ public:
       const vss::SeparationFunction& sep_func = &vss::functions::uniform);
 
   // Helper
-  [[nodiscard]] std::vector<size_t>
-  trains_in_section(const std::vector<size_t>& section) const;
+
   [[nodiscard]] std::vector<size_t> trains_at_t(int t) const;
   [[nodiscard]] std::vector<size_t>
   trains_at_t(int t, const std::vector<size_t>& trains_to_consider) const;
-  [[nodiscard]] bool                has_route_for_every_train() const;
-  [[nodiscard]] std::vector<size_t> trains_on_edge(size_t edge_id,
-                                                   bool   fixed_routes) const;
-  [[nodiscard]] std::vector<size_t>
-  trains_on_edge(size_t edge_id, bool fixed_routes,
-                 const std::vector<size_t>& trains_to_consider) const;
-  [[nodiscard]] std::vector<size_t>
-  edges_used_by_train(size_t train_id, bool fixed_routes) const {
-    return edges_used_by_train(get_train_list().get_train(train_id).name,
-                               fixed_routes);
-  };
-  [[nodiscard]] std::vector<size_t>
-  edges_used_by_train(const std::string& train_name, bool fixed_routes) const;
 };
 
 class SolVSSGenerationTimetable
