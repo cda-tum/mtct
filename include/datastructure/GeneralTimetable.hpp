@@ -455,7 +455,7 @@ public:
 
   template <typename StationType = std::string, typename... Args,
             typename             = std::enable_if_t<
-                std::is_convertible_v<StationType, std::string>>>
+                            std::is_convertible_v<StationType, std::string>>>
   void add_stop(size_t train_index, const StationType& station_name, bool sort,
                 decltype(T::time_type()) t0, decltype(T::time_type()) tn,
                 Args... args) {
@@ -485,9 +485,9 @@ public:
   template <typename TrainType   = std::string,
             typename StationType = std::string, typename... Args,
             typename             = std::enable_if_t<
-                !std::is_convertible_v<TrainType, size_t> &&
-                std::is_convertible_v<TrainType, std::string> &&
-                std::is_convertible_v<StationType, std::string>>>
+                            !std::is_convertible_v<TrainType, size_t> &&
+                            std::is_convertible_v<TrainType, std::string> &&
+                            std::is_convertible_v<StationType, std::string>>>
   void add_stop(const TrainType& train_name, const StationType& station_name,
                 bool sort, decltype(T::time_type()) t0,
                 decltype(T::time_type()) tn, Args... args) {
@@ -496,7 +496,7 @@ public:
   };
   template <typename StationType = std::string, typename... Args,
             typename             = std::enable_if_t<
-                std::is_convertible_v<StationType, std::string>>>
+                            std::is_convertible_v<StationType, std::string>>>
   void add_stop(size_t train_index, const StationType& station_name,
                 decltype(T::time_type()) t0, decltype(T::time_type()) tn,
                 Args... args) {
@@ -505,9 +505,9 @@ public:
   template <typename TrainType   = std::string,
             typename StationType = std::string, typename... Args,
             typename             = std::enable_if_t<
-                !std::is_convertible_v<TrainType, size_t> &&
-                std::is_convertible_v<TrainType, std::string> &&
-                std::is_convertible_v<StationType, std::string>>>
+                            !std::is_convertible_v<TrainType, size_t> &&
+                            std::is_convertible_v<TrainType, std::string> &&
+                            std::is_convertible_v<StationType, std::string>>>
   void add_stop(const TrainType& train_name, const StationType& station_name,
                 decltype(T::time_type()) t0, decltype(T::time_type()) tn,
                 Args... args) {
