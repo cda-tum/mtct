@@ -881,4 +881,25 @@ TEST(Helper, EoMMaximalTravelTimeStopping) {
       cda_rail::max_travel_time_to_end(10, 5, 1, 1, 2, 40, 40, true), 0);
 }
 
+TEST(Helper, EoMMinimalTimePushMA) {
+  // Start at speed 10 with a = 2 and d = 1
+  // Current braking distance is 10*10/2 = 50
+
+  // First, if speed remains constant, the ma is pushed forward with speed 10
+  // After 2 seconds it moved 10*2 = 20
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_to_push_ma_forward(10, 0, 1, 20), 2);
+
+  // After 2 seconds speed 14 is reached, hence travelled 12*2 = 24
+  // New braking distance is 14*14/2 = 98
+  // MA is 24+98 = 122 before initial point
+  // Hence, braking overlap is 122 - 50 = 72
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_to_push_ma_forward(10, 2, 1, 72), 2);
+
+  // After 10 seconds speed 30 is reached, hence travelled 20*10 = 200
+  // New braking distance is 30*30/2 = 450
+  // MA is 200+450 = 650 before initial point
+  // Hence, braking overlap is 650 - 50 = 600
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_to_push_ma_forward(10, 2, 1, 600), 10);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)

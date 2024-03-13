@@ -252,3 +252,21 @@ double cda_rail::max_travel_time_to_end(double v_1, double v_2, double v_m,
              ? max_travel_time_to_end_stopping_allowed(v_1, v_2, a, d, s, x)
              : max_travel_time_to_end_no_stopping(v_1, v_2, v_m, a, d, s, x);
 }
+
+double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
+                                             double s) {
+  // How much time does a train need to move its moving authority forward by s
+  // given initial speed v_0 and acceleration a and deceleration d
+
+  // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
+  if (v_0 < 0 || a < 0 || d <= 0 || s <= 0) {
+    throw exceptions::InvalidInputException(
+        "We need v_0 >= 0, a >= 0, d > 0, s > 0");
+  }
+
+  // ma(t) = v_0*t + 0.5*a*t^2 + (v_0+a*t)^2/(2d) != s + v_0^2/(2d)
+  // -> t = (...) = 2*d*s / (sqrt(2*(a+d)*a*d*s+(a+d)^2*v^2) + (a+d)*v)
+  return 2 * d * s /
+         (std::sqrt(2 * (a + d) * a * d * s + (a + d) * (a + d) * v_0 * v_0) +
+          (a + d) * v_0);
+}
