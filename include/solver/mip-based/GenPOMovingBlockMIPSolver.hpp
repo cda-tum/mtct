@@ -12,11 +12,11 @@ class GenPOMovingBlockMIPSolver
           instances::GeneralPerformanceOptimizationInstance,
           instances::SolGeneralPerformanceOptimizationInstance> {
 private:
-  SolutionSettings solution_settings = {};
-  size_t           num_tr            = 0;
-  size_t           num_edges         = 0;
-  size_t           num_vertices      = 0;
-  int              max_t             = 0;
+  SolutionSettingsMovingBlock solution_settings = {};
+  size_t                      num_tr            = 0;
+  size_t                      num_edges         = 0;
+  size_t                      num_vertices      = 0;
+  int                         max_t             = 0;
 
   void create_variables();
   void create_timing_variables();
