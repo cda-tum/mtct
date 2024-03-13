@@ -7,7 +7,7 @@
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
-    const SolutionSettingsMovingBlock& solution_settings, int time_limit,
+    const SolutionSettingsMovingBlock& solution_settings_input, int time_limit,
     bool debug_input) {
   /**
    * Solves initiated performance optimization problem with moving block
@@ -32,10 +32,11 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   instances::GeneralPerformanceOptimizationInstance old_instance = instance;
   this->instance.discretize_stops();
 
-  num_tr       = instance.get_train_list().size();
-  num_edges    = instance.const_n().number_of_edges();
-  num_vertices = instance.const_n().number_of_vertices();
-  max_t        = instance.max_t();
+  num_tr                  = instance.get_train_list().size();
+  num_edges               = instance.const_n().number_of_edges();
+  num_vertices            = instance.const_n().number_of_vertices();
+  max_t                   = instance.max_t();
+  this->solution_settings = solution_settings_input;
 
   PLOGD << "Create variables";
   create_variables();

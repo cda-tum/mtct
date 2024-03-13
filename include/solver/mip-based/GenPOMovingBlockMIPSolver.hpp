@@ -12,11 +12,11 @@ class GenPOMovingBlockMIPSolver
           instances::GeneralPerformanceOptimizationInstance,
           instances::SolGeneralPerformanceOptimizationInstance> {
 private:
-  SolutionSettings solution_settings;
-  size_t           num_tr;
-  size_t           num_edges;
-  size_t           num_vertices;
-  int              max_t;
+  SolutionSettings solution_settings = {};
+  size_t           num_tr            = 0;
+  size_t           num_edges         = 0;
+  size_t           num_vertices      = 0;
+  int              max_t             = 0;
 
   void create_variables();
   void create_timing_variables();
@@ -59,7 +59,7 @@ public:
   };
 
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
-  solve(const SolutionSettingsMovingBlock& solution_settings, int time_limit,
-        bool debug_input);
+  solve(const SolutionSettingsMovingBlock& solution_settings_input,
+        int time_limit, bool debug_input);
 };
 } // namespace cda_rail::solver::mip_based
