@@ -312,8 +312,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     if (time_limit > 0) {
       PLOGD << "Time left: " << time_left << " s";
     } else {
-      PLOGD << "Time left: "
-            << "No Limit";
+      PLOGD << "Time left: " << "No Limit";
     }
   }
 
