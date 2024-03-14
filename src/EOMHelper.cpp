@@ -213,16 +213,18 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
   // given initial speed v_0 and acceleration a and deceleration d
 
   // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
-  if (v_0 < 0 || a < 0 || d <= 0 || s <= 0) {
+  if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
     throw exceptions::InvalidInputException(
-        "We need v_0 >= 0, a >= 0, d > 0, s > 0");
+        "We need v_0 >= 0, a >= 0, d > 0, s >= 0");
   }
 
   // ma(t) = v_0*t + 0.5*a*t^2 + (v_0+a*t)^2/(2d) != s + v_0^2/(2d)
   // -> t = (...) = 2*d*s / (sqrt(2*(a+d)*a*d*s+(a+d)^2*v^2) + (a+d)*v)
-  return 2 * d * s /
-         (std::sqrt(2 * (a + d) * a * d * s + (a + d) * (a + d) * v_0 * v_0) +
-          (a + d) * v_0);
+  return s == 0 ? 0
+                : 2 * d * s /
+                      (std::sqrt(2 * (a + d) * a * d * s +
+                                 (a + d) * (a + d) * v_0 * v_0) +
+                       (a + d) * v_0);
 }
 
 std::pair<double, double>
@@ -292,4 +294,40 @@ cda_rail::get_max_travel_time_acceleration_change_points(double v_1, double v_2,
   // minimal speed is not reached
 
   return {y, y};
+}
+
+double cda_rail::min_time_from_rear_to_ma_point(double v_1, double v_2,
+                                                double v_m, double a, double d,
+                                                double s, double obd) {
+  const auto s_points =
+      get_min_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d, s);
+  const auto& s_1 = s_points.first;
+  const auto& s_2 = s_points.second;
+
+  if (obd < 0) {
+    throw exceptions::InvalidInputException(
+        "obd must be greater than or equal 0.");
+  }
+  if (obd == 0) {
+    return 0;
+  }
+
+  const double bd_1  = v_1 * v_1 / (2 * d); // Distance to stop
+  const double bd_2  = v_2 * v_2 / (2 * d); // Distance to stop
+  const double ubd_1 = s + bd_2 - obd - bd_1;
+
+  if (ubd_1 < 0) {
+    throw exceptions::ConsistencyException(
+        "obd is too large for the given edge and speed profile.");
+  }
+
+  // Is the relevant point within the constant phase or acceleration (Note:
+  // deceleration does not change ma)
+  if (s_2 - s_1 >= obd) {
+    // Point is at s_2 - obd
+    return min_travel_time(v_1, v_2, v_m, a, d, s) -
+           min_travel_time_from_start(v_1, v_2, v_m, a, d, s, s_2 - obd);
+  }
+  return min_travel_time(v_1, v_2, v_m, a, d, s) -
+         min_time_to_push_ma_forward(v_1, a, d, ubd_1);
 }

@@ -902,4 +902,50 @@ TEST(Helper, EoMMinimalTimePushMA) {
   EXPECT_DOUBLE_EQ(cda_rail::min_time_to_push_ma_forward(10, 2, 1, 600), 10);
 }
 
+TEST(Helper, EoMMinimalTimeFromEndMA) {
+  // Train starts at v_1 = 16, a = 3, d = 1
+  // It accelerates for 2 seconds to reach speed 22, which is also maximal
+  // After 2 seconds it has travelled 19*2 = 38
+  // It remains constant for 2 seconds and travels 22*2 = 44
+  // It decelerates 2 seconds to final speed 20
+  // Deceleration distance is 21*2 = 42
+  // Total distance travelled is 38+44+42 = 124 within 6 seconds
+  // Breaking distance at end is 20*20/2 = 200
+  // Breaking distance at start is 16*16/2 = 128, i.e., 4 after end
+
+  EXPECT_DOUBLE_EQ(cda_rail::min_travel_time(16, 20, 22, 3, 1, 124), 6);
+
+  // If start is MA point, then obd is 200-4 = 196
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 196), 6);
+
+  // After 1 second it has reached speed 19, hence travelled 17.5*1 = 17.5
+  // Its braking distance is 19*19/2 = 180.5
+  // Hence, MA is at 17.5+180.5 = 198, i.e., 198-124 = 74 after end
+  // Then obd is 200 - 74 = 126
+  // To end this is 6-1 = 5
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 126), 5);
+
+  // After 2 seconds it has travelled 38
+  // Braking distance is 22*22/2 = 242
+  // Hence, MA is at 38+242 = 280, i.e., 280-124 = 156 after end
+  // Then obd is 200 - 156 = 44
+  // To end this is 6-2 = 4
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 44), 4);
+
+  // After 3 seconds it has travelled additional 22, i.e., 38+22 = 60
+  // Braking distance is 22*22/2 = 242
+  // Hence, MA is at 60+242 = 302, i.e., 302-124 = 178 after end
+  // Then obd is 200 - 178 = 22
+  // To end this is 6-3 = 3
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 22), 3);
+
+  // If obd is 0, then result is 0
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 0), 0);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
