@@ -12,59 +12,38 @@ double cda_rail::min_travel_time_from_start(double v_1, double v_2, double v_m,
                                             double a, double d, double s,
                                             double x) {
   check_consistency_of_eom_input(v_1, v_2, a, d, s, x);
-  if (v_m <= 0) {
-    throw exceptions::ConsistencyException("v_m must be greater than 0.");
-  }
-  if (v_1 > v_m || v_2 > v_m) {
-    throw exceptions::ConsistencyException(
-        "v_m must be greater than or equal to v_1 and v_2.");
-  }
 
-  const double s_1 =
-      (v_m + v_1) * (v_m - v_1) / (2 * a); // Distance to reach maximal speed
+  const auto s_points =
+      get_min_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d, s);
+  const auto& s_1 = s_points.first;
+  const auto& s_2 = s_points.second;
 
-  if (const double s_2 = s - ((v_m + v_2) * (v_m - v_2) / (2 * d));
-      s_2 >= s_1) {
-    // Accelerate to maximal speed. Keep constant until braking in the last
-    // moment.
+  assert(s_2 >= s_1);
 
-    const double x_1 = std::min(x, s_1);
+  // Accelerating part
+  const double x_1 = std::min(x, s_1);
 
-    // Time spent until x_1 is (sqrt(2*a*x_1+v_1^2)-v_1)/a
-    // Stable version: (2*x_1)/(sqrt(2*a*x_1+v_1^2)+v_1)
-    const double t_1 =
-        x_1 == 0 ? 0 : (2 * x_1) / (std::sqrt(2 * a * x_1 + v_1 * v_1) + v_1);
-
-    const double x_2 = std::min(std::max(x - s_1, 0.0), s_2 - s_1);
-    const double t_2 = x_2 / v_m; // constant
-
-    const double x_3 = std::min(std::max(x - s_2, 0.0), s - s_2);
-    // Time spent until x_3 is (2*x_3)/(sqrt(v_m^2-2*d*x_3)+v_m)
-    const double t_3 =
-        x_3 == 0 ? 0 : (2 * x_3) / (std::sqrt(v_m * v_m - 2 * d * x_3) + v_m);
-    return t_1 + t_2 + t_3;
-  }
-
-  // Accelerate until braking is necessary to reach v_2
-
-  // Distance at which braking starts if maximal speed is not reached
-  const double y = (2 * d * s + (v_2 + v_1) * (v_2 - v_1)) / (2 * (a + d));
-
-  const double x_1 = std::min(x, y); // Accelerating part
+  // Time spent until x_1 is (sqrt(2*a*x_1+v_1^2)-v_1)/a
+  // Stable version: (2*x_1)/(sqrt(2*a*x_1+v_1^2)+v_1)
   const double t_1 =
       x_1 == 0 ? 0 : (2 * x_1) / (std::sqrt(2 * a * x_1 + v_1 * v_1) + v_1);
 
+  // Terminal velocity
   const double v_t_squared =
-      v_1 * v_1 + 2 * a * y; // Maximal velocity reached before braking
+      v_1 * v_1 + 2 * a * s_1;               // Maximal velocity reached
+  const double v_t = std::sqrt(v_t_squared); // = v_m if s_2 > s_1
 
-  const double x_2 =
-      std::min(std::max(x - y, 0.0), s - y); // Distance in braking part
-  const double t_2 = x_2 == 0
-                         ? 0
-                         : (2 * x_2) / (std::sqrt(v_t_squared - 2 * d * x_2) +
-                                        std::sqrt(v_t_squared));
+  // Constant speed part
+  const double x_2 = std::min(std::max(x - s_1, 0.0), s_2 - s_1);
+  const double t_2 = x_2 == 0 ? 0 : x_2 / v_t;
 
-  return t_1 + t_2;
+  // Decelerating part
+  const double x_3 = std::min(std::max(x - s_2, 0.0), s - s_2);
+  // Time spent until x_3 is (2*x_3)/(sqrt(v_m^2-2*d*x_3)+v_m)
+  const double t_3 =
+      x_3 == 0 ? 0 : (2 * x_3) / (std::sqrt(v_t_squared - 2 * d * x_3) + v_t);
+
+  return t_1 + t_2 + t_3;
 }
 
 double cda_rail::min_travel_time(double v_1, double v_2, double v_m, double a,
@@ -85,73 +64,45 @@ double cda_rail::max_travel_time_from_start_no_stopping(double v_1, double v_2,
   // v_m is minimal speed in this case
 
   check_consistency_of_eom_input(v_1, v_2, a, d, s, x);
-  if (v_m <= 0) {
-    throw exceptions::ConsistencyException("v_m must be greater than 0.");
-  }
 
   const bool v_1_below_minimal_speed = v_1 < v_m;
   const bool v_2_below_minimal_speed = v_2 < v_m;
 
-  const double s_1 =
-      (v_1 + v_m) * (v_1 - v_m) /
-      (2 *
-       (v_1_below_minimal_speed ? -a : d)); // Distance to reach minimal speed
+  const auto s_points =
+      get_max_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d, s);
+  const auto& s_1 = s_points.first;
+  const auto& s_2 = s_points.second;
 
-  if (const double s_2 = s - ((v_2 + v_m) * (v_2 - v_m) /
-                              (2 * (v_2_below_minimal_speed ? -d : a)));
-      s_2 >= s_1) {
-    // Decelerate to minimal speed. Keep constant until accelerating in the last
-    // moment.
+  // Acceleration/Decelation to s_1
+  const double x_1 = std::min(x, s_1);
 
-    const double x_1 = std::min(x, s_1);
-
-    // Time spent until x_1 is (sqrt(v_1^2-2*d*x_1)-v_1)/d
-    // Stable version: (2*x_1)/(sqrt(v_1^2-2*d*x_1)+v_1)
-    const double t_1 =
-        x_1 == 0
-            ? 0
-            : (2 * x_1) /
-                  (std::sqrt(v_1 * v_1 +
-                             2 * (v_1_below_minimal_speed ? a : -d) * x_1) +
-                   v_1);
-
-    const double x_2 = std::min(std::max(x - s_1, 0.0), s_2 - s_1);
-    const double t_2 = x_2 / v_m; // constant
-
-    const double x_3 = std::min(std::max(x - s_2, 0.0), s - s_2);
-    // Time spent until x_3 is (sqrt(2*a*x_3+v_m^2)-v_m)/a
-    // Stable version: (2*x_3)/(sqrt(2*a*x_3+v_m^2)+v_m)
-    const double t_3 =
-        (2 * x_3) /
-        (std::sqrt(v_m * v_m + 2 * (v_2_below_minimal_speed ? -d : a) * x_3) +
-         v_m);
-    return t_1 + t_2 + t_3;
-  }
-
-  if (v_1_below_minimal_speed && v_2_below_minimal_speed) {
-    // Very short distance, train cannot reach minimal speed, hence same as
-    // minimal time
-    return min_travel_time_from_start(v_1, v_2, v_m, a, d, s, x);
-  }
-
-  assert((!v_1_below_minimal_speed && !v_2_below_minimal_speed));
-
-  const double y = (2 * a * s + (v_1 + v_2) * (v_1 - v_2)) /
-                   (2 * (a + d)); // Distance at which accelerating starts if
-                                  // minimal speed is not reached
-
-  const double x_1 = std::min(x, y); // Decelerating part
-  const double t_1 = (2 * x_1) / (std::sqrt(v_1 * v_1 - 2 * d * x_1) + v_1);
+  // Time spent until x_1 is (sqrt(v_1^2-2*d*x_1)-v_1)/d
+  // Stable version: (2*x_1)/(sqrt(v_1^2-2*d*x_1)+v_1)
+  const double t_1 =
+      x_1 == 0 ? 0
+               : (2 * x_1) /
+                     (std::sqrt(v_1 * v_1 +
+                                2 * (v_1_below_minimal_speed ? a : -d) * x_1) +
+                      v_1);
 
   const double v_t_squared =
-      v_1 * v_1 - 2 * d * y; // Minimal velocity reached before accelerating
+      v_1 * v_1 +
+      2 * (v_1_below_minimal_speed ? a : -d) * s_1; // Minimal velocity reached
+  const double v_t = std::sqrt(v_t_squared);        // = v_m if s_2 > s_1
 
-  const double x_2 =
-      std::min(std::max(x - y, 0.0), s - y); // Distance in accelerating part
-  const double t_2 = (2 * x_2) / (std::sqrt(2 * a * x_2 + v_t_squared) +
-                                  std::sqrt(v_t_squared));
+  const double x_2 = std::min(std::max(x - s_1, 0.0), s_2 - s_1);
+  const double t_2 = x_2 == 0 ? 0 : x_2 / v_t; // constant
 
-  return t_1 + t_2;
+  const double x_3 = std::min(std::max(x - s_2, 0.0), s - s_2);
+  // Time spent until x_3 is (sqrt(2*a*x_3+v_m^2)-v_m)/a
+  // Stable version: (2*x_3)/(sqrt(2*a*x_3+v_m^2)+v_m)
+  const double t_3 =
+      x_3 == 0 ? 0
+               : (2 * x_3) /
+                     (std::sqrt(v_t_squared +
+                                2 * (v_2_below_minimal_speed ? -d : a) * x_3) +
+                      v_t);
+  return t_1 + t_2 + t_3;
 }
 
 double cda_rail::max_travel_time_no_stopping(double v_1, double v_2, double v_m,
@@ -163,15 +114,18 @@ double cda_rail::max_travel_time_from_start_stopping_allowed(
     double v_1, double v_2, double a, double d, double s, double x) {
   check_consistency_of_eom_input(v_1, v_2, a, d, s, x);
 
-  const double s_1 = v_1 * v_1 / (2 * d); // Distance to stop
+  const auto s_points =
+      get_max_travel_time_acceleration_change_points(v_1, v_2, 0, a, d, s);
+  const auto& s_1 = s_points.first;
+  const auto& s_2 = s_points.second;
 
-  if (const double s_2 = s - (v_2 * v_2 / (2 * a)); s_2 >= s_1) {
+  const double bd = v_1 * v_1 / (2 * d); // Distance to stop
+
+  if (bd <= s_1) {
     if (x >= s_1) {
       // Infinite, because train could have stopped
       return std::numeric_limits<double>::infinity();
     }
-
-    return (2 * x) / (std::sqrt(v_1 * v_1 - 2 * d * x) + v_1);
   }
 
   // Train cannot stop, hence same as max_travel_time_from_start_no_stopping
@@ -269,4 +223,73 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
   return 2 * d * s /
          (std::sqrt(2 * (a + d) * a * d * s + (a + d) * (a + d) * v_0 * v_0) +
           (a + d) * v_0);
+}
+
+std::pair<double, double>
+cda_rail::get_min_travel_time_acceleration_change_points(double v_1, double v_2,
+                                                         double v_m, double a,
+                                                         double d, double s) {
+  check_consistency_of_eom_input(v_1, v_2, a, d, s, s);
+  if (v_m <= 0) {
+    throw exceptions::ConsistencyException("v_m must be greater than 0.");
+  }
+  if (v_1 > v_m || v_2 > v_m) {
+    throw exceptions::ConsistencyException(
+        "v_m must be greater than or equal to v_1 and v_2.");
+  }
+
+  const double s_1 =
+      (v_m + v_1) * (v_m - v_1) / (2 * a); // Distance to reach maximal speed
+
+  const double s_2 = s - ((v_m + v_2) * (v_m - v_2) / (2 * d));
+
+  if (s_2 >= s_1) {
+    return {s_1, s_2};
+  }
+
+  const double y = (2 * d * s + (v_2 + v_1) * (v_2 - v_1)) / (2 * (a + d));
+  return {y, y};
+}
+
+std::pair<double, double>
+cda_rail::get_max_travel_time_acceleration_change_points(double v_1, double v_2,
+                                                         double v_m, double a,
+                                                         double d, double s) {
+  // v_m is minimal speed in this case
+
+  check_consistency_of_eom_input(v_1, v_2, a, d, s, s);
+  if (v_m < 0) {
+    throw exceptions::ConsistencyException(
+        "v_m must be greater than or equal 0.");
+  }
+
+  const bool v_1_below_minimal_speed = v_1 < v_m;
+  const bool v_2_below_minimal_speed = v_2 < v_m;
+
+  const double s_1 =
+      (v_1 + v_m) * (v_1 - v_m) /
+      (2 *
+       (v_1_below_minimal_speed ? -a : d)); // Distance to reach minimal speed
+
+  const double s_2 = s - ((v_2 + v_m) * (v_2 - v_m) /
+                          (2 * (v_2_below_minimal_speed ? -d : a)));
+
+  if (s_2 >= s_1) {
+    return {s_1, s_2};
+  }
+
+  if (v_1_below_minimal_speed && v_2_below_minimal_speed) {
+    // Very short distance, train cannot reach minimal speed, hence same as
+    // minimal time
+    return get_min_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d,
+                                                          s);
+  }
+
+  assert((!v_1_below_minimal_speed && !v_2_below_minimal_speed));
+
+  const double y = (2 * a * s + (v_1 + v_2) * (v_1 - v_2)) /
+                   (2 * (a + d)); // Distance at which accelerating starts if
+  // minimal speed is not reached
+
+  return {y, y};
 }

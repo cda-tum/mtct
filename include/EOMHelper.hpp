@@ -1,11 +1,22 @@
 #pragma once
 
+#include <utility>
+
 // EOM = Equations of Motion
 
 namespace cda_rail {
 bool possible_by_eom(double v_1, double v_2, double a, double d, double s);
 void check_consistency_of_eom_input(double v_1, double v_2, double a, double d,
                                     double s, double x);
+
+[[nodiscard]] std::pair<double, double>
+get_min_travel_time_acceleration_change_points(double v_1, double v_2,
+                                               double v_m, double a, double d,
+                                               double s);
+[[nodiscard]] std::pair<double, double>
+get_max_travel_time_acceleration_change_points(double v_1, double v_2,
+                                               double v_m, double a, double d,
+                                               double s);
 
 double min_travel_time_from_start(double v_1, double v_2, double v_m, double a,
                                   double d, double s, double x);
