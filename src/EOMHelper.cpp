@@ -296,9 +296,9 @@ cda_rail::get_max_travel_time_acceleration_change_points(double v_1, double v_2,
   return {y, y};
 }
 
-double cda_rail::min_time_from_rear_to_ma_point(double v_1, double v_2,
-                                                double v_m, double a, double d,
-                                                double s, double obd) {
+double cda_rail::min_time_from_front_to_ma_point(double v_1, double v_2,
+                                                 double v_m, double a, double d,
+                                                 double s, double obd) {
   const auto s_points =
       get_min_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d, s);
   const auto& s_1 = s_points.first;
@@ -309,7 +309,7 @@ double cda_rail::min_time_from_rear_to_ma_point(double v_1, double v_2,
         "obd must be greater than or equal 0.");
   }
   if (obd == 0) {
-    return 0;
+    return min_travel_time(v_1, v_2, v_m, a, d, s);
   }
 
   const double bd_1  = v_1 * v_1 / (2 * d); // Distance to stop
@@ -325,9 +325,14 @@ double cda_rail::min_time_from_rear_to_ma_point(double v_1, double v_2,
   // deceleration does not change ma)
   if (s_2 - s_1 >= obd) {
     // Point is at s_2 - obd
-    return min_travel_time(v_1, v_2, v_m, a, d, s) -
-           min_travel_time_from_start(v_1, v_2, v_m, a, d, s, s_2 - obd);
+    return min_travel_time_from_start(v_1, v_2, v_m, a, d, s, s_2 - obd);
   }
+  return min_time_to_push_ma_forward(v_1, a, d, ubd_1);
+}
+
+double cda_rail::min_time_from_rear_to_ma_point(double v_1, double v_2,
+                                                double v_m, double a, double d,
+                                                double s, double obd) {
   return min_travel_time(v_1, v_2, v_m, a, d, s) -
-         min_time_to_push_ma_forward(v_1, a, d, ubd_1);
+         min_time_from_front_to_ma_point(v_1, v_2, v_m, a, d, s, obd);
 }

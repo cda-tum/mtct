@@ -902,7 +902,7 @@ TEST(Helper, EoMMinimalTimePushMA) {
   EXPECT_DOUBLE_EQ(cda_rail::min_time_to_push_ma_forward(10, 2, 1, 600), 10);
 }
 
-TEST(Helper, EoMMinimalTimeFromEndMA) {
+TEST(Helper, EoMMinimalTimeMA) {
   // Train starts at v_1 = 16, a = 3, d = 1
   // It accelerates for 2 seconds to reach speed 22, which is also maximal
   // After 2 seconds it has travelled 19*2 = 38
@@ -917,6 +917,8 @@ TEST(Helper, EoMMinimalTimeFromEndMA) {
 
   // If start is MA point, then obd is 200-4 = 196
   EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_front_to_ma_point(16, 20, 22, 3, 1, 124, 196), 0);
+  EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 196), 6);
 
   // After 1 second it has reached speed 19, hence travelled 17.5*1 = 17.5
@@ -924,6 +926,8 @@ TEST(Helper, EoMMinimalTimeFromEndMA) {
   // Hence, MA is at 17.5+180.5 = 198, i.e., 198-124 = 74 after end
   // Then obd is 200 - 74 = 126
   // To end this is 6-1 = 5
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_front_to_ma_point(16, 20, 22, 3, 1, 124, 126), 1);
   EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 126), 5);
 
@@ -933,6 +937,8 @@ TEST(Helper, EoMMinimalTimeFromEndMA) {
   // Then obd is 200 - 156 = 44
   // To end this is 6-2 = 4
   EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_front_to_ma_point(16, 20, 22, 3, 1, 124, 44), 2);
+  EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 44), 4);
 
   // After 3 seconds it has travelled additional 22, i.e., 38+22 = 60
@@ -941,11 +947,48 @@ TEST(Helper, EoMMinimalTimeFromEndMA) {
   // Then obd is 200 - 178 = 22
   // To end this is 6-3 = 3
   EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_front_to_ma_point(16, 20, 22, 3, 1, 124, 22), 3);
+  EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 22), 3);
 
-  // If obd is 0, then result is 0
+  // If obd is 0, then result to back is 0
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_front_to_ma_point(16, 20, 22, 3, 1, 124, 0), 6);
   EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 0), 0);
+
+  // Other case without constant part
+  // Train starts with v1 = 20, a = 4, d = 2
+  // It accelerates for 2 seconds to reach speed 28
+  // After 2 seconds it has travelled 24*2 = 48
+  // The theoretical maximal speed is 30
+  // However, it immediately decelerates for 1 second to reach speed 26
+  // For this, the distance is 27*1=27
+  // Total distance travelled is 48+27 = 75 within 3 seconds
+  // Braking distance at begin is 20*20/4 = 100, i.e., 25 after end
+  // Braking distance at end is 26*26/4 = 169
+
+  // If start is MA point, then obd is 169-25 = 144
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_front_to_ma_point(20, 26, 30, 4, 2, 75, 144), 0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_rear_to_ma_point(20, 26, 30, 4, 2, 75, 144), 3);
+
+  // After 1 second it has reached speed 24, hence travelled 22*1 = 22
+  // Its braking distance is 24*24/4 = 144
+  // Hence, MA is at 22+144 = 166, i.e., 166-75 = 91 after end
+  // Then obd is 169 - 91 = 78
+  // To end this is 3-1 = 2
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_front_to_ma_point(20, 26, 30, 4, 2, 75, 78), 1);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_rear_to_ma_point(20, 26, 30, 4, 2, 75, 78), 2);
+
+  // If obd is 0, then result to back is 0
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_front_to_ma_point(20, 26, 30, 4, 2, 75, 0), 3);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::min_time_from_rear_to_ma_point(20, 26, 30, 4, 2, 75, 0), 0);
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)
