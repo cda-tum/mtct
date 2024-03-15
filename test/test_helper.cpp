@@ -918,8 +918,9 @@ TEST(Helper, EoMMinimalTimeMA) {
   // If start is MA point, then obd is 200-4 = 196
   EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_front_to_ma_point(16, 20, 22, 3, 1, 124, 196), 0);
-  EXPECT_DOUBLE_EQ(
-      cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 196), 6);
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_profile_from_rear_to_ma_point(
+                       16, 20, 22, 3, 1, 124, 196),
+                   6);
 
   // After 1 second it has reached speed 19, hence travelled 17.5*1 = 17.5
   // Its braking distance is 19*19/2 = 180.5
@@ -928,8 +929,9 @@ TEST(Helper, EoMMinimalTimeMA) {
   // To end this is 6-1 = 5
   EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_front_to_ma_point(16, 20, 22, 3, 1, 124, 126), 1);
-  EXPECT_DOUBLE_EQ(
-      cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 126), 5);
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_profile_from_rear_to_ma_point(
+                       16, 20, 22, 3, 1, 124, 126),
+                   5);
 
   // After 2 seconds it has travelled 38
   // Braking distance is 22*22/2 = 242
@@ -938,8 +940,9 @@ TEST(Helper, EoMMinimalTimeMA) {
   // To end this is 6-2 = 4
   EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_front_to_ma_point(16, 20, 22, 3, 1, 124, 44), 2);
-  EXPECT_DOUBLE_EQ(
-      cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 44), 4);
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_profile_from_rear_to_ma_point(
+                       16, 20, 22, 3, 1, 124, 44),
+                   4);
 
   // After 3 seconds it has travelled additional 22, i.e., 38+22 = 60
   // Braking distance is 22*22/2 = 242
@@ -948,14 +951,16 @@ TEST(Helper, EoMMinimalTimeMA) {
   // To end this is 6-3 = 3
   EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_front_to_ma_point(16, 20, 22, 3, 1, 124, 22), 3);
-  EXPECT_DOUBLE_EQ(
-      cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 22), 3);
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_profile_from_rear_to_ma_point(
+                       16, 20, 22, 3, 1, 124, 22),
+                   3);
 
   // If obd is 0, then result to back is 0
   EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_front_to_ma_point(16, 20, 22, 3, 1, 124, 0), 6);
-  EXPECT_DOUBLE_EQ(
-      cda_rail::min_time_from_rear_to_ma_point(16, 20, 22, 3, 1, 124, 0), 0);
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_profile_from_rear_to_ma_point(
+                       16, 20, 22, 3, 1, 124, 0),
+                   0);
 
   // Other case without constant part
   // Train starts with v1 = 20, a = 4, d = 2
@@ -971,8 +976,9 @@ TEST(Helper, EoMMinimalTimeMA) {
   // If start is MA point, then obd is 169-25 = 144
   EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_front_to_ma_point(20, 26, 30, 4, 2, 75, 144), 0);
-  EXPECT_DOUBLE_EQ(
-      cda_rail::min_time_from_rear_to_ma_point(20, 26, 30, 4, 2, 75, 144), 3);
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_profile_from_rear_to_ma_point(
+                       20, 26, 30, 4, 2, 75, 144),
+                   3);
 
   // After 1 second it has reached speed 24, hence travelled 22*1 = 22
   // Its braking distance is 24*24/4 = 144
@@ -981,14 +987,16 @@ TEST(Helper, EoMMinimalTimeMA) {
   // To end this is 3-1 = 2
   EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_front_to_ma_point(20, 26, 30, 4, 2, 75, 78), 1);
-  EXPECT_DOUBLE_EQ(
-      cda_rail::min_time_from_rear_to_ma_point(20, 26, 30, 4, 2, 75, 78), 2);
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_profile_from_rear_to_ma_point(
+                       20, 26, 30, 4, 2, 75, 78),
+                   2);
 
   // If obd is 0, then result to back is 0
   EXPECT_DOUBLE_EQ(
       cda_rail::min_time_from_front_to_ma_point(20, 26, 30, 4, 2, 75, 0), 3);
   EXPECT_DOUBLE_EQ(
-      cda_rail::min_time_from_rear_to_ma_point(20, 26, 30, 4, 2, 75, 0), 0);
+      cda_rail::min_time_profile_from_rear_to_ma_point(20, 26, 30, 4, 2, 75, 0),
+      0);
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)

@@ -330,9 +330,10 @@ double cda_rail::min_time_from_front_to_ma_point(double v_1, double v_2,
   return min_time_to_push_ma_forward(v_1, a, d, ubd_1);
 }
 
-double cda_rail::min_time_from_rear_to_ma_point(double v_1, double v_2,
-                                                double v_m, double a, double d,
-                                                double s, double obd) {
+double cda_rail::min_time_profile_from_rear_to_ma_point(double v_1, double v_2,
+                                                        double v_m, double a,
+                                                        double d, double s,
+                                                        double obd) {
   return min_travel_time(v_1, v_2, v_m, a, d, s) -
          min_time_from_front_to_ma_point(v_1, v_2, v_m, a, d, s, obd);
 }

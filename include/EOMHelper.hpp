@@ -52,9 +52,10 @@ double max_travel_time_to_end(double v_1, double v_2, double v_m, double a,
                               bool stopping_allowed);
 
 double min_time_to_push_ma_forward(double v_0, double a, double d, double s);
-double min_time_from_rear_to_ma_point(double v_1, double v_2, double v_m,
-                                      double a, double d, double s, double obd);
 double min_time_from_front_to_ma_point(double v_1, double v_2, double v_m,
                                        double a, double d, double s,
                                        double obd);
+double min_time_profile_from_rear_to_ma_point(double v_1, double v_2,
+                                              double v_m, double a, double d,
+                                              double s, double obd);
 } // namespace cda_rail
