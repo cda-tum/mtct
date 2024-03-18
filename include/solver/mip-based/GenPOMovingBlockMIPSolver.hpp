@@ -12,11 +12,13 @@ class GenPOMovingBlockMIPSolver
           instances::GeneralPerformanceOptimizationInstance,
           instances::SolGeneralPerformanceOptimizationInstance> {
 private:
-  SolutionSettingsMovingBlock solution_settings = {};
-  size_t                      num_tr            = 0;
-  size_t                      num_edges         = 0;
-  size_t                      num_vertices      = 0;
-  int                         max_t             = 0;
+  SolutionSettingsMovingBlock      solution_settings = {};
+  size_t                           num_tr            = 0;
+  size_t                           num_edges         = 0;
+  size_t                           num_vertices      = 0;
+  size_t                           num_ttd           = 0;
+  int                              max_t             = 0;
+  std::vector<std::vector<size_t>> ttd_sections;
 
   void create_variables();
   void create_timing_variables();

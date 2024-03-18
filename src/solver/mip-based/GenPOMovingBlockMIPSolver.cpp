@@ -37,6 +37,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   num_vertices            = instance.const_n().number_of_vertices();
   max_t                   = instance.max_t();
   this->solution_settings = solution_settings_input;
+  this->ttd_sections      = instance.n().unbreakable_sections();
+  this->num_ttd           = this->ttd_sections.size();
 
   PLOGD << "Create variables";
   create_variables();
@@ -56,6 +58,24 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   vars["t_front_arrival"]   = MultiArray<GRBVar>(num_tr, num_vertices);
   vars["t_front_departure"] = MultiArray<GRBVar>(num_tr, num_vertices);
   vars["t_rear_departure"]  = MultiArray<GRBVar>(num_tr, num_vertices);
+  vars["t_ttd_departure"]   = MultiArray<GRBVar>(num_tr, num_ttd);
+
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const double tr_approx_leaving_time =
+        instance.get_approximate_leaving_time(tr);
+    for (size_t v = 0; v < num_vertices; v++) {
+      vars["t_front_arrival"](tr, v) =
+          model->addVar(0.0, max_t, 0.0, GRB_CONTINUOUS);
+      vars["t_front_departure"](tr, v) = model->addVar(
+          0.0, max_t + tr_approx_leaving_time, 0.0, GRB_CONTINUOUS);
+      vars["t_rear_departure"](tr, v) = model->addVar(
+          0.0, max_t + tr_approx_leaving_time, 0.0, GRB_CONTINUOUS);
+    }
+    for (size_t ttd = 0; ttd < num_ttd; ttd++) {
+      vars["t_ttd_departure"](tr, ttd) = model->addVar(
+          0.0, max_t + tr_approx_leaving_time, 0.0, GRB_CONTINUOUS);
+    }
+  }
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
