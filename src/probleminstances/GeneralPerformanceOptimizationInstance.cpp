@@ -16,3 +16,10 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     this->editable_routes().update_after_discretization(new_edges);
   }
 }
+
+double cda_rail::instances::GeneralPerformanceOptimizationInstance::
+    get_approximate_leaving_time(size_t train) {
+  const auto& tr_object = this->get_train_list().get_train(train);
+  const auto& timetable = this->get_timetable().get_schedule(train);
+  return tr_object.length / timetable.get_v_n();
+}

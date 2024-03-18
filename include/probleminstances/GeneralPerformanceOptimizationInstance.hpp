@@ -221,6 +221,13 @@ public:
             std::all_of(train_weights.begin(), train_weights.end(),
                         [](double w) { return w >= 0; }));
   };
+
+  [[nodiscard]] double get_approximate_leaving_time(size_t train);
+  [[nodiscard]] double
+  get_approximate_leaving_time(const std::string& tr_name) {
+    return get_approximate_leaving_time(
+        this->get_timetable().get_train_list().get_train_index(tr_name));
+  };
 };
 
 class SolGeneralPerformanceOptimizationInstance
