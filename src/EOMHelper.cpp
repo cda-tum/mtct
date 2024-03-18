@@ -336,3 +336,81 @@ double cda_rail::min_time_profile_from_rear_to_ma_point(double v_1, double v_2,
   return min_travel_time(v_1, v_2, v_m, a, d, s) -
          min_time_from_front_to_ma_point(v_1, v_2, v_m, a, d, s, obd);
 }
+
+double cda_rail::max_time_from_front_to_ma_point_no_stopping(
+    double v_1, double v_2, double v_m, double a, double d, double s,
+    double obd) {
+  const auto s_points =
+      get_max_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d, s);
+  const auto& s_1 = s_points.first;
+  const auto& s_2 = s_points.second;
+
+  if (obd < 0) {
+    throw exceptions::InvalidInputException(
+        "obd must be greater than or equal 0.");
+  }
+
+  const bool v1_below_minimal_speed = v_1 < v_m;
+
+  // Speed at changing point
+  const double v_t_squared =
+      v_1 * v_1 + 2 * (v1_below_minimal_speed ? a : -d) * s_1;
+  const double v_t = std::sqrt(v_t_squared);
+
+  // Braking distances
+  const double bd_1 = v_1 * v_1 / (2 * d);
+  const double bd_2 = v_2 * v_2 / (2 * d);
+  const double bd_t = v_t_squared / (2 * d);
+
+  const double ma_point = s + bd_2 - obd;
+
+  const double ubd_v1 = ma_point - bd_1;
+  const double ubd_s1 = ma_point - (s_1 + bd_t);
+  const double ubd_s2 = ma_point - (s_2 + bd_t);
+
+  if (ubd_s2 > 0) {
+    return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s_2) +
+           min_time_to_push_ma_forward(v_t, a, d, ubd_s2);
+  }
+  if (ubd_s1 > 0) {
+    return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s,
+                                                  s_1 + ubd_s1);
+  }
+
+  if (!v1_below_minimal_speed && ubd_s1 == 0) {
+    return 0;
+  }
+
+  assert(v1_below_minimal_speed);
+
+  return min_time_to_push_ma_forward(v_1, a, d, ubd_v1);
+}
+
+double cda_rail::max_time_profile_from_rear_to_ma_point(double v_1, double v_2,
+                                                        double v_m, double a,
+                                                        double d, double s,
+                                                        double obd) {
+  return max_travel_time_no_stopping(v_1, v_2, v_m, a, d, s) -
+         max_time_from_front_to_ma_point_no_stopping(v_1, v_2, v_m, a, d, s,
+                                                     obd);
+}
+
+double cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
+    double v_1, double v_2, double a, double d, double s, double obd) {
+  if (max_travel_time_stopping_allowed(v_1, v_2, a, d, s) >=
+      std::numeric_limits<double>::infinity()) {
+    return std::numeric_limits<double>::infinity();
+  }
+  return max_time_from_front_to_ma_point_no_stopping(v_1, v_2, 0, a, d, s, obd);
+}
+
+double cda_rail::max_time_from_front_to_ma_point(double v_1, double v_2,
+                                                 double v_m, double a, double d,
+                                                 double s, double obd,
+                                                 bool stopping_allowed) {
+  return stopping_allowed
+             ? max_time_from_front_to_ma_point_stopping_allowed(v_1, v_2, a, d,
+                                                                s, obd)
+             : max_time_from_front_to_ma_point_no_stopping(v_1, v_2, v_m, a, d,
+                                                           s, obd);
+}

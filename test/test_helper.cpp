@@ -999,4 +999,215 @@ TEST(Helper, EoMMinimalTimeMA) {
       0);
 }
 
+TEST(Helper, EoMMaximalTimeNoStopping1) {
+  // Train starts at speed 20
+  // It decelerates at rate 1 for 2 second until speed 18 is reached, which is
+  // minimal Traveling 19*2 = 38 It remains constant for 1 second travelling 18
+  // Finally it accelerates at rate 2 for 2 second reaching 22
+  // Acceleration distance is 20*2 = 40
+  // Total distance travelled is 38+18+40 = 96
+  // Braking distance at begin is 20*20/2 = 200, i.e., 104 after end
+  // Braking distance at end is 22*22/2 = 242
+
+  // After 2 seconds the distance travelled is 38
+  // Its braking distance is 18*18/2 = 162
+  // Hence, MA is at 38+162 = 200, i.e., 200-96 = 104 after end
+  // Then obd is 242 - 104 = 138
+  // To end this is 5-2 = 3
+  // Same already holds at 0 seconds!
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_no_stopping(
+                       20, 22, 18, 2, 1, 96, 138),
+                   0);
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point(20, 22, 18, 2, 1,
+                                                             96, 138, false),
+                   0);
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_profile_from_rear_to_ma_point(
+                       20, 22, 18, 2, 1, 96, 138),
+                   5);
+
+  // After 3 seconds it has travelled additional 18, i.e., 38+18 = 56
+  // Braking distance is 18*18/2 = 162
+  // Hence, MA is at 56+162 = 218, i.e., 218-96 = 122 after end
+  // Then obd is 242 - 122 = 120
+  // To end this is 5-3 = 2
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_no_stopping(
+                       20, 22, 18, 2, 1, 96, 120),
+                   3);
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point(20, 22, 18, 2, 1,
+                                                             96, 120, false),
+                   3);
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_profile_from_rear_to_ma_point(
+                       20, 22, 18, 2, 1, 96, 120),
+                   2);
+
+  // After 4 seconds it has travelled additional 19, i.e., 56+19 = 75
+  // Braking distance is 20*20/2 = 200
+  // Hence, MA is at 75+200 = 275, i.e., 275-96 = 179 after end
+  // Then obd is 242 - 179 = 63
+  // To end this is 5-4 = 1
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_no_stopping(
+                       20, 22, 18, 2, 1, 96, 63),
+                   4);
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point(20, 22, 18, 2, 1,
+                                                             96, 63, false),
+                   4);
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_profile_from_rear_to_ma_point(
+                       20, 22, 18, 2, 1, 96, 63),
+                   1);
+
+  // If obd is 0, then it is the end point at 5 seconds
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_no_stopping(
+                       20, 22, 18, 2, 1, 96, 0),
+                   5);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_from_front_to_ma_point(20, 22, 18, 2, 1, 96, 0, false),
+      5);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_profile_from_rear_to_ma_point(20, 22, 18, 2, 1, 96, 0),
+      0);
+}
+
+TEST(Helper, EoMMaximalTimeNoStopping2) {
+  // Train starts at speed 20, however minimal speed is 22
+  // It accelerates at rate 2 for 1 second to reach speed 22
+  // Traveling 21*1 = 21
+  // It remains constant for 1 second travelling 22
+  // Finally, it decelerates at rate 1 for 2 seconds until speed 20 is reached
+  // Deceleration distance is 21*2 = 42
+  // Total distance travelled is 21+22+42 = 85
+  // within 4 seconds
+  // Braking distance at begin is 20*20/2 = 200, i.e., 115 after end
+  // Braking distance at end is also 20*20/2 = 200
+
+  // After 0 seconds the distance travelled is 0
+  // The braking distance is 20*20/2 = 200
+  // Hence, MA is at 200, i.e., 200-85 = 115 after end
+  // Then obd is 200 - 115 = 85
+  // To end this is 4-0 = 4
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_no_stopping(
+                       20, 20, 22, 2, 1, 85, 85),
+                   0);
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point(20, 20, 22, 2, 1,
+                                                             85, 85, false),
+                   0);
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_profile_from_rear_to_ma_point(
+                       20, 20, 22, 2, 1, 85, 85),
+                   4);
+
+  // After 1 second it has travelled 21
+  // Braking distance is 22*22/2 = 242
+  // Hence, MA is at 21+242 = 263, i.e., 263-85 = 178 after end
+  // Then obd is 200 - 178 = 22
+  // To end this is 4-1 = 3
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_no_stopping(
+                       20, 20, 22, 2, 1, 85, 22),
+                   1);
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point(20, 20, 22, 2, 1,
+                                                             85, 22, false),
+                   1);
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_profile_from_rear_to_ma_point(
+                       20, 20, 22, 2, 1, 85, 22),
+                   3);
+
+  // After 2 seconds it has travelled 43
+  // Braking distance is 22*22/2 = 242
+  // Hence, MA is at 43+242 = 285, i.e., 285-85 = 200 after end
+  // Then obd is 200 - 200 = 0
+  // To end this is 4-2 = 2
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_no_stopping(
+                       20, 20, 22, 2, 1, 85, 0),
+                   2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_from_front_to_ma_point(20, 20, 22, 2, 1, 85, 0, false),
+      2);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_profile_from_rear_to_ma_point(20, 20, 22, 2, 1, 85, 0),
+      2);
+}
+
+TEST(Helper, EoMMaximalTimeStopping) {
+  // Train starts at speed 10
+  // It decelerates at rate 1 for 10 seconds until speed 0 is reached
+  // Total distance travelled is 5*10 = 50
+  // It then accelerates at rate 4 for 5 seconds until speed 20 is reached
+  // Acceleration distance is 10*5 = 50
+  // Total distance travelled is 50+50 = 100
+  // Braking distance at end is 20*20/2 = 200
+
+  // 2 seconds before the end, the train has speed 12
+  // It still travels 16*2 = 32
+  // Its braking distance 12*12/2 = 72
+  // Hence its MA is 72-32 = 40 after the end
+  // Then obd is 200 - 40 = 160
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
+                       10, 20, 4, 1, 100, 160),
+                   std::numeric_limits<double>::infinity());
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point(10, 20, 0, 4, 1,
+                                                             100, 160, true),
+                   std::numeric_limits<double>::infinity());
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_profile_from_rear_to_ma_point(
+                       10, 20, 0, 4, 1, 100, 160),
+                   2);
+
+  // If obd is 0, then from rear is 0
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
+                       10, 20, 4, 1, 100, 0),
+                   std::numeric_limits<double>::infinity());
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_from_front_to_ma_point(10, 20, 0, 4, 1, 100, 0, true),
+      std::numeric_limits<double>::infinity());
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_profile_from_rear_to_ma_point(10, 20, 0, 4, 1, 100, 0),
+      0);
+
+  // Other scenario
+  // Train starts at speed 10
+  // It decelerates at rate 1 for 4 seconds until speed 6 is reached
+  // Distance travelled is 8*4 = 32
+  // It then accelerates at rate 2 for 2 seconds until speed 10 is reached again
+  // Acceleration distance is 8*2 = 16
+  // Total distance travelled is 32+16 = 48
+  // Braking distance at end is 10*10/2 = 50
+
+  // Braking distance at start is 10*10/2 = 50, i.e., 2 after end
+  // Hence, MA is 2 after the end
+  // Then obd is 50 - 2 = 48
+  // From end this is 6 - 0 = 6
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
+                       10, 10, 2, 1, 48, 48),
+                   0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_from_front_to_ma_point(10, 10, 0, 2, 1, 48, 48, true),
+      0);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_profile_from_rear_to_ma_point(10, 10, 0, 2, 1, 48, 48),
+      6);
+
+  // After 5 seconds it has travelled 32+7=39
+  // Braking distance is 8*8/2 = 32
+  // Hence, MA is 39+32 = 71, i.e., 71-48 = 23 after end
+  // Then obd is 50 - 23 = 27
+  // From end this is 6 - 5 = 1
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
+                       10, 10, 2, 1, 48, 27),
+                   5);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_from_front_to_ma_point(10, 10, 0, 2, 1, 48, 27, true),
+      5);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_profile_from_rear_to_ma_point(10, 10, 0, 2, 1, 48, 27),
+      1);
+
+  // After 6 seconds obd is 0
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
+                       10, 10, 2, 1, 48, 0),
+                   6);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_from_front_to_ma_point(10, 10, 0, 2, 1, 48, 0, true),
+      6);
+  EXPECT_DOUBLE_EQ(
+      cda_rail::max_time_profile_from_rear_to_ma_point(10, 10, 0, 2, 1, 48, 0),
+      0);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)

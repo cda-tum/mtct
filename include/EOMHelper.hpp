@@ -58,4 +58,17 @@ double min_time_from_front_to_ma_point(double v_1, double v_2, double v_m,
 double min_time_profile_from_rear_to_ma_point(double v_1, double v_2,
                                               double v_m, double a, double d,
                                               double s, double obd);
+double max_time_from_front_to_ma_point_no_stopping(double v_1, double v_2,
+                                                   double v_m, double a,
+                                                   double d, double s,
+                                                   double obd);
+double max_time_from_front_to_ma_point_stopping_allowed(double v_1, double v_2,
+                                                        double a, double d,
+                                                        double s, double obd);
+double max_time_from_front_to_ma_point(double v_1, double v_2, double v_m,
+                                       double a, double d, double s, double obd,
+                                       bool stopping_allowed);
+double max_time_profile_from_rear_to_ma_point(double v_1, double v_2,
+                                              double v_m, double a, double d,
+                                              double s, double obd);
 } // namespace cda_rail
