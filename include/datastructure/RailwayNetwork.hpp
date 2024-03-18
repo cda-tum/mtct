@@ -25,10 +25,13 @@ struct Vertex {
 
   std::string name;
   VertexType  type;
+  double      headway;
 
   // Constructors
   Vertex(std::string name, VertexType type)
-      : name(std::move(name)), type(type){};
+      : name(std::move(name)), type(type), headway(0.0){};
+  Vertex(std::string name, VertexType type, double headway)
+      : name(std::move(name)), type(type), headway(headway){};
 };
 
 struct Edge {
@@ -73,9 +76,11 @@ private:
   static void get_keys(tinyxml2::XMLElement* graphml_body,
                        std::string& breakable, std::string& length,
                        std::string& max_speed, std::string& min_block_length,
-                       std::string& min_stop_block_length, std::string& type);
+                       std::string& min_stop_block_length, std::string& type,
+                       std::string& headway);
   void add_vertices_from_graphml(const tinyxml2::XMLElement* graphml_node,
-                                 const std::string&          type);
+                                 const std::string&          type,
+                                 const std::string&          headway);
   void add_edges_from_graphml(const tinyxml2::XMLElement* graphml_edge,
                               const std::string&          breakable,
                               const std::string&          length,
@@ -143,7 +148,8 @@ public:
 
   [[nodiscard]] std::vector<size_t> get_vertices_by_type(VertexType type) const;
 
-  size_t add_vertex(const std::string& name, VertexType type);
+  size_t add_vertex(const std::string& name, VertexType type,
+                    double headway = 0.0);
   size_t add_edge(size_t source, size_t target, double length, double max_speed,
                   bool breakable = true, double min_block_length = 1,
                   double min_stop_block_length = 100);

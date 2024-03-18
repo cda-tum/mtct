@@ -987,6 +987,7 @@ TEST(Functionality, ReadNetwork) {
     const cda_rail::Vertex& v      = network.get_vertex(v_name);
     EXPECT_EQ(v.name, v_name);
     EXPECT_EQ(v.type, type[i]);
+    EXPECT_DOUBLE_EQ(v.headway, 0.0);
   }
 
   // Check edges properties
@@ -1149,7 +1150,7 @@ TEST(Functionality, ReadNetwork) {
 TEST(Functionality, WriteNetwork) {
   cda_rail::Network network;
   network.add_vertex("v0", cda_rail::VertexType::NoBorder);
-  network.add_vertex("v1", cda_rail::VertexType::VSS);
+  network.add_vertex("v1", cda_rail::VertexType::VSS, 5);
   network.add_vertex("v2", cda_rail::VertexType::TTD);
 
   network.add_edge("v0", "v1", 1, 2, true, 0);
@@ -1180,6 +1181,9 @@ TEST(Functionality, WriteNetwork) {
     EXPECT_TRUE(network_read.has_vertex(network.get_vertex(i).name));
     EXPECT_EQ(network_read.get_vertex(network.get_vertex(i).name).type,
               network.get_vertex(i).type);
+    EXPECT_DOUBLE_EQ(
+        network_read.get_vertex(network.get_vertex(i).name).headway,
+        network.get_vertex(i).headway);
   }
 
   // check edges

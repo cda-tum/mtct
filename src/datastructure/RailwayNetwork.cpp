@@ -21,7 +21,7 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
                                  std::string& max_speed,
                                  std::string& min_block_length,
                                  std::string& min_stop_block_length,
-                                 std::string& type) {
+                                 std::string& type, std::string& headway) {
   /**
    * Get keys from graphml file
    * @param graphml_body Body of graphml file
@@ -31,6 +31,7 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
    * @param min_block_length Min block length key
    * @param min_stop_block_length Min stop block length key
    * @param type Type key
+   * @param headway Headway key
    *
    * The variables are passed by reference and are modified in place.
    */
@@ -52,18 +53,22 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
     } else if (graphml_key->Attribute("attr.name") ==
                std::string("min_stop_block_length")) {
       min_stop_block_length = graphml_key->Attribute("id");
+    } else if (graphml_key->Attribute("attr.name") == std::string("headway")) {
+      headway = graphml_key->Attribute("id");
     }
     graphml_key = graphml_key->NextSiblingElement("key");
   }
 }
 
 void cda_rail::Network::add_vertices_from_graphml(
-    const tinyxml2::XMLElement* graphml_node, const std::string& type) {
+    const tinyxml2::XMLElement* graphml_node, const std::string& type,
+    const std::string& headway) {
   /**
    * Add vertices from graphml file
    * @param graphml_node Node of graphml file
    * @param network Network object
    * @param type Type key
+   * @param headway Headway key
    *
    * The vertices are added to the network object in place.
    */
@@ -71,18 +76,27 @@ void cda_rail::Network::add_vertices_from_graphml(
   while (graphml_node != nullptr) {
     const tinyxml2::XMLElement* graphml_data =
         graphml_node->FirstChildElement("data");
-    std::string const  name = graphml_node->Attribute("id");
-    std::optional<int> v_type;
+    std::string const     name = graphml_node->Attribute("id");
+    std::optional<int>    v_type;
+    std::optional<double> headway_value;
     while (graphml_data != nullptr) {
       if (graphml_data->Attribute("key") == type) {
         v_type = std::stoi(graphml_data->GetText());
+      } else if (!headway.empty() &&
+                 graphml_data->Attribute("key") == headway) {
+        headway_value = std::stod(graphml_data->GetText());
       }
       graphml_data = graphml_data->NextSiblingElement("data");
     }
     if (!v_type.has_value()) {
       throw exceptions::ImportException("graphml");
     }
-    this->add_vertex(name, static_cast<VertexType>(v_type.value()));
+    if (headway_value.has_value()) {
+      this->add_vertex(name, static_cast<VertexType>(v_type.value()),
+                       headway_value.value());
+    } else {
+      this->add_vertex(name, static_cast<VertexType>(v_type.value()));
+    }
     graphml_node = graphml_node->NextSiblingElement("node");
   }
 }
@@ -168,8 +182,9 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   std::string min_block_length;
   std::string min_stop_block_length;
   std::string type;
+  std::string headway;
   Network::get_keys(graphml_body, breakable, length, max_speed,
-                    min_block_length, min_stop_block_length, type);
+                    min_block_length, min_stop_block_length, type, headway);
   if (breakable.empty() || length.empty() || max_speed.empty() ||
       min_block_length.empty() || type.empty()) {
     throw exceptions::ImportException("graphml");
@@ -183,7 +198,7 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
 
   const tinyxml2::XMLElement* graphml_node =
       graphml_graph->FirstChildElement("node");
-  this->add_vertices_from_graphml(graphml_node, type);
+  this->add_vertices_from_graphml(graphml_node, type, headway);
 
   const tinyxml2::XMLElement* graphml_edge =
       graphml_graph->FirstChildElement("edge");
@@ -213,18 +228,20 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
   }
 }
 
-size_t cda_rail::Network::add_vertex(const std::string& name, VertexType type) {
+size_t cda_rail::Network::add_vertex(const std::string& name, VertexType type,
+                                     double headway) {
   /**
    * Add vertex to network
    * @param name Name of vertex
    * @param type Type of vertex
+   * @param headway Headway of vertex
    *
    * @return Index of vertex
    */
   if (has_vertex(name)) {
     throw exceptions::InvalidInputException("Vertex already exists");
   }
-  vertices.emplace_back(name, type);
+  vertices.emplace_back(name, type, headway);
   vertex_name_to_index[name] = vertices.size() - 1;
   return vertex_name_to_index[name];
 }
@@ -631,6 +648,7 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   std::string const min_block_length      = "d3";
   std::string const min_stop_block_length = "d4";
   std::string const type                  = "d5";
+  std::string const headway               = "d6";
   file << "<key id=\"" << breakable
        << R"(" for="edge" attr.name="breakable" attr.type="boolean"/>)"
        << std::endl;
@@ -648,7 +666,10 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
       << R"(" for="edge" attr.name="min_stop_block_length" attr.type="double"/>)"
       << std::endl;
   file << "<key id=\"" << type
-       << R"(" for="edge" attr.name="type" attr.type="long"/>)" << std::endl;
+       << R"(" for="vertex" attr.name="type" attr.type="long"/>)" << std::endl;
+  file << "<key id=\"" << headway
+       << R"(" for="vertex" attr.name="headway" attr.type="double"/>)"
+       << std::endl;
 
   // Write the graph header
   file << "<graph edgedefault=\"directed\">" << std::endl;
@@ -658,6 +679,8 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
     file << "<node id=\"" << vertex.name << "\">" << std::endl;
     file << "<data key=\"" << type << "\">" << static_cast<int>(vertex.type)
          << "</data>" << std::endl;
+    file << "<data key=\"" << headway << "\">" << vertex.headway << "</data>"
+         << std::endl;
     file << "</node>" << std::endl;
   }
 
