@@ -72,14 +72,14 @@ double max_time_profile_from_rear_to_ma_point(double v_1, double v_2,
                                               double v_m, double a, double d,
                                               double s, double obd);
 
-enum class MATimingStrategy { EXTREME_PROFILES = 0 };
+enum class MATimingStrategy { ExtremeProfiles = 0 };
 
 double min_time_from_rear_to_ma_point(
     double v_1, double v_2, double v_min, double v_max, double a, double d,
     double s, double obd,
-    MATimingStrategy strategy = MATimingStrategy::EXTREME_PROFILES);
+    MATimingStrategy strategy = MATimingStrategy::ExtremeProfiles);
 double max_time_from_rear_to_ma_point(
     double v_1, double v_2, double v_min, double v_max, double a, double d,
     double s, double obd,
-    MATimingStrategy strategy = MATimingStrategy::EXTREME_PROFILES);
+    MATimingStrategy strategy = MATimingStrategy::ExtremeProfiles);
 } // namespace cda_rail
