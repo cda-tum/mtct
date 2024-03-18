@@ -117,7 +117,6 @@ double cda_rail::max_travel_time_from_start_stopping_allowed(
   const auto s_points =
       get_max_travel_time_acceleration_change_points(v_1, v_2, 0, a, d, s);
   const auto& s_1 = s_points.first;
-  const auto& s_2 = s_points.second;
 
   const double bd = v_1 * v_1 / (2 * d); // Distance to stop
 
