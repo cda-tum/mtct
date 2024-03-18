@@ -414,3 +414,27 @@ double cda_rail::max_time_from_front_to_ma_point(double v_1, double v_2,
              : max_time_from_front_to_ma_point_no_stopping(v_1, v_2, v_m, a, d,
                                                            s, obd);
 }
+
+double cda_rail::min_time_from_rear_to_ma_point(
+    double v_1, double v_2, double v_min, double v_max, double a, double d,
+    double s, double obd, cda_rail::MATimingStrategy strategy) {
+  if (strategy == MATimingStrategy::EXTREME_PROFILES) {
+    const double t1 =
+        max_time_profile_from_rear_to_ma_point(v_1, v_2, v_min, a, d, s, obd);
+    const double t2 =
+        min_time_profile_from_rear_to_ma_point(v_1, v_2, v_max, a, d, s, obd);
+    return std::min(t1, t2);
+  }
+}
+
+double cda_rail::max_time_from_rear_to_ma_point(
+    double v_1, double v_2, double v_min, double v_max, double a, double d,
+    double s, double obd, cda_rail::MATimingStrategy strategy) {
+  if (strategy == MATimingStrategy::EXTREME_PROFILES) {
+    const double t1 =
+        max_time_profile_from_rear_to_ma_point(v_1, v_2, v_min, a, d, s, obd);
+    const double t2 =
+        min_time_profile_from_rear_to_ma_point(v_1, v_2, v_max, a, d, s, obd);
+    return std::max(t1, t2);
+  }
+}
