@@ -1,5 +1,7 @@
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
+#include "Definitions.hpp"
+#include "EOMHelper.hpp"
 #include "probleminstances/VSSGenerationTimetable.hpp"
 
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
@@ -24,6 +26,31 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
   const auto& tr_object = this->get_train_list().get_train(train);
   const auto& timetable = this->get_timetable().get_schedule(train);
   return tr_object.length / timetable.get_v_n();
+}
+
+double cda_rail::instances::GeneralPerformanceOptimizationInstance::
+    get_maximal_leaving_time(size_t train, double v) {
+  const auto& tr_object = this->get_train_list().get_train(train);
+  const auto& timetable = this->get_timetable().get_schedule(train);
+  return cda_rail::max_travel_time_no_stopping(
+      v, timetable.get_v_n(), V_MIN, tr_object.acceleration,
+      tr_object.deceleration, tr_object.length);
+}
+
+double cda_rail::instances::GeneralPerformanceOptimizationInstance::
+    get_minimal_leaving_time(size_t train, double v) {
+  const auto& tr_object = this->get_train_list().get_train(train);
+  const auto& timetable = this->get_timetable().get_schedule(train);
+  auto        v_max     = std::max(v, timetable.get_v_n());
+  if (v_max <= 0) {
+    const auto& exit_node =
+        this->get_timetable().get_schedule(train).get_exit();
+    const auto& exit_edge = this->const_n().in_edges(exit_node).at(0);
+    v_max                 = this->const_n().get_edge(exit_edge).max_speed;
+  }
+  return cda_rail::min_travel_time(v, timetable.get_v_n(), v_max,
+                                   tr_object.acceleration,
+                                   tr_object.deceleration, tr_object.length);
 }
 
 cda_rail::instances::GeneralPerformanceOptimizationInstance cda_rail::
