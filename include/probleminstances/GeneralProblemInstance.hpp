@@ -308,7 +308,24 @@ public:
       bool fixed_routes, bool error_if_no_route = true) const {
     return sections_used_by_train(get_train_list().get_train(tr_id).name,
                                   sections, fixed_routes, error_if_no_route);
-  }
+  };
+  [[nodiscard]] std::vector<size_t>
+  trains_in_section(const std::vector<size_t>& section, bool fix_routes,
+                    bool error_if_no_route = true) const {
+    std::vector<size_t> tr_in_sec;
+    for (size_t i = 0; i < get_train_list().size(); ++i) {
+      const auto edges_used =
+          edges_used_by_train(i, fix_routes, error_if_no_route);
+      for (const auto& e_id : section) {
+        if (std::find(edges_used.begin(), edges_used.end(), e_id) !=
+            edges_used.end()) {
+          tr_in_sec.push_back(i);
+          break;
+        }
+      }
+    }
+    return tr_in_sec;
+  };
   [[nodiscard]] std::vector<size_t>
   trains_on_edge(size_t edge_id, bool fixed_routes,
                  const std::vector<size_t>& trains_to_consider,

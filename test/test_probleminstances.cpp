@@ -917,6 +917,15 @@ TEST(Functionality, HelperFunctions) {
   EXPECT_TRUE(std::find(tr2_sections_fixed.begin(), tr2_sections_fixed.end(),
                         2) != tr2_sections_fixed.end());
 
+  const auto tr_on_section_fixed =
+      instance.trains_in_section({v1_v2, v2_v3, v2_v4}, true);
+  // Expect tr1 and tr3
+  EXPECT_EQ(tr_on_section_fixed.size(), 2);
+  EXPECT_TRUE(std::find(tr_on_section_fixed.begin(), tr_on_section_fixed.end(),
+                        tr1) != tr_on_section_fixed.end());
+  EXPECT_TRUE(std::find(tr_on_section_fixed.begin(), tr_on_section_fixed.end(),
+                        tr3) != tr_on_section_fixed.end());
+
   const auto tr1_edges_free = instance.edges_used_by_train("tr1", false);
   // Expect all 6 edges
   EXPECT_EQ(tr1_edges_free.size(), instance.n().number_of_edges());
@@ -940,6 +949,11 @@ TEST(Functionality, HelperFunctions) {
                         1) != tr2_sections_free.end());
   EXPECT_TRUE(std::find(tr2_sections_free.begin(), tr2_sections_free.end(),
                         2) != tr2_sections_free.end());
+
+  const auto tr_on_section_free =
+      instance.trains_in_section({v1_v2, v2_v3, v2_v4}, false);
+  // Expect all 3 trains
+  EXPECT_EQ(tr_on_section_free.size(), instance.get_train_list().size());
 
   // Check trains on edge
   const auto trains_on_v1_v2_fixed = instance.trains_on_edge(v1_v2, true);
