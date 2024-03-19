@@ -252,3 +252,151 @@ TEST(GeneralAbstractDataStructure, GeneralTimetableExportImport) {
                 .get_min_stopping_time(),
             60);
 }
+
+TEST(GeneralAbstractDataStructure, ParseSchedule) {
+  cda_rail::ScheduledStop stop1(0, 4, "Test");
+  cda_rail::ScheduledStop stop2(6, 8, "Test");
+
+  cda_rail::Schedule schedule(0, 10, 1, 20, 5, 2, {stop1, stop2});
+
+  const auto general_schedule = schedule.parse_to_general_schedule();
+  EXPECT_EQ(general_schedule.get_t_0_range(), (std::pair<int, int>(0, 0)));
+  EXPECT_EQ(general_schedule.get_t_n_range(), (std::pair<int, int>(20, 20)));
+  EXPECT_EQ(general_schedule.get_v_0(), 10);
+  EXPECT_EQ(general_schedule.get_v_n(), 5);
+  EXPECT_EQ(general_schedule.get_entry(), 1);
+  EXPECT_EQ(general_schedule.get_exit(), 2);
+  EXPECT_EQ(general_schedule.get_stops().size(), 2);
+  EXPECT_EQ(general_schedule.get_stops().at(0).get_begin_range(),
+            (std::pair<int, int>(0, 0)));
+  EXPECT_EQ(general_schedule.get_stops().at(0).get_end_range(),
+            (std::pair<int, int>(4, 4)));
+  EXPECT_EQ(general_schedule.get_stops().at(0).get_min_stopping_time(), 4);
+  EXPECT_EQ(general_schedule.get_stops().at(0).get_station_name(), "Test");
+  EXPECT_EQ(typeid(general_schedule.get_stops().at(0)),
+            typeid(cda_rail::GeneralScheduledStop));
+  EXPECT_EQ(general_schedule.get_stops().at(1).get_begin_range(),
+            (std::pair<int, int>(6, 6)));
+  EXPECT_EQ(general_schedule.get_stops().at(1).get_end_range(),
+            (std::pair<int, int>(8, 8)));
+  EXPECT_EQ(general_schedule.get_stops().at(1).get_min_stopping_time(), 2);
+  EXPECT_EQ(general_schedule.get_stops().at(1).get_station_name(), "Test");
+  EXPECT_EQ(typeid(general_schedule.get_stops().at(1)),
+            typeid(cda_rail::GeneralScheduledStop));
+}
+
+TEST(GeneralAbstractDataStructure, ParseTimetable) {
+  auto network = cda_rail::Network::import_network(
+      "./example-networks/SimpleStation/network/");
+  cda_rail::Timetable timetable;
+
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", "g00", "g01", network);
+
+  timetable.add_station("Station2");
+  timetable.add_track_to_station("Station2", "g10", "g11", network);
+
+  const auto l0 = network.get_vertex_index("l0");
+  const auto r0 = network.get_vertex_index("r0");
+
+  const auto tr1 = timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, l0, 300,
+                                       20, r0, network);
+  timetable.add_stop(tr1, "Station1", 0, 60);
+  timetable.add_stop(tr1, "Station2", 120, 180);
+
+  const auto tr2 = timetable.add_train("tr2", 100, 83.33, 2, 1, 0, 0, l0, 300,
+                                       20, r0, network);
+  timetable.add_stop(tr2, "Station1", 100, 160);
+
+  const auto general_timetable = timetable.parse_to_general_timetable();
+  EXPECT_EQ(general_timetable.get_station_list().get_station_names().size(), 2);
+  EXPECT_EQ(general_timetable.get_station_list().get_station_names().at(0),
+            "Station1");
+  EXPECT_EQ(general_timetable.get_station_list().get_station_names().at(1),
+            "Station2");
+  EXPECT_EQ(general_timetable.get_train_list().size(), 2);
+  EXPECT_EQ(general_timetable.get_train_list().get_train_index("tr1"), tr1);
+  EXPECT_EQ(general_timetable.get_train_list().get_train_index("tr2"), tr2);
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr1").name, "tr1");
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr1").length, 100);
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr1").max_speed,
+            83.33);
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr1").acceleration,
+            2);
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr1").deceleration,
+            1);
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr1").tim, true);
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr2").name, "tr2");
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr2").length, 100);
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr2").max_speed,
+            83.33);
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr2").acceleration,
+            2);
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr2").deceleration,
+            1);
+  EXPECT_EQ(general_timetable.get_train_list().get_train("tr2").tim, true);
+  EXPECT_EQ(general_timetable.get_schedule(tr1).get_t_0_range(),
+            (std::pair<int, int>(0, 0)));
+  EXPECT_EQ(general_timetable.get_schedule(tr1).get_t_n_range(),
+            (std::pair<int, int>(300, 300)));
+  EXPECT_EQ(general_timetable.get_schedule(tr1).get_v_0(), 0);
+  EXPECT_EQ(general_timetable.get_schedule(tr1).get_v_n(), 20);
+  EXPECT_EQ(general_timetable.get_schedule(tr1).get_entry(), l0);
+  EXPECT_EQ(general_timetable.get_schedule(tr1).get_exit(), r0);
+  EXPECT_EQ(general_timetable.get_schedule(tr1).get_stops().size(), 2);
+  EXPECT_EQ(
+      general_timetable.get_schedule(tr1).get_stops().at(0).get_station_name(),
+      "Station1");
+  EXPECT_EQ(
+      general_timetable.get_schedule(tr1).get_stops().at(0).get_begin_range(),
+      (std::pair<int, int>(0, 0)));
+  EXPECT_EQ(
+      general_timetable.get_schedule(tr1).get_stops().at(0).get_end_range(),
+      (std::pair<int, int>(60, 60)));
+  EXPECT_EQ(general_timetable.get_schedule(tr1)
+                .get_stops()
+                .at(0)
+                .get_min_stopping_time(),
+            60);
+  EXPECT_EQ(
+      general_timetable.get_schedule(tr1).get_stops().at(1).get_station_name(),
+      "Station2");
+  EXPECT_EQ(
+      general_timetable.get_schedule(tr1).get_stops().at(1).get_begin_range(),
+      (std::pair<int, int>(120, 120)));
+  EXPECT_EQ(
+      general_timetable.get_schedule(tr1).get_stops().at(1).get_end_range(),
+      (std::pair<int, int>(180, 180)));
+  EXPECT_EQ(general_timetable.get_schedule(tr1)
+                .get_stops()
+                .at(1)
+                .get_min_stopping_time(),
+            60);
+  EXPECT_EQ(general_timetable.get_schedule(tr2).get_t_0_range(),
+            (std::pair<int, int>(0, 0)));
+  EXPECT_EQ(general_timetable.get_schedule(tr2).get_t_n_range(),
+            (std::pair<int, int>(300, 300)));
+  EXPECT_EQ(general_timetable.get_schedule(tr2).get_v_0(), 0);
+  EXPECT_EQ(general_timetable.get_schedule(tr2).get_v_n(), 20);
+  EXPECT_EQ(general_timetable.get_schedule(tr2).get_entry(), l0);
+  EXPECT_EQ(general_timetable.get_schedule(tr2).get_exit(), r0);
+  EXPECT_EQ(general_timetable.get_schedule(tr2).get_stops().size(), 1);
+  EXPECT_EQ(
+      general_timetable.get_schedule(tr2).get_stops().at(0).get_station_name(),
+      "Station1");
+  EXPECT_EQ(
+      general_timetable.get_schedule(tr2).get_stops().at(0).get_begin_range(),
+      (std::pair<int, int>(100, 100)));
+  EXPECT_EQ(
+      general_timetable.get_schedule(tr2).get_stops().at(0).get_end_range(),
+      (std::pair<int, int>(160, 160)));
+  EXPECT_EQ(general_timetable.get_schedule(tr2)
+                .get_stops()
+                .at(0)
+                .get_min_stopping_time(),
+            60);
+
+  EXPECT_EQ(typeid(general_timetable),
+            typeid(cda_rail::GeneralTimetable<
+                   cda_rail::GeneralSchedule<cda_rail::GeneralScheduledStop>>));
+}

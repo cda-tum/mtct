@@ -404,6 +404,10 @@ public:
       : GeneralTimetable(std::filesystem::path(path), network){};
   GeneralTimetable(const char* path, const Network& network)
       : GeneralTimetable(std::filesystem::path(path), network){};
+  GeneralTimetable(const StationList& station_list, const TrainList& train_list,
+                   const std::vector<T>& schedules)
+      : station_list(station_list), train_list(train_list),
+        schedules(schedules) {}
 
   void export_timetable(const std::string& path, const Network& network) const {
     export_timetable(std::filesystem::path(path), network);

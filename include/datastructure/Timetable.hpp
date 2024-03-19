@@ -45,6 +45,18 @@ public:
   void set_t_0(int t_0) { set_t_0_range({t_0, t_0}); }
   void set_t_n(int t_n) { set_t_n_range({t_n, t_n}); }
 
+  [[nodiscard]] GeneralSchedule<GeneralScheduledStop>
+  parse_to_general_schedule() const {
+    const auto&                       stops = this->get_stops();
+    std::vector<GeneralScheduledStop> general_stops;
+    general_stops.reserve(stops.size());
+    for (const auto& stop : stops) {
+      general_stops.push_back(stop);
+    }
+    return {get_t_0_range(), get_v_0(),  get_entry(),  get_t_n_range(),
+            get_v_n(),       get_exit(), general_stops};
+  }
+
   // Constructor
   // NOLINTNEXTLINE(readability-redundant-member-init)
   Schedule() : GeneralSchedule() {}
@@ -77,6 +89,16 @@ public:
                       bool tn_inclusive = true) const {
     return time_index_interval(train_list.get_train_index(train_name), dt,
                                tn_inclusive);
+  };
+
+  [[nodiscard]] GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>
+  parse_to_general_timetable() const {
+    std::vector<GeneralSchedule<GeneralScheduledStop>> general_schedules;
+    general_schedules.reserve(this->get_train_list().size());
+    for (const auto& schedule : schedules) {
+      general_schedules.push_back(schedule.parse_to_general_schedule());
+    }
+    return {station_list, train_list, general_schedules};
   };
 
   [[nodiscard]] static Timetable import_timetable(const std::string& path,
