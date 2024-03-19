@@ -876,9 +876,49 @@ TEST(Functionality, HelperFunctions) {
   EXPECT_TRUE(std::find(tr1_edges_fixed.begin(), tr1_edges_fixed.end(),
                         v3_v4) != tr1_edges_fixed.end());
 
+  const auto tr1_vertices_fixed = instance.vertices_used_by_train(tr1, true);
+  // Expect five vertices v0 - v1 - v2 - v3 - v4
+  EXPECT_EQ(tr1_vertices_fixed.size(), 5);
+  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v0")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v1")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v2")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v3")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v4")) !=
+              tr1_vertices_fixed.end());
+
+  const auto tr2_vertices_fixed = instance.vertices_used_by_train(tr2, true);
+  // Expect 3 vertices v0 - v1 - v4
+  EXPECT_EQ(tr2_vertices_fixed.size(), 3);
+  EXPECT_TRUE(std::find(tr2_vertices_fixed.begin(), tr2_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v0")) !=
+              tr2_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr2_vertices_fixed.begin(), tr2_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v1")) !=
+              tr2_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr2_vertices_fixed.begin(), tr2_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v4")) !=
+              tr2_vertices_fixed.end());
+
   const auto tr1_edges_free = instance.edges_used_by_train("tr1", false);
   // Expect all 6 edges
   EXPECT_EQ(tr1_edges_free.size(), instance.n().number_of_edges());
+
+  const auto tr1_vertices_free = instance.vertices_used_by_train("tr1", false);
+  // Expect all 5 vertices
+  EXPECT_EQ(tr1_vertices_free.size(), instance.n().number_of_vertices());
+
+  const auto tr2_vertices_free = instance.vertices_used_by_train("tr2", false);
+  // Expect all 5 vertices
+  EXPECT_EQ(tr2_vertices_free.size(), instance.n().number_of_vertices());
 
   // Check trains on edge
   const auto trains_on_v1_v2_fixed = instance.trains_on_edge(v1_v2, true);

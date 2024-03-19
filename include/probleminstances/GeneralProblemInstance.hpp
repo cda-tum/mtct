@@ -250,10 +250,36 @@ public:
     return get_route(train_name).get_edges();
   };
   [[nodiscard]] std::vector<size_t>
-  edges_used_by_train(size_t train_id, bool fixed_routes) const {
+  edges_used_by_train(size_t train_id, bool fixed_routes,
+                      bool error_if_no_route = true) const {
     return edges_used_by_train(get_train_list().get_train(train_id).name,
-                               fixed_routes);
+                               fixed_routes, error_if_no_route);
   };
+  [[nodiscard]] std::vector<size_t>
+  vertices_used_by_train(const std::string& tr_name, bool fixed_routes,
+                         bool error_if_no_route = true) const {
+    const auto edges =
+        edges_used_by_train(tr_name, fixed_routes, error_if_no_route);
+    std::vector<size_t> return_vertices;
+    for (const auto& e_id : edges) {
+      const auto& edge = this->const_n().get_edge(e_id);
+      if (std::find(return_vertices.begin(), return_vertices.end(),
+                    edge.source) == return_vertices.end()) {
+        return_vertices.push_back(edge.source);
+      }
+      if (std::find(return_vertices.begin(), return_vertices.end(),
+                    edge.target) == return_vertices.end()) {
+        return_vertices.push_back(edge.target);
+      }
+    }
+    return return_vertices;
+  };
+  [[nodiscard]] std::vector<size_t>
+  vertices_used_by_train(size_t tr_id, bool fixed_routes,
+                         bool error_if_no_route = true) const {
+    return vertices_used_by_train(get_train_list().get_train(tr_id).name,
+                                  fixed_routes, error_if_no_route);
+  }
   [[nodiscard]] std::vector<size_t>
   trains_on_edge(size_t edge_id, bool fixed_routes,
                  const std::vector<size_t>& trains_to_consider,
