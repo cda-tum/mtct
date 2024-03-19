@@ -279,6 +279,35 @@ public:
                          bool error_if_no_route = true) const {
     return vertices_used_by_train(get_train_list().get_train(tr_id).name,
                                   fixed_routes, error_if_no_route);
+  };
+  [[nodiscard]] std::vector<size_t>
+  sections_used_by_train(const std::string&                      tr_name,
+                         const std::vector<std::vector<size_t>>& sections,
+                         bool                                    fixed_routes,
+                         bool error_if_no_route = true) const {
+    const auto edges =
+        edges_used_by_train(tr_name, fixed_routes, error_if_no_route);
+    std::vector<size_t> return_sections;
+    for (size_t section_id = 0; section_id < sections.size(); ++section_id) {
+      const auto& section     = sections[section_id];
+      bool        add_section = false;
+      for (const auto& e_id : section) {
+        if (std::find(edges.begin(), edges.end(), e_id) != edges.end()) {
+          add_section = true;
+          break;
+        }
+      }
+      if (add_section) {
+        return_sections.push_back(section_id);
+      }
+    }
+    return return_sections;
+  };
+  [[nodiscard]] std::vector<size_t> sections_used_by_train(
+      size_t tr_id, const std::vector<std::vector<size_t>>& sections,
+      bool fixed_routes, bool error_if_no_route = true) const {
+    return sections_used_by_train(get_train_list().get_train(tr_id).name,
+                                  sections, fixed_routes, error_if_no_route);
   }
   [[nodiscard]] std::vector<size_t>
   trains_on_edge(size_t edge_id, bool fixed_routes,
