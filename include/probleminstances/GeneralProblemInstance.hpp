@@ -89,6 +89,7 @@ protected:
 
 public:
   [[nodiscard]] const auto& get_timetable() const { return timetable; };
+  [[nodiscard]] const auto& get_routes() const { return routes; };
 
   Train& editable_tr(size_t index) { return timetable.editable_tr(index); };
   Train& editable_tr(const std::string& name) {

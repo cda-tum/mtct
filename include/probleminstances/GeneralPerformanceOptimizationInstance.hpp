@@ -2,6 +2,7 @@
 
 #include "Definitions.hpp"
 #include "GeneralProblemInstance.hpp"
+#include "VSSGenerationTimetable.hpp"
 #include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
@@ -62,6 +63,9 @@ public:
     }
     lambda = static_cast<double>(j["lambda"]);
   };
+
+  static GeneralPerformanceOptimizationInstance
+  cast_from_vss_generation(const VSSGenerationTimetable& vss_gen);
 
   using T = GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>;
 

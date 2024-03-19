@@ -400,3 +400,376 @@ TEST(GeneralAbstractDataStructure, ParseTimetable) {
             typeid(cda_rail::GeneralTimetable<
                    cda_rail::GeneralSchedule<cda_rail::GeneralScheduledStop>>));
 }
+
+struct EdgeTarget {
+  std::string source;
+  std::string target;
+  double      length;
+  double      max_speed;
+  bool        breakable;
+  double      min_block_length;
+  double      min_stop_block_length = 100;
+};
+
+void check_instance_import_general_cast(
+    const cda_rail::instances::GeneralPerformanceOptimizationInstance&
+        instance) {
+  const auto& network = instance.const_n();
+
+  // Check vertices properties
+  std::vector<std::string> vertex_names = {
+      "l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
+  std::vector<cda_rail::VertexType> type = {
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::NoBorder,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
+      cda_rail::VertexType::NoBorder, cda_rail::VertexType::TTD,
+      cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
+      cda_rail::VertexType::TTD};
+
+  EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
+
+  for (size_t i = 0; i < vertex_names.size(); i++) {
+    std::string      v_name = vertex_names[i];
+    cda_rail::Vertex v      = network.get_vertex(v_name);
+    EXPECT_EQ(v.name, v_name);
+    EXPECT_EQ(v.type, type[i]);
+  }
+
+  // Check edges properties
+  std::vector<EdgeTarget> edge_targets;
+  edge_targets.push_back({"l0", "l1", 500, 27.77777777777778, true, 10});
+  edge_targets.push_back({"l1", "l2", 500, 27.77777777777778, true, 10});
+  edge_targets.push_back({"l2", "l3", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"l3", "g00", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"l3", "g10", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 10, 150});
+  edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 10, 150});
+  edge_targets.push_back({"g01", "r2", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"g11", "r2", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"r2", "r1", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"r1", "r0", 500, 27.77777777777778, true, 10});
+  edge_targets.push_back({"r0", "r1", 500, 27.77777777777778, true, 10});
+  edge_targets.push_back({"r1", "r2", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"r2", "g01", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"r2", "g11", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 10, 150});
+  edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 10, 150});
+  edge_targets.push_back({"g00", "l3", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"g10", "l3", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"l3", "l2", 5, 27.77777777777778, false, 0});
+  edge_targets.push_back({"l2", "l1", 500, 27.77777777777778, true, 10});
+  edge_targets.push_back({"l1", "l0", 500, 27.77777777777778, true, 10});
+
+  EXPECT_EQ(network.number_of_edges(), edge_targets.size());
+  for (const auto& edge : edge_targets) {
+    cda_rail::Edge e = network.get_edge(edge.source, edge.target);
+    EXPECT_EQ(network.get_vertex(e.source).name, edge.source);
+    EXPECT_EQ(network.get_vertex(e.target).name, edge.target);
+    EXPECT_EQ(e.length, edge.length);
+    EXPECT_EQ(e.max_speed, edge.max_speed);
+    EXPECT_EQ(e.breakable, edge.breakable);
+    EXPECT_EQ(e.min_block_length, edge.min_block_length);
+    EXPECT_EQ(e.min_stop_block_length, edge.min_stop_block_length);
+  }
+
+  // Check successors
+  std::vector<size_t> successors_target;
+
+  // l0,l1
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("l1", "l2"));
+  EXPECT_EQ(network.get_successors("l0", "l1"), successors_target);
+
+  // l1,l2
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("l2", "l3"));
+  EXPECT_EQ(network.get_successors("l1", "l2"), successors_target);
+
+  // l2,l3
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("l3", "g00"));
+  successors_target.emplace_back(network.get_edge_index("l3", "g10"));
+  auto successors_l2_l3 = network.get_successors("l2", "l3");
+  std::sort(successors_target.begin(), successors_target.end());
+  std::sort(successors_l2_l3.begin(), successors_l2_l3.end());
+  EXPECT_EQ(successors_l2_l3, successors_target);
+
+  // l3,g00
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("g00", "g01"));
+  EXPECT_EQ(network.get_successors("l3", "g00"), successors_target);
+
+  // l3,g10
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("g10", "g11"));
+  EXPECT_EQ(network.get_successors("l3", "g10"), successors_target);
+
+  // g00,g01
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("g01", "r2"));
+  EXPECT_EQ(network.get_successors("g00", "g01"), successors_target);
+
+  // g10,g11
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("g11", "r2"));
+  EXPECT_EQ(network.get_successors("g10", "g11"), successors_target);
+
+  // g01,r2
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("r2", "r1"));
+  EXPECT_EQ(network.get_successors("g01", "r2"), successors_target);
+
+  // g11,r2
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("r2", "r1"));
+  EXPECT_EQ(network.get_successors("g11", "r2"), successors_target);
+
+  // r2,r1
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("r1", "r0"));
+  EXPECT_EQ(network.get_successors("r2", "r1"), successors_target);
+
+  // r1,r0
+  successors_target.clear();
+  EXPECT_EQ(network.get_successors("r1", "r0"), successors_target);
+
+  // r0,r1
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("r1", "r2"));
+  EXPECT_EQ(network.get_successors("r0", "r1"), successors_target);
+
+  // r1,r2
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("r2", "g01"));
+  successors_target.emplace_back(network.get_edge_index("r2", "g11"));
+  auto successors_r1_r2 = network.get_successors("r1", "r2");
+  std::sort(successors_target.begin(), successors_target.end());
+  std::sort(successors_r1_r2.begin(), successors_r1_r2.end());
+  EXPECT_EQ(successors_r1_r2, successors_target);
+
+  // r2,g01
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("g01", "g00"));
+  EXPECT_EQ(network.get_successors("r2", "g01"), successors_target);
+
+  // r2,g11
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("g11", "g10"));
+  EXPECT_EQ(network.get_successors("r2", "g11"), successors_target);
+
+  // g01,g00
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("g00", "l3"));
+  EXPECT_EQ(network.get_successors("g01", "g00"), successors_target);
+
+  // g11,g10
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("g10", "l3"));
+  EXPECT_EQ(network.get_successors("g11", "g10"), successors_target);
+
+  // g00,l3
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("l3", "l2"));
+  EXPECT_EQ(network.get_successors("g00", "l3"), successors_target);
+
+  // g10,l3
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("l3", "l2"));
+  EXPECT_EQ(network.get_successors("g10", "l3"), successors_target);
+
+  // l3,l2
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("l2", "l1"));
+  EXPECT_EQ(network.get_successors("l3", "l2"), successors_target);
+
+  // l2,l1
+  successors_target.clear();
+  successors_target.emplace_back(network.get_edge_index("l1", "l0"));
+  EXPECT_EQ(network.get_successors("l2", "l1"), successors_target);
+
+  // l1,l0
+  successors_target.clear();
+  EXPECT_EQ(network.get_successors("l1", "l0"), successors_target);
+
+  // Check timetable
+  const auto& stations = instance.get_station_list();
+  EXPECT_EQ(stations.size(), 1);
+  EXPECT_TRUE(stations.has_station("Central"));
+
+  // Check if the station is imported correctly
+  const auto& station = stations.get_station("Central");
+  EXPECT_EQ(station.name, "Central");
+  EXPECT_EQ(station.tracks.size(), 4);
+  std::vector<size_t> track_ids{network.get_edge_index("g00", "g01"),
+                                network.get_edge_index("g10", "g11"),
+                                network.get_edge_index("g01", "g00"),
+                                network.get_edge_index("g11", "g10")};
+  auto                tracks_read = station.tracks;
+  std::sort(tracks_read.begin(), tracks_read.end());
+  std::sort(track_ids.begin(), track_ids.end());
+  EXPECT_EQ(tracks_read, track_ids);
+
+  const auto& trains = instance.get_train_list();
+  // Check if the all trains are imported
+  EXPECT_EQ(trains.size(), 3);
+  EXPECT_TRUE(trains.has_train("tr1"));
+  EXPECT_TRUE(trains.has_train("tr2"));
+  EXPECT_TRUE(trains.has_train("tr3"));
+  // Check if the train tr1 is imported correctly
+  auto tr1 = trains.get_train("tr1");
+  EXPECT_EQ(tr1.name, "tr1");
+  EXPECT_EQ(tr1.length, 100);
+  EXPECT_EQ(tr1.max_speed, 83.33);
+  EXPECT_EQ(tr1.acceleration, 2);
+  EXPECT_EQ(tr1.deceleration, 1);
+  // Check if the train tr2 is imported correctly
+  auto tr2 = trains.get_train("tr2");
+  EXPECT_EQ(tr2.name, "tr2");
+  EXPECT_EQ(tr2.length, 100);
+  EXPECT_EQ(tr2.max_speed, 27.78);
+  EXPECT_EQ(tr2.acceleration, 2);
+  EXPECT_EQ(tr2.deceleration, 1);
+  // Check if the train tr3 is imported correctly
+  auto tr3 = trains.get_train("tr3");
+  EXPECT_EQ(tr3.name, "tr3");
+  EXPECT_EQ(tr3.length, 250);
+  EXPECT_EQ(tr3.max_speed, 20);
+  EXPECT_EQ(tr3.acceleration, 2);
+  EXPECT_EQ(tr3.deceleration, 1);
+
+  // Check the schedule of tr1
+  const auto& tr1_schedule = instance.get_schedule("tr1");
+  EXPECT_EQ(tr1_schedule.get_t_0_range(), (std::pair<int, int>(120, 120)));
+  EXPECT_EQ(tr1_schedule.get_v_0(), 0);
+  EXPECT_EQ(tr1_schedule.get_t_n_range(), (std::pair<int, int>(645, 645)));
+  EXPECT_EQ(tr1_schedule.get_v_n(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr1_schedule.get_entry()).name, "l0");
+  EXPECT_EQ(network.get_vertex(tr1_schedule.get_exit()).name, "r0");
+  EXPECT_EQ(tr1_schedule.get_stops().size(), 1);
+  const auto& stop = tr1_schedule.get_stops()[0];
+  EXPECT_EQ(stop.get_begin_range(), (std::pair<int, int>(240, 240)));
+  EXPECT_EQ(stop.get_end_range(), (std::pair<int, int>(300, 300)));
+  EXPECT_EQ(stop.get_min_stopping_time(), 300 - 240);
+  EXPECT_EQ(stations.get_station(stop.get_station_name()).name, "Central");
+
+  // Check the schedule of tr2
+  const auto& tr2_schedule = instance.get_schedule("tr2");
+  EXPECT_EQ(tr2_schedule.get_t_0_range(), (std::pair<int, int>(0, 0)));
+  EXPECT_EQ(tr2_schedule.get_v_0(), 0);
+  EXPECT_EQ(tr2_schedule.get_t_n_range(), (std::pair<int, int>(420, 420)));
+  EXPECT_EQ(tr2_schedule.get_v_n(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr2_schedule.get_entry()).name, "l0");
+  EXPECT_EQ(network.get_vertex(tr2_schedule.get_exit()).name, "r0");
+  EXPECT_EQ(tr2_schedule.get_stops().size(), 1);
+  const auto& stop2 = tr2_schedule.get_stops()[0];
+  EXPECT_EQ(stop2.get_begin_range(), (std::pair<int, int>(120, 120)));
+  EXPECT_EQ(stop2.get_end_range(), (std::pair<int, int>(300, 300)));
+  EXPECT_EQ(stop2.get_min_stopping_time(), 300 - 120);
+  EXPECT_EQ(stations.get_station(stop2.get_station_name()).name, "Central");
+
+  // Check the schedule of tr3
+  const auto& tr3_schedule = instance.get_schedule("tr3");
+  EXPECT_EQ(tr3_schedule.get_t_0_range(), (std::pair<int, int>(0, 0)));
+  EXPECT_EQ(tr3_schedule.get_v_0(), 0);
+  EXPECT_EQ(tr3_schedule.get_t_n_range(), (std::pair<int, int>(420, 420)));
+  EXPECT_EQ(tr3_schedule.get_v_n(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr3_schedule.get_entry()).name, "r0");
+  EXPECT_EQ(network.get_vertex(tr3_schedule.get_exit()).name, "l0");
+  EXPECT_EQ(tr3_schedule.get_stops().size(), 1);
+  const auto& stop3 = tr3_schedule.get_stops()[0];
+  EXPECT_EQ(stop3.get_begin_range(), (std::pair<int, int>(180, 180)));
+  EXPECT_EQ(stop3.get_end_range(), (std::pair<int, int>(300, 300)));
+  EXPECT_EQ(stop3.get_min_stopping_time(), 300 - 180);
+  EXPECT_EQ(stations.get_station(stop3.get_station_name()).name, "Central");
+
+  // Check the route  map
+  // Check if the route consists of three trains with names "tr1", "tr2" and
+  // "tr3"
+  EXPECT_EQ(instance.route_map_size(), 3);
+  EXPECT_TRUE(instance.has_route("tr1"));
+  EXPECT_TRUE(instance.has_route("tr2"));
+  EXPECT_TRUE(instance.has_route("tr3"));
+
+  // Check if the route for tr1 consists of eight edges passing vertices
+  // l0-l1-l2-l3-g00-g01-r2-r1-r0 in this order.
+  const auto& route = instance.get_route("tr1");
+  EXPECT_EQ(route.size(), 8);
+  EXPECT_EQ(network.get_vertex(route.get_edge(0, network).source).name, "l0");
+  EXPECT_EQ(network.get_vertex(route.get_edge(0, network).target).name, "l1");
+  EXPECT_EQ(network.get_vertex(route.get_edge(1, network).source).name, "l1");
+  EXPECT_EQ(network.get_vertex(route.get_edge(1, network).target).name, "l2");
+  EXPECT_EQ(network.get_vertex(route.get_edge(2, network).source).name, "l2");
+  EXPECT_EQ(network.get_vertex(route.get_edge(2, network).target).name, "l3");
+  EXPECT_EQ(network.get_vertex(route.get_edge(3, network).source).name, "l3");
+  EXPECT_EQ(network.get_vertex(route.get_edge(3, network).target).name, "g00");
+  EXPECT_EQ(network.get_vertex(route.get_edge(4, network).source).name, "g00");
+  EXPECT_EQ(network.get_vertex(route.get_edge(4, network).target).name, "g01");
+  EXPECT_EQ(network.get_vertex(route.get_edge(5, network).source).name, "g01");
+  EXPECT_EQ(network.get_vertex(route.get_edge(5, network).target).name, "r2");
+  EXPECT_EQ(network.get_vertex(route.get_edge(6, network).source).name, "r2");
+  EXPECT_EQ(network.get_vertex(route.get_edge(6, network).target).name, "r1");
+  EXPECT_EQ(network.get_vertex(route.get_edge(7, network).source).name, "r1");
+  EXPECT_EQ(network.get_vertex(route.get_edge(7, network).target).name, "r0");
+
+  // Check if the route for tr2 consists of eight edges passing vertices
+  // l0-l1-l2-l3-g00-g01-r2-r1-r0 in this order.
+  const auto& route2 = instance.get_route("tr2");
+  EXPECT_EQ(route2.size(), 8);
+  EXPECT_EQ(network.get_vertex(route2.get_edge(0, network).source).name, "l0");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(0, network).target).name, "l1");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(1, network).source).name, "l1");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(1, network).target).name, "l2");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(2, network).source).name, "l2");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(2, network).target).name, "l3");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(3, network).source).name, "l3");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(3, network).target).name, "g00");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(4, network).source).name, "g00");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(4, network).target).name, "g01");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(5, network).source).name, "g01");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(5, network).target).name, "r2");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(6, network).source).name, "r2");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(6, network).target).name, "r1");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(7, network).source).name, "r1");
+  EXPECT_EQ(network.get_vertex(route2.get_edge(7, network).target).name, "r0");
+
+  // Check if the route for tr3 consists of eight edges passing vertices
+  // r0-r1-r2-g11-g10-l3-l2-l1 in this order.
+  const auto& route3 = instance.get_route("tr3");
+  EXPECT_EQ(route3.size(), 8);
+  EXPECT_EQ(network.get_vertex(route3.get_edge(0, network).source).name, "r0");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(0, network).target).name, "r1");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(1, network).source).name, "r1");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(1, network).target).name, "r2");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(2, network).source).name, "r2");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(2, network).target).name, "g11");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(3, network).source).name, "g11");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(3, network).target).name, "g10");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(4, network).source).name, "g10");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(4, network).target).name, "l3");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(5, network).source).name, "l3");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(5, network).target).name, "l2");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(6, network).source).name, "l2");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(6, network).target).name, "l1");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(7, network).source).name, "l1");
+  EXPECT_EQ(network.get_vertex(route3.get_edge(7, network).target).name, "l0");
+
+  // Check consistency
+  EXPECT_TRUE(instance.check_consistency());
+  EXPECT_TRUE(instance.check_consistency(true));
+  EXPECT_TRUE(instance.check_consistency(false));
+
+  // Check if max_t is correct
+  EXPECT_EQ(instance.max_t(), 645);
+}
+
+TEST(GeneralAbstractDataStructure, VSSGenerationTimetableParse) {
+  const auto instance =
+      cda_rail::instances::VSSGenerationTimetable::import_instance(
+          "./example-networks/SimpleStation/");
+
+  const auto general_instance =
+      cda_rail::instances::GeneralPerformanceOptimizationInstance::
+          cast_from_vss_generation(instance);
+  check_instance_import_general_cast(general_instance);
+}

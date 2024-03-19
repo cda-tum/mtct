@@ -1,5 +1,7 @@
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
+#include "probleminstances/VSSGenerationTimetable.hpp"
+
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     discretize_stops() {
   /**
@@ -22,4 +24,14 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
   const auto& tr_object = this->get_train_list().get_train(train);
   const auto& timetable = this->get_timetable().get_schedule(train);
   return tr_object.length / timetable.get_v_n();
+}
+
+cda_rail::instances::GeneralPerformanceOptimizationInstance cda_rail::
+    instances::GeneralPerformanceOptimizationInstance::cast_from_vss_generation(
+        const cda_rail::instances::VSSGenerationTimetable& vss_gen) {
+  GeneralPerformanceOptimizationInstance general_instance(
+      vss_gen.const_n(), vss_gen.get_timetable().parse_to_general_timetable(),
+      vss_gen.get_routes());
+  general_instance.initialize_vectors();
+  return general_instance;
 }
