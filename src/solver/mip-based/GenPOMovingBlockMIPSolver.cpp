@@ -7,6 +7,7 @@
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
+    const ModelDetail&                 model_detail_input,
     const SolutionSettingsMovingBlock& solution_settings_input, int time_limit,
     bool debug_input) {
   /**
@@ -29,6 +30,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     throw exceptions::ConsistencyException();
   }
 
+  PLOGI << "Create model";
+
   instances::GeneralPerformanceOptimizationInstance old_instance = instance;
   this->instance.discretize_stops();
 
@@ -37,11 +40,19 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   num_vertices            = instance.const_n().number_of_vertices();
   max_t                   = instance.max_t();
   this->solution_settings = solution_settings_input;
+  this->model_detail      = model_detail_input;
   this->ttd_sections      = instance.n().unbreakable_sections();
   this->num_ttd           = this->ttd_sections.size();
 
   PLOGD << "Create variables";
   create_variables();
+  PLOGD << "Set objective";
+  set_objective();
+  PLOGD << "Create constraints";
+  create_constraints();
+
+  PLOGI << "Model created. Optimize";
+  model->optimize();
 
   this->instance = old_instance;
 
@@ -51,6 +62,9 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_variables() {
   create_timing_variables();
+  create_general_edge_variables();
+  create_velocity_extended_variables();
+  create_stop_variables();
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -63,7 +77,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   for (size_t tr = 0; tr < num_tr; tr++) {
     const double tr_approx_leaving_time =
         instance.get_approximate_leaving_time(tr);
-    for (size_t v = 0; v < num_vertices; v++) {
+    for (const auto v :
+         instance.vertices_used_by_train(tr, model_detail.fix_routes, false)) {
       vars["t_front_arrival"](tr, v) =
           model->addVar(0.0, max_t, 0.0, GRB_CONTINUOUS);
       vars["t_front_departure"](tr, v) = model->addVar(
@@ -71,11 +86,73 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       vars["t_rear_departure"](tr, v) = model->addVar(
           0.0, max_t + tr_approx_leaving_time, 0.0, GRB_CONTINUOUS);
     }
-    for (size_t ttd = 0; ttd < num_ttd; ttd++) {
+    for (const auto& ttd : instance.sections_used_by_train(
+             tr, ttd_sections, model_detail.fix_routes, false)) {
       vars["t_ttd_departure"](tr, ttd) = model->addVar(
           0.0, max_t + tr_approx_leaving_time, 0.0, GRB_CONTINUOUS);
     }
   }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_general_edge_variables() {
+  vars["x"]         = MultiArray<GRBVar>(num_tr, num_edges);
+  vars["order"]     = MultiArray<GRBVar>(num_tr, num_tr, num_edges);
+  vars["x_ttd"]     = MultiArray<GRBVar>(num_tr, num_ttd);
+  vars["order_ttd"] = MultiArray<GRBVar>(num_tr, num_tr, num_ttd);
+
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    for (const auto e :
+         instance.edges_used_by_train(tr, model_detail.fix_routes, false)) {
+      vars["x"](tr, e) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+    }
+    for (const auto& ttd : instance.sections_used_by_train(
+             tr, ttd_sections, model_detail.fix_routes, false)) {
+      vars["x_ttd"](tr, ttd) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+    }
+  }
+  for (size_t e = 0; e < num_edges; e++) {
+    const auto tr_on_e = instance.trains_on_edge_mixed_routing(
+        e, model_detail.fix_routes, false);
+    for (const auto& tr1 : tr_on_e) {
+      for (const auto& tr2 : tr_on_e) {
+        if (tr1 != tr2) {
+          vars["order"](tr1, tr2, e) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+        }
+      }
+    }
+  }
+  for (size_t ttd = 0; ttd < num_ttd; ttd++) {
+    const auto tr_on_ttd = instance.trains_in_section(
+        ttd_sections.at(ttd), model_detail.fix_routes, false);
+    for (const auto& tr1 : tr_on_ttd) {
+      for (const auto& tr2 : tr_on_ttd) {
+        if (tr1 != tr2) {
+          vars["order_ttd"](tr1, tr2, ttd) =
+              model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+        }
+      }
+    }
+  }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_stop_variables() {
+  // TODO
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_velocity_extended_variables() {
+  // TODO
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_objective() {
+  // TODO
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_constraints() {
+  // TODO
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)

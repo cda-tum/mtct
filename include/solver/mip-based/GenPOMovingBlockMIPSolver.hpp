@@ -7,12 +7,18 @@
 #include <string>
 
 namespace cda_rail::solver::mip_based {
+
+struct ModelDetail {
+  bool fix_routes = false;
+};
+
 class GenPOMovingBlockMIPSolver
     : public GeneralMIPSolver<
           instances::GeneralPerformanceOptimizationInstance,
           instances::SolGeneralPerformanceOptimizationInstance> {
 private:
   SolutionSettingsMovingBlock      solution_settings = {};
+  ModelDetail                      model_detail      = {};
   size_t                           num_tr            = 0;
   size_t                           num_edges         = 0;
   size_t                           num_vertices      = 0;
@@ -22,6 +28,13 @@ private:
 
   void create_variables();
   void create_timing_variables();
+  void create_general_edge_variables();
+  void create_stop_variables();
+  void create_velocity_extended_variables();
+
+  void set_objective();
+
+  void create_constraints();
 
 protected:
   void solve_init_gen_po_mb(int time_limit, bool debug_input) {
@@ -57,11 +70,12 @@ public:
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(int time_limit, bool debug_input) override {
-    return solve({}, time_limit, debug_input);
+    return solve({}, {}, time_limit, debug_input);
   };
 
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
-  solve(const SolutionSettingsMovingBlock& solution_settings_input,
+  solve(const ModelDetail&                 model_detail_input,
+        const SolutionSettingsMovingBlock& solution_settings_input,
         int time_limit, bool debug_input);
 };
 } // namespace cda_rail::solver::mip_based
