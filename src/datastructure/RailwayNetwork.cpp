@@ -1752,3 +1752,13 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
 
   return ret_val;
 }
+
+std::vector<size_t>
+cda_rail::Network::vertices_used_by_edges(const std::vector<size_t>& edges) {
+  std::unordered_set<size_t> used_vertices;
+  for (const auto& edge : edges) {
+    used_vertices.insert(get_edge(edge).source);
+    used_vertices.insert(get_edge(edge).target);
+  }
+  return {used_vertices.begin(), used_vertices.end()};
+}

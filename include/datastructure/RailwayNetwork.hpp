@@ -219,6 +219,9 @@ public:
                           get_vertex_index(target_name));
   };
 
+  [[nodiscard]] std::vector<size_t>
+  vertices_used_by_edges(const std::vector<size_t>& edges);
+
   [[nodiscard]] std::vector<std::vector<size_t>>
   all_paths_of_length_starting_in_vertex(size_t v, double desired_len) const {
     return all_routes_of_given_length(v, std::nullopt, desired_len, false);

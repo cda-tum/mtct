@@ -40,6 +40,25 @@ TEST(Functionality, NetworkFunctions) {
   network.add_successor(network.get_edge_index("v2", "v0"),
                         network.get_edge_index("v0", "v1"));
 
+  // Check vertices used by edges
+  const auto vertices1 = network.vertices_used_by_edges({e0, e1, e2});
+  // Expect all three vertices v0, v1, v2
+  EXPECT_EQ(vertices1.size(), 3);
+  EXPECT_TRUE(std::find(vertices1.begin(), vertices1.end(), v0) !=
+              vertices1.end());
+  EXPECT_TRUE(std::find(vertices1.begin(), vertices1.end(), v1) !=
+              vertices1.end());
+  EXPECT_TRUE(std::find(vertices1.begin(), vertices1.end(), v2) !=
+              vertices1.end());
+
+  const auto vertices2 = network.vertices_used_by_edges({e0, e2});
+  // Expect only v0 and v1
+  EXPECT_EQ(vertices2.size(), 2);
+  EXPECT_TRUE(std::find(vertices2.begin(), vertices2.end(), v0) !=
+              vertices2.end());
+  EXPECT_TRUE(std::find(vertices2.begin(), vertices2.end(), v1) !=
+              vertices2.end());
+
   // check vertex indices
   EXPECT_EQ(network.get_vertex_index("v0"), v0);
   EXPECT_EQ(network.get_vertex_index("v1"), v1);
