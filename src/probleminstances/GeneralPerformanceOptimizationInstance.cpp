@@ -45,8 +45,8 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
   if (v_max <= 0) {
     const auto& exit_node =
         this->get_timetable().get_schedule(train).get_exit();
-    const auto& exit_edge = this->const_n().in_edges(exit_node).at(0);
-    v_max                 = this->const_n().get_edge(exit_edge).max_speed;
+    const auto exit_edge = this->const_n().in_edges(exit_node).at(0);
+    v_max                = this->const_n().get_edge(exit_edge).max_speed;
   }
   return cda_rail::min_travel_time(v, timetable.get_v_n(), v_max,
                                    tr_object.acceleration,
