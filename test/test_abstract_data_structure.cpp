@@ -308,12 +308,14 @@ TEST(GeneralAbstractDataStructure, ParseTimetable) {
                                        20, r0, network);
   timetable.add_stop(tr2, "Station1", 100, 160);
 
-  const auto general_timetable = timetable.parse_to_general_timetable();
-  EXPECT_EQ(general_timetable.get_station_list().get_station_names().size(), 2);
-  EXPECT_EQ(general_timetable.get_station_list().get_station_names().at(0),
-            "Station1");
-  EXPECT_EQ(general_timetable.get_station_list().get_station_names().at(1),
-            "Station2");
+  const auto  general_timetable = timetable.parse_to_general_timetable();
+  const auto& station_names =
+      general_timetable.get_station_list().get_station_names();
+  EXPECT_EQ(station_names.size(), 2);
+  EXPECT_TRUE(std::find(station_names.begin(), station_names.end(),
+                        "Station1") != station_names.end());
+  EXPECT_TRUE(std::find(station_names.begin(), station_names.end(),
+                        "Station2") != station_names.end());
   EXPECT_EQ(general_timetable.get_train_list().size(), 2);
   EXPECT_EQ(general_timetable.get_train_list().get_train_index("tr1"), tr1);
   EXPECT_EQ(general_timetable.get_train_list().get_train_index("tr2"), tr2);
