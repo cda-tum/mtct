@@ -6,9 +6,11 @@
 #include "datastructure/Route.hpp"
 #include "nlohmann/json.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 using json = nlohmann::json;
 
@@ -139,6 +141,58 @@ public:
   };
   [[nodiscard]] const auto& get_schedule(const std::string& train_name) const {
     return timetable.get_schedule(train_name);
+  };
+
+  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+  possible_stop_vertices(size_t tr, const std::string& station_name) {
+    /**
+     * This method returns the possible stop vertices for a train at a station
+     * together with the respective stop edges
+     *
+     * @param tr The index of the train
+     * @param station_name The name of the station
+     *
+     * @return A vector of pairs:
+     * - The first element of the pair is the index of a possible stop vertex
+     * - The second element lists all possible stop paths ending in that vertex
+     * Note: The train has to use one of the stop paths if it stops at the
+     * vertex
+     */
+
+    const auto& station_tracks =
+        this->get_station_list().get_station(station_name).tracks;
+    const auto& tr_length = this->get_train_list().get_train(tr).length;
+    const auto  vertices_to_test =
+        this->const_n().vertices_used_by_edges(station_tracks);
+
+    std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>> ret_val;
+
+    for (const auto& v : vertices_to_test) {
+      const auto potential_stop_paths =
+          this->const_n().all_paths_of_length_ending_in_vertex(v, tr_length);
+      std::vector<std::vector<size_t>> stop_paths;
+      for (const auto& p : potential_stop_paths) {
+        // If all edges of p are in station_tracks, add p to stop_paths
+        if (std::all_of(p.begin(), p.end(), [&station_tracks](size_t e) {
+              return std::find(station_tracks.begin(), station_tracks.end(),
+                               e) != station_tracks.end();
+            })) {
+          stop_paths.push_back(p);
+        }
+      }
+      if (!stop_paths.empty()) {
+        ret_val.emplace_back(v, stop_paths);
+      }
+    }
+
+    return ret_val;
+  };
+  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+  possible_stop_vertices(const std::string& train_name,
+                         const std::string& station_name) {
+    return possible_stop_vertices(
+        get_timetable().get_train_list().get_train_index(train_name),
+        station_name);
   };
 
   [[nodiscard]] int                 max_t() const { return timetable.max_t(); };

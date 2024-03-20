@@ -4,6 +4,7 @@
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
 #include "gtest/gtest.h"
+#include <tuple>
 #include <utility>
 
 using namespace cda_rail;
@@ -625,6 +626,429 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
         << instance.const_n().get_edge(e).source << " to "
         << instance.const_n().get_edge(e).target << " not found in station 2";
   }
+}
+
+TEST(GeneralPerformanceOptimizationInstances, StopVertices) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  // Create network
+  size_t v0  = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
+  size_t v1  = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
+  size_t v21 = instance.n().add_vertex("v21", cda_rail::VertexType::TTD);
+  size_t v22 = instance.n().add_vertex("v22", cda_rail::VertexType::TTD);
+  size_t v31 = instance.n().add_vertex("v31", cda_rail::VertexType::TTD);
+  size_t v32 = instance.n().add_vertex("v32", cda_rail::VertexType::TTD);
+  size_t v41 = instance.n().add_vertex("v41", cda_rail::VertexType::TTD);
+  size_t v42 = instance.n().add_vertex("v42", cda_rail::VertexType::TTD);
+  size_t v43 = instance.n().add_vertex("v43", cda_rail::VertexType::TTD);
+  size_t v51 = instance.n().add_vertex("v51", cda_rail::VertexType::TTD);
+  size_t v52 = instance.n().add_vertex("v52", cda_rail::VertexType::TTD);
+  size_t v53 = instance.n().add_vertex("v53", cda_rail::VertexType::TTD);
+  size_t v6  = instance.n().add_vertex("v6", cda_rail::VertexType::TTD);
+  size_t v7  = instance.n().add_vertex("v7", cda_rail::VertexType::TTD);
+
+  // Edges to add
+  const std::vector<std::tuple<size_t, size_t, double>> to_add = {
+      {v0, v1, 50},   {v1, v21, 10},  {v1, v22, 10},  {v21, v31, 50},
+      {v22, v32, 50}, {v31, v41, 20}, {v32, v42, 10}, {v32, v43, 10},
+      {v41, v51, 50}, {v41, v42, 10}, {v42, v52, 60}, {v43, v53, 50},
+      {v51, v6, 10},  {v52, v6, 10},  {v53, v6, 10},  {v6, v7, 100}};
+
+  std::unordered_map<int, size_t> edge_map;
+
+  // Add bidirectional edges of specified length
+  for (const auto& [source, target, length] : to_add) {
+    edge_map.insert_or_assign(
+        100 * source + target,
+        instance.n().add_edge(source, target, length, 50));
+    edge_map.insert_or_assign(
+        100 * target + source,
+        instance.n().add_edge(target, source, length, 50));
+  }
+
+  EXPECT_EQ(edge_map.size(), 2 * to_add.size());
+
+  // Add successors
+  instance.n().add_successor({v0, v1}, {v1, v21});
+  instance.n().add_successor({v0, v1}, {v1, v22});
+  instance.n().add_successor({v1, v21}, {v21, v31});
+  instance.n().add_successor({v1, v22}, {v22, v32});
+  instance.n().add_successor({v21, v31}, {v31, v41});
+  instance.n().add_successor({v22, v32}, {v32, v42});
+  instance.n().add_successor({v22, v32}, {v32, v43});
+  instance.n().add_successor({v31, v41}, {v41, v51});
+  instance.n().add_successor({v32, v42}, {v42, v41});
+  instance.n().add_successor({v32, v42}, {v42, v52});
+  instance.n().add_successor({v32, v43}, {v43, v53});
+  instance.n().add_successor({v41, v51}, {v51, v6});
+  instance.n().add_successor({v42, v52}, {v52, v6});
+  instance.n().add_successor({v43, v53}, {v53, v6});
+  instance.n().add_successor({v51, v6}, {v6, v7});
+  instance.n().add_successor({v52, v6}, {v6, v7});
+  instance.n().add_successor({v53, v6}, {v6, v7});
+  // And all reverse successors
+  instance.n().add_successor({v21, v1}, {v1, v0});
+  instance.n().add_successor({v22, v1}, {v1, v0});
+  instance.n().add_successor({v31, v21}, {v21, v1});
+  instance.n().add_successor({v32, v22}, {v22, v1});
+  instance.n().add_successor({v41, v31}, {v31, v21});
+  instance.n().add_successor({v42, v32}, {v32, v22});
+  instance.n().add_successor({v43, v32}, {v32, v22});
+  instance.n().add_successor({v51, v41}, {v41, v31});
+  instance.n().add_successor({v41, v42}, {v42, v32});
+  instance.n().add_successor({v52, v42}, {v42, v32});
+  instance.n().add_successor({v53, v43}, {v43, v32});
+  instance.n().add_successor({v6, v51}, {v51, v41});
+  instance.n().add_successor({v6, v52}, {v52, v42});
+  instance.n().add_successor({v6, v53}, {v53, v43});
+  instance.n().add_successor({v7, v6}, {v6, v51});
+  instance.n().add_successor({v7, v6}, {v6, v52});
+  instance.n().add_successor({v7, v6}, {v6, v53});
+
+  // Add station bidirectional edges v21-v31-v41-v51, v22-v32-v42-v52,
+  // v22-v32-v43-v53
+  instance.add_station("Station1");
+  instance.add_track_to_station("Station1", v21, v31);
+  instance.add_track_to_station("Station1", v31, v41);
+  instance.add_track_to_station("Station1", v41, v51);
+  instance.add_track_to_station("Station1", v22, v32);
+  instance.add_track_to_station("Station1", v32, v42);
+  instance.add_track_to_station("Station1", v42, v52);
+  instance.add_track_to_station("Station1", v32, v43);
+  instance.add_track_to_station("Station1", v43, v53);
+  instance.add_track_to_station("Station1", v31, v21);
+  instance.add_track_to_station("Station1", v41, v31);
+  instance.add_track_to_station("Station1", v51, v41);
+  instance.add_track_to_station("Station1", v32, v22);
+  instance.add_track_to_station("Station1", v42, v32);
+  instance.add_track_to_station("Station1", v52, v42);
+  instance.add_track_to_station("Station1", v43, v32);
+  instance.add_track_to_station("Station1", v53, v43);
+
+  // Add trains of various length
+  instance.add_train("Train100", 100, 50, 1, 1, {0, 60}, 10, v0, {300, 360}, 5,
+                     v7);
+  instance.add_train("Train60", 60, 50, 1, 1, {0, 60}, 10, v0, {300, 360}, 5,
+                     v7);
+  instance.add_train("Train30", 30, 50, 1, 1, {0, 60}, 10, v0, {300, 360}, 5,
+                     v7);
+
+  const auto tr100stops =
+      instance.possible_stop_vertices("Train100", "Station1");
+  // Expect 5 stop vertices
+  EXPECT_EQ(tr100stops.size(), 5);
+  std::unordered_map<size_t, size_t> tr100stop_map;
+  for (size_t i = 0; i < tr100stops.size(); ++i) {
+    tr100stop_map.insert_or_assign(tr100stops[i].first, i);
+  }
+  // Expect stop map to have keys v21, v51, v22, v52, and v53
+  EXPECT_EQ(tr100stop_map.size(), 5);
+  EXPECT_EQ(tr100stop_map.count(v21), 1);
+  EXPECT_EQ(tr100stop_map.count(v51), 1);
+  EXPECT_EQ(tr100stop_map.count(v22), 1);
+  EXPECT_EQ(tr100stop_map.count(v52), 1);
+  EXPECT_EQ(tr100stop_map.count(v53), 1);
+
+  // At v21, the stop path is v21-v31-v41-v51 using the reverse edges
+  const auto& [stop_100_21_v, stop_100_21_p] = tr100stops[tr100stop_map[v21]];
+  EXPECT_EQ(stop_100_21_v, v21);
+  EXPECT_EQ(stop_100_21_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_100_21_p.begin(), stop_100_21_p.end(),
+                        std::vector<size_t>({edge_map.at(v21 + 100 * v31),
+                                             edge_map.at(v31 + 100 * v41),
+                                             edge_map.at(v41 + 100 * v51)})) !=
+              stop_100_21_p.end());
+
+  // At v51, the stop path is v51-v41-v31-v21 using the reverse edges
+  const auto& [stop_100_51_v, stop_100_51_p] = tr100stops[tr100stop_map[v51]];
+  EXPECT_EQ(stop_100_51_v, v51);
+  EXPECT_EQ(stop_100_51_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_100_51_p.begin(), stop_100_51_p.end(),
+                        std::vector<size_t>({edge_map.at(v51 + 100 * v41),
+                                             edge_map.at(v41 + 100 * v31),
+                                             edge_map.at(v31 + 100 * v21)})) !=
+              stop_100_51_p.end());
+
+  // At v22, the stop path is v22-v32-v42-v52 or v22-v32-v43-v53 using the
+  // reverse edges
+  const auto& [stop_100_22_v, stop_100_22_p] = tr100stops[tr100stop_map[v22]];
+  EXPECT_EQ(stop_100_22_v, v22);
+  EXPECT_EQ(stop_100_22_p.size(), 2);
+  EXPECT_TRUE(std::find(stop_100_22_p.begin(), stop_100_22_p.end(),
+                        std::vector<size_t>({edge_map.at(v22 + 100 * v32),
+                                             edge_map.at(v32 + 100 * v42),
+                                             edge_map.at(v42 + 100 * v52)})) !=
+              stop_100_22_p.end());
+  EXPECT_TRUE(std::find(stop_100_22_p.begin(), stop_100_22_p.end(),
+                        std::vector<size_t>({edge_map.at(v22 + 100 * v32),
+                                             edge_map.at(v32 + 100 * v43),
+                                             edge_map.at(v43 + 100 * v53)})) !=
+              stop_100_22_p.end());
+
+  // At v52, the stop path is v52-v42-v32-v22 using the reverse edges
+  const auto& [stop_100_52_v, stop_100_52_p] = tr100stops[tr100stop_map[v52]];
+  EXPECT_EQ(stop_100_52_v, v52);
+  EXPECT_EQ(stop_100_52_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_100_52_p.begin(), stop_100_52_p.end(),
+                        std::vector<size_t>({edge_map.at(v52 + 100 * v42),
+                                             edge_map.at(v42 + 100 * v32),
+                                             edge_map.at(v32 + 100 * v22)})) !=
+              stop_100_52_p.end());
+
+  // At v53, the stop path is v53-v43-v32-v22 using the reverse edges
+  const auto& [stop_100_53_v, stop_100_53_p] = tr100stops[tr100stop_map[v53]];
+  EXPECT_EQ(stop_100_53_v, v53);
+  EXPECT_EQ(stop_100_53_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_100_53_p.begin(), stop_100_53_p.end(),
+                        std::vector<size_t>({edge_map.at(v53 + 100 * v43),
+                                             edge_map.at(v43 + 100 * v32),
+                                             edge_map.at(v32 + 100 * v22)})) !=
+              stop_100_53_p.end());
+
+  const auto tr60stops = instance.possible_stop_vertices("Train60", "Station1");
+  // Expect v21, v31, v41, v51, v22, v32, v42, v52, v43, v53
+  // i.e. 10 stop vertices
+  EXPECT_EQ(tr60stops.size(), 10);
+  std::unordered_map<size_t, size_t> tr60stop_map;
+  for (size_t i = 0; i < tr60stops.size(); ++i) {
+    tr60stop_map.insert_or_assign(tr60stops[i].first, i);
+  }
+  EXPECT_EQ(tr60stop_map.size(), 10);
+  EXPECT_EQ(tr60stop_map.count(v21), 1);
+  EXPECT_EQ(tr60stop_map.count(v31), 1);
+  EXPECT_EQ(tr60stop_map.count(v41), 1);
+  EXPECT_EQ(tr60stop_map.count(v51), 1);
+  EXPECT_EQ(tr60stop_map.count(v22), 1);
+  EXPECT_EQ(tr60stop_map.count(v32), 1);
+  EXPECT_EQ(tr60stop_map.count(v42), 1);
+  EXPECT_EQ(tr60stop_map.count(v52), 1);
+  EXPECT_EQ(tr60stop_map.count(v43), 1);
+  EXPECT_EQ(tr60stop_map.count(v53), 1);
+
+  // At v21, the stop path is v21-v31-v41 using the reverse edges
+  const auto& [stop_60_21_v, stop_60_21_p] = tr60stops[tr60stop_map[v21]];
+  EXPECT_EQ(stop_60_21_v, v21);
+  EXPECT_EQ(stop_60_21_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_60_21_p.begin(), stop_60_21_p.end(),
+                        std::vector<size_t>({edge_map.at(v21 + 100 * v31),
+                                             edge_map.at(v31 + 100 * v41)})) !=
+              stop_60_21_p.end());
+
+  // At v31, the stop path is v31-v41-v51 using the reverse edges
+  const auto& [stop_60_31_v, stop_60_31_p] = tr60stops[tr60stop_map[v31]];
+  EXPECT_EQ(stop_60_31_v, v31);
+  EXPECT_EQ(stop_60_31_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_60_31_p.begin(), stop_60_31_p.end(),
+                        std::vector<size_t>({edge_map.at(v31 + 100 * v41),
+                                             edge_map.at(v41 + 100 * v51)})) !=
+              stop_60_31_p.end());
+
+  // At v41, the stop path is v41-v31-v21 using the reverse edges
+  const auto& [stop_60_41_v, stop_60_41_p] = tr60stops[tr60stop_map[v41]];
+  EXPECT_EQ(stop_60_41_v, v41);
+  EXPECT_EQ(stop_60_41_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_60_41_p.begin(), stop_60_41_p.end(),
+                        std::vector<size_t>({edge_map.at(v41 + 100 * v31),
+                                             edge_map.at(v31 + 100 * v21)})) !=
+              stop_60_41_p.end());
+
+  // At v51, the stop path is v51-v41-v31 using the reverse edges
+  const auto& [stop_60_51_v, stop_60_51_p] = tr60stops[tr60stop_map[v51]];
+  EXPECT_EQ(stop_60_51_v, v51);
+  EXPECT_EQ(stop_60_51_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_60_51_p.begin(), stop_60_51_p.end(),
+                        std::vector<size_t>({edge_map.at(v51 + 100 * v41),
+                                             edge_map.at(v41 + 100 * v31)})) !=
+              stop_60_51_p.end());
+
+  // At v22, the stop path is v22-v32-v42 or v22-v32-v43 using the reverse edges
+  const auto& [stop_60_22_v, stop_60_22_p] = tr60stops[tr60stop_map[v22]];
+  EXPECT_EQ(stop_60_22_v, v22);
+  EXPECT_EQ(stop_60_22_p.size(), 2);
+  EXPECT_TRUE(std::find(stop_60_22_p.begin(), stop_60_22_p.end(),
+                        std::vector<size_t>({edge_map.at(v22 + 100 * v32),
+                                             edge_map.at(v32 + 100 * v42)})) !=
+              stop_60_22_p.end());
+  EXPECT_TRUE(std::find(stop_60_22_p.begin(), stop_60_22_p.end(),
+                        std::vector<size_t>({edge_map.at(v22 + 100 * v32),
+                                             edge_map.at(v32 + 100 * v43)})) !=
+              stop_60_22_p.end());
+
+  // At v32, the stop path is v32-v42-v52 or v32-v43-v53 using the reverse edges
+  const auto& [stop_60_32_v, stop_60_32_p] = tr60stops[tr60stop_map[v32]];
+  EXPECT_EQ(stop_60_32_v, v32);
+  EXPECT_EQ(stop_60_32_p.size(), 2);
+  EXPECT_TRUE(std::find(stop_60_32_p.begin(), stop_60_32_p.end(),
+                        std::vector<size_t>({edge_map.at(v32 + 100 * v42),
+                                             edge_map.at(v42 + 100 * v52)})) !=
+              stop_60_32_p.end());
+  EXPECT_TRUE(std::find(stop_60_32_p.begin(), stop_60_32_p.end(),
+                        std::vector<size_t>({edge_map.at(v32 + 100 * v43),
+                                             edge_map.at(v43 + 100 * v53)})) !=
+              stop_60_32_p.end());
+
+  // At v42, the stop path is v42-v32-v22 or v42-v52 using the reverse edges
+  const auto& [stop_60_42_v, stop_60_42_p] = tr60stops[tr60stop_map[v42]];
+  EXPECT_EQ(stop_60_42_v, v42);
+  EXPECT_EQ(stop_60_42_p.size(), 2);
+  EXPECT_TRUE(std::find(stop_60_42_p.begin(), stop_60_42_p.end(),
+                        std::vector<size_t>({edge_map.at(v42 + 100 * v32),
+                                             edge_map.at(v32 + 100 * v22)})) !=
+              stop_60_42_p.end());
+  EXPECT_TRUE(std::find(stop_60_42_p.begin(), stop_60_42_p.end(),
+                        std::vector<size_t>({edge_map.at(v42 + 100 * v52)})) !=
+              stop_60_42_p.end());
+
+  // At v52, the stop path is v52-v42 using the reverse edges
+  const auto& [stop_60_52_v, stop_60_52_p] = tr60stops[tr60stop_map[v52]];
+  EXPECT_EQ(stop_60_52_v, v52);
+  EXPECT_EQ(stop_60_52_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_60_52_p.begin(), stop_60_52_p.end(),
+                        std::vector<size_t>({edge_map.at(v52 + 100 * v42)})) !=
+              stop_60_52_p.end());
+
+  // At v43 the stop path is v43-v32-v22 using the reverse edges
+  const auto& [stop_60_43_v, stop_60_43_p] = tr60stops[tr60stop_map[v43]];
+  EXPECT_EQ(stop_60_43_v, v43);
+  EXPECT_EQ(stop_60_43_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_60_43_p.begin(), stop_60_43_p.end(),
+                        std::vector<size_t>({edge_map.at(v43 + 100 * v32),
+                                             edge_map.at(v32 + 100 * v22)})) !=
+              stop_60_43_p.end());
+
+  // At v53 the stop path is v53-v43-v32 using the reverse edges
+  const auto& [stop_60_53_v, stop_60_53_p] = tr60stops[tr60stop_map[v53]];
+  EXPECT_EQ(stop_60_53_v, v53);
+  EXPECT_EQ(stop_60_53_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_60_53_p.begin(), stop_60_53_p.end(),
+                        std::vector<size_t>({edge_map.at(v53 + 100 * v43),
+                                             edge_map.at(v43 + 100 * v32)})) !=
+              stop_60_53_p.end());
+
+  const auto tr30stops = instance.possible_stop_vertices("Train30", "Station1");
+  // Expect v21, v31, v41, v51, v22, v32, v42, v52, v43, v53
+  // i.e. 10 stop vertices
+  EXPECT_EQ(tr30stops.size(), 10);
+  std::unordered_map<size_t, size_t> tr30stop_map;
+  for (size_t i = 0; i < tr30stops.size(); ++i) {
+    tr30stop_map.insert_or_assign(tr30stops[i].first, i);
+  }
+  EXPECT_EQ(tr30stop_map.size(), 10);
+  EXPECT_EQ(tr30stop_map.count(v21), 1);
+  EXPECT_EQ(tr30stop_map.count(v31), 1);
+  EXPECT_EQ(tr30stop_map.count(v41), 1);
+  EXPECT_EQ(tr30stop_map.count(v51), 1);
+  EXPECT_EQ(tr30stop_map.count(v22), 1);
+  EXPECT_EQ(tr30stop_map.count(v32), 1);
+  EXPECT_EQ(tr30stop_map.count(v42), 1);
+  EXPECT_EQ(tr30stop_map.count(v52), 1);
+  EXPECT_EQ(tr30stop_map.count(v43), 1);
+  EXPECT_EQ(tr30stop_map.count(v53), 1);
+
+  // At v21, the stop path is v21-v31 using the reverse edges
+  const auto& [stop_30_21_v, stop_30_21_p] = tr30stops[tr30stop_map[v21]];
+  EXPECT_EQ(stop_30_21_v, v21);
+  EXPECT_EQ(stop_30_21_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_30_21_p.begin(), stop_30_21_p.end(),
+                        std::vector<size_t>({edge_map.at(v21 + 100 * v31)})) !=
+              stop_30_21_p.end());
+
+  // At v31, the stop path is v31-v21 or v31-v41-v51 using the reverse edges
+  const auto& [stop_30_31_v, stop_30_31_p] = tr30stops[tr30stop_map[v31]];
+  EXPECT_EQ(stop_30_31_v, v31);
+  EXPECT_EQ(stop_30_31_p.size(), 2);
+  EXPECT_TRUE(std::find(stop_30_31_p.begin(), stop_30_31_p.end(),
+                        std::vector<size_t>({edge_map.at(v31 + 100 * v21)})) !=
+              stop_30_31_p.end());
+  EXPECT_TRUE(std::find(stop_30_31_p.begin(), stop_30_31_p.end(),
+                        std::vector<size_t>({edge_map.at(v31 + 100 * v41),
+                                             edge_map.at(v41 + 100 * v51)})) !=
+              stop_30_31_p.end());
+
+  // At v41, the stop path is v41-v31-v21 or v41-v51 using the reverse edges
+  const auto& [stop_30_41_v, stop_30_41_p] = tr30stops[tr30stop_map[v41]];
+  EXPECT_EQ(stop_30_41_v, v41);
+  EXPECT_EQ(stop_30_41_p.size(), 2);
+  EXPECT_TRUE(std::find(stop_30_41_p.begin(), stop_30_41_p.end(),
+                        std::vector<size_t>({edge_map.at(v41 + 100 * v31),
+                                             edge_map.at(v31 + 100 * v21)})) !=
+              stop_30_41_p.end());
+  EXPECT_TRUE(std::find(stop_30_41_p.begin(), stop_30_41_p.end(),
+                        std::vector<size_t>({edge_map.at(v41 + 100 * v51)})) !=
+              stop_30_41_p.end());
+
+  // At v51, the stop path is v51-v41 using the reverse edges
+  const auto& [stop_30_51_v, stop_30_51_p] = tr30stops[tr30stop_map[v51]];
+  EXPECT_EQ(stop_30_51_v, v51);
+  EXPECT_EQ(stop_30_51_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_30_51_p.begin(), stop_30_51_p.end(),
+                        std::vector<size_t>({edge_map.at(v51 + 100 * v41)})) !=
+              stop_30_51_p.end());
+
+  // At v22, the stop path is v22-v32 using the reverse edges
+  const auto& [stop_30_22_v, stop_30_22_p] = tr30stops[tr30stop_map[v22]];
+  EXPECT_EQ(stop_30_22_v, v22);
+  EXPECT_EQ(stop_30_22_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_30_22_p.begin(), stop_30_22_p.end(),
+                        std::vector<size_t>({edge_map.at(v22 + 100 * v32)})) !=
+              stop_30_22_p.end());
+
+  // At v32, the stop path is v32-v22 or v32-v42-v52 or v32-v43-v53 using the
+  // reverse edges
+  const auto& [stop_30_32_v, stop_30_32_p] = tr30stops[tr30stop_map[v32]];
+  EXPECT_EQ(stop_30_32_v, v32);
+  EXPECT_EQ(stop_30_32_p.size(), 3);
+  EXPECT_TRUE(std::find(stop_30_32_p.begin(), stop_30_32_p.end(),
+                        std::vector<size_t>({edge_map.at(v32 + 100 * v22)})) !=
+              stop_30_32_p.end());
+  EXPECT_TRUE(std::find(stop_30_32_p.begin(), stop_30_32_p.end(),
+                        std::vector<size_t>({edge_map.at(v32 + 100 * v42),
+                                             edge_map.at(v42 + 100 * v52)})) !=
+              stop_30_32_p.end());
+  EXPECT_TRUE(std::find(stop_30_32_p.begin(), stop_30_32_p.end(),
+                        std::vector<size_t>({edge_map.at(v32 + 100 * v43),
+                                             edge_map.at(v43 + 100 * v53)})) !=
+              stop_30_32_p.end());
+
+  // At v42, the stop path is v42-v32-v22 or v42-v52 using the reverse edges
+  const auto& [stop_30_42_v, stop_30_42_p] = tr30stops[tr30stop_map[v42]];
+  EXPECT_EQ(stop_30_42_v, v42);
+  EXPECT_EQ(stop_30_42_p.size(), 2);
+  EXPECT_TRUE(std::find(stop_30_42_p.begin(), stop_30_42_p.end(),
+                        std::vector<size_t>({edge_map.at(v42 + 100 * v32),
+                                             edge_map.at(v32 + 100 * v22)})) !=
+              stop_30_42_p.end());
+  EXPECT_TRUE(std::find(stop_30_42_p.begin(), stop_30_42_p.end(),
+                        std::vector<size_t>({edge_map.at(v42 + 100 * v52)})) !=
+              stop_30_42_p.end());
+
+  // At v52, the stop path is v52-v42 using the reverse edges
+  const auto& [stop_30_52_v, stop_30_52_p] = tr30stops[tr30stop_map[v52]];
+  EXPECT_EQ(stop_30_52_v, v52);
+  EXPECT_EQ(stop_30_52_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_30_52_p.begin(), stop_30_52_p.end(),
+                        std::vector<size_t>({edge_map.at(v52 + 100 * v42)})) !=
+              stop_30_52_p.end());
+
+  // At v43 the stop path is v43-v32-v22 or v43-v53 using the reverse edges
+  const auto& [stop_30_43_v, stop_30_43_p] = tr30stops[tr30stop_map[v43]];
+  EXPECT_EQ(stop_30_43_v, v43);
+  EXPECT_EQ(stop_30_43_p.size(), 2);
+  EXPECT_TRUE(std::find(stop_30_43_p.begin(), stop_30_43_p.end(),
+                        std::vector<size_t>({edge_map.at(v43 + 100 * v32),
+                                             edge_map.at(v32 + 100 * v22)})) !=
+              stop_30_43_p.end());
+  EXPECT_TRUE(std::find(stop_30_43_p.begin(), stop_30_43_p.end(),
+                        std::vector<size_t>({edge_map.at(v43 + 100 * v53)})) !=
+              stop_30_43_p.end());
+
+  // At v53 the stop path is v53-v43 using the reverse edges
+  const auto& [stop_30_53_v, stop_30_53_p] = tr30stops[tr30stop_map[v53]];
+  EXPECT_EQ(stop_30_53_v, v53);
+  EXPECT_EQ(stop_30_53_p.size(), 1);
+  EXPECT_TRUE(std::find(stop_30_53_p.begin(), stop_30_53_p.end(),
+                        std::vector<size_t>({edge_map.at(v53 + 100 * v43)})) !=
+              stop_30_53_p.end());
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
