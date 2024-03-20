@@ -25,6 +25,10 @@ private:
   size_t                           num_ttd           = 0;
   int                              max_t             = 0;
   std::vector<std::vector<size_t>> ttd_sections;
+  std::vector<std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>>
+      tr_stop_data;
+
+  void fill_tr_stop_data();
 
   void create_variables();
   void create_timing_variables();

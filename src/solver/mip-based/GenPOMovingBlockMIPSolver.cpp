@@ -155,4 +155,19 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   // TODO
 }
 
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    fill_tr_stop_data() {
+  tr_stop_data.reserve(num_tr);
+
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>> tr_data;
+    tr_data.reserve(instance.get_schedule(tr).get_stops().size());
+    for (const auto& stop : instance.get_schedule(tr).get_stops()) {
+      tr_data.emplace_back(
+          instance.possible_stop_vertices(tr, stop.get_station_name()));
+    }
+    tr_stop_data.emplace_back(tr_data);
+  }
+}
+
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
