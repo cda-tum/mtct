@@ -286,6 +286,7 @@ TEST(GeneralAbstractDataStructure, ParseSchedule) {
 }
 
 TEST(GeneralAbstractDataStructure, ParseTimetable) {
+  // Create timetable on simple network
   auto network = cda_rail::Network::import_network(
       "./example-networks/SimpleStation/network/");
   cda_rail::Timetable timetable;
@@ -308,7 +309,10 @@ TEST(GeneralAbstractDataStructure, ParseTimetable) {
                                        20, r0, network);
   timetable.add_stop(tr2, "Station1", 100, 160);
 
-  const auto  general_timetable = timetable.parse_to_general_timetable();
+  // Parse to general timetable
+  const auto general_timetable = timetable.parse_to_general_timetable();
+
+  // Check that nothing has changed
   const auto& station_names =
       general_timetable.get_station_list().get_station_names();
   EXPECT_EQ(station_names.size(), 2);
