@@ -3,7 +3,7 @@
 #include "solver/GeneralSolver.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
-#include "gtest/gtest.h"
+// #include "gtest/gtest.h"
 #include <filesystem>
 #include <string>
 #include <utility>
@@ -23,7 +23,7 @@ class GenPOMovingBlockMIPSolver
           instances::GeneralPerformanceOptimizationInstance,
           instances::SolGeneralPerformanceOptimizationInstance> {
 private:
-  FRIEND_TEST(GenPOMovingBlockMIPSolver, private_fill_functions);
+  // FRIEND_TEST(GenPOMovingBlockMIPSolver, private_fill_functions);
 
   SolutionSettingsMovingBlock      solution_settings = {};
   ModelDetail                      model_detail      = {};
