@@ -25,7 +25,11 @@ private:
   size_t                           num_ttd           = 0;
   int                              max_t             = 0;
   std::vector<std::vector<size_t>> ttd_sections;
-  std::vector<std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>>
+  // tr_stop_data:
+  // For every train, for every station, list of possible stop vertices together
+  // with respective edges
+  std::vector<std::vector<
+      std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>>>
       tr_stop_data;
 
   void fill_tr_stop_data();

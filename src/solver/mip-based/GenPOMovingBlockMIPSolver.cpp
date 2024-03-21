@@ -160,7 +160,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   tr_stop_data.reserve(num_tr);
 
   for (size_t tr = 0; tr < num_tr; tr++) {
-    std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>> tr_data;
+    std::vector<
+        std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>>
+        tr_data;
     tr_data.reserve(instance.get_schedule(tr).get_stops().size());
     for (const auto& stop : instance.get_schedule(tr).get_stops()) {
       tr_data.emplace_back(
