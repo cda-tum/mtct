@@ -2136,6 +2136,46 @@ TEST(Functionality, NetworkVerticesByType) {
               no_border_vss.end());
 }
 
+TEST(Functionality, NetworkVertexSpeed) {
+  cda_rail::Network network;
+
+  // Add vertices
+  const auto v1  = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2  = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3  = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v41 = network.add_vertex("v41", cda_rail::VertexType::VSS);
+  const auto v42 = network.add_vertex("v42", cda_rail::VertexType::VSS);
+  const auto v5  = network.add_vertex("v5", cda_rail::VertexType::VSS);
+  const auto v6  = network.add_vertex("v6", cda_rail::VertexType::VSS);
+  const auto v7  = network.add_vertex("v7", cda_rail::VertexType::VSS);
+  const auto v8  = network.add_vertex("v8", cda_rail::VertexType::VSS);
+
+  // Add edges
+  const auto e_1_2  = network.add_edge(v1, v2, 100, 30, false);
+  const auto e_2_3  = network.add_edge(v2, v3, 100, 40, false);
+  const auto e_3_41 = network.add_edge(v3, v41, 100, 50, false);
+  const auto e_41_5 = network.add_edge(v41, v5, 100, 50, false);
+  const auto e_5_6  = network.add_edge(v5, v6, 100, 40, false);
+  const auto e_5_7  = network.add_edge(v5, v7, 100, 50, false);
+  const auto e_7_8  = network.add_edge(v7, v8, 100, 20, false);
+  const auto e_8_7  = network.add_edge(v8, v7, 100, 20, false);
+  const auto e_7_42 = network.add_edge(v7, v42, 100, 30, false);
+  const auto e_42_3 = network.add_edge(v42, v3, 100, 40, false);
+  const auto e_5_41 = network.add_edge(v5, v41, 100, 50, false);
+  const auto e_41_3 = network.add_edge(v41, v3, 100, 50, false);
+
+  // Check velocity maximal speeds
+  EXPECT_DOUBLE_EQ(network.maximal_vertex_speed(v1), 30);
+  EXPECT_DOUBLE_EQ(network.maximal_vertex_speed("v2"), 30);
+  EXPECT_DOUBLE_EQ(network.maximal_vertex_speed(v3), 40);
+  EXPECT_DOUBLE_EQ(network.maximal_vertex_speed("v41"), 50);
+  EXPECT_DOUBLE_EQ(network.maximal_vertex_speed(v5), 50);
+  EXPECT_DOUBLE_EQ(network.maximal_vertex_speed("v6"), 40);
+  EXPECT_DOUBLE_EQ(network.maximal_vertex_speed(v7), 30);
+  EXPECT_DOUBLE_EQ(network.maximal_vertex_speed("v8"), 20);
+  EXPECT_DOUBLE_EQ(network.maximal_vertex_speed(v42), 30);
+}
+
 TEST(Functionality, ReverseIndices) {
   cda_rail::Network network;
   network.add_vertex("v1", cda_rail::VertexType::TTD);

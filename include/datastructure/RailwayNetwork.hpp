@@ -125,6 +125,10 @@ private:
                              std::optional<size_t> e_0, double desired_length,
                              bool reverse_direction) const;
 
+  [[nodiscard]] size_t other_vertex(size_t e, size_t v) const {
+    return get_edge(e).source == v ? get_edge(e).target : get_edge(e).source;
+  };
+
 public:
   // Constructors
   Network() = default;
@@ -145,6 +149,11 @@ public:
     return vertices;
   };
   [[nodiscard]] const std::vector<Edge>& get_edges() const { return edges; };
+
+  [[nodiscard]] double maximal_vertex_speed(size_t v) const;
+  [[nodiscard]] double maximal_vertex_speed(const std::string& v_name) const {
+    return maximal_vertex_speed(get_vertex_index(v_name));
+  };
 
   [[nodiscard]] std::vector<size_t> get_vertices_by_type(VertexType type) const;
 
@@ -324,6 +333,12 @@ public:
   [[nodiscard]] std::vector<size_t> in_edges(const std::string& name) const {
     return in_edges(get_vertex_index(name));
   };
+  [[nodiscard]] std::vector<size_t> neighboring_edges(size_t index) const;
+  [[nodiscard]] std::vector<size_t>
+  neighboring_edges(const std::string& name) const {
+    return neighboring_edges(get_vertex_index(name));
+  };
+
   [[nodiscard]] std::vector<size_t>        get_predecessors(size_t index) const;
   [[nodiscard]] const std::vector<size_t>& get_successors(size_t index) const;
   [[nodiscard]] const std::vector<size_t>&

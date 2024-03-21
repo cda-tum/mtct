@@ -1762,3 +1762,35 @@ std::vector<size_t> cda_rail::Network::vertices_used_by_edges(
   }
   return {used_vertices.begin(), used_vertices.end()};
 }
+
+double cda_rail::Network::maximal_vertex_speed(size_t v) const {
+  const auto& n_edges = neighboring_edges(v);
+
+  if (neighbors(v).size() == 1) {
+    return get_edge(n_edges.front()).max_speed;
+  }
+
+  double                max_speed = 0;
+  std::optional<size_t> max_speed_neighboring_vertex;
+  double                second_max_speed = 0;
+  for (const auto& e : n_edges) {
+    const auto& edge = get_edge(e);
+    if (edge.max_speed > max_speed) {
+      second_max_speed             = max_speed;
+      max_speed                    = edge.max_speed;
+      max_speed_neighboring_vertex = other_vertex(e, v);
+    } else if (edge.max_speed > second_max_speed &&
+               max_speed_neighboring_vertex.has_value() &&
+               other_vertex(e, v) != max_speed_neighboring_vertex.value()) {
+      second_max_speed = edge.max_speed;
+    }
+  }
+  return second_max_speed;
+}
+
+std::vector<size_t> cda_rail::Network::neighboring_edges(size_t index) const {
+  auto       ret_val      = in_edges(index);
+  const auto edges_to_add = out_edges(index);
+  ret_val.insert(ret_val.end(), edges_to_add.begin(), edges_to_add.end());
+  return ret_val;
+}
