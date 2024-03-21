@@ -3,6 +3,10 @@
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
 
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
@@ -43,6 +47,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   this->model_detail      = model_detail_input;
   this->ttd_sections      = instance.n().unbreakable_sections();
   this->num_ttd           = this->ttd_sections.size();
+  this->fill_tr_stop_data();
 
   PLOGD << "Create variables";
   create_variables();
@@ -138,7 +143,22 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_stop_variables() {
-  // TODO
+  size_t max_num_stops = 0;
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    max_num_stops =
+        std::max(max_num_stops, instance.get_schedule(tr).get_stops().size());
+  }
+  vars["stop"] = MultiArray<GRBVar>(num_tr, max_num_stops, num_vertices);
+
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    for (size_t stop = 0; stop < instance.get_schedule(tr).get_stops().size();
+         stop++) {
+      const auto& stop_data = tr_stop_data.at(tr).at(stop);
+      for (const auto& [v, edges] : stop_data) {
+        vars["stop"](tr, stop, v) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+      }
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
