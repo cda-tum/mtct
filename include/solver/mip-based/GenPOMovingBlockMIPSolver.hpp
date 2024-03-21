@@ -3,13 +3,19 @@
 #include "solver/GeneralSolver.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
+#include "gtest/gtest.h"
 #include <filesystem>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace cda_rail::solver::mip_based {
 
 struct ModelDetail {
-  bool fix_routes = false;
+  bool                       fix_routes         = false;
+  double                     max_velocity_delta = 5.55; // 20 km/h
+  VelocityRefinementStrategy velocity_refinement_strategy =
+      VelocityRefinementStrategy::MinOneStep;
 };
 
 class GenPOMovingBlockMIPSolver
@@ -17,6 +23,8 @@ class GenPOMovingBlockMIPSolver
           instances::GeneralPerformanceOptimizationInstance,
           instances::SolGeneralPerformanceOptimizationInstance> {
 private:
+  FRIEND_TEST(GenPOMovingBlockMIPSolver, private_fill_functions);
+
   SolutionSettingsMovingBlock      solution_settings = {};
   ModelDetail                      model_detail      = {};
   size_t                           num_tr            = 0;
@@ -30,9 +38,15 @@ private:
   // with respective edges
   std::vector<std::vector<
       std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>>>
-      tr_stop_data;
+                                                tr_stop_data;
+  std::vector<std::vector<std::vector<double>>> velocity_extensions;
 
   void fill_tr_stop_data();
+  void fill_velocity_extensions();
+  void fill_velocity_extensions_using_none_strategy();
+  void fill_velocity_extensions_using_min_one_step_strategy();
+
+  size_t get_maximal_velocity_extension_size() const;
 
   void create_variables();
   void create_timing_variables();
@@ -86,4 +100,5 @@ public:
         const SolutionSettingsMovingBlock& solution_settings_input,
         int time_limit, bool debug_input);
 };
+
 } // namespace cda_rail::solver::mip_based

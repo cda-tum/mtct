@@ -36,6 +36,7 @@ add_library(
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
+target_include_directories(${PROJECT_NAME} PUBLIC ${gtest_SOURCE_DIR}/include) # for FRIEND_TEST usability
 
 if(GUROBI_FOUND)
   target_include_directories(${PROJECT_NAME} PUBLIC ${GUROBI_INCLUDE_DIR})

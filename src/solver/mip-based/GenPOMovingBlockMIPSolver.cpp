@@ -1,9 +1,11 @@
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 
+#include "EOMHelper.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 #include <vector>
 
@@ -163,7 +165,29 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_velocity_extended_variables() {
-  // TODO
+  const auto max_velocity_extension_size =
+      get_maximal_velocity_extension_size();
+  vars["y"] = MultiArray<GRBVar>(num_tr, num_edges, max_velocity_extension_size,
+                                 max_velocity_extension_size);
+
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto& train = instance.get_train_list().get_train(tr);
+    for (const auto e :
+         instance.edges_used_by_train(tr, model_detail.fix_routes, false)) {
+      const auto& edge = instance.const_n().get_edge(e);
+      const auto& v_1  = velocity_extensions.at(tr).at(edge.source);
+      const auto& v_2  = velocity_extensions.at(tr).at(edge.target);
+      for (size_t i = 0; i < v_1.size(); i++) {
+        for (size_t j = 0; j < v_2.size(); j++) {
+          if (cda_rail::possible_by_eom(v_1.at(i), v_2.at(j),
+                                        train.acceleration, train.deceleration,
+                                        edge.length)) {
+            vars["y"](tr, e, i, j) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+          }
+        }
+      }
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_objective() {
@@ -199,6 +223,83 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     }
     tr_stop_data.emplace_back(tr_data);
   }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    fill_velocity_extensions() {
+  if (model_detail.velocity_refinement_strategy ==
+      VelocityRefinementStrategy::None) {
+    fill_velocity_extensions_using_none_strategy();
+  } else if (model_detail.velocity_refinement_strategy ==
+             VelocityRefinementStrategy::MinOneStep) {
+    fill_velocity_extensions_using_min_one_step_strategy();
+  } else {
+    throw exceptions::InvalidInputException(
+        "Velocity refinement strategy not implemented.");
+  }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    fill_velocity_extensions_using_none_strategy() {
+  velocity_extensions.reserve(num_tr);
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    std::vector<std::vector<double>> tr_velocity_extensions;
+    tr_velocity_extensions.reserve(num_vertices);
+    for (size_t v = 0; v < num_vertices; v++) {
+      std::vector<double> v_velocity_extensions = {0};
+      const double        max_vertex_speed =
+          instance.const_n().maximal_vertex_speed(v);
+      double speed = 0;
+      while (speed < max_vertex_speed) {
+        speed += model_detail.max_velocity_delta;
+        if (speed > max_vertex_speed) {
+          speed = max_vertex_speed;
+        }
+        v_velocity_extensions.emplace_back(speed);
+      }
+    }
+    velocity_extensions.emplace_back(tr_velocity_extensions);
+  }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    fill_velocity_extensions_using_min_one_step_strategy() {
+  velocity_extensions.reserve(num_tr);
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    std::vector<std::vector<double>> tr_velocity_extensions;
+    tr_velocity_extensions.reserve(num_vertices);
+    const auto tr_speed_change =
+        std::min(instance.get_train_list().get_train(tr).acceleration,
+                 instance.get_train_list().get_train(tr).deceleration);
+    for (size_t v = 0; v < num_vertices; v++) {
+      const double max_vertex_speed =
+          instance.const_n().maximal_vertex_speed(v);
+      const double min_n_length =
+          instance.const_n().minimal_neighboring_edge_length(v);
+
+      std::vector<double> v_velocity_extensions = {0};
+      double              speed                 = 0;
+      while (speed < max_vertex_speed) {
+        speed = std::min(
+            {speed + model_detail.max_velocity_delta,
+             std::sqrt(speed * speed + 2 * tr_speed_change * min_n_length),
+             max_vertex_speed});
+        v_velocity_extensions.emplace_back(speed);
+      }
+    }
+    velocity_extensions.emplace_back(tr_velocity_extensions);
+  }
+}
+
+size_t cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    get_maximal_velocity_extension_size() const {
+  size_t max_size = 0;
+  for (const auto& tr_velocity_extensions : velocity_extensions) {
+    for (const auto& v_velocity_extensions : tr_velocity_extensions) {
+      max_size = std::max(max_size, v_velocity_extensions.size());
+    }
+  }
+  return max_size;
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
