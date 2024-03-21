@@ -167,7 +167,16 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_objective() {
-  // TODO
+  GRBLinExpr obj_expr = 0;
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto  exit_node     = instance.get_schedule(tr).get_exit();
+    const auto& min_exit_time = instance.get_schedule(tr).get_t_n_range().first;
+    const auto& tr_weight     = instance.get_train_weight(tr);
+
+    obj_expr +=
+        tr_weight * (vars["t_rear_departure"](tr, exit_node) - min_exit_time);
+  }
+  model->setObjective(obj_expr, GRB_MINIMIZE);
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
