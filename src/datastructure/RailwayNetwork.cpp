@@ -1794,3 +1794,12 @@ std::vector<size_t> cda_rail::Network::neighboring_edges(size_t index) const {
   ret_val.insert(ret_val.end(), edges_to_add.begin(), edges_to_add.end());
   return ret_val;
 }
+
+double cda_rail::Network::minimal_neighboring_edge_length(size_t v) const {
+  const auto n_edges        = neighboring_edges(v);
+  const auto min_edge_index = *std::min_element(
+      n_edges.begin(), n_edges.end(), [this](size_t a, size_t b) {
+        return get_edge(a).length < get_edge(b).length;
+      });
+  return get_edge(min_edge_index).length;
+}

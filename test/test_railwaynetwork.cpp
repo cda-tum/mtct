@@ -2151,18 +2151,18 @@ TEST(Functionality, NetworkVertexSpeed) {
   const auto v8  = network.add_vertex("v8", cda_rail::VertexType::VSS);
 
   // Add edges
-  const auto e_1_2  = network.add_edge(v1, v2, 100, 30, false);
-  const auto e_2_3  = network.add_edge(v2, v3, 100, 40, false);
-  const auto e_3_41 = network.add_edge(v3, v41, 100, 50, false);
-  const auto e_41_5 = network.add_edge(v41, v5, 100, 50, false);
-  const auto e_5_6  = network.add_edge(v5, v6, 100, 40, false);
-  const auto e_5_7  = network.add_edge(v5, v7, 100, 50, false);
-  const auto e_7_8  = network.add_edge(v7, v8, 100, 20, false);
-  const auto e_8_7  = network.add_edge(v8, v7, 100, 20, false);
-  const auto e_7_42 = network.add_edge(v7, v42, 100, 30, false);
+  const auto e_1_2  = network.add_edge(v1, v2, 10, 30, false);
+  const auto e_2_3  = network.add_edge(v2, v3, 20, 40, false);
+  const auto e_3_41 = network.add_edge(v3, v41, 30, 50, false);
+  const auto e_41_5 = network.add_edge(v41, v5, 40, 50, false);
+  const auto e_5_6  = network.add_edge(v5, v6, 50, 40, false);
+  const auto e_5_7  = network.add_edge(v5, v7, 60, 50, false);
+  const auto e_7_8  = network.add_edge(v7, v8, 70, 20, false);
+  const auto e_8_7  = network.add_edge(v8, v7, 70, 20, false);
+  const auto e_7_42 = network.add_edge(v7, v42, 90, 30, false);
   const auto e_42_3 = network.add_edge(v42, v3, 100, 40, false);
-  const auto e_5_41 = network.add_edge(v5, v41, 100, 50, false);
-  const auto e_41_3 = network.add_edge(v41, v3, 100, 50, false);
+  const auto e_5_41 = network.add_edge(v5, v41, 40, 50, false);
+  const auto e_41_3 = network.add_edge(v41, v3, 30, 50, false);
 
   // Check velocity maximal speeds
   EXPECT_DOUBLE_EQ(network.maximal_vertex_speed(v1), 30);
@@ -2174,6 +2174,16 @@ TEST(Functionality, NetworkVertexSpeed) {
   EXPECT_DOUBLE_EQ(network.maximal_vertex_speed(v7), 30);
   EXPECT_DOUBLE_EQ(network.maximal_vertex_speed("v8"), 20);
   EXPECT_DOUBLE_EQ(network.maximal_vertex_speed(v42), 30);
+
+  EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length(v1), 10);
+  EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length("v2"), 10);
+  EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length(v3), 20);
+  EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length("v41"), 30);
+  EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length(v5), 40);
+  EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length("v6"), 50);
+  EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length(v7), 60);
+  EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length("v8"), 70);
+  EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length(v42), 90);
 }
 
 TEST(Functionality, ReverseIndices) {

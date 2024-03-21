@@ -154,6 +154,11 @@ public:
   [[nodiscard]] double maximal_vertex_speed(const std::string& v_name) const {
     return maximal_vertex_speed(get_vertex_index(v_name));
   };
+  [[nodiscard]] double minimal_neighboring_edge_length(size_t v) const;
+  [[nodiscard]] double
+  minimal_neighboring_edge_length(const std::string& v_name) const {
+    return minimal_neighboring_edge_length(get_vertex_index(v_name));
+  };
 
   [[nodiscard]] std::vector<size_t> get_vertices_by_type(VertexType type) const;
 
