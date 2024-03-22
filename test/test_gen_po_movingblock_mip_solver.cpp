@@ -1,3 +1,4 @@
+#include <cstdlib>
 #define TEST_FRIENDS true
 
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
@@ -11,7 +12,7 @@
 #include <vector>
 
 #define EXPECT_APPROX_EQ(a, b)                                                 \
-  EXPECT_TRUE(std::abs(a - b) < 1e-2) << a << " !=(approx.) " << b;
+  EXPECT_TRUE(std::abs((a) - (b)) < 1e-2) << (a) << " !=(approx.) " << (b);
 
 // NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
 
