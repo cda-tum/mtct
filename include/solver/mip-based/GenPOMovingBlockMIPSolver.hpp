@@ -7,6 +7,7 @@
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
 #include "gtest/gtest_prod.h"
+#include <cstddef>
 #include <filesystem>
 #include <string>
 #include <utility>
