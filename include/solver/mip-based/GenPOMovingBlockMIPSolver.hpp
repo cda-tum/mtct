@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Definitions.hpp"
 #include "datastructure/GeneralTimetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
