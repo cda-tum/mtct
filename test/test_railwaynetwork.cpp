@@ -22,8 +22,7 @@ struct EdgeTarget {
   double      min_stop_block_length = 100;
 };
 
-// NOLINTBEGIN(clang-diagnostic-unused-result,
-// clang-analyzer-deadcode.DeadStores)
+// NOLINTBEGIN(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores)
 
 TEST(Functionality, NetworkFunctions) {
   cda_rail::Network network;
@@ -3464,4 +3463,4 @@ TEST(Functionality, IsFullyInStation) {
   EXPECT_FALSE(stations.is_fully_in_station("Station1", {0, 2}));
 }
 
-// NOLINTEND(clang-diagnostic-unused-result, clang-analyzer-deadcode.DeadStores)
+// NOLINTEND(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores)
