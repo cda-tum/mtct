@@ -3,6 +3,7 @@
 #include "EOMHelper.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
+#include "solver/mip-based/GeneralMIPSolver.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -38,18 +39,11 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
 
   PLOGI << "Create model";
 
-  instances::GeneralPerformanceOptimizationInstance old_instance = instance;
+  const instances::GeneralPerformanceOptimizationInstance old_instance =
+      instance;
   this->instance.discretize_stops();
 
-  num_tr                  = instance.get_train_list().size();
-  num_edges               = instance.const_n().number_of_edges();
-  num_vertices            = instance.const_n().number_of_vertices();
-  max_t                   = instance.max_t();
-  this->solution_settings = solution_settings_input;
-  this->model_detail      = model_detail_input;
-  this->ttd_sections      = instance.n().unbreakable_sections();
-  this->num_ttd           = this->ttd_sections.size();
-  this->fill_tr_stop_data();
+  this->initialize_variables(solution_settings_input, model_detail_input);
 
   PLOGD << "Create variables";
   create_variables();
@@ -210,6 +204,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     fill_tr_stop_data() {
+  tr_stop_data.clear();
   tr_stop_data.reserve(num_tr);
 
   for (size_t tr = 0; tr < num_tr; tr++) {
@@ -218,8 +213,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         tr_data;
     tr_data.reserve(instance.get_schedule(tr).get_stops().size());
     for (const auto& stop : instance.get_schedule(tr).get_stops()) {
-      tr_data.emplace_back(
-          instance.possible_stop_vertices(tr, stop.get_station_name()));
+      tr_data.emplace_back(instance.possible_stop_vertices(
+          tr, stop.get_station_name(),
+          instance.edges_used_by_train(tr, model_detail.fix_routes, false)));
     }
     tr_stop_data.emplace_back(tr_data);
   }
@@ -227,6 +223,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     fill_velocity_extensions() {
+  velocity_extensions.clear();
   if (model_detail.velocity_refinement_strategy ==
       VelocityRefinementStrategy::None) {
     fill_velocity_extensions_using_none_strategy();
@@ -255,8 +252,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       }
 
       std::vector<double> v_velocity_extensions = {0};
-      const double        max_vertex_speed =
-          std::min(instance.const_n().maximal_vertex_speed(v), tr_max_speed);
+      const double        max_vertex_speed      = std::min(
+          instance.const_n().maximal_vertex_speed(
+              v,
+              instance.edges_used_by_train(tr, model_detail.fix_routes, false)),
+          tr_max_speed);
       double speed = 0;
       while (speed < max_vertex_speed) {
         speed += model_detail.max_velocity_delta;
@@ -289,8 +289,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         continue;
       }
 
-      const double max_vertex_speed =
-          std::min(instance.const_n().maximal_vertex_speed(v), tr_max_speed);
+      const double max_vertex_speed = std::min(
+          instance.const_n().maximal_vertex_speed(
+              v,
+              instance.edges_used_by_train(tr, model_detail.fix_routes, false)),
+          tr_max_speed);
       double min_n_length =
           instance.const_n().minimal_neighboring_edge_length(v);
 
@@ -323,6 +326,22 @@ size_t cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     }
   }
   return max_size;
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    initialize_variables(
+        const SolutionSettingsMovingBlock& solution_settings_input,
+        const ModelDetail&                 model_detail_input) {
+  num_tr                  = instance.get_train_list().size();
+  num_edges               = instance.const_n().number_of_edges();
+  num_vertices            = instance.const_n().number_of_vertices();
+  max_t                   = instance.max_t();
+  this->solution_settings = solution_settings_input;
+  this->model_detail      = model_detail_input;
+  this->ttd_sections      = instance.n().unbreakable_sections();
+  this->num_ttd           = this->ttd_sections.size();
+  this->fill_tr_stop_data();
+  this->fill_velocity_extensions();
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)

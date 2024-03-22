@@ -61,6 +61,10 @@ private:
                                                 tr_stop_data;
   std::vector<std::vector<std::vector<double>>> velocity_extensions;
 
+  void initialize_variables(
+      const SolutionSettingsMovingBlock& solution_settings_input,
+      const ModelDetail&                 model_detail_input);
+
   void fill_tr_stop_data();
   void fill_velocity_extensions();
   void fill_velocity_extensions_using_none_strategy();
