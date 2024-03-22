@@ -3,11 +3,26 @@
 #include "solver/GeneralSolver.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
-// #include "gtest/gtest.h"
+#include "gtest/gtest_prod.h"
 #include <filesystem>
 #include <string>
 #include <utility>
 #include <vector>
+
+// If TEST_FRIENDS has value true, the corresponding test is friended to test
+// complex private functions
+// This is not good practice, however after consideration, it was decided that
+// - it is not reasonable to make the functions public, because they are only
+// needed to build the model
+// - they have a complexity that should be tested
+// - by only testing the overall solution, there is too much code tested at once
+#ifndef TEST_FRIENDS
+#define TEST_FRIENDS false
+#endif
+#if TEST_FRIENDS
+class GenPOMovingBlockMIPSolver;
+class GenPOMovingBlockMIPSolver_PrivateFillFunctions_Test;
+#endif
 
 namespace cda_rail::solver::mip_based {
 
@@ -23,7 +38,9 @@ class GenPOMovingBlockMIPSolver
           instances::GeneralPerformanceOptimizationInstance,
           instances::SolGeneralPerformanceOptimizationInstance> {
 private:
-  // FRIEND_TEST(GenPOMovingBlockMIPSolver, private_fill_functions);
+#if TEST_FRIENDS
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, PrivateFillFunctions);
+#endif
 
   SolutionSettingsMovingBlock      solution_settings = {};
   ModelDetail                      model_detail      = {};

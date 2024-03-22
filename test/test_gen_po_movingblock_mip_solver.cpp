@@ -1,3 +1,5 @@
+#define TEST_FRIENDS true
+
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 
@@ -8,7 +10,10 @@
 #include <utility>
 #include <vector>
 
-TEST(GenPOMovingBlockMIPSolver, private_fill_functions) {
+TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // TODO
-  EXPECT_EQ(1, 1);
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver;
+  solver.max_t = 1;
+  EXPECT_EQ(solver.max_t, 1);
 }
