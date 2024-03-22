@@ -150,14 +150,21 @@ public:
   };
   [[nodiscard]] const std::vector<Edge>& get_edges() const { return edges; };
 
-  [[nodiscard]] double maximal_vertex_speed(size_t v) const;
-  [[nodiscard]] double maximal_vertex_speed(const std::string& v_name) const {
-    return maximal_vertex_speed(get_vertex_index(v_name));
-  };
-  [[nodiscard]] double minimal_neighboring_edge_length(size_t v) const;
   [[nodiscard]] double
-  minimal_neighboring_edge_length(const std::string& v_name) const {
-    return minimal_neighboring_edge_length(get_vertex_index(v_name));
+                       maximal_vertex_speed(size_t                     v,
+                                            const std::vector<size_t>& edges_to_consider = {}) const;
+  [[nodiscard]] double maximal_vertex_speed(
+      const std::string&         v_name,
+      const std::vector<size_t>& edges_to_consider = {}) const {
+    return maximal_vertex_speed(get_vertex_index(v_name), edges_to_consider);
+  };
+  [[nodiscard]] double minimal_neighboring_edge_length(
+      size_t v, const std::vector<size_t>& edges_to_consider = {}) const;
+  [[nodiscard]] double minimal_neighboring_edge_length(
+      const std::string&         v_name,
+      const std::vector<size_t>& edges_to_consider = {}) const {
+    return minimal_neighboring_edge_length(get_vertex_index(v_name),
+                                           edges_to_consider);
   };
 
   [[nodiscard]] std::vector<size_t> get_vertices_by_type(VertexType type) const;

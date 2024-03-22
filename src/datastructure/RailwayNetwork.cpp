@@ -1763,8 +1763,21 @@ std::vector<size_t> cda_rail::Network::vertices_used_by_edges(
   return {used_vertices.begin(), used_vertices.end()};
 }
 
-double cda_rail::Network::maximal_vertex_speed(size_t v) const {
-  const auto& n_edges = neighboring_edges(v);
+double cda_rail::Network::maximal_vertex_speed(
+    size_t v, const std::vector<size_t>& edges_to_consider) const {
+  const auto& n_edges_tmp = neighboring_edges(v);
+  auto        n_edges =
+      edges_to_consider.empty() ? n_edges_tmp : std::vector<size_t>();
+  for (const auto& e : n_edges_tmp) {
+    if (std::find(edges_to_consider.begin(), edges_to_consider.end(), e) !=
+        edges_to_consider.end()) {
+      n_edges.emplace_back(e);
+    }
+  }
+
+  if (n_edges.empty()) {
+    return 0;
+  }
 
   if (neighbors(v).size() == 1) {
     return get_edge(n_edges.front()).max_speed;
@@ -1795,8 +1808,22 @@ std::vector<size_t> cda_rail::Network::neighboring_edges(size_t index) const {
   return ret_val;
 }
 
-double cda_rail::Network::minimal_neighboring_edge_length(size_t v) const {
-  const auto n_edges        = neighboring_edges(v);
+double cda_rail::Network::minimal_neighboring_edge_length(
+    size_t v, const std::vector<size_t>& edges_to_consider) const {
+  const auto n_edges_tmp = neighboring_edges(v);
+  auto       n_edges =
+      edges_to_consider.empty() ? n_edges_tmp : std::vector<size_t>();
+  for (const auto& e : n_edges_tmp) {
+    if (std::find(edges_to_consider.begin(), edges_to_consider.end(), e) !=
+        edges_to_consider.end()) {
+      n_edges.emplace_back(e);
+    }
+  }
+
+  if (n_edges.empty()) {
+    return std::numeric_limits<double>::infinity();
+  }
+
   const auto min_edge_index = *std::min_element(
       n_edges.begin(), n_edges.end(), [this](size_t a, size_t b) {
         return get_edge(a).length < get_edge(b).length;

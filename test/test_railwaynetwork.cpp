@@ -2175,6 +2175,8 @@ TEST(Functionality, NetworkVertexSpeed) {
   EXPECT_DOUBLE_EQ(network.maximal_vertex_speed("v8"), 20);
   EXPECT_DOUBLE_EQ(network.maximal_vertex_speed(v42), 30);
 
+  EXPECT_DOUBLE_EQ(network.maximal_vertex_speed(v7, {e_5_7, e_1_2, e_7_8}), 20);
+
   EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length(v1), 10);
   EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length("v2"), 10);
   EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length(v3), 20);
@@ -2184,6 +2186,11 @@ TEST(Functionality, NetworkVertexSpeed) {
   EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length(v7), 60);
   EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length("v8"), 70);
   EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length(v42), 90);
+
+  EXPECT_DOUBLE_EQ(
+      network.minimal_neighboring_edge_length(v7, {e_7_8, e_1_2, e_7_42}), 70);
+  EXPECT_DOUBLE_EQ(network.minimal_neighboring_edge_length(v7, {e_1_2}),
+                   std::numeric_limits<double>::infinity());
 }
 
 TEST(Functionality, ReverseIndices) {

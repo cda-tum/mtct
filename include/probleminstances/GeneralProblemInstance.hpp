@@ -144,13 +144,16 @@ public:
   };
 
   [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
-  possible_stop_vertices(size_t tr, const std::string& station_name) {
+  possible_stop_vertices(size_t tr, const std::string& station_name,
+                         const std::vector<size_t>& edges_to_consider = {}) {
     /**
      * This method returns the possible stop vertices for a train at a station
      * together with the respective stop edges
      *
      * @param tr The index of the train
      * @param station_name The name of the station
+     * @param edges_to_consider The edges to consider. Default: {}, then all
+     * edges
      *
      * @return A vector of pairs:
      * - The first element of the pair is the index of a possible stop vertex
@@ -161,9 +164,19 @@ public:
 
     const auto& station_tracks =
         this->get_station_list().get_station(station_name).tracks;
+
+    auto station_tracks_to_consider =
+        edges_to_consider.size() >= 1 ? std::vector<size_t>() : station_tracks;
+    for (const auto& tmp_e : edges_to_consider) {
+      if (std::find(station_tracks.begin(), station_tracks.end(), tmp_e) !=
+          station_tracks.end()) {
+        station_tracks_to_consider.emplace_back(tmp_e);
+      }
+    }
+
     const auto& tr_length = this->get_train_list().get_train(tr).length;
     const auto  vertices_to_test =
-        this->const_n().vertices_used_by_edges(station_tracks);
+        this->const_n().vertices_used_by_edges(station_tracks_to_consider);
 
     std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>> ret_val;
 
@@ -173,10 +186,12 @@ public:
       std::vector<std::vector<size_t>> stop_paths;
       for (const auto& p : potential_stop_paths) {
         // If all edges of p are in station_tracks, add p to stop_paths
-        if (std::all_of(p.begin(), p.end(), [&station_tracks](size_t e) {
-              return std::find(station_tracks.begin(), station_tracks.end(),
-                               e) != station_tracks.end();
-            })) {
+        if (std::all_of(
+                p.begin(), p.end(), [&station_tracks_to_consider](size_t e) {
+                  return std::find(station_tracks_to_consider.begin(),
+                                   station_tracks_to_consider.end(),
+                                   e) != station_tracks_to_consider.end();
+                })) {
           stop_paths.push_back(p);
         }
       }
@@ -188,11 +203,12 @@ public:
     return ret_val;
   };
   [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
-  possible_stop_vertices(const std::string& train_name,
-                         const std::string& station_name) {
+  possible_stop_vertices(const std::string&         train_name,
+                         const std::string&         station_name,
+                         const std::vector<size_t>& edges_to_consider = {}) {
     return possible_stop_vertices(
         get_timetable().get_train_list().get_train_index(train_name),
-        station_name);
+        station_name, edges_to_consider);
   };
 
   [[nodiscard]] int                 max_t() const { return timetable.max_t(); };
