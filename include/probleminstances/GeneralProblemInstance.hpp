@@ -166,7 +166,7 @@ public:
         this->get_station_list().get_station(station_name).tracks;
 
     auto station_tracks_to_consider =
-        edges_to_consider.size() >= 1 ? std::vector<size_t>() : station_tracks;
+        edges_to_consider.empty() ? station_tracks : std::vector<size_t>();
     for (const auto& tmp_e : edges_to_consider) {
       if (std::find(station_tracks.begin(), station_tracks.end(), tmp_e) !=
           station_tracks.end()) {
