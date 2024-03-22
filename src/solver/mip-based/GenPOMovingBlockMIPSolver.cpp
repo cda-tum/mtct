@@ -245,10 +245,18 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   for (size_t tr = 0; tr < num_tr; tr++) {
     std::vector<std::vector<double>> tr_velocity_extensions;
     tr_velocity_extensions.reserve(num_vertices);
+    const auto& tr_max_speed =
+        instance.get_train_list().get_train(tr).max_speed;
     for (size_t v = 0; v < num_vertices; v++) {
+      if (instance.get_schedule(tr).get_entry() == v) {
+        tr_velocity_extensions.emplace_back(
+            std::vector<double>{instance.get_schedule(tr).get_v_0()});
+        continue;
+      }
+
       std::vector<double> v_velocity_extensions = {0};
       const double        max_vertex_speed =
-          instance.const_n().maximal_vertex_speed(v);
+          std::min(instance.const_n().maximal_vertex_speed(v), tr_max_speed);
       double speed = 0;
       while (speed < max_vertex_speed) {
         speed += model_detail.max_velocity_delta;
@@ -257,6 +265,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         }
         v_velocity_extensions.emplace_back(speed);
       }
+      tr_velocity_extensions.emplace_back(v_velocity_extensions);
     }
     velocity_extensions.emplace_back(tr_velocity_extensions);
   }
@@ -268,14 +277,27 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   for (size_t tr = 0; tr < num_tr; tr++) {
     std::vector<std::vector<double>> tr_velocity_extensions;
     tr_velocity_extensions.reserve(num_vertices);
-    const auto tr_speed_change =
-        std::min(instance.get_train_list().get_train(tr).acceleration,
-                 instance.get_train_list().get_train(tr).deceleration);
+    const auto& tr_object = instance.get_train_list().get_train(tr);
+    const auto  tr_speed_change =
+        std::min(tr_object.acceleration, tr_object.deceleration);
+    const auto& tr_max_speed = tr_object.max_speed;
+    const auto& tr_length    = tr_object.length;
     for (size_t v = 0; v < num_vertices; v++) {
+      if (instance.get_schedule(tr).get_entry() == v) {
+        tr_velocity_extensions.emplace_back(
+            std::vector<double>{instance.get_schedule(tr).get_v_0()});
+        continue;
+      }
+
       const double max_vertex_speed =
-          instance.const_n().maximal_vertex_speed(v);
-      const double min_n_length =
+          std::min(instance.const_n().maximal_vertex_speed(v), tr_max_speed);
+      double min_n_length =
           instance.const_n().minimal_neighboring_edge_length(v);
+
+      if (min_n_length > tr_length &&
+          instance.get_schedule(tr).get_exit() == v) {
+        min_n_length = tr_length;
+      }
 
       std::vector<double> v_velocity_extensions = {0};
       double              speed                 = 0;
@@ -286,6 +308,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
              max_vertex_speed});
         v_velocity_extensions.emplace_back(speed);
       }
+      tr_velocity_extensions.emplace_back(v_velocity_extensions);
     }
     velocity_extensions.emplace_back(tr_velocity_extensions);
   }
