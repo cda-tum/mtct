@@ -200,6 +200,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_objective() {
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_constraints() {
   // TODO
+  create_general_path_constraints();
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -342,6 +343,129 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   this->num_ttd           = this->ttd_sections.size();
   this->fill_tr_stop_data();
   this->fill_velocity_extensions();
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_general_path_constraints() {
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto& tr_object = instance.get_train_list().get_train(tr);
+    for (const auto& e :
+         instance.edges_used_by_train(tr, model_detail.fix_routes, false)) {
+      const auto&      edge       = instance.const_n().get_edge(e);
+      const auto&      source_obj = instance.const_n().get_vertex(edge.source);
+      const auto&      target_obj = instance.const_n().get_vertex(edge.target);
+      const auto&      v1_values  = velocity_extensions.at(tr).at(edge.source);
+      const auto&      v2_values  = velocity_extensions.at(tr).at(edge.target);
+      const GRBLinExpr lhs        = vars["x"](tr, e);
+      GRBLinExpr       rhs        = 0;
+      for (size_t i = 0; i < v1_values.size(); i++) {
+        for (size_t j = 0; j < v2_values.size(); j++) {
+          if (cda_rail::possible_by_eom(v1_values.at(i), v2_values.at(j),
+                                        tr_object.acceleration,
+                                        tr_object.deceleration, edge.length)) {
+            rhs += vars["y"](tr, e, i, j);
+          }
+        }
+      }
+      model->addConstr(lhs == rhs, "aggregate_edge_velocity_extension_" +
+                                       tr_object.name + "_" + source_obj.name +
+                                       "-" + target_obj.name);
+    }
+    const auto& schedule = instance.get_schedule(tr);
+    const auto& entry    = schedule.get_entry();
+    const auto& exit     = schedule.get_exit();
+    const auto  edges_used_by_train =
+        instance.edges_used_by_train(tr, model_detail.fix_routes, false);
+    for (const auto& v :
+         instance.vertices_used_by_train(tr, model_detail.fix_routes, false)) {
+      if (v == entry) {
+        GRBLinExpr lhs = 0;
+        for (const auto& e : instance.const_n().out_edges(v)) {
+          if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
+                        e) != edges_used_by_train.end()) {
+            lhs += vars["x"](tr, e);
+          }
+        }
+        model->addConstr(lhs == 1, "entry_vertex_" + tr_object.name + "_" +
+                                       instance.const_n().get_vertex(v).name);
+      } else if (v == exit) {
+        GRBLinExpr lhs = 0;
+        for (const auto& e : instance.const_n().in_edges(v)) {
+          if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
+                        e) != edges_used_by_train.end()) {
+            lhs += vars["x"](tr, e);
+          }
+        }
+        model->addConstr(lhs == 1, "exit_vertex_" + tr_object.name + "_" +
+                                       instance.const_n().get_vertex(v).name);
+      } else {
+        GRBLinExpr x_in_edges  = 0;
+        GRBLinExpr x_out_edges = 0;
+        for (const auto& e : instance.const_n().in_edges(v)) {
+          if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
+                        e) != edges_used_by_train.end()) {
+            x_in_edges += vars["x"](tr, e);
+          }
+        }
+        for (const auto& e : instance.const_n().out_edges(v)) {
+          if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
+                        e) != edges_used_by_train.end()) {
+            x_out_edges += vars["x"](tr, e);
+          }
+        }
+        model->addConstr(x_in_edges <= 1,
+                         "in_edges_" + tr_object.name + "_" +
+                             instance.const_n().get_vertex(v).name);
+        model->addConstr(x_out_edges <= 1,
+                         "out_edges_" + tr_object.name + "_" +
+                             instance.const_n().get_vertex(v).name);
+        const auto& v1_values = velocity_extensions.at(tr).at(v);
+        for (size_t i = 0; i < v1_values.size(); i++) {
+          GRBLinExpr lhs = 0;
+          GRBLinExpr rhs = 0;
+          for (const auto& e : instance.const_n().in_edges(v)) {
+            if (std::find(edges_used_by_train.begin(),
+                          edges_used_by_train.end(),
+                          e) != edges_used_by_train.end()) {
+              const auto& edge = instance.const_n().get_edge(e);
+              const auto& v2_values =
+                  velocity_extensions.at(tr).at(edge.source);
+              for (size_t j = 0; j < v2_values.size(); j++) {
+                if (cda_rail::possible_by_eom(v2_values.at(j), v1_values.at(i),
+                                              tr_object.acceleration,
+                                              tr_object.deceleration,
+                                              edge.length)) {
+                  lhs += vars["y"](tr, e, j, i);
+                }
+              }
+            }
+          }
+          for (const auto& e : instance.const_n().out_edges(v)) {
+            if (std::find(edges_used_by_train.begin(),
+                          edges_used_by_train.end(),
+                          e) != edges_used_by_train.end()) {
+              const auto& edge = instance.const_n().get_edge(e);
+              const auto& v2_values =
+                  velocity_extensions.at(tr).at(edge.target);
+              for (size_t j = 0; j < v2_values.size(); j++) {
+                if (cda_rail::possible_by_eom(v1_values.at(i), v2_values.at(j),
+                                              tr_object.acceleration,
+                                              tr_object.deceleration,
+                                              edge.length)) {
+                  rhs += vars["y"](tr, e, i, j);
+                }
+              }
+            }
+          }
+          model->addConstr(lhs == rhs,
+                           "vertex_velocity_extension_flow_condition_" +
+                               tr_object.name + "_" +
+                               instance.const_n().get_vertex(v).name + "_" +
+                               std::to_string(v1_values.at(i)));
+        }
+      }
+    }
+  }
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)

@@ -82,6 +82,7 @@ private:
   void set_objective();
 
   void create_constraints();
+  void create_general_path_constraints();
 
 protected:
   void solve_init_gen_po_mb(int time_limit, bool debug_input) {
