@@ -502,6 +502,16 @@ TEST(Functionality, NetworkForwardPathsFromVertex) {
   const auto forward_paths_13 =
       network.all_paths_of_length_starting_in_vertex(v_1, 601);
   EXPECT_EQ(forward_paths_13.size(), 0);
+
+  // Forward paths from v_4 with length 50 and exit node v5, where only v4_v5
+  // and v1_v2 are considered is v4_v5
+  const auto forward_paths_14 = network.all_paths_of_length_starting_in_vertex(
+      v_4, 50, v_5, {e_1_2, e_4_5});
+  EXPECT_EQ(forward_paths_14.size(), 1);
+  EXPECT_TRUE(std::find(forward_paths_14.begin(), forward_paths_14.end(),
+                        std::vector<size_t>{e_4_5}) != forward_paths_14.end())
+      << "e_4_5 is not in the forward paths from v_4 with length 50 and exit "
+         "node v5";
 }
 
 TEST(Functionality, NetworkForwardPathsFromEdge) {
