@@ -226,21 +226,21 @@ public:
                         [](double w) { return w >= 0; }));
   };
 
-  [[nodiscard]] double get_approximate_leaving_time(size_t train);
-  [[nodiscard]] double get_maximal_leaving_time(size_t train, double v);
-  [[nodiscard]] double get_minimal_leaving_time(size_t train, double v);
+  [[nodiscard]] double get_approximate_leaving_time(size_t train) const;
+  [[nodiscard]] double get_maximal_leaving_time(size_t train, double v) const;
+  [[nodiscard]] double get_minimal_leaving_time(size_t train, double v) const;
   [[nodiscard]] double
-  get_approximate_leaving_time(const std::string& tr_name) {
+  get_approximate_leaving_time(const std::string& tr_name) const {
     return get_approximate_leaving_time(
         this->get_timetable().get_train_list().get_train_index(tr_name));
   };
   [[nodiscard]] double get_maximal_leaving_time(const std::string& tr_name,
-                                                double             v) {
+                                                double             v) const {
     return get_maximal_leaving_time(
         this->get_timetable().get_train_list().get_train_index(tr_name), v);
   };
   [[nodiscard]] double get_minimal_leaving_time(const std::string& tr_name,
-                                                double             v) {
+                                                double             v) const {
     return get_minimal_leaving_time(
         this->get_timetable().get_train_list().get_train_index(tr_name), v);
   };

@@ -22,14 +22,14 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
 }
 
 double cda_rail::instances::GeneralPerformanceOptimizationInstance::
-    get_approximate_leaving_time(size_t train) {
+    get_approximate_leaving_time(size_t train) const {
   const auto& tr_object = this->get_train_list().get_train(train);
   const auto& timetable = this->get_timetable().get_schedule(train);
   return tr_object.length / timetable.get_v_n();
 }
 
 double cda_rail::instances::GeneralPerformanceOptimizationInstance::
-    get_maximal_leaving_time(size_t train, double v) {
+    get_maximal_leaving_time(size_t train, double v) const {
   const auto& tr_object = this->get_train_list().get_train(train);
   const auto& timetable = this->get_timetable().get_schedule(train);
   return cda_rail::max_travel_time_no_stopping(
@@ -38,7 +38,7 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
 }
 
 double cda_rail::instances::GeneralPerformanceOptimizationInstance::
-    get_minimal_leaving_time(size_t train, double v) {
+    get_minimal_leaving_time(size_t train, double v) const {
   const auto& tr_object = this->get_train_list().get_train(train);
   const auto& timetable = this->get_timetable().get_schedule(train);
   auto        v_max     = std::max(v, timetable.get_v_n());

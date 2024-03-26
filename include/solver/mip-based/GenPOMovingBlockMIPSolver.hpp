@@ -66,6 +66,8 @@ private:
       const SolutionSettingsMovingBlock& solution_settings_input,
       const ModelDetail&                 model_detail_input);
 
+  double ub_timing_variable(size_t tr) const;
+
   void fill_tr_stop_data();
   void fill_velocity_extensions();
   void fill_velocity_extensions_using_none_strategy();
@@ -83,6 +85,7 @@ private:
 
   void create_constraints();
   void create_general_path_constraints();
+  void create_travel_times_constraints();
 
 protected:
   void solve_init_gen_po_mb(int time_limit, bool debug_input) {
