@@ -120,10 +120,11 @@ private:
       std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
           edge_pairs) const;
 
-  [[nodiscard]] std::vector<std::vector<size_t>>
-  all_routes_of_given_length(std::optional<size_t> v_0,
-                             std::optional<size_t> e_0, double desired_length,
-                             bool reverse_direction) const;
+  [[nodiscard]] std::vector<std::vector<size_t>> all_routes_of_given_length(
+      std::optional<size_t> v_0, std::optional<size_t> e_0,
+      double desired_length, bool reverse_direction,
+      std::optional<size_t> exit_node           = {},
+      std::vector<size_t>   edges_used_by_train = {}) const;
 
   [[nodiscard]] size_t other_vertex(size_t e, size_t v) const {
     return get_edge(e).source == v ? get_edge(e).target : get_edge(e).source;
@@ -244,20 +245,36 @@ public:
   vertices_used_by_edges(const std::vector<size_t>& edges) const;
 
   [[nodiscard]] std::vector<std::vector<size_t>>
-  all_paths_of_length_starting_in_vertex(size_t v, double desired_len) const {
-    return all_routes_of_given_length(v, std::nullopt, desired_len, false);
+  all_paths_of_length_starting_in_vertex(
+      size_t v, double desired_len, std::optional<size_t> exit_node = {},
+      std::vector<size_t> edges_to_consider = {}) const {
+    return all_routes_of_given_length(v, std::nullopt, desired_len, false,
+                                      std::move(exit_node),
+                                      std::move(edges_to_consider));
   };
   [[nodiscard]] std::vector<std::vector<size_t>>
-  all_paths_of_length_starting_in_edge(size_t e, double desired_len) const {
-    return all_routes_of_given_length(std::nullopt, e, desired_len, false);
+  all_paths_of_length_starting_in_edge(
+      size_t e, double desired_len, std::optional<size_t> exit_node = {},
+      std::vector<size_t> edges_to_consider = {}) const {
+    return all_routes_of_given_length(std::nullopt, e, desired_len, false,
+                                      std::move(exit_node),
+                                      std::move(edges_to_consider));
   };
   [[nodiscard]] std::vector<std::vector<size_t>>
-  all_paths_of_length_ending_in_vertex(size_t v, double desired_len) const {
-    return all_routes_of_given_length(v, std::nullopt, desired_len, true);
+  all_paths_of_length_ending_in_vertex(
+      size_t v, double desired_len, std::optional<size_t> exit_node = {},
+      std::vector<size_t> edges_to_consider = {}) const {
+    return all_routes_of_given_length(v, std::nullopt, desired_len, true,
+                                      std::move(exit_node),
+                                      std::move(edges_to_consider));
   };
   [[nodiscard]] std::vector<std::vector<size_t>>
-  all_paths_of_length_ending_in_edge(size_t e, double desired_len) const {
-    return all_routes_of_given_length(std::nullopt, e, desired_len, true);
+  all_paths_of_length_ending_in_edge(
+      size_t e, double desired_len, std::optional<size_t> exit_node = {},
+      std::vector<size_t> edges_to_consider = {}) const {
+    return all_routes_of_given_length(std::nullopt, e, desired_len, true,
+                                      std::move(exit_node),
+                                      std::move(edges_to_consider));
   }
 
   [[nodiscard]] bool has_vertex(size_t index) const {

@@ -1672,7 +1672,8 @@ cda_rail::Network::separate_stop_edges(const std::vector<size_t>& stop_edges) {
 
 std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
     std::optional<size_t> v_0, std::optional<size_t> e_0, double desired_length,
-    bool reverse_direction) const {
+    bool reverse_direction, std::optional<size_t> exit_node,
+    std::vector<size_t> edges_used_by_train) const {
   /**
    * Finds all routes from a specified starting point in the specified
    * direction. The routes are of a specified length, i.e., at least that long,
@@ -1707,10 +1708,22 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
         "Desired length is not strictly positive");
   }
 
-  const std::vector<size_t> edges_to_consider =
+  const std::vector<size_t> edges_to_consider_tmp =
       v_0.has_value()
           ? (reverse_direction ? in_edges(v_0.value()) : out_edges(v_0.value()))
           : std::vector<size_t>{e_0.value()};
+
+  auto edges_to_consider = edges_used_by_train.empty() ? edges_to_consider_tmp
+                                                       : std::vector<size_t>();
+
+  if (!edges_used_by_train.empty()) {
+    for (const auto& e : edges_to_consider_tmp) {
+      if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
+                    e) != edges_used_by_train.end()) {
+        edges_to_consider.emplace_back(e);
+      }
+    }
+  }
 
   std::vector<std::vector<size_t>> ret_val;
 
@@ -1726,6 +1739,12 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
         reverse_direction ? get_predecessors(e_index) : get_successors(e_index);
 
     for (const auto& e_next_index : next_edges) {
+      if (!reverse_direction && exit_node.has_value() &&
+          get_edge(e_next_index).target == exit_node.value()) {
+        ret_val.emplace_back(1, e_index);
+        continue;
+      }
+
       const auto paths_e_next =
           all_routes_of_given_length(std::nullopt, e_next_index,
                                      desired_length - e_len, reverse_direction);
