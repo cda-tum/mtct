@@ -249,32 +249,28 @@ public:
       size_t v, double desired_len, std::optional<size_t> exit_node = {},
       std::vector<size_t> edges_to_consider = {}) const {
     return all_routes_of_given_length(v, std::nullopt, desired_len, false,
-                                      std::move(exit_node),
-                                      std::move(edges_to_consider));
+                                      exit_node, std::move(edges_to_consider));
   };
   [[nodiscard]] std::vector<std::vector<size_t>>
   all_paths_of_length_starting_in_edge(
       size_t e, double desired_len, std::optional<size_t> exit_node = {},
       std::vector<size_t> edges_to_consider = {}) const {
     return all_routes_of_given_length(std::nullopt, e, desired_len, false,
-                                      std::move(exit_node),
-                                      std::move(edges_to_consider));
+                                      exit_node, std::move(edges_to_consider));
   };
   [[nodiscard]] std::vector<std::vector<size_t>>
   all_paths_of_length_ending_in_vertex(
       size_t v, double desired_len, std::optional<size_t> exit_node = {},
       std::vector<size_t> edges_to_consider = {}) const {
     return all_routes_of_given_length(v, std::nullopt, desired_len, true,
-                                      std::move(exit_node),
-                                      std::move(edges_to_consider));
+                                      exit_node, std::move(edges_to_consider));
   };
   [[nodiscard]] std::vector<std::vector<size_t>>
   all_paths_of_length_ending_in_edge(
       size_t e, double desired_len, std::optional<size_t> exit_node = {},
       std::vector<size_t> edges_to_consider = {}) const {
     return all_routes_of_given_length(std::nullopt, e, desired_len, true,
-                                      std::move(exit_node),
-                                      std::move(edges_to_consider));
+                                      exit_node, std::move(edges_to_consider));
   }
 
   [[nodiscard]] bool has_vertex(size_t index) const {
