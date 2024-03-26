@@ -201,6 +201,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_constraints() {
   // TODO
   create_general_path_constraints();
+  create_travel_times_constraints();
+  create_basic_order_constraints();
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -584,6 +586,38 @@ double
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::ub_timing_variable(
     size_t tr) const {
   return instance.get_schedule(tr).get_t_n_range().second;
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_basic_order_constraints() {
+  for (size_t e = 0; e < num_edges; e++) {
+    const auto& tr_on_edge = instance.trains_on_edge_mixed_routing(
+        e, model_detail.fix_routes, false);
+    const auto e_obj = instance.const_n().get_edge(e);
+    const auto v1    = instance.const_n().get_vertex(e_obj.source);
+    const auto v2    = instance.const_n().get_vertex(e_obj.target);
+    for (const auto& tr1 : tr_on_edge) {
+      for (const auto& tr2 : tr_on_edge) {
+        if (tr1 == tr2) {
+          continue;
+        }
+
+        model->addConstr(
+            vars["order"](tr1, tr2, e) + vars["order"](tr2, tr1, e) <=
+                0.5 * (vars["x"](tr1, e) + vars["x"](tr2, e)),
+            "edge_order_1_" + instance.get_train_list().get_train(tr1).name +
+                "_" + instance.get_train_list().get_train(tr2).name + "_" +
+                v1.name + "-" + v2.name);
+
+        model->addConstr(
+            vars["order"](tr1, tr2, e) + vars["order"](tr2, tr1, e) >=
+                vars["x"](tr1, e) - vars["x"](tr2, e) - 1,
+            "edge_order_2_" + instance.get_train_list().get_train(tr1).name +
+                "_" + instance.get_train_list().get_train(tr2).name + "_" +
+                v1.name + "-" + v2.name);
+      }
+    }
+  }
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
