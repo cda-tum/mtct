@@ -625,4 +625,77 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   }
 }
 
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_train_rear_constraints() {
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto& tr_object = instance.get_train_list().get_train(tr);
+    const auto& schedule  = instance.get_schedule(tr);
+    const auto& exit      = schedule.get_exit();
+    const auto& v_n       = schedule.get_v_n();
+    const auto  edges_used_by_train =
+        instance.edges_used_by_train(tr, model_detail.fix_routes, false);
+    for (const auto& v :
+         instance.vertices_used_by_train(tr, model_detail.fix_routes, false)) {
+      if (v == exit) {
+        const auto v_max_speed =
+            instance.const_n().maximal_vertex_speed(v, edges_used_by_train);
+        const auto v_exit_velocities = velocity_extensions.at(tr).at(v);
+        // t_rear_departure(v) >= t_front_departure(v)  + min_t selected by
+        // incoming edge speed
+        const auto          in_edges          = instance.const_n().in_edges(v);
+        std::vector<size_t> relevant_in_edges = {};
+        for (const auto& e : in_edges) {
+          if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
+                        e) != edges_used_by_train.end()) {
+            relevant_in_edges.push_back(e);
+          }
+        }
+        GRBLinExpr min_travel_time_expr = 0;
+        GRBLinExpr max_travel_time_expr = 0;
+        for (size_t i = 0; i < v_exit_velocities.size(); i++) {
+          const auto& v_exit_velocity = v_exit_velocities.at(i);
+          if (cda_rail::possible_by_eom(
+                  v_exit_velocity, v_n, tr_object.acceleration,
+                  tr_object.deceleration, tr_object.length)) {
+            const auto min_t_to_full_exit = cda_rail::min_travel_time(
+                v_exit_velocity, v_n, v_max_speed, tr_object.acceleration,
+                tr_object.deceleration, tr_object.length);
+            const auto max_t_to_full_exit = cda_rail::max_travel_time(
+                v_exit_velocity, v_n, V_MIN, tr_object.acceleration,
+                tr_object.deceleration, tr_object.length, false);
+            for (const auto& e_in : relevant_in_edges) {
+              const auto& e_in_object = instance.const_n().get_edge(e_in);
+              const auto& v1_velocities =
+                  velocity_extensions.at(tr).at(e_in_object.source);
+              for (size_t j = 0; j < v1_velocities.size(); j++) {
+                if (cda_rail::possible_by_eom(
+                        v1_velocities.at(j), v_exit_velocity,
+                        tr_object.acceleration, tr_object.deceleration,
+                        e_in_object.length)) {
+                  min_travel_time_expr +=
+                      vars["y"](tr, e_in, j, i) * min_t_to_full_exit;
+                  max_travel_time_expr +=
+                      vars["y"](tr, e_in, j, i) * max_t_to_full_exit;
+                }
+              }
+            }
+          }
+        }
+        model->addConstr(vars["t_rear_departure"](tr, v) >=
+                             vars["t_front_departure"](tr, v) +
+                                 min_travel_time_expr,
+                         "rear_departure_vertex_" + tr_object.name + "_" +
+                             instance.const_n().get_vertex(v).name);
+        model->addConstr(vars["t_rear_departure"](tr, v) <=
+                             vars["t_front_departure"](tr, v) +
+                                 max_travel_time_expr,
+                         "rear_departure_vertex_" + tr_object.name + "_" +
+                             instance.const_n().get_vertex(v).name);
+      } else {
+        // TODO
+      }
+    }
+  }
+}
+
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)

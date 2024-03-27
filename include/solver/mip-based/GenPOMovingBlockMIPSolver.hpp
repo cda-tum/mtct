@@ -87,6 +87,7 @@ private:
   void create_general_path_constraints();
   void create_travel_times_constraints();
   void create_basic_order_constraints();
+  void create_train_rear_constraints();
 
 protected:
   void solve_init_gen_po_mb(int time_limit, bool debug_input) {
