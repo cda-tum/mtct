@@ -20,7 +20,8 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
                                  std::string& breakable, std::string& length,
                                  std::string& max_speed,
                                  std::string& min_block_length,
-                                 std::string& type) {
+                                 std::string& min_stop_block_length,
+                                 std::string& type, std::string& headway) {
   /**
    * Get keys from graphml file
    * @param graphml_body Body of graphml file
@@ -28,7 +29,9 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
    * @param length Length key
    * @param max_speed Max speed key
    * @param min_block_length Min block length key
+   * @param min_stop_block_length Min stop block length key
    * @param type Type key
+   * @param headway Headway key
    *
    * The variables are passed by reference and are modified in place.
    */
@@ -47,18 +50,25 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
       length = graphml_key->Attribute("id");
     } else if (graphml_key->Attribute("attr.name") == std::string("type")) {
       type = graphml_key->Attribute("id");
+    } else if (graphml_key->Attribute("attr.name") ==
+               std::string("min_stop_block_length")) {
+      min_stop_block_length = graphml_key->Attribute("id");
+    } else if (graphml_key->Attribute("attr.name") == std::string("headway")) {
+      headway = graphml_key->Attribute("id");
     }
     graphml_key = graphml_key->NextSiblingElement("key");
   }
 }
 
 void cda_rail::Network::add_vertices_from_graphml(
-    const tinyxml2::XMLElement* graphml_node, const std::string& type) {
+    const tinyxml2::XMLElement* graphml_node, const std::string& type,
+    const std::string& headway) {
   /**
    * Add vertices from graphml file
    * @param graphml_node Node of graphml file
    * @param network Network object
    * @param type Type key
+   * @param headway Headway key
    *
    * The vertices are added to the network object in place.
    */
@@ -66,18 +76,27 @@ void cda_rail::Network::add_vertices_from_graphml(
   while (graphml_node != nullptr) {
     const tinyxml2::XMLElement* graphml_data =
         graphml_node->FirstChildElement("data");
-    std::string const  name = graphml_node->Attribute("id");
-    std::optional<int> v_type;
+    std::string const     name = graphml_node->Attribute("id");
+    std::optional<int>    v_type;
+    std::optional<double> headway_value;
     while (graphml_data != nullptr) {
       if (graphml_data->Attribute("key") == type) {
         v_type = std::stoi(graphml_data->GetText());
+      } else if (!headway.empty() &&
+                 graphml_data->Attribute("key") == headway) {
+        headway_value = std::stod(graphml_data->GetText());
       }
       graphml_data = graphml_data->NextSiblingElement("data");
     }
     if (!v_type.has_value()) {
       throw exceptions::ImportException("graphml");
     }
-    this->add_vertex(name, static_cast<VertexType>(v_type.value()));
+    if (headway_value.has_value()) {
+      this->add_vertex(name, static_cast<VertexType>(v_type.value()),
+                       headway_value.value());
+    } else {
+      this->add_vertex(name, static_cast<VertexType>(v_type.value()));
+    }
     graphml_node = graphml_node->NextSiblingElement("node");
   }
 }
@@ -85,7 +104,8 @@ void cda_rail::Network::add_vertices_from_graphml(
 void cda_rail::Network::add_edges_from_graphml(
     const tinyxml2::XMLElement* graphml_edge, const std::string& breakable,
     const std::string& length, const std::string& max_speed,
-    const std::string& min_block_length) {
+    const std::string& min_block_length,
+    const std::string& min_stop_block_length) {
   /**
    * Add edges from graphml file
    * @param graphml_edge Edge of graphml file
@@ -107,6 +127,7 @@ void cda_rail::Network::add_edges_from_graphml(
     std::optional<double> e_max_speed;
     std::optional<bool>   e_breakable;
     std::optional<double> e_min_block_length;
+    std::optional<double> e_min_stop_block_length;
     while (graphml_data != nullptr) {
       if (graphml_data->Attribute("key") == breakable) {
         std::string tmp = graphml_data->GetText();
@@ -117,6 +138,9 @@ void cda_rail::Network::add_edges_from_graphml(
         e_max_speed = std::stod(graphml_data->GetText());
       } else if (graphml_data->Attribute("key") == length) {
         e_length = std::stod(graphml_data->GetText());
+      } else if (!min_stop_block_length.empty() &&
+                 graphml_data->Attribute("key") == min_stop_block_length) {
+        e_min_stop_block_length = std::stod(graphml_data->GetText());
       }
       graphml_data = graphml_data->NextSiblingElement("data");
     }
@@ -124,9 +148,16 @@ void cda_rail::Network::add_edges_from_graphml(
         !e_breakable.has_value() || !e_min_block_length.has_value()) {
       throw exceptions::ImportException("graphml");
     }
-    this->add_edge(source_name, target_name, e_length.value(),
-                   e_max_speed.value(), e_breakable.value(),
-                   e_min_block_length.value());
+    if (e_min_stop_block_length.has_value()) {
+      this->add_edge(source_name, target_name, e_length.value(),
+                     e_max_speed.value(), e_breakable.value(),
+                     e_min_block_length.value(),
+                     e_min_stop_block_length.value());
+    } else {
+      this->add_edge(source_name, target_name, e_length.value(),
+                     e_max_speed.value(), e_breakable.value(),
+                     e_min_block_length.value());
+    }
     graphml_edge = graphml_edge->NextSiblingElement("edge");
   }
 }
@@ -149,9 +180,11 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   std::string length;
   std::string max_speed;
   std::string min_block_length;
+  std::string min_stop_block_length;
   std::string type;
+  std::string headway;
   Network::get_keys(graphml_body, breakable, length, max_speed,
-                    min_block_length, type);
+                    min_block_length, min_stop_block_length, type, headway);
   if (breakable.empty() || length.empty() || max_speed.empty() ||
       min_block_length.empty() || type.empty()) {
     throw exceptions::ImportException("graphml");
@@ -165,12 +198,12 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
 
   const tinyxml2::XMLElement* graphml_node =
       graphml_graph->FirstChildElement("node");
-  this->add_vertices_from_graphml(graphml_node, type);
+  this->add_vertices_from_graphml(graphml_node, type, headway);
 
   const tinyxml2::XMLElement* graphml_edge =
       graphml_graph->FirstChildElement("edge");
   this->add_edges_from_graphml(graphml_edge, breakable, length, max_speed,
-                               min_block_length);
+                               min_block_length, min_stop_block_length);
 }
 
 void cda_rail::Network::read_successors(const std::filesystem::path& p) {
@@ -195,25 +228,28 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
   }
 }
 
-size_t cda_rail::Network::add_vertex(const std::string& name, VertexType type) {
+size_t cda_rail::Network::add_vertex(const std::string& name, VertexType type,
+                                     double headway) {
   /**
    * Add vertex to network
    * @param name Name of vertex
    * @param type Type of vertex
+   * @param headway Headway of vertex
    *
    * @return Index of vertex
    */
   if (has_vertex(name)) {
     throw exceptions::InvalidInputException("Vertex already exists");
   }
-  vertices.emplace_back(name, type);
+  vertices.emplace_back(name, type, headway);
   vertex_name_to_index[name] = vertices.size() - 1;
   return vertex_name_to_index[name];
 }
 
 size_t cda_rail::Network::add_edge(size_t source, size_t target, double length,
                                    double max_speed, bool breakable,
-                                   double min_block_length) {
+                                   double min_block_length,
+                                   double min_stop_block_length) {
   /**
    * Add edge to network
    * @param source Source vertex
@@ -238,7 +274,7 @@ size_t cda_rail::Network::add_edge(size_t source, size_t target, double length,
     throw exceptions::InvalidInputException("Edge already exists");
   }
   edges.emplace_back(source, target, length, max_speed, breakable,
-                     min_block_length);
+                     min_block_length, min_stop_block_length);
   successors.emplace_back();
   return edges.size() - 1;
 }
@@ -461,6 +497,20 @@ void cda_rail::Network::change_edge_min_block_length(
   edges[index].min_block_length = new_min_block_length;
 }
 
+void cda_rail::Network::change_edge_min_stop_block_length(
+    size_t index, double new_min_stop_block_length) {
+  /**
+   * Change edge min stop block length
+   *
+   * @param index Index of edge
+   * @param new_min_stop_block_length New min block length of edge
+   */
+  if (!has_edge(index)) {
+    throw exceptions::EdgeNotExistentException(index);
+  }
+  edges[index].min_stop_block_length = new_min_stop_block_length;
+}
+
 void cda_rail::Network::set_edge_breakable(size_t index) {
   /**
    * Sets an edge to be breakable
@@ -540,6 +590,28 @@ cda_rail::Network::get_successors(size_t index) const {
   return successors[index];
 }
 
+std::vector<size_t> cda_rail::Network::get_predecessors(size_t index) const {
+  /**
+   * Gets all predecessors of a given edge
+   *
+   * @param index Index of edge
+   *
+   * @return Vector of indices of predecessors
+   */
+  if (!has_edge(index)) {
+    throw exceptions::EdgeNotExistentException(index);
+  }
+  std::vector<size_t> ret_val;
+
+  for (const auto& e_1 : in_edges(get_edge(index).source)) {
+    if (is_valid_successor(e_1, index)) {
+      ret_val.push_back(e_1);
+    }
+  }
+
+  return ret_val;
+}
+
 void cda_rail::to_bool_optional(std::string& s, std::optional<bool>& b) {
   /**
    * Converts a string to an optional bool
@@ -570,11 +642,13 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
       << std::endl;
 
   // Write the key relations
-  std::string const breakable        = "d0";
-  std::string const length           = "d1";
-  std::string const max_speed        = "d2";
-  std::string const min_block_length = "d3";
-  std::string const type             = "d4";
+  std::string const breakable             = "d0";
+  std::string const length                = "d1";
+  std::string const max_speed             = "d2";
+  std::string const min_block_length      = "d3";
+  std::string const min_stop_block_length = "d4";
+  std::string const type                  = "d5";
+  std::string const headway               = "d6";
   file << "<key id=\"" << breakable
        << R"(" for="edge" attr.name="breakable" attr.type="boolean"/>)"
        << std::endl;
@@ -587,8 +661,15 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   file << "<key id=\"" << min_block_length
        << R"(" for="edge" attr.name="min_block_length" attr.type="double"/>)"
        << std::endl;
+  file
+      << "<key id=\"" << min_stop_block_length
+      << R"(" for="edge" attr.name="min_stop_block_length" attr.type="double"/>)"
+      << std::endl;
   file << "<key id=\"" << type
-       << R"(" for="edge" attr.name="type" attr.type="long"/>)" << std::endl;
+       << R"(" for="vertex" attr.name="type" attr.type="long"/>)" << std::endl;
+  file << "<key id=\"" << headway
+       << R"(" for="vertex" attr.name="headway" attr.type="double"/>)"
+       << std::endl;
 
   // Write the graph header
   file << "<graph edgedefault=\"directed\">" << std::endl;
@@ -598,6 +679,8 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
     file << "<node id=\"" << vertex.name << "\">" << std::endl;
     file << "<data key=\"" << type << "\">" << static_cast<int>(vertex.type)
          << "</data>" << std::endl;
+    file << "<data key=\"" << headway << "\">" << vertex.headway << "</data>"
+         << std::endl;
     file << "</node>" << std::endl;
   }
 
@@ -613,6 +696,8 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
          << std::endl;
     file << "<data key=\"" << min_block_length << "\">" << edge.min_block_length
          << "</data>" << std::endl;
+    file << "<data key=\"" << min_stop_block_length << "\">"
+         << edge.min_stop_block_length << "</data>" << std::endl;
     file << "</edge>" << std::endl;
   }
 
@@ -828,7 +913,8 @@ bool cda_rail::Network::is_adjustable(size_t vertex_id) const {
 
 std::pair<std::vector<size_t>, std::vector<size_t>>
 cda_rail::Network::separate_edge_at(
-    size_t edge_index, const std::vector<double>& distances_from_source) {
+    size_t edge_index, const std::vector<double>& distances_from_source,
+    bool new_edge_breakable) {
   /**
    * This function separates an edge at given distances from the source vertex.
    * If the reverse edge exists it is separated analogously. In particular the
@@ -878,15 +964,18 @@ cda_rail::Network::separate_edge_at(
   auto& new_edges = return_edges.first;
   new_edges.emplace_back(add_edge(edge.source, new_vertices.front(),
                                   distances_from_source.front(), edge.max_speed,
-                                  false, edge.min_block_length));
+                                  new_edge_breakable, edge.min_block_length,
+                                  edge.min_stop_block_length));
   for (size_t i = 1; i < distances_from_source.size(); ++i) {
-    new_edges.emplace_back(
-        add_edge(new_vertices[i - 1], new_vertices[i],
-                 distances_from_source[i] - distances_from_source[i - 1],
-                 edge.max_speed, false, edge.min_block_length));
+    new_edges.emplace_back(add_edge(
+        new_vertices[i - 1], new_vertices[i],
+        distances_from_source[i] - distances_from_source[i - 1], edge.max_speed,
+        new_edge_breakable, edge.min_block_length, edge.min_stop_block_length));
   }
   change_edge_length(edge_index, edge.length - distances_from_source.back());
-  set_edge_unbreakable(edge_index);
+  if (!new_edge_breakable) {
+    set_edge_unbreakable(edge_index);
+  }
   edges[edge_index].source = new_vertices.back();
   new_edges.emplace_back(edge_index);
 
@@ -916,18 +1005,22 @@ cda_rail::Network::separate_edge_at(
           "Reverse edge has different length");
     }
 
-    new_reverse_edges.emplace_back(
-        add_edge(edge.target, new_vertices.back(),
-                 edge.length - distances_from_source.back(),
-                 reverse_edge.max_speed, false, reverse_edge.min_block_length));
+    new_reverse_edges.emplace_back(add_edge(
+        edge.target, new_vertices.back(),
+        edge.length - distances_from_source.back(), reverse_edge.max_speed,
+        new_edge_breakable, reverse_edge.min_block_length,
+        reverse_edge.min_stop_block_length));
     for (size_t i = distances_from_source.size() - 1; i > 0; --i) {
       new_reverse_edges.emplace_back(add_edge(
           new_vertices[i], new_vertices[i - 1],
           distances_from_source[i] - distances_from_source[i - 1],
-          reverse_edge.max_speed, false, reverse_edge.min_block_length));
+          reverse_edge.max_speed, new_edge_breakable,
+          reverse_edge.min_block_length, reverse_edge.min_stop_block_length));
     }
     change_edge_length(reverse_edge_index, distances_from_source.front());
-    set_edge_unbreakable(reverse_edge_index);
+    if (!new_edge_breakable) {
+      set_edge_unbreakable(reverse_edge_index);
+    }
     edges[reverse_edge_index].source = new_vertices.front();
     new_reverse_edges.emplace_back(reverse_edge_index);
 
@@ -945,8 +1038,9 @@ cda_rail::Network::separate_edge_at(
 }
 
 std::pair<std::vector<size_t>, std::vector<size_t>>
-cda_rail::Network::separate_edge(size_t                         edge_index,
-                                 const vss::SeparationFunction& sep_func) {
+cda_rail::Network::separate_edge_private_helper(
+    size_t edge_index, double min_length,
+    const vss::SeparationFunction& sep_func, bool new_edge_breakable) {
   /**
    * Separates an edge (and possibly its reverse edge) according to the given
    * number of new vertices.
@@ -967,8 +1061,8 @@ cda_rail::Network::separate_edge(size_t                         edge_index,
   // Get edge to separate
   const auto& edge = get_edge(edge_index);
   // Get number of new vertices
-  const auto number_of_blocks = vss::functions::max_n_blocks(
-      sep_func, edge.min_block_length / edge.length);
+  const auto number_of_blocks =
+      vss::functions::max_n_blocks(sep_func, min_length / edge.length);
 
   // Calculate distances
   std::vector<double> distances_from_source;
@@ -978,7 +1072,8 @@ cda_rail::Network::separate_edge(size_t                         edge_index,
                                        sep_func(i, number_of_blocks));
   }
 
-  return separate_edge_at(edge_index, distances_from_source);
+  return separate_edge_at(edge_index, distances_from_source,
+                          new_edge_breakable);
 }
 
 std::vector<size_t> cda_rail::Network::breakable_edges() const {
@@ -1553,4 +1648,204 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
   }
 
   return ret_val;
+}
+
+std::vector<std::pair<size_t, std::vector<size_t>>>
+cda_rail::Network::separate_stop_edges(const std::vector<size_t>& stop_edges) {
+  std::vector<std::pair<size_t, std::vector<size_t>>> ret_val;
+  for (size_t const i : stop_edges) {
+    const auto edge_object = get_edge(i);
+    if (2 * edge_object.min_stop_block_length > edge_object.length) {
+      continue;
+    }
+    auto separated_edges = separate_stop_edge(i);
+    if (!separated_edges.first.empty()) {
+      ret_val.emplace_back(separated_edges.first.back(), separated_edges.first);
+    }
+    if (!separated_edges.second.empty()) {
+      ret_val.emplace_back(separated_edges.second.back(),
+                           separated_edges.second);
+    }
+  }
+  return ret_val;
+}
+
+std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
+    std::optional<size_t> v_0, std::optional<size_t> e_0, double desired_length,
+    bool reverse_direction, std::optional<size_t> exit_node,
+    std::vector<size_t> edges_used_by_train) const {
+  /**
+   * Finds all routes from a specified starting point in the specified
+   * direction. The routes are of a specified length, i.e., at least that long,
+   * however removing the last edge results in a route that is too short.
+   *
+   * @param v_0: The index of the starting vertex. If specified, e_0 should be
+   * empty.
+   * @param e_0: The index of the starting edge. If specified, v_0 should be
+   * empty.
+   * @param desired_length: The desired length of the routes.
+   * @param reverse_direction: If true, the routes are in the reverse direction.
+   * Default is false, i.e., in edge order.
+   */
+
+  if (v_0.has_value() && e_0.has_value()) {
+    throw exceptions::InvalidInputException("Both v_0 and e_0 are specified");
+  }
+  if (!v_0.has_value() && !e_0.has_value()) {
+    throw exceptions::InvalidInputException(
+        "Neither v_0 nor e_0 are specified");
+  }
+
+  if (v_0.has_value() && !has_vertex(v_0.value())) {
+    throw exceptions::VertexNotExistentException(v_0.value());
+  }
+  if (e_0.has_value() && !has_edge(e_0.value())) {
+    throw exceptions::EdgeNotExistentException(e_0.value());
+  }
+
+  if (desired_length <= 0) {
+    throw exceptions::InvalidInputException(
+        "Desired length is not strictly positive");
+  }
+
+  const std::vector<size_t> edges_to_consider_tmp =
+      v_0.has_value()
+          ? (reverse_direction ? in_edges(v_0.value()) : out_edges(v_0.value()))
+          : std::vector<size_t>{e_0.value()};
+
+  auto edges_to_consider = edges_used_by_train.empty() ? edges_to_consider_tmp
+                                                       : std::vector<size_t>();
+
+  if (!edges_used_by_train.empty()) {
+    for (const auto& e : edges_to_consider_tmp) {
+      if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
+                    e) != edges_used_by_train.end()) {
+        edges_to_consider.emplace_back(e);
+      }
+    }
+  }
+
+  std::vector<std::vector<size_t>> ret_val;
+
+  for (const auto& e_index : edges_to_consider) {
+    if (!reverse_direction && exit_node.has_value() &&
+        get_edge(e_index).target == exit_node.value()) {
+      ret_val.emplace_back(1, e_index);
+      continue;
+    }
+
+    const auto& e_len = get_edge(e_index).length;
+
+    if (e_len >= desired_length) {
+      ret_val.emplace_back(1, e_index);
+      continue;
+    }
+
+    const auto next_edges =
+        reverse_direction ? get_predecessors(e_index) : get_successors(e_index);
+
+    for (const auto& e_next_index : next_edges) {
+      const auto paths_e_next = all_routes_of_given_length(
+          std::nullopt, e_next_index, desired_length - e_len, reverse_direction,
+          exit_node, edges_used_by_train);
+      for (const auto& path_e_next : paths_e_next) {
+        // check for cycle
+        const auto edges_r = reverse_direction
+                                 ? in_edges(get_edge(e_index).target)
+                                 : out_edges(get_edge(e_index).source);
+        if (std::any_of(
+                edges_r.begin(), edges_r.end(), [&path_e_next](const auto& e) {
+                  return std::find(path_e_next.begin(), path_e_next.end(), e) !=
+                         path_e_next.end();
+                })) {
+          continue;
+        }
+
+        std::vector<size_t> path;
+        path.emplace_back(e_index);
+        path.insert(path.end(), path_e_next.begin(), path_e_next.end());
+        ret_val.push_back(path);
+      }
+    }
+  }
+
+  return ret_val;
+}
+
+std::vector<size_t> cda_rail::Network::vertices_used_by_edges(
+    const std::vector<size_t>& edges) const {
+  std::unordered_set<size_t> used_vertices;
+  for (const auto& edge : edges) {
+    used_vertices.insert(get_edge(edge).source);
+    used_vertices.insert(get_edge(edge).target);
+  }
+  return {used_vertices.begin(), used_vertices.end()};
+}
+
+double cda_rail::Network::maximal_vertex_speed(
+    size_t v, const std::vector<size_t>& edges_to_consider) const {
+  const auto& n_edges_tmp = neighboring_edges(v);
+  auto        n_edges =
+      edges_to_consider.empty() ? n_edges_tmp : std::vector<size_t>();
+  for (const auto& e : n_edges_tmp) {
+    if (std::find(edges_to_consider.begin(), edges_to_consider.end(), e) !=
+        edges_to_consider.end()) {
+      n_edges.emplace_back(e);
+    }
+  }
+
+  if (n_edges.empty()) {
+    return 0;
+  }
+
+  if (neighbors(v).size() == 1) {
+    return get_edge(n_edges.front()).max_speed;
+  }
+
+  double                max_speed = 0;
+  std::optional<size_t> max_speed_neighboring_vertex;
+  double                second_max_speed = 0;
+  for (const auto& e : n_edges) {
+    const auto& edge = get_edge(e);
+    if (edge.max_speed > max_speed) {
+      second_max_speed             = max_speed;
+      max_speed                    = edge.max_speed;
+      max_speed_neighboring_vertex = other_vertex(e, v);
+    } else if (edge.max_speed > second_max_speed &&
+               max_speed_neighboring_vertex.has_value() &&
+               other_vertex(e, v) != max_speed_neighboring_vertex.value()) {
+      second_max_speed = edge.max_speed;
+    }
+  }
+  return second_max_speed;
+}
+
+std::vector<size_t> cda_rail::Network::neighboring_edges(size_t index) const {
+  auto       ret_val      = in_edges(index);
+  const auto edges_to_add = out_edges(index);
+  ret_val.insert(ret_val.end(), edges_to_add.begin(), edges_to_add.end());
+  return ret_val;
+}
+
+double cda_rail::Network::minimal_neighboring_edge_length(
+    size_t v, const std::vector<size_t>& edges_to_consider) const {
+  const auto n_edges_tmp = neighboring_edges(v);
+  auto       n_edges =
+      edges_to_consider.empty() ? n_edges_tmp : std::vector<size_t>();
+  for (const auto& e : n_edges_tmp) {
+    if (std::find(edges_to_consider.begin(), edges_to_consider.end(), e) !=
+        edges_to_consider.end()) {
+      n_edges.emplace_back(e);
+    }
+  }
+
+  if (n_edges.empty()) {
+    return std::numeric_limits<double>::infinity();
+  }
+
+  const auto min_edge_index = *std::min_element(
+      n_edges.begin(), n_edges.end(), [this](size_t a, size_t b) {
+        return get_edge(a).length < get_edge(b).length;
+      });
+  return get_edge(min_edge_index).length;
 }

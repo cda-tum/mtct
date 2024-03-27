@@ -28,21 +28,17 @@ cda_rail::StationList::get_station(const std::string& name) const {
 }
 
 void cda_rail::StationList::add_track_to_station(const std::string& name,
-                                                 size_t             track,
-                                                 const Network&     network) {
+                                                 size_t             track) {
   /**
    * Add a specified track to a specified station.
    *
    * @param name The name of the station.
    * @param track The index of the track to add.
-   * @param network The network reference to use for the edge names.
    */
   if (!has_station(name)) {
     throw exceptions::StationNotExistentException(name);
   }
-  if (!network.has_edge(track)) {
-    throw exceptions::EdgeNotExistentException(track);
-  }
+
   // If stations.at(name).tracks already contains track, nothing happens.
   if (std::find(stations.at(name).tracks.begin(),
                 stations.at(name).tracks.end(),
@@ -170,4 +166,19 @@ void cda_rail::StationList::update_after_discretization(
       }
     }
   }
+}
+
+bool cda_rail::StationList::is_fully_in_station(
+    const std::string& station_name, std::vector<size_t> edges) const {
+  if (!has_station(station_name)) {
+    throw exceptions::StationNotExistentException(station_name);
+  }
+
+  const auto& station_tracks = get_station(station_name).tracks;
+
+  return std::all_of(
+      edges.begin(), edges.end(), [&station_tracks](size_t edge) {
+        return std::find(station_tracks.begin(), station_tracks.end(), edge) !=
+               station_tracks.end();
+      });
 }

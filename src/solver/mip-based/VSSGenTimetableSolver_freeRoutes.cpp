@@ -98,8 +98,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).name;
     const auto& tr_len  = instance.get_train_list().get_train(tr_name).length;
-    const auto& entry   = instance.get_schedule(tr).entry;
-    const auto& exit    = instance.get_schedule(tr).exit;
+    const auto& entry   = instance.get_schedule(tr).get_entry();
+    const auto& exit    = instance.get_schedule(tr).get_exit();
     for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
          ++t) {
       // Train position has the correct length
@@ -231,8 +231,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).name;
     const auto& tr_len  = train_list.get_train(tr_name).length;
-    const auto& entry   = instance.get_schedule(tr).entry;
-    const auto& exit    = instance.get_schedule(tr).exit;
+    const auto& entry   = instance.get_schedule(tr).get_entry();
+    const auto& exit    = instance.get_schedule(tr).get_exit();
     for (size_t t = train_interval[tr].first;
          t <= train_interval[tr].second - 1; ++t) {
       // Train cannot be solely on the exit edge
@@ -361,8 +361,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   const auto train_list = instance.get_train_list();
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).name;
-    const auto& entry   = instance.get_schedule(tr).entry;
-    const auto& exit    = instance.get_schedule(tr).exit;
+    const auto& entry   = instance.get_schedule(tr).get_entry();
+    const auto& exit    = instance.get_schedule(tr).get_exit();
     for (size_t e = 0; e < num_edges; ++e) {
       const auto& e_v0      = instance.n().get_edge(e).source;
       const auto& e_v1      = instance.n().get_edge(e).target;
@@ -497,7 +497,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         // Constraint inferred from before position
         if (before_after_struct.t_before <= train_interval[tr].first) {
           const auto e_before =
-              instance.n().out_edges(instance.get_schedule(tr).entry)[0];
+              instance.n().out_edges(instance.get_schedule(tr).get_entry())[0];
           const auto& e_len_before = instance.n().get_edge(e_before).length;
           dist_before              = apsp[e_before][e] + e_len_before - e_len;
         } else {
@@ -530,7 +530,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         // Constraint inferred from after position
         if (before_after_struct.t_after >= train_interval[tr].second) {
           const auto e_after =
-              instance.n().in_edges(instance.get_schedule(tr).exit)[0];
+              instance.n().in_edges(instance.get_schedule(tr).get_exit())[0];
           dist_after = apsp[e][e_after];
         } else {
           dist_after = INF;

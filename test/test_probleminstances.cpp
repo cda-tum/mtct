@@ -10,6 +10,7 @@ struct EdgeTarget {
   double      max_speed;
   bool        breakable;
   double      min_block_length;
+  double      min_stop_block_length = 100;
 };
 
 // NOLINTBEGIN(clang-diagnostic-unused-result,google-readability-function-size,readability-function-size)
@@ -45,8 +46,8 @@ void check_instance_import(
   edge_targets.push_back({"l2", "l3", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"l3", "g00", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"l3", "g10", 5, 27.77777777777778, false, 0});
-  edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 10});
-  edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 10});
+  edge_targets.push_back({"g00", "g01", 300, 27.77777777777778, true, 10, 150});
+  edge_targets.push_back({"g10", "g11", 300, 27.77777777777778, true, 10, 150});
   edge_targets.push_back({"g01", "r2", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"g11", "r2", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"r2", "r1", 5, 27.77777777777778, false, 0});
@@ -55,8 +56,8 @@ void check_instance_import(
   edge_targets.push_back({"r1", "r2", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"r2", "g01", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"r2", "g11", 5, 27.77777777777778, false, 0});
-  edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 10});
-  edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 10});
+  edge_targets.push_back({"g01", "g00", 300, 27.77777777777778, true, 10, 150});
+  edge_targets.push_back({"g11", "g10", 300, 27.77777777777778, true, 10, 150});
   edge_targets.push_back({"g00", "l3", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"g10", "l3", 5, 27.77777777777778, false, 0});
   edge_targets.push_back({"l3", "l2", 5, 27.77777777777778, false, 0});
@@ -72,6 +73,7 @@ void check_instance_import(
     EXPECT_EQ(e.max_speed, edge.max_speed);
     EXPECT_EQ(e.breakable, edge.breakable);
     EXPECT_EQ(e.min_block_length, edge.min_block_length);
+    EXPECT_EQ(e.min_stop_block_length, edge.min_stop_block_length);
   }
 
   // Check successors
@@ -241,45 +243,45 @@ void check_instance_import(
 
   // Check the schedule of tr1
   const auto& tr1_schedule = instance.get_schedule("tr1");
-  EXPECT_EQ(tr1_schedule.t_0, 120);
-  EXPECT_EQ(tr1_schedule.v_0, 0);
-  EXPECT_EQ(tr1_schedule.t_n, 645);
-  EXPECT_EQ(tr1_schedule.v_n, 16.67);
-  EXPECT_EQ(network.get_vertex(tr1_schedule.entry).name, "l0");
-  EXPECT_EQ(network.get_vertex(tr1_schedule.exit).name, "r0");
-  EXPECT_EQ(tr1_schedule.stops.size(), 1);
-  const auto& stop = tr1_schedule.stops[0];
-  EXPECT_EQ(stop.begin, 240);
-  EXPECT_EQ(stop.end, 300);
-  EXPECT_EQ(stations.get_station(stop.station).name, "Central");
+  EXPECT_EQ(tr1_schedule.get_t_0(), 120);
+  EXPECT_EQ(tr1_schedule.get_v_0(), 0);
+  EXPECT_EQ(tr1_schedule.get_t_n(), 645);
+  EXPECT_EQ(tr1_schedule.get_v_n(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr1_schedule.get_entry()).name, "l0");
+  EXPECT_EQ(network.get_vertex(tr1_schedule.get_exit()).name, "r0");
+  EXPECT_EQ(tr1_schedule.get_stops().size(), 1);
+  const auto& stop = tr1_schedule.get_stops()[0];
+  EXPECT_EQ(stop.arrival(), 240);
+  EXPECT_EQ(stop.departure(), 300);
+  EXPECT_EQ(stations.get_station(stop.get_station_name()).name, "Central");
 
   // Check the schedule of tr2
   const auto& tr2_schedule = instance.get_schedule("tr2");
-  EXPECT_EQ(tr2_schedule.t_0, 0);
-  EXPECT_EQ(tr2_schedule.v_0, 0);
-  EXPECT_EQ(tr2_schedule.t_n, 420);
-  EXPECT_EQ(tr2_schedule.v_n, 16.67);
-  EXPECT_EQ(network.get_vertex(tr2_schedule.entry).name, "l0");
-  EXPECT_EQ(network.get_vertex(tr2_schedule.exit).name, "r0");
-  EXPECT_EQ(tr2_schedule.stops.size(), 1);
-  const auto& stop2 = tr2_schedule.stops[0];
-  EXPECT_EQ(stop2.begin, 120);
-  EXPECT_EQ(stop2.end, 300);
-  EXPECT_EQ(stations.get_station(stop2.station).name, "Central");
+  EXPECT_EQ(tr2_schedule.get_t_0(), 0);
+  EXPECT_EQ(tr2_schedule.get_v_0(), 0);
+  EXPECT_EQ(tr2_schedule.get_t_n(), 420);
+  EXPECT_EQ(tr2_schedule.get_v_n(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr2_schedule.get_entry()).name, "l0");
+  EXPECT_EQ(network.get_vertex(tr2_schedule.get_exit()).name, "r0");
+  EXPECT_EQ(tr2_schedule.get_stops().size(), 1);
+  const auto& stop2 = tr2_schedule.get_stops()[0];
+  EXPECT_EQ(stop2.arrival(), 120);
+  EXPECT_EQ(stop2.departure(), 300);
+  EXPECT_EQ(stations.get_station(stop2.get_station_name()).name, "Central");
 
   // Check the schedule of tr3
   const auto& tr3_schedule = instance.get_schedule("tr3");
-  EXPECT_EQ(tr3_schedule.t_0, 0);
-  EXPECT_EQ(tr3_schedule.v_0, 0);
-  EXPECT_EQ(tr3_schedule.t_n, 420);
-  EXPECT_EQ(tr3_schedule.v_n, 16.67);
-  EXPECT_EQ(network.get_vertex(tr3_schedule.entry).name, "r0");
-  EXPECT_EQ(network.get_vertex(tr3_schedule.exit).name, "l0");
-  EXPECT_EQ(tr3_schedule.stops.size(), 1);
-  const auto& stop3 = tr3_schedule.stops[0];
-  EXPECT_EQ(stop3.begin, 180);
-  EXPECT_EQ(stop3.end, 300);
-  EXPECT_EQ(stations.get_station(stop3.station).name, "Central");
+  EXPECT_EQ(tr3_schedule.get_t_0(), 0);
+  EXPECT_EQ(tr3_schedule.get_v_0(), 0);
+  EXPECT_EQ(tr3_schedule.get_t_n(), 420);
+  EXPECT_EQ(tr3_schedule.get_v_n(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr3_schedule.get_entry()).name, "r0");
+  EXPECT_EQ(network.get_vertex(tr3_schedule.get_exit()).name, "l0");
+  EXPECT_EQ(tr3_schedule.get_stops().size(), 1);
+  const auto& stop3 = tr3_schedule.get_stops()[0];
+  EXPECT_EQ(stop3.arrival(), 180);
+  EXPECT_EQ(stop3.departure(), 300);
+  EXPECT_EQ(stations.get_station(stop3.get_station_name()).name, "Central");
 
   // Check the route  map
   // Check if the route consists of three trains with names "tr1", "tr2" and
@@ -361,14 +363,14 @@ void check_instance_import(
   EXPECT_EQ(instance.max_t(), 645);
 }
 
-TEST(Functionality, VSSGenerationTimetabbleInstanceImport1) {
+TEST(Functionality, VSSGenerationTimetableInstanceImport1) {
   auto instance = cda_rail::instances::VSSGenerationTimetable::import_instance(
       "./example-networks/SimpleStation/");
 
   check_instance_import(instance);
 }
 
-TEST(Functionality, VSSGenerationTimetabbleInstanceImport2) {
+TEST(Functionality, VSSGenerationTimetableInstanceImport2) {
   std::string p("./example-networks/SimpleStation/");
 
   auto instance =
@@ -377,7 +379,7 @@ TEST(Functionality, VSSGenerationTimetabbleInstanceImport2) {
   check_instance_import(instance);
 }
 
-TEST(Functionality, VSSGenerationTimetabbleInstanceImport3) {
+TEST(Functionality, VSSGenerationTimetableInstanceImport3) {
   std::filesystem::path p("./example-networks/SimpleStation/");
 
   auto instance =
@@ -412,10 +414,12 @@ TEST(Functionality, VSSGenerationTimetableExport) {
   instance.add_stop("tr1", "s1", 200, 260);
   instance.add_stop("tr1", "s0", 60, 120);
 
-  EXPECT_EQ(instance.get_station_list()
-                .get_station(instance.get_schedule("tr1").stops.at(0).station)
-                .name,
-            "s0");
+  EXPECT_EQ(
+      instance.get_station_list()
+          .get_station(
+              instance.get_schedule("tr1").get_stops().at(0).get_station_name())
+          .name,
+      "s0");
 
   // Add route to instance
   instance.add_empty_route("tr1");
@@ -524,21 +528,23 @@ TEST(Functionality, VSSGenerationTimetableExport) {
 
   // Check if the schedule of tr1 is saved correctly
   const auto& tr1_schedule_read = instance_read.get_schedule("tr1");
-  EXPECT_EQ(tr1_schedule_read.t_0, 0);
-  EXPECT_EQ(tr1_schedule_read.v_0, 0);
-  EXPECT_EQ(tr1_schedule_read.t_n, 600);
-  EXPECT_EQ(tr1_schedule_read.v_n, 5);
-  EXPECT_EQ(network.get_vertex(tr1_schedule_read.entry).name, "v0");
-  EXPECT_EQ(network.get_vertex(tr1_schedule_read.exit).name, "v2");
-  EXPECT_EQ(tr1_schedule_read.stops.size(), 2);
-  const auto& stop1_read = tr1_schedule_read.stops[0];
-  EXPECT_EQ(stop1_read.begin, 60);
-  EXPECT_EQ(stop1_read.end, 120);
-  EXPECT_EQ(stations_read.get_station(stop1_read.station).name, "s0");
-  const auto& stop2_read = tr1_schedule_read.stops[1];
-  EXPECT_EQ(stop2_read.begin, 200);
-  EXPECT_EQ(stop2_read.end, 260);
-  EXPECT_EQ(stations_read.get_station(stop2_read.station).name, "s1");
+  EXPECT_EQ(tr1_schedule_read.get_t_0(), 0);
+  EXPECT_EQ(tr1_schedule_read.get_v_0(), 0);
+  EXPECT_EQ(tr1_schedule_read.get_t_n(), 600);
+  EXPECT_EQ(tr1_schedule_read.get_v_n(), 5);
+  EXPECT_EQ(network.get_vertex(tr1_schedule_read.get_entry()).name, "v0");
+  EXPECT_EQ(network.get_vertex(tr1_schedule_read.get_exit()).name, "v2");
+  EXPECT_EQ(tr1_schedule_read.get_stops().size(), 2);
+  const auto& stop1_read = tr1_schedule_read.get_stops()[0];
+  EXPECT_EQ(stop1_read.arrival(), 60);
+  EXPECT_EQ(stop1_read.departure(), 120);
+  EXPECT_EQ(stations_read.get_station(stop1_read.get_station_name()).name,
+            "s0");
+  const auto& stop2_read = tr1_schedule_read.get_stops()[1];
+  EXPECT_EQ(stop2_read.arrival(), 200);
+  EXPECT_EQ(stop2_read.departure(), 260);
+  EXPECT_EQ(stations_read.get_station(stop2_read.get_station_name()).name,
+            "s1");
 
   // Check if the imported instance has the same route map as the original
   // instance Check if the route for tr1 consists of two edges passing v0-v1-v2
@@ -589,10 +595,12 @@ TEST(Functionality, Discretization) {
   instance.add_stop("tr1", "s1", 200, 260);
   instance.add_stop("tr1", "s0", 60, 120);
 
-  EXPECT_EQ(instance.get_station_list()
-                .get_station(instance.get_schedule("tr1").stops.at(0).station)
-                .name,
-            "s0");
+  EXPECT_EQ(
+      instance.get_station_list()
+          .get_station(
+              instance.get_schedule("tr1").get_stops().at(0).get_station_name())
+          .name,
+      "s0");
 
   // Add route to instance
   instance.add_empty_route("tr1");
@@ -868,9 +876,84 @@ TEST(Functionality, HelperFunctions) {
   EXPECT_TRUE(std::find(tr1_edges_fixed.begin(), tr1_edges_fixed.end(),
                         v3_v4) != tr1_edges_fixed.end());
 
+  const auto tr1_vertices_fixed = instance.vertices_used_by_train(tr1, true);
+  // Expect five vertices v0 - v1 - v2 - v3 - v4
+  EXPECT_EQ(tr1_vertices_fixed.size(), 5);
+  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v0")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v1")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v2")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v3")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v4")) !=
+              tr1_vertices_fixed.end());
+
+  const auto tr2_vertices_fixed = instance.vertices_used_by_train(tr2, true);
+  // Expect 3 vertices v0 - v1 - v4
+  EXPECT_EQ(tr2_vertices_fixed.size(), 3);
+  EXPECT_TRUE(std::find(tr2_vertices_fixed.begin(), tr2_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v0")) !=
+              tr2_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr2_vertices_fixed.begin(), tr2_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v1")) !=
+              tr2_vertices_fixed.end());
+  EXPECT_TRUE(std::find(tr2_vertices_fixed.begin(), tr2_vertices_fixed.end(),
+                        instance.n().get_vertex_index("v4")) !=
+              tr2_vertices_fixed.end());
+
+  const auto tr2_sections_fixed = instance.sections_used_by_train(
+      tr2, {{v0_v1}, {v1_v2, v3_v4}, {v1_v4, v1_v2}}, true);
+  // Expect section 0 and 2
+  EXPECT_EQ(tr2_sections_fixed.size(), 2);
+  EXPECT_TRUE(std::find(tr2_sections_fixed.begin(), tr2_sections_fixed.end(),
+                        0) != tr2_sections_fixed.end());
+  EXPECT_TRUE(std::find(tr2_sections_fixed.begin(), tr2_sections_fixed.end(),
+                        2) != tr2_sections_fixed.end());
+
+  const auto tr_on_section_fixed =
+      instance.trains_in_section({v1_v2, v2_v3, v2_v4}, true);
+  // Expect tr1 and tr3
+  EXPECT_EQ(tr_on_section_fixed.size(), 2);
+  EXPECT_TRUE(std::find(tr_on_section_fixed.begin(), tr_on_section_fixed.end(),
+                        tr1) != tr_on_section_fixed.end());
+  EXPECT_TRUE(std::find(tr_on_section_fixed.begin(), tr_on_section_fixed.end(),
+                        tr3) != tr_on_section_fixed.end());
+
   const auto tr1_edges_free = instance.edges_used_by_train("tr1", false);
   // Expect all 6 edges
   EXPECT_EQ(tr1_edges_free.size(), instance.n().number_of_edges());
+
+  const auto tr1_vertices_free = instance.vertices_used_by_train("tr1", false);
+  // Expect all 5 vertices
+  EXPECT_EQ(tr1_vertices_free.size(), instance.n().number_of_vertices());
+
+  const auto tr2_vertices_free = instance.vertices_used_by_train("tr2", false);
+  // Expect all 5 vertices
+  EXPECT_EQ(tr2_vertices_free.size(), instance.n().number_of_vertices());
+
+  const auto tr2_sections_free = instance.sections_used_by_train(
+      tr2, {{v0_v1}, {v1_v2, v3_v4}, {v1_v4, v1_v2}}, false);
+  // Expect all 3 sections
+  EXPECT_EQ(tr2_sections_free.size(), 3);
+
+  EXPECT_TRUE(std::find(tr2_sections_free.begin(), tr2_sections_free.end(),
+                        0) != tr2_sections_free.end());
+  EXPECT_TRUE(std::find(tr2_sections_free.begin(), tr2_sections_free.end(),
+                        1) != tr2_sections_free.end());
+  EXPECT_TRUE(std::find(tr2_sections_free.begin(), tr2_sections_free.end(),
+                        2) != tr2_sections_free.end());
+
+  const auto tr_on_section_free =
+      instance.trains_in_section({v1_v2, v2_v3, v2_v4}, false);
+  // Expect all 3 trains
+  EXPECT_EQ(tr_on_section_free.size(), instance.get_train_list().size());
 
   // Check trains on edge
   const auto trains_on_v1_v2_fixed = instance.trains_on_edge(v1_v2, true);
@@ -2464,6 +2547,58 @@ TEST(Functionality, SolVSSGenerationTimetable) {
                cda_rail::exceptions::TrainNotExistentException);
   EXPECT_EQ(sol2_read.get_train_speed(tr1, 30), 5);
   EXPECT_EQ(sol2_read.get_train_speed(tr2, 258), 7);
+}
+
+TEST(ProblemInstances, TimetableConsistency) {
+  cda_rail::Network network1;
+  cda_rail::Network network2;
+
+  network1.add_vertex("v0", cda_rail::VertexType::TTD);
+  network1.add_vertex("v1", cda_rail::VertexType::TTD);
+  network2.add_vertex("v0", cda_rail::VertexType::TTD);
+  network2.add_vertex("v1", cda_rail::VertexType::TTD);
+  network2.add_vertex("v2", cda_rail::VertexType::TTD);
+
+  int e11 = network1.add_edge("v0", "v1", 100, 10, true, 10);
+  int e12 = network2.add_edge("v0", "v1", 100, 10, true, 10);
+  int e22 = network2.add_edge("v1", "v2", 100, 10, true, 10);
+
+  EXPECT_EQ(e11, e12);
+
+  cda_rail::Timetable timetable;
+  timetable.add_station("TestStation");
+  timetable.add_track_to_station("TestStation", e12, network2);
+
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_TRUE(timetable.check_consistency(network1));
+
+  timetable.add_track_to_station("TestStation", e22, network2);
+
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_FALSE(timetable.check_consistency(network1));
+
+  timetable.add_train("TestTrain", 100, 10, 1, 1, 10, 0, "v0", 60, 0, "v2",
+                      network2);
+  timetable.add_stop("TestTrain", "TestStation", 20, 30);
+
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 1);
+  EXPECT_TRUE(timetable.check_consistency(network2));
+
+  timetable.remove_stop("TestTrain", "TestStation");
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 0);
+
+  timetable.add_stop("TestTrain", "TestStation", 0, 20);
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 1);
+  EXPECT_FALSE(timetable.check_consistency(network2));
+
+  timetable.remove_stop("TestTrain", "TestStation");
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 0);
+
+  timetable.add_stop("TestTrain", "TestStation", 50, 70);
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 1);
+  EXPECT_FALSE(timetable.check_consistency(network2));
 }
 
 // NOLINTEND(clang-diagnostic-unused-result,google-readability-function-size,readability-function-size)

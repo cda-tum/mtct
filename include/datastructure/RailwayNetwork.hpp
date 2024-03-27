@@ -25,10 +25,13 @@ struct Vertex {
 
   std::string name;
   VertexType  type;
+  double      headway;
 
   // Constructors
   Vertex(std::string name, VertexType type)
-      : name(std::move(name)), type(type){};
+      : name(std::move(name)), type(type), headway(0.0){};
+  Vertex(std::string name, VertexType type, double headway)
+      : name(std::move(name)), type(type), headway(headway){};
 };
 
 struct Edge {
@@ -46,13 +49,16 @@ struct Edge {
   double length;
   double max_speed;
   bool   breakable;
-  double min_block_length = 1;
+  double min_block_length      = 1;
+  double min_stop_block_length = 100;
 
   // Constructors
   Edge(size_t source, size_t target, double length, double max_speed,
-       bool breakable, double min_block_length = 1)
+       bool breakable, double min_block_length = 1,
+       double min_stop_block_length = 1)
       : source(source), target(target), length(length), max_speed(max_speed),
-        breakable(breakable), min_block_length(min_block_length){};
+        breakable(breakable), min_block_length(min_block_length),
+        min_stop_block_length(min_stop_block_length){};
 };
 
 class Network {
@@ -70,14 +76,17 @@ private:
   static void get_keys(tinyxml2::XMLElement* graphml_body,
                        std::string& breakable, std::string& length,
                        std::string& max_speed, std::string& min_block_length,
-                       std::string& type);
+                       std::string& min_stop_block_length, std::string& type,
+                       std::string& headway);
   void add_vertices_from_graphml(const tinyxml2::XMLElement* graphml_node,
-                                 const std::string&          type);
+                                 const std::string&          type,
+                                 const std::string&          headway);
   void add_edges_from_graphml(const tinyxml2::XMLElement* graphml_edge,
                               const std::string&          breakable,
                               const std::string&          length,
                               const std::string&          max_speed,
-                              const std::string&          min_block_length);
+                              const std::string&          min_block_length,
+                              const std::string& min_stop_block_length);
   void read_successors(const std::filesystem::path& p);
 
   void export_graphml(const std::filesystem::path& p) const;
@@ -86,8 +95,15 @@ private:
   void write_successor_set_to_file(std::ofstream& file, size_t i) const;
 
   std::pair<std::vector<size_t>, std::vector<size_t>>
+  separate_edge_private_helper(
+      size_t edge_index, double min_length,
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform,
+      bool                           new_edge_breakable = false);
+
+  std::pair<std::vector<size_t>, std::vector<size_t>>
   separate_edge_at(size_t                     edge_index,
-                   const std::vector<double>& distances_from_source);
+                   const std::vector<double>& distances_from_source,
+                   bool                       new_edge_breakable = false);
 
   // helper function
   void dfs(std::vector<std::vector<size_t>>& ret_val,
@@ -103,6 +119,16 @@ private:
   sort_edge_pairs(
       std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
           edge_pairs) const;
+
+  [[nodiscard]] std::vector<std::vector<size_t>> all_routes_of_given_length(
+      std::optional<size_t> v_0, std::optional<size_t> e_0,
+      double desired_length, bool reverse_direction,
+      std::optional<size_t> exit_node           = {},
+      std::vector<size_t>   edges_used_by_train = {}) const;
+
+  [[nodiscard]] size_t other_vertex(size_t e, size_t v) const {
+    return get_edge(e).source == v ? get_edge(e).target : get_edge(e).source;
+  };
 
 public:
   // Constructors
@@ -125,18 +151,38 @@ public:
   };
   [[nodiscard]] const std::vector<Edge>& get_edges() const { return edges; };
 
+  [[nodiscard]] double
+                       maximal_vertex_speed(size_t                     v,
+                                            const std::vector<size_t>& edges_to_consider = {}) const;
+  [[nodiscard]] double maximal_vertex_speed(
+      const std::string&         v_name,
+      const std::vector<size_t>& edges_to_consider = {}) const {
+    return maximal_vertex_speed(get_vertex_index(v_name), edges_to_consider);
+  };
+  [[nodiscard]] double minimal_neighboring_edge_length(
+      size_t v, const std::vector<size_t>& edges_to_consider = {}) const;
+  [[nodiscard]] double minimal_neighboring_edge_length(
+      const std::string&         v_name,
+      const std::vector<size_t>& edges_to_consider = {}) const {
+    return minimal_neighboring_edge_length(get_vertex_index(v_name),
+                                           edges_to_consider);
+  };
+
   [[nodiscard]] std::vector<size_t> get_vertices_by_type(VertexType type) const;
 
-  size_t add_vertex(const std::string& name, VertexType type);
+  size_t add_vertex(const std::string& name, VertexType type,
+                    double headway = 0.0);
   size_t add_edge(size_t source, size_t target, double length, double max_speed,
-                  bool breakable, double min_block_length = 1);
+                  bool breakable = true, double min_block_length = 1,
+                  double min_stop_block_length = 100);
   size_t add_edge(const std::string& source_name,
                   const std::string& target_name, double length,
-                  double max_speed, bool breakable,
-                  double min_block_length = 1) {
+                  double max_speed, bool breakable = true,
+                  double min_block_length      = 1,
+                  double min_stop_block_length = 100) {
     return add_edge(get_vertex_index(source_name),
                     get_vertex_index(target_name), length, max_speed, breakable,
-                    min_block_length);
+                    min_block_length, min_stop_block_length);
   };
   void add_successor(size_t edge_in, size_t edge_out);
   void add_successor(const std::pair<size_t, size_t>& edge_in,
@@ -195,6 +241,38 @@ public:
                           get_vertex_index(target_name));
   };
 
+  [[nodiscard]] std::vector<size_t>
+  vertices_used_by_edges(const std::vector<size_t>& edges) const;
+
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_paths_of_length_starting_in_vertex(
+      size_t v, double desired_len, std::optional<size_t> exit_node = {},
+      std::vector<size_t> edges_to_consider = {}) const {
+    return all_routes_of_given_length(v, std::nullopt, desired_len, false,
+                                      exit_node, std::move(edges_to_consider));
+  };
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_paths_of_length_starting_in_edge(
+      size_t e, double desired_len, std::optional<size_t> exit_node = {},
+      std::vector<size_t> edges_to_consider = {}) const {
+    return all_routes_of_given_length(std::nullopt, e, desired_len, false,
+                                      exit_node, std::move(edges_to_consider));
+  };
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_paths_of_length_ending_in_vertex(
+      size_t v, double desired_len, std::optional<size_t> exit_node = {},
+      std::vector<size_t> edges_to_consider = {}) const {
+    return all_routes_of_given_length(v, std::nullopt, desired_len, true,
+                                      exit_node, std::move(edges_to_consider));
+  };
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_paths_of_length_ending_in_edge(
+      size_t e, double desired_len, std::optional<size_t> exit_node = {},
+      std::vector<size_t> edges_to_consider = {}) const {
+    return all_routes_of_given_length(std::nullopt, e, desired_len, true,
+                                      exit_node, std::move(edges_to_consider));
+  }
+
   [[nodiscard]] bool has_vertex(size_t index) const {
     return (index < vertices.size());
   };
@@ -221,6 +299,8 @@ public:
   void change_edge_length(size_t index, double new_length);
   void change_edge_max_speed(size_t index, double new_max_speed);
   void change_edge_min_block_length(size_t index, double new_min_block_length);
+  void change_edge_min_stop_block_length(size_t index,
+                                         double new_min_stop_block_length);
 
   void change_edge_length(size_t source_id, size_t target_id,
                           double new_length) {
@@ -278,6 +358,13 @@ public:
   [[nodiscard]] std::vector<size_t> in_edges(const std::string& name) const {
     return in_edges(get_vertex_index(name));
   };
+  [[nodiscard]] std::vector<size_t> neighboring_edges(size_t index) const;
+  [[nodiscard]] std::vector<size_t>
+  neighboring_edges(const std::string& name) const {
+    return neighboring_edges(get_vertex_index(name));
+  };
+
+  [[nodiscard]] std::vector<size_t>        get_predecessors(size_t index) const;
   [[nodiscard]] const std::vector<size_t>& get_successors(size_t index) const;
   [[nodiscard]] const std::vector<size_t>&
   get_successors(size_t source_id, size_t target_id) const {
@@ -375,7 +462,10 @@ public:
   // Transformation functions
   std::pair<std::vector<size_t>, std::vector<size_t>> separate_edge(
       size_t                         edge_index,
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
+    return separate_edge_private_helper(
+        edge_index, get_edge(edge_index).min_block_length, sep_func);
+  };
   std::pair<std::vector<size_t>, std::vector<size_t>> separate_edge(
       size_t source_id, size_t target_id,
       const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
@@ -386,6 +476,15 @@ public:
       const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
     return separate_edge(get_edge_index(source_name, target_name), sep_func);
   };
+
+  std::pair<std::vector<size_t>, std::vector<size_t>>
+  separate_stop_edge(size_t edge_index) {
+    return separate_edge_private_helper(
+        edge_index, get_edge(edge_index).min_stop_block_length,
+        &vss::functions::uniform, true);
+  };
+  std::vector<std::pair<size_t, std::vector<size_t>>>
+  separate_stop_edges(const std::vector<size_t>& stop_edges);
 
   std::vector<std::pair<size_t, std::vector<size_t>>> discretize(
       const vss::SeparationFunction& sep_func = &vss::functions::uniform);

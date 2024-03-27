@@ -31,6 +31,7 @@ enum class ExportOption {
   ExportSolutionWithInstanceAndLP = 5
 };
 enum class OptimalityStrategy { Optimal = 0, TradeOff = 1, Feasible = 2 };
+enum class VelocityRefinementStrategy { None = 0, MinOneStep = 1 };
 
 // Helper functions
 
