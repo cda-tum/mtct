@@ -369,6 +369,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           }
         }
       }
+      // Edge is used if one of the velocity extended arcs is used
       model->addConstr(lhs == rhs, "aggregate_edge_velocity_extension_" +
                                        tr_object.name + "_" + source_obj.name +
                                        "-" + target_obj.name);
@@ -388,6 +389,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             lhs += vars["x"](tr, e);
           }
         }
+        // The entry vertex is only left but not entered
         model->addConstr(lhs == 1, "entry_vertex_" + tr_object.name + "_" +
                                        instance.const_n().get_vertex(v).name);
       } else if (v == exit) {
@@ -398,6 +400,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             lhs += vars["x"](tr, e);
           }
         }
+        // The exit vertex is only entered but not left
         model->addConstr(lhs == 1, "exit_vertex_" + tr_object.name + "_" +
                                        instance.const_n().get_vertex(v).name);
       } else {
@@ -415,6 +418,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             x_out_edges += vars["x"](tr, e);
           }
         }
+        // All other vertices are entered and left at most once
         model->addConstr(x_in_edges <= 1,
                          "in_edges_" + tr_object.name + "_" +
                              instance.const_n().get_vertex(v).name);
@@ -459,6 +463,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               }
             }
           }
+          // And they fulfill a flow condition
           model->addConstr(lhs == rhs,
                            "vertex_velocity_extension_flow_condition_" +
                                tr_object.name + "_" +
