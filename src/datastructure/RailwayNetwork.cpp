@@ -1745,9 +1745,9 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
         reverse_direction ? get_predecessors(e_index) : get_successors(e_index);
 
     for (const auto& e_next_index : next_edges) {
-      const auto paths_e_next =
-          all_routes_of_given_length(std::nullopt, e_next_index,
-                                     desired_length - e_len, reverse_direction);
+      const auto paths_e_next = all_routes_of_given_length(
+          std::nullopt, e_next_index, desired_length - e_len, reverse_direction,
+          exit_node, edges_used_by_train);
       for (const auto& path_e_next : paths_e_next) {
         // check for cycle
         const auto edges_r = reverse_direction
