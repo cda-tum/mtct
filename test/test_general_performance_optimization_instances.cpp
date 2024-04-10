@@ -1077,6 +1077,29 @@ TEST(GeneralPerformanceOptimizationInstances, LeavingTimes) {
   const auto tr2 = instance.add_train("Train2", 64, 8, 1, 2, {120, 180}, 20, v0,
                                       {500, 560}, 0, v1);
 
+  // Train 3 stops on exit
+  // It will be stopped.
+  // Then accelerate to 20 m/s at rate 2 for 10 seconds
+  // traveling 10*10=100 meters
+  // Then remain at constant speed for 2 seconds traveling 2*20=40 meters
+  // Then decelerate at rate 4 for 5 seconds to 0 m/s
+  // traveling 10*5=50 meters
+  // In total 100+40+50=190 meters -> length
+  // In time 10+2+5=17 seconds
+  const auto tr3 = instance.add_train("Train3", 190, 50, 2, 4, {0, 60}, 20, v0,
+                                      {300, 360}, 0, v1);
+
+  // Train 4 exits with speed 10
+  // It arrives at exit node with speed 5
+  // Then accelerate at rate 1 for 5 seconds to 10 m/s
+  // traveling 7.5*5=37.5 meters
+  // Then remain constant for 2.25 seconds
+  // traveling 2.25*10=22.5 meters
+  // Total distance 37.5+22.5=60 meters
+  // Total time 5+2.25=7.25 seconds
+  const auto tr4 = instance.add_train("Train4", 60, 50, 1, 2, {0, 60}, 20, v0,
+                                      {300, 360}, 10, v1);
+
   // Leaving times of Train1
   EXPECT_EQ(instance.get_approximate_leaving_time(tr1), 7);
   EXPECT_APPROX_EQ(instance.get_maximal_leaving_time(tr1, 10),
@@ -1088,6 +1111,18 @@ TEST(GeneralPerformanceOptimizationInstances, LeavingTimes) {
       instance.get_maximal_leaving_time(tr2, 8),
       cda_rail::max_travel_time_no_stopping(8, 0, cda_rail::V_MIN, 1, 2, 64));
   EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr2, 0), 14);
+
+  // Leaving times for Train3
+  EXPECT_APPROX_EQ(
+      instance.get_maximal_leaving_time(tr3, 10),
+      cda_rail::max_travel_time_no_stopping(10, 0, cda_rail::V_MIN, 2, 4, 190));
+  EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr3, 0), 17);
+
+  // Leaving times for Train4
+  EXPECT_APPROX_EQ(
+      instance.get_maximal_leaving_time(tr4, 5),
+      cda_rail::max_travel_time_no_stopping(5, 10, cda_rail::V_MIN, 1, 2, 60));
+  EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr4, 5), 7.25);
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
