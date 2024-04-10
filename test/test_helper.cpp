@@ -1256,4 +1256,15 @@ TEST(Helper, EoMMaximalTimeStopping) {
       0);
 }
 
+TEST(Helper, EoMMaxTimeToMAFromRear) {
+  EXPECT_APPROX_EQ(cda_rail::max_time_from_rear_to_ma_point(
+                       20, 22, 18, 25, 2, 1, 96, 138,
+                       cda_rail::MATimingStrategy::ExtremeProfiles),
+                   5);
+  EXPECT_APPROX_EQ(cda_rail::min_time_from_rear_to_ma_point(
+                       16, 20, 15, 22, 3, 1, 124, 196,
+                       cda_rail::MATimingStrategy::ExtremeProfiles),
+                   6);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
