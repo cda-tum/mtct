@@ -41,7 +41,10 @@ double cda_rail::min_travel_time_from_start(double v_1, double v_2, double v_m,
   const double x_3 = std::min(std::max(x - s_2, 0.0), s - s_2);
   // Time spent until x_3 is (2*x_3)/(sqrt(v_m^2-2*d*x_3)+v_m)
   const double t_3 =
-      x_3 == 0 ? 0 : (2 * x_3) / (std::sqrt(v_t_squared - 2 * d * x_3) + v_t);
+      x_3 == 0
+          ? 0
+          : (2 * x_3) /
+                (std::sqrt(std::max(0.0, v_t_squared - 2 * d * x_3)) + v_t);
 
   return t_1 + t_2 + t_3;
 }
@@ -79,11 +82,13 @@ double cda_rail::max_travel_time_from_start_no_stopping(double v_1, double v_2,
   // Time spent until x_1 is (sqrt(v_1^2-2*d*x_1)-v_1)/d
   // Stable version: (2*x_1)/(sqrt(v_1^2-2*d*x_1)+v_1)
   const double t_1 =
-      x_1 == 0 ? 0
-               : (2 * x_1) /
-                     (std::sqrt(v_1 * v_1 +
-                                2 * (v_1_below_minimal_speed ? a : -d) * x_1) +
-                      v_1);
+      x_1 == 0
+          ? 0
+          : (2 * x_1) /
+                (std::sqrt(std::max(
+                     0.0, v_1 * v_1 +
+                              2 * (v_1_below_minimal_speed ? a : -d) * x_1)) +
+                 v_1);
 
   const double v_t_squared =
       v_1 * v_1 +
