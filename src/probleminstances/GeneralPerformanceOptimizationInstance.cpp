@@ -48,6 +48,9 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
     const auto exit_edge = this->const_n().in_edges(exit_node).at(0);
     v_max                = this->const_n().get_edge(exit_edge).max_speed;
   }
+  if (v_max > tr_object.max_speed) {
+    v_max = tr_object.max_speed;
+  }
   return cda_rail::min_travel_time(v, timetable.get_v_n(), v_max,
                                    tr_object.acceleration,
                                    tr_object.deceleration, tr_object.length);
