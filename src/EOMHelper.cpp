@@ -97,11 +97,13 @@ double cda_rail::max_travel_time_from_start_no_stopping(double v_1, double v_2,
   // Time spent until x_3 is (sqrt(2*a*x_3+v_m^2)-v_m)/a
   // Stable version: (2*x_3)/(sqrt(2*a*x_3+v_m^2)+v_m)
   const double t_3 =
-      x_3 == 0 ? 0
-               : (2 * x_3) /
-                     (std::sqrt(v_t_squared +
-                                2 * (v_2_below_minimal_speed ? -d : a) * x_3) +
-                      v_t);
+      x_3 == 0
+          ? 0
+          : (2 * x_3) /
+                (std::sqrt(std::max(
+                     0.0, v_t_squared +
+                              2 * (v_2_below_minimal_speed ? -d : a) * x_3)) +
+                 v_t);
   return t_1 + t_2 + t_3;
 }
 
