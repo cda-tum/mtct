@@ -17,8 +17,10 @@ using json = nlohmann::json;
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
 cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
-    cda_rail::instances::VSSGenerationTimetable instance, int dt)
-    : instance(std::move(instance)), dt(dt) {
+    const cda_rail::instances::VSSGenerationTimetable& instance, int dt)
+    : SolGeneralProblemInstanceWithScheduleAndRoutes<VSSGenerationTimetable>(
+          instance),
+      dt(dt) {
   this->initialize_vectors();
 }
 
@@ -221,16 +223,11 @@ void cda_rail::instances::SolVSSGenerationTimetable::add_train_speed(
 }
 
 bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
-  if (status == SolutionStatus::Unknown) {
+  if (!SolGeneralProblemInstanceWithScheduleAndRoutes<
+          VSSGenerationTimetable>::check_general_solution_data_consistency()) {
     return false;
   }
-  if (status == SolutionStatus::Infeasible ||
-      status == SolutionStatus::Timeout) {
-    return true;
-  }
-  if (obj + EPS < 0) {
-    return false;
-  }
+
   if (dt < 0) {
     return false;
   }
@@ -293,20 +290,14 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
                                       p.string());
   }
 
-  if (export_instance) {
-    instance.export_instance(p / "instance");
-  } else {
-    instance.routes.export_routes(p / "instance" / "routes",
-                                  instance.const_n());
-  }
+  SolGeneralProblemInstanceWithScheduleAndRoutes<VSSGenerationTimetable>::
+      export_general_solution_data_with_routes(p, export_instance, false);
 
-  json data;
+  json data = SolGeneralProblemInstanceWithScheduleAndRoutes<
+      VSSGenerationTimetable>::get_general_solution_data();
   data["dt"]            = dt;
-  data["status"]        = static_cast<int>(status);
-  data["obj"]           = obj;
   data["mip_obj"]       = mip_obj;
   data["postprocessed"] = postprocessed;
-  data["has_solution"]  = has_sol;
   std::ofstream data_file(p / "solution" / "data.json");
   data_file << data << std::endl;
   data_file.close();
@@ -367,7 +358,7 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
   }
 
   if (import_routes) {
-    this->instance.routes =
+    this->instance.editable_routes() =
         RouteMap(p / "instance" / "routes", this->instance.const_n());
   }
 
@@ -378,13 +369,12 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
 
   // Read data
   std::ifstream data_file(p / "solution" / "data.json");
-  json          data  = json::parse(data_file);
+  json          data = json::parse(data_file);
+  SolGeneralProblemInstanceWithScheduleAndRoutes<
+      VSSGenerationTimetable>::set_general_solution_data(data);
   this->dt            = data["dt"].get<int>();
-  this->status        = static_cast<SolutionStatus>(data["status"].get<int>());
-  this->obj           = data["obj"].get<double>();
   this->mip_obj       = data["mip_obj"].get<double>();
   this->postprocessed = data["postprocessed"].get<bool>();
-  this->has_sol       = data["has_solution"].get<bool>();
 
   this->initialize_vectors();
 
@@ -415,11 +405,6 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
     for (const auto& [t, speed] : tr_speed_json.items()) {
       this->add_train_speed(tr_name, std::stoi(t), speed.get<double>());
     }
-  }
-
-  if (!this->check_consistency()) {
-    throw exceptions::ConsistencyException(
-        "Imported solution object is not consistent");
   }
 }
 
@@ -640,7 +625,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     for (size_t tr = 0; tr < num_tr; ++tr) {
       const auto train = instance.get_train_list().get_train(tr);
       sol_obj.add_empty_route(train.name);
-      size_t current_vertex = instance.get_schedule(tr).entry;
+      size_t current_vertex = instance.get_schedule(tr).get_entry();
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         std::unordered_set<size_t> edge_list;

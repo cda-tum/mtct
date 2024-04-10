@@ -18,8 +18,9 @@
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
 cda_rail::solver::mip_based::VSSGenTimetableSolver::VSSGenTimetableSolver(
-    instances::VSSGenerationTimetable instance)
-    : instance(std::move(instance)) {
+    const instances::VSSGenerationTimetable& instance)
+    : GeneralMIPSolver<instances::VSSGenerationTimetable,
+                       instances::SolVSSGenerationTimetable>(instance) {
   if (plog::get() == nullptr) {
     static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
     plog::init(plog::debug, &console_appender);
@@ -117,12 +118,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * @return Solution object containing status, objective value, and solution
    */
 
-  if (plog::get() == nullptr) {
-    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
-    plog::init(plog::debug, &console_appender);
-  }
-
-  plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
+  this->solve_init_vss_gen_timetable(time_limit, debug_input);
 
   if (!model_settings.model_type.check_consistency()) {
     PLOGE << "Model type  and separation types/functions are not consistent.";
@@ -133,15 +129,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
   if (!instance.n().is_consistent_for_transformation()) {
     PLOGE << "Instance is not consistent for transformation.";
     throw exceptions::ConsistencyException();
-  }
-
-  decltype(std::chrono::high_resolution_clock::now()) start;
-  decltype(std::chrono::high_resolution_clock::now()) model_created;
-  decltype(std::chrono::high_resolution_clock::now()) model_solved;
-  int64_t                                             create_time = 0;
-  int64_t                                             solve_time  = 0;
-  if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
-    start = std::chrono::high_resolution_clock::now();
   }
 
   this->dt                        = model_detail.delta_t;
@@ -253,15 +240,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   calculate_fwd_bwd_sections();
 
-  PLOGD << "Create Gurobi environment and model";
-  env.emplace(true);
-  env->start();
-  model.emplace(env.value());
-
-  MessageCallback message_callback = MessageCallback();
-  model->setCallback(&message_callback);
-  model->set(GRB_IntParam_LogToConsole, 0);
-
   PLOGD << "Create general variables";
   create_general_variables();
   if (this->fix_routes) {
@@ -367,7 +345,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       PLOGD << "Settings focussing on feasibility";
     }
 
-    model->optimize();
+    this->model->optimize();
     iteration_number += 1;
 
     if (model->get(GRB_IntAttr_SolCount) >= 1) {
@@ -1042,12 +1020,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  tr_name     = train_list.get_train(tr).name;
     const auto& tr_schedule = instance.get_schedule(tr_name);
     const auto& tr_edges = instance.edges_used_by_train(tr, this->fix_routes);
-    for (const auto& tr_stop : tr_schedule.stops) {
-      const auto t0 = static_cast<size_t>(tr_stop.begin / dt);
-      const auto t1 =
-          static_cast<size_t>(std::ceil(static_cast<double>(tr_stop.end) / dt));
-      const auto& stop_edges =
-          instance.get_station_list().get_station(tr_stop.station).tracks;
+    for (const auto& tr_stop : tr_schedule.get_stops()) {
+      const auto t0 = static_cast<size_t>(tr_stop.arrival() / dt);
+      const auto t1 = static_cast<size_t>(
+          std::ceil(static_cast<double>(tr_stop.departure()) / dt));
+      const auto& stop_edges = instance.get_station_list()
+                                   .get_station(tr_stop.get_station_name())
+                                   .tracks;
       const auto inverse_stop_edges =
           instance.n().inverse_edges(stop_edges, tr_edges);
       for (size_t t = t0 - 1; t <= t1; ++t) {
@@ -1849,8 +1828,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   auto train_list = instance.get_train_list();
   for (size_t i = 0; i < num_tr; ++i) {
     auto tr_name       = train_list.get_train(i).name;
-    auto initial_speed = instance.get_schedule(tr_name).v_0;
-    auto final_speed   = instance.get_schedule(tr_name).v_n;
+    auto initial_speed = instance.get_schedule(tr_name).get_v_0();
+    auto final_speed   = instance.get_schedule(tr_name).get_v_n();
     // initial_speed: v(train_interval[i].first) = initial_speed
     model->addConstr(vars["v"](i, train_interval[i].first) == initial_speed,
                      "initial_speed_" + tr_name);

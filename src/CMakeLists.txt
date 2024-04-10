@@ -1,5 +1,7 @@
 add_library(
   ${PROJECT_NAME}
+  ${PROJECT_SOURCE_DIR}/include/EOMHelper.hpp
+  EOMHelper.cpp
   ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
   ${PROJECT_SOURCE_DIR}/include/VSSModel.hpp
   ${PROJECT_SOURCE_DIR}/include/CustomExceptions.hpp
@@ -8,16 +10,23 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/datastructure/Train.hpp
   datastructure/Train.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Timetable.hpp
+  ${PROJECT_SOURCE_DIR}/include/datastructure/GeneralTimetable.hpp
   datastructure/Timetable.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Station.hpp
   datastructure/Station.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Route.hpp
   datastructure/Route.cpp
+  ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralProblemInstance.hpp
+  ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralPerformanceOptimizationInstance.hpp
   ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
   probleminstances/VSSGenerationTimetable.cpp
   probleminstances/SolVSSGenerationTimetable.cpp
+  probleminstances/SolGeneralPerformanceOptimizationInstance.cpp
+  probleminstances/GeneralPerformanceOptimizationInstance.cpp
   ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
   ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
+  ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp
+  ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GeneralMIPSolver.hpp
   solver/mip-based/VSSGenTimetableSolver_general.cpp
   solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
   solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
@@ -25,6 +34,7 @@ add_library(
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
+# target_include_directories(${PROJECT_NAME} PUBLIC ${gtest_SOURCE_DIR}/include) # for FRIEND_TEST usability
 
 if(GUROBI_FOUND)
   target_include_directories(${PROJECT_NAME} PUBLIC ${GUROBI_INCLUDE_DIR})
@@ -33,21 +43,21 @@ endif()
 
 # add tinyxml2
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/tinyxml2 extern/tinyxml2)
-
 target_link_libraries(${PROJECT_NAME} PUBLIC project_options)
 target_link_libraries(${PROJECT_NAME} PUBLIC tinyxml2::tinyxml2)
 
 # add json
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/json extern/json)
-
 target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
 
 # add gsl
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/gsl extern/gsl)
-
 target_link_libraries(${PROJECT_NAME} PUBLIC Microsoft.GSL::GSL)
 
 # add plog
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/plog extern/plog)
-
 target_link_libraries(${PROJECT_NAME} PUBLIC plog::plog)
+
+# add gtest for FRIEND_TEST
+add_subdirectory(${PROJECT_SOURCE_DIR}/extern/googletest extern/googletest)
+target_link_libraries(${PROJECT_NAME} PUBLIC gtest)
