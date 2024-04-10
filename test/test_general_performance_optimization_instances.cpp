@@ -1,4 +1,6 @@
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
+#include "EOMHelper.hpp"
 #include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/Route.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
@@ -8,6 +10,9 @@
 #include <utility>
 
 using namespace cda_rail;
+
+#define EXPECT_APPROX_EQ(a, b)                                                 \
+  EXPECT_TRUE(std::abs((a) - (b)) < 1e-6) << (a) << " !=(approx.) " << (b)
 
 // NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
 
@@ -1049,6 +1054,40 @@ TEST(GeneralPerformanceOptimizationInstances, StopVertices) {
   EXPECT_TRUE(std::find(stop_30_53_p.begin(), stop_30_53_p.end(),
                         std::vector<size_t>({edge_map.at(v53 + 100 * v43)})) !=
               stop_30_53_p.end());
+}
+
+TEST(GeneralPerformanceOptimizationInstances, LeavingTimes) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  // Create simple network
+  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
+
+  const auto e01 = instance.n().add_edge(v0, v1, 1000, 20);
+
+  // Add train and schedule
+  const auto tr1 = instance.add_train("Train1", 56, 50, 1.5, 2, {0, 60}, 20, v0,
+                                      {300, 360}, 8, v1);
+  // Train 2 stops on exit
+  // It will be stopped.
+  // Then accelerate to 8 m/s in 8 seconds travelling 4*8=32 meters
+  // Then remain at constant speed for 2 seconds traveling 2*8=16 meters
+  // Then decelerate for 4 seconds to 0 m/s traveling 4*4=16 meters
+  // In total 32+16+16=64 meters -> length
+  const auto tr2 = instance.add_train("Train2", 64, 50, 1, 2, {120, 180}, 20,
+                                      v0, {500, 560}, 0, v1);
+
+  // Leaving times of Train1
+  EXPECT_EQ(instance.get_approximate_leaving_time(tr1), 7);
+  EXPECT_APPROX_EQ(instance.get_maximal_leaving_time(tr1, 10),
+                   cda_rail::max_travel_time_no_stopping(10, 8, cda_rail::V_MIN,
+                                                         1.5, 2, 56));
+
+  // Leaving times of Train2
+  EXPECT_APPROX_EQ(
+      instance.get_maximal_leaving_time(tr2, 8),
+      cda_rail::max_travel_time_no_stopping(8, 0, cda_rail::V_MIN, 1, 2, 64));
+  EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr2, 0), 14);
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
