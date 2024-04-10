@@ -1074,8 +1074,8 @@ TEST(GeneralPerformanceOptimizationInstances, LeavingTimes) {
   // Then remain at constant speed for 2 seconds traveling 2*8=16 meters
   // Then decelerate for 4 seconds to 0 m/s traveling 4*4=16 meters
   // In total 32+16+16=64 meters -> length
-  const auto tr2 = instance.add_train("Train2", 64, 50, 1, 2, {120, 180}, 20,
-                                      v0, {500, 560}, 0, v1);
+  const auto tr2 = instance.add_train("Train2", 64, 8, 1, 2, {120, 180}, 20, v0,
+                                      {500, 560}, 0, v1);
 
   // Leaving times of Train1
   EXPECT_EQ(instance.get_approximate_leaving_time(tr1), 7);
