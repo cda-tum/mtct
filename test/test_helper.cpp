@@ -896,18 +896,18 @@ TEST(Helper, EoMMaximalTravelTimeStopping) {
       cda_rail::max_travel_time_from_start(10, 5, 1, 1, 2, 40, 16, true), 2);
 
   // After 25m it came to a full stop
-  EXPECT_APPROX_EQ(cda_rail::max_travel_time_from_start_stopping_allowed(
+  EXPECT_DOUBLE_EQ(cda_rail::max_travel_time_from_start_stopping_allowed(
                        10, 5, 1, 2, 40, 25),
                    std::numeric_limits<double>::infinity());
-  EXPECT_APPROX_EQ(
+  EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_from_start(10, 5, 1, 1, 2, 40, 25, true),
       std::numeric_limits<double>::infinity());
 
   // Going backwards at 40-12.5 = 27.5 train can still stop
-  EXPECT_APPROX_EQ(
+  EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_to_end_stopping_allowed(10, 5, 1, 2, 40, 27.5),
       std::numeric_limits<double>::infinity());
-  EXPECT_APPROX_EQ(
+  EXPECT_DOUBLE_EQ(
       cda_rail::max_travel_time_to_end(10, 5, 1, 1, 2, 40, 27.5, true),
       std::numeric_limits<double>::infinity());
 
@@ -1185,10 +1185,10 @@ TEST(Helper, EoMMaximalTimeStopping) {
   // Its braking distance 12*12/2 = 72
   // Hence its MA is 72-32 = 40 after the end
   // Then obd is 200 - 40 = 160
-  EXPECT_APPROX_EQ(cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
                        10, 20, 4, 1, 100, 160),
                    std::numeric_limits<double>::infinity());
-  EXPECT_APPROX_EQ(cda_rail::max_time_from_front_to_ma_point(10, 20, 0, 4, 1,
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point(10, 20, 0, 4, 1,
                                                              100, 160, true),
                    std::numeric_limits<double>::infinity());
   EXPECT_APPROX_EQ(cda_rail::max_time_profile_from_rear_to_ma_point(
@@ -1196,10 +1196,10 @@ TEST(Helper, EoMMaximalTimeStopping) {
                    2);
 
   // If obd is 0, then from rear is 0
-  EXPECT_APPROX_EQ(cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
+  EXPECT_DOUBLE_EQ(cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
                        10, 20, 4, 1, 100, 0),
                    std::numeric_limits<double>::infinity());
-  EXPECT_APPROX_EQ(
+  EXPECT_DOUBLE_EQ(
       cda_rail::max_time_from_front_to_ma_point(10, 20, 0, 4, 1, 100, 0, true),
       std::numeric_limits<double>::infinity());
   EXPECT_APPROX_EQ(
