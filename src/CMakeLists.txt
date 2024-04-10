@@ -27,10 +27,12 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
   ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp
   ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GeneralMIPSolver.hpp
+  ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GenPOMovingBlockMIPSolver.hpp
   solver/mip-based/VSSGenTimetableSolver_general.cpp
   solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
   solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
-  solver/mip-based/VSSGenTimetableSolver_helper.cpp)
+  solver/mip-based/VSSGenTimetableSolver_helper.cpp
+  solver/mip-based/GenPOMovingBlockMIPSolver.cpp)
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
