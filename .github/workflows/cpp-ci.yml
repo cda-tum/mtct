@@ -21,9 +21,28 @@ env:
   CTEST_PARALLEL_LEVEL: 1
 
 jobs:
+  read-parameters:
+    name: read-parameters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Read current gurobi Version
+        uses: zlatko-ms/varfiletoenv@v3
+        with:
+          paths: ./.github/gurobi_version.json
+      - name: Export variables for next jobs
+        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
+        with:
+          variables: |
+            gurobiVersion=${{ env.gurobiVersion }}
+            gurobiShortVersion=${{ env.gurobiShortVersion }}
+            gurobiFolder=${{ env.gurobiFolder }}
   cpp-ubuntu-latest:
     name: cpp-ubuntu-latest
     runs-on: ubuntu-latest
+    needs: read-parameters
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,10 +54,13 @@ jobs:
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
-      - name: Read current gurobi Version
-        uses: zlatko-ms/varfiletoenv@v3
+      - name: Import variables
+        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
         with:
-          paths: ./.github/gurobi_version.json
+          variables: |
+            gurobiVersion
+            gurobiShortVersion
+            gurobiFolder
       - name: download-gurobi-linux
         env:
           GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
@@ -54,17 +76,10 @@ jobs:
         run: cmake --build build --config Release
       - name: Test
         run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 400
-      - name: Export variables for next jobs
-        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
-        with:
-          variables: |
-            gurobiVersion=${{ env.gurobiVersion }}
-            gurobiShortVersion=${{ env.gurobiShortVersion }}
-            gurobiFolder=${{ env.gurobiFolder }}
   cpp-macos-latest:
     name: cpp-macos-latest
     runs-on: macos-latest
-    needs: cpp-ubuntu-latest
+    needs: read-parameters
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,7 +87,7 @@ jobs:
       - name: setup-gurobi-license
         id: write-license
         env:
-          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
+          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE_TWO   }}
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
@@ -109,7 +124,7 @@ jobs:
       - name: setup-gurobi-license
         id: write-license
         env:
-          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
+          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE_TWO   }}
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
@@ -155,7 +170,7 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-    needs: cpp-windows-latest
+    needs: cpp-ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
