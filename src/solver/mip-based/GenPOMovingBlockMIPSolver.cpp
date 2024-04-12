@@ -205,6 +205,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   create_travel_times_constraints();
   create_basic_order_constraints();
   create_train_rear_constraints();
+  create_stopping_constraints();
+  create_headway_constraints();
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -768,6 +770,16 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       }
     }
   }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_stopping_constraints() {
+  // TODO
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_headway_constraints() {
+  // TODO
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
