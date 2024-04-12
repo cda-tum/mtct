@@ -639,6 +639,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto  edges_used_by_train =
         instance.edges_used_by_train(tr, model_detail.fix_routes, false);
 
+    // NOLINTNEXTLINE(readability-identifier-naming)
     const auto M = ub_timing_variable(tr);
 
     for (const auto& v :
@@ -715,7 +716,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           const auto& last_edge_obj = instance.const_n().get_edge(last_edge);
           assert(last_edge_obj.length + p_len_last_vertex >= tr_object.length);
 
-          GRBLinExpr lhs = vars["t_rear_departure"](tr, v) + M * p.size();
+          GRBLinExpr lhs = vars["t_rear_departure"](tr, v) +
+                           M * static_cast<double>(p.size());
           for (const auto& e_p : p) {
             lhs -= M * vars["x"](tr, e_p);
           }
