@@ -204,6 +204,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   create_general_path_constraints();
   create_travel_times_constraints();
   create_basic_order_constraints();
+  create_train_rear_constraints();
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
