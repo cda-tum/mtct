@@ -82,7 +82,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     for (const auto v :
          instance.vertices_used_by_train(tr, model_detail.fix_routes, false)) {
       vars["t_front_arrival"](tr, v) =
-          model->addVar(0.0, max_t, 0.0, GRB_CONTINUOUS);
+          model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS);
       vars["t_front_departure"](tr, v) =
           model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS);
       vars["t_rear_departure"](tr, v) =
@@ -635,6 +635,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto& v_n       = schedule.get_v_n();
     const auto  edges_used_by_train =
         instance.edges_used_by_train(tr, model_detail.fix_routes, false);
+
+    const auto M = ub_timing_variable(tr);
+
     for (const auto& v :
          instance.vertices_used_by_train(tr, model_detail.fix_routes, false)) {
       if (v == exit) {
@@ -696,13 +699,70 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         const auto possible_paths =
             instance.const_n().all_paths_of_length_starting_in_vertex(
                 v, tr_object.length, exit, edges_used_by_train);
-        for (const auto& p : possible_paths) {
+        for (size_t p_ind = 0; p_ind < possible_paths.size(); p_ind++) {
+          const auto&  p                 = possible_paths.at(p_ind);
           const double p_len_last_vertex = std::accumulate(
               p.begin(), p.end() - 1, 0.0,
               [this](double sum, const auto& edge_index) {
                 return sum + instance.const_n().get_edge(edge_index).length;
               });
-          // TODO
+          assert(p_len_last_vertex >= 0);
+          assert(p_len_last_vertex <= tr_object.length);
+          const auto& last_edge     = p.back();
+          const auto& last_edge_obj = instance.const_n().get_edge(last_edge);
+          assert(last_edge_obj.length + p_len_last_vertex >= tr_object.length);
+
+          GRBLinExpr lhs = vars["t_rear_departure"](tr, v) + M * p.size();
+          for (const auto& e_p : p) {
+            lhs -= M * vars["x"](tr, e_p);
+          }
+
+          const auto rel_pt_on_edge = tr_object.length - p_len_last_vertex;
+          const auto v_0_velocities =
+              velocity_extensions.at(tr).at(last_edge_obj.source);
+          const auto v_1_velocities =
+              velocity_extensions.at(tr).at(last_edge_obj.target);
+          GRBLinExpr t_ref_1 =
+              vars["t_front_departure"](tr, last_edge_obj.source);
+          GRBLinExpr t_ref_2 =
+              vars["t_front_arrival"](tr, last_edge_obj.target);
+
+          const auto v_max_rel_e =
+              std::min(last_edge_obj.max_speed, tr_object.max_speed);
+          for (size_t i = 0; i < v_0_velocities.size(); i++) {
+            for (size_t j = 0; j < v_1_velocities.size(); j++) {
+              if (cda_rail::possible_by_eom(
+                      v_0_velocities.at(i), v_1_velocities.at(j),
+                      tr_object.acceleration, tr_object.deceleration,
+                      last_edge_obj.length)) {
+                t_ref_1 +=
+                    vars["y"](tr, last_edge, i, j) *
+                    cda_rail::min_time_from_front_to_ma_point(
+                        v_0_velocities.at(i), v_1_velocities.at(j), v_max_rel_e,
+                        tr_object.acceleration, tr_object.deceleration,
+                        last_edge_obj.length, rel_pt_on_edge);
+                const auto max_travel_time = cda_rail::max_travel_time_to_end(
+                    v_0_velocities.at(i), v_1_velocities.at(j), V_MIN,
+                    tr_object.acceleration, tr_object.deceleration,
+                    last_edge_obj.length, rel_pt_on_edge,
+                    last_edge_obj.breakable);
+                t_ref_2 -=
+                    vars["y"](tr, last_edge, i, j) *
+                    (max_travel_time >= std::numeric_limits<double>::infinity()
+                         ? M
+                         : max_travel_time);
+              }
+            }
+          }
+
+          model->addConstr(lhs >= t_ref_1,
+                           "rear_departure_1_" + tr_object.name + "_" +
+                               instance.const_n().get_vertex(v).name + "_" +
+                               std::to_string(p_ind));
+          model->addConstr(lhs >= t_ref_2,
+                           "rear_departure_2_" + tr_object.name + "_" +
+                               instance.const_n().get_vertex(v).name + "_" +
+                               std::to_string(p_ind));
         }
       }
     }
