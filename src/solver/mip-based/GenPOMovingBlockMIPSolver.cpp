@@ -699,8 +699,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         for (const auto& p : possible_paths) {
           const double p_len_last_vertex = std::accumulate(
               p.begin(), p.end() - 1, 0.0,
-              [this](double sum, const auto& edgeIndex) {
-                return sum + instance.const_n().get_edge(edgeIndex).length;
+              [this](double sum, const auto& edge_index) {
+                return sum + instance.const_n().get_edge(edge_index).length;
               });
           // TODO
         }
