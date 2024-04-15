@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
@@ -904,4 +904,4 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   // TODO
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
