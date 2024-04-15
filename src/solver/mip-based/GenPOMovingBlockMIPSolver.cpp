@@ -476,6 +476,27 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         }
       }
     }
+
+    // Prevent illegal paths
+    for (const auto& e :
+         instance.edges_used_by_train(tr, model_detail.fix_routes, false)) {
+      const auto& e_object  = instance.const_n().get_edge(e);
+      const auto& v2        = e_object.target;
+      const auto& out_edges = instance.const_n().out_edges(v2);
+      const auto& v1_name = instance.const_n().get_vertex(e_object.source).name;
+      const auto& v2_name = instance.const_n().get_vertex(v2).name;
+      for (const auto& e2 : out_edges) {
+        if (!instance.const_n().is_valid_successor(e, e2)) {
+          const auto& v3_name =
+              instance.const_n()
+                  .get_vertex(instance.const_n().get_edge(e2).target)
+                  .name;
+          model->addConstr(vars["x"](tr, e) + vars["x"](tr, e2) <= 1,
+                           "illegal_path_" + tr_object.name + "_" + v1_name +
+                               "-" + v2_name + "-" + v3_name);
+        }
+      }
+    }
   }
 }
 
