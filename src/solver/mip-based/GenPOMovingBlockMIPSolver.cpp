@@ -790,7 +790,92 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_stopping_constraints() {
-  // TODO
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto& tr_object = instance.get_train_list().get_train(tr);
+    // NOLINTNEXTLINE(readability-identifier-naming)
+    const auto M = ub_timing_variable(tr);
+
+    // Stop at exactly one stop using lhs
+    for (size_t stop = 0; stop < instance.get_schedule(tr).get_stops().size();
+         stop++) {
+      const auto& stop_data   = tr_stop_data.at(tr).at(stop);
+      const auto& stop_object = instance.get_schedule(tr).get_stops().at(stop);
+      const auto& stop_station_name = stop_object.get_station_name();
+      GRBLinExpr  lhs               = 0;
+      for (const auto& [v, paths] : stop_data) {
+        lhs += vars["stop"](tr, stop, v);
+
+        // If stopped then t_front_departure - t_front_arrival >= stop_time,
+        // otherwise unconstrained Hence, >= stop_time * stop
+        model->addConstr(
+            vars["t_front_departure"](tr, v) - vars["t_front_arrival"](tr, v) >=
+                stop_object.get_min_stopping_time() * vars["stop"](tr, stop, v),
+            "min_stop_time_" + tr_object.name + "_" + stop_station_name +
+                "_vertex_" + instance.const_n().get_vertex(v).name);
+
+        // If stopped then t_front_arrival is within desired arrival interval
+        const auto t_0_interval = stop_object.get_begin_range();
+        // t >= t_0 * stop
+        model->addConstr(vars["t_front_arrival"](tr, v) >=
+                             t_0_interval.first * vars["stop"](tr, stop, v),
+                         "min_arrival_time_" + tr_object.name + "_" +
+                             stop_station_name + "_vertex_" +
+                             instance.const_n().get_vertex(v).name);
+        // t <= t_0 + M * (1 - stop)
+        model->addConstr(
+            vars["t_front_arrival"](tr, v) <=
+                t_0_interval.second + M * (1 - vars["stop"](tr, stop, v)),
+            "max_arrival_time_" + tr_object.name + "_" + stop_station_name +
+                "_vertex_" + instance.const_n().get_vertex(v).name);
+
+        // If stopped then t_front_departure is within desired departure
+        // interval
+        const auto t_n_interval = stop_object.get_end_range();
+        // t >= t_n * stop
+        model->addConstr(vars["t_front_departure"](tr, v) >=
+                             t_n_interval.first * vars["stop"](tr, stop, v),
+                         "min_departure_time_" + tr_object.name + "_" +
+                             stop_station_name + "_vertex_" +
+                             instance.const_n().get_vertex(v).name);
+        // t <= t_n + M * (1 - stop)
+        model->addConstr(
+            vars["t_front_departure"](tr, v) <=
+                t_n_interval.second + M * (1 - vars["stop"](tr, stop, v)),
+            "max_departure_time_" + tr_object.name + "_" + stop_station_name +
+                "_vertex_" + instance.const_n().get_vertex(v).name);
+
+        // Train can only stop if one of the valid edge paths is used
+        GRBLinExpr path_expr = 0;
+        for (size_t p_index = 0; p_index < paths.size(); p_index++) {
+          const auto& p = paths.at(p_index);
+          // The following variable should be binary, however since only one
+          // direction of inference is needed, continuous should suffice
+          const auto tmp_var = model->addVar(
+              0.0, 1.0, 0.0, GRB_CONTINUOUS,
+              "stop_path_" + tr_object.name + "_" + stop_station_name +
+                  "_vertex_" + instance.const_n().get_vertex(v).name +
+                  "_path_" + std::to_string(p_index));
+          path_expr += tmp_var;
+          for (const auto& e : p) {
+            model->addConstr(tmp_var <= vars["x"](tr, e),
+                             "stop_path_" + tr_object.name + "_" +
+                                 stop_station_name + "_vertex_" +
+                                 instance.const_n().get_vertex(v).name +
+                                 "_path_" + std::to_string(p_index) + "_edge_" +
+                                 std::to_string(e));
+          }
+        }
+        model->addConstr(vars["stop"](tr, stop, v) <= path_expr,
+                         "stop_only_if_path_is_used_" + tr_object.name + "_" +
+                             stop_station_name + "_vertex_" +
+                             instance.const_n().get_vertex(v).name);
+      }
+      model->addConstr(lhs == 1,
+                       "stop_at_one_vertex_" +
+                           instance.get_train_list().get_train(tr).name + "_" +
+                           stop_station_name);
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
