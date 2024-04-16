@@ -87,6 +87,7 @@ private:
   void create_general_path_constraints();
   void create_travel_times_constraints();
   void create_basic_order_constraints();
+  void create_basic_ttd_constraints();
   void create_train_rear_constraints();
   void create_stopping_constraints();
   void create_headway_constraints();

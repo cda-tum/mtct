@@ -904,4 +904,81 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   // TODO
 }
 
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_basic_ttd_constraints() {
+  for (size_t i = 0; i < ttd_sections.size(); i++) {
+    const auto& ttd_section = ttd_sections.at(i);
+    const auto  tr_on_ttd =
+        instance.trains_in_section(ttd_section, model_detail.fix_routes, false);
+    for (const auto& tr : tr_on_ttd) {
+      const auto t_bound = ub_timing_variable(tr);
+
+      // x_ttd aggregates x values
+      const auto e_tr =
+          instance.edges_used_by_train(tr, model_detail.fix_routes, false);
+      // relevant edges are intersection of ttd_section and e_tr
+      std::vector<size_t> relevant_edges;
+      for (const auto& e : ttd_section) {
+        if (std::find(e_tr.begin(), e_tr.end(), e) != e_tr.end()) {
+          relevant_edges.push_back(e);
+        }
+      }
+      GRBLinExpr rhs = 0;
+      for (const auto& e : relevant_edges) {
+        const auto e_object = instance.const_n().get_edge(e);
+        const auto v1_name =
+            instance.const_n().get_vertex(e_object.source).name;
+        const auto v2_name =
+            instance.const_n().get_vertex(e_object.target).name;
+        model->addConstr(vars["x_ttd"](tr, i) >= vars["x"](tr, e),
+                         "aggregate_edge_ttd_1_" +
+                             instance.get_train_list().get_train(tr).name +
+                             "_" + std::to_string(i) + "_" + v1_name + "-" +
+                             v2_name);
+        rhs += vars["x"](tr, e);
+
+        // Moreover bound t_ttd_departure
+        // >= t_rear_departure(v2) * x(e)
+        // where 0 <= t_rear_departure <= t_bound continuous
+        // x(e) is binary
+        // Hence, equivalent to
+        // t_ttd >= t - t_bound * (1 - x)
+        // t_ttd >= 0 (already by definition)
+        // Because we are only interested in bounding the time from below no
+        // other constraints are needed.
+        model->addConstr(vars["t_ttd_departure"](tr, i) >=
+                             vars["t_rear_departure"](tr, e_object.target) -
+                                 t_bound * (1 - vars["x"](tr, e)),
+                         "ttd_departure_bound_" +
+                             instance.get_train_list().get_train(tr).name +
+                             "_" + std::to_string(i) + "_" + v1_name + "-" +
+                             v2_name);
+      }
+      model->addConstr(vars["x_ttd"](tr, i) <= rhs,
+                       "aggregate_edge_ttd_2_" +
+                           instance.get_train_list().get_train(tr).name + "_" +
+                           std::to_string(i));
+
+      // Order constraints as usual
+      for (const auto& tr2 : tr_on_ttd) {
+        if (tr == tr2) {
+          continue;
+        }
+        model->addConstr(
+            vars["order_ttd"](tr, tr2, i) + vars["order_ttd"](tr2, tr, i) <=
+                0.5 * (vars["x_ttd"](tr, i) + vars["x_ttd"](tr2, i)),
+            "ttd_order_1_" + instance.get_train_list().get_train(tr).name +
+                "_" + instance.get_train_list().get_train(tr2).name + "_" +
+                std::to_string(i));
+        model->addConstr(
+            vars["order_ttd"](tr, tr2, i) + vars["order_ttd"](tr2, tr, i) >=
+                vars["x_ttd"](tr, i) - vars["x_ttd"](tr2, i) - 1,
+            "ttd_order_2_" + instance.get_train_list().get_train(tr).name +
+                "_" + instance.get_train_list().get_train(tr2).name + "_" +
+                std::to_string(i));
+      }
+    }
+  }
+}
+
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
