@@ -776,7 +776,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                         tr_object.acceleration, tr_object.deceleration,
                         last_edge_obj.length)) {
                   t_ref_1 += vars["y"](tr, last_edge, i, j) *
-                             cda_rail::min_time_from_front_to_ma_point(
+                             cda_rail::min_travel_time_from_start(
                                  v_0_velocities.at(i), v_1_velocities.at(j),
                                  v_max_rel_e, tr_object.acceleration,
                                  tr_object.deceleration, last_edge_obj.length,
