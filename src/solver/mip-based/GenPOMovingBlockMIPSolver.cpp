@@ -204,6 +204,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   create_general_path_constraints();
   create_travel_times_constraints();
   create_basic_order_constraints();
+  create_basic_ttd_constraints();
   create_train_rear_constraints();
   create_stopping_constraints();
   create_headway_constraints();
@@ -517,10 +518,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             // t_front_arrival >= t_rear_departure + minimal travel time if arc
             // is used
             const auto& min_t_arc = cda_rail::min_travel_time(
-                v1_values.at(i), v2_values.at(i), edge.max_speed,
+                v1_values.at(i), v2_values.at(j), edge.max_speed,
                 tr_object.acceleration, tr_object.deceleration, edge.length);
             const auto& max_t_arc = cda_rail::max_travel_time(
-                v1_values.at(i), v2_values.at(i), V_MIN, tr_object.acceleration,
+                v1_values.at(i), v2_values.at(j), V_MIN, tr_object.acceleration,
                 tr_object.deceleration, edge.length, edge.breakable);
             model->addConstr(
                 vars["t_front_arrival"](tr, edge.target) +
