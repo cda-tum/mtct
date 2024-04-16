@@ -54,8 +54,27 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   PLOGD << "Create constraints";
   create_constraints();
 
-  PLOGI << "Model created. Optimize";
+  PLOGI << "Model created. Optimize.";
   model->optimize();
+
+  if (solution_settings.export_option == ExportOption::ExportLP ||
+      solution_settings.export_option == ExportOption::ExportSolutionAndLP ||
+      solution_settings.export_option ==
+          ExportOption::ExportSolutionWithInstanceAndLP) {
+    PLOGI << "Saving model and solution";
+    std::filesystem::path path = solution_settings.path;
+
+    if (!is_directory_and_create(path)) {
+      PLOGE << "Could not create directory " << path.string();
+      throw exceptions::ExportException("Could not create directory " +
+                                        path.string());
+    }
+
+    model->write((path / (solution_settings.name + ".mps")).string());
+    if (model->get(GRB_IntAttr_SolCount) > 0) {
+      model->write((path / (solution_settings.name + ".sol")).string());
+    }
+  }
 
   this->instance = old_instance;
 
