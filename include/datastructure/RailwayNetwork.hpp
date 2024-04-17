@@ -247,7 +247,7 @@ public:
            get_vertex(edge_object.target).name;
   }
   [[nodiscard]] std::string get_edge_name(size_t v0, size_t v1,
-                                          bool check_existence = false) {
+                                          bool check_existence = false) const {
     if (check_existence && !has_edge(v0, v1)) {
       throw exceptions::EdgeNotExistentException(v0, v1);
     }
@@ -255,7 +255,7 @@ public:
   }
   [[nodiscard]] std::string get_edge_name(const std::string& v1,
                                           const std::string& v2,
-                                          bool check_existance = false) {
+                                          bool check_existance = false) const {
     if (check_existance && !has_vertex(v1)) {
       throw exceptions::VertexNotExistentException(v1);
     }
