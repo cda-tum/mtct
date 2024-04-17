@@ -90,6 +90,7 @@ private:
   void create_basic_ttd_constraints();
   void create_train_rear_constraints();
   void create_stopping_constraints();
+  void create_vertex_headway_constraints();
   void create_headway_constraints();
 
 protected:

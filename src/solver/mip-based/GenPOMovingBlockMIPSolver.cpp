@@ -258,6 +258,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   create_basic_ttd_constraints();
   create_train_rear_constraints();
   create_stopping_constraints();
+  create_vertex_headway_constraints();
   create_headway_constraints();
 }
 
@@ -972,7 +973,22 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_headway_constraints() {
-  // TODO
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto& tr_object = instance.get_train_list().get_train(tr);
+    const auto  tr_used_edges =
+        instance.edges_used_by_train(tr, model_detail.fix_routes, false);
+    const auto exit_node = instance.get_schedule(tr).get_exit();
+    for (const auto v :
+         instance.vertices_used_by_train(tr, model_detail.fix_routes, false)) {
+      const auto v_velocities = velocity_extensions.at(tr).at(v);
+      for (const auto& vel : v_velocities) {
+        const auto bd = vel * vel / (2 * tr_object.deceleration);
+        const auto brake_paths =
+            instance.const_n().all_paths_of_length_starting_in_vertex(
+                v, bd, exit_node, tr_used_edges);
+      }
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -1050,6 +1066,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       }
     }
   }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_vertex_headway_constraints() {
+  // TODO
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
