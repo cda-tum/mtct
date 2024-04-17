@@ -40,6 +40,42 @@ TEST(Functionality, NetworkFunctions) {
   network.add_successor(network.get_edge_index("v2", "v0"),
                         network.get_edge_index("v0", "v1"));
 
+  // Check edge name
+  EXPECT_EQ(network.get_edge_name(e0), "v0-v1");
+  EXPECT_EQ(network.get_edge_name(e1), "v1-v2");
+  EXPECT_EQ(network.get_edge_name(e2), "v1-v0");
+  EXPECT_EQ(network.get_edge_name(e3), "v2-v0");
+
+  EXPECT_EQ(network.get_edge_name(v0, v2), "v0-v2");
+  EXPECT_EQ(network.get_edge_name(v0, v2, false), "v0-v2");
+  EXPECT_THROW(network.get_edge_name(v0, v2, true),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW(network.get_edge_name(v0, v0 + v1 + v2),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW(network.get_edge_name(v0, v0 + v1 + v2, false),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW(network.get_edge_name(v0, v0 + v1 + v2, true),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_EQ(network.get_edge_name(v0, v1), "v0-v1");
+  EXPECT_EQ(network.get_edge_name(v0, v1, false), "v0-v1");
+  EXPECT_EQ(network.get_edge_name(v0, v1, true), "v0-v1");
+
+  EXPECT_EQ(network.get_edge_name("v0", "v2"), "v0-v2");
+  EXPECT_EQ(network.get_edge_name("v0", "v2", false), "v0-v2");
+  EXPECT_THROW(network.get_edge_name("v0", "v2", true),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_EQ(network.get_edge_name("v0", "temp"), "v0-temp");
+  EXPECT_EQ(network.get_edge_name("v0", "temp", false), "v0-temp");
+  EXPECT_THROW(network.get_edge_name("v0", "temp", true),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_EQ(network.get_edge_name("temp", "v0"), "temp-v0");
+  EXPECT_EQ(network.get_edge_name("temp", "v0", false), "temp-v0");
+  EXPECT_THROW(network.get_edge_name("temp", "v0", true),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_EQ(network.get_edge_name("v0", "v1"), "v0-v1");
+  EXPECT_EQ(network.get_edge_name("v0", "v1", false), "v0-v1");
+  EXPECT_EQ(network.get_edge_name("v0", "v1", true), "v0-v1");
+
   // Check vertices used by edges
   const auto vertices1 = network.vertices_used_by_edges({e0, e1, e2});
   // Expect all three vertices v0, v1, v2

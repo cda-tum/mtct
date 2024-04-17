@@ -1,4 +1,5 @@
 #pragma once
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "MultiArray.hpp"
 #include "VSSModel.hpp"
@@ -240,6 +241,32 @@ public:
     return get_edge_index(get_vertex_index(source_name),
                           get_vertex_index(target_name));
   };
+  [[nodiscard]] std::string get_edge_name(size_t index) const {
+    const auto& edge_object = get_edge(index);
+    return get_vertex(edge_object.source).name + "-" +
+           get_vertex(edge_object.target).name;
+  }
+  [[nodiscard]] std::string get_edge_name(size_t v0, size_t v1,
+                                          bool check_existence = false) {
+    if (check_existence && !has_edge(v0, v1)) {
+      throw exceptions::EdgeNotExistentException(v0, v1);
+    }
+    return get_vertex(v0).name + "-" + get_vertex(v1).name;
+  }
+  [[nodiscard]] std::string get_edge_name(const std::string& v1,
+                                          const std::string& v2,
+                                          bool check_existance = false) {
+    if (check_existance && !has_vertex(v1)) {
+      throw exceptions::VertexNotExistentException(v1);
+    }
+    if (check_existance && !has_vertex(v2)) {
+      throw exceptions::VertexNotExistentException(v2);
+    }
+    if (check_existance && !has_edge(v1, v2)) {
+      throw exceptions::EdgeNotExistentException(v1, v2);
+    }
+    return v1 + "-" + v2;
+  }
 
   [[nodiscard]] std::vector<size_t>
   vertices_used_by_edges(const std::vector<size_t>& edges) const;
