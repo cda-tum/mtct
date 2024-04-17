@@ -578,7 +578,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 vars["t_front_arrival"](tr, edge.target) +
                         (ub_timing_variable(tr) + min_t_arc) *
                             (1 - vars["y"](tr, e, i, j)) >=
-                    vars["t_rear_departure"](tr, edge.source) + min_t_arc,
+                    vars["t_front_departure"](tr, edge.source) + min_t_arc,
                 "edge_minimal_travel_time_" + tr_object.name + "_" +
                     instance.const_n().get_vertex(edge.source).name + "-" +
                     instance.const_n().get_vertex(edge.target).name + "_" +
@@ -593,7 +593,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             // is used
             model->addConstr(
                 vars["t_front_arrival"](tr, edge.target) <=
-                    vars["t_rear_departure"](tr, edge.source) + max_t_arc +
+                    vars["t_front_departure"](tr, edge.source) + max_t_arc +
                         (ub_timing_variable(tr) - max_t_arc) *
                             (1 - vars["y"](tr, e, i, j)),
                 "edge_maximal_travel_time_" + tr_object.name + "_" +
