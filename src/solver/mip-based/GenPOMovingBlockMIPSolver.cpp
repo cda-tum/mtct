@@ -768,12 +768,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         model->addConstr(vars["t_rear_departure"](tr, v) >=
                              vars["t_front_departure"](tr, v) +
                                  min_travel_time_expr,
-                         "rear_departure_vertex_" + tr_object.name + "_" +
+                         "rear_departure_vertex_c1_" + tr_object.name + "_" +
                              instance.const_n().get_vertex(v).name);
         model->addConstr(vars["t_rear_departure"](tr, v) <=
                              vars["t_front_departure"](tr, v) +
                                  max_travel_time_expr,
-                         "rear_departure_vertex_" + tr_object.name + "_" +
+                         "rear_departure_vertex_c2_" + tr_object.name + "_" +
                              instance.const_n().get_vertex(v).name);
       } else {
         // Otherwise deduce limits from last path edge
