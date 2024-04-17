@@ -1849,3 +1849,30 @@ double cda_rail::Network::minimal_neighboring_edge_length(
       });
   return get_edge(min_edge_index).length;
 }
+
+std::vector<std::pair<size_t, size_t>> cda_rail::Network::get_intersecting_ttd(
+    const std::vector<size_t>&             edges_to_consider,
+    const std::vector<std::vector<size_t>> ttd) {
+  /**
+   * Returns the intersecting ttd sections, together with the entering, i.e.,
+   * first edge. The edge is returned using the index within the path.
+   */
+
+  std::vector<std::pair<size_t, size_t>> ret_val;
+
+  for (size_t ttd_index = 0; ttd_index < ttd.size(); ++ttd_index) {
+    bool        intersection_found = false;
+    const auto& ttd_section        = ttd.at(ttd_index);
+    for (size_t edge_index = 0;
+         !intersection_found && edge_index < edges_to_consider.size();
+         ++edge_index) {
+      if (std::find(ttd_section.begin(), ttd_section.end(),
+                    edges_to_consider.at(edge_index)) != ttd_section.end()) {
+        ret_val.emplace_back(ttd_index, edge_index);
+        intersection_found = true;
+      }
+    }
+  }
+
+  return ret_val;
+}

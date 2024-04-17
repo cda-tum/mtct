@@ -24,6 +24,13 @@ struct EdgeTarget {
 
 // NOLINTBEGIN(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores)
 
+TEST(Functionality, NetworkTTDIntersection) {
+  std::vector<std::pair<size_t, size_t>> expected({{0, 1}, {2, 4}});
+  const auto actual = cda_rail::Network::get_intersecting_ttd(
+      {0, 1, 2, 3, 4}, {{1, 2, 5}, {6, 9, 10}, {11, 4, 10}});
+  EXPECT_EQ(actual, expected);
+}
+
 TEST(Functionality, NetworkFunctions) {
   cda_rail::Network network;
   const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
