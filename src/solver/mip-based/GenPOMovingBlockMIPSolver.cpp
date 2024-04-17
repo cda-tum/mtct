@@ -869,10 +869,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto M = ub_timing_variable(tr);
 
     // Stop at exactly one stop using lhs
-    for (size_t stop = 0; stop < instance.get_schedule(tr).get_stops().size();
-         stop++) {
-      const auto& stop_data   = tr_stop_data.at(tr).at(stop);
-      const auto& stop_object = instance.get_schedule(tr).get_stops().at(stop);
+    const auto& tr_schedule = instance.get_schedule(tr);
+    const auto& tr_stops    = tr_schedule.get_stops();
+    for (size_t stop = 0; stop < tr_stops.size(); stop++) {
+      const auto& stop_data         = tr_stop_data.at(tr).at(stop);
+      const auto& stop_object       = tr_stops.at(stop);
       const auto& stop_station_name = stop_object.get_station_name();
       GRBLinExpr  lhs               = 0;
       for (const auto& [v, paths] : stop_data) {
@@ -948,6 +949,24 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                            instance.get_train_list().get_train(tr).name + "_" +
                            stop_station_name);
     }
+
+    // Initial
+    const auto& t0_range = tr_schedule.get_t_0_range();
+    model->addConstr(vars["t_front_arrival"](tr, tr_schedule.get_entry()) >=
+                         t0_range.first,
+                     "initial_arrival_time_lb_" + tr_object.name);
+    model->addConstr(vars["t_front_arrival"](tr, tr_schedule.get_entry()) <=
+                         t0_range.second,
+                     "initial_arrival_time_ub_" + tr_object.name);
+
+    // Final
+    const auto& tn_range = tr_schedule.get_t_n_range();
+    model->addConstr(vars["t_rear_departure"](tr, tr_schedule.get_exit()) >=
+                         tn_range.first,
+                     "final_departure_time_lb_" + tr_object.name);
+    model->addConstr(vars["t_rear_departure"](tr, tr_schedule.get_exit()) <=
+                         tn_range.second,
+                     "final_departure_time_ub_" + tr_object.name);
   }
 }
 
