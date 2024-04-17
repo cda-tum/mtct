@@ -98,19 +98,25 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
   for (size_t tr = 0; tr < num_tr; tr++) {
     const double ub_timing_dept = ub_timing_variable(tr);
+    const auto&  tr_name        = instance.get_train_list().get_train(tr).name;
     for (const auto v :
          instance.vertices_used_by_train(tr, model_detail.fix_routes, false)) {
+      const auto& v_name = instance.const_n().get_vertex(v).name;
       vars["t_front_arrival"](tr, v) =
-          model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS);
+          model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS,
+                        "t_front_arrival_" + tr_name + "_" + v_name);
       vars["t_front_departure"](tr, v) =
-          model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS);
+          model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS,
+                        "t_front_departure_" + tr_name + "_" + v_name);
       vars["t_rear_departure"](tr, v) =
-          model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS);
+          model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS,
+                        "t_rear_departure_" + tr_name + "_" + v_name);
     }
     for (const auto& ttd : instance.sections_used_by_train(
              tr, ttd_sections, model_detail.fix_routes, false)) {
-      vars["t_ttd_departure"](tr, ttd) =
-          model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS);
+      vars["t_ttd_departure"](tr, ttd) = model->addVar(
+          0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS,
+          "t_ttd_departure_" + tr_name + "_" + std::to_string(ttd));
     }
   }
 }
@@ -123,22 +129,32 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   vars["order_ttd"] = MultiArray<GRBVar>(num_tr, num_tr, num_ttd);
 
   for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
     for (const auto e :
          instance.edges_used_by_train(tr, model_detail.fix_routes, false)) {
-      vars["x"](tr, e) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+      vars["x"](tr, e) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY,
+                                       "x_" + tr_name + "_" +
+                                           instance.const_n().get_edge_name(e));
     }
     for (const auto& ttd : instance.sections_used_by_train(
              tr, ttd_sections, model_detail.fix_routes, false)) {
-      vars["x_ttd"](tr, ttd) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+      vars["x_ttd"](tr, ttd) =
+          model->addVar(0.0, 1.0, 0.0, GRB_BINARY,
+                        "x_ttd_" + tr_name + "_" + std::to_string(ttd));
     }
   }
   for (size_t e = 0; e < num_edges; e++) {
     const auto tr_on_e = instance.trains_on_edge_mixed_routing(
         e, model_detail.fix_routes, false);
+    const auto& e_name = instance.const_n().get_edge_name(e);
     for (const auto& tr1 : tr_on_e) {
+      const auto& tr1_name = instance.get_train_list().get_train(tr1).name;
       for (const auto& tr2 : tr_on_e) {
         if (tr1 != tr2) {
-          vars["order"](tr1, tr2, e) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+          const auto& tr2_name = instance.get_train_list().get_train(tr2).name;
+          vars["order"](tr1, tr2, e) = model->addVar(
+              0.0, 1.0, 0.0, GRB_BINARY,
+              "order_" + tr1_name + "_" + tr2_name + "_" + e_name);
         }
       }
     }
@@ -147,10 +163,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto tr_on_ttd = instance.trains_in_section(
         ttd_sections.at(ttd), model_detail.fix_routes, false);
     for (const auto& tr1 : tr_on_ttd) {
+      const auto& tr1_name = instance.get_train_list().get_train(tr1).name;
       for (const auto& tr2 : tr_on_ttd) {
         if (tr1 != tr2) {
+          const auto& tr2_name = instance.get_train_list().get_train(tr2).name;
           vars["order_ttd"](tr1, tr2, ttd) =
-              model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+              model->addVar(0.0, 1.0, 0.0, GRB_BINARY,
+                            "order_ttd_" + tr1_name + "_" + tr2_name + "_" +
+                                std::to_string(ttd));
         }
       }
     }
@@ -167,11 +187,17 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   vars["stop"] = MultiArray<GRBVar>(num_tr, max_num_stops, num_vertices);
 
   for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
     for (size_t stop = 0; stop < instance.get_schedule(tr).get_stops().size();
          stop++) {
+      const auto& stop_name =
+          instance.get_schedule(tr).get_stops().at(stop).get_station_name();
       const auto& stop_data = tr_stop_data.at(tr).at(stop);
       for (const auto& [v, edges] : stop_data) {
-        vars["stop"](tr, stop, v) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+        vars["stop"](tr, stop, v) =
+            model->addVar(0.0, 1.0, 0.0, GRB_BINARY,
+                          "stop_" + tr_name + "_" + stop_name + "_" +
+                              instance.const_n().get_vertex(v).name);
       }
     }
   }
@@ -189,14 +215,20 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     for (const auto e :
          instance.edges_used_by_train(tr, model_detail.fix_routes, false)) {
       const auto& edge = instance.const_n().get_edge(e);
-      const auto& v_1  = velocity_extensions.at(tr).at(edge.source);
-      const auto& v_2  = velocity_extensions.at(tr).at(edge.target);
+      const auto& edge_name =
+          instance.const_n().get_edge_name(edge.source, edge.target);
+      const auto& v_1 = velocity_extensions.at(tr).at(edge.source);
+      const auto& v_2 = velocity_extensions.at(tr).at(edge.target);
       for (size_t i = 0; i < v_1.size(); i++) {
         for (size_t j = 0; j < v_2.size(); j++) {
           if (cda_rail::possible_by_eom(v_1.at(i), v_2.at(j),
                                         train.acceleration, train.deceleration,
                                         edge.length)) {
-            vars["y"](tr, e, i, j) = model->addVar(0.0, 1.0, 0.0, GRB_BINARY);
+            vars["y"](tr, e, i, j) =
+                model->addVar(0.0, 1.0, 0.0, GRB_BINARY,
+                              "y_" + train.name + "_" + edge_name + "_" +
+                                  std::to_string(v_1.at(i)) + "_" +
+                                  std::to_string(v_2.at(j)));
           }
         }
       }
