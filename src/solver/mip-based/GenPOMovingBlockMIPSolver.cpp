@@ -989,7 +989,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         const auto  bd  = vel * vel / (2 * tr_object.deceleration);
         const auto  brake_paths =
             instance.const_n().all_paths_of_length_starting_in_vertex(
-                v, bd, exit_node, tr_used_edges);
+                v, std::max(EPS, bd), exit_node,
+                tr_used_edges); // min EPS so that following edge is detected
+                                // for speed 0
         for (size_t p_index = 0; p_index < brake_paths.size(); p_index++) {
           const auto& p     = brake_paths.at(p_index);
           const auto  p_len = std::accumulate(
@@ -1092,7 +1094,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 }
               }
             }
-            for (size_t rhs_idx = 0; rhs_idx < p.size(); rhs_idx++) {
+            for (size_t rhs_idx = 0; rhs_idx < rhs.size(); rhs_idx++) {
               model->addConstr(
                   lhs >= rhs.at(rhs_idx),
                   "headway_" + std::to_string(rhs_idx) + "-" +
