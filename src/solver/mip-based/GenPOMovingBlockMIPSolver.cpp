@@ -560,7 +560,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto& v1_name = instance.const_n().get_vertex(e_object.source).name;
       const auto& v2_name = instance.const_n().get_vertex(v2).name;
       for (const auto& e2 : out_edges) {
-        if (!instance.const_n().is_valid_successor(e, e2)) {
+        if (!instance.const_n().is_valid_successor(e, e2) &&
+            std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
+                      e2) != edges_used_by_train.end()) {
           const auto& v3_name =
               instance.const_n()
                   .get_vertex(instance.const_n().get_edge(e2).target)
@@ -715,7 +717,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
         model->addConstr(
             vars["order"](tr1, tr2, e) + vars["order"](tr2, tr1, e) >=
-                vars["x"](tr1, e) - vars["x"](tr2, e) - 1,
+                vars["x"](tr1, e) + vars["x"](tr2, e) - 1,
             "edge_order_2_" + instance.get_train_list().get_train(tr1).name +
                 "_" + instance.get_train_list().get_train(tr2).name + "_" +
                 v1.name + "-" + v2.name);
@@ -1053,10 +1055,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             if (tr == tr2) {
               continue;
             }
+
+            const auto& t_bound_tmp =
+                std::max(t_bound, ub_timing_variable(tr2));
+
             const GRBLinExpr lhs =
                 vars["t_front_arrival"](tr, v) +
-                t_bound * (p.size() - edge_path_expr) +
-                t_bound * (1 - vars["order"](tr, tr2, p.back()));
+                t_bound_tmp * (static_cast<double>(p.size()) - edge_path_expr) +
+                t_bound_tmp * (1 - vars["order"](tr, tr2, p.back()));
             std::vector<GRBLinExpr> rhs;
             if (p_len + EPS >= bd && p_len - EPS <= bd) {
               // Target vertex is exactly the desired moving authority
@@ -1110,7 +1116,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                     rhs.at(1) -=
                         vars["y"](tr2, p.back(), v_tr2_source_index,
                                   v_tr2_target_index) *
-                        (max_travel_time > t_bound ? t_bound : max_travel_time);
+                        (max_travel_time > t_bound_tmp ? t_bound_tmp
+                                                       : max_travel_time);
                   }
                 }
               }
