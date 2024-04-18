@@ -962,6 +962,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                  "_path_" + std::to_string(p_index) + "_edge_" +
                                  std::to_string(e));
           }
+          model->addConstr(vars["stop"](tr, stop, v) >= tmp_var,
+                           "use_path_only_if_stopped_" + tr_object.name + "_" +
+                               stop_station_name + "_vertex_" +
+                               instance.const_n().get_vertex(v).name +
+                               "_path_" + std::to_string(p_index));
         }
         model->addConstr(vars["stop"](tr, stop, v) <= path_expr,
                          "stop_only_if_path_is_used_" + tr_object.name + "_" +
