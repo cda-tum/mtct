@@ -978,14 +978,131 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto  tr_used_edges =
         instance.edges_used_by_train(tr, model_detail.fix_routes, false);
     const auto exit_node = instance.get_schedule(tr).get_exit();
+    const auto t_bound   = ub_timing_variable(tr);
+
     for (const auto v :
          instance.vertices_used_by_train(tr, model_detail.fix_routes, false)) {
       const auto v_velocities = velocity_extensions.at(tr).at(v);
-      for (const auto& vel : v_velocities) {
-        const auto bd = vel * vel / (2 * tr_object.deceleration);
-        const auto brake_paths =
+      for (size_t v_source_index = 0; v_source_index < v_velocities.size();
+           v_source_index++) {
+        const auto& vel = v_velocities.at(v_source_index);
+        const auto  bd  = vel * vel / (2 * tr_object.deceleration);
+        const auto  brake_paths =
             instance.const_n().all_paths_of_length_starting_in_vertex(
                 v, bd, exit_node, tr_used_edges);
+        for (size_t p_index = 0; p_index < brake_paths.size(); p_index++) {
+          const auto& p     = brake_paths.at(p_index);
+          const auto  p_len = std::accumulate(
+              p.begin(), p.end(), 0.0,
+              [this](double sum, const auto& edge_index) {
+                return sum + instance.const_n().get_edge(edge_index).length;
+              });
+
+          // Variables to decide if path was used. First edge must leave from
+          // desired velocity extension.
+          GRBLinExpr  edge_path_expr = 0;
+          const auto& e_1            = p.front();
+          const auto& e_1_obj        = instance.const_n().get_edge(e_1);
+          const auto& v_target_velocities =
+              velocity_extensions.at(tr).at(e_1_obj.target);
+          for (size_t v_target_index = 0;
+               v_target_index < v_target_velocities.size(); v_target_index++) {
+            const auto& vel_target = v_target_velocities.at(v_target_index);
+            if (cda_rail::possible_by_eom(
+                    vel, vel_target, tr_object.acceleration,
+                    tr_object.deceleration, e_1_obj.length)) {
+              edge_path_expr +=
+                  vars["y"](tr, e_1, v_source_index, v_target_index);
+            }
+          }
+          for (const auto& e_p : p) {
+            if (e_p != e_1) {
+              edge_path_expr += vars["x"](tr, e_p);
+            }
+          }
+
+          const auto tr_on_last_edge = instance.trains_on_edge_mixed_routing(
+              p.back(), model_detail.fix_routes, false);
+
+          const auto& last_edge_object = instance.const_n().get_edge(p.back());
+
+          for (const auto& tr2 : tr_on_last_edge) {
+            if (tr == tr2) {
+              continue;
+            }
+            const GRBLinExpr lhs =
+                vars["t_front_arrival"](tr, v) +
+                t_bound * (p.size() - edge_path_expr) +
+                t_bound * (1 - vars["order"](tr, tr2, p.back()));
+            std::vector<GRBLinExpr> rhs;
+            if (p_len + EPS >= bd && p_len - EPS <= bd) {
+              // Target vertex is exactly the desired moving authority
+              // t_front_arrival(tr, v) >= t_rear_departure(tr2, target) if
+              // order(tr, tr2, e) = 1 and path p chosen.
+              rhs.emplace_back(
+                  vars["t_rear_departure"](tr2, last_edge_object.target));
+            } else {
+              assert(p_len > bd && p_len - last_edge_object.length <= bd);
+              const auto  target_point = bd - p_len + last_edge_object.length;
+              const auto& v_tr2_source_velocities =
+                  velocity_extensions.at(tr2).at(last_edge_object.source);
+              const auto& v_tr2_target_velocities =
+                  velocity_extensions.at(tr2).at(last_edge_object.target);
+              rhs.emplace_back(
+                  vars["t_rear_departure"](tr2, last_edge_object.source));
+              rhs.emplace_back(
+                  vars["t_rear_departure"](tr2, last_edge_object.target));
+              const auto& tr2_object = instance.get_train_list().get_train(tr2);
+              const auto  max_speed =
+                  std::min(tr2_object.max_speed, last_edge_object.max_speed);
+              for (size_t v_tr2_source_index = 0;
+                   v_tr2_source_index < v_tr2_source_velocities.size();
+                   v_tr2_source_index++) {
+                const auto& vel_tr2_source =
+                    v_tr2_source_velocities.at(v_tr2_source_index);
+                for (size_t v_tr2_target_index = 0;
+                     v_tr2_target_index < v_tr2_target_velocities.size();
+                     v_tr2_target_index++) {
+                  const auto& vel_tr2_target =
+                      v_tr2_target_velocities.at(v_tr2_target_index);
+                  if (cda_rail::possible_by_eom(vel_tr2_source, vel_tr2_target,
+                                                tr2_object.acceleration,
+                                                tr2_object.deceleration,
+                                                last_edge_object.length)) {
+                    // first: += y * min_t
+                    // second: -= y * max_t
+                    rhs.at(0) +=
+                        vars["y"](tr2, p.back(), v_tr2_source_index,
+                                  v_tr2_target_index) *
+                        cda_rail::min_travel_time_from_start(
+                            vel_tr2_source, vel_tr2_target, max_speed,
+                            tr2_object.acceleration, tr2_object.deceleration,
+                            last_edge_object.length, target_point);
+                    const auto max_travel_time =
+                        cda_rail::max_travel_time_to_end(
+                            vel_tr2_source, vel_tr2_target, V_MIN,
+                            tr2_object.acceleration, tr2_object.deceleration,
+                            last_edge_object.length, target_point,
+                            last_edge_object.breakable);
+                    rhs.at(1) -=
+                        vars["y"](tr2, p.back(), v_tr2_source_index,
+                                  v_tr2_target_index) *
+                        (max_travel_time > t_bound ? t_bound : max_travel_time);
+                  }
+                }
+              }
+            }
+            for (size_t rhs_idx = 0; rhs_idx < p.size(); rhs_idx++) {
+              model->addConstr(
+                  lhs >= rhs.at(rhs_idx),
+                  "headway_" + std::to_string(rhs_idx) + "-" +
+                      std::to_string(rhs.size()) + "_" + tr_object.name + "_" +
+                      instance.get_train_list().get_train(tr2).name + "_" +
+                      instance.const_n().get_vertex(v).name + "_" +
+                      std::to_string(vel) + "_" + std::to_string(p_index));
+            }
+          }
+        }
       }
     }
   }
