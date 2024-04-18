@@ -1851,8 +1851,8 @@ double cda_rail::Network::minimal_neighboring_edge_length(
 }
 
 std::vector<std::pair<size_t, size_t>> cda_rail::Network::get_intersecting_ttd(
-    const std::vector<size_t>&             edges_to_consider,
-    const std::vector<std::vector<size_t>> ttd) {
+    const std::vector<size_t>&              edges_to_consider,
+    const std::vector<std::vector<size_t>>& ttd) {
   /**
    * Returns the intersecting ttd sections, together with the entering, i.e.,
    * first edge. The edge is returned using the index within the path.

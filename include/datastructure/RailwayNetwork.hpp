@@ -392,8 +392,8 @@ public:
   };
 
   [[nodiscard]] static std::vector<std::pair<size_t, size_t>>
-  get_intersecting_ttd(const std::vector<size_t>&             edges,
-                       const std::vector<std::vector<size_t>> ttd);
+  get_intersecting_ttd(const std::vector<size_t>&              edges,
+                       const std::vector<std::vector<size_t>>& ttd);
 
   [[nodiscard]] std::vector<size_t>        get_predecessors(size_t index) const;
   [[nodiscard]] const std::vector<size_t>& get_successors(size_t index) const;
