@@ -54,6 +54,27 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   PLOGD << "Create constraints";
   create_constraints();
 
+  model->update();
+
+  PLOGD << "Fix numerical issues with small coefficients";
+  // TODO: Can we prevent this from being necessary by rounding at the source.
+  // On the other hand, this does not take long to fix.
+  size_t       num_fixed   = 0;
+  const double integer_tol = model->getEnv().get(GRB_DoubleParam_IntFeasTol);
+  auto         vars_tmp    = model->getVars();
+  const int    num_vars    = model->get(GRB_IntAttr_NumVars);
+  for (size_t i = 0; i < num_vars; i++) {
+    auto col_v = model->getCol(vars_tmp[i]);
+    for (size_t j = 0; j < col_v.size(); j++) {
+      if (std::abs(col_v.getCoeff(j)) < integer_tol && col_v.getCoeff(j) != 0) {
+        auto c = col_v.getConstr(j);
+        model->chgCoeff(c, vars_tmp[i], 0);
+        num_fixed++;
+      }
+    }
+  }
+  PLOGD << "Fixed " << num_fixed << " coefficients";
+
   PLOGI << "Model created. Optimize.";
   model->optimize();
 
