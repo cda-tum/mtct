@@ -1214,6 +1214,13 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                       std::to_string(vel) + "_" + std::to_string(p_index));
             }
           }
+
+          // Headways on intersecting TTD sections
+          const auto intersecting_ttd =
+              cda_rail::Network::get_intersecting_ttd(p, ttd_sections);
+          for (const auto& [ttd_index, e_index] : intersecting_ttd) {
+            // TODO
+          }
         }
       }
     }
