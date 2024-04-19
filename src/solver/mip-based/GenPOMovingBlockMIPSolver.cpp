@@ -59,9 +59,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   PLOGD << "Fix numerical issues with small coefficients";
   // TODO: Can we prevent this from being necessary by rounding at the source.
   // On the other hand, this does not take long to fix.
+  // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   size_t       num_fixed   = 0;
   const double integer_tol = model->getEnv().get(GRB_DoubleParam_IntFeasTol);
-  auto         vars_tmp    = model->getVars();
+  auto*        vars_tmp    = model->getVars();
   const int    num_vars    = model->get(GRB_IntAttr_NumVars);
   for (size_t i = 0; i < num_vars; i++) {
     auto col_v = model->getCol(vars_tmp[i]);
@@ -73,6 +74,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
       }
     }
   }
+  // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   PLOGD << "Fixed " << num_fixed << " coefficients";
 
   PLOGI << "Model created. Optimize.";
