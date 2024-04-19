@@ -240,10 +240,17 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto& edge = instance.const_n().get_edge(e);
       const auto& edge_name =
           instance.const_n().get_edge_name(edge.source, edge.target);
-      const auto& v_1 = velocity_extensions.at(tr).at(edge.source);
-      const auto& v_2 = velocity_extensions.at(tr).at(edge.target);
+      const auto& v_1           = velocity_extensions.at(tr).at(edge.source);
+      const auto& v_2           = velocity_extensions.at(tr).at(edge.target);
+      const auto  tmp_max_speed = std::min(train.max_speed, edge.max_speed);
       for (size_t i = 0; i < v_1.size(); i++) {
+        if (v_1.at(i) > tmp_max_speed) {
+          continue;
+        }
         for (size_t j = 0; j < v_2.size(); j++) {
+          if (v_2.at(j) > tmp_max_speed) {
+            continue;
+          }
           if (cda_rail::possible_by_eom(v_1.at(i), v_2.at(j),
                                         train.acceleration, train.deceleration,
                                         edge.length)) {
@@ -440,8 +447,15 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto&      v2_values  = velocity_extensions.at(tr).at(edge.target);
       const GRBLinExpr lhs        = vars["x"](tr, e);
       GRBLinExpr       rhs        = 0;
+      const auto tmp_max_speed = std::min(tr_object.max_speed, edge.max_speed);
       for (size_t i = 0; i < v1_values.size(); i++) {
+        if (v1_values.at(i) > tmp_max_speed) {
+          continue;
+        }
         for (size_t j = 0; j < v2_values.size(); j++) {
+          if (v2_values.at(j) > tmp_max_speed) {
+            continue;
+          }
           if (cda_rail::possible_by_eom(v1_values.at(i), v2_values.at(j),
                                         tr_object.acceleration,
                                         tr_object.deceleration, edge.length)) {
@@ -516,7 +530,15 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               const auto& edge = instance.const_n().get_edge(e);
               const auto& v2_values =
                   velocity_extensions.at(tr).at(edge.source);
+              const auto tmp_max_speed =
+                  std::min(tr_object.max_speed, edge.max_speed);
+              if (v1_values.at(i) > tmp_max_speed) {
+                continue;
+              }
               for (size_t j = 0; j < v2_values.size(); j++) {
+                if (v2_values.at(j) > tmp_max_speed) {
+                  continue;
+                }
                 if (cda_rail::possible_by_eom(v2_values.at(j), v1_values.at(i),
                                               tr_object.acceleration,
                                               tr_object.deceleration,
@@ -531,9 +553,17 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                           edges_used_by_train.end(),
                           e) != edges_used_by_train.end()) {
               const auto& edge = instance.const_n().get_edge(e);
+              const auto  tmp_max_speed =
+                  std::min(tr_object.max_speed, edge.max_speed);
+              if (v1_values.at(i) > tmp_max_speed) {
+                continue;
+              }
               const auto& v2_values =
                   velocity_extensions.at(tr).at(edge.target);
               for (size_t j = 0; j < v2_values.size(); j++) {
+                if (v2_values.at(j) > tmp_max_speed) {
+                  continue;
+                }
                 if (cda_rail::possible_by_eom(v1_values.at(i), v2_values.at(j),
                                               tr_object.acceleration,
                                               tr_object.deceleration,
@@ -584,18 +614,25 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto& tr_object = instance.get_train_list().get_train(tr);
     for (const auto& e :
          instance.edges_used_by_train(tr, model_detail.fix_routes, false)) {
-      const auto& edge      = instance.const_n().get_edge(e);
-      const auto& v1_values = velocity_extensions.at(tr).at(edge.source);
-      const auto& v2_values = velocity_extensions.at(tr).at(edge.target);
+      const auto& edge          = instance.const_n().get_edge(e);
+      const auto& v1_values     = velocity_extensions.at(tr).at(edge.source);
+      const auto& v2_values     = velocity_extensions.at(tr).at(edge.target);
+      const auto  tmp_max_speed = std::min(tr_object.max_speed, edge.max_speed);
       for (size_t i = 0; i < v1_values.size(); i++) {
+        if (v1_values.at(i) > tmp_max_speed) {
+          continue;
+        }
         for (size_t j = 0; j < v2_values.size(); j++) {
+          if (v2_values.at(j) > tmp_max_speed) {
+            continue;
+          }
           if (cda_rail::possible_by_eom(v1_values.at(i), v2_values.at(j),
                                         tr_object.acceleration,
                                         tr_object.deceleration, edge.length)) {
             // t_front_arrival >= t_rear_departure + minimal travel time if arc
             // is used
             const auto& min_t_arc = cda_rail::min_travel_time(
-                v1_values.at(i), v2_values.at(j), edge.max_speed,
+                v1_values.at(i), v2_values.at(j), tmp_max_speed,
                 tr_object.acceleration, tr_object.deceleration, edge.length);
             const auto& max_t_arc = cda_rail::max_travel_time(
                 v1_values.at(i), v2_values.at(j), V_MIN, tr_object.acceleration,
@@ -656,7 +693,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           const auto& v1_velocities =
               velocity_extensions.at(tr).at(e_in_object.source);
           assert(velocity_extensions.at(tr).at(v).at(0) == 0);
+          const auto tmp_max_speed =
+              std::min(tr_object.max_speed, e_in_object.max_speed);
           for (size_t i = 0; i < v1_velocities.size(); i++) {
+            if (v1_velocities.at(i) > tmp_max_speed) {
+              continue;
+            }
             if (cda_rail::possible_by_eom(
                     v1_velocities.at(i), 0, tr_object.acceleration,
                     tr_object.deceleration, e_in_object.length)) {
@@ -672,7 +714,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           const auto& v2_velocities =
               velocity_extensions.at(tr).at(e_out_object.target);
           assert(velocity_extensions.at(tr).at(v).at(0) == 0);
+          const auto tmp_max_speed =
+              std::min(tr_object.max_speed, e_out_object.max_speed);
           for (size_t i = 0; i < v2_velocities.size(); i++) {
+            if (v2_velocities.at(i) > tmp_max_speed) {
+              continue;
+            }
             if (cda_rail::possible_by_eom(
                     0, v2_velocities.at(i), tr_object.acceleration,
                     tr_object.deceleration, e_out_object.length)) {
@@ -775,9 +822,17 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 tr_object.deceleration, tr_object.length, false);
             for (const auto& e_in : relevant_in_edges) {
               const auto& e_in_object = instance.const_n().get_edge(e_in);
+              const auto  tmp_max_speed =
+                  std::min(tr_object.max_speed, e_in_object.max_speed);
+              if (v_exit_velocity > tmp_max_speed) {
+                continue;
+              }
               const auto& v1_velocities =
                   velocity_extensions.at(tr).at(e_in_object.source);
               for (size_t j = 0; j < v1_velocities.size(); j++) {
+                if (v1_velocities.at(j) > tmp_max_speed) {
+                  continue;
+                }
                 if (cda_rail::possible_by_eom(
                         v1_velocities.at(j), v_exit_velocity,
                         tr_object.acceleration, tr_object.deceleration,
@@ -847,7 +902,13 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             const auto v_max_rel_e =
                 std::min(last_edge_obj.max_speed, tr_object.max_speed);
             for (size_t i = 0; i < v_0_velocities.size(); i++) {
+              if (v_0_velocities.at(i) > v_max_rel_e) {
+                continue;
+              }
               for (size_t j = 0; j < v_1_velocities.size(); j++) {
+                if (v_1_velocities.at(j) > v_max_rel_e) {
+                  continue;
+                }
                 if (cda_rail::possible_by_eom(
                         v_0_velocities.at(i), v_1_velocities.at(j),
                         tr_object.acceleration, tr_object.deceleration,
@@ -1035,11 +1096,19 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           GRBLinExpr  edge_path_expr = 0;
           const auto& e_1            = p.front();
           const auto& e_1_obj        = instance.const_n().get_edge(e_1);
+          const auto  tmp_max_speed =
+              std::min(tr_object.max_speed, e_1_obj.max_speed);
+          if (vel > tmp_max_speed) {
+            continue;
+          }
           const auto& v_target_velocities =
               velocity_extensions.at(tr).at(e_1_obj.target);
           for (size_t v_target_index = 0;
                v_target_index < v_target_velocities.size(); v_target_index++) {
             const auto& vel_target = v_target_velocities.at(v_target_index);
+            if (vel_target > tmp_max_speed) {
+              continue;
+            }
             if (cda_rail::possible_by_eom(
                     vel, vel_target, tr_object.acceleration,
                     tr_object.deceleration, e_1_obj.length)) {
@@ -1067,13 +1136,13 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 std::max(t_bound, ub_timing_variable(tr2));
 
             const GRBLinExpr lhs =
-                vars["t_front_arrival"](tr, v) +
+                vars["t_front_departure"](tr, v) +
                 t_bound_tmp * (static_cast<double>(p.size()) - edge_path_expr) +
                 t_bound_tmp * (1 - vars["order"](tr, tr2, p.back()));
             std::vector<GRBLinExpr> rhs;
             if (p_len + EPS >= bd && p_len - EPS <= bd) {
               // Target vertex is exactly the desired moving authority
-              // t_front_arrival(tr, v) >= t_rear_departure(tr2, target) if
+              // t_front_departure(tr, v) >= t_rear_departure(tr2, target) if
               // order(tr, tr2, e) = 1 and path p chosen.
               rhs.emplace_back(
                   vars["t_rear_departure"](tr2, last_edge_object.target));
@@ -1096,11 +1165,17 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                    v_tr2_source_index++) {
                 const auto& vel_tr2_source =
                     v_tr2_source_velocities.at(v_tr2_source_index);
+                if (vel_tr2_source > max_speed) {
+                  continue;
+                }
                 for (size_t v_tr2_target_index = 0;
                      v_tr2_target_index < v_tr2_target_velocities.size();
                      v_tr2_target_index++) {
                   const auto& vel_tr2_target =
                       v_tr2_target_velocities.at(v_tr2_target_index);
+                  if (vel_tr2_target > max_speed) {
+                    continue;
+                  }
                   if (cda_rail::possible_by_eom(vel_tr2_source, vel_tr2_target,
                                                 tr2_object.acceleration,
                                                 tr2_object.deceleration,
