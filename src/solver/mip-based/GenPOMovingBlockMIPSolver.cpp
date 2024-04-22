@@ -872,20 +872,85 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           assert(p_len_last_vertex <= tr_object.length);
           const auto& last_edge     = p.back();
           const auto& last_edge_obj = instance.const_n().get_edge(last_edge);
+
+          GRBLinExpr lhs = vars["t_rear_departure"](tr, v) +
+                           M * static_cast<double>(p.size());
+          for (const auto& e_p : p) {
+            lhs -= M * vars["x"](tr, e_p);
+          }
+
           if (last_edge_obj.target == exit &&
               last_edge_obj.length + p_len_last_vertex < tr_object.length) {
             // The train has partially left the network through the last edge
-            // TODO
+            const auto outside_len =
+                tr_object.length - p_len_last_vertex - last_edge_obj.length;
+            assert(outside_len >= 0);
+            assert(outside_len <= tr_object.length);
+            const auto& v_exit_velocities = velocity_extensions.at(tr).at(exit);
+
+            const auto tr_max_speed_tmp =
+                std::min({tr_object.max_speed,
+                          instance.const_n().maximal_vertex_speed(
+                              exit, edges_used_by_train),
+                          last_edge_obj.max_speed});
+
+            GRBLinExpr min_travel_time_expr = 0;
+            GRBLinExpr max_travel_time_expr = 0;
+            for (size_t i = 0; i < v_exit_velocities.size(); i++) {
+              const auto& v_exit_velocity = v_exit_velocities.at(i);
+              if (v_exit_velocity > tr_max_speed_tmp) {
+                continue;
+              }
+              if (cda_rail::possible_by_eom(
+                      v_exit_velocity, v_n, tr_object.acceleration,
+                      tr_object.deceleration, tr_object.length)) {
+                const auto min_t_to_required_pos =
+                    cda_rail::min_travel_time_from_start(
+                        v_exit_velocity, v_n, tr_max_speed_tmp,
+                        tr_object.acceleration, tr_object.deceleration,
+                        tr_object.length, outside_len);
+                const auto max_t_to_required_pos =
+                    cda_rail::max_travel_time_from_start(
+                        v_exit_velocity, v_n, V_MIN, tr_object.acceleration,
+                        tr_object.deceleration, tr_object.length, outside_len,
+                        false);
+                if (v_exit_velocity > tr_max_speed_tmp) {
+                  continue;
+                }
+                const auto& v1_velocities =
+                    velocity_extensions.at(tr).at(last_edge_obj.source);
+                for (size_t j = 0; j < v1_velocities.size(); j++) {
+                  if (v1_velocities.at(j) > tr_max_speed_tmp) {
+                    continue;
+                  }
+                  if (cda_rail::possible_by_eom(
+                          v1_velocities.at(j), v_exit_velocity,
+                          tr_object.acceleration, tr_object.deceleration,
+                          last_edge_obj.length)) {
+                    min_travel_time_expr +=
+                        vars["y"](tr, last_edge, j, i) * min_t_to_required_pos;
+                    max_travel_time_expr +=
+                        vars["y"](tr, last_edge, j, i) * max_t_to_required_pos;
+                  }
+                }
+              }
+            }
+
+            model->addConstr(lhs >= vars["t_front_departure"](tr, exit) +
+                                        min_travel_time_expr,
+                             "rear_departure_half_leaving_1_" + tr_object.name +
+                                 "_" + instance.const_n().get_vertex(v).name +
+                                 "_" + std::to_string(p_ind));
+            model->addConstr(lhs <= vars["t_front_departure"](tr, exit) +
+                                        max_travel_time_expr,
+                             "rear_departure_half_leaving_2_" + tr_object.name +
+                                 "_" + instance.const_n().get_vertex(v).name +
+                                 "_" + std::to_string(p_ind));
+
           } else {
             // The relevant point is on an actual edge
             assert(last_edge_obj.length + p_len_last_vertex >=
                    tr_object.length);
-
-            GRBLinExpr lhs = vars["t_rear_departure"](tr, v) +
-                             M * static_cast<double>(p.size());
-            for (const auto& e_p : p) {
-              lhs -= M * vars["x"](tr, e_p);
-            }
 
             const auto rel_pt_on_edge = tr_object.length - p_len_last_vertex;
             const auto v_0_velocities =
