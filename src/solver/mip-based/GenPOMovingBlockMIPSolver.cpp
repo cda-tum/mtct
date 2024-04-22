@@ -1077,8 +1077,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto& tr_object = instance.get_train_list().get_train(tr);
     const auto  tr_used_edges =
         instance.edges_used_by_train(tr, model_detail.fix_routes, false);
-    const auto exit_node = instance.get_schedule(tr).get_exit();
-    const auto t_bound   = ub_timing_variable(tr);
+    // const auto exit_node = instance.get_schedule(tr).get_exit();
+    const auto t_bound = ub_timing_variable(tr);
 
     for (const auto v :
          instance.vertices_used_by_train(tr, model_detail.fix_routes, false)) {
