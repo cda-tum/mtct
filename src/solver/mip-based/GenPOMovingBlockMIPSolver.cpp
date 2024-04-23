@@ -1143,7 +1143,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto  tr_used_edges =
         instance.edges_used_by_train(tr, model_detail.fix_routes, false);
     // const auto exit_node = instance.get_schedule(tr).get_exit();
-    const auto t_bound = ub_timing_variable(tr);
+    const auto& tr_schedule_object = instance.get_schedule(tr);
+    const auto& entry_node         = tr_schedule_object.get_entry();
+    const auto& entry_speed        = tr_schedule_object.get_v_0();
+    const auto  t_bound            = ub_timing_variable(tr);
 
     for (const auto v :
          instance.vertices_used_by_train(tr, model_detail.fix_routes, false)) {
@@ -1151,9 +1154,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       for (size_t v_source_index = 0; v_source_index < v_velocities.size();
            v_source_index++) {
         const auto& vel = v_velocities.at(v_source_index);
-        const auto  bd  = vel * vel / (2 * tr_object.deceleration);
-        // TODO?: What if bd is outside network. Then relation to point where ma
-        // was set to exit node?
+        if (vel > tr_object.max_speed) {
+          continue;
+        }
+        const auto bd = vel * vel / (2 * tr_object.deceleration);
+        // What if bd is outside network. Then relation to point where ma was
+        // set to exit node or leave as it is?
         const auto brake_paths =
             instance.const_n().all_paths_of_length_starting_in_vertex(
                 v, std::max(EPS, bd), {},
@@ -1295,7 +1301,104 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           const auto intersecting_ttd =
               cda_rail::Network::get_intersecting_ttd(p, ttd_sections);
           for (const auto& [ttd_index, e_index] : intersecting_ttd) {
-            // TODO
+            const auto& p_tmp =
+                std::vector<size_t>(p.begin(), p.begin() + e_index);
+            const auto p_tmp_len = std::accumulate(
+                p_tmp.begin(), p_tmp.end(), 0.0,
+                [this](double sum, const auto& edge_index) {
+                  return sum + instance.const_n().get_edge(edge_index).length;
+                });
+            GRBLinExpr edge_tmp_path_expr = 0;
+            for (const auto& e_tmp : p_tmp) {
+              edge_tmp_path_expr += vars["x"](tr, e_tmp);
+            }
+
+            const auto obd = bd - p_tmp_len;
+
+            assert(obd >= 0);
+
+            const auto tr_on_ttd = instance.trains_in_section(
+                ttd_sections.at(ttd_index), model_detail.fix_routes, false);
+            for (const auto& tr2 : tr_on_ttd) {
+              if (tr == tr2) {
+                continue;
+              }
+
+              const auto t_bound_tmp =
+                  std::max(t_bound, ub_timing_variable(tr2));
+
+              GRBLinExpr lhs_from_rear =
+                  vars["t_front_departure"](tr, v) +
+                  t_bound_tmp *
+                      (static_cast<double>(p_tmp.size()) - edge_tmp_path_expr);
+              const GRBLinExpr rhs =
+                  vars["t_ttd_departure"](tr2, ttd_index) +
+                  t_bound_tmp * (vars["order_ttd"](tr, tr2, ttd_index) - 1);
+
+              bool is_relevant = obd < GRB_EPS;
+
+              if (obd >= GRB_EPS) {
+                assert(vel >= GRB_EPS);
+                // Get all possible edges before v
+                if (v == entry_node) {
+                  // Train is entering the network
+                  assert(v_velocities.size() == 1);
+                  // Assume previous constant line speed
+                  lhs_from_rear -= obd / vel;
+                  is_relevant = true;
+                } else {
+                  std::vector<size_t> rel_in_edges;
+                  for (const auto& e : instance.const_n().in_edges(v)) {
+                    if (std::find(tr_used_edges.begin(), tr_used_edges.end(),
+                                  e) != tr_used_edges.end()) {
+                      rel_in_edges.push_back(e);
+                    }
+                  }
+                  assert(rel_in_edges.size() > 0);
+                  for (const auto& e_before_v : rel_in_edges) {
+                    const auto& e_before_v_obj =
+                        instance.const_n().get_edge(e_before_v);
+                    const auto& v_before_v = e_before_v_obj.source;
+                    const auto  v_before_v_velocities =
+                        velocity_extensions.at(tr).at(v_before_v);
+                    const auto& e_before_v_tmp_max =
+                        std::min(tmp_max_speed, e_before_v_obj.max_speed);
+                    for (size_t v_before_v_index = 0;
+                         v_before_v_index < v_before_v_velocities.size();
+                         v_before_v_index++) {
+                      const auto& vel_before_v =
+                          v_before_v_velocities.at(v_before_v_index);
+                      if (vel_before_v > e_before_v_tmp_max ||
+                          vel_before_v * vel_before_v /
+                                  (2 * tr_object.deceleration) >=
+                              e_before_v_obj.length + p_tmp_len) {
+                        continue;
+                      }
+                      if (cda_rail::possible_by_eom(
+                              vel_before_v, vel, tr_object.acceleration,
+                              tr_object.deceleration, e_before_v_obj.length)) {
+                        lhs_from_rear -=
+                            vars["y"](tr, e_before_v, v_before_v_index,
+                                      v_source_index) *
+                            cda_rail::min_time_from_rear_to_ma_point(
+                                vel_before_v, vel, V_MIN, e_before_v_tmp_max,
+                                tr_object.acceleration, tr_object.deceleration,
+                                e_before_v_obj.length, obd);
+                        is_relevant = true;
+                        // TODO: timing_from_front
+                      }
+                    }
+                  }
+                }
+              }
+              model->addConstr(
+                  lhs_from_rear >= rhs,
+                  "headway_ttd_" + tr_object.name + "_" +
+                      instance.get_train_list().get_train(tr2).name + "_" +
+                      instance.const_n().get_vertex(v).name + "_" +
+                      std::to_string(vel) + "_" + std::to_string(p_index) +
+                      "_" + std::to_string(ttd_index));
+            }
           }
         }
       }
