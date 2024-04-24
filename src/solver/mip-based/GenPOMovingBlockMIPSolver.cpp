@@ -1507,7 +1507,69 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_vertex_headway_constraints() {
-  // TODO
+  // If a line headway is specified (most importantly on exit nodes), then obey
+  // This only takes into account if the same previous or next edge is used
+  for (size_t e = 0; e < num_edges; e++) {
+    const auto& tr_on_edge = instance.trains_on_edge_mixed_routing(
+        e, model_detail.fix_routes, false);
+    if (tr_on_edge.size() <= 1) {
+      continue;
+    }
+
+    const auto& e_object        = instance.const_n().get_edge(e);
+    const auto& source_v        = e_object.source;
+    const auto& target_v        = e_object.target;
+    const auto& source_v_object = instance.const_n().get_vertex(source_v);
+    const auto& target_v_object = instance.const_n().get_vertex(target_v);
+
+    for (size_t tr1_index = 1; tr1_index < tr_on_edge.size(); tr1_index++) {
+      const auto& tr1         = tr_on_edge.at(tr1_index);
+      const auto  tr1_t_bound = ub_timing_variable(tr1);
+      for (size_t tr2_index = 0; tr2_index < tr1_index; tr2_index++) {
+        const auto& tr2         = tr_on_edge.at(tr2_index);
+        const auto  tr2_t_bound = ub_timing_variable(tr2);
+        const auto  t_bound     = std::max(tr1_t_bound, tr2_t_bound);
+        // Add headway constraints to both source and target vertices depending
+        // on train order
+        model->addConstr(
+            vars["t_front_departure"](tr1, source_v) +
+                    t_bound * (1 - vars["order"](tr1, tr2, e)) >=
+                vars["t_rear_departure"](tr2, source_v) +
+                    source_v_object.headway,
+            "headway_vertex_source_1_" +
+                instance.get_train_list().get_train(tr1).name + "_" +
+                instance.get_train_list().get_train(tr2).name + "_" +
+                source_v_object.name + "-" + target_v_object.name);
+        model->addConstr(
+            vars["t_front_departure"](tr2, source_v) +
+                    t_bound * (1 - vars["order"](tr2, tr1, e)) >=
+                vars["t_rear_departure"](tr1, source_v) +
+                    source_v_object.headway,
+            "headway_vertex_source_2_" +
+                instance.get_train_list().get_train(tr1).name + "_" +
+                instance.get_train_list().get_train(tr2).name + "_" +
+                source_v_object.name + "-" + target_v_object.name);
+        model->addConstr(
+            vars["t_front_departure"](tr1, target_v) +
+                    t_bound * (1 - vars["order"](tr1, tr2, e)) >=
+                vars["t_rear_departure"](tr2, target_v) +
+                    target_v_object.headway,
+            "headway_vertex_target_1_" +
+                instance.get_train_list().get_train(tr1).name + "_" +
+                instance.get_train_list().get_train(tr2).name + "_" +
+                source_v_object.name + "-" + target_v_object.name);
+        model->addConstr(
+            vars["t_front_departure"](tr2, target_v) +
+                    t_bound * (1 - vars["order"](tr2, tr1, e)) >=
+                vars["t_rear_departure"](tr1, target_v) +
+                    target_v_object.headway,
+            "headway_vertex_target_2_" +
+                instance.get_train_list().get_train(tr1).name + "_" +
+                instance.get_train_list().get_train(tr2).name + "_" +
+                source_v_object.name + "-" + target_v_object.name);
+      }
+    }
+  }
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
