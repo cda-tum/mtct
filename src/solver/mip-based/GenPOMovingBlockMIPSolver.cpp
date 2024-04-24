@@ -1385,19 +1385,41 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                 tr_object.acceleration, tr_object.deceleration,
                                 e_before_v_obj.length, obd);
                         is_relevant = true;
-                        // TODO: timing_from_front
+
+                        const GRBLinExpr lhs_from_front =
+                            vars["t_front_departure"](tr, v_before_v) +
+                            cda_rail::min_time_from_front_to_ma_point(
+                                vel_before_v, vel, e_before_v_tmp_max,
+                                tr_object.acceleration, tr_object.deceleration,
+                                e_before_v_obj.length, obd) +
+                            t_bound_tmp *
+                                (static_cast<double>(p_tmp.size()) + 1 -
+                                 vars["y"](tr, e_before_v, v_before_v_index,
+                                           v_source_index) -
+                                 edge_tmp_path_expr);
+                        model->addConstr(
+                            lhs_from_front >= rhs,
+                            "headway_ttd_from_front_" + tr_object.name + "_" +
+                                instance.get_train_list().get_train(tr2).name +
+                                "_" + instance.const_n().get_vertex(v).name +
+                                "_" + std::to_string(vel) + "_" +
+                                std::to_string(p_index) + "_" +
+                                std::to_string(e_before_v) + "_" +
+                                std::to_string(vel_before_v));
                       }
                     }
                   }
                 }
               }
-              model->addConstr(
-                  lhs_from_rear >= rhs,
-                  "headway_ttd_" + tr_object.name + "_" +
-                      instance.get_train_list().get_train(tr2).name + "_" +
-                      instance.const_n().get_vertex(v).name + "_" +
-                      std::to_string(vel) + "_" + std::to_string(p_index) +
-                      "_" + std::to_string(ttd_index));
+              if (is_relevant) {
+                model->addConstr(
+                    lhs_from_rear >= rhs,
+                    "headway_ttd_" + tr_object.name + "_" +
+                        instance.get_train_list().get_train(tr2).name + "_" +
+                        instance.const_n().get_vertex(v).name + "_" +
+                        std::to_string(vel) + "_" + std::to_string(p_index) +
+                        "_" + std::to_string(ttd_index));
+              }
             }
           }
         }
