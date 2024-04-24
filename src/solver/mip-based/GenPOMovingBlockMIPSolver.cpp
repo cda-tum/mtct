@@ -1142,10 +1142,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto& tr_object = instance.get_train_list().get_train(tr);
     const auto  tr_used_edges =
         instance.edges_used_by_train(tr, model_detail.fix_routes, false);
-    // const auto exit_node = instance.get_schedule(tr).get_exit();
     const auto& tr_schedule_object = instance.get_schedule(tr);
     const auto& entry_node         = tr_schedule_object.get_entry();
-    const auto& entry_speed        = tr_schedule_object.get_v_0();
     const auto  t_bound            = ub_timing_variable(tr);
 
     for (const auto v :
@@ -1354,7 +1352,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                       rel_in_edges.push_back(e);
                     }
                   }
-                  assert(rel_in_edges.size() > 0);
+                  assert(!rel_in_edges.empty());
                   for (const auto& e_before_v : rel_in_edges) {
                     const auto& e_before_v_obj =
                         instance.const_n().get_edge(e_before_v);
