@@ -27,7 +27,7 @@ struct Train {
   Train(std::string name, int length, double max_speed, double acceleration,
         double deceleration, bool tim = true)
       : name(std::move(name)), length(length), max_speed(max_speed),
-        acceleration(acceleration), deceleration(deceleration), tim(tim){};
+        acceleration(acceleration), deceleration(deceleration), tim(tim) {};
 };
 
 class TrainList {
@@ -44,9 +44,9 @@ public:
 
   explicit TrainList(const std::filesystem::path& p);
   explicit TrainList(const std::string& path)
-      : TrainList(std::filesystem::path(path)){};
+      : TrainList(std::filesystem::path(path)) {};
   explicit TrainList(const char* path)
-      : TrainList(std::filesystem::path(path)){};
+      : TrainList(std::filesystem::path(path)) {};
 
   // Rule of 5
   TrainList(const TrainList& other)                = default;
