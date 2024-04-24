@@ -27,9 +27,9 @@ class GeneralProblemInstance {
 protected:
   GeneralProblemInstance() = default;
   explicit GeneralProblemInstance(Network network)
-      : network(std::move(network)){};
+      : network(std::move(network)) {};
   explicit GeneralProblemInstance(const std::filesystem::path& path)
-      : network(Network(path / "network")){};
+      : network(Network(path / "network")) {};
 
   void export_network(const std::filesystem::path& path) const {
     if (!is_directory_and_create(path)) {
@@ -77,12 +77,12 @@ protected:
       RouteMap routes) // according to linter, large objects by const reference,
                        // others using std::move
       : GeneralProblemInstance(network), timetable(timetable),
-        routes(std::move(routes)){};
+        routes(std::move(routes)) {};
   explicit GeneralProblemInstanceWithScheduleAndRoutes(
       const std::filesystem::path& path)
       : GeneralProblemInstance(path),
         timetable(T(path / "timetable", this->const_n())),
-        routes(RouteMap(path / "routes", this->const_n())){};
+        routes(RouteMap(path / "routes", this->const_n())) {};
 
   [[nodiscard]] T&              editable_timetable() { return timetable; };
   [[nodiscard]] RouteMap&       editable_routes() { return routes; };
@@ -547,10 +547,10 @@ protected:
   bool           has_sol = false;
 
   SolGeneralProblemInstance() = default;
-  explicit SolGeneralProblemInstance(const T& instance) : instance(instance){};
+  explicit SolGeneralProblemInstance(const T& instance) : instance(instance) {};
   SolGeneralProblemInstance(const T& instance, SolutionStatus status,
                             double obj, bool has_sol)
-      : instance(instance), status(status), obj(obj), has_sol(has_sol){};
+      : instance(instance), status(status), obj(obj), has_sol(has_sol) {};
 
   void export_general_solution_data(const std::filesystem::path& p,
                                     bool export_instance,
@@ -657,11 +657,11 @@ protected:
 public:
   SolGeneralProblemInstanceWithScheduleAndRoutes() = default;
   explicit SolGeneralProblemInstanceWithScheduleAndRoutes(const T& instance)
-      : SolGeneralProblemInstance<T>(instance){};
+      : SolGeneralProblemInstance<T>(instance) {};
   SolGeneralProblemInstanceWithScheduleAndRoutes(const T&       instance,
                                                  SolutionStatus status,
                                                  double obj, bool has_sol)
-      : SolGeneralProblemInstance<T>(instance, status, obj, has_sol){};
+      : SolGeneralProblemInstance<T>(instance, status, obj, has_sol) {};
 
   // RouteMap functions
   void reset_routes() {

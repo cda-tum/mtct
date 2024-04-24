@@ -18,11 +18,11 @@ public:
   // Constructors
   VSSGenerationTimetable() = default;
   explicit VSSGenerationTimetable(const std::filesystem::path& p)
-      : GeneralProblemInstanceWithScheduleAndRoutes<Timetable>(p){};
+      : GeneralProblemInstanceWithScheduleAndRoutes<Timetable>(p) {};
   explicit VSSGenerationTimetable(const std::string& path)
-      : VSSGenerationTimetable(std::filesystem::path(path)){};
+      : VSSGenerationTimetable(std::filesystem::path(path)) {};
   explicit VSSGenerationTimetable(const char* path)
-      : VSSGenerationTimetable(std::filesystem::path(path)){};
+      : VSSGenerationTimetable(std::filesystem::path(path)) {};
   ~VSSGenerationTimetable() = default;
 
   [[nodiscard]] std::pair<size_t, size_t>

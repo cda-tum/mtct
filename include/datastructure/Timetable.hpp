@@ -74,11 +74,11 @@ public:
   // Constructors
   Timetable() = default;
   Timetable(const std::filesystem::path& p, const Network& network)
-      : GeneralTimetable(p, network){};
+      : GeneralTimetable(p, network) {};
   Timetable(const std::string& path, const Network& network)
-      : Timetable(std::filesystem::path(path), network){};
+      : Timetable(std::filesystem::path(path), network) {};
   Timetable(const char* path, const Network& network)
-      : Timetable(std::filesystem::path(path), network){};
+      : Timetable(std::filesystem::path(path), network) {};
   virtual ~Timetable() = default;
 
   [[nodiscard]] std::pair<size_t, size_t>

@@ -30,9 +30,9 @@ struct Vertex {
 
   // Constructors
   Vertex(std::string name, VertexType type)
-      : name(std::move(name)), type(type), headway(0.0){};
+      : name(std::move(name)), type(type), headway(0.0) {};
   Vertex(std::string name, VertexType type, double headway)
-      : name(std::move(name)), type(type), headway(headway){};
+      : name(std::move(name)), type(type), headway(headway) {};
 };
 
 struct Edge {
@@ -59,7 +59,7 @@ struct Edge {
        double min_stop_block_length = 1)
       : source(source), target(target), length(length), max_speed(max_speed),
         breakable(breakable), min_block_length(min_block_length),
-        min_stop_block_length(min_stop_block_length){};
+        min_stop_block_length(min_stop_block_length) {};
 };
 
 class Network {
@@ -137,8 +137,8 @@ public:
 
   explicit Network(const std::filesystem::path& p);
   explicit Network(const std::string& path)
-      : Network(std::filesystem::path(path)){};
-  explicit Network(const char* path) : Network(std::filesystem::path(path)){};
+      : Network(std::filesystem::path(path)) {};
+  explicit Network(const char* path) : Network(std::filesystem::path(path)) {};
 
   // Rule of 5
   Network(const Network& other)                = default;
