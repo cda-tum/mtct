@@ -30,9 +30,9 @@ public:
   StationList() = default;
   StationList(const std::filesystem::path& p, const Network& network);
   StationList(const std::string& path, const Network& network)
-      : StationList(std::filesystem::path(path), network){};
+      : StationList(std::filesystem::path(path), network) {};
   StationList(const char* path, const Network& network)
-      : StationList(std::filesystem::path(path), network){};
+      : StationList(std::filesystem::path(path), network) {};
 
   // Rule of 5
   StationList(const StationList& other)            = default;

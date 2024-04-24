@@ -401,9 +401,9 @@ public:
     this->sort_stops();
   };
   GeneralTimetable(const std::string& path, const Network& network)
-      : GeneralTimetable(std::filesystem::path(path), network){};
+      : GeneralTimetable(std::filesystem::path(path), network) {};
   GeneralTimetable(const char* path, const Network& network)
-      : GeneralTimetable(std::filesystem::path(path), network){};
+      : GeneralTimetable(std::filesystem::path(path), network) {};
   GeneralTimetable(StationList station_list, TrainList train_list,
                    const std::vector<T>& schedules)
       : station_list(std::move(station_list)),

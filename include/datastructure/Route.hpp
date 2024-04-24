@@ -81,9 +81,9 @@ public:
   RouteMap() = default;
   RouteMap(const std::filesystem::path& p, const Network& network);
   RouteMap(const std::string& path, const Network& network)
-      : RouteMap(std::filesystem::path(path), network){};
+      : RouteMap(std::filesystem::path(path), network) {};
   RouteMap(const char* path, const Network& network)
-      : RouteMap(std::filesystem::path(path), network){};
+      : RouteMap(std::filesystem::path(path), network) {};
 
   // Rule of 5
   RouteMap(const RouteMap& other)            = default;
