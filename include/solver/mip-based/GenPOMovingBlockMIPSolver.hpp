@@ -105,22 +105,22 @@ public:
       const instances::GeneralPerformanceOptimizationInstance& instance)
       : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
                          instances::SolGeneralPerformanceOptimizationInstance>(
-            instance){};
+            instance) {};
 
   explicit GenPOMovingBlockMIPSolver(const std::filesystem::path& p)
       : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
                          instances::SolGeneralPerformanceOptimizationInstance>(
-            p){};
+            p) {};
 
   explicit GenPOMovingBlockMIPSolver(const std::string& path)
       : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
                          instances::SolGeneralPerformanceOptimizationInstance>(
-            path){};
+            path) {};
 
   explicit GenPOMovingBlockMIPSolver(const char* path)
       : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
                          instances::SolGeneralPerformanceOptimizationInstance>(
-            path){};
+            path) {};
 
   ~GenPOMovingBlockMIPSolver() = default;
 
