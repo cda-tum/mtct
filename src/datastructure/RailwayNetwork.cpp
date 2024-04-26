@@ -966,13 +966,17 @@ cda_rail::Network::separate_edge_at(
                                   distances_from_source.front(), edge.max_speed,
                                   new_edge_breakable, edge.min_block_length,
                                   edge.min_stop_block_length));
+  update_new_old_edge(new_edges.back(), edge_index, 0);
   for (size_t i = 1; i < distances_from_source.size(); ++i) {
     new_edges.emplace_back(add_edge(
         new_vertices[i - 1], new_vertices[i],
         distances_from_source[i] - distances_from_source[i - 1], edge.max_speed,
         new_edge_breakable, edge.min_block_length, edge.min_stop_block_length));
+    update_new_old_edge(new_edges.back(), edge_index,
+                        distances_from_source[i - 1]);
   }
   change_edge_length(edge_index, edge.length - distances_from_source.back());
+  update_new_old_edge(edge_index, edge_index, distances_from_source.back());
   if (!new_edge_breakable) {
     set_edge_unbreakable(edge_index);
   }
@@ -1010,14 +1014,19 @@ cda_rail::Network::separate_edge_at(
         edge.length - distances_from_source.back(), reverse_edge.max_speed,
         new_edge_breakable, reverse_edge.min_block_length,
         reverse_edge.min_stop_block_length));
+    update_new_old_edge(new_reverse_edges.back(), reverse_edge_index, 0);
     for (size_t i = distances_from_source.size() - 1; i > 0; --i) {
       new_reverse_edges.emplace_back(add_edge(
           new_vertices[i], new_vertices[i - 1],
           distances_from_source[i] - distances_from_source[i - 1],
           reverse_edge.max_speed, new_edge_breakable,
           reverse_edge.min_block_length, reverse_edge.min_stop_block_length));
+      update_new_old_edge(new_reverse_edges.back(), reverse_edge_index,
+                          reverse_edge.length - distances_from_source[i]);
     }
     change_edge_length(reverse_edge_index, distances_from_source.front());
+    update_new_old_edge(reverse_edge_index, reverse_edge_index,
+                        reverse_edge.length - distances_from_source.front());
     if (!new_edge_breakable) {
       set_edge_unbreakable(reverse_edge_index);
     }
@@ -1875,4 +1884,34 @@ std::vector<std::pair<size_t, size_t>> cda_rail::Network::get_intersecting_ttd(
   }
 
   return ret_val;
+}
+
+std::pair<size_t, double>
+cda_rail::Network::get_old_edge(size_t new_edge) const {
+  if (!has_edge(new_edge)) {
+    throw exceptions::EdgeNotExistentException(new_edge);
+  }
+  // If new_edge_to_old_edge_after_transform has no(!) key new_edge, return
+  // (new_edge, 0)
+  if (new_edge_to_old_edge_after_transform.find(new_edge) ==
+      new_edge_to_old_edge_after_transform.end()) {
+    return {new_edge, 0};
+  }
+  return new_edge_to_old_edge_after_transform.at(new_edge);
+}
+
+void cda_rail::Network::update_new_old_edge(size_t new_edge, size_t old_edge,
+                                            double position) {
+  /**
+   * Updates the mapping accordingly
+   */
+  std::pair<size_t, double> old_edge_position = {old_edge, position};
+  if (new_edge_to_old_edge_after_transform.find(old_edge) !=
+      new_edge_to_old_edge_after_transform.end()) {
+    const auto& old_edge_position_before =
+        new_edge_to_old_edge_after_transform.at(old_edge);
+    old_edge_position = {old_edge_position_before.first,
+                         old_edge_position_before.second + position};
+  }
+  new_edge_to_old_edge_after_transform[new_edge] = old_edge_position;
 }

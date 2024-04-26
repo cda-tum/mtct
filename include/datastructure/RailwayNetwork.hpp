@@ -73,6 +73,9 @@ private:
   std::vector<std::vector<size_t>>        successors;
   std::unordered_map<std::string, size_t> vertex_name_to_index;
 
+  std::unordered_map<std::size_t, std::pair<size_t, double>>
+      new_edge_to_old_edge_after_transform;
+
   void        read_graphml(const std::filesystem::path& p);
   static void get_keys(tinyxml2::XMLElement* graphml_body,
                        std::string& breakable, std::string& length,
@@ -94,6 +97,8 @@ private:
   void export_successors_python(const std::filesystem::path& p) const;
   void export_successors_cpp(const std::filesystem::path& p) const;
   void write_successor_set_to_file(std::ofstream& file, size_t i) const;
+
+  void update_new_old_edge(size_t new_edge, size_t old_edge, double position);
 
   std::pair<std::vector<size_t>, std::vector<size_t>>
   separate_edge_private_helper(
@@ -170,6 +175,16 @@ public:
   };
 
   [[nodiscard]] std::vector<size_t> get_vertices_by_type(VertexType type) const;
+
+  [[nodiscard]] std::pair<size_t, double> get_old_edge(size_t new_edge) const;
+  [[nodiscard]] std::pair<size_t, double> get_old_edge(size_t source,
+                                                       size_t target) const {
+    return get_old_edge(get_edge_index(source, target));
+  };
+  [[nodiscard]] std::pair<size_t, double>
+  get_old_edge(const std::string& source, const std::string& target) const {
+    return get_old_edge(get_edge_index(source, target));
+  };
 
   size_t add_vertex(const std::string& name, VertexType type,
                     double headway = 0.0);
