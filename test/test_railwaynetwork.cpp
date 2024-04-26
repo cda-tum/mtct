@@ -1312,9 +1312,9 @@ TEST(Functionality, WriteNetwork) {
 TEST(Functionality, NetworkEdgeSeparation) {
   cda_rail::Network network;
   // Add vertices
-  network.add_vertex("v00", cda_rail::VertexType::TTD);
+  const auto v00 = network.add_vertex("v00", cda_rail::VertexType::TTD);
   network.add_vertex("v01", cda_rail::VertexType::TTD);
-  network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
   network.add_vertex("v2", cda_rail::VertexType::TTD);
   network.add_vertex("v30", cda_rail::VertexType::TTD);
   network.add_vertex("v31", cda_rail::VertexType::TTD);
@@ -1566,6 +1566,20 @@ TEST(Functionality, NetworkEdgeSeparation) {
   EXPECT_TRUE(network.get_successors("v2", "v30").empty());
   // v2->v31 has no successors
   EXPECT_TRUE(network.get_successors("v2", "v31").empty());
+
+  // Check the mapping
+  // Reminder v1 ->(len: 11) v1_v2_0 -> (len: 11) v1_v2_1 -> (len: 11) v1_v2_2
+  // -> (len:11) v2
+  std::pair<size_t, double> expected_pair = {v00_v1, 0};
+  EXPECT_EQ(network.get_old_edge(v00, v1), expected_pair);
+  expected_pair = {v1_v2, 0};
+  EXPECT_EQ(network.get_old_edge("v1", "v1_v2_0"), expected_pair);
+  expected_pair = {v1_v2, 11};
+  EXPECT_EQ(network.get_old_edge("v1_v2_0", "v1_v2_1"), expected_pair);
+  expected_pair = {v1_v2, 22};
+  EXPECT_EQ(network.get_old_edge("v1_v2_1", "v1_v2_2"), expected_pair);
+  expected_pair = {v1_v2, 33};
+  EXPECT_EQ(network.get_old_edge("v1_v2_2", "v2"), expected_pair);
 }
 
 TEST(Functionality, NetworkExceptions) {
@@ -2152,6 +2166,26 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
   // Successors of v1->v00 and v1->v01 are empty
   EXPECT_TRUE(network.get_successors("v1", "v00").empty());
   EXPECT_TRUE(network.get_successors("v1", "v01").empty());
+
+  // Check mapping
+  // Reminder: v1 ->(len: 11) v1_v2_0 -> (len: 11) v1_v2_1 -> (len: 11) v1_v2_2
+  // -> (len:11) v2
+  std::pair<size_t, double> expected_pair = {v1_v2, 0};
+  EXPECT_EQ(network.get_old_edge("v1", "v1_v2_0"), expected_pair);
+  expected_pair = {v1_v2, 11};
+  EXPECT_EQ(network.get_old_edge("v1_v2_0", "v1_v2_1"), expected_pair);
+  expected_pair = {v1_v2, 22};
+  EXPECT_EQ(network.get_old_edge("v1_v2_1", "v1_v2_2"), expected_pair);
+  expected_pair = {v1_v2, 33};
+  EXPECT_EQ(network.get_old_edge("v1_v2_2", "v2"), expected_pair);
+  expected_pair = {v2_v1, 0};
+  EXPECT_EQ(network.get_old_edge("v2", "v1_v2_2"), expected_pair);
+  expected_pair = {v2_v1, 11};
+  EXPECT_EQ(network.get_old_edge("v1_v2_2", "v1_v2_1"), expected_pair);
+  expected_pair = {v2_v1, 22};
+  EXPECT_EQ(network.get_old_edge("v1_v2_1", "v1_v2_0"), expected_pair);
+  expected_pair = {v2_v1, 33};
+  EXPECT_EQ(network.get_old_edge("v1_v2_0", "v1"), expected_pair);
 }
 
 TEST(Functionality, NetworkVerticesByType) {
