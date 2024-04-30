@@ -93,6 +93,10 @@ private:
   void create_vertex_headway_constraints();
   void create_headway_constraints();
 
+  void extract_solution(
+      instances::SolGeneralPerformanceOptimizationInstance& sol) const;
+  double extract_speed(size_t tr, size_t vertex_id) const;
+
 protected:
   void solve_init_gen_po_mb(int time_limit, bool debug_input) {
     this->solve_init_general_mip(time_limit, debug_input);

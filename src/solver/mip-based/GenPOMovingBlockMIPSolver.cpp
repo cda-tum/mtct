@@ -9,6 +9,7 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -78,7 +79,41 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   PLOGD << "Fixed " << num_fixed << " coefficients";
 
   PLOGI << "Model created. Optimize.";
+  if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
+    model_created = std::chrono::high_resolution_clock::now();
+    create_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
+                      model_created - start)
+                      .count();
+
+    auto time_left = time_limit - create_time / 1000;
+    if (time_left < 0 && time_limit > 0) {
+      time_left = 1;
+    }
+    if (time_limit > 0) {
+      model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
+    }
+    PLOGD << "Model created in " << (static_cast<double>(create_time) / 1000.0)
+          << " s";
+    if (time_limit > 0) {
+      PLOGD << "Time left: " << time_left << " s";
+    } else {
+      PLOGD << "Time left: " << "No Limit";
+    }
+  }
   model->optimize();
+
+  IF_PLOG(plog::debug) {
+    model_solved = std::chrono::high_resolution_clock::now();
+    solve_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
+                     model_solved - model_created)
+                     .count();
+    PLOGD << "Model created in " << (static_cast<double>(create_time) / 1000.0)
+          << " s";
+    PLOGD << "Model solved in " << (static_cast<double>(solve_time) / 1000.0)
+          << " s";
+    PLOGD << "Total time "
+          << (static_cast<double>(create_time + solve_time) / 1000.0) << " s";
+  }
 
   if (solution_settings.export_option == ExportOption::ExportLP ||
       solution_settings.export_option == ExportOption::ExportSolutionAndLP ||
@@ -99,9 +134,29 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     }
   }
 
+  instances::SolGeneralPerformanceOptimizationInstance solution(old_instance);
+  extract_solution(solution);
+
+  if (solution_settings.export_option == ExportOption::ExportSolution ||
+      solution_settings.export_option ==
+          ExportOption::ExportSolutionWithInstance ||
+      solution_settings.export_option == ExportOption::ExportSolutionAndLP ||
+      solution_settings.export_option ==
+          ExportOption::ExportSolutionWithInstanceAndLP) {
+    const bool export_instance =
+        (solution_settings.export_option ==
+             ExportOption::ExportSolutionWithInstance ||
+         solution_settings.export_option ==
+             ExportOption::ExportSolutionWithInstanceAndLP);
+    PLOGI << "Saving solution";
+    std::filesystem::path path = solution_settings.path;
+    path /= solution_settings.name;
+    solution.export_solution(path, export_instance);
+  }
+
   this->instance = old_instance;
 
-  return {};
+  return solution;
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
