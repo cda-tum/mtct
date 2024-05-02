@@ -37,6 +37,22 @@ struct ModelDetail {
       VelocityRefinementStrategy::MinOneStep;
 };
 
+enum class LazyConstraintSelectionStrategy {
+  OnlyViolated   = 0,
+  OnlyFirstFound = 1,
+  AllChecked     = 2
+};
+
+enum class LazyTrainSelectionStrategy { OnlyAdjacent = 0, All = 1 };
+
+struct SolverStrategyMovingBlock {
+  LazyConstraintSelectionStrategy lazy_constraint_selection_strategy =
+      LazyConstraintSelectionStrategy::OnlyViolated;
+  LazyTrainSelectionStrategy lazy_train_selection_strategy =
+      LazyTrainSelectionStrategy::OnlyAdjacent;
+  bool include_reverse_headways = false;
+};
+
 class GenPOMovingBlockMIPSolver
     : public GeneralMIPSolver<
           instances::GeneralPerformanceOptimizationInstance,
@@ -48,6 +64,7 @@ private:
 
   SolutionSettingsMovingBlock      solution_settings = {};
   ModelDetail                      model_detail      = {};
+  SolverStrategyMovingBlock        solver_strategy   = {};
   size_t                           num_tr            = 0;
   size_t                           num_edges         = 0;
   size_t                           num_vertices      = 0;
@@ -131,11 +148,12 @@ public:
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(int time_limit, bool debug_input) override {
-    return solve({}, {}, time_limit, debug_input);
+    return solve({}, {}, {}, time_limit, debug_input);
   };
 
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(const ModelDetail&                 model_detail_input,
+        const SolverStrategyMovingBlock&   solver_strategy_input,
         const SolutionSettingsMovingBlock& solution_settings_input,
         int time_limit, bool debug_input);
 };
