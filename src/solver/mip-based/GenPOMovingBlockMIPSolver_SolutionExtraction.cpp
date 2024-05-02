@@ -10,6 +10,8 @@
 #include <utility>
 #include <vector>
 
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
+
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
     cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol) const {
   PLOGI << "Extracting solution object...";
@@ -143,3 +145,5 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
                                          tr_object.name + " at vertex " +
                                          std::to_string(vertex_id));
 }
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
