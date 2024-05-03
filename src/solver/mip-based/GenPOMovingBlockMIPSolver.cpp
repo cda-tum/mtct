@@ -34,7 +34,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
    * @return: respective solution object
    */
 
-  this->solve_init_gen_po_mb(time_limit, debug_input);
+  this->solve_init_gen_po_mb(time_limit, debug_input,
+                             solver_strategy_input.use_lazy_constraints);
 
   if (!instance.n().is_consistent_for_transformation()) {
     PLOGE << "Instance is not consistent for transformation.";
@@ -47,7 +48,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
       instance;
   this->instance.discretize_stops();
 
-  this->initialize_variables(solution_settings_input, model_detail_input);
+  this->initialize_variables(solution_settings_input, solver_strategy_input,
+                             model_detail_input);
 
   PLOGD << "Create variables";
   create_variables();
@@ -101,6 +103,11 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
       PLOGD << "Time left: " << "No Limit";
     }
   }
+
+  if (solver_strategy.use_lazy_constraints) {
+    model->set(GRB_IntParam_LazyConstraints, 1);
+  }
+
   model->optimize();
 
   IF_PLOG(plog::debug) {
@@ -337,15 +344,28 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_objective() {
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_constraints() {
-  // TODO
+  PLOGD << "Create general path constraints";
   create_general_path_constraints();
+  PLOGD << "Create travel times constraints";
   create_travel_times_constraints();
+  PLOGD << "Create basic order constraints";
   create_basic_order_constraints();
+  PLOGD << "Create basic TTD constraints";
   create_basic_ttd_constraints();
+  PLOGD << "Create train rear constraints";
   create_train_rear_constraints();
+  PLOGD << "Create stopping constraints";
   create_stopping_constraints();
-  create_vertex_headway_constraints();
-  create_headway_constraints();
+  if (!solver_strategy.use_lazy_constraints) {
+    PLOGD << "Create vertex headway constraints";
+    create_vertex_headway_constraints();
+    PLOGD << "Create headway constraints";
+    create_headway_constraints();
+  }
+  if (solver_strategy.include_timetable_timing_cuts) {
+    PLOGD << "Create timetable timing constraints";
+    create_timetable_timing_constraints();
+  }
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -477,12 +497,14 @@ size_t cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     initialize_variables(
         const SolutionSettingsMovingBlock& solution_settings_input,
+        const SolverStrategyMovingBlock&   solver_strategy_input,
         const ModelDetail&                 model_detail_input) {
   num_tr                  = instance.get_train_list().size();
   num_edges               = instance.const_n().number_of_edges();
   num_vertices            = instance.const_n().number_of_vertices();
   max_t                   = instance.max_t();
   this->solution_settings = solution_settings_input;
+  this->solver_strategy   = solver_strategy_input;
   this->model_detail      = model_detail_input;
   this->ttd_sections      = instance.n().unbreakable_sections();
   this->num_ttd           = this->ttd_sections.size();
@@ -1623,6 +1645,23 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 source_v_object.name + "-" + target_v_object.name);
       }
     }
+  }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_timetable_timing_constraints() {
+  // TODO: Implement
+  PLOGD << "Still needed to implement";
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    solve_init_gen_po_mb(int time_limit, bool debug_input,
+                         bool use_lazy_callback) {
+  if (use_lazy_callback) {
+    LazyCallback cb(this);
+    this->solve_init_general_mip(time_limit, debug_input, &cb);
+  } else {
+    this->solve_init_general_mip(time_limit, debug_input);
   }
 }
 

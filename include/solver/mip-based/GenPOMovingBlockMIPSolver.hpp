@@ -46,11 +46,14 @@ enum class LazyConstraintSelectionStrategy {
 enum class LazyTrainSelectionStrategy { OnlyAdjacent = 0, All = 1 };
 
 struct SolverStrategyMovingBlock {
+  bool include_timetable_timing_cuts = true;
+  bool use_lazy_constraints =
+      true; // If false, the following settings are ignored
+  bool                            include_reverse_headways = false;
   LazyConstraintSelectionStrategy lazy_constraint_selection_strategy =
       LazyConstraintSelectionStrategy::OnlyViolated;
   LazyTrainSelectionStrategy lazy_train_selection_strategy =
       LazyTrainSelectionStrategy::OnlyAdjacent;
-  bool include_reverse_headways = false;
 };
 
 class GenPOMovingBlockMIPSolver
@@ -81,6 +84,7 @@ private:
 
   void initialize_variables(
       const SolutionSettingsMovingBlock& solution_settings_input,
+      const SolverStrategyMovingBlock&   solver_strategy_input,
       const ModelDetail&                 model_detail_input);
 
   double ub_timing_variable(size_t tr) const;
@@ -109,15 +113,26 @@ private:
   void create_stopping_constraints();
   void create_vertex_headway_constraints();
   void create_headway_constraints();
+  void create_timetable_timing_constraints();
 
   void extract_solution(
       instances::SolGeneralPerformanceOptimizationInstance& sol) const;
   double extract_speed(size_t tr, size_t vertex_id) const;
 
-protected:
-  void solve_init_gen_po_mb(int time_limit, bool debug_input) {
-    this->solve_init_general_mip(time_limit, debug_input);
+  class LazyCallback : public MessageCallback {
+  private:
+    GenPOMovingBlockMIPSolver* solver;
+
+  public:
+    explicit LazyCallback(GenPOMovingBlockMIPSolver* solver) : solver(solver) {}
+
+  protected:
+    void callback() override;
   };
+
+protected:
+  void solve_init_gen_po_mb(int time_limit, bool debug_input,
+                            bool use_lazy_callback);
 
 public:
   GenPOMovingBlockMIPSolver() = default;
