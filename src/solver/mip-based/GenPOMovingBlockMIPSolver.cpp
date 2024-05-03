@@ -368,10 +368,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     PLOGD << "Create headway constraints";
     create_headway_constraints();
   }
-  if (solver_strategy.include_timetable_timing_cuts) {
-    PLOGD << "Create timetable timing constraints";
-    create_timetable_timing_constraints();
-  }
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -1652,12 +1648,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       }
     }
   }
-}
-
-void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
-    create_timetable_timing_constraints() {
-  // TODO: Implement
-  PLOGD << "Still needed to implement";
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)

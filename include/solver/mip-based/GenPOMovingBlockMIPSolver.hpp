@@ -46,7 +46,6 @@ enum class LazyConstraintSelectionStrategy {
 enum class LazyTrainSelectionStrategy { OnlyAdjacent = 0, All = 1 };
 
 struct SolverStrategyMovingBlock {
-  bool include_timetable_timing_cuts = true;
   bool use_lazy_constraints =
       true; // If false, the following settings are ignored
   bool                            include_reverse_headways = false;
@@ -113,7 +112,6 @@ private:
   void create_stopping_constraints();
   void create_vertex_headway_constraints();
   void create_headway_constraints();
-  void create_timetable_timing_constraints();
 
   void extract_solution(
       instances::SolGeneralPerformanceOptimizationInstance& sol) const;

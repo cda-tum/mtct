@@ -119,7 +119,7 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // Initialize relevant variables
   solver.initialize_variables(
       {},
-      {false, true, true,
+      {true, true,
        cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
            OnlyFirstFound},
       {true, 5.55, cda_rail::VelocityRefinementStrategy::None});
@@ -133,7 +133,6 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   EXPECT_EQ(solver.num_vertices, 10);
   EXPECT_EQ(solver.num_ttd, 1);
   EXPECT_EQ(solver.max_t, 360);
-  EXPECT_FALSE(solver.solver_strategy.include_timetable_timing_cuts);
   EXPECT_TRUE(solver.solver_strategy.use_lazy_constraints);
   EXPECT_TRUE(solver.solver_strategy.include_reverse_headways);
   EXPECT_EQ(solver.solver_strategy.lazy_constraint_selection_strategy,
