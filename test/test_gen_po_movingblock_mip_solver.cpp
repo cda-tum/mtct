@@ -118,7 +118,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
 
   // Initialize relevant variables
   solver.initialize_variables(
-      {}, {true, 5.55, cda_rail::VelocityRefinementStrategy::None});
+      {},
+      {false, true, true,
+       cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
+           OnlyFirstFound},
+      {true, 5.55, cda_rail::VelocityRefinementStrategy::None});
 
   EXPECT_TRUE(solver.model_detail.fix_routes);
   EXPECT_APPROX_EQ(solver.model_detail.max_velocity_delta, 5.55);
@@ -129,6 +133,15 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   EXPECT_EQ(solver.num_vertices, 10);
   EXPECT_EQ(solver.num_ttd, 1);
   EXPECT_EQ(solver.max_t, 360);
+  EXPECT_FALSE(solver.solver_strategy.include_timetable_timing_cuts);
+  EXPECT_TRUE(solver.solver_strategy.use_lazy_constraints);
+  EXPECT_TRUE(solver.solver_strategy.include_reverse_headways);
+  EXPECT_EQ(solver.solver_strategy.lazy_constraint_selection_strategy,
+            cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
+                OnlyFirstFound);
+  EXPECT_EQ(
+      solver.solver_strategy.lazy_train_selection_strategy,
+      cda_rail::solver::mip_based::LazyTrainSelectionStrategy::OnlyAdjacent);
 
   // Test if stop data was set correctly
 
