@@ -130,10 +130,6 @@ private:
     void callback() override;
   };
 
-protected:
-  void solve_init_gen_po_mb(int time_limit, bool debug_input,
-                            bool use_lazy_callback);
-
 public:
   GenPOMovingBlockMIPSolver() = default;
 

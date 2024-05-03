@@ -34,8 +34,12 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
    * @return: respective solution object
    */
 
-  this->solve_init_gen_po_mb(time_limit, debug_input,
-                             solver_strategy_input.use_lazy_constraints);
+  if (solver_strategy_input.use_lazy_constraints) {
+    LazyCallback cb = LazyCallback(this);
+    this->solve_init_general_mip(time_limit, debug_input, &cb);
+  } else {
+    this->solve_init_general_mip(time_limit, debug_input);
+  }
 
   if (!instance.n().is_consistent_for_transformation()) {
     PLOGE << "Instance is not consistent for transformation.";
@@ -1652,17 +1656,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_timetable_timing_constraints() {
   // TODO: Implement
   PLOGD << "Still needed to implement";
-}
-
-void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
-    solve_init_gen_po_mb(int time_limit, bool debug_input,
-                         bool use_lazy_callback) {
-  if (use_lazy_callback) {
-    LazyCallback cb(this);
-    this->solve_init_general_mip(time_limit, debug_input, &cb);
-  } else {
-    this->solve_init_general_mip(time_limit, debug_input);
-  }
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
