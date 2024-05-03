@@ -9,6 +9,7 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -34,9 +35,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
    * @return: respective solution object
    */
 
+  std::optional<LazyCallback> cb;
   if (solver_strategy_input.use_lazy_constraints) {
-    LazyCallback cb = LazyCallback(this);
-    this->solve_init_general_mip(time_limit, debug_input, &cb);
+    cb = LazyCallback(this);
+    this->solve_init_general_mip(time_limit, debug_input, &(cb.value()));
   } else {
     this->solve_init_general_mip(time_limit, debug_input);
   }

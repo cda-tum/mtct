@@ -12,13 +12,13 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     if (where == GRB_CB_MESSAGE) {
       MessageCallback::callback();
     } else if (where == GRB_CB_MIPSOL) {
-      PLOGD << "TODO: Implement callback" << std::endl;
+      PLOGD << "TODO: Implement callback";
     }
-  } catch (GRBException e) {
-    PLOGE << "Error number: " << e.getErrorCode() << std::endl;
-    PLOGE << e.getMessage() << std::endl;
+  } catch (GRBException& e) {
+    PLOGE << "Error number: " << e.getErrorCode();
+    PLOGE << e.getMessage();
   } catch (...) {
-    PLOGE << "Error during callback" << std::endl;
+    PLOGE << "Error during callback";
   }
 }
 
