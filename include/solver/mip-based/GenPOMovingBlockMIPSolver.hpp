@@ -122,8 +122,10 @@ private:
     GenPOMovingBlockMIPSolver* solver;
 
     std::vector<std::vector<std::pair<size_t, double>>> get_routes();
-    std::vector<std::vector<size_t>> get_train_orders_on_conflicting_edges(
-        const std::vector<std::vector<size_t>>& routes);
+    std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
+    get_train_orders_on_edges(const std::vector<std::vector<size_t>>& routes);
+    std::vector<std::vector<size_t>>
+    get_train_orders_on_ttd(const std::vector<std::vector<size_t>>& routes);
 
   public:
     explicit LazyCallback(GenPOMovingBlockMIPSolver* solver) : solver(solver) {}
