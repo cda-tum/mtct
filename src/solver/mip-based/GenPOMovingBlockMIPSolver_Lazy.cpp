@@ -90,4 +90,53 @@ std::vector<std::vector<size_t>> cda_rail::solver::mip_based::
   return train_orders_on_ttd;
 }
 
+std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
+    get_train_orders_on_edges(const std::vector<std::vector<size_t>>& routes) {
+  std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
+      train_orders_on_edges;
+  train_orders_on_edges.reserve(solver->num_edges);
+  for (size_t edge_id = 0; edge_id < solver->num_edges; edge_id++) {
+    train_orders_on_edges.emplace_back();
+    assert(train_orders_on_edges.size() == edge_id + 1);
+    const auto& edge_object = solver->instance.const_n().get_edge(edge_id);
+    std::unordered_map<size_t, double> train_edge_times_source;
+    std::unordered_map<size_t, double> train_edge_times_target;
+    for (size_t tr = 0; tr < solver->num_tr; tr++) {
+      for (size_t i = 0; i < routes[tr].size() - 1; i++) {
+        if (routes[tr][i] == edge_object.source &&
+            routes[tr][i + 1] == edge_object.target) {
+          GRBVar t_source =
+              solver->vars["t_front_departure"](tr, edge_object.source);
+          GRBVar t_target =
+              solver->vars["t_rear_departure"](tr, edge_object.target);
+          // Assume they exist by choice of routes
+          train_edge_times_source[tr] = getSolution(t_source);
+          train_edge_times_target[tr] = getSolution(t_target);
+          train_orders_on_edges[edge_id].first.emplace_back(tr);
+          train_orders_on_edges[edge_id].second.emplace_back(tr);
+        }
+      }
+    }
+    if (train_orders_on_edges[edge_id].first.size() >= 2) {
+      std::sort(train_orders_on_edges[edge_id].first.begin(),
+                train_orders_on_edges[edge_id].first.end(),
+                [&train_edge_times_source](size_t tr1, size_t tr2) {
+                  return train_edge_times_source[tr1] <
+                         train_edge_times_source[tr2];
+                });
+    }
+    if (train_orders_on_edges[edge_id].second.size() >= 2) {
+      std::sort(train_orders_on_edges[edge_id].second.begin(),
+                train_orders_on_edges[edge_id].second.end(),
+                [&train_edge_times_target](size_t tr1, size_t tr2) {
+                  return train_edge_times_target[tr1] <
+                         train_edge_times_target[tr2];
+                });
+    }
+  }
+
+  return train_orders_on_edges;
+}
+
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
