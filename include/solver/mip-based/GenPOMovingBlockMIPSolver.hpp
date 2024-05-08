@@ -123,7 +123,8 @@ private:
 
     std::vector<std::vector<std::pair<size_t, double>>> get_routes();
     std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
-    get_train_orders_on_edges(const std::vector<std::vector<size_t>>& routes);
+    get_train_orders_on_edges(
+        const std::vector<std::vector<std::pair<size_t, double>>>& routes);
     std::vector<std::vector<size_t>> get_train_orders_on_ttd();
 
   public:

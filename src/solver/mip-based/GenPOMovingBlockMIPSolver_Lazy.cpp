@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <unordered_map>
+#include <vector>
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
 
@@ -15,8 +16,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     if (where == GRB_CB_MESSAGE) {
       MessageCallback::callback();
     } else if (where == GRB_CB_MIPSOL) {
-      const auto routes = get_routes();
-      // TODO: Continue
+      const auto routes                = get_routes();
+      const auto train_orders_on_edges = get_train_orders_on_edges(routes);
+      const auto train_orders_on_ttd   = get_train_orders_on_ttd();
     }
   } catch (GRBException& e) {
     PLOGE << "Error number: " << e.getErrorCode();
@@ -92,7 +94,8 @@ std::vector<std::vector<size_t>> cda_rail::solver::mip_based::
 
 std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
-    get_train_orders_on_edges(const std::vector<std::vector<size_t>>& routes) {
+    get_train_orders_on_edges(
+        const std::vector<std::vector<std::pair<size_t, double>>>& routes) {
   std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
       train_orders_on_edges;
   train_orders_on_edges.reserve(solver->num_edges);
@@ -104,8 +107,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     std::unordered_map<size_t, double> train_edge_times_target;
     for (size_t tr = 0; tr < solver->num_tr; tr++) {
       for (size_t i = 0; i < routes[tr].size() - 1; i++) {
-        if (routes[tr][i] == edge_object.source &&
-            routes[tr][i + 1] == edge_object.target) {
+        if (routes[tr][i].first == edge_object.source &&
+            routes[tr][i + 1].first == edge_object.target) {
           GRBVar t_source =
               solver->vars["t_front_departure"](tr, edge_object.source);
           GRBVar t_target =
