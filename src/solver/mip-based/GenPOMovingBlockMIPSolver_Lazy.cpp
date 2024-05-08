@@ -17,6 +17,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       MessageCallback::callback();
     } else if (where == GRB_CB_MIPSOL) {
       const auto routes                = get_routes();
+      const auto train_velocities      = get_train_velocities(routes);
       const auto train_orders_on_edges = get_train_orders_on_edges(routes);
       const auto train_orders_on_ttd   = get_train_orders_on_ttd();
     }
@@ -140,6 +141,52 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   }
 
   return train_orders_on_edges;
+}
+
+std::vector<std::unordered_map<size_t, double>> cda_rail::solver::mip_based::
+    GenPOMovingBlockMIPSolver::LazyCallback::get_train_velocities(
+        const std::vector<std::vector<std::pair<size_t, double>>>& routes) {
+  std::vector<std::unordered_map<size_t, double>> train_velocities(
+      solver->num_tr);
+  for (size_t tr = 0; tr < solver->num_tr; tr++) {
+    const auto& exit = solver->instance.get_schedule(tr).get_exit();
+    for (size_t route_v_idx = 0; route_v_idx < routes[tr].size();
+         route_v_idx++) {
+      const auto& v_idx = routes[tr][route_v_idx].first;
+      const auto  e_idx = (route_v_idx == routes[tr].size() - 1)
+                              ? solver->instance.const_n().get_edge_index(
+                                   routes[tr][route_v_idx - 1].first, v_idx)
+                              : solver->instance.const_n().get_edge_index(
+                                   v_idx, routes[tr][route_v_idx + 1].first);
+      const auto& edge  = solver->instance.const_n().get_edge(e_idx);
+      const auto& source_velocities =
+          solver->velocity_extensions.at(tr).at(edge.source);
+      const auto& target_velocities =
+          solver->velocity_extensions.at(tr).at(edge.target);
+
+      bool vel_found = false;
+      for (size_t i = 0; i < source_velocities.size() && !vel_found; i++) {
+        const auto& source_v = source_velocities[i];
+        for (size_t j = 0; j < target_velocities.size() && !vel_found; j++) {
+          const auto& target_v  = target_velocities[j];
+          GRBVar      y_var_tmp = solver->vars["y"](tr, e_idx, i, j);
+          if (!y_var_tmp.sameAs(GRBVar()) && getSolution(y_var_tmp) > 0.5) {
+            train_velocities[tr][v_idx] =
+                edge.source == v_idx ? source_v : target_v;
+            vel_found = true;
+          }
+        }
+      }
+      if (!vel_found) {
+        PLOGE << "No velocity found for train " << tr << " at vertex " << v_idx;
+        throw cda_rail::exceptions::ConsistencyException(
+            "No velocity found for train " + std::to_string(tr) +
+            " at vertex " + std::to_string(v_idx));
+      }
+    }
+  }
+
+  return train_velocities;
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
