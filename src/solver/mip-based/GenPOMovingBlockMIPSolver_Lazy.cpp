@@ -21,6 +21,35 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       const auto train_velocities      = get_train_velocities(routes);
       const auto train_orders_on_edges = get_train_orders_on_edges(routes);
       const auto train_orders_on_ttd   = get_train_orders_on_ttd();
+
+      // Check edge headways
+      for (size_t tr = 0; tr < solver->num_tr; tr++) {
+        const auto& tr_object = solver->instance.get_train_list().get_train(tr);
+        for (size_t r_v_idx = 0; r_v_idx < routes.at(tr).size(); r_v_idx++) {
+          const auto& [v_idx, pos] = routes.at(tr).at(r_v_idx);
+          const auto& vel          = train_velocities.at(tr).at(v_idx);
+          const auto  bd           = vel * vel / (2 * tr_object.deceleration);
+          const auto  ma_pos       = pos + bd;
+          if (ma_pos >= routes.at(tr).back().second) {
+            // TODO: Exit node is reached by moving authority
+          } else {
+            // r_ma_idx >= r_v_idx s.th. routes.at(tr).at(r_ma_idx).second <=
+            // ma_pos < routes.at(tr).at(r_ma_idx + 1).second which should be
+            // unique by design
+            size_t r_ma_idx = r_v_idx;
+            while (routes.at(tr).at(r_ma_idx + 1).second <= ma_pos) {
+              r_ma_idx++;
+            }
+            const auto& [rel_source, rel_source_pos] =
+                routes.at(tr).at(r_ma_idx);
+            const auto& [rel_target, rel_target_pos] =
+                routes.at(tr).at(r_ma_idx + 1);
+            const auto rel_e_idx = solver->instance.const_n().get_edge_index(
+                rel_source, rel_target);
+            // TODO: Continue checking edge headways
+          }
+        }
+      }
     }
   } catch (GRBException& e) {
     PLOGE << "Error number: " << e.getErrorCode();
