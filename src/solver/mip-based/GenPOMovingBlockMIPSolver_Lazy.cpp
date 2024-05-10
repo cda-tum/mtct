@@ -27,8 +27,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       const auto train_orders_on_edges = get_train_orders_on_edges(routes);
       const auto train_orders_on_ttd   = get_train_orders_on_ttd();
 
-      create_lazy_edge_headway_constraints(routes, train_velocities,
-                                           train_orders_on_edges);
+      create_lazy_edge_and_ttd_headway_constraints(
+          routes, train_velocities, train_orders_on_edges, train_orders_on_ttd);
     }
   } catch (GRBException& e) {
     PLOGE << "Error number: " << e.getErrorCode();
@@ -197,12 +197,12 @@ std::vector<std::unordered_map<size_t, double>> cda_rail::solver::mip_based::
 }
 
 bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
-    create_lazy_edge_headway_constraints(
+    create_lazy_edge_and_ttd_headway_constraints(
         const std::vector<std::vector<std::pair<size_t, double>>>& routes,
         const std::vector<std::unordered_map<size_t, double>>& train_velocities,
         const std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>&
-            train_orders_on_edges) {
-  // Check edge headways
+                                                train_orders_on_edges,
+        const std::vector<std::vector<size_t>>& train_orders_on_ttd) {
   bool violated_constraint_found = false;
   bool only_one_constraint =
       solver->solver_strategy.lazy_constraint_selection_strategy ==
