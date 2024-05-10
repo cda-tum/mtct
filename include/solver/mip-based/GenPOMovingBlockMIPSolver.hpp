@@ -8,6 +8,7 @@
 
 #include "gtest/gtest_prod.h"
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <utility>
@@ -37,13 +38,16 @@ struct ModelDetail {
       VelocityRefinementStrategy::MinOneStep;
 };
 
-enum class LazyConstraintSelectionStrategy {
+enum class LazyConstraintSelectionStrategy : std::uint8_t {
   OnlyViolated   = 0,
   OnlyFirstFound = 1,
   AllChecked     = 2
 };
 
-enum class LazyTrainSelectionStrategy { OnlyAdjacent = 0, All = 1 };
+enum class LazyTrainSelectionStrategy : std::uint8_t {
+  OnlyAdjacent = 0,
+  All          = 1
+};
 
 struct SolverStrategyMovingBlock {
   bool use_lazy_constraints =
