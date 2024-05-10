@@ -33,8 +33,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   } catch (GRBException& e) {
     PLOGE << "Error number: " << e.getErrorCode();
     PLOGE << e.getMessage();
-  } catch (...) {
-    PLOGE << "Error during callback";
   }
 }
 
@@ -214,8 +212,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
        tr++) {
     const auto& tr_object = solver->instance.get_train_list().get_train(tr);
     const auto  t_bound   = solver->ub_timing_variable(tr);
+    // Check every vertex except the last one, because only vertex headway is
+    // imposed in that case
     for (size_t r_v_idx = 0;
-         r_v_idx < routes.at(tr).size() &&
+         r_v_idx < routes.at(tr).size() - 1 &&
          (!only_one_constraint || !violated_constraint_found);
          r_v_idx++) {
       const auto& [v_idx, pos] = routes.at(tr).at(r_v_idx);
@@ -226,21 +226,19 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       const auto& tr_t_var       = solver->vars["t_front_departure"](tr, v_idx);
       const auto& tr_t_var_value = getSolution(tr_t_var);
 
-      if (ma_pos >= routes.at(tr).back().second) {
-        // TODO: Exit node is reached by moving authority
-      } else {
-        // r_ma_idx >= r_v_idx s.th. routes.at(tr).at(r_ma_idx).second <=
-        // ma_pos < routes.at(tr).at(r_ma_idx + 1).second which should be
-        // unique by design
+      if (ma_pos <= routes.at(tr).back().second) {
+        // r_ma_idx >= r_v_idx s.th. routes.at(tr).at(r_ma_idx).second <
+        // ma_pos <= routes.at(tr).at(r_ma_idx + 1).second which should be
+        // unique by design unless bd = 0, then r_ma_idx = r_v_idx
         size_t r_ma_idx = r_v_idx;
-        while (routes.at(tr).at(r_ma_idx + 1).second <= ma_pos) {
+        while (routes.at(tr).at(r_ma_idx + 1).second < ma_pos - EPS) {
           r_ma_idx++;
         }
         const auto& [rel_source, rel_source_pos] = routes.at(tr).at(r_ma_idx);
         const auto& [rel_target, rel_target_pos] =
             routes.at(tr).at(r_ma_idx + 1);
-        assert(rel_source_pos <= ma_pos);
-        assert(ma_pos < rel_target_pos);
+        assert(bd == 0 || rel_source_pos < ma_pos - EPS);
+        assert(ma_pos <= rel_target_pos);
         const auto rel_pos_on_edge = ma_pos - rel_source_pos;
 
         // Get used path, which is
@@ -376,7 +374,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                 t_bound_tmp *
                     (1 - solver->vars["order"](tr, tr_other_idx, p.back()));
             std::vector<GRBLinExpr> rhs;
-            if (rel_pos_on_edge < EPS) {
+            if (std::abs(rel_e_obj.length - rel_pos_on_edge) < EPS) {
+              rhs.emplace_back(tr_other_target_var);
+            } else if (rel_pos_on_edge < EPS) {
               rhs.emplace_back(tr_other_source_var);
             } else {
               rhs.emplace_back(tr_other_source_var);
