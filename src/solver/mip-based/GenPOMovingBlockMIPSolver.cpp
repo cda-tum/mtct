@@ -1259,34 +1259,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
           // Variables to decide if path was used. First edge must leave from
           // desired velocity extension.
-          GRBLinExpr  edge_path_expr = 0;
-          const auto& e_1            = p.front();
-          const auto& e_1_obj        = instance.const_n().get_edge(e_1);
-          const auto  tmp_max_speed =
-              std::min(tr_object.max_speed, e_1_obj.max_speed);
-          if (vel > tmp_max_speed) {
-            continue;
-          }
-          const auto& v_target_velocities =
-              velocity_extensions.at(tr).at(e_1_obj.target);
-          for (size_t v_target_index = 0;
-               v_target_index < v_target_velocities.size(); v_target_index++) {
-            const auto& vel_target = v_target_velocities.at(v_target_index);
-            if (vel_target > tmp_max_speed) {
-              continue;
-            }
-            if (cda_rail::possible_by_eom(
-                    vel, vel_target, tr_object.acceleration,
-                    tr_object.deceleration, e_1_obj.length)) {
-              edge_path_expr +=
-                  vars["y"](tr, e_1, v_source_index, v_target_index);
-            }
-          }
-          for (const auto& e_p : p) {
-            if (e_p != e_1) {
-              edge_path_expr += vars["x"](tr, e_p);
-            }
-          }
+          const GRBLinExpr edge_path_expr = get_edge_path_expr(tr, p, vel);
 
           const auto tr_on_last_edge = instance.trains_on_edge_mixed_routing(
               p.back(), model_detail.fix_routes, false);
