@@ -418,6 +418,58 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             }
           }
         }
+
+        // Is there a conflict with TTD constraints
+        const auto intersecting_ttd =
+            cda_rail::Network::get_intersecting_ttd(p, solver->ttd_sections);
+        for (const auto& [ttd_index, e_index] : intersecting_ttd) {
+          const auto& p_tmp =
+              std::vector<size_t>(p.begin(), p.begin() + e_index);
+          const auto p_tmp_len = std::accumulate(
+              p_tmp.begin(), p_tmp.end(), 0.0,
+              [this](double sum, const auto& edge_index) {
+                return sum +
+                       solver->instance.const_n().get_edge(edge_index).length;
+              });
+          GRBLinExpr edge_tmp_path_expr = 0;
+          for (const auto& e_tmp : p_tmp) {
+            edge_tmp_path_expr += solver->vars["x"](tr, e_tmp);
+          }
+
+          const auto obd = bd - p_tmp_len;
+          assert(obd >= 0);
+
+          // Get other trains that might conflict with the current train on
+          // this TTD section
+          const auto& rel_tr_order_ttd = train_orders_on_ttd.at(ttd_index);
+          std::unordered_set<size_t> other_trains_ttd;
+          const auto                 tr_index =
+              std::find(rel_tr_order_ttd.begin(), rel_tr_order_ttd.end(), tr) -
+              rel_tr_order_ttd.begin();
+          assert(tr_index != rel_tr_order_ttd.end() - rel_tr_order_ttd.begin());
+          for (size_t tr_other_idx = 0; tr_other_idx < rel_tr_order_ttd.size();
+               tr_other_idx++) {
+            if (tr_other_idx == tr_index) {
+              continue;
+            }
+            if (solver->solver_strategy.lazy_train_selection_strategy ==
+                    LazyTrainSelectionStrategy::OnlyAdjacent &&
+                std::abs(static_cast<int>(tr_other_idx) -
+                         static_cast<int>(tr_index)) > 1) {
+              continue;
+            }
+            if (!solver->solver_strategy.include_reverse_headways &&
+                tr_other_idx < tr_index) {
+              continue;
+            }
+            other_trains_ttd.insert(rel_tr_order_ttd.at(tr_other_idx));
+          }
+
+          for (const size_t other_tr : other_trains_ttd) {
+            // Check if TTD constraint is violated or not and add if needed
+            // TODO
+          }
+        }
       }
     }
   }
