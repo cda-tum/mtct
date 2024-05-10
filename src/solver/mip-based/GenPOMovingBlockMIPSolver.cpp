@@ -1260,6 +1260,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           // Variables to decide if path was used. First edge must leave from
           // desired velocity extension.
           const GRBLinExpr edge_path_expr = get_edge_path_expr(tr, p, vel);
+          const auto       tmp_max_speed =
+              std::min(tr_object.max_speed,
+                       instance.const_n().get_edge(p.front()).max_speed);
 
           const auto tr_on_last_edge = instance.trains_on_edge_mixed_routing(
               p.back(), model_detail.fix_routes, false);
