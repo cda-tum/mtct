@@ -153,18 +153,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               }
             }
             for (const auto& tr_other_idx : other_trains) {
-              PLOGD << "Check " << tr_object.name << " following "
-                    << solver->instance.get_train_list()
-                           .get_train(tr_other_idx)
-                           .name
-                    << " on edge "
-                    << solver->instance.const_n().get_vertex(rel_source).name
-                    << " -> "
-                    << solver->instance.const_n().get_vertex(rel_target).name
-                    << " at ma position " << rel_pos_on_edge
-                    << " with velocity " << vel << " at "
-                    << solver->instance.const_n().get_vertex(v_idx).name;
-
               const auto& tr_other_object =
                   solver->instance.get_train_list().get_train(tr_other_idx);
               const auto& tr_other_source_speed =
@@ -209,7 +197,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   std::max(t_bound, solver->ub_timing_variable(tr_other_idx));
 
               if (add_constr) {
-                PLOGD << "ADD!";
                 const GRBLinExpr lhs =
                     tr_t_var +
                     t_bound_tmp *
@@ -220,8 +207,65 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                 if (rel_pos_on_edge < EPS) {
                   rhs.emplace_back(tr_other_source_var);
                 } else {
-                  PLOGD << "Skipped for now though.";
-                  // TODO: Implement
+                  rhs.emplace_back(tr_other_source_var);
+                  rhs.emplace_back(tr_other_target_var);
+
+                  const auto& v_tr_other_source_velocities =
+                      solver->velocity_extensions.at(tr_other_idx)
+                          .at(rel_source);
+                  const auto& v_tr_other_target_velocities =
+                      solver->velocity_extensions.at(tr_other_idx)
+                          .at(rel_target);
+
+                  for (size_t v_tr_other_source_index = 0;
+                       v_tr_other_source_index <
+                       v_tr_other_source_velocities.size();
+                       v_tr_other_source_index++) {
+                    const auto& vel_tr_other_source =
+                        v_tr_other_source_velocities.at(
+                            v_tr_other_source_index);
+                    if (vel_tr_other_source > tr_other_max_speed) {
+                      continue;
+                    }
+                    for (size_t v_tr_other_target_index = 0;
+                         v_tr_other_target_index <
+                         v_tr_other_target_velocities.size();
+                         v_tr_other_target_index++) {
+                      const auto& vel_tr_other_target =
+                          v_tr_other_target_velocities.at(
+                              v_tr_other_target_index);
+                      if (vel_tr_other_target > tr_other_max_speed) {
+                        continue;
+                      }
+                      if (cda_rail::possible_by_eom(
+                              vel_tr_other_source, vel_tr_other_target,
+                              tr_other_object.acceleration,
+                              tr_other_object.deceleration, rel_e_obj.length)) {
+                        rhs.at(0) +=
+                            solver->vars["y"](tr_other_idx, rel_e_idx,
+                                              v_tr_other_source_index,
+                                              v_tr_other_target_index) *
+                            cda_rail::min_travel_time_from_start(
+                                vel_tr_other_source, vel_tr_other_target,
+                                tr_other_max_speed,
+                                tr_other_object.acceleration,
+                                tr_other_object.deceleration, rel_e_obj.length,
+                                rel_pos_on_edge);
+                        const auto max_travel_time =
+                            cda_rail::max_travel_time_to_end(
+                                vel_tr_other_source, vel_tr_other_target, V_MIN,
+                                tr_other_object.acceleration,
+                                tr_other_object.deceleration, rel_e_obj.length,
+                                rel_pos_on_edge, rel_e_obj.breakable);
+                        rhs.at(1) -=
+                            solver->vars["y"](tr_other_idx, rel_e_idx,
+                                              v_tr_other_source_index,
+                                              v_tr_other_target_index) *
+                            (max_travel_time > t_bound_tmp ? t_bound_tmp
+                                                           : max_travel_time);
+                      }
+                    }
+                  }
                 }
 
                 for (const auto& rhs_expr : rhs) {
