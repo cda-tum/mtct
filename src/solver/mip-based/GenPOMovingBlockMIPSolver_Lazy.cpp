@@ -259,8 +259,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         // Create path expression according to route. The first edge must
         // use the specified velocity or faster, since only then the desired
         // headway must hold.
-        const GRBLinExpr edge_path_expr =
-            solver->get_edge_path_expr(tr, p, vel, true);
+        const GRBLinExpr edge_path_expr = solver->get_edge_path_expr(
+            tr, p, vel,
+            solver->solver_strategy.include_higher_velocities_in_edge_expr);
 
         // Get other trains that might conflict with the current train on
         // this edge
