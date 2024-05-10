@@ -118,6 +118,12 @@ private:
   void create_vertex_headway_constraints();
   void create_headway_constraints();
 
+  // Helper for headway normal and lazy constraints
+  [[nodiscard]] GRBLinExpr
+  get_edge_path_expr(size_t tr, const std::vector<size_t>& p,
+                     double initial_velocity,
+                     bool   also_higher_velocities = false);
+
   void extract_solution(
       instances::SolGeneralPerformanceOptimizationInstance& sol) const;
   double extract_speed(size_t tr, size_t vertex_id) const;

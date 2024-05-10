@@ -259,40 +259,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         // Create path expression according to route. The first edge must
         // use the specified velocity or faster, since only then the desired
         // headway must hold.
-        GRBLinExpr  edge_path_expr = 0;
-        const auto& e_1            = p.front();
-        const auto& e_1_obj        = solver->instance.const_n().get_edge(e_1);
-        const auto  tmp_max_speed =
-            std::min(tr_object.max_speed, e_1_obj.max_speed);
-        const auto& v_source_velocities =
-            solver->velocity_extensions.at(tr).at(e_1_obj.source);
-        const auto& v_target_velocities =
-            solver->velocity_extensions.at(tr).at(e_1_obj.target);
-        for (size_t v_source_index = 0;
-             v_source_index < v_source_velocities.size(); v_source_index++) {
-          const auto& vel_source = v_source_velocities.at(v_source_index);
-          if (vel_source < vel || vel_source > tmp_max_speed) {
-            continue;
-          }
-          for (size_t v_target_index = 0;
-               v_target_index < v_target_velocities.size(); v_target_index++) {
-            const auto& vel_target = v_target_velocities.at(v_target_index);
-            if (vel_target > tmp_max_speed) {
-              continue;
-            }
-            if (cda_rail::possible_by_eom(
-                    vel_source, vel_target, tr_object.acceleration,
-                    tr_object.deceleration, e_1_obj.length)) {
-              edge_path_expr +=
-                  solver->vars["y"](tr, e_1, v_source_index, v_target_index);
-            }
-          }
-        }
-        for (const auto& e_p : p) {
-          if (e_p != e_1) {
-            edge_path_expr += solver->vars["x"](tr, e_p);
-          }
-        }
+        const GRBLinExpr edge_path_expr =
+            solver->get_edge_path_expr(tr, p, vel, true);
 
         // Get other trains that might conflict with the current train on
         // this edge
