@@ -116,10 +116,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                                                       v_target_index);
                 }
               }
-              for (const auto& e_p : p) {
-                if (e_p != e_1) {
-                  edge_path_expr += solver->vars["x"](tr, e_p);
-                }
+            }
+            for (const auto& e_p : p) {
+              if (e_p != e_1) {
+                edge_path_expr += solver->vars["x"](tr, e_p);
               }
             }
 
