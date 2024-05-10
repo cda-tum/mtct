@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
