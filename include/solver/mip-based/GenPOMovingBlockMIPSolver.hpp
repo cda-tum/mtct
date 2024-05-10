@@ -134,6 +134,12 @@ private:
         const std::vector<std::vector<std::pair<size_t, double>>>& routes);
     std::vector<std::vector<size_t>> get_train_orders_on_ttd();
 
+    bool create_lazy_edge_headway_constraints(
+        const std::vector<std::vector<std::pair<size_t, double>>>& routes,
+        const std::vector<std::unordered_map<size_t, double>>& train_velocities,
+        const std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>&
+            train_orders_on_edges);
+
   public:
     explicit LazyCallback(GenPOMovingBlockMIPSolver* solver) : solver(solver) {}
 
