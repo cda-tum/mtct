@@ -129,10 +129,19 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
           << (static_cast<double>(create_time + solve_time) / 1000.0) << " s";
   }
 
+  instances::SolGeneralPerformanceOptimizationInstance solution(old_instance);
+  extract_solution(solution);
+
   if (solution_settings.export_option == ExportOption::ExportLP ||
       solution_settings.export_option == ExportOption::ExportSolutionAndLP ||
       solution_settings.export_option ==
           ExportOption::ExportSolutionWithInstanceAndLP) {
+    PLOGD << "Add " << lazy_constraints.size() << " lazy constraints";
+    for (size_t i = 0; i < lazy_constraints.size(); i++) {
+      model->addConstr(lazy_constraints.at(i), "Lazy" + std::to_string(i));
+    }
+    model->update();
+
     PLOGI << "Saving model and solution";
     std::filesystem::path path = solution_settings.path;
 
@@ -147,9 +156,6 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
       model->write((path / (solution_settings.name + ".sol")).string());
     }
   }
-
-  instances::SolGeneralPerformanceOptimizationInstance solution(old_instance);
-  extract_solution(solution);
 
   if (solution_settings.export_option == ExportOption::ExportSolution ||
       solution_settings.export_option ==
