@@ -212,6 +212,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
        tr++) {
     const auto& tr_object = solver->instance.get_train_list().get_train(tr);
     const auto  t_bound   = solver->ub_timing_variable(tr);
+    const auto& entry     = solver->instance.get_schedule(tr).get_entry();
     // Check every vertex except the last one, because only vertex headway is
     // imposed in that case
     for (size_t r_v_idx = 0;
@@ -439,6 +440,52 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           const auto obd = bd - p_tmp_len;
           assert(obd >= 0);
 
+          double                t_reduction = 0;
+          std::optional<double> t_addition;
+
+          std::optional<size_t> prev_v_idx;
+          std::optional<double> prev_pos;
+          std::optional<double> prev_vel;
+          std::optional<GRBVar> prev_t_var;
+          std::optional<double> prev_t_var_value;
+
+          bool skip = false;
+          if (v_idx == entry) {
+            t_reduction = vel <= GRB_EPS ? 0 : obd / vel;
+          } else {
+            assert(r_v_idx >= 1);
+            prev_v_idx = routes.at(tr).at(r_v_idx - 1).first;
+            prev_pos   = routes.at(tr).at(r_v_idx - 1).second;
+            prev_vel   = train_velocities.at(tr).at(prev_v_idx.value());
+            const auto& prev_bd = prev_vel.value() * prev_vel.value() /
+                                  (2 * tr_object.deceleration);
+            const auto& prev_ma_pos = prev_pos.value() + prev_bd;
+            const auto& prev_edge_object =
+                solver->instance.const_n().get_edge(prev_v_idx.value(), v_idx);
+            prev_t_var =
+                solver->vars["t_front_departure"](tr, prev_v_idx.value());
+            prev_t_var_value = getSolution(prev_t_var.value());
+            const auto& prev_max_speed =
+                std::min(prev_edge_object.max_speed, tr_object.max_speed);
+            if (prev_ma_pos > pos + p_tmp_len) {
+              skip = true;
+              // obd is too long and relevant vertex is earlier
+            } else {
+              t_reduction = cda_rail::min_time_from_rear_to_ma_point(
+                  prev_vel.value(), vel, V_MIN, prev_max_speed,
+                  tr_object.acceleration, tr_object.deceleration,
+                  prev_edge_object.length, obd);
+              t_addition = cda_rail::max_time_from_front_to_ma_point(
+                  prev_vel.value(), vel, V_MIN, tr_object.acceleration,
+                  tr_object.deceleration, prev_edge_object.length, obd,
+                  prev_edge_object.breakable);
+            }
+          }
+
+          if (skip) {
+            continue;
+          }
+
           // Get other trains that might conflict with the current train on
           // this TTD section
           const auto& rel_tr_order_ttd = train_orders_on_ttd.at(ttd_index);
@@ -467,7 +514,29 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 
           for (const size_t other_tr : other_trains_ttd) {
             // Check if TTD constraint is violated or not and add if needed
-            // TODO
+            bool add_constr =
+                (solver->solver_strategy.lazy_constraint_selection_strategy ==
+                 LazyConstraintSelectionStrategy::AllChecked);
+            const auto& other_tr_object =
+                solver->instance.get_train_list().get_train(other_tr);
+            const auto& other_tr_t_variable =
+                solver->vars["t_ttd_departure"](other_tr, ttd_index);
+            if (!add_constr && tr_t_var_value - t_reduction <
+                                   getSolution(other_tr_t_variable)) {
+              add_constr = true;
+            }
+            if (!add_constr && prev_t_var_value.has_value() &&
+                t_addition.has_value() &&
+                prev_t_var_value.value() + t_addition.value() <
+                    getSolution(other_tr_t_variable)) {
+              add_constr = true;
+            }
+
+            if (add_constr) {
+              PLOGD << "Adding lazy constraint for train " << tr
+                    << " and train " << other_tr << " on TTD section "
+                    << ttd_index;
+            }
           }
         }
       }
