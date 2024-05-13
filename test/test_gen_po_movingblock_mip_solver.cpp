@@ -2,6 +2,7 @@
 #define TEST_FRIENDS true
 
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "probleminstances/VSSGenerationTimetable.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 
 #include "gtest/gtest.h"
@@ -119,7 +120,7 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // Initialize relevant variables
   solver.initialize_variables(
       {},
-      {true, true,
+      {true, true, true,
        cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
            OnlyFirstFound},
       {true, 5.55, cda_rail::VelocityRefinementStrategy::None});
@@ -135,6 +136,7 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   EXPECT_EQ(solver.max_t, 360);
   EXPECT_TRUE(solver.solver_strategy.use_lazy_constraints);
   EXPECT_TRUE(solver.solver_strategy.include_reverse_headways);
+  EXPECT_TRUE(solver.solver_strategy.include_higher_velocities_in_edge_expr);
   EXPECT_EQ(solver.solver_strategy.lazy_constraint_selection_strategy,
             cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
                 OnlyFirstFound);
