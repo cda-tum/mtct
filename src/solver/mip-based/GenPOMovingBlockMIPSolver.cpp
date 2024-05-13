@@ -1446,12 +1446,15 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                 e_before_v_obj.length, obd);
                         is_relevant = true;
 
+                        const auto max_from_front =
+                            cda_rail::max_time_from_front_to_ma_point(
+                                vel_before_v, vel, V_MIN,
+                                tr_object.acceleration, tr_object.deceleration,
+                                e_before_v_obj.length, obd,
+                                e_before_v_obj.breakable);
                         const GRBLinExpr lhs_from_front =
                             vars["t_front_departure"](tr, v_before_v) +
-                            cda_rail::min_time_from_front_to_ma_point(
-                                vel_before_v, vel, e_before_v_tmp_max,
-                                tr_object.acceleration, tr_object.deceleration,
-                                e_before_v_obj.length, obd) +
+                            std::min(max_from_front, t_bound_tmp) +
                             t_bound_tmp *
                                 (static_cast<double>(p_tmp.size()) + 1 -
                                  vars["y"](tr, e_before_v, v_before_v_index,
