@@ -1404,7 +1404,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                   // Train is entering the network
                   assert(v_velocities.size() == 1);
                   // Assume previous constant line speed
-                  lhs_from_rear -= obd / vel;
+                  lhs_from_rear -= vel <= GRB_EPS ? 0 : obd / vel;
                   is_relevant = true;
                 } else {
                   std::vector<size_t> rel_in_edges;
