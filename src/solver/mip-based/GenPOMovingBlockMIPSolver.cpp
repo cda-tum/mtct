@@ -1596,7 +1596,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         // on train order
         model->addConstr(
             vars["t_front_departure"](tr1, source_v) +
-                    t_bound * (1 - vars["order"](tr1, tr2, e)) >=
+                    (t_bound + source_v_object.headway) *
+                        (1 - vars["order"](tr1, tr2, e)) >=
                 vars["t_rear_departure"](tr2, source_v) +
                     source_v_object.headway,
             "headway_vertex_source_1_" +
@@ -1605,7 +1606,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 source_v_object.name + "-" + target_v_object.name);
         model->addConstr(
             vars["t_front_departure"](tr2, source_v) +
-                    t_bound * (1 - vars["order"](tr2, tr1, e)) >=
+                    (t_bound + source_v_object.headway) *
+                        (1 - vars["order"](tr2, tr1, e)) >=
                 vars["t_rear_departure"](tr1, source_v) +
                     source_v_object.headway,
             "headway_vertex_source_2_" +
@@ -1614,7 +1616,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 source_v_object.name + "-" + target_v_object.name);
         model->addConstr(
             vars["t_front_departure"](tr1, target_v) +
-                    t_bound * (1 - vars["order"](tr1, tr2, e)) >=
+                    (t_bound + target_v_object.headway) *
+                        (1 - vars["order"](tr1, tr2, e)) >=
                 vars["t_rear_departure"](tr2, target_v) +
                     target_v_object.headway,
             "headway_vertex_target_1_" +
@@ -1623,7 +1626,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 source_v_object.name + "-" + target_v_object.name);
         model->addConstr(
             vars["t_front_departure"](tr2, target_v) +
-                    t_bound * (1 - vars["order"](tr2, tr1, e)) >=
+                    (t_bound + target_v_object.headway) *
+                        (1 - vars["order"](tr2, tr1, e)) >=
                 vars["t_rear_departure"](tr1, target_v) +
                     target_v_object.headway,
             "headway_vertex_target_2_" +
