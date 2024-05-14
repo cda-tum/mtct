@@ -28,8 +28,15 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       const auto train_orders_on_edges = get_train_orders_on_edges(routes);
       const auto train_orders_on_ttd   = get_train_orders_on_ttd();
 
-      create_lazy_edge_and_ttd_headway_constraints(
-          routes, train_velocities, train_orders_on_edges, train_orders_on_ttd);
+      const auto constraint_created =
+          create_lazy_vertex_headway_constraints(routes, train_orders_on_edges);
+      if (solver->solver_strategy.lazy_constraint_selection_strategy !=
+              LazyConstraintSelectionStrategy::OnlyFirstFound ||
+          !constraint_created) {
+        create_lazy_edge_and_ttd_headway_constraints(routes, train_velocities,
+                                                     train_orders_on_edges,
+                                                     train_orders_on_ttd);
+      }
     }
   } catch (GRBException& e) {
     PLOGE << "Error number: " << e.getErrorCode();
@@ -605,6 +612,103 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                 violated_constraint_found = true;
               }
             }
+          }
+        }
+      }
+    }
+  }
+
+  return violated_constraint_found;
+}
+
+bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
+    create_lazy_vertex_headway_constraints(
+        const std::vector<std::vector<std::pair<size_t, double>>>& routes,
+        const std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>&
+            train_orders_on_edges) {
+  bool violated_constraint_found = false;
+  bool only_one_constraint =
+      solver->solver_strategy.lazy_constraint_selection_strategy ==
+      LazyConstraintSelectionStrategy::OnlyFirstFound;
+  for (size_t tr = 0; tr < solver->num_tr &&
+                      (!only_one_constraint || !violated_constraint_found);
+       tr++) {
+    const auto tr_t_bound = solver->ub_timing_variable(tr);
+    for (size_t r_v_idx = 0;
+         r_v_idx < routes.at(tr).size() - 1 &&
+         (!only_one_constraint || !violated_constraint_found);
+         r_v_idx++) {
+      const auto& v_source = routes.at(tr).at(r_v_idx).first;
+      const auto& v_target = routes.at(tr).at(r_v_idx + 1).first;
+      const auto& edge_index =
+          solver->instance.const_n().get_edge_index(v_source, v_target);
+
+      const auto& [rel_tr_order_source, rel_tr_order_target] =
+          train_orders_on_edges.at(edge_index);
+
+      for (size_t i = 0;
+           i < 2 && (!only_one_constraint || !violated_constraint_found); i++) {
+        const auto& rel_tr_oder =
+            i == 0 ? rel_tr_order_source : rel_tr_order_target;
+        const auto& rel_vertex = i == 0 ? v_source : v_target;
+        const auto& rel_vertex_object =
+            solver->instance.const_n().get_vertex(rel_vertex);
+
+        const auto tr_idx =
+            std::find(rel_tr_oder.begin(), rel_tr_oder.end(), tr) -
+            rel_tr_oder.begin();
+        assert(tr_idx < rel_tr_oder.size());
+        size_t lb_idx = 0;
+        size_t ub_idx = rel_tr_oder.size() - 1;
+        if (solver->solver_strategy.lazy_train_selection_strategy ==
+            LazyTrainSelectionStrategy::OnlyAdjacent) {
+          lb_idx = std::max<int>(static_cast<int>(lb_idx),
+                                 static_cast<int>(tr_idx) - 1);
+          ub_idx = std::min<int>(static_cast<int>(ub_idx),
+                                 static_cast<int>(tr_idx) + 1);
+        }
+        if (!solver->solver_strategy.include_reverse_headways) {
+          lb_idx = std::max<int>(static_cast<int>(lb_idx),
+                                 static_cast<int>(tr_idx) + 1);
+        }
+        if (solver->solver_strategy.lazy_constraint_selection_strategy !=
+            LazyConstraintSelectionStrategy::AllChecked) {
+          lb_idx = std::max<int>(static_cast<int>(lb_idx),
+                                 static_cast<int>(tr_idx) + 1);
+        }
+
+        for (size_t edge_order_other_tr_idx = lb_idx;
+             edge_order_other_tr_idx <= ub_idx &&
+             (!only_one_constraint || !violated_constraint_found);
+             edge_order_other_tr_idx++) {
+          if (edge_order_other_tr_idx == tr_idx) {
+            continue;
+          }
+          const auto& other_tr = rel_tr_oder.at(edge_order_other_tr_idx);
+          auto tr_t_var = solver->vars["t_front_departure"](tr, rel_vertex);
+          auto other_tr_t_var =
+              solver->vars["t_front_departure"](other_tr, rel_vertex);
+          const auto& headway = rel_vertex_object.headway;
+          if (solver->solver_strategy.lazy_constraint_selection_strategy ==
+                  LazyConstraintSelectionStrategy::AllChecked ||
+              getSolution(other_tr_t_var) < getSolution(tr_t_var) + headway) {
+            const auto t_bound =
+                std::max(tr_t_bound, solver->ub_timing_variable(other_tr)) +
+                headway;
+            GRBLinExpr lhs =
+                other_tr_t_var +
+                t_bound * (1 - solver->vars["order"](other_tr, tr, edge_index));
+            GRBLinExpr rhs = tr_t_var + headway;
+            addLazy(lhs >= rhs);
+            if (solver->solution_settings.export_option ==
+                    ExportOption::ExportLP ||
+                solver->solution_settings.export_option ==
+                    ExportOption::ExportSolutionAndLP ||
+                solver->solution_settings.export_option ==
+                    ExportOption::ExportSolutionWithInstanceAndLP) {
+              solver->lazy_constraints.emplace_back(lhs >= rhs);
+            }
+            violated_constraint_found = true;
           }
         }
       }
