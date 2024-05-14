@@ -402,11 +402,11 @@ double cda_rail::max_time_from_front_to_ma_point_no_stopping(
   const double ubd_s1 = ma_point - (s_1 + bd_t);
   const double ubd_s2 = ma_point - (s_2 + bd_t);
 
-  if (ubd_s2 > -EPS) {
+  if (ubd_s2 > EPS) {
     return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s_2) +
            min_time_to_push_ma_forward(v_t, a, d, ubd_s2);
   }
-  if (ubd_s1 > -EPS) {
+  if (ubd_s1 > EPS) {
     return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s,
                                                   s_1 + ubd_s1);
   }
