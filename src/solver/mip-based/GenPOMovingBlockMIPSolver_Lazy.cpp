@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
+#include <limits>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -448,6 +449,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           std::optional<double> prev_vel;
           std::optional<GRBVar> prev_t_var;
           std::optional<double> prev_t_var_value;
+          std::optional<size_t> prev_edge_index;
 
           bool skip = false;
           if (v_idx == entry) {
@@ -460,8 +462,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             const auto& prev_bd = prev_vel.value() * prev_vel.value() /
                                   (2 * tr_object.deceleration);
             const auto& prev_ma_pos = prev_pos.value() + prev_bd;
+            prev_edge_index         = solver->instance.const_n().get_edge_index(
+                prev_v_idx.value(), v_idx);
             const auto& prev_edge_object =
-                solver->instance.const_n().get_edge(prev_v_idx.value(), v_idx);
+                solver->instance.const_n().get_edge(prev_edge_index.value());
             prev_t_var =
                 solver->vars["t_front_departure"](tr, prev_v_idx.value());
             prev_t_var_value = getSolution(prev_t_var.value());
@@ -475,10 +479,13 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   prev_vel.value(), vel, V_MIN, prev_max_speed,
                   tr_object.acceleration, tr_object.deceleration,
                   prev_edge_object.length, obd);
-              t_addition = cda_rail::max_time_from_front_to_ma_point(
+              const auto tmp_max = cda_rail::max_time_from_front_to_ma_point(
                   prev_vel.value(), vel, V_MIN, tr_object.acceleration,
                   tr_object.deceleration, prev_edge_object.length, obd,
                   prev_edge_object.breakable);
+              if (tmp_max < std::numeric_limits<double>::infinity()) {
+                t_addition = tmp_max;
+              }
             }
           }
 
@@ -533,9 +540,70 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             }
 
             if (add_constr) {
-              PLOGD << "Adding lazy constraint for train " << tr
-                    << " and train " << other_tr << " on TTD section "
-                    << ttd_index;
+              const auto& t_bound_tmp =
+                  std::max(t_bound, solver->ub_timing_variable(other_tr));
+              GRBLinExpr rhs =
+                  other_tr_t_variable +
+                  t_bound_tmp *
+                      (solver->vars["order_ttd"](tr, other_tr, ttd_index) - 1);
+              std::vector<GRBLinExpr> lhs;
+              if (prev_edge_index.has_value()) {
+                assert(prev_vel.has_value());
+                const auto vel_idx =
+                    std::find(
+                        solver->velocity_extensions.at(tr).at(v_idx).begin(),
+                        solver->velocity_extensions.at(tr).at(v_idx).end(),
+                        vel) -
+                    solver->velocity_extensions.at(tr).at(v_idx).begin();
+                const auto prev_vel_idx =
+                    std::find(solver->velocity_extensions.at(tr)
+                                  .at(prev_v_idx.value())
+                                  .begin(),
+                              solver->velocity_extensions.at(tr)
+                                  .at(prev_v_idx.value())
+                                  .end(),
+                              prev_vel.value()) -
+                    solver->velocity_extensions.at(tr)
+                        .at(prev_v_idx.value())
+                        .begin();
+                lhs.emplace_back(
+                    tr_t_var - t_reduction +
+                    t_bound_tmp *
+                        (static_cast<double>(p_tmp.size()) -
+                         edge_tmp_path_expr + 1 -
+                         solver->vars["y"](tr, prev_edge_index.value(),
+                                           prev_vel_idx, vel_idx)));
+                if (t_addition.has_value()) {
+                  assert(prev_t_var.has_value());
+                  lhs.emplace_back(
+                      prev_t_var.value() + t_addition.value() +
+                      t_bound_tmp *
+                          (static_cast<double>(p_tmp.size()) -
+                           edge_tmp_path_expr + 1 -
+                           solver->vars["y"](tr, prev_edge_index.value(),
+                                             prev_vel_idx, vel_idx)));
+                }
+              } else {
+                // Entry node
+                assert(v_idx == entry);
+                lhs.emplace_back(tr_t_var - t_reduction +
+                                 t_bound_tmp *
+                                     (static_cast<double>(p_tmp.size()) -
+                                      edge_tmp_path_expr));
+              }
+
+              for (const auto& lhs_expr : lhs) {
+                addLazy(lhs_expr >= rhs);
+                if (solver->solution_settings.export_option ==
+                        ExportOption::ExportLP ||
+                    solver->solution_settings.export_option ==
+                        ExportOption::ExportSolutionAndLP ||
+                    solver->solution_settings.export_option ==
+                        ExportOption::ExportSolutionWithInstanceAndLP) {
+                  solver->lazy_constraints.emplace_back(lhs_expr >= rhs);
+                }
+                violated_constraint_found = true;
+              }
             }
           }
         }
