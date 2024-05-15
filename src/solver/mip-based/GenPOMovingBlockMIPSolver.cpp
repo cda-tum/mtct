@@ -508,6 +508,19 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         const SolutionSettingsMovingBlock& solution_settings_input,
         const SolverStrategyMovingBlock&   solver_strategy_input,
         const ModelDetail&                 model_detail_input) {
+  if (solver_strategy_input.include_reverse_headways &&
+      !solver_strategy_input.use_lazy_constraints) {
+    throw exceptions::InvalidInputException(
+        "Reverse headways can only be included with lazy constraints.");
+  }
+  if (solver_strategy_input.include_reverse_headways &&
+      solver_strategy_input.lazy_constraint_selection_strategy !=
+          LazyConstraintSelectionStrategy::AllChecked) {
+    throw exceptions::InvalidInputException(
+        "Reverse headway cannot be used if only violated lazy constraints are "
+        "added.");
+  }
+
   num_tr                  = instance.get_train_list().size();
   num_edges               = instance.const_n().number_of_edges();
   num_vertices            = instance.const_n().number_of_vertices();
