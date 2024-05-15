@@ -1,3 +1,4 @@
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "MultiArray.hpp"
@@ -10,6 +11,9 @@
 #include <cstddef>
 #include <cstdlib>
 #include <limits>
+#include <numeric>
+#include <optional>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -164,7 +168,6 @@ std::vector<std::unordered_map<size_t, double>> cda_rail::solver::mip_based::
   std::vector<std::unordered_map<size_t, double>> train_velocities(
       solver->num_tr);
   for (size_t tr = 0; tr < solver->num_tr; tr++) {
-    const auto& exit = solver->instance.get_schedule(tr).get_exit();
     for (size_t route_v_idx = 0; route_v_idx < routes[tr].size();
          route_v_idx++) {
       const auto& v_idx = routes[tr][route_v_idx].first;
@@ -211,8 +214,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         const std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>&
                                                 train_orders_on_edges,
         const std::vector<std::vector<size_t>>& train_orders_on_ttd) {
-  bool violated_constraint_found = false;
-  bool only_one_constraint =
+  bool       violated_constraint_found = false;
+  const bool only_one_constraint =
       solver->solver_strategy.lazy_constraint_selection_strategy ==
       LazyConstraintSelectionStrategy::OnlyFirstFound;
   for (size_t tr = 0; tr < solver->num_tr &&
@@ -274,11 +277,12 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 
         // Get other trains that might conflict with the current train on
         // this edge
-        const auto& rel_tr_order = train_orders_on_edges.at(rel_e_idx);
+        const auto& [rel_tr_order_source, rel_tr_order_target] =
+            train_orders_on_edges.at(rel_e_idx);
         std::unordered_set<size_t> other_trains;
         for (size_t i = 0; i < 2; i++) {
           const auto& tr_order =
-              i == 0 ? rel_tr_order.first : rel_tr_order.second;
+              i == 0 ? rel_tr_order_source : rel_tr_order_target;
           const auto tr_index =
               std::find(tr_order.begin(), tr_order.end(), tr) -
               tr_order.begin();
@@ -531,8 +535,6 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             bool add_constr =
                 (solver->solver_strategy.lazy_constraint_selection_strategy ==
                  LazyConstraintSelectionStrategy::AllChecked);
-            const auto& other_tr_object =
-                solver->instance.get_train_list().get_train(other_tr);
             const auto& other_tr_t_variable =
                 solver->vars["t_ttd_departure"](other_tr, ttd_index);
             if (!add_constr && tr_t_var_value - t_reduction <
