@@ -1428,7 +1428,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                       rel_in_edges.push_back(e);
                     }
                   }
-                  assert(!rel_in_edges.empty());
+                  // Note: In some cases there might be no relevant in edges, in
+                  // particular if it is an entry node of a different train that
+                  // might not be reachable from the network itself.
                   for (const auto& e_before_v : rel_in_edges) {
                     const auto& e_before_v_obj =
                         instance.const_n().get_edge(e_before_v);
@@ -1437,6 +1439,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                         velocity_extensions.at(tr).at(v_before_v);
                     const auto& e_before_v_tmp_max =
                         std::min(tmp_max_speed, e_before_v_obj.max_speed);
+                    if (vel > e_before_v_tmp_max) {
+                      continue;
+                    }
                     for (size_t v_before_v_index = 0;
                          v_before_v_index < v_before_v_velocities.size();
                          v_before_v_index++) {
