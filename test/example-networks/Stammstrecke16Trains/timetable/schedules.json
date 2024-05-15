@@ -3,7 +3,7 @@
     "entry": "Ost2Entry",
     "exit": "LaimExitNymphenburg",
     "stops": [
-      { "begin": 690, "end": 720, "station": "Rosenheimer Platz" },
+      { "begin": 690, "end": 720, "station": "RosenheimerPlatz" },
       { "begin": 810, "end": 840, "station": "Isartor" },
       { "begin": 915, "end": 945, "station": "Marienplatz" },
       { "begin": 1020, "end": 1050, "station": "Karlsplatz" },
@@ -29,7 +29,7 @@
       { "begin": 1080, "end": 1110, "station": "Karlsplatz" },
       { "begin": 1185, "end": 1215, "station": "Marienplatz" },
       { "begin": 1290, "end": 1320, "station": "Isartor" },
-      { "begin": 1410, "end": 1440, "station": "Rosenheimer Platz" }
+      { "begin": 1410, "end": 1440, "station": "RosenheimerPlatz" }
     ],
     "t_0": 525,
     "t_n": 1530,
@@ -40,7 +40,7 @@
     "entry": "Ost2Entry",
     "exit": "LaimExitNymphenburg",
     "stops": [
-      { "begin": 510, "end": 540, "station": "Rosenheimer Platz" },
+      { "begin": 510, "end": 540, "station": "RosenheimerPlatz" },
       { "begin": 630, "end": 660, "station": "Isartor" },
       { "begin": 735, "end": 765, "station": "Marienplatz" },
       { "begin": 840, "end": 870, "station": "Karlsplatz" },
@@ -66,7 +66,7 @@
       { "begin": 825, "end": 855, "station": "Karlsplatz" },
       { "begin": 930, "end": 960, "station": "Marienplatz" },
       { "begin": 1035, "end": 1065, "station": "Isartor" },
-      { "begin": 1155, "end": 1185, "station": "Rosenheimer Platz" }
+      { "begin": 1155, "end": 1185, "station": "RosenheimerPlatz" }
     ],
     "t_0": 270,
     "t_n": 1275,
@@ -84,7 +84,7 @@
       { "begin": 1260, "end": 1290, "station": "Karlsplatz" },
       { "begin": 1365, "end": 1395, "station": "Marienplatz" },
       { "begin": 1470, "end": 1500, "station": "Isartor" },
-      { "begin": 1590, "end": 1620, "station": "Rosenheimer Platz" }
+      { "begin": 1590, "end": 1620, "station": "RosenheimerPlatz" }
     ],
     "t_0": 705,
     "t_n": 1710,
@@ -95,7 +95,7 @@
     "entry": "Ost2Entry",
     "exit": "LaimExitNymphenburg",
     "stops": [
-      { "begin": 90, "end": 120, "station": "Rosenheimer Platz" },
+      { "begin": 90, "end": 120, "station": "RosenheimerPlatz" },
       { "begin": 210, "end": 240, "station": "Isartor" },
       { "begin": 315, "end": 345, "station": "Marienplatz" },
       { "begin": 420, "end": 450, "station": "Karlsplatz" },
@@ -122,7 +122,7 @@
       { "begin": 900, "end": 930, "station": "Karlsplatz" },
       { "begin": 1005, "end": 1035, "station": "Marienplatz" },
       { "begin": 1110, "end": 1140, "station": "Isartor" },
-      { "begin": 1230, "end": 1260, "station": "Rosenheimer Platz" }
+      { "begin": 1230, "end": 1260, "station": "RosenheimerPlatz" }
     ],
     "t_0": 165,
     "t_n": 1350,
@@ -133,7 +133,7 @@
     "entry": "Ost3Entry",
     "exit": "PasingExit",
     "stops": [
-      { "begin": 420, "end": 450, "station": "Rosenheimer Platz" },
+      { "begin": 420, "end": 450, "station": "RosenheimerPlatz" },
       { "begin": 540, "end": 570, "station": "Isartor" },
       { "begin": 645, "end": 675, "station": "Marienplatz" },
       { "begin": 750, "end": 780, "station": "Karlsplatz" },
@@ -152,7 +152,7 @@
     "entry": "Ost1Entry",
     "exit": "PasingExit",
     "stops": [
-      { "begin": 600, "end": 630, "station": "Rosenheimer Platz" },
+      { "begin": 600, "end": 630, "station": "RosenheimerPlatz" },
       { "begin": 720, "end": 750, "station": "Isartor" },
       { "begin": 825, "end": 855, "station": "Marienplatz" },
       { "begin": 930, "end": 960, "station": "Karlsplatz" },
@@ -179,7 +179,7 @@
       { "begin": 1170, "end": 1200, "station": "Karlsplatz" },
       { "begin": 1275, "end": 1305, "station": "Marienplatz" },
       { "begin": 1380, "end": 1410, "station": "Isartor" },
-      { "begin": 1500, "end": 1530, "station": "Rosenheimer Platz" }
+      { "begin": 1500, "end": 1530, "station": "RosenheimerPlatz" }
     ],
     "t_0": 435,
     "t_n": 1620,
@@ -198,7 +198,7 @@
       { "begin": 735, "end": 765, "station": "Karlsplatz" },
       { "begin": 840, "end": 870, "station": "Marienplatz" },
       { "begin": 945, "end": 975, "station": "Isartor" },
-      { "begin": 1065, "end": 1095, "station": "Rosenheimer Platz" }
+      { "begin": 1065, "end": 1095, "station": "RosenheimerPlatz" }
     ],
     "t_0": 0,
     "t_n": 1185,
@@ -209,7 +209,7 @@
     "entry": "Ost1Entry",
     "exit": "PasingExit",
     "stops": [
-      { "begin": 180, "end": 210, "station": "Rosenheimer Platz" },
+      { "begin": 180, "end": 210, "station": "RosenheimerPlatz" },
       { "begin": 300, "end": 330, "station": "Isartor" },
       { "begin": 405, "end": 435, "station": "Marienplatz" },
       { "begin": 510, "end": 540, "station": "Karlsplatz" },
@@ -233,7 +233,7 @@
       { "begin": 660, "end": 690, "station": "Karlsplatz" },
       { "begin": 765, "end": 795, "station": "Marienplatz" },
       { "begin": 870, "end": 900, "station": "Isartor" },
-      { "begin": 990, "end": 1020, "station": "Rosenheimer Platz" }
+      { "begin": 990, "end": 1020, "station": "RosenheimerPlatz" }
     ],
     "t_0": 345,
     "t_n": 1110,
@@ -244,7 +244,7 @@
     "entry": "Ost3Entry",
     "exit": "DonnersbergerExit",
     "stops": [
-      { "begin": 255, "end": 285, "station": "Rosenheimer Platz" },
+      { "begin": 255, "end": 285, "station": "RosenheimerPlatz" },
       { "begin": 375, "end": 405, "station": "Isartor" },
       { "begin": 480, "end": 510, "station": "Marienplatz" },
       { "begin": 585, "end": 615, "station": "Karlsplatz" },
@@ -268,7 +268,7 @@
       { "begin": 990, "end": 1020, "station": "Karlsplatz" },
       { "begin": 1095, "end": 1125, "station": "Marienplatz" },
       { "begin": 1200, "end": 1230, "station": "Isartor" },
-      { "begin": 1320, "end": 1350, "station": "Rosenheimer Platz" }
+      { "begin": 1320, "end": 1350, "station": "RosenheimerPlatz" }
     ],
     "t_0": 255,
     "t_n": 1440,
@@ -279,7 +279,7 @@
     "entry": "Ost1Entry",
     "exit": "PasingExit",
     "stops": [
-      { "begin": 345, "end": 375, "station": "Rosenheimer Platz" },
+      { "begin": 345, "end": 375, "station": "RosenheimerPlatz" },
       { "begin": 465, "end": 495, "station": "Isartor" },
       { "begin": 570, "end": 600, "station": "Marienplatz" },
       { "begin": 675, "end": 705, "station": "Karlsplatz" },
