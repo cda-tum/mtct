@@ -118,9 +118,25 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
 
   // Initialize relevant variables
+  EXPECT_THROW(solver.initialize_variables(
+                   {},
+                   {true, true, true,
+                    cda_rail::solver::mip_based::
+                        LazyConstraintSelectionStrategy::OnlyFirstFound},
+                   {true, 5.55, cda_rail::VelocityRefinementStrategy::None}),
+               cda_rail::exceptions::InvalidInputException);
+
+  EXPECT_THROW(solver.initialize_variables(
+                   {},
+                   {false, true, true,
+                    cda_rail::solver::mip_based::
+                        LazyConstraintSelectionStrategy::AllChecked},
+                   {true, 5.55, cda_rail::VelocityRefinementStrategy::None}),
+               cda_rail::exceptions::InvalidInputException);
+
   solver.initialize_variables(
       {},
-      {true, true, true,
+      {true, false, true,
        cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
            OnlyFirstFound},
       {true, 5.55, cda_rail::VelocityRefinementStrategy::None});
@@ -135,7 +151,7 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   EXPECT_EQ(solver.num_ttd, 1);
   EXPECT_EQ(solver.max_t, 360);
   EXPECT_TRUE(solver.solver_strategy.use_lazy_constraints);
-  EXPECT_TRUE(solver.solver_strategy.include_reverse_headways);
+  EXPECT_FALSE(solver.solver_strategy.include_reverse_headways);
   EXPECT_TRUE(solver.solver_strategy.include_higher_velocities_in_edge_expr);
   EXPECT_EQ(solver.solver_strategy.lazy_constraint_selection_strategy,
             cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
