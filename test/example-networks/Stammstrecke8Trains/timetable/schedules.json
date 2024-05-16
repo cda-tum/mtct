@@ -135,12 +135,12 @@
       { "begin": 675, "end": 705, "station": "Karlsplatz" },
       { "begin": 765, "end": 795, "station": "Hbf" },
       { "begin": 870, "end": 915, "station": "Hackerbruecke" },
-      { "begin": 975, "end": 1005, "station": "Donnersbergerbruecke" },
-      { "begin": 1095, "end": 1125, "station": "Hirschgarten" },
-      { "begin": 1215, "end": 1245, "station": "Laim" }
+      { "begin": 990, "end": 1020, "station": "Donnersbergerbruecke" },
+      { "begin": 1110, "end": 1140, "station": "Hirschgarten" },
+      { "begin": 1230, "end": 1260, "station": "Laim" }
     ],
     "t_0": 255,
-    "t_n": 1395,
+    "t_n": 1410,
     "v_0": 0.0,
     "v_n": 0.0
   }
