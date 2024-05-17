@@ -955,7 +955,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                              vars["t_front_departure"](tr, v) +
                                  max_travel_time_expr,
                          "rear_departure_vertex_c2_" + tr_object.name + "_" +
-                             instance.const_n().get_vertex(v).name);
+                             instance.const_n()
+                                 .get_vertex(v)
+                                 .name); // not needed because objective pushes
+                                         // rear departure down
       } else {
         // Otherwise deduce limits from last path edge
         const auto possible_paths =
@@ -1061,12 +1064,13 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             if (rel_pt_on_edge + 1e-6 >= last_edge_obj.length) {
               // Directly use corresponding variable
               model->addConstr(
-                  lhs == vars["t_front_departure"](tr, last_edge_obj.target),
+                  lhs >= vars["t_front_departure"](tr, last_edge_obj.target),
                   "rear_departure_2_" + tr_object.name + "_" +
                       instance.const_n().get_vertex(v).name + "_" +
                       std::to_string(p_ind));
             } else {
-              // Only in this case there is no corresponding variable.
+              // Only in this case there is no corresponding variable. Note that
+              // objective pushes rear departure down.
               GRBLinExpr t_ref_1 =
                   vars["t_front_departure"](tr, last_edge_obj.source);
               GRBLinExpr t_ref_2 =
