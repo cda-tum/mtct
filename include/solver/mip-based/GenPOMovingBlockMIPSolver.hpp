@@ -86,6 +86,14 @@ private:
       std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>>>
                                                 tr_stop_data;
   std::vector<std::vector<std::vector<double>>> velocity_extensions;
+  std::vector<std::pair<size_t, size_t>>        relevant_reverse_edges;
+  std::unordered_map<size_t, size_t>            edge_to_relevant_index;
+  [[nodiscard]] std::optional<size_t> get_relevant_index(size_t edge_id) const {
+    if (edge_to_relevant_index.find(edge_id) == edge_to_relevant_index.end()) {
+      return std::optional<size_t>();
+    }
+    return edge_to_relevant_index.at(edge_id);
+  }
 
   void initialize_variables(
       const SolutionSettingsMovingBlock& solution_settings_input,
@@ -95,6 +103,7 @@ private:
   double ub_timing_variable(size_t tr) const;
 
   void fill_tr_stop_data();
+  void fill_relevant_reverse_edges();
   void fill_velocity_extensions();
   void fill_velocity_extensions_using_none_strategy();
   void fill_velocity_extensions_using_min_one_step_strategy();
@@ -106,6 +115,7 @@ private:
   void create_general_edge_variables();
   void create_stop_variables();
   void create_velocity_extended_variables();
+  void create_reverse_edge_variables();
 
   void set_objective();
 

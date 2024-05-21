@@ -186,6 +186,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   create_general_edge_variables();
   create_velocity_extended_variables();
   create_stop_variables();
+  create_reverse_edge_variables();
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -336,6 +337,44 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                   std::to_string(v_1.at(i)) + "_" +
                                   std::to_string(v_2.at(j)));
           }
+        }
+      }
+    }
+  }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_reverse_edge_variables() {
+  /**
+   * In order to prevent collisions of trains traveling in opposite directions,
+   * we need additional variables.
+   */
+  vars["t_rear_undirected_relevant_edge"] =
+      MultiArray<GRBVar>(num_tr, relevant_reverse_edges.size());
+  vars["reverse_order"] =
+      MultiArray<GRBVar>(num_tr, num_tr, relevant_reverse_edges.size());
+
+  for (size_t idx = 0; idx < relevant_reverse_edges.size(); idx++) {
+    const auto& [e1, e2] = relevant_reverse_edges.at(idx);
+    const auto tr_list =
+        instance.trains_in_section({e1, e2}, model_detail.fix_routes, false);
+    const auto  e_obj   = instance.const_n().get_edge(e1);
+    const auto& v1_name = instance.const_n().get_vertex(e_obj.source).name;
+    const auto& v2_name = instance.const_n().get_vertex(e_obj.target).name;
+    for (const auto& tr : tr_list) {
+      const auto&  tr_name = instance.get_train_list().get_train(tr).name;
+      const double ub_timing_dept = ub_timing_variable(tr);
+      vars["t_rear_undirected_relevant_edge"](tr, idx) =
+          model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS,
+                        "t_rear_undirected_relevant_edge_" + tr_name + "_" +
+                            v1_name + "-" + v2_name);
+      for (const auto& tr2 : tr_list) {
+        if (tr != tr2) {
+          const auto& tr2_name = instance.get_train_list().get_train(tr2).name;
+          vars["reverse_order"](tr, tr2, idx) =
+              model->addVar(0.0, 1.0, 0.0, GRB_BINARY,
+                            "reverse_order_" + tr_name + "_" + tr2_name + "_" +
+                                v1_name + "-" + v2_name);
         }
       }
     }
@@ -532,6 +571,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   this->num_ttd           = this->ttd_sections.size();
   this->fill_tr_stop_data();
   this->fill_velocity_extensions();
+  this->fill_relevant_reverse_edges();
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -1710,6 +1750,22 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_edge_path_expr(
   }
 
   return edge_path_expr;
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    fill_relevant_reverse_edges() {
+  const auto relevant_breakable_edges =
+      instance.const_n().relevant_breakable_edges();
+  relevant_reverse_edges.clear();
+  for (const auto& e : relevant_breakable_edges) {
+    const auto reverse_edge = instance.const_n().get_reverse_edge_index(e);
+    if (reverse_edge.has_value()) {
+      relevant_reverse_edges.emplace_back(e, reverse_edge.value());
+      size_t idx                = relevant_reverse_edges.size() - 1;
+      edge_to_relevant_index[e] = idx;
+      edge_to_relevant_index[reverse_edge.value()] = idx;
+    }
+  }
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
