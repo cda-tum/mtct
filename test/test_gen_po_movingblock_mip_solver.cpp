@@ -750,7 +750,7 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   EXPECT_APPROX_EQ(vel_data_new_2_v8.at(0), 10);
 }
 
-/** TEST(GenPOMovingBlockMIPSolver, Default1) {
+TEST(GenPOMovingBlockMIPSolver, Default1) {
   const std::vector<std::string> paths{"HighSpeedTrack2Trains",
                                        "HighSpeedTrack5Trains", "Overtake",
                                        "SimpleNetwork"};
@@ -1036,7 +1036,6 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
         << "Objective value is not 0 for instance " << instance_path;
   }
 }
-**/
 
 TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
   const std::vector<std::string> paths{"SingleTrack"};
@@ -1049,8 +1048,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance::
             cast_from_vss_generation(instance_before_parse);
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto                                             sol =
-        solver.solve({}, {false}, {cda_rail::ExportOption::ExportLP}, 250);
+    const auto sol = solver.solve({}, {false}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution())
         << "No solution found for instance " << instance_path;
