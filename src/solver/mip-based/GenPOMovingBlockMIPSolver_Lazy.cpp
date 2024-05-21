@@ -852,8 +852,6 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               solver->lazy_constraints.emplace_back(lhs2 >= rhs2);
             }
 
-            PLOGD << "Added!";
-
             violated_constraint_found = true;
           }
         }
