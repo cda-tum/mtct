@@ -39,11 +39,13 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
 
   if (const auto sol_count = model->get(GRB_IntAttr_SolCount);
       sol_count < 0.5) {
+    sol.set_solution_not_found();
     return;
   }
 
   const auto mip_obj_val =
       static_cast<int>(std::round(model->get(GRB_DoubleAttr_ObjVal)));
+  sol.set_solution_found();
   sol.set_obj(mip_obj_val);
   PLOGD << "MIP objective: " << mip_obj_val;
 
