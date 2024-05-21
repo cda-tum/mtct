@@ -77,7 +77,7 @@ jobs:
       - name: Test
         run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 400
       - name: Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifacts@v4
         with:
           name: model
           path: /**/model.mps
