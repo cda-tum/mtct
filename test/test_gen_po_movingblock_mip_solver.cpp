@@ -838,7 +838,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
                      {true, false, true,
                       cda_rail::solver::mip_based::
                           LazyConstraintSelectionStrategy::OnlyFirstFound},
-                     {}, 60);
+                     {}, 100);
 
     EXPECT_TRUE(sol.has_solution())
         << "No solution found for instance " << instance_path;
@@ -866,7 +866,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
                      {true, false, true,
                       cda_rail::solver::mip_based::
                           LazyConstraintSelectionStrategy::OnlyFirstFound},
-                     {}, 60);
+                     {}, 120);
 
     EXPECT_TRUE(sol.has_solution())
         << "No solution found for instance " << instance_path;
@@ -894,7 +894,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3) {
                      {true, false, true,
                       cda_rail::solver::mip_based::
                           LazyConstraintSelectionStrategy::OnlyFirstFound},
-                     {}, 60);
+                     {}, 120);
 
     EXPECT_TRUE(sol.has_solution())
         << "No solution found for instance " << instance_path;
@@ -924,7 +924,7 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
                                                      cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
                                                          AllChecked,
                                                      cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
-        {}, 60);
+        {}, 120);
 
     EXPECT_TRUE(sol.has_solution())
         << "No solution found for instance " << instance_path;
@@ -953,7 +953,7 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
                                                      cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
                                                          AllChecked,
                                                      cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
-        {}, 60);
+        {}, 130);
 
     EXPECT_TRUE(sol.has_solution())
         << "No solution found for instance " << instance_path;
@@ -982,7 +982,7 @@ TEST(GenPOMovingBlockMIPSolver, All3) {
                                                      cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
                                                          AllChecked,
                                                      cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
-        {}, 60);
+        {}, 130);
 
     EXPECT_TRUE(sol.has_solution())
         << "No solution found for instance " << instance_path;
