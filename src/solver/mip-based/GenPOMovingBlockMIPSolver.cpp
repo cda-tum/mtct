@@ -1403,6 +1403,32 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 }
               }
             }
+            if (tr_object.name == "tr1" &&
+                instance.get_train_list().get_train(tr2).name == "tr2" &&
+                instance.const_n().get_vertex(v).name == "v0" && vel == 27 &&
+                p_index == 0) {
+              model->update();
+              // Print all variables included in lhs
+              for (size_t i = 0; i < lhs.size(); i++) {
+                const auto var       = lhs.getVar(i);
+                const auto var_name  = var.get(GRB_StringAttr_VarName);
+                const auto var_coeff = lhs.getCoeff(i);
+                std::cout << std::to_string(lhs.getConstant()) << " + "
+                          << std::to_string(var_coeff) << "*" << var_name
+                          << " ";
+              }
+              std::cout << std::endl << ">=" << std::endl;
+              // Print all variables included in rhs.at(0)
+              for (size_t i = 0; i < rhs.at(0).size(); i++) {
+                const auto var       = rhs.at(0).getVar(i);
+                const auto var_name  = var.get(GRB_StringAttr_VarName);
+                const auto var_coeff = rhs.at(0).getCoeff(i);
+                std::cout << std::to_string(rhs.at(0).getConstant()) << " + "
+                          << std::to_string(var_coeff) << "*" << var_name
+                          << " ";
+              }
+              std::cout << std::endl;
+            }
             for (size_t rhs_idx = 0; rhs_idx < rhs.size(); rhs_idx++) {
               model->addConstr(
                   lhs >= rhs.at(rhs_idx),
