@@ -80,4 +80,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: model
-          path: /home/runner/work/mtct/mtct/**/model.mps
+          path: /**/model.mps
