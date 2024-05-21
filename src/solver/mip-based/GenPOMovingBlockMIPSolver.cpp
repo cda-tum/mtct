@@ -1409,23 +1409,23 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 p_index == 0) {
               model->update();
               // Print all variables included in lhs
+              std::cout << std::to_string(lhs.getConstant()) << " ";
               for (size_t i = 0; i < lhs.size(); i++) {
                 const auto var       = lhs.getVar(i);
                 const auto var_name  = var.get(GRB_StringAttr_VarName);
                 const auto var_coeff = lhs.getCoeff(i);
-                std::cout << std::to_string(lhs.getConstant()) << " + "
-                          << std::to_string(var_coeff) << "*" << var_name
-                          << " ";
+                std::cout << " + " << std::to_string(var_coeff) << "*"
+                          << var_name << " ";
               }
               std::cout << std::endl << ">=" << std::endl;
               // Print all variables included in rhs.at(1)
+              std::cout << std::to_string(rhs.at(0).getConstant()) << " ";
               for (size_t i = 0; i < rhs.at(1).size(); i++) {
                 const auto var       = rhs.at(1).getVar(i);
                 const auto var_name  = var.get(GRB_StringAttr_VarName);
                 const auto var_coeff = rhs.at(1).getCoeff(i);
-                std::cout << std::to_string(rhs.at(1).getConstant()) << " + "
-                          << std::to_string(var_coeff) << "*" << var_name
-                          << " ";
+                std::cout << " + " << std::to_string(var_coeff) << "*"
+                          << var_name << " ";
               }
               std::cout << std::endl;
             }
