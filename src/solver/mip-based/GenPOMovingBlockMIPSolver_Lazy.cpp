@@ -37,9 +37,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       if (solver->solver_strategy.lazy_constraint_selection_strategy !=
               LazyConstraintSelectionStrategy::OnlyFirstFound ||
           !constraint_created) {
-        constraint_created == create_lazy_edge_and_ttd_headway_constraints(
-                                  routes, train_velocities,
-                                  train_orders_on_edges, train_orders_on_ttd);
+        constraint_created = create_lazy_edge_and_ttd_headway_constraints(
+            routes, train_velocities, train_orders_on_edges,
+            train_orders_on_ttd);
       }
       if (solver->solver_strategy.lazy_constraint_selection_strategy !=
               LazyConstraintSelectionStrategy::OnlyFirstFound ||
