@@ -90,7 +90,7 @@ private:
   std::unordered_map<size_t, size_t>            edge_to_relevant_index;
   [[nodiscard]] std::optional<size_t> get_relevant_index(size_t edge_id) const {
     if (edge_to_relevant_index.find(edge_id) == edge_to_relevant_index.end()) {
-      return std::optional<size_t>();
+      return {};
     }
     return edge_to_relevant_index.at(edge_id);
   }
