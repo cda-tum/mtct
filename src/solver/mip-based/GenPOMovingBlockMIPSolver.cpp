@@ -1331,13 +1331,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               continue;
             }
 
-            const auto& t_bound_tmp =
+            const auto t_bound_tmp_2 =
                 std::max(t_bound, ub_timing_variable(tr2));
 
             const GRBLinExpr lhs =
                 vars["t_front_departure"](tr, v) +
-                t_bound_tmp * (static_cast<double>(p.size()) - edge_path_expr) +
-                t_bound_tmp * (1 - vars["order"](tr, tr2, p.back()));
+                t_bound_tmp_2 *
+                    (static_cast<double>(p.size()) - edge_path_expr) +
+                t_bound_tmp_2 * (1 - vars["order"](tr, tr2, p.back()));
             std::vector<GRBLinExpr> rhs;
             if (p_len + EPS >= bd && p_len - EPS <= bd) {
               // Target vertex is exactly the desired moving authority
@@ -1397,8 +1398,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                     rhs.at(1) -=
                         vars["y"](tr2, p.back(), v_tr2_source_index,
                                   v_tr2_target_index) *
-                        (max_travel_time > t_bound_tmp ? t_bound_tmp
-                                                       : max_travel_time);
+                        (max_travel_time > t_bound_tmp_2 ? t_bound_tmp_2
+                                                         : max_travel_time);
                   }
                 }
               }
@@ -1419,7 +1420,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               }
               std::cout << std::endl << ">=" << std::endl;
               // Print all variables included in rhs.at(1)
-              std::cout << std::to_string(rhs.at(0).getConstant()) << " ";
+              std::cout << std::to_string(rhs.at(1).getConstant()) << " ";
               for (size_t i = 0; i < rhs.at(1).size(); i++) {
                 const auto var       = rhs.at(1).getVar(i);
                 const auto var_name  = var.get(GRB_StringAttr_VarName);

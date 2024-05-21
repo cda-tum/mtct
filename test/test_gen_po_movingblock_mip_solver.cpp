@@ -1058,6 +1058,8 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    EXPECT_TRUE(false);
   }
 }
 
