@@ -1331,8 +1331,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               continue;
             }
 
-            const auto& t_bound_tmp =
-                std::max(t_bound, ub_timing_variable(tr2));
+            const auto t_bound_tmp = std::max(t_bound, ub_timing_variable(tr2));
 
             const GRBLinExpr lhs =
                 vars["t_front_departure"](tr, v) +

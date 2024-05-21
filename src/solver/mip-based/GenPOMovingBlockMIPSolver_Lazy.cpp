@@ -366,7 +366,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             add_constr = true;
           }
 
-          const auto& t_bound_tmp =
+          const auto t_bound_tmp =
               std::max(t_bound, solver->ub_timing_variable(tr_other_idx));
 
           if (add_constr) {
@@ -590,7 +590,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             }
 
             if (add_constr) {
-              const auto& t_bound_tmp =
+              const auto t_bound_tmp =
                   std::max(t_bound, solver->ub_timing_variable(other_tr));
               GRBLinExpr rhs =
                   other_tr_t_variable +
