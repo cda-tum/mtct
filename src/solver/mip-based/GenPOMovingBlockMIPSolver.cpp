@@ -1418,12 +1418,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                           << " ";
               }
               std::cout << std::endl << ">=" << std::endl;
-              // Print all variables included in rhs.at(1)
-              for (size_t i = 0; i < rhs.at(1).size(); i++) {
-                const auto var       = rhs.at(1).getVar(i);
+              // Print all variables included in rhs.at(0)
+              for (size_t i = 0; i < rhs.at(0).size(); i++) {
+                const auto var       = rhs.at(0).getVar(i);
                 const auto var_name  = var.get(GRB_StringAttr_VarName);
-                const auto var_coeff = rhs.at(1).getCoeff(i);
-                std::cout << std::to_string(rhs.at(1).getConstant()) << " + "
+                const auto var_coeff = rhs.at(0).getCoeff(i);
+                std::cout << std::to_string(rhs.at(0).getConstant()) << " + "
                           << std::to_string(var_coeff) << "*" << var_name
                           << " ";
               }
