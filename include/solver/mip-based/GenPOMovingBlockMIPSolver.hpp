@@ -158,6 +158,10 @@ private:
         const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
                                     std::vector<std::pair<size_t, bool>>>>&
             train_orders_on_edges);
+    bool create_lazy_reverse_edge_constraints(
+        const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
+                                    std::vector<std::pair<size_t, bool>>>>&
+            train_orders_on_edges);
 
   public:
     explicit LazyCallback(GenPOMovingBlockMIPSolver* solver) : solver(solver) {}
