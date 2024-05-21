@@ -349,8 +349,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
    * In order to prevent collisions of trains traveling in opposite directions,
    * we need additional variables.
    */
-  vars["t_rear_undirected_relevant_edge"] =
-      MultiArray<GRBVar>(num_tr, relevant_reverse_edges.size());
   vars["reverse_order"] =
       MultiArray<GRBVar>(num_tr, num_tr, relevant_reverse_edges.size());
 
@@ -361,21 +359,20 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto  e_obj   = instance.const_n().get_edge(e1);
     const auto& v1_name = instance.const_n().get_vertex(e_obj.source).name;
     const auto& v2_name = instance.const_n().get_vertex(e_obj.target).name;
-    for (const auto& tr : tr_list) {
-      const auto&  tr_name = instance.get_train_list().get_train(tr).name;
-      const double ub_timing_dept = ub_timing_variable(tr);
-      vars["t_rear_undirected_relevant_edge"](tr, idx) =
-          model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS,
-                        "t_rear_undirected_relevant_edge_" + tr_name + "_" +
-                            v1_name + "-" + v2_name);
-      for (const auto& tr2 : tr_list) {
-        if (tr != tr2) {
-          const auto& tr2_name = instance.get_train_list().get_train(tr2).name;
-          vars["reverse_order"](tr, tr2, idx) =
-              model->addVar(0.0, 1.0, 0.0, GRB_BINARY,
-                            "reverse_order_" + tr_name + "_" + tr2_name + "_" +
-                                v1_name + "-" + v2_name);
-        }
+    for (size_t idx_tr1 = 0; idx_tr1 < tr_list.size(); idx_tr1++) {
+      const auto  tr1      = tr_list.at(idx_tr1);
+      const auto& tr1_name = instance.get_train_list().get_train(tr1).name;
+      for (size_t idx_tr2 = idx_tr1 + 1; idx_tr2 < tr_list.size(); idx_tr2++) {
+        const auto  tr2      = tr_list.at(idx_tr2);
+        const auto& tr2_name = instance.get_train_list().get_train(tr2).name;
+        vars["reverse_order"](tr1, tr2, idx) =
+            model->addVar(0.0, 1.0, 0.0, GRB_BINARY,
+                          "reverse_order_" + tr1_name + "_" + tr2_name + "_" +
+                              v1_name + "-" + v2_name);
+        vars["reverse_order"](tr2, tr1, idx) =
+            model->addVar(0.0, 1.0, 0.0, GRB_BINARY,
+                          "reverse_order_" + tr2_name + "_" + tr1_name + "_" +
+                              v1_name + "-" + v2_name);
       }
     }
   }
@@ -406,6 +403,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   create_basic_ttd_constraints();
   PLOGD << "Create train rear constraints";
   create_train_rear_constraints();
+  PLOGD << "Create basic reverse edge constraints";
+  create_reverse_edge_constraints();
   PLOGD << "Create stopping constraints";
   create_stopping_constraints();
   if (!solver_strategy.use_lazy_constraints) {
@@ -1632,6 +1631,82 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_reverse_edge_constraints() {
+  for (size_t idx = 0; idx < relevant_reverse_edges.size(); idx++) {
+    const auto& [e1, e2] = relevant_reverse_edges.at(idx);
+    const auto tr_list =
+        instance.trains_in_section({e1, e2}, model_detail.fix_routes, false);
+    const auto tr_list_1 = instance.trains_on_edge_mixed_routing(
+        e1, model_detail.fix_routes, false);
+    const auto tr_list_2 = instance.trains_on_edge_mixed_routing(
+        e2, model_detail.fix_routes, false);
+
+    const auto  e_obj   = instance.const_n().get_edge(e1);
+    const auto& v1_name = instance.const_n().get_vertex(e_obj.source).name;
+    const auto& v2_name = instance.const_n().get_vertex(e_obj.target).name;
+
+    for (const auto& tr1 : tr_list_1) {
+      const auto& tr1_name = instance.get_train_list().get_train(tr1).name;
+      for (const auto& tr2 : tr_list_2) {
+        if (tr1 == tr2) {
+          continue;
+        }
+        const auto& tr2_name = instance.get_train_list().get_train(tr2).name;
+        model->addConstr(vars["reverse_order"](tr1, tr2, idx) +
+                                 vars["reverse_order"](tr2, tr1, idx) >=
+                             vars["x"](tr1, e1) + vars["x"](tr2, e2) - 1,
+                         "reverse_order_lb_" + tr1_name + "_" + tr2_name + "_" +
+                             v1_name + "-" + v2_name);
+      }
+    }
+
+    for (size_t idx_tr1 = 0; idx_tr1 < tr_list.size(); idx_tr1++) {
+      const auto  tr1      = tr_list.at(idx_tr1);
+      const auto& tr1_name = instance.get_train_list().get_train(tr1).name;
+      const auto  ub_val_1 = ub_timing_variable(tr1);
+      for (size_t idx_tr2 = idx_tr1 + 1; idx_tr2 < tr_list.size(); idx_tr2++) {
+        const auto  tr2      = tr_list.at(idx_tr2);
+        const auto& tr2_name = instance.get_train_list().get_train(tr2).name;
+        model->addConstr(vars["reverse_order"](tr1, tr2, idx) +
+                                 vars["reverse_order"](tr2, tr1, idx) <=
+                             1,
+                         "reverse_order_ub_" + tr1_name + "_" + tr2_name + "_" +
+                             v1_name + "-" + v2_name);
+
+        const auto ub_val_2 = ub_timing_variable(tr2);
+        const auto t_bound  = std::max(ub_val_1, ub_val_2);
+
+        model->addConstr(
+            vars["t_front_departure"](tr1, e_obj.source) +
+                    t_bound * (1 - vars["reverse_order"](tr1, tr2, idx)) >=
+                vars["t_rear_departure"](tr2, e_obj.source),
+            "reverse_order_1_" + tr1_name + "_" + tr2_name + "_" + v1_name +
+                "-" + v2_name);
+        model->addConstr(
+            vars["t_front_departure"](tr1, e_obj.target) +
+                    t_bound * (1 - vars["reverse_order"](tr1, tr2, idx)) >=
+                vars["t_rear_departure"](tr2, e_obj.target),
+            "reverse_order_2_" + tr1_name + "_" + tr2_name + "_" + v1_name +
+                "-" + v2_name);
+
+        model->addConstr(
+            vars["t_front_departure"](tr2, e_obj.source) +
+                    t_bound * (1 - vars["reverse_order"](tr2, tr1, idx)) >=
+                vars["t_rear_departure"](tr1, e_obj.source),
+            "reverse_order_1b_" + tr2_name + "_" + tr1_name + "_" + v1_name +
+                "-" + v2_name);
+        model->addConstr(
+            vars["t_front_departure"](tr2, e_obj.target) +
+                    t_bound * (1 - vars["reverse_order"](tr2, tr1, idx)) >=
+                vars["t_rear_departure"](tr1, e_obj.target),
+            "reverse_order_2b_" + tr2_name + "_" + tr1_name + "_" + v1_name +
+                "-" + v2_name);
+      }
+    }
+  }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_vertex_headway_constraints() {
   // If a line headway is specified (most importantly on exit nodes), then obey
   // This only takes into account if the same previous or next edge is used
@@ -1761,9 +1836,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto reverse_edge = instance.const_n().get_reverse_edge_index(e);
     if (reverse_edge.has_value()) {
       relevant_reverse_edges.emplace_back(e, reverse_edge.value());
-      size_t idx                = relevant_reverse_edges.size() - 1;
-      edge_to_relevant_index[e] = idx;
-      edge_to_relevant_index[reverse_edge.value()] = idx;
     }
   }
 }

@@ -87,13 +87,6 @@ private:
                                                 tr_stop_data;
   std::vector<std::vector<std::vector<double>>> velocity_extensions;
   std::vector<std::pair<size_t, size_t>>        relevant_reverse_edges;
-  std::unordered_map<size_t, size_t>            edge_to_relevant_index;
-  [[nodiscard]] std::optional<size_t> get_relevant_index(size_t edge_id) const {
-    if (edge_to_relevant_index.find(edge_id) == edge_to_relevant_index.end()) {
-      return {};
-    }
-    return edge_to_relevant_index.at(edge_id);
-  }
 
   void initialize_variables(
       const SolutionSettingsMovingBlock& solution_settings_input,
@@ -125,6 +118,7 @@ private:
   void create_basic_order_constraints();
   void create_basic_ttd_constraints();
   void create_train_rear_constraints();
+  void create_reverse_edge_constraints();
   void create_stopping_constraints();
   void create_vertex_headway_constraints();
   void create_headway_constraints();
