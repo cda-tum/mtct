@@ -397,8 +397,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   create_general_path_constraints();
   PLOGD << "Create travel times constraints";
   create_travel_times_constraints();
-  PLOGD << "Create basic order constraints";
-  create_basic_order_constraints();
   PLOGD << "Create basic TTD constraints";
   create_basic_ttd_constraints();
   PLOGD << "Create train rear constraints";
@@ -406,6 +404,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   PLOGD << "Create stopping constraints";
   create_stopping_constraints();
   if (!solver_strategy.use_lazy_constraints) {
+    PLOGD << "Create basic order constraints";
+    create_basic_order_constraints();
     PLOGD << "Create vertex headway constraints";
     create_vertex_headway_constraints();
     PLOGD << "Create reverse edge constraints";

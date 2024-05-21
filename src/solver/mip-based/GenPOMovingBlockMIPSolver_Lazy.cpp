@@ -437,6 +437,27 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               }
             }
 
+            if (!rhs.empty()) {
+              GRBLinExpr order_expr =
+                  solver->vars["order"](tr, tr_other_idx, p.back()) +
+                  solver->vars["order"](tr_other_idx, tr, p.back());
+              GRBLinExpr edge_expr = solver->vars["x"](tr, p.back()) +
+                                     solver->vars["x"](tr_other_idx, p.back());
+              addLazy(order_expr <= 0.5 * edge_expr);
+              addLazy(order_expr >= edge_expr - 1);
+              if (solver->solution_settings.export_option ==
+                      ExportOption::ExportLP ||
+                  solver->solution_settings.export_option ==
+                      ExportOption::ExportSolutionAndLP ||
+                  solver->solution_settings.export_option ==
+                      ExportOption::ExportSolutionWithInstanceAndLP) {
+                solver->lazy_constraints.emplace_back(order_expr <=
+                                                      0.5 * edge_expr);
+                solver->lazy_constraints.emplace_back(order_expr >=
+                                                      edge_expr - 1);
+              }
+            }
+
             for (const auto& rhs_expr : rhs) {
               addLazy(lhs >= rhs_expr);
               if (solver->solution_settings.export_option ==
