@@ -49,7 +49,7 @@ jobs:
           --tidy-checks="" \
           --thread-comments=true \
           --files-changed-only=true \
-          --ignore="build" \
+          --ignore="build | test/example-networks | test/example-networks-gen-po" \
           --database=build
       - name: Fail if linter found errors
         if: steps.linter.outputs.checks-failed > 0
