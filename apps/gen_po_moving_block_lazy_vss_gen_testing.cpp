@@ -7,6 +7,8 @@
 #include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
 
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+
 int main(int argc, char** argv) {
   // Only log to console using std::cerr and std::cout respectively unless
   // initialized differently
@@ -84,3 +86,5 @@ int main(int argc, char** argv) {
                 train_strategy},
                {}, timeout, true);
 }
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
