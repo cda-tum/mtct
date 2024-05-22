@@ -337,6 +337,10 @@ public:
   void change_vertex_type(const std::string& name, VertexType new_type) {
     change_vertex_type(get_vertex_index(name), new_type);
   };
+  void change_vertex_headway(size_t index, double new_headway);
+  void change_vertex_headway(const std::string& name, double new_headway) {
+    change_vertex_headway(get_vertex_index(name), new_headway);
+  };
 
   void change_edge_length(size_t index, double new_length);
   void change_edge_max_speed(size_t index, double new_max_speed);

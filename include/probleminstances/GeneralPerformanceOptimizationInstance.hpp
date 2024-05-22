@@ -38,6 +38,11 @@ class GeneralPerformanceOptimizationInstance
 
 public:
   GeneralPerformanceOptimizationInstance() = default;
+  explicit GeneralPerformanceOptimizationInstance(const Network& network)
+      : GeneralProblemInstanceWithScheduleAndRoutes<
+            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>(network) {
+    initialize_vectors();
+  };
   explicit GeneralPerformanceOptimizationInstance(
       const Network&                                                 network,
       const GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>& timetable,

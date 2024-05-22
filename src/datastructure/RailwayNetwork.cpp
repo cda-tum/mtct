@@ -1915,3 +1915,11 @@ void cda_rail::Network::update_new_old_edge(size_t new_edge, size_t old_edge,
   }
   new_edge_to_old_edge_after_transform[new_edge] = old_edge_position;
 }
+
+void cda_rail::Network::change_vertex_headway(size_t index,
+                                              double new_headway) {
+  if (!has_vertex(index)) {
+    throw exceptions::VertexNotExistentException(index);
+  }
+  vertices[index].headway = new_headway;
+}
