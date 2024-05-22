@@ -1,5 +1,6 @@
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 
+#include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
@@ -521,10 +522,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       std::vector<double> v_velocity_extensions = {0};
       double              speed                 = 0;
       while (speed < max_vertex_speed) {
-        speed = std::min(
-            {speed + model_detail.max_velocity_delta,
-             std::sqrt(speed * speed + 2 * tr_speed_change * min_n_length),
-             max_vertex_speed});
+        // Buffer, because due to numerics some values might be slightly too
+        // big.
+        const auto sqrt_tmp = std::max(
+            std::sqrt(speed * speed + 2 * tr_speed_change * min_n_length) -
+                V_MIN,
+            speed + V_MIN);
+        speed = std::min({speed + model_detail.max_velocity_delta, sqrt_tmp,
+                          max_vertex_speed});
         v_velocity_extensions.emplace_back(speed);
       }
       tr_velocity_extensions.emplace_back(v_velocity_extensions);
