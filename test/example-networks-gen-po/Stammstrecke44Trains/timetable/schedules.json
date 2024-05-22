@@ -1,0 +1,1864 @@
+{
+  "Train0": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [750, 22620],
+        "end": [795, 22665],
+        "min_stopping_time": 45,
+        "station": "Laim"
+      },
+      {
+        "begin": [855, 22785],
+        "end": [900, 22830],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [960, 22950],
+        "end": [1005, 22995],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1065, 23115],
+        "end": [1110, 23160],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1170, 23280],
+        "end": [1215, 23325],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1275, 23445],
+        "end": [1320, 23490],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1380, 23610],
+        "end": [1425, 23655],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1485, 23775],
+        "end": [1530, 23820],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [0, 60],
+    "t_n": [690, 22500],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train1": {
+    "entry": "Ost3Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [1125, 33840],
+        "end": [1170, 33885],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [1230, 34005],
+        "end": [1275, 34050],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1335, 34170],
+        "end": [1380, 34215],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1440, 34335],
+        "end": [1485, 34380],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1545, 34500],
+        "end": [1590, 34545],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1650, 34665],
+        "end": [1695, 34710],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1755, 34830],
+        "end": [1800, 34875],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      }
+    ],
+    "t_0": [60, 120],
+    "t_n": [1065, 33720],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train10": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [1350, 23220],
+        "end": [1395, 23265],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1455, 23385],
+        "end": [1500, 23430],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1560, 23550],
+        "end": [1605, 23595],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1665, 23715],
+        "end": [1710, 23760],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1770, 23880],
+        "end": [1815, 23925],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [600, 660],
+    "t_n": [1290, 23100],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train11": {
+    "entry": "LaimEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [1620, 30720],
+        "end": [1665, 30765],
+        "min_stopping_time": 45,
+        "station": "Laim"
+      },
+      {
+        "begin": [1725, 30885],
+        "end": [1770, 30930],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [1830, 31050],
+        "end": [1875, 31095],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1935, 31215],
+        "end": [1980, 31260],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2040, 31380],
+        "end": [2085, 31425],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2145, 31545],
+        "end": [2190, 31590],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2250, 31710],
+        "end": [2295, 31755],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2355, 31875],
+        "end": [2400, 31920],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [660, 720],
+    "t_n": [1560, 30600],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train12": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [1470, 23340],
+        "end": [1515, 23385],
+        "min_stopping_time": 45,
+        "station": "Laim"
+      },
+      {
+        "begin": [1575, 23505],
+        "end": [1620, 23550],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [1680, 23670],
+        "end": [1725, 23715],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1785, 23835],
+        "end": [1830, 23880],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1890, 24000],
+        "end": [1935, 24045],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1995, 24165],
+        "end": [2040, 24210],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2100, 24330],
+        "end": [2145, 24375],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2205, 24495],
+        "end": [2250, 24540],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [720, 780],
+    "t_n": [1410, 23220],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train13": {
+    "entry": "Ost3Entry",
+    "exit": "DonnersbergerExit",
+    "stops": [
+      {
+        "begin": [1530, 23400],
+        "end": [1575, 23445],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [1635, 23565],
+        "end": [1680, 23610],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1740, 23730],
+        "end": [1785, 23775],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1845, 23895],
+        "end": [1890, 23940],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1950, 24060],
+        "end": [1995, 24105],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2055, 24225],
+        "end": [2100, 24270],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2160, 24390],
+        "end": [2205, 24435],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      }
+    ],
+    "t_0": [780, 840],
+    "t_n": [1470, 23280],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train14": {
+    "entry": "Ost3Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [1140, 1500],
+        "end": [1230, 1590],
+        "min_stopping_time": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [840, 900],
+    "t_n": [1845, 34500],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train15": {
+    "entry": "Ost3Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [1200, 1560],
+        "end": [1290, 1650],
+        "min_stopping_time": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [900, 960],
+    "t_n": [1905, 34560],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "Train16": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [1710, 23580],
+        "end": [1755, 23625],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1815, 23745],
+        "end": [1860, 23790],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1920, 23910],
+        "end": [1965, 23955],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2025, 24075],
+        "end": [2070, 24120],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2130, 24240],
+        "end": [2175, 24285],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [960, 1020],
+    "t_n": [1650, 23460],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train17": {
+    "entry": "Ost3Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [2085, 34800],
+        "end": [2130, 34845],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [2190, 34965],
+        "end": [2235, 35010],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [2295, 35130],
+        "end": [2340, 35175],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2400, 35295],
+        "end": [2445, 35340],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2505, 35460],
+        "end": [2550, 35505],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2610, 35625],
+        "end": [2655, 35670],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2715, 35790],
+        "end": [2760, 35835],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      }
+    ],
+    "t_0": [1020, 1080],
+    "t_n": [2025, 34680],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train18": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [1830, 23700],
+        "end": [1875, 23745],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1935, 23865],
+        "end": [1980, 23910],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2040, 24030],
+        "end": [2085, 24075],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2145, 24195],
+        "end": [2190, 24240],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2250, 24360],
+        "end": [2295, 24405],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [1080, 1140],
+    "t_n": [1770, 23580],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train19": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [1890, 23760],
+        "end": [1935, 23805],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1995, 23925],
+        "end": [2040, 23970],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2100, 24090],
+        "end": [2145, 24135],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2205, 24255],
+        "end": [2250, 24300],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2310, 24420],
+        "end": [2355, 24465],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [1140, 1200],
+    "t_n": [1830, 23640],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train2": {
+    "entry": "LaimEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [1080, 30180],
+        "end": [1125, 30225],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1185, 30345],
+        "end": [1230, 30390],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1290, 30510],
+        "end": [1335, 30555],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1395, 30675],
+        "end": [1440, 30720],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1500, 30840],
+        "end": [1545, 30885],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [120, 180],
+    "t_n": [1020, 30060],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train20": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [1950, 23820],
+        "end": [1995, 23865],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2055, 23985],
+        "end": [2100, 24030],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2160, 24150],
+        "end": [2205, 24195],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2265, 24315],
+        "end": [2310, 24360],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2370, 24480],
+        "end": [2415, 24525],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [1200, 1260],
+    "t_n": [1890, 23700],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train21": {
+    "entry": "LaimEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [2220, 31320],
+        "end": [2265, 31365],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2325, 31485],
+        "end": [2370, 31530],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2430, 31650],
+        "end": [2475, 31695],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2535, 31815],
+        "end": [2580, 31860],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2640, 31980],
+        "end": [2685, 32025],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [1260, 1320],
+    "t_n": [2160, 31200],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train22": {
+    "entry": "Ost1Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [2385, 35100],
+        "end": [2430, 35145],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [2490, 35265],
+        "end": [2535, 35310],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [2595, 35430],
+        "end": [2640, 35475],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2700, 35595],
+        "end": [2745, 35640],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2805, 35760],
+        "end": [2850, 35805],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2910, 35925],
+        "end": [2955, 35970],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [3015, 36090],
+        "end": [3060, 36135],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [3120, 36255],
+        "end": [3165, 36300],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      }
+    ],
+    "t_0": [1320, 1380],
+    "t_n": [2325, 34980],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "Train23": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [2130, 24000],
+        "end": [2175, 24045],
+        "min_stopping_time": 45,
+        "station": "Laim"
+      },
+      {
+        "begin": [2235, 24165],
+        "end": [2280, 24210],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [2340, 24330],
+        "end": [2385, 24375],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [2445, 24495],
+        "end": [2490, 24540],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2550, 24660],
+        "end": [2595, 24705],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2655, 24825],
+        "end": [2700, 24870],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2760, 24990],
+        "end": [2805, 25035],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2865, 25155],
+        "end": [2910, 25200],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [1380, 1440],
+    "t_n": [2070, 23880],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train24": {
+    "entry": "Ost3Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [2505, 35220],
+        "end": [2550, 35265],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [2610, 35385],
+        "end": [2655, 35430],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [2715, 35550],
+        "end": [2760, 35595],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2820, 35715],
+        "end": [2865, 35760],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2925, 35880],
+        "end": [2970, 35925],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [3030, 36045],
+        "end": [3075, 36090],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [3135, 36210],
+        "end": [3180, 36255],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      }
+    ],
+    "t_0": [1440, 1500],
+    "t_n": [2445, 35100],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train25": {
+    "entry": "LaimEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [2460, 31560],
+        "end": [2505, 31605],
+        "min_stopping_time": 45,
+        "station": "Laim"
+      },
+      {
+        "begin": [2565, 31725],
+        "end": [2610, 31770],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [2670, 31890],
+        "end": [2715, 31935],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [2775, 32055],
+        "end": [2820, 32100],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2880, 32220],
+        "end": [2925, 32265],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2985, 32385],
+        "end": [3030, 32430],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [3090, 32550],
+        "end": [3135, 32595],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [3195, 32715],
+        "end": [3240, 32760],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [1500, 1560],
+    "t_n": [2400, 31440],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train26": {
+    "entry": "Ost1Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [2625, 35340],
+        "end": [2670, 35385],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [2730, 35505],
+        "end": [2775, 35550],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [2835, 35670],
+        "end": [2880, 35715],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2940, 35835],
+        "end": [2985, 35880],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [3045, 36000],
+        "end": [3090, 36045],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [3150, 36165],
+        "end": [3195, 36210],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [3255, 36330],
+        "end": [3300, 36375],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [3360, 36495],
+        "end": [3405, 36540],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      }
+    ],
+    "t_0": [1560, 1620],
+    "t_n": [2565, 35220],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "Train27": {
+    "entry": "Ost1Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [2685, 35400],
+        "end": [2730, 35445],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [2790, 35565],
+        "end": [2835, 35610],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [2895, 35730],
+        "end": [2940, 35775],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [3000, 35895],
+        "end": [3045, 35940],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [3105, 36060],
+        "end": [3150, 36105],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [3210, 36225],
+        "end": [3255, 36270],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [3315, 36390],
+        "end": [3360, 36435],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [3420, 36555],
+        "end": [3465, 36600],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      }
+    ],
+    "t_0": [1620, 1680],
+    "t_n": [2625, 35280],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "Train28": {
+    "entry": "Ost3Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [1980, 2340],
+        "end": [2070, 2430],
+        "min_stopping_time": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [1680, 1740],
+    "t_n": [2685, 35340],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "Train29": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [2490, 24360],
+        "end": [2535, 24405],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2595, 24525],
+        "end": [2640, 24570],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2700, 24690],
+        "end": [2745, 24735],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2805, 24855],
+        "end": [2850, 24900],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [2910, 25020],
+        "end": [2955, 25065],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [1740, 1800],
+    "t_n": [2430, 24240],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train3": {
+    "entry": "Ost1Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [1245, 33960],
+        "end": [1290, 34005],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [1350, 34125],
+        "end": [1395, 34170],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1455, 34290],
+        "end": [1500, 34335],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1560, 34455],
+        "end": [1605, 34500],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1665, 34620],
+        "end": [1710, 34665],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1770, 34785],
+        "end": [1815, 34830],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1875, 34950],
+        "end": [1920, 34995],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1980, 35115],
+        "end": [2025, 35160],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      }
+    ],
+    "t_0": [180, 240],
+    "t_n": [1185, 33840],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train30": {
+    "entry": "LaimEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [2760, 31860],
+        "end": [2805, 31905],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2865, 32025],
+        "end": [2910, 32070],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2970, 32190],
+        "end": [3015, 32235],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [3075, 32355],
+        "end": [3120, 32400],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [3180, 32520],
+        "end": [3225, 32565],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [1800, 1860],
+    "t_n": [2700, 31740],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train31": {
+    "entry": "LaimEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [2160, 2520],
+        "end": [2250, 2610],
+        "min_stopping_time": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [1860, 1920],
+    "t_n": [2760, 31800],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train32": {
+    "entry": "Ost2Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [2220, 2580],
+        "end": [2310, 2670],
+        "min_stopping_time": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [1920, 1980],
+    "t_n": [2925, 35580],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "Train33": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [2280, 2640],
+        "end": [2370, 2730],
+        "min_stopping_time": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [1980, 2040],
+    "t_n": [2670, 24480],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train34": {
+    "entry": "LaimEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [3000, 32100],
+        "end": [3045, 32145],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [3105, 32265],
+        "end": [3150, 32310],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [3210, 32430],
+        "end": [3255, 32475],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [3315, 32595],
+        "end": [3360, 32640],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [3420, 32760],
+        "end": [3465, 32805],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [2040, 2100],
+    "t_n": [2940, 31980],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train35": {
+    "entry": "Ost3Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [3165, 35880],
+        "end": [3210, 35925],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [3270, 36045],
+        "end": [3315, 36090],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [3375, 36210],
+        "end": [3420, 36255],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [3480, 36375],
+        "end": [3525, 36420],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [3585, 36540],
+        "end": [3630, 36585],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [3690, 36705],
+        "end": [3735, 36750],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [3795, 36870],
+        "end": [3840, 36915],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      }
+    ],
+    "t_0": [2100, 2160],
+    "t_n": [3105, 35760],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train36": {
+    "entry": "LaimEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [3120, 32220],
+        "end": [3165, 32265],
+        "min_stopping_time": 45,
+        "station": "Laim"
+      },
+      {
+        "begin": [3225, 32385],
+        "end": [3270, 32430],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [3330, 32550],
+        "end": [3375, 32595],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [3435, 32715],
+        "end": [3480, 32760],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [3540, 32880],
+        "end": [3585, 32925],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [3645, 33045],
+        "end": [3690, 33090],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [3750, 33210],
+        "end": [3795, 33255],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [3855, 33375],
+        "end": [3900, 33420],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [2160, 2220],
+    "t_n": [3060, 32100],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train37": {
+    "entry": "PasingEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [2520, 2880],
+        "end": [2610, 2970],
+        "min_stopping_time": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [2220, 2280],
+    "t_n": [3225, 35880],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train38": {
+    "entry": "PasingEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [3345, 36060],
+        "end": [3390, 36105],
+        "min_stopping_time": 45,
+        "station": "Laim"
+      },
+      {
+        "begin": [3450, 36225],
+        "end": [3495, 36270],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [3555, 36390],
+        "end": [3600, 36435],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [3660, 36555],
+        "end": [3705, 36600],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [3765, 36720],
+        "end": [3810, 36765],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [3870, 36885],
+        "end": [3915, 36930],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [3975, 37050],
+        "end": [4020, 37095],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [4080, 37215],
+        "end": [4125, 37260],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [2280, 2340],
+    "t_n": [3285, 35940],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train39": {
+    "entry": "Ost3Entry",
+    "exit": "DonnersbergerExit",
+    "stops": [
+      {
+        "begin": [2640, 3000],
+        "end": [2730, 3090],
+        "min_stopping_time": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [2340, 2400],
+    "t_n": [3030, 24840],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train4": {
+    "entry": "Ost2Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [1305, 34020],
+        "end": [1350, 34065],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [1410, 34185],
+        "end": [1455, 34230],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1515, 34350],
+        "end": [1560, 34395],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1620, 34515],
+        "end": [1665, 34560],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1725, 34680],
+        "end": [1770, 34725],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [240, 300],
+    "t_n": [1245, 33900],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "Train40": {
+    "entry": "Ost2Entry",
+    "exit": "DonnersbergerExit",
+    "stops": [
+      {
+        "begin": [2700, 3060],
+        "end": [2790, 3150],
+        "min_stopping_time": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [2400, 2460],
+    "t_n": [3090, 24900],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train41": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [3210, 25080],
+        "end": [3255, 25125],
+        "min_stopping_time": 45,
+        "station": "Laim"
+      },
+      {
+        "begin": [3315, 25245],
+        "end": [3360, 25290],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [3420, 25410],
+        "end": [3465, 25455],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [3525, 25575],
+        "end": [3570, 25620],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [3630, 25740],
+        "end": [3675, 25785],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [3735, 25905],
+        "end": [3780, 25950],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [3840, 26070],
+        "end": [3885, 26115],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [3945, 26235],
+        "end": [3990, 26280],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      }
+    ],
+    "t_0": [2460, 2520],
+    "t_n": [3150, 24960],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train42": {
+    "entry": "Ost3Entry",
+    "exit": "DonnersbergerExit",
+    "stops": [
+      {
+        "begin": [3270, 25140],
+        "end": [3315, 25185],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [3375, 25305],
+        "end": [3420, 25350],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [3480, 25470],
+        "end": [3525, 25515],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [3585, 25635],
+        "end": [3630, 25680],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [3690, 25800],
+        "end": [3735, 25845],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [3795, 25965],
+        "end": [3840, 26010],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [3900, 26130],
+        "end": [3945, 26175],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      }
+    ],
+    "t_0": [2520, 2580],
+    "t_n": [3210, 25020],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train43": {
+    "entry": "Ost1Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [2880, 3240],
+        "end": [2970, 3330],
+        "min_stopping_time": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [2580, 2640],
+    "t_n": [3585, 36240],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train5": {
+    "entry": "Ost2Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [1365, 34080],
+        "end": [1410, 34125],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [1470, 34245],
+        "end": [1515, 34290],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1575, 34410],
+        "end": [1620, 34455],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1680, 34575],
+        "end": [1725, 34620],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1785, 34740],
+        "end": [1830, 34785],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [300, 360],
+    "t_n": [1305, 33960],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train6": {
+    "entry": "Ost1Entry",
+    "exit": "DonnersbergerExit",
+    "stops": [
+      {
+        "begin": [1110, 22980],
+        "end": [1155, 23025],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [1215, 23145],
+        "end": [1260, 23190],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1320, 23310],
+        "end": [1365, 23355],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1425, 23475],
+        "end": [1470, 23520],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1530, 23640],
+        "end": [1575, 23685],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1635, 23805],
+        "end": [1680, 23850],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1740, 23970],
+        "end": [1785, 24015],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1845, 24135],
+        "end": [1890, 24180],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      }
+    ],
+    "t_0": [360, 420],
+    "t_n": [1050, 22860],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train7": {
+    "entry": "Ost1Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [1485, 34200],
+        "end": [1530, 34245],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [1590, 34365],
+        "end": [1635, 34410],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1695, 34530],
+        "end": [1740, 34575],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1800, 34695],
+        "end": [1845, 34740],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1905, 34860],
+        "end": [1950, 34905],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2010, 35025],
+        "end": [2055, 35070],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2115, 35190],
+        "end": [2160, 35235],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [2220, 35355],
+        "end": [2265, 35400],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      }
+    ],
+    "t_0": [420, 480],
+    "t_n": [1425, 34080],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "Train8": {
+    "entry": "Ost2Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [1545, 34260],
+        "end": [1590, 34305],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [1650, 34425],
+        "end": [1695, 34470],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1755, 34590],
+        "end": [1800, 34635],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1860, 34755],
+        "end": [1905, 34800],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1965, 34920],
+        "end": [2010, 34965],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": [480, 540],
+    "t_n": [1485, 34140],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "Train9": {
+    "entry": "Ost1Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [1605, 34320],
+        "end": [1650, 34365],
+        "min_stopping_time": 45,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [1710, 34485],
+        "end": [1755, 34530],
+        "min_stopping_time": 45,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1815, 34650],
+        "end": [1860, 34695],
+        "min_stopping_time": 45,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1920, 34815],
+        "end": [1965, 34860],
+        "min_stopping_time": 45,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [2025, 34980],
+        "end": [2070, 35025],
+        "min_stopping_time": 45,
+        "station": "Hbf"
+      },
+      {
+        "begin": [2130, 35145],
+        "end": [2175, 35190],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [2235, 35310],
+        "end": [2280, 35355],
+        "min_stopping_time": 45,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [2340, 35475],
+        "end": [2385, 35520],
+        "min_stopping_time": 45,
+        "station": "Hirschgarten"
+      }
+    ],
+    "t_0": [540, 600],
+    "t_n": [1545, 34200],
+    "v_0": 0.0,
+    "v_n": 20.0
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "lambda": 1.0,
+  "train_optional": { "Train0": false, "Train1": false, "Train2": false },
+  "train_weights": { "Train0": 8.4, "Train1": 2.9, "Train2": 9.8 }
+}

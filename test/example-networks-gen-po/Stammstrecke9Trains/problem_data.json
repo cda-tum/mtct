@@ -1,0 +1,25 @@
+{
+  "lambda": 1.0,
+  "train_optional": {
+    "Train0": false,
+    "Train1": false,
+    "Train2": false,
+    "Train3": false,
+    "Train4": false,
+    "Train5": false,
+    "Train6": false,
+    "Train7": false,
+    "Train8": false
+  },
+  "train_weights": {
+    "Train0": 8.9,
+    "Train1": 6.8,
+    "Train2": 3.0,
+    "Train3": 7.8,
+    "Train4": 6.4,
+    "Train5": 9.5,
+    "Train6": 9.7,
+    "Train7": 5.2,
+    "Train8": 9.4
+  }
+}
