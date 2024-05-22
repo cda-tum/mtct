@@ -7,7 +7,7 @@
 #include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
 
 int main(int argc, char** argv) {
   // Only log to console using std::cerr and std::cout respectively unless
@@ -81,10 +81,11 @@ int main(int argc, char** argv) {
   }
   PLOGI << "Timeout: " << timeout;
 
+  // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve({},
                {use_lazy, reverse_headways, higher_velocities, lazy_strategy,
                 train_strategy},
                {}, timeout, true);
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
