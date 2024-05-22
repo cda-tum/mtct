@@ -115,6 +115,9 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     model->set(GRB_IntParam_LazyConstraints, 1);
   }
 
+  model->update();
+  model->write("model.lp");
+
   model->optimize();
 
   IF_PLOG(plog::debug) {
