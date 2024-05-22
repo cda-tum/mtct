@@ -493,8 +493,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // v2 has minimal length of 5 -> 2*1*5 = 10
   std::vector<double> expected_speeds_1_v2 = {0};
   while (expected_speeds_1_v2.back() < 30) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_1_v2.back() * expected_speeds_1_v2.back() + 10);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_1_v2.back() * expected_speeds_1_v2.back() +
+                  10) -
+            cda_rail::V_MIN,
+        expected_speeds_1_v2.back() + cda_rail::V_MIN);
     expected_speeds_1_v2.push_back(new_speed > 30 ? 30 : new_speed);
   }
   EXPECT_EQ(vel_data_new_1_v2.size(), expected_speeds_1_v2.size());
@@ -506,8 +509,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // v3 has minimal length of 5 -> 2*1*5 = 10
   std::vector<double> expected_speeds_1_v3 = {0};
   while (expected_speeds_1_v3.back() < 10) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_1_v3.back() * expected_speeds_1_v3.back() + 10);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_1_v3.back() * expected_speeds_1_v3.back() +
+                  10) -
+            cda_rail::V_MIN,
+        expected_speeds_1_v3.back() + cda_rail::V_MIN);
     expected_speeds_1_v3.push_back(new_speed > 10 ? 10 : new_speed);
   }
   EXPECT_EQ(vel_data_new_1_v3.size(), expected_speeds_1_v3.size());
@@ -519,8 +525,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // v41 has minimal length of 10 -> 2*1*10 = 20
   std::vector<double> expected_speeds_1_v41 = {0};
   while (expected_speeds_1_v41.back() < 10) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_1_v41.back() * expected_speeds_1_v41.back() + 20);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_1_v41.back() * expected_speeds_1_v41.back() +
+                  20) -
+            cda_rail::V_MIN,
+        expected_speeds_1_v41.back() + cda_rail::V_MIN);
     expected_speeds_1_v41.push_back(new_speed > 10 ? 10 : new_speed);
   }
   EXPECT_EQ(vel_data_new_1_v41.size(), expected_speeds_1_v41.size());
@@ -536,8 +545,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // ...
   std::vector<double> expected_speeds_1_v51 = {0};
   while (expected_speeds_1_v51.back() < 30) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_1_v51.back() * expected_speeds_1_v51.back() + 100);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_1_v51.back() * expected_speeds_1_v51.back() +
+                  100) -
+            cda_rail::V_MIN,
+        expected_speeds_1_v51.back() + cda_rail::V_MIN);
     expected_speeds_1_v51.push_back(new_speed > 30 ? 30 : new_speed);
   }
   EXPECT_EQ(vel_data_new_1_v51.size(), expected_speeds_1_v51.size());
@@ -549,8 +561,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // v61 has minimal length of 10 -> 2*1*10 = 20
   std::vector<double> expected_speeds_1_v61 = {0};
   while (expected_speeds_1_v61.back() < 10) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_1_v61.back() * expected_speeds_1_v61.back() + 20);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_1_v61.back() * expected_speeds_1_v61.back() +
+                  20) -
+            cda_rail::V_MIN,
+        expected_speeds_1_v61.back() + cda_rail::V_MIN);
     expected_speeds_1_v61.push_back(new_speed > 10 ? 10 : new_speed);
   }
   EXPECT_EQ(vel_data_new_1_v61.size(), expected_speeds_1_v61.size());
@@ -562,8 +577,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // v7 has minimal length of 10 -> 2*1*10 = 20
   std::vector<double> expected_speeds_1_v7 = {0};
   while (expected_speeds_1_v7.back() < 10) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_1_v7.back() * expected_speeds_1_v7.back() + 20);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_1_v7.back() * expected_speeds_1_v7.back() +
+                  20) -
+            cda_rail::V_MIN,
+        expected_speeds_1_v7.back() + cda_rail::V_MIN);
     expected_speeds_1_v7.push_back(new_speed > 10 ? 10 : new_speed);
   }
   EXPECT_EQ(vel_data_new_1_v7.size(), expected_speeds_1_v7.size());
@@ -578,8 +596,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // sqrt(10^2+150) = 15.8114 < 20 -> ...
   std::vector<double> expected_speeds_1_v8 = {0, 10};
   while (expected_speeds_1_v8.back() < 30) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_1_v8.back() * expected_speeds_1_v8.back() + 150);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_1_v8.back() * expected_speeds_1_v8.back() +
+                  150) -
+            cda_rail::V_MIN,
+        expected_speeds_1_v8.back() + cda_rail::V_MIN);
     expected_speeds_1_v8.push_back(new_speed > 30 ? 30 : new_speed);
   }
   EXPECT_EQ(vel_data_new_1_v8.size(), expected_speeds_1_v8.size());
@@ -615,8 +636,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // sqrt(10^2+160) = 16.0312 < 20 -> ...
   std::vector<double> expected_speeds_2_v1 = {0, 10};
   while (expected_speeds_2_v1.back() < 40) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_2_v1.back() * expected_speeds_2_v1.back() + 160);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_2_v1.back() * expected_speeds_2_v1.back() +
+                  160) -
+            cda_rail::V_MIN,
+        expected_speeds_2_v1.back() + cda_rail::V_MIN);
     expected_speeds_2_v1.push_back(new_speed > 40 ? 40 : new_speed);
   }
   EXPECT_EQ(vel_data_new_2_v1.size(), expected_speeds_2_v1.size());
@@ -630,8 +654,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // sqrt(0^2+20) = 4.47214 < 10 -> ...
   std::vector<double> expected_speeds_2_v2 = {0};
   while (expected_speeds_2_v2.back() < 40) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_2_v2.back() * expected_speeds_2_v2.back() + 20);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_2_v2.back() * expected_speeds_2_v2.back() +
+                  20) -
+            cda_rail::V_MIN,
+        expected_speeds_2_v2.back() + cda_rail::V_MIN);
     expected_speeds_2_v2.push_back(new_speed > 40 ? 40 : new_speed);
   }
   EXPECT_EQ(vel_data_new_2_v2.size(), expected_speeds_2_v2.size());
@@ -645,8 +672,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // sqrt(0^2+20) = 4.47214 < 10 -> ...
   std::vector<double> expected_speeds_2_v3 = {0};
   while (expected_speeds_2_v3.back() < 40) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_2_v3.back() * expected_speeds_2_v3.back() + 20);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_2_v3.back() * expected_speeds_2_v3.back() +
+                  20) -
+            cda_rail::V_MIN,
+        expected_speeds_2_v3.back() + cda_rail::V_MIN);
     expected_speeds_2_v3.push_back(new_speed > 40 ? 40 : new_speed);
   }
   EXPECT_EQ(vel_data_new_2_v3.size(), expected_speeds_2_v3.size());
@@ -660,8 +690,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // sqrt(0^2+40) = 6.32456 < 10 -> ...
   std::vector<double> expected_speeds_2_v41 = {0};
   while (expected_speeds_2_v41.back() < 10) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_2_v41.back() * expected_speeds_2_v41.back() + 40);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_2_v41.back() * expected_speeds_2_v41.back() +
+                  40) -
+            cda_rail::V_MIN,
+        expected_speeds_2_v41.back() + cda_rail::V_MIN);
     expected_speeds_2_v41.push_back(new_speed > 10 ? 10 : new_speed);
   }
   EXPECT_EQ(vel_data_new_2_v41.size(), expected_speeds_2_v41.size());
@@ -676,8 +709,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // sqrt(10^2+200) = 14.1421 < 20 -> ...
   std::vector<double> expected_speeds_2_v51 = {0, 10};
   while (expected_speeds_2_v51.back() < 30) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_2_v51.back() * expected_speeds_2_v51.back() + 200);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_2_v51.back() * expected_speeds_2_v51.back() +
+                  200) -
+            cda_rail::V_MIN,
+        expected_speeds_2_v51.back() + cda_rail::V_MIN);
     expected_speeds_2_v51.push_back(new_speed > 30 ? 30 : new_speed);
   }
   EXPECT_EQ(vel_data_new_2_v51.size(), expected_speeds_2_v51.size());
@@ -691,8 +727,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // sqrt(0^2+40) = 6.32456 < 10 -> ...
   std::vector<double> expected_speeds_2_v61 = {0};
   while (expected_speeds_2_v61.back() < 10) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_2_v61.back() * expected_speeds_2_v61.back() + 40);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_2_v61.back() * expected_speeds_2_v61.back() +
+                  40) -
+            cda_rail::V_MIN,
+        expected_speeds_2_v61.back() + cda_rail::V_MIN);
     expected_speeds_2_v61.push_back(new_speed > 10 ? 10 : new_speed);
   }
   EXPECT_EQ(vel_data_new_2_v61.size(), expected_speeds_2_v61.size());
@@ -706,8 +745,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // sqrt(0^2+40) = 6.32456 < 10 -> ...
   std::vector<double> expected_speeds_2_v42 = {0};
   while (expected_speeds_2_v42.back() < 30) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_2_v42.back() * expected_speeds_2_v42.back() + 40);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_2_v42.back() * expected_speeds_2_v42.back() +
+                  40) -
+            cda_rail::V_MIN,
+        expected_speeds_2_v42.back() + cda_rail::V_MIN);
     expected_speeds_2_v42.push_back(new_speed > 30 ? 30 : new_speed);
   }
   EXPECT_EQ(vel_data_new_2_v42.size(), expected_speeds_2_v42.size());
@@ -721,8 +763,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // sqrt(0^2+40) = 6.32456 < 10 -> ...
   std::vector<double> expected_speeds_2_v62 = {0};
   while (expected_speeds_2_v62.back() < 30) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_2_v62.back() * expected_speeds_2_v62.back() + 40);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_2_v62.back() * expected_speeds_2_v62.back() +
+                  40) -
+            cda_rail::V_MIN,
+        expected_speeds_2_v62.back() + cda_rail::V_MIN);
     expected_speeds_2_v62.push_back(new_speed > 30 ? 30 : new_speed);
   }
   EXPECT_EQ(vel_data_new_2_v62.size(), expected_speeds_2_v62.size());
@@ -736,8 +781,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // sqrt(0^2+40) = 6.32456 < 10 -> ...
   std::vector<double> expected_speeds_2_v7 = {0};
   while (expected_speeds_2_v7.back() < 40) {
-    const auto new_speed = std::sqrt(
-        expected_speeds_2_v7.back() * expected_speeds_2_v7.back() + 40);
+    const auto new_speed = std::max(
+        std::sqrt(expected_speeds_2_v7.back() * expected_speeds_2_v7.back() +
+                  40) -
+            cda_rail::V_MIN,
+        expected_speeds_2_v7.back() + cda_rail::V_MIN);
     expected_speeds_2_v7.push_back(new_speed > 40 ? 40 : new_speed);
   }
   EXPECT_EQ(vel_data_new_2_v7.size(), expected_speeds_2_v7.size());
