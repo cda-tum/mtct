@@ -138,12 +138,6 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
       solution_settings.export_option == ExportOption::ExportSolutionAndLP ||
       solution_settings.export_option ==
           ExportOption::ExportSolutionWithInstanceAndLP) {
-    PLOGD << "Add " << lazy_constraints.size() << " lazy constraints";
-    for (size_t i = 0; i < lazy_constraints.size(); i++) {
-      model->addConstr(lazy_constraints.at(i), "Lazy" + std::to_string(i));
-    }
-    model->update();
-
     PLOGI << "Saving model and solution";
     std::filesystem::path path = solution_settings.path;
 
@@ -153,10 +147,18 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
                                         path.string());
     }
 
-    model->write((path / (solution_settings.name + ".mps")).string());
+    const auto sol_count = model->get(GRB_IntAttr_SolCount);
     if (model->get(GRB_IntAttr_SolCount) > 0) {
-      model->write((path / (solution_settings.name + ".sol")).string());
+      model->write((path / (solution_settings.name + ".json")).string());
     }
+
+    PLOGD << "Add " << lazy_constraints.size() << " lazy constraints";
+    for (size_t i = 0; i < lazy_constraints.size(); i++) {
+      model->addConstr(lazy_constraints.at(i), "Lazy" + std::to_string(i));
+    }
+    model->update();
+
+    model->write((path / (solution_settings.name + ".lp")).string());
   }
 
   if (solution_settings.export_option == ExportOption::ExportSolution ||
@@ -1339,7 +1341,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             const auto t_bound_tmp = std::max(t_bound, ub_timing_variable(tr2));
 
             const GRBLinExpr lhs =
-                vars["t_front_departure"](tr, v) +
+                vars["t_front_arrival"](tr, v) +
                 t_bound_tmp * (static_cast<double>(p.size()) - edge_path_expr) +
                 t_bound_tmp * (1 - vars["order"](tr, tr2, p.back()));
             std::vector<GRBLinExpr> rhs;
@@ -1449,7 +1451,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                   std::max(t_bound, ub_timing_variable(tr2));
 
               GRBLinExpr lhs_from_rear =
-                  vars["t_front_departure"](tr, v) +
+                  vars["t_front_arrival"](tr, v) +
                   t_bound_tmp *
                       (static_cast<double>(p_tmp.size()) - edge_tmp_path_expr);
               const GRBLinExpr rhs =
@@ -1737,7 +1739,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         // Add headway constraints to both source and target vertices depending
         // on train order
         model->addConstr(
-            vars["t_front_departure"](tr1, source_v) +
+            vars["t_front_arrival"](tr1, source_v) +
                     (t_bound + source_v_object.headway) *
                         (1 - vars["order"](tr1, tr2, e)) >=
                 vars["t_rear_departure"](tr2, source_v) +
@@ -1747,7 +1749,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 instance.get_train_list().get_train(tr2).name + "_" +
                 source_v_object.name + "-" + target_v_object.name);
         model->addConstr(
-            vars["t_front_departure"](tr2, source_v) +
+            vars["t_front_arrival"](tr2, source_v) +
                     (t_bound + source_v_object.headway) *
                         (1 - vars["order"](tr2, tr1, e)) >=
                 vars["t_rear_departure"](tr1, source_v) +
@@ -1757,7 +1759,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 instance.get_train_list().get_train(tr2).name + "_" +
                 source_v_object.name + "-" + target_v_object.name);
         model->addConstr(
-            vars["t_front_departure"](tr1, target_v) +
+            vars["t_front_arrival"](tr1, target_v) +
                     (t_bound + target_v_object.headway) *
                         (1 - vars["order"](tr1, tr2, e)) >=
                 vars["t_rear_departure"](tr2, target_v) +
@@ -1767,7 +1769,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 instance.get_train_list().get_train(tr2).name + "_" +
                 source_v_object.name + "-" + target_v_object.name);
         model->addConstr(
-            vars["t_front_departure"](tr2, target_v) +
+            vars["t_front_arrival"](tr2, target_v) +
                     (t_bound + target_v_object.headway) *
                         (1 - vars["order"](tr2, tr1, e)) >=
                 vars["t_rear_departure"](tr1, target_v) +
