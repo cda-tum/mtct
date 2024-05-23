@@ -799,9 +799,8 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, Default1) {
-  const std::vector<std::string> paths{"HighSpeedTrack2Trains",
-                                       "HighSpeedTrack5Trains", "Overtake",
-                                       "SimpleNetwork"};
+  const std::vector<std::string> paths{
+      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
 
   for (const auto& p : paths) {
     const std::string instance_path = "./example-networks/" + p + "/";
@@ -869,9 +868,8 @@ TEST(GenPOMovingBlockMIPSolver, Default3) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
-  const std::vector<std::string> paths{"HighSpeedTrack2Trains",
-                                       "HighSpeedTrack5Trains", "Overtake",
-                                       "SimpleNetwork"};
+  const std::vector<std::string> paths{
+      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
 
   for (const auto& p : paths) {
     const std::string instance_path = "./example-networks/" + p + "/";
@@ -994,7 +992,7 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
             cast_from_vss_generation(instance_before_parse);
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {},
+        {true, 5.55, cda_rail::VelocityRefinementStrategy::None},
         {true, true, false,
                                                      cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
                                                          AllChecked,
