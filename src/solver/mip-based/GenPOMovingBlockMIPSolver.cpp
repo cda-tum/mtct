@@ -116,6 +116,9 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     model->set(GRB_IntParam_LazyConstraints, 1);
   }
 
+  PLOGD << "Set absolute MIP gap to " << solver_strategy.abs_mip_gap;
+  model->set(GRB_DoubleParam_MIPGapAbs, solver_strategy.abs_mip_gap);
+
   model->optimize();
 
   IF_PLOG(plog::debug) {
@@ -382,15 +385,18 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_objective() {
-  GRBLinExpr obj_expr = 0;
+  GRBLinExpr obj_expr      = 0;
+  double     tr_weight_sum = 0;
   for (size_t tr = 0; tr < num_tr; tr++) {
     const auto  exit_node     = instance.get_schedule(tr).get_exit();
     const auto& min_exit_time = instance.get_schedule(tr).get_t_n_range().first;
     const auto& tr_weight     = instance.get_train_weight(tr);
+    tr_weight_sum += tr_weight;
 
     obj_expr +=
         tr_weight * (vars["t_rear_departure"](tr, exit_node) - min_exit_time);
   }
+  obj_expr /= tr_weight_sum;
   model->setObjective(obj_expr, GRB_MINIMIZE);
 }
 
