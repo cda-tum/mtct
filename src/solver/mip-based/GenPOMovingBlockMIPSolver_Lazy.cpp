@@ -677,6 +677,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   bool only_one_constraint =
       solver->solver_strategy.lazy_constraint_selection_strategy ==
       LazyConstraintSelectionStrategy::OnlyFirstFound;
+
+  std::unordered_set<size_t> trains_checked_by_heuristic = {};
+
   for (size_t tr = 0; tr < solver->num_tr &&
                       (!only_one_constraint || !violated_constraint_found);
        tr++) {
@@ -775,6 +778,73 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                 getSolution(tr_t_var_source_rear) + headway_source - GRB_EPS ||
             getSolution(other_tr_t_var_target_front) <
                 getSolution(tr_t_var_target_rear) + headway_target - GRB_EPS) {
+          if (solver->solver_strategy.include_heuristic && !same_order) {
+            // Try if this can be solved by rerouting the other (following)
+            // train This might be possible, because it appears that the other
+            // train wants to pass the current train But only if neither train
+            // has been checked by the heuristic yet
+            if (trains_checked_by_heuristic.count(tr) == 0 &&
+                trains_checked_by_heuristic.count(other_tr) == 0) {
+              const auto& tr_heuristic_object =
+                  solver->instance.get_train_list().get_train(tr);
+
+              trains_checked_by_heuristic.insert(tr);
+              trains_checked_by_heuristic.insert(other_tr);
+
+              setSolution(solver->vars["order"](tr, other_tr, edge_index), 0);
+
+              for (const auto v_heuristic :
+                   solver->instance.vertices_used_by_train(
+                       tr, solver->model_detail.fix_routes, false)) {
+                setSolution(solver->vars["t_front_arrival"](tr, v_heuristic),
+                            getSolution(solver->vars["t_front_departure"](
+                                tr, v_heuristic)));
+                setSolution(solver->vars["t_front_departure"](tr, v_heuristic),
+                            getSolution(solver->vars["t_rear_departure"](
+                                tr, v_heuristic)));
+                setSolution(solver->vars["t_rear_departure"](tr, v_heuristic),
+                            getSolution(solver->vars["t_rear_departure"](
+                                tr, v_heuristic)));
+              }
+
+              for (const auto e_heuristic :
+                   solver->instance.edges_used_by_train(
+                       tr, solver->model_detail.fix_routes, false)) {
+                setSolution(solver->vars["x"](tr, e_heuristic),
+                            getSolution(solver->vars["x"](tr, e_heuristic)));
+                const auto& edge_heuristic =
+                    solver->instance.const_n().get_edge(e_heuristic);
+                const auto& v_1_heuristic =
+                    solver->velocity_extensions.at(tr).at(
+                        edge_heuristic.source);
+                const auto& v_2_heuristic =
+                    solver->velocity_extensions.at(tr).at(
+                        edge_heuristic.target);
+                const auto tmp_max_speed = std::min(
+                    tr_heuristic_object.max_speed, edge_heuristic.max_speed);
+                for (size_t i = 0; i < v_1_heuristic.size(); i++) {
+                  if (v_1_heuristic.at(i) > tmp_max_speed) {
+                    continue;
+                  }
+                  for (size_t j = 0; j < v_2_heuristic.size(); j++) {
+                    if (v_2_heuristic.at(j) > tmp_max_speed) {
+                      continue;
+                    }
+                    if (cda_rail::possible_by_eom(
+                            v_1_heuristic.at(i), v_2_heuristic.at(j),
+                            tr_heuristic_object.acceleration,
+                            tr_heuristic_object.deceleration,
+                            edge_heuristic.length)) {
+                      setSolution(solver->vars["y"](tr, e_heuristic, i, j),
+                                  getSolution(solver->vars["y"](tr, e_heuristic,
+                                                                i, j)));
+                    }
+                  }
+                }
+              }
+            }
+          }
+
           const auto t_bound_source =
               std::max(tr_t_bound, solver->ub_timing_variable(other_tr)) +
               headway_source;
@@ -838,6 +908,61 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             solver->lazy_constraints.emplace_back(lhs_target_2 >= rhs_target_2);
           }
           violated_constraint_found = true;
+        }
+      }
+    }
+  }
+
+  if (solver->solver_strategy.include_heuristic &&
+      !trains_checked_by_heuristic.empty()) {
+    for (size_t tr = 0; tr < solver->num_tr; tr++) {
+      if (trains_checked_by_heuristic.count(tr) == 0) {
+        const auto tr_heuristic_object =
+            solver->instance.get_train_list().get_train(tr);
+        for (const auto v_heuristic : solver->instance.vertices_used_by_train(
+                 tr, solver->model_detail.fix_routes, false)) {
+          setSolution(
+              solver->vars["t_front_arrival"](tr, v_heuristic),
+              getSolution(solver->vars["t_front_departure"](tr, v_heuristic)));
+          setSolution(
+              solver->vars["t_front_departure"](tr, v_heuristic),
+              getSolution(solver->vars["t_rear_departure"](tr, v_heuristic)));
+          setSolution(
+              solver->vars["t_rear_departure"](tr, v_heuristic),
+              getSolution(solver->vars["t_rear_departure"](tr, v_heuristic)));
+        }
+
+        for (const auto e_heuristic : solver->instance.edges_used_by_train(
+                 tr, solver->model_detail.fix_routes, false)) {
+          setSolution(solver->vars["x"](tr, e_heuristic),
+                      getSolution(solver->vars["x"](tr, e_heuristic)));
+          const auto& edge_heuristic =
+              solver->instance.const_n().get_edge(e_heuristic);
+          const auto& v_1_heuristic =
+              solver->velocity_extensions.at(tr).at(edge_heuristic.source);
+          const auto& v_2_heuristic =
+              solver->velocity_extensions.at(tr).at(edge_heuristic.target);
+          const auto tmp_max_speed =
+              std::min(tr_heuristic_object.max_speed, edge_heuristic.max_speed);
+          for (size_t i = 0; i < v_1_heuristic.size(); i++) {
+            if (v_1_heuristic.at(i) > tmp_max_speed) {
+              continue;
+            }
+            for (size_t j = 0; j < v_2_heuristic.size(); j++) {
+              if (v_2_heuristic.at(j) > tmp_max_speed) {
+                continue;
+              }
+              if (cda_rail::possible_by_eom(v_1_heuristic.at(i),
+                                            v_2_heuristic.at(j),
+                                            tr_heuristic_object.acceleration,
+                                            tr_heuristic_object.deceleration,
+                                            edge_heuristic.length)) {
+                setSolution(
+                    solver->vars["y"](tr, e_heuristic, i, j),
+                    getSolution(solver->vars["y"](tr, e_heuristic, i, j)));
+              }
+            }
+          }
         }
       }
     }
