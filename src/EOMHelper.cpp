@@ -163,17 +163,17 @@ double cda_rail::max_travel_time(double v_1, double v_2, double v_m, double a,
 void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
                                               double& a, double& d, double& s,
                                               double& x) {
-  if (std::abs(v_1) < EPS)
+  if (std::abs(v_1) < GRB_EPS)
     v_1 = 0;
-  if (std::abs(v_2) < EPS)
+  if (std::abs(v_2) < GRB_EPS)
     v_2 = 0;
-  if (std::abs(a) < EPS)
+  if (std::abs(a) < GRB_EPS)
     a = 0;
-  if (std::abs(d) < EPS)
+  if (std::abs(d) < GRB_EPS)
     d = 0;
-  if (std::abs(s) < EPS)
+  if (std::abs(s) < GRB_EPS)
     s = 0;
-  if (std::abs(x) < EPS)
+  if (std::abs(x) < GRB_EPS)
     x = 0;
   if (v_1 < 0 || v_2 < 0 || a < 0 || d < 0 || s < 0 || x < 0) {
     throw exceptions::ConsistencyException(
