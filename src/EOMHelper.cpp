@@ -232,13 +232,13 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
   // How much time does a train need to move its moving authority forward by s
   // given initial speed v_0 and acceleration a and deceleration d
 
-  if (std::abs(v_0) < EPS)
+  if (std::abs(v_0) < GRB_EPS)
     v_0 = 0;
-  if (std::abs(a) < EPS)
+  if (std::abs(a) < GRB_EPS)
     a = 0;
-  if (std::abs(d) < EPS)
+  if (d < 0 && d > -GRB_EPS)
     d = 0;
-  if (std::abs(s) < EPS)
+  if (std::abs(s) < GRB_EPS)
     s = 0;
 
   // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
@@ -333,7 +333,7 @@ double cda_rail::min_time_from_front_to_ma_point(double v_1, double v_2,
   const auto& s_1 = s_points.first;
   const auto& s_2 = s_points.second;
 
-  if (std::abs(obd) < EPS)
+  if (std::abs(obd) < GRB_EPS)
     obd = 0;
   if (obd < 0) {
     throw exceptions::InvalidInputException(
@@ -347,7 +347,7 @@ double cda_rail::min_time_from_front_to_ma_point(double v_1, double v_2,
   const double bd_2  = v_2 * v_2 / (2 * d); // Distance to stop
   const double ubd_1 = s + bd_2 - obd - bd_1;
 
-  if (ubd_1 < -EPS) {
+  if (ubd_1 < -GRB_EPS) {
     throw exceptions::ConsistencyException(
         "obd is too large for the given edge and speed profile.");
   }
@@ -377,7 +377,7 @@ double cda_rail::max_time_from_front_to_ma_point_no_stopping(
   const auto& s_1 = s_points.first;
   const auto& s_2 = s_points.second;
 
-  if (std::abs(obd) < EPS)
+  if (std::abs(obd) < GRB_EPS)
     obd = 0;
   if (obd < 0) {
     throw exceptions::InvalidInputException(
@@ -402,16 +402,16 @@ double cda_rail::max_time_from_front_to_ma_point_no_stopping(
   const double ubd_s1 = ma_point - (s_1 + bd_t);
   const double ubd_s2 = ma_point - (s_2 + bd_t);
 
-  if (ubd_s2 > EPS) {
+  if (ubd_s2 > GRB_EPS) {
     return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s_2) +
            min_time_to_push_ma_forward(v_t, a, d, ubd_s2);
   }
-  if (ubd_s1 > EPS) {
+  if (ubd_s1 > GRB_EPS) {
     return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s,
                                                   s_1 + ubd_s1);
   }
 
-  if (!v1_below_minimal_speed && std::abs(ubd_s1) <= EPS) {
+  if (!v1_below_minimal_speed && std::abs(ubd_s1) <= GRB_EPS) {
     return 0;
   }
   assert(v1_below_minimal_speed);
