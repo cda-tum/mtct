@@ -1536,7 +1536,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                  edge_tmp_path_expr);
                         model->addConstr(
                             lhs_from_front >= rhs,
-                            "headway_ttd_from_front_" + tr_object.name + "_" +
+                            "headway_ttd_" + std::to_string(ttd_index) +
+                                "from_front_" + tr_object.name + "_" +
                                 instance.get_train_list().get_train(tr2).name +
                                 "_" + instance.const_n().get_vertex(v).name +
                                 "_" + std::to_string(vel) + "_" +
