@@ -1,0 +1,37 @@
+{
+  "Train0": {
+    "acceleration": 2.1,
+    "deceleration": 1.5,
+    "length": 193.0,
+    "max_speed": 31.0,
+    "tim": true
+  },
+  "Train1": {
+    "acceleration": 2.2,
+    "deceleration": 2.2,
+    "length": 177.0,
+    "max_speed": 39.0,
+    "tim": true
+  },
+  "Train2": {
+    "acceleration": 2.2,
+    "deceleration": 3.4,
+    "length": 171.0,
+    "max_speed": 35.0,
+    "tim": true
+  },
+  "Train3": {
+    "acceleration": 2.1,
+    "deceleration": 3.9,
+    "length": 189.0,
+    "max_speed": 37.0,
+    "tim": true
+  },
+  "Train4": {
+    "acceleration": 2.0,
+    "deceleration": 2.6,
+    "length": 132.0,
+    "max_speed": 36.0,
+    "tim": true
+  }
+}
