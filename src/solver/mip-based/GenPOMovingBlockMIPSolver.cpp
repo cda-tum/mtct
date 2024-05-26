@@ -161,7 +161,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     }
     model->update();
 
-    model->write((path / (solution_settings.name + ".lp")).string());
+    model->write((path / (solution_settings.name + ".mps")).string());
   }
 
   if (solution_settings.export_option == ExportOption::ExportSolution ||
