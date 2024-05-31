@@ -48,7 +48,7 @@ jobs:
           --style="" \
           --tidy-checks="" \
           --thread-comments=true \
-          --ignore="build | test/example-networks | test/example-networks-gen-po" \
+          --ignore="build | test/example-networks | test/example-networks-gen-po | gurobi*" \
           --database=build
       - name: Fail if linter found errors
         if: steps.linter.outputs.checks-failed > 0
