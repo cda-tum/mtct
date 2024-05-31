@@ -48,7 +48,6 @@ jobs:
           --style="" \
           --tidy-checks="" \
           --thread-comments=true \
-          --files-changed-only=true \
           --ignore="build | test/example-networks | test/example-networks-gen-po" \
           --database=build
       - name: Fail if linter found errors
