@@ -150,7 +150,6 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
                                         path.string());
     }
 
-    const auto sol_count = model->get(GRB_IntAttr_SolCount);
     if (model->get(GRB_IntAttr_SolCount) > 0) {
       model->write((path / (solution_settings.name + ".json")).string());
     }
@@ -1430,8 +1429,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           const auto intersecting_ttd =
               cda_rail::Network::get_intersecting_ttd(p, ttd_sections);
           for (const auto& [ttd_index, e_index] : intersecting_ttd) {
-            const auto& p_tmp =
-                std::vector<size_t>(p.begin(), p.begin() + e_index);
+            const auto& p_tmp = std::vector<size_t>(
+                p.begin(), p.begin() + static_cast<std::ptrdiff_t>(e_index));
             const auto p_tmp_len = std::accumulate(
                 p_tmp.begin(), p_tmp.end(), 0.0,
                 [this](double sum, const auto& edge_index) {
