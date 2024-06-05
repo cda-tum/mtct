@@ -23,6 +23,7 @@ class GeneralPerformanceOptimizationInstance
     : public GeneralProblemInstanceWithScheduleAndRoutes<
           GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>> {
   friend class SolGeneralPerformanceOptimizationInstance;
+  friend class SolVSSGeneralPerformanceOptimizationInstance;
 
   void initialize_vectors() {
     train_weights =
@@ -295,6 +296,8 @@ public:
   [[nodiscard]] double get_train_speed(const std::string& tr_name,
                                        double             t) const;
   [[nodiscard]] bool   get_train_routed(const std::string& tr_name) const;
+  [[nodiscard]] std::vector<double>
+  get_train_times(const std::string& tr_name) const;
 
   void add_train_pos(const std::string& tr_name, double t, double pos);
   void add_train_speed(const std::string& tr_name, double t, double speed);
@@ -340,7 +343,94 @@ public:
 
 class SolVSSGeneralPerformanceOptimizationInstance
     : public SolGeneralPerformanceOptimizationInstance {
-  // TODO
+  std::vector<std::vector<double>> vss_pos;
+
+public:
+  SolVSSGeneralPerformanceOptimizationInstance() = default;
+  explicit SolVSSGeneralPerformanceOptimizationInstance(
+      const GeneralPerformanceOptimizationInstance& instance)
+      : SolGeneralPerformanceOptimizationInstance(instance) {
+    vss_pos = std::vector<std::vector<double>>(
+        this->instance.const_n().number_of_edges());
+  };
+  SolVSSGeneralPerformanceOptimizationInstance(
+      const GeneralPerformanceOptimizationInstance& instance,
+      SolutionStatus status, double obj, bool has_sol)
+      : SolGeneralPerformanceOptimizationInstance(instance, status, obj,
+                                                  has_sol) {
+    vss_pos = std::vector<std::vector<double>>(
+        this->instance.const_n().number_of_edges());
+  };
+  explicit SolVSSGeneralPerformanceOptimizationInstance(
+      const std::filesystem::path&                                 p,
+      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
+          std::optional<GeneralPerformanceOptimizationInstance>())
+      : SolGeneralPerformanceOptimizationInstance(p, instance) {
+    vss_pos = std::vector<std::vector<double>>(
+        this->instance.const_n().number_of_edges());
+  }
+
+  void add_vss_pos(size_t edge_id, double pos, bool reverse_edge = true);
+  void add_vss_pos(size_t source, size_t target, double pos,
+                   bool reverse_edge = true) {
+    add_vss_pos(instance.const_n().get_edge_index(source, target), pos,
+                reverse_edge);
+  };
+  void add_vss_pos(const std::string& source, const std::string& target,
+                   double pos, bool reverse_edge = true) {
+    add_vss_pos(instance.const_n().get_edge_index(source, target), pos,
+                reverse_edge);
+  };
+
+  void set_vss_pos(size_t edge_id, std::vector<double> pos);
+  void set_vss_pos(size_t source, size_t target, std::vector<double> pos) {
+    set_vss_pos(instance.const_n().get_edge_index(source, target),
+                std::move(pos));
+  };
+  void set_vss_pos(const std::string& source, const std::string& target,
+                   std::vector<double> pos) {
+    set_vss_pos(instance.const_n().get_edge_index(source, target),
+                std::move(pos));
+  };
+
+  void reset_vss_pos(size_t edge_id);
+  void reset_vss_pos(size_t source, size_t target) {
+    reset_vss_pos(instance.const_n().get_edge_index(source, target));
+  };
+  void reset_vss_pos(const std::string& source, const std::string& target) {
+    reset_vss_pos(instance.const_n().get_edge_index(source, target));
+  };
+
+  void               export_solution(const std::filesystem::path& p,
+                                     bool export_instance) const override;
+  [[nodiscard]] bool check_consistency() const override;
+
+  [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
+  import_solution(
+      const std::filesystem::path&                                 p,
+      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
+          std::optional<GeneralPerformanceOptimizationInstance>()) {
+    auto sol = SolVSSGeneralPerformanceOptimizationInstance(p, instance);
+    if (!sol.check_consistency()) {
+      throw exceptions::ConsistencyException(
+          "Imported solution object is not consistent");
+    }
+    return sol;
+  };
+  [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
+  import_solution(
+      const std::string&                                           path,
+      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
+          std::optional<GeneralPerformanceOptimizationInstance>()) {
+    return import_solution(std::filesystem::path(path), instance);
+  };
+  [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
+  import_solution(
+      const char*                                                  path,
+      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
+          std::optional<GeneralPerformanceOptimizationInstance>()) {
+    return import_solution(std::filesystem::path(path), instance);
+  };
 };
 
 } // namespace cda_rail::instances
