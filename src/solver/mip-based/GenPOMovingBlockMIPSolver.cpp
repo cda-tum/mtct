@@ -17,7 +17,8 @@
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
 
-cda_rail::instances::SolGeneralPerformanceOptimizationInstance
+cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
+    cda_rail::instances::GeneralPerformanceOptimizationInstance>
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     const ModelDetail&                 model_detail_input,
     const SolverStrategyMovingBlock&   solver_strategy_input,

@@ -13,7 +13,9 @@
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
-    cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol) const {
+    cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
+        cda_rail::instances::GeneralPerformanceOptimizationInstance>& sol)
+    const {
   PLOGI << "Extracting solution object...";
 
   // Is there a solution?

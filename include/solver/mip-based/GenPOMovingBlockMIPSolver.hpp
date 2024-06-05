@@ -66,7 +66,8 @@ struct SolverStrategyMovingBlock {
 class GenPOMovingBlockMIPSolver
     : public GeneralMIPSolver<
           instances::GeneralPerformanceOptimizationInstance,
-          instances::SolGeneralPerformanceOptimizationInstance> {
+          instances::SolGeneralPerformanceOptimizationInstance<
+              instances::GeneralPerformanceOptimizationInstance>> {
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, PrivateFillFunctions);
@@ -132,7 +133,8 @@ private:
                      bool   also_higher_velocities = false);
 
   void extract_solution(
-      instances::SolGeneralPerformanceOptimizationInstance& sol) const;
+      instances::SolGeneralPerformanceOptimizationInstance<
+          instances::GeneralPerformanceOptimizationInstance>& sol) const;
   double extract_speed(size_t tr, size_t vertex_id) const;
 
   class LazyCallback : public MessageCallback {
@@ -177,34 +179,41 @@ public:
 
   explicit GenPOMovingBlockMIPSolver(
       const instances::GeneralPerformanceOptimizationInstance& instance)
-      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
-                         instances::SolGeneralPerformanceOptimizationInstance>(
-            instance) {};
+      : GeneralMIPSolver<
+            instances::GeneralPerformanceOptimizationInstance,
+            instances::SolGeneralPerformanceOptimizationInstance<
+                instances::GeneralPerformanceOptimizationInstance>>(instance) {
+        };
 
   explicit GenPOMovingBlockMIPSolver(const std::filesystem::path& p)
-      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
-                         instances::SolGeneralPerformanceOptimizationInstance>(
-            p) {};
+      : GeneralMIPSolver<
+            instances::GeneralPerformanceOptimizationInstance,
+            instances::SolGeneralPerformanceOptimizationInstance<
+                instances::GeneralPerformanceOptimizationInstance>>(p) {};
 
   explicit GenPOMovingBlockMIPSolver(const std::string& path)
-      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
-                         instances::SolGeneralPerformanceOptimizationInstance>(
-            path) {};
+      : GeneralMIPSolver<
+            instances::GeneralPerformanceOptimizationInstance,
+            instances::SolGeneralPerformanceOptimizationInstance<
+                instances::GeneralPerformanceOptimizationInstance>>(path) {};
 
   explicit GenPOMovingBlockMIPSolver(const char* path)
-      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
-                         instances::SolGeneralPerformanceOptimizationInstance>(
-            path) {};
+      : GeneralMIPSolver<
+            instances::GeneralPerformanceOptimizationInstance,
+            instances::SolGeneralPerformanceOptimizationInstance<
+                instances::GeneralPerformanceOptimizationInstance>>(path) {};
 
   ~GenPOMovingBlockMIPSolver() = default;
 
   using GeneralSolver::solve;
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
+      instances::GeneralPerformanceOptimizationInstance>
   solve(int time_limit, bool debug_input) override {
     return solve({}, {}, {}, time_limit, debug_input);
   };
 
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
+      instances::GeneralPerformanceOptimizationInstance>
   solve(const ModelDetail&                 model_detail_input,
         const SolverStrategyMovingBlock&   solver_strategy_input,
         const SolutionSettingsMovingBlock& solution_settings_input,
