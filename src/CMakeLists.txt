@@ -23,8 +23,7 @@ add_library(
   probleminstances/SolVSSGenerationTimetable.cpp
   probleminstances/GeneralPerformanceOptimizationInstance.cpp
   ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
-  ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp
-  ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSTimetableOptimizationInstance.hpp)
+  ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp)
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
