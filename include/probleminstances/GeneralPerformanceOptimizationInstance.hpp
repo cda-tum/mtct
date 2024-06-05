@@ -323,7 +323,8 @@ public:
     json          train_pos_json = json::parse(train_pos_file);
     for (const auto& [tr_name, tr_pos_json] : train_pos_json.items()) {
       for (const auto& [idx, pos_pair] : tr_pos_json.items()) {
-        const auto [t, pos] = pos_pair.get<std::pair<double, double>>();
+        const auto [t, pos] =
+            pos_pair.template get<std::pair<double, double>>();
         this->add_train_pos(tr_name, t, pos);
       }
     }
@@ -333,7 +334,8 @@ public:
     json          train_speed_json = json::parse(train_speed_file);
     for (const auto& [tr_name, tr_speed_json] : train_speed_json.items()) {
       for (const auto& [idx, speed_pair] : tr_speed_json.items()) {
-        const auto [t, speed] = speed_pair.get<std::pair<double, double>>();
+        const auto [t, speed] =
+            speed_pair.template get<std::pair<double, double>>();
         this->add_train_speed(tr_name, t, speed);
       }
     }
@@ -343,7 +345,7 @@ public:
     json          train_routed_json = json::parse(train_routed_file);
     for (const auto& [tr_name, routed] : train_routed_json.items()) {
       this->train_routed[this->instance.get_train_list().get_train_index(
-          tr_name)] = routed.get<bool>();
+          tr_name)] = routed.template get<bool>();
     }
   };
 
