@@ -264,10 +264,10 @@ class SolGeneralPerformanceOptimizationInstance
   std::vector<bool>                     train_routed;
 
   void initialize_vectors() {
-    train_pos.reserve(instance.get_timetable().get_train_list().size());
-    train_speed.reserve(instance.get_timetable().get_train_list().size());
+    train_pos.reserve(this->instance.get_timetable().get_train_list().size());
+    train_speed.reserve(this->instance.get_timetable().get_train_list().size());
     train_routed = std::vector<bool>(
-        instance.get_timetable().get_train_list().size(), false);
+        this->instance.get_timetable().get_train_list().size(), false);
     for (size_t tr = 0; tr < this->instance.get_train_list().size(); ++tr) {
       train_pos.emplace_back();
       train_speed.emplace_back();
@@ -350,10 +350,10 @@ public:
 
   [[nodiscard]] double get_train_pos(const std::string& tr_name,
                                      double             t) const {
-    if (!instance.get_train_list().has_train(tr_name)) {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
     }
-    const auto tr_id = instance.get_train_list().get_train_index(tr_name);
+    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
     if (train_pos.at(tr_id).count(t) > 0) {
       return train_pos.at(tr_id).at(t);
     }
@@ -362,10 +362,10 @@ public:
   }
   [[nodiscard]] double get_train_speed(const std::string& tr_name,
                                        double             t) const {
-    if (!instance.get_train_list().has_train(tr_name)) {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
     }
-    const auto tr_id = instance.get_train_list().get_train_index(tr_name);
+    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
     if (train_speed.at(tr_id).count(t) > 0) {
       return train_speed.at(tr_id).at(t);
     }
@@ -373,17 +373,18 @@ public:
                                            " at time " + std::to_string(t));
   }
   [[nodiscard]] bool get_train_routed(const std::string& tr_name) const {
-    if (!instance.get_train_list().has_train(tr_name)) {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
     }
-    return train_routed.at(instance.get_train_list().get_train_index(tr_name));
+    return train_routed.at(
+        this->instance.get_train_list().get_train_index(tr_name));
   }
   [[nodiscard]] std::vector<double>
   get_train_times(const std::string& tr_name) const {
-    if (!instance.get_train_list().has_train(tr_name)) {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
     }
-    const auto  tr_id = instance.get_train_list().get_train_index(tr_name);
+    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
     const auto& tr_speed_map = train_speed.at(tr_id);
     // Return keys of the map
     std::vector<double> times;
@@ -396,7 +397,7 @@ public:
   }
 
   void add_train_pos(const std::string& tr_name, double t, double pos) {
-    if (!instance.get_train_list().has_train(tr_name)) {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
     }
     if (pos + EPS < 0) {
@@ -406,7 +407,7 @@ public:
       throw exceptions::ConsistencyException("Time must be non-negative");
     }
 
-    const auto tr_id = instance.get_train_list().get_train_index(tr_name);
+    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
     if (train_pos.at(tr_id).count(t) > 0) {
       train_pos.at(tr_id).at(t) = pos;
     } else {
@@ -414,7 +415,7 @@ public:
     }
   }
   void add_train_speed(const std::string& tr_name, double t, double speed) {
-    if (!instance.get_train_list().has_train(tr_name)) {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
     }
     if (speed + EPS < 0) {
@@ -424,7 +425,7 @@ public:
       throw exceptions::ConsistencyException("Time must be non-negative");
     }
 
-    const auto tr_id = instance.get_train_list().get_train_index(tr_name);
+    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
     if (train_speed.at(tr_id).count(t) > 0) {
       train_speed.at(tr_id).at(t) = speed;
     } else {
@@ -438,10 +439,11 @@ public:
     set_train_routed_value(tr_name, false);
   }
   void set_train_routed_value(const std::string& tr_name, bool val) {
-    if (!instance.get_train_list().has_train(tr_name)) {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
     }
-    train_routed.at(instance.get_train_list().get_train_index(tr_name)) = val;
+    train_routed.at(this->instance.get_train_list().get_train_index(tr_name)) =
+        val;
   }
 
   void export_solution(const std::filesystem::path& p,
@@ -480,10 +482,11 @@ public:
     json train_pos_json;
     json train_speed_json;
     json train_routed_json;
-    for (size_t tr_id = 0; tr_id < instance.get_train_list().size(); ++tr_id) {
-      const auto& train            = instance.get_train_list().get_train(tr_id);
-      train_pos_json[train.name]   = train_pos.at(tr_id);
-      train_speed_json[train.name] = train_speed.at(tr_id);
+    for (size_t tr_id = 0; tr_id < this->instance.get_train_list().size();
+         ++tr_id) {
+      const auto& train = this->instance.get_train_list().get_train(tr_id);
+      train_pos_json[train.name]    = train_pos.at(tr_id);
+      train_speed_json[train.name]  = train_speed.at(tr_id);
       train_routed_json[train.name] = train_routed.at(tr_id);
     }
 
@@ -505,16 +508,18 @@ public:
             check_general_solution_data_consistency()) {
       return false;
     }
-    if (!instance.check_consistency(false)) {
+    if (!this->instance.check_consistency(false)) {
       return false;
     }
 
     for (auto tr_id = 0; tr_id < train_routed.size(); tr_id++) {
-      const auto& tr_name = instance.get_train_list().get_train(tr_id).name;
-      if (train_routed.at(tr_id) && !instance.has_route(tr_name)) {
+      const auto& tr_name =
+          this->instance.get_train_list().get_train(tr_id).name;
+      if (train_routed.at(tr_id) && !this->instance.has_route(tr_name)) {
         return false;
       }
-      if (!train_routed.at(tr_id) && !instance.get_train_optional().at(tr_id)) {
+      if (!train_routed.at(tr_id) &&
+          !this->instance.get_train_optional().at(tr_id)) {
         return false;
       }
       if (train_routed.at(tr_id) && train_pos.at(tr_id).size() < 2) {
@@ -541,7 +546,7 @@ public:
       }
     }
     for (size_t tr_id = 0; tr_id < train_speed.size(); ++tr_id) {
-      const auto& train = instance.get_train_list().get_train(tr_id);
+      const auto& train = this->instance.get_train_list().get_train(tr_id);
       for (const auto& [t, v] : train_speed.at(tr_id)) {
         if (v + EPS < 0 || v > train.max_speed + EPS) {
           return false;
@@ -616,11 +621,11 @@ public:
   void add_vss_pos(size_t edge_id, double pos, bool reverse_edge = true) {
     // Add VSS position on edge. Also on reverse edge if true.
 
-    if (!instance.const_n().has_edge(edge_id)) {
+    if (!this->instance.const_n().has_edge(edge_id)) {
       throw exceptions::EdgeNotExistentException(edge_id);
     }
 
-    const auto& edge = instance.const_n().get_edge(edge_id);
+    const auto& edge = this->instance.const_n().get_edge(edge_id);
 
     if (pos <= EPS || pos + EPS >= edge.length) {
       throw exceptions::ConsistencyException(
@@ -633,7 +638,7 @@ public:
 
     if (reverse_edge) {
       const auto reverse_edge_index =
-          instance.const_n().get_reverse_edge_index(edge_id);
+          this->instance.const_n().get_reverse_edge_index(edge_id);
       if (reverse_edge_index.has_value()) {
         vss_pos.at(reverse_edge_index.value()).emplace_back(edge.length - pos);
         std::sort(vss_pos.at(reverse_edge_index.value()).begin(),
@@ -643,21 +648,21 @@ public:
   }
   void add_vss_pos(size_t source, size_t target, double pos,
                    bool reverse_edge = true) {
-    add_vss_pos(instance.const_n().get_edge_index(source, target), pos,
+    add_vss_pos(this->instance.const_n().get_edge_index(source, target), pos,
                 reverse_edge);
   };
   void add_vss_pos(const std::string& source, const std::string& target,
                    double pos, bool reverse_edge = true) {
-    add_vss_pos(instance.const_n().get_edge_index(source, target), pos,
+    add_vss_pos(this->instance.const_n().get_edge_index(source, target), pos,
                 reverse_edge);
   };
 
   void set_vss_pos(size_t edge_id, std::vector<double> pos) {
-    if (!instance.const_n().has_edge(edge_id)) {
+    if (!this->instance.const_n().has_edge(edge_id)) {
       throw exceptions::EdgeNotExistentException(edge_id);
     }
 
-    const auto& edge = instance.const_n().get_edge(edge_id);
+    const auto& edge = this->instance.const_n().get_edge(edge_id);
 
     for (const auto& p : pos) {
       if (p <= EPS || p + EPS >= edge.length) {
@@ -670,40 +675,40 @@ public:
     vss_pos.at(edge_id) = std::move(pos);
   }
   void set_vss_pos(size_t source, size_t target, std::vector<double> pos) {
-    set_vss_pos(instance.const_n().get_edge_index(source, target),
+    set_vss_pos(this->instance.const_n().get_edge_index(source, target),
                 std::move(pos));
   };
   void set_vss_pos(const std::string& source, const std::string& target,
                    std::vector<double> pos) {
-    set_vss_pos(instance.const_n().get_edge_index(source, target),
+    set_vss_pos(this->instance.const_n().get_edge_index(source, target),
                 std::move(pos));
   };
 
   void reset_vss_pos(size_t edge_id) {
-    if (!instance.const_n().has_edge(edge_id)) {
+    if (!this->instance.const_n().has_edge(edge_id)) {
       throw exceptions::EdgeNotExistentException(edge_id);
     }
 
     vss_pos.at(edge_id).clear();
   }
   void reset_vss_pos(size_t source, size_t target) {
-    reset_vss_pos(instance.const_n().get_edge_index(source, target));
+    reset_vss_pos(this->instance.const_n().get_edge_index(source, target));
   };
   void reset_vss_pos(const std::string& source, const std::string& target) {
-    reset_vss_pos(instance.const_n().get_edge_index(source, target));
+    reset_vss_pos(this->const_n().get_edge_index(source, target));
   };
 
   void export_solution(const std::filesystem::path& p,
                        bool export_instance) const override {
-    SolGeneralPerformanceOptimizationInstance::export_solution(p,
-                                                               export_instance);
+    SolGeneralPerformanceOptimizationInstance<T>::export_solution(
+        p, export_instance);
 
     json vss_pos_json;
-    for (size_t edge_id = 0; edge_id < instance.const_n().number_of_edges();
-         ++edge_id) {
-      const auto& edge = instance.const_n().get_edge(edge_id);
-      const auto& v0   = instance.const_n().get_vertex(edge.source).name;
-      const auto& v1   = instance.const_n().get_vertex(edge.target).name;
+    for (size_t edge_id = 0;
+         edge_id < this->instance.const_n().number_of_edges(); ++edge_id) {
+      const auto& edge = this->instance.const_n().get_edge(edge_id);
+      const auto& v0   = this->instance.const_n().get_vertex(edge.source).name;
+      const auto& v1   = this->instance.const_n().get_vertex(edge.target).name;
       vss_pos_json["('" + v0 + "', '" + v1 + "')"] = vss_pos.at(edge_id);
     }
 
@@ -712,11 +717,11 @@ public:
     vss_pos_file.close();
   }
   [[nodiscard]] bool check_consistency() const override {
-    if (!SolGeneralPerformanceOptimizationInstance::check_consistency()) {
+    if (!SolGeneralPerformanceOptimizationInstance<T>::check_consistency()) {
       return false;
     }
     for (size_t edge_id = 0; edge_id < vss_pos.size(); ++edge_id) {
-      const auto& edge = instance.const_n().get_edge(edge_id);
+      const auto& edge = this->instance.const_n().get_edge(edge_id);
       if (!edge.breakable && !vss_pos.at(edge_id).empty()) {
         return false;
       }
