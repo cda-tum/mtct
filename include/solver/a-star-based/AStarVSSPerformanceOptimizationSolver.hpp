@@ -10,7 +10,7 @@ namespace cda_rail::solver::astar_based {
 class AStarVSSPerformanceOptimizationSolver
     : public GeneralSolver<
           instances::GeneralPerformanceOptimizationInstance,
-          instances::SolGeneralPerformanceOptimizationInstance<
+          instances::SolVSSGeneralPerformanceOptimizationInstance<
               instances::GeneralPerformanceOptimizationInstance>> {
 private:
   // TODO: Implement
