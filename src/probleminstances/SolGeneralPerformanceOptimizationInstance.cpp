@@ -255,3 +255,118 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
   return train_routed.at(instance.get_train_list().get_train_index(tr_name));
 }
+
+std::vector<double>
+cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_times(
+    const std::string& tr_name) const {
+  if (!instance.get_train_list().has_train(tr_name)) {
+    throw exceptions::TrainNotExistentException(tr_name);
+  }
+  const auto  tr_id        = instance.get_train_list().get_train_index(tr_name);
+  const auto& tr_speed_map = train_speed.at(tr_id);
+  // Return keys of the map
+  std::vector<double> times;
+  for (const auto& [t, _] : tr_speed_map) {
+    times.push_back(t);
+  }
+  // Sort
+  std::sort(times.begin(), times.end());
+  return times;
+}
+
+void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    add_vss_pos(size_t edge_id, double pos, bool reverse_edge) {
+  // Add VSS position on edge. Also on reverse edge if true.
+
+  if (!instance.const_n().has_edge(edge_id)) {
+    throw exceptions::EdgeNotExistentException(edge_id);
+  }
+
+  const auto& edge = instance.const_n().get_edge(edge_id);
+
+  if (pos <= EPS || pos + EPS >= edge.length) {
+    throw exceptions::ConsistencyException(
+        "VSS position " + std::to_string(pos) + " is not on edge " +
+        std::to_string(edge_id));
+  }
+
+  vss_pos.at(edge_id).emplace_back(pos);
+  std::sort(vss_pos.at(edge_id).begin(), vss_pos.at(edge_id).end());
+
+  if (reverse_edge) {
+    const auto reverse_edge_index =
+        instance.const_n().get_reverse_edge_index(edge_id);
+    if (reverse_edge_index.has_value()) {
+      vss_pos.at(reverse_edge_index.value()).emplace_back(edge.length - pos);
+      std::sort(vss_pos.at(reverse_edge_index.value()).begin(),
+                vss_pos.at(reverse_edge_index.value()).end());
+    }
+  }
+}
+
+void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    set_vss_pos(size_t edge_id, std::vector<double> pos) {
+  if (!instance.const_n().has_edge(edge_id)) {
+    throw exceptions::EdgeNotExistentException(edge_id);
+  }
+
+  const auto& edge = instance.const_n().get_edge(edge_id);
+
+  for (const auto& p : pos) {
+    if (p <= EPS || p + EPS >= edge.length) {
+      throw exceptions::ConsistencyException(
+          "VSS position " + std::to_string(p) + " is not on edge " +
+          std::to_string(edge_id));
+    }
+  }
+
+  vss_pos.at(edge_id) = std::move(pos);
+}
+
+void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    reset_vss_pos(size_t edge_id) {
+  if (!instance.const_n().has_edge(edge_id)) {
+    throw exceptions::EdgeNotExistentException(edge_id);
+  }
+
+  vss_pos.at(edge_id).clear();
+}
+
+void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    export_solution(const std::filesystem::path& p,
+                    bool                         export_instance) const {
+  SolGeneralPerformanceOptimizationInstance::export_solution(p,
+                                                             export_instance);
+
+  json vss_pos_json;
+  for (size_t edge_id = 0; edge_id < instance.const_n().number_of_edges();
+       ++edge_id) {
+    const auto& edge = instance.const_n().get_edge(edge_id);
+    const auto& v0   = instance.const_n().get_vertex(edge.source).name;
+    const auto& v1   = instance.const_n().get_vertex(edge.target).name;
+    vss_pos_json["('" + v0 + "', '" + v1 + "')"] = vss_pos.at(edge_id);
+  }
+
+  std::ofstream vss_pos_file(p / "solution" / "vss_pos.json");
+  vss_pos_file << vss_pos_json << std::endl;
+  vss_pos_file.close();
+}
+
+bool cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    check_consistency() const {
+  if (!SolGeneralPerformanceOptimizationInstance::check_consistency()) {
+    return false;
+  }
+  for (size_t edge_id = 0; edge_id < vss_pos.size(); ++edge_id) {
+    const auto& edge = instance.const_n().get_edge(edge_id);
+    if (!edge.breakable && !vss_pos.at(edge_id).empty()) {
+      return false;
+    }
+    for (const auto& pos : vss_pos.at(edge_id)) {
+      if (pos + EPS < 0 || pos > edge.length + EPS) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
