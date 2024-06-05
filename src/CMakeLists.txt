@@ -21,7 +21,6 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
   probleminstances/VSSGenerationTimetable.cpp
   probleminstances/SolVSSGenerationTimetable.cpp
-  probleminstances/SolGeneralPerformanceOptimizationInstance.cpp
   probleminstances/GeneralPerformanceOptimizationInstance.cpp
   ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
   ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp
