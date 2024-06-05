@@ -344,7 +344,7 @@ public:
       this->train_routed[this->instance.get_train_list().get_train_index(
           tr_name)] = routed.get<bool>();
     }
-  }
+  };
 
   [[nodiscard]] double get_train_pos(const std::string& tr_name,
                                      double             t) const {
@@ -357,7 +357,7 @@ public:
     }
     throw exceptions::ConsistencyException("No position for train " + tr_name +
                                            " at time " + std::to_string(t));
-  }
+  };
   [[nodiscard]] double get_train_speed(const std::string& tr_name,
                                        double             t) const {
     if (!this->instance.get_train_list().has_train(tr_name)) {
@@ -369,14 +369,14 @@ public:
     }
     throw exceptions::ConsistencyException("No speed for train " + tr_name +
                                            " at time " + std::to_string(t));
-  }
+  };
   [[nodiscard]] bool get_train_routed(const std::string& tr_name) const {
     if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
     }
     return train_routed.at(
         this->instance.get_train_list().get_train_index(tr_name));
-  }
+  };
   [[nodiscard]] std::vector<double>
   get_train_times(const std::string& tr_name) const {
     if (!this->instance.get_train_list().has_train(tr_name)) {
@@ -392,7 +392,7 @@ public:
     // Sort
     std::sort(times.begin(), times.end());
     return times;
-  }
+  };
 
   void add_train_pos(const std::string& tr_name, double t, double pos) {
     if (!this->instance.get_train_list().has_train(tr_name)) {
@@ -411,7 +411,7 @@ public:
     } else {
       train_pos.at(tr_id).insert({t, pos});
     }
-  }
+  };
   void add_train_speed(const std::string& tr_name, double t, double speed) {
     if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
@@ -429,20 +429,20 @@ public:
     } else {
       train_speed.at(tr_id).insert({t, speed});
     }
-  }
+  };
   void set_train_routed(const std::string& tr_name) {
     set_train_routed_value(tr_name, true);
-  }
+  };
   void set_train_not_routed(const std::string& tr_name) {
     set_train_routed_value(tr_name, false);
-  }
+  };
   void set_train_routed_value(const std::string& tr_name, bool val) {
     if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
     }
     train_routed.at(this->instance.get_train_list().get_train_index(tr_name)) =
         val;
-  }
+  };
 
   void export_solution(const std::filesystem::path& p,
                        bool export_instance) const override {
@@ -498,7 +498,7 @@ public:
     std::ofstream train_routed_file(p / "solution" / "train_routed.json");
     train_routed_file << train_routed_json << std::endl;
     train_routed_file.close();
-  }
+  };
   [[nodiscard]] bool check_consistency() const override {
     if (!SolGeneralProblemInstanceWithScheduleAndRoutes<
             T>::check_general_solution_data_consistency()) {
@@ -550,7 +550,7 @@ public:
       }
     }
     return true;
-  }
+  };
 
   [[nodiscard]] static SolGeneralPerformanceOptimizationInstance
   import_solution(const std::filesystem::path& p,
@@ -605,7 +605,7 @@ public:
       : SolGeneralPerformanceOptimizationInstance<T>(p, instance) {
     vss_pos = std::vector<std::vector<double>>(
         this->instance.const_n().number_of_edges());
-  }
+  };
 
   void add_vss_pos(size_t edge_id, double pos, bool reverse_edge = true) {
     // Add VSS position on edge. Also on reverse edge if true.
@@ -634,7 +634,7 @@ public:
                   vss_pos.at(reverse_edge_index.value()).end());
       }
     }
-  }
+  };
   void add_vss_pos(size_t source, size_t target, double pos,
                    bool reverse_edge = true) {
     add_vss_pos(this->instance.const_n().get_edge_index(source, target), pos,
@@ -662,7 +662,7 @@ public:
     }
 
     vss_pos.at(edge_id) = std::move(pos);
-  }
+  };
   void set_vss_pos(size_t source, size_t target, std::vector<double> pos) {
     set_vss_pos(this->instance.const_n().get_edge_index(source, target),
                 std::move(pos));
@@ -679,7 +679,7 @@ public:
     }
 
     vss_pos.at(edge_id).clear();
-  }
+  };
   void reset_vss_pos(size_t source, size_t target) {
     reset_vss_pos(this->instance.const_n().get_edge_index(source, target));
   };
@@ -704,7 +704,7 @@ public:
     std::ofstream vss_pos_file(p / "solution" / "vss_pos.json");
     vss_pos_file << vss_pos_json << std::endl;
     vss_pos_file.close();
-  }
+  };
   [[nodiscard]] bool check_consistency() const override {
     if (!SolGeneralPerformanceOptimizationInstance<T>::check_consistency()) {
       return false;
@@ -721,7 +721,7 @@ public:
       }
     }
     return true;
-  }
+  };
 
   [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
   import_solution(const std::filesystem::path& p,
