@@ -277,16 +277,14 @@ class SolGeneralPerformanceOptimizationInstance
 public:
   SolGeneralPerformanceOptimizationInstance() = default;
   explicit SolGeneralPerformanceOptimizationInstance(const T& instance)
-      : SolGeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralPerformanceOptimizationInstance>(instance) {
+      : SolGeneralProblemInstanceWithScheduleAndRoutes<T>(instance) {
     this->initialize_vectors();
   };
   SolGeneralPerformanceOptimizationInstance(const T&       instance,
                                             SolutionStatus status, double obj,
                                             bool has_sol)
-      : SolGeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralPerformanceOptimizationInstance>(instance, status, obj,
-                                                    has_sol) {
+      : SolGeneralProblemInstanceWithScheduleAndRoutes<T>(instance, status, obj,
+                                                          has_sol) {
     this->initialize_vectors();
   };
   explicit SolGeneralPerformanceOptimizationInstance(
@@ -476,8 +474,7 @@ public:
     }
 
     SolGeneralProblemInstanceWithScheduleAndRoutes<
-        GeneralPerformanceOptimizationInstance>::
-        export_general_solution_data_with_routes(p, export_instance, true);
+        T>::export_general_solution_data_with_routes(p, export_instance, true);
 
     json train_pos_json;
     json train_speed_json;
@@ -504,8 +501,7 @@ public:
   }
   [[nodiscard]] bool check_consistency() const override {
     if (!SolGeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralPerformanceOptimizationInstance>::
-            check_general_solution_data_consistency()) {
+            T>::check_general_solution_data_consistency()) {
       return false;
     }
     if (!this->instance.check_consistency(false)) {
@@ -557,10 +553,8 @@ public:
   }
 
   [[nodiscard]] static SolGeneralPerformanceOptimizationInstance
-  import_solution(
-      const std::filesystem::path&                                 p,
-      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
-          std::optional<GeneralPerformanceOptimizationInstance>()) {
+  import_solution(const std::filesystem::path& p,
+                  const std::optional<T>&      instance = std::optional<T>()) {
     auto sol = SolGeneralPerformanceOptimizationInstance(p, instance);
     if (!sol.check_consistency()) {
       throw exceptions::ConsistencyException(
@@ -569,17 +563,13 @@ public:
     return sol;
   };
   [[nodiscard]] static SolGeneralPerformanceOptimizationInstance
-  import_solution(
-      const std::string&                                           path,
-      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
-          std::optional<GeneralPerformanceOptimizationInstance>()) {
+  import_solution(const std::string&      path,
+                  const std::optional<T>& instance = std::optional<T>()) {
     return import_solution(std::filesystem::path(path), instance);
   };
   [[nodiscard]] static SolGeneralPerformanceOptimizationInstance
-  import_solution(
-      const char*                                                  path,
-      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
-          std::optional<GeneralPerformanceOptimizationInstance>()) {
+  import_solution(const char*             path,
+                  const std::optional<T>& instance = std::optional<T>()) {
     return import_solution(std::filesystem::path(path), instance);
   };
 };
@@ -597,23 +587,22 @@ public:
   SolVSSGeneralPerformanceOptimizationInstance() = default;
   explicit SolVSSGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance)
-      : SolGeneralPerformanceOptimizationInstance(instance) {
+      : SolGeneralPerformanceOptimizationInstance<T>(instance) {
     vss_pos = std::vector<std::vector<double>>(
         this->instance.const_n().number_of_edges());
   };
   SolVSSGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance,
       SolutionStatus status, double obj, bool has_sol)
-      : SolGeneralPerformanceOptimizationInstance(instance, status, obj,
-                                                  has_sol) {
+      : SolGeneralPerformanceOptimizationInstance<T>(instance, status, obj,
+                                                     has_sol) {
     vss_pos = std::vector<std::vector<double>>(
         this->instance.const_n().number_of_edges());
   };
   explicit SolVSSGeneralPerformanceOptimizationInstance(
-      const std::filesystem::path&                                 p,
-      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
-          std::optional<GeneralPerformanceOptimizationInstance>())
-      : SolGeneralPerformanceOptimizationInstance(p, instance) {
+      const std::filesystem::path& p,
+      const std::optional<T>&      instance = std::optional<T>())
+      : SolGeneralPerformanceOptimizationInstance<T>(p, instance) {
     vss_pos = std::vector<std::vector<double>>(
         this->instance.const_n().number_of_edges());
   }
@@ -735,10 +724,8 @@ public:
   }
 
   [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
-  import_solution(
-      const std::filesystem::path&                                 p,
-      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
-          std::optional<GeneralPerformanceOptimizationInstance>()) {
+  import_solution(const std::filesystem::path& p,
+                  const std::optional<T>&      instance = std::optional<T>()) {
     auto sol = SolVSSGeneralPerformanceOptimizationInstance(p, instance);
     if (!sol.check_consistency()) {
       throw exceptions::ConsistencyException(
@@ -747,17 +734,13 @@ public:
     return sol;
   };
   [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
-  import_solution(
-      const std::string&                                           path,
-      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
-          std::optional<GeneralPerformanceOptimizationInstance>()) {
+  import_solution(const std::string&      path,
+                  const std::optional<T>& instance = std::optional<T>()) {
     return import_solution(std::filesystem::path(path), instance);
   };
   [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
-  import_solution(
-      const char*                                                  path,
-      const std::optional<GeneralPerformanceOptimizationInstance>& instance =
-          std::optional<GeneralPerformanceOptimizationInstance>()) {
+  import_solution(const char*             path,
+                  const std::optional<T>& instance = std::optional<T>()) {
     return import_solution(std::filesystem::path(path), instance);
   };
 };
