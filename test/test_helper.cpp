@@ -1267,4 +1267,21 @@ TEST(Helper, EoMMaxTimeToMAFromRear) {
                    6);
 }
 
+TEST(Helper, EoMMinTimeMoveMABackwards) {
+  // Train with acceleration 2 and deceleration 1
+  // Start with speed 10 -> BD = 10*10/2 = 50
+  // Accelerate for 2 seconds to reach speed 14
+  // Travelled 12*2 = 24
+  // New BD = 14*14/2 = 98
+  // MA moved by 98 + 24 - 50 = 72
+
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_to_push_ma_backward(14, 2, 1, 72), 2);
+
+  // After 3s it reached speed 10 + 3*2 = 16
+  // Travelled 13*3 = 39
+  // New BD = 16*16/2 = 128
+  // MA moved by 128 + 39 - 50 = 117
+  EXPECT_DOUBLE_EQ(cda_rail::min_time_to_push_ma_backward(16, 2, 1, 117), 3);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)

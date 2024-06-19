@@ -256,6 +256,46 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
                        (a + d) * v_0);
 }
 
+double cda_rail::min_time_to_push_ma_backward(double v_0, double a, double d,
+                                              double s) {
+  if (std::abs(v_0) < GRB_EPS)
+    v_0 = 0;
+  if (std::abs(a) < GRB_EPS)
+    a = 0;
+  if (d < 0 && d > -GRB_EPS)
+    d = 0;
+  if (std::abs(s) < GRB_EPS)
+    s = 0;
+
+  // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
+  if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
+    throw exceptions::InvalidInputException(
+        "We need v_0 >= 0, a >= 0, d > 0, s >= 0");
+  }
+
+  // Assert that s <= v_0^2/(2d)
+  if (s > v_0 * v_0 / (2 * d) + GRB_EPS) {
+    throw exceptions::InvalidInputException(
+        "s must be less than or equal to v_0^2/(2d)");
+  }
+
+  // Solve (v_0-a*t)^2/(2d) + s = v_0*t - 0.5*a*t + v_0^2/(2d)
+  // WolframAlpha: solve for t: (v-a*t)^2/(2*b)+s=v*t-0.5*a*t^2+v^2/(2*b), v>0,
+  // t>0, a>0, b>0, s>0, s<v^2/(2*b), t<v/a
+  // -> t = v/a - sqrt((b v^2 + a (-2 b s + v^2))/(a^2 (a + b)))
+  // -> t = (v - sqrt(-(2 a b s)/(a + b) + v^2))/a
+  // Numerical stable version: t = 2*b*s/((a+b)*(v+sqrt(v^2-2*a*b*s/(a+b))))
+  // Return 0 if v=0 and s = 0
+  // using b=d in wolframalpha to prevent conversion to day
+
+  if (v_0 == 0 || s == 0) {
+    return 0;
+  }
+
+  return 2 * d * s /
+         ((a + d) * (v_0 + std::sqrt(v_0 * v_0 - 2 * a * d * s / (a + d))));
+}
+
 std::pair<double, double>
 cda_rail::get_min_travel_time_acceleration_change_points(double v_1, double v_2,
                                                          double v_m, double a,
