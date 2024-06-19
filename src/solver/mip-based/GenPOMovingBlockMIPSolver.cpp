@@ -1591,6 +1591,35 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto& e_obj    = instance.const_n().get_edge(e);
       const auto& v_source = e_obj.source;
       const auto& v_target = e_obj.target;
+
+      const auto& v_source_velocities = velocity_extensions.at(tr).at(v_source);
+      const auto& v_target_velocities = velocity_extensions.at(tr).at(v_target);
+
+      GRBLinExpr headway_tr_on_e = 0;
+
+      for (size_t v_source_index = 0;
+           v_source_index < v_source_velocities.size(); v_source_index++) {
+        const auto& vel_source = v_source_velocities.at(v_source_index);
+        if (vel_source > tr_object.max_speed) {
+          continue;
+        }
+        for (size_t v_target_index = 0;
+             v_target_index < v_target_velocities.size(); v_target_index++) {
+          const auto& vel_target = v_target_velocities.at(v_target_index);
+          if (vel_target > tr_object.max_speed) {
+            continue;
+          }
+          if (cda_rail::possible_by_eom(vel_source, vel_target,
+                                        tr_object.acceleration,
+                                        tr_object.deceleration, e_obj.length)) {
+            headway_tr_on_e +=
+                vars["y"](tr, e, v_source_index, v_target_index) *
+                headway(tr_object, e_obj, vel_source, vel_target);
+          }
+        }
+      }
+
+      // TODO Continue
     }
   }
 }
