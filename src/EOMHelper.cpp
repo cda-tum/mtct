@@ -256,6 +256,33 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
                        (a + d) * v_0);
 }
 
+double cda_rail::min_time_to_push_ma_fully_backward(double v_0, double a,
+                                                    double d) {
+  // Simplified version if s is the full braking distance
+  // solve for t : (v-a*t)^2/(2*b) = v * t - 0.5 * a * t^2
+  // -> t = (v + (a v)/b - (sqrt(a + b) v)/sqrt(b))/(a + a^2/b)
+  // -> t = ((-sqrt(b) + sqrt(a + b)) v)/(a sqrt(a + b))
+  // -> t = v / (a + b + sqrt(b*(a+b)))
+  // Again b is replaced with the deceleration
+
+  if (std::abs(v_0) < GRB_EPS) {
+    v_0 = 0;
+  }
+  if (std::abs(a) < GRB_EPS) {
+    a = 0;
+  }
+  if (d < 0 && d > -GRB_EPS) {
+    d = 0;
+  }
+
+  // Assert that v_0 >= 0, a >= 0, d > 0
+  if (v_0 < 0 || a < 0 || d <= 0) {
+    throw exceptions::InvalidInputException("We need v_0 >= 0, a >= 0, d > 0");
+  }
+
+  return v_0 / (a + d + std::sqrt(d * (a + d)));
+}
+
 double cda_rail::min_time_to_push_ma_backward(double v_0, double a, double d,
                                               double s) {
   if (std::abs(v_0) < GRB_EPS)
@@ -277,6 +304,11 @@ double cda_rail::min_time_to_push_ma_backward(double v_0, double a, double d,
   if (s > v_0 * v_0 / (2 * d) + GRB_EPS) {
     throw exceptions::InvalidInputException(
         "s must be less than or equal to v_0^2/(2d)");
+  }
+
+  if (std::abs(v_0 * v_0 / (2 * d) - s) < GRB_EPS) {
+    // More stable version in this special case
+    return min_time_to_push_ma_fully_backward(v_0, a, d);
   }
 
   // Solve (v_0-a*t)^2/(2d) + s = v_0*t - 0.5*a*t + v_0^2/(2d)

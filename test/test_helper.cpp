@@ -1282,6 +1282,20 @@ TEST(Helper, EoMMinTimeMoveMABackwards) {
   // New BD = 16*16/2 = 128
   // MA moved by 128 + 39 - 50 = 117
   EXPECT_DOUBLE_EQ(cda_rail::min_time_to_push_ma_backward(16, 2, 1, 117), 3);
+
+  // Time to fully move 50m forward
+  // v^2 - 10^2 = 2 * 2 * 50
+  // Hence, v = 10 * sqrt(3)
+  // Time t such that 10 + 2*t = 10 * sqrt(3)
+  // Hence, t = 5 * (sqrt(3) - 1)
+  // obd = v^2 / 2 = 300/ 2 = 150
+
+  EXPECT_APPROX_EQ(
+      cda_rail::min_time_to_push_ma_backward(10 * std::sqrt(3), 2, 1, 150),
+      5 * (std::sqrt(3) - 1));
+  EXPECT_APPROX_EQ(
+      cda_rail::min_time_to_push_ma_fully_backward(10 * std::sqrt(3), 2, 1),
+      5 * (std::sqrt(3) - 1));
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)
