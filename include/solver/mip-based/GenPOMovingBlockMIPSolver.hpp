@@ -37,6 +37,7 @@ struct ModelDetail {
   double                     max_velocity_delta = 5.55; // 20 km/h
   VelocityRefinementStrategy velocity_refinement_strategy =
       VelocityRefinementStrategy::MinOneStep;
+  bool simplify_headway_constraints = false;
 };
 
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
@@ -125,6 +126,7 @@ private:
   void create_stopping_constraints();
   void create_vertex_headway_constraints();
   void create_headway_constraints();
+  void create_simplified_headway_constraints();
 
   // Helper for headway normal and lazy constraints
   [[nodiscard]] GRBLinExpr
@@ -136,6 +138,8 @@ private:
       instances::SolGeneralPerformanceOptimizationInstance<
           instances::GeneralPerformanceOptimizationInstance>& sol) const;
   double extract_speed(size_t tr, size_t vertex_id) const;
+  double headway(const Train& tr_obj, const Edge& e_obj, double v_0,
+                 double v_1) const;
 
   class LazyCallback : public MessageCallback {
   private:

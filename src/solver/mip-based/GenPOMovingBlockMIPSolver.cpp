@@ -419,8 +419,13 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_vertex_headway_constraints();
     PLOGD << "Create reverse edge constraints";
     create_reverse_edge_constraints();
-    PLOGD << "Create headway constraints";
-    create_headway_constraints();
+    if (this->model_detail.simplify_headway_constraints) {
+      PLOGD << "Create simplified headway constraints";
+      create_simplified_headway_constraints();
+    } else {
+      PLOGD << "Create headway constraints";
+      create_headway_constraints();
+    }
   }
 }
 
@@ -1567,6 +1572,30 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    create_simplified_headway_constraints() {
+  // This creates simplified headway constraints.
+  // They are less accurate, but should make the model easier to solve
+  // No problem if the solution is only used as a starting solution to fix some
+  // parameters
+
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto& tr_object = instance.get_train_list().get_train(tr);
+    const auto  tr_used_edges =
+        instance.edges_used_by_train(tr, model_detail.fix_routes, false);
+    const auto& tr_schedule_object = instance.get_schedule(tr);
+    const auto& entry_node         = tr_schedule_object.get_entry();
+    const auto  t_bound            = ub_timing_variable(tr);
+
+    for (const auto e : instance.edges_used_by_train(
+             tr, this->model_detail.fix_routes, false)) {
+      const auto& e_obj    = instance.const_n().get_edge(e);
+      const auto& v_source = e_obj.source;
+      const auto& v_target = e_obj.target;
+    }
+  }
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_basic_ttd_constraints() {
   for (size_t i = 0; i < ttd_sections.size(); i++) {
     const auto& ttd_section = ttd_sections.at(i);
@@ -1851,6 +1880,31 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       relevant_reverse_edges.emplace_back(e, reverse_edge.value());
     }
   }
+}
+
+double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::headway(
+    const cda_rail::Train& tr_obj, const cda_rail::Edge& e_obj, double v_0,
+    double v_1) const {
+  // If Value is within GRB_EPS set to 0
+  if (std::abs(v_0) < GRB_EPS) {
+    v_0 = 0;
+  }
+  if (std::abs(v_1) < GRB_EPS) {
+    v_1 = 0;
+  }
+
+  if (const auto bd = v_0 * v_0 / (2 * tr_obj.deceleration);
+      bd >= e_obj.length - GRB_EPS) {
+    return min_time_to_push_ma_backward(
+        v_0, tr_obj.acceleration, tr_obj.deceleration,
+        std::max<double>(bd - e_obj.length, 0.0));
+  }
+
+  const auto obd = v_1 * v_1 / (2 * tr_obj.deceleration);
+
+  return -max_time_from_front_to_ma_point(v_0, v_1, V_MIN, tr_obj.acceleration,
+                                          tr_obj.deceleration, e_obj.length,
+                                          obd, e_obj.breakable);
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
