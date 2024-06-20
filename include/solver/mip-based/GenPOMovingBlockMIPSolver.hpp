@@ -37,7 +37,8 @@ struct ModelDetail {
   double                     max_velocity_delta = 5.55; // 20 km/h
   VelocityRefinementStrategy velocity_refinement_strategy =
       VelocityRefinementStrategy::MinOneStep;
-  bool simplify_headway_constraints = false;
+  bool simplify_headway_constraints          = false;
+  bool strengthen_vertex_headway_constraints = true;
 };
 
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
