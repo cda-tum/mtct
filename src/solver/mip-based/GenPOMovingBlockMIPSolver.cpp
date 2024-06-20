@@ -1597,7 +1597,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto& v_source_velocities = velocity_extensions.at(tr).at(v_source);
       const auto& v_target_velocities = velocity_extensions.at(tr).at(v_target);
 
-      GRBLinExpr headway_tr_on_e = 0;
+      GRBLinExpr headway_tr_on_e   = 0;
+      GRBLinExpr headway_tr_on_ttd = 0;
 
       for (size_t v_source_index = 0;
            v_source_index < v_source_velocities.size(); v_source_index++) {
@@ -1618,6 +1619,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 vars["y"](tr, e, v_source_index, v_target_index) *
                 headway(tr_object, e_obj, vel_source, vel_target,
                         v_source_index == entry_node);
+
+            headway_tr_on_ttd +=
+                vars["y"](tr, e, v_source_index, v_target_index) *
+                min_time_to_push_ma_fully_backward(
+                    vel_source, tr_object.acceleration, tr_object.deceleration);
           }
         }
       }
@@ -1640,6 +1646,46 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             "headway_simplified_" + tr_object.name + "_" +
                 instance.get_train_list().get_train(tr2).name + "_" +
                 v_source_object.name + "_" + v_target_object.name);
+      }
+
+      // TTD constraint on entering edge
+      const auto neighboring_edges =
+          instance.const_n().neighboring_edges(v_source);
+      const auto intersecting_ttd =
+          instance.const_n().get_intersecting_ttd({e}, ttd_sections);
+      for (const auto& [ttd_index, ttd_edge] : intersecting_ttd) {
+        assert(ttd_edge == e);
+        const auto& ttd_section = ttd_sections.at(ttd_index);
+        // If all of neighboring_edges are in ttd_section, then it is not an
+        // entering edge Hence, if at least one neighboring edge is not in
+        // ttd_section, then we have an entering edge
+        bool is_entering_edge = std::any_of(
+            neighboring_edges.begin(), neighboring_edges.end(),
+            [&ttd_section](const auto& e_tmp) {
+              return std::find(ttd_section.begin(), ttd_section.end(), e_tmp) ==
+                     ttd_section.end();
+            });
+        if (is_entering_edge) {
+          // We need a constraint for each other train in the TTD section
+          const auto tr_on_ttd = instance.trains_in_section(
+              ttd_section, model_detail.fix_routes, false);
+          for (const auto& tr2 : tr_on_ttd) {
+            if (tr == tr2) {
+              continue;
+            }
+            const auto t_bound_tmp = std::max(t_bound, ub_timing_variable(tr2));
+            const auto tr2_t_var   = vars["t_ttd_departure"](tr2, ttd_index);
+            model->addConstr(
+                tr_t_var - tr2_t_var +
+                        t_bound_tmp *
+                            (1 - vars["order_ttd"](tr, tr2, ttd_index)) >=
+                    headway_tr_on_ttd,
+                "headway_simplified_ttd_" + tr_object.name + "_" +
+                    instance.get_train_list().get_train(tr2).name + "_" +
+                    v_source_object.name + "_" + v_target_object.name + "_ttd" +
+                    std::to_string(ttd_index));
+          }
+        }
       }
     }
   }
@@ -1933,30 +1979,30 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 }
 
 double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::headway(
-    const cda_rail::Train& tr_obj, const cda_rail::Edge& e_obj, double v_0,
-    double v_1, bool entry_vertex) {
+    const cda_rail::Train& tr_obj, const cda_rail::Edge& e_obj, double v_1,
+    double v_2, bool entry_vertex) {
   // If Value is within GRB_EPS set to 0
-  if (std::abs(v_0) < GRB_EPS) {
-    v_0 = 0;
-  }
   if (std::abs(v_1) < GRB_EPS) {
     v_1 = 0;
   }
+  if (std::abs(v_2) < GRB_EPS) {
+    v_2 = 0;
+  }
 
-  if (const auto bd = v_0 * v_0 / (2 * tr_obj.deceleration);
+  if (const auto bd = v_1 * v_1 / (2 * tr_obj.deceleration);
       bd >= e_obj.length - GRB_EPS) {
-    if (v_0 <= GRB_EPS) {
+    if (v_1 <= GRB_EPS) {
       return 0;
     }
-    return entry_vertex ? (bd - e_obj.length) / v_0
+    return entry_vertex ? (bd - e_obj.length) / v_1
                         : min_time_to_push_ma_backward(
-                              v_0, tr_obj.acceleration, tr_obj.deceleration,
+                              v_1, tr_obj.acceleration, tr_obj.deceleration,
                               std::max<double>(bd - e_obj.length, 0.0));
   }
 
-  const auto obd = v_1 * v_1 / (2 * tr_obj.deceleration);
+  const auto obd = v_2 * v_2 / (2 * tr_obj.deceleration);
 
-  return -max_time_from_front_to_ma_point(v_0, v_1, V_MIN, tr_obj.acceleration,
+  return -max_time_from_front_to_ma_point(v_1, v_2, V_MIN, tr_obj.acceleration,
                                           tr_obj.deceleration, e_obj.length,
                                           obd, e_obj.breakable);
 }
