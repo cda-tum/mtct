@@ -1588,9 +1588,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
     for (const auto e : instance.edges_used_by_train(
              tr, this->model_detail.fix_routes, false)) {
-      const auto& e_obj    = instance.const_n().get_edge(e);
-      const auto& v_source = e_obj.source;
-      const auto& v_target = e_obj.target;
+      const auto& e_obj           = instance.const_n().get_edge(e);
+      const auto& v_source        = e_obj.source;
+      const auto& v_target        = e_obj.target;
+      const auto& v_source_object = instance.const_n().get_vertex(v_source);
+      const auto& v_target_object = instance.const_n().get_vertex(v_target);
 
       const auto& v_source_velocities = velocity_extensions.at(tr).at(v_source);
       const auto& v_target_velocities = velocity_extensions.at(tr).at(v_target);
@@ -1614,12 +1616,31 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                         tr_object.deceleration, e_obj.length)) {
             headway_tr_on_e +=
                 vars["y"](tr, e, v_source_index, v_target_index) *
-                headway(tr_object, e_obj, vel_source, vel_target);
+                headway(tr_object, e_obj, vel_source, vel_target,
+                        v_source_index == entry_node);
           }
         }
       }
 
-      // TODO Continue
+      GRBVar tr_t_var = vars["t_front_departure"](tr, v_source);
+
+      const auto tr_on_e = instance.trains_on_edge_mixed_routing(
+          e, model_detail.fix_routes, false);
+      for (const auto& tr2 : tr_on_e) {
+        if (tr == tr2) {
+          continue;
+        }
+        const auto t_bound_tmp = std::max(t_bound, ub_timing_variable(tr2));
+        const auto tr2_t_var   = vars["t_rear_departure"](tr2, v_target);
+
+        model->addConstr(
+            tr_t_var - tr2_t_var +
+                    t_bound_tmp * (1 - vars["order"](tr, tr2, e)) >=
+                headway_tr_on_e,
+            "headway_simplified_" + tr_object.name + "_" +
+                instance.get_train_list().get_train(tr2).name + "_" +
+                v_source_object.name + "_" + v_target_object.name);
+      }
     }
   }
 }
