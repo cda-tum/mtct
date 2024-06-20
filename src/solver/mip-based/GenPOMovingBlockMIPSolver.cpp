@@ -1913,7 +1913,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
 double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::headway(
     const cda_rail::Train& tr_obj, const cda_rail::Edge& e_obj, double v_0,
-    double v_1) const {
+    double v_1, bool entry_vertex) {
   // If Value is within GRB_EPS set to 0
   if (std::abs(v_0) < GRB_EPS) {
     v_0 = 0;
@@ -1924,9 +1924,13 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::headway(
 
   if (const auto bd = v_0 * v_0 / (2 * tr_obj.deceleration);
       bd >= e_obj.length - GRB_EPS) {
-    return min_time_to_push_ma_backward(
-        v_0, tr_obj.acceleration, tr_obj.deceleration,
-        std::max<double>(bd - e_obj.length, 0.0));
+    if (v_0 <= GRB_EPS) {
+      return 0;
+    }
+    return entry_vertex ? (bd - e_obj.length) / v_0
+                        : min_time_to_push_ma_backward(
+                              v_0, tr_obj.acceleration, tr_obj.deceleration,
+                              std::max<double>(bd - e_obj.length, 0.0));
   }
 
   const auto obd = v_1 * v_1 / (2 * tr_obj.deceleration);

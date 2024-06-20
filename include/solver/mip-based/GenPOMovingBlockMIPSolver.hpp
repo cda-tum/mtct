@@ -137,9 +137,9 @@ private:
   void extract_solution(
       instances::SolGeneralPerformanceOptimizationInstance<
           instances::GeneralPerformanceOptimizationInstance>& sol) const;
-  double extract_speed(size_t tr, size_t vertex_id) const;
-  double headway(const Train& tr_obj, const Edge& e_obj, double v_0,
-                 double v_1) const;
+  double        extract_speed(size_t tr, size_t vertex_id) const;
+  static double headway(const Train& tr_obj, const Edge& e_obj, double v_0,
+                        double v_1, bool entry_vertex = false);
 
   class LazyCallback : public MessageCallback {
   private:
