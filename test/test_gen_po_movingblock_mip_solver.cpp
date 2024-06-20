@@ -1132,4 +1132,29 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
   }
 }
 
+TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
+  const std::vector<std::string> paths{"SimpleNetwork"};
+
+  for (const auto& p : paths) {
+    const std::string instance_path = "./example-networks/" + p + "/";
+    const auto        instance_before_parse =
+        cda_rail::instances::VSSGenerationTimetable(instance_path);
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance::
+            cast_from_vss_generation(instance_before_parse);
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
+                                                     true},
+        {false}, {}, 250, true);
+
+    EXPECT_TRUE(sol.has_solution())
+        << "No solution found for instance " << instance_path;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "Solution status is not optimal for instance " << instance_path;
+    EXPECT_EQ(sol.get_obj(), 0)
+        << "Objective value is not 0 for instance " << instance_path;
+  }
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

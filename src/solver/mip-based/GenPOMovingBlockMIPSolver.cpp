@@ -1603,13 +1603,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       for (size_t v_source_index = 0;
            v_source_index < v_source_velocities.size(); v_source_index++) {
         const auto& vel_source = v_source_velocities.at(v_source_index);
-        if (vel_source > tr_object.max_speed) {
+        if (vel_source > tr_object.max_speed || vel_source > e_obj.max_speed) {
           continue;
         }
         for (size_t v_target_index = 0;
              v_target_index < v_target_velocities.size(); v_target_index++) {
           const auto& vel_target = v_target_velocities.at(v_target_index);
-          if (vel_target > tr_object.max_speed) {
+          if (vel_target > tr_object.max_speed ||
+              vel_target > e_obj.max_speed) {
             continue;
           }
           if (cda_rail::possible_by_eom(vel_source, vel_target,
@@ -1819,7 +1820,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         for (size_t s_vel_idx = 0; s_vel_idx < tr1_source_velocities.size();
              s_vel_idx++) {
           const auto& source_vel = tr1_source_velocities.at(s_vel_idx);
-          if (source_vel > tr1_object.max_speed) {
+          if (source_vel > tr1_object.max_speed ||
+              source_vel > e_obj.max_speed) {
             continue;
           }
           const auto source_velocity_headway =
@@ -1830,7 +1832,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           for (size_t t_vel_idx = 0; t_vel_idx < tr1_target_velocities.size();
                t_vel_idx++) {
             const auto& target_vel = tr1_target_velocities.at(t_vel_idx);
-            if (target_vel > tr1_object.max_speed) {
+            if (target_vel > tr1_object.max_speed ||
+                target_vel > e_obj.max_speed) {
               continue;
             }
             const auto target_velocity_headway =
@@ -1878,7 +1881,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           for (size_t s_vel_idx = 0; s_vel_idx < tr2_source_velocities.size();
                s_vel_idx++) {
             const auto& source_vel = tr2_source_velocities.at(s_vel_idx);
-            if (source_vel > tr2_object.max_speed) {
+            if (source_vel > tr2_object.max_speed ||
+                source_vel > e_obj.max_speed) {
               continue;
             }
             const auto source_velocity_headway =
@@ -1890,7 +1894,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             for (size_t t_vel_idx = 0; t_vel_idx < tr2_target_velocities.size();
                  t_vel_idx++) {
               const auto& target_vel = tr2_target_velocities.at(t_vel_idx);
-              if (target_vel > tr2_object.max_speed) {
+              if (target_vel > tr2_object.max_speed ||
+                  target_vel > e_obj.max_speed) {
                 continue;
               }
               const auto target_velocity_headway =
@@ -1983,7 +1988,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         for (size_t s_vel_idx = 0; s_vel_idx < tr1_source_velocities.size();
              s_vel_idx++) {
           const auto& source_vel = tr1_source_velocities.at(s_vel_idx);
-          if (source_vel > tr1_object.max_speed) {
+          if (source_vel > tr1_object.max_speed ||
+              source_vel > e_object.max_speed) {
             continue;
           }
           const auto source_velocity_headway =
@@ -1993,7 +1999,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           for (size_t t_vel_idx = 0; t_vel_idx < tr1_target_velocities.size();
                t_vel_idx++) {
             const auto& target_vel = tr1_target_velocities.at(t_vel_idx);
-            if (target_vel > tr1_object.max_speed) {
+            if (target_vel > tr1_object.max_speed ||
+                target_vel > e_object.max_speed) {
               continue;
             }
             const auto target_velocity_headway =
@@ -2041,7 +2048,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           for (size_t s_vel_idx = 0; s_vel_idx < tr2_source_velocities.size();
                s_vel_idx++) {
             const auto& source_vel = tr2_source_velocities.at(s_vel_idx);
-            if (source_vel > tr2_object.max_speed) {
+            if (source_vel > tr2_object.max_speed ||
+                source_vel > e_object.max_speed) {
               continue;
             }
             const auto source_velocity_headway =
@@ -2052,7 +2060,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             for (size_t t_vel_idx = 0; t_vel_idx < tr2_target_velocities.size();
                  t_vel_idx++) {
               const auto& target_vel = tr2_target_velocities.at(t_vel_idx);
-              if (target_vel > tr2_object.max_speed) {
+              if (target_vel > tr2_object.max_speed ||
+                  target_vel > e_object.max_speed) {
                 continue;
               }
               const auto target_velocity_headway =
