@@ -1653,7 +1653,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto neighboring_edges =
           instance.const_n().neighboring_edges(v_source);
       const auto intersecting_ttd =
-          instance.const_n().get_intersecting_ttd({e}, ttd_sections);
+          cda_rail::Network::get_intersecting_ttd({e}, ttd_sections);
       for (const auto& [ttd_index, ttd_edge] : intersecting_ttd) {
         assert(ttd_edge == e);
         const auto& ttd_section = ttd_sections.at(ttd_index);
