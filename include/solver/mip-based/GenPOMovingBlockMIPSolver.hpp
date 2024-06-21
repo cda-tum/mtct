@@ -111,6 +111,8 @@ private:
 
   [[nodiscard]] std::tuple<double, GRBLinExpr, double, GRBLinExpr>
   get_vertex_headway_expressions(size_t tr, size_t e);
+  [[nodiscard]] std::tuple<double, GRBLinExpr, double, GRBLinExpr>
+  get_edge_headway_expressions(size_t tr, size_t e);
 
   void create_variables();
   void create_timing_variables();
