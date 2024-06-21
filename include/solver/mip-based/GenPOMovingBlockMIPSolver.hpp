@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -107,6 +108,9 @@ private:
   void fill_velocity_extensions_using_min_one_step_strategy();
 
   size_t get_maximal_velocity_extension_size() const;
+
+  [[nodiscard]] std::tuple<double, GRBLinExpr, double, GRBLinExpr>
+  get_vertex_headway_expressions(size_t tr, size_t e);
 
   void create_variables();
   void create_timing_variables();
