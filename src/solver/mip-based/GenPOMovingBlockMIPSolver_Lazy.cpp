@@ -1070,7 +1070,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           const auto  tr2_t_bound = solver->ub_timing_variable(tr2);
           const auto  t_bound     = std::max(tr1_t_bound, tr2_t_bound);
           const auto& tr1_edge    = tr1_direction ? e1 : e2;
-          const auto& tr2_edge    = tr1_direction ? e1 : e2;
+          const auto& tr2_edge    = tr2_direction ? e1 : e2;
 
           GRBLinExpr lhs1 = solver->vars["reverse_order"](tr1, tr2, idx) +
                             solver->vars["reverse_order"](tr2, tr1, idx);
