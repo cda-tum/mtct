@@ -1821,52 +1821,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto  ub_val_1   = ub_timing_variable(tr1);
 
       // Possibly strengthen headway
-      double     hw_s1_max = 0;
-      double     hw_t1_max = 0;
-      GRBLinExpr hw_s1     = 0;
-      GRBLinExpr hw_t1     = 0;
-
-      if (this->model_detail.strengthen_vertex_headway_constraints) {
-        // Strengthen similarly to vertex headway
-        const auto& tr1_source_velocities =
-            velocity_extensions.at(tr1).at(e_obj.source);
-        const auto& tr1_target_velocities =
-            velocity_extensions.at(tr1).at(e_obj.target);
-        for (size_t s_vel_idx = 0; s_vel_idx < tr1_source_velocities.size();
-             s_vel_idx++) {
-          const auto& source_vel = tr1_source_velocities.at(s_vel_idx);
-          if (source_vel > tr1_object.max_speed ||
-              source_vel > e_obj.max_speed) {
-            continue;
-          }
-          const auto source_velocity_headway =
-              min_time_to_push_ma_fully_backward(
-                  source_vel, tr1_object.acceleration, tr1_object.deceleration);
-          hw_s1_max = std::max(hw_s1_max, source_velocity_headway);
-
-          for (size_t t_vel_idx = 0; t_vel_idx < tr1_target_velocities.size();
-               t_vel_idx++) {
-            const auto& target_vel = tr1_target_velocities.at(t_vel_idx);
-            if (target_vel > tr1_object.max_speed ||
-                target_vel > e_obj.max_speed) {
-              continue;
-            }
-            const auto target_velocity_headway =
-                min_time_to_push_ma_fully_backward(target_vel,
-                                                   tr1_object.acceleration,
-                                                   tr1_object.deceleration);
-            hw_t1_max = std::max(hw_t1_max, target_velocity_headway);
-            if (cda_rail::possible_by_eom(
-                    source_vel, target_vel, tr1_object.acceleration,
-                    tr1_object.deceleration, e_obj.length)) {
-              hw_s1 += vars["y"](tr1, e1, s_vel_idx, t_vel_idx) *
-                       source_velocity_headway;
-              hw_t1 += vars["y"](tr1, e1, s_vel_idx, t_vel_idx) *
-                       target_velocity_headway;
-            }
-          }
-        }
-      }
+      auto [hw_s1_max, hw_s1, hw_t1_max, hw_t1] =
+          get_vertex_headway_expressions(tr1, e1);
 
       for (size_t idx_tr2 = idx_tr1 + 1; idx_tr2 < tr_list.size(); idx_tr2++) {
         const auto  tr2        = tr_list.at(idx_tr2);
@@ -1881,55 +1837,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         const auto ub_val_2 = ub_timing_variable(tr2);
         const auto t_bound  = std::max(ub_val_1, ub_val_2);
 
-        // Possibly strengthen headway
-        double     hw_s2_max = 0;
-        double     hw_t2_max = 0;
-        GRBLinExpr hw_s2     = 0;
-        GRBLinExpr hw_t2     = 0;
-
-        if (this->model_detail.strengthen_vertex_headway_constraints) {
-          // Strengthen similarly to vertex headway
-          const auto& tr2_source_velocities =
-              velocity_extensions.at(tr2).at(e_obj.source);
-          const auto& tr2_target_velocities =
-              velocity_extensions.at(tr2).at(e_obj.target);
-          for (size_t s_vel_idx = 0; s_vel_idx < tr2_source_velocities.size();
-               s_vel_idx++) {
-            const auto& source_vel = tr2_source_velocities.at(s_vel_idx);
-            if (source_vel > tr2_object.max_speed ||
-                source_vel > e_obj.max_speed) {
-              continue;
-            }
-            const auto source_velocity_headway =
-                min_time_to_push_ma_fully_backward(source_vel,
-                                                   tr2_object.acceleration,
-                                                   tr2_object.deceleration);
-            hw_s2_max = std::max(hw_s2_max, source_velocity_headway);
-
-            for (size_t t_vel_idx = 0; t_vel_idx < tr2_target_velocities.size();
-                 t_vel_idx++) {
-              const auto& target_vel = tr2_target_velocities.at(t_vel_idx);
-              if (target_vel > tr2_object.max_speed ||
-                  target_vel > e_obj.max_speed) {
-                continue;
-              }
-              const auto target_velocity_headway =
-                  min_time_to_push_ma_fully_backward(target_vel,
-                                                     tr2_object.acceleration,
-                                                     tr2_object.deceleration);
-              hw_t2_max = std::max(hw_t2_max, target_velocity_headway);
-              // Note that tr2 moves from target to source using e2
-              if (cda_rail::possible_by_eom(
-                      target_vel, source_vel, tr2_object.acceleration,
-                      tr2_object.deceleration, e_obj.length)) {
-                hw_s2 += vars["y"](tr2, e2, t_vel_idx, s_vel_idx) *
-                         source_velocity_headway;
-                hw_t2 += vars["y"](tr2, e2, t_vel_idx, s_vel_idx) *
-                         target_velocity_headway;
-              }
-            }
-          }
-        }
+        // s and t are reversed in the following line, because tr2 travels on
+        // the reverse edge
+        auto [hw_t2_max, hw_t2, hw_s2_max, hw_s2] =
+            get_vertex_headway_expressions(tr2, e2);
 
         model->addConstr(
             vars["t_front_departure"](tr1, e_obj.source) +
