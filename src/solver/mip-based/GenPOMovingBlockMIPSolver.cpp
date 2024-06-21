@@ -1790,8 +1790,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         for (size_t s_vel_idx = 0; s_vel_idx < tr1_source_velocities.size();
              s_vel_idx++) {
           const auto& source_vel = tr1_source_velocities.at(s_vel_idx);
-          if (source_vel > tr1_object.max_speed ||
-              source_vel > e_obj.max_speed) {
+          if (source_vel > tr1_object.max_speed) {
             continue;
           }
           const auto source_velocity_headway =
@@ -1802,8 +1801,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           for (size_t t_vel_idx = 0; t_vel_idx < tr1_target_velocities.size();
                t_vel_idx++) {
             const auto& target_vel = tr1_target_velocities.at(t_vel_idx);
-            if (target_vel > tr1_object.max_speed ||
-                target_vel > e_obj.max_speed) {
+            if (target_vel > tr1_object.max_speed) {
               continue;
             }
             const auto target_velocity_headway =
@@ -1851,8 +1849,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           for (size_t s_vel_idx = 0; s_vel_idx < tr2_source_velocities.size();
                s_vel_idx++) {
             const auto& source_vel = tr2_source_velocities.at(s_vel_idx);
-            if (source_vel > tr2_object.max_speed ||
-                source_vel > e_obj.max_speed) {
+            if (source_vel > tr2_object.max_speed) {
               continue;
             }
             const auto source_velocity_headway =
@@ -1864,8 +1861,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             for (size_t t_vel_idx = 0; t_vel_idx < tr2_target_velocities.size();
                  t_vel_idx++) {
               const auto& target_vel = tr2_target_velocities.at(t_vel_idx);
-              if (target_vel > tr2_object.max_speed ||
-                  target_vel > e_obj.max_speed) {
+              if (target_vel > tr2_object.max_speed) {
                 continue;
               }
               const auto target_velocity_headway =
