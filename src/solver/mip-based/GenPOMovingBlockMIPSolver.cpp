@@ -1853,7 +1853,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto& tr1_object  = instance.get_train_list().get_train(tr1);
       const auto  tr1_t_bound = ub_timing_variable(tr1);
 
-      auto [hw_s1_max, hw_t1_max, hw_s1, hw_t1] =
+      auto [hw_s1_max, hw_s1, hw_t1_max, hw_t1] =
           get_vertex_headway_expressions(tr1, e);
 
       for (size_t tr2_index = 0; tr2_index < tr1_index; tr2_index++) {
@@ -1862,7 +1862,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         const auto  tr2_t_bound = ub_timing_variable(tr2);
         const auto  t_bound     = std::max(tr1_t_bound, tr2_t_bound);
 
-        auto [hw_s2_max, hw_t2_max, hw_s2, hw_t2] =
+        auto [hw_s2_max, hw_s2, hw_t2_max, hw_t2] =
             get_vertex_headway_expressions(tr2, e);
 
         // Add headway constraints to both source and target vertices depending
