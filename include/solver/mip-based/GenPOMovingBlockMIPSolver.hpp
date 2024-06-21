@@ -39,7 +39,7 @@ struct ModelDetail {
   VelocityRefinementStrategy velocity_refinement_strategy =
       VelocityRefinementStrategy::MinOneStep;
   bool simplify_headway_constraints          = false;
-  bool strengthen_vertex_headway_constraints = false;
+  bool strengthen_vertex_headway_constraints = true;
 };
 
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
