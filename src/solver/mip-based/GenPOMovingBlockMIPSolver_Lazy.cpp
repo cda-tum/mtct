@@ -32,8 +32,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       const auto train_orders_on_edges = get_train_orders_on_edges(routes);
       const auto train_orders_on_ttd   = get_train_orders_on_ttd();
 
-      auto constraint_created =
-          create_lazy_vertex_headway_constraints(routes, train_orders_on_edges);
+      auto constraint_created = create_lazy_vertex_headway_constraints(
+          routes, train_velocities, train_orders_on_edges);
       if (solver->solver_strategy.lazy_constraint_selection_strategy !=
               LazyConstraintSelectionStrategy::OnlyFirstFound ||
           !constraint_created) {
@@ -669,6 +669,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     create_lazy_vertex_headway_constraints(
         const std::vector<std::vector<std::pair<size_t, double>>>& routes,
+        const std::vector<std::unordered_map<size_t, double>>& train_velocities,
         const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
                                     std::vector<std::pair<size_t, bool>>>>&
             train_orders_on_edges) {
@@ -684,15 +685,19 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                       (!only_one_constraint || !violated_constraint_found);
        tr++) {
     const auto tr_t_bound = solver->ub_timing_variable(tr);
+    const auto tr_object  = solver->instance.get_train_list().get_train(tr);
     // Check every vertex on the route
     for (size_t r_v_idx = 0;
          r_v_idx < routes.at(tr).size() - 1 &&
          (!only_one_constraint || !violated_constraint_found);
          r_v_idx++) {
-      const auto& v_source = routes.at(tr).at(r_v_idx).first;
-      const auto& v_target = routes.at(tr).at(r_v_idx + 1).first;
+      const auto& v_source   = routes.at(tr).at(r_v_idx).first;
+      const auto& v_target   = routes.at(tr).at(r_v_idx + 1).first;
+      const auto& vel_source = train_velocities.at(tr).at(v_source);
+      const auto& vel_target = train_velocities.at(tr).at(v_target);
       const auto& edge_index =
           solver->instance.const_n().get_edge_index(v_source, v_target);
+      const auto& e_object = solver->instance.const_n().get_edge(edge_index);
 
       const auto& [rel_tr_order_source, rel_tr_order_target] =
           train_orders_on_edges.at(edge_index);
@@ -701,6 +706,19 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           solver->instance.const_n().get_vertex(v_source);
       const auto& v_target_obj =
           solver->instance.const_n().get_vertex(v_target);
+
+      // Variables to possibly strengthen the constraints
+      auto [hw_s1_max, hw_s1, hw_t1_max, hw_t1] =
+          solver->get_vertex_headway_expressions(tr, edge_index);
+
+      auto hw_s1_value = std::max(
+          v_source_obj.headway,
+          min_time_to_push_ma_fully_backward(vel_source, tr_object.acceleration,
+                                             tr_object.deceleration));
+      auto hw_t1_value = std::max(
+          v_target_obj.headway,
+          min_time_to_push_ma_fully_backward(vel_target, tr_object.acceleration,
+                                             tr_object.deceleration));
 
       const auto tr_idx_source =
           std::find(rel_tr_order_source.begin(), rel_tr_order_source.end(),
@@ -754,8 +772,6 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             solver->vars["t_front_arrival"](other_tr, v_target);
         auto other_tr_t_var_target_rear =
             solver->vars["t_rear_departure"](other_tr, v_target);
-        const auto& headway_source = v_source_obj.headway;
-        const auto& headway_target = v_target_obj.headway;
 
         // If train order differs between source and target, also add vertex
         // constraints
@@ -775,9 +791,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             solver->solver_strategy.lazy_constraint_selection_strategy ==
                 LazyConstraintSelectionStrategy::AllChecked ||
             getSolution(other_tr_t_var_source_front) <
-                getSolution(tr_t_var_source_rear) + headway_source - GRB_EPS ||
+                getSolution(tr_t_var_source_rear) + hw_s1_value - GRB_EPS ||
             getSolution(other_tr_t_var_target_front) <
-                getSolution(tr_t_var_target_rear) + headway_target - GRB_EPS) {
+                getSolution(tr_t_var_target_rear) + hw_t1_value - GRB_EPS) {
           if (solver->solver_strategy.include_heuristic && !same_order) {
             // Try if this can be solved by rerouting the other (following)
             // train This might be possible, because it appears that the other
@@ -845,11 +861,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             }
           }
 
-          const auto t_bound_source =
-              std::max(tr_t_bound, solver->ub_timing_variable(other_tr)) +
-              headway_source;
-          const auto t_bound_target =
-              t_bound_source - headway_source + headway_target;
+          const auto t_bound_tmp =
+              std::max(tr_t_bound, solver->ub_timing_variable(other_tr));
 
           // Introduce basic constraints on order
           GRBLinExpr order_expr =
@@ -863,30 +876,33 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // Add headway constraints
           GRBLinExpr lhs_source =
               other_tr_t_var_source_front +
-              t_bound_source *
+              (t_bound_tmp + hw_s1_max) *
                   (1 - solver->vars["order"](other_tr, tr, edge_index));
-          GRBLinExpr rhs_source = tr_t_var_source_rear + headway_source;
+          GRBLinExpr rhs_source = tr_t_var_source_rear + hw_s1;
 
           GRBLinExpr lhs_target =
               other_tr_t_var_target_front +
-              t_bound_target *
+              (t_bound_tmp + hw_t1_max) *
                   (1 - solver->vars["order"](other_tr, tr, edge_index));
-          GRBLinExpr rhs_target = tr_t_var_target_rear + headway_target;
+          GRBLinExpr rhs_target = tr_t_var_target_rear + hw_t1;
 
           // Reverse constraints are needed. Otherwise, the solver can
           // reschedule the trains the exact same way by setting the order
           // variable to the wrong value
+          auto [hw_s2_max, hw_s2, hw_t2_max, hw_t2] =
+              solver->get_vertex_headway_expressions(other_tr, edge_index);
+
           GRBLinExpr lhs_source_2 =
               tr_t_var_source_front +
-              t_bound_source *
+              (t_bound_tmp + hw_s2_max) *
                   (1 - solver->vars["order"](tr, other_tr, edge_index));
-          GRBLinExpr rhs_source_2 = other_tr_t_var_source_rear + headway_source;
+          GRBLinExpr rhs_source_2 = other_tr_t_var_source_rear + hw_s2;
 
           GRBLinExpr lhs_target_2 =
               tr_t_var_target_front +
-              t_bound_target *
+              (t_bound_tmp + hw_t2_max) *
                   (1 - solver->vars["order"](tr, other_tr, edge_index));
-          GRBLinExpr rhs_target_2 = other_tr_t_var_target_rear + headway_target;
+          GRBLinExpr rhs_target_2 = other_tr_t_var_target_rear + hw_t2;
 
           addLazy(lhs_source >= rhs_source);
           addLazy(lhs_target >= rhs_target);
