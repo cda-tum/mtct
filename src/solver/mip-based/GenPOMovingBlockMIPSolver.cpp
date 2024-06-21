@@ -1599,6 +1599,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
       GRBLinExpr headway_tr_on_e   = 0;
       GRBLinExpr headway_tr_on_ttd = 0;
+      double     hw_max            = 0;
+      double     hw_max_ttd        = 0;
 
       for (size_t v_source_index = 0;
            v_source_index < v_source_velocities.size(); v_source_index++) {
@@ -1616,15 +1618,29 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           if (cda_rail::possible_by_eom(vel_source, vel_target,
                                         tr_object.acceleration,
                                         tr_object.deceleration, e_obj.length)) {
+            auto hw_tmp = headway(tr_object, e_obj, vel_source, vel_target,
+                                  v_source_index == entry_node);
+            const auto hw_tmp_ttd = min_time_to_push_ma_fully_backward(
+                vel_source, tr_object.acceleration, tr_object.deceleration);
+
+            if (hw_tmp < -t_bound) {
+              hw_tmp = -t_bound;
+            } else if (hw_tmp > t_bound) {
+              hw_tmp = t_bound;
+            }
+
+            if (hw_tmp > hw_max) {
+              hw_max = hw_tmp;
+            }
+            if (hw_tmp_ttd > hw_max_ttd) {
+              hw_max_ttd = hw_tmp_ttd;
+            }
+
             headway_tr_on_e +=
-                vars["y"](tr, e, v_source_index, v_target_index) *
-                headway(tr_object, e_obj, vel_source, vel_target,
-                        v_source_index == entry_node);
+                vars["y"](tr, e, v_source_index, v_target_index) * hw_tmp;
 
             headway_tr_on_ttd +=
-                vars["y"](tr, e, v_source_index, v_target_index) *
-                min_time_to_push_ma_fully_backward(
-                    vel_source, tr_object.acceleration, tr_object.deceleration);
+                vars["y"](tr, e, v_source_index, v_target_index) * hw_tmp_ttd;
           }
         }
       }
@@ -1642,7 +1658,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
         model->addConstr(
             tr_t_var - tr2_t_var +
-                    t_bound_tmp * (1 - vars["order"](tr, tr2, e)) >=
+                    (t_bound_tmp + hw_max) * (1 - vars["order"](tr, tr2, e)) >=
                 headway_tr_on_e,
             "headway_simplified_" + tr_object.name + "_" +
                 instance.get_train_list().get_train(tr2).name + "_" +
@@ -1654,8 +1670,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           instance.const_n().neighboring_edges(v_source);
       const auto intersecting_ttd =
           cda_rail::Network::get_intersecting_ttd({e}, ttd_sections);
-      for (const auto& [ttd_index, ttd_edge] : intersecting_ttd) {
-        assert(ttd_edge == e);
+      for (const auto& [ttd_index, _] : intersecting_ttd) {
         const auto& ttd_section = ttd_sections.at(ttd_index);
         // If all of neighboring_edges are in ttd_section, then it is not an
         // entering edge Hence, if at least one neighboring edge is not in
@@ -1678,7 +1693,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             const auto tr2_t_var   = vars["t_ttd_departure"](tr2, ttd_index);
             model->addConstr(
                 tr_t_var - tr2_t_var +
-                        t_bound_tmp *
+                        (t_bound_tmp + hw_max_ttd) *
                             (1 - vars["order_ttd"](tr, tr2, ttd_index)) >=
                     headway_tr_on_ttd,
                 "headway_simplified_ttd_" + tr_object.name + "_" +
