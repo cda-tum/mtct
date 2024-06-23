@@ -1776,7 +1776,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         // If tr1 follows tr2 then front of tr1 >= rear of tr2 at source vertex
         // (of e1)
         model->addConstr(
-            vars["t_front_departure"](tr1, e_obj.source) +
+            vars["t_front_arrival"](tr1, e_obj.source) +
                     t_bound * (1 - vars["reverse_order"](tr1, tr2, idx)) >=
                 vars["t_rear_departure"](tr2, e_obj.source),
             "reverse_order_1_" + tr1_name + "_" + tr2_name + "_" + v1_name +
@@ -1785,7 +1785,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         // If tr2 follows tr1 then front of tr2 >= rear of tr1 at source vertex
         // of e2, hence, target vertex of e1
         model->addConstr(
-            vars["t_front_departure"](tr2, e_obj.target) +
+            vars["t_front_arrival"](tr2, e_obj.target) +
                     t_bound * (1 - vars["reverse_order"](tr2, tr1, idx)) >=
                 vars["t_rear_departure"](tr1, e_obj.target),
             "reverse_order_2_" + tr2_name + "_" + tr1_name + "_" + v1_name +
