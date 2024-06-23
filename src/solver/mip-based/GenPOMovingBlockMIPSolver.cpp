@@ -1580,11 +1580,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
   for (size_t tr = 0; tr < num_tr; tr++) {
     const auto& tr_object = instance.get_train_list().get_train(tr);
-    const auto  tr_used_edges =
-        instance.edges_used_by_train(tr, model_detail.fix_routes, false);
-    const auto& tr_schedule_object = instance.get_schedule(tr);
-    const auto& entry_node         = tr_schedule_object.get_entry();
-    const auto  t_bound            = ub_timing_variable(tr);
+    const auto  t_bound   = ub_timing_variable(tr);
 
     for (const auto e : instance.edges_used_by_train(
              tr, this->model_detail.fix_routes, false)) {
@@ -1594,12 +1590,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto& v_source_object = instance.const_n().get_vertex(v_source);
       const auto& v_target_object = instance.const_n().get_vertex(v_target);
 
-      const auto& v_source_velocities = velocity_extensions.at(tr).at(v_source);
-      const auto& v_target_velocities = velocity_extensions.at(tr).at(v_target);
-
       auto [hw_max, headway_tr_on_e, hw_max_ttd, headway_tr_on_ttd] =
           get_edge_headway_expressions(tr, e);
 
+      // departure because ma might move forward, otherwise arrival and
+      // departure are equal due to non-zero velocity
       GRBVar tr_t_var = vars["t_front_departure"](tr, v_source);
 
       const auto tr_on_e = instance.trains_on_edge_mixed_routing(
@@ -1630,7 +1625,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         // If all of neighboring_edges are in ttd_section, then it is not an
         // entering edge Hence, if at least one neighboring edge is not in
         // ttd_section, then we have an entering edge
-        bool is_entering_edge = std::any_of(
+        const bool is_entering_edge = std::any_of(
             neighboring_edges.begin(), neighboring_edges.end(),
             [&ttd_section](const auto& e_tmp) {
               return std::find(ttd_section.begin(), ttd_section.end(), e_tmp) ==
