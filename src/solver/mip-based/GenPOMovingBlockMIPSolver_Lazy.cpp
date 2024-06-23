@@ -319,7 +319,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               continue;
             }
             if (!solver->solver_strategy.include_reverse_headways &&
-                tr_other_idx < tr_index) {
+                tr_other_idx > tr_index) {
+              // In this case tr_other follows tr, which is irrelevant for tr ma
               continue;
             }
             other_trains.insert(tr_order.at(tr_other_idx).first);
@@ -439,26 +440,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               }
             }
 
-            if (!rhs.empty()) {
-              GRBLinExpr order_expr =
-                  solver->vars["order"](tr, tr_other_idx, p.back()) +
-                  solver->vars["order"](tr_other_idx, tr, p.back());
-              GRBLinExpr edge_expr = solver->vars["x"](tr, p.back()) +
-                                     solver->vars["x"](tr_other_idx, p.back());
-              addLazy(order_expr <= 0.5 * edge_expr);
-              addLazy(order_expr >= edge_expr - 1);
-              if (solver->solution_settings.export_option ==
-                      ExportOption::ExportLP ||
-                  solver->solution_settings.export_option ==
-                      ExportOption::ExportSolutionAndLP ||
-                  solver->solution_settings.export_option ==
-                      ExportOption::ExportSolutionWithInstanceAndLP) {
-                solver->lazy_constraints.emplace_back(order_expr <=
-                                                      0.5 * edge_expr);
-                solver->lazy_constraints.emplace_back(order_expr >=
-                                                      edge_expr - 1);
-              }
-            }
+            // Previous simple order constraint deleted, because making sure
+            // that the order variable has the correct semantic value is ensured
+            // by vertex headway constraints
 
             for (const auto& rhs_expr : rhs) {
               addLazy(lhs >= rhs_expr);
@@ -567,7 +551,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               continue;
             }
             if (!solver->solver_strategy.include_reverse_headways &&
-                tr_other_idx < tr_index) {
+                tr_other_idx > tr_index) {
+              // In this case tr_other follows tr, which is irrelevant for tr ma
               continue;
             }
             other_trains_ttd.insert(rel_tr_order_ttd.at(tr_other_idx));
