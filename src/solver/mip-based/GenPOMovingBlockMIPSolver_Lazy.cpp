@@ -37,9 +37,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       if (solver->solver_strategy.lazy_constraint_selection_strategy !=
               LazyConstraintSelectionStrategy::OnlyFirstFound ||
           !constraint_created) {
-        constraint_created = create_lazy_edge_and_ttd_headway_constraints(
-            routes, train_velocities, train_orders_on_edges,
-            train_orders_on_ttd);
+        constraint_created =
+            solver->model_detail.simplify_headway_constraints
+                ? create_lazy_simplified_edge_constraints(
+                      routes, train_velocities, train_orders_on_edges,
+                      train_orders_on_ttd)
+                : create_lazy_edge_and_ttd_headway_constraints(
+                      routes, train_velocities, train_orders_on_edges,
+                      train_orders_on_ttd);
       }
       if (solver->solver_strategy.lazy_constraint_selection_strategy !=
               LazyConstraintSelectionStrategy::OnlyFirstFound ||
@@ -944,6 +949,121 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       }
     }
   }
+  return violated_constraint_found;
+}
+
+bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
+    create_lazy_simplified_edge_constraints(
+        const std::vector<std::vector<std::pair<size_t, double>>>& routes,
+        const std::vector<std::unordered_map<size_t, double>>& train_velocities,
+        const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
+                                    std::vector<std::pair<size_t, bool>>>>&
+                                                train_orders_on_edges,
+        const std::vector<std::vector<size_t>>& train_orders_on_ttd) {
+  bool violated_constraint_found = false;
+  bool only_one_constraint =
+      solver->solver_strategy.lazy_constraint_selection_strategy ==
+      LazyConstraintSelectionStrategy::OnlyFirstFound;
+
+  for (size_t tr = 0; tr < solver->num_tr &&
+                      (!only_one_constraint || !violated_constraint_found);
+       tr++) {
+    const auto tr_t_bound = solver->ub_timing_variable(tr);
+    const auto tr_object  = solver->instance.get_train_list().get_train(tr);
+    // Check every vertex on the route
+    for (size_t r_v_idx = 0;
+         r_v_idx < routes.at(tr).size() - 1 &&
+         (!only_one_constraint || !violated_constraint_found);
+         r_v_idx++) {
+      const auto& v_source   = routes.at(tr).at(r_v_idx).first;
+      const auto& v_target   = routes.at(tr).at(r_v_idx + 1).first;
+      const auto& vel_source = train_velocities.at(tr).at(v_source);
+      const auto& vel_target = train_velocities.at(tr).at(v_target);
+      const auto& edge_index =
+          solver->instance.const_n().get_edge_index(v_source, v_target);
+      const auto& edge_object = solver->instance.const_n().get_edge(edge_index);
+
+      const auto hw_edge = solver->headway(tr_object, edge_object, vel_source,
+                                           vel_target, r_v_idx == 0);
+
+      // Variables to possibly strengthen the constraints
+      auto [hw_max, headway_tr_on_e, hw_max_ttd, headway_tr_on_ttd] =
+          solver->get_edge_headway_expressions(tr, edge_index);
+      const auto& tr_t_var = solver->vars["t_front_departure"](tr, v_source);
+      const auto  tr_t_var_value = getSolution(tr_t_var);
+
+      std::unordered_set<size_t> other_trains;
+      const auto& tr_order = train_orders_on_edges.at(edge_index).first;
+      const auto  tr_index = std::find(tr_order.begin(), tr_order.end(),
+                                       std::pair<size_t, bool>(tr, true)) -
+                            tr_order.begin();
+      assert(tr_index != tr_order.end() - tr_order.begin());
+      for (size_t tr_other_idx = 0; tr_other_idx < tr_order.size();
+           tr_other_idx++) {
+        if (tr_other_idx == tr_index) {
+          continue;
+        }
+        if (!tr_order.at(tr_other_idx).second) {
+          // The train travels in reverse direction!
+          continue;
+        }
+        if (solver->solver_strategy.lazy_train_selection_strategy ==
+                LazyTrainSelectionStrategy::OnlyAdjacent &&
+            std::abs(static_cast<int>(tr_other_idx) -
+                     static_cast<int>(tr_index)) > 1) {
+          continue;
+        }
+        if (!solver->solver_strategy.include_reverse_headways &&
+            tr_other_idx > tr_index) {
+          // In this case tr_other follows tr, which is irrelevant for tr ma
+          continue;
+        }
+        other_trains.insert(tr_order.at(tr_other_idx).first);
+      }
+
+      for (const auto& tr_other_idx : other_trains) {
+        const auto& tr_other_object =
+            solver->instance.get_train_list().get_train(tr_other_idx);
+
+        const auto& tr_other_t_var =
+            solver->vars["t_rear_departure"](tr_other_idx, v_target);
+        const auto& tr_other_var_value = getSolution(tr_other_t_var);
+
+        // Check if this constraint should be added
+        bool add_constr =
+            (solver->solver_strategy.lazy_constraint_selection_strategy ==
+             LazyConstraintSelectionStrategy::AllChecked);
+        if (!add_constr &&
+            tr_t_var_value - tr_other_var_value < hw_edge - GRB_EPS) {
+          add_constr = true;
+        }
+
+        const auto t_bound_tmp =
+            std::max(tr_t_bound, solver->ub_timing_variable(tr_other_idx));
+
+        if (add_constr) {
+          GRBLinExpr lhs =
+              tr_t_var - tr_other_t_var +
+              (t_bound_tmp + hw_max) *
+                  (1 - solver->vars["order"](tr, tr_other_idx, edge_index));
+          GRBLinExpr rhs = headway_tr_on_e;
+          addLazy(lhs >= rhs);
+          if (solver->solution_settings.export_option ==
+                  ExportOption::ExportLP ||
+              solver->solution_settings.export_option ==
+                  ExportOption::ExportSolutionAndLP ||
+              solver->solution_settings.export_option ==
+                  ExportOption::ExportSolutionWithInstanceAndLP) {
+            solver->lazy_constraints.emplace_back(lhs >= rhs);
+          }
+          violated_constraint_found = true;
+        }
+      }
+
+      // TODO: TTD constraints
+    }
+  }
+
   return violated_constraint_found;
 }
 

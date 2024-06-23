@@ -167,6 +167,13 @@ private:
                                     std::vector<std::pair<size_t, bool>>>>&
                                                 train_orders_on_edges,
         const std::vector<std::vector<size_t>>& train_orders_on_ttd);
+    bool create_lazy_simplified_edge_constraints(
+        const std::vector<std::vector<std::pair<size_t, double>>>& routes,
+        const std::vector<std::unordered_map<size_t, double>>& train_velocities,
+        const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
+                                    std::vector<std::pair<size_t, bool>>>>&
+                                                train_orders_on_edges,
+        const std::vector<std::vector<size_t>>& train_orders_on_ttd);
     bool create_lazy_vertex_headway_constraints(
         const std::vector<std::vector<std::pair<size_t, double>>>& routes,
         const std::vector<std::unordered_map<size_t, double>>& train_velocities,
