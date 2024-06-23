@@ -1663,8 +1663,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto& ttd_section = ttd_sections.at(i);
     const auto  tr_on_ttd =
         instance.trains_in_section(ttd_section, model_detail.fix_routes, false);
-    for (const auto& tr : tr_on_ttd) {
-      const auto t_bound = ub_timing_variable(tr);
+    for (size_t tr_on_ttd_index = 0; tr_on_ttd_index < tr_on_ttd.size();
+         tr_on_ttd_index++) {
+      const auto& tr      = tr_on_ttd.at(tr_on_ttd_index);
+      const auto  t_bound = ub_timing_variable(tr);
+      const auto& tr_name = instance.get_train_list().get_train(tr).name;
 
       // x_ttd aggregates x values
       const auto e_tr =
@@ -1713,22 +1716,37 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                            std::to_string(i));
 
       // Order constraints as usual
-      for (const auto& tr2 : tr_on_ttd) {
-        if (tr == tr2) {
-          continue;
-        }
+      for (size_t tr2_on_ttd_index = tr_on_ttd_index + 1;
+           tr2_on_ttd_index < tr_on_ttd.size(); tr2_on_ttd_index++) {
+        const auto& tr2         = tr_on_ttd.at(tr2_on_ttd_index);
+        const auto  t_bound_tmp = std::max(t_bound, ub_timing_variable(tr2));
+        const auto& tr2_name    = instance.get_train_list().get_train(tr2).name;
         model->addConstr(
             vars["order_ttd"](tr, tr2, i) + vars["order_ttd"](tr2, tr, i) <=
                 0.5 * (vars["x_ttd"](tr, i) + vars["x_ttd"](tr2, i)),
-            "ttd_order_1_" + instance.get_train_list().get_train(tr).name +
-                "_" + instance.get_train_list().get_train(tr2).name + "_" +
+            "ttd_order_1_" + tr_name + "_" + tr2_name + "_" +
                 std::to_string(i));
-        model->addConstr(
-            vars["order_ttd"](tr, tr2, i) + vars["order_ttd"](tr2, tr, i) >=
-                vars["x_ttd"](tr, i) - vars["x_ttd"](tr2, i) - 1,
-            "ttd_order_2_" + instance.get_train_list().get_train(tr).name +
-                "_" + instance.get_train_list().get_train(tr2).name + "_" +
-                std::to_string(i));
+        model->addConstr(vars["order_ttd"](tr, tr2, i) +
+                                 vars["order_ttd"](tr2, tr, i) >=
+                             vars["x_ttd"](tr, i) - vars["x_ttd"](tr2, i) - 1,
+                         "ttd_order_2_" + tr_name + "_" + tr2_name + "_" +
+                             std::to_string(i));
+
+        // If tr1 follows tr2 then t_ttd_departure(tr1) >= t_ttd_departure(tr2)
+        model->addConstr(vars["t_ttd_departure"](tr, i) +
+                                 t_bound_tmp *
+                                     (1 - vars["order_ttd"](tr, tr2, i)) >=
+                             vars["t_ttd_departure"](tr2, i),
+                         "ttd_order_3_time_" + tr_name + "_" + tr2_name + "_" +
+                             std::to_string(i));
+
+        // If tr2 follows tr1 then t_ttd_departure(tr2) >= t_ttd_departure(tr1)
+        model->addConstr(vars["t_ttd_departure"](tr2, i) +
+                                 t_bound_tmp *
+                                     (1 - vars["order_ttd"](tr2, tr, i)) >=
+                             vars["t_ttd_departure"](tr, i),
+                         "ttd_order_4_time_" + tr2_name + "_" + tr_name + "_" +
+                             std::to_string(i));
       }
     }
   }
