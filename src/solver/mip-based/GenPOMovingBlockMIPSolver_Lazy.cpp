@@ -878,8 +878,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       const auto& tr1_t_var_value_front = getSolution(tr1_t_var_front);
       const auto& tr1_t_var_rear        = solver->vars["t_rear_departure"](
           tr1, tr1_direction ? e_obj.target : e_obj.source);
-      const auto& tr1_t_var_value_rear = getSolution(tr1_t_var_rear);
-      const auto  tr1_t_bound          = solver->ub_timing_variable(tr1);
+      const auto tr1_t_bound = solver->ub_timing_variable(tr1);
 
       size_t       lb_idx = 0;
       const size_t ub_idx = tr1_idx;
@@ -903,8 +902,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         }
         const auto& tr2_t_var_front = solver->vars["t_front_arrival"](
             tr2, tr2_direction ? e_obj.source : e_obj.target);
-        const auto& tr2_t_var_value_front = getSolution(tr2_t_var_front);
-        const auto& tr2_t_var_rear        = solver->vars["t_rear_departure"](
+        const auto& tr2_t_var_rear = solver->vars["t_rear_departure"](
             tr2, tr2_direction ? e_obj.target : e_obj.source);
         const auto& tr2_t_var_value_rear = getSolution(tr2_t_var_rear);
 
