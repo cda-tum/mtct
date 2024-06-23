@@ -1715,12 +1715,13 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                            instance.get_train_list().get_train(tr).name + "_" +
                            std::to_string(i));
 
-      // Order constraints as usual
       for (size_t tr2_on_ttd_index = tr_on_ttd_index + 1;
            tr2_on_ttd_index < tr_on_ttd.size(); tr2_on_ttd_index++) {
         const auto& tr2         = tr_on_ttd.at(tr2_on_ttd_index);
         const auto  t_bound_tmp = std::max(t_bound, ub_timing_variable(tr2));
         const auto& tr2_name    = instance.get_train_list().get_train(tr2).name;
+
+        // Order constraints as usual
         model->addConstr(
             vars["order_ttd"](tr, tr2, i) + vars["order_ttd"](tr2, tr, i) <=
                 0.5 * (vars["x_ttd"](tr, i) + vars["x_ttd"](tr2, i)),
