@@ -1845,38 +1845,34 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
         // Add headway constraints to both source and target vertices depending
         // on train order
-        model->addConstr(
-            vars["t_front_arrival"](tr1, source_v) +
-                    (t_bound + hw_s1_max) * (1 - vars["order"](tr1, tr2, e)) >=
-                vars["t_rear_departure"](tr2, source_v) + hw_s1,
-            "headway_vertex_source_1_" +
-                instance.get_train_list().get_train(tr1).name + "_" +
-                instance.get_train_list().get_train(tr2).name + "_" +
-                source_v_object.name + "-" + target_v_object.name);
-        model->addConstr(
-            vars["t_front_arrival"](tr2, source_v) +
-                    (t_bound + hw_s2_max) * (1 - vars["order"](tr2, tr1, e)) >=
-                vars["t_rear_departure"](tr1, source_v) + hw_s2,
-            "headway_vertex_source_2_" +
-                instance.get_train_list().get_train(tr1).name + "_" +
-                instance.get_train_list().get_train(tr2).name + "_" +
-                source_v_object.name + "-" + target_v_object.name);
-        model->addConstr(
-            vars["t_front_arrival"](tr1, target_v) +
-                    (t_bound + hw_t1_max) * (1 - vars["order"](tr1, tr2, e)) >=
-                vars["t_rear_departure"](tr2, target_v) + hw_t1,
-            "headway_vertex_target_1_" +
-                instance.get_train_list().get_train(tr1).name + "_" +
-                instance.get_train_list().get_train(tr2).name + "_" +
-                source_v_object.name + "-" + target_v_object.name);
-        model->addConstr(
-            vars["t_front_arrival"](tr2, target_v) +
-                    (t_bound + hw_t2_max) * (1 - vars["order"](tr2, tr1, e)) >=
-                vars["t_rear_departure"](tr1, target_v) + hw_t2,
-            "headway_vertex_target_2_" +
-                instance.get_train_list().get_train(tr1).name + "_" +
-                instance.get_train_list().get_train(tr2).name + "_" +
-                source_v_object.name + "-" + target_v_object.name);
+        model->addConstr(vars["t_front_arrival"](tr1, source_v) +
+                                 (t_bound + hw_s1_max) *
+                                     (1 - vars["order"](tr1, tr2, e)) >=
+                             vars["t_rear_departure"](tr2, source_v) + hw_s1,
+                         "headway_vertex_source_1_" + tr1_object.name + "_" +
+                             tr2_object.name + "_" + source_v_object.name +
+                             "-" + target_v_object.name);
+        model->addConstr(vars["t_front_arrival"](tr2, source_v) +
+                                 (t_bound + hw_s2_max) *
+                                     (1 - vars["order"](tr2, tr1, e)) >=
+                             vars["t_rear_departure"](tr1, source_v) + hw_s2,
+                         "headway_vertex_source_2_" + tr1_object.name + "_" +
+                             tr2_object.name + "_" + source_v_object.name +
+                             "-" + target_v_object.name);
+        model->addConstr(vars["t_front_arrival"](tr1, target_v) +
+                                 (t_bound + hw_t1_max) *
+                                     (1 - vars["order"](tr1, tr2, e)) >=
+                             vars["t_rear_departure"](tr2, target_v) + hw_t1,
+                         "headway_vertex_target_1_" + tr1_object.name + "_" +
+                             tr2_object.name + "_" + source_v_object.name +
+                             "-" + target_v_object.name);
+        model->addConstr(vars["t_front_arrival"](tr2, target_v) +
+                                 (t_bound + hw_t2_max) *
+                                     (1 - vars["order"](tr2, tr1, e)) >=
+                             vars["t_rear_departure"](tr1, target_v) + hw_t2,
+                         "headway_vertex_target_2_" + tr1_object.name + "_" +
+                             tr2_object.name + "_" + source_v_object.name +
+                             "-" + target_v_object.name);
       }
     }
   }
