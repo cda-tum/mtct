@@ -873,59 +873,45 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
          (!only_one_constraint || !violated_constraint_found);
          tr1_idx++) {
       const auto& [tr1, tr1_direction] = tr_order.at(tr1_idx);
-      const auto& tr1_t_var_1 =
-          solver->vars["t_front_departure"](tr1, e_obj.source);
-      const auto& tr1_t_var_value_1 = getSolution(tr1_t_var_1);
-      const auto& tr1_t_var_2 =
-          solver->vars["t_front_departure"](tr1, e_obj.target);
-      const auto& tr1_t_var_value_2 = getSolution(tr1_t_var_2);
-      const auto  tr1_t_bound       = solver->ub_timing_variable(tr1);
+      const auto& tr1_t_var_front      = solver->vars["t_front_arrival"](
+          tr1, tr1_direction ? e_obj.source : e_obj.target);
+      const auto& tr1_t_var_value_front = getSolution(tr1_t_var_front);
+      const auto& tr1_t_var_rear        = solver->vars["t_rear_departure"](
+          tr1, tr1_direction ? e_obj.target : e_obj.source);
+      const auto& tr1_t_var_value_rear = getSolution(tr1_t_var_rear);
+      const auto  tr1_t_bound          = solver->ub_timing_variable(tr1);
 
-      size_t lb_idx = 0;
-      size_t ub_idx = tr_order.size() - 1;
+      size_t       lb_idx = 0;
+      const size_t ub_idx = tr1_idx;
       // Depending on strategy, not all trains are considered
       if (solver->solver_strategy.lazy_train_selection_strategy ==
           LazyTrainSelectionStrategy::OnlyAdjacent) {
         lb_idx = std::max<int>(static_cast<int>(lb_idx),
                                static_cast<int>(tr1_idx) - 1);
-        ub_idx = std::min<int>(static_cast<int>(ub_idx),
-                               static_cast<int>(tr1_idx) + 1);
       }
-      if (!solver->solver_strategy.include_reverse_headways) {
-        lb_idx = std::max<int>(static_cast<int>(lb_idx),
-                               static_cast<int>(tr1_idx) + 1);
-      }
-      if (solver->solver_strategy.lazy_constraint_selection_strategy !=
-          LazyConstraintSelectionStrategy::AllChecked) {
-        lb_idx = std::max<int>(static_cast<int>(lb_idx),
-                               static_cast<int>(tr1_idx) + 1);
-      }
+      // Note reverse orders are always included anyway to ensure correctness
 
       for (size_t tr2_idx = lb_idx;
-           tr2_idx <= ub_idx &&
+           tr2_idx < ub_idx &&
            (!only_one_constraint || !violated_constraint_found);
            tr2_idx++) {
-        if (tr1_idx == tr2_idx) {
-          // Same train!
-          continue;
-        }
+        assert(tr1_idx != tr2_idx);
         const auto& [tr2, tr2_direction] = tr_order.at(tr2_idx);
         if (tr1_direction == tr2_direction) {
           // The trains travel in the same direction!
           continue;
         }
-        const auto& tr2_t_var_1 =
-            solver->vars["t_rear_departure"](tr2, e_obj.source);
-        const auto& tr2_t_var_value_1 = getSolution(tr2_t_var_1);
-        const auto& tr2_t_var_2 =
-            solver->vars["t_rear_departure"](tr2, e_obj.target);
-        const auto& tr2_t_var_value_2 = getSolution(tr2_t_var_2);
+        const auto& tr2_t_var_front = solver->vars["t_front_arrival"](
+            tr2, tr2_direction ? e_obj.source : e_obj.target);
+        const auto& tr2_t_var_value_front = getSolution(tr2_t_var_front);
+        const auto& tr2_t_var_rear        = solver->vars["t_rear_departure"](
+            tr2, tr2_direction ? e_obj.target : e_obj.source);
+        const auto& tr2_t_var_value_rear = getSolution(tr2_t_var_rear);
 
         // Check if trains do not crash as specified
         if (solver->solver_strategy.lazy_constraint_selection_strategy ==
                 LazyConstraintSelectionStrategy::AllChecked ||
-            tr1_t_var_value_1 < tr2_t_var_value_1 ||
-            tr1_t_var_value_2 < tr2_t_var_value_2) {
+            tr1_t_var_value_front < tr2_t_var_value_rear - GRB_EPS) {
           const auto  tr2_t_bound = solver->ub_timing_variable(tr2);
           const auto  t_bound     = std::max(tr1_t_bound, tr2_t_bound);
           const auto& tr1_edge    = tr1_direction ? e1 : e2;
@@ -937,13 +923,13 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                             solver->vars["x"](tr2, tr2_edge) - 1;
 
           GRBLinExpr lhs2 =
-              tr1_t_var_1 +
+              tr1_t_var_front +
               t_bound * (1 - solver->vars["reverse_order"](tr1, tr2, idx));
-          GRBLinExpr rhs2 = tr2_t_var_1;
+          GRBLinExpr rhs2 = tr2_t_var_rear;
           GRBLinExpr lhs3 =
-              tr1_t_var_2 +
-              t_bound * (1 - solver->vars["reverse_order"](tr1, tr2, idx));
-          GRBLinExpr rhs3 = tr2_t_var_2;
+              tr2_t_var_front +
+              t_bound * (1 - solver->vars["reverse_order"](tr2, tr1, idx));
+          GRBLinExpr rhs3 = tr1_t_var_rear;
 
           addLazy(lhs1 >= rhs1);
           addLazy(lhs1 <= 1);
