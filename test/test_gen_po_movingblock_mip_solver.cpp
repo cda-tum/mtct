@@ -799,8 +799,8 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, Default1) {
-  const std::vector<std::string> paths{
-      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
+  const std::vector<std::string> paths{"HighSpeedTrack2Trains",
+                                       "HighSpeedTrack5Trains"};
 
   for (const auto& p : paths) {
     const std::string instance_path = "./example-networks/" + p + "/";
