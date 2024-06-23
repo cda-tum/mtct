@@ -1743,8 +1743,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_reverse_edge_constraints() {
   for (size_t idx = 0; idx < relevant_reverse_edges.size(); idx++) {
     const auto& [e1, e2] = relevant_reverse_edges.at(idx);
-    const auto tr_list =
-        instance.trains_in_section({e1, e2}, model_detail.fix_routes, false);
     const auto tr_list_1 = instance.trains_on_edge_mixed_routing(
         e1, model_detail.fix_routes, false);
     const auto tr_list_2 = instance.trains_on_edge_mixed_routing(
@@ -1756,59 +1754,41 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
     for (const auto& tr1 : tr_list_1) {
       const auto& tr1_name = instance.get_train_list().get_train(tr1).name;
+      const auto  ub_val_1 = ub_timing_variable(tr1);
       for (const auto& tr2 : tr_list_2) {
         if (tr1 == tr2) {
           continue;
         }
         const auto& tr2_name = instance.get_train_list().get_train(tr2).name;
+        const auto  ub_val_2 = ub_timing_variable(tr2);
+        const auto  t_bound  = std::max(ub_val_1, ub_val_2);
         model->addConstr(vars["reverse_order"](tr1, tr2, idx) +
                                  vars["reverse_order"](tr2, tr1, idx) >=
                              vars["x"](tr1, e1) + vars["x"](tr2, e2) - 1,
                          "reverse_order_lb_" + tr1_name + "_" + tr2_name + "_" +
                              v1_name + "-" + v2_name);
-      }
-    }
-
-    for (size_t idx_tr1 = 0; idx_tr1 < tr_list.size(); idx_tr1++) {
-      const auto  tr1      = tr_list.at(idx_tr1);
-      const auto& tr1_name = instance.get_train_list().get_train(tr1).name;
-      const auto  ub_val_1 = ub_timing_variable(tr1);
-      for (size_t idx_tr2 = idx_tr1 + 1; idx_tr2 < tr_list.size(); idx_tr2++) {
-        const auto  tr2      = tr_list.at(idx_tr2);
-        const auto& tr2_name = instance.get_train_list().get_train(tr2).name;
         model->addConstr(vars["reverse_order"](tr1, tr2, idx) +
                                  vars["reverse_order"](tr2, tr1, idx) <=
                              1,
                          "reverse_order_ub_" + tr1_name + "_" + tr2_name + "_" +
                              v1_name + "-" + v2_name);
 
-        const auto ub_val_2 = ub_timing_variable(tr2);
-        const auto t_bound  = std::max(ub_val_1, ub_val_2);
-
+        // If tr1 follows tr2 then front of tr1 >= rear of tr2 at source vertex
+        // (of e1)
         model->addConstr(
             vars["t_front_departure"](tr1, e_obj.source) +
                     t_bound * (1 - vars["reverse_order"](tr1, tr2, idx)) >=
                 vars["t_rear_departure"](tr2, e_obj.source),
             "reverse_order_1_" + tr1_name + "_" + tr2_name + "_" + v1_name +
                 "-" + v2_name);
-        model->addConstr(
-            vars["t_front_departure"](tr1, e_obj.target) +
-                    t_bound * (1 - vars["reverse_order"](tr1, tr2, idx)) >=
-                vars["t_rear_departure"](tr2, e_obj.target),
-            "reverse_order_2_" + tr1_name + "_" + tr2_name + "_" + v1_name +
-                "-" + v2_name);
 
-        model->addConstr(
-            vars["t_front_departure"](tr2, e_obj.source) +
-                    t_bound * (1 - vars["reverse_order"](tr2, tr1, idx)) >=
-                vars["t_rear_departure"](tr1, e_obj.source),
-            "reverse_order_1b_" + tr2_name + "_" + tr1_name + "_" + v1_name +
-                "-" + v2_name);
+        // If tr2 follows tr1 then front of tr2 >= rear of tr1 at source vertex
+        // of e2, hence, target vertex of e1
         model->addConstr(
             vars["t_front_departure"](tr2, e_obj.target) +
                     t_bound * (1 - vars["reverse_order"](tr2, tr1, idx)) >=
                 vars["t_rear_departure"](tr1, e_obj.target),
-            "reverse_order_2b_" + tr2_name + "_" + tr1_name + "_" + v1_name +
+            "reverse_order_2_" + tr2_name + "_" + tr1_name + "_" + v1_name +
                 "-" + v2_name);
       }
     }
