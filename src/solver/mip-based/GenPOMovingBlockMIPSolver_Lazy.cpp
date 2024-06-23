@@ -659,8 +659,6 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       solver->solver_strategy.lazy_constraint_selection_strategy ==
       LazyConstraintSelectionStrategy::OnlyFirstFound;
 
-  std::unordered_set<size_t> trains_checked_by_heuristic = {};
-
   for (size_t tr = 0; tr < solver->num_tr &&
                       (!only_one_constraint || !violated_constraint_found);
        tr++) {
