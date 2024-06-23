@@ -861,7 +861,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     for (size_t i = 0; i < 2; i++) {
       const auto& tr_order = i == 0 ? train_orders_on_edges.at(e1).first
                                     : train_orders_on_edges.at(e1).second;
-      for (size_t tr1_idx = 0;
+      for (size_t tr1_idx = 1;
            tr1_idx < tr_order.size() &&
            (!only_one_constraint || !violated_constraint_found);
            tr1_idx++) {
