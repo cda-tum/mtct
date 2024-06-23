@@ -858,7 +858,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
        idx++) {
     const auto& [e1, e2] = solver->relevant_reverse_edges.at(idx);
     const auto& e_obj    = solver->instance.const_n().get_edge(e1);
-    for (size_t i = 0; i < 2; i++) {
+    for (size_t i = 0;
+         i < 2 && (!only_one_constraint || !violated_constraint_found); i++) {
       const auto& tr_order = i == 0 ? train_orders_on_edges.at(e1).first
                                     : train_orders_on_edges.at(e1).second;
       for (size_t tr1_idx = 1;
