@@ -62,8 +62,7 @@ struct SolverStrategyMovingBlock {
       LazyConstraintSelectionStrategy::OnlyViolated;
   LazyTrainSelectionStrategy lazy_train_selection_strategy =
       LazyTrainSelectionStrategy::OnlyAdjacent;
-  bool   include_heuristic = false;
-  double abs_mip_gap       = 10;
+  double abs_mip_gap = 10;
 };
 
 class GenPOMovingBlockMIPSolver
