@@ -1023,9 +1023,6 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       }
 
       for (const auto& tr_other_idx : other_trains) {
-        const auto& tr_other_object =
-            solver->instance.get_train_list().get_train(tr_other_idx);
-
         const auto& tr_other_t_var =
             solver->vars["t_rear_departure"](tr_other_idx, v_target);
         const auto& tr_other_var_value = getSolution(tr_other_t_var);
@@ -1061,11 +1058,97 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         }
       }
 
-      // TODO: TTD constraints
+      // TTD constraint on entering edge
+      const auto neighboring_edges =
+          solver->instance.const_n().neighboring_edges(v_source);
+      const auto intersecting_ttd = cda_rail::Network::get_intersecting_ttd(
+          {edge_index}, solver->ttd_sections);
+      for (const auto& [ttd_index, _] : intersecting_ttd) {
+        const auto& ttd_section = solver->ttd_sections.at(ttd_index);
+        // If all of neighboring_edges are in ttd_section, then it is not an
+        // entering edge Hence, if at least one neighboring edge is not in
+        // ttd_section, then we have an entering edge
+        const bool is_entering_edge = std::any_of(
+            neighboring_edges.begin(), neighboring_edges.end(),
+            [&ttd_section](const auto& e_tmp) {
+              return std::find(ttd_section.begin(), ttd_section.end(), e_tmp) ==
+                     ttd_section.end();
+            });
+        if (is_entering_edge) {
+          // Check TTD condition on entering edge
+          const auto& tr_order_ttd = train_orders_on_ttd.at(ttd_index);
+          std::unordered_set<size_t> other_trains_ttd;
+          const auto                 tr_index_ttd =
+              std::find(tr_order_ttd.begin(), tr_order_ttd.end(), tr) -
+              tr_order_ttd.begin();
+          assert(tr_index_ttd < tr_order_ttd.end() - tr_order_ttd.begin());
+
+          for (size_t tr_other_idx_ttd = 0;
+               tr_other_idx_ttd < tr_order_ttd.size(); tr_other_idx_ttd++) {
+            if (tr_other_idx_ttd == tr_index_ttd) {
+              continue;
+            }
+            if (solver->solver_strategy.lazy_train_selection_strategy ==
+                    LazyTrainSelectionStrategy::OnlyAdjacent &&
+                std::abs(static_cast<int>(tr_other_idx_ttd) -
+                         static_cast<int>(tr_index_ttd)) > 1) {
+              continue;
+            }
+            if (!solver->solver_strategy.include_reverse_headways &&
+                tr_other_idx_ttd > tr_index_ttd) {
+              // In this case tr_other follows tr, which is irrelevant for tr ma
+              continue;
+            }
+            other_trains_ttd.insert(tr_order_ttd.at(tr_other_idx_ttd));
+          }
+
+          const auto hw_ttd_value =
+              cda_rail::min_time_to_push_ma_fully_backward(
+                  vel_source, tr_object.acceleration, tr_object.deceleration);
+
+          for (const auto& tr_other_ttd : other_trains_ttd) {
+            const auto& tr_other_t_var_ttd =
+                solver->vars["t_ttd_departure"](tr_other_ttd, ttd_index);
+            const auto& tr_other_t_var_value_ttd =
+                getSolution(tr_other_t_var_ttd);
+
+            // Check if this constraint should be added
+            bool add_constr =
+                (solver->solver_strategy.lazy_constraint_selection_strategy ==
+                 LazyConstraintSelectionStrategy::AllChecked);
+            if (!add_constr && tr_t_var_value - tr_other_t_var_value_ttd <
+                                   hw_ttd_value - GRB_EPS) {
+              add_constr = true;
+            }
+
+            const auto t_bound_tmp =
+                std::max(tr_t_bound, solver->ub_timing_variable(tr_other_ttd));
+
+            if (add_constr) {
+              GRBLinExpr lhs = tr_t_var - tr_other_t_var_ttd +
+                               (t_bound_tmp + hw_max_ttd) *
+                                   (1 - solver->vars["order_ttd"](
+                                            tr, tr_other_ttd, ttd_index));
+              GRBLinExpr rhs = headway_tr_on_ttd;
+              addLazy(lhs >= rhs);
+              if (solver->solution_settings.export_option ==
+                      ExportOption::ExportLP ||
+                  solver->solution_settings.export_option ==
+                      ExportOption::ExportSolutionAndLP ||
+                  solver->solution_settings.export_option ==
+                      ExportOption::ExportSolutionWithInstanceAndLP) {
+                solver->lazy_constraints.emplace_back(lhs >= rhs);
+              }
+              violated_constraint_found = true;
+            }
+          }
+        }
+      }
     }
   }
+}
 
-  return violated_constraint_found;
+return violated_constraint_found;
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
