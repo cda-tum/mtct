@@ -983,8 +983,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           solver->instance.const_n().get_edge_index(v_source, v_target);
       const auto& edge_object = solver->instance.const_n().get_edge(edge_index);
 
-      const auto hw_edge = solver->headway(tr_object, edge_object, vel_source,
-                                           vel_target, r_v_idx == 0);
+      const auto hw_edge =
+          cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::headway(
+              tr_object, edge_object, vel_source, vel_target, r_v_idx == 0);
 
       // Variables to possibly strengthen the constraints
       auto [hw_max, headway_tr_on_e, hw_max_ttd, headway_tr_on_ttd] =
