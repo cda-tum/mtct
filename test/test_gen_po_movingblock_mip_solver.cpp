@@ -1246,8 +1246,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified2) {
             cast_from_vss_generation(instance_before_parse);
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-                                                     true},
+        {false, 5.55, cda_rail::VelocityRefinementStrategy::None, true, true},
         {true}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution())
