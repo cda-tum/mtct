@@ -880,7 +880,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
             cast_from_vss_generation(instance_before_parse);
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol =
-        solver.solve({},
+        solver.solve({false, 5.55, cda_rail::VelocityRefinementStrategy::None},
                      {true, false, true,
                       cda_rail::solver::mip_based::
                           LazyConstraintSelectionStrategy::OnlyFirstFound},
@@ -964,7 +964,7 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
             cast_from_vss_generation(instance_before_parse);
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {},
+        {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
         {true, true, false,
                                                      cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
                                                          AllChecked,
@@ -1099,7 +1099,9 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance::
             cast_from_vss_generation(instance_before_parse);
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {false}, {}, 250);
+    const auto                                             sol =
+        solver.solve({false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+                     {false}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution())
         << "No solution found for instance " << instance_path;
