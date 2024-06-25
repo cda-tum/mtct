@@ -1298,4 +1298,23 @@ TEST(Helper, EoMMinTimeMoveMABackwards) {
       5 * (std::sqrt(3) - 1));
 }
 
+TEST(Helper, EoMMaximalLineSpeed) {
+  // Train starts with speed 10
+  // Accelerates for 2 seconds at rate 2 to reach speed 14
+  // Distance travelled is 12*2 = 24
+  // Then decelerates for 4 seconds at rate 3 to reach speed 2
+  // Distance travelled is 8*4 = 32
+  // Total distance travelled is 24+32 = 56
+
+  EXPECT_APPROX_EQ(cda_rail::maximal_line_speed(10, 2, 20, 2, 3, 56), 14);
+  EXPECT_APPROX_EQ(cda_rail::maximal_line_speed(10, 2, 14, 2, 3, 70), 14);
+  EXPECT_APPROX_EQ(cda_rail::maximal_line_speed(10, 2, 10, 2, 3, 70), 10);
+
+  // Train starts with speed 10
+  // Decelerates at rate 1 for 2 seconds to rech speed 8
+  // Distance travelled is 9*2 = 18
+
+  EXPECT_APPROX_EQ(cda_rail::maximal_line_speed(10, 8, 20, 2, 1, 18), 10);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
