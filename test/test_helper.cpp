@@ -1389,4 +1389,22 @@ TEST(Helper, EoMTravelTimePerLineSpeed) {
   EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 6, 8, 2, 1, 32), 4);
 }
 
+TEST(Helper, EoMGetLineSpeed) {
+  // Train starts with speed 10
+  // Accelerates for 2 seconds at rate 2 to reach speed 14
+  // Distance travelled is 12*2 = 24
+  // Then travels at speed 14 for 4 seconds
+  // Distance travelled is 14*4 = 56
+  // Then accelerates for 4 seconds at rate 2 to reach speed 22
+  // Distance travelled is 18*4 = 72
+  // Total distance travelled is 24+56+72 = 152
+  // Total time travelled is 2+4+4 = 10
+
+  const auto line_speed =
+      cda_rail::get_line_speed(10, 22, 1, 25, 2, 1, 152, 10);
+  EXPECT_TRUE(std::abs(line_speed - 14) <= 0.27 ||
+              std::abs(cda_rail::time_on_edge(10, 22, line_speed, 2, 1, 152) -
+                       10) <= 1);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
