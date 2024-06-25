@@ -630,3 +630,38 @@ double cda_rail::minimal_line_speed(double v_1, double v_2, double v_min,
       2 * (v_1_below_minimal_speed ? a : -d) * s_1; // Minimal velocity reached
   return std::sqrt(v_t_squared);                    // = v_m if s_2 > s_1
 }
+
+double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
+                                double v_max, double a, double d, double s,
+                                double t) {
+  if (max_travel_time_no_stopping(v_1, v_2, v_min, a, d, s) < t - GRB_EPS) {
+    return 0;
+  }
+
+  double v_ub = maximal_line_speed(v_1, v_2, v_max, a, d, s);
+  double v_lb = minimal_line_speed(v_1, v_2, v_min, a, d, s);
+
+  const double t_ub = time_on_edge(v_1, v_2, v_lb, a, d, s);
+  double       t_lb = time_on_edge(v_1, v_2, v_ub, a, d, s);
+
+  if (std::abs(t_ub - t) < GRB_EPS) {
+    return v_ub;
+  }
+  if (std::abs(t_lb - t) < GRB_EPS) {
+    return v_lb;
+  }
+
+  assert(t_lb < t);
+  assert(t < t_ub);
+  while (v_ub - v_lb > 0.27 && t - t_lb > 1) {
+    const double v = (v_ub + v_lb) / 2;
+    if (const double t_v = time_on_edge(v_1, v_2, v, a, d, s); t_v <= t) {
+      v_ub = v;
+      t_lb = t_v;
+    } else {
+      v_lb = v;
+    }
+  }
+
+  return v_ub;
+}
