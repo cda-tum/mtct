@@ -52,6 +52,9 @@ int main(int argc, char** argv) {
   if (use_simplified_headways) {
     PLOGI << "Using simplified headways";
   }
+  if (strengthen_vertex_headway_constraints) {
+    PLOGI << "Strengthening vertex headway constraints";
+  }
   if (use_lazy) {
     PLOGI << "Using lazy constraints";
   }
