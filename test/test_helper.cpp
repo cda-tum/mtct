@@ -1317,6 +1317,28 @@ TEST(Helper, EoMMaximalLineSpeed) {
   EXPECT_APPROX_EQ(cda_rail::maximal_line_speed(10, 8, 20, 2, 1, 18), 10);
 }
 
+TEST(HELPER, EoMMinimalLineSpeed) {
+  // Train starts with speed 10
+  // Decelerates at rate 2 for 2 seconds to reach speed 6
+  // Distance travelled is 8*2 = 16
+  // Then accelerates for 4 seconds at rate 3 to reach speed 18
+  // Distance travelled is 12*4 = 48
+  // Total distance travelled is 16+48 = 64
+
+  EXPECT_APPROX_EQ(cda_rail::minimal_line_speed(10, 18, 1, 3, 2, 64), 6);
+  EXPECT_APPROX_EQ(cda_rail::minimal_line_speed(10, 18, 6, 3, 2, 150), 6);
+
+  // Train starts with speed 0
+  // Accelerates at rate 2 for 2 seconds to reach speed 4
+  // Distance travelled is 2*2 = 4
+  // Then decelerates for 4 seconds at rate 1 to reach speed 0
+  // Distance travelled is 2*4 = 8
+  // Total distance travelled is 4+8 = 12
+
+  EXPECT_APPROX_EQ(cda_rail::minimal_line_speed(0, 0, 5, 2, 1, 12), 4);
+  EXPECT_APPROX_EQ(cda_rail::minimal_line_speed(0, 0, 4, 2, 1, 20), 4);
+}
+
 TEST(Helper, EoMTravelTimePerLineSpeed) {
   // Train starts with speed 10
   // Accelerates for 2 seconds at rate 2 to reach speed 14
