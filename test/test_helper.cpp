@@ -1317,4 +1317,54 @@ TEST(Helper, EoMMaximalLineSpeed) {
   EXPECT_APPROX_EQ(cda_rail::maximal_line_speed(10, 8, 20, 2, 1, 18), 10);
 }
 
+TEST(Helper, EoMTravelTimePerLineSpeed) {
+  // Train starts with speed 10
+  // Accelerates for 2 seconds at rate 2 to reach speed 14
+  // Distance travelled is 12*2 = 24
+  // Then travels at speed 14 for 4 seconds
+  // Distance travelled is 14*4 = 56
+  // Then accelerates for 4 seconds at rate 2 to reach speed 22
+  // Distance travelled is 18*4 = 72
+  // Total distance travelled is 24+56+72 = 152
+  // Total distance without constant speed is 24+72 = 96
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 22, 14, 2, 1, 152), 10);
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 22, 14, 2, 1, 96), 6);
+
+  // Train starts with speed 10
+  // Accelerates for 2 seconds at rate 2 to reach speed 14
+  // Distance travelled is 12*2 = 24
+  // Then travels at speed 14 for 4 seconds
+  // Distance travelled is 14*4 = 56
+  // Then decelerates for 6 seconds at rate 1 to reach speed 8
+  // Distance travelled is 11*6 = 66
+  // Total distance travelled is 24+56+66 = 146
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 8, 14, 2, 1, 146), 12);
+
+  // Train starts with speed 10
+  // Decelerates for 2 seconds at rate 1 to reach speed 8
+  // Distance travelled is 9*2 = 18
+  // Then travels at speed 8 for 4 seconds
+  // Distance travelled is 8*4 = 32
+  // Then accelerates for 6 seconds at rate 2 to reach speed 8+12 = 20
+  // Distance travelled is 14*6 = 84
+  // Total distance travelled is 18+32+84 = 134
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 20, 8, 2, 1, 134), 12);
+
+  // Train starts with speed 10
+  // Decelerates for 2 seconds at rate 1 to reach speed 8
+  // Distance travelled is 9*2 = 18
+  // Then travels at speed 8 for 4 seconds
+  // Distance travelled is 8*4 = 32
+  // Then decelerates another 2 seconds at rate 1 to reach speed 6
+  // Distance travelled is 7*2 = 14
+  // Total distance travelled is 18+32+14 = 64
+  // Total distance without constant speed is 18+14 = 32
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 6, 8, 2, 1, 64), 8);
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 6, 8, 2, 1, 32), 4);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
