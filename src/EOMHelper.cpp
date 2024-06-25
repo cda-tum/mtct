@@ -545,3 +545,76 @@ double cda_rail::max_time_from_rear_to_ma_point(
   }
   throw exceptions::InvalidInputException("Invalid strategy.");
 }
+
+double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
+                              double d, double s) {
+  /**
+   * This function calculates the time a train needs to travel distance s with
+   * - initial speed v_1
+   * - final speed v_2
+   * - line speed v_line
+   * - acceleration a
+   * - deceleration d
+   */
+
+  // If any variable is within std::abs(GRB_EPS), set to 0
+  if (std::abs(v_1) < GRB_EPS)
+    v_1 = 0;
+  if (std::abs(v_2) < GRB_EPS)
+    v_2 = 0;
+  if (std::abs(v_line) < GRB_EPS)
+    v_line = 0;
+  if (std::abs(a) < GRB_EPS)
+    a = 0;
+  if (std::abs(d) < GRB_EPS)
+    d = 0;
+  if (std::abs(s) < GRB_EPS)
+    s = 0;
+
+  // Assert that all variables are >= 0 and a, d, s are >= GRB_EPS
+  if (v_1 < 0 || v_2 < 0 || v_line < V_MIN || a < GRB_EPS || d < GRB_EPS ||
+      s < GRB_EPS) {
+    throw exceptions::InvalidInputException(
+        "All input values must be non-negative, and a, d, s must be greater "
+        "than 0, and v_line must be greater than V_MIN.");
+  }
+
+  // First segment: v_1 -> v_line
+  double a1 = v_line >= v_1 ? a : -d;
+  double s1 = (v_line * v_line - v_1 * v_1) / (2 * a1);
+  double t1 = (v_line - v_1) / a1;
+  assert(t1 >= 0);
+
+  // Last segment: v_line -> v_2
+  double a2 = v_2 >= v_line ? a : -d;
+  double s2 = (v_2 * v_2 - v_line * v_line) / (2 * a2);
+  double t2 = (v_2 - v_line) / a2;
+  assert(t2 >= 0);
+
+  // If s1 + s2 > s, this is not possible
+  if (s1 + s2 - GRB_EPS > s) {
+    throw exceptions::ConsistencyException(
+        "Travel time not possible by equations of motion.");
+  }
+
+  if (std::abs(s - s1 - s2) < GRB_EPS) {
+    return t1 + t2;
+  }
+
+  return t1 + t2 + (s - s1 - s2) / v_line;
+}
+
+double cda_rail::maximal_line_speed(double v_1, double v_2, double v_max,
+                                    double a, double d, double s) {
+  const auto [s_1, s_2] =
+      get_min_travel_time_acceleration_change_points(v_1, v_2, v_max, a, d, s);
+
+  assert(s_2 >= s_1);
+
+  // Terminal velocity
+  const double v_t_squared =
+      v_1 * v_1 + 2 * a * s_1;               // Maximal velocity reached
+  const double v_t = std::sqrt(v_t_squared); // = v_m if s_2 > s_1
+
+  return v_t;
+}
