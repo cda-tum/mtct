@@ -87,6 +87,8 @@ double max_time_from_rear_to_ma_point(
 
 double maximal_line_speed(double v_1, double v_2, double v_max, double a,
                           double d, double s);
+double minimal_line_speed(double v_1, double v_2, double v_min, double a,
+                          double d, double s);
 double time_on_edge(double v_1, double v_2, double v_line, double a, double d,
                     double s);
 } // namespace cda_rail
