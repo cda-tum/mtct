@@ -1405,6 +1405,68 @@ TEST(Helper, EoMGetLineSpeed) {
   EXPECT_TRUE(std::abs(line_speed - 14) <= 0.27 ||
               std::abs(cda_rail::time_on_edge(10, 22, line_speed, 2, 1, 152) -
                        10) <= 1);
+
+  // Train starts with speed 10
+  // Accelerates for 2 seconds at rate 2 to reach speed 14
+  // Distance travelled is 12*2 = 24
+  // Then travels at speed 14 for 4 seconds
+  // Distance travelled is 14*4 = 56
+  // Then decelerates at rate 1 for 4 seconds to reach speed 10
+  // Distance travelled is 12*4 = 48
+  // Total distance travelled is 24+56+48 = 128
+  // Total time travelled is 2+4+4 = 10
+
+  const auto line_speed2 =
+      cda_rail::get_line_speed(10, 10, 1, 25, 2, 1, 128, 10);
+  EXPECT_TRUE(std::abs(line_speed2 - 14) <= 0.27 ||
+              std::abs(cda_rail::time_on_edge(10, 10, line_speed2, 2, 1, 128) -
+                       10) <= 1);
+
+  // Train starts with speed 10
+  // Then decelerates at rate 2 for 2 seconds to reach speed 6
+  // Distance travelled is 8*2 = 16
+  // Then travels at speed 6 for 4 seconds
+  // Distance travelled is 6*4 = 24
+  // Then accelerates at rate 3 for 4 seconds to reach speed 18
+  // Distance travelled is 12*4 = 48
+  // Total distance travelled is 16+24+48 = 88
+  // Total time travelled is 2+4+4 = 10
+
+  const auto line_speed3 =
+      cda_rail::get_line_speed(10, 18, 1, 25, 3, 2, 88, 10);
+  EXPECT_TRUE(std::abs(line_speed3 - 6) <= 0.27 ||
+              std::abs(cda_rail::time_on_edge(10, 18, line_speed3, 2, 1, 88) -
+                       10) <= 1);
+
+  // Train starts with speed 0
+  // Accelerates at rate 0.5 for 1 second to reach speed 0.5
+  // Distance travelled is 0.25
+  // Then decelerates at rate 0.5 for 1 second to reach speed 0
+  // Distance travelled is 0.25
+  // Total distance travelled is 0.5
+  // Total time travelled is 1+1 = 2
+
+  const auto line_speed4 =
+      cda_rail::get_line_speed(0, 0, 1, 20, 0.5, 0.5, 0.5, 2);
+  EXPECT_TRUE(
+      std::abs(line_speed4 - 0.5) <= 0.27 ||
+      std::abs(cda_rail::time_on_edge(0, 0, line_speed4, 0.5, 0.5, 0.5) - 2) <=
+          1);
+
+  // Train starts with speed 10
+  // Then decelerates at rate 1 for 10 seconds to stop
+  // Distance travelled is 5*10 = 50
+  // Then accelerates at rate 2 for 5 seconds to reach speed 20
+  // Distance travelled is 10*5 = 50
+  // Total distance travelled is 100 in at least 15 seconds
+
+  const auto line_speed5 =
+      cda_rail::get_line_speed(10, 20, 1, 25, 2, 1, 100, 20);
+  EXPECT_APPROX_EQ(line_speed5, 0);
+
+  // If train ends after 50
+  const auto line_speed6 = cda_rail::get_line_speed(10, 0, 1, 25, 2, 1, 50, 10);
+  EXPECT_APPROX_EQ(line_speed6, 10);
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)
