@@ -93,6 +93,8 @@ double time_on_edge(double v_1, double v_2, double v_line, double a, double d,
                     double s);
 double pos_on_edge_at_time(double v_1, double v_2, double v_line, double a,
                            double d, double s, double t);
+double vel_on_edge_at_time(double v_1, double v_2, double v_line, double a,
+                           double d, double s, double t);
 double get_line_speed(double v_1, double v_2, double v_min, double v_max,
                       double a, double d, double s, double t);
 } // namespace cda_rail
