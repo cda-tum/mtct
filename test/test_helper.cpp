@@ -1507,9 +1507,21 @@ TEST(Helper, EoMPosOnEdgeAtTime) {
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 8),
                    117);
 
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 0), 10);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 1), 12);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 2), 14);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 4), 14);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 5), 14);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 6), 16);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 8), 20);
+
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 14, 12, 2, 1, 24, 0), 0);
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 14, 12, 2, 1, 24, 1), 11);
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 14, 12, 2, 1, 24, 2), 24);
+
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 14, 12, 2, 1, 24, 0), 10);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 14, 12, 2, 1, 24, 1), 12);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 14, 12, 2, 1, 24, 2), 14);
 
   // Train starts with speed 10
 
@@ -1556,6 +1568,14 @@ TEST(Helper, EoMPosOnEdgeAtTime) {
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 9), 60);
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 13), 68);
 
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 0), 10);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 2), 8);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 4), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 5), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 7), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 9), 4);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 13), 0);
+
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 0), 0);
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 2), 18);
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 4), 32);
@@ -1564,9 +1584,21 @@ TEST(Helper, EoMPosOnEdgeAtTime) {
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 8), 57);
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 10), 77);
 
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 0), 10);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 2), 8);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 4), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 5), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 7), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 8), 8);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 10), 12);
+
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 6, 8, 2, 1, 32, 0), 0);
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 6, 8, 2, 1, 32, 2), 18);
   EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 6, 8, 2, 1, 32, 4), 32);
+
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 6, 8, 2, 1, 32, 0), 10);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 6, 8, 2, 1, 32, 2), 8);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 6, 8, 2, 1, 32, 4), 6);
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)
