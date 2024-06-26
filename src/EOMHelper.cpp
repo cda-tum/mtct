@@ -571,12 +571,13 @@ double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
   if (std::abs(s) < GRB_EPS)
     s = 0;
 
-  // Assert that all variables are >= 0 and a, d, s are >= GRB_EPS
-  if (v_1 < 0 || v_2 < 0 || v_line < V_MIN || a < GRB_EPS || d < GRB_EPS ||
+  // Assert that all variables are >= 0 and a, d, s, v_line are >= GRB_EPS
+  if (v_1 < 0 || v_2 < 0 || v_line < GRB_EPS || a < GRB_EPS || d < GRB_EPS ||
       s < GRB_EPS) {
     throw exceptions::InvalidInputException(
-        "All input values must be non-negative, and a, d, s must be greater "
-        "than 0, and v_line must be greater than V_MIN.");
+        "All input values must be non-negative, and a, d, s , v_line must be "
+        "greater "
+        "than 0.");
   }
 
   // First segment: v_1 -> v_line
@@ -663,4 +664,36 @@ double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
   }
 
   return v_ub;
+}
+
+double cda_rail::pos_on_edge_at_time(double v_1, double v_2, double v_line,
+                                     double a, double d, double s, double t) {
+  const auto total_time = time_on_edge(v_1, v_2, v_line, a, d, s);
+  if (std::abs(total_time) < GRB_EPS) {
+    return 0;
+  }
+  if (total_time < 0) {
+    throw exceptions::InvalidInputException("Total travel time is negative.");
+  }
+  if (t > total_time + GRB_EPS) {
+    throw exceptions::InvalidInputException("Time exceeds total travel time.");
+  }
+  if (std::abs(t - total_time) < GRB_EPS) {
+    return s;
+  }
+
+  const auto a1 = v_line >= v_1 ? a : -d;
+  const auto a2 = v_2 >= v_line ? a : -d;
+
+  const auto t1 = (v_line - v_1) / a1;
+  const auto t2 = total_time - (v_2 - v_line) / a2;
+
+  if (t <= t1) {
+    return v_1 * t + 0.5 * a1 * t * t;
+  }
+  if (t <= t2) {
+    return v_1 * t1 + 0.5 * a1 * t1 * t1 + v_line * (t - t1);
+  }
+  return s + 0.5 * a2 * (total_time - t) * (total_time - t) -
+         v_2 * (total_time - t);
 }
