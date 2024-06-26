@@ -1469,4 +1469,104 @@ TEST(Helper, EoMGetLineSpeed) {
   EXPECT_APPROX_EQ(line_speed6, 10);
 }
 
+TEST(Helper, EoMPosOnEdgeAtTime) {
+  // Train starts with speed 10
+  // Acceleration Rate 2, Deceleration Rate 1
+
+  // Accelerates for 1 second to reach speed 12
+  // Distance travelled is 11 within 1 second
+
+  // Then continues accelerating for 1 second to reach speed 14
+  // Distance travelled is 13
+  // Total distance until here is 24 within 2 seconds
+
+  // Then remains constant at line speed 14 for 2 seconds
+  // Distance travelled is 28
+  // Total distance until here is 52 within 4 seconds
+
+  // Remains at line speed for another second
+  // Distance travelled is 14
+  // Total distance until here is 66 within 5 seconds
+
+  // Then accelerates for another second to reach speed 16
+  // Distance travelled is 15
+  // Total distance until here is 81 within 6 seconds
+
+  // Finally accelerates another 2 seconds to reach speed 20
+  // Distance travelled is 18*2 = 36
+  // Total distance until here is 117 within 8 seconds
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 20, 14, 2, 1, 117), 8);
+
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 0), 0);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 1), 11);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 2), 24);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 4), 52);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 5), 66);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 6), 81);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 8),
+                   117);
+
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 14, 12, 2, 1, 24, 0), 0);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 14, 12, 2, 1, 24, 1), 11);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 14, 12, 2, 1, 24, 2), 24);
+
+  // Train starts with speed 10
+
+  // Decelerates for 2 seconds at rate 1 to reach speed 8
+  // Distance travelled is 9*2 = 18
+  // Total 18 within 2 seconds
+
+  // Continues decelerating for another 2 seconds to reach speed 6
+  // Distance travelled is 7*2 = 14
+  // Total 32 within 4 seconds
+
+  // Remains constant for 1 second
+  // Distance travelled is 6
+  // Total 38 within 5 seconds
+
+  // Remains constant for another 2 seconds
+  // Distance travelled is 12
+  // Total 50 within 7 seconds
+
+  // Option a: Decelerates for 2 seconds to reach speed 4
+  // Distance travelled is 5*2 = 10
+  // Total 60 within 9 seconds
+
+  // Decelerates another 4 seconds to reach speed 0
+  // Distance travelled is 2*4 = 8
+  // Total 68 within 13 seconds
+
+  // Option b: Accelerates at rate 2 for 1 second to reach speed 8
+  // Distance travelled is 7
+  // Total 57 within 8 seconds
+
+  // Accelerates another 2 seconds to reach speed 12
+  // Distance travelled is 10*2 = 20
+  // Total 77 within 10 seconds
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 0, 6, 2, 1, 68), 13);
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 12, 6, 2, 1, 77), 10);
+
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 0), 0);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 2), 18);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 4), 32);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 5), 38);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 7), 50);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 9), 60);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 13), 68);
+
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 0), 0);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 2), 18);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 4), 32);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 5), 38);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 7), 50);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 8), 57);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 10), 77);
+
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 6, 8, 2, 1, 32, 0), 0);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 6, 8, 2, 1, 32, 2), 18);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 6, 8, 2, 1, 32, 4), 32);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
