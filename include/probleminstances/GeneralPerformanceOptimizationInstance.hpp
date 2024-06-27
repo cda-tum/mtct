@@ -411,7 +411,8 @@ public:
     assert(t <= t2);
 
     if (t1 == t2) {
-      return {get_train_pos(tr_name, t1), get_train_speed(tr_name, t1)};
+      return std::make_pair(get_train_pos(tr_name, t1),
+                            get_train_speed(tr_name, t1));
     }
 
     const auto  v1        = get_train_speed(tr_name, t1);
@@ -434,7 +435,7 @@ public:
         vel_on_edge_at_time(v1, v2, v_line, tr_obj.acceleration,
                             tr_obj.deceleration, edge_obj.length, t - t1);
 
-    return {tr_pos, tr_vel};
+    return std::make_pair(tr_pos, tr_vel);
   };
   [[nodiscard]] double get_train_speed(const std::string& tr_name,
                                        double             t) const {

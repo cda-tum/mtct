@@ -645,10 +645,10 @@ double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
   double       t_lb = time_on_edge(v_1, v_2, v_ub, a, d, s);
 
   if (std::abs(t_ub - t) < GRB_EPS) {
-    return v_ub;
+    return v_lb;
   }
   if (std::abs(t_lb - t) < GRB_EPS) {
-    return v_lb;
+    return v_ub;
   }
 
   assert(t_lb < t);
