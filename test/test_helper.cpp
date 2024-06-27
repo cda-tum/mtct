@@ -1402,9 +1402,9 @@ TEST(Helper, EoMGetLineSpeed) {
 
   const auto line_speed =
       cda_rail::get_line_speed(10, 22, 1, 25, 2, 1, 152, 10);
-  EXPECT_TRUE(std::abs(line_speed - 14) <= 0.27 ||
+  EXPECT_TRUE(std::abs(line_speed - 14) <= cda_rail::LINE_SPEED_ACCURACY ||
               std::abs(cda_rail::time_on_edge(10, 22, line_speed, 2, 1, 152) -
-                       10) <= 1);
+                       10) <= cda_rail::LINE_SPEED_TIME_ACCURACY);
 
   // Train starts with speed 10
   // Accelerates for 2 seconds at rate 2 to reach speed 14
@@ -1418,9 +1418,9 @@ TEST(Helper, EoMGetLineSpeed) {
 
   const auto line_speed2 =
       cda_rail::get_line_speed(10, 10, 1, 25, 2, 1, 128, 10);
-  EXPECT_TRUE(std::abs(line_speed2 - 14) <= 0.27 ||
+  EXPECT_TRUE(std::abs(line_speed2 - 14) <= cda_rail::LINE_SPEED_ACCURACY ||
               std::abs(cda_rail::time_on_edge(10, 10, line_speed2, 2, 1, 128) -
-                       10) <= 1);
+                       10) <= cda_rail::LINE_SPEED_TIME_ACCURACY);
 
   // Train starts with speed 10
   // Then decelerates at rate 2 for 2 seconds to reach speed 6
@@ -1434,9 +1434,9 @@ TEST(Helper, EoMGetLineSpeed) {
 
   const auto line_speed3 =
       cda_rail::get_line_speed(10, 18, 1, 25, 3, 2, 88, 10);
-  EXPECT_TRUE(std::abs(line_speed3 - 6) <= 0.27 ||
+  EXPECT_TRUE(std::abs(line_speed3 - 6) <= cda_rail::LINE_SPEED_ACCURACY ||
               std::abs(cda_rail::time_on_edge(10, 18, line_speed3, 2, 1, 88) -
-                       10) <= 1);
+                       10) <= cda_rail::LINE_SPEED_TIME_ACCURACY);
 
   // Train starts with speed 0
   // Accelerates at rate 0.5 for 1 second to reach speed 0.5
@@ -1449,9 +1449,9 @@ TEST(Helper, EoMGetLineSpeed) {
   const auto line_speed4 =
       cda_rail::get_line_speed(0, 0, 1, 20, 0.5, 0.5, 0.5, 2);
   EXPECT_TRUE(
-      std::abs(line_speed4 - 0.5) <= 0.27 ||
+      std::abs(line_speed4 - 0.5) <= cda_rail::LINE_SPEED_ACCURACY ||
       std::abs(cda_rail::time_on_edge(0, 0, line_speed4, 0.5, 0.5, 0.5) - 2) <=
-          1);
+          cda_rail::LINE_SPEED_TIME_ACCURACY);
 
   // Train starts with speed 10
   // Then decelerates at rate 1 for 10 seconds to stop

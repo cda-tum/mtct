@@ -644,16 +644,17 @@ double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
   const double t_ub = time_on_edge(v_1, v_2, v_lb, a, d, s);
   double       t_lb = time_on_edge(v_1, v_2, v_ub, a, d, s);
 
-  if (std::abs(t_ub - t) < GRB_EPS) {
-    return v_lb;
-  }
   if (std::abs(t_lb - t) < GRB_EPS) {
     return v_ub;
+  }
+  if (std::abs(t_ub - t) < GRB_EPS) {
+    return v_lb;
   }
 
   assert(t_lb < t);
   assert(t < t_ub);
-  while (v_ub - v_lb > 0.27 && t - t_lb > 1) {
+  while (v_ub - v_lb > LINE_SPEED_ACCURACY &&
+         t - t_lb > LINE_SPEED_TIME_ACCURACY) {
     const double v = (v_ub + v_lb) / 2;
     if (const double t_v = time_on_edge(v_1, v_2, v, a, d, s); t_v <= t) {
       v_ub = v;
