@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Definitions.hpp"
+#include "EOMHelper.hpp"
 #include "GeneralProblemInstance.hpp"
 #include "VSSGenerationTimetable.hpp"
 #include "datastructure/GeneralTimetable.hpp"
@@ -8,9 +9,11 @@
 #include "datastructure/Route.hpp"
 #include "nlohmann/json.hpp"
 
+#include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -360,6 +363,78 @@ public:
     }
     throw exceptions::ConsistencyException("No position for train " + tr_name +
                                            " at time " + std::to_string(t));
+  };
+  [[nodiscard]] std::tuple<size_t, double, double>
+  get_edge_and_time_on_edge(const std::string& tr_name, double t) const {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
+      throw exceptions::TrainNotExistentException(tr_name);
+    }
+    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
+    const auto& tr_pos = train_pos.at(tr_id);
+
+    double t0 = -1;
+    double t1 = -1;
+    for (const auto& [time, pos] : tr_pos) {
+      if (time == t) {
+        t0 = time;
+        t1 = time;
+        break;
+      }
+      if (time < t) {
+        t0 = time;
+      } else if (t0 >= 0) {
+        t1 = time;
+        break;
+      } else {
+        throw exceptions::ConsistencyException(
+            "Train " + tr_name + " not present at time " + std::to_string(t));
+      }
+    }
+    if (t1 < 0) {
+      throw exceptions::ConsistencyException(
+          "Train " + tr_name + " not present at time " + std::to_string(t));
+    }
+
+    assert(t >= t0);
+    assert(t <= t1);
+    const auto pos0 = get_train_pos(tr_name, t0);
+
+    const Route& route = this->get_instance().const_routes().get_route(tr_name);
+    const Network& n   = this->get_instance().const_n();
+    return {route.get_edge_at_pos(pos0 + GRB_EPS, n), t0, t1};
+  };
+  [[nodiscard]] std::optional<std::pair<double, double>>
+  get_approximate_train_pos_and_vel(const std::string& tr_name,
+                                    double             t) const {
+    const auto [edge, t1, t2] = get_edge_and_time_on_edge(tr_name, t);
+    assert(t >= t1);
+    assert(t <= t2);
+
+    if (t1 == t2) {
+      return {get_train_pos(tr_name, t1), get_train_speed(tr_name, t1)};
+    }
+
+    const auto  v1        = get_train_speed(tr_name, t1);
+    const auto  v2        = get_train_speed(tr_name, t2);
+    const auto& edge_obj  = this->instance.const_n().get_edge(edge);
+    const auto& tr_obj    = this->instance.get_train_list().get_train(tr_name);
+    const auto  max_speed = std::min(tr_obj.max_speed, edge_obj.max_speed);
+    const auto  v_line =
+        get_line_speed(v1, v2, V_MIN, max_speed, tr_obj.acceleration,
+                       tr_obj.deceleration, edge_obj.length, t2 - t1);
+    if (v_line <= 0) {
+      return std::nullopt;
+    }
+
+    const auto tr_pos =
+        get_train_pos(tr_name, t1) +
+        pos_on_edge_at_time(v1, v2, v_line, tr_obj.acceleration,
+                            tr_obj.deceleration, edge_obj.length, t - t1);
+    const auto tr_vel =
+        vel_on_edge_at_time(v1, v2, v_line, tr_obj.acceleration,
+                            tr_obj.deceleration, edge_obj.length, t - t1);
+
+    return {tr_pos, tr_vel};
   };
   [[nodiscard]] double get_train_speed(const std::string& tr_name,
                                        double             t) const {
