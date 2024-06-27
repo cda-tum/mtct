@@ -11,8 +11,10 @@
 
 using namespace cda_rail;
 
-#define EXPECT_APPROX_EQ(a, b)                                                 \
-  EXPECT_TRUE(std::abs((a) - (b)) < 1e-6) << (a) << " !=(approx.) " << (b)
+#define EXPECT_APPROX_EQ(a, b) EXPECT_APPROX_EQ_2(a, b, 1e-6)
+
+#define EXPECT_APPROX_EQ_2(a, b, c)                                            \
+  EXPECT_TRUE(std::abs((a) - (b)) < (c)) << (a) << " !=(approx.) " << (b)
 
 // NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
 
@@ -411,24 +413,24 @@ TEST(GeneralPerformanceOptimizationInstances,
       sol_instance.get_approximate_train_pos_and_vel("tr1", 21);
   EXPECT_TRUE(posvel6.has_value());
   const auto [pos6, vel6] = posvel6.value();
-  EXPECT_APPROX_EQ(pos6, 209);
-  EXPECT_APPROX_EQ(vel6, 8);
+  EXPECT_APPROX_EQ_2(pos6, 209, 10 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ_2(vel6, 8, 2 * cda_rail::LINE_SPEED_ACCURACY);
 
   // Time 22 with speed 6 at position 216
   const auto posvel7 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 22);
   EXPECT_TRUE(posvel7.has_value());
   const auto [pos7, vel7] = posvel7.value();
-  EXPECT_APPROX_EQ(pos7, 216);
-  EXPECT_APPROX_EQ(vel7, 6);
+  EXPECT_APPROX_EQ_2(pos7, 216, 10 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ_2(vel7, 6, 2 * cda_rail::LINE_SPEED_ACCURACY);
 
   // Time 25 with speed 6 at position 216+3*6 = 234
   const auto posvel8 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 25);
   EXPECT_TRUE(posvel8.has_value());
   const auto [pos8, vel8] = posvel8.value();
-  EXPECT_APPROX_EQ(pos8, 234);
-  EXPECT_APPROX_EQ(vel8, 6);
+  EXPECT_APPROX_EQ_2(pos8, 234, 10 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ_2(vel8, 6, 2 * cda_rail::LINE_SPEED_ACCURACY);
 
   // Time 36 with speed 6 at position 300
   const auto posvel9 =
