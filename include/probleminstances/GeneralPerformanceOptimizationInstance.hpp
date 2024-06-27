@@ -365,7 +365,7 @@ public:
                                            " at time " + std::to_string(t));
   };
   [[nodiscard]] std::tuple<size_t, double, double>
-  get_edge_and_time_on_edge(const std::string& tr_name, double t) const {
+  get_edge_and_time_bounds(const std::string& tr_name, double t) const {
     if (!this->instance.get_train_list().has_train(tr_name)) {
       throw exceptions::TrainNotExistentException(tr_name);
     }
@@ -406,7 +406,7 @@ public:
   [[nodiscard]] std::optional<std::pair<double, double>>
   get_approximate_train_pos_and_vel(const std::string& tr_name,
                                     double             t) const {
-    const auto [edge, t1, t2] = get_edge_and_time_on_edge(tr_name, t);
+    const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
     assert(t >= t1);
     assert(t <= t2);
 
@@ -420,9 +420,11 @@ public:
     const auto& edge_obj  = this->instance.const_n().get_edge(edge);
     const auto& tr_obj    = this->instance.get_train_list().get_train(tr_name);
     const auto  max_speed = std::min(tr_obj.max_speed, edge_obj.max_speed);
-    const auto  v_line =
+    const auto  dist_travelled =
+        get_train_pos(tr_name, t2) - get_train_pos(tr_name, t1);
+    const auto v_line =
         get_line_speed(v1, v2, V_MIN, max_speed, tr_obj.acceleration,
-                       tr_obj.deceleration, edge_obj.length, t2 - t1);
+                       tr_obj.deceleration, dist_travelled, t2 - t1);
     if (v_line <= 0) {
       return std::nullopt;
     }
