@@ -171,6 +171,12 @@ private:
                   GRBLinExpr& cut_expr);
   void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss,
                               GRBLinExpr& cut_expr);
+  [[nodiscard]] std::optional<instances::VSSGenerationTimetable>
+  initialize_variables(const ModelDetail&      model_detail,
+                       const ModelSettings&    model_settings,
+                       const SolverStrategy&   solver_strategy,
+                       const SolutionSettings& solution_settings,
+                       int time_limit, bool debug_input);
 
 protected:
   void solve_init_vss_gen_timetable(int time_limit, bool debug_input) {
