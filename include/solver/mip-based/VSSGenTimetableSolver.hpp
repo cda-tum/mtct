@@ -3,6 +3,7 @@
 #include "GeneralMIPSolver.hpp"
 #include "VSSModel.hpp"
 #include "gurobi_c++.h"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "unordered_map"
 
@@ -32,6 +33,16 @@ struct ModelDetail {
   bool braking_curves = true;
 };
 
+struct ModelDetailMBInformation {
+  int  delta_t                    = 15;
+  bool train_dynamics             = true;
+  bool braking_curves             = true;
+  bool fix_routes                 = true;
+  bool fix_stop_positions         = true;
+  bool fix_exact_positions        = true;
+  bool hint_approximate_positions = true;
+};
+
 struct ModelSettings {
   vss::Model model_type        = vss::Model();
   bool       use_pwl           = false;
@@ -41,6 +52,8 @@ struct ModelSettings {
 class VSSGenTimetableSolver
     : public GeneralMIPSolver<instances::VSSGenerationTimetable,
                               instances::SolVSSGenerationTimetable> {
+  friend class VSSGenTimetableSolverWithMovingBlockInformation;
+
 private:
   // Instance variables
   int                                    dt                     = -1;
@@ -192,7 +205,7 @@ public:
   explicit VSSGenTimetableSolver(const char* instance_path);
 
   // Methods
-  instances::SolVSSGenerationTimetable
+  [[nodiscard]] instances::SolVSSGenerationTimetable
   solve(const ModelDetail&      model_detail,
         const ModelSettings&    model_settings    = {},
         const SolverStrategy&   solver_strategy   = {},
@@ -200,7 +213,42 @@ public:
         bool debug_input = false);
 
   using GeneralSolver::solve;
+  [[nodiscard]] virtual instances::SolVSSGenerationTimetable
+  solve(int time_limit, bool debug_input) override {
+    return solve({}, {}, {}, {}, time_limit, debug_input);
+  }
+};
+
+class VSSGenTimetableSolverWithMovingBlockInformation
+    : public VSSGenTimetableSolver {
+private:
+  instances::SolGeneralPerformanceOptimizationInstance<
+      instances::GeneralPerformanceOptimizationInstance>
+       moving_block_solution;
+  bool fix_stop_positions         = true;
+  bool fix_exact_positions        = true;
+  bool hint_approximate_positions = true;
+
+public:
+  explicit VSSGenTimetableSolverWithMovingBlockInformation(
+      const instances::SolGeneralPerformanceOptimizationInstance<
+          instances::GeneralPerformanceOptimizationInstance>&
+           moving_block_solution_tmp,
+      bool throw_error = true)
+      : VSSGenTimetableSolver(
+            moving_block_solution_tmp.get_instance().cast_to_vss_generation(
+                throw_error)),
+        moving_block_solution(moving_block_solution_tmp) {};
+
   [[nodiscard]] instances::SolVSSGenerationTimetable
+  solve(const ModelDetailMBInformation& model_detail_mb_information,
+        const ModelSettings&            model_settings  = {},
+        const SolverStrategy&           solver_strategy = {},
+        const SolutionSettings& solution_settings = {}, int time_limit = -1,
+        bool debug_input = false);
+
+  using GeneralSolver::solve;
+  [[nodiscard]] virtual instances::SolVSSGenerationTimetable
   solve(int time_limit, bool debug_input) override {
     return solve({}, {}, {}, {}, time_limit, debug_input);
   }
