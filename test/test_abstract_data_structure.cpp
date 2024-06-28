@@ -876,4 +876,6 @@ TEST(GeneralAbstractDataStructure, VSSGenerationTimetableParse) {
       cda_rail::instances::GeneralPerformanceOptimizationInstance::
           cast_from_vss_generation(instance);
   check_instance_import_general_cast(general_instance);
+
+  EXPECT_NO_THROW(general_instance.cast_to_vss_generation());
 }
