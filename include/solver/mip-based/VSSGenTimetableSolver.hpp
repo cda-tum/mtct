@@ -37,7 +37,6 @@ struct ModelDetailMBInformation {
   int  delta_t                    = 15;
   bool train_dynamics             = true;
   bool braking_curves             = true;
-  bool fix_routes                 = true;
   bool fix_stop_positions         = true;
   bool fix_exact_positions        = true;
   bool hint_approximate_positions = true;
@@ -91,6 +90,7 @@ private:
       fwd_bwd_sections;
 
   // Variable functions
+  void create_variables();
   void create_general_variables();
   void create_fixed_routes_variables();
   void create_free_routes_variables();
@@ -101,6 +101,7 @@ private:
   void create_non_discretized_only_stop_at_vss_variables();
 
   // Constraint functions
+  void create_constraints();
   void create_general_constraints();
   void create_fixed_routes_constraints();
   void create_free_routes_constraints();
@@ -228,6 +229,13 @@ private:
   bool fix_stop_positions         = true;
   bool fix_exact_positions        = true;
   bool hint_approximate_positions = true;
+
+  // Additional functions
+  void include_additional_information();
+  void fix_oder_on_edges();
+  void fix_stop_positions_constraints();
+  void fix_exact_positions_constraints();
+  void hint_approximate_positions_constraints();
 
 public:
   explicit VSSGenTimetableSolverWithMovingBlockInformation(

@@ -122,57 +122,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
       initialize_variables(model_detail, model_settings, solver_strategy,
                            solution_settings, time_limit, debug_input);
 
-  PLOGD << "Create general variables";
-  create_general_variables();
-  if (this->fix_routes) {
-    PLOGD << "Create fixed routes variables";
-    create_fixed_routes_variables();
-  } else {
-    PLOGD << "Create free routes variables";
-    create_free_routes_variables();
-  }
-  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
-    PLOGD << "Create discretized VSS variables";
-    create_discretized_variables();
-  } else {
-    PLOGD << "Create non-discretized VSS variables";
-    create_non_discretized_variables();
-  }
-  if (this->include_braking_curves) {
-    PLOGD << "Create braking distance variables";
-    create_brakelen_variables();
-  }
-  if (vss_model.get_only_stop_at_vss()) {
-    PLOGD << "Create only stop at VSS variables";
-    create_only_stop_at_vss_variables();
-  }
-  PLOGD << "Set objective";
+  create_variables();
   set_objective();
-
-  PLOGD << "Create general constraints";
-  create_general_constraints();
-  if (this->fix_routes) {
-    PLOGD << "Create fixed routes constraints";
-    create_fixed_routes_constraints();
-  } else {
-    PLOGD << "Create free routes constraints";
-    create_free_routes_constraints();
-  }
-  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
-    PLOGD << "Create discretized VSS constraints";
-    create_discretized_constraints();
-  } else {
-    PLOGD << "Create non-discretized VSS constraints";
-    create_non_discretized_constraints();
-  }
-  if (this->include_train_dynamics) {
-    PLOGD << "Create train dynamic constraints";
-    create_acceleration_constraints();
-  }
-  if (this->include_braking_curves) {
-    PLOGD << "Create braking distance constraints";
-    create_brakelen_constraints();
-  }
+  create_constraints();
 
   PLOGI << "DONE creating model";
 
@@ -666,6 +618,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
   /**
    * Sets the objective function of the problem
    */
+
+  PLOGD << "Set objective";
 
   // sum over all b_i as in no_border_vss_vertices
   objective_expr = 0;
@@ -1915,6 +1869,60 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                        "at_least_one_tight_if_stopped_" + tr_name + "_" +
                            std::to_string(t * dt));
     }
+  }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_variables() {
+  PLOGD << "Create general variables";
+  create_general_variables();
+  if (this->fix_routes) {
+    PLOGD << "Create fixed routes variables";
+    create_fixed_routes_variables();
+  } else {
+    PLOGD << "Create free routes variables";
+    create_free_routes_variables();
+  }
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
+    PLOGD << "Create discretized VSS variables";
+    create_discretized_variables();
+  } else {
+    PLOGD << "Create non-discretized VSS variables";
+    create_non_discretized_variables();
+  }
+  if (this->include_braking_curves) {
+    PLOGD << "Create braking distance variables";
+    create_brakelen_variables();
+  }
+  if (vss_model.get_only_stop_at_vss()) {
+    PLOGD << "Create only stop at VSS variables";
+    create_only_stop_at_vss_variables();
+  }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_constraints() {
+  PLOGD << "Create general constraints";
+  create_general_constraints();
+  if (this->fix_routes) {
+    PLOGD << "Create fixed routes constraints";
+    create_fixed_routes_constraints();
+  } else {
+    PLOGD << "Create free routes constraints";
+    create_free_routes_constraints();
+  }
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
+    PLOGD << "Create discretized VSS constraints";
+    create_discretized_constraints();
+  } else {
+    PLOGD << "Create non-discretized VSS constraints";
+    create_non_discretized_constraints();
+  }
+  if (this->include_train_dynamics) {
+    PLOGD << "Create train dynamic constraints";
+    create_acceleration_constraints();
+  }
+  if (this->include_braking_curves) {
+    PLOGD << "Create braking distance constraints";
+    create_brakelen_constraints();
   }
 }
 
