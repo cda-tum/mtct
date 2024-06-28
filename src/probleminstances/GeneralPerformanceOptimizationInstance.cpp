@@ -65,3 +65,13 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance cda_rail::
   general_instance.initialize_vectors();
   return general_instance;
 }
+
+cda_rail::instances::VSSGenerationTimetable
+cda_rail::instances::GeneralPerformanceOptimizationInstance::
+    cast_to_vss_generation(bool throw_error) const {
+  return VSSGenerationTimetable(
+      this->const_n(),
+      cda_rail::Timetable::cast_from_general_timetable(this->get_timetable(),
+                                                       throw_error),
+      this->get_routes());
+}

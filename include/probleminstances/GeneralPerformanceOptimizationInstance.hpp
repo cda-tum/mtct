@@ -77,6 +77,8 @@ public:
 
   static GeneralPerformanceOptimizationInstance
   cast_from_vss_generation(const VSSGenerationTimetable& vss_gen);
+  [[nodiscard]] VSSGenerationTimetable
+  cast_to_vss_generation(bool throw_error = true) const;
 
   using T = GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>;
 
