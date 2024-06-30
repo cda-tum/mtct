@@ -573,11 +573,15 @@ double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
 
   // Assert that all variables are >= 0 and a, d, s, v_line are >= GRB_EPS
   if (v_1 < 0 || v_2 < 0 || v_line < GRB_EPS || a < GRB_EPS || d < GRB_EPS ||
-      s < GRB_EPS) {
+      s < 0) {
     throw exceptions::InvalidInputException(
-        "All input values must be non-negative, and a, d, s , v_line must be "
+        "All input values must be non-negative, and a, d, v_line must be "
         "greater "
         "than 0.");
+  }
+
+  if (s == 0) {
+    return 0;
   }
 
   // First segment: v_1 -> v_line
