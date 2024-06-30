@@ -461,6 +461,23 @@ TEST(GeneralPerformanceOptimizationInstances,
   sol_instance.set_obj(0);
 
   EXPECT_TRUE(sol_instance.check_consistency());
+
+  // Test tr_order
+  sol_instance.add_empty_route("tr2");
+  sol_instance.push_back_edge_to_route("tr2", v1_v2);
+  sol_instance.add_train_pos("tr2", 0, 0);
+  sol_instance.add_train_speed("tr2", 0, 10);
+  sol_instance.add_train_pos("tr2", 20, 200);
+  sol_instance.add_train_speed("tr2", 20, 10);
+
+  const auto tr_order = sol_instance.get_train_order(v0_v1);
+  EXPECT_EQ(tr_order.size(), 1);
+  EXPECT_EQ(tr_order.at(0), tr1);
+
+  const auto tr_order_2 = sol_instance.get_train_order(v1_v2);
+  EXPECT_EQ(tr_order_2.size(), 2);
+  EXPECT_EQ(tr_order_2.at(0), tr2);
+  EXPECT_EQ(tr_order_2.at(1), tr1);
 }
 
 TEST(GeneralPerformanceOptimizationInstances,
