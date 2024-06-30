@@ -285,10 +285,10 @@ TEST(GeneralPerformanceOptimizationInstances,
   const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
   const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::TTD);
 
-  const auto v0_v1 = instance.n().add_edge("v0", "v1", 100, 10);
-  const auto v1_v2 = instance.n().add_edge("v1", "v2", 200, 20);
-  const auto v1_v0 = instance.n().add_edge("v1", "v0", 100, 10);
-  const auto v2_v1 = instance.n().add_edge("v2", "v1", 200, 20);
+  const auto v0_v1 = instance.n().add_edge("v0", "v1", 100, 10, false);
+  const auto v1_v2 = instance.n().add_edge("v1", "v2", 200, 20, false);
+  const auto v1_v0 = instance.n().add_edge("v1", "v0", 100, 10, false);
+  const auto v2_v1 = instance.n().add_edge("v2", "v1", 200, 20, false);
 
   instance.n().add_successor({"v0", "v1"}, {"v1", "v2"});
   instance.n().add_successor({"v2", "v1"}, {"v1", "v0"});
@@ -377,12 +377,23 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_APPROX_EQ(pos1, 0);
   EXPECT_APPROX_EQ(vel1, 10);
 
+  const auto [pos1_lb, pos1_ub] = sol_instance.get_exact_pos_bounds("tr1", 0);
+  EXPECT_APPROX_EQ(pos1_lb, 0);
+  EXPECT_APPROX_EQ(pos1_ub, 0);
+
   // Time 5 with speed 10 at position 50
   const auto posvel2 = sol_instance.get_approximate_train_pos_and_vel("tr1", 5);
   EXPECT_TRUE(posvel2.has_value());
   const auto [pos2, vel2] = posvel2.value();
   EXPECT_APPROX_EQ(pos2, 50);
   EXPECT_APPROX_EQ(vel2, 10);
+
+  const auto [pos2_lb, pos2_ub] = sol_instance.get_exact_pos_bounds("tr1", 5);
+  EXPECT_APPROX_EQ(min_travel_time_from_start(10, 10, 10, 2, 2, 100, pos2_ub),
+                   5);
+  EXPECT_APPROX_EQ(
+      max_travel_time_from_start_no_stopping(10, 10, V_MIN, 2, 2, 100, pos2_lb),
+      5);
 
   // Time 10 with speed 10 at position 100
   const auto posvel3 =
