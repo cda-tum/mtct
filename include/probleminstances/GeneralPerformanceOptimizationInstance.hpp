@@ -521,6 +521,38 @@ public:
     std::sort(times.begin(), times.end());
     return times;
   };
+  [[nodiscard]] std::vector<size_t> get_train_order(size_t edge_index) const {
+    std::vector<size_t> tr_on_edge =
+        this->get_instance().trains_on_edge(edge_index, true);
+    std::map<size_t, double> tr_times;
+    for (const auto& tr : tr_on_edge) {
+      const Train& tr_object =
+          this->get_instance().get_train_list().get_train(tr);
+      const double e_pos =
+          this->get_instance().route_edge_pos(tr_object.name, edge_index).first;
+      const auto time_at_e_pos = get_time_at_pos(tr_object.name, e_pos);
+      tr_times.insert({tr, time_at_e_pos});
+    }
+    std::sort(tr_on_edge.begin(), tr_on_edge.end(),
+              [&tr_times](size_t tr1, size_t tr2) {
+                return tr_times.at(tr1) < tr_times.at(tr2);
+              });
+    return tr_on_edge;
+  };
+  [[nodiscard]] double get_time_at_pos(const std::string& tr_name,
+                                       double             pos) const {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
+      throw exceptions::TrainNotExistentException(tr_name);
+    }
+    const auto tr_times = get_train_times(tr_name);
+    for (const auto& t : tr_times) {
+      if (std::abs(get_train_pos(tr_name, t) - pos) < GRB_EPS) {
+        return t;
+      }
+    }
+    throw exceptions::ConsistencyException(
+        "No time for train " + tr_name + " at position " + std::to_string(pos));
+  };
 
   void add_train_pos(const std::string& tr_name, double t, double pos) {
     if (!this->instance.get_train_list().has_train(tr_name)) {
