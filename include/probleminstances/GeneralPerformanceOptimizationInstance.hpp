@@ -405,6 +405,50 @@ public:
     const Network& n   = this->get_instance().const_n();
     return {route.get_edge_at_pos(pos0 + GRB_EPS, n), t0, t1};
   };
+  [[nodiscard]] std::pair<double, double>
+  get_exact_pos_bounds(const std::string& tr_name, double t) const {
+    const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
+    assert(t >= t1);
+    assert(t <= t2);
+
+    const auto  v1       = get_train_speed(tr_name, t1);
+    const auto  v2       = get_train_speed(tr_name, t2);
+    const auto& edge_obj = this->instance.const_n().get_edge(edge);
+    const auto& tr_obj   = this->instance.get_train_list().get_train(tr_name);
+
+    const auto max_speed = std::max(edge_obj.max_speed, tr_obj.max_speed);
+
+    const auto max_t =
+        max_travel_time(v1, v2, V_MIN, tr_obj.acceleration, tr_obj.deceleration,
+                        edge_obj.length, edge_obj.breakable);
+    const auto min_t = min_travel_time(v1, v2, max_speed, tr_obj.acceleration,
+                                       tr_obj.deceleration, edge_obj.length);
+    double     ub    = get_train_pos(tr_name, t1);
+    double     lb    = get_train_pos(tr_name, t1);
+
+    if (max_t >= std::numeric_limits<double>::infinity()) {
+      const auto t_to_stop = v1 / tr_obj.deceleration;
+      const auto rel_t     = std::min(t_to_stop, t - t1);
+      lb += v1 * rel_t - 0.5 * tr_obj.deceleration * rel_t * rel_t;
+    } else {
+      const auto min_speed =
+          minimal_line_speed(v1, v2, V_MIN, tr_obj.acceleration,
+                             tr_obj.deceleration, edge_obj.length);
+      lb += pos_on_edge_at_time(v1, v2, min_speed, tr_obj.acceleration,
+                                tr_obj.deceleration, edge_obj.length, t - t1);
+    }
+
+    if (t >= t1 + min_t) {
+      ub += edge_obj.length;
+    } else {
+      const auto max_line_speed =
+          maximal_line_speed(v1, v2, V_MIN, tr_obj.acceleration,
+                             tr_obj.deceleration, edge_obj.length);
+      ub += pos_on_edge_at_time(v1, v2, max_line_speed, tr_obj.acceleration,
+                                tr_obj.deceleration, edge_obj.length, t - t1);
+    }
+    return {lb, ub};
+  };
   [[nodiscard]] std::optional<std::pair<double, double>>
   get_approximate_train_pos_and_vel(const std::string& tr_name,
                                     double             t) const {
