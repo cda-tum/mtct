@@ -165,7 +165,41 @@ void cda_rail::solver::mip_based::
 
 void cda_rail::solver::mip_based::
     VSSGenTimetableSolverWithMovingBlockInformation::fix_oder_on_edges() {
-  // TODO
+  // Fixes train order on every breakable edge
+  // For this b_front and b_rear are set equal where applicable
+  for (size_t i = 0; i < breakable_edges.size(); ++i) {
+    const auto& e            = breakable_edges[i];
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    const auto& edge         = instance.n().get_edge(e);
+    const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
+                            "," + instance.n().get_vertex(edge.target).name +
+                            "]";
+    const auto tr_order_on_e = moving_block_solution.get_train_order(e);
+    for (size_t tr_i = 1; tr_i < tr_order_on_e.size(); tr_i++) {
+      const auto& tr_object =
+          instance.get_train_list().get_train(tr_order_on_e.at(tr_i));
+      const auto& tr_object_prev =
+          instance.get_train_list().get_train(tr_order_on_e.at(tr_i - 1));
+      if (!tr_object_prev.tim) {
+        continue;
+      }
+      for (size_t vss = 0; vss < vss_number_e; ++vss) {
+        for (size_t t =
+                 std::max(train_interval[tr_order_on_e.at(tr_i)].first,
+                          train_interval[tr_order_on_e.at(tr_i - 1)].first);
+             t <= train_interval[tr_order_on_e.at(tr_i)].second &&
+             t <= train_interval[tr_order_on_e.at(tr_i - 1)].second;
+             ++t) {
+          model->addConstr(
+              vars["b_front"](tr_order_on_e.at(tr_i), t, i, vss) ==
+                  vars["b_rear"](tr_order_on_e.at(tr_i - 1), t, i, vss),
+              "fix_order_" + tr_object_prev.name + "_" + tr_object.name + "_" +
+                  std::to_string(t * dt) + "_" + edge_name + "_" +
+                  std::to_string(vss));
+        }
+      }
+    }
+  }
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)
