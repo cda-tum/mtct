@@ -96,7 +96,34 @@ void cda_rail::solver::mip_based::
 void cda_rail::solver::mip_based::
     VSSGenTimetableSolverWithMovingBlockInformation::
         fix_exact_positions_constraints() {
-  // TODO
+  const auto& train_list = instance.get_train_list();
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto& tr_obj  = train_list.get_train(tr);
+    const auto& tr_name = tr_obj.name;
+    const auto& tr_len  = tr_obj.length;
+    for (size_t t_steps = train_interval[tr].first + 1;
+         t_steps <= train_interval[tr].second + 1; t_steps++) {
+      const auto t = t_steps * dt;
+      const auto [pos_lb, pos_ub] =
+          moving_block_solution.get_exact_pos_bounds(tr_name, t);
+
+      model->addConstr(vars["mu"](tr, t_steps - 1) >= pos_lb - tr_len,
+                       "exact_pos_lb_mu_" + tr_name + "_" + std::to_string(t));
+      model->addConstr(vars["mu"](tr, t_steps - 1) <= pos_ub - tr_len,
+                       "exact_pos_ub_mu_" + tr_name + "_" + std::to_string(t));
+
+      GRBLinExpr pos_lambda_exp = vars["lda"](tr, t_steps - 1);
+      if (include_braking_curves) {
+        pos_lambda_exp -= vars["brakelen"](tr, t_steps - 1);
+      }
+      model->addConstr(pos_lambda_exp >= pos_lb, "exact_pos_lb_lambda_" +
+                                                     tr_name + "_" +
+                                                     std::to_string(t));
+      model->addConstr(pos_lambda_exp <= pos_ub, "exact_pos_ub_lambda_" +
+                                                     tr_name + "_" +
+                                                     std::to_string(t));
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::
