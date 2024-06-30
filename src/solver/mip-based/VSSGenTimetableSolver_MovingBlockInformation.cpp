@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <plog/Appenders/ColorConsoleAppender.h>
@@ -108,7 +109,7 @@ void cda_rail::solver::mip_based::
     const auto& tr_len  = tr_obj.length;
     for (size_t t_steps = train_interval[tr].first;
          t_steps <= train_interval[tr].second + 1; ++t_steps) {
-      auto       t = t_steps * dt;
+      const auto t = t_steps * dt;
       const auto approx_info =
           moving_block_solution.get_approximate_train_pos_and_vel(tr_name, t);
       if (approx_info.has_value()) {
