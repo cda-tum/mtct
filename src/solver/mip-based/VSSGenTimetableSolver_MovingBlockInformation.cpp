@@ -108,8 +108,11 @@ void cda_rail::solver::mip_based::
       const auto [pos_lb, pos_ub] =
           moving_block_solution.get_exact_pos_bounds(tr_name, t);
 
-      model->addConstr(vars["mu"](tr, t_steps - 1) >= pos_lb - tr_len,
-                       "exact_pos_lb_mu_" + tr_name + "_" + std::to_string(t));
+      model->addConstr(
+          vars["mu"](tr, t_steps - 1) >=
+              pos_lb - tr_len -
+                  (pos_ub - pos_lb < STOP_TOLERANCE ? STOP_TOLERANCE : 0),
+          "exact_pos_lb_mu_" + tr_name + "_" + std::to_string(t));
       model->addConstr(vars["mu"](tr, t_steps - 1) <= pos_ub - tr_len,
                        "exact_pos_ub_mu_" + tr_name + "_" + std::to_string(t));
 
@@ -117,9 +120,10 @@ void cda_rail::solver::mip_based::
       if (include_braking_curves) {
         pos_lambda_exp -= vars["brakelen"](tr, t_steps - 1);
       }
-      model->addConstr(pos_lambda_exp >= pos_lb, "exact_pos_lb_lambda_" +
-                                                     tr_name + "_" +
-                                                     std::to_string(t));
+      model->addConstr(
+          pos_lambda_exp >=
+              pos_lb - (pos_ub - pos_lb < STOP_TOLERANCE ? STOP_TOLERANCE : 0),
+          "exact_pos_lb_lambda_" + tr_name + "_" + std::to_string(t));
       model->addConstr(pos_lambda_exp <= pos_ub, "exact_pos_ub_lambda_" +
                                                      tr_name + "_" +
                                                      std::to_string(t));
