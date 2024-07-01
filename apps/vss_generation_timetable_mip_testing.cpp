@@ -80,6 +80,7 @@ int main(int argc, char** argv) {
                                  {&cda_rail::vss::functions::uniform})
           : cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous);
 
+  // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve(
       {delta_t, fix_routes, include_train_dynamics, include_braking_curves},
       {vss_model, use_pwl, use_schedule_cuts},

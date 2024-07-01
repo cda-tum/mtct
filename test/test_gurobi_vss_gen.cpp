@@ -12,6 +12,7 @@ TEST(Solver, GurobiVSSDiscretizeInstanceWithoutChange) {
 
   const auto num_vertices =
       solver.get_instance().const_n().number_of_vertices();
+  // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve({30, true},
                {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                                      {cda_rail::vss::functions::uniform})});

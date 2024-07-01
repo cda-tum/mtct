@@ -147,8 +147,8 @@ private:
   BaseGeneralSchedule() = default;
 
 public:
-  virtual ~BaseGeneralSchedule()                 = default;
-  virtual bool is_forced_to_stop(int time) const = 0;
+  virtual ~BaseGeneralSchedule()                               = default;
+  [[nodiscard]] virtual bool is_forced_to_stop(int time) const = 0;
 };
 
 template <typename T = GeneralScheduledStop>
@@ -188,7 +188,7 @@ public:
   [[nodiscard]] size_t                     get_exit() const { return exit; }
   [[nodiscard]] const std::vector<T>&      get_stops() const { return stops; }
 
-  virtual bool is_forced_to_stop(int time) const override {
+  [[nodiscard]] virtual bool is_forced_to_stop(int time) const override {
     for (const auto& stop : stops) {
       if (stop.is_forced_to_stop(time)) {
         return true;
@@ -256,10 +256,10 @@ private:
 public:
   virtual ~BaseTimetable() = default;
 
-  virtual void export_timetable(const std::filesystem::path& p,
-                                const Network&               network) const = 0;
-  virtual bool is_forced_to_stop(const std::string& tr_name,
-                                 int                time) const              = 0;
+  virtual void               export_timetable(const std::filesystem::path& p,
+                                              const Network&               network) const = 0;
+  [[nodiscard]] virtual bool is_forced_to_stop(const std::string& tr_name,
+                                               int time) const              = 0;
 };
 
 template <typename T = GeneralSchedule<GeneralScheduledStop>>
