@@ -1,4 +1,5 @@
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
