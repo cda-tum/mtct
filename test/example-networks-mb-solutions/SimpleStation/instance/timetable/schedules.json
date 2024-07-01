@@ -1,0 +1,50 @@
+{
+  "tr1": {
+    "entry": "l0",
+    "exit": "r0",
+    "stops": [
+      {
+        "begin": [240, 240],
+        "end": [300, 300],
+        "min_stopping_time": 60,
+        "station": "Central"
+      }
+    ],
+    "t_0": [120, 120],
+    "t_n": [645, 645],
+    "v_0": 0.0,
+    "v_n": 16.67
+  },
+  "tr2": {
+    "entry": "l0",
+    "exit": "r0",
+    "stops": [
+      {
+        "begin": [120, 120],
+        "end": [300, 300],
+        "min_stopping_time": 180,
+        "station": "Central"
+      }
+    ],
+    "t_0": [0, 0],
+    "t_n": [420, 420],
+    "v_0": 0.0,
+    "v_n": 16.67
+  },
+  "tr3": {
+    "entry": "r0",
+    "exit": "l0",
+    "stops": [
+      {
+        "begin": [180, 180],
+        "end": [300, 300],
+        "min_stopping_time": 120,
+        "station": "Central"
+      }
+    ],
+    "t_0": [0, 0],
+    "t_n": [420, 420],
+    "v_0": 0.0,
+    "v_n": 16.67
+  }
+}
