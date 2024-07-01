@@ -92,7 +92,42 @@ void cda_rail::solver::mip_based::
 void cda_rail::solver::mip_based::
     VSSGenTimetableSolverWithMovingBlockInformation::
         fix_stop_positions_constraints() {
-  // TODO
+  const auto& train_list = instance.get_train_list();
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto& tr_obj  = train_list.get_train(tr);
+    const auto& tr_name = tr_obj.name;
+    const auto& tr_len  = tr_obj.length;
+    for (size_t t_steps = train_interval[tr].first + 1;
+         t_steps < train_interval[tr].second; ++t_steps) {
+      const auto t = t_steps * dt;
+      const auto approx_info =
+          moving_block_solution.get_approximate_train_pos_and_vel(tr_name, t);
+      if (approx_info.has_value()) {
+        const auto& [pos_approx, vel_approx] = approx_info.value();
+        if (std::abs(vel_approx) < GRB_EPS &&
+            instance.is_forced_to_stop(tr_name, t)) {
+          // Train is stopping
+          model->addConstr(
+              vars["lda"](tr, t_steps) >= pos_approx - tr_len - STOP_TOLERANCE,
+              "stop_pos_lb_lda_" + tr_name + "_" + std::to_string(t));
+          model->addConstr(vars["lda"](tr, t_steps) <= pos_approx - tr_len,
+                           "stop_pos_ub_lda_" + tr_name + "_" +
+                               std::to_string(t));
+          model->addConstr(
+              vars["mu"](tr, t_steps - 1) >= pos_approx - STOP_TOLERANCE,
+              "stop_pos_lb_mu_" + tr_name + "_" + std::to_string(t));
+          model->addConstr(vars["mu"](tr, t_steps - 1) <= pos_approx,
+                           "stop_pos_ub_mu_" + tr_name + "_" +
+                               std::to_string(t));
+          model->addConstr(vars["v"](tr, t_steps) == 0,
+                           "stop_vel_" + tr_name + "_" + std::to_string(t));
+          model->addConstr(vars["brakelen"](tr, t_steps - 1) == 0,
+                           "stop_brakelen_" + tr_name + "_" +
+                               std::to_string(t));
+        }
+      }
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::
@@ -104,7 +139,7 @@ void cda_rail::solver::mip_based::
     const auto& tr_name = tr_obj.name;
     const auto& tr_len  = tr_obj.length;
     for (size_t t_steps = train_interval[tr].first + 1;
-         t_steps <= train_interval[tr].second + 1; t_steps++) {
+         t_steps <= train_interval[tr].second; t_steps++) {
       const auto t = t_steps * dt;
       const auto [pos_lb, pos_ub] =
           moving_block_solution.get_exact_pos_bounds(tr_name, t);
