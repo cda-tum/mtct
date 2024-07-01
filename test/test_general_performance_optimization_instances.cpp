@@ -295,7 +295,7 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   const auto tr1 = instance.add_train("tr1", 50, 10, 2, 2, {0, 60}, 10, "v0",
                                       {120, 180}, 6, "v2");
-  const auto tr2 = instance.add_train("tr2", 50, 10, 2, 2, {120, 180}, 0, "v2",
+  const auto tr2 = instance.add_train("tr2", 50, 20, 2, 2, {120, 180}, 0, "v2",
                                       {210, 270}, 0, "v0", 2, true);
 
   // Check the consistency of the instance
@@ -466,9 +466,58 @@ TEST(GeneralPerformanceOptimizationInstances,
   sol_instance.add_empty_route("tr2");
   sol_instance.push_back_edge_to_route("tr2", v1_v2);
   sol_instance.add_train_pos("tr2", 0, 0);
-  sol_instance.add_train_speed("tr2", 0, 10);
+  sol_instance.add_train_speed("tr2", 0, 0);
+  sol_instance.add_train_pos("tr2", 5, 0);
+  sol_instance.add_train_speed("tr2", 5, 0);
   sol_instance.add_train_pos("tr2", 20, 200);
-  sol_instance.add_train_speed("tr2", 20, 10);
+  sol_instance.add_train_speed("tr2", 20, 20);
+
+  const auto tr2_pos_vel_0 =
+      sol_instance.get_approximate_train_pos_and_vel("tr2", 0);
+  EXPECT_TRUE(tr2_pos_vel_0.has_value());
+  const auto [tr2_pos_0, tr2_vel_0] = tr2_pos_vel_0.value();
+  EXPECT_APPROX_EQ(tr2_pos_0, 0);
+  EXPECT_APPROX_EQ(tr2_vel_0, 0);
+
+  const auto tr2_pos_vel_2 =
+      sol_instance.get_approximate_train_pos_and_vel("tr2", 2);
+  EXPECT_TRUE(tr2_pos_vel_2.has_value());
+  const auto [tr2_pos_2, tr2_vel_2] = tr2_pos_vel_2.value();
+  EXPECT_APPROX_EQ(tr2_pos_2, 0);
+  EXPECT_APPROX_EQ(tr2_vel_2, 0);
+
+  const auto tr2_pos_vel_5 =
+      sol_instance.get_approximate_train_pos_and_vel("tr2", 5);
+  EXPECT_TRUE(tr2_pos_vel_5.has_value());
+  const auto [tr2_pos_5, tr2_vel_5] = tr2_pos_vel_5.value();
+  EXPECT_APPROX_EQ(tr2_pos_5, 0);
+  EXPECT_APPROX_EQ(tr2_vel_5, 0);
+
+  const auto tr2_pos_vel_15 =
+      sol_instance.get_approximate_train_pos_and_vel("tr2", 15);
+  EXPECT_TRUE(tr2_pos_vel_15.has_value());
+  const auto [tr2_pos_15, tr2_vel_15] = tr2_pos_vel_15.value();
+  EXPECT_APPROX_EQ(tr2_pos_15, 100);
+  EXPECT_APPROX_EQ(tr2_vel_15, 20);
+
+  const auto tr2_pos_vel_20 =
+      sol_instance.get_approximate_train_pos_and_vel("tr2", 20);
+  EXPECT_TRUE(tr2_pos_vel_20.has_value());
+  const auto [tr2_pos_20, tr2_vel_20] = tr2_pos_vel_20.value();
+  EXPECT_APPROX_EQ(tr2_pos_20, 200);
+  EXPECT_APPROX_EQ(tr2_vel_20, 20);
+
+  const auto [pos_lb_0, pos_ub_0] = sol_instance.get_exact_pos_bounds("tr2", 0);
+  EXPECT_APPROX_EQ(pos_lb_0, 0);
+  EXPECT_APPROX_EQ(pos_ub_0, 0);
+
+  const auto [pos_lb_2, pos_ub_2] = sol_instance.get_exact_pos_bounds("tr2", 2);
+  EXPECT_APPROX_EQ(pos_lb_2, 0);
+  EXPECT_APPROX_EQ(pos_ub_2, 0);
+
+  const auto [pos_lb_5, pos_ub_5] = sol_instance.get_exact_pos_bounds("tr2", 5);
+  EXPECT_APPROX_EQ(pos_lb_5, 0);
+  EXPECT_APPROX_EQ(pos_ub_5, 0);
 
   const auto tr_order = sol_instance.get_train_order(v0_v1);
   EXPECT_EQ(tr_order.size(), 1);
