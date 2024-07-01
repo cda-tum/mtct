@@ -403,7 +403,8 @@ public:
 
     const Route& route = this->get_instance().const_routes().get_route(tr_name);
     const Network& n   = this->get_instance().const_n();
-    return {route.get_edge_at_pos(pos0 + GRB_EPS, n), t0, t1};
+    const auto     r_len = route.length(n);
+    return {route.get_edge_at_pos(std::min(pos0 + GRB_EPS, r_len), n), t0, t1};
   };
   [[nodiscard]] std::pair<double, double>
   get_exact_pos_bounds(const std::string& tr_name, double t) const {
@@ -411,10 +412,15 @@ public:
     assert(t >= t1);
     assert(t <= t2);
 
-    const auto  v1       = get_train_speed(tr_name, t1);
-    const auto  v2       = get_train_speed(tr_name, t2);
-    const auto  pos1     = get_train_pos(tr_name, t1);
-    const auto  pos2     = get_train_pos(tr_name, t2);
+    const auto v1   = get_train_speed(tr_name, t1);
+    const auto v2   = get_train_speed(tr_name, t2);
+    const auto pos1 = get_train_pos(tr_name, t1);
+    const auto pos2 = get_train_pos(tr_name, t2);
+
+    if (std::abs(pos2 - pos1) < GRB_EPS) {
+      return {pos1, pos1};
+    }
+
     const auto& edge_obj = this->instance.const_n().get_edge(edge);
     const auto& tr_obj   = this->instance.get_train_list().get_train(tr_name);
 
@@ -457,18 +463,26 @@ public:
     assert(t >= t1);
     assert(t <= t2);
 
+    const auto pos_1 = get_train_pos(tr_name, t1);
+    const auto v1    = get_train_speed(tr_name, t1);
+
     if (t1 == t2) {
-      return std::make_pair(get_train_pos(tr_name, t1),
-                            get_train_speed(tr_name, t1));
+      return std::make_pair(pos_1, v1);
     }
 
-    const auto  v1        = get_train_speed(tr_name, t1);
-    const auto  v2        = get_train_speed(tr_name, t2);
+    const auto pos_2 = get_train_pos(tr_name, t2);
+    const auto v2    = get_train_speed(tr_name, t2);
+
     const auto& edge_obj  = this->instance.const_n().get_edge(edge);
     const auto& tr_obj    = this->instance.get_train_list().get_train(tr_name);
     const auto  max_speed = std::min(tr_obj.max_speed, edge_obj.max_speed);
-    const auto  dist_travelled =
-        get_train_pos(tr_name, t2) - get_train_pos(tr_name, t1);
+    const auto  dist_travelled = pos_2 - pos_1;
+
+    if (std::abs(dist_travelled) < GRB_EPS) {
+      // Train stopped
+      return std::make_pair(pos_1, 0);
+    }
+
     const auto v_line =
         get_line_speed(v1, v2, V_MIN, max_speed, tr_obj.acceleration,
                        tr_obj.deceleration, dist_travelled, t2 - t1);
