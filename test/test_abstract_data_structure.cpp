@@ -38,12 +38,21 @@ TEST(GeneralAbstractDataStructure, GeneralScheduledStopConstructor) {
 TEST(GeneralAbstractDataStructure, GeneralSchedulesStopForcedStoppingInterval) {
   cda_rail::GeneralScheduledStop stop1({0, 2}, {3, 4}, 1, "Test");
   EXPECT_EQ(stop1.get_forced_stopping_interval(), (std::pair<int, int>(2, 3)));
+  EXPECT_FALSE(stop1.is_forced_to_stop(1));
+  EXPECT_TRUE(stop1.is_forced_to_stop(2));
+  EXPECT_TRUE(stop1.is_forced_to_stop(3));
+  EXPECT_FALSE(stop1.is_forced_to_stop(4));
 
   cda_rail::GeneralScheduledStop stop2({0, 2}, {3, 4}, 2, "Test");
   EXPECT_EQ(stop2.get_forced_stopping_interval(), (std::pair<int, int>(2, 3)));
 
   cda_rail::GeneralScheduledStop stop3({0, 2}, {3, 4}, 3, "Test");
   EXPECT_EQ(stop3.get_forced_stopping_interval(), (std::pair<int, int>(1, 3)));
+  EXPECT_FALSE(stop3.is_forced_to_stop(0));
+  EXPECT_TRUE(stop3.is_forced_to_stop(1));
+  EXPECT_TRUE(stop3.is_forced_to_stop(2));
+  EXPECT_TRUE(stop3.is_forced_to_stop(3));
+  EXPECT_FALSE(stop3.is_forced_to_stop(4));
 
   cda_rail::GeneralScheduledStop stop4({0, 2}, {3, 4}, 4, "Test");
   EXPECT_EQ(stop4.get_forced_stopping_interval(), (std::pair<int, int>(0, 4)));
@@ -394,6 +403,16 @@ TEST(GeneralAbstractDataStructure, ParseTimetable) {
                 .at(1)
                 .get_min_stopping_time(),
             60);
+
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 0));
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 30));
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 60));
+  EXPECT_FALSE(general_timetable.is_forced_to_stop("tr1", 90));
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 120));
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 150));
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 180));
+  EXPECT_FALSE(general_timetable.is_forced_to_stop("tr1", 210));
+
   EXPECT_EQ(general_timetable.get_schedule(tr2).get_t_0_range(),
             (std::pair<int, int>(0, 0)));
   EXPECT_EQ(general_timetable.get_schedule(tr2).get_t_n_range(),
