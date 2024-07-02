@@ -681,7 +681,14 @@ double cda_rail::pos_on_edge_at_time(double v_1, double v_2, double v_line,
     throw exceptions::InvalidInputException("Total travel time is negative.");
   }
   if (t > total_time + GRB_EPS) {
-    throw exceptions::InvalidInputException("Time exceeds total travel time.");
+    // Time exceeds total time
+    const auto v_line_dv     = v_line - LINE_SPEED_ACCURACY;
+    const auto total_time_dv = time_on_edge(v_1, v_2, v_line_dv, a, d, s);
+    if (t > total_time_dv + GRB_EPS) {
+      throw exceptions::InvalidInputException(
+          "Time exceeds total travel time.");
+    }
+    return s;
   }
   if (std::abs(t - total_time) < GRB_EPS) {
     return s;
@@ -713,7 +720,13 @@ double cda_rail::vel_on_edge_at_time(double v_1, double v_2, double v_line,
     throw exceptions::InvalidInputException("Total travel time is negative.");
   }
   if (t > total_time + GRB_EPS) {
-    throw exceptions::InvalidInputException("Time exceeds total travel time.");
+    const auto v_line_dv     = v_line - LINE_SPEED_ACCURACY;
+    const auto total_time_dv = time_on_edge(v_1, v_2, v_line_dv, a, d, s);
+    if (t > total_time_dv + GRB_EPS) {
+      throw exceptions::InvalidInputException(
+          "Time exceeds total travel time.");
+    }
+    return v_2;
   }
   if (std::abs(t - total_time) < GRB_EPS) {
     return v_2;
