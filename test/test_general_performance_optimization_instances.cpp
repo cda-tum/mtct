@@ -307,6 +307,7 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   sol_instance.set_obj(0.5);
   sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
+  sol_instance.set_solution_found();
 
   EXPECT_FALSE(sol_instance.check_consistency());
 
@@ -345,10 +346,12 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_TRUE(sol_instance.check_consistency());
 
   sol_instance.set_status(cda_rail::SolutionStatus::Infeasible);
+  sol_instance.set_solution_not_found();
   EXPECT_TRUE(sol_instance.check_consistency());
   sol_instance.set_status(cda_rail::SolutionStatus::Timeout);
   EXPECT_TRUE(sol_instance.check_consistency());
   sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
+  sol_instance.set_solution_found();
 
   sol_instance.set_obj(-1);
   EXPECT_FALSE(sol_instance.check_consistency());
