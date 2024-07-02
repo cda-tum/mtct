@@ -257,6 +257,20 @@ public:
             moving_block_solution_tmp.get_instance().cast_to_vss_generation(
                 throw_error)),
         moving_block_solution(moving_block_solution_tmp) {};
+  explicit VSSGenTimetableSolverWithMovingBlockInformation(
+      const std::filesystem::path& sol_path)
+      : VSSGenTimetableSolver(sol_path / "instance"),
+        moving_block_solution(
+            instances::SolGeneralPerformanceOptimizationInstance<
+                instances::GeneralPerformanceOptimizationInstance>(sol_path)) {
+        };
+  explicit VSSGenTimetableSolverWithMovingBlockInformation(
+      const std::string& sol_path)
+      : VSSGenTimetableSolverWithMovingBlockInformation(
+            std::filesystem::path(sol_path)) {};
+  explicit VSSGenTimetableSolverWithMovingBlockInformation(const char* sol_path)
+      : VSSGenTimetableSolverWithMovingBlockInformation(
+            std::filesystem::path(sol_path)) {};
 
   [[nodiscard]] instances::SolVSSGenerationTimetable
   solve(const ModelDetailMBInformation& model_detail_mb_information,
