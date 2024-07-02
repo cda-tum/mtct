@@ -260,8 +260,7 @@ public:
         moving_block_solution(moving_block_solution_tmp) {};
   explicit VSSGenTimetableSolverWithMovingBlockInformation(
       const std::filesystem::path& sol_path)
-      : VSSGenTimetableSolver(sol_path / "instance"),
-        moving_block_solution(
+      : VSSGenTimetableSolverWithMovingBlockInformation(
             instances::SolGeneralPerformanceOptimizationInstance<
                 instances::GeneralPerformanceOptimizationInstance>(sol_path)) {
         };
