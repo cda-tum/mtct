@@ -652,7 +652,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     }
 
     model->write((path / (solution_settings.name + ".mps")).string());
-    model->write((path / (solution_settings.name + ".sol")).string());
+    if (model->get(GRB_IntAttr_SolCount) >= 1) {
+      model->write((path / (solution_settings.name + ".sol")).string());
+    }
   }
 }
 
