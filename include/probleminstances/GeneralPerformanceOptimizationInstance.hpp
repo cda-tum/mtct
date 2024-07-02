@@ -511,6 +511,10 @@ public:
       return false;
     }
 
+    if (!this->has_sol) {
+      return true;
+    }
+
     for (auto tr_id = 0; tr_id < train_routed.size(); tr_id++) {
       const auto& tr_name =
           this->instance.get_train_list().get_train(tr_id).name;
