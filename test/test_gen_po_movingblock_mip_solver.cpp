@@ -13,7 +13,25 @@
 #include <vector>
 
 #define EXPECT_APPROX_EQ(a, b)                                                 \
-  EXPECT_TRUE(std::abs((a) - (b)) < 1e-2) << (a) << " !=(approx.) " << (b);
+  EXPECT_TRUE(std::abs((a) - (b)) < 1e-2) << (a) << " !=(approx.) " << (b)
+
+void check_last_train_pos(
+    const cda_rail::instances::VSSGenerationTimetable& instance_before_parse,
+    const cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
+        cda_rail::instances::GeneralPerformanceOptimizationInstance>& sol,
+    const std::string& instance_path) {
+  const auto num_tr = instance_before_parse.get_train_list().size();
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto tr_object = instance_before_parse.get_train_list().get_train(tr);
+    const auto t_n       = instance_before_parse.get_schedule(tr).get_t_n();
+    const auto route_len = sol.get_instance()
+                               .get_route(tr_object.name)
+                               .length(instance_before_parse.const_n());
+    EXPECT_APPROX_EQ(sol.get_train_pos(tr_object.name, t_n),
+                     route_len + tr_object.length)
+        << " for train " << tr_object.name << " in " << instance_path;
+  }
+}
 
 // NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
 
@@ -818,6 +836,8 @@ TEST(GenPOMovingBlockMIPSolver, Default1) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -841,6 +861,8 @@ TEST(GenPOMovingBlockMIPSolver, Default2) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -864,6 +886,8 @@ TEST(GenPOMovingBlockMIPSolver, Default3) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -892,6 +916,8 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -920,6 +946,8 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -948,6 +976,8 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -977,6 +1007,8 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1005,6 +1037,8 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1034,6 +1068,8 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1063,6 +1099,8 @@ TEST(GenPOMovingBlockMIPSolver, All3) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1085,6 +1123,8 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1109,6 +1149,8 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1131,6 +1173,8 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1156,6 +1200,8 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1181,6 +1227,8 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified2) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1206,6 +1254,8 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified3) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1231,6 +1281,8 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified1) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1255,6 +1307,8 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified2) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
@@ -1280,6 +1334,8 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified3) {
         << "Solution status is not optimal for instance " << instance_path;
     EXPECT_EQ(sol.get_obj(), 0)
         << "Objective value is not 0 for instance " << instance_path;
+
+    check_last_train_pos(instance_before_parse, sol, instance_path);
   }
 }
 
