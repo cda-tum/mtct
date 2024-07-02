@@ -128,7 +128,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   set_timeout(time_limit);
 
-  const auto sol_object = optimize(time_limit);
+  const auto sol_object = optimize(old_instance, time_limit);
 
   export_lp_if_applicable(solution_settings);
 

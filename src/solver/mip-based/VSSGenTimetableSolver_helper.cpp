@@ -475,7 +475,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_timeout(
 }
 
 std::optional<cda_rail::instances::SolVSSGenerationTimetable>
-cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(int time_limit) {
+cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
+    const std::optional<instances::VSSGenerationTimetable>& old_instance,
+    int                                                     time_limit) {
   std::optional<instances::SolVSSGenerationTimetable> sol_object;
 
   bool reoptimize = true;

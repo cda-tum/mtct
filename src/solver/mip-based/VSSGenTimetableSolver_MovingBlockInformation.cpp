@@ -71,7 +71,7 @@ cda_rail::instances::SolVSSGenerationTimetable cda_rail::solver::mip_based::
 
   set_timeout(time_limit);
 
-  const auto sol_object = optimize(time_limit);
+  const auto sol_object = optimize(old_instance, time_limit);
 
   export_lp_if_applicable(solution_settings);
   export_solution_if_applicable(sol_object, solution_settings);

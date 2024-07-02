@@ -148,7 +148,8 @@ private:
   // Helper functions
   void set_timeout(int time_limit);
   [[nodiscard]] std::optional<instances::SolVSSGenerationTimetable>
-       optimize(int time_limit);
+  optimize(const std::optional<instances::VSSGenerationTimetable>& old_instance,
+           int                                                     time_limit);
   void export_lp_if_applicable(const SolutionSettings& solution_settings);
   void export_solution_if_applicable(
       const std::optional<cda_rail::instances::SolVSSGenerationTimetable>&
