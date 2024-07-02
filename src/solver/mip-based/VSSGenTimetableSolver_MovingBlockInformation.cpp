@@ -16,6 +16,8 @@
 #include <string>
 #include <utility>
 
+#define EXACT_TOL 3
+
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
@@ -149,29 +151,30 @@ void cda_rail::solver::mip_based::
     const auto& tr_obj  = train_list.get_train(tr);
     const auto& tr_name = tr_obj.name;
     const auto& tr_len  = tr_obj.length;
+
+    const auto max_v_delta =
+        std::max(tr_obj.acceleration, tr_obj.deceleration) * dt;
+
     for (size_t t_steps = train_interval[tr].first + 1;
          t_steps <= train_interval[tr].second; t_steps++) {
       const auto t = t_steps * dt;
       const auto [pos_lb, pos_ub] =
           moving_block_solution.get_exact_pos_bounds(tr_name, t);
 
-      model->addConstr(
-          vars["lda"](tr, t_steps) >=
-              pos_lb - tr_len -
-                  (pos_ub - pos_lb < STOP_TOLERANCE ? STOP_TOLERANCE : 0),
-          "exact_pos_lb_lda_" + tr_name + "_" + std::to_string(t));
-      model->addConstr(vars["lda"](tr, t_steps) <= pos_ub - tr_len,
+      model->addConstr(vars["lda"](tr, t_steps) >=
+                           pos_lb - tr_len - EXACT_TOL * max_v_delta,
+                       "exact_pos_lb_lda_" + tr_name + "_" + std::to_string(t));
+      model->addConstr(vars["lda"](tr, t_steps) <=
+                           pos_ub - tr_len + EXACT_TOL * max_v_delta,
                        "exact_pos_ub_lda_" + tr_name + "_" + std::to_string(t));
 
       GRBLinExpr pos_mu_expr = vars["mu"](tr, t_steps - 1);
       if (include_braking_curves) {
         pos_mu_expr -= vars["brakelen"](tr, t_steps - 1);
       }
-      model->addConstr(
-          pos_mu_expr >=
-              pos_lb - (pos_ub - pos_lb < STOP_TOLERANCE ? STOP_TOLERANCE : 0),
-          "exact_pos_lb_mu_" + tr_name + "_" + std::to_string(t));
-      model->addConstr(pos_mu_expr <= pos_ub,
+      model->addConstr(pos_mu_expr >= pos_lb - EXACT_TOL * max_v_delta,
+                       "exact_pos_lb_mu_" + tr_name + "_" + std::to_string(t));
+      model->addConstr(pos_mu_expr <= pos_ub + EXACT_TOL * max_v_delta,
                        "exact_pos_ub_mu_" + tr_name + "_" + std::to_string(t));
     }
   }
