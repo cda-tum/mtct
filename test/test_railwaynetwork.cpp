@@ -3442,7 +3442,7 @@ TEST(Functionality, RouteMapHelper) {
   const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
   network.add_vertex("v3", cda_rail::VertexType::TTD);
 
-  network.add_edge("v0", "v1", 10, 5, false);
+  const auto v0_v1 = network.add_edge("v0", "v1", 10, 5, false);
   const auto v1_v2 = network.add_edge("v1", "v2", 20, 5, false);
   const auto v2_v3 = network.add_edge("v2", "v3", 30, 5, false);
   const auto v3_v2 = network.add_edge("v3", "v2", 30, 5, false);
@@ -3491,6 +3491,20 @@ TEST(Functionality, RouteMapHelper) {
   const auto                      tr1_e3_pos = tr1_map.edge_pos(v2_v3, network);
   const std::pair<double, double> expected_tr1_e3_pos = {30, 60};
   EXPECT_EQ(tr1_e3_pos, expected_tr1_e3_pos);
+
+  // Reverse:
+  EXPECT_EQ(tr1_map.get_edge_at_pos(0, network), v0_v1);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(cda_rail::GRB_EPS / 2, network), v0_v1);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(5, network), v0_v1);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(10, network), v1_v2);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(15, network), v1_v2);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(30, network), v2_v3);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(35, network), v2_v3);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(60, network), v2_v3);
+  EXPECT_THROW(tr1_map.get_edge_at_pos(61, network),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(tr1_map.get_edge_at_pos(-1, network),
+               cda_rail::exceptions::InvalidInputException);
 
   const auto station_pos =
       tr1_map.edge_pos({v1_v2, v2_v1, v2_v3, v3_v2}, network);

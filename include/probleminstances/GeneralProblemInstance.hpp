@@ -100,6 +100,11 @@ public:
     return timetable.editable_tr(name);
   };
 
+  [[nodiscard]] bool is_forced_to_stop(const std::string& train_name,
+                                       int                time) const {
+    return timetable.is_forced_to_stop(train_name, time);
+  }
+
   template <typename TrainN = std::string, typename EntryN = std::string,
             typename ExitN = std::string>
   size_t add_train(const TrainN& name, int length, double max_speed,

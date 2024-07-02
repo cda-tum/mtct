@@ -1,0 +1,15 @@
+{
+  "lambda": 1.0,
+  "train_optional": {
+    "S2Petershausen": false,
+    "S6Ebersberg": false,
+    "S6Tutzing": false,
+    "S7Aying": false
+  },
+  "train_weights": {
+    "S2Petershausen": 1.0,
+    "S6Ebersberg": 1.0,
+    "S6Tutzing": 1.0,
+    "S7Aying": 1.0
+  }
+}

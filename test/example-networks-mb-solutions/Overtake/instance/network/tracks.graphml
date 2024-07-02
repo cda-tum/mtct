@@ -1,0 +1,206 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+<key id="d0" for="edge" attr.name="breakable" attr.type="boolean"/>
+<key id="d1" for="edge" attr.name="length" attr.type="double"/>
+<key id="d2" for="edge" attr.name="max_speed" attr.type="double"/>
+<key id="d3" for="edge" attr.name="min_block_length" attr.type="double"/>
+<key id="d4" for="edge" attr.name="min_stop_block_length" attr.type="double"/>
+<key id="d5" for="vertex" attr.name="type" attr.type="long"/>
+<key id="d6" for="vertex" attr.name="headway" attr.type="double"/>
+<graph edgedefault="directed">
+<node id="v1">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v2">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v3">
+<data key="d5">0</data>
+<data key="d6">0</data>
+</node>
+<node id="v4">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v5">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v6">
+<data key="d5">0</data>
+<data key="d6">0</data>
+</node>
+<node id="v7">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v8">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v9">
+<data key="d5">0</data>
+<data key="d6">0</data>
+</node>
+<node id="v10">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v11">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v4b">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v5b">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v6b">
+<data key="d5">0</data>
+<data key="d6">0</data>
+</node>
+<node id="v7b">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v8b">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="switch_center">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<edge source="v1" target="v2">
+<data key="d0">true</data>
+<data key="d1">4475</data>
+<data key="d2">80</data>
+<data key="d3">100</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v2" target="v3">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">80</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v3" target="v4">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">80</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v4" target="v5">
+<data key="d0">true</data>
+<data key="d1">675</data>
+<data key="d2">80</data>
+<data key="d3">100</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v5" target="v6">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">80</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v6" target="v7">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">80</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v7" target="v8">
+<data key="d0">true</data>
+<data key="d1">225</data>
+<data key="d2">80</data>
+<data key="d3">100</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v8" target="v9">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">80</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v9" target="v10">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">80</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v10" target="v11">
+<data key="d0">true</data>
+<data key="d1">4475</data>
+<data key="d2">80</data>
+<data key="d3">100</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v3" target="v4b">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">25</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v4b" target="v5b">
+<data key="d0">true</data>
+<data key="d1">650</data>
+<data key="d2">25</data>
+<data key="d3">100</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v5b" target="v6b">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">25</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v6b" target="v7b">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">25</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v7b" target="v8b">
+<data key="d0">true</data>
+<data key="d1">250</data>
+<data key="d2">25</data>
+<data key="d3">100</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v8b" target="v9">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">25</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v6b" target="switch_center">
+<data key="d0">false</data>
+<data key="d1">13</data>
+<data key="d2">25</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="switch_center" target="v6">
+<data key="d0">false</data>
+<data key="d1">13</data>
+<data key="d2">25</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+</graph>
+</graphml>

@@ -23,6 +23,9 @@ public:
       : VSSGenerationTimetable(std::filesystem::path(path)) {};
   explicit VSSGenerationTimetable(const char* path)
       : VSSGenerationTimetable(std::filesystem::path(path)) {};
+  explicit VSSGenerationTimetable(const Network& n, const Timetable& tt,
+                                  const RouteMap& rm)
+      : GeneralProblemInstanceWithScheduleAndRoutes<Timetable>(n, tt, rm) {};
   ~VSSGenerationTimetable() = default;
 
   [[nodiscard]] std::pair<size_t, size_t>

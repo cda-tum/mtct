@@ -1,0 +1,23 @@
+{
+  "lambda": 1.0,
+  "train_optional": {
+    "S2Erding": false,
+    "S2Petershausen": false,
+    "S3Deisenhofen": false,
+    "S6Ebersberg": false,
+    "S6Tutzing": false,
+    "S7Aying": false,
+    "S7Wolfratshausen": false,
+    "S8Germering": false
+  },
+  "train_weights": {
+    "S2Erding": 1.0,
+    "S2Petershausen": 1.0,
+    "S3Deisenhofen": 1.0,
+    "S6Ebersberg": 1.0,
+    "S6Tutzing": 1.0,
+    "S7Aying": 1.0,
+    "S7Wolfratshausen": 1.0,
+    "S8Germering": 1.0
+  }
+}

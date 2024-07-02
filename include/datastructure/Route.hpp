@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace cda_rail {
@@ -51,6 +52,9 @@ public:
   [[nodiscard]] std::pair<double, double>
   edge_pos(const std::vector<size_t>& edges_to_consider,
            const Network&             network) const;
+
+  [[nodiscard]] size_t get_edge_at_pos(double         pos,
+                                       const Network& network) const;
 
   [[nodiscard]] size_t      get_edge(size_t route_index) const;
   [[nodiscard]] const Edge& get_edge(size_t         route_index,

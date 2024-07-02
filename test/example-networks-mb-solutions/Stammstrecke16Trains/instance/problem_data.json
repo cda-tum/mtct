@@ -1,0 +1,39 @@
+{
+  "lambda": 1.0,
+  "train_optional": {
+    "S1Freising": false,
+    "S1Leuchtenbergring": false,
+    "S2Dachau": false,
+    "S2Erding": false,
+    "S2Ost": false,
+    "S2Petershausen": false,
+    "S3Deisenhofen": false,
+    "S3Mammendorf": false,
+    "S4Geltendorf": false,
+    "S4Grafing": false,
+    "S6Ebersberg": false,
+    "S6Tutzing": false,
+    "S7Aying": false,
+    "S7Wolfratshausen": false,
+    "S8Airport": false,
+    "S8Germering": false
+  },
+  "train_weights": {
+    "S1Freising": 1.0,
+    "S1Leuchtenbergring": 1.0,
+    "S2Dachau": 1.0,
+    "S2Erding": 1.0,
+    "S2Ost": 1.0,
+    "S2Petershausen": 1.0,
+    "S3Deisenhofen": 1.0,
+    "S3Mammendorf": 1.0,
+    "S4Geltendorf": 1.0,
+    "S4Grafing": 1.0,
+    "S6Ebersberg": 1.0,
+    "S6Tutzing": 1.0,
+    "S7Aying": 1.0,
+    "S7Wolfratshausen": 1.0,
+    "S8Airport": 1.0,
+    "S8Germering": 1.0
+  }
+}

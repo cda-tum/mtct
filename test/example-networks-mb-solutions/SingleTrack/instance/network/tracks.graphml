@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+<key id="d0" for="edge" attr.name="breakable" attr.type="boolean"/>
+<key id="d1" for="edge" attr.name="length" attr.type="double"/>
+<key id="d2" for="edge" attr.name="max_speed" attr.type="double"/>
+<key id="d3" for="edge" attr.name="min_block_length" attr.type="double"/>
+<key id="d4" for="edge" attr.name="min_stop_block_length" attr.type="double"/>
+<key id="d5" for="vertex" attr.name="type" attr.type="long"/>
+<key id="d6" for="vertex" attr.name="headway" attr.type="double"/>
+<graph edgedefault="directed">
+<node id="v0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="v1">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<edge source="v0" target="v1">
+<data key="d0">true</data>
+<data key="d1">15000</data>
+<data key="d2">27</data>
+<data key="d3">75</data>
+<data key="d4">100</data>
+</edge>
+</graph>
+</graphml>

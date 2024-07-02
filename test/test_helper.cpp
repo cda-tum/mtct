@@ -1298,4 +1298,307 @@ TEST(Helper, EoMMinTimeMoveMABackwards) {
       5 * (std::sqrt(3) - 1));
 }
 
+TEST(Helper, EoMMaximalLineSpeed) {
+  // Train starts with speed 10
+  // Accelerates for 2 seconds at rate 2 to reach speed 14
+  // Distance travelled is 12*2 = 24
+  // Then decelerates for 4 seconds at rate 3 to reach speed 2
+  // Distance travelled is 8*4 = 32
+  // Total distance travelled is 24+32 = 56
+
+  EXPECT_APPROX_EQ(cda_rail::maximal_line_speed(10, 2, 20, 2, 3, 56), 14);
+  EXPECT_APPROX_EQ(cda_rail::maximal_line_speed(10, 2, 14, 2, 3, 70), 14);
+  EXPECT_APPROX_EQ(cda_rail::maximal_line_speed(10, 2, 10, 2, 3, 70), 10);
+
+  // Train starts with speed 10
+  // Decelerates at rate 1 for 2 seconds to rech speed 8
+  // Distance travelled is 9*2 = 18
+
+  EXPECT_APPROX_EQ(cda_rail::maximal_line_speed(10, 8, 20, 2, 1, 18), 10);
+}
+
+TEST(HELPER, EoMMinimalLineSpeed) {
+  // Train starts with speed 10
+  // Decelerates at rate 2 for 2 seconds to reach speed 6
+  // Distance travelled is 8*2 = 16
+  // Then accelerates for 4 seconds at rate 3 to reach speed 18
+  // Distance travelled is 12*4 = 48
+  // Total distance travelled is 16+48 = 64
+
+  EXPECT_APPROX_EQ(cda_rail::minimal_line_speed(10, 18, 1, 3, 2, 64), 6);
+  EXPECT_APPROX_EQ(cda_rail::minimal_line_speed(10, 18, 6, 3, 2, 150), 6);
+
+  // Train starts with speed 0
+  // Accelerates at rate 2 for 2 seconds to reach speed 4
+  // Distance travelled is 2*2 = 4
+  // Then decelerates for 4 seconds at rate 1 to reach speed 0
+  // Distance travelled is 2*4 = 8
+  // Total distance travelled is 4+8 = 12
+
+  EXPECT_APPROX_EQ(cda_rail::minimal_line_speed(0, 0, 5, 2, 1, 12), 4);
+  EXPECT_APPROX_EQ(cda_rail::minimal_line_speed(0, 0, 4, 2, 1, 20), 4);
+}
+
+TEST(Helper, EoMTravelTimePerLineSpeed) {
+  // Train starts with speed 10
+  // Accelerates for 2 seconds at rate 2 to reach speed 14
+  // Distance travelled is 12*2 = 24
+  // Then travels at speed 14 for 4 seconds
+  // Distance travelled is 14*4 = 56
+  // Then accelerates for 4 seconds at rate 2 to reach speed 22
+  // Distance travelled is 18*4 = 72
+  // Total distance travelled is 24+56+72 = 152
+  // Total distance without constant speed is 24+72 = 96
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 22, 14, 2, 1, 152), 10);
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 22, 14, 2, 1, 96), 6);
+
+  // Train starts with speed 10
+  // Accelerates for 2 seconds at rate 2 to reach speed 14
+  // Distance travelled is 12*2 = 24
+  // Then travels at speed 14 for 4 seconds
+  // Distance travelled is 14*4 = 56
+  // Then decelerates for 6 seconds at rate 1 to reach speed 8
+  // Distance travelled is 11*6 = 66
+  // Total distance travelled is 24+56+66 = 146
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 8, 14, 2, 1, 146), 12);
+
+  // Train starts with speed 10
+  // Decelerates for 2 seconds at rate 1 to reach speed 8
+  // Distance travelled is 9*2 = 18
+  // Then travels at speed 8 for 4 seconds
+  // Distance travelled is 8*4 = 32
+  // Then accelerates for 6 seconds at rate 2 to reach speed 8+12 = 20
+  // Distance travelled is 14*6 = 84
+  // Total distance travelled is 18+32+84 = 134
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 20, 8, 2, 1, 134), 12);
+
+  // Train starts with speed 10
+  // Decelerates for 2 seconds at rate 1 to reach speed 8
+  // Distance travelled is 9*2 = 18
+  // Then travels at speed 8 for 4 seconds
+  // Distance travelled is 8*4 = 32
+  // Then decelerates another 2 seconds at rate 1 to reach speed 6
+  // Distance travelled is 7*2 = 14
+  // Total distance travelled is 18+32+14 = 64
+  // Total distance without constant speed is 18+14 = 32
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 6, 8, 2, 1, 64), 8);
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 6, 8, 2, 1, 32), 4);
+}
+
+TEST(Helper, EoMGetLineSpeed) {
+  // Train starts with speed 10
+  // Accelerates for 2 seconds at rate 2 to reach speed 14
+  // Distance travelled is 12*2 = 24
+  // Then travels at speed 14 for 4 seconds
+  // Distance travelled is 14*4 = 56
+  // Then accelerates for 4 seconds at rate 2 to reach speed 22
+  // Distance travelled is 18*4 = 72
+  // Total distance travelled is 24+56+72 = 152
+  // Total time travelled is 2+4+4 = 10
+
+  const auto line_speed =
+      cda_rail::get_line_speed(10, 22, 1, 25, 2, 1, 152, 10);
+  EXPECT_TRUE(std::abs(line_speed - 14) <= cda_rail::LINE_SPEED_ACCURACY ||
+              std::abs(cda_rail::time_on_edge(10, 22, line_speed, 2, 1, 152) -
+                       10) <= cda_rail::LINE_SPEED_TIME_ACCURACY);
+
+  // Train starts with speed 10
+  // Accelerates for 2 seconds at rate 2 to reach speed 14
+  // Distance travelled is 12*2 = 24
+  // Then travels at speed 14 for 4 seconds
+  // Distance travelled is 14*4 = 56
+  // Then decelerates at rate 1 for 4 seconds to reach speed 10
+  // Distance travelled is 12*4 = 48
+  // Total distance travelled is 24+56+48 = 128
+  // Total time travelled is 2+4+4 = 10
+
+  const auto line_speed2 =
+      cda_rail::get_line_speed(10, 10, 1, 25, 2, 1, 128, 10);
+  EXPECT_TRUE(std::abs(line_speed2 - 14) <= cda_rail::LINE_SPEED_ACCURACY ||
+              std::abs(cda_rail::time_on_edge(10, 10, line_speed2, 2, 1, 128) -
+                       10) <= cda_rail::LINE_SPEED_TIME_ACCURACY);
+
+  // Train starts with speed 10
+  // Then decelerates at rate 2 for 2 seconds to reach speed 6
+  // Distance travelled is 8*2 = 16
+  // Then travels at speed 6 for 4 seconds
+  // Distance travelled is 6*4 = 24
+  // Then accelerates at rate 3 for 4 seconds to reach speed 18
+  // Distance travelled is 12*4 = 48
+  // Total distance travelled is 16+24+48 = 88
+  // Total time travelled is 2+4+4 = 10
+
+  const auto line_speed3 =
+      cda_rail::get_line_speed(10, 18, 1, 25, 3, 2, 88, 10);
+  EXPECT_TRUE(std::abs(line_speed3 - 6) <= cda_rail::LINE_SPEED_ACCURACY ||
+              std::abs(cda_rail::time_on_edge(10, 18, line_speed3, 2, 1, 88) -
+                       10) <= cda_rail::LINE_SPEED_TIME_ACCURACY);
+
+  // Train starts with speed 0
+  // Accelerates at rate 0.5 for 1 second to reach speed 0.5
+  // Distance travelled is 0.25
+  // Then decelerates at rate 0.5 for 1 second to reach speed 0
+  // Distance travelled is 0.25
+  // Total distance travelled is 0.5
+  // Total time travelled is 1+1 = 2
+
+  const auto line_speed4 =
+      cda_rail::get_line_speed(0, 0, 1, 20, 0.5, 0.5, 0.5, 2);
+  EXPECT_TRUE(
+      std::abs(line_speed4 - 0.5) <= cda_rail::LINE_SPEED_ACCURACY ||
+      std::abs(cda_rail::time_on_edge(0, 0, line_speed4, 0.5, 0.5, 0.5) - 2) <=
+          cda_rail::LINE_SPEED_TIME_ACCURACY);
+
+  // Train starts with speed 10
+  // Then decelerates at rate 1 for 10 seconds to stop
+  // Distance travelled is 5*10 = 50
+  // Then accelerates at rate 2 for 5 seconds to reach speed 20
+  // Distance travelled is 10*5 = 50
+  // Total distance travelled is 100 in at least 15 seconds
+
+  const auto line_speed5 =
+      cda_rail::get_line_speed(10, 20, 1, 25, 2, 1, 100, 20);
+  EXPECT_APPROX_EQ(line_speed5, 0);
+
+  // If train ends after 50
+  const auto line_speed6 = cda_rail::get_line_speed(10, 0, 1, 25, 2, 1, 50, 10);
+  EXPECT_APPROX_EQ(line_speed6, 10);
+}
+
+TEST(Helper, EoMPosOnEdgeAtTime) {
+  // Train starts with speed 10
+  // Acceleration Rate 2, Deceleration Rate 1
+
+  // Accelerates for 1 second to reach speed 12
+  // Distance travelled is 11 within 1 second
+
+  // Then continues accelerating for 1 second to reach speed 14
+  // Distance travelled is 13
+  // Total distance until here is 24 within 2 seconds
+
+  // Then remains constant at line speed 14 for 2 seconds
+  // Distance travelled is 28
+  // Total distance until here is 52 within 4 seconds
+
+  // Remains at line speed for another second
+  // Distance travelled is 14
+  // Total distance until here is 66 within 5 seconds
+
+  // Then accelerates for another second to reach speed 16
+  // Distance travelled is 15
+  // Total distance until here is 81 within 6 seconds
+
+  // Finally accelerates another 2 seconds to reach speed 20
+  // Distance travelled is 18*2 = 36
+  // Total distance until here is 117 within 8 seconds
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 20, 14, 2, 1, 117), 8);
+
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 0), 0);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 1), 11);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 2), 24);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 4), 52);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 5), 66);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 6), 81);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 20, 14, 2, 1, 117, 8),
+                   117);
+
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 0), 10);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 1), 12);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 2), 14);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 4), 14);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 5), 14);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 6), 16);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 20, 14, 2, 1, 117, 8), 20);
+
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 14, 12, 2, 1, 24, 0), 0);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 14, 12, 2, 1, 24, 1), 11);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 14, 12, 2, 1, 24, 2), 24);
+
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 14, 12, 2, 1, 24, 0), 10);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 14, 12, 2, 1, 24, 1), 12);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 14, 12, 2, 1, 24, 2), 14);
+
+  // Train starts with speed 10
+
+  // Decelerates for 2 seconds at rate 1 to reach speed 8
+  // Distance travelled is 9*2 = 18
+  // Total 18 within 2 seconds
+
+  // Continues decelerating for another 2 seconds to reach speed 6
+  // Distance travelled is 7*2 = 14
+  // Total 32 within 4 seconds
+
+  // Remains constant for 1 second
+  // Distance travelled is 6
+  // Total 38 within 5 seconds
+
+  // Remains constant for another 2 seconds
+  // Distance travelled is 12
+  // Total 50 within 7 seconds
+
+  // Option a: Decelerates for 2 seconds to reach speed 4
+  // Distance travelled is 5*2 = 10
+  // Total 60 within 9 seconds
+
+  // Decelerates another 4 seconds to reach speed 0
+  // Distance travelled is 2*4 = 8
+  // Total 68 within 13 seconds
+
+  // Option b: Accelerates at rate 2 for 1 second to reach speed 8
+  // Distance travelled is 7
+  // Total 57 within 8 seconds
+
+  // Accelerates another 2 seconds to reach speed 12
+  // Distance travelled is 10*2 = 20
+  // Total 77 within 10 seconds
+
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 0, 6, 2, 1, 68), 13);
+  EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 12, 6, 2, 1, 77), 10);
+
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 0), 0);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 2), 18);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 4), 32);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 5), 38);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 7), 50);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 9), 60);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 0, 6, 2, 1, 68, 13), 68);
+
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 0), 10);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 2), 8);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 4), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 5), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 7), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 9), 4);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 0, 6, 2, 1, 68, 13), 0);
+
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 0), 0);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 2), 18);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 4), 32);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 5), 38);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 7), 50);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 8), 57);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 12, 6, 2, 1, 77, 10), 77);
+
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 0), 10);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 2), 8);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 4), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 5), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 7), 6);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 8), 8);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 12, 6, 2, 1, 77, 10), 12);
+
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 6, 8, 2, 1, 32, 0), 0);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 6, 8, 2, 1, 32, 2), 18);
+  EXPECT_APPROX_EQ(cda_rail::pos_on_edge_at_time(10, 6, 8, 2, 1, 32, 4), 32);
+
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 6, 8, 2, 1, 32, 0), 10);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 6, 8, 2, 1, 32, 2), 8);
+  EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 6, 8, 2, 1, 32, 4), 6);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
