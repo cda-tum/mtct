@@ -27,8 +27,22 @@ void check_last_train_pos(
     const auto route_len = sol.get_instance()
                                .get_route(tr_object.name)
                                .length(instance_before_parse.const_n());
-    EXPECT_APPROX_EQ(sol.get_train_pos(tr_object.name, t_n),
-                     route_len + tr_object.length)
+
+    const auto tr_times = sol.get_train_times(tr_object.name);
+
+    EXPECT_GE(tr_times.size(), 2);
+
+    EXPECT_APPROX_EQ(tr_times.at(tr_times.size() - 1), t_n)
+        << " for train " << tr_object.name << " in " << instance_path;
+
+    EXPECT_APPROX_EQ(
+        sol.get_train_pos(tr_object.name, tr_times.at(tr_times.size() - 2)),
+        route_len)
+        << " for train " << tr_object.name << " in " << instance_path;
+
+    EXPECT_APPROX_EQ(
+        sol.get_train_pos(tr_object.name, tr_times.at(tr_times.size() - 1)),
+        route_len + tr_object.length)
         << " for train " << tr_object.name << " in " << instance_path;
   }
 }
