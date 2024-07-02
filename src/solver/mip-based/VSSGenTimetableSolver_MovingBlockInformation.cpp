@@ -44,9 +44,10 @@ cda_rail::instances::SolVSSGenerationTimetable cda_rail::solver::mip_based::
    * @return The solution object
    */
 
-  if (solver_strategy.iterative_approach) {
+  if (model_settings.model_type.get_model_type() == vss::ModelType::Discrete) {
+    // Not implemented
     throw cda_rail::exceptions::InvalidInputException(
-        "Iterative approach not supported for this model.");
+        "Discrete model type is not supported.");
   }
 
   auto old_instance =
@@ -55,6 +56,9 @@ cda_rail::instances::SolVSSGenerationTimetable cda_rail::solver::mip_based::
                             model_detail_mb_information.braking_curves},
                            model_settings, solver_strategy, solution_settings,
                            time_limit, debug_input);
+
+  assert(!old_instance.has_value());
+
   fix_stop_positions  = model_detail_mb_information.fix_stop_positions;
   fix_exact_positions = model_detail_mb_information.fix_exact_positions;
   hint_approximate_positions =
@@ -65,7 +69,14 @@ cda_rail::instances::SolVSSGenerationTimetable cda_rail::solver::mip_based::
   create_constraints();
   include_additional_information();
 
-  std::optional<instances::SolVSSGenerationTimetable> sol_object;
+  set_timeout(time_limit);
+
+  const auto sol_object = optimize(time_limit);
+
+  export_lp_if_applicable(solution_settings);
+  export_solution_if_applicable(sol_object, solution_settings);
+
+  cleanup();
 
   return sol_object.value();
 }
@@ -239,6 +250,14 @@ void cda_rail::solver::mip_based::
       }
     }
   }
+}
+
+void cda_rail::solver::mip_based::
+    VSSGenTimetableSolverWithMovingBlockInformation::cleanup() {
+  VSSGenTimetableSolver::cleanup();
+  fix_stop_positions         = true;
+  fix_exact_positions        = true;
+  hint_approximate_positions = true;
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation)

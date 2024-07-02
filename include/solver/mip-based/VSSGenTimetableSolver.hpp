@@ -245,6 +245,8 @@ private:
   void fix_exact_positions_constraints();
   void hint_approximate_positions_constraints();
 
+  virtual void cleanup() override;
+
 public:
   explicit VSSGenTimetableSolverWithMovingBlockInformation(
       const instances::SolGeneralPerformanceOptimizationInstance<
