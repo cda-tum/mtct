@@ -34,12 +34,14 @@ int main(int argc, char** argv) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance::
             cast_from_vss_generation(instance_before_parse);
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    solver.solve(
-        {false, 3, cda_rail::VelocityRefinementStrategy::None, false, false},
-        {false},
-        {cda_rail::ExportOption::ExportSolutionWithInstance, instance_name,
-         "./test/example-networks-mb-solutions"},
-        -1, true);
+    solver.solve({true, 5.55, cda_rail::VelocityRefinementStrategy::None},
+                 {true, true, false,
+                  cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
+                      AllChecked,
+                  cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
+                 {cda_rail::ExportOption::ExportSolutionWithInstance,
+                  instance_name, "./test/example-networks-mb-solutions"},
+                 420, true);
   }
 }
 
