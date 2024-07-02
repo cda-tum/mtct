@@ -91,7 +91,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   // Save routing times
   PLOGD << "Setting timings and velocities...";
   for (int tr = 0; tr < num_tr; tr++) {
-    const auto& tr_object = instance.get_train_list().get_train(tr);
+    const auto& tr_object   = instance.get_train_list().get_train(tr);
+    const auto& tr_schedule = instance.get_schedule(tr);
     for (const auto& [vertex_id, pos] : route_markers[tr]) {
       const auto time_1 =
           vars.at("t_front_arrival").at(tr, vertex_id).get(GRB_DoubleAttr_X);
@@ -103,6 +104,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
       if (time_2 > time_1 + GRB_EPS) {
         sol.add_train_pos(tr_object.name, time_2, pos);
         sol.add_train_speed(tr_object.name, time_2, vertex_speed);
+      }
+
+      if (vertex_id == tr_schedule.get_exit()) {
+        const auto last_time =
+            vars.at("t_rear_departure").at(tr, vertex_id).get(GRB_DoubleAttr_X);
+        const auto last_speed = tr_schedule.get_v_n();
+        sol.add_train_pos(tr_object.name, last_time, pos + tr_object.length);
+        sol.add_train_speed(tr_object.name, last_time, last_speed);
       }
     }
   }
