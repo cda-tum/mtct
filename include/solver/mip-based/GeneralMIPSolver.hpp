@@ -55,6 +55,8 @@ class GeneralMIPSolver : public GeneralSolver<T, S> {
       "S must be a child of SolGeneralProblemInstance<T>");
 
 protected:
+  std::vector<GRBTempConstr> lazy_constraints;
+
   // Gurobi variables
   std::optional<GRBEnv>                               env;
   std::optional<GRBModel>                             model;

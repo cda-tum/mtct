@@ -1,6 +1,7 @@
 #include "EOMHelper.hpp"
 
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -159,8 +160,21 @@ double cda_rail::max_travel_time(double v_1, double v_2, double v_m, double a,
                                     stopping_allowed);
 }
 
-void cda_rail::check_consistency_of_eom_input(double v_1, double v_2, double a,
-                                              double d, double s, double x) {
+void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
+                                              double& a, double& d, double& s,
+                                              double& x) {
+  if (std::abs(v_1) < GRB_EPS)
+    v_1 = 0;
+  if (std::abs(v_2) < GRB_EPS)
+    v_2 = 0;
+  if (std::abs(a) < GRB_EPS)
+    a = 0;
+  if (std::abs(d) < GRB_EPS)
+    d = 0;
+  if (std::abs(s) < GRB_EPS)
+    s = 0;
+  if (std::abs(x) < GRB_EPS)
+    x = 0;
   if (v_1 < 0 || v_2 < 0 || a < 0 || d < 0 || s < 0 || x < 0) {
     throw exceptions::ConsistencyException(
         "All input values must be non-negative.");
@@ -218,6 +232,15 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
   // How much time does a train need to move its moving authority forward by s
   // given initial speed v_0 and acceleration a and deceleration d
 
+  if (std::abs(v_0) < GRB_EPS)
+    v_0 = 0;
+  if (std::abs(a) < GRB_EPS)
+    a = 0;
+  if (d < 0 && d > -GRB_EPS)
+    d = 0;
+  if (std::abs(s) < GRB_EPS)
+    s = 0;
+
   // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
   if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
     throw exceptions::InvalidInputException(
@@ -231,6 +254,78 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
                       (std::sqrt(2 * (a + d) * a * d * s +
                                  (a + d) * (a + d) * v_0 * v_0) +
                        (a + d) * v_0);
+}
+
+double cda_rail::min_time_to_push_ma_fully_backward(double v_0, double a,
+                                                    double d) {
+  // Simplified version if s is the full braking distance
+  // solve for t : (v-a*t)^2/(2*b) = v * t - 0.5 * a * t^2
+  // -> t = (v + (a v)/b - (sqrt(a + b) v)/sqrt(b))/(a + a^2/b)
+  // -> t = ((-sqrt(b) + sqrt(a + b)) v)/(a sqrt(a + b))
+  // -> t = v / (a + b + sqrt(b*(a+b)))
+  // Again b is replaced with the deceleration
+
+  if (std::abs(v_0) < GRB_EPS) {
+    v_0 = 0;
+  }
+  if (std::abs(a) < GRB_EPS) {
+    a = 0;
+  }
+  if (d < 0 && d > -GRB_EPS) {
+    d = 0;
+  }
+
+  // Assert that v_0 >= 0, a >= 0, d > 0
+  if (v_0 < 0 || a < 0 || d <= 0) {
+    throw exceptions::InvalidInputException("We need v_0 >= 0, a >= 0, d > 0");
+  }
+
+  return v_0 / (a + d + std::sqrt(d * (a + d)));
+}
+
+double cda_rail::min_time_to_push_ma_backward(double v_0, double a, double d,
+                                              double s) {
+  if (std::abs(v_0) < GRB_EPS)
+    v_0 = 0;
+  if (std::abs(a) < GRB_EPS)
+    a = 0;
+  if (d < 0 && d > -GRB_EPS)
+    d = 0;
+  if (std::abs(s) < GRB_EPS)
+    s = 0;
+
+  // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
+  if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
+    throw exceptions::InvalidInputException(
+        "We need v_0 >= 0, a >= 0, d > 0, s >= 0");
+  }
+
+  // Assert that s <= v_0^2/(2d)
+  if (s > v_0 * v_0 / (2 * d) + GRB_EPS) {
+    throw exceptions::InvalidInputException(
+        "s must be less than or equal to v_0^2/(2d)");
+  }
+
+  if (std::abs(v_0 * v_0 / (2 * d) - s) < GRB_EPS) {
+    // More stable version in this special case
+    return min_time_to_push_ma_fully_backward(v_0, a, d);
+  }
+
+  // Solve (v_0-a*t)^2/(2d) + s = v_0*t - 0.5*a*t + v_0^2/(2d)
+  // WolframAlpha: solve for t: (v-a*t)^2/(2*b)+s=v*t-0.5*a*t^2+v^2/(2*b), v>0,
+  // t>0, a>0, b>0, s>0, s<v^2/(2*b), t<v/a
+  // -> t = v/a - sqrt((b v^2 + a (-2 b s + v^2))/(a^2 (a + b)))
+  // -> t = (v - sqrt(-(2 a b s)/(a + b) + v^2))/a
+  // Numerical stable version: t = 2*b*s/((a+b)*(v+sqrt(v^2-2*a*b*s/(a+b))))
+  // Return 0 if v=0 and s = 0
+  // using b=d in wolframalpha to prevent conversion to day
+
+  if (v_0 == 0 || s == 0) {
+    return 0;
+  }
+
+  return 2 * d * s /
+         ((a + d) * (v_0 + std::sqrt(v_0 * v_0 - 2 * a * d * s / (a + d))));
 }
 
 std::pair<double, double>
@@ -310,6 +405,8 @@ double cda_rail::min_time_from_front_to_ma_point(double v_1, double v_2,
   const auto& s_1 = s_points.first;
   const auto& s_2 = s_points.second;
 
+  if (std::abs(obd) < GRB_EPS)
+    obd = 0;
   if (obd < 0) {
     throw exceptions::InvalidInputException(
         "obd must be greater than or equal 0.");
@@ -322,7 +419,7 @@ double cda_rail::min_time_from_front_to_ma_point(double v_1, double v_2,
   const double bd_2  = v_2 * v_2 / (2 * d); // Distance to stop
   const double ubd_1 = s + bd_2 - obd - bd_1;
 
-  if (ubd_1 < 0) {
+  if (ubd_1 < -GRB_EPS) {
     throw exceptions::ConsistencyException(
         "obd is too large for the given edge and speed profile.");
   }
@@ -352,6 +449,8 @@ double cda_rail::max_time_from_front_to_ma_point_no_stopping(
   const auto& s_1 = s_points.first;
   const auto& s_2 = s_points.second;
 
+  if (std::abs(obd) < GRB_EPS)
+    obd = 0;
   if (obd < 0) {
     throw exceptions::InvalidInputException(
         "obd must be greater than or equal 0.");
@@ -375,19 +474,18 @@ double cda_rail::max_time_from_front_to_ma_point_no_stopping(
   const double ubd_s1 = ma_point - (s_1 + bd_t);
   const double ubd_s2 = ma_point - (s_2 + bd_t);
 
-  if (ubd_s2 > 0) {
+  if (ubd_s2 > GRB_EPS) {
     return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s_2) +
            min_time_to_push_ma_forward(v_t, a, d, ubd_s2);
   }
-  if (ubd_s1 > 0) {
+  if (ubd_s1 > GRB_EPS) {
     return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s,
                                                   s_1 + ubd_s1);
   }
 
-  if (!v1_below_minimal_speed && ubd_s1 == 0) {
+  if (!v1_below_minimal_speed && std::abs(ubd_s1) <= GRB_EPS) {
     return 0;
   }
-
   assert(v1_below_minimal_speed);
 
   return min_time_to_push_ma_forward(v_1, a, d, ubd_v1);

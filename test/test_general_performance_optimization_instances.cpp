@@ -299,12 +299,15 @@ TEST(GeneralPerformanceOptimizationInstances,
   // Check the consistency of the instance
   EXPECT_TRUE(instance.check_consistency(false));
 
-  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+  instances::SolGeneralPerformanceOptimizationInstance<
+      instances::GeneralPerformanceOptimizationInstance>
+      sol_instance(instance);
 
   EXPECT_FALSE(sol_instance.check_consistency());
 
   sol_instance.set_obj(0.5);
   sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
+  sol_instance.set_solution_found();
 
   EXPECT_FALSE(sol_instance.check_consistency());
 
@@ -343,10 +346,12 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_TRUE(sol_instance.check_consistency());
 
   sol_instance.set_status(cda_rail::SolutionStatus::Infeasible);
+  sol_instance.set_solution_not_found();
   EXPECT_TRUE(sol_instance.check_consistency());
   sol_instance.set_status(cda_rail::SolutionStatus::Timeout);
   EXPECT_TRUE(sol_instance.check_consistency());
   sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
+  sol_instance.set_solution_found();
 
   sol_instance.set_obj(-1);
   EXPECT_FALSE(sol_instance.check_consistency());
@@ -380,7 +385,9 @@ TEST(GeneralPerformanceOptimizationInstances,
   // Check the consistency of the instance
   EXPECT_TRUE(instance.check_consistency(false));
 
-  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+  instances::SolGeneralPerformanceOptimizationInstance<
+      instances::GeneralPerformanceOptimizationInstance>
+      sol_instance(instance);
 
   sol_instance.set_obj(0.5);
   sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
@@ -401,10 +408,12 @@ TEST(GeneralPerformanceOptimizationInstances,
   sol_instance.export_solution("./tmp/test-sol-instance-1", true);
   sol_instance.export_solution("./tmp/test-sol-instance-2", false);
   const auto sol1_read =
-      cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
+      cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
+          instances::GeneralPerformanceOptimizationInstance>::
           import_solution("./tmp/test-sol-instance-1");
   const auto sol2_read =
-      cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
+      cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
+          instances::GeneralPerformanceOptimizationInstance>::
           import_solution("./tmp/test-sol-instance-2", instance);
   std::filesystem::remove_all("./tmp");
 
