@@ -1001,6 +1001,36 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 }
               }
             }
+          } else {
+            // Velocity is not possible at exit vertex
+            for (const auto& e_in : relevant_in_edges) {
+              const auto& e_in_object = instance.const_n().get_edge(e_in);
+              const auto& e_in_source_vertex =
+                  instance.const_n().get_vertex(e_in_object.source);
+              const auto tmp_max_speed =
+                  std::min(tr_object.max_speed, e_in_object.max_speed);
+              if (v_exit_velocity > tmp_max_speed) {
+                continue;
+              }
+              const auto& v1_velocities =
+                  velocity_extensions.at(tr).at(e_in_object.source);
+              for (size_t j = 0; j < v1_velocities.size(); j++) {
+                if (v1_velocities.at(j) > tmp_max_speed) {
+                  continue;
+                }
+                if (cda_rail::possible_by_eom(
+                        v1_velocities.at(j), v_exit_velocity,
+                        tr_object.acceleration, tr_object.deceleration,
+                        e_in_object.length)) {
+                  model->addConstr(
+                      vars["y"](tr, e_in, j, i) == 0,
+                      "y_exit_velocity_" + std::to_string(v_exit_velocity) +
+                          "_not_possible_from_" +
+                          std::to_string(v1_velocities.at(j)) + "_at_" +
+                          e_in_source_vertex.name + "_tr_" + tr_object.name);
+                }
+              }
+            }
           }
         }
         model->addConstr(vars["t_rear_departure"](tr, v) >=
