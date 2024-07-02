@@ -146,6 +146,14 @@ private:
   void set_objective();
 
   // Helper functions
+  void set_timeout(int time_limit);
+  [[nodiscard]] std::optional<instances::SolVSSGenerationTimetable>
+       optimize(int time_limit);
+  void export_lp_if_applicable(const SolutionSettings& solution_settings);
+  void export_solution_if_applicable(
+      const std::optional<cda_rail::instances::SolVSSGenerationTimetable>&
+                              sol_object,
+      const SolutionSettings& solution_settings);
   [[nodiscard]] std::vector<size_t>
                        unbreakable_section_indices(size_t train_index) const;
   void                 calculate_fwd_bwd_sections();
@@ -174,7 +182,7 @@ private:
                          const double& v0, const double& a_max,
                          const bool& braking_distance) const;
 
-  void cleanup();
+  virtual void cleanup();
 
   [[nodiscard]] instances::SolVSSGenerationTimetable
   extract_solution(bool postprocess, bool full_model,
