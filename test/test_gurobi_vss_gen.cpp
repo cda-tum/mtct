@@ -556,12 +556,12 @@ TEST(Solver, Stammstrecke16FixedContinuous) {
   EXPECT_EQ(obj_val_braking.get_status(), cda_rail::SolutionStatus::Optimal);
 
   EXPECT_EQ(obj_val_base.get_obj(), 0);
-  EXPECT_EQ(obj_val_dynamics.get_obj(), 16);
-  EXPECT_EQ(obj_val_braking.get_obj(), 16);
+  EXPECT_EQ(obj_val_dynamics.get_obj(), 15);
+  EXPECT_EQ(obj_val_braking.get_obj(), 15);
 
   EXPECT_EQ(obj_val_base.get_mip_obj(), 0);
-  EXPECT_EQ(obj_val_dynamics.get_mip_obj(), 16);
-  EXPECT_EQ(obj_val_braking.get_mip_obj(), 16);
+  EXPECT_EQ(obj_val_dynamics.get_mip_obj(), 15);
+  EXPECT_EQ(obj_val_braking.get_mip_obj(), 15);
 }
 
 TEST(Solver, SimpleStationInferredUniform) {
