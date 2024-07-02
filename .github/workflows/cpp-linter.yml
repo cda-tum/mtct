@@ -19,19 +19,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Read current gurobi Version
-        uses: zlatko-ms/varfiletoenv@v3
-        with:
-          paths: ./.github/gurobi_version.json
-      - name: download-gurobi-linux
-        env:
-          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
-          GUROBI_VERSION: ${{ env.gurobiVersion }}
-          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
-          GUROBI_FILE: gurobi${{ env.gurobiVersion }}_linux64.tar.gz
-        run: |
-          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
-          tar -xvzf ${{ env.GUROBI_FILE }}
       - name: Generate compilation database
         run: |
           CC=clang-14 CXX=clang++-14 \
@@ -48,8 +35,7 @@ jobs:
           --style="" \
           --tidy-checks="" \
           --thread-comments=true \
-          --files-changed-only=true \
-          --ignore="build" \
+          --ignore="build | test/example-networks | test/example-networks-gen-po | gurobi*" \
           --database=build
       - name: Fail if linter found errors
         if: steps.linter.outputs.checks-failed > 0

@@ -1,0 +1,331 @@
+{
+  "Train0": {
+    "acceleration": 1.5,
+    "deceleration": 2.9,
+    "length": 155.0,
+    "max_speed": 44.0,
+    "tim": true
+  },
+  "Train1": {
+    "acceleration": 2.2,
+    "deceleration": 3.4,
+    "length": 129.0,
+    "max_speed": 45.0,
+    "tim": true
+  },
+  "Train10": {
+    "acceleration": 2.1,
+    "deceleration": 1.5,
+    "length": 160.0,
+    "max_speed": 39.0,
+    "tim": true
+  },
+  "Train11": {
+    "acceleration": 2.8,
+    "deceleration": 2.6,
+    "length": 80.0,
+    "max_speed": 35.0,
+    "tim": true
+  },
+  "Train12": {
+    "acceleration": 1.6,
+    "deceleration": 3.7,
+    "length": 78.0,
+    "max_speed": 38.0,
+    "tim": true
+  },
+  "Train13": {
+    "acceleration": 3.0,
+    "deceleration": 3.0,
+    "length": 125.0,
+    "max_speed": 30.0,
+    "tim": true
+  },
+  "Train14": {
+    "acceleration": 2.1,
+    "deceleration": 3.3,
+    "length": 172.0,
+    "max_speed": 45.0,
+    "tim": true
+  },
+  "Train15": {
+    "acceleration": 1.9,
+    "deceleration": 1.3,
+    "length": 139.0,
+    "max_speed": 33.0,
+    "tim": true
+  },
+  "Train16": {
+    "acceleration": 2.7,
+    "deceleration": 1.6,
+    "length": 77.0,
+    "max_speed": 40.0,
+    "tim": true
+  },
+  "Train17": {
+    "acceleration": 2.5,
+    "deceleration": 3.2,
+    "length": 191.0,
+    "max_speed": 43.0,
+    "tim": true
+  },
+  "Train18": {
+    "acceleration": 1.2,
+    "deceleration": 2.0,
+    "length": 162.0,
+    "max_speed": 33.0,
+    "tim": true
+  },
+  "Train19": {
+    "acceleration": 2.8,
+    "deceleration": 1.0,
+    "length": 156.0,
+    "max_speed": 37.0,
+    "tim": true
+  },
+  "Train2": {
+    "acceleration": 2.6,
+    "deceleration": 3.9,
+    "length": 97.0,
+    "max_speed": 36.0,
+    "tim": true
+  },
+  "Train20": {
+    "acceleration": 2.5,
+    "deceleration": 2.3,
+    "length": 110.0,
+    "max_speed": 34.0,
+    "tim": true
+  },
+  "Train21": {
+    "acceleration": 3.0,
+    "deceleration": 1.9,
+    "length": 93.0,
+    "max_speed": 31.0,
+    "tim": true
+  },
+  "Train22": {
+    "acceleration": 2.9,
+    "deceleration": 3.5,
+    "length": 164.0,
+    "max_speed": 42.0,
+    "tim": true
+  },
+  "Train23": {
+    "acceleration": 2.9,
+    "deceleration": 1.1,
+    "length": 170.0,
+    "max_speed": 45.0,
+    "tim": true
+  },
+  "Train24": {
+    "acceleration": 2.4,
+    "deceleration": 2.0,
+    "length": 121.0,
+    "max_speed": 31.0,
+    "tim": true
+  },
+  "Train25": {
+    "acceleration": 3.0,
+    "deceleration": 2.4,
+    "length": 150.0,
+    "max_speed": 37.0,
+    "tim": true
+  },
+  "Train26": {
+    "acceleration": 2.8,
+    "deceleration": 4.0,
+    "length": 180.0,
+    "max_speed": 43.0,
+    "tim": true
+  },
+  "Train27": {
+    "acceleration": 1.9,
+    "deceleration": 1.0,
+    "length": 159.0,
+    "max_speed": 37.0,
+    "tim": true
+  },
+  "Train28": {
+    "acceleration": 3.0,
+    "deceleration": 1.2,
+    "length": 130.0,
+    "max_speed": 30.0,
+    "tim": true
+  },
+  "Train29": {
+    "acceleration": 1.5,
+    "deceleration": 2.5,
+    "length": 79.0,
+    "max_speed": 40.0,
+    "tim": true
+  },
+  "Train3": {
+    "acceleration": 1.8,
+    "deceleration": 3.9,
+    "length": 86.0,
+    "max_speed": 32.0,
+    "tim": true
+  },
+  "Train30": {
+    "acceleration": 1.7,
+    "deceleration": 2.8,
+    "length": 96.0,
+    "max_speed": 42.0,
+    "tim": true
+  },
+  "Train31": {
+    "acceleration": 1.8,
+    "deceleration": 3.3,
+    "length": 83.0,
+    "max_speed": 45.0,
+    "tim": true
+  },
+  "Train32": {
+    "acceleration": 3.0,
+    "deceleration": 1.3,
+    "length": 143.0,
+    "max_speed": 42.0,
+    "tim": true
+  },
+  "Train33": {
+    "acceleration": 2.9,
+    "deceleration": 1.3,
+    "length": 186.0,
+    "max_speed": 45.0,
+    "tim": true
+  },
+  "Train34": {
+    "acceleration": 1.0,
+    "deceleration": 1.6,
+    "length": 188.0,
+    "max_speed": 33.0,
+    "tim": true
+  },
+  "Train35": {
+    "acceleration": 2.6,
+    "deceleration": 3.5,
+    "length": 121.0,
+    "max_speed": 31.0,
+    "tim": true
+  },
+  "Train36": {
+    "acceleration": 1.0,
+    "deceleration": 2.2,
+    "length": 107.0,
+    "max_speed": 30.0,
+    "tim": true
+  },
+  "Train37": {
+    "acceleration": 1.6,
+    "deceleration": 1.1,
+    "length": 147.0,
+    "max_speed": 31.0,
+    "tim": true
+  },
+  "Train38": {
+    "acceleration": 1.4,
+    "deceleration": 1.9,
+    "length": 81.0,
+    "max_speed": 35.0,
+    "tim": true
+  },
+  "Train39": {
+    "acceleration": 1.0,
+    "deceleration": 3.1,
+    "length": 173.0,
+    "max_speed": 34.0,
+    "tim": true
+  },
+  "Train4": {
+    "acceleration": 2.2,
+    "deceleration": 3.1,
+    "length": 105.0,
+    "max_speed": 41.0,
+    "tim": true
+  },
+  "Train40": {
+    "acceleration": 1.2,
+    "deceleration": 1.4,
+    "length": 114.0,
+    "max_speed": 40.0,
+    "tim": true
+  },
+  "Train41": {
+    "acceleration": 1.5,
+    "deceleration": 3.3,
+    "length": 91.0,
+    "max_speed": 42.0,
+    "tim": true
+  },
+  "Train42": {
+    "acceleration": 1.0,
+    "deceleration": 2.7,
+    "length": 90.0,
+    "max_speed": 34.0,
+    "tim": true
+  },
+  "Train43": {
+    "acceleration": 1.7,
+    "deceleration": 2.8,
+    "length": 163.0,
+    "max_speed": 42.0,
+    "tim": true
+  },
+  "Train44": {
+    "acceleration": 2.3,
+    "deceleration": 1.9,
+    "length": 151.0,
+    "max_speed": 44.0,
+    "tim": true
+  },
+  "Train45": {
+    "acceleration": 2.6,
+    "deceleration": 3.9,
+    "length": 174.0,
+    "max_speed": 44.0,
+    "tim": true
+  },
+  "Train46": {
+    "acceleration": 1.6,
+    "deceleration": 2.9,
+    "length": 88.0,
+    "max_speed": 31.0,
+    "tim": true
+  },
+  "Train5": {
+    "acceleration": 2.2,
+    "deceleration": 2.2,
+    "length": 88.0,
+    "max_speed": 38.0,
+    "tim": true
+  },
+  "Train6": {
+    "acceleration": 1.8,
+    "deceleration": 2.0,
+    "length": 109.0,
+    "max_speed": 33.0,
+    "tim": true
+  },
+  "Train7": {
+    "acceleration": 2.4,
+    "deceleration": 2.3,
+    "length": 115.0,
+    "max_speed": 42.0,
+    "tim": true
+  },
+  "Train8": {
+    "acceleration": 1.3,
+    "deceleration": 2.4,
+    "length": 83.0,
+    "max_speed": 41.0,
+    "tim": true
+  },
+  "Train9": {
+    "acceleration": 1.8,
+    "deceleration": 2.6,
+    "length": 128.0,
+    "max_speed": 45.0,
+    "tim": true
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "Train0_0": {
+    "acceleration": 2.0,
+    "deceleration": 2.0,
+    "length": 100.0,
+    "max_speed": 34.0,
+    "tim": true
+  },
+  "Train0_1": {
+    "acceleration": 2.0,
+    "deceleration": 2.0,
+    "length": 100.0,
+    "max_speed": 34.0,
+    "tim": true
+  },
+  "Train0_2": {
+    "acceleration": 2.0,
+    "deceleration": 2.0,
+    "length": 100.0,
+    "max_speed": 50.0,
+    "tim": true
+  }
+}

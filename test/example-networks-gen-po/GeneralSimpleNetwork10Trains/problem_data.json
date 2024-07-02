@@ -1,0 +1,27 @@
+{
+  "lambda": 1.0,
+  "train_optional": {
+    "Train0_0": false,
+    "Train0_1": false,
+    "Train0_2": false,
+    "Train0_3": false,
+    "Train0_4": false,
+    "Train1_0": false,
+    "Train1_1": false,
+    "Train1_2": false,
+    "Train1_3": false,
+    "Train1_4": false
+  },
+  "train_weights": {
+    "Train0_0": 3.1,
+    "Train0_1": 9.6,
+    "Train0_2": 7.2,
+    "Train0_3": 5.0,
+    "Train0_4": 6.7,
+    "Train1_0": 3.9,
+    "Train1_1": 8.4,
+    "Train1_2": 2.8,
+    "Train1_3": 7.0,
+    "Train1_4": 2.9
+  }
+}

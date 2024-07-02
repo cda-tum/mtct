@@ -72,6 +72,8 @@ class GeneralProblemInstanceWithScheduleAndRoutes
 
 protected:
   GeneralProblemInstanceWithScheduleAndRoutes() = default;
+  explicit GeneralProblemInstanceWithScheduleAndRoutes(const Network& network)
+      : GeneralProblemInstance(network) {};
   explicit GeneralProblemInstanceWithScheduleAndRoutes(
       const Network& network, const T& timetable,
       RouteMap routes) // according to linter, large objects by const reference,
