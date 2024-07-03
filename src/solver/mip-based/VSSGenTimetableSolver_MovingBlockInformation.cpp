@@ -4,6 +4,7 @@
 #include "gurobi_c++.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -157,21 +158,46 @@ void cda_rail::solver::mip_based::
       const auto [pos_lb, pos_ub, vel_lb, vel_ub] =
           moving_block_solution.get_exact_pos_and_vel_bounds(tr_name, t);
 
-      model->addConstr(vars["lda"](tr, t_steps) >=
-                           pos_lb - tr_len - tr_obj.max_speed * dt,
-                       "exact_pos_lb_lda_" + tr_name + "_" + std::to_string(t));
-      model->addConstr(vars["lda"](tr, t_steps) <=
-                           pos_ub - tr_len + tr_obj.max_speed * dt,
-                       "exact_pos_ub_lda_" + tr_name + "_" + std::to_string(t));
+      if (fix_exact_positions) {
+        model->addConstr(
+            vars["lda"](tr, t_steps) >= pos_lb - tr_len - tr_obj.max_speed * dt,
+            "exact_pos_lb_lda_" + tr_name + "_" + std::to_string(t));
+        model->addConstr(
+            vars["lda"](tr, t_steps) <= pos_ub - tr_len + tr_obj.max_speed * dt,
+            "exact_pos_ub_lda_" + tr_name + "_" + std::to_string(t));
 
-      GRBLinExpr pos_mu_expr = vars["mu"](tr, t_steps - 1);
-      if (include_braking_curves) {
-        pos_mu_expr -= vars["brakelen"](tr, t_steps - 1);
+        GRBLinExpr pos_mu_expr = vars["mu"](tr, t_steps - 1);
+        if (include_braking_curves) {
+          pos_mu_expr -= vars["brakelen"](tr, t_steps - 1);
+        }
+        model->addConstr(pos_mu_expr >= pos_lb - tr_obj.max_speed * dt,
+                         "exact_pos_lb_mu_" + tr_name + "_" +
+                             std::to_string(t));
+        model->addConstr(pos_mu_expr <= pos_ub + tr_obj.max_speed * dt,
+                         "exact_pos_ub_mu_" + tr_name + "_" +
+                             std::to_string(t));
       }
-      model->addConstr(pos_mu_expr >= pos_lb - tr_obj.max_speed * dt,
-                       "exact_pos_lb_mu_" + tr_name + "_" + std::to_string(t));
-      model->addConstr(pos_mu_expr <= pos_ub + tr_obj.max_speed * dt,
-                       "exact_pos_ub_mu_" + tr_name + "_" + std::to_string(t));
+
+      if (fix_exact_velocities) {
+        const auto rel_vel_lb = std::max(vel_lb - V_MIN, 0.0);
+        const auto rel_vel_ub = vel_ub + V_MIN;
+        model->addConstr(vars["v"](tr, t_steps) >= rel_vel_lb,
+                         "exact_vel_lb_" + tr_name + "_" + std::to_string(t));
+        model->addConstr(vars["v"](tr, t_steps) <= rel_vel_ub,
+                         "exact_vel_ub_" + tr_name + "_" + std::to_string(t));
+        if (include_braking_curves) {
+          const auto bl_lb =
+              rel_vel_lb * rel_vel_lb / (2 * tr_obj.deceleration);
+          const auto bl_ub =
+              rel_vel_ub * rel_vel_ub / (2 * tr_obj.deceleration);
+          model->addConstr(vars["brakelen"](tr, t_steps - 1) >= bl_lb,
+                           "exact_brakelen_lb_" + tr_name + "_" +
+                               std::to_string(t));
+          model->addConstr(vars["brakelen"](tr, t_steps - 1) <= bl_ub,
+                           "exact_brakelen_ub_" + tr_name + "_" +
+                               std::to_string(t));
+        }
+      }
     }
   }
 }
