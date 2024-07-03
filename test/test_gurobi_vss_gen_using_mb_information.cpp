@@ -94,7 +94,7 @@ TEST(VSSGenMBInfoSolver, Default8) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
       solver("./example-networks-mb-solutions/Stammstrecke4Trains/");
 
-  const auto sol = solver.solve();
+  const auto sol = solver.solve({5});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -106,7 +106,7 @@ TEST(VSSGenMBInfoSolver, Default9) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
       solver("./example-networks-mb-solutions/Stammstrecke8Trains/");
 
-  const auto sol = solver.solve();
+  const auto sol = solver.solve({5});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -118,7 +118,7 @@ TEST(VSSGenMBInfoSolver, Default10) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
       solver("./example-networks-mb-solutions/Stammstrecke16Trains/");
 
-  const auto sol = solver.solve();
+  const auto sol = solver.solve({5});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
