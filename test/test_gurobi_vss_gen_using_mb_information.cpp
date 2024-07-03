@@ -34,12 +34,12 @@ TEST(VSSGenMBInfoSolver, Default3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
       solver("./example-networks-mb-solutions/HighSpeedTrack5Trains/");
 
-  const auto sol = solver.solve();
+  const auto sol = solver.solve({15, true, false});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 18);
-  EXPECT_EQ(sol.get_mip_obj(), 18);
+  EXPECT_EQ(sol.get_obj(), 10);
+  EXPECT_EQ(sol.get_mip_obj(), 10);
 }
 
 TEST(VSSGenMBInfoSolver, Default4) {
