@@ -152,8 +152,8 @@ void cda_rail::solver::mip_based::
     const auto&  tr_name = tr_obj.name;
     const auto&  tr_len  = tr_obj.length;
     const double delta_v =
-        0.5 * std::max(tr_obj.acceleration, tr_obj.deceleration) * dt;
-    const double delta_pos = 0.5 * tr_obj.max_speed * dt;
+        std::max(tr_obj.acceleration, tr_obj.deceleration) * dt;
+    const double delta_pos = tr_obj.max_speed * dt;
 
     for (size_t t_steps = train_interval[tr].first + 1;
          t_steps <= train_interval[tr].second; t_steps++) {
