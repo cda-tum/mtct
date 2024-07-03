@@ -626,7 +626,7 @@ double cda_rail::minimal_line_speed(double v_1, double v_2, double v_min,
                                     double a, double d, double s) {
   const bool v_1_below_minimal_speed = v_1 < v_min;
 
-  const auto [s_1, s_2] =
+  const auto [s_1, _] =
       get_max_travel_time_acceleration_change_points(v_1, v_2, v_min, a, d, s);
 
   const double v_t_squared =

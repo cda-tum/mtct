@@ -377,7 +377,7 @@ public:
     double t0 = -1;
     double t1 = -1;
     for (const auto& [time, pos] : tr_pos) {
-      if (time == t) {
+      if (std::abs(time - t) < GRB_EPS) {
         t0 = time;
         t1 = time;
         break;

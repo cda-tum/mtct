@@ -382,6 +382,8 @@ TEST(GeneralPerformanceOptimizationInstances,
       sol_instance.get_exact_pos_and_vel_bounds("tr1", 0);
   EXPECT_APPROX_EQ(pos1_lb, 0);
   EXPECT_APPROX_EQ(pos1_ub, 0);
+  EXPECT_APPROX_EQ(v1_lb, 10);
+  EXPECT_APPROX_EQ(v1_ub, 10);
 
   // Time 5 with speed 10 at position 50
   const auto posvel2 = sol_instance.get_approximate_train_pos_and_vel("tr1", 5);
@@ -397,6 +399,8 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_APPROX_EQ(
       max_travel_time_from_start_no_stopping(10, 10, V_MIN, 2, 2, 100, pos2_lb),
       5);
+  EXPECT_APPROX_EQ(v2_lb, V_MIN);
+  EXPECT_APPROX_EQ(v2_ub, 10);
 
   // Time 10 with speed 10 at position 100
   const auto posvel3 =
@@ -452,6 +456,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_TRUE(posvel9.has_value());
   const auto [pos9, vel9] = posvel9.value();
   EXPECT_APPROX_EQ(pos9, 300);
+  EXPECT_APPROX_EQ(vel9, 6);
 
   sol_instance.set_status(cda_rail::SolutionStatus::Infeasible);
   sol_instance.set_solution_not_found();
@@ -516,16 +521,22 @@ TEST(GeneralPerformanceOptimizationInstances,
       sol_instance.get_exact_pos_and_vel_bounds("tr2", 0);
   EXPECT_APPROX_EQ(pos_lb_0, 0);
   EXPECT_APPROX_EQ(pos_ub_0, 0);
+  EXPECT_APPROX_EQ(v_lb_0, 0);
+  EXPECT_APPROX_EQ(v_ub_0, 0);
 
   const auto [pos_lb_2, pos_ub_2, v_lb_1, v_ub_1] =
       sol_instance.get_exact_pos_and_vel_bounds("tr2", 2);
   EXPECT_APPROX_EQ(pos_lb_2, 0);
   EXPECT_APPROX_EQ(pos_ub_2, 0);
+  EXPECT_APPROX_EQ(v_lb_1, 0);
+  EXPECT_APPROX_EQ(v_ub_1, 0);
 
   const auto [pos_lb_5, pos_ub_5, v_lb_2, v_ub_2] =
       sol_instance.get_exact_pos_and_vel_bounds("tr2", 5);
   EXPECT_APPROX_EQ(pos_lb_5, 0);
   EXPECT_APPROX_EQ(pos_ub_5, 0);
+  EXPECT_APPROX_EQ(v_lb_2, 0);
+  EXPECT_APPROX_EQ(v_ub_2, 0);
 
   const auto tr_order = sol_instance.get_train_order(v0_v1);
   EXPECT_EQ(tr_order.size(), 1);
