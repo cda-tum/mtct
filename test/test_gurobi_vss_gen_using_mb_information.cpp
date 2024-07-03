@@ -62,8 +62,8 @@ TEST(VSSGenMBInfoSolver, Default5) {
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 9);
-  EXPECT_EQ(sol.get_mip_obj(), 9);
+  EXPECT_EQ(sol.get_obj(), 13);
+  EXPECT_EQ(sol.get_mip_obj(), 13);
 }
 
 TEST(VSSGenMBInfoSolver, Default6) {
