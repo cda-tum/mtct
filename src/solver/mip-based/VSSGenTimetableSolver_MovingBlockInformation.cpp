@@ -153,6 +153,7 @@ void cda_rail::solver::mip_based::
     const auto&  tr_len  = tr_obj.length;
     const double delta_v =
         std::max(tr_obj.acceleration, tr_obj.deceleration) * dt;
+    const double delta_pos = tr_obj.max_speed * dt;
 
     for (size_t t_steps = train_interval[tr].first + 1;
          t_steps <= train_interval[tr].second; t_steps++) {
@@ -162,20 +163,20 @@ void cda_rail::solver::mip_based::
 
       if (fix_exact_positions) {
         model->addConstr(
-            vars["lda"](tr, t_steps) >= pos_lb - tr_len - tr_obj.max_speed * dt,
+            vars["lda"](tr, t_steps) >= pos_lb - tr_len - delta_pos,
             "exact_pos_lb_lda_" + tr_name + "_" + std::to_string(t));
         model->addConstr(
-            vars["lda"](tr, t_steps) <= pos_ub - tr_len + tr_obj.max_speed * dt,
+            vars["lda"](tr, t_steps) <= pos_ub - tr_len + delta_pos,
             "exact_pos_ub_lda_" + tr_name + "_" + std::to_string(t));
 
         GRBLinExpr pos_mu_expr = vars["mu"](tr, t_steps - 1);
         if (include_braking_curves) {
           pos_mu_expr -= vars["brakelen"](tr, t_steps - 1);
         }
-        model->addConstr(pos_mu_expr >= pos_lb - tr_obj.max_speed * dt,
+        model->addConstr(pos_mu_expr >= pos_lb - delta_pos,
                          "exact_pos_lb_mu_" + tr_name + "_" +
                              std::to_string(t));
-        model->addConstr(pos_mu_expr <= pos_ub + tr_obj.max_speed * dt,
+        model->addConstr(pos_mu_expr <= pos_ub + delta_pos,
                          "exact_pos_ub_mu_" + tr_name + "_" +
                              std::to_string(t));
       }
