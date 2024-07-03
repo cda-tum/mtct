@@ -148,9 +148,11 @@ void cda_rail::solver::mip_based::
         fix_exact_positions_and_velocities_constraints() {
   const auto& train_list = instance.get_train_list();
   for (size_t tr = 0; tr < num_tr; tr++) {
-    const auto& tr_obj  = train_list.get_train(tr);
-    const auto& tr_name = tr_obj.name;
-    const auto& tr_len  = tr_obj.length;
+    const auto&  tr_obj  = train_list.get_train(tr);
+    const auto&  tr_name = tr_obj.name;
+    const auto&  tr_len  = tr_obj.length;
+    const double delta_v =
+        std::max(tr_obj.acceleration, tr_obj.deceleration) * dt;
 
     for (size_t t_steps = train_interval[tr].first + 1;
          t_steps <= train_interval[tr].second; t_steps++) {
@@ -179,8 +181,8 @@ void cda_rail::solver::mip_based::
       }
 
       if (fix_exact_velocities) {
-        const auto rel_vel_lb = std::max(vel_lb - V_MIN, 0.0);
-        const auto rel_vel_ub = vel_ub + V_MIN;
+        const auto rel_vel_lb = std::max(vel_lb - delta_v, 0.0);
+        const auto rel_vel_ub = vel_ub + delta_v;
         model->addConstr(vars["v"](tr, t_steps) >= rel_vel_lb,
                          "exact_vel_lb_" + tr_name + "_" + std::to_string(t));
         model->addConstr(vars["v"](tr, t_steps) <= rel_vel_ub,
