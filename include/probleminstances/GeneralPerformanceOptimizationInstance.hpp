@@ -450,9 +450,9 @@ public:
     } else {
       const auto max_line_speed =
           maximal_line_speed(v1, v2, max_speed, tr_obj.acceleration,
-                             tr_obj.deceleration, edge_obj.length);
+                             tr_obj.deceleration, pos2 - pos1);
       ub += pos_on_edge_at_time(v1, v2, max_line_speed, tr_obj.acceleration,
-                                tr_obj.deceleration, edge_obj.length, t - t1);
+                                tr_obj.deceleration, pos2 - pos1, t - t1);
     }
     return {lb, ub};
   };
@@ -493,10 +493,10 @@ public:
     const auto tr_pos =
         get_train_pos(tr_name, t1) +
         pos_on_edge_at_time(v1, v2, v_line, tr_obj.acceleration,
-                            tr_obj.deceleration, edge_obj.length, t - t1);
+                            tr_obj.deceleration, dist_travelled, t - t1);
     const auto tr_vel =
         vel_on_edge_at_time(v1, v2, v_line, tr_obj.acceleration,
-                            tr_obj.deceleration, edge_obj.length, t - t1);
+                            tr_obj.deceleration, dist_travelled, t - t1);
 
     return std::make_pair(tr_pos, tr_vel);
   };
