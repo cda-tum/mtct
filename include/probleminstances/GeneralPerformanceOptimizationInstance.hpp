@@ -406,8 +406,8 @@ public:
     const auto     r_len = route.length(n);
     return {route.get_edge_at_pos(std::min(pos0 + GRB_EPS, r_len), n), t0, t1};
   };
-  [[nodiscard]] std::pair<double, double>
-  get_exact_pos_bounds(const std::string& tr_name, double t) const {
+  [[nodiscard]] std::tuple<double, double, double, double>
+  get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const {
     const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
     assert(t >= t1);
     assert(t <= t2);
@@ -417,14 +417,21 @@ public:
     const auto pos1 = get_train_pos(tr_name, t1);
     const auto pos2 = get_train_pos(tr_name, t2);
 
+    const Route& tr_route         = this->instance.get_route(tr_name);
+    const auto&  r_len            = tr_route.length(this->instance.const_n());
+    const bool   tr_leaving_route = pos2 >= r_len + GRB_EPS;
+
     if (std::abs(pos2 - pos1) < GRB_EPS) {
-      return {pos1, pos1};
+      return {std::min(pos1, pos2), std::max(pos1, pos2), std::min(v1, v2),
+              std::max(v1, v2)};
     }
 
     const auto& edge_obj = this->instance.const_n().get_edge(edge);
     const auto& tr_obj   = this->instance.get_train_list().get_train(tr_name);
 
-    const auto max_speed = std::max(edge_obj.max_speed, tr_obj.max_speed);
+    const auto max_speed = tr_leaving_route
+                               ? tr_obj.max_speed
+                               : std::min(edge_obj.max_speed, tr_obj.max_speed);
 
     const auto max_t =
         max_travel_time(v1, v2, V_MIN, tr_obj.acceleration, tr_obj.deceleration,
@@ -433,16 +440,21 @@ public:
                                        tr_obj.deceleration, pos2 - pos1);
     double     ub    = pos1;
     double     lb    = pos1;
+    double     v_lb  = 0;
+    double     v_ub  = max_speed;
 
     if (max_t >= std::numeric_limits<double>::infinity()) {
       const auto t_to_stop = v1 / tr_obj.deceleration;
       const auto rel_t     = std::min(t_to_stop, t - t1);
       lb += v1 * rel_t - 0.5 * tr_obj.deceleration * rel_t * rel_t;
+      v_lb = v1 - tr_obj.deceleration * rel_t;
     } else {
       const auto min_speed = minimal_line_speed(
           v1, v2, V_MIN, tr_obj.acceleration, tr_obj.deceleration, pos2 - pos1);
       lb += pos_on_edge_at_time(v1, v2, min_speed, tr_obj.acceleration,
                                 tr_obj.deceleration, pos2 - pos1, t - t1);
+      v_lb = vel_on_edge_at_time(v1, v2, min_speed, tr_obj.acceleration,
+                                 tr_obj.deceleration, pos2 - pos1, t - t1);
     }
 
     if (t >= t1 + min_t) {
@@ -453,8 +465,10 @@ public:
                              tr_obj.deceleration, pos2 - pos1);
       ub += pos_on_edge_at_time(v1, v2, max_line_speed, tr_obj.acceleration,
                                 tr_obj.deceleration, pos2 - pos1, t - t1);
+      v_ub = vel_on_edge_at_time(v1, v2, max_line_speed, tr_obj.acceleration,
+                                 tr_obj.deceleration, pos2 - pos1, t - t1);
     }
-    return {lb, ub};
+    return {lb, ub, v_lb, v_ub};
   };
   [[nodiscard]] std::optional<std::pair<double, double>>
   get_approximate_train_pos_and_vel(const std::string& tr_name,

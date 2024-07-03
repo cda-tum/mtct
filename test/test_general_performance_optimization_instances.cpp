@@ -378,7 +378,8 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_APPROX_EQ(pos1, 0);
   EXPECT_APPROX_EQ(vel1, 10);
 
-  const auto [pos1_lb, pos1_ub] = sol_instance.get_exact_pos_bounds("tr1", 0);
+  const auto [pos1_lb, pos1_ub, v1_lb, v1_ub] =
+      sol_instance.get_exact_pos_and_vel_bounds("tr1", 0);
   EXPECT_APPROX_EQ(pos1_lb, 0);
   EXPECT_APPROX_EQ(pos1_ub, 0);
 
@@ -389,7 +390,8 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_APPROX_EQ(pos2, 50);
   EXPECT_APPROX_EQ(vel2, 10);
 
-  const auto [pos2_lb, pos2_ub] = sol_instance.get_exact_pos_bounds("tr1", 5);
+  const auto [pos2_lb, pos2_ub, v2_lb, v2_ub] =
+      sol_instance.get_exact_pos_and_vel_bounds("tr1", 5);
   EXPECT_APPROX_EQ(min_travel_time_from_start(10, 10, 10, 2, 2, 100, pos2_ub),
                    5);
   EXPECT_APPROX_EQ(
@@ -510,15 +512,18 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_APPROX_EQ(tr2_pos_20, 200);
   EXPECT_APPROX_EQ(tr2_vel_20, 20);
 
-  const auto [pos_lb_0, pos_ub_0] = sol_instance.get_exact_pos_bounds("tr2", 0);
+  const auto [pos_lb_0, pos_ub_0, v_lb_0, v_ub_0] =
+      sol_instance.get_exact_pos_and_vel_bounds("tr2", 0);
   EXPECT_APPROX_EQ(pos_lb_0, 0);
   EXPECT_APPROX_EQ(pos_ub_0, 0);
 
-  const auto [pos_lb_2, pos_ub_2] = sol_instance.get_exact_pos_bounds("tr2", 2);
+  const auto [pos_lb_2, pos_ub_2, v_lb_1, v_ub_1] =
+      sol_instance.get_exact_pos_and_vel_bounds("tr2", 2);
   EXPECT_APPROX_EQ(pos_lb_2, 0);
   EXPECT_APPROX_EQ(pos_ub_2, 0);
 
-  const auto [pos_lb_5, pos_ub_5] = sol_instance.get_exact_pos_bounds("tr2", 5);
+  const auto [pos_lb_5, pos_ub_5, v_lb_2, v_ub_2] =
+      sol_instance.get_exact_pos_and_vel_bounds("tr2", 5);
   EXPECT_APPROX_EQ(pos_lb_5, 0);
   EXPECT_APPROX_EQ(pos_ub_5, 0);
 

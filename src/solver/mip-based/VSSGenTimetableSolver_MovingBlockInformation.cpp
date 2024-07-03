@@ -59,8 +59,9 @@ cda_rail::instances::SolVSSGenerationTimetable cda_rail::solver::mip_based::
 
   assert(!old_instance.has_value());
 
-  fix_stop_positions  = model_detail_mb_information.fix_stop_positions;
-  fix_exact_positions = model_detail_mb_information.fix_exact_positions;
+  fix_stop_positions   = model_detail_mb_information.fix_stop_positions;
+  fix_exact_positions  = model_detail_mb_information.fix_exact_positions;
+  fix_exact_velocities = model_detail_mb_information.fix_exact_velocities;
   hint_approximate_positions =
       model_detail_mb_information.hint_approximate_positions;
 
@@ -90,9 +91,9 @@ void cda_rail::solver::mip_based::
     PLOGD << "Fixing stop positions";
     fix_stop_positions_constraints();
   }
-  if (fix_exact_positions) {
-    PLOGD << "Fixing exact positions";
-    fix_exact_positions_constraints();
+  if (fix_exact_positions || fix_exact_velocities) {
+    PLOGD << "Fixing exact positions and/or velocities";
+    fix_exact_positions_and_velocities_constraints();
   }
   if (hint_approximate_positions) {
     PLOGD << "Hinting approximate positions";
@@ -143,7 +144,7 @@ void cda_rail::solver::mip_based::
 
 void cda_rail::solver::mip_based::
     VSSGenTimetableSolverWithMovingBlockInformation::
-        fix_exact_positions_constraints() {
+        fix_exact_positions_and_velocities_constraints() {
   const auto& train_list = instance.get_train_list();
   for (size_t tr = 0; tr < num_tr; tr++) {
     const auto& tr_obj  = train_list.get_train(tr);
@@ -153,8 +154,8 @@ void cda_rail::solver::mip_based::
     for (size_t t_steps = train_interval[tr].first + 1;
          t_steps <= train_interval[tr].second; t_steps++) {
       const auto t = t_steps * dt;
-      const auto [pos_lb, pos_ub] =
-          moving_block_solution.get_exact_pos_bounds(tr_name, t);
+      const auto [pos_lb, pos_ub, vel_lb, vel_ub] =
+          moving_block_solution.get_exact_pos_and_vel_bounds(tr_name, t);
 
       model->addConstr(vars["lda"](tr, t_steps) >=
                            pos_lb - tr_len - tr_obj.max_speed * dt,
@@ -255,6 +256,7 @@ void cda_rail::solver::mip_based::
   VSSGenTimetableSolver::cleanup();
   fix_stop_positions         = true;
   fix_exact_positions        = true;
+  fix_exact_velocities       = true;
   hint_approximate_positions = true;
 }
 

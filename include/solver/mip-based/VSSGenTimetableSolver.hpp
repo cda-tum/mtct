@@ -39,6 +39,7 @@ struct ModelDetailMBInformation {
   bool braking_curves             = true;
   bool fix_stop_positions         = true;
   bool fix_exact_positions        = true;
+  bool fix_exact_velocities       = true;
   bool hint_approximate_positions = true;
 };
 
@@ -237,13 +238,14 @@ private:
        moving_block_solution;
   bool fix_stop_positions         = true;
   bool fix_exact_positions        = true;
+  bool fix_exact_velocities       = true;
   bool hint_approximate_positions = true;
 
   // Additional functions
   void include_additional_information();
   void fix_oder_on_edges();
   void fix_stop_positions_constraints();
-  void fix_exact_positions_constraints();
+  void fix_exact_positions_and_velocities_constraints();
   void hint_approximate_positions_constraints();
 
   virtual void cleanup() override;
