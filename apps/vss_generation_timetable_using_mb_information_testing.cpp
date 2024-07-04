@@ -20,8 +20,8 @@ int main(int argc, char** argv) {
     plog::init(plog::debug, &console_appender);
   }
 
-  if (argc < 10 || argc > 11) {
-    PLOGE << "Expected 9 or 10 arguments, got " << argc - 1;
+  if (argc < 11 || argc > 12) {
+    PLOGE << "Expected 10 or 11 arguments, got " << argc - 1;
     std::exit(-1);
   }
 
@@ -35,8 +35,9 @@ int main(int argc, char** argv) {
   const bool        fix_exact_positions        = std::stoi(args[6]) != 0;
   const bool        fix_exact_velocities       = std::stoi(args[7]) != 0;
   const bool        hint_approximate_positions = std::stoi(args[8]) != 0;
-  const int         timeout                    = std::stoi(args[9]);
-  const std::string output_path                = (argc == 11 ? args[10] : "");
+  const bool        fix_order_on_edges         = std::stoi(args[9]) != 0;
+  const int         timeout                    = std::stoi(args[10]);
+  const std::string output_path                = (argc == 12 ? args[11] : "");
 
   PLOGI << "Solving instance " << model_name
         << " with the following parameters:";
@@ -55,6 +56,9 @@ int main(int argc, char** argv) {
     if (hint_approximate_positions) {
       PLOGI << "   approximate positions are hinted";
     }
+    if (fix_order_on_edges) {
+      PLOGI << "   order on edges is fixed";
+    }
   } else {
     PLOGI << "   moving block information is not used";
   }
@@ -67,6 +71,7 @@ int main(int argc, char** argv) {
       std::to_string(static_cast<int>(fix_exact_positions)) + "_" +
       std::to_string(static_cast<int>(fix_exact_velocities)) + "_" +
       std::to_string(static_cast<int>(hint_approximate_positions)) + "_" +
+      std::to_string(static_cast<int>(fix_order_on_edges)) + "_" +
       std::to_string(timeout);
 
   if (use_mb_information) {
@@ -76,7 +81,7 @@ int main(int argc, char** argv) {
     // NOLINTNEXTLINE(clang-diagnostic-unused-result)
     solver.solve({delta_t, use_mb_information, true, fix_stop_positions,
                   fix_exact_positions, fix_exact_positions,
-                  hint_approximate_positions},
+                  hint_approximate_positions, fix_order_on_edges},
                  {}, {false, cda_rail::OptimalityStrategy::Optimal},
                  {false, cda_rail::ExportOption::ExportSolutionWithInstance,
                   file_name, output_path},
