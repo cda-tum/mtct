@@ -66,6 +66,29 @@ TEST(VSSGenMBInfoSolver, Default5) {
   EXPECT_EQ(sol.get_mip_obj(), 13);
 }
 
+TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver("./example-networks-mb-solutions/SimpleNetwork/");
+
+  const auto sol = solver.solve(
+      {5}, {}, {}, {false, cda_rail::ExportOption::ExportSolution}, 10);
+
+  EXPECT_FALSE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Timeout);
+  EXPECT_EQ(sol.get_obj(), -1);
+  EXPECT_EQ(sol.get_mip_obj(), -1);
+
+  // Expect folder model to exist and to contain folders solution and instance
+  EXPECT_TRUE(std::filesystem::exists("model"));
+  EXPECT_TRUE(std::filesystem::exists("model/solution"));
+  EXPECT_TRUE(std::filesystem::exists("model/instance"));
+  // Within solution there should be data.json
+  EXPECT_TRUE(std::filesystem::exists("model/solution/data.json"));
+
+  // Remove model folder
+  std::filesystem::remove_all("model");
+}
+
 TEST(VSSGenMBInfoSolver, Default6) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
       solver("./example-networks-mb-solutions/SingleTrack/");
