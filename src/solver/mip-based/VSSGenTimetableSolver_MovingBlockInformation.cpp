@@ -60,6 +60,7 @@ cda_rail::instances::SolVSSGenerationTimetable cda_rail::solver::mip_based::
 
   assert(!old_instance.has_value());
 
+  fix_orders_on_edges  = model_detail_mb_information.fix_order_on_edges;
   fix_stop_positions   = model_detail_mb_information.fix_stop_positions;
   fix_exact_positions  = model_detail_mb_information.fix_exact_positions;
   fix_exact_velocities = model_detail_mb_information.fix_exact_velocities;
@@ -88,6 +89,10 @@ void cda_rail::solver::mip_based::
         include_additional_information() {
   PLOGD << "Including additional information";
   fix_oder_on_edges();
+  if (fix_orders_on_edges) {
+    PLOGD << "Fixing orders on edges";
+    fix_oder_on_edges();
+  }
   if (fix_stop_positions) {
     PLOGD << "Fixing stop positions";
     fix_stop_positions_constraints();
@@ -283,6 +288,7 @@ void cda_rail::solver::mip_based::
 void cda_rail::solver::mip_based::
     VSSGenTimetableSolverWithMovingBlockInformation::cleanup() {
   VSSGenTimetableSolver::cleanup();
+  fix_orders_on_edges        = true;
   fix_stop_positions         = true;
   fix_exact_positions        = true;
   fix_exact_velocities       = true;

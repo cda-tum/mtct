@@ -41,6 +41,7 @@ struct ModelDetailMBInformation {
   bool fix_exact_positions        = true;
   bool fix_exact_velocities       = true;
   bool hint_approximate_positions = true;
+  bool fix_order_on_edges         = true;
 };
 
 struct ModelSettings {
@@ -236,6 +237,7 @@ private:
   instances::SolGeneralPerformanceOptimizationInstance<
       instances::GeneralPerformanceOptimizationInstance>
        moving_block_solution;
+  bool fix_orders_on_edges        = true;
   bool fix_stop_positions         = true;
   bool fix_exact_positions        = true;
   bool fix_exact_velocities       = true;
