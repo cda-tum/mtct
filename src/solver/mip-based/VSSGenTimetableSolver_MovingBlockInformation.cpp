@@ -283,6 +283,82 @@ void cda_rail::solver::mip_based::
       }
     }
   }
+
+  // Additional fix order by constraints on x variables on every edge
+  for (size_t e = 0; e < num_edges; ++e) {
+    const auto& edge_obj = instance.const_n().get_edge(e);
+    const auto& edge_name =
+        "[" + instance.const_n().get_vertex(edge_obj.source).name + "," +
+        instance.const_n().get_vertex(edge_obj.target).name + "]";
+    const auto tr_order_on_e =
+        moving_block_solution.get_train_order_with_reverse(e);
+    const std::optional<size_t> rev_e =
+        instance.const_n().get_reverse_edge_index(e);
+    for (size_t tr_i = 1; tr_i < tr_order_on_e.size(); tr_i++) {
+      // Fix order on edge e
+      const auto& [tr_following, tr_following_direction] =
+          tr_order_on_e.at(tr_i);
+      if (!tr_following_direction) {
+        // Prevent double counting
+        continue;
+      }
+      const auto& tr_following_obj =
+          instance.get_train_list().get_train(tr_following);
+
+      const auto& [tr_prev, tr_prev_direction] = tr_order_on_e.at(tr_i - 1);
+      const auto& tr_prev_obj = instance.get_train_list().get_train(tr_prev);
+
+      const auto& tr_following_interval = train_interval[tr_following];
+      const auto& tr_prev_interval      = train_interval[tr_prev];
+
+      assert(tr_prev_direction || rev_e.has_value());
+
+      const auto& prev_e = tr_prev_direction ? e : rev_e.value();
+
+      GRBLinExpr prev_x_expr      = 0;
+      GRBLinExpr following_x_expr = 0;
+      for (size_t t_idx = tr_following_interval.first;
+           t_idx <= tr_following_interval.second; ++t_idx) {
+        following_x_expr += vars["x"](tr_following, t_idx, e);
+      }
+
+      for (size_t t_idx =
+               std::min(tr_prev_interval.first, tr_following_interval.first);
+           t_idx <=
+           std::max(tr_prev_interval.second, tr_following_interval.second);
+           ++t_idx) {
+        const int t = t_idx * dt;
+        if (t_idx >= tr_prev_interval.first &&
+            t_idx <= tr_prev_interval.second) {
+          prev_x_expr += vars["x"](tr_prev, t_idx, prev_e);
+        }
+        if (t_idx - 1 >= tr_following_interval.first &&
+            t_idx - 1 <= tr_following_interval.second) {
+          following_x_expr -= vars["x"](tr_following, t_idx - 1, e);
+        }
+
+        // tr_following can only be on the edge after tr_prev
+        if (t_idx >= tr_following_interval.first &&
+            t_idx <= tr_following_interval.second) {
+          model->addConstr(vars["x"](tr_following, t_idx, e) <= prev_x_expr,
+                           "fix_order_type_1_" + tr_prev_obj.name + "_" +
+                               tr_following_obj.name + "_" + std::to_string(t) +
+                               "_" + edge_name);
+        }
+
+        // tr_prev can only be on the edge if tr_following will still be on the
+        // edge
+        if (t_idx >= tr_prev_interval.first &&
+            t_idx <= tr_prev_interval.second) {
+          model->addConstr(vars["x"](tr_prev, t_idx, prev_e) <=
+                               following_x_expr,
+                           "fix_order_type_2_" + tr_prev_obj.name + "_" +
+                               tr_following_obj.name + "_" + std::to_string(t) +
+                               "_" + edge_name);
+        }
+      }
+    }
+  }
 }
 
 void cda_rail::solver::mip_based::
