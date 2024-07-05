@@ -567,6 +567,42 @@ public:
               });
     return tr_on_edge;
   };
+  [[nodiscard]] std::vector<std::pair<size_t, bool>>
+  get_train_order_with_reverse(size_t edge_index) const {
+    std::vector<size_t> tr_on_edge =
+        this->get_instance().trains_on_edge(edge_index, true);
+    const std::optional<size_t> rev_e =
+        this->get_instance().const_n().get_reverse_edge_index(edge_index);
+    std::vector<size_t> tr_on_rev_edge;
+    if (rev_e.has_value()) {
+      tr_on_rev_edge = this->get_instance().trains_on_edge(rev_e.value(), true);
+    }
+
+    std::vector<std::pair<size_t, bool>> ret_vec;
+    std::map<size_t, double>             tr_times;
+    for (size_t i = 0; i < (rev_e.has_value() ? 2 : 1); ++i) {
+      const bool  direction   = i == 0;
+      const auto& rel_e       = direction ? edge_index : rev_e.value();
+      const auto& rel_tr_on_e = direction ? tr_on_edge : tr_on_rev_edge;
+      for (const auto& tr : rel_tr_on_e) {
+        const Train& tr_object =
+            this->get_instance().get_train_list().get_train(tr);
+        const double e_pos =
+            this->get_instance().route_edge_pos(tr_object.name, rel_e).first;
+        const auto time_at_e_pos = get_time_at_pos(tr_object.name, e_pos);
+        tr_times.insert({tr, time_at_e_pos});
+        ret_vec.emplace_back(tr, direction);
+      }
+    }
+
+    std::sort(
+        ret_vec.begin(), ret_vec.end(),
+        [&tr_times](std::pair<size_t, bool> tr1, std::pair<size_t, bool> tr2) {
+          return tr_times.at(tr1.first) < tr_times.at(tr2.first);
+        });
+
+    return ret_vec;
+  }
   [[nodiscard]] double get_time_at_pos(const std::string& tr_name,
                                        double             pos) const {
     if (!this->instance.get_train_list().has_train(tr_name)) {
