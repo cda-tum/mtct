@@ -252,11 +252,11 @@ void cda_rail::solver::mip_based::
   // For this b_front and b_rear are set equal where applicable
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
     const auto& e            = breakable_edges[i];
-    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
-    const auto& edge         = instance.n().get_edge(e);
-    const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
-                            "," + instance.n().get_vertex(edge.target).name +
-                            "]";
+    const auto  vss_number_e = instance.const_n().max_vss_on_edge(e);
+    const auto& edge         = instance.const_n().get_edge(e);
+    const auto& edge_name =
+        "[" + instance.const_n().get_vertex(edge.source).name + "," +
+        instance.const_n().get_vertex(edge.target).name + "]";
     const auto tr_order_on_e = moving_block_solution.get_train_order(e);
     for (size_t tr_i = 1; tr_i < tr_order_on_e.size(); tr_i++) {
       const auto& tr_object =
