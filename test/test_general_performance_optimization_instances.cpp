@@ -549,6 +549,137 @@ TEST(GeneralPerformanceOptimizationInstances,
 }
 
 TEST(GeneralPerformanceOptimizationInstances,
+     SolGeneralPerformanceOptimizationInstanceTrainOrderWithReverseEdge) {
+  instances::GeneralPerformanceOptimizationInstance instance;
+
+  // Add a simple network to the instance
+  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::TTD);
+
+  const auto v0_v1 = instance.n().add_edge("v0", "v1", 100, 10, false);
+  const auto v1_v2 = instance.n().add_edge("v1", "v2", 200, 20, false);
+  const auto v1_v0 = instance.n().add_edge("v1", "v0", 100, 10, false);
+  const auto v2_v1 = instance.n().add_edge("v2", "v1", 200, 20, false);
+
+  instance.n().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.n().add_successor({"v2", "v1"}, {"v1", "v0"});
+
+  const auto tr1 = instance.add_train("tr1", 50, 10, 2, 2, {0, 160}, 10, "v0",
+                                      {30, 270}, 6, "v2");
+  const auto tr2 = instance.add_train("tr2", 50, 20, 2, 2, {0, 160}, 0, "v2",
+                                      {30, 270}, 0, "v0", 2, true);
+  const auto tr3 = instance.add_train("tr3", 50, 10, 2, 2, {0, 160}, 10, "v0",
+                                      {30, 270}, 6, "v2");
+
+  // Check the consistency of the instance
+  EXPECT_TRUE(instance.check_consistency(false));
+
+  instances::SolGeneralPerformanceOptimizationInstance<
+      instances::GeneralPerformanceOptimizationInstance>
+      sol_instance(instance);
+
+  sol_instance.add_empty_route("tr1");
+  sol_instance.add_empty_route("tr2");
+  sol_instance.add_empty_route("tr3");
+
+  sol_instance.push_back_edge_to_route("tr1", v0_v1);
+  sol_instance.push_back_edge_to_route("tr1", v1_v2);
+
+  sol_instance.push_back_edge_to_route("tr2", v2_v1);
+  sol_instance.push_back_edge_to_route("tr2", v1_v0);
+
+  sol_instance.push_back_edge_to_route("tr3", v0, v1);
+  sol_instance.push_back_edge_to_route("tr3", v1, v2);
+
+  sol_instance.add_train_pos("tr1", 0, 0);
+  sol_instance.add_train_pos("tr1", 10, 100);
+  sol_instance.add_train_pos("tr1", 20, 200);
+  sol_instance.add_train_pos("tr1", 30, 300);
+  sol_instance.add_train_speed("tr1", 0, 10);
+  sol_instance.add_train_speed("tr1", 10, 10);
+  sol_instance.add_train_speed("tr1", 20, 10);
+  sol_instance.add_train_speed("tr1", 30, 10);
+
+  sol_instance.add_train_pos("tr2", 40, 0);
+  sol_instance.add_train_pos("tr2", 50, 100);
+  sol_instance.add_train_pos("tr2", 60, 200);
+  sol_instance.add_train_pos("tr2", 70, 300);
+  sol_instance.add_train_speed("tr2", 40, 10);
+  sol_instance.add_train_speed("tr2", 50, 10);
+  sol_instance.add_train_speed("tr2", 60, 10);
+  sol_instance.add_train_speed("tr2", 70, 10);
+
+  sol_instance.add_train_pos("tr3", 80, 0);
+  sol_instance.add_train_pos("tr3", 90, 100);
+  sol_instance.add_train_pos("tr3", 100, 200);
+  sol_instance.add_train_pos("tr3", 110, 300);
+  sol_instance.add_train_speed("tr3", 80, 10);
+  sol_instance.add_train_speed("tr3", 90, 10);
+  sol_instance.add_train_speed("tr3", 100, 10);
+  sol_instance.add_train_speed("tr3", 110, 10);
+
+  // Check Train Orders
+  const auto tr_order_v0_v1 = sol_instance.get_train_order(v0_v1);
+  EXPECT_EQ(tr_order_v0_v1.size(), 2);
+  EXPECT_EQ(tr_order_v0_v1.at(0), tr1);
+  EXPECT_EQ(tr_order_v0_v1.at(1), tr3);
+
+  const auto tr_order_v1_v2 = sol_instance.get_train_order(v1_v2);
+  EXPECT_EQ(tr_order_v1_v2.size(), 2);
+  EXPECT_EQ(tr_order_v1_v2.at(0), tr1);
+  EXPECT_EQ(tr_order_v1_v2.at(1), tr3);
+
+  const auto tr_order_v1_v0 = sol_instance.get_train_order(v1_v0);
+  EXPECT_EQ(tr_order_v1_v0.size(), 1);
+  EXPECT_EQ(tr_order_v1_v0.at(0), tr2);
+
+  const auto tr_order_v2_v1 = sol_instance.get_train_order(v2_v1);
+  EXPECT_EQ(tr_order_v2_v1.size(), 1);
+  EXPECT_EQ(tr_order_v2_v1.at(0), tr2);
+
+  const auto tr_order_rev_v0_v1 =
+      sol_instance.get_train_order_with_reverse(v0_v1);
+  EXPECT_EQ(tr_order_rev_v0_v1.size(), 3);
+  EXPECT_EQ(tr_order_rev_v0_v1.at(0).first, tr1);
+  EXPECT_EQ(tr_order_rev_v0_v1.at(1).first, tr2);
+  EXPECT_EQ(tr_order_rev_v0_v1.at(2).first, tr3);
+  EXPECT_TRUE(tr_order_rev_v0_v1.at(0).second);
+  EXPECT_FALSE(tr_order_rev_v0_v1.at(1).second);
+  EXPECT_TRUE(tr_order_rev_v0_v1.at(2).second);
+
+  const auto tr_order_rev_v1_v2 =
+      sol_instance.get_train_order_with_reverse(v1_v2);
+  EXPECT_EQ(tr_order_rev_v1_v2.size(), 3);
+  EXPECT_EQ(tr_order_rev_v1_v2.at(0).first, tr1);
+  EXPECT_EQ(tr_order_rev_v1_v2.at(1).first, tr2);
+  EXPECT_EQ(tr_order_rev_v1_v2.at(2).first, tr3);
+  EXPECT_TRUE(tr_order_rev_v1_v2.at(0).second);
+  EXPECT_FALSE(tr_order_rev_v1_v2.at(1).second);
+  EXPECT_TRUE(tr_order_rev_v1_v2.at(2).second);
+
+  const auto tr_order_rev_v1_v0 =
+      sol_instance.get_train_order_with_reverse(v1_v0);
+  EXPECT_EQ(tr_order_rev_v1_v0.size(), 3);
+  EXPECT_EQ(tr_order_rev_v1_v0.at(0).first, tr1);
+  EXPECT_EQ(tr_order_rev_v1_v0.at(1).first, tr2);
+  EXPECT_EQ(tr_order_rev_v1_v0.at(2).first, tr3);
+  EXPECT_FALSE(tr_order_rev_v1_v0.at(0).second);
+  EXPECT_TRUE(tr_order_rev_v1_v0.at(1).second);
+  EXPECT_FALSE(tr_order_rev_v1_v0.at(2).second);
+
+  const auto tr_order_rev_v2_v1 =
+      sol_instance.get_train_order_with_reverse(v2_v1);
+  EXPECT_EQ(tr_order_rev_v2_v1.size(), 3);
+  EXPECT_EQ(tr_order_rev_v2_v1.at(0).first, tr1);
+  EXPECT_EQ(tr_order_rev_v2_v1.at(1).first, tr2);
+  EXPECT_EQ(tr_order_rev_v2_v1.at(2).first, tr3);
+  EXPECT_FALSE(tr_order_rev_v2_v1.at(0).second);
+  EXPECT_TRUE(tr_order_rev_v2_v1.at(1).second);
+  EXPECT_FALSE(tr_order_rev_v2_v1.at(2).second);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
      SolGeneralPerformanceOptimizationInstanceExportImport) {
   instances::GeneralPerformanceOptimizationInstance instance;
 
