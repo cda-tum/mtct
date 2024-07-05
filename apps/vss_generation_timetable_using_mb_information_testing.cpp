@@ -20,8 +20,8 @@ int main(int argc, char** argv) {
     plog::init(plog::debug, &console_appender);
   }
 
-  if (argc < 11 || argc > 12) {
-    PLOGE << "Expected 10 or 11 arguments, got " << argc - 1;
+  if (argc < 12 || argc > 13) {
+    PLOGE << "Expected 11 or 12 arguments, got " << argc - 1;
     std::exit(-1);
   }
 
@@ -36,8 +36,9 @@ int main(int argc, char** argv) {
   const bool        fix_exact_velocities       = std::stoi(args[7]) != 0;
   const bool        hint_approximate_positions = std::stoi(args[8]) != 0;
   const bool        fix_order_on_edges         = std::stoi(args[9]) != 0;
-  const int         timeout                    = std::stoi(args[10]);
-  const std::string output_path                = (argc == 12 ? args[11] : "");
+  const bool        use_pwl                    = std::stoi(args[10]) != 0;
+  const int         timeout                    = std::stoi(args[11]);
+  const std::string output_path                = (argc == 13 ? args[12] : "");
 
   PLOGI << "Solving instance " << model_name
         << " with the following parameters:";
@@ -62,6 +63,9 @@ int main(int argc, char** argv) {
   } else {
     PLOGI << "   moving block information is not used";
   }
+  if (use_pwl) {
+    PLOGI << "   piecewise linear functions are used";
+  }
   PLOGI << "   timeout: " << timeout << "s";
 
   const std::string file_name =
@@ -72,7 +76,7 @@ int main(int argc, char** argv) {
       std::to_string(static_cast<int>(fix_exact_velocities)) + "_" +
       std::to_string(static_cast<int>(hint_approximate_positions)) + "_" +
       std::to_string(static_cast<int>(fix_order_on_edges)) + "_" +
-      std::to_string(timeout);
+      std::to_string(static_cast<int>(use_pwl)) + "_" + std::to_string(timeout);
 
   if (use_mb_information) {
     cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
@@ -82,7 +86,8 @@ int main(int argc, char** argv) {
     solver.solve({delta_t, use_mb_information, true, fix_stop_positions,
                   fix_exact_positions, fix_exact_positions,
                   hint_approximate_positions, fix_order_on_edges},
-                 {}, {false, cda_rail::OptimalityStrategy::Optimal},
+                 {cda_rail::vss::Model(), use_pwl},
+                 {false, cda_rail::OptimalityStrategy::Optimal},
                  {false, cda_rail::ExportOption::ExportSolutionWithInstance,
                   file_name, output_path},
                  timeout, true);
@@ -97,7 +102,8 @@ int main(int argc, char** argv) {
     PLOGI << "Instance " << model_name << " loaded at " << vss_instance_path;
 
     // NOLINTNEXTLINE(clang-diagnostic-unused-result)
-    solver.solve({delta_t, false, true, true}, {},
+    solver.solve({delta_t, false, true, true},
+                 {cda_rail::vss::Model(), use_pwl},
                  {false, cda_rail::OptimalityStrategy::Optimal},
                  {false, cda_rail::ExportOption::ExportSolutionWithInstance,
                   file_name, output_path},
