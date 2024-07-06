@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
   PLOGI << "Timeout: " << timeout;
 
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
-  solver.solve({false, 3, cda_rail::VelocityRefinementStrategy::None,
+  solver.solve({false, 5.55, cda_rail::VelocityRefinementStrategy::None,
                 use_simplified_headways, strengthen_vertex_headway_constraints},
                {use_lazy, false, false, lazy_strategy, train_strategy}, {},
                timeout, true);
