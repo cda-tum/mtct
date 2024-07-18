@@ -541,6 +541,9 @@ public:
 
   [[nodiscard]] std::vector<std::vector<double>>
   all_edge_pairs_shortest_paths() const;
+
+  [[nodiscard]] std::optional<double>
+  shortest_path(size_t source_edge_id, size_t target_vertex_id) const;
 };
 
 // HELPER
