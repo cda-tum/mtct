@@ -1666,9 +1666,9 @@ cda_rail::Network::shortest_path(size_t source_edge_id,
                                  size_t target_vertex_id) const {
   /**
    * Calculates the shortest path from a source edge e to a target vertex w.
-   * If e = (u,v), then the shortest path between v and w is returned. However,
-   * only valid successors of e can be used as a first edge. If no path exists,
-   * the optional has no value.
+   * If e = (u,v), then the length of the shortest path between v and w is
+   * returned. However, only valid successors of e can be used as a first edge.
+   * If no path exists, the optional has no value.
    */
 
   if (!has_edge(source_edge_id)) {
