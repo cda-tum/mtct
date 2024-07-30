@@ -315,6 +315,10 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
     const cda_rail::solver::mip_based::SolverStrategy&   solver_strategy,
     const cda_rail::solver::mip_based::SolutionSettings& solution_settings,
     int time_limit, bool debug_input) {
+  /**
+   * This function initializes the variables affecting the model creation and
+   * optimization process
+   */
   this->solve_init_vss_gen_timetable(time_limit, debug_input);
 
   if (!model_settings.model_type.check_consistency()) {
@@ -328,6 +332,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
     throw exceptions::ConsistencyException();
   }
 
+  // General settings
   this->dt                        = model_detail.delta_t;
   this->fix_routes                = model_detail.fix_routes;
   this->vss_model                 = model_settings.model_type;
@@ -345,6 +350,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
   this->export_option             = solution_settings.export_option;
 
   if (this->iterative_vss) {
+    // Iterative optimization strategy
     if (this->iterative_update_strategy == UpdateStrategy::Fixed &&
         this->iterative_update_value <= 1) {
       PLOGE << "iterative_update_value must be greater than 1";
@@ -368,6 +374,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
 
   std::optional<instances::VSSGenerationTimetable> old_instance;
   if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
+    // Discretize graph model
     PLOGI << "Preprocessing graph...";
     old_instance = instance;
     instance.discretize(this->vss_model.get_separation_functions().front());
@@ -389,11 +396,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
   unbreakable_sections = instance.n().unbreakable_sections();
 
   if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
+    // Sections of discretized graph
     no_border_vss_sections = instance.n().no_border_vss_sections();
     num_breakable_sections = no_border_vss_sections.size();
     no_border_vss_vertices =
         instance.n().get_vertices_by_type(VertexType::NoBorderVSS);
   } else {
+    // Sections of non-discretized graph
     breakable_edges = instance.n().breakable_edges();
     for (size_t i = 0; i < breakable_edges.size(); ++i) {
       breakable_edge_indices[breakable_edges[i]] = i;
@@ -435,8 +444,10 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
     }
   }
 
+  // Sections on which trains can collide face-to-face
   calculate_fwd_bwd_sections();
 
+  // Return unchanged instance for cleaning step
   return old_instance;
 }
 
@@ -478,6 +489,9 @@ std::optional<cda_rail::instances::SolVSSGenerationTimetable>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
     const std::optional<instances::VSSGenerationTimetable>& old_instance,
     int                                                     time_limit) {
+  /**
+   * This function contains the optimization process
+   */
   std::optional<instances::SolVSSGenerationTimetable> sol_object;
 
   bool reoptimize = true;
@@ -501,10 +515,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
       PLOGD << "Settings focussing on feasibility";
     }
 
+    // Optimize the (possibly restricted) model
     this->model->optimize();
     iteration_number += 1;
 
     if (model->get(GRB_IntAttr_SolCount) >= 1) {
+      // If there is a solution, then extract it and compare it with the current
+      // best solution
       const auto obj_tmp = model->get(GRB_DoubleAttr_ObjVal);
       if (obj_tmp < obj_ub) {
         obj_ub = obj_tmp;
@@ -519,6 +536,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
     }
 
     if (iterative_vss) {
+      // If applicable, iteratively update the model
       if (model->get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
         PLOGD << "Break because of timeout";
         if (sol_object->has_solution()) {
@@ -621,6 +639,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
     }
   }
 
+  // Extract solving times
   IF_PLOG(plog::debug) {
     model_solved = std::chrono::high_resolution_clock::now();
     solve_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
