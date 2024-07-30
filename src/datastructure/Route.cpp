@@ -239,6 +239,30 @@ cda_rail::Route::edge_pos(const std::vector<size_t>& edges_to_consider,
   return return_pos;
 }
 
+size_t
+cda_rail::Route::get_edge_at_pos(double                   pos,
+                                 const cda_rail::Network& network) const {
+  if (std::abs(pos) < GRB_EPS) {
+    pos = 0;
+  }
+  if (pos < 0) {
+    throw exceptions::InvalidInputException("Position must be non-negative.");
+  }
+
+  double current_pos = 0;
+  for (const auto& edge : edges) {
+    const auto edge_length = network.get_edge(edge).length;
+    if (current_pos + edge_length > pos) {
+      return edge;
+    }
+    current_pos += edge_length;
+  }
+  if (std::abs(current_pos - pos) < GRB_EPS) {
+    return edges.back();
+  }
+  throw exceptions::ConsistencyException("Position is not on the route.");
+}
+
 void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
   /**
    * Adds an empty route for the given train.

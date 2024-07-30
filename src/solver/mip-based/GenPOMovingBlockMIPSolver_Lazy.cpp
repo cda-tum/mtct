@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
+#include <exception>
 #include <limits>
 #include <numeric>
 #include <optional>
@@ -55,6 +56,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   } catch (GRBException& e) {
     PLOGE << "Error number: " << e.getErrorCode();
     PLOGE << e.getMessage();
+  } catch (std::exception& e) {
+    PLOGE << "Uncaught exception: " << e.what();
+    throw;
+  } catch (...) {
+    PLOGE << "Unknown exception caught in lazy callback.";
+    throw;
   }
 }
 

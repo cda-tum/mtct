@@ -76,6 +76,11 @@ public:
            interval2.first <= interval1.second;
   }
 
+  [[nodiscard]] bool is_forced_to_stop(int time) const {
+    const auto& [forced_lb, forced_ub] = get_forced_stopping_interval();
+    return forced_lb <= time && time <= forced_ub;
+  }
+
   [[nodiscard]] std::pair<int, int> get_forced_stopping_interval() const {
     std::pair<int, int> interval = {begin.second, end.first};
     if (begin.first + min_stopping_time > interval.second) {
@@ -142,7 +147,8 @@ private:
   BaseGeneralSchedule() = default;
 
 public:
-  virtual ~BaseGeneralSchedule() = default;
+  virtual ~BaseGeneralSchedule()                               = default;
+  [[nodiscard]] virtual bool is_forced_to_stop(int time) const = 0;
 };
 
 template <typename T = GeneralScheduledStop>
@@ -181,6 +187,15 @@ public:
   [[nodiscard]] double                     get_v_n() const { return v_n; }
   [[nodiscard]] size_t                     get_exit() const { return exit; }
   [[nodiscard]] const std::vector<T>&      get_stops() const { return stops; }
+
+  [[nodiscard]] virtual bool is_forced_to_stop(int time) const override {
+    for (const auto& stop : stops) {
+      if (stop.is_forced_to_stop(time)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   void set_t_0_range(std::pair<int, int> t_0) { this->t_0 = std::move(t_0); }
   void set_v_0(double v_0) { this->v_0 = v_0; }
@@ -241,8 +256,10 @@ private:
 public:
   virtual ~BaseTimetable() = default;
 
-  virtual void export_timetable(const std::filesystem::path& p,
-                                const Network&               network) const = 0;
+  virtual void               export_timetable(const std::filesystem::path& p,
+                                              const Network&               network) const = 0;
+  [[nodiscard]] virtual bool is_forced_to_stop(const std::string& tr_name,
+                                               int time) const              = 0;
 };
 
 template <typename T = GeneralSchedule<GeneralScheduledStop>>
@@ -662,6 +679,11 @@ public:
   [[nodiscard]] const T& get_schedule(const std::string& train_name) const {
     return get_schedule(train_list.get_train_index(train_name));
   };
+
+  virtual bool is_forced_to_stop(const std::string& train_name,
+                                 int                time) const {
+    return get_schedule(train_name).is_forced_to_stop(time);
+  }
 
   [[nodiscard]] int max_t() const {
     /**

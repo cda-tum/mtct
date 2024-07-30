@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Definitions.hpp"
+#include "EOMHelper.hpp"
 #include "GeneralProblemInstance.hpp"
 #include "VSSGenerationTimetable.hpp"
 #include "datastructure/GeneralTimetable.hpp"
@@ -8,9 +9,11 @@
 #include "datastructure/Route.hpp"
 #include "nlohmann/json.hpp"
 
+#include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -74,6 +77,8 @@ public:
 
   static GeneralPerformanceOptimizationInstance
   cast_from_vss_generation(const VSSGenerationTimetable& vss_gen);
+  [[nodiscard]] VSSGenerationTimetable
+  cast_to_vss_generation(bool throw_error = true) const;
 
   using T = GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>;
 
@@ -361,6 +366,154 @@ public:
     throw exceptions::ConsistencyException("No position for train " + tr_name +
                                            " at time " + std::to_string(t));
   };
+  [[nodiscard]] std::tuple<size_t, double, double>
+  get_edge_and_time_bounds(const std::string& tr_name, double t) const {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
+      throw exceptions::TrainNotExistentException(tr_name);
+    }
+    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
+    const auto& tr_pos = train_pos.at(tr_id);
+
+    double t0 = -1;
+    double t1 = -1;
+    for (const auto& [time, pos] : tr_pos) {
+      if (std::abs(time - t) < GRB_EPS) {
+        t0 = time;
+        t1 = time;
+        break;
+      }
+      if (time < t) {
+        t0 = time;
+      } else if (t0 >= 0) {
+        t1 = time;
+        break;
+      } else {
+        throw exceptions::ConsistencyException(
+            "Train " + tr_name + " not present at time " + std::to_string(t));
+      }
+    }
+    if (t1 < 0) {
+      throw exceptions::ConsistencyException(
+          "Train " + tr_name + " not present at time " + std::to_string(t));
+    }
+
+    assert(t >= t0 - GRB_EPS);
+    assert(t <= t1 + GRB_EPS);
+    const auto pos0 = get_train_pos(tr_name, t0);
+
+    const Route& route = this->get_instance().const_routes().get_route(tr_name);
+    const Network& n   = this->get_instance().const_n();
+    const auto     r_len = route.length(n);
+    return {route.get_edge_at_pos(std::min(pos0 + GRB_EPS, r_len), n), t0, t1};
+  };
+  [[nodiscard]] std::tuple<double, double, double, double>
+  get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const {
+    const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
+    assert(t >= t1 - GRB_EPS);
+    assert(t <= t2 + GRB_EPS);
+
+    const auto v1   = get_train_speed(tr_name, t1);
+    const auto v2   = get_train_speed(tr_name, t2);
+    const auto pos1 = get_train_pos(tr_name, t1);
+    const auto pos2 = get_train_pos(tr_name, t2);
+
+    const Route& tr_route         = this->instance.get_route(tr_name);
+    const auto&  r_len            = tr_route.length(this->instance.const_n());
+    const bool   tr_leaving_route = pos2 >= r_len + GRB_EPS;
+
+    if (std::abs(pos2 - pos1) < GRB_EPS) {
+      return {std::min(pos1, pos2), std::max(pos1, pos2), std::min(v1, v2),
+              std::max(v1, v2)};
+    }
+
+    const auto& edge_obj = this->instance.const_n().get_edge(edge);
+    const auto& tr_obj   = this->instance.get_train_list().get_train(tr_name);
+
+    const auto max_speed = tr_leaving_route
+                               ? tr_obj.max_speed
+                               : std::min(edge_obj.max_speed, tr_obj.max_speed);
+
+    const auto max_t =
+        max_travel_time(v1, v2, V_MIN, tr_obj.acceleration, tr_obj.deceleration,
+                        pos2 - pos1, edge_obj.breakable);
+    const auto min_t = min_travel_time(v1, v2, max_speed, tr_obj.acceleration,
+                                       tr_obj.deceleration, pos2 - pos1);
+    double     ub    = pos1;
+    double     lb    = pos1;
+    double     v_lb  = 0;
+    double     v_ub  = max_speed;
+
+    if (max_t >= std::numeric_limits<double>::infinity()) {
+      const auto t_to_stop = v1 / tr_obj.deceleration;
+      const auto rel_t     = std::min(t_to_stop, t - t1);
+      lb += v1 * rel_t - 0.5 * tr_obj.deceleration * rel_t * rel_t;
+      v_lb = v1 - tr_obj.deceleration * rel_t;
+    } else {
+      const auto min_speed = minimal_line_speed(
+          v1, v2, V_MIN, tr_obj.acceleration, tr_obj.deceleration, pos2 - pos1);
+      lb += pos_on_edge_at_time(v1, v2, min_speed, tr_obj.acceleration,
+                                tr_obj.deceleration, pos2 - pos1, t - t1);
+      v_lb = vel_on_edge_at_time(v1, v2, min_speed, tr_obj.acceleration,
+                                 tr_obj.deceleration, pos2 - pos1, t - t1);
+    }
+
+    if (t >= t1 + min_t) {
+      ub += pos2 - pos1;
+    } else {
+      const auto max_line_speed =
+          maximal_line_speed(v1, v2, max_speed, tr_obj.acceleration,
+                             tr_obj.deceleration, pos2 - pos1);
+      ub += pos_on_edge_at_time(v1, v2, max_line_speed, tr_obj.acceleration,
+                                tr_obj.deceleration, pos2 - pos1, t - t1);
+      v_ub = vel_on_edge_at_time(v1, v2, max_line_speed, tr_obj.acceleration,
+                                 tr_obj.deceleration, pos2 - pos1, t - t1);
+    }
+    return {lb, ub, v_lb, v_ub};
+  };
+  [[nodiscard]] std::optional<std::pair<double, double>>
+  get_approximate_train_pos_and_vel(const std::string& tr_name,
+                                    double             t) const {
+    const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
+    assert(t >= t1 - GRB_EPS);
+    assert(t <= t2 + GRB_EPS);
+
+    const auto pos_1 = get_train_pos(tr_name, t1);
+    const auto v1    = get_train_speed(tr_name, t1);
+
+    if (t1 == t2) {
+      return std::make_pair(pos_1, v1);
+    }
+
+    const auto pos_2 = get_train_pos(tr_name, t2);
+    const auto v2    = get_train_speed(tr_name, t2);
+
+    const auto& edge_obj  = this->instance.const_n().get_edge(edge);
+    const auto& tr_obj    = this->instance.get_train_list().get_train(tr_name);
+    const auto  max_speed = std::min(tr_obj.max_speed, edge_obj.max_speed);
+    const auto  dist_travelled = pos_2 - pos_1;
+
+    if (std::abs(dist_travelled) < GRB_EPS) {
+      // Train stopped
+      return std::make_pair(pos_1, 0);
+    }
+
+    const auto v_line =
+        get_line_speed(v1, v2, V_MIN, max_speed, tr_obj.acceleration,
+                       tr_obj.deceleration, dist_travelled, t2 - t1);
+    if (v_line <= 0) {
+      return std::nullopt;
+    }
+
+    const auto tr_pos =
+        get_train_pos(tr_name, t1) +
+        pos_on_edge_at_time(v1, v2, v_line, tr_obj.acceleration,
+                            tr_obj.deceleration, dist_travelled, t - t1);
+    const auto tr_vel =
+        vel_on_edge_at_time(v1, v2, v_line, tr_obj.acceleration,
+                            tr_obj.deceleration, dist_travelled, t - t1);
+
+    return std::make_pair(tr_pos, tr_vel);
+  };
   [[nodiscard]] double get_train_speed(const std::string& tr_name,
                                        double             t) const {
     if (!this->instance.get_train_list().has_train(tr_name)) {
@@ -395,6 +548,74 @@ public:
     // Sort
     std::sort(times.begin(), times.end());
     return times;
+  };
+  [[nodiscard]] std::vector<size_t> get_train_order(size_t edge_index) const {
+    std::vector<size_t> tr_on_edge =
+        this->get_instance().trains_on_edge(edge_index, true);
+    std::map<size_t, double> tr_times;
+    for (const auto& tr : tr_on_edge) {
+      const Train& tr_object =
+          this->get_instance().get_train_list().get_train(tr);
+      const double e_pos =
+          this->get_instance().route_edge_pos(tr_object.name, edge_index).first;
+      const auto time_at_e_pos = get_time_at_pos(tr_object.name, e_pos);
+      tr_times.insert({tr, time_at_e_pos});
+    }
+    std::sort(tr_on_edge.begin(), tr_on_edge.end(),
+              [&tr_times](size_t tr1, size_t tr2) {
+                return tr_times.at(tr1) < tr_times.at(tr2);
+              });
+    return tr_on_edge;
+  };
+  [[nodiscard]] std::vector<std::pair<size_t, bool>>
+  get_train_order_with_reverse(size_t edge_index) const {
+    std::vector<size_t> tr_on_edge =
+        this->get_instance().trains_on_edge(edge_index, true);
+    const std::optional<size_t> rev_e =
+        this->get_instance().const_n().get_reverse_edge_index(edge_index);
+    std::vector<size_t> tr_on_rev_edge;
+    if (rev_e.has_value()) {
+      tr_on_rev_edge = this->get_instance().trains_on_edge(rev_e.value(), true);
+    }
+
+    std::vector<std::pair<size_t, bool>> ret_vec;
+    std::map<size_t, double>             tr_times;
+    for (size_t i = 0; i < (rev_e.has_value() ? 2 : 1); ++i) {
+      const bool  direction   = i == 0;
+      const auto& rel_e       = direction ? edge_index : rev_e.value();
+      const auto& rel_tr_on_e = direction ? tr_on_edge : tr_on_rev_edge;
+      for (const auto& tr : rel_tr_on_e) {
+        const Train& tr_object =
+            this->get_instance().get_train_list().get_train(tr);
+        const double e_pos =
+            this->get_instance().route_edge_pos(tr_object.name, rel_e).first;
+        const auto time_at_e_pos = get_time_at_pos(tr_object.name, e_pos);
+        tr_times.insert({tr, time_at_e_pos});
+        ret_vec.emplace_back(tr, direction);
+      }
+    }
+
+    std::sort(
+        ret_vec.begin(), ret_vec.end(),
+        [&tr_times](std::pair<size_t, bool> tr1, std::pair<size_t, bool> tr2) {
+          return tr_times.at(tr1.first) < tr_times.at(tr2.first);
+        });
+
+    return ret_vec;
+  }
+  [[nodiscard]] double get_time_at_pos(const std::string& tr_name,
+                                       double             pos) const {
+    if (!this->instance.get_train_list().has_train(tr_name)) {
+      throw exceptions::TrainNotExistentException(tr_name);
+    }
+    const auto tr_times = get_train_times(tr_name);
+    for (const auto& t : tr_times) {
+      if (std::abs(get_train_pos(tr_name, t) - pos) < GRB_EPS) {
+        return t;
+      }
+    }
+    throw exceptions::ConsistencyException(
+        "No time for train " + tr_name + " at position " + std::to_string(pos));
   };
 
   void add_train_pos(const std::string& tr_name, double t, double pos) {

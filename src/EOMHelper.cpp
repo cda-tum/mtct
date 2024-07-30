@@ -545,3 +545,206 @@ double cda_rail::max_time_from_rear_to_ma_point(
   }
   throw exceptions::InvalidInputException("Invalid strategy.");
 }
+
+double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
+                              double d, double s) {
+  /**
+   * This function calculates the time a train needs to travel distance s with
+   * - initial speed v_1
+   * - final speed v_2
+   * - line speed v_line
+   * - acceleration a
+   * - deceleration d
+   */
+
+  // If any variable is within std::abs(GRB_EPS), set to 0
+  if (std::abs(v_1) < GRB_EPS)
+    v_1 = 0;
+  if (std::abs(v_2) < GRB_EPS)
+    v_2 = 0;
+  if (std::abs(v_line) < GRB_EPS)
+    v_line = 0;
+  if (std::abs(a) < GRB_EPS)
+    a = 0;
+  if (std::abs(d) < GRB_EPS)
+    d = 0;
+  if (std::abs(s) < GRB_EPS)
+    s = 0;
+
+  // Assert that all variables are >= 0 and a, d, s, v_line are >= GRB_EPS
+  if (v_1 < 0 || v_2 < 0 || v_line < GRB_EPS || a < GRB_EPS || d < GRB_EPS ||
+      s < 0) {
+    throw exceptions::InvalidInputException(
+        "All input values must be non-negative, and a, d, v_line must be "
+        "greater "
+        "than 0.");
+  }
+
+  if (s == 0) {
+    return 0;
+  }
+
+  // First segment: v_1 -> v_line
+  double a1 = v_line >= v_1 ? a : -d;
+  double s1 = (v_line * v_line - v_1 * v_1) / (2 * a1);
+  double t1 = (v_line - v_1) / a1;
+  assert(t1 >= 0);
+
+  // Last segment: v_line -> v_2
+  double a2 = v_2 >= v_line ? a : -d;
+  double s2 = (v_2 * v_2 - v_line * v_line) / (2 * a2);
+  double t2 = (v_2 - v_line) / a2;
+  assert(t2 >= 0);
+
+  // If s1 + s2 > s, this is not possible
+  if (s1 + s2 - GRB_EPS > s) {
+    throw exceptions::ConsistencyException(
+        "Travel time not possible by equations of motion.");
+  }
+
+  if (std::abs(s - s1 - s2) < GRB_EPS) {
+    return t1 + t2;
+  }
+
+  return t1 + t2 + (s - s1 - s2) / v_line;
+}
+
+double cda_rail::maximal_line_speed(double v_1, double v_2, double v_max,
+                                    double a, double d, double s) {
+  const auto [s_1, s_2] =
+      get_min_travel_time_acceleration_change_points(v_1, v_2, v_max, a, d, s);
+
+  assert(s_2 >= s_1);
+
+  // Terminal velocity
+  const double v_t_squared =
+      v_1 * v_1 + 2 * a * s_1;   // Maximal velocity reached
+  return std::sqrt(v_t_squared); // = v_m if s_2 > s_1
+}
+
+double cda_rail::minimal_line_speed(double v_1, double v_2, double v_min,
+                                    double a, double d, double s) {
+  const bool v_1_below_minimal_speed = v_1 < v_min;
+
+  const auto [s_1, s_2] =
+      get_max_travel_time_acceleration_change_points(v_1, v_2, v_min, a, d, s);
+
+  (void)s_2; // unused
+
+  const double v_t_squared =
+      v_1 * v_1 +
+      2 * (v_1_below_minimal_speed ? a : -d) * s_1; // Minimal velocity reached
+  return std::sqrt(v_t_squared);                    // = v_m if s_2 > s_1
+}
+
+double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
+                                double v_max, double a, double d, double s,
+                                double t) {
+  if (max_travel_time_no_stopping(v_1, v_2, v_min, a, d, s) < t - GRB_EPS) {
+    return 0;
+  }
+
+  double v_ub = maximal_line_speed(v_1, v_2, v_max, a, d, s);
+  double v_lb = minimal_line_speed(v_1, v_2, v_min, a, d, s);
+
+  const double t_ub = time_on_edge(v_1, v_2, v_lb, a, d, s);
+  double       t_lb = time_on_edge(v_1, v_2, v_ub, a, d, s);
+
+  if (std::abs(t_lb - t) < GRB_EPS) {
+    return v_ub;
+  }
+  if (std::abs(t_ub - t) < GRB_EPS) {
+    return v_lb;
+  }
+
+  assert(t_lb < t);
+  assert(t < t_ub);
+  while (v_ub - v_lb > LINE_SPEED_ACCURACY &&
+         t - t_lb > LINE_SPEED_TIME_ACCURACY) {
+    const double v = (v_ub + v_lb) / 2;
+    if (const double t_v = time_on_edge(v_1, v_2, v, a, d, s); t_v <= t) {
+      v_ub = v;
+      t_lb = t_v;
+    } else {
+      v_lb = v;
+    }
+  }
+
+  return v_ub;
+}
+
+double cda_rail::pos_on_edge_at_time(double v_1, double v_2, double v_line,
+                                     double a, double d, double s, double t) {
+  const auto total_time = time_on_edge(v_1, v_2, v_line, a, d, s);
+  if (std::abs(total_time) < GRB_EPS) {
+    return 0;
+  }
+  if (total_time < 0) {
+    throw exceptions::InvalidInputException("Total travel time is negative.");
+  }
+  if (t > total_time + GRB_EPS) {
+    // Time exceeds total time
+    const auto v_line_dv     = v_line - LINE_SPEED_ACCURACY;
+    const auto total_time_dv = time_on_edge(v_1, v_2, v_line_dv, a, d, s);
+    if (t > total_time_dv + GRB_EPS) {
+      throw exceptions::InvalidInputException(
+          "Time exceeds total travel time.");
+    }
+    return s;
+  }
+  if (std::abs(t - total_time) < GRB_EPS) {
+    return s;
+  }
+
+  const auto a1 = v_line >= v_1 ? a : -d;
+  const auto a2 = v_2 >= v_line ? a : -d;
+
+  const auto t1 = (v_line - v_1) / a1;
+  const auto t2 = total_time - (v_2 - v_line) / a2;
+
+  if (t <= t1) {
+    return v_1 * t + 0.5 * a1 * t * t;
+  }
+  if (t <= t2) {
+    return v_1 * t1 + 0.5 * a1 * t1 * t1 + v_line * (t - t1);
+  }
+  return s + 0.5 * a2 * (total_time - t) * (total_time - t) -
+         v_2 * (total_time - t);
+}
+
+double cda_rail::vel_on_edge_at_time(double v_1, double v_2, double v_line,
+                                     double a, double d, double s, double t) {
+  const auto total_time = time_on_edge(v_1, v_2, v_line, a, d, s);
+  if (std::abs(total_time) < GRB_EPS) {
+    return v_1;
+  }
+  if (total_time < 0) {
+    throw exceptions::InvalidInputException("Total travel time is negative.");
+  }
+  if (t > total_time + GRB_EPS) {
+    const auto v_line_dv     = v_line - LINE_SPEED_ACCURACY;
+    const auto total_time_dv = time_on_edge(v_1, v_2, v_line_dv, a, d, s);
+    if (t > total_time_dv + GRB_EPS) {
+      throw exceptions::InvalidInputException(
+          "Time exceeds total travel time.");
+    }
+    return v_2;
+  }
+  if (std::abs(t - total_time) < GRB_EPS) {
+    return v_2;
+  }
+
+  const auto a1 = v_line >= v_1 ? a : -d;
+  const auto a2 = v_2 >= v_line ? a : -d;
+
+  const auto t1 = (v_line - v_1) / a1;
+  const auto t2 = total_time - (v_2 - v_line) / a2;
+
+  if (t <= t1) {
+    return v_1 + a1 * t;
+  }
+  if (t <= t2) {
+    return v_line;
+  }
+  return v_2 - a2 * (total_time - t);
+}

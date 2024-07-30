@@ -1,0 +1,23 @@
+{
+  "tr1": {
+    "acceleration": 2.0,
+    "deceleration": 1.0,
+    "length": 100.0,
+    "max_speed": 83.33,
+    "tim": true
+  },
+  "tr2": {
+    "acceleration": 2.0,
+    "deceleration": 1.0,
+    "length": 100.0,
+    "max_speed": 27.78,
+    "tim": true
+  },
+  "tr3": {
+    "acceleration": 2.0,
+    "deceleration": 1.0,
+    "length": 250.0,
+    "max_speed": 20.0,
+    "tim": true
+  }
+}
