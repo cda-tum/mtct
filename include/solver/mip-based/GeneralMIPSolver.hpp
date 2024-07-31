@@ -63,6 +63,15 @@ protected:
   std::unordered_map<std::string, MultiArray<GRBVar>> vars;
   GRBLinExpr                                          objective_expr;
 
+  virtual void cleanup() {
+    objective_expr = 0;
+    lazy_constraints.clear();
+    model->reset(1);
+    vars.clear();
+    model.reset();
+    env.reset();
+  };
+
   void solve_init_general_mip(int time_limit, bool debug_input) {
     static auto message_callback = MessageCallback();
     this->solve_init_general_mip(time_limit, debug_input, &message_callback);

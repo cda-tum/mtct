@@ -181,6 +181,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     solution.export_solution(path, export_instance);
   }
 
+  cleanup();
+
   this->instance = old_instance;
 
   return solution;
@@ -2123,6 +2125,22 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
   }
 
   return {hw_max, headway_tr_on_e, hw_max_ttd, headway_tr_on_ttd};
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::cleanup() {
+  GeneralMIPSolver::cleanup();
+  solution_settings = {};
+  model_detail      = {};
+  solver_strategy   = {};
+  num_tr            = 0;
+  num_edges         = 0;
+  num_vertices      = 0;
+  num_ttd           = 0;
+  max_t             = 0;
+  ttd_sections.clear();
+  tr_stop_data.clear();
+  velocity_extensions.clear();
+  relevant_reverse_edges.clear();
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)

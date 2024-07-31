@@ -185,7 +185,7 @@ private:
                          const double& v0, const double& a_max,
                          const bool& braking_distance) const;
 
-  virtual void cleanup();
+  virtual void cleanup() override;
 
   [[nodiscard]] instances::SolVSSGenerationTimetable
   extract_solution(bool postprocess, bool full_model,

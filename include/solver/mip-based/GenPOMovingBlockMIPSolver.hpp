@@ -192,6 +192,9 @@ private:
     void callback() override;
   };
 
+protected:
+  virtual void cleanup() override;
+
 public:
   GenPOMovingBlockMIPSolver() = default;
 

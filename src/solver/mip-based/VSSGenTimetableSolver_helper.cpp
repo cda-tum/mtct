@@ -194,11 +194,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup() {
   max_vss_per_edge_in_iteration.clear();
   breakable_edge_indices.clear();
   fwd_bwd_sections.clear();
-  objective_expr = 0;
-  model->reset(1);
-  vars.clear();
-  model.reset();
-  env.reset();
+  GeneralMIPSolver::cleanup();
 }
 
 bool cda_rail::solver::mip_based::VSSGenTimetableSolver::update_vss(
