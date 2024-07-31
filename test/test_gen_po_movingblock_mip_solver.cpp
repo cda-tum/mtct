@@ -1376,8 +1376,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting first solve" << std::endl;
   const auto obj_val = solver.solve(
-      {}, {}, {cda_rail::ExportOption::ExportLP, "tmp1file", "tmp1folder"}, 20,
-      true);
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
+      {cda_rail::ExportOption::ExportLP, "tmp1file", "tmp1folder"}, 30, true);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1393,8 +1393,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting second solve" << std::endl;
   const auto obj_val2 = solver.solve(
-      {}, {},
-      {cda_rail::ExportOption::ExportSolution, "tmp2file", "tmp2folder"}, 20,
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
+      {cda_rail::ExportOption::ExportSolution, "tmp2file", "tmp2folder"}, 30,
       true);
 
   // Expect optimal value of 0
@@ -1427,11 +1427,11 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   std::filesystem::remove_all("tmp2folder");
 
   std::cout << "Starting third solve" << std::endl;
-  const auto obj_val3 =
-      solver.solve({}, {},
-                   {cda_rail::ExportOption::ExportSolutionWithInstance,
-                    "tmp3file", "tmp3folder"},
-                   20, true);
+  const auto obj_val3 = solver.solve(
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
+      {cda_rail::ExportOption::ExportSolutionWithInstance, "tmp3file",
+       "tmp3folder"},
+      30, true);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val3.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1474,8 +1474,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting fourth solve" << std::endl;
   const auto obj_val4 = solver.solve(
-      {}, {}, {cda_rail::ExportOption::NoExport, "tmp4file", "tmp4folder"}, 20,
-      true);
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
+      {cda_rail::ExportOption::NoExport, "tmp4file", "tmp4folder"}, 30, true);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val4.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1485,9 +1485,9 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting fifth solve" << std::endl;
   const auto obj_val5 = solver.solve(
-      {}, {},
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
       {cda_rail::ExportOption::ExportSolutionAndLP, "tmp5file", "tmp5folder"},
-      20, false);
+      30, false);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val5.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1519,11 +1519,11 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   std::cout << "ERROR!: " << ec.message() << std::endl;
 
   std::cout << "Starting sixth solve" << std::endl;
-  const auto obj_val6 =
-      solver.solve({}, {},
-                   {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP,
-                    "tmp6file", "tmp6folder"},
-                   20, false);
+  const auto obj_val6 = solver.solve(
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
+      {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP, "tmp6file",
+       "tmp6folder"},
+      30, false);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val6.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1568,8 +1568,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting seventh solve" << std::endl;
   const auto obj_val7 = solver.solve(
-      {}, {}, {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP}, 20,
-      false);
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
+      {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP}, 30, false);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val7.get_status(), cda_rail::SolutionStatus::Optimal);
