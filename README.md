@@ -8,8 +8,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="_img/mtct-logo-light-medium.png" width="60%">
-    <img src="_img/mtct-logo-light-medium.png" width="60%">
+    <source media="(prefers-color-scheme: dark)" srcset="_img/logo-train-control-toolkit-white-medium.png" width="60%">
+    <img src="_img/logo-train-control-toolkit-medium.png" width="60%">
   </picture>
 </p>
 
