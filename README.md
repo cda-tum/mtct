@@ -80,7 +80,7 @@ Otherwise, they have to be set manually, see also https://support.gurobi.com/hc/
 
 Currently, the tool provides only basic access via the command line and supports the generation of minimal VSS layouts. More command line functions will be added shortly. Example networks can be found in `test/example-networks/`.
 
-#### MILP Based Routing under Moving Block {#mb-routing}
+#### MILP Based Routing under Moving Block
 
 `rail_gen_po_moving_block_lazy_testing` and `rail_gen_po_moving_block_lazy_vss_gen_testing` are command line interfaces for optimal train routing using moving block train control. Various settings can be set by the user affecting the solving process. More precisely, different strategies on how to select lazy constraints can be used.
 The syntax is as follows
@@ -181,7 +181,7 @@ This functionality is based on [[4]](#references).
 
 #### Using Precomputed Solution Information
 
-If a [routing under moving block](#mb-routing) has been precomputed, this information can be used when generating minimal VSS layouts. For this, the app `rail_vss_generation_timetable_using_mb_information_testing` can be used.
+If a [routing under moving block](#milp-based-routing-under-moving-block) has been precomputed, this information can be used when generating minimal VSS layouts. For this, the app `rail_vss_generation_timetable_using_mb_information_testing` can be used.
 The syntax is as follows
 
 ```commandline
@@ -221,7 +221,7 @@ If you have any questions, feel free to contact us via etcs.cda@xcit.tum.de or b
 
 [[3]](https://drops.dagstuhl.de/opus/volltexte/2023/18767/pdf/OASIcs-ATMOS-2023-6.pdf) Stefan Engels and Tom Peham and Robert Wille. **"A Symbolic Design Method for ETCS Hybrid Level 3 at Different Degrees of Accuracy"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2023 ([doi](https://doi.org/10.4230/OASIcs.ATMOS.2023.6), [pdf](https://drops.dagstuhl.de/opus/volltexte/2023/18767/pdf/OASIcs-ATMOS-2023-6.pdf))
 
-[[4]](https://www.cda.cit.tum.de/files/eda/2024_date_lbr_iterative_da_for_train_control_with_htd.pdf) Stefan Engels and Robert Wille. **"Late Breaking Results: Iterative Design Automation for Train Control with Hybrid Train Detection"**. Design, Automation and Test in Europe (DATE), 2024 ([IEEEXplore](https://ieeexplore.ieee.org/document/10546590), [pdf](https://www.cda.cit.tum.de/files/eda/2024_date_lbr_iterative_da_for_train_control_with_htd.pdf))
+[[4]](https://www.cda.cit.tum.de/files/eda/2024_date_lbr_iterative_da_for_train_control_with_htd.pdf) Stefan Engels and Robert Wille. **"Late Breaking Results: Iterative Design Automation for Train Control with Hybrid Train Detection"**. Design, Automation and Test in Europe (DATE), 2024 ([IEEE Xplore](https://ieeexplore.ieee.org/document/10546590), [pdf](https://www.cda.cit.tum.de/files/eda/2024_date_lbr_iterative_da_for_train_control_with_htd.pdf))
 
 [[5]](https://www.cda.cit.tum.de/files/eda/2024_fedcsis_lazy_constraint_selection_strategies_moving_block.pdf) Stefan Engels and Robert Wille. **"Comparing Lazy Constraint Selection Strategies in Train Routing with Moving Block Control"**. Conference on Computer Science and Intelligence Systems (FedCSIS), 2024 ([arXiv](https://arxiv.org/abs/2405.18977), [pdf](https://www.cda.cit.tum.de/files/eda/2024_fedcsis_lazy_constraint_selection_strategies_moving_block.pdf))
 
