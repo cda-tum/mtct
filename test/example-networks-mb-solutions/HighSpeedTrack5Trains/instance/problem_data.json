@@ -1,0 +1,17 @@
+{
+  "lambda": 1.0,
+  "train_optional": {
+    "tr1": false,
+    "tr2": false,
+    "tr3": false,
+    "tr4": false,
+    "tr5": false
+  },
+  "train_weights": {
+    "tr1": 1.0,
+    "tr2": 1.0,
+    "tr3": 1.0,
+    "tr4": 1.0,
+    "tr5": 1.0
+  }
+}

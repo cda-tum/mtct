@@ -24,6 +24,13 @@ struct EdgeTarget {
 
 // NOLINTBEGIN(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores)
 
+TEST(Functionality, NetworkTTDIntersection) {
+  std::vector<std::pair<size_t, size_t>> expected({{0, 1}, {2, 4}});
+  const auto actual = cda_rail::Network::get_intersecting_ttd(
+      {0, 1, 2, 3, 4}, {{1, 2, 5}, {6, 9, 10}, {11, 4, 10}});
+  EXPECT_EQ(actual, expected);
+}
+
 TEST(Functionality, NetworkFunctions) {
   cda_rail::Network network;
   const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
@@ -39,6 +46,42 @@ TEST(Functionality, NetworkFunctions) {
                         network.get_edge_index("v1", "v2"));
   network.add_successor(network.get_edge_index("v2", "v0"),
                         network.get_edge_index("v0", "v1"));
+
+  // Check edge name
+  EXPECT_EQ(network.get_edge_name(e0), "v0-v1");
+  EXPECT_EQ(network.get_edge_name(e1), "v1-v2");
+  EXPECT_EQ(network.get_edge_name(e2), "v1-v0");
+  EXPECT_EQ(network.get_edge_name(e3), "v2-v0");
+
+  EXPECT_EQ(network.get_edge_name(v0, v2), "v0-v2");
+  EXPECT_EQ(network.get_edge_name(v0, v2, false), "v0-v2");
+  EXPECT_THROW(network.get_edge_name(v0, v2, true),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW(network.get_edge_name(v0, v0 + v1 + v2),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW(network.get_edge_name(v0, v0 + v1 + v2, false),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW(network.get_edge_name(v0, v0 + v1 + v2, true),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_EQ(network.get_edge_name(v0, v1), "v0-v1");
+  EXPECT_EQ(network.get_edge_name(v0, v1, false), "v0-v1");
+  EXPECT_EQ(network.get_edge_name(v0, v1, true), "v0-v1");
+
+  EXPECT_EQ(network.get_edge_name("v0", "v2"), "v0-v2");
+  EXPECT_EQ(network.get_edge_name("v0", "v2", false), "v0-v2");
+  EXPECT_THROW(network.get_edge_name("v0", "v2", true),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_EQ(network.get_edge_name("v0", "temp"), "v0-temp");
+  EXPECT_EQ(network.get_edge_name("v0", "temp", false), "v0-temp");
+  EXPECT_THROW(network.get_edge_name("v0", "temp", true),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_EQ(network.get_edge_name("temp", "v0"), "temp-v0");
+  EXPECT_EQ(network.get_edge_name("temp", "v0", false), "temp-v0");
+  EXPECT_THROW(network.get_edge_name("temp", "v0", true),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_EQ(network.get_edge_name("v0", "v1"), "v0-v1");
+  EXPECT_EQ(network.get_edge_name("v0", "v1", false), "v0-v1");
+  EXPECT_EQ(network.get_edge_name("v0", "v1", true), "v0-v1");
 
   // Check vertices used by edges
   const auto vertices1 = network.vertices_used_by_edges({e0, e1, e2});
@@ -1269,9 +1312,9 @@ TEST(Functionality, WriteNetwork) {
 TEST(Functionality, NetworkEdgeSeparation) {
   cda_rail::Network network;
   // Add vertices
-  network.add_vertex("v00", cda_rail::VertexType::TTD);
+  const auto v00 = network.add_vertex("v00", cda_rail::VertexType::TTD);
   network.add_vertex("v01", cda_rail::VertexType::TTD);
-  network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
   network.add_vertex("v2", cda_rail::VertexType::TTD);
   network.add_vertex("v30", cda_rail::VertexType::TTD);
   network.add_vertex("v31", cda_rail::VertexType::TTD);
@@ -1523,6 +1566,20 @@ TEST(Functionality, NetworkEdgeSeparation) {
   EXPECT_TRUE(network.get_successors("v2", "v30").empty());
   // v2->v31 has no successors
   EXPECT_TRUE(network.get_successors("v2", "v31").empty());
+
+  // Check the mapping
+  // Reminder v1 ->(len: 11) v1_v2_0 -> (len: 11) v1_v2_1 -> (len: 11) v1_v2_2
+  // -> (len:11) v2
+  std::pair<size_t, double> expected_pair = {v00_v1, 0};
+  EXPECT_EQ(network.get_old_edge(v00, v1), expected_pair);
+  expected_pair = {v1_v2, 0};
+  EXPECT_EQ(network.get_old_edge("v1", "v1_v2_0"), expected_pair);
+  expected_pair = {v1_v2, 11};
+  EXPECT_EQ(network.get_old_edge("v1_v2_0", "v1_v2_1"), expected_pair);
+  expected_pair = {v1_v2, 22};
+  EXPECT_EQ(network.get_old_edge("v1_v2_1", "v1_v2_2"), expected_pair);
+  expected_pair = {v1_v2, 33};
+  EXPECT_EQ(network.get_old_edge("v1_v2_2", "v2"), expected_pair);
 }
 
 TEST(Functionality, NetworkExceptions) {
@@ -2109,6 +2166,26 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
   // Successors of v1->v00 and v1->v01 are empty
   EXPECT_TRUE(network.get_successors("v1", "v00").empty());
   EXPECT_TRUE(network.get_successors("v1", "v01").empty());
+
+  // Check mapping
+  // Reminder: v1 ->(len: 11) v1_v2_0 -> (len: 11) v1_v2_1 -> (len: 11) v1_v2_2
+  // -> (len:11) v2
+  std::pair<size_t, double> expected_pair = {v1_v2, 0};
+  EXPECT_EQ(network.get_old_edge("v1", "v1_v2_0"), expected_pair);
+  expected_pair = {v1_v2, 11};
+  EXPECT_EQ(network.get_old_edge("v1_v2_0", "v1_v2_1"), expected_pair);
+  expected_pair = {v1_v2, 22};
+  EXPECT_EQ(network.get_old_edge("v1_v2_1", "v1_v2_2"), expected_pair);
+  expected_pair = {v1_v2, 33};
+  EXPECT_EQ(network.get_old_edge("v1_v2_2", "v2"), expected_pair);
+  expected_pair = {v2_v1, 0};
+  EXPECT_EQ(network.get_old_edge("v2", "v1_v2_2"), expected_pair);
+  expected_pair = {v2_v1, 11};
+  EXPECT_EQ(network.get_old_edge("v1_v2_2", "v1_v2_1"), expected_pair);
+  expected_pair = {v2_v1, 22};
+  EXPECT_EQ(network.get_old_edge("v1_v2_1", "v1_v2_0"), expected_pair);
+  expected_pair = {v2_v1, 33};
+  EXPECT_EQ(network.get_old_edge("v1_v2_0", "v1"), expected_pair);
 }
 
 TEST(Functionality, NetworkVerticesByType) {
@@ -3365,7 +3442,7 @@ TEST(Functionality, RouteMapHelper) {
   const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
   network.add_vertex("v3", cda_rail::VertexType::TTD);
 
-  network.add_edge("v0", "v1", 10, 5, false);
+  const auto v0_v1 = network.add_edge("v0", "v1", 10, 5, false);
   const auto v1_v2 = network.add_edge("v1", "v2", 20, 5, false);
   const auto v2_v3 = network.add_edge("v2", "v3", 30, 5, false);
   const auto v3_v2 = network.add_edge("v3", "v2", 30, 5, false);
@@ -3414,6 +3491,20 @@ TEST(Functionality, RouteMapHelper) {
   const auto                      tr1_e3_pos = tr1_map.edge_pos(v2_v3, network);
   const std::pair<double, double> expected_tr1_e3_pos = {30, 60};
   EXPECT_EQ(tr1_e3_pos, expected_tr1_e3_pos);
+
+  // Reverse:
+  EXPECT_EQ(tr1_map.get_edge_at_pos(0, network), v0_v1);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(cda_rail::GRB_EPS / 2, network), v0_v1);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(5, network), v0_v1);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(10, network), v1_v2);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(15, network), v1_v2);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(30, network), v2_v3);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(35, network), v2_v3);
+  EXPECT_EQ(tr1_map.get_edge_at_pos(60, network), v2_v3);
+  EXPECT_THROW(tr1_map.get_edge_at_pos(61, network),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(tr1_map.get_edge_at_pos(-1, network),
+               cda_rail::exceptions::InvalidInputException);
 
   const auto station_pos =
       tr1_map.edge_pos({v1_v2, v2_v1, v2_v3, v3_v2}, network);

@@ -3,6 +3,7 @@
 #include "GeneralMIPSolver.hpp"
 #include "VSSModel.hpp"
 #include "gurobi_c++.h"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "unordered_map"
 
@@ -32,6 +33,17 @@ struct ModelDetail {
   bool braking_curves = true;
 };
 
+struct ModelDetailMBInformation {
+  int  delta_t                    = 15;
+  bool train_dynamics             = true;
+  bool braking_curves             = true;
+  bool fix_stop_positions         = true;
+  bool fix_exact_positions        = true;
+  bool fix_exact_velocities       = true;
+  bool hint_approximate_positions = true;
+  bool fix_order_on_edges         = true;
+};
+
 struct ModelSettings {
   vss::Model model_type        = vss::Model();
   bool       use_pwl           = false;
@@ -41,6 +53,8 @@ struct ModelSettings {
 class VSSGenTimetableSolver
     : public GeneralMIPSolver<instances::VSSGenerationTimetable,
                               instances::SolVSSGenerationTimetable> {
+  friend class VSSGenTimetableSolverWithMovingBlockInformation;
+
 private:
   // Instance variables
   int                                    dt                     = -1;
@@ -78,6 +92,7 @@ private:
       fwd_bwd_sections;
 
   // Variable functions
+  void create_variables();
   void create_general_variables();
   void create_fixed_routes_variables();
   void create_free_routes_variables();
@@ -88,6 +103,7 @@ private:
   void create_non_discretized_only_stop_at_vss_variables();
 
   // Constraint functions
+  void create_constraints();
   void create_general_constraints();
   void create_fixed_routes_constraints();
   void create_free_routes_constraints();
@@ -132,6 +148,15 @@ private:
   void set_objective();
 
   // Helper functions
+  void set_timeout(int time_limit);
+  [[nodiscard]] std::optional<instances::SolVSSGenerationTimetable>
+  optimize(const std::optional<instances::VSSGenerationTimetable>& old_instance,
+           int                                                     time_limit);
+  void export_lp_if_applicable(const SolutionSettings& solution_settings);
+  void export_solution_if_applicable(
+      const std::optional<cda_rail::instances::SolVSSGenerationTimetable>&
+                              sol_object,
+      const SolutionSettings& solution_settings);
   [[nodiscard]] std::vector<size_t>
                        unbreakable_section_indices(size_t train_index) const;
   void                 calculate_fwd_bwd_sections();
@@ -160,7 +185,7 @@ private:
                          const double& v0, const double& a_max,
                          const bool& braking_distance) const;
 
-  void cleanup();
+  virtual void cleanup() override;
 
   [[nodiscard]] instances::SolVSSGenerationTimetable
   extract_solution(bool postprocess, bool full_model,
@@ -171,6 +196,12 @@ private:
                   GRBLinExpr& cut_expr);
   void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss,
                               GRBLinExpr& cut_expr);
+  [[nodiscard]] std::optional<instances::VSSGenerationTimetable>
+  initialize_variables(const ModelDetail&      model_detail,
+                       const ModelSettings&    model_settings,
+                       const SolverStrategy&   solver_strategy,
+                       const SolutionSettings& solution_settings,
+                       int time_limit, bool debug_input);
 
 protected:
   void solve_init_vss_gen_timetable(int time_limit, bool debug_input) {
@@ -186,7 +217,7 @@ public:
   explicit VSSGenTimetableSolver(const char* instance_path);
 
   // Methods
-  instances::SolVSSGenerationTimetable
+  [[nodiscard]] instances::SolVSSGenerationTimetable
   solve(const ModelDetail&      model_detail,
         const ModelSettings&    model_settings    = {},
         const SolverStrategy&   solver_strategy   = {},
@@ -194,7 +225,66 @@ public:
         bool debug_input = false);
 
   using GeneralSolver::solve;
+  [[nodiscard]] virtual instances::SolVSSGenerationTimetable
+  solve(int time_limit, bool debug_input) override {
+    return solve({}, {}, {}, {}, time_limit, debug_input);
+  }
+};
+
+class VSSGenTimetableSolverWithMovingBlockInformation
+    : public VSSGenTimetableSolver {
+private:
+  instances::SolGeneralPerformanceOptimizationInstance<
+      instances::GeneralPerformanceOptimizationInstance>
+       moving_block_solution;
+  bool fix_orders_on_edges        = true;
+  bool fix_stop_positions         = true;
+  bool fix_exact_positions        = true;
+  bool fix_exact_velocities       = true;
+  bool hint_approximate_positions = true;
+
+  // Additional functions
+  void include_additional_information();
+  void fix_oder_on_edges();
+  void fix_stop_positions_constraints();
+  void fix_exact_positions_and_velocities_constraints();
+  void hint_approximate_positions_constraints();
+
+  virtual void cleanup() override;
+
+public:
+  explicit VSSGenTimetableSolverWithMovingBlockInformation(
+      const instances::SolGeneralPerformanceOptimizationInstance<
+          instances::GeneralPerformanceOptimizationInstance>&
+           moving_block_solution_tmp,
+      bool throw_error = true)
+      : VSSGenTimetableSolver(
+            moving_block_solution_tmp.get_instance().cast_to_vss_generation(
+                throw_error)),
+        moving_block_solution(moving_block_solution_tmp) {};
+  explicit VSSGenTimetableSolverWithMovingBlockInformation(
+      const std::filesystem::path& sol_path)
+      : VSSGenTimetableSolverWithMovingBlockInformation(
+            instances::SolGeneralPerformanceOptimizationInstance<
+                instances::GeneralPerformanceOptimizationInstance>(sol_path)) {
+        };
+  explicit VSSGenTimetableSolverWithMovingBlockInformation(
+      const std::string& sol_path)
+      : VSSGenTimetableSolverWithMovingBlockInformation(
+            std::filesystem::path(sol_path)) {};
+  explicit VSSGenTimetableSolverWithMovingBlockInformation(const char* sol_path)
+      : VSSGenTimetableSolverWithMovingBlockInformation(
+            std::filesystem::path(sol_path)) {};
+
   [[nodiscard]] instances::SolVSSGenerationTimetable
+  solve(const ModelDetailMBInformation& model_detail_mb_information,
+        const ModelSettings&            model_settings  = {},
+        const SolverStrategy&           solver_strategy = {},
+        const SolutionSettings& solution_settings = {}, int time_limit = -1,
+        bool debug_input = false);
+
+  using GeneralSolver::solve;
+  [[nodiscard]] virtual instances::SolVSSGenerationTimetable
   solve(int time_limit, bool debug_input) override {
     return solve({}, {}, {}, {}, time_limit, debug_input);
   }

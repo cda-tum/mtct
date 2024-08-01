@@ -100,6 +100,7 @@ int main(int argc, char** argv) {
 
   cda_rail::vss::Model vss_model(cda_rail::vss::ModelType::Continuous);
 
+  // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve(
       {delta_t, fix_routes, true, include_braking_curves}, {vss_model},
       {iterate_vss, optimality_strategy, update_strategy, initial_vss,

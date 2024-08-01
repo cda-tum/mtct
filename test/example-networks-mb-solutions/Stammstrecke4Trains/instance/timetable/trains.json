@@ -1,0 +1,30 @@
+{
+  "S2Petershausen": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 135.0,
+    "max_speed": 38.888888888888886,
+    "tim": true
+  },
+  "S6Ebersberg": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 135.0,
+    "max_speed": 38.888888888888886,
+    "tim": true
+  },
+  "S6Tutzing": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 202.0,
+    "max_speed": 38.888888888888886,
+    "tim": true
+  },
+  "S7Aying": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 202.0,
+    "max_speed": 38.888888888888886,
+    "tim": true
+  }
+}

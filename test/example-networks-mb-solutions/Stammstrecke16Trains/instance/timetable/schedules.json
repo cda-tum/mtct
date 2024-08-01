@@ -1,0 +1,972 @@
+{
+  "S1Freising": {
+    "entry": "Ost2Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [690, 690],
+        "end": [720, 720],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [810, 810],
+        "end": [840, 840],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [915, 915],
+        "end": [945, 945],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1020, 1020],
+        "end": [1050, 1050],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1140, 1140],
+        "end": [1170, 1170],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1245, 1245],
+        "end": [1275, 1275],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1350, 1350],
+        "end": [1380, 1380],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1470, 1470],
+        "end": [1500, 1500],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [1590, 1590],
+        "end": [1620, 1620],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      }
+    ],
+    "t_0": [600, 600],
+    "t_n": [1665, 1665],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "S1Leuchtenbergring": {
+    "entry": "LaimEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [615, 615],
+        "end": [645, 645],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [735, 735],
+        "end": [765, 765],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [840, 840],
+        "end": [870, 870],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [960, 960],
+        "end": [990, 990],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1080, 1080],
+        "end": [1110, 1110],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1185, 1185],
+        "end": [1215, 1215],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1290, 1290],
+        "end": [1320, 1320],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1410, 1410],
+        "end": [1440, 1440],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      }
+    ],
+    "t_0": [525, 525],
+    "t_n": [1530, 1530],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S2Dachau": {
+    "entry": "Ost2Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [510, 510],
+        "end": [540, 540],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [630, 630],
+        "end": [660, 660],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [735, 735],
+        "end": [765, 765],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [840, 840],
+        "end": [870, 870],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [960, 960],
+        "end": [990, 990],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1065, 1065],
+        "end": [1095, 1095],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1170, 1170],
+        "end": [1200, 1200],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1290, 1290],
+        "end": [1320, 1320],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [1410, 1410],
+        "end": [1440, 1440],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      }
+    ],
+    "t_0": [420, 420],
+    "t_n": [1485, 1485],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "S2Erding": {
+    "entry": "LaimEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [360, 360],
+        "end": [390, 390],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [480, 480],
+        "end": [510, 510],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [585, 585],
+        "end": [615, 615],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [705, 705],
+        "end": [735, 735],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [825, 825],
+        "end": [855, 855],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [930, 930],
+        "end": [960, 960],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1035, 1035],
+        "end": [1065, 1065],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1155, 1155],
+        "end": [1185, 1185],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      }
+    ],
+    "t_0": [270, 270],
+    "t_n": [1275, 1275],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S2Ost": {
+    "entry": "LaimEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [795, 795],
+        "end": [825, 825],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [915, 915],
+        "end": [945, 945],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1020, 1020],
+        "end": [1050, 1050],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1140, 1140],
+        "end": [1170, 1170],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1260, 1260],
+        "end": [1290, 1290],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1365, 1365],
+        "end": [1395, 1395],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1470, 1470],
+        "end": [1500, 1500],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1590, 1590],
+        "end": [1620, 1620],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      }
+    ],
+    "t_0": [705, 705],
+    "t_n": [1710, 1710],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S2Petershausen": {
+    "entry": "Ost2Entry",
+    "exit": "LaimExitNymphenburg",
+    "stops": [
+      {
+        "begin": [90, 90],
+        "end": [120, 120],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [210, 210],
+        "end": [240, 240],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [315, 315],
+        "end": [345, 345],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [420, 420],
+        "end": [450, 450],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [510, 510],
+        "end": [540, 540],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [615, 615],
+        "end": [645, 645],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [720, 720],
+        "end": [750, 750],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [840, 840],
+        "end": [870, 870],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [960, 960],
+        "end": [990, 990],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      }
+    ],
+    "t_0": [0, 0],
+    "t_n": [1035, 1035],
+    "v_0": 0.0,
+    "v_n": 20.0
+  },
+  "S3Deisenhofen": {
+    "entry": "PasingEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [315, 315],
+        "end": [345, 345],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      },
+      {
+        "begin": [435, 435],
+        "end": [465, 465],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [555, 555],
+        "end": [585, 585],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [660, 660],
+        "end": [690, 690],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [780, 780],
+        "end": [810, 810],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [900, 900],
+        "end": [930, 930],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1005, 1005],
+        "end": [1035, 1035],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1110, 1110],
+        "end": [1140, 1140],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1230, 1230],
+        "end": [1260, 1260],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      }
+    ],
+    "t_0": [165, 165],
+    "t_n": [1350, 1350],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S3Mammendorf": {
+    "entry": "Ost3Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [420, 420],
+        "end": [450, 450],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [540, 540],
+        "end": [570, 570],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [645, 645],
+        "end": [675, 675],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [750, 750],
+        "end": [780, 780],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [870, 870],
+        "end": [900, 900],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [975, 975],
+        "end": [1005, 1005],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1080, 1080],
+        "end": [1110, 1110],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1200, 1200],
+        "end": [1230, 1230],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [1320, 1320],
+        "end": [1350, 1350],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      }
+    ],
+    "t_0": [330, 330],
+    "t_n": [1500, 1500],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S4Geltendorf": {
+    "entry": "Ost1Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [600, 600],
+        "end": [630, 630],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [720, 720],
+        "end": [750, 750],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [825, 825],
+        "end": [855, 855],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [930, 930],
+        "end": [960, 960],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1050, 1050],
+        "end": [1080, 1080],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1155, 1155],
+        "end": [1185, 1185],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1260, 1260],
+        "end": [1290, 1290],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1380, 1380],
+        "end": [1410, 1410],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [1500, 1500],
+        "end": [1530, 1530],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      }
+    ],
+    "t_0": [510, 510],
+    "t_n": [1680, 1680],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S4Grafing": {
+    "entry": "PasingEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [585, 585],
+        "end": [615, 615],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      },
+      {
+        "begin": [705, 705],
+        "end": [735, 735],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [825, 825],
+        "end": [855, 855],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [930, 930],
+        "end": [960, 960],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [1050, 1050],
+        "end": [1080, 1080],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [1170, 1170],
+        "end": [1200, 1200],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1275, 1275],
+        "end": [1305, 1305],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1380, 1380],
+        "end": [1410, 1410],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1500, 1500],
+        "end": [1530, 1530],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      }
+    ],
+    "t_0": [435, 435],
+    "t_n": [1620, 1620],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S6Ebersberg": {
+    "entry": "PasingEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [150, 150],
+        "end": [180, 180],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      },
+      {
+        "begin": [270, 270],
+        "end": [300, 300],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [390, 390],
+        "end": [420, 420],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [495, 495],
+        "end": [525, 525],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [615, 615],
+        "end": [645, 645],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [735, 735],
+        "end": [765, 765],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [840, 840],
+        "end": [870, 870],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [945, 945],
+        "end": [975, 975],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1065, 1065],
+        "end": [1095, 1095],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      }
+    ],
+    "t_0": [0, 0],
+    "t_n": [1185, 1185],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S6Tutzing": {
+    "entry": "Ost1Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [180, 180],
+        "end": [210, 210],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [300, 300],
+        "end": [330, 330],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [405, 405],
+        "end": [435, 435],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [510, 510],
+        "end": [540, 540],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [600, 600],
+        "end": [630, 630],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [705, 705],
+        "end": [735, 735],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [810, 810],
+        "end": [840, 840],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [930, 930],
+        "end": [960, 960],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [1050, 1050],
+        "end": [1080, 1080],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      }
+    ],
+    "t_0": [90, 90],
+    "t_n": [1230, 1230],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S7Aying": {
+    "entry": "DonnersbergerEntry",
+    "exit": "Ost4Exit",
+    "stops": [
+      {
+        "begin": [420, 420],
+        "end": [450, 450],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [540, 540],
+        "end": [570, 570],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [660, 660],
+        "end": [690, 690],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [765, 765],
+        "end": [795, 795],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [870, 870],
+        "end": [900, 900],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [990, 990],
+        "end": [1020, 1020],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      }
+    ],
+    "t_0": [345, 345],
+    "t_n": [1110, 1110],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S7Wolfratshausen": {
+    "entry": "Ost3Entry",
+    "exit": "DonnersbergerExit",
+    "stops": [
+      {
+        "begin": [255, 255],
+        "end": [285, 285],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [375, 375],
+        "end": [405, 405],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [480, 480],
+        "end": [510, 510],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [585, 585],
+        "end": [615, 615],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [675, 675],
+        "end": [705, 705],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [780, 780],
+        "end": [810, 810],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      }
+    ],
+    "t_0": [165, 165],
+    "t_n": [885, 885],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S8Airport": {
+    "entry": "PasingEntry",
+    "exit": "Ost5Exit",
+    "stops": [
+      {
+        "begin": [405, 405],
+        "end": [435, 435],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      },
+      {
+        "begin": [525, 525],
+        "end": [555, 555],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [645, 645],
+        "end": [675, 675],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [750, 750],
+        "end": [780, 780],
+        "min_stopping_time": 30,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [870, 870],
+        "end": [900, 900],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [990, 990],
+        "end": [1020, 1020],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [1095, 1095],
+        "end": [1125, 1125],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [1200, 1200],
+        "end": [1230, 1230],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [1320, 1320],
+        "end": [1350, 1350],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      }
+    ],
+    "t_0": [255, 255],
+    "t_n": [1440, 1440],
+    "v_0": 0.0,
+    "v_n": 0.0
+  },
+  "S8Germering": {
+    "entry": "Ost1Entry",
+    "exit": "PasingExit",
+    "stops": [
+      {
+        "begin": [345, 345],
+        "end": [375, 375],
+        "min_stopping_time": 30,
+        "station": "RosenheimerPlatz"
+      },
+      {
+        "begin": [465, 465],
+        "end": [495, 495],
+        "min_stopping_time": 30,
+        "station": "Isartor"
+      },
+      {
+        "begin": [570, 570],
+        "end": [600, 600],
+        "min_stopping_time": 30,
+        "station": "Marienplatz"
+      },
+      {
+        "begin": [675, 675],
+        "end": [705, 705],
+        "min_stopping_time": 30,
+        "station": "Karlsplatz"
+      },
+      {
+        "begin": [765, 765],
+        "end": [795, 795],
+        "min_stopping_time": 30,
+        "station": "Hbf"
+      },
+      {
+        "begin": [870, 870],
+        "end": [915, 915],
+        "min_stopping_time": 45,
+        "station": "Hackerbruecke"
+      },
+      {
+        "begin": [990, 990],
+        "end": [1020, 1020],
+        "min_stopping_time": 30,
+        "station": "Donnersbergerbruecke"
+      },
+      {
+        "begin": [1110, 1110],
+        "end": [1140, 1140],
+        "min_stopping_time": 30,
+        "station": "Hirschgarten"
+      },
+      {
+        "begin": [1230, 1230],
+        "end": [1260, 1260],
+        "min_stopping_time": 30,
+        "station": "Laim"
+      }
+    ],
+    "t_0": [255, 255],
+    "t_n": [1410, 1410],
+    "v_0": 0.0,
+    "v_n": 0.0
+  }
+}
