@@ -25,14 +25,14 @@ ETCS Hybrid Level 3 (ETCS HL3) is of great practical interest to achieve shorter
 It allows adding virtual subsections (VSS) that do not depend on trackside train detection (TTD) hardware.
 However, finding optimal layouts is non-trivial and is currently done mainly manually.
 In our research at the [Chair for Design Automation](https://www.cda.cit.tum.de/) of the [Technical University of Munich](https://www.tum.de/en/), we develop design methods to aid designers of such train control systems in automatically finding optimal layouts concerning various optimality criteria.
-A preprint describing the arising design tasks in more detail is available [[6]](#references)
+A preprint describing the arising design tasks in more detail is available [[7]](#references)
 
 First attempts using satisfiability solvers [[1]](#references) and heuristics [[2]](#references) have been implemented at [https://github.com/cda-tum/da_etcs](https://github.com/cda-tum/da_etcs).
 Since the methods used there cannot model continuous properties directly, simplifying assumptions were made.
 
 This tool provides a flexible approach in which designers can individually trade off the efficiency of the solving process and the model's accuracy.
 Currently, it supports an exact Mixed Integer Linear Programming (MILP) approach to generate minimal VSS layouts to satisfy a given timetable [[3]](#references).
-The runtime has been improved using an iterative approach [[4]](#references) and the usage of precomputed routing information.
+The runtime has been improved using an iterative approach [[4]](#references) and the usage of precomputed routing information [[6]](#references).
 Finally, optimal train routings can also be computed in a moving block controlled environment [[5]](#references).
 The tool is under active development, and more features will follow.
 
@@ -43,7 +43,7 @@ The tool is under active development, and more features will follow.
 The tool has been tested under Windows 11 (64-bit) using the MSVC compiler.
 It should also be compatible with any current version of g++ supporting C++17 and a minimum CMake version of 3.19.
 
-Moreover, the tool requires a local installation of a recent Gurobi [[7]](#references) version available at [https://www.gurobi.com/downloads/gurobi-software/](https://www.gurobi.com/downloads/gurobi-software/) as well as a valid [license](https://www.gurobi.com/solutions/licensing/).
+Moreover, the tool requires a local installation of a recent Gurobi [[8]](#references) version available at [https://www.gurobi.com/downloads/gurobi-software/](https://www.gurobi.com/downloads/gurobi-software/) as well as a valid [license](https://www.gurobi.com/solutions/licensing/).
 For academic purposes, Gurobi offers [free academic licenses](https://www.gurobi.com/academia/academic-program-and-licenses/).
 The project currently tests with Gurobi v11.0.3.
 
@@ -202,7 +202,7 @@ where the parameters are
 
 Booleans have to be passed as numbers (0 = false or 1 = true).
 
-This functionality is based on unpublished work.
+This functionality is based on [[6]](#references).
 
 #### Access via C++
 
@@ -225,6 +225,8 @@ If you have any questions, feel free to contact us via etcs.cda@xcit.tum.de or b
 
 [[5]](https://www.cda.cit.tum.de/files/eda/2024_fedcsis_lazy_constraint_selection_strategies_moving_block.pdf) Stefan Engels and Robert Wille. **"Comparing Lazy Constraint Selection Strategies in Train Routing with Moving Block Control"**. Conference on Computer Science and Intelligence Systems (FedCSIS), 2024 ([arXiv](https://arxiv.org/abs/2405.18977), [pdf](https://www.cda.cit.tum.de/files/eda/2024_fedcsis_lazy_constraint_selection_strategies_moving_block.pdf))
 
-[[6]](https://www.cda.cit.tum.de/files/eda/2024_arXiv_etcs_design_tasks_and_complexity.pdf) Stefan Engels and Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Design Tasks and Their Complexity for the European Train Control System with Hybrid Train Detection"**. Preprint, 2024 ([arXiv](https://arxiv.org/abs/2308.02572), [pdf](https://www.cda.cit.tum.de/files/eda/2024_arXiv_etcs_design_tasks_and_complexity.pdf))
+[[6]] Stefan Engels and Robert Wille. **"Towards an Optimization Pipeline for the Design of Train Control Systems with Hybrid Train Detection"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2024
 
-[[7]](https://www.gurobi.com) Gurobi Optimization, LLC. **"Gurobi Optimizer Reference Manual"**. 2024
+[[7]](https://www.cda.cit.tum.de/files/eda/2024_arXiv_etcs_design_tasks_and_complexity.pdf) Stefan Engels and Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Design Tasks and Their Complexity for the European Train Control System with Hybrid Train Detection"**. Preprint, 2024 ([arXiv](https://arxiv.org/abs/2308.02572), [pdf](https://www.cda.cit.tum.de/files/eda/2024_arXiv_etcs_design_tasks_and_complexity.pdf))
+
+[[8]](https://www.gurobi.com) Gurobi Optimization, LLC. **"Gurobi Optimizer Reference Manual"**. 2024
