@@ -225,7 +225,7 @@ If you have any questions, feel free to contact us via etcs.cda@xcit.tum.de or b
 
 [[5]](https://www.cda.cit.tum.de/files/eda/2024_fedcsis_lazy_constraint_selection_strategies_moving_block.pdf) Stefan Engels and Robert Wille. **"Comparing Lazy Constraint Selection Strategies in Train Routing with Moving Block Control"**. Conference on Computer Science and Intelligence Systems (FedCSIS), 2024 ([arXiv](https://arxiv.org/abs/2405.18977), [pdf](https://www.cda.cit.tum.de/files/eda/2024_fedcsis_lazy_constraint_selection_strategies_moving_block.pdf))
 
-[[6]] Stefan Engels and Robert Wille. **"Towards an Optimization Pipeline for the Design of Train Control Systems with Hybrid Train Detection"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2024
+[6] Stefan Engels and Robert Wille. **"Towards an Optimization Pipeline for the Design of Train Control Systems with Hybrid Train Detection"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2024
 
 [[7]](https://www.cda.cit.tum.de/files/eda/2024_arXiv_etcs_design_tasks_and_complexity.pdf) Stefan Engels and Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Design Tasks and Their Complexity for the European Train Control System with Hybrid Train Detection"**. Preprint, 2024 ([arXiv](https://arxiv.org/abs/2308.02572), [pdf](https://www.cda.cit.tum.de/files/eda/2024_arXiv_etcs_design_tasks_and_complexity.pdf))
 
