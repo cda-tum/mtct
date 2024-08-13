@@ -72,6 +72,8 @@ class GeneralProblemInstanceWithScheduleAndRoutes
 
 protected:
   GeneralProblemInstanceWithScheduleAndRoutes() = default;
+  explicit GeneralProblemInstanceWithScheduleAndRoutes(const Network& network)
+      : GeneralProblemInstance(network) {};
   explicit GeneralProblemInstanceWithScheduleAndRoutes(
       const Network& network, const T& timetable,
       RouteMap routes) // according to linter, large objects by const reference,
@@ -97,6 +99,11 @@ public:
   Train& editable_tr(const std::string& name) {
     return timetable.editable_tr(name);
   };
+
+  [[nodiscard]] bool is_forced_to_stop(const std::string& train_name,
+                                       int                time) const {
+    return timetable.is_forced_to_stop(train_name, time);
+  }
 
   template <typename TrainN = std::string, typename EntryN = std::string,
             typename ExitN = std::string>

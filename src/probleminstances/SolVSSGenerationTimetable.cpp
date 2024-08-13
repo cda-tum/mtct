@@ -234,6 +234,11 @@ bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
   if (!instance.check_consistency(true)) {
     return false;
   }
+
+  if (!has_solution()) {
+    return true;
+  }
+
   for (const auto& train_pos_vec : train_pos) {
     for (const auto& pos : train_pos_vec) {
       if (pos + EPS < 0) {

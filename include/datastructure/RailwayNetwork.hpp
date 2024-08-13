@@ -1,4 +1,5 @@
 #pragma once
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "MultiArray.hpp"
 #include "VSSModel.hpp"
@@ -72,6 +73,9 @@ private:
   std::vector<std::vector<size_t>>        successors;
   std::unordered_map<std::string, size_t> vertex_name_to_index;
 
+  std::unordered_map<std::size_t, std::pair<size_t, double>>
+      new_edge_to_old_edge_after_transform;
+
   void        read_graphml(const std::filesystem::path& p);
   static void get_keys(tinyxml2::XMLElement* graphml_body,
                        std::string& breakable, std::string& length,
@@ -93,6 +97,8 @@ private:
   void export_successors_python(const std::filesystem::path& p) const;
   void export_successors_cpp(const std::filesystem::path& p) const;
   void write_successor_set_to_file(std::ofstream& file, size_t i) const;
+
+  void update_new_old_edge(size_t new_edge, size_t old_edge, double position);
 
   std::pair<std::vector<size_t>, std::vector<size_t>>
   separate_edge_private_helper(
@@ -170,6 +176,16 @@ public:
 
   [[nodiscard]] std::vector<size_t> get_vertices_by_type(VertexType type) const;
 
+  [[nodiscard]] std::pair<size_t, double> get_old_edge(size_t new_edge) const;
+  [[nodiscard]] std::pair<size_t, double> get_old_edge(size_t source,
+                                                       size_t target) const {
+    return get_old_edge(get_edge_index(source, target));
+  };
+  [[nodiscard]] std::pair<size_t, double>
+  get_old_edge(const std::string& source, const std::string& target) const {
+    return get_old_edge(get_edge_index(source, target));
+  };
+
   size_t add_vertex(const std::string& name, VertexType type,
                     double headway = 0.0);
   size_t add_edge(size_t source, size_t target, double length, double max_speed,
@@ -240,6 +256,32 @@ public:
     return get_edge_index(get_vertex_index(source_name),
                           get_vertex_index(target_name));
   };
+  [[nodiscard]] std::string get_edge_name(size_t index) const {
+    const auto& edge_object = get_edge(index);
+    return get_vertex(edge_object.source).name + "-" +
+           get_vertex(edge_object.target).name;
+  }
+  [[nodiscard]] std::string get_edge_name(size_t v0, size_t v1,
+                                          bool check_existence = false) const {
+    if (check_existence && !has_edge(v0, v1)) {
+      throw exceptions::EdgeNotExistentException(v0, v1);
+    }
+    return get_vertex(v0).name + "-" + get_vertex(v1).name;
+  }
+  [[nodiscard]] std::string get_edge_name(const std::string& v1,
+                                          const std::string& v2,
+                                          bool check_existance = false) const {
+    if (check_existance && !has_vertex(v1)) {
+      throw exceptions::VertexNotExistentException(v1);
+    }
+    if (check_existance && !has_vertex(v2)) {
+      throw exceptions::VertexNotExistentException(v2);
+    }
+    if (check_existance && !has_edge(v1, v2)) {
+      throw exceptions::EdgeNotExistentException(v1, v2);
+    }
+    return v1 + "-" + v2;
+  }
 
   [[nodiscard]] std::vector<size_t>
   vertices_used_by_edges(const std::vector<size_t>& edges) const;
@@ -294,6 +336,10 @@ public:
   void change_vertex_type(size_t index, VertexType new_type);
   void change_vertex_type(const std::string& name, VertexType new_type) {
     change_vertex_type(get_vertex_index(name), new_type);
+  };
+  void change_vertex_headway(size_t index, double new_headway);
+  void change_vertex_headway(const std::string& name, double new_headway) {
+    change_vertex_headway(get_vertex_index(name), new_headway);
   };
 
   void change_edge_length(size_t index, double new_length);
@@ -363,6 +409,10 @@ public:
   neighboring_edges(const std::string& name) const {
     return neighboring_edges(get_vertex_index(name));
   };
+
+  [[nodiscard]] static std::vector<std::pair<size_t, size_t>>
+  get_intersecting_ttd(const std::vector<size_t>&              edges,
+                       const std::vector<std::vector<size_t>>& ttd);
 
   [[nodiscard]] std::vector<size_t>        get_predecessors(size_t index) const;
   [[nodiscard]] const std::vector<size_t>& get_successors(size_t index) const;

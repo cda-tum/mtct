@@ -255,6 +255,13 @@ void check_instance_import(
   EXPECT_EQ(stop.departure(), 300);
   EXPECT_EQ(stations.get_station(stop.get_station_name()).name, "Central");
 
+  EXPECT_FALSE(instance.is_forced_to_stop("tr1", 0));
+  EXPECT_FALSE(instance.is_forced_to_stop("tr1", 100));
+  EXPECT_FALSE(instance.is_forced_to_stop("tr1", 310));
+  EXPECT_TRUE(instance.is_forced_to_stop("tr1", 240));
+  EXPECT_TRUE(instance.is_forced_to_stop("tr1", 260));
+  EXPECT_TRUE(instance.is_forced_to_stop("tr1", 300));
+
   // Check the schedule of tr2
   const auto& tr2_schedule = instance.get_schedule("tr2");
   EXPECT_EQ(tr2_schedule.get_t_0(), 0);
@@ -268,6 +275,13 @@ void check_instance_import(
   EXPECT_EQ(stop2.arrival(), 120);
   EXPECT_EQ(stop2.departure(), 300);
   EXPECT_EQ(stations.get_station(stop2.get_station_name()).name, "Central");
+
+  EXPECT_FALSE(instance.is_forced_to_stop("tr2", 0));
+  EXPECT_FALSE(instance.is_forced_to_stop("tr2", 100));
+  EXPECT_FALSE(instance.is_forced_to_stop("tr2", 310));
+  EXPECT_TRUE(instance.is_forced_to_stop("tr2", 120));
+  EXPECT_TRUE(instance.is_forced_to_stop("tr2", 150));
+  EXPECT_TRUE(instance.is_forced_to_stop("tr2", 300));
 
   // Check the schedule of tr3
   const auto& tr3_schedule = instance.get_schedule("tr3");

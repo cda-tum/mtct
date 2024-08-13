@@ -57,6 +57,45 @@ public:
             get_v_n(),       get_exit(), general_stops};
   }
 
+  template <typename S, typename = std::enable_if_t<
+                            std::is_base_of_v<GeneralScheduledStop, S>>>
+  [[nodiscard]] static Schedule
+  cast_from_general_schedule(const GeneralSchedule<S>& general_schedule_obj,
+                             bool                      throw_error = true) {
+    const std::pair<int, int>& t_0_range = general_schedule_obj.get_t_0_range();
+    const std::pair<int, int>& t_n_range = general_schedule_obj.get_t_n_range();
+    if (throw_error && t_0_range.first != t_0_range.second) {
+      throw std::invalid_argument("Schedule must have fixed initial time");
+    }
+    if (throw_error && t_n_range.first != t_n_range.second) {
+      throw std::invalid_argument("Schedule must have fixed final time");
+    }
+
+    const std::vector<S>&      stops = general_schedule_obj.get_stops();
+    std::vector<ScheduledStop> scheduled_stops;
+    scheduled_stops.reserve(stops.size());
+    for (const auto& stop : stops) {
+      const std::pair<int, int>& b_range = stop.get_begin_range();
+      const std::pair<int, int>& e_range = stop.get_end_range();
+      const std::string&         s_name  = stop.get_station_name();
+      if (throw_error && b_range.first != b_range.second) {
+        throw std::invalid_argument("Scheduled stop must have fixed arrival");
+      }
+      if (throw_error && e_range.first != e_range.second) {
+        throw std::invalid_argument("Scheduled stop must have fixed departure");
+      }
+      scheduled_stops.emplace_back(b_range.first, e_range.first, s_name);
+    }
+
+    return {t_0_range.first,
+            general_schedule_obj.get_v_0(),
+            general_schedule_obj.get_entry(),
+            t_n_range.first,
+            general_schedule_obj.get_v_n(),
+            general_schedule_obj.get_exit(),
+            scheduled_stops};
+  }
+
   // Constructor
   // NOLINTNEXTLINE(readability-redundant-member-init)
   Schedule() : GeneralSchedule() {}
@@ -79,6 +118,9 @@ public:
       : Timetable(std::filesystem::path(path), network) {};
   Timetable(const char* path, const Network& network)
       : Timetable(std::filesystem::path(path), network) {};
+  Timetable(const StationList& station_list, const TrainList& train_list,
+            const std::vector<Schedule>& schedules)
+      : GeneralTimetable(station_list, train_list, schedules) {};
   virtual ~Timetable() = default;
 
   [[nodiscard]] std::pair<size_t, size_t>
@@ -100,6 +142,23 @@ public:
     }
     return {station_list, train_list, general_schedules};
   };
+
+  template <typename S, typename = std::enable_if_t<
+                            std::is_base_of_v<GeneralScheduledStop, S>>>
+  [[nodiscard]] static Timetable cast_from_general_timetable(
+      const GeneralTimetable<GeneralSchedule<S>>& general_timetable_obj,
+      bool                                        throw_error = true) {
+    std::vector<Schedule> schedules;
+    const size_t          number_of_element =
+        general_timetable_obj.get_train_list().size();
+    schedules.reserve(number_of_element);
+    for (size_t tr = 0; tr < number_of_element; ++tr) {
+      schedules.push_back(Schedule::cast_from_general_schedule(
+          general_timetable_obj.get_schedule(tr), throw_error));
+    }
+    return {general_timetable_obj.get_station_list(),
+            general_timetable_obj.get_train_list(), schedules};
+  }
 
   [[nodiscard]] static Timetable import_timetable(const std::string& path,
                                                   const Network&     network) {

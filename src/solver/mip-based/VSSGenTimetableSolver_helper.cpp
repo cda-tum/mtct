@@ -194,11 +194,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup() {
   max_vss_per_edge_in_iteration.clear();
   breakable_edge_indices.clear();
   fwd_bwd_sections.clear();
-  objective_expr = 0;
-  model->reset(1);
-  vars.clear();
-  model.reset();
-  env.reset();
+  GeneralMIPSolver::cleanup();
 }
 
 bool cda_rail::solver::mip_based::VSSGenTimetableSolver::update_vss(
@@ -305,6 +301,394 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
               << sep_type << "," << old_max_vss << ") to cut_expr";
       }
     }
+  }
+}
+
+std::optional<cda_rail::instances::VSSGenerationTimetable>
+cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
+    const cda_rail::solver::mip_based::ModelDetail&      model_detail,
+    const cda_rail::solver::mip_based::ModelSettings&    model_settings,
+    const cda_rail::solver::mip_based::SolverStrategy&   solver_strategy,
+    const cda_rail::solver::mip_based::SolutionSettings& solution_settings,
+    int time_limit, bool debug_input) {
+  /**
+   * This function initializes the variables affecting the model creation and
+   * optimization process
+   */
+  this->solve_init_vss_gen_timetable(time_limit, debug_input);
+
+  if (!model_settings.model_type.check_consistency()) {
+    PLOGE << "Model type  and separation types/functions are not consistent.";
+    throw cda_rail::exceptions::ConsistencyException(
+        "Model type and separation types/functions are not consistent.");
+  }
+
+  if (!instance.n().is_consistent_for_transformation()) {
+    PLOGE << "Instance is not consistent for transformation.";
+    throw exceptions::ConsistencyException();
+  }
+
+  // General settings
+  this->dt                        = model_detail.delta_t;
+  this->fix_routes                = model_detail.fix_routes;
+  this->vss_model                 = model_settings.model_type;
+  this->include_train_dynamics    = model_detail.train_dynamics;
+  this->include_braking_curves    = model_detail.braking_curves;
+  this->use_pwl                   = model_settings.use_pwl;
+  this->use_schedule_cuts         = model_settings.use_schedule_cuts;
+  this->iterative_vss             = solver_strategy.iterative_approach;
+  this->optimality_strategy       = solver_strategy.optimality_strategy;
+  this->iterative_update_strategy = solver_strategy.update_strategy;
+  this->iterative_initial_value   = solver_strategy.initial_value;
+  this->iterative_update_value    = solver_strategy.update_value;
+  this->iterative_include_cuts    = solver_strategy.include_cuts;
+  this->postprocess               = solution_settings.postprocess;
+  this->export_option             = solution_settings.export_option;
+
+  if (this->iterative_vss) {
+    // Iterative optimization strategy
+    if (this->iterative_update_strategy == UpdateStrategy::Fixed &&
+        this->iterative_update_value <= 1) {
+      PLOGE << "iterative_update_value must be greater than 1";
+      throw exceptions::ConsistencyException(
+          "iterative_update_value must be greater than 1");
+    }
+    if (this->iterative_update_strategy == UpdateStrategy::Relative &&
+        (this->iterative_update_value <= 0 ||
+         this->iterative_update_value >= 1)) {
+      PLOGE << "iterative_update_value must be between 0 and 1";
+      throw exceptions::ConsistencyException(
+          "iterative_update_value must be between 0 and 1");
+    }
+  }
+
+  if (this->fix_routes && !instance.has_route_for_every_train()) {
+    PLOGE << "Instance does not have a route for every train";
+    throw exceptions::ConsistencyException(
+        "Instance does not have a route for every train");
+  }
+
+  std::optional<instances::VSSGenerationTimetable> old_instance;
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
+    // Discretize graph model
+    PLOGI << "Preprocessing graph...";
+    old_instance = instance;
+    instance.discretize(this->vss_model.get_separation_functions().front());
+    PLOGI << "Preprocessing graph... DONE";
+  }
+
+  PLOGI << "Creating model...";
+  PLOGD << "Initialize other relevant variables";
+
+  num_t = static_cast<size_t>(instance.max_t() / dt);
+  if (instance.max_t() % dt != 0) {
+    num_t += 1;
+  }
+
+  num_tr       = instance.get_train_list().size();
+  num_edges    = instance.n().number_of_edges();
+  num_vertices = instance.n().number_of_vertices();
+
+  unbreakable_sections = instance.n().unbreakable_sections();
+
+  if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
+    // Sections of discretized graph
+    no_border_vss_sections = instance.n().no_border_vss_sections();
+    num_breakable_sections = no_border_vss_sections.size();
+    no_border_vss_vertices =
+        instance.n().get_vertices_by_type(VertexType::NoBorderVSS);
+  } else {
+    // Sections of non-discretized graph
+    breakable_edges = instance.n().breakable_edges();
+    for (size_t i = 0; i < breakable_edges.size(); ++i) {
+      breakable_edge_indices[breakable_edges[i]] = i;
+    }
+    breakable_edges_pairs = instance.n().combine_reverse_edges(breakable_edges);
+    num_breakable_sections = breakable_edges.size();
+    relevant_edges         = instance.n().relevant_breakable_edges();
+  }
+
+  for (size_t i = 0; i < num_tr; ++i) {
+    train_interval.emplace_back(instance.time_index_interval(i, dt, false));
+  }
+
+  if (iterative_vss && vss_model.get_model_type() == vss::ModelType::Discrete) {
+    PLOGE << "Iterative VSS not supported for discrete VSS model";
+    throw exceptions::ConsistencyException(
+        "Iterative VSS not supported for discrete VSS model");
+  }
+
+  max_vss_per_edge_in_iteration.resize(relevant_edges.size(), 0);
+  for (size_t i = 0; i < relevant_edges.size(); ++i) {
+    const auto& e            = relevant_edges.at(i);
+    const auto  vss_number_e = instance.n().max_vss_on_edge(e);
+    if (iterative_vss) {
+      if (iterative_update_strategy == UpdateStrategy::Fixed) {
+        max_vss_per_edge_in_iteration[i] = std::min(
+            vss_number_e, static_cast<int>(std::ceil(iterative_initial_value)));
+      } else if (iterative_update_strategy == UpdateStrategy::Relative) {
+        max_vss_per_edge_in_iteration[i] = std::min(
+            vss_number_e,
+            static_cast<int>(std::ceil(iterative_initial_value *
+                                       static_cast<double>(vss_number_e))));
+      } else {
+        PLOGE << "Unknown update strategy";
+        throw exceptions::ConsistencyException("Unknown update strategy");
+      }
+    } else {
+      max_vss_per_edge_in_iteration[i] = vss_number_e;
+    }
+  }
+
+  // Sections on which trains can collide face-to-face
+  calculate_fwd_bwd_sections();
+
+  // Return unchanged instance for cleaning step
+  return old_instance;
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_timeout(
+    int time_limit) {
+  PLOGI << "DONE creating model";
+
+  if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
+    model_created = std::chrono::high_resolution_clock::now();
+    create_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
+                      model_created - start)
+                      .count();
+
+    auto time_left = time_limit - create_time / 1000;
+    if (time_left < 0 && time_limit > 0) {
+      time_left = 1;
+    }
+    if (time_limit > 0) {
+      model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
+    }
+    PLOGD << "Model created in " << (static_cast<double>(create_time) / 1000.0)
+          << " s";
+    if (time_limit > 0) {
+      PLOGD << "Time left: " << time_left << " s";
+    } else {
+      PLOGD << "Time left: "
+            << "No Limit";
+    }
+  }
+
+  if ((this->include_braking_curves && !this->use_pwl)) {
+    // Non-convex constraints are present. Still, Gurobi can solve to optimality
+    // using spatial branching
+    model->set(GRB_IntParam_NonConvex, 2);
+  }
+}
+
+std::optional<cda_rail::instances::SolVSSGenerationTimetable>
+cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
+    const std::optional<instances::VSSGenerationTimetable>& old_instance,
+    int                                                     time_limit) {
+  /**
+   * This function contains the optimization process
+   */
+  std::optional<instances::SolVSSGenerationTimetable> sol_object;
+
+  bool reoptimize = true;
+
+  double obj_ub = 1.0;
+  for (const auto& e : relevant_edges) {
+    obj_ub += instance.const_n().max_vss_on_edge(e);
+  }
+  double obj_lb           = 0;
+  size_t iteration_number = 0;
+
+  std::vector<GRBConstr> iterative_cuts;
+  this->iterative_include_cuts_tmp = this->iterative_include_cuts;
+
+  while (reoptimize) {
+    reoptimize = false;
+
+    if (optimality_strategy == OptimalityStrategy::Feasible) {
+      model->set(GRB_IntParam_SolutionLimit, 1);
+      model->set(GRB_IntParam_MIPFocus, 1);
+      PLOGD << "Settings focussing on feasibility";
+    }
+
+    // Optimize the (possibly restricted) model
+    this->model->optimize();
+    iteration_number += 1;
+
+    if (model->get(GRB_IntAttr_SolCount) >= 1) {
+      // If there is a solution, then extract it and compare it with the current
+      // best solution
+      const auto obj_tmp = model->get(GRB_DoubleAttr_ObjVal);
+      if (obj_tmp < obj_ub) {
+        obj_ub = obj_tmp;
+        sol_object =
+            extract_solution(postprocess, !iterative_vss, old_instance);
+        this->iterative_include_cuts_tmp = false;
+      }
+    }
+
+    if (!sol_object.has_value()) {
+      sol_object = extract_solution(postprocess, !iterative_vss, old_instance);
+    }
+
+    if (iterative_vss) {
+      // If applicable, iteratively update the model
+      if (model->get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
+        PLOGD << "Break because of timeout";
+        if (sol_object->has_solution()) {
+          PLOGD << "However, use previous obtained solution";
+          break;
+        }
+        sol_object =
+            extract_solution(postprocess, !iterative_vss, old_instance);
+        break;
+      }
+
+      auto obj_lb_tmp = model->get(GRB_DoubleAttr_ObjBound);
+      for (int i = 0; i < relevant_edges.size(); ++i) {
+        if (static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1 <
+                obj_lb_tmp &&
+            max_vss_per_edge_in_iteration.at(i) <
+                instance.const_n().max_vss_on_edge(relevant_edges.at(i))) {
+          obj_lb_tmp =
+              static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1;
+        }
+      }
+      if (obj_lb_tmp > obj_lb) {
+        obj_lb = obj_lb_tmp;
+      }
+
+      if (obj_lb + GRB_EPS >= obj_ub && (sol_object->has_solution())) {
+        PLOGD << "Break because obj_lb (" << obj_lb << ") >= obj_ub (" << obj_ub
+              << ") -> Proven optimal";
+        sol_object->set_status(SolutionStatus::Optimal);
+        break;
+      }
+
+      if (optimality_strategy != OptimalityStrategy::Optimal &&
+          (model->get(GRB_IntAttr_SolCount) >= 1)) {
+        PLOGD << "Break because of feasible solution and not searching for "
+                 "optimality.";
+        break;
+      }
+
+      GRBLinExpr cut_expr = 0;
+      for (int i = 0; i < relevant_edges.size(); ++i) {
+        if (update_vss(i, obj_ub, cut_expr)) {
+          reoptimize = true;
+        }
+      }
+
+      if (!reoptimize) {
+        PLOGD << "Break because no more VSS can be added";
+        break;
+      }
+
+      model->addConstr(objective_expr, GRB_GREATER_EQUAL, obj_lb,
+                       "obj_lb_" + std::to_string(obj_lb) + "_" +
+                           std::to_string(iteration_number));
+      model->addConstr(objective_expr, GRB_LESS_EQUAL, obj_ub,
+                       "obj_ub_" + std::to_string(obj_ub) + "_" +
+                           std::to_string(iteration_number));
+      PLOGD << "Added constraint: obj >= " << obj_lb;
+      PLOGD << "Added constraint: obj <= " << obj_ub;
+
+      if (this->iterative_include_cuts_tmp) {
+        iterative_cuts.push_back(
+            model->addConstr(cut_expr, GRB_GREATER_EQUAL, 1,
+                             "cut_" + std::to_string(iteration_number)));
+        model->reset(1);
+        PLOGD << "Added constraint: cut_expr >= 1";
+      } else {
+        PLOGD << "Remove " << iterative_cuts.size() << " cut constraints";
+        for (const auto& c : iterative_cuts) {
+          model->remove(c);
+        }
+        iterative_cuts.clear();
+      }
+
+      if (time_limit > 0) {
+        const auto current_time = std::chrono::high_resolution_clock::now();
+        const auto current_time_span =
+            std::chrono::duration_cast<std::chrono::milliseconds>(current_time -
+                                                                  start)
+                .count();
+
+        auto time_left = time_limit - current_time_span / 1000;
+
+        if (time_left < 0) {
+          PLOGD << "Break because of timeout";
+          if (sol_object->has_solution()) {
+            PLOGD << "However, use previous obtained solution";
+            break;
+          }
+          sol_object->set_status(SolutionStatus::Timeout);
+          break;
+        }
+
+        model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
+
+        PLOGD << "Next iterations limit: " << time_left << " s";
+      }
+
+      model->update();
+    }
+  }
+
+  // Extract solving times
+  IF_PLOG(plog::debug) {
+    model_solved = std::chrono::high_resolution_clock::now();
+    solve_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
+                     model_solved - model_created)
+                     .count();
+    PLOGD << "Model created in " << (static_cast<double>(create_time) / 1000.0)
+          << " s";
+    PLOGD << "Model solved in " << (static_cast<double>(solve_time) / 1000.0)
+          << " s";
+    PLOGD << "Total time "
+          << (static_cast<double>(create_time + solve_time) / 1000.0) << " s";
+  }
+
+  return sol_object;
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    export_lp_if_applicable(const SolutionSettings& solution_settings) {
+  if (export_option == ExportOption::ExportLP ||
+      export_option == ExportOption::ExportSolutionAndLP ||
+      export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
+    PLOGI << "Saving model and solution";
+    std::filesystem::path path = solution_settings.path;
+
+    if (!is_directory_and_create(path)) {
+      PLOGE << "Could not create directory " << path.string();
+      throw exceptions::ExportException("Could not create directory " +
+                                        path.string());
+    }
+
+    model->write((path / (solution_settings.name + ".mps")).string());
+    if (model->get(GRB_IntAttr_SolCount) >= 1) {
+      model->write((path / (solution_settings.name + ".sol")).string());
+    }
+  }
+}
+
+void cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    export_solution_if_applicable(
+        const std::optional<cda_rail::instances::SolVSSGenerationTimetable>&
+                                sol_object,
+        const SolutionSettings& solution_settings) {
+  if (export_option == ExportOption::ExportSolution ||
+      export_option == ExportOption::ExportSolutionWithInstance ||
+      export_option == ExportOption::ExportSolutionAndLP ||
+      export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
+    const bool export_instance =
+        (export_option == ExportOption::ExportSolutionWithInstance ||
+         export_option == ExportOption::ExportSolutionWithInstanceAndLP);
+    PLOGI << "Saving solution";
+    std::filesystem::path path = solution_settings.path;
+    path /= solution_settings.name;
+    sol_object->export_solution(path, export_instance);
   }
 }
 

@@ -55,11 +55,22 @@ class GeneralMIPSolver : public GeneralSolver<T, S> {
       "S must be a child of SolGeneralProblemInstance<T>");
 
 protected:
+  std::vector<GRBTempConstr> lazy_constraints;
+
   // Gurobi variables
   std::optional<GRBEnv>                               env;
   std::optional<GRBModel>                             model;
   std::unordered_map<std::string, MultiArray<GRBVar>> vars;
   GRBLinExpr                                          objective_expr;
+
+  virtual void cleanup() {
+    objective_expr = 0;
+    lazy_constraints.clear();
+    model->reset(1);
+    vars.clear();
+    model.reset();
+    env.reset();
+  };
 
   void solve_init_general_mip(int time_limit, bool debug_input) {
     static auto message_callback = MessageCallback();

@@ -38,12 +38,21 @@ TEST(GeneralAbstractDataStructure, GeneralScheduledStopConstructor) {
 TEST(GeneralAbstractDataStructure, GeneralSchedulesStopForcedStoppingInterval) {
   cda_rail::GeneralScheduledStop stop1({0, 2}, {3, 4}, 1, "Test");
   EXPECT_EQ(stop1.get_forced_stopping_interval(), (std::pair<int, int>(2, 3)));
+  EXPECT_FALSE(stop1.is_forced_to_stop(1));
+  EXPECT_TRUE(stop1.is_forced_to_stop(2));
+  EXPECT_TRUE(stop1.is_forced_to_stop(3));
+  EXPECT_FALSE(stop1.is_forced_to_stop(4));
 
   cda_rail::GeneralScheduledStop stop2({0, 2}, {3, 4}, 2, "Test");
   EXPECT_EQ(stop2.get_forced_stopping_interval(), (std::pair<int, int>(2, 3)));
 
   cda_rail::GeneralScheduledStop stop3({0, 2}, {3, 4}, 3, "Test");
   EXPECT_EQ(stop3.get_forced_stopping_interval(), (std::pair<int, int>(1, 3)));
+  EXPECT_FALSE(stop3.is_forced_to_stop(0));
+  EXPECT_TRUE(stop3.is_forced_to_stop(1));
+  EXPECT_TRUE(stop3.is_forced_to_stop(2));
+  EXPECT_TRUE(stop3.is_forced_to_stop(3));
+  EXPECT_FALSE(stop3.is_forced_to_stop(4));
 
   cda_rail::GeneralScheduledStop stop4({0, 2}, {3, 4}, 4, "Test");
   EXPECT_EQ(stop4.get_forced_stopping_interval(), (std::pair<int, int>(0, 4)));
@@ -283,6 +292,22 @@ TEST(GeneralAbstractDataStructure, ParseSchedule) {
   EXPECT_EQ(general_schedule.get_stops().at(1).get_station_name(), "Test");
   EXPECT_EQ(typeid(general_schedule.get_stops().at(1)),
             typeid(cda_rail::GeneralScheduledStop));
+
+  const auto schedule_parsed_back =
+      cda_rail::Schedule::cast_from_general_schedule(general_schedule);
+  EXPECT_EQ(schedule_parsed_back.get_t_0(), 0);
+  EXPECT_EQ(schedule_parsed_back.get_t_n(), 20);
+  EXPECT_EQ(schedule_parsed_back.get_v_0(), 10);
+  EXPECT_EQ(schedule_parsed_back.get_v_n(), 5);
+  EXPECT_EQ(schedule_parsed_back.get_entry(), 1);
+  EXPECT_EQ(schedule_parsed_back.get_exit(), 2);
+  EXPECT_EQ(schedule_parsed_back.get_stops().size(), 2);
+  EXPECT_EQ(schedule_parsed_back.get_stops().at(0).arrival(), 0);
+  EXPECT_EQ(schedule_parsed_back.get_stops().at(0).departure(), 4);
+  EXPECT_EQ(schedule_parsed_back.get_stops().at(0).get_station_name(), "Test");
+  EXPECT_EQ(schedule_parsed_back.get_stops().at(1).arrival(), 6);
+  EXPECT_EQ(schedule_parsed_back.get_stops().at(1).departure(), 8);
+  EXPECT_EQ(schedule_parsed_back.get_stops().at(1).get_station_name(), "Test");
 }
 
 TEST(GeneralAbstractDataStructure, ParseTimetable) {
@@ -378,6 +403,16 @@ TEST(GeneralAbstractDataStructure, ParseTimetable) {
                 .at(1)
                 .get_min_stopping_time(),
             60);
+
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 0));
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 30));
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 60));
+  EXPECT_FALSE(general_timetable.is_forced_to_stop("tr1", 90));
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 120));
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 150));
+  EXPECT_TRUE(general_timetable.is_forced_to_stop("tr1", 180));
+  EXPECT_FALSE(general_timetable.is_forced_to_stop("tr1", 210));
+
   EXPECT_EQ(general_timetable.get_schedule(tr2).get_t_0_range(),
             (std::pair<int, int>(0, 0)));
   EXPECT_EQ(general_timetable.get_schedule(tr2).get_t_n_range(),
@@ -405,6 +440,88 @@ TEST(GeneralAbstractDataStructure, ParseTimetable) {
   EXPECT_EQ(typeid(general_timetable),
             typeid(cda_rail::GeneralTimetable<
                    cda_rail::GeneralSchedule<cda_rail::GeneralScheduledStop>>));
+
+  // Parse back to timetable
+  const auto timetable_parsed_back =
+      cda_rail::Timetable::cast_from_general_timetable(general_timetable);
+  const auto station_names_parsed_back =
+      timetable_parsed_back.get_station_list().get_station_names();
+  EXPECT_EQ(station_names_parsed_back.size(), 2);
+  EXPECT_TRUE(std::find(station_names_parsed_back.begin(),
+                        station_names_parsed_back.end(),
+                        "Station1") != station_names_parsed_back.end());
+  EXPECT_TRUE(std::find(station_names_parsed_back.begin(),
+                        station_names_parsed_back.end(),
+                        "Station2") != station_names_parsed_back.end());
+  EXPECT_EQ(timetable_parsed_back.get_train_list().size(), 2);
+  EXPECT_EQ(timetable_parsed_back.get_train_list().get_train_index("tr1"), tr1);
+  EXPECT_EQ(timetable_parsed_back.get_train_list().get_train_index("tr2"), tr2);
+  EXPECT_EQ(timetable_parsed_back.get_train_list().get_train("tr1").name,
+            "tr1");
+  EXPECT_EQ(timetable_parsed_back.get_train_list().get_train("tr1").length,
+            100);
+  EXPECT_EQ(timetable_parsed_back.get_train_list().get_train("tr1").max_speed,
+            83.33);
+  EXPECT_EQ(
+      timetable_parsed_back.get_train_list().get_train("tr1").acceleration, 2);
+  EXPECT_EQ(
+      timetable_parsed_back.get_train_list().get_train("tr1").deceleration, 1);
+  EXPECT_EQ(timetable_parsed_back.get_train_list().get_train("tr1").tim, true);
+  EXPECT_EQ(timetable_parsed_back.get_train_list().get_train("tr2").name,
+            "tr2");
+  EXPECT_EQ(timetable_parsed_back.get_train_list().get_train("tr2").length,
+            100);
+  EXPECT_EQ(timetable_parsed_back.get_train_list().get_train("tr2").max_speed,
+            83.33);
+  EXPECT_EQ(
+      timetable_parsed_back.get_train_list().get_train("tr2").acceleration, 2);
+  EXPECT_EQ(
+      timetable_parsed_back.get_train_list().get_train("tr2").deceleration, 1);
+  EXPECT_EQ(timetable_parsed_back.get_train_list().get_train("tr2").tim, true);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1).get_t_0(), 0);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1).get_t_n(), 300);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1).get_v_0(), 0);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1).get_v_n(), 20);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1).get_entry(), l0);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1).get_exit(), r0);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1).get_stops().size(), 2);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1).get_stops().at(0).arrival(),
+            0);
+  EXPECT_EQ(
+      timetable_parsed_back.get_schedule(tr1).get_stops().at(0).departure(),
+      60);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1)
+                .get_stops()
+                .at(0)
+                .get_station_name(),
+            "Station1");
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1).get_stops().at(1).arrival(),
+            120);
+  EXPECT_EQ(
+      timetable_parsed_back.get_schedule(tr1).get_stops().at(1).departure(),
+      180);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr1)
+                .get_stops()
+                .at(1)
+                .get_station_name(),
+            "Station2");
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr2).get_t_0(), 0);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr2).get_t_n(), 300);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr2).get_v_0(), 0);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr2).get_v_n(), 20);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr2).get_entry(), l0);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr2).get_exit(), r0);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr2).get_stops().size(), 1);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr2).get_stops().at(0).arrival(),
+            100);
+  EXPECT_EQ(
+      timetable_parsed_back.get_schedule(tr2).get_stops().at(0).departure(),
+      160);
+  EXPECT_EQ(timetable_parsed_back.get_schedule(tr2)
+                .get_stops()
+                .at(0)
+                .get_station_name(),
+            "Station1");
 }
 
 struct EdgeTarget {
@@ -778,4 +895,7 @@ TEST(GeneralAbstractDataStructure, VSSGenerationTimetableParse) {
       cda_rail::instances::GeneralPerformanceOptimizationInstance::
           cast_from_vss_generation(instance);
   check_instance_import_general_cast(general_instance);
+
+  // NOLINTNEXTLINE(clang-diagnostic-unused-result)
+  EXPECT_NO_THROW(general_instance.cast_to_vss_generation());
 }
