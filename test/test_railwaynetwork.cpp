@@ -904,6 +904,7 @@ TEST(Functionality, NetworkSections) {
   EXPECT_EQ(unbreakable_sections.size(), 3);
   // One section should contain v0_v1, one should contain v20_v30, and one
   // should contain v4_v5
+
   std::optional<size_t> s0;
   std::optional<size_t> s1;
   std::optional<size_t> s2;
@@ -944,6 +945,26 @@ TEST(Functionality, NetworkSections) {
 
   // Section s0 should contain 5 edges, namely v0 -> v1, v1 -> v20, v31 -> v21,
   // v21 -> v1, v1 -> v0
+  const auto& unbreakable_v0_v1 =
+      network.get_unbreakable_section_containing_edge(v0_v1);
+  EXPECT_EQ(unbreakable_v0_v1.size(), 5);
+  EXPECT_TRUE(std::find(unbreakable_v0_v1.begin(), unbreakable_v0_v1.end(),
+                        v0_v1) != unbreakable_v0_v1.end());
+  EXPECT_TRUE(std::find(unbreakable_v0_v1.begin(), unbreakable_v0_v1.end(),
+                        v1_v20) != unbreakable_v0_v1.end());
+  EXPECT_TRUE(std::find(unbreakable_v0_v1.begin(), unbreakable_v0_v1.end(),
+                        v31_v21) != unbreakable_v0_v1.end());
+  EXPECT_TRUE(std::find(unbreakable_v0_v1.begin(), unbreakable_v0_v1.end(),
+                        v21_v1) != unbreakable_v0_v1.end());
+  EXPECT_TRUE(std::find(unbreakable_v0_v1.begin(), unbreakable_v0_v1.end(),
+                        v1_v0) != unbreakable_v0_v1.end());
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v0_v1, v1_v20));
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v1_v20, v0_v1));
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v0_v1, v31_v21));
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v0_v1, v21_v1));
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v0_v1, v1_v0));
+  EXPECT_FALSE(network.is_on_same_unbreakable_section(v0_v1, v30_v4));
+
   EXPECT_EQ(unbreakable_sections[s0_val].size(), 5);
   EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
                         unbreakable_sections[s0_val].end(),
@@ -971,6 +992,34 @@ TEST(Functionality, NetworkSections) {
                         v30_v4) != unbreakable_sections[s1_val].end());
 
   // Section s2 should contain 2 edges, namely v4 -> v5 and the reverse
+  const auto& unbreakable_v4_v5 =
+      network.get_unbreakable_section_containing_edge(v4_v5);
+  EXPECT_EQ(unbreakable_v4_v5.size(), 2);
+  EXPECT_TRUE(std::find(unbreakable_v4_v5.begin(), unbreakable_v4_v5.end(),
+                        v4_v5) != unbreakable_v4_v5.end());
+  EXPECT_TRUE(std::find(unbreakable_v4_v5.begin(), unbreakable_v4_v5.end(),
+                        v5_v4) != unbreakable_v4_v5.end());
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v4_v5, v5_v4));
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v5_v4, v4_v5));
+  EXPECT_FALSE(network.is_on_same_unbreakable_section(v4_v5, v0_v1));
+
+  EXPECT_EQ(unbreakable_sections[s0_val].size(), 5);
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v0_v1) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v1_v20) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v31_v21) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v21_v1) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v1_v0) != unbreakable_sections[s0_val].end());
+
   EXPECT_EQ(unbreakable_sections[s2_val].size(), 2);
   EXPECT_TRUE(std::find(unbreakable_sections[s2_val].begin(),
                         unbreakable_sections[s2_val].end(),
