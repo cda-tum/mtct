@@ -1986,3 +1986,85 @@ void cda_rail::Network::change_vertex_headway(size_t index,
   }
   vertices[index].headway = new_headway;
 }
+
+std::vector<size_t>
+cda_rail::Network::get_unbreakable_section_containing_edge(size_t e) const {
+  /**
+   * This functions returns the unbreakable section that contains edge e as a
+   * vector of edge indices.
+   */
+
+  const auto& edge_object = get_edge(e);
+  if (edge_object.breakable) {
+    return {};
+  }
+
+  std::vector<size_t> ret_val;
+  ret_val.emplace_back(e);
+  const auto reverse_e = get_reverse_edge_index(e);
+  if (reverse_e.has_value()) {
+    ret_val.push_back(reverse_e.value());
+  }
+
+  std::queue<size_t>  vertices_to_visit;
+  std::vector<size_t> visited_vertices;
+  vertices_to_visit.push(edge_object.source);
+  vertices_to_visit.push(edge_object.target);
+
+  while (!vertices_to_visit.empty()) {
+    const auto& current_v = vertices_to_visit.front();
+
+    if (std::find(visited_vertices.begin(), visited_vertices.end(),
+                  current_v) != visited_vertices.end()) {
+      // Vertex already visited
+      vertices_to_visit.pop();
+      continue;
+    }
+
+    if (get_vertex(current_v).type != VertexType::TTD &&
+        get_vertex(current_v).type != VertexType::VSS) {
+      // This vertex can be used to further extend the section
+      const auto& n_vertices = neighbors(current_v);
+      for (const auto& v_tmp : n_vertices) {
+        if (std::find(visited_vertices.begin(), visited_vertices.end(),
+                      v_tmp) == visited_vertices.end()) {
+          vertices_to_visit.push(v_tmp);
+        }
+
+        // Possibly add new edges
+        if (has_edge(current_v, v_tmp)) {
+          const auto& e_tmp = get_edge_index(current_v, v_tmp);
+          if (std::find(ret_val.begin(), ret_val.end(), e_tmp) ==
+              ret_val.end()) {
+            ret_val.push_back(e_tmp);
+          }
+        }
+        if (has_edge(v_tmp, current_v)) {
+          const auto& e_tmp = get_edge_index(v_tmp, current_v);
+          if (std::find(ret_val.begin(), ret_val.end(), e_tmp) ==
+              ret_val.end()) {
+            ret_val.push_back(e_tmp);
+          }
+        }
+      }
+    }
+
+    // Update visited vertices
+    visited_vertices.push_back(current_v);
+    vertices_to_visit.pop();
+  }
+
+  return ret_val;
+}
+
+bool cda_rail::Network::is_on_same_unbreakable_section(size_t e1,
+                                                       size_t e2) const {
+  /**
+   * This function returns true if, and only if, two edges are within the same
+   * unbreakable section.
+   */
+
+  const auto section_tmp = get_unbreakable_section_containing_edge(e1);
+  return std::find(section_tmp.begin(), section_tmp.end(), e2) !=
+         section_tmp.end();
+}
