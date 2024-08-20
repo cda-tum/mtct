@@ -48,3 +48,4 @@ venv.bak/
 .mypy_cache/
 
 gurobi*
+test/ras-datasets/
