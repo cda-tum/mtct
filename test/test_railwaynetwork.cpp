@@ -904,6 +904,7 @@ TEST(Functionality, NetworkSections) {
   EXPECT_EQ(unbreakable_sections.size(), 3);
   // One section should contain v0_v1, one should contain v20_v30, and one
   // should contain v4_v5
+
   std::optional<size_t> s0;
   std::optional<size_t> s1;
   std::optional<size_t> s2;
@@ -944,6 +945,26 @@ TEST(Functionality, NetworkSections) {
 
   // Section s0 should contain 5 edges, namely v0 -> v1, v1 -> v20, v31 -> v21,
   // v21 -> v1, v1 -> v0
+  const auto& unbreakable_v0_v1 =
+      network.get_unbreakable_section_containing_edge(v0_v1);
+  EXPECT_EQ(unbreakable_v0_v1.size(), 5);
+  EXPECT_TRUE(std::find(unbreakable_v0_v1.begin(), unbreakable_v0_v1.end(),
+                        v0_v1) != unbreakable_v0_v1.end());
+  EXPECT_TRUE(std::find(unbreakable_v0_v1.begin(), unbreakable_v0_v1.end(),
+                        v1_v20) != unbreakable_v0_v1.end());
+  EXPECT_TRUE(std::find(unbreakable_v0_v1.begin(), unbreakable_v0_v1.end(),
+                        v31_v21) != unbreakable_v0_v1.end());
+  EXPECT_TRUE(std::find(unbreakable_v0_v1.begin(), unbreakable_v0_v1.end(),
+                        v21_v1) != unbreakable_v0_v1.end());
+  EXPECT_TRUE(std::find(unbreakable_v0_v1.begin(), unbreakable_v0_v1.end(),
+                        v1_v0) != unbreakable_v0_v1.end());
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v0_v1, v1_v20));
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v1_v20, v0_v1));
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v0_v1, v31_v21));
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v0_v1, v21_v1));
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v0_v1, v1_v0));
+  EXPECT_FALSE(network.is_on_same_unbreakable_section(v0_v1, v30_v4));
+
   EXPECT_EQ(unbreakable_sections[s0_val].size(), 5);
   EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
                         unbreakable_sections[s0_val].end(),
@@ -971,6 +992,34 @@ TEST(Functionality, NetworkSections) {
                         v30_v4) != unbreakable_sections[s1_val].end());
 
   // Section s2 should contain 2 edges, namely v4 -> v5 and the reverse
+  const auto& unbreakable_v4_v5 =
+      network.get_unbreakable_section_containing_edge(v4_v5);
+  EXPECT_EQ(unbreakable_v4_v5.size(), 2);
+  EXPECT_TRUE(std::find(unbreakable_v4_v5.begin(), unbreakable_v4_v5.end(),
+                        v4_v5) != unbreakable_v4_v5.end());
+  EXPECT_TRUE(std::find(unbreakable_v4_v5.begin(), unbreakable_v4_v5.end(),
+                        v5_v4) != unbreakable_v4_v5.end());
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v4_v5, v5_v4));
+  EXPECT_TRUE(network.is_on_same_unbreakable_section(v5_v4, v4_v5));
+  EXPECT_FALSE(network.is_on_same_unbreakable_section(v4_v5, v0_v1));
+
+  EXPECT_EQ(unbreakable_sections[s0_val].size(), 5);
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v0_v1) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v1_v20) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v31_v21) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v21_v1) != unbreakable_sections[s0_val].end());
+  EXPECT_TRUE(std::find(unbreakable_sections[s0_val].begin(),
+                        unbreakable_sections[s0_val].end(),
+                        v1_v0) != unbreakable_sections[s0_val].end());
+
   EXPECT_EQ(unbreakable_sections[s2_val].size(), 2);
   EXPECT_TRUE(std::find(unbreakable_sections[s2_val].begin(),
                         unbreakable_sections[s2_val].end(),
@@ -2360,17 +2409,17 @@ TEST(Functionality, InverseEdges) {
   EXPECT_TRUE(std::find(inv_2.begin(), inv_2.end(), e34) != inv_2.end());
 }
 
-TEST(Functionality, FloydWarshall) {
+TEST(Functionality, ShortestPaths) {
   // Initialize empty network
   cda_rail::Network network;
 
   // Add 6 vertices
-  network.add_vertex("v1", cda_rail::VertexType::TTD);
-  network.add_vertex("v2", cda_rail::VertexType::TTD);
-  network.add_vertex("v3", cda_rail::VertexType::TTD);
-  network.add_vertex("v4", cda_rail::VertexType::TTD);
-  network.add_vertex("v5", cda_rail::VertexType::TTD);
-  network.add_vertex("v6", cda_rail::VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v4 = network.add_vertex("v4", cda_rail::VertexType::TTD);
+  const auto v5 = network.add_vertex("v5", cda_rail::VertexType::TTD);
+  const auto v6 = network.add_vertex("v6", cda_rail::VertexType::TTD);
 
   // Add the following edges
   // v1 v2 of length 100
@@ -2429,6 +2478,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v1_v2][v5_v4], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v1_v2][v6_v5], cda_rail::INF);
 
+  EXPECT_EQ(network.shortest_path(v1_v2, v2), 0);
+  EXPECT_EQ(network.shortest_path(v1_v2, v3), 200);
+  EXPECT_EQ(network.shortest_path(v1_v2, v4), 500);
+  EXPECT_EQ(network.shortest_path(v1_v2, v5), 700);
+  EXPECT_EQ(network.shortest_path(v1_v2, v6), 1700);
+  EXPECT_EQ(network.shortest_path(v1_v2, v1), 1000);
+
   // Starting from v2_v3, we reach
   // v2_v3 in 0
   // v3_v4 in 300
@@ -2449,6 +2505,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v2_v3][v4_v3], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v2_v3][v5_v4], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v2_v3][v6_v5], cda_rail::INF);
+
+  EXPECT_EQ(network.shortest_path(v2_v3, v1), 800);
+  EXPECT_EQ(network.shortest_path(v2_v3, v2), 900);
+  EXPECT_EQ(network.shortest_path(v2_v3, v3), 0);
+  EXPECT_EQ(network.shortest_path(v2_v3, v4), 300);
+  EXPECT_EQ(network.shortest_path(v2_v3, v5), 500);
+  EXPECT_EQ(network.shortest_path(v2_v3, v6), 1500);
 
   // Starting from v3_v4, we reach
   // v3_v4 in 0
@@ -2471,6 +2534,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v3_v4][v5_v4], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v3_v4][v6_v5], cda_rail::INF);
 
+  EXPECT_EQ(network.shortest_path(v3_v4, v1), 500);
+  EXPECT_EQ(network.shortest_path(v3_v4, v2), 600);
+  EXPECT_EQ(network.shortest_path(v3_v4, v3), 800);
+  EXPECT_EQ(network.shortest_path(v3_v4, v4), 0);
+  EXPECT_EQ(network.shortest_path(v3_v4, v5), 400);
+  EXPECT_EQ(network.shortest_path(v3_v4, v6), 1400);
+
   // Starting from v3_v5, we reach
   // v3_v5 in 0
   // v5_v6 in 1000
@@ -2486,6 +2556,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v3_v5][v5_v4], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v3_v5][v6_v5], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v3_v5][v3_v2], cda_rail::INF);
+
+  EXPECT_FALSE(network.shortest_path(v3_v5, v1).has_value());
+  EXPECT_FALSE(network.shortest_path(v3_v5, v2).has_value());
+  EXPECT_FALSE(network.shortest_path(v3_v5, v3).has_value());
+  EXPECT_FALSE(network.shortest_path(v3_v5, v4).has_value());
+  EXPECT_EQ(network.shortest_path(v3_v5, v5), 0);
+  EXPECT_EQ(network.shortest_path(v3_v5, v6), 1000);
 
   // Starting from v4_v5, we reach
   // v4_v5 in 0
@@ -2503,6 +2580,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v4_v5][v6_v5], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v4_v5][v3_v2], cda_rail::INF);
 
+  EXPECT_FALSE(network.shortest_path(v4_v5, v1).has_value());
+  EXPECT_FALSE(network.shortest_path(v4_v5, v2).has_value());
+  EXPECT_FALSE(network.shortest_path(v4_v5, v3).has_value());
+  EXPECT_FALSE(network.shortest_path(v4_v5, v4).has_value());
+  EXPECT_EQ(network.shortest_path(v4_v5, v5), 0);
+  EXPECT_EQ(network.shortest_path(v4_v5, v6), 1000);
+
   // Starting from v5_v6, we reach
   // v5_v6 in 0
   // all other edges are not reachable
@@ -2517,6 +2601,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v5_v6][v5_v4], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v5_v6][v6_v5], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v5_v6][v3_v2], cda_rail::INF);
+
+  EXPECT_FALSE(network.shortest_path(v5_v6, v1).has_value());
+  EXPECT_FALSE(network.shortest_path(v5_v6, v2).has_value());
+  EXPECT_FALSE(network.shortest_path(v5_v6, v3).has_value());
+  EXPECT_FALSE(network.shortest_path(v5_v6, v4).has_value());
+  EXPECT_FALSE(network.shortest_path(v5_v6, v5).has_value());
+  EXPECT_EQ(network.shortest_path(v5_v6, v6), 0);
 
   // Starting from v4_v1, we reach
   // v4_v1 in 0
@@ -2539,6 +2630,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v4_v1][v5_v4], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v4_v1][v6_v5], cda_rail::INF);
 
+  EXPECT_EQ(network.shortest_path(v4_v1, v1), 0);
+  EXPECT_EQ(network.shortest_path(v4_v1, v2), 100);
+  EXPECT_EQ(network.shortest_path(v4_v1, v3), 300);
+  EXPECT_EQ(network.shortest_path(v4_v1, v4), 600);
+  EXPECT_EQ(network.shortest_path(v4_v1, v5), 800);
+  EXPECT_EQ(network.shortest_path(v4_v1, v6), 1800);
+
   // Starting from v6_v5, we reach
   // v6_v5 in 0
   // v5_v4 in 400
@@ -2557,6 +2655,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v6_v5][v2_v3], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v6_v5][v5_v6], cda_rail::INF);
 
+  EXPECT_FALSE(network.shortest_path(v6_v5, v1).has_value());
+  EXPECT_EQ(network.shortest_path(v6_v5, v2), 900);
+  EXPECT_EQ(network.shortest_path(v6_v5, v3), 700);
+  EXPECT_EQ(network.shortest_path(v6_v5, v4), 400);
+  EXPECT_EQ(network.shortest_path(v6_v5, v5), 0);
+  EXPECT_FALSE(network.shortest_path(v6_v5, v6).has_value());
+
   // Starting from v5_v4, we reach
   // v5_v4 in 0
   // v4_v3 in 300
@@ -2574,6 +2679,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v5_v4][v5_v6], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v5_v4][v6_v5], cda_rail::INF);
 
+  EXPECT_FALSE(network.shortest_path(v5_v4, v1).has_value());
+  EXPECT_EQ(network.shortest_path(v5_v4, v2), 500);
+  EXPECT_EQ(network.shortest_path(v5_v4, v3), 300);
+  EXPECT_EQ(network.shortest_path(v5_v4, v4), 0);
+  EXPECT_FALSE(network.shortest_path(v5_v4, v5).has_value());
+  EXPECT_FALSE(network.shortest_path(v5_v4, v6).has_value());
+
   // Starting from v4_v3, we reach
   // v4_v3 in 0
   // v3_v2 in 200
@@ -2590,6 +2702,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v4_v3][v5_v6], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v4_v3][v6_v5], cda_rail::INF);
 
+  EXPECT_FALSE(network.shortest_path(v4_v3, v1).has_value());
+  EXPECT_EQ(network.shortest_path(v4_v3, v2), 200);
+  EXPECT_EQ(network.shortest_path(v4_v3, v3), 0);
+  EXPECT_FALSE(network.shortest_path(v4_v3, v4).has_value());
+  EXPECT_FALSE(network.shortest_path(v4_v3, v5).has_value());
+  EXPECT_FALSE(network.shortest_path(v4_v3, v6).has_value());
+
   // Starting from v3_v2, we reach
   // v3_v2 in 0
   // all other edges are not reachable
@@ -2604,6 +2723,13 @@ TEST(Functionality, FloydWarshall) {
   EXPECT_EQ(shortest_paths[v3_v2][v5_v4], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v3_v2][v5_v6], cda_rail::INF);
   EXPECT_EQ(shortest_paths[v3_v2][v6_v5], cda_rail::INF);
+
+  EXPECT_FALSE(network.shortest_path(v3_v2, v1).has_value());
+  EXPECT_EQ(network.shortest_path(v3_v2, v2), 0);
+  EXPECT_FALSE(network.shortest_path(v3_v2, v3).has_value());
+  EXPECT_FALSE(network.shortest_path(v3_v2, v4).has_value());
+  EXPECT_FALSE(network.shortest_path(v3_v2, v5).has_value());
+  EXPECT_FALSE(network.shortest_path(v3_v2, v6).has_value());
 }
 
 TEST(Functionality, ReadTrains) {
@@ -3442,7 +3568,7 @@ TEST(Functionality, RouteMapHelper) {
   const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
   network.add_vertex("v3", cda_rail::VertexType::TTD);
 
-  const auto v0_v1 = network.add_edge("v0", "v1", 10, 5, false);
+  network.add_edge("v0", "v1", 10, 5, false);
   const auto v1_v2 = network.add_edge("v1", "v2", 20, 5, false);
   const auto v2_v3 = network.add_edge("v2", "v3", 30, 5, false);
   const auto v3_v2 = network.add_edge("v3", "v2", 30, 5, false);
@@ -3491,20 +3617,6 @@ TEST(Functionality, RouteMapHelper) {
   const auto                      tr1_e3_pos = tr1_map.edge_pos(v2_v3, network);
   const std::pair<double, double> expected_tr1_e3_pos = {30, 60};
   EXPECT_EQ(tr1_e3_pos, expected_tr1_e3_pos);
-
-  // Reverse:
-  EXPECT_EQ(tr1_map.get_edge_at_pos(0, network), v0_v1);
-  EXPECT_EQ(tr1_map.get_edge_at_pos(cda_rail::GRB_EPS / 2, network), v0_v1);
-  EXPECT_EQ(tr1_map.get_edge_at_pos(5, network), v0_v1);
-  EXPECT_EQ(tr1_map.get_edge_at_pos(10, network), v1_v2);
-  EXPECT_EQ(tr1_map.get_edge_at_pos(15, network), v1_v2);
-  EXPECT_EQ(tr1_map.get_edge_at_pos(30, network), v2_v3);
-  EXPECT_EQ(tr1_map.get_edge_at_pos(35, network), v2_v3);
-  EXPECT_EQ(tr1_map.get_edge_at_pos(60, network), v2_v3);
-  EXPECT_THROW(tr1_map.get_edge_at_pos(61, network),
-               cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(tr1_map.get_edge_at_pos(-1, network),
-               cda_rail::exceptions::InvalidInputException);
 
   const auto station_pos =
       tr1_map.edge_pos({v1_v2, v2_v1, v2_v3, v3_v2}, network);
