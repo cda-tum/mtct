@@ -499,6 +499,10 @@ public:
   }
 
   [[nodiscard]] std::vector<size_t>
+                     get_unbreakable_section_containing_edge(size_t e) const;
+  [[nodiscard]] bool is_on_same_unbreakable_section(size_t e1, size_t e2) const;
+
+  [[nodiscard]] std::vector<size_t>
   inverse_edges(const std::vector<size_t>& edge_indices) const {
     const auto&         edge_number = number_of_edges();
     std::vector<size_t> edges_to_consider(edge_number);
@@ -541,6 +545,9 @@ public:
 
   [[nodiscard]] std::vector<std::vector<double>>
   all_edge_pairs_shortest_paths() const;
+
+  [[nodiscard]] std::optional<double>
+  shortest_path(size_t source_edge_id, size_t target_vertex_id) const;
 };
 
 // HELPER
