@@ -2046,7 +2046,7 @@ cda_rail::Network::shortest_path_using_edges(
   // If source edge already leads to the target, then the distance is 0
   const auto& source_edge = get_edge(source_edge_id);
   if (source_edge.target == target_vertex_id) {
-    return {0, {}};
+    return {0, {source_edge_id}};
   }
 
   // Initialize vectors and queues for Dijkstra
