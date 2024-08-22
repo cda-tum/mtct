@@ -9,12 +9,14 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <queue>
 #include <stack>
 #include <string>
 #include <tinyxml2.h>
 #include <unordered_set>
+#include <vector>
 
 using json = nlohmann::json;
 
@@ -1671,55 +1673,7 @@ cda_rail::Network::shortest_path(size_t source_edge_id,
    * If no path exists, the optional has no value.
    */
 
-  if (!has_edge(source_edge_id)) {
-    throw exceptions::EdgeNotExistentException(source_edge_id);
-  }
-  if (!has_vertex(target_vertex_id)) {
-    throw exceptions::VertexNotExistentException(target_vertex_id);
-  }
-
-  // If source edge already leads to the target, then the distance is 0
-  const auto& source_edge = get_edge(source_edge_id);
-  if (source_edge.target == target_vertex_id) {
-    return 0;
-  }
-
-  // Initialize vectors and queues for Dijkstra
-  std::vector<double> distances(number_of_edges(), INF);
-  std::vector<bool>   visited(number_of_edges(), false);
-  // Priority queue where the element with the smallest .first is returned
-  std::priority_queue<std::pair<double, size_t>,
-                      std::vector<std::pair<double, size_t>>, std::greater<>>
-      pq;
-  pq.emplace(0, source_edge_id);
-  distances[source_edge_id] = 0;
-
-  // Dijkstra
-  while (!pq.empty()) {
-    auto [dist, edge_id] = pq.top();
-    pq.pop();
-
-    if (visited[edge_id]) {
-      // Probably relict from later update due to shorter path
-      continue;
-    }
-    visited[edge_id] = true;
-
-    if (const auto& edge = get_edge(edge_id); edge.target == target_vertex_id) {
-      return dist;
-    }
-
-    for (const auto& successor : get_successors(edge_id)) {
-      const auto& successor_edge = get_edge(successor);
-      if (dist + successor_edge.length < distances[successor]) {
-        // Update entry in priority queue
-        distances[successor] = dist + successor_edge.length;
-        pq.emplace(distances[successor], successor);
-      }
-    }
-  }
-
-  return std::nullopt;
+  return shortest_path_using_edges(source_edge_id, target_vertex_id).first;
 }
 
 std::vector<std::pair<size_t, std::vector<size_t>>>
@@ -2067,4 +2021,104 @@ bool cda_rail::Network::is_on_same_unbreakable_section(size_t e1,
   const auto section_tmp = get_unbreakable_section_containing_edge(e1);
   return std::find(section_tmp.begin(), section_tmp.end(), e2) !=
          section_tmp.end();
+}
+
+std::pair<std::optional<double>, std::vector<size_t>>
+cda_rail::Network::shortest_path_using_edges(
+    size_t source_edge_id, size_t target_vertex_id,
+    bool only_use_valid_successors, std::vector<size_t> edges_to_use) const {
+  /**
+   * Calculates the shortest path from a source edge e to a target vertex w.
+   * If e = (u,v), then the length of the shortest path between v and w is
+   * returned. If no path exists, the optional has no value, and the vector is
+   * empty. If only_use_valid_successors is true, only valid successors of e can
+   * be used as a first edge and for all preceding edges. If edges_to_use is not
+   * empty, only these edges are used, otherwise all edges are used.
+   */
+
+  if (!has_edge(source_edge_id)) {
+    throw exceptions::EdgeNotExistentException(source_edge_id);
+  }
+  if (!has_vertex(target_vertex_id)) {
+    throw exceptions::VertexNotExistentException(target_vertex_id);
+  }
+
+  // If source edge already leads to the target, then the distance is 0
+  const auto& source_edge = get_edge(source_edge_id);
+  if (source_edge.target == target_vertex_id) {
+    return {0, {}};
+  }
+
+  // Initialize vectors and queues for Dijkstra
+  std::vector<double> distances(number_of_edges(), INF);
+  std::vector<bool>   visited(number_of_edges(), false);
+  std::vector<size_t> predecessors(number_of_edges(),
+                                   std::numeric_limits<size_t>::max());
+  // Priority queue where the element with the smallest .first is returned
+  std::priority_queue<std::pair<double, size_t>,
+                      std::vector<std::pair<double, size_t>>, std::greater<>>
+      pq;
+  pq.emplace(0, source_edge_id);
+  distances[source_edge_id] = 0;
+
+  // Dijkstra
+  while (!pq.empty()) {
+    auto [dist, edge_id] = pq.top();
+    pq.pop();
+
+    if (visited[edge_id]) {
+      // Probably relict from later update due to shorter path
+      continue;
+    }
+    visited[edge_id] = true;
+
+    const auto& edge = get_edge(edge_id);
+
+    if (edge.target == target_vertex_id) {
+      std::vector<size_t> path;
+      path.emplace_back(edge_id);
+      while (path.back() != source_edge_id &&
+             predecessors[path.back()] != std::numeric_limits<size_t>::max()) {
+        const size_t predecessor = predecessors[path.back()];
+        if (std::find(path.begin(), path.end(), predecessor) != path.end()) {
+          throw exceptions::ConsistencyException("Cycle in path");
+        }
+        path.emplace_back(predecessor);
+      }
+      std::reverse(path.begin(), path.end());
+      return {dist, path};
+    }
+
+    const auto&         possible_successors = only_use_valid_successors
+                                                  ? get_successors(edge_id)
+                                                  : out_edges(edge.target);
+    std::vector<size_t> cleaned_successors;
+    if (edges_to_use.empty()) {
+      cleaned_successors = possible_successors;
+    } else {
+      for (const auto& successor : possible_successors) {
+        if (std::find(edges_to_use.begin(), edges_to_use.end(), successor) !=
+            edges_to_use.end()) {
+          cleaned_successors.emplace_back(successor);
+        }
+      }
+    }
+
+    for (const auto& successor : cleaned_successors) {
+      const auto& successor_edge = get_edge(successor);
+      if (successor_edge.source == edge.target &&
+          successor_edge.target == edge.source) {
+        // Skip reverse edge
+        continue;
+      }
+      if (dist + successor_edge.length < distances[successor]) {
+        // Update entry in priority queue
+        distances[successor]    = dist + successor_edge.length;
+        predecessors[successor] = edge_id;
+        pq.emplace(distances[successor], successor);
+      }
+    }
+  }
+
+  return {std::nullopt, {}};
 }

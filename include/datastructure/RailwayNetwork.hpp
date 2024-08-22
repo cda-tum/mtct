@@ -548,6 +548,11 @@ public:
 
   [[nodiscard]] std::optional<double>
   shortest_path(size_t source_edge_id, size_t target_vertex_id) const;
+
+  [[nodiscard]] std::pair<std::optional<double>, std::vector<size_t>>
+  shortest_path_using_edges(size_t source_edge_id, size_t target_vertex_id,
+                            bool only_use_valid_successors   = true,
+                            std::vector<size_t> edges_to_use = {}) const;
 };
 
 // HELPER
