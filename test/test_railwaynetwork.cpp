@@ -2730,6 +2730,62 @@ TEST(Functionality, ShortestPaths) {
   EXPECT_FALSE(network.shortest_path(v3_v2, v4).has_value());
   EXPECT_FALSE(network.shortest_path(v3_v2, v5).has_value());
   EXPECT_FALSE(network.shortest_path(v3_v2, v6).has_value());
+
+  // Shortest paths
+  const auto [shortest_paths_1_val, shortest_paths_1_path] =
+      network.shortest_path_using_edges(v1_v2, v6);
+  EXPECT_TRUE(shortest_paths_1_val.has_value());
+  EXPECT_EQ(shortest_paths_1_val.value(), 1700);
+  EXPECT_EQ(shortest_paths_1_path.size(), 4);
+  EXPECT_EQ(shortest_paths_1_path,
+            std::vector<size_t>({v1_v2, v2_v3, v3_v5, v5_v6}));
+
+  const auto [shortest_paths_1b_val, shortest_paths_1b_path] =
+      network.shortest_path_using_edges(v1_v2, v6, false);
+  EXPECT_TRUE(shortest_paths_1b_val.has_value());
+  EXPECT_EQ(shortest_paths_1b_val.value(), 1700);
+  EXPECT_EQ(shortest_paths_1b_path.size(), 4);
+  EXPECT_EQ(shortest_paths_1b_path,
+            std::vector<size_t>({v1_v2, v2_v3, v3_v5, v5_v6}));
+
+  const auto [shortest_paths_2_val, shortest_paths_2_path] =
+      network.shortest_path_using_edges(
+          v1_v2, v6, true,
+          {v1_v2, v2_v3, v3_v4, v4_v3, v4_v5, v5_v4, v5_v6, v6_v5});
+  EXPECT_TRUE(shortest_paths_2_val.has_value());
+  EXPECT_EQ(shortest_paths_2_val.value(), 1900);
+  EXPECT_EQ(shortest_paths_2_path.size(), 5);
+  EXPECT_EQ(shortest_paths_2_path,
+            std::vector<size_t>({v1_v2, v2_v3, v3_v4, v4_v5, v5_v6}));
+
+  const auto [shortest_paths_2b_val, shortest_paths_2b_path] =
+      network.shortest_path_using_edges(
+          v1_v2, v6, false,
+          {v1_v2, v2_v3, v3_v4, v4_v3, v4_v5, v5_v4, v5_v6, v6_v5});
+  EXPECT_TRUE(shortest_paths_2b_val.has_value());
+  EXPECT_EQ(shortest_paths_2b_val.value(), 1900);
+  EXPECT_EQ(shortest_paths_2b_path.size(), 5);
+  EXPECT_EQ(shortest_paths_2b_path,
+            std::vector<size_t>({v1_v2, v2_v3, v3_v4, v4_v5, v5_v6}));
+
+  const auto [shortest_paths_3_val, shortest_paths_3_path] =
+      network.shortest_path_using_edges(v5_v4, v1, true);
+  EXPECT_FALSE(shortest_paths_3_val.has_value());
+  EXPECT_TRUE(shortest_paths_3_path.empty());
+
+  const auto [shortest_paths_3b_val, shortest_paths_3b_path] =
+      network.shortest_path_using_edges(v5_v4, v1, false);
+  EXPECT_TRUE(shortest_paths_3b_val.has_value());
+  EXPECT_EQ(shortest_paths_3b_val.value(), 500);
+  EXPECT_EQ(shortest_paths_3b_path.size(), 2);
+  EXPECT_EQ(shortest_paths_3b_path, std::vector<size_t>({v5_v4, v4_v1}));
+
+  const auto [shortest_paths_4_val, shortest_paths_4_path] =
+      network.shortest_path_using_edges(v1_v2, v2);
+  EXPECT_TRUE(shortest_paths_4_val.has_value());
+  EXPECT_EQ(shortest_paths_4_val.value(), 0);
+  EXPECT_EQ(shortest_paths_4_path.size(), 1);
+  EXPECT_EQ(shortest_paths_4_path, std::vector<size_t>({v1_v2}));
 }
 
 TEST(Functionality, ReadTrains) {
