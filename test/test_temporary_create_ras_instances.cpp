@@ -367,6 +367,47 @@ create_ras_instance(const std::string& path) {
         target_speed, destination_vertex_index);
   }
 
+  // Extract stops from Input_Train_Required_Stop.csv
+  // train_id,station_name,require_stop,minimum_dwelling_time_in_minute
+  const auto path_to_input_train_required_stop =
+      path_to_instance / "Input_Train_Required_Stop.csv";
+  if (!std::filesystem::exists(path_to_input_train_required_stop)) {
+    throw std::exception("Input_Train_Required_Stop.csv does not exist");
+  }
+  std::ifstream input_train_required_stop_file(
+      path_to_input_train_required_stop);
+  while (std::getline(input_train_required_stop_file, line)) {
+    if (line ==
+        "train_id,station_name,require_stop,minimum_dwelling_time_in_minute") {
+      continue;
+    }
+    std::istringstream iss(line);
+    std::string        train_id;
+    std::string        station_name;
+    std::string        require_stop_str;
+    std::string        minimum_dwelling_time_in_minute_str;
+
+    std::getline(iss, train_id, ',');
+    std::getline(iss, station_name, ',');
+    std::getline(iss, require_stop_str, ',');
+    std::getline(iss, minimum_dwelling_time_in_minute_str, ',');
+
+    const bool require_stop = require_stop_str == "1";
+    const int  minimum_dwelling_time_in_minute =
+        std::stoi(minimum_dwelling_time_in_minute_str);
+    const auto tr_schedule = instance.get_schedule("tr_" + train_id);
+
+    if (require_stop) {
+      instance.add_stop(
+          "tr_" + train_id, station_name,
+          std::pair<int, int>({tr_schedule.get_t_0_range().first,
+                               tr_schedule.get_t_n_range().second}),
+          std::pair<int, int>({tr_schedule.get_t_0_range().first,
+                               tr_schedule.get_t_n_range().second}),
+          minimum_dwelling_time_in_minute * 60);
+    }
+  }
+
   return instance;
 };
 

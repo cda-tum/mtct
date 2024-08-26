@@ -2,7 +2,80 @@
   "tr_1": {
     "entry": "v_1259",
     "exit": "v_224",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E6"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E5"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E3"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E2"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "N1"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "N2"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "N4"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "N5"
+      }
+    ],
     "t_0": [0, 40],
     "t_n": [0, 21640],
     "v_0": 9.387839999999999,
@@ -11,7 +84,62 @@
   "tr_10": {
     "entry": "v_233",
     "exit": "v_844",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N5"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N1"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S2"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S4"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S6"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S7"
+      }
+    ],
     "t_0": [40, 80],
     "t_n": [40, 21680],
     "v_0": 53.6448,
@@ -20,7 +148,50 @@
   "tr_11": {
     "entry": "v_223",
     "exit": "v_844",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [60, 21720],
+        "end": [60, 21720],
+        "min_stopping_time": 120,
+        "station": "N5"
+      },
+      {
+        "begin": [60, 21720],
+        "end": [60, 21720],
+        "min_stopping_time": 120,
+        "station": "N2"
+      },
+      {
+        "begin": [60, 21720],
+        "end": [60, 21720],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [60, 21720],
+        "end": [60, 21720],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [60, 21720],
+        "end": [60, 21720],
+        "min_stopping_time": 120,
+        "station": "S3"
+      },
+      {
+        "begin": [60, 21720],
+        "end": [60, 21720],
+        "min_stopping_time": 120,
+        "station": "S5"
+      },
+      {
+        "begin": [60, 21720],
+        "end": [60, 21720],
+        "min_stopping_time": 120,
+        "station": "S7"
+      }
+    ],
     "t_0": [60, 120],
     "t_n": [60, 21720],
     "v_0": 13.4112,
@@ -29,7 +200,86 @@
   "tr_12": {
     "entry": "v_223",
     "exit": "v_1936",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "N5"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "N4"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "N3"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "N2"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "N1"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "W1"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "W2"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "W3"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "W4"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "W5"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "W6"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "W7"
+      },
+      {
+        "begin": [30, 21680],
+        "end": [30, 21680],
+        "min_stopping_time": 180,
+        "station": "W8"
+      }
+    ],
     "t_0": [30, 80],
     "t_n": [30, 21680],
     "v_0": 9.387839999999999,
@@ -38,7 +288,56 @@
   "tr_13": {
     "entry": "v_223",
     "exit": "v_1938",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "N5"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 180,
+        "station": "N1"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 180,
+        "station": "W1"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W2"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W3"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W5"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W8"
+      }
+    ],
     "t_0": [30, 70],
     "t_n": [30, 21670],
     "v_0": 13.4112,
@@ -47,7 +346,92 @@
   "tr_14": {
     "entry": "v_853",
     "exit": "v_1256",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "S7"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "S6"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "S5"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "S4"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "S3"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "S2"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E2"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E3"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E5"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "E6"
+      }
+    ],
     "t_0": [0, 40],
     "t_n": [0, 21640],
     "v_0": 9.387839999999999,
@@ -56,7 +440,86 @@
   "tr_15": {
     "entry": "v_853",
     "exit": "v_224",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S7"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S6"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S5"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S4"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N4"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N5"
+      }
+    ],
     "t_0": [10, 50],
     "t_n": [10, 21650],
     "v_0": 9.387839999999999,
@@ -65,7 +528,68 @@
   "tr_16": {
     "entry": "v_853",
     "exit": "v_226",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S7"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S5"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "M"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N4"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N5"
+      }
+    ],
     "t_0": [10, 50],
     "t_n": [10, 21650],
     "v_0": 13.4112,
@@ -74,7 +598,68 @@
   "tr_17": {
     "entry": "v_853",
     "exit": "v_224",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S7"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S6"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S4"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S3"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S2"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N1"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N5"
+      }
+    ],
     "t_0": [40, 80],
     "t_n": [40, 21680],
     "v_0": 9.387839999999999,
@@ -83,7 +668,104 @@
   "tr_18": {
     "entry": "v_853",
     "exit": "v_1938",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S7"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S6"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S5"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S4"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S3"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S2"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "M"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W1"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W2"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W3"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W4"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W5"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W6"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W7"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W8"
+      }
+    ],
     "t_0": [20, 60],
     "t_n": [20, 21660],
     "v_0": 9.387839999999999,
@@ -92,7 +774,80 @@
   "tr_19": {
     "entry": "v_853",
     "exit": "v_1936",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "S7"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "S6"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "S3"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "S2"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "M"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "W1"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "W3"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "W4"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "W6"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "W7"
+      },
+      {
+        "begin": [50, 21700],
+        "end": [50, 21700],
+        "min_stopping_time": 120,
+        "station": "W8"
+      }
+    ],
     "t_0": [50, 100],
     "t_n": [50, 21700],
     "v_0": 13.4112,
@@ -101,7 +856,80 @@
   "tr_2": {
     "entry": "v_1259",
     "exit": "v_226",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E6"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E5"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N4"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N5"
+      }
+    ],
     "t_0": [10, 50],
     "t_n": [10, 21650],
     "v_0": 9.387839999999999,
@@ -110,7 +938,98 @@
   "tr_20": {
     "entry": "v_1940",
     "exit": "v_1256",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W8"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W7"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W6"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W5"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W4"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E5"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E6"
+      }
+    ],
     "t_0": [10, 50],
     "t_n": [10, 21650],
     "v_0": 9.387839999999999,
@@ -119,7 +1038,62 @@
   "tr_21": {
     "entry": "v_1940",
     "exit": "v_1256",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W8"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W6"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W4"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W2"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "W1"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "E6"
+      }
+    ],
     "t_0": [20, 60],
     "t_n": [20, 21660],
     "v_0": 13.4112,
@@ -128,7 +1102,62 @@
   "tr_22": {
     "entry": "v_1940",
     "exit": "v_1256",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W8"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W6"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W4"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W2"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W1"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "E6"
+      }
+    ],
     "t_0": [30, 70],
     "t_n": [30, 21670],
     "v_0": 13.4112,
@@ -137,7 +1166,86 @@
   "tr_23": {
     "entry": "v_1940",
     "exit": "v_224",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "N5"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "N4"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "N2"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "N1"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "W1"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "W2"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "W3"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "W4"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "W5"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "W6"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "W7"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 120,
+        "station": "W8"
+      }
+    ],
     "t_0": [0, 40],
     "t_n": [0, 21640],
     "v_0": 9.387839999999999,
@@ -146,7 +1254,68 @@
   "tr_24": {
     "entry": "v_1940",
     "exit": "v_226",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "N5"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 60,
+        "station": "N4"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "N2"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 180,
+        "station": "N1"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W1"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W2"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 180,
+        "station": "W4"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W6"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W7"
+      },
+      {
+        "begin": [30, 21670],
+        "end": [30, 21670],
+        "min_stopping_time": 120,
+        "station": "W8"
+      }
+    ],
     "t_0": [30, 70],
     "t_n": [30, 21670],
     "v_0": 13.4112,
@@ -155,7 +1324,104 @@
   "tr_25": {
     "entry": "v_1940",
     "exit": "v_844",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "W8"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "W7"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "W6"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "W5"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "W4"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "W3"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "W2"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "W1"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "S1"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "S2"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "S3"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "S4"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "S5"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "S6"
+      },
+      {
+        "begin": [0, 21640],
+        "end": [0, 21640],
+        "min_stopping_time": 60,
+        "station": "S7"
+      }
+    ],
     "t_0": [0, 40],
     "t_n": [0, 21640],
     "v_0": 9.387839999999999,
@@ -164,7 +1430,80 @@
   "tr_26": {
     "entry": "v_1940",
     "exit": "v_844",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W8"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W7"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W5"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "W1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S4"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S5"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "S7"
+      }
+    ],
     "t_0": [10, 50],
     "t_n": [10, 21650],
     "v_0": 13.4112,
@@ -173,7 +1512,92 @@
   "tr_3": {
     "entry": "v_1259",
     "exit": "v_844",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "E6"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "E5"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "E3"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "E2"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "S2"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "S3"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "S4"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "S5"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "S6"
+      },
+      {
+        "begin": [90, 21740],
+        "end": [90, 21740],
+        "min_stopping_time": 120,
+        "station": "S7"
+      }
+    ],
     "t_0": [90, 140],
     "t_n": [90, 21740],
     "v_0": 9.387839999999999,
@@ -182,7 +1606,86 @@
   "tr_4": {
     "entry": "v_1259",
     "exit": "v_1936",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "E6"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "E5"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "E3"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "E2"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "W1"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "W2"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "W4"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "W5"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "W6"
+      },
+      {
+        "begin": [50, 21690],
+        "end": [50, 21690],
+        "min_stopping_time": 120,
+        "station": "W8"
+      }
+    ],
     "t_0": [50, 90],
     "t_n": [50, 21690],
     "v_0": 13.4112,
@@ -191,7 +1694,98 @@
   "tr_5": {
     "entry": "v_1259",
     "exit": "v_1938",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "E6"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "E5"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "E3"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "E2"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "W1"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "W2"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "W3"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "W4"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "W5"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "W6"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "W7"
+      },
+      {
+        "begin": [40, 21690],
+        "end": [40, 21690],
+        "min_stopping_time": 120,
+        "station": "W8"
+      }
+    ],
     "t_0": [40, 90],
     "t_n": [40, 21690],
     "v_0": 9.387839999999999,
@@ -200,7 +1794,68 @@
   "tr_6": {
     "entry": "v_1259",
     "exit": "v_1938",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [80, 21720],
+        "end": [80, 21720],
+        "min_stopping_time": 60,
+        "station": "E6"
+      },
+      {
+        "begin": [80, 21720],
+        "end": [80, 21720],
+        "min_stopping_time": 60,
+        "station": "E4"
+      },
+      {
+        "begin": [80, 21720],
+        "end": [80, 21720],
+        "min_stopping_time": 60,
+        "station": "E2"
+      },
+      {
+        "begin": [80, 21720],
+        "end": [80, 21720],
+        "min_stopping_time": 60,
+        "station": "E1"
+      },
+      {
+        "begin": [80, 21720],
+        "end": [80, 21720],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [80, 21720],
+        "end": [80, 21720],
+        "min_stopping_time": 60,
+        "station": "W1"
+      },
+      {
+        "begin": [80, 21720],
+        "end": [80, 21720],
+        "min_stopping_time": 60,
+        "station": "W3"
+      },
+      {
+        "begin": [80, 21720],
+        "end": [80, 21720],
+        "min_stopping_time": 60,
+        "station": "W5"
+      },
+      {
+        "begin": [80, 21720],
+        "end": [80, 21720],
+        "min_stopping_time": 60,
+        "station": "W7"
+      },
+      {
+        "begin": [80, 21720],
+        "end": [80, 21720],
+        "min_stopping_time": 60,
+        "station": "W8"
+      }
+    ],
     "t_0": [80, 120],
     "t_n": [80, 21720],
     "v_0": 13.4112,
@@ -209,7 +1864,80 @@
   "tr_7": {
     "entry": "v_223",
     "exit": "v_1256",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N5"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N4"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "N1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E2"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E3"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E5"
+      },
+      {
+        "begin": [10, 21650],
+        "end": [10, 21650],
+        "min_stopping_time": 120,
+        "station": "E6"
+      }
+    ],
     "t_0": [10, 50],
     "t_n": [10, 21650],
     "v_0": 9.387839999999999,
@@ -218,7 +1946,80 @@
   "tr_8": {
     "entry": "v_223",
     "exit": "v_1256",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N5"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N4"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N2"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "N1"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "E1"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "E2"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "E3"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "E4"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "E5"
+      },
+      {
+        "begin": [40, 21680],
+        "end": [40, 21680],
+        "min_stopping_time": 120,
+        "station": "E6"
+      }
+    ],
     "t_0": [40, 80],
     "t_n": [40, 21680],
     "v_0": 9.387839999999999,
@@ -227,7 +2028,86 @@
   "tr_9": {
     "entry": "v_223",
     "exit": "v_844",
-    "stops": null,
+    "stops": [
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "N5"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "N4"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "N3"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "N2"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "N1"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 180,
+        "station": "M"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S1"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S2"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S3"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S4"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S5"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S6"
+      },
+      {
+        "begin": [20, 21660],
+        "end": [20, 21660],
+        "min_stopping_time": 120,
+        "station": "S7"
+      }
+    ],
     "t_0": [20, 60],
     "t_n": [20, 21660],
     "v_0": 9.387839999999999,
