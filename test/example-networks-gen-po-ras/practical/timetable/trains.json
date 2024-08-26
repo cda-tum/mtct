@@ -1,1 +1,184 @@
-null
+{
+  "tr_1": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_10": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_11": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_12": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_13": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_14": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_15": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_16": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_17": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_18": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_19": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_2": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_20": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_21": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_22": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_23": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_24": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_25": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_26": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_3": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_4": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_5": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_6": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 80.4672,
+    "tim": true
+  },
+  "tr_7": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_8": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  },
+  "tr_9": {
+    "acceleration": 1.0,
+    "deceleration": 0.9,
+    "length": 400.0,
+    "max_speed": 56.32704,
+    "tim": true
+  }
+}

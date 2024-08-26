@@ -290,6 +290,83 @@ create_ras_instance(const std::string& path) {
     }
   }
 
+  double max_speed = 0;
+  for (size_t i = 0; i < instance.const_n().number_of_edges(); ++i) {
+    max_speed = std::max(max_speed, instance.const_n().get_edge(i).max_speed);
+  }
+
+  double min_station_length = std::numeric_limits<double>::max();
+  for (const auto& [station_name, station] : instance.get_station_list()) {
+    for (const auto& track_id : station.tracks) {
+      min_station_length = std::min(
+          min_station_length, instance.const_n().get_edge(track_id).length);
+    }
+  }
+
+  // Extract trains from Input_Train_Info.csv
+  // train_id,origin_node_id,destination_node_id,speed
+  // multiplier,earliest_departure_time,latest_departure_time
+  const auto path_to_input_train_info =
+      path_to_instance / "Input_Train_Info.csv";
+  if (!std::filesystem::exists(path_to_input_train_info)) {
+    throw std::exception("Input_Train_Info.csv does not exist");
+  }
+  std::ifstream input_train_info_file(path_to_input_train_info);
+  while (std::getline(input_train_info_file, line)) {
+    if (line == "train_id,origin_node_id,destination_node_id,speed "
+                "multiplier,earliest_departure_time,latest_departure_time") {
+      continue;
+    }
+    std::istringstream iss(line);
+    std::string        train_id;
+    std::string        origin_node_id;
+    std::string        destination_node_id;
+    std::string        speed_multiplier_str;
+    std::string        earliest_departure_time_str;
+    std::string        latest_departure_time_str;
+
+    std::getline(iss, train_id, ',');
+    std::getline(iss, origin_node_id, ',');
+    std::getline(iss, destination_node_id, ',');
+    std::getline(iss, speed_multiplier_str, ',');
+    std::getline(iss, earliest_departure_time_str, ',');
+    std::getline(iss, latest_departure_time_str, ',');
+
+    const double speed_multiplier     = std::stod(speed_multiplier_str);
+    const int earliest_departure_time = std::stoi(earliest_departure_time_str);
+    const int latest_departure_time   = std::stoi(latest_departure_time_str);
+
+    const size_t origin_vertex_index =
+        instance.n().get_vertex_index("v_" + origin_node_id);
+    const size_t destination_vertex_index =
+        instance.n().get_vertex_index("v_" + destination_node_id);
+
+    const auto in_edges = instance.const_n().out_edges(origin_vertex_index);
+    double     initial_speed = std::numeric_limits<double>::max();
+    for (const auto& e : in_edges) {
+      initial_speed =
+          std::min(initial_speed,
+                   speed_multiplier * instance.const_n().get_edge(e).max_speed);
+    }
+
+    const auto out_edges =
+        instance.const_n().in_edges(destination_vertex_index);
+    double target_speed = std::numeric_limits<double>::max();
+    for (const auto& e : out_edges) {
+      target_speed =
+          std::min(target_speed,
+                   speed_multiplier * instance.const_n().get_edge(e).max_speed);
+    }
+
+    instance.add_train(
+        "tr_" + train_id, std::min(400.0, min_station_length),
+        speed_multiplier * max_speed, 1, 0.9,
+        {earliest_departure_time, latest_departure_time}, initial_speed,
+        origin_vertex_index,
+        {earliest_departure_time, latest_departure_time + 6 * 60 * 60},
+        target_speed, destination_vertex_index);
+  }
+
   return instance;
 };
 

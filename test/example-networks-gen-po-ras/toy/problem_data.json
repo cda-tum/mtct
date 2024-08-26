@@ -1,1 +1,5 @@
-{ "lambda": 1.0 }
+{
+  "lambda": 1.0,
+  "train_optional": { "tr_1": false, "tr_2": false },
+  "train_weights": { "tr_1": 1.0, "tr_2": 1.0 }
+}
