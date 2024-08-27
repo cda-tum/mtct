@@ -162,6 +162,14 @@ TEST(Functionality, NetworkFunctions) {
   EXPECT_FALSE(network.has_vertex("v0_tmp"));
   EXPECT_TRUE(network.has_vertex("v0"));
 
+  // change vertex headway tests
+  EXPECT_EQ(network.get_vertex("v0").headway, 0);
+  network.change_vertex_headway("v0", 10);
+  EXPECT_EQ(network.get_vertex("v0").headway, 10);
+  const auto v0_index = network.get_vertex_index("v0");
+  network.change_vertex_headway(v0_index, 0);
+  EXPECT_EQ(network.get_vertex("v0").headway, 0);
+
   // change edge properties tests
   network.change_edge_length(0, 2);
   EXPECT_EQ(network.get_edge(0).length, 2);
@@ -942,6 +950,13 @@ TEST(Functionality, NetworkSections) {
   const auto s0_val = s0.value();
   const auto s1_val = s1.value();
   const auto s2_val = s2.value();
+
+  // Test breakable special case
+  network.set_edge_breakable(v0_v1);
+  const auto& unbreakable_v0_v1_var =
+      network.get_unbreakable_section_containing_edge(v0_v1);
+  EXPECT_EQ(unbreakable_v0_v1_var.size(), 0);
+  network.set_edge_unbreakable(v0_v1);
 
   // Section s0 should contain 5 edges, namely v0 -> v1, v1 -> v20, v31 -> v21,
   // v21 -> v1, v1 -> v0
