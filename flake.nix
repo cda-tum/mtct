@@ -30,6 +30,8 @@
               cmake
               lldb
               python3
+              pre-commit
+              clang-tools
             ];
 
             GUROBI_HOME = "${gurobi-with-source}";
