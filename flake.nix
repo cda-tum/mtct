@@ -32,6 +32,7 @@
               python3
               pre-commit
               clang-tools
+              graphia
             ];
 
             GUROBI_HOME = "${gurobi-with-source}";
