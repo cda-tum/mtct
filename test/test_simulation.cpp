@@ -13,8 +13,9 @@ TEST(Simulation, SimulationInstance) {
       Network::import_network("./example-networks/SimpleStation/network/");
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleStation/timetable/", network);
-  SimulationParameters parameters = {.n_timesteps = 200, .n_v_target_vars = 20};
 
-  const SimulationInstance instance =
-      SimulationInstance(network, timetable, parameters);
+  SimulationInstance instance = SimulationInstance(network, timetable, 200, 20);
+
+  ASSERT_EQ(instance.get_max_train_speed(), 83.33);
+  ASSERT_EQ(instance.get_shortest_track(), 5);
 }
