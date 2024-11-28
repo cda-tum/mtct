@@ -1,8 +1,8 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Timetable.hpp"
 
-#include "gtest/gtest_prod.h"
 #include <cfloat>
+#include <stdint.h>
 
 namespace cda_rail {
 
@@ -14,16 +14,16 @@ class SimulationInstance {
   Network   network;
   Timetable timetable;
 
-  u_int64_t n_timesteps;
-  u_int64_t n_v_target_vars;
-  u_int64_t n_switch_timesteps;
+  uint64_t n_timesteps;
+  uint64_t n_v_target_vars;
+  uint64_t n_switch_vars;
 
 public:
-  SimulationInstance(Network network, Timetable timetable,
-                     u_int64_t n_timesteps, u_int64_t n_v_target_vars)
+  SimulationInstance(Network network, Timetable timetable, uint64_t n_timesteps,
+                     uint64_t n_v_target_vars)
       : network(network), timetable(timetable), n_timesteps(n_timesteps),
         n_v_target_vars(n_v_target_vars) {
-    n_switch_timesteps =
+    n_switch_vars =
         std::ceil((get_max_train_speed() * n_timesteps) / get_shortest_track());
   };
 
