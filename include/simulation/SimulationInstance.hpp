@@ -6,7 +6,7 @@
 
 namespace cda_rail {
 
-class SimulationInstance {
+struct SimulationInstance {
   /**
    * Environment for Microscopic Simulation
    */
@@ -18,7 +18,6 @@ class SimulationInstance {
   uint64_t n_v_target_vars;
   uint64_t n_switch_vars;
 
-public:
   SimulationInstance(Network network, Timetable timetable, uint64_t n_timesteps,
                      uint64_t n_v_target_vars)
       : network(network), timetable(timetable), n_timesteps(n_timesteps),
@@ -30,4 +29,5 @@ public:
   double get_max_train_speed();
   double get_shortest_track();
 };
+
 }; // namespace cda_rail

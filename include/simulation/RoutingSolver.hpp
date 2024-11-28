@@ -1,0 +1,21 @@
+#include "simulation/SimulationInstance.hpp"
+
+#include <random>
+
+namespace cda_rail {
+
+class RoutingSolver {
+  /**
+   * Performs heuristic routing in a SimulationInstance
+   *
+   * @param instance contains constant parameters
+   * @param rng_engine used for solution generation
+   */
+
+  SimulationInstance instance;
+  std::mt19937       rng_engine;
+
+  RoutingSolver(SimulationInstance instance);
+};
+
+}; // namespace cda_rail

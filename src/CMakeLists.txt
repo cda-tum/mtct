@@ -36,7 +36,10 @@ add_library(
   solver/mip-based/GenPOMovingBlockMIPSolver_SolutionExtraction.cpp
   solver/mip-based/GenPOMovingBlockMIPSolver_Lazy.cpp
   ${PROJECT_SOURCE_DIR}/include/simulation/SimulationInstance.hpp
-  simulation/SimulationInstance.cpp)
+  simulation/SimulationInstance.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/RoutingSolution.hpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/RoutingSolver.hpp
+  simulation/RoutingSolver.cpp)
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)

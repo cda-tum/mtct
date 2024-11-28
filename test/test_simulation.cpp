@@ -19,3 +19,5 @@ TEST(Simulation, SimulationInstance) {
   ASSERT_EQ(instance.get_max_train_speed(), 83.33);
   ASSERT_EQ(instance.get_shortest_track(), 5);
 }
+
+TEST(Simulation, ExpandRoutingSolution) {}
