@@ -13,7 +13,7 @@ class RoutingSolver {
    */
 
   SimulationInstance instance;
-  std::mt19937       rng_engine;
+  std::ranlux24_base rng_engine;
 
   RoutingSolver(SimulationInstance instance);
 };

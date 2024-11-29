@@ -38,6 +38,7 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/simulation/SimulationInstance.hpp
   simulation/SimulationInstance.cpp
   ${PROJECT_SOURCE_DIR}/include/simulation/RoutingSolution.hpp
+  simulation/RoutingSolution.cpp
   ${PROJECT_SOURCE_DIR}/include/simulation/RoutingSolver.hpp
   simulation/RoutingSolver.cpp)
 
