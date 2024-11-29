@@ -1,10 +1,11 @@
+#include <algorithm>
 #include <random>
 #include <stdint.h>
 #include <vector>
 
 namespace cda_rail {
 
-struct RoutingSolution {
+class RoutingSolution {
   /**
    * Heuristic routing decision variables for a single train
    *
@@ -18,6 +19,7 @@ struct RoutingSolution {
   std::vector<std::tuple<double, double>> v_targets;
   std::vector<double>                     switch_directions;
 
+public:
   // Constructors
   // Generate a random solution
   RoutingSolution(uint64_t n_v_target_vars, uint64_t n_switch_vars,
@@ -26,6 +28,8 @@ struct RoutingSolution {
   RoutingSolution(std::vector<std::tuple<double, double>> v_targets,
                   std::vector<double>                     switch_directions)
       : v_targets(v_targets), switch_directions(switch_directions) {};
+
+  bool check_consistency() const;
 };
 
 }; // namespace cda_rail

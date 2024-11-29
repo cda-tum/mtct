@@ -16,3 +16,26 @@ cda_rail::RoutingSolution::RoutingSolution(uint64_t            n_v_target_vars,
         std::make_tuple(uniform(rng_engine), uniform(rng_engine)));
   }
 }
+
+bool cda_rail::RoutingSolution::check_consistency() const {
+  // Check size
+  if (switch_directions.size() != 10)
+    return false;
+  if (v_targets.size() != 10)
+    return false;
+
+  // Check range
+  for (double direction : switch_directions) {
+    if (direction != std::clamp(direction, 0.0, 1.0))
+      return false;
+  }
+
+  for (std::tuple<double, double> v_target : v_targets) {
+    if (std::get<0>(v_target) != std::clamp(std::get<0>(v_target), 0.0, 1.0))
+      return false;
+    if (std::get<1>(v_target) != std::clamp(std::get<1>(v_target), 0.0, 1.0))
+      return false;
+  }
+
+  return true;
+}
