@@ -2,12 +2,14 @@
 #include "datastructure/Timetable.hpp"
 #include "simulation/RoutingSolution.hpp"
 #include "simulation/SimulationInstance.hpp"
+#include "simulation/SpeedTargets.hpp"
 
 using namespace cda_rail;
 
 #include "gtest/gtest.h"
 #include <plog/Log.h>
 #include <plog/Logger.h>
+#include <vector>
 
 TEST(Simulation, SimulationInstance) {
   Network network =
@@ -31,4 +33,10 @@ TEST(Simulation, RandomSolution) {
     ASSERT_EQ(sol.v_targets.size(), 10);
     ASSERT_EQ(sol.switch_directions.size(), 10);
   }
+}
+
+TEST(Simulation, SpeedTargets) {
+  std::vector<uint>   timesteps = {1, 3, 5, 10, 87};
+  std::vector<double> speeds    = {0.4, 0.6, 0.5, -0.2, -0.5};
+  SpeedTargets        v_targets(timesteps, speeds);
 }
