@@ -40,7 +40,9 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/simulation/RoutingSolution.hpp
   simulation/RoutingSolution.cpp
   ${PROJECT_SOURCE_DIR}/include/simulation/RoutingSolver.hpp
-  simulation/RoutingSolver.cpp)
+  simulation/RoutingSolver.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/EdgeTrajectory.hpp
+  simulation/EdgeTrajectory.cpp)
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
