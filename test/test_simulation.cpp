@@ -22,11 +22,13 @@ TEST(Simulation, SimulationInstance) {
 }
 
 TEST(Simulation, RandomSolution) {
-  uint64_t seed =
+  uint seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   for (int i = 0; i <= 100; i++) {
     const RoutingSolution sol = RoutingSolution(10, 10, rng_engine);
     ASSERT_TRUE(sol.check_consistency());
+    ASSERT_EQ(sol.v_targets.size(), 10);
+    ASSERT_EQ(sol.switch_directions.size(), 10);
   }
 }

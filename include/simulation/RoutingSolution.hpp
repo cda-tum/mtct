@@ -5,7 +5,7 @@
 
 namespace cda_rail {
 
-class RoutingSolution {
+struct RoutingSolution {
   /**
    * Heuristic routing decision variables for a single train
    *
@@ -22,7 +22,7 @@ class RoutingSolution {
 public:
   // Constructors
   // Generate a random solution
-  RoutingSolution(uint64_t n_v_target_vars, uint64_t n_switch_vars,
+  RoutingSolution(uint n_v_target_vars, uint n_switch_vars,
                   std::ranlux24_base& rng_engine);
   // Alternatively pass in all variables
   RoutingSolution(std::vector<std::tuple<double, double>> v_targets,
