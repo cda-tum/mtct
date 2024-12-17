@@ -1,15 +1,15 @@
-#include "simulation/RoutingSolution.hpp"
 #include "simulation/SimulationInstance.hpp"
+#include "simulation/SpeedTargets.hpp"
 
 #include <vector>
 
 namespace cda_rail {
 
-class InitialEdgeState {
+struct InitialEdgeState {
   /**
    * Initial train state on new edge
    */
-  uint   timestep;
+  uint   timestep; // [1, n_timesteps]
   uint   edge;
   double position;
   bool   orientation;
@@ -25,15 +25,21 @@ class EdgeTrajectory {
   /**
    * Continuous train state on one edge
    */
-  uint                initial_timestep;
-  uint                edge;
-  bool                orientation;
+  uint initial_timestep; // [1, n_timesteps]
+  uint edge;
+  bool orientation;
+
+  uint   final_timestep; // [1, n_timesteps]
+  bool   exit_point;
+  double leftover_movement;
+
   std::vector<double> position;
   std::vector<double> speed;
 
+public:
   // Simulate edge movement from initial state and v targets
-  EdgeTrajectory(const SimulationInstance& instance,
-                 InitialEdgeState initial_state, const RoutingSolution& sol);
+  EdgeTrajectory(const SimulationInstance& instance, const Train& train,
+                 InitialEdgeState initial_state, SpeedTargets& v_targets);
 
   // Return possible next initial edge state
   std::optional<InitialEdgeState> get_next_edge(double switch_direction);
