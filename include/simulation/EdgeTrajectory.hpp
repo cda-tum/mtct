@@ -9,14 +9,14 @@ struct InitialEdgeState {
   /**
    * Initial train state on new edge
    */
-  uint   timestep; // [1, n_timesteps]
-  uint   edge;
+  ulong  timestep; // [1, n_timesteps]
+  size_t edge;
   double position;
   bool   orientation;
   double speed;
 
-  InitialEdgeState(uint timestep, uint edge, double position, bool orientation,
-                   double speed)
+  InitialEdgeState(ulong timestep, ulong edge, double position,
+                   bool orientation, double speed)
       : timestep(timestep), edge(edge), position(position),
         orientation(orientation), speed(speed) {};
 };
@@ -24,14 +24,11 @@ struct InitialEdgeState {
 class EdgeTrajectory {
   /**
    * Continuous train state on one edge
+   * Includes one additional simulation timestep after leaving edge
    */
-  uint initial_timestep; // [1, n_timesteps]
-  uint edge;
-  bool orientation;
-
-  uint   final_timestep; // [1, n_timesteps]
-  bool   exit_point;
-  double leftover_movement;
+  ulong  initial_timestep; // [1, n_timesteps]
+  size_t edge;
+  bool   orientation;
 
   std::vector<double> position;
   std::vector<double> speed;
@@ -42,7 +39,8 @@ public:
                  InitialEdgeState initial_state, SpeedTargets& v_targets);
 
   // Return possible next initial edge state
-  std::optional<InitialEdgeState> get_next_edge(double switch_direction);
+  std::optional<InitialEdgeState>
+  get_next_edge(const SimulationInstance& instance, double switch_direction);
 };
 
 }; // namespace cda_rail
