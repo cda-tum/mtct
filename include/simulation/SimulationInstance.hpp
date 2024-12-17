@@ -14,12 +14,12 @@ struct SimulationInstance {
   const Network   network;
   const Timetable timetable;
 
-  const uint n_timesteps;
-  const uint n_v_target_vars;
-  const uint n_switch_vars;
+  const ulong n_timesteps;
+  const ulong n_v_target_vars;
+  const ulong n_switch_vars;
 
-  SimulationInstance(Network network, Timetable timetable, uint n_timesteps,
-                     uint n_v_target_vars)
+  SimulationInstance(Network network, Timetable timetable, ulong n_timesteps,
+                     ulong n_v_target_vars)
       : network(network), timetable(timetable), n_timesteps(n_timesteps),
         n_v_target_vars(n_v_target_vars),
         n_switch_vars(std::ceil((get_max_train_speed() * n_timesteps) /

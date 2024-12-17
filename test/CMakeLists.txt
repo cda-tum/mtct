@@ -21,4 +21,5 @@ package_add_test(
   ${CMAKE_CURRENT_SOURCE_DIR}/test_general_performance_optimization_instances.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_gen_po_movingblock_mip_solver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi_vss_gen_using_mb_information.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_simulation.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_simulation.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_simulation_data.cpp)
