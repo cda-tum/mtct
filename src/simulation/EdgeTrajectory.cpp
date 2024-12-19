@@ -2,8 +2,8 @@
 
 cda_rail::EdgeTrajectory::EdgeTrajectory(const SimulationInstance& instance,
                                          const Train&              train,
-                                         InitialEdgeState initial_state,
-                                         SpeedTargets&    v_targets)
+                                         SpeedTargets&             v_targets,
+                                         InitialEdgeState initial_state)
     : initial_timestep(initial_state.timestep), edge(initial_state.edge),
       orientation(initial_state.orientation) {
   double edge_length         = instance.network.get_edge(edge).length;

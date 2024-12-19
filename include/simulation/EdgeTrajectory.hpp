@@ -31,7 +31,7 @@ class EdgeTrajectory {
 public:
   // Simulate movement on edge from initial state and v_targets
   EdgeTrajectory(const SimulationInstance& instance, const Train& train,
-                 InitialEdgeState initial_state, SpeedTargets& v_targets);
+                 SpeedTargets& v_targets, InitialEdgeState initial_state);
 
   // Contains edge transition logic
   std::optional<InitialEdgeState>
