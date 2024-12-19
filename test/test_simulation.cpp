@@ -31,8 +31,14 @@ TEST(Simulation, EdgeTrajectory) {
   std::vector<ulong>  timesteps = {3, 20, 50, 75, 87};
   std::vector<double> speeds    = {0.4, 0.6, 0.5, -0.2, -0.5};
 
-  InitialEdgeState init_state(15, 3, 0.05, 0, 5);
+  InitialEdgeState init_state{.timestep    = 15,
+                              .edge        = 3,
+                              .position    = 0.05,
+                              .orientation = false,
+                              .speed       = 5};
   SpeedTargets     v_targets(timesteps, speeds);
   EdgeTrajectory   edge_traj(instance, *(timetable.get_train_list().begin()),
                              init_state, v_targets);
+  std::optional<InitialEdgeState> new_edge_init_state =
+      edge_traj.get_next_edge(instance, 0.3);
 }
