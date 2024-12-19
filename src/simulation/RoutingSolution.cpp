@@ -14,7 +14,7 @@ cda_rail::RoutingSolution::RoutingSolution(ulong n_v_target_vars,
     switch_directions.push_back(uniform(rng_engine));
   }
 
-  for (ulong i = 1; i <= n_v_target_vars; i++) {
+  while (v_targets.targets.size() < n_v_target_vars) {
     v_targets.targets.insert({uniform_int(rng_engine), uniform(rng_engine)});
   }
 }

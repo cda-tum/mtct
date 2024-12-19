@@ -10,22 +10,25 @@ using namespace cda_rail;
 #include <vector>
 
 TEST(Simulation, RandomSolution) {
-  Network network =
+  const Network network =
       Network::import_network("./example-networks/SimpleStation/network/");
-  Timetable timetable = Timetable::import_timetable(
+  const Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleStation/timetable/", network);
-  ulong seed =
+  const ulong seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::ranlux24_base rng_engine(seed);
+  std::ranlux24_base                   rng_engine(seed);
+  std::uniform_int_distribution<ulong> random_train_index(
+      0, timetable.get_train_list().size() - 1);
 
   for (int i = 0; i <= 1000; i++) {
-    const RoutingSolution sol = RoutingSolution(
-        10, 10, 100, *(timetable.get_train_list().begin()), rng_engine);
+    const Train& train =
+        timetable.get_train_list().get_train(random_train_index(rng_engine));
+    const RoutingSolution sol = RoutingSolution(10, 10, 100, train, rng_engine);
     for (auto target : sol.v_targets.targets) {
       ASSERT_GE(target.first, 1);
       ASSERT_LE(target.first, 100);
-      ASSERT_GE(target.second, -50);
-      ASSERT_LE(target.second, 50);
+      ASSERT_GE(target.second, -train.max_speed);
+      ASSERT_LE(target.second, train.max_speed);
     }
     ASSERT_EQ(sol.v_targets.targets.size(), 10);
     ASSERT_EQ(sol.switch_directions.size(), 10);
