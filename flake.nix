@@ -28,11 +28,12 @@
             packages = with pkgs; [
               # C++ Compiler is already part of stdenv
               cmake
+              ninja
               lldb
               python3
               pre-commit
               clang-tools
-              graphia
+	            graphia
             ];
 
             GUROBI_HOME = "${gurobi-with-source}";
