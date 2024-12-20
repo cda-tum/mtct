@@ -50,7 +50,6 @@ public:
   EdgeTransition get_transition(const SimulationInstance& instance,
                                 const Train& train, double switch_direction);
 
-private:
   bool is_planned_stop(const SimulationInstance& instance, const Train& train);
 };
 

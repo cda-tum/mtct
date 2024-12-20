@@ -77,7 +77,7 @@ cda_rail::EdgeTrajectory::get_transition(const SimulationInstance& instance,
   size_t next_edge = viable_next_edges.at(
       std::round(switch_direction * (viable_next_edges.size() - 1)));
 
-  if (is_planned_stop(instance, train, next_edge)) {
+  if (is_planned_stop(instance, train)) {
     return EdgeTransition{
         .outcome   = cda_rail::PLANNED_STOP,
         .new_state = {},

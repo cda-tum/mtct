@@ -14,7 +14,11 @@ class TrainTrajectory {
 
 public:
   TrainTrajectory(const SimulationInstance& instance, const Train& train,
-                  RoutingSolution solution, InitialEdgeState init_state);
+                  RoutingSolution solution);
 };
+
+InitialEdgeState
+init_train_state_from_schedule(const SimulationInstance& instance,
+                               const Train&              train);
 
 }; // namespace cda_rail

@@ -1,6 +1,6 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Timetable.hpp"
-#include "simulation/EdgeTrajectory.hpp"
+#include "simulation/TrainTrajectory.hpp"
 
 using namespace cda_rail;
 
@@ -15,29 +15,33 @@ TEST(Simulation, SimulationInstance) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleStation/timetable/", network);
 
-  SimulationInstance instance(network, timetable, 200, 20);
+  SimulationInstance instance(network, timetable, 20);
 
   ASSERT_EQ(instance.get_max_train_speed(), 83.33);
   ASSERT_EQ(instance.get_shortest_track(), 5);
 }
 
 TEST(Simulation, EdgeTrajectory) {
-  Network network =
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+  Network            network =
       Network::import_network("./example-networks/SimpleStation/network/");
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleStation/timetable/", network);
-  SimulationInstance instance(network, timetable, 200, 20);
 
-  std::vector<ulong>  timesteps = {3, 20, 50, 75, 87};
-  std::vector<double> speeds    = {0.4, 0.6, 0.5, -0.2, -0.5};
-  Train               train     = timetable.get_train_list().get_train(1);
+  SimulationInstance                   instance(network, timetable, 20);
+  std::uniform_int_distribution<ulong> random_train_index(
+      0, timetable.get_train_list().size() - 1);
 
-  InitialEdgeState init_state{.timestep    = 15,
-                              .edge        = 3,
-                              .position    = 0.05,
-                              .orientation = false,
-                              .speed       = 5};
-  SpeedTargets     v_targets(timesteps, speeds);
-  EdgeTrajectory   edge_traj(instance, train, v_targets, init_state);
-  EdgeTransition   transition = edge_traj.get_transition(instance, train, 0.3);
+  for (int i = 0; i < 1000; i++) {
+    Train train =
+        timetable.get_train_list().get_train(random_train_index(rng_engine));
+    RoutingSolution solution(10, 10, instance.n_timesteps, train, rng_engine);
+
+    InitialEdgeState init_state =
+        init_train_state_from_schedule(instance, train);
+    EdgeTrajectory edge_traj(instance, train, solution.v_targets, init_state);
+    EdgeTransition transition = edge_traj.get_transition(instance, train, 0.3);
+  }
 }
