@@ -1,9 +1,18 @@
 #include "simulation/SimulationInstance.hpp"
 #include "simulation/SpeedTargets.hpp"
 
+#include <optional>
 #include <vector>
 
 namespace cda_rail {
+
+enum EdgeTransitionOutcome {
+  NORMAL,
+  OVERSPEED,
+  DEADEND,
+  PLANNED_STOP,
+  TIME_END,
+};
 
 struct InitialEdgeState {
   /**
@@ -14,6 +23,11 @@ struct InitialEdgeState {
   double position;    // [0, 1]
   bool   orientation; // true, false = forward, backward
   double speed;       // (-Inf, Inf)
+};
+
+struct EdgeTransition {
+  EdgeTransitionOutcome           outcome;
+  std::optional<InitialEdgeState> new_state;
 };
 
 class EdgeTrajectory {
@@ -33,9 +47,12 @@ public:
   EdgeTrajectory(const SimulationInstance& instance, const Train& train,
                  SpeedTargets& v_targets, InitialEdgeState initial_state);
 
-  // Contains edge transition logic
-  std::optional<InitialEdgeState>
-  get_next_edge(const SimulationInstance& instance, double switch_direction);
+  EdgeTransition get_transition(const SimulationInstance& instance,
+                                const Train& train, double switch_direction);
+
+private:
+  bool is_planned_stop(const SimulationInstance& instance, const Train& train,
+                       size_t next_edge);
 };
 
 }; // namespace cda_rail
