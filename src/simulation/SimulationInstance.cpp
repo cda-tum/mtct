@@ -19,3 +19,14 @@ double cda_rail::SimulationInstance::get_shortest_track() const {
   }
   return shortest_edge_length;
 }
+
+ulong cda_rail::SimulationInstance::get_last_train_departure() const {
+  ulong last_departure = 1;
+  for (auto train : timetable.get_train_list()) {
+    // TODO: narrowing cast should be avoided
+    ulong departure = timetable.get_schedule(train.name).get_t_n();
+    if (departure > last_departure)
+      last_departure = departure;
+  }
+  return last_departure;
+}

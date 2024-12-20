@@ -18,15 +18,17 @@ struct SimulationInstance {
   const ulong n_v_target_vars;
   const ulong n_switch_vars;
 
-  SimulationInstance(Network network, Timetable timetable, ulong n_timesteps,
+  SimulationInstance(Network network, Timetable timetable,
                      ulong n_v_target_vars)
-      : network(network), timetable(timetable), n_timesteps(n_timesteps),
+      : network(network), timetable(timetable),
+        n_timesteps(get_last_train_departure()),
         n_v_target_vars(n_v_target_vars),
         n_switch_vars(std::ceil((get_max_train_speed() * n_timesteps) /
                                 get_shortest_track())) {};
 
   double get_max_train_speed() const;
   double get_shortest_track() const;
+  ulong  get_last_train_departure() const;
 };
 
 }; // namespace cda_rail
