@@ -111,9 +111,10 @@ cda_rail::EdgeTrajectory::get_transition(const SimulationInstance& instance,
 
 bool cda_rail::EdgeTrajectory::is_planned_stop(
     const SimulationInstance& instance, const Train& train, size_t next_edge) {
-  size_t train_idx =
-      instance.timetable.get_train_list().get_train_index(train.name);
+  // size_t train_idx =
+  //    instance.timetable.get_train_list().get_train_index(train.name);
 
   // TODO: check for stop
   // instance.timetable.get_schedule(train_idx).get_stops();
+  return false;
 }

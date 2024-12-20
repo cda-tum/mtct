@@ -30,6 +30,7 @@ TEST(Simulation, EdgeTrajectory) {
 
   std::vector<ulong>  timesteps = {3, 20, 50, 75, 87};
   std::vector<double> speeds    = {0.4, 0.6, 0.5, -0.2, -0.5};
+  Train               train     = timetable.get_train_list().get_train(1);
 
   InitialEdgeState init_state{.timestep    = 15,
                               .edge        = 3,
@@ -37,8 +38,6 @@ TEST(Simulation, EdgeTrajectory) {
                               .orientation = false,
                               .speed       = 5};
   SpeedTargets     v_targets(timesteps, speeds);
-  EdgeTrajectory   edge_traj(instance, *(timetable.get_train_list().begin()),
-                             init_state, v_targets);
-  std::optional<InitialEdgeState> new_edge_init_state =
-      edge_traj.get_next_edge(instance, 0.3);
+  EdgeTrajectory   edge_traj(instance, train, v_targets, init_state);
+  EdgeTransition   transition = edge_traj.get_transition(instance, train, 0.3);
 }
