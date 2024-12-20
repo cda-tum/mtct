@@ -51,8 +51,7 @@ public:
                                 const Train& train, double switch_direction);
 
 private:
-  bool is_planned_stop(const SimulationInstance& instance, const Train& train,
-                       size_t next_edge);
+  bool is_planned_stop(const SimulationInstance& instance, const Train& train);
 };
 
 }; // namespace cda_rail

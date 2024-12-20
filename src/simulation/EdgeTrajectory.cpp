@@ -1,5 +1,7 @@
 #include "simulation/EdgeTrajectory.hpp"
 
+#include <algorithm>
+
 cda_rail::EdgeTrajectory::EdgeTrajectory(const SimulationInstance& instance,
                                          const Train&              train,
                                          SpeedTargets&             v_targets,
@@ -110,11 +112,15 @@ cda_rail::EdgeTrajectory::get_transition(const SimulationInstance& instance,
 }
 
 bool cda_rail::EdgeTrajectory::is_planned_stop(
-    const SimulationInstance& instance, const Train& train, size_t next_edge) {
-  // size_t train_idx =
-  //    instance.timetable.get_train_list().get_train_index(train.name);
+    const SimulationInstance& instance, const Train& train) {
+  for (auto stop : instance.timetable.get_schedule(train.name).get_stops()) {
+    auto stop_station = instance.timetable.get_station_list().get_station(
+        stop.get_station_name());
 
-  // TODO: check for stop
-  // instance.timetable.get_schedule(train_idx).get_stops();
+    if (std::find(stop_station.tracks.begin(), stop_station.tracks.end(),
+                  edge) != stop_station.tracks.end())
+      return true;
+  }
+
   return false;
 }
