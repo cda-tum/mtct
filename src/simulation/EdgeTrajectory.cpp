@@ -40,7 +40,7 @@ cda_rail::EdgeTrajectory::get_transition(const SimulationInstance& instance,
                                          double switch_direction) {
   if (initial_timestep + positions.size() - 1 >= instance.n_timesteps) {
     return EdgeTransition{
-        .outcome   = cda_rail::TIME_END,
+        .outcome   = TIME_END,
         .new_state = {},
     };
   }
@@ -69,7 +69,7 @@ cda_rail::EdgeTrajectory::get_transition(const SimulationInstance& instance,
 
   if (viable_next_edges.size() < 1) {
     return EdgeTransition{
-        .outcome   = cda_rail::DEADEND,
+        .outcome   = DEADEND,
         .new_state = {},
     };
   }
@@ -79,7 +79,7 @@ cda_rail::EdgeTrajectory::get_transition(const SimulationInstance& instance,
 
   if (is_planned_stop(instance, train)) {
     return EdgeTransition{
-        .outcome   = cda_rail::PLANNED_STOP,
+        .outcome   = PLANNED_STOP,
         .new_state = {},
     };
   }
@@ -97,8 +97,13 @@ cda_rail::EdgeTrajectory::get_transition(const SimulationInstance& instance,
                                    instance.network.get_edge(next_edge).length);
   }
 
+  EdgeTransitionOutcome outcome = NORMAL;
+
+  if (std::abs(speeds.back()) > instance.network.get_edge(next_edge).max_speed)
+    outcome = OVERSPEED;
+
   return EdgeTransition{
-      .outcome = cda_rail::NORMAL,
+      .outcome = outcome,
       .new_state =
           InitialEdgeState{
               .timestep = initial_timestep + positions.size() - 1,
