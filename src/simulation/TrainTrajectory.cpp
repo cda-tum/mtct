@@ -1,25 +1,42 @@
 #include "simulation/TrainTrajectory.hpp"
 
-// cda_rail::TrainTrajectory::TrainTrajectory(const SimulationInstance&
-// instance,
-//                                            const Train&              train,
-//                                            RoutingSolution solution,
-//                                            InitialEdgeState init_state) {
-//
-//   for (auto switch_direction : solution.switch_directions) {
-//     EdgeTrajectory edge_traj(instance, train, solution.v_targets,
-//     init_state); std::optional<InitialEdgeState> new_init_state =
-//     edge_traj.get_next_edge(instance, switch_direction);
-//
-//     if (!new_init_state.has_value()) break;
-//
-//     init_state = new_init_state.value();
-//   }
-// }
+cda_rail::TrainTrajectory::TrainTrajectory(const SimulationInstance& instance,
+                                           const Train&              train,
+                                           RoutingSolution           solution)
+    : solution(solution) {
+  initial_edge_states.push_back(read_initial_train_state(instance, train));
+
+  for (size_t abort = 0;; abort++) {
+    double switch_direction =
+        solution.switch_directions.at(initial_edge_states.size() - 1);
+    EdgeTrajectory edge_traj(instance, train, solution.v_targets,
+                             initial_edge_states.back());
+    EdgeTransition transition =
+        edge_traj.get_transition(instance, train, switch_direction);
+
+    switch (transition.outcome) {
+    case OVERSPEED:
+    // TODO: braking + jump back
+    case DEADEND:
+    // TODO: braking + waiting + jump back
+    case PLANNED_STOP:
+    // TODO: braking + waiting + jump back
+    case TIME_END:
+    // TODO: return
+    case NORMAL:
+    // TODO: continue
+    default:
+    }
+
+    if (abort > 1000)
+      throw exceptions::ConsistencyException(
+          "Trajectory construction did not terminate.");
+  }
+}
 
 cda_rail::InitialEdgeState
-cda_rail::init_train_state_from_schedule(const SimulationInstance& instance,
-                                         const Train&              train) {
+cda_rail::read_initial_train_state(const SimulationInstance& instance,
+                                   const Train&              train) {
   cda_rail::Schedule train_schedule =
       instance.timetable.get_schedule(train.name);
   return InitialEdgeState{
