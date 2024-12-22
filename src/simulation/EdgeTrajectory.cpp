@@ -27,7 +27,8 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
     }
     speeds.push_back(speeds.back() + acceleration);
     positions.push_back(positions.back() +
-                        (orientation * speeds.back() * edge_length_divisor));
+                        ((2 * ((double)orientation) - 1) * speeds.back() *
+                         edge_length_divisor));
 
     if (positions.back() > 1 || positions.back() < 0)
       transition = determine_transition(positions.back(), speeds.back());
