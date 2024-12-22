@@ -41,7 +41,7 @@ TEST(Simulation, EdgeTrajectory) {
 
     cda_rail::Schedule train_schedule =
         instance.timetable.get_schedule(train.name);
-    InitialEdgeState init_state{
+    TrainState init_state{
         .timestep = (ulong)train_schedule.get_t_0(),
         .edge =
             instance.network.get_successors(train_schedule.get_entry()).front(),

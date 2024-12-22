@@ -14,9 +14,9 @@ enum EdgeTransitionOutcome {
   TIME_END,
 };
 
-struct InitialEdgeState {
+struct TrainState {
   /**
-   * Initial train state on new edge
+   * Single train state
    */
   ulong  timestep;    // [1, n_timesteps]
   size_t edge;        // [0, network.edges.size() - 1]
@@ -26,8 +26,8 @@ struct InitialEdgeState {
 };
 
 struct EdgeTransition {
-  EdgeTransitionOutcome           outcome;
-  std::optional<InitialEdgeState> new_state;
+  EdgeTransitionOutcome     outcome;
+  std::optional<TrainState> new_state;
 };
 
 class EdgeTrajectory {
@@ -48,11 +48,18 @@ class EdgeTrajectory {
 public:
   // Simulate movement on edge from initial state and v_targets
   EdgeTrajectory(SimulationInstance& instance, Train& train,
-                 SpeedTargets& v_targets, InitialEdgeState initial_state);
+                 SpeedTargets& v_targets, TrainState initial_state);
 
   EdgeTransition get_transition(double switch_direction);
 
   bool is_planned_stop();
+
+  ulong               get_initial_timestep();
+  ulong               get_last_timestep();
+  ulong               get_edge();
+  bool                get_orientation();
+  std::vector<double> get_positions();
+  std::vector<double> get_speeds();
 };
 
 }; // namespace cda_rail

@@ -4,7 +4,7 @@
 
 cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
                                          Train& train, SpeedTargets& v_targets,
-                                         InitialEdgeState initial_state)
+                                         TrainState initial_state)
     : instance(instance), train(train),
       initial_timestep(initial_state.timestep), edge(initial_state.edge),
       orientation(initial_state.orientation) {
@@ -103,7 +103,7 @@ cda_rail::EdgeTrajectory::get_transition(double switch_direction) {
   return EdgeTransition{
       .outcome = outcome,
       .new_state =
-          InitialEdgeState{
+          TrainState{
               .timestep = initial_timestep + positions.size() - 1,
               .edge     = next_edge,
               .position = edge_entry_position,
@@ -126,3 +126,21 @@ bool cda_rail::EdgeTrajectory::is_planned_stop() {
 
   return false;
 }
+
+ulong cda_rail::EdgeTrajectory::get_initial_timestep() {
+  return initial_timestep;
+}
+
+ulong cda_rail::EdgeTrajectory::get_last_timestep() {
+  return initial_timestep + positions.size() - 1;
+}
+
+ulong cda_rail::EdgeTrajectory::get_edge() { return edge; }
+
+bool cda_rail::EdgeTrajectory::get_orientation() { return orientation; }
+
+std::vector<double> cda_rail::EdgeTrajectory::get_positions() {
+  return positions;
+}
+
+std::vector<double> cda_rail::EdgeTrajectory::get_speeds() { return speeds; }

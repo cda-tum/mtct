@@ -38,22 +38,58 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
 }
 
 cda_rail::SpeedTargets cda_rail::TrainTrajectory::match_velocity(
-    EdgeTransition transition, SpeedTargets v_targets, double target_speed,
-    std::optional<ulong> hold_until_timestep) {}
+    double target_speed, std::optional<ulong> hold_until_timestep) {}
 
 std::tuple<ulong, ulong> cda_rail::TrainTrajectory::find_braking_point(
-    EdgeTransition transition, SpeedTargets v_targets, double target_speed,
-    std::optional<ulong> hold_until_timestep) {}
+    double target_speed, std::optional<ulong> hold_until_timestep) {}
 
-cda_rail::InitialEdgeState
-cda_rail::TrainTrajectory::read_initial_train_state() {
+cda_rail::TrainState cda_rail::TrainTrajectory::read_initial_train_state() {
   cda_rail::Schedule train_schedule =
       instance.timetable.get_schedule(train.name);
-  return InitialEdgeState{
+  return TrainState{
       .timestep = (ulong)train_schedule.get_t_0(),
       .edge =
           instance.network.get_successors(train_schedule.get_entry()).front(),
       .position    = 0,
       .orientation = true,
       .speed       = train_schedule.get_v_0()};
+}
+
+bool cda_rail::TrainTrajectory::is_feasible_braking_point(ulong  timestep,
+                                                          double target_speed) {
+  double abs_diff_to_target_speed =
+      std::abs(get_state(timestep).speed - target_speed);
+  if (timestep > edge_trajectories.back().get_last_timestep() || timestep < 1)
+    throw std::out_of_range("Timestep out of range.");
+
+  // TODO: Logic test braking point
+}
+
+cda_rail::TrainState cda_rail::TrainTrajectory::get_state(ulong timestep) {
+  if (timestep > edge_trajectories.back().get_last_timestep() || timestep < 1)
+    throw std::out_of_range("Timestep out of range.");
+
+  EdgeTrajectory& relevant_trajectory =
+      edge_trajectories.at(find_relevant_trajectory(timestep));
+  size_t trajectory_idx = timestep - relevant_trajectory.get_initial_timestep();
+
+  return TrainState{
+      .timestep    = timestep,
+      .edge        = relevant_trajectory.get_edge(),
+      .position    = relevant_trajectory.get_positions().at(trajectory_idx),
+      .orientation = relevant_trajectory.get_orientation(),
+      .speed       = relevant_trajectory.get_speeds().at(trajectory_idx),
+  };
+}
+
+size_t cda_rail::TrainTrajectory::find_relevant_trajectory(ulong timestep) {
+  if (timestep > edge_trajectories.back().get_last_timestep() || timestep < 1)
+    throw std::out_of_range("Timestep out of range.");
+
+  for (auto it = edge_trajectories.begin(); it != edge_trajectories.end();
+       it++) {
+    if ((*it).get_initial_timestep() > timestep) {
+      return (size_t)std::distance(edge_trajectories.begin(), it);
+    }
+  }
 }
