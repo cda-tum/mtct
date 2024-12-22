@@ -21,3 +21,12 @@ double cda_rail::SpeedTargets::find_target_speed(ulong timestep) {
 
   return it->second;
 };
+
+void cda_rail::SpeedTargets::limit_speed_after(double maximum, ulong timestep) {
+  ;
+  for (auto it = targets.lower_bound(timestep); it != targets.end(); it++) {
+    if (std::abs((*it).second) > maximum) {
+      (*it).second = std::copysign(maximum, (*it).second);
+    }
+  }
+}
