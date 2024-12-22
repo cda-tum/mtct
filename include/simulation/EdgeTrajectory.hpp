@@ -18,7 +18,7 @@ struct TrainState {
   /**
    * Single train state
    */
-  ulong  timestep;    // [1, n_timesteps]
+  ulong  timestep;    // [0, n_timesteps]
   size_t edge;        // [0, network.edges.size() - 1]
   double position;    // [0, 1]
   bool   orientation; // true, false = forward, backward
@@ -45,7 +45,7 @@ class EdgeTrajectory {
   SimulationInstance& instance;
   Train&              train;
 
-  ulong  initial_timestep; // [1, n_timesteps]
+  ulong  initial_timestep; // [0, n_timesteps]
   size_t edge;             // [0, network.edges.size() - 1]
   bool   orientation;      // true, false = forward, backward
 

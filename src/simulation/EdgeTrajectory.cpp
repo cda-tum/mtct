@@ -17,7 +17,7 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
   double speed_disparity;
   double acceleration;
 
-  for (int timestep = initial_timestep + 1; timestep <= instance.n_timesteps;
+  for (int timestep = initial_timestep + 1; timestep < instance.n_timesteps;
        timestep++) {
     speed_disparity = v_targets.find_target_speed(timestep - 1) - speeds.back();
     if (speed_disparity >= 0) {
