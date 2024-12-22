@@ -48,4 +48,11 @@ TEST(Simulation, SpeedTargets) {
   ASSERT_EQ(v_targets.find_target_speed(74), 0.5);
   ASSERT_EQ(v_targets.find_target_speed(84), -0.2);
   ASSERT_EQ(v_targets.find_target_speed(89), -0.5);
+
+  v_targets.limit_speed_after(0.3, 45);
+  ASSERT_EQ(v_targets.targets.at(3), 0.4);
+  ASSERT_EQ(v_targets.targets.at(20), 0.6);
+  ASSERT_EQ(v_targets.targets.at(50), 0.3);
+  ASSERT_EQ(v_targets.targets.at(75), -0.2);
+  ASSERT_EQ(v_targets.targets.at(87), -0.3);
 }
