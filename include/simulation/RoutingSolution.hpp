@@ -26,9 +26,6 @@ public:
   // Generate a random solution
   RoutingSolution(ulong n_v_target_vars, ulong n_switch_vars, ulong n_timesteps,
                   const Train& train, std::ranlux24_base& rng_engine);
-  // Alternatively pass in all variables
-  RoutingSolution(SpeedTargets v_targets, std::vector<double> switch_directions)
-      : v_targets(v_targets), switch_directions(switch_directions) {};
 };
 
 }; // namespace cda_rail
