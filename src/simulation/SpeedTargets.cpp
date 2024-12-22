@@ -11,7 +11,7 @@ double cda_rail::SpeedTargets::find_target_speed(ulong timestep) {
   if (targets.size() == 0)
     throw std::out_of_range("Speed target set is empty.");
 
-  std::map<ulong, double>::iterator it = targets.upper_bound(timestep);
+  std::map<ulong, double>::const_iterator it = targets.upper_bound(timestep);
   if (it != targets.begin()) {
     --it;
   }
