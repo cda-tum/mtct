@@ -149,21 +149,28 @@ bool cda_rail::EdgeTrajectory::is_planned_stop() {
   return false;
 }
 
-ulong cda_rail::EdgeTrajectory::get_initial_timestep() {
+ulong cda_rail::EdgeTrajectory::get_initial_timestep() const {
   return initial_timestep;
 }
 
-ulong cda_rail::EdgeTrajectory::get_last_timestep() {
+ulong cda_rail::EdgeTrajectory::get_last_timestep() const {
   // Size is larger by one than timesteps on edge
   return initial_timestep + positions.size() - 1;
 }
 
-ulong cda_rail::EdgeTrajectory::get_edge() { return edge; }
+ulong cda_rail::EdgeTrajectory::get_edge() const { return edge; }
 
-bool cda_rail::EdgeTrajectory::get_orientation() { return orientation; }
+bool cda_rail::EdgeTrajectory::get_orientation() const { return orientation; }
 
-std::vector<double> cda_rail::EdgeTrajectory::get_positions() {
+const std::vector<double>& cda_rail::EdgeTrajectory::get_positions() const {
   return positions;
 }
 
-std::vector<double> cda_rail::EdgeTrajectory::get_speeds() { return speeds; }
+const std::vector<double>& cda_rail::EdgeTrajectory::get_speeds() const {
+  return speeds;
+}
+
+const std::optional<cda_rail::EdgeTransition>&
+cda_rail::EdgeTrajectory::get_transition() const {
+  return transition;
+}

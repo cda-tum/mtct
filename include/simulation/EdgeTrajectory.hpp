@@ -66,12 +66,13 @@ public:
 
   bool is_planned_stop();
 
-  ulong               get_initial_timestep();
-  ulong               get_last_timestep();
-  ulong               get_edge();
-  bool                get_orientation();
-  std::vector<double> get_positions();
-  std::vector<double> get_speeds();
+  ulong                                get_initial_timestep() const;
+  ulong                                get_last_timestep() const;
+  ulong                                get_edge() const;
+  bool                                 get_orientation() const;
+  const std::vector<double>&           get_positions() const;
+  const std::vector<double>&           get_speeds() const;
+  const std::optional<EdgeTransition>& get_transition() const;
 };
 
 }; // namespace cda_rail

@@ -67,17 +67,54 @@ bool cda_rail::TrainTrajectory::is_feasible_braking_point(ulong  timestep,
   }
 
   ulong required_braking_time = std::ceil(speed_diff / accel);
-  ulong speed_reached_at      = timestep + required_braking_time;
 
   // This is the definite integral under the braking curve
   // As defined in EdgeTrajectory speed changes are done at maximum acceleration
-  double braking_distance =
+  double braking_dist =
       starting_speed * required_braking_time +
       std::copysign((required_braking_time - 1) * required_braking_time * accel,
                     speed_diff);
-  // TODO
-  // double distance_remaining =
-  return false;
+
+  // Distance is defined from the train point of view on a fixed path
+  double dist_to_transition = distance_to_last_transition(timestep);
+  // TODO: Deviates from matlab version
+  double dist_after_braking = dist_to_transition - braking_dist;
+
+  if (timestep + required_braking_time <
+          edge_trajs.back().get_last_timestep() + 1 &&
+      dist_after_braking > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+double cda_rail::TrainTrajectory::distance_to_last_transition(ulong timestep) {
+  size_t start_traj_idx = get_relevant_trajectory(timestep);
+
+  if (!edge_trajs.back().get_transition().has_value())
+    throw exceptions::ConsistencyException(
+        "Last edge trajectory has no transition.");
+
+  double distance = 0;
+  for (auto it = edge_trajs.begin() + start_traj_idx; it != edge_trajs.end();
+       it++) {
+    double                     start_position, end_position;
+    const std::vector<double>& positions = (*it).get_positions();
+
+    if (it == edge_trajs.begin() + start_traj_idx) {
+      start_position = positions.front();
+    } else {
+      start_position = (double)(*it--).get_transition().value().exit_point;
+    }
+
+    end_position = (double)(*it).get_transition().value().exit_point;
+
+    distance += (end_position - start_position) *
+                (2 * ((double)(*it).get_orientation()) - 1);
+  }
+
+  return distance;
 }
 
 cda_rail::TrainState cda_rail::TrainTrajectory::get_state(ulong timestep) {
@@ -95,17 +132,6 @@ cda_rail::TrainState cda_rail::TrainTrajectory::get_state(ulong timestep) {
       .orientation = relevant_trajectory.get_orientation(),
       .speed       = relevant_trajectory.get_speeds().at(trajectory_idx),
   };
-}
-
-double cda_rail::TrainTrajectory::get_distance_to_end(ulong timestep) {
-  size_t start_traj_idx = get_relevant_trajectory(timestep);
-
-  double distance = 0;
-  for (auto it = edge_trajs.begin() + start_traj_idx; it != edge_trajs.end();
-       it++) {
-  }
-  // TODO
-  return 0.0;
 }
 
 size_t cda_rail::TrainTrajectory::get_relevant_trajectory(ulong timestep) {

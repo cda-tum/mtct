@@ -35,7 +35,7 @@ public:
 
   TrainState get_state(ulong timestep);
 
-  double get_distance_to_end(ulong timestep);
+  double distance_to_last_transition(ulong timestep);
 
   size_t get_relevant_trajectory(ulong timestep);
 
