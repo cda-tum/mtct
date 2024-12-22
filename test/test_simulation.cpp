@@ -39,9 +39,17 @@ TEST(Simulation, EdgeTrajectory) {
         timetable.get_train_list().get_train(random_train_index(rng_engine));
     RoutingSolution solution(10, 10, instance.n_timesteps, train, rng_engine);
 
-    InitialEdgeState init_state =
-        init_train_state_from_schedule(instance, train);
+    cda_rail::Schedule train_schedule =
+        instance.timetable.get_schedule(train.name);
+    InitialEdgeState init_state{
+        .timestep = (ulong)train_schedule.get_t_0(),
+        .edge =
+            instance.network.get_successors(train_schedule.get_entry()).front(),
+        .position    = 0,
+        .orientation = true,
+        .speed       = train_schedule.get_v_0()};
+
     EdgeTrajectory edge_traj(instance, train, solution.v_targets, init_state);
-    EdgeTransition transition = edge_traj.get_transition(instance, train, 0.3);
+    EdgeTransition transition = edge_traj.get_transition(0.3);
   }
 }

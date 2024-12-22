@@ -2,11 +2,11 @@
 
 #include <algorithm>
 
-cda_rail::EdgeTrajectory::EdgeTrajectory(const SimulationInstance& instance,
-                                         const Train&              train,
-                                         SpeedTargets&             v_targets,
+cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
+                                         Train& train, SpeedTargets& v_targets,
                                          InitialEdgeState initial_state)
-    : initial_timestep(initial_state.timestep), edge(initial_state.edge),
+    : instance(instance), train(train),
+      initial_timestep(initial_state.timestep), edge(initial_state.edge),
       orientation(initial_state.orientation) {
   double edge_length         = instance.network.get_edge(edge).length;
   double edge_length_divisor = 1 / edge_length;
@@ -35,9 +35,7 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(const SimulationInstance& instance,
 }
 
 cda_rail::EdgeTransition
-cda_rail::EdgeTrajectory::get_transition(const SimulationInstance& instance,
-                                         const Train&              train,
-                                         double switch_direction) {
+cda_rail::EdgeTrajectory::get_transition(double switch_direction) {
   if (initial_timestep + positions.size() - 1 >= instance.n_timesteps) {
     return EdgeTransition{
         .outcome   = TIME_END,
@@ -77,7 +75,7 @@ cda_rail::EdgeTrajectory::get_transition(const SimulationInstance& instance,
   size_t next_edge = viable_next_edges.at(
       std::round(switch_direction * (viable_next_edges.size() - 1)));
 
-  if (is_planned_stop(instance, train)) {
+  if (is_planned_stop()) {
     return EdgeTransition{
         .outcome   = PLANNED_STOP,
         .new_state = {},
@@ -116,8 +114,7 @@ cda_rail::EdgeTrajectory::get_transition(const SimulationInstance& instance,
   };
 }
 
-bool cda_rail::EdgeTrajectory::is_planned_stop(
-    const SimulationInstance& instance, const Train& train) {
+bool cda_rail::EdgeTrajectory::is_planned_stop() {
   for (auto stop : instance.timetable.get_schedule(train.name).get_stops()) {
     auto stop_station = instance.timetable.get_station_list().get_station(
         stop.get_station_name());
