@@ -1,5 +1,6 @@
 #include "simulation/EdgeTrajectory.hpp"
 
+#include <algorithm>
 #include <iterator>
 #include <optional>
 #include <vector>
@@ -9,12 +10,12 @@ namespace cda_rail {
 class TrainTrajectory {
   /**
    * Path of a single train over entire timespan
-   * Repairs solution speeds
+   * Repairs solution speeds to be feasible
    */
   SimulationInstance& instance;
   Train&              train;
 
-  std::vector<EdgeTrajectory> edge_trajectories;
+  std::vector<EdgeTrajectory> edge_trajs;
   std::vector<TrainState>     initial_edge_states;
   RoutingSolution             solution;
 
@@ -30,13 +31,15 @@ public:
   find_braking_point(double               target_speed,
                      std::optional<ulong> hold_until_timestep);
 
-  TrainState read_initial_train_state();
-
   bool is_feasible_braking_point(ulong timestep, double target_speed);
 
   TrainState get_state(ulong timestep);
 
-  size_t find_relevant_trajectory(ulong timestep);
+  double get_distance_to_end(ulong timestep);
+
+  size_t get_relevant_trajectory(ulong timestep);
+
+  TrainState read_initial_train_state();
 };
 
 }; // namespace cda_rail

@@ -25,15 +25,22 @@ struct TrainState {
   double speed;       // (-Inf, Inf)
 };
 
-struct EdgeTransition {
+struct EdgeTransitionResult {
   EdgeTransitionOutcome     outcome;
   std::optional<TrainState> new_state;
+};
+
+struct EdgeTransition {
+  bool   exit_point;          // true, false = forward, backward
+  size_t traversed_node;      // [0, network.edges.size() - 1]
+  bool   traversal_direction; // true, false = forward, backward
+  double leftover_movement;   // (0, Inf)
+  double traversal_speed;     // (-Inf, Inf)
 };
 
 class EdgeTrajectory {
   /**
    * Continuous train state on one edge
-   * Includes one additional simulation timestep after leaving edge
    */
   SimulationInstance& instance;
   Train&              train;
@@ -45,12 +52,17 @@ class EdgeTrajectory {
   std::vector<double> positions; // [0, 1]
   std::vector<double> speeds;    // (-Inf, Inf)
 
+  std::optional<EdgeTransition> transition;
+
+private:
+  EdgeTransition determine_transition(double exit_position, double exit_speed);
+
 public:
   // Simulate movement on edge from initial state and v_targets
   EdgeTrajectory(SimulationInstance& instance, Train& train,
                  SpeedTargets& v_targets, TrainState initial_state);
 
-  EdgeTransition get_transition(double switch_direction);
+  EdgeTransitionResult enter_next_edge(double switch_direction);
 
   bool is_planned_stop();
 

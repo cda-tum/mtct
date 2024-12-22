@@ -30,43 +30,62 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
                         (orientation * speeds.back() * edge_length_divisor));
 
     if (positions.back() > 1 || positions.back() < 0)
-      return;
+      transition = determine_transition(positions.back(), speeds.back());
+    positions.pop_back();
+    speeds.pop_back();
+    return;
   }
+
+  transition = {};
 }
 
 cda_rail::EdgeTransition
-cda_rail::EdgeTrajectory::get_transition(double switch_direction) {
-  if (initial_timestep + positions.size() - 1 >= instance.n_timesteps) {
+cda_rail::EdgeTrajectory::determine_transition(double exit_position,
+                                               double exit_speed) {
+  double edge_length = instance.network.get_edge(edge).length;
+  bool   exit_point  = (exit_position > 1);
+  size_t traversed_node;
+  bool   traversal_direction;
+  double leftover_movement;
+
+  if (exit_point) {
     return EdgeTransition{
+        // Forward exit in edge direction
+        .exit_point          = exit_point,
+        .traversed_node      = instance.network.get_edge(edge).target,
+        .traversal_direction = orientation,
+        .leftover_movement   = (exit_position - 1) * edge_length,
+        .traversal_speed     = exit_speed,
+    };
+  } else {
+    return EdgeTransition{
+        // Backward exit in edge direction
+        .exit_point          = exit_point,
+        .traversed_node      = instance.network.get_edge(edge).source,
+        .traversal_direction = !orientation,
+        .leftover_movement   = -exit_position * edge_length,
+        .traversal_speed     = exit_speed,
+    };
+  }
+}
+
+cda_rail::EdgeTransitionResult
+cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) {
+  if (!transition.has_value())
+    return EdgeTransitionResult{
         .outcome   = TIME_END,
         .new_state = {},
     };
-  }
 
-  size_t              traversed_node;
-  bool                traversal_direction;
-  double              leftover_movement;
   std::vector<size_t> viable_next_edges;
-
-  double edge_length     = instance.network.get_edge(edge).length;
-  bool   edge_exit_point = (positions.back() > 1);
-
-  if (edge_exit_point) {
-    // Forward exit in edge direction
-    traversed_node      = instance.network.get_edge(edge).target;
-    traversal_direction = orientation;
-    leftover_movement   = (positions.back() - 1) * edge_length;
-    viable_next_edges   = instance.network.get_successors(edge);
+  if (transition.value().exit_point) {
+    viable_next_edges = instance.network.get_successors(edge);
   } else {
-    // Backward exit in edge direction
-    traversed_node      = instance.network.get_edge(edge).source;
-    traversal_direction = !orientation;
-    leftover_movement   = -positions.back() * edge_length;
-    viable_next_edges   = instance.network.get_predecessors(edge);
+    viable_next_edges = instance.network.get_predecessors(edge);
   }
 
   if (viable_next_edges.size() < 1) {
-    return EdgeTransition{
+    return EdgeTransitionResult{
         .outcome   = DEADEND,
         .new_state = {},
     };
@@ -76,40 +95,43 @@ cda_rail::EdgeTrajectory::get_transition(double switch_direction) {
       std::round(switch_direction * (viable_next_edges.size() - 1)));
 
   if (is_planned_stop()) {
-    return EdgeTransition{
+    return EdgeTransitionResult{
         .outcome   = PLANNED_STOP,
         .new_state = {},
     };
   }
 
   double edge_entry_position;
-  bool   edge_entry_point =
-      (instance.network.get_edge(next_edge).target == traversed_node);
+  bool   edge_entry_point = (instance.network.get_edge(next_edge).target ==
+                           transition.value().traversed_node);
 
   if (edge_entry_point) {
     edge_entry_position =
-        1 - std::abs(leftover_movement /
+        1 - std::abs(transition.value().leftover_movement /
                      instance.network.get_edge(next_edge).length);
   } else {
-    edge_entry_position = std::abs(leftover_movement /
+    edge_entry_position = std::abs(transition.value().leftover_movement /
                                    instance.network.get_edge(next_edge).length);
   }
 
-  EdgeTransitionOutcome outcome = NORMAL;
-
-  if (std::abs(speeds.back()) > instance.network.get_edge(next_edge).max_speed)
+  EdgeTransitionOutcome outcome;
+  if (std::abs(transition.value().traversal_speed) >
+      instance.network.get_edge(next_edge).max_speed) {
     outcome = OVERSPEED;
+  } else {
+    outcome = NORMAL;
+  }
 
-  return EdgeTransition{
+  return EdgeTransitionResult{
       .outcome = outcome,
       .new_state =
           TrainState{
-              .timestep = initial_timestep + positions.size() - 1,
-              .edge     = next_edge,
-              .position = edge_entry_position,
-              .orientation =
-                  !(edge_entry_point != !traversal_direction), // XNOR
-              .speed = speeds.back(),
+              .timestep    = initial_timestep + positions.size(),
+              .edge        = next_edge,
+              .position    = edge_entry_position,
+              .orientation = !(edge_entry_point !=
+                               !transition.value().traversal_direction), // XNOR
+              .speed       = transition.value().traversal_speed,
           },
   };
 }
@@ -132,6 +154,7 @@ ulong cda_rail::EdgeTrajectory::get_initial_timestep() {
 }
 
 ulong cda_rail::EdgeTrajectory::get_last_timestep() {
+  // Size is larger by one than timesteps on edge
   return initial_timestep + positions.size() - 1;
 }
 
