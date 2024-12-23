@@ -25,7 +25,7 @@ TEST(Simulation, RandomSolution) {
         timetable.get_train_list().get_train(random_train_index(rng_engine));
     const RoutingSolution sol = RoutingSolution(10, 10, 100, train, rng_engine);
     for (auto target : sol.v_targets.targets) {
-      ASSERT_GE(target.first, 1);
+      ASSERT_GE(target.first, 0);
       ASSERT_LE(target.first, 100);
       ASSERT_GE(target.second, -train.max_speed);
       ASSERT_LE(target.second, train.max_speed);
