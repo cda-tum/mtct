@@ -56,8 +56,9 @@ TEST(Simulation, SpeedTargets) {
   ASSERT_EQ(v_targets.targets.at(87), -0.3);
 
   std::map<ulong, double> cop = v_targets.copy_range(20, 50);
-  ASSERT_EQ(cop.size(), 2);
+  ASSERT_EQ(cop.size(), 3);
   ASSERT_EQ(cop.at(20), 0.6);
+  ASSERT_EQ(cop.at(45), 0.3);
   ASSERT_EQ(cop.at(50), 0.3);
 
   SpeedTargets v_targets_original = v_targets;

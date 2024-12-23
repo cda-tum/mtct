@@ -8,11 +8,17 @@ cda_rail::SpeedTargets::SpeedTargets(std::vector<ulong>  timesteps,
 };
 
 void cda_rail::SpeedTargets::limit_speed_from(double maximum, ulong timestep) {
+  // Cap targets in range
   for (auto it = targets.lower_bound(timestep); it != targets.end(); it++) {
     if (std::abs((*it).second) > maximum) {
       (*it).second = std::copysign(maximum, (*it).second);
     }
   }
+
+  // Ensure carried over targets are not too high
+  double previous_target = find_target_speed(timestep);
+  if (std::abs(previous_target) > maximum)
+    targets.insert_or_assign(timestep, std::copysign(maximum, previous_target));
 }
 
 void cda_rail::SpeedTargets::insert(std::map<ulong, double> add_targets) {
