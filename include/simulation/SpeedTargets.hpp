@@ -9,7 +9,6 @@ namespace cda_rail {
 struct SpeedTargets {
   /**
    * Timestep-Speed tuples that train acceleration follows
-   * Timesteps are in range [1, n_timesteps]
    */
   std::map<ulong, double> targets;
 
@@ -19,6 +18,11 @@ public:
 
   double find_target_speed(ulong timestep) const;
   void   limit_speed_after(double maximum, ulong timestep);
+
+  void                    delete_range(ulong start, ulong end);
+  std::map<ulong, double> copy_range(ulong start, ulong end) const;
+  // Insert without replacing
+  void insert(std::map<ulong, double> add_targets);
 };
 
 }; // namespace cda_rail

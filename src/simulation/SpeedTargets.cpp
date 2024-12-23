@@ -23,10 +23,27 @@ double cda_rail::SpeedTargets::find_target_speed(ulong timestep) const {
 };
 
 void cda_rail::SpeedTargets::limit_speed_after(double maximum, ulong timestep) {
-  ;
   for (auto it = targets.lower_bound(timestep); it != targets.end(); it++) {
     if (std::abs((*it).second) > maximum) {
       (*it).second = std::copysign(maximum, (*it).second);
     }
   }
+}
+
+void cda_rail::SpeedTargets::delete_range(ulong start, ulong end) {
+  targets.erase(targets.lower_bound(start), targets.upper_bound(end));
+}
+
+std::map<ulong, double> cda_rail::SpeedTargets::copy_range(ulong start,
+                                                           ulong end) const {
+  std::map<ulong, double> new_map;
+  for (auto it = targets.lower_bound(start);
+       (*it).first <= end && it != targets.end(); it++) {
+    new_map.insert({(*it).first, (*it).second});
+  }
+  return new_map;
+}
+
+void cda_rail::SpeedTargets::insert(std::map<ulong, double> add_targets) {
+  targets.insert(add_targets.begin(), add_targets.end());
 }

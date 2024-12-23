@@ -40,7 +40,6 @@ TEST(Simulation, SpeedTargets) {
   std::vector<double> speeds    = {0.4, 0.6, 0.5, -0.2, -0.5};
 
   SpeedTargets v_targets(timesteps, speeds);
-
   ASSERT_EQ(v_targets.find_target_speed(2), 0.4);
   ASSERT_EQ(v_targets.find_target_speed(11), 0.4);
   ASSERT_EQ(v_targets.find_target_speed(21), 0.6);
@@ -55,4 +54,17 @@ TEST(Simulation, SpeedTargets) {
   ASSERT_EQ(v_targets.targets.at(50), 0.3);
   ASSERT_EQ(v_targets.targets.at(75), -0.2);
   ASSERT_EQ(v_targets.targets.at(87), -0.3);
+
+  std::map<ulong, double> cop = v_targets.copy_range(20, 50);
+  ASSERT_EQ(cop.size(), 2);
+  ASSERT_EQ(cop.at(20), 0.6);
+  ASSERT_EQ(cop.at(50), 0.3);
+
+  SpeedTargets v_targets_original = v_targets;
+  v_targets.delete_range(20, 50);
+  ASSERT_EQ(v_targets.find_target_speed(35), 0.4);
+  ASSERT_EQ(v_targets.targets.size(), 3);
+
+  v_targets.insert(cop);
+  ASSERT_EQ(v_targets_original.targets, v_targets.targets);
 }
