@@ -23,7 +23,7 @@ public:
   TrainTrajectory(SimulationInstance& instance, Train& train,
                   RoutingSolution solution);
 
-  // Modify speed targets to reach velocity before edge transition
+  // Modify speed targets to reach velocity before last edge transition
   SpeedTargets match_velocity(double               target_speed,
                               std::optional<ulong> hold_until_timestep);
 

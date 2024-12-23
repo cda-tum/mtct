@@ -40,7 +40,7 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
   transition = {};
 }
 
-cda_rail::EdgeTransition
+cda_rail::EdgeExit
 cda_rail::EdgeTrajectory::determine_transition(double exit_position,
                                                double exit_speed) const {
   double edge_length = instance.network.get_edge(edge).length;
@@ -50,7 +50,7 @@ cda_rail::EdgeTrajectory::determine_transition(double exit_position,
   double leftover_movement;
 
   if (exit_point) {
-    return EdgeTransition{
+    return EdgeExit{
         // Forward exit in edge direction
         .exit_point          = exit_point,
         .traversed_node      = instance.network.get_edge(edge).target,
@@ -59,7 +59,7 @@ cda_rail::EdgeTrajectory::determine_transition(double exit_position,
         .traversal_speed     = exit_speed,
     };
   } else {
-    return EdgeTransition{
+    return EdgeExit{
         // Backward exit in edge direction
         .exit_point          = exit_point,
         .traversed_node      = instance.network.get_edge(edge).source,
@@ -70,10 +70,10 @@ cda_rail::EdgeTrajectory::determine_transition(double exit_position,
   }
 }
 
-cda_rail::EdgeTransitionResult
+cda_rail::EdgeEntry
 cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   if (!transition.has_value())
-    return EdgeTransitionResult{
+    return EdgeEntry{
         .outcome   = TIME_END,
         .new_state = {},
     };
@@ -86,7 +86,7 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   }
 
   if (viable_next_edges.size() < 1) {
-    return EdgeTransitionResult{
+    return EdgeEntry{
         .outcome   = DEADEND,
         .new_state = {},
     };
@@ -96,7 +96,7 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
       std::round(switch_direction * (viable_next_edges.size() - 1)));
 
   if (is_planned_stop()) {
-    return EdgeTransitionResult{
+    return EdgeEntry{
         .outcome   = PLANNED_STOP,
         .new_state = {},
     };
@@ -115,7 +115,7 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
                                    instance.network.get_edge(next_edge).length);
   }
 
-  EdgeTransitionOutcome outcome;
+  EdgeEntryOutcome outcome;
   if (std::abs(transition.value().traversal_speed) >
       instance.network.get_edge(next_edge).max_speed) {
     outcome = OVERSPEED;
@@ -123,7 +123,7 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
     outcome = NORMAL;
   }
 
-  return EdgeTransitionResult{
+  return EdgeEntry{
       .outcome = outcome,
       .new_state =
           TrainState{
@@ -171,7 +171,7 @@ const std::vector<double>& cda_rail::EdgeTrajectory::get_speeds() const {
   return speeds;
 }
 
-const std::optional<cda_rail::EdgeTransition>&
+const std::optional<cda_rail::EdgeExit>&
 cda_rail::EdgeTrajectory::get_transition() const {
   return transition;
 }

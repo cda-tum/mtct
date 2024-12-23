@@ -10,27 +10,34 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
     double switch_direction =
         solution.switch_directions.at(initial_edge_states.size() - 1);
 
-    // TODO: clamp speed
+    SpeedTargets working_targets(solution.v_targets);
+    double       speed_limit =
+        instance.network.get_edge(initial_edge_states.back().edge).max_speed;
+    working_targets.limit_speed_from(speed_limit,
+                                     initial_edge_states.back().timestep);
     // TODO: adjust starting target
 
-    EdgeTrajectory       edge_traj(instance, train, solution.v_targets,
-                                   initial_edge_states.back());
-    EdgeTransitionResult transition =
-        edge_traj.enter_next_edge(switch_direction);
+    edge_trajs.push_back(EdgeTrajectory(instance, train, solution.v_targets,
+                                        initial_edge_states.back()));
+    EdgeEntry transition = edge_trajs.back().enter_next_edge(switch_direction);
 
     // switch (transition.outcome) {
     // case OVERSPEED:
-    //   // TODO: braking + jump back
+    //   // TODO: braking + merge targ + jump back
     // case DEADEND:
-    // // TODO: braking + waiting + jump back
+    // // TODO: braking + waiting + merge targ + jump back
     // case PLANNED_STOP:
-    // // TODO: braking + waiting + jump back
+    // // TODO: braking + waiting + merge targ + jump back
     // case TIME_END:
     // // TODO: return
     // case NORMAL:
     // // TODO: continue
     // default:
     // }
+
+    // TODO: Merge speed targets
+
+    // TODO: retry calculating edge
 
     if (abort > 1000)
       throw exceptions::ConsistencyException(
@@ -39,7 +46,13 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
 }
 
 cda_rail::SpeedTargets cda_rail::TrainTrajectory::match_velocity(
-    double target_speed, std::optional<ulong> hold_until_timestep) {}
+    double target_speed, std::optional<ulong> hold_until_timestep) {
+  if (!edge_trajs.back().get_transition().has_value())
+    throw exceptions::ConsistencyException("No transition to brake for.");
+  for (ulong candidate = edge_trajs.back().get_last_timestep(); candidate >= 0;
+       candidate--) {
+  }
+}
 
 bool cda_rail::TrainTrajectory::is_feasible_braking_point(
     ulong timestep, double target_speed) const {

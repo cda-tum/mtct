@@ -17,7 +17,7 @@ public:
   SpeedTargets(std::vector<ulong> timesteps, std::vector<double> speeds);
 
   double find_target_speed(ulong timestep) const;
-  void   limit_speed_after(double maximum, ulong timestep);
+  void   limit_speed_from(double maximum, ulong timestep);
 
   void                    delete_range(ulong start, ulong end);
   std::map<ulong, double> copy_range(ulong start, ulong end) const;

@@ -50,6 +50,6 @@ TEST(Simulation, EdgeTrajectory) {
         .speed       = train_schedule.get_v_0()};
 
     EdgeTrajectory edge_traj(instance, train, solution.v_targets, init_state);
-    EdgeTransitionResult transition = edge_traj.enter_next_edge(0.3);
+    EdgeEntry      transition = edge_traj.enter_next_edge(0.3);
   }
 }

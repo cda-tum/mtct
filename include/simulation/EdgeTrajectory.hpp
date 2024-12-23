@@ -6,14 +6,6 @@
 
 namespace cda_rail {
 
-enum EdgeTransitionOutcome {
-  NORMAL,
-  OVERSPEED,
-  DEADEND,
-  PLANNED_STOP,
-  TIME_END,
-};
-
 struct TrainState {
   /**
    * Single train state
@@ -25,12 +17,20 @@ struct TrainState {
   double speed;       // (-Inf, Inf)
 };
 
-struct EdgeTransitionResult {
-  EdgeTransitionOutcome     outcome;
+enum EdgeEntryOutcome {
+  NORMAL,
+  OVERSPEED,
+  DEADEND,
+  PLANNED_STOP,
+  TIME_END,
+};
+
+struct EdgeEntry {
+  EdgeEntryOutcome          outcome;
   std::optional<TrainState> new_state;
 };
 
-struct EdgeTransition {
+struct EdgeExit {
   bool   exit_point;          // true, false = forward, backward
   size_t traversed_node;      // [0, network.edges.size() - 1]
   bool   traversal_direction; // true, false = forward, backward
@@ -52,28 +52,27 @@ class EdgeTrajectory {
   std::vector<double> positions; // [0, 1]
   std::vector<double> speeds;    // (-Inf, Inf)
 
-  std::optional<EdgeTransition> transition;
+  std::optional<EdgeExit> transition;
 
 private:
-  EdgeTransition determine_transition(double exit_position,
-                                      double exit_speed) const;
+  EdgeExit determine_transition(double exit_position, double exit_speed) const;
 
 public:
   // Simulate movement on edge from initial state and v_targets
   EdgeTrajectory(SimulationInstance& instance, Train& train,
                  SpeedTargets& v_targets, TrainState initial_state);
 
-  EdgeTransitionResult enter_next_edge(double switch_direction) const;
+  EdgeEntry enter_next_edge(double switch_direction) const;
 
   bool is_planned_stop() const;
 
-  ulong                                get_initial_timestep() const;
-  ulong                                get_last_timestep() const;
-  ulong                                get_edge() const;
-  bool                                 get_orientation() const;
-  const std::vector<double>&           get_positions() const;
-  const std::vector<double>&           get_speeds() const;
-  const std::optional<EdgeTransition>& get_transition() const;
+  ulong                          get_initial_timestep() const;
+  ulong                          get_last_timestep() const;
+  ulong                          get_edge() const;
+  bool                           get_orientation() const;
+  const std::vector<double>&     get_positions() const;
+  const std::vector<double>&     get_speeds() const;
+  const std::optional<EdgeExit>& get_transition() const;
 };
 
 }; // namespace cda_rail
