@@ -12,8 +12,8 @@ class RoutingSolver {
    * @param rng_engine used for solution generation
    */
 
-  SimulationInstance instance;
-  std::ranlux24_base rng_engine;
+  const SimulationInstance instance;
+  const std::ranlux24_base rng_engine;
 
   RoutingSolver(SimulationInstance instance);
 };
