@@ -16,13 +16,12 @@ public:
   SpeedTargets() = default;
   SpeedTargets(std::vector<ulong> timesteps, std::vector<double> speeds);
 
-  double find_target_speed(ulong timestep) const;
-  void   limit_speed_from(double maximum, ulong timestep);
+  void limit_speed_from(double maximum, ulong timestep);
+  void insert(std::map<ulong, double> add_targets); // does not replace
+  void delete_range(ulong start, ulong end);
 
-  void                    delete_range(ulong start, ulong end);
+  double                  find_target_speed(ulong timestep) const;
   std::map<ulong, double> copy_range(ulong start, ulong end) const;
-  // Insert without replacing
-  void insert(std::map<ulong, double> add_targets);
 };
 
 }; // namespace cda_rail

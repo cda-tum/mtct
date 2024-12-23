@@ -7,6 +7,22 @@ cda_rail::SpeedTargets::SpeedTargets(std::vector<ulong>  timesteps,
   };
 };
 
+void cda_rail::SpeedTargets::limit_speed_from(double maximum, ulong timestep) {
+  for (auto it = targets.lower_bound(timestep); it != targets.end(); it++) {
+    if (std::abs((*it).second) > maximum) {
+      (*it).second = std::copysign(maximum, (*it).second);
+    }
+  }
+}
+
+void cda_rail::SpeedTargets::insert(std::map<ulong, double> add_targets) {
+  targets.insert(add_targets.begin(), add_targets.end());
+}
+
+void cda_rail::SpeedTargets::delete_range(ulong start, ulong end) {
+  targets.erase(targets.lower_bound(start), targets.upper_bound(end));
+}
+
 double cda_rail::SpeedTargets::find_target_speed(ulong timestep) const {
   if (targets.size() == 0)
     throw std::out_of_range("Speed target set is empty.");
@@ -22,18 +38,6 @@ double cda_rail::SpeedTargets::find_target_speed(ulong timestep) const {
   return it->second;
 };
 
-void cda_rail::SpeedTargets::limit_speed_from(double maximum, ulong timestep) {
-  for (auto it = targets.lower_bound(timestep); it != targets.end(); it++) {
-    if (std::abs((*it).second) > maximum) {
-      (*it).second = std::copysign(maximum, (*it).second);
-    }
-  }
-}
-
-void cda_rail::SpeedTargets::delete_range(ulong start, ulong end) {
-  targets.erase(targets.lower_bound(start), targets.upper_bound(end));
-}
-
 std::map<ulong, double> cda_rail::SpeedTargets::copy_range(ulong start,
                                                            ulong end) const {
   std::map<ulong, double> new_map;
@@ -42,8 +46,4 @@ std::map<ulong, double> cda_rail::SpeedTargets::copy_range(ulong start,
     new_map.insert({(*it).first, (*it).second});
   }
   return new_map;
-}
-
-void cda_rail::SpeedTargets::insert(std::map<ulong, double> add_targets) {
-  targets.insert(add_targets.begin(), add_targets.end());
 }
