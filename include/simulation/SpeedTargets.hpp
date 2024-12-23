@@ -17,7 +17,7 @@ public:
   SpeedTargets() = default;
   SpeedTargets(std::vector<ulong> timesteps, std::vector<double> speeds);
 
-  double find_target_speed(ulong timestep);
+  double find_target_speed(ulong timestep) const;
   void   limit_speed_after(double maximum, ulong timestep);
 };
 

@@ -55,16 +55,17 @@ class EdgeTrajectory {
   std::optional<EdgeTransition> transition;
 
 private:
-  EdgeTransition determine_transition(double exit_position, double exit_speed);
+  EdgeTransition determine_transition(double exit_position,
+                                      double exit_speed) const;
 
 public:
   // Simulate movement on edge from initial state and v_targets
   EdgeTrajectory(SimulationInstance& instance, Train& train,
                  SpeedTargets& v_targets, TrainState initial_state);
 
-  EdgeTransitionResult enter_next_edge(double switch_direction);
+  EdgeTransitionResult enter_next_edge(double switch_direction) const;
 
-  bool is_planned_stop();
+  bool is_planned_stop() const;
 
   ulong                                get_initial_timestep() const;
   ulong                                get_last_timestep() const;

@@ -29,17 +29,17 @@ public:
 
   std::tuple<ulong, ulong>
   find_braking_point(double               target_speed,
-                     std::optional<ulong> hold_until_timestep);
+                     std::optional<ulong> hold_until_timestep) const;
 
-  bool is_feasible_braking_point(ulong timestep, double target_speed);
+  bool is_feasible_braking_point(ulong timestep, double target_speed) const;
 
-  TrainState get_state(ulong timestep);
+  TrainState get_state(ulong timestep) const;
 
-  double distance_to_last_transition(ulong timestep);
+  double distance_to_last_transition(ulong timestep) const;
 
-  size_t get_relevant_trajectory(ulong timestep);
+  size_t get_relevant_trajectory(ulong timestep) const;
 
-  TrainState read_initial_train_state();
+  TrainState read_initial_train_state() const;
 };
 
 }; // namespace cda_rail

@@ -42,7 +42,7 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
 
 cda_rail::EdgeTransition
 cda_rail::EdgeTrajectory::determine_transition(double exit_position,
-                                               double exit_speed) {
+                                               double exit_speed) const {
   double edge_length = instance.network.get_edge(edge).length;
   bool   exit_point  = (exit_position > 1);
   size_t traversed_node;
@@ -71,7 +71,7 @@ cda_rail::EdgeTrajectory::determine_transition(double exit_position,
 }
 
 cda_rail::EdgeTransitionResult
-cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) {
+cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   if (!transition.has_value())
     return EdgeTransitionResult{
         .outcome   = TIME_END,
@@ -137,7 +137,7 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) {
   };
 }
 
-bool cda_rail::EdgeTrajectory::is_planned_stop() {
+bool cda_rail::EdgeTrajectory::is_planned_stop() const {
   for (auto stop : instance.timetable.get_schedule(train.name).get_stops()) {
     auto stop_station = instance.timetable.get_station_list().get_station(
         stop.get_station_name());

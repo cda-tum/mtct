@@ -7,7 +7,7 @@ cda_rail::SpeedTargets::SpeedTargets(std::vector<ulong>  timesteps,
   };
 };
 
-double cda_rail::SpeedTargets::find_target_speed(ulong timestep) {
+double cda_rail::SpeedTargets::find_target_speed(ulong timestep) const {
   if (targets.size() == 0)
     throw std::out_of_range("Speed target set is empty.");
 
