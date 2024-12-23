@@ -55,7 +55,7 @@ class EdgeTrajectory {
   std::optional<EdgeExit> transition;
 
 private:
-  EdgeExit determine_transition(double exit_position, double exit_speed) const;
+  EdgeExit determine_exit(double exit_position, double exit_speed) const;
 
 public:
   // Simulate movement on edge from initial state and v_targets

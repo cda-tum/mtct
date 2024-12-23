@@ -31,7 +31,7 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
                          edge_length_divisor));
 
     if (positions.back() > 1 || positions.back() < 0)
-      transition = determine_transition(positions.back(), speeds.back());
+      transition = determine_exit(positions.back(), speeds.back());
     positions.pop_back();
     speeds.pop_back();
     return;
@@ -41,8 +41,8 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
 }
 
 cda_rail::EdgeExit
-cda_rail::EdgeTrajectory::determine_transition(double exit_position,
-                                               double exit_speed) const {
+cda_rail::EdgeTrajectory::determine_exit(double exit_position,
+                                         double exit_speed) const {
   double edge_length = instance.network.get_edge(edge).length;
   bool   exit_point  = (exit_position > 1);
   size_t traversed_node;
