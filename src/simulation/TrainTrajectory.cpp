@@ -26,7 +26,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
     // case DEADEND:
     // // TODO: braking + wait till reverse target + merge targ + jump back
     // case PLANNED_STOP:
-    // // TODO: braking + wait + merge targ + jump back
+    // // TODO: braking + wait fixed time + merge targ + jump back
     // case TIME_END:
     // // TODO: return
     // case NORMAL:
@@ -45,7 +45,8 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
 }
 
 cda_rail::BrakingPeriod cda_rail::TrainTrajectory::brake_before_transit(
-    double abs_target_speed, std::optional<ulong> hold_until_timestep) {
+    double abs_target_speed, std::optional<ulong> hold_until,
+    std::optional<ulong> hold_at_least) {
   if (!edge_trajs.back().get_transition().has_value())
     throw exceptions::ConsistencyException("No transition to brake for.");
 
@@ -61,12 +62,15 @@ cda_rail::BrakingPeriod cda_rail::TrainTrajectory::brake_before_transit(
 
   ulong start_braking, end_braking;
   std::tie(start_braking, end_braking) = braking_period.value();
+  ulong end_hold                       = end_braking;
 
-  ulong end_delete = end_braking;
-  if (hold_until_timestep.has_value() &&
-      hold_until_timestep.value() > end_braking)
-    end_delete = hold_until_timestep.value();
-  solution.v_targets.delete_range(start_braking, end_delete);
+  if (hold_until.has_value() && hold_until.value() > end_hold)
+    end_hold = hold_until.value();
+  if (hold_at_least.has_value() &&
+      hold_at_least.value() + start_braking > end_hold)
+    end_hold = hold_at_least.value() + start_braking;
+
+  solution.v_targets.delete_range(start_braking, end_hold);
 
   solution.v_targets.targets.insert_or_assign(start_braking, target_speed);
 
