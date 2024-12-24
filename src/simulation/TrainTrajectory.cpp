@@ -10,29 +10,44 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
     double switch_direction =
         solution.switch_directions.at(initial_edge_states.size() - 1);
 
-    SpeedTargets working_targets(solution.v_targets);
-    double       speed_limit =
+    SpeedTargets previous_targets(solution.v_targets);
+
+    double curr_speed_limit =
         instance.network.get_edge(initial_edge_states.back().edge).max_speed;
-    working_targets.limit_speed_from(speed_limit,
-                                     initial_edge_states.back().timestep);
+    solution.v_targets.limit_speed_from(curr_speed_limit,
+                                        initial_edge_states.back().timestep);
 
     edge_trajs.push_back(EdgeTrajectory(instance, train, solution.v_targets,
                                         initial_edge_states.back()));
     EdgeEntry transition = edge_trajs.back().enter_next_edge(switch_direction);
 
-    // switch (transition.outcome) {
-    // case OVERSPEED:
-    //   // TODO: braking + merge targ + jump back
-    // case DEADEND:
-    // // TODO: braking + wait till reverse target + merge targ + jump back
-    // case PLANNED_STOP:
-    // // TODO: braking + wait fixed time + merge targ + jump back
-    // case TIME_END:
-    // // TODO: return
-    // case NORMAL:
-    // // TODO: continue
-    // default:
-    // }
+    // Restore original targets after leaving edge
+    // Braking can only shift edge transition backwards so we never
+    // unnecessarily constrain speeds
+    solution.v_targets.delete_range(edge_trajs.back().get_last_timestep() + 1,
+                                    instance.n_timesteps - 1);
+    solution.v_targets.insert(previous_targets.copy_range(
+        edge_trajs.back().get_last_timestep() + 1, instance.n_timesteps - 1));
+
+    switch (transition.outcome) {
+    case OVERSPEED: {
+      double next_speed_limit =
+          instance.network.get_edge(transition.new_state.value().edge)
+              .max_speed;
+      BrakingPeriod braking_period =
+          brake_before_transit(next_speed_limit, {}, {});
+      // TODO: jump back
+    }
+    case DEADEND:
+    // TODO: braking + wait till reverse target + merge targ + jump back
+    case PLANNED_STOP:
+    // TODO: braking + wait fixed time + merge targ + jump back
+    case TIME_END:
+    // TODO: return
+    case NORMAL:
+    // TODO: continue
+    default:
+    }
 
     // TODO: Merge speed targets
 
