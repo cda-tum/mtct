@@ -15,7 +15,6 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
         instance.network.get_edge(initial_edge_states.back().edge).max_speed;
     working_targets.limit_speed_from(speed_limit,
                                      initial_edge_states.back().timestep);
-    // TODO: adjust starting target
 
     edge_trajs.push_back(EdgeTrajectory(instance, train, solution.v_targets,
                                         initial_edge_states.back()));
@@ -25,9 +24,9 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
     // case OVERSPEED:
     //   // TODO: braking + merge targ + jump back
     // case DEADEND:
-    // // TODO: braking + waiting + merge targ + jump back
+    // // TODO: braking + wait till reverse target + merge targ + jump back
     // case PLANNED_STOP:
-    // // TODO: braking + waiting + merge targ + jump back
+    // // TODO: braking + wait + merge targ + jump back
     // case TIME_END:
     // // TODO: return
     // case NORMAL:
@@ -45,23 +44,57 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
   }
 }
 
-cda_rail::SpeedTargets cda_rail::TrainTrajectory::match_velocity(
-    double target_speed, std::optional<ulong> hold_until_timestep) {
+cda_rail::BrakingPeriod cda_rail::TrainTrajectory::brake_before_transit(
+    double abs_target_speed, std::optional<ulong> hold_until_timestep) {
   if (!edge_trajs.back().get_transition().has_value())
     throw exceptions::ConsistencyException("No transition to brake for.");
-  for (ulong candidate = edge_trajs.back().get_last_timestep(); candidate >= 0;
-       candidate--) {
-  }
+
+  EdgeExit transition = edge_trajs.back().get_transition().value();
+  double   target_speed =
+      std::copysign(abs_target_speed, transition.traversal_direction);
+
+  std::optional<BrakingPeriod> braking_period =
+      find_latest_braking_period(target_speed);
+
+  if (!braking_period.has_value())
+    throw exceptions::ConsistencyException("No feasible braking period found.");
+
+  ulong start_braking, end_braking;
+  std::tie(start_braking, end_braking) = braking_period.value();
+
+  ulong end_delete = end_braking;
+  if (hold_until_timestep.has_value() &&
+      hold_until_timestep.value() > end_braking)
+    end_delete = hold_until_timestep.value();
+  solution.v_targets.delete_range(start_braking, end_delete);
+
+  solution.v_targets.targets.insert_or_assign(start_braking, target_speed);
+
+  return braking_period.value();
 }
 
-bool cda_rail::TrainTrajectory::is_feasible_braking_point(
-    ulong timestep, double target_speed) const {
+std::optional<cda_rail::BrakingPeriod>
+cda_rail::TrainTrajectory::find_latest_braking_period(
+    double target_speed) const {
+  for (ulong start_braking = edge_trajs.back().get_last_timestep();
+       start_braking >= 0; start_braking--) {
+    std::optional<ulong> end_braking =
+        is_feasible_braking_point(start_braking, target_speed);
+    if (end_braking.has_value())
+      return std::tuple(start_braking, end_braking.value());
+  }
+  return {};
+}
+
+std::optional<ulong> cda_rail::TrainTrajectory::is_feasible_braking_point(
+    ulong start_braking, double target_speed) const {
   double abs_diff_to_target_speed =
-      std::abs(get_state(timestep).speed - target_speed);
-  if (timestep > edge_trajs.back().get_last_timestep() || timestep < 1)
+      std::abs(get_state(start_braking).speed - target_speed);
+  if (start_braking > edge_trajs.back().get_last_timestep() ||
+      start_braking < 0)
     throw std::out_of_range("Timestep out of range.");
 
-  double starting_speed  = get_state(timestep).speed;
+  double starting_speed  = get_state(start_braking).speed;
   double speed_diff      = target_speed - starting_speed;
   double speed_diff_abs  = std::abs(speed_diff);
   bool   accel_direction = std::signbit(speed_diff);
@@ -84,16 +117,17 @@ bool cda_rail::TrainTrajectory::is_feasible_braking_point(
                     speed_diff);
 
   // Distance is defined from the train point of view on a fixed path
-  double dist_to_transition = distance_to_last_transition(timestep);
+  double dist_to_transition = distance_to_last_transition(start_braking);
   // TODO: Deviates from matlab version
   double dist_after_braking = dist_to_transition - braking_dist;
 
-  if (timestep + required_braking_time <
-          edge_trajs.back().get_last_timestep() + 1 &&
+  ulong end_braking = start_braking + required_braking_time;
+
+  if (end_braking < edge_trajs.back().get_last_timestep() + 1 &&
       dist_after_braking > 0) {
-    return true;
+    return end_braking;
   } else {
-    return false;
+    return {};
   }
 }
 

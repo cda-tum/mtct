@@ -7,6 +7,8 @@
 
 namespace cda_rail {
 
+using BrakingPeriod = std::tuple<ulong, ulong>;
+
 class TrainTrajectory {
   /**
    * Path of a single train over entire timespan
@@ -24,14 +26,15 @@ public:
                   RoutingSolution solution);
 
   // Modify speed targets to reach velocity before last edge transition
-  SpeedTargets match_velocity(double               target_speed,
-                              std::optional<ulong> hold_until_timestep);
+  BrakingPeriod brake_before_transit(double               target_speed,
+                                     std::optional<ulong> hold_until_timestep);
 
-  std::tuple<ulong, ulong>
-  find_braking_point(double               target_speed,
-                     std::optional<ulong> hold_until_timestep) const;
+  std::optional<BrakingPeriod>
+  find_latest_braking_period(double target_speed) const;
 
-  bool is_feasible_braking_point(ulong timestep, double target_speed) const;
+  // Returns end of braking if braking is feasible
+  std::optional<ulong> is_feasible_braking_point(ulong  start_braking,
+                                                 double target_speed) const;
 
   TrainState get_state(ulong timestep) const;
 
