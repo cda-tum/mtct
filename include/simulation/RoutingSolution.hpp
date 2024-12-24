@@ -13,7 +13,7 @@ struct RoutingSolution {
    * Heuristic routing decision variables for a single train
    *
    * @param v_targets speed targets to accelerate towards
-   * (timestep [0, n_timesteps], speed [-max_speed,+max_speed])
+   * (timestep [0, n_timesteps - 1], speed [-max_speed,+max_speed])
    * @param switch_directions directions to take at vertices
    * direction [0,1]
    * switch_direction selects from list of available next edges

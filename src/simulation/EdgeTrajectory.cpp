@@ -155,7 +155,6 @@ ulong cda_rail::EdgeTrajectory::get_initial_timestep() const {
 }
 
 ulong cda_rail::EdgeTrajectory::get_last_timestep() const {
-  // Size is larger by one than timesteps on edge
   return initial_timestep + positions.size() - 1;
 }
 
