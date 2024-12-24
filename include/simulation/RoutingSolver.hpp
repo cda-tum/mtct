@@ -1,5 +1,6 @@
 #include "simulation/SimulationInstance.hpp"
 
+#include <ctime>
 #include <random>
 
 namespace cda_rail {
