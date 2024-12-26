@@ -17,28 +17,40 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
 
       switch (transition.outcome) {
       case OVERSPEED: {
-        double next_speed_limit =
+        double prev_speed_limit =
             instance.network.get_edge(transition.new_state.value().edge)
                 .max_speed;
         ulong start_braking, end_braking;
         std::tie(start_braking, end_braking) =
-            brake_before_transit(next_speed_limit, {}, {});
+            add_braking(prev_speed_limit, {}, {});
         backtrack_trajectory(start_braking);
         continue;
       }
       case DEADEND: {
+        std::optional<ulong> reversal_time =
+            solution.v_targets.find_next_reversal(
+                edge_trajs.back().get_last_timestep());
+        ulong start_braking, end_braking;
+        std::tie(start_braking, end_braking) =
+            add_braking(0, reversal_time, {});
+        backtrack_trajectory(start_braking);
+        continue;
       }
-      // TODO: braking + wait till reverse target + merge targ + jump back
       case PLANNED_STOP: {
+        // TODO: read real stop time from schedule instead of placeholder
+        ulong stop_duration = 40;
+        ulong start_braking, end_braking;
+        // TODO: remove stops once visited
+        std::tie(start_braking, end_braking) =
+            add_braking(0, {}, stop_duration);
+        backtrack_trajectory(start_braking);
+        continue;
       }
-      // TODO: braking + wait fixed time + merge targ + jump back
       case TIME_END: {
+        break;
       }
-      // TODO: return
       case NORMAL: {
-      }
-      // TODO: continue
-      default: {
+        initial_edge_state = transition.new_state.value();
       }
       }
     }
@@ -61,10 +73,6 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
     solution.v_targets.insert(previous_targets.copy_range(
         edge_trajs.back().get_last_timestep() + 1, instance.n_timesteps - 1));
 
-    // TODO: Merge speed targets
-
-    // TODO: retry calculating edge
-
     if (abort > 1000)
       throw exceptions::ConsistencyException(
           "Trajectory construction did not terminate.");
@@ -77,9 +85,10 @@ void cda_rail::TrainTrajectory::backtrack_trajectory(ulong timestep) {
   }
 }
 
-cda_rail::BrakingPeriod cda_rail::TrainTrajectory::brake_before_transit(
-    double abs_target_speed, std::optional<ulong> hold_until,
-    std::optional<ulong> hold_at_least) {
+cda_rail::BrakingPeriod
+cda_rail::TrainTrajectory::add_braking(double               abs_target_speed,
+                                       std::optional<ulong> hold_until,
+                                       std::optional<ulong> hold_at_least) {
   if (!edge_trajs.back().get_transition().has_value())
     throw exceptions::ConsistencyException("No transition to brake for.");
 

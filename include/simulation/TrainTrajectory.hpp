@@ -24,9 +24,9 @@ private:
   void backtrack_trajectory(ulong timestep);
 
   // Modify speed targets to reach velocity before last edge transition
-  BrakingPeriod brake_before_transit(double               target_speed,
-                                     std::optional<ulong> hold_until,
-                                     std::optional<ulong> hold_at_least);
+  BrakingPeriod add_braking(double               target_speed,
+                            std::optional<ulong> hold_until,
+                            std::optional<ulong> hold_at_least);
 
   std::optional<BrakingPeriod>
   find_latest_braking_period(double target_speed) const;
