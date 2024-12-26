@@ -30,11 +30,12 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
                         ((2 * ((double)orientation) - 1) * speeds.back() *
                          edge_length_divisor));
 
-    if (positions.back() > 1 || positions.back() < 0)
+    if (positions.back() > 1 || positions.back() < 0) {
       transition = determine_exit(positions.back(), speeds.back());
-    positions.pop_back();
-    speeds.pop_back();
-    return;
+      positions.pop_back();
+      speeds.pop_back();
+      return;
+    }
   }
 
   transition = {};
