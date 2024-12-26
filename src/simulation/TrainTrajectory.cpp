@@ -4,22 +4,54 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
                                            Train&              train,
                                            RoutingSolution     solution)
     : instance(instance), train(train), solution(solution) {
-  initial_edge_states.push_back(read_initial_train_state());
-
   for (size_t abort = 0;; abort++) {
-    double switch_direction =
-        solution.switch_directions.at(initial_edge_states.size() - 1);
+    TrainState initial_edge_state;
+    if (edge_trajs.size() == 0) {
+      initial_edge_state = read_initial_train_state();
+    } else {
+      double switch_direction =
+          solution.switch_directions.at(edge_trajs.size());
+
+      EdgeEntry transition =
+          edge_trajs.back().enter_next_edge(switch_direction);
+
+      switch (transition.outcome) {
+      case OVERSPEED: {
+        double next_speed_limit =
+            instance.network.get_edge(transition.new_state.value().edge)
+                .max_speed;
+        ulong start_braking, end_braking;
+        std::tie(start_braking, end_braking) =
+            brake_before_transit(next_speed_limit, {}, {});
+        backtrack_trajectory(start_braking);
+        continue;
+      }
+      case DEADEND: {
+      }
+      // TODO: braking + wait till reverse target + merge targ + jump back
+      case PLANNED_STOP: {
+      }
+      // TODO: braking + wait fixed time + merge targ + jump back
+      case TIME_END: {
+      }
+      // TODO: return
+      case NORMAL: {
+      }
+      // TODO: continue
+      default: {
+      }
+      }
+    }
 
     SpeedTargets previous_targets(solution.v_targets);
 
     double curr_speed_limit =
-        instance.network.get_edge(initial_edge_states.back().edge).max_speed;
+        instance.network.get_edge(initial_edge_state.edge).max_speed;
     solution.v_targets.limit_speed_from(curr_speed_limit,
-                                        initial_edge_states.back().timestep);
+                                        initial_edge_state.timestep);
 
     edge_trajs.push_back(EdgeTrajectory(instance, train, solution.v_targets,
-                                        initial_edge_states.back()));
-    EdgeEntry transition = edge_trajs.back().enter_next_edge(switch_direction);
+                                        initial_edge_state));
 
     // Restore original targets after leaving edge
     // Braking can only shift edge transition backwards so we never
@@ -29,26 +61,6 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
     solution.v_targets.insert(previous_targets.copy_range(
         edge_trajs.back().get_last_timestep() + 1, instance.n_timesteps - 1));
 
-    switch (transition.outcome) {
-    case OVERSPEED: {
-      double next_speed_limit =
-          instance.network.get_edge(transition.new_state.value().edge)
-              .max_speed;
-      BrakingPeriod braking_period =
-          brake_before_transit(next_speed_limit, {}, {});
-      // TODO: jump back
-    }
-    case DEADEND:
-    // TODO: braking + wait till reverse target + merge targ + jump back
-    case PLANNED_STOP:
-    // TODO: braking + wait fixed time + merge targ + jump back
-    case TIME_END:
-    // TODO: return
-    case NORMAL:
-    // TODO: continue
-    default:
-    }
-
     // TODO: Merge speed targets
 
     // TODO: retry calculating edge
@@ -56,6 +68,12 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
     if (abort > 1000)
       throw exceptions::ConsistencyException(
           "Trajectory construction did not terminate.");
+  }
+}
+
+void cda_rail::TrainTrajectory::backtrack_trajectory(ulong timestep) {
+  while (edge_trajs.size() > get_relevant_trajectory(timestep)) {
+    edge_trajs.pop_back();
   }
 }
 
@@ -199,7 +217,7 @@ cda_rail::TrainTrajectory::get_state(ulong timestep) const {
 
 size_t
 cda_rail::TrainTrajectory::get_relevant_trajectory(ulong timestep) const {
-  if (timestep > edge_trajs.back().get_last_timestep() || timestep < 1)
+  if (timestep > edge_trajs.back().get_last_timestep() || timestep < 0)
     throw std::out_of_range("Timestep out of range.");
 
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {

@@ -18,12 +18,10 @@ class TrainTrajectory {
   Train&              train;
 
   std::vector<EdgeTrajectory> edge_trajs;
-  std::vector<TrainState>     initial_edge_states;
   RoutingSolution             solution;
 
-public:
-  TrainTrajectory(SimulationInstance& instance, Train& train,
-                  RoutingSolution solution);
+private:
+  void backtrack_trajectory(ulong timestep);
 
   // Modify speed targets to reach velocity before last edge transition
   BrakingPeriod brake_before_transit(double               target_speed,
@@ -37,9 +35,13 @@ public:
   std::optional<ulong> is_feasible_braking_point(ulong  start_braking,
                                                  double target_speed) const;
 
-  TrainState get_state(ulong timestep) const;
-
   double distance_to_last_transition(ulong timestep) const;
+
+public:
+  TrainTrajectory(SimulationInstance& instance, Train& train,
+                  RoutingSolution solution);
+
+  TrainState get_state(ulong timestep) const;
 
   size_t get_relevant_trajectory(ulong timestep) const;
 
