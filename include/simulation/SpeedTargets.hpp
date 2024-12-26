@@ -21,6 +21,7 @@ public:
   void delete_range(ulong start, ulong end);
 
   double                  find_target_speed(ulong timestep) const;
+  std::optional<ulong>    find_next_reversal(ulong timestep) const;
   std::map<ulong, double> copy_range(ulong start, ulong end) const;
 };
 

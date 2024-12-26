@@ -29,6 +29,16 @@ void cda_rail::SpeedTargets::delete_range(ulong start, ulong end) {
   targets.erase(targets.lower_bound(start), targets.upper_bound(end));
 }
 
+std::optional<ulong>
+cda_rail::SpeedTargets::find_next_reversal(ulong timestep) const {
+  bool previous_direction = std::signbit(find_target_speed(timestep));
+  for (auto it = targets.upper_bound(timestep); it != targets.end(); it++) {
+    if (std::signbit((*it).second) != previous_direction)
+      return (*it).first;
+  }
+  return {};
+}
+
 double cda_rail::SpeedTargets::find_target_speed(ulong timestep) const {
   if (targets.size() == 0)
     throw std::out_of_range("Speed target set is empty.");

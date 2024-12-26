@@ -47,6 +47,9 @@ TEST(Simulation, SpeedTargets) {
   ASSERT_EQ(v_targets.find_target_speed(74), 0.5);
   ASSERT_EQ(v_targets.find_target_speed(84), -0.2);
   ASSERT_EQ(v_targets.find_target_speed(89), -0.5);
+  ASSERT_EQ(v_targets.find_next_reversal(0), 75);
+  ASSERT_EQ(v_targets.find_next_reversal(10), 75);
+  ASSERT_EQ(v_targets.find_next_reversal(21), 75);
 
   v_targets.limit_speed_from(0.3, 45);
   ASSERT_EQ(v_targets.targets.at(3), 0.4);
