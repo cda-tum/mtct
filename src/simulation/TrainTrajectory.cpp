@@ -208,7 +208,7 @@ cda_rail::TrainTrajectory::distance_to_last_transition(ulong timestep) const {
 
 cda_rail::TrainState
 cda_rail::TrainTrajectory::get_state(ulong timestep) const {
-  if (timestep > edge_trajs.back().get_last_timestep() || timestep < 1)
+  if (timestep > edge_trajs.back().get_last_timestep() || timestep < 0)
     throw std::out_of_range("Timestep out of range.");
 
   const EdgeTrajectory& relevant_trajectory =
