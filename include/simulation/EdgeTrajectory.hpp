@@ -30,12 +30,14 @@ struct EdgeEntry {
   std::optional<TrainState> new_state;
 };
 
-struct EdgeExit {
-  bool   exit_point;          // true, false = forward, backward
-  size_t traversed_node;      // [0, network.edges.size() - 1]
-  bool   traversal_direction; // true, false = forward, backward
-  double leftover_movement;   // (0, Inf)
-  double traversal_speed;     // (-Inf, Inf)
+struct EdgeTraversal {
+  ulong  timestep;
+  size_t from_edge;
+  bool   exit_point;           // true, false = forward, backward
+  size_t vertex;               // [0, network.edges.size() - 1]
+  bool   crossing_orientation; // true, false = forward, backward
+  double leftover_movement;    // (0, Inf)
+  double speed;                // (-Inf, Inf)
 };
 
 class EdgeTrajectory {
@@ -52,11 +54,9 @@ class EdgeTrajectory {
   std::vector<double> positions; // [0, 1]
   std::vector<double> speeds;    // (-Inf, Inf)
 
-  std::optional<EdgeExit> transition;
+  std::optional<EdgeTraversal> traversal;
 
 private:
-  EdgeExit determine_exit(double exit_position, double exit_speed) const;
-
 public:
   // Simulate movement on edge from initial state and v_targets
   EdgeTrajectory(SimulationInstance& instance, Train& train,
@@ -68,13 +68,18 @@ public:
 
   cda_rail::ScheduledStop get_stop() const;
 
-  ulong                          get_initial_timestep() const;
-  ulong                          get_last_timestep() const;
-  ulong                          get_edge() const;
-  bool                           get_orientation() const;
-  const std::vector<double>&     get_positions() const;
-  const std::vector<double>&     get_speeds() const;
-  const std::optional<EdgeExit>& get_transition() const;
+  ulong                               get_initial_timestep() const;
+  ulong                               get_last_timestep() const;
+  ulong                               get_edge() const;
+  bool                                get_orientation() const;
+  const std::vector<double>&          get_positions() const;
+  const std::vector<double>&          get_speeds() const;
+  const std::optional<EdgeTraversal>& get_traversal() const;
 };
+
+std::optional<TrainState> determine_first_state(const Network& network,
+                                                EdgeTraversal  exit,
+                                                double switch_direction);
+EdgeTraversal determine_exit(const Network& network, TrainState overshot_state);
 
 }; // namespace cda_rail

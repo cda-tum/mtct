@@ -12,13 +12,12 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
       double switch_direction =
           solution.switch_directions.at(edge_trajs.size());
 
-      EdgeEntry transition =
-          edge_trajs.back().enter_next_edge(switch_direction);
+      EdgeEntry traversal = edge_trajs.back().enter_next_edge(switch_direction);
 
-      switch (transition.outcome) {
+      switch (traversal.outcome) {
       case OVERSPEED: {
         double prev_speed_limit =
-            instance.network.get_edge(transition.new_state.value().edge)
+            instance.network.get_edge(traversal.new_state.value().edge)
                 .max_speed;
         ulong start_braking, end_braking;
         std::tie(start_braking, end_braking) =
@@ -48,7 +47,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
           backtrack_trajectory(start_braking);
           visited_stops.push_back(stop);
         } else {
-          initial_edge_state = transition.new_state.value();
+          initial_edge_state = traversal.new_state.value();
         }
         continue;
       }
@@ -56,7 +55,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
         break;
       }
       case NORMAL: {
-        initial_edge_state = transition.new_state.value();
+        initial_edge_state = traversal.new_state.value();
       }
       }
     }
@@ -72,7 +71,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
                                         initial_edge_state));
 
     // Restore original targets after leaving edge
-    // Braking can only shift edge transition backwards so we never
+    // Braking can only shift edge traversal backwards so we never
     // unnecessarily constrain speeds
     solution.v_targets.delete_range(edge_trajs.back().get_last_timestep() + 1,
                                     instance.n_timesteps - 1);
@@ -95,12 +94,12 @@ cda_rail::BrakingPeriod
 cda_rail::TrainTrajectory::add_braking(double               abs_target_speed,
                                        std::optional<ulong> hold_until,
                                        std::optional<ulong> hold_at_least) {
-  if (!edge_trajs.back().get_transition().has_value())
-    throw exceptions::ConsistencyException("No transition to brake for.");
+  if (!edge_trajs.back().get_traversal().has_value())
+    throw exceptions::ConsistencyException("No traversal to brake for.");
 
-  EdgeExit transition = edge_trajs.back().get_transition().value();
-  double   target_speed =
-      std::copysign(abs_target_speed, transition.traversal_direction);
+  EdgeTraversal traversal = edge_trajs.back().get_traversal().value();
+  double        target_speed =
+      std::copysign(abs_target_speed, traversal.crossing_orientation);
 
   std::optional<BrakingPeriod> braking_period =
       find_latest_braking_period(target_speed);
@@ -169,9 +168,9 @@ std::optional<ulong> cda_rail::TrainTrajectory::is_feasible_braking_point(
                     speed_diff);
 
   // Distance is defined from the train point of view on a fixed path
-  double dist_to_transition = distance_to_last_transition(start_braking);
+  double dist_to_traversal = distance_to_last_traversal(start_braking);
   // TODO: Deviates from matlab version
-  double dist_after_braking = dist_to_transition - braking_dist;
+  double dist_after_braking = dist_to_traversal - braking_dist;
 
   ulong end_braking = start_braking + required_braking_time;
 
@@ -184,12 +183,12 @@ std::optional<ulong> cda_rail::TrainTrajectory::is_feasible_braking_point(
 }
 
 double
-cda_rail::TrainTrajectory::distance_to_last_transition(ulong timestep) const {
+cda_rail::TrainTrajectory::distance_to_last_traversal(ulong timestep) const {
   size_t start_traj_idx = get_relevant_trajectory(timestep);
 
-  if (!edge_trajs.back().get_transition().has_value())
+  if (!edge_trajs.back().get_traversal().has_value())
     throw exceptions::ConsistencyException(
-        "Last edge trajectory has no transition.");
+        "Last edge trajectory has no traversal.");
 
   double distance = 0;
   for (auto it = edge_trajs.begin() + start_traj_idx; it != edge_trajs.end();
@@ -200,10 +199,10 @@ cda_rail::TrainTrajectory::distance_to_last_transition(ulong timestep) const {
     if (it == edge_trajs.begin() + start_traj_idx) {
       start_position = positions.front();
     } else {
-      start_position = (double)(*it--).get_transition().value().exit_point;
+      start_position = (double)(*it--).get_traversal().value().exit_point;
     }
 
-    end_position = (double)(*it).get_transition().value().exit_point;
+    end_position = (double)(*it).get_traversal().value().exit_point;
 
     distance += (end_position - start_position) *
                 (2 * ((double)(*it).get_orientation()) - 1);

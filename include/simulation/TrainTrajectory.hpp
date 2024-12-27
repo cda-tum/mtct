@@ -24,7 +24,7 @@ class TrainTrajectory {
 private:
   void backtrack_trajectory(ulong timestep);
 
-  // Modify speed targets to reach velocity before last edge transition
+  // Modify speed targets to reach velocity before last edge traversal
   BrakingPeriod add_braking(double               target_speed,
                             std::optional<ulong> hold_until,
                             std::optional<ulong> hold_at_least);
@@ -36,7 +36,7 @@ private:
   std::optional<ulong> is_feasible_braking_point(ulong  start_braking,
                                                  double target_speed) const;
 
-  double distance_to_last_transition(ulong timestep) const;
+  double distance_to_last_traversal(ulong timestep) const;
 
 public:
   TrainTrajectory(SimulationInstance& instance, Train& train,
