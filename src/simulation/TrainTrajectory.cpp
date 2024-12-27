@@ -37,13 +37,19 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
         continue;
       }
       case PLANNED_STOP: {
-        // TODO: read real stop time from schedule instead of placeholder
-        ulong stop_duration = 40;
-        ulong start_braking, end_braking;
-        // TODO: remove stops once visited
-        std::tie(start_braking, end_braking) =
-            add_braking(0, {}, stop_duration);
-        backtrack_trajectory(start_braking);
+        ScheduledStop stop = edge_trajs.back().get_stop();
+        if (std::find(visited_stops.begin(), visited_stops.end(), stop) ==
+            visited_stops.end()) {
+          // TODO: unsafe cast
+          ulong stop_duration = stop.departure() - stop.arrival();
+          ulong start_braking, end_braking;
+          std::tie(start_braking, end_braking) =
+              add_braking(0, {}, stop_duration);
+          backtrack_trajectory(start_braking);
+          visited_stops.push_back(stop);
+        } else {
+          initial_edge_state = transition.new_state.value();
+        }
         continue;
       }
       case TIME_END: {

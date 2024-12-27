@@ -96,13 +96,6 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   size_t next_edge = viable_next_edges.at(
       std::round(switch_direction * (viable_next_edges.size() - 1)));
 
-  if (is_planned_stop()) {
-    return EdgeEntry{
-        .outcome   = PLANNED_STOP,
-        .new_state = {},
-    };
-  }
-
   double edge_entry_position;
   bool   edge_entry_point = (instance.network.get_edge(next_edge).target ==
                            transition.value().traversed_node);
@@ -120,6 +113,8 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   if (std::abs(transition.value().traversal_speed) >
       instance.network.get_edge(next_edge).max_speed) {
     outcome = OVERSPEED;
+  } else if (is_planned_stop()) {
+    outcome = PLANNED_STOP;
   } else {
     outcome = NORMAL;
   }
@@ -149,6 +144,18 @@ bool cda_rail::EdgeTrajectory::is_planned_stop() const {
   }
 
   return false;
+}
+
+cda_rail::ScheduledStop cda_rail::EdgeTrajectory::get_stop() const {
+  for (auto stop : instance.timetable.get_schedule(train.name).get_stops()) {
+    auto stop_station = instance.timetable.get_station_list().get_station(
+        stop.get_station_name());
+
+    if (std::find(stop_station.tracks.begin(), stop_station.tracks.end(),
+                  edge) != stop_station.tracks.end())
+      return stop;
+  }
+  throw std::invalid_argument("No associated scheduled stop found.");
 }
 
 ulong cda_rail::EdgeTrajectory::get_initial_timestep() const {

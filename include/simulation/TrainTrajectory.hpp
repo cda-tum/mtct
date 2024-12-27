@@ -18,6 +18,7 @@ class TrainTrajectory {
   Train&              train;
 
   std::vector<EdgeTrajectory> edge_trajs;
+  std::vector<ScheduledStop>  visited_stops;
   RoutingSolution             solution;
 
 private:

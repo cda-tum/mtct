@@ -66,6 +66,8 @@ public:
 
   bool is_planned_stop() const;
 
+  cda_rail::ScheduledStop get_stop() const;
+
   ulong                          get_initial_timestep() const;
   ulong                          get_last_timestep() const;
   ulong                          get_edge() const;
