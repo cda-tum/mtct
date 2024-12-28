@@ -128,7 +128,8 @@ std::optional<cda_rail::BrakingPeriod>
 cda_rail::TrainTrajectory::find_latest_braking_period(
     double target_speed) const {
   for (ulong start_braking = edge_trajs.back().get_last_timestep();
-       start_braking >= 0; start_braking--) {
+       start_braking >= edge_trajs.front().get_initial_timestep();
+       start_braking--) {
     std::optional<ulong> end_braking =
         is_feasible_braking_point(start_braking, target_speed);
     if (end_braking.has_value())
@@ -142,7 +143,7 @@ std::optional<ulong> cda_rail::TrainTrajectory::is_feasible_braking_point(
   double abs_diff_to_target_speed =
       std::abs(get_state(start_braking).speed - target_speed);
   if (start_braking > edge_trajs.back().get_last_timestep() ||
-      start_braking < 0)
+      start_braking < edge_trajs.front().get_initial_timestep())
     throw std::out_of_range("Timestep out of range.");
 
   double starting_speed  = get_state(start_braking).speed;
