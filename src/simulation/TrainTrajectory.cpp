@@ -85,7 +85,9 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
 }
 
 void cda_rail::TrainTrajectory::backtrack_trajectory(ulong timestep) {
-  while (edge_trajs.size() > get_relevant_trajectory(timestep)) {
+  size_t i = get_relevant_trajectory(timestep);
+
+  while (edge_trajs.size() > i) {
     edge_trajs.pop_back();
   }
 }
