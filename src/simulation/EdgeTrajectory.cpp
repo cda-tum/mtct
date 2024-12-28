@@ -14,12 +14,11 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
   speeds.push_back(initial_state.speed);
   positions.push_back(initial_state.position);
 
-  double speed_disparity;
-  double acceleration;
-
   for (int timestep = initial_timestep + 1; timestep < instance.n_timesteps;
        timestep++) {
-    speed_disparity = v_targets.find_target_speed(timestep - 1) - speeds.back();
+    double speed_disparity =
+        v_targets.find_target_speed(timestep - 1) - speeds.back();
+    double acceleration;
     if (speed_disparity >= 0) {
       acceleration = std::min(speed_disparity, train.acceleration);
     } else {
@@ -69,6 +68,7 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   //          +------- EdgeTraversal <-+
   //  determine_first_state()     determine_exit()
   //
+
   EdgeTraversal edge_exit = traversal.value();
   TrainState    new_state;
   for (bool overshot = true; overshot != false;) {
