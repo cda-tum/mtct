@@ -123,7 +123,7 @@ cda_rail::TrainTrajectory::add_braking(double               abs_target_speed,
 
   solution.v_targets.targets.insert_or_assign(start_braking, target_speed);
 
-  return braking_period.value();
+  return std::tuple(start_braking, end_hold);
 }
 
 std::optional<cda_rail::BrakingPeriod>
