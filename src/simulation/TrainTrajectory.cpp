@@ -231,15 +231,13 @@ cda_rail::TrainTrajectory::get_state(ulong timestep) const {
 
 size_t
 cda_rail::TrainTrajectory::get_relevant_trajectory(ulong timestep) const {
-  if (timestep > edge_trajs.back().get_last_timestep() || timestep < 0)
-    throw std::out_of_range("Timestep out of range.");
-
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
-    if ((*it).get_last_timestep() >= timestep) {
+    if ((*it).get_initial_timestep() <= timestep &&
+        (*it).get_last_timestep() >= timestep) {
       return (size_t)std::distance(edge_trajs.begin(), it);
     }
   }
-  return 0;
+  throw std::out_of_range("Found no trajectory containing timestep.");
 }
 
 cda_rail::TrainState
