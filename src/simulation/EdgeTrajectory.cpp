@@ -113,7 +113,7 @@ cda_rail::determine_first_state(const cda_rail::Network& network,
                                 cda_rail::EdgeTraversal  traversal,
                                 double                   switch_direction) {
   std::vector<size_t> viable_next_edges;
-  if (traversal.exit_point) {
+  if (traversal.from_exit_point) {
     viable_next_edges = network.get_successors(traversal.from_edge);
   } else {
     viable_next_edges = network.get_predecessors(traversal.from_edge);
@@ -138,7 +138,7 @@ cda_rail::determine_first_state(const cda_rail::Network& network,
   }
 
   return cda_rail::TrainState{
-      .timestep = traversal.timestep + 1,
+      .timestep = traversal.from_timestep + 1,
       .edge     = next_edge,
       .position = edge_entry_position,
       .orientation =
@@ -159,9 +159,9 @@ cda_rail::determine_exit(const cda_rail::Network& network,
   if (exit_point) {
     return cda_rail::EdgeTraversal{
         // Forward exit in edge direction
-        .timestep             = overshot_state.timestep,
+        .from_timestep        = overshot_state.timestep,
         .from_edge            = overshot_state.edge,
-        .exit_point           = exit_point,
+        .from_exit_point      = exit_point,
         .vertex               = network.get_edge(overshot_state.edge).target,
         .crossing_orientation = overshot_state.orientation,
         .leftover_movement    = (overshot_state.position - 1) * edge_length,
@@ -170,9 +170,9 @@ cda_rail::determine_exit(const cda_rail::Network& network,
   } else {
     return cda_rail::EdgeTraversal{
         // Backward exit in edge direction
-        .timestep             = overshot_state.timestep,
+        .from_timestep        = overshot_state.timestep,
         .from_edge            = overshot_state.edge,
-        .exit_point           = exit_point,
+        .from_exit_point      = exit_point,
         .vertex               = network.get_edge(overshot_state.edge).source,
         .crossing_orientation = !overshot_state.orientation,
         .leftover_movement    = -overshot_state.position * edge_length,

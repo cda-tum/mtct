@@ -31,9 +31,9 @@ struct EdgeEntry {
 };
 
 struct EdgeTraversal {
-  ulong  timestep;
+  ulong  from_timestep;
   size_t from_edge;
-  bool   exit_point;           // true, false = forward, backward
+  bool   from_exit_point;      // true, false = forward, backward
   size_t vertex;               // [0, network.edges.size() - 1]
   bool   crossing_orientation; // true, false = forward, backward
   double leftover_movement;    // (0, Inf)
