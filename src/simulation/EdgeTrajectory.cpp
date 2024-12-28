@@ -22,7 +22,7 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
     if (speed_disparity >= 0) {
       acceleration = std::min(speed_disparity, train.acceleration);
     } else {
-      acceleration = std::max(speed_disparity, train.deceleration);
+      acceleration = std::max(speed_disparity, -train.deceleration);
     }
     speeds.push_back(speeds.back() + acceleration);
     positions.push_back(positions.back() +
