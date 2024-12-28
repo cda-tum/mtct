@@ -240,7 +240,7 @@ cda_rail::TrainTrajectory::get_relevant_trajectory(ulong timestep) const {
       return (size_t)std::distance(edge_trajs.begin(), it);
     }
   }
-  throw std::out_of_range("Found no trajectory containing timestep.");
+  throw std::out_of_range("Timestep not contained in any trajectory.");
 }
 
 cda_rail::TrainState
