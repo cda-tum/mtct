@@ -12,13 +12,12 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
       double switch_direction =
           solution.switch_directions.at(edge_trajs.size());
 
-      EdgeEntry traversal = edge_trajs.back().enter_next_edge(switch_direction);
+      EdgeEntry entry = edge_trajs.back().enter_next_edge(switch_direction);
 
-      switch (traversal.outcome) {
+      switch (entry.outcome) {
       case OVERSPEED: {
         double prev_speed_limit =
-            instance.network.get_edge(traversal.new_state.value().edge)
-                .max_speed;
+            instance.network.get_edge(entry.new_state.value().edge).max_speed;
         ulong start_braking, end_braking;
         std::tie(start_braking, end_braking) =
             add_braking(prev_speed_limit, {}, {});
@@ -47,7 +46,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
           backtrack_trajectory(start_braking);
           visited_stops.push_back(stop);
         } else {
-          initial_edge_state = traversal.new_state.value();
+          initial_edge_state = entry.new_state.value();
         }
         continue;
       }
@@ -55,7 +54,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
         break;
       }
       case NORMAL: {
-        initial_edge_state = traversal.new_state.value();
+        initial_edge_state = entry.new_state.value();
       }
       }
     }
