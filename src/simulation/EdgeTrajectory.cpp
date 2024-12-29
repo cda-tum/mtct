@@ -30,10 +30,10 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
                          edge_length_divisor));
 
     if (positions.back() > 1 || positions.back() < 0) {
+      last_timestep = initial_timestep + positions.size() - 2;
       traversal =
           determine_exit(instance.network, TrainState{
-                                               .timestep = initial_timestep +
-                                                           positions.size() - 1,
+                                               .timestep    = last_timestep + 1,
                                                .edge        = edge,
                                                .position    = positions.back(),
                                                .orientation = orientation,
@@ -41,7 +41,6 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
                                            });
       positions.pop_back();
       speeds.pop_back();
-      last_timestep = initial_timestep + positions.size() - 1;
       return;
     }
   }
@@ -160,7 +159,7 @@ cda_rail::determine_exit(const cda_rail::Network& network,
   if (exit_point) {
     return cda_rail::EdgeTraversal{
         // Forward exit in edge direction
-        .from_timestep        = overshot_state.timestep,
+        .from_timestep        = overshot_state.timestep - 1,
         .from_edge            = overshot_state.edge,
         .from_exit_point      = exit_point,
         .vertex               = network.get_edge(overshot_state.edge).target,
@@ -171,7 +170,7 @@ cda_rail::determine_exit(const cda_rail::Network& network,
   } else {
     return cda_rail::EdgeTraversal{
         // Backward exit in edge direction
-        .from_timestep        = overshot_state.timestep,
+        .from_timestep        = overshot_state.timestep - 1,
         .from_edge            = overshot_state.edge,
         .from_exit_point      = exit_point,
         .vertex               = network.get_edge(overshot_state.edge).source,
