@@ -2,6 +2,16 @@
 
 #include <algorithm>
 
+cda_rail::EdgeEntry::EdgeEntry(cda_rail::EdgeEntryOutcome          outcome,
+                               std::optional<cda_rail::TrainState> new_state)
+    : outcome(outcome), new_state(new_state) {
+  bool requires_state =
+      (outcome == NORMAL || outcome == OVERSPEED || outcome == PLANNED_STOP);
+  if (requires_state && !new_state.has_value() ||
+      !requires_state && new_state.has_value())
+    throw std::invalid_argument("Improper result of edge entry.");
+}
+
 cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
                                          Train& train, SpeedTargets& v_targets,
                                          TrainState initial_state)
@@ -51,10 +61,7 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
 cda_rail::EdgeEntry
 cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   if (!traversal.has_value())
-    return EdgeEntry{
-        .outcome   = TIME_END,
-        .new_state = {},
-    };
+    return EdgeEntry{TIME_END, {}};
 
   // traversal along edges until no longer overshooting on first step
   //
@@ -77,10 +84,7 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
         determine_first_state(instance.network, edge_exit, switch_direction);
 
     if (!new_state_result.has_value()) {
-      return cda_rail::EdgeEntry{
-          .outcome   = DEADEND,
-          .new_state = {},
-      };
+      return EdgeEntry{DEADEND, {}};
     } else {
       new_state = new_state_result.value();
     }
@@ -102,10 +106,7 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
     outcome = NORMAL;
   }
 
-  return EdgeEntry{
-      .outcome   = outcome,
-      .new_state = new_state,
-  };
+  return EdgeEntry{outcome, new_state};
 }
 
 std::optional<cda_rail::TrainState>

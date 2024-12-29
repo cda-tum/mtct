@@ -26,8 +26,11 @@ enum EdgeEntryOutcome {
 };
 
 struct EdgeEntry {
+  // TODO: should use getter functions since it has an invariant
   EdgeEntryOutcome          outcome;
   std::optional<TrainState> new_state;
+
+  EdgeEntry(EdgeEntryOutcome outcome, std::optional<TrainState> new_state);
 };
 
 struct EdgeTraversal {
@@ -57,7 +60,6 @@ class EdgeTrajectory {
 
   std::optional<EdgeTraversal> traversal;
 
-private:
 public:
   // Simulate movement on edge from initial state and v_targets
   EdgeTrajectory(SimulationInstance& instance, Train& train,
