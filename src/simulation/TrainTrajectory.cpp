@@ -202,7 +202,8 @@ cda_rail::TrainTrajectory::distance_to_last_traversal(ulong timestep) const {
     if (it == edge_trajs.begin() + start_traj_idx) {
       start_position = positions.front();
     } else {
-      start_position = (double)(*it--).get_traversal().value().from_exit_point;
+      start_position =
+          (double)(*(it - 1)).get_traversal().value().from_exit_point;
     }
 
     end_position = (double)(*it).get_traversal().value().from_exit_point;
