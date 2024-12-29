@@ -45,10 +45,10 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
               add_braking(0, {}, stop_duration);
           backtrack_trajectory(start_braking);
           visited_stops.push_back(stop);
+          continue;
         } else {
           initial_edge_state = entry.new_state.value();
         }
-        continue;
       }
       case TIME_END: {
         return;
