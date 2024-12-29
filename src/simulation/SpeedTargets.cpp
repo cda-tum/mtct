@@ -39,10 +39,12 @@ cda_rail::SpeedTargets::find_next_reversal(ulong timestep) const {
   return {};
 }
 
-double cda_rail::SpeedTargets::find_target_speed(ulong timestep) const {
-  if (targets.size() == 0)
-    throw std::out_of_range("Speed target set is empty.");
+void cda_rail::SpeedTargets::set_range(ulong start, ulong end, double value) {
+  delete_range(start, end);
+  targets.insert_or_assign(start, value);
+}
 
+double cda_rail::SpeedTargets::find_target_speed(ulong timestep) const {
   std::map<ulong, double>::const_iterator it = targets.upper_bound(timestep);
   if (it != targets.begin()) {
     --it;
@@ -62,4 +64,11 @@ std::map<ulong, double> cda_rail::SpeedTargets::copy_range(ulong start,
     new_map.insert({(*it).first, (*it).second});
   }
   return new_map;
+}
+
+bool cda_rail::SpeedTargets::is_first_target(ulong timestep) const {
+  std::map<ulong, double>::const_iterator it = targets.upper_bound(timestep);
+  if (it == targets.begin() || it-- == targets.begin())
+    return true;
+  return false;
 }

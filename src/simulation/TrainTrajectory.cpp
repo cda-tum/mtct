@@ -119,9 +119,10 @@ cda_rail::TrainTrajectory::add_braking(double               abs_target_speed,
       hold_at_least.value() + start_braking > end_hold)
     end_hold = hold_at_least.value() + start_braking;
 
-  solution.v_targets.delete_range(start_braking, end_hold);
+  if (solution.v_targets.is_first_target(start_braking))
+    start_braking = 0;
 
-  solution.v_targets.targets.insert_or_assign(start_braking, target_speed);
+  solution.v_targets.set_range(start_braking, end_hold, target_speed);
 
   return std::tuple(start_braking, end_hold);
 }
