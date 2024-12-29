@@ -51,7 +51,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
         continue;
       }
       case TIME_END: {
-        break;
+        return;
       }
       case NORMAL: {
         initial_edge_state = entry.new_state.value();
