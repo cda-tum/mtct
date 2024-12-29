@@ -48,7 +48,8 @@ class EdgeTrajectory {
   Train&              train;
 
   ulong  initial_timestep; // [0, n_timesteps - 1]
-  size_t edge;             // [0, network.edges.size() - 1]
+  ulong  last_timestep;    // [0, n_timesteps - 1]
+  size_t edge;             // [0, network.edges.1ize() - 1]
   bool   orientation;      // true, false = forward, backward
 
   std::vector<double> positions; // [0, 1]

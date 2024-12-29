@@ -41,6 +41,7 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
                                            });
       positions.pop_back();
       speeds.pop_back();
+      last_timestep = initial_timestep + positions.size() - 1;
       return;
     }
   }
@@ -211,7 +212,7 @@ ulong cda_rail::EdgeTrajectory::get_initial_timestep() const {
 }
 
 ulong cda_rail::EdgeTrajectory::get_last_timestep() const {
-  return initial_timestep + positions.size() - 1;
+  return last_timestep;
 }
 
 ulong cda_rail::EdgeTrajectory::get_edge() const { return edge; }
