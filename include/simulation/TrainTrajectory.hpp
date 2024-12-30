@@ -44,7 +44,9 @@ public:
 
   TrainState get_state(ulong timestep) const;
 
-  size_t get_relevant_trajectory(ulong timestep) const;
+  size_t get_matching_trajectory(ulong timestep) const;
+
+  size_t get_earliest_affected_trajectory(ulong timestep) const;
 
   TrainState read_initial_train_state() const;
 };

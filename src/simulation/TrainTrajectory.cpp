@@ -86,7 +86,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
 }
 
 void cda_rail::TrainTrajectory::backtrack_trajectory(ulong timestep) {
-  size_t i = get_relevant_trajectory(timestep);
+  size_t i = get_earliest_affected_trajectory(timestep);
 
   while (edge_trajs.size() > i) {
     edge_trajs.pop_back();
@@ -189,7 +189,7 @@ std::optional<ulong> cda_rail::TrainTrajectory::is_feasible_braking_point(
 
 double
 cda_rail::TrainTrajectory::distance_to_last_traversal(ulong timestep) const {
-  size_t start_traj_idx = get_relevant_trajectory(timestep);
+  size_t start_traj_idx = get_earliest_affected_trajectory(timestep);
 
   if (!edge_trajs.back().get_traversal().has_value())
     throw exceptions::ConsistencyException(
@@ -223,7 +223,7 @@ cda_rail::TrainTrajectory::get_state(ulong timestep) const {
     throw std::out_of_range("Timestep out of range.");
 
   const EdgeTrajectory& relevant_trajectory =
-      edge_trajs.at(get_relevant_trajectory(timestep));
+      edge_trajs.at(get_matching_trajectory(timestep));
   size_t trajectory_idx = timestep - relevant_trajectory.get_initial_timestep();
 
   return TrainState{
@@ -236,7 +236,7 @@ cda_rail::TrainTrajectory::get_state(ulong timestep) const {
 }
 
 size_t
-cda_rail::TrainTrajectory::get_relevant_trajectory(ulong timestep) const {
+cda_rail::TrainTrajectory::get_matching_trajectory(ulong timestep) const {
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
     if ((*it).get_initial_timestep() <= timestep &&
         (*it).get_last_timestep() >= timestep) {
@@ -244,6 +244,16 @@ cda_rail::TrainTrajectory::get_relevant_trajectory(ulong timestep) const {
     }
   }
   throw std::out_of_range("Timestep not contained in any trajectory.");
+}
+
+size_t cda_rail::TrainTrajectory::get_earliest_affected_trajectory(
+    ulong timestep) const {
+  for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
+    if ((*it).get_last_timestep() >= timestep) {
+      return (size_t)std::distance(edge_trajs.begin(), it);
+    }
+  }
+  throw std::out_of_range("No affected trajectory found.");
 }
 
 cda_rail::TrainState
