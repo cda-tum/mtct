@@ -70,12 +70,14 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
                                         initial_edge_state));
 
     // Restore original targets after leaving edge
-    // Braking can only shift edge traversal backwards so we never
-    // unnecessarily constrain speeds
-    solution.v_targets.delete_range(edge_trajs.back().get_last_timestep() + 1,
-                                    instance.n_timesteps - 1);
-    solution.v_targets.insert(previous_targets.copy_range(
-        edge_trajs.back().get_last_timestep() + 1, instance.n_timesteps - 1));
+    // TODO: Braking can shift traversal forwards when changing direction
+    // so we sometimes constrain speeds unnecessarily
+    if (ulong last_step = edge_trajs.back().get_last_timestep();
+        last_step < instance.n_timesteps - 1) {
+      solution.v_targets.delete_range(last_step + 1, instance.n_timesteps - 1);
+      solution.v_targets.insert(
+          previous_targets.copy_range(last_step + 1, instance.n_timesteps - 1));
+    }
 
     if (abort > 1000)
       throw exceptions::ConsistencyException(
