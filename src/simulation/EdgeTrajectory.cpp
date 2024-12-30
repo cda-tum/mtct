@@ -55,7 +55,8 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
     }
   }
 
-  traversal = {};
+  last_timestep = initial_timestep + positions.size() - 1;
+  traversal     = {};
 }
 
 cda_rail::EdgeEntry
