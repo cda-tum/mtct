@@ -26,7 +26,16 @@ void cda_rail::SpeedTargets::insert(std::map<ulong, double> add_targets) {
 }
 
 void cda_rail::SpeedTargets::delete_range(ulong start, ulong end) {
-  targets.erase(targets.lower_bound(start), targets.upper_bound(end));
+  if (start > end || start < 0)
+    throw std::invalid_argument("Invalid timestep range.");
+
+  for (auto it = targets.lower_bound(start); it != targets.end();) {
+    if ((*it).first <= end) {
+      it = targets.erase(it);
+    } else {
+      break;
+    }
+  }
 }
 
 std::optional<ulong>
@@ -40,6 +49,9 @@ cda_rail::SpeedTargets::find_next_reversal(ulong timestep) const {
 }
 
 void cda_rail::SpeedTargets::set_range(ulong start, ulong end, double value) {
+  if (start > end || start < 0)
+    throw std::invalid_argument("Invalid timestep range.");
+
   delete_range(start, end);
   targets.insert_or_assign(start, value);
 }
@@ -58,6 +70,9 @@ double cda_rail::SpeedTargets::find_target_speed(ulong timestep) const {
 
 std::map<ulong, double> cda_rail::SpeedTargets::copy_range(ulong start,
                                                            ulong end) const {
+  if (start > end || start < 0)
+    throw std::invalid_argument("Invalid timestep range.");
+
   std::map<ulong, double> new_map;
   for (auto it = targets.lower_bound(start);
        (*it).first <= end && it != targets.end(); it++) {
