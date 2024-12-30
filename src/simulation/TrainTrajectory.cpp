@@ -2,8 +2,8 @@
 
 cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
                                            Train&              train,
-                                           RoutingSolution     solution)
-    : instance(instance), train(train), solution(solution) {
+                                           RoutingSolution     init_solution)
+    : instance(instance), train(train), solution(init_solution) {
   for (size_t abort = 0;; abort++) {
     TrainState initial_edge_state;
     if (edge_trajs.size() == 0) {
