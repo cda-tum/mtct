@@ -18,20 +18,18 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
       case OVERSPEED: {
         double prev_speed_limit =
             instance.network.get_edge(entry.new_state.value().edge).max_speed;
-        ulong start_braking, end_braking;
-        std::tie(start_braking, end_braking) =
-            add_braking(prev_speed_limit, {}, {});
-        backtrack_trajectory(start_braking);
+        BrakingPeriod braking_period = add_braking(prev_speed_limit, {}, {});
+        backtrack_trajectory(std::get<0>(braking_period));
         continue;
       }
       case DEADEND: {
         std::optional<ulong> reversal_time =
             solution.v_targets.find_next_reversal(
                 edge_trajs.back().get_last_timestep());
-        ulong start_braking, end_braking;
-        std::tie(start_braking, end_braking) =
-            add_braking(0, reversal_time, {});
-        backtrack_trajectory(start_braking);
+
+        BrakingPeriod braking_period = add_braking(
+            0, reversal_time.value_or(instance.n_timesteps - 1), {});
+        backtrack_trajectory(std::get<0>(braking_period));
         continue;
       }
       case PLANNED_STOP: {
@@ -39,11 +37,9 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
         if (std::find(visited_stops.begin(), visited_stops.end(), stop) ==
             visited_stops.end()) {
           // TODO: unsafe cast
-          ulong stop_duration = stop.departure() - stop.arrival();
-          ulong start_braking, end_braking;
-          std::tie(start_braking, end_braking) =
-              add_braking(0, {}, stop_duration);
-          backtrack_trajectory(start_braking);
+          ulong         stop_duration  = stop.departure() - stop.arrival();
+          BrakingPeriod braking_period = add_braking(0, {}, stop_duration);
+          backtrack_trajectory(std::get<0>(braking_period));
           visited_stops.push_back(stop);
           continue;
         } else {
