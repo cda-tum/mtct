@@ -66,13 +66,15 @@ TEST(Simulation, TrainTrajectory) {
   SimulationInstance                    instance(network, timetable, 20);
   std::uniform_int_distribution<size_t> random_train_index(
       0, timetable.get_train_list().size() - 1);
+  std::uniform_int_distribution<size_t> random_target_amount(1, 100);
 
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 10000; i++) {
     size_t train_idx = random_train_index(rng_engine);
 
     Train train = timetable.get_train_list().get_train(train_idx);
 
-    RoutingSolution solution(10, instance.n_switch_vars, instance.n_timesteps,
+    RoutingSolution solution(random_target_amount(rng_engine),
+                             instance.n_switch_vars, instance.n_timesteps,
                              train, rng_engine);
 
     TrainTrajectory traj(instance, train, solution);
