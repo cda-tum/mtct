@@ -27,7 +27,7 @@ void cda_rail::SpeedTargets::insert(std::map<u_int64_t, double> add_targets) {
 }
 
 void cda_rail::SpeedTargets::delete_range(u_int64_t start, u_int64_t end) {
-  if (start > end || start < 0)
+  if (start > end)
     throw std::invalid_argument("Invalid timestep range.");
 
   for (auto it = targets.lower_bound(start); it != targets.end();) {
@@ -51,7 +51,7 @@ cda_rail::SpeedTargets::find_next_reversal(u_int64_t timestep) const {
 
 void cda_rail::SpeedTargets::set_range(u_int64_t start, u_int64_t end,
                                        double value) {
-  if (start > end || start < 0)
+  if (start > end)
     throw std::invalid_argument("Invalid timestep range.");
 
   delete_range(start, end);
@@ -73,7 +73,7 @@ double cda_rail::SpeedTargets::find_target_speed(u_int64_t timestep) const {
 
 std::map<u_int64_t, double>
 cda_rail::SpeedTargets::copy_range(u_int64_t start, u_int64_t end) const {
-  if (start > end || start < 0)
+  if (start > end)
     throw std::invalid_argument("Invalid timestep range.");
 
   std::map<u_int64_t, double> new_map;
