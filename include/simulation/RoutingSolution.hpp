@@ -24,8 +24,9 @@ struct RoutingSolution {
 public:
   // Constructors
   // Generate a random solution
-  RoutingSolution(ulong n_v_target_vars, ulong n_switch_vars, ulong n_timesteps,
-                  const Train& train, std::ranlux24_base& rng_engine);
+  RoutingSolution(size_t n_v_target_vars, size_t n_switch_vars,
+                  ulong n_timesteps, const Train& train,
+                  std::ranlux24_base& rng_engine);
 };
 
 }; // namespace cda_rail
