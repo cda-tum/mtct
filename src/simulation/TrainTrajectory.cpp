@@ -127,13 +127,19 @@ cda_rail::TrainTrajectory::add_braking(double abs_target_speed,
 std::optional<cda_rail::BrakingPeriod>
 cda_rail::TrainTrajectory::find_latest_braking_period(
     double target_speed) const {
-  for (u_int64_t start_braking = edge_trajs.back().get_last_timestep();
-       start_braking >= edge_trajs.front().get_initial_timestep();
+  u_int64_t last_timestep  = edge_trajs.back().get_last_timestep();
+  u_int64_t first_timestep = edge_trajs.front().get_initial_timestep();
+
+  for (u_int64_t start_braking = last_timestep; start_braking >= first_timestep;
        start_braking--) {
     std::optional<u_int64_t> end_braking =
         is_feasible_braking_point(start_braking, target_speed);
+
     if (end_braking.has_value())
       return std::tuple(start_braking, end_braking.value());
+
+    if (start_braking == 0)
+      break;
   }
   return {};
 }
