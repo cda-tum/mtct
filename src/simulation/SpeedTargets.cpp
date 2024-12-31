@@ -1,13 +1,14 @@
 #include "simulation/SpeedTargets.hpp"
 
-cda_rail::SpeedTargets::SpeedTargets(std::vector<ulong>  timesteps,
-                                     std::vector<double> speeds) {
+cda_rail::SpeedTargets::SpeedTargets(std::vector<u_int64_t> timesteps,
+                                     std::vector<double>    speeds) {
   for (size_t i = 0; i < timesteps.size(); i++) {
     targets.insert({timesteps.at(i), speeds.at(i)});
   };
 };
 
-void cda_rail::SpeedTargets::limit_speed_from(double maximum, ulong timestep) {
+void cda_rail::SpeedTargets::limit_speed_from(double    maximum,
+                                              u_int64_t timestep) {
   // Cap targets in range
   for (auto it = targets.lower_bound(timestep); it != targets.end(); it++) {
     if (std::abs((*it).second) > maximum) {
@@ -21,11 +22,11 @@ void cda_rail::SpeedTargets::limit_speed_from(double maximum, ulong timestep) {
     targets.insert_or_assign(timestep, std::copysign(maximum, previous_target));
 }
 
-void cda_rail::SpeedTargets::insert(std::map<ulong, double> add_targets) {
+void cda_rail::SpeedTargets::insert(std::map<u_int64_t, double> add_targets) {
   targets.insert(add_targets.begin(), add_targets.end());
 }
 
-void cda_rail::SpeedTargets::delete_range(ulong start, ulong end) {
+void cda_rail::SpeedTargets::delete_range(u_int64_t start, u_int64_t end) {
   if (start > end || start < 0)
     throw std::invalid_argument("Invalid timestep range.");
 
@@ -38,8 +39,8 @@ void cda_rail::SpeedTargets::delete_range(ulong start, ulong end) {
   }
 }
 
-std::optional<ulong>
-cda_rail::SpeedTargets::find_next_reversal(ulong timestep) const {
+std::optional<u_int64_t>
+cda_rail::SpeedTargets::find_next_reversal(u_int64_t timestep) const {
   bool previous_direction = std::signbit(find_target_speed(timestep));
   for (auto it = targets.upper_bound(timestep); it != targets.end(); it++) {
     if (std::signbit((*it).second) != previous_direction)
@@ -48,7 +49,8 @@ cda_rail::SpeedTargets::find_next_reversal(ulong timestep) const {
   return {};
 }
 
-void cda_rail::SpeedTargets::set_range(ulong start, ulong end, double value) {
+void cda_rail::SpeedTargets::set_range(u_int64_t start, u_int64_t end,
+                                       double value) {
   if (start > end || start < 0)
     throw std::invalid_argument("Invalid timestep range.");
 
@@ -56,8 +58,9 @@ void cda_rail::SpeedTargets::set_range(ulong start, ulong end, double value) {
   targets.insert_or_assign(start, value);
 }
 
-double cda_rail::SpeedTargets::find_target_speed(ulong timestep) const {
-  std::map<ulong, double>::const_iterator it = targets.upper_bound(timestep);
+double cda_rail::SpeedTargets::find_target_speed(u_int64_t timestep) const {
+  std::map<u_int64_t, double>::const_iterator it =
+      targets.upper_bound(timestep);
   if (it != targets.begin()) {
     --it;
   }
@@ -68,12 +71,12 @@ double cda_rail::SpeedTargets::find_target_speed(ulong timestep) const {
   return it->second;
 };
 
-std::map<ulong, double> cda_rail::SpeedTargets::copy_range(ulong start,
-                                                           ulong end) const {
+std::map<u_int64_t, double>
+cda_rail::SpeedTargets::copy_range(u_int64_t start, u_int64_t end) const {
   if (start > end || start < 0)
     throw std::invalid_argument("Invalid timestep range.");
 
-  std::map<ulong, double> new_map;
+  std::map<u_int64_t, double> new_map;
   for (auto it = targets.lower_bound(start);
        (*it).first <= end && it != targets.end(); it++) {
     new_map.insert({(*it).first, (*it).second});
@@ -81,8 +84,9 @@ std::map<ulong, double> cda_rail::SpeedTargets::copy_range(ulong start,
   return new_map;
 }
 
-bool cda_rail::SpeedTargets::is_first_target(ulong timestep) const {
-  std::map<ulong, double>::const_iterator it = targets.upper_bound(timestep);
+bool cda_rail::SpeedTargets::is_first_target(u_int64_t timestep) const {
+  std::map<u_int64_t, double>::const_iterator it =
+      targets.upper_bound(timestep);
   if (it == targets.begin() || it-- == targets.begin())
     return true;
   return false;

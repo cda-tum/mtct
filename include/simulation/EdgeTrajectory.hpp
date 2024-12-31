@@ -10,11 +10,11 @@ struct TrainState {
   /**
    * Single train state
    */
-  ulong  timestep;    // [0, n_timesteps - 1]
-  size_t edge;        // [0, network.edges.size() - 1]
-  double position;    // [0, 1]
-  bool   orientation; // true, false = forward, backward
-  double speed;       // (-Inf, Inf)
+  u_int64_t timestep;    // [0, n_timesteps - 1]
+  size_t    edge;        // [0, network.edges.size() - 1]
+  double    position;    // [0, 1]
+  bool      orientation; // true, false = forward, backward
+  double    speed;       // (-Inf, Inf)
 };
 
 enum EdgeEntryOutcome {
@@ -34,13 +34,13 @@ struct EdgeEntry {
 };
 
 struct EdgeTraversal {
-  ulong  from_timestep;
-  size_t from_edge;
-  bool   from_exit_point;      // true, false = forward, backward
-  size_t vertex;               // [0, network.edges.size() - 1]
-  bool   crossing_orientation; // true, false = forward, backward
-  double leftover_movement;    // (0, Inf)
-  double speed;                // (-Inf, Inf)
+  u_int64_t from_timestep;
+  size_t    from_edge;
+  bool      from_exit_point;      // true, false = forward, backward
+  size_t    vertex;               // [0, network.edges.size() - 1]
+  bool      crossing_orientation; // true, false = forward, backward
+  double    leftover_movement;    // (0, Inf)
+  double    speed;                // (-Inf, Inf)
 };
 
 class EdgeTrajectory {
@@ -50,10 +50,10 @@ class EdgeTrajectory {
   SimulationInstance& instance;
   Train&              train;
 
-  ulong  initial_timestep; // [0, n_timesteps - 1]
-  ulong  last_timestep;    // [0, n_timesteps - 1]
-  size_t edge;             // [0, network.edges.1ize() - 1]
-  bool   orientation;      // true, false = forward, backward
+  u_int64_t initial_timestep; // [0, n_timesteps - 1]
+  u_int64_t last_timestep;    // [0, n_timesteps - 1]
+  size_t    edge;             // [0, network.edges.1ize() - 1]
+  bool      orientation;      // true, false = forward, backward
 
   std::vector<double> positions; // [0, 1]
   std::vector<double> speeds;    // (-Inf, Inf)
@@ -71,9 +71,9 @@ public:
 
   cda_rail::ScheduledStop get_stop() const;
 
-  ulong                               get_initial_timestep() const;
-  ulong                               get_last_timestep() const;
-  ulong                               get_edge() const;
+  u_int64_t                           get_initial_timestep() const;
+  u_int64_t                           get_last_timestep() const;
+  u_int64_t                           get_edge() const;
   bool                                get_orientation() const;
   const std::vector<double>&          get_positions() const;
   const std::vector<double>&          get_speeds() const;

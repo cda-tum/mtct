@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <random>
-#include <stdint.h>
 #include <vector>
 
 namespace cda_rail {
@@ -25,7 +24,7 @@ public:
   // Constructors
   // Generate a random solution
   RoutingSolution(size_t n_v_target_vars, size_t n_switch_vars,
-                  ulong n_timesteps, const Train& train,
+                  u_int64_t n_timesteps, const Train& train,
                   std::ranlux24_base& rng_engine);
 };
 

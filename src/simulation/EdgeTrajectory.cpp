@@ -208,15 +208,15 @@ cda_rail::ScheduledStop cda_rail::EdgeTrajectory::get_stop() const {
   throw std::invalid_argument("No associated scheduled stop found.");
 }
 
-ulong cda_rail::EdgeTrajectory::get_initial_timestep() const {
+u_int64_t cda_rail::EdgeTrajectory::get_initial_timestep() const {
   return initial_timestep;
 }
 
-ulong cda_rail::EdgeTrajectory::get_last_timestep() const {
+u_int64_t cda_rail::EdgeTrajectory::get_last_timestep() const {
   return last_timestep;
 }
 
-ulong cda_rail::EdgeTrajectory::get_edge() const { return edge; }
+u_int64_t cda_rail::EdgeTrajectory::get_edge() const { return edge; }
 
 bool cda_rail::EdgeTrajectory::get_orientation() const { return orientation; }
 

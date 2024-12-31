@@ -23,7 +23,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
         continue;
       }
       case DEADEND: {
-        std::optional<ulong> reversal_time =
+        std::optional<u_int64_t> reversal_time =
             solution.v_targets.find_next_reversal(
                 edge_trajs.back().get_last_timestep());
 
@@ -37,7 +37,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
         if (std::find(visited_stops.begin(), visited_stops.end(), stop) ==
             visited_stops.end()) {
           // TODO: unsafe cast
-          ulong         stop_duration  = stop.departure() - stop.arrival();
+          u_int64_t     stop_duration  = stop.departure() - stop.arrival();
           BrakingPeriod braking_period = add_braking(0, {}, stop_duration);
           backtrack_trajectory(std::get<0>(braking_period));
           visited_stops.push_back(stop);
@@ -68,7 +68,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
     // Restore original targets after leaving edge
     // TODO: Braking can shift traversal forwards when changing direction
     // so we sometimes constrain speeds unnecessarily
-    if (ulong last_step = edge_trajs.back().get_last_timestep();
+    if (u_int64_t last_step = edge_trajs.back().get_last_timestep();
         last_step < instance.n_timesteps - 1) {
       solution.v_targets.delete_range(last_step + 1, instance.n_timesteps - 1);
       solution.v_targets.insert(
@@ -81,7 +81,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
   }
 }
 
-void cda_rail::TrainTrajectory::backtrack_trajectory(ulong timestep) {
+void cda_rail::TrainTrajectory::backtrack_trajectory(u_int64_t timestep) {
   size_t i = get_earliest_affected_trajectory(timestep);
 
   while (edge_trajs.size() > i) {
@@ -90,9 +90,9 @@ void cda_rail::TrainTrajectory::backtrack_trajectory(ulong timestep) {
 }
 
 cda_rail::BrakingPeriod
-cda_rail::TrainTrajectory::add_braking(double               abs_target_speed,
-                                       std::optional<ulong> hold_until,
-                                       std::optional<ulong> hold_at_least) {
+cda_rail::TrainTrajectory::add_braking(double abs_target_speed,
+                                       std::optional<u_int64_t> hold_until,
+                                       std::optional<u_int64_t> hold_at_least) {
   if (!edge_trajs.back().get_traversal().has_value())
     throw exceptions::ConsistencyException("No traversal to brake for.");
 
@@ -106,9 +106,9 @@ cda_rail::TrainTrajectory::add_braking(double               abs_target_speed,
   if (!braking_period.has_value())
     throw exceptions::ConsistencyException("No feasible braking period found.");
 
-  ulong start_braking, end_braking;
+  u_int64_t start_braking, end_braking;
   std::tie(start_braking, end_braking) = braking_period.value();
-  ulong end_hold                       = end_braking;
+  u_int64_t end_hold                   = end_braking;
 
   if (hold_until.has_value() && hold_until.value() > end_hold)
     end_hold = hold_until.value();
@@ -127,10 +127,10 @@ cda_rail::TrainTrajectory::add_braking(double               abs_target_speed,
 std::optional<cda_rail::BrakingPeriod>
 cda_rail::TrainTrajectory::find_latest_braking_period(
     double target_speed) const {
-  for (ulong start_braking = edge_trajs.back().get_last_timestep();
+  for (u_int64_t start_braking = edge_trajs.back().get_last_timestep();
        start_braking >= edge_trajs.front().get_initial_timestep();
        start_braking--) {
-    std::optional<ulong> end_braking =
+    std::optional<u_int64_t> end_braking =
         is_feasible_braking_point(start_braking, target_speed);
     if (end_braking.has_value())
       return std::tuple(start_braking, end_braking.value());
@@ -138,8 +138,8 @@ cda_rail::TrainTrajectory::find_latest_braking_period(
   return {};
 }
 
-std::optional<ulong> cda_rail::TrainTrajectory::is_feasible_braking_point(
-    ulong start_braking, double target_speed) const {
+std::optional<u_int64_t> cda_rail::TrainTrajectory::is_feasible_braking_point(
+    u_int64_t start_braking, double target_speed) const {
   double abs_diff_to_target_speed =
       std::abs(get_state(start_braking).speed - target_speed);
   if (start_braking > edge_trajs.back().get_last_timestep() ||
@@ -158,7 +158,7 @@ std::optional<ulong> cda_rail::TrainTrajectory::is_feasible_braking_point(
     accel = train.deceleration;
   }
 
-  ulong required_braking_time = std::ceil(speed_diff / accel);
+  u_int64_t required_braking_time = std::ceil(speed_diff / accel);
 
   // This is the definite integral under the braking curve
   // As defined in EdgeTrajectory speed changes are done at maximum acceleration
@@ -173,7 +173,7 @@ std::optional<ulong> cda_rail::TrainTrajectory::is_feasible_braking_point(
   // TODO: Deviates from matlab version
   double dist_after_braking = dist_to_traversal - braking_dist;
 
-  ulong end_braking = start_braking + required_braking_time;
+  u_int64_t end_braking = start_braking + required_braking_time;
 
   if (end_braking < edge_trajs.back().get_last_timestep() + 1 &&
       dist_after_braking > 0) {
@@ -183,8 +183,8 @@ std::optional<ulong> cda_rail::TrainTrajectory::is_feasible_braking_point(
   }
 }
 
-double
-cda_rail::TrainTrajectory::distance_to_last_traversal(ulong timestep) const {
+double cda_rail::TrainTrajectory::distance_to_last_traversal(
+    u_int64_t timestep) const {
   size_t start_traj_idx = get_earliest_affected_trajectory(timestep);
 
   if (!edge_trajs.back().get_traversal().has_value())
@@ -214,7 +214,7 @@ cda_rail::TrainTrajectory::distance_to_last_traversal(ulong timestep) const {
 }
 
 cda_rail::TrainState
-cda_rail::TrainTrajectory::get_state(ulong timestep) const {
+cda_rail::TrainTrajectory::get_state(u_int64_t timestep) const {
   if (timestep > edge_trajs.back().get_last_timestep() || timestep < 0)
     throw std::out_of_range("Timestep out of range.");
 
@@ -232,7 +232,7 @@ cda_rail::TrainTrajectory::get_state(ulong timestep) const {
 }
 
 size_t
-cda_rail::TrainTrajectory::get_matching_trajectory(ulong timestep) const {
+cda_rail::TrainTrajectory::get_matching_trajectory(u_int64_t timestep) const {
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
     if ((*it).get_initial_timestep() <= timestep &&
         (*it).get_last_timestep() >= timestep) {
@@ -243,7 +243,7 @@ cda_rail::TrainTrajectory::get_matching_trajectory(ulong timestep) const {
 }
 
 size_t cda_rail::TrainTrajectory::get_earliest_affected_trajectory(
-    ulong timestep) const {
+    u_int64_t timestep) const {
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
     if ((*it).get_last_timestep() >= timestep) {
       return (size_t)std::distance(edge_trajs.begin(), it);
@@ -257,7 +257,7 @@ cda_rail::TrainTrajectory::read_initial_train_state() const {
   cda_rail::Schedule train_schedule =
       instance.timetable.get_schedule(train.name);
   return TrainState{
-      .timestep = (ulong)train_schedule.get_t_0(),
+      .timestep = (u_int64_t)train_schedule.get_t_0(),
       .edge =
           instance.network.get_successors(train_schedule.get_entry()).front(),
       .position    = 0,
