@@ -37,8 +37,8 @@ cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
         if (std::find(visited_stops.begin(), visited_stops.end(), stop) ==
             visited_stops.end()) {
           // TODO: unsafe cast
-          u_int64_t     stop_duration  = stop.departure() - stop.arrival();
-          BrakingPeriod braking_period = add_braking(0, {}, stop_duration);
+          BrakingPeriod braking_period =
+              add_braking(0, {}, stop.get_min_stopping_time());
           backtrack_trajectory(std::get<0>(braking_period));
           visited_stops.push_back(stop);
           continue;
