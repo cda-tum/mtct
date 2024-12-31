@@ -216,7 +216,7 @@ u_int64_t cda_rail::EdgeTrajectory::get_last_timestep() const {
   return last_timestep;
 }
 
-u_int64_t cda_rail::EdgeTrajectory::get_edge() const { return edge; }
+size_t cda_rail::EdgeTrajectory::get_edge() const { return edge; }
 
 bool cda_rail::EdgeTrajectory::get_orientation() const { return orientation; }
 

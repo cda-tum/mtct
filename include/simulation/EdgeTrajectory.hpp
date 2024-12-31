@@ -73,7 +73,7 @@ public:
 
   u_int64_t                           get_initial_timestep() const;
   u_int64_t                           get_last_timestep() const;
-  u_int64_t                           get_edge() const;
+  size_t                              get_edge() const;
   bool                                get_orientation() const;
   const std::vector<double>&          get_positions() const;
   const std::vector<double>&          get_speeds() const;
