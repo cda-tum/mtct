@@ -164,7 +164,7 @@ std::optional<u_int64_t> cda_rail::TrainTrajectory::is_feasible_braking_point(
     accel = train.deceleration;
   }
 
-  u_int64_t required_braking_time = std::ceil(speed_diff / accel);
+  u_int64_t required_braking_time = std::ceil(speed_diff_abs / accel);
 
   // This is the definite integral under the braking curve
   // As defined in EdgeTrajectory speed changes are done at maximum acceleration
