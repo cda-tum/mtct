@@ -175,49 +175,13 @@ std::optional<u_int64_t> cda_rail::TrainTrajectory::is_feasible_braking_point(
                                (required_braking_time * accel),
                            speed_diff));
 
-  // Distance is defined from the train point of view on a fixed path
-  double dist_to_traversal = distance_to_last_traversal(start_braking);
-  // TODO: Deviates from matlab version
-  double dist_after_braking = dist_to_traversal - braking_dist;
-
   u_int64_t end_braking = start_braking + required_braking_time;
 
-  if (end_braking <= edge_trajs.back().get_last_timestep() &&
-      dist_after_braking > 0) {
+  if (end_braking <= edge_trajs.back().get_last_timestep()) {
     return end_braking;
   } else {
     return {};
   }
-}
-
-double cda_rail::TrainTrajectory::distance_to_last_traversal(
-    u_int64_t timestep) const {
-  size_t start_traj_idx = get_earliest_affected_trajectory(timestep);
-
-  if (!edge_trajs.back().get_traversal().has_value())
-    throw exceptions::ConsistencyException(
-        "Last edge trajectory has no traversal.");
-
-  double distance = 0;
-  for (auto it = edge_trajs.begin() + start_traj_idx; it != edge_trajs.end();
-       it++) {
-    double                     start_position, end_position;
-    const std::vector<double>& positions = (*it).get_positions();
-
-    if (it == edge_trajs.begin() + start_traj_idx) {
-      start_position = positions.front();
-    } else {
-      start_position =
-          (double)(*(it - 1)).get_traversal().value().from_exit_point;
-    }
-
-    end_position = (double)(*it).get_traversal().value().from_exit_point;
-
-    distance += (end_position - start_position) *
-                (2 * ((double)(*it).get_orientation()) - 1);
-  }
-
-  return distance;
 }
 
 cda_rail::TrainState
