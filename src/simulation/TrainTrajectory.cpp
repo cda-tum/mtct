@@ -155,7 +155,7 @@ std::optional<u_int64_t> cda_rail::TrainTrajectory::is_feasible_braking_point(
   double starting_speed  = get_state(start_braking).speed;
   double speed_diff      = target_speed - starting_speed;
   double speed_diff_abs  = std::abs(speed_diff);
-  bool   accel_direction = std::signbit(speed_diff);
+  bool   accel_direction = !std::signbit(speed_diff);
 
   double accel;
   if (accel_direction) {

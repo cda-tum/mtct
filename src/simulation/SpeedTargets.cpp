@@ -41,9 +41,9 @@ void cda_rail::SpeedTargets::delete_range(u_int64_t start, u_int64_t end) {
 
 std::optional<u_int64_t>
 cda_rail::SpeedTargets::find_next_reversal(u_int64_t timestep) const {
-  bool previous_direction = std::signbit(find_target_speed(timestep));
+  bool previous_direction = !std::signbit(find_target_speed(timestep));
   for (auto it = targets.upper_bound(timestep); it != targets.end(); it++) {
-    if (std::signbit((*it).second) != previous_direction)
+    if (!std::signbit((*it).second) != previous_direction)
       return (*it).first;
   }
   return {};
