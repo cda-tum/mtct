@@ -171,8 +171,9 @@ std::optional<u_int64_t> cda_rail::TrainTrajectory::is_feasible_braking_point(
   // Zero-crossing and bidirectionality need to be considered
   double braking_dist =
       starting_speed * required_braking_time +
-      std::copysign((required_braking_time - 1) * required_braking_time * accel,
-                    speed_diff);
+      (0.5 * std::copysign((required_braking_time - 1) *
+                               (required_braking_time * accel),
+                           speed_diff));
 
   // Distance is defined from the train point of view on a fixed path
   double dist_to_traversal = distance_to_last_traversal(start_braking);
@@ -181,7 +182,7 @@ std::optional<u_int64_t> cda_rail::TrainTrajectory::is_feasible_braking_point(
 
   u_int64_t end_braking = start_braking + required_braking_time;
 
-  if (end_braking < edge_trajs.back().get_last_timestep() + 1 &&
+  if (end_braking <= edge_trajs.back().get_last_timestep() &&
       dist_after_braking > 0) {
     return end_braking;
   } else {
