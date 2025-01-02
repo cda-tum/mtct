@@ -26,9 +26,9 @@ TEST(Simulation, EdgeTrajectory) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network =
-      Network::import_network("./example-networks/SimpleStation/network/");
+      Network::import_network("./example-networks/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks/SimpleStation/timetable/", network);
+      "./example-networks/SimpleNetwork/timetable/", network);
 
   SimulationInstance                   instance(network, timetable, 20);
   std::uniform_int_distribution<ulong> random_train_index(
@@ -59,9 +59,9 @@ TEST(Simulation, TrainTrajectory) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network =
-      Network::import_network("./example-networks/SimpleStation/network/");
+      Network::import_network("./example-networks/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks/SimpleStation/timetable/", network);
+      "./example-networks/SimpleNetwork/timetable/", network);
 
   SimulationInstance                    instance(network, timetable, 20);
   std::uniform_int_distribution<size_t> random_train_index(
@@ -86,9 +86,9 @@ TEST(Simulation, TrainTrajectorySet) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network =
-      Network::import_network("./example-networks/SimpleStation/network/");
+      Network::import_network("./example-networks/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks/SimpleStation/timetable/", network);
+      "./example-networks/SimpleNetwork/timetable/", network);
 
   SimulationInstance                    instance(network, timetable, 20);
   std::uniform_int_distribution<size_t> random_train_index(
@@ -99,8 +99,8 @@ TEST(Simulation, TrainTrajectorySet) {
     RoutingSolutionSet solution_set{instance, rng_engine};
     TrainTrajectorySet traj{instance, solution_set};
 
-    ASSERT_EQ(solution_set.solutions.size(), 3);
-    ASSERT_EQ(traj.size(), 3);
+    ASSERT_EQ(solution_set.solutions.size(), 4);
+    ASSERT_EQ(traj.size(), 4);
   }
 
   RoutingSolutionSet solution_set{instance, rng_engine};
