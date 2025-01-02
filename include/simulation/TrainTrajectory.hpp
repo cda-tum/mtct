@@ -39,6 +39,7 @@ private:
   double distance_to_last_traversal(u_int64_t timestep) const;
 
 public:
+  TrainTrajectory() = delete;
   TrainTrajectory(SimulationInstance& instance, Train& train,
                   RoutingSolution solution);
 

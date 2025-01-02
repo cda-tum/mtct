@@ -21,6 +21,7 @@ struct RoutingSolution {
   std::vector<double> switch_directions;
 
 public:
+  RoutingSolution() = delete;
   // Constructors
   // Generate a random solution
   RoutingSolution(size_t n_v_target_vars, size_t n_switch_vars,

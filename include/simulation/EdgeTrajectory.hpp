@@ -61,6 +61,7 @@ class EdgeTrajectory {
   std::optional<EdgeTraversal> traversal;
 
 public:
+  EdgeTrajectory() = delete;
   // Simulate movement on edge from initial state and v_targets
   EdgeTrajectory(SimulationInstance& instance, Train& train,
                  SpeedTargets& v_targets, TrainState initial_state);

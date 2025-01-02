@@ -17,6 +17,8 @@ struct SimulationInstance {
   const u_int64_t n_v_target_vars;
   const u_int64_t n_switch_vars;
 
+public:
+  SimulationInstance() = delete;
   SimulationInstance(Network network, Timetable timetable,
                      u_int64_t n_v_target_vars)
       : network(network), timetable(timetable),

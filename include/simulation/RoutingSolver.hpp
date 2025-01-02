@@ -16,6 +16,8 @@ class RoutingSolver {
   const SimulationInstance instance;
   const std::ranlux24_base rng_engine;
 
+public:
+  RoutingSolver() = delete;
   RoutingSolver(SimulationInstance instance);
 };
 
