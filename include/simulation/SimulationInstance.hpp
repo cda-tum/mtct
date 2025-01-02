@@ -1,3 +1,5 @@
+#pragma once
+
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Timetable.hpp"
 

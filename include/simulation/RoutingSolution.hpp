@@ -1,3 +1,5 @@
+#pragma once
+
 #include "datastructure/Train.hpp"
 #include "simulation/SpeedTargets.hpp"
 

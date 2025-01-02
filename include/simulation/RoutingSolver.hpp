@@ -1,3 +1,5 @@
+#pragma once
+
 #include "simulation/SimulationInstance.hpp"
 
 #include <ctime>
