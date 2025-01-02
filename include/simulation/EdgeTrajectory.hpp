@@ -47,8 +47,8 @@ class EdgeTrajectory {
   /**
    * Continuous train state on one edge
    */
-  SimulationInstance& instance;
-  Train&              train;
+  const SimulationInstance& instance;
+  const Train&              train;
 
   u_int64_t initial_timestep; // [0, n_timesteps - 1]
   u_int64_t last_timestep;    // [0, n_timesteps - 1]
@@ -63,7 +63,7 @@ class EdgeTrajectory {
 public:
   EdgeTrajectory() = delete;
   // Simulate movement on edge from initial state and v_targets
-  EdgeTrajectory(SimulationInstance& instance, Train& train,
+  EdgeTrajectory(const SimulationInstance& instance, const Train& train,
                  SpeedTargets& v_targets, TrainState initial_state);
 
   EdgeEntry enter_next_edge(double switch_direction) const;

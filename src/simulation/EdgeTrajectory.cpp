@@ -12,8 +12,9 @@ cda_rail::EdgeEntry::EdgeEntry(cda_rail::EdgeEntryOutcome          outcome,
     throw std::invalid_argument("Improper result of edge entry.");
 }
 
-cda_rail::EdgeTrajectory::EdgeTrajectory(SimulationInstance& instance,
-                                         Train& train, SpeedTargets& v_targets,
+cda_rail::EdgeTrajectory::EdgeTrajectory(const SimulationInstance& instance,
+                                         const Train&              train,
+                                         SpeedTargets&             v_targets,
                                          TrainState initial_state)
     : instance(instance), train(train),
       initial_timestep(initial_state.timestep), edge(initial_state.edge),

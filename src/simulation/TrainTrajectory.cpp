@@ -1,8 +1,8 @@
 #include "simulation/TrainTrajectory.hpp"
 
-cda_rail::TrainTrajectory::TrainTrajectory(SimulationInstance& instance,
-                                           Train&              train,
-                                           RoutingSolution     init_solution)
+cda_rail::TrainTrajectory::TrainTrajectory(const SimulationInstance& instance,
+                                           const Train&              train,
+                                           RoutingSolution init_solution)
     : instance(instance), train(train), solution(init_solution) {
   for (size_t abort = 0;; abort++) {
     TrainState initial_edge_state;

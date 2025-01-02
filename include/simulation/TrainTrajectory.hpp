@@ -14,8 +14,8 @@ class TrainTrajectory {
    * Path of a single train over entire timespan
    * Repairs solution speeds to be feasible
    */
-  SimulationInstance& instance;
-  Train&              train;
+  const SimulationInstance& instance;
+  const Train&              train;
 
   std::vector<EdgeTrajectory> edge_trajs;
   std::vector<ScheduledStop>  visited_stops;
@@ -40,7 +40,7 @@ private:
 
 public:
   TrainTrajectory() = delete;
-  TrainTrajectory(SimulationInstance& instance, Train& train,
+  TrainTrajectory(const SimulationInstance& instance, const Train& train,
                   RoutingSolution solution);
 
   TrainState get_state(u_int64_t timestep) const;
