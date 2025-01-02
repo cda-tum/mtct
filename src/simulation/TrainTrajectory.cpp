@@ -128,7 +128,7 @@ std::optional<cda_rail::BrakingPeriod>
 cda_rail::TrainTrajectory::find_latest_braking_period(
     double target_speed) const {
   u_int64_t last_timestep  = edge_trajs.back().get_last_timestep();
-  u_int64_t first_timestep = edge_trajs.front().get_initial_timestep();
+  u_int64_t first_timestep = edge_trajs.front().get_first_timestep();
 
   for (u_int64_t start_braking = last_timestep; start_braking >= first_timestep;
        start_braking--) {
@@ -149,7 +149,7 @@ std::optional<u_int64_t> cda_rail::TrainTrajectory::is_feasible_braking_point(
   double abs_diff_to_target_speed =
       std::abs(get_state(start_braking).speed - target_speed);
   if (start_braking > edge_trajs.back().get_last_timestep() ||
-      start_braking < edge_trajs.front().get_initial_timestep())
+      start_braking < edge_trajs.front().get_first_timestep())
     throw std::out_of_range("Timestep out of range.");
 
   double starting_speed  = get_state(start_braking).speed;
@@ -191,7 +191,7 @@ cda_rail::TrainTrajectory::get_state(u_int64_t timestep) const {
 
   const EdgeTrajectory& relevant_trajectory =
       edge_trajs.at(get_matching_trajectory(timestep));
-  size_t trajectory_idx = timestep - relevant_trajectory.get_initial_timestep();
+  size_t trajectory_idx = timestep - relevant_trajectory.get_first_timestep();
 
   return TrainState{
       .timestep    = timestep,
@@ -205,7 +205,7 @@ cda_rail::TrainTrajectory::get_state(u_int64_t timestep) const {
 size_t
 cda_rail::TrainTrajectory::get_matching_trajectory(u_int64_t timestep) const {
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
-    if ((*it).get_initial_timestep() <= timestep &&
+    if ((*it).get_first_timestep() <= timestep &&
         (*it).get_last_timestep() >= timestep) {
       return (size_t)std::distance(edge_trajs.begin(), it);
     }
@@ -221,6 +221,14 @@ size_t cda_rail::TrainTrajectory::get_earliest_affected_trajectory(
     }
   }
   throw std::out_of_range("No affected trajectory found.");
+}
+
+size_t cda_rail::TrainTrajectory::get_first_timestep() const {
+  return edge_trajs.front().get_first_timestep();
+}
+
+size_t cda_rail::TrainTrajectory::get_last_timestep() const {
+  return edge_trajs.back().get_last_timestep();
 }
 
 cda_rail::TrainState

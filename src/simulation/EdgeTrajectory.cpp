@@ -16,16 +16,15 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(const SimulationInstance& instance,
                                          const Train&              train,
                                          SpeedTargets&             v_targets,
                                          TrainState initial_state)
-    : instance(instance), train(train),
-      initial_timestep(initial_state.timestep), edge(initial_state.edge),
-      orientation(initial_state.orientation) {
+    : instance(instance), train(train), first_timestep(initial_state.timestep),
+      edge(initial_state.edge), orientation(initial_state.orientation) {
   double edge_length         = instance.network.get_edge(edge).length;
   double edge_length_divisor = 1 / edge_length;
 
   speeds.push_back(initial_state.speed);
   positions.push_back(initial_state.position);
 
-  for (int timestep = initial_timestep + 1; timestep < instance.n_timesteps;
+  for (int timestep = first_timestep + 1; timestep < instance.n_timesteps;
        timestep++) {
     double speed_disparity =
         v_targets.find_target_speed(timestep - 1) - speeds.back();
@@ -41,7 +40,7 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(const SimulationInstance& instance,
                          edge_length_divisor));
 
     if (positions.back() > 1 || positions.back() < 0) {
-      last_timestep = initial_timestep + positions.size() - 2;
+      last_timestep = first_timestep + positions.size() - 2;
       traversal =
           determine_exit(instance.network, TrainState{
                                                .timestep    = last_timestep + 1,
@@ -56,7 +55,7 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(const SimulationInstance& instance,
     }
   }
 
-  last_timestep = initial_timestep + positions.size() - 1;
+  last_timestep = first_timestep + positions.size() - 1;
   traversal     = {};
 }
 
@@ -209,8 +208,8 @@ cda_rail::ScheduledStop cda_rail::EdgeTrajectory::get_stop() const {
   throw std::invalid_argument("No associated scheduled stop found.");
 }
 
-u_int64_t cda_rail::EdgeTrajectory::get_initial_timestep() const {
-  return initial_timestep;
+u_int64_t cda_rail::EdgeTrajectory::get_first_timestep() const {
+  return first_timestep;
 }
 
 u_int64_t cda_rail::EdgeTrajectory::get_last_timestep() const {

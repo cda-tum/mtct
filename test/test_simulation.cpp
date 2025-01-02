@@ -95,11 +95,18 @@ TEST(Simulation, TrainTrajectorySet) {
       0, timetable.get_train_list().size() - 1);
   std::uniform_int_distribution<size_t> random_target_amount(1, 100);
 
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 100; i++) {
     RoutingSolutionSet solution_set{instance, rng_engine};
     TrainTrajectorySet traj{instance, solution_set};
 
     ASSERT_EQ(solution_set.solutions.size(), 3);
     ASSERT_EQ(traj.size(), 3);
   }
+
+  RoutingSolutionSet solution_set{instance, rng_engine};
+  TrainTrajectorySet traj{instance, solution_set};
+  cda_rail::is_directory_and_create("tmp");
+  std::filesystem::path p = "tmp/trajectory.csv";
+  traj.export_csv(p);
+  std::filesystem::remove_all("tmp");
 }

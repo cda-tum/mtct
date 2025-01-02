@@ -52,10 +52,10 @@ class EdgeTrajectory {
   const SimulationInstance& instance;
   const Train&              train;
 
-  u_int64_t initial_timestep; // [0, n_timesteps - 1]
-  u_int64_t last_timestep;    // [0, n_timesteps - 1]
-  size_t    edge;             // [0, network.edges.1ize() - 1]
-  bool      orientation;      // true, false = forward, backward
+  u_int64_t first_timestep; // [0, n_timesteps - 1]
+  u_int64_t last_timestep;  // [0, n_timesteps - 1]
+  size_t    edge;           // [0, network.edges.1ize() - 1]
+  bool      orientation;    // true, false = forward, backward
 
   std::vector<double> positions; // [0, 1]
   std::vector<double> speeds;    // (-Inf, Inf)
@@ -74,7 +74,7 @@ public:
 
   cda_rail::ScheduledStop get_stop() const;
 
-  u_int64_t                           get_initial_timestep() const;
+  u_int64_t                           get_first_timestep() const;
   u_int64_t                           get_last_timestep() const;
   size_t                              get_edge() const;
   bool                                get_orientation() const;
