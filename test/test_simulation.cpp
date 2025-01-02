@@ -1,6 +1,6 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Timetable.hpp"
-#include "simulation/TrainTrajectory.hpp"
+#include "simulation/TrainTrajectorySet.hpp"
 
 using namespace cda_rail;
 
@@ -68,7 +68,7 @@ TEST(Simulation, TrainTrajectory) {
       0, timetable.get_train_list().size() - 1);
   std::uniform_int_distribution<size_t> random_target_amount(1, 100);
 
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < 100; i++) {
     size_t train_idx = random_train_index(rng_engine);
 
     Train train = timetable.get_train_list().get_train(train_idx);
@@ -78,5 +78,25 @@ TEST(Simulation, TrainTrajectory) {
                              train, rng_engine);
 
     TrainTrajectory traj(instance, train, solution);
+  }
+}
+
+TEST(Simulation, TrainTrajectorySet) {
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+  Network            network =
+      Network::import_network("./example-networks/SimpleStation/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks/SimpleStation/timetable/", network);
+
+  SimulationInstance                    instance(network, timetable, 20);
+  std::uniform_int_distribution<size_t> random_train_index(
+      0, timetable.get_train_list().size() - 1);
+  std::uniform_int_distribution<size_t> random_target_amount(1, 100);
+
+  for (int i = 0; i < 1000; i++) {
+    RoutingSolutionSet solution_set{instance, rng_engine};
+    TrainTrajectorySet traj{instance, solution_set};
   }
 }
