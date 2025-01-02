@@ -98,5 +98,8 @@ TEST(Simulation, TrainTrajectorySet) {
   for (int i = 0; i < 1000; i++) {
     RoutingSolutionSet solution_set{instance, rng_engine};
     TrainTrajectorySet traj{instance, solution_set};
+
+    ASSERT_EQ(solution_set.solutions.size(), 3);
+    ASSERT_EQ(traj.size(), 3);
   }
 }

@@ -10,3 +10,7 @@ cda_rail::TrainTrajectorySet::TrainTrajectorySet(
     trajectories.insert({solution.first, traj});
   }
 }
+
+size_t cda_rail::TrainTrajectorySet::size() const {
+  return trajectories.size();
+}

@@ -19,7 +19,8 @@ public:
   TrainTrajectorySet() = delete;
   TrainTrajectorySet(const SimulationInstance& instance,
                      const RoutingSolutionSet& solution_set);
-                     RoutingSolutionSet        solution_set);
+
+  size_t size() const;
 };
 
 }; // namespace cda_rail
