@@ -51,6 +51,8 @@ TEST(Simulation, EdgeTrajectory) {
 
     EdgeTrajectory edge_traj(instance, train, solution.v_targets, init_state);
     EdgeEntry      transition = edge_traj.enter_next_edge(0.3);
+
+    edge_traj.check_speed_limits();
   }
 }
 
@@ -78,6 +80,8 @@ TEST(Simulation, TrainTrajectory) {
                              train, rng_engine);
 
     TrainTrajectory traj(instance, train, solution);
+
+    traj.check_speed_limits();
   }
 }
 
@@ -101,6 +105,7 @@ TEST(Simulation, TrainTrajectorySet) {
 
     ASSERT_EQ(solution_set.solutions.size(), 4);
     ASSERT_EQ(traj.size(), 4);
+    traj.check_speed_limits();
   }
 
   RoutingSolutionSet solution_set{instance, rng_engine};

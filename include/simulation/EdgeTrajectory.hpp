@@ -72,6 +72,8 @@ public:
 
   bool is_planned_stop() const;
 
+  void check_speed_limits() const;
+
   cda_rail::ScheduledStop get_stop() const;
 
   u_int64_t                           get_first_timestep() const;

@@ -26,6 +26,8 @@ public:
 
   void export_csv(const std::filesystem::path& p) const;
 
+  void check_speed_limits() const;
+
   size_t size() const;
 };
 

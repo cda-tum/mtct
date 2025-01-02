@@ -196,6 +196,24 @@ bool cda_rail::EdgeTrajectory::is_planned_stop() const {
   return false;
 }
 
+void cda_rail::EdgeTrajectory::check_speed_limits() const {
+  double speed_limit =
+      std::max(instance.network.get_edge(edge).max_speed, train.max_speed);
+
+  if (positions.size() > 1) {
+    double edge_length = instance.network.get_edge(edge).length;
+    for (auto pos = positions.begin() + 1; pos != positions.end(); pos++) {
+      if (std::abs((*pos) - *(pos - 1)) * edge_length > speed_limit)
+        throw exceptions::ConsistencyException("Overspeed detected.");
+    }
+  }
+
+  for (auto speed : speeds) {
+    if (std::abs(speed) > speed_limit)
+      throw exceptions::ConsistencyException("Overspeed detected.");
+  }
+}
+
 cda_rail::ScheduledStop cda_rail::EdgeTrajectory::get_stop() const {
   for (auto stop : instance.timetable.get_schedule(train.name).get_stops()) {
     auto stop_station = instance.timetable.get_station_list().get_station(

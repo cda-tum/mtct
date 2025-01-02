@@ -56,6 +56,8 @@ public:
   size_t get_last_timestep() const;
 
   TrainState read_initial_train_state() const;
+
+  void check_speed_limits() const;
 };
 
 }; // namespace cda_rail

@@ -44,3 +44,9 @@ void cda_rail::TrainTrajectorySet::export_csv(
 
   csvfile.close();
 }
+
+void cda_rail::TrainTrajectorySet::check_speed_limits() const {
+  for (auto traj : trajectories) {
+    traj.second.check_speed_limits();
+  }
+}

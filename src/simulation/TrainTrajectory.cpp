@@ -243,3 +243,9 @@ cda_rail::TrainTrajectory::read_initial_train_state() const {
       .orientation = true,
       .speed       = train_schedule.get_v_0()};
 }
+
+void cda_rail::TrainTrajectory::check_speed_limits() const {
+  for (auto traj : edge_trajs) {
+    traj.check_speed_limits();
+  }
+}
