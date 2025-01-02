@@ -8,6 +8,9 @@ namespace cda_rail {
 struct RoutingSolutionSet {
   /**
    * Routing solutions for all trains in a timetable
+   *
+   * @param solutions Map containing train name and corresponding
+   * RoutingSolution
    */
 
   std::unordered_map<std::string, RoutingSolution> solutions;

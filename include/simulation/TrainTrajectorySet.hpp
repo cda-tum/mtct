@@ -8,6 +8,9 @@ namespace cda_rail {
 class TrainTrajectorySet {
   /**
    * Trajectories for all trains in a timetable
+   *
+   * @param trajectories Map containing train name and corresponding
+   * TrainTrajectory
    */
 
   std::unordered_map<std::string, TrainTrajectory> trajectories;
