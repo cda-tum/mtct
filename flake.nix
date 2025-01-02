@@ -25,15 +25,26 @@
             });
           in
           pkgs.mkShell {
-            packages = with pkgs; [
+            packages = with pkgs;[
               # C++ Compiler is already part of stdenv
               cmake
               ninja
               lldb
-              python3
               pre-commit
               clang-tools
+
+              # Plotting
 	            graphia
+              (python3.withPackages (python-pkgs: with python-pkgs; [
+                pandas
+                numpy
+                scipy
+                seaborn
+                plotly
+                networkx
+                shapely
+                geopy
+              ]))
             ];
 
             GUROBI_HOME = "${gurobi-with-source}";
