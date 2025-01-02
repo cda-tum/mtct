@@ -104,7 +104,9 @@ sliders = [dict(
     steps=steps
 )]
 
-fig = go.Figure(data=[edge_trace, node_trace] + train_traces,
+train_store_bg = [go.Scatter(x=[-0.03, -0.03, 0.2, 0.2, -0.03], y=[-0.03, 0.03, 0.03, -0.03, -0.03], line=go.Line(color="black"), text="Outside Network")]
+
+fig = go.Figure(data=[edge_trace, node_trace] + train_traces + train_store_bg,
              layout=go.Layout(
                 title='Train Network',
                 titlefont_size=16,
