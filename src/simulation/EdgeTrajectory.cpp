@@ -247,7 +247,7 @@ const std::vector<double>& cda_rail::EdgeTrajectory::get_speeds() const {
   return speeds;
 }
 
-const std::optional<cda_rail::EdgeTraversal>&
+std::optional<cda_rail::EdgeTraversal>
 cda_rail::EdgeTrajectory::get_traversal() const {
   return traversal;
 }

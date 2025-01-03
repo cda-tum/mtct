@@ -76,13 +76,13 @@ public:
 
   cda_rail::ScheduledStop get_stop() const;
 
-  u_int64_t                           get_first_timestep() const;
-  u_int64_t                           get_last_timestep() const;
-  size_t                              get_edge() const;
-  bool                                get_orientation() const;
-  const std::vector<double>&          get_positions() const;
-  const std::vector<double>&          get_speeds() const;
-  const std::optional<EdgeTraversal>& get_traversal() const;
+  u_int64_t                    get_first_timestep() const;
+  u_int64_t                    get_last_timestep() const;
+  size_t                       get_edge() const;
+  bool                         get_orientation() const;
+  const std::vector<double>&   get_positions() const;
+  const std::vector<double>&   get_speeds() const;
+  std::optional<EdgeTraversal> get_traversal() const;
 };
 
 std::optional<TrainState> determine_first_state(const Network& network,
