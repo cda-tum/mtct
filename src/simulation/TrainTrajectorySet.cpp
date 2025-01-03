@@ -11,8 +11,45 @@ cda_rail::sim::TrainTrajectorySet::TrainTrajectorySet(
   }
 }
 
-size_t cda_rail::sim::TrainTrajectorySet::size() const {
-  return trajectories.size();
+std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
+    std::string train1, std::string train2, size_t timestep) const {
+  if (instance.bidirectional_travel)
+    throw std::runtime_error(
+        "Distance metric only works with unidirectional traffic.");
+
+  TrainState state1, state2;
+  {
+    std::optional<TrainState> state_opt1 =
+        (*trajectories.find(train1)).second.get_state(timestep);
+    std::optional<TrainState> state_opt2 =
+        (*trajectories.find(train2)).second.get_state(timestep);
+
+    if (!state_opt1.has_value() || !state_opt2.has_value()) {
+      return {};
+    } else {
+      state1 = state_opt1.value();
+      state2 = state_opt2.value();
+    }
+  }
+
+  double edge_length1 = instance.network.get_edge(state1.edge).length;
+
+  if (state1.edge == state2.edge)
+    return std::abs(state1.position - state2.position) * edge_length1;
+
+  double edge_length2 = instance.network.get_edge(state2.edge).length;
+
+  double aepsp_metric1 =
+      instance.shortest_paths.at(state1.edge).at(state2.edge);
+  double aepsp_metric2 =
+      instance.shortest_paths.at(state2.edge).at(state1.edge);
+
+  double dist1 = aepsp_metric1 - state1.position * edge_length1 -
+                 (1 - state2.position) * edge_length2;
+  double dist2 = aepsp_metric2 - state2.position * edge_length2 -
+                 (1 - state1.position) * edge_length1;
+
+  return std::min(dist1, dist2);
 }
 
 void cda_rail::sim::TrainTrajectorySet::export_csv(
@@ -31,7 +68,7 @@ void cda_rail::sim::TrainTrajectorySet::export_csv(
 
       csvfile << timestep << ",";
 
-      TrainState  state = traj.second.get_state(timestep);
+      TrainState  state = traj.second.get_state(timestep).value();
       const Edge& edge  = instance.network.get_edge(state.edge);
 
       csvfile << state.edge << ",";
@@ -49,4 +86,8 @@ void cda_rail::sim::TrainTrajectorySet::check_speed_limits() const {
   for (auto traj : trajectories) {
     traj.second.check_speed_limits();
   }
+}
+
+size_t cda_rail::sim::TrainTrajectorySet::size() const {
+  return trajectories.size();
 }

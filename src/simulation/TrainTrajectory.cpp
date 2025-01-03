@@ -146,13 +146,13 @@ cda_rail::sim::TrainTrajectory::find_latest_braking_period(
 std::optional<u_int64_t>
 cda_rail::sim::TrainTrajectory::is_feasible_braking_point(
     u_int64_t start_braking, double target_speed) const {
-  double abs_diff_to_target_speed =
-      std::abs(get_state(start_braking).speed - target_speed);
+  TrainState start_state          = get_state(start_braking).value();
+  double abs_diff_to_target_speed = std::abs(start_state.speed - target_speed);
   if (start_braking > edge_trajs.back().get_last_timestep() ||
       start_braking < edge_trajs.front().get_first_timestep())
     throw std::out_of_range("Timestep out of range.");
 
-  double starting_speed  = get_state(start_braking).speed;
+  double starting_speed  = start_state.speed;
   double speed_diff      = target_speed - starting_speed;
   double speed_diff_abs  = std::abs(speed_diff);
   bool   accel_direction = !std::signbit(speed_diff);
@@ -184,10 +184,11 @@ cda_rail::sim::TrainTrajectory::is_feasible_braking_point(
   }
 }
 
-cda_rail::sim::TrainState
+std::optional<cda_rail::sim::TrainState>
 cda_rail::sim::TrainTrajectory::get_state(u_int64_t timestep) const {
-  if (timestep > edge_trajs.back().get_last_timestep())
-    throw std::out_of_range("Timestep out of range.");
+  if (timestep > edge_trajs.back().get_last_timestep() ||
+      timestep < edge_trajs.front().get_first_timestep())
+    return {};
 
   const EdgeTrajectory& relevant_trajectory =
       edge_trajs.at(get_matching_trajectory(timestep));

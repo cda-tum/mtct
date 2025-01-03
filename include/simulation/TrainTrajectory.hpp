@@ -45,7 +45,7 @@ public:
   TrainTrajectory(const SimulationInstance& instance, const Train& train,
                   RoutingSolution solution);
 
-  TrainState get_state(u_int64_t timestep) const;
+  std::optional<TrainState> get_state(u_int64_t timestep) const;
 
   size_t get_matching_trajectory(u_int64_t timestep) const;
 

@@ -12,22 +12,19 @@ struct SimulationInstance {
    * Environment for Microscopic Simulation
    */
 
-  const Network   network;
-  const Timetable timetable;
+  const Network                          network;
+  const Timetable                        timetable;
+  const std::vector<std::vector<double>> shortest_paths;
 
   const u_int64_t n_timesteps;
   const u_int64_t n_v_target_vars;
   const u_int64_t n_switch_vars;
+  const bool      bidirectional_travel;
 
 public:
   SimulationInstance() = delete;
   SimulationInstance(Network network, Timetable timetable,
-                     u_int64_t n_v_target_vars)
-      : network(network), timetable(timetable),
-        n_timesteps(get_last_train_departure()),
-        n_v_target_vars(n_v_target_vars),
-        n_switch_vars(std::ceil((get_max_train_speed() * n_timesteps) /
-                                get_shortest_track())) {};
+                     u_int64_t n_v_target_vars, bool bidirectional_travel);
 
   double    get_max_train_speed() const;
   double    get_shortest_track() const;

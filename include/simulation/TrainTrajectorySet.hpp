@@ -24,6 +24,9 @@ public:
   TrainTrajectorySet(const SimulationInstance& instance,
                      const RoutingSolutionSet& solution_set);
 
+  std::optional<double> train_distance(std::string train1, std::string train2,
+                                       size_t timestep) const;
+
   void export_csv(const std::filesystem::path& p) const;
 
   void check_speed_limits() const;
