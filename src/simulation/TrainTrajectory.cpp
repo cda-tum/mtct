@@ -1,8 +1,8 @@
 #include "simulation/TrainTrajectory.hpp"
 
-cda_rail::TrainTrajectory::TrainTrajectory(const SimulationInstance& instance,
-                                           const Train&              train,
-                                           RoutingSolution init_solution)
+cda_rail::sim::TrainTrajectory::TrainTrajectory(
+    const SimulationInstance& instance, const Train& train,
+    RoutingSolution init_solution)
     : instance(instance), train(train), solution(init_solution) {
   for (size_t abort = 0;; abort++) {
     TrainState initial_edge_state;
@@ -81,7 +81,7 @@ cda_rail::TrainTrajectory::TrainTrajectory(const SimulationInstance& instance,
   }
 }
 
-void cda_rail::TrainTrajectory::backtrack_trajectory(u_int64_t timestep) {
+void cda_rail::sim::TrainTrajectory::backtrack_trajectory(u_int64_t timestep) {
   size_t i = get_earliest_affected_trajectory(timestep);
 
   while (edge_trajs.size() > i) {
@@ -89,10 +89,9 @@ void cda_rail::TrainTrajectory::backtrack_trajectory(u_int64_t timestep) {
   }
 }
 
-cda_rail::BrakingPeriod
-cda_rail::TrainTrajectory::add_braking(double abs_target_speed,
-                                       std::optional<u_int64_t> hold_until,
-                                       std::optional<u_int64_t> hold_at_least) {
+cda_rail::sim::BrakingPeriod cda_rail::sim::TrainTrajectory::add_braking(
+    double abs_target_speed, std::optional<u_int64_t> hold_until,
+    std::optional<u_int64_t> hold_at_least) {
   if (!edge_trajs.back().get_traversal().has_value())
     throw exceptions::ConsistencyException("No traversal to brake for.");
 
@@ -124,8 +123,8 @@ cda_rail::TrainTrajectory::add_braking(double abs_target_speed,
   return std::tuple(start_braking, end_hold);
 }
 
-std::optional<cda_rail::BrakingPeriod>
-cda_rail::TrainTrajectory::find_latest_braking_period(
+std::optional<cda_rail::sim::BrakingPeriod>
+cda_rail::sim::TrainTrajectory::find_latest_braking_period(
     double target_speed) const {
   u_int64_t last_timestep  = edge_trajs.back().get_last_timestep();
   u_int64_t first_timestep = edge_trajs.front().get_first_timestep();
@@ -144,7 +143,8 @@ cda_rail::TrainTrajectory::find_latest_braking_period(
   return {};
 }
 
-std::optional<u_int64_t> cda_rail::TrainTrajectory::is_feasible_braking_point(
+std::optional<u_int64_t>
+cda_rail::sim::TrainTrajectory::is_feasible_braking_point(
     u_int64_t start_braking, double target_speed) const {
   double abs_diff_to_target_speed =
       std::abs(get_state(start_braking).speed - target_speed);
@@ -184,8 +184,8 @@ std::optional<u_int64_t> cda_rail::TrainTrajectory::is_feasible_braking_point(
   }
 }
 
-cda_rail::TrainState
-cda_rail::TrainTrajectory::get_state(u_int64_t timestep) const {
+cda_rail::sim::TrainState
+cda_rail::sim::TrainTrajectory::get_state(u_int64_t timestep) const {
   if (timestep > edge_trajs.back().get_last_timestep())
     throw std::out_of_range("Timestep out of range.");
 
@@ -202,8 +202,8 @@ cda_rail::TrainTrajectory::get_state(u_int64_t timestep) const {
   };
 }
 
-size_t
-cda_rail::TrainTrajectory::get_matching_trajectory(u_int64_t timestep) const {
+size_t cda_rail::sim::TrainTrajectory::get_matching_trajectory(
+    u_int64_t timestep) const {
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
     if ((*it).get_first_timestep() <= timestep &&
         (*it).get_last_timestep() >= timestep) {
@@ -213,7 +213,7 @@ cda_rail::TrainTrajectory::get_matching_trajectory(u_int64_t timestep) const {
   throw std::out_of_range("Timestep not contained in any trajectory.");
 }
 
-size_t cda_rail::TrainTrajectory::get_earliest_affected_trajectory(
+size_t cda_rail::sim::TrainTrajectory::get_earliest_affected_trajectory(
     u_int64_t timestep) const {
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
     if ((*it).get_last_timestep() >= timestep) {
@@ -223,16 +223,16 @@ size_t cda_rail::TrainTrajectory::get_earliest_affected_trajectory(
   throw std::out_of_range("No affected trajectory found.");
 }
 
-size_t cda_rail::TrainTrajectory::get_first_timestep() const {
+size_t cda_rail::sim::TrainTrajectory::get_first_timestep() const {
   return edge_trajs.front().get_first_timestep();
 }
 
-size_t cda_rail::TrainTrajectory::get_last_timestep() const {
+size_t cda_rail::sim::TrainTrajectory::get_last_timestep() const {
   return edge_trajs.back().get_last_timestep();
 }
 
-cda_rail::TrainState
-cda_rail::TrainTrajectory::read_initial_train_state() const {
+cda_rail::sim::TrainState
+cda_rail::sim::TrainTrajectory::read_initial_train_state() const {
   cda_rail::Schedule train_schedule =
       instance.timetable.get_schedule(train.name);
   return TrainState{
@@ -244,7 +244,7 @@ cda_rail::TrainTrajectory::read_initial_train_state() const {
       .speed       = train_schedule.get_v_0()};
 }
 
-void cda_rail::TrainTrajectory::check_speed_limits() const {
+void cda_rail::sim::TrainTrajectory::check_speed_limits() const {
   for (auto traj : edge_trajs) {
     traj.check_speed_limits();
   }

@@ -7,7 +7,7 @@
 #include <random>
 #include <vector>
 
-namespace cda_rail {
+namespace cda_rail::sim {
 
 struct RoutingSolution {
   /**
@@ -31,4 +31,4 @@ public:
                   std::ranlux24_base& rng_engine);
 };
 
-}; // namespace cda_rail
+}; // namespace cda_rail::sim

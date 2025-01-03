@@ -3,7 +3,7 @@
 #include "simulation/RoutingSolution.hpp"
 #include "simulation/SimulationInstance.hpp"
 
-namespace cda_rail {
+namespace cda_rail::sim {
 
 struct RoutingSolutionSet {
   /**
@@ -22,4 +22,4 @@ public:
                      std::ranlux24_base&       rng_engine);
 };
 
-}; // namespace cda_rail
+}; // namespace cda_rail::sim

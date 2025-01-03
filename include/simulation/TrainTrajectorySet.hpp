@@ -6,7 +6,7 @@
 #include <fstream>
 #include <iostream>
 
-namespace cda_rail {
+namespace cda_rail::sim {
 
 class TrainTrajectorySet {
   /**
@@ -31,4 +31,4 @@ public:
   size_t size() const;
 };
 
-}; // namespace cda_rail
+}; // namespace cda_rail::sim

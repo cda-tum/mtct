@@ -6,7 +6,7 @@
 #include <optional>
 #include <vector>
 
-namespace cda_rail {
+namespace cda_rail::sim {
 
 struct TrainState {
   /**
@@ -90,4 +90,4 @@ std::optional<TrainState> determine_first_state(const Network& network,
                                                 double switch_direction);
 EdgeTraversal determine_exit(const Network& network, TrainState overshot_state);
 
-}; // namespace cda_rail
+}; // namespace cda_rail::sim

@@ -5,7 +5,7 @@
 #include <ctime>
 #include <random>
 
-namespace cda_rail {
+namespace cda_rail::sim {
 
 class RoutingSolver {
   /**
@@ -23,4 +23,4 @@ public:
   RoutingSolver(SimulationInstance instance);
 };
 
-}; // namespace cda_rail
+}; // namespace cda_rail::sim

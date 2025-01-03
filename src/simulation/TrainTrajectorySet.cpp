@@ -1,6 +1,6 @@
 #include "simulation/TrainTrajectorySet.hpp"
 
-cda_rail::TrainTrajectorySet::TrainTrajectorySet(
+cda_rail::sim::TrainTrajectorySet::TrainTrajectorySet(
     const SimulationInstance& instance, const RoutingSolutionSet& solution_set)
     : instance(instance) {
   const TrainList& trainlist = instance.timetable.get_train_list();
@@ -11,11 +11,11 @@ cda_rail::TrainTrajectorySet::TrainTrajectorySet(
   }
 }
 
-size_t cda_rail::TrainTrajectorySet::size() const {
+size_t cda_rail::sim::TrainTrajectorySet::size() const {
   return trajectories.size();
 }
 
-void cda_rail::TrainTrajectorySet::export_csv(
+void cda_rail::sim::TrainTrajectorySet::export_csv(
     const std::filesystem::path& p) const {
   std::ofstream csvfile(p);
   csvfile << "train_idx,train_name,timestep,edge_idx,edge_src_node,edge_dst_"
@@ -45,7 +45,7 @@ void cda_rail::TrainTrajectorySet::export_csv(
   csvfile.close();
 }
 
-void cda_rail::TrainTrajectorySet::check_speed_limits() const {
+void cda_rail::sim::TrainTrajectorySet::check_speed_limits() const {
   for (auto traj : trajectories) {
     traj.second.check_speed_limits();
   }

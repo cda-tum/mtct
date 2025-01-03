@@ -7,7 +7,7 @@
 #include <optional>
 #include <vector>
 
-namespace cda_rail {
+namespace cda_rail::sim {
 
 using BrakingPeriod = std::tuple<u_int64_t, u_int64_t>;
 
@@ -60,4 +60,4 @@ public:
   void check_speed_limits() const;
 };
 
-}; // namespace cda_rail
+}; // namespace cda_rail::sim

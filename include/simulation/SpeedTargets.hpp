@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace cda_rail {
+namespace cda_rail::sim {
 
 struct SpeedTargets {
   /**
@@ -30,4 +30,4 @@ public:
   bool                        is_first_target(u_int64_t timestep) const;
 };
 
-}; // namespace cda_rail
+}; // namespace cda_rail::sim

@@ -5,7 +5,7 @@
 
 #include <cfloat>
 
-namespace cda_rail {
+namespace cda_rail::sim {
 
 struct SimulationInstance {
   /**
@@ -34,4 +34,4 @@ public:
   u_int64_t get_last_train_departure() const;
 };
 
-}; // namespace cda_rail
+}; // namespace cda_rail::sim

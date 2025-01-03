@@ -1,6 +1,6 @@
 #include "simulation/RoutingSolutionSet.hpp"
 
-cda_rail::RoutingSolutionSet::RoutingSolutionSet(
+cda_rail::sim::RoutingSolutionSet::RoutingSolutionSet(
     const SimulationInstance& instance, std::ranlux24_base& rng_engine) {
   for (const Train& train : instance.timetable.get_train_list()) {
     RoutingSolution sol{instance.n_v_target_vars, instance.n_switch_vars,

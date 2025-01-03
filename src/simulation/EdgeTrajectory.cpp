@@ -2,8 +2,9 @@
 
 #include <algorithm>
 
-cda_rail::EdgeEntry::EdgeEntry(cda_rail::EdgeEntryOutcome          outcome,
-                               std::optional<cda_rail::TrainState> new_state)
+cda_rail::sim::EdgeEntry::EdgeEntry(
+    cda_rail::sim::EdgeEntryOutcome          outcome,
+    std::optional<cda_rail::sim::TrainState> new_state)
     : outcome(outcome), new_state(new_state) {
   bool requires_state =
       (outcome == NORMAL || outcome == OVERSPEED || outcome == PLANNED_STOP);
@@ -12,10 +13,9 @@ cda_rail::EdgeEntry::EdgeEntry(cda_rail::EdgeEntryOutcome          outcome,
     throw std::invalid_argument("Improper result of edge entry.");
 }
 
-cda_rail::EdgeTrajectory::EdgeTrajectory(const SimulationInstance& instance,
-                                         const Train&              train,
-                                         SpeedTargets&             v_targets,
-                                         TrainState initial_state)
+cda_rail::sim::EdgeTrajectory::EdgeTrajectory(
+    const SimulationInstance& instance, const Train& train,
+    SpeedTargets& v_targets, TrainState initial_state)
     : instance(instance), train(train), first_timestep(initial_state.timestep),
       edge(initial_state.edge), orientation(initial_state.orientation) {
   double edge_length         = instance.network.get_edge(edge).length;
@@ -59,8 +59,8 @@ cda_rail::EdgeTrajectory::EdgeTrajectory(const SimulationInstance& instance,
   traversal     = {};
 }
 
-cda_rail::EdgeEntry
-cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
+cda_rail::sim::EdgeEntry
+cda_rail::sim::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   if (!traversal.has_value())
     return EdgeEntry{TIME_END, {}};
 
@@ -111,10 +111,10 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   return EdgeEntry{outcome, new_state};
 }
 
-std::optional<cda_rail::TrainState>
-cda_rail::determine_first_state(const cda_rail::Network& network,
-                                cda_rail::EdgeTraversal  traversal,
-                                double                   switch_direction) {
+std::optional<cda_rail::sim::TrainState>
+cda_rail::sim::determine_first_state(const cda_rail::Network&     network,
+                                     cda_rail::sim::EdgeTraversal traversal,
+                                     double switch_direction) {
   std::vector<size_t> viable_next_edges;
   if (traversal.from_exit_point) {
     viable_next_edges = network.get_successors(traversal.from_edge);
@@ -140,7 +140,7 @@ cda_rail::determine_first_state(const cda_rail::Network& network,
                                    network.get_edge(next_edge).length);
   }
 
-  return cda_rail::TrainState{
+  return cda_rail::sim::TrainState{
       .timestep = traversal.from_timestep + 1,
       .edge     = next_edge,
       .position = edge_entry_position,
@@ -150,9 +150,9 @@ cda_rail::determine_first_state(const cda_rail::Network& network,
   };
 }
 
-cda_rail::EdgeTraversal
-cda_rail::determine_exit(const cda_rail::Network& network,
-                         cda_rail::TrainState     overshot_state) {
+cda_rail::sim::EdgeTraversal
+cda_rail::sim::determine_exit(const cda_rail::Network&  network,
+                              cda_rail::sim::TrainState overshot_state) {
   double edge_length = network.get_edge(overshot_state.edge).length;
   bool   exit_point  = (overshot_state.position > 1);
   size_t vertex;
@@ -160,7 +160,7 @@ cda_rail::determine_exit(const cda_rail::Network& network,
   double leftover_movement;
 
   if (exit_point) {
-    return cda_rail::EdgeTraversal{
+    return cda_rail::sim::EdgeTraversal{
         // Forward exit in edge direction
         .from_timestep        = overshot_state.timestep - 1,
         .from_edge            = overshot_state.edge,
@@ -171,7 +171,7 @@ cda_rail::determine_exit(const cda_rail::Network& network,
         .speed                = overshot_state.speed,
     };
   } else {
-    return cda_rail::EdgeTraversal{
+    return cda_rail::sim::EdgeTraversal{
         // Backward exit in edge direction
         .from_timestep        = overshot_state.timestep - 1,
         .from_edge            = overshot_state.edge,
@@ -184,7 +184,7 @@ cda_rail::determine_exit(const cda_rail::Network& network,
   }
 }
 
-bool cda_rail::EdgeTrajectory::is_planned_stop() const {
+bool cda_rail::sim::EdgeTrajectory::is_planned_stop() const {
   for (auto stop : instance.timetable.get_schedule(train.name).get_stops()) {
     auto stop_station = instance.timetable.get_station_list().get_station(
         stop.get_station_name());
@@ -197,7 +197,7 @@ bool cda_rail::EdgeTrajectory::is_planned_stop() const {
   return false;
 }
 
-void cda_rail::EdgeTrajectory::check_speed_limits() const {
+void cda_rail::sim::EdgeTrajectory::check_speed_limits() const {
   double speed_limit =
       std::max(instance.network.get_edge(edge).max_speed, train.max_speed);
 
@@ -215,7 +215,7 @@ void cda_rail::EdgeTrajectory::check_speed_limits() const {
   }
 }
 
-cda_rail::ScheduledStop cda_rail::EdgeTrajectory::get_stop() const {
+cda_rail::ScheduledStop cda_rail::sim::EdgeTrajectory::get_stop() const {
   for (auto stop : instance.timetable.get_schedule(train.name).get_stops()) {
     auto stop_station = instance.timetable.get_station_list().get_station(
         stop.get_station_name());
@@ -227,27 +227,30 @@ cda_rail::ScheduledStop cda_rail::EdgeTrajectory::get_stop() const {
   throw std::invalid_argument("No associated scheduled stop found.");
 }
 
-u_int64_t cda_rail::EdgeTrajectory::get_first_timestep() const {
+u_int64_t cda_rail::sim::EdgeTrajectory::get_first_timestep() const {
   return first_timestep;
 }
 
-u_int64_t cda_rail::EdgeTrajectory::get_last_timestep() const {
+u_int64_t cda_rail::sim::EdgeTrajectory::get_last_timestep() const {
   return last_timestep;
 }
 
-size_t cda_rail::EdgeTrajectory::get_edge() const { return edge; }
+size_t cda_rail::sim::EdgeTrajectory::get_edge() const { return edge; }
 
-bool cda_rail::EdgeTrajectory::get_orientation() const { return orientation; }
+bool cda_rail::sim::EdgeTrajectory::get_orientation() const {
+  return orientation;
+}
 
-const std::vector<double>& cda_rail::EdgeTrajectory::get_positions() const {
+const std::vector<double>&
+cda_rail::sim::EdgeTrajectory::get_positions() const {
   return positions;
 }
 
-const std::vector<double>& cda_rail::EdgeTrajectory::get_speeds() const {
+const std::vector<double>& cda_rail::sim::EdgeTrajectory::get_speeds() const {
   return speeds;
 }
 
-std::optional<cda_rail::EdgeTraversal>
-cda_rail::EdgeTrajectory::get_traversal() const {
+std::optional<cda_rail::sim::EdgeTraversal>
+cda_rail::sim::EdgeTrajectory::get_traversal() const {
   return traversal;
 }

@@ -23,7 +23,7 @@ TEST(Simulation, RandomSolution) {
   for (int i = 0; i <= 1000; i++) {
     const Train& train =
         timetable.get_train_list().get_train(random_train_index(rng_engine));
-    const RoutingSolution sol = RoutingSolution(10, 10, 100, train, rng_engine);
+    const sim::RoutingSolution sol{10, 10, 100, train, rng_engine};
     for (auto target : sol.v_targets.targets) {
       ASSERT_GE(target.first, 0);
       ASSERT_LE(target.first, 100);
@@ -39,7 +39,7 @@ TEST(Simulation, SpeedTargets) {
   std::vector<ulong>  timesteps = {3, 20, 50, 75, 87};
   std::vector<double> speeds    = {0.4, 0.6, 0.5, -0.2, -0.5};
 
-  SpeedTargets v_targets(timesteps, speeds);
+  sim::SpeedTargets v_targets(timesteps, speeds);
   ASSERT_EQ(v_targets.find_target_speed(2), 0.4);
   ASSERT_EQ(v_targets.find_target_speed(11), 0.4);
   ASSERT_EQ(v_targets.find_target_speed(21), 0.6);
@@ -64,7 +64,7 @@ TEST(Simulation, SpeedTargets) {
   ASSERT_EQ(cop.at(45), 0.3);
   ASSERT_EQ(cop.at(50), 0.3);
 
-  SpeedTargets v_targets_original = v_targets;
+  sim::SpeedTargets v_targets_original = v_targets;
   v_targets.delete_range(20, 50);
   ASSERT_EQ(v_targets.find_target_speed(35), 0.4);
   ASSERT_EQ(v_targets.targets.size(), 3);
