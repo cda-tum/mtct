@@ -115,3 +115,5 @@ TEST(Simulation, TrainTrajectorySet) {
   traj.export_csv(p);
   std::filesystem::remove_all("tmp");
 }
+
+// TODO: test for invariance of solution after being repaired and used again
