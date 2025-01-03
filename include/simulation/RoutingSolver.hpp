@@ -1,26 +1,42 @@
 #pragma once
 
-#include "simulation/SimulationInstance.hpp"
+#include "simulation/TrainTrajectorySet.hpp"
 
-#include <ctime>
+#include <chrono>
+#include <functional>
 #include <random>
 
 namespace cda_rail::sim {
 
+struct SolverResult {
+  RoutingSolutionSet solution;
+  TrainTrajectorySet trajectories;
+};
+
 class RoutingSolver {
   /**
-   * Performs heuristic routing in a SimulationInstance
+   * Performs heuristic routing for a SimulationInstance
    *
    * @param instance contains constant parameters
    * @param rng_engine used for solution generation
    */
 
   const SimulationInstance instance;
-  const std::ranlux24_base rng_engine;
+  std::ranlux24_base       rng_engine;
 
 public:
   RoutingSolver() = delete;
   RoutingSolver(SimulationInstance instance);
+
+  /**
+   * Random search exits when score decreases slower than abort_improv_rate
+   *
+   * @param abort_improv_rate Minimum improvement in score / milliseconds
+   * @param objective Objective function that gets minimized
+   */
+  std::optional<SolverResult>
+  random_search(double                                    abort_improv_rate,
+                std::function<double(TrainTrajectorySet)> objective);
 };
 
 }; // namespace cda_rail::sim

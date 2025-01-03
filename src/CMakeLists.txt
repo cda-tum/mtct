@@ -50,7 +50,9 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/simulation/TrainTrajectorySet.hpp
   simulation/TrainTrajectorySet.cpp
   ${PROJECT_SOURCE_DIR}/include/simulation/SpeedTargets.hpp
-  simulation/SpeedTargets.cpp)
+  simulation/SpeedTargets.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/Objectives.hpp
+  simulation/Objectives.cpp)
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)

@@ -1,5 +1,4 @@
-#include "datastructure/RailwayNetwork.hpp"
-#include "datastructure/Timetable.hpp"
+#include "simulation/RoutingSolver.hpp"
 #include "simulation/TrainTrajectorySet.hpp"
 
 using namespace cda_rail;
@@ -115,6 +114,16 @@ TEST(Simulation, TrainTrajectorySet) {
   std::filesystem::path p = "tmp/trajectory.csv";
   traj.export_csv(p);
   std::filesystem::remove_all("tmp");
+}
+
+TEST(Simulation, RoutingSolver) {
+  Network network =
+      Network::import_network("./example-networks/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks/SimpleNetwork/timetable/", network);
+
+  sim::SimulationInstance instance{network, timetable, 20};
+  sim::RoutingSolver      solver{instance};
 }
 
 // TODO: test for invariance of solution after being repaired and used again
