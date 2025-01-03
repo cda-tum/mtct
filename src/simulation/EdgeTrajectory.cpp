@@ -81,6 +81,7 @@ cda_rail::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   TrainState    new_state;
   for (bool overshot = true; overshot != false;) {
     // TODO: select separate direction for each iteration
+    // TODO: trains should be able to exit the network at their designated node
     std::optional<TrainState> new_state_result =
         determine_first_state(instance.network, edge_exit, switch_direction);
 
