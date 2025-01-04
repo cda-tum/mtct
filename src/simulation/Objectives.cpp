@@ -31,14 +31,18 @@ cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
       if (last_step1 < first_step2 || last_step2 < first_step1)
         continue;
 
+      double safe_dist =
+          0.5 * (*train1).length + 0.5 * (*train2).length + safety_distance;
+
+      if (2 * safe_dist < (*train1).max_speed + (*train2).max_speed)
+        throw std::logic_error("Time resolution too low.");
+
       for (size_t timestep = std::max(first_step1, first_step2);
            timestep <= std::min(last_step1, last_step2);) {
         double dist =
             traj_set.train_distance((*train1).name, (*train2).name, timestep)
                 .value();
 
-        double safe_dist =
-            0.5 * (*train1).length + 0.5 * (*train2).length + safety_distance;
         if (dist >= safe_dist) {
           // TODO: we could differentiate here between uni/bidirectional and the
           // two trains
