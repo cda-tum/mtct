@@ -28,6 +28,9 @@ cda_rail::sim::RoutingSolver::random_search(
 
       last_time  = round_time;
       best_score = round_score;
+
+      PLOGI << "Best Score: " << best_score;
+
       best_result.reset();
       best_result.emplace(SolverResult{
           .solution     = round_sol,

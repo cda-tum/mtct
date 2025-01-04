@@ -192,6 +192,11 @@ TEST(Simulation, RoutingSolver) {
 
   sim::SimulationInstance instance{network, timetable, 20, false};
   sim::RoutingSolver      solver{instance};
+  std::function<double(sim::TrainTrajectorySet)> obj_fct =
+      [](sim::TrainTrajectorySet traj) {
+        return sim::collision_penalty(traj, sim::reciprocal_dist_penalty, 50);
+      };
+  solver.random_search(1e-3, obj_fct);
 }
 
 TEST(Simulation, CollisionPenalty) {

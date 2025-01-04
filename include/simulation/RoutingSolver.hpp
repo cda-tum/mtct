@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <functional>
+#include <plog/Log.h>
 #include <random>
 
 namespace cda_rail::sim {
