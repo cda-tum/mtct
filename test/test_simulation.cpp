@@ -184,6 +184,55 @@ TEST(Simulation, TrainTrajectorySet) {
   std::filesystem::remove_all("tmp");
 }
 
+TEST(Simulation, TrainDistance) {
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+  Network            network =
+      Network::import_network("./example-networks/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks/SimpleNetwork/timetable/", network);
+  sim::SimulationInstance instance(network, timetable, 20, false);
+
+  const TrainList&                      train_list = timetable.get_train_list();
+  std::uniform_int_distribution<size_t> random_train_index(
+      0, timetable.get_train_list().size() - 1);
+  std::uniform_int_distribution<size_t> random_timestep(
+      0, instance.n_timesteps - 1);
+  std::uniform_int_distribution<size_t> random_target_amount(1, 100);
+
+  for (int i = 0; i < 10; i++) {
+    sim::RoutingSolutionSet solution_set{instance, rng_engine};
+    sim::TrainTrajectorySet traj{instance, solution_set};
+
+    for (int k = 0; k < 50; k++) {
+      std::optional<double> dist = traj.train_distance(
+          train_list.get_train(random_train_index(rng_engine)).name,
+          train_list.get_train(random_train_index(rng_engine)).name,
+          random_timestep(rng_engine));
+      ASSERT_GE(dist, 0);
+    }
+  }
+}
+
+TEST(Simulation, CollisionPenalty) {
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+  Network            network =
+      Network::import_network("./example-networks/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks/SimpleNetwork/timetable/", network);
+
+  sim::SimulationInstance instance(network, timetable, 20, false);
+
+  for (int i = 0; i < 100; i++) {
+    sim::RoutingSolutionSet solution_set{instance, rng_engine};
+    sim::TrainTrajectorySet traj{instance, solution_set};
+    sim::collision_penalty(traj, sim::reciprocal_dist_penalty, 50);
+  }
+}
+
 TEST(Simulation, RoutingSolver) {
   Network network =
       Network::import_network("./example-networks/SimpleNetwork/network/");
@@ -196,28 +245,7 @@ TEST(Simulation, RoutingSolver) {
       [](sim::TrainTrajectorySet traj) {
         return sim::collision_penalty(traj, sim::reciprocal_dist_penalty, 50);
       };
-  solver.random_search(1e-3, obj_fct);
-}
-
-TEST(Simulation, CollisionPenalty) {
-  const ulong seed =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::ranlux24_base rng_engine(seed);
-  Network            network =
-      Network::import_network("./example-networks/SimpleNetwork/network/");
-  Timetable timetable = Timetable::import_timetable(
-      "./example-networks/SimpleNetwork/timetable/", network);
-
-  sim::SimulationInstance               instance(network, timetable, 20, false);
-  std::uniform_int_distribution<size_t> random_train_index(
-      0, timetable.get_train_list().size() - 1);
-  std::uniform_int_distribution<size_t> random_target_amount(1, 100);
-
-  for (int i = 0; i < 100; i++) {
-    sim::RoutingSolutionSet solution_set{instance, rng_engine};
-    sim::TrainTrajectorySet traj{instance, solution_set};
-    sim::collision_penalty(traj, sim::reciprocal_dist_penalty, 50);
-  }
+  solver.random_search(0.1, obj_fct);
 }
 
 // TODO: test for invariance of solution after being repaired and used again

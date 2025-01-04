@@ -49,6 +49,9 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
   double dist2 = aepsp_metric2 - state2.position * edge_length2 -
                  (1 - state1.position) * edge_length1;
 
+  if (std::min(dist1, dist2) < 0)
+    throw std::runtime_error("Distance calculation failed.");
+
   return std::min(dist1, dist2);
 }
 
