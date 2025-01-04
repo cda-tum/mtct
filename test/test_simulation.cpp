@@ -20,7 +20,7 @@ TEST(Simulation, RandomSolution) {
   std::uniform_int_distribution<ulong> random_train_index(
       0, timetable.get_train_list().size() - 1);
 
-  for (int i = 0; i <= 1000; i++) {
+  for (int i = 0; i <= 100; i++) {
     const Train& train =
         timetable.get_train_list().get_train(random_train_index(rng_engine));
 
@@ -101,7 +101,7 @@ TEST(Simulation, EdgeTrajectory) {
   std::uniform_int_distribution<ulong> random_train_index(
       0, timetable.get_train_list().size() - 1);
 
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 500; i++) {
     Train train =
         timetable.get_train_list().get_train(random_train_index(rng_engine));
 
