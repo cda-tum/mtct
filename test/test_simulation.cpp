@@ -246,7 +246,7 @@ TEST(Simulation, RoutingSolver) {
       [](sim::TrainTrajectorySet traj) {
         return sim::collision_penalty(traj, sim::reciprocal_dist_penalty, 50);
       };
-  solver.random_search(0.1, obj_fct);
+  solver.random_search(obj_fct, 1);
 }
 
 // TODO: test for invariance of solution after being repaired and used again

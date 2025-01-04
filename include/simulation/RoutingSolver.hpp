@@ -36,8 +36,8 @@ public:
    * @param objective Objective function that gets minimized
    */
   std::optional<SolverResult>
-  random_search(double                                    abort_improv_rate,
-                std::function<double(TrainTrajectorySet)> objective_fct);
+  random_search(std::function<double(TrainTrajectorySet)> objective_fct,
+                size_t                                    timeout);
 };
 
 }; // namespace cda_rail::sim
