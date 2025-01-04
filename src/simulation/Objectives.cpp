@@ -45,7 +45,7 @@ cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
           size_t guaranteed_safe_time =
               std::floor((dist - safe_dist) /
                          std::max((*train1).max_speed, (*train2).max_speed));
-          timestep = timestep + guaranteed_safe_time;
+          timestep = timestep + std::max(guaranteed_safe_time, (size_t)1);
         } else {
           score = score + dist_penalty_fct(dist / safe_dist);
           timestep++;
