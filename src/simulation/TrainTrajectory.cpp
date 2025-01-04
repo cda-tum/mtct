@@ -76,8 +76,7 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
     }
 
     if (abort > 1000)
-      throw exceptions::ConsistencyException(
-          "Trajectory construction did not terminate.");
+      throw std::logic_error("Trajectory construction did not terminate.");
   }
 }
 
@@ -93,7 +92,7 @@ cda_rail::sim::BrakingPeriod cda_rail::sim::TrainTrajectory::add_braking(
     double abs_target_speed, std::optional<u_int64_t> hold_until,
     std::optional<u_int64_t> hold_at_least) {
   if (!edge_trajs.back().get_traversal().has_value())
-    throw exceptions::ConsistencyException("No traversal to brake for.");
+    throw std::logic_error("No traversal to brake for.");
 
   EdgeTraversal traversal = edge_trajs.back().get_traversal().value();
   double        target_speed =
@@ -103,7 +102,7 @@ cda_rail::sim::BrakingPeriod cda_rail::sim::TrainTrajectory::add_braking(
       find_latest_braking_period(target_speed);
 
   if (!braking_period.has_value())
-    throw exceptions::ConsistencyException("No feasible braking period found.");
+    throw std::logic_error("No feasible braking period found.");
 
   u_int64_t start_braking, end_braking;
   std::tie(start_braking, end_braking) = braking_period.value();

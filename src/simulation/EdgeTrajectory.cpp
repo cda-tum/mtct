@@ -10,7 +10,7 @@ cda_rail::sim::EdgeEntry::EdgeEntry(
       (outcome == NORMAL || outcome == OVERSPEED || outcome == PLANNED_STOP);
   if (requires_state && !new_state.has_value() ||
       !requires_state && new_state.has_value())
-    throw std::invalid_argument("Improper result of edge entry.");
+    throw std::logic_error("Improper result of edge entry.");
 }
 
 cda_rail::sim::EdgeTrajectory::EdgeTrajectory(
@@ -205,13 +205,13 @@ void cda_rail::sim::EdgeTrajectory::check_speed_limits() const {
     double edge_length = instance.network.get_edge(edge).length;
     for (auto pos = positions.begin() + 1; pos != positions.end(); pos++) {
       if (std::abs((*pos) - *(pos - 1)) * edge_length > speed_limit)
-        throw exceptions::ConsistencyException("Overspeed detected.");
+        throw std::logic_error("Overspeed detected.");
     }
   }
 
   for (auto speed : speeds) {
     if (std::abs(speed) > speed_limit)
-      throw exceptions::ConsistencyException("Overspeed detected.");
+      throw std::logic_error("Overspeed detected.");
   }
 }
 

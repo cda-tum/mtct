@@ -14,7 +14,7 @@ cda_rail::sim::TrainTrajectorySet::TrainTrajectorySet(
 std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
     std::string train1, std::string train2, size_t timestep) const {
   if (instance.bidirectional_travel)
-    throw std::runtime_error(
+    throw std::logic_error(
         "Distance metric only works with unidirectional traffic.");
 
   TrainState state1, state2;
@@ -50,7 +50,7 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
                  (1 - state1.position) * edge_length1;
 
   if (std::min(dist1, dist2) < 0)
-    throw std::runtime_error("Distance calculation failed.");
+    throw std::logic_error("Distance calculation failed.");
 
   return std::min(dist1, dist2);
 }
