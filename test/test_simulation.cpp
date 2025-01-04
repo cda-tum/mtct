@@ -175,13 +175,6 @@ TEST(Simulation, TrainTrajectorySet) {
     ASSERT_EQ(traj.size(), 4);
     traj.check_speed_limits();
   }
-
-  sim::RoutingSolutionSet solution_set{instance, rng_engine};
-  sim::TrainTrajectorySet traj{instance, solution_set};
-  cda_rail::is_directory_and_create("tmp");
-  std::filesystem::path p = "tmp/trajectory.csv";
-  traj.export_csv(p);
-  std::filesystem::remove_all("tmp");
 }
 
 TEST(Simulation, TrainDistance) {
@@ -246,7 +239,13 @@ TEST(Simulation, RoutingSolver) {
       [](sim::TrainTrajectorySet traj) {
         return sim::collision_penalty(traj, sim::reciprocal_dist_penalty, 50);
       };
-  solver.random_search(obj_fct, 1);
+
+  if (std::optional<sim::SolverResult> sol = solver.random_search(obj_fct, 5)) {
+    cda_rail::is_directory_and_create("tmp");
+    std::filesystem::path p = "tmp/trajectory.csv";
+    sol.value().trajectories.export_csv(p);
+    // std::filesystem::remove_all("tmp");
+  }
 }
 
 // TODO: test for invariance of solution after being repaired and used again
