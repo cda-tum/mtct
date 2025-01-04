@@ -28,12 +28,13 @@ TEST(Simulation, RandomSolution) {
     const sim::RoutingSolution sol{instance, train, rng_engine};
     for (auto target : sol.v_targets.targets) {
       ASSERT_GE(target.first, 0);
-      ASSERT_LE(target.first, 100);
-      ASSERT_GE(target.second, -train.max_speed);
+      ASSERT_LT(target.first, instance.n_timesteps);
+      ASSERT_GE(target.second,
+                -(instance.bidirectional_travel * train.max_speed));
       ASSERT_LE(target.second, train.max_speed);
     }
-    ASSERT_EQ(sol.v_targets.targets.size(), 10);
-    ASSERT_EQ(sol.switch_directions.size(), 10);
+    ASSERT_EQ(sol.v_targets.targets.size(), instance.n_v_target_vars);
+    ASSERT_EQ(sol.switch_directions.size(), instance.n_switch_vars);
   }
 }
 
