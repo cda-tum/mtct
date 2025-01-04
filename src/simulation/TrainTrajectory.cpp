@@ -239,6 +239,7 @@ cda_rail::sim::TrainTrajectory::read_initial_train_state() const {
       .timestep = (u_int64_t)train_schedule.get_t_0(),
       .edge =
           instance.network.get_successors(train_schedule.get_entry()).front(),
+      // TODO: starting edge is not always directed away from starting vertex
       .position    = 0,
       .orientation = true,
       .speed       = train_schedule.get_v_0()};

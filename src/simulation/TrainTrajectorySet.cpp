@@ -39,11 +39,16 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
 
   double edge_length2 = instance.network.get_edge(state2.edge).length;
 
+  // TODO: shortest path matrix only considers successors
+  //       but trains can travel to predecessors even when unidirectional
+  //       thus this distance is incorrect
   double aepsp_metric1 =
       instance.shortest_paths.at(state1.edge).at(state2.edge);
   double aepsp_metric2 =
       instance.shortest_paths.at(state2.edge).at(state1.edge);
 
+  // TODO: trains are not always traveling in edge direction even when
+  // unidirectional
   double dist1 = aepsp_metric1 + (1 - state1.position) * edge_length1 -
                  (1 - state2.position) * edge_length2;
   double dist2 = aepsp_metric2 + (1 - state2.position) * edge_length2 -
