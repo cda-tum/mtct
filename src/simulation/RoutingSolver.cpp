@@ -6,7 +6,7 @@ cda_rail::sim::RoutingSolver::RoutingSolver(SimulationInstance instance)
 std::optional<cda_rail::sim::SolverResult>
 cda_rail::sim::RoutingSolver::random_search(
     double                                    min_improv_rate,
-    std::function<double(TrainTrajectorySet)> objective) {
+    std::function<double(TrainTrajectorySet)> objective_fct) {
   double                      best_score = DBL_MAX;
   std::optional<SolverResult> best_result;
 
@@ -16,7 +16,7 @@ cda_rail::sim::RoutingSolver::random_search(
     RoutingSolutionSet round_sol{instance, rng_engine};
     TrainTrajectorySet round_traj{instance, round_sol};
 
-    double round_score = objective(round_traj);
+    double round_score = objective_fct(round_traj);
 
     if (round_score < best_score) {
       std::chrono::steady_clock::time_point round_time =

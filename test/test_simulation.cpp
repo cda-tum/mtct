@@ -209,9 +209,14 @@ TEST(Simulation, CollisionPenalty) {
   std::uniform_int_distribution<size_t> random_target_amount(1, 100);
 
   for (int i = 0; i < 100; i++) {
-    sim::RoutingSolutionSet solution_set{instance, rng_engine};
-    sim::TrainTrajectorySet traj{instance, solution_set};
-    sim::collision_penalty(traj);
+    sim::RoutingSolutionSet       solution_set{instance, rng_engine};
+    sim::TrainTrajectorySet       traj{instance, solution_set};
+    double                        safe_dist_thres = 3;
+    std::function<double(double)> dist_penalty_fct =
+        [safe_dist_thres](double dist) {
+          return sim::reciprocal_dist_penalty(dist, safe_dist_thres);
+        };
+    sim::collision_penalty(traj, dist_penalty_fct, safe_dist_thres);
   }
 }
 

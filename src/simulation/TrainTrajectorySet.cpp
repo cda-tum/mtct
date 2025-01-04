@@ -20,9 +20,9 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
   TrainState state1, state2;
   {
     std::optional<TrainState> state_opt1 =
-        (*trajectories.find(train1)).second.get_state(timestep);
+        trajectories.at(train1).get_state(timestep);
     std::optional<TrainState> state_opt2 =
-        (*trajectories.find(train2)).second.get_state(timestep);
+        trajectories.at(train2).get_state(timestep);
 
     if (!state_opt1.has_value() || !state_opt2.has_value()) {
       return {};
@@ -86,6 +86,16 @@ void cda_rail::sim::TrainTrajectorySet::check_speed_limits() const {
   for (auto traj : trajectories) {
     traj.second.check_speed_limits();
   }
+}
+
+const cda_rail::sim::TrainTrajectory&
+cda_rail::sim::TrainTrajectorySet::get_traj(std::string train_name) const {
+  return trajectories.at(train_name);
+}
+
+const cda_rail::sim::SimulationInstance&
+cda_rail::sim::TrainTrajectorySet::get_instance() const {
+  return instance;
 }
 
 size_t cda_rail::sim::TrainTrajectorySet::size() const {

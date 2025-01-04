@@ -31,7 +31,9 @@ public:
 
   void check_speed_limits() const;
 
-  size_t size() const;
+  const TrainTrajectory&    get_traj(std::string train_name) const;
+  const SimulationInstance& get_instance() const;
+  size_t                    size() const;
 };
 
 }; // namespace cda_rail::sim

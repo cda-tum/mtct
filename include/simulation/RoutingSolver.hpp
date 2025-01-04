@@ -36,7 +36,7 @@ public:
    */
   std::optional<SolverResult>
   random_search(double                                    abort_improv_rate,
-                std::function<double(TrainTrajectorySet)> objective);
+                std::function<double(TrainTrajectorySet)> objective_fct);
 };
 
 }; // namespace cda_rail::sim
