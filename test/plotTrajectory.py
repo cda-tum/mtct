@@ -7,8 +7,8 @@ import pandas as pd
 traj = pd.read_csv('tmp/trajectory.csv', index_col=False)
 G = nx.read_graphml("example-networks/SimpleNetwork/network/tracks.graphml")
 
-n_trains = int(traj["train_idx"].max())
-max_timestep = int(traj["timestep"].max())
+n_trains = int(traj["train_idx"].max() + 1)
+max_timestep = int(traj["timestep"].max() + 1)
 pos=nx.fruchterman_reingold_layout(G)
 adj_matrix = nx.adjacency_matrix(G)
 
