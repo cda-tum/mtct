@@ -3,7 +3,17 @@
 double
 cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
                                  std::function<double(double)> dist_penalty_fct,
-                                 double dist_safe_thres) {
+                                 double safety_distance) {
+  /**
+   * Check all trains for violation in minimum distances
+   * Train position is assumed to be the center of the train
+   *
+   * @param traj_set Set of train trajectories
+   * @param dist_penalty_fct Penalty invoked when distance is smaller than
+   * safety_distance Distance argument is normalized (0-1)
+   * @param safety_distance  Distance between trains below which penalties are
+   * applied
+   */
   const SimulationInstance& instance   = traj_set.get_instance();
   const TrainList&          train_list = instance.timetable.get_train_list();
   double                    score      = 0;
@@ -27,12 +37,17 @@ cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
             traj_set.train_distance((*train1).name, (*train2).name, timestep)
                 .value();
 
-        if (dist >= dist_safe_thres) {
-          size_t guaranteed_safe_time = std::floor(
-              (dist - dist_safe_thres) / (2 * instance.get_max_train_speed()));
+        double safe_dist =
+            0.5 * (*train1).length + 0.5 * (*train2).length + safety_distance;
+        if (dist >= safe_dist) {
+          // TODO: we could differentiate here between uni/bidirectional and the
+          // two trains
+          size_t guaranteed_safe_time =
+              std::floor((dist - safe_dist) /
+                         std::max((*train1).max_speed, (*train2).max_speed));
           timestep = timestep + guaranteed_safe_time;
         } else {
-          score = score + dist_penalty_fct(dist);
+          score = score + dist_penalty_fct(dist / safe_dist);
           timestep++;
         }
       }
@@ -42,6 +57,6 @@ cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
   return score;
 }
 
-double cda_rail::sim::reciprocal_dist_penalty(double dist, double thres) {
-  return (thres / dist - 1);
+double cda_rail::sim::reciprocal_dist_penalty(double dist) {
+  return (1 / dist - 1);
 }

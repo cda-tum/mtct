@@ -8,6 +8,6 @@ double collision_penalty(const TrainTrajectorySet&     traj_set,
                          std::function<double(double)> dist_penalty_fct,
                          double                        dist_safe_thres);
 
-double reciprocal_dist_penalty(double dist, double thres);
+double reciprocal_dist_penalty(double dist);
 
 } // namespace cda_rail::sim
