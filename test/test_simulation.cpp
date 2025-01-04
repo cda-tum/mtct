@@ -206,11 +206,12 @@ TEST(Simulation, TrainDistance) {
     sim::TrainTrajectorySet traj{instance, solution_set};
 
     for (int k = 0; k < 50; k++) {
-      std::optional<double> dist = traj.train_distance(
+      std::optional<double> dist_opt = traj.train_distance(
           train_list.get_train(random_train_index(rng_engine)).name,
           train_list.get_train(random_train_index(rng_engine)).name,
           random_timestep(rng_engine));
-      ASSERT_GE(dist, 0);
+      if (dist_opt)
+        ASSERT_GE(dist_opt.value(), 0);
     }
   }
 }

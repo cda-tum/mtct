@@ -44,9 +44,9 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
   double aepsp_metric2 =
       instance.shortest_paths.at(state2.edge).at(state1.edge);
 
-  double dist1 = aepsp_metric1 - state1.position * edge_length1 -
+  double dist1 = aepsp_metric1 + (1 - state1.position) * edge_length1 -
                  (1 - state2.position) * edge_length2;
-  double dist2 = aepsp_metric2 - state2.position * edge_length2 -
+  double dist2 = aepsp_metric2 + (1 - state2.position) * edge_length2 -
                  (1 - state1.position) * edge_length1;
 
   if (std::min(dist1, dist2) < 0)
