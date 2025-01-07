@@ -13,51 +13,44 @@ cda_rail::sim::TrainTrajectorySet::TrainTrajectorySet(
 
 std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
     std::string train1, std::string train2, size_t timestep) const {
-  if (instance.bidirectional_travel)
-    throw std::logic_error(
-        "Distance metric only works with unidirectional traffic.");
+  const std::optional<TrainState> state_opt1 =
+      trajectories.at(train1).get_state(timestep);
+  const std::optional<TrainState> state_opt2 =
+      trajectories.at(train2).get_state(timestep);
 
-  TrainState state1, state2;
-  {
-    std::optional<TrainState> state_opt1 =
-        trajectories.at(train1).get_state(timestep);
-    std::optional<TrainState> state_opt2 =
-        trajectories.at(train2).get_state(timestep);
-
-    if (!state_opt1.has_value() || !state_opt2.has_value()) {
-      return {};
-    } else {
-      state1 = state_opt1.value();
-      state2 = state_opt2.value();
-    }
+  if (!state_opt1.has_value() || !state_opt2.has_value()) {
+    return {};
   }
 
-  double edge_length1 = instance.network.get_edge(state1.edge).length;
+  const TrainState state1 = state_opt1.value();
+  const TrainState state2 = state_opt2.value();
+  const Edge&      edge1  = instance.network.get_edge(state1.edge);
+  const Edge&      edge2  = instance.network.get_edge(state2.edge);
 
   if (state1.edge == state2.edge)
-    return std::abs(state1.position - state2.position) * edge_length1;
+    return std::abs(state1.position - state2.position) * edge1.length;
 
-  double edge_length2 = instance.network.get_edge(state2.edge).length;
+  const double remain_dist_1_fw = (1 - state1.position) * edge1.length;
+  const double remain_dist_1_bw = state1.position * edge1.length;
+  const double remain_dist_2_fw = (1 - state2.position) * edge2.length;
+  const double remain_dist_2_bw = state2.position * edge2.length;
 
-  // TODO: shortest path matrix only considers successors
-  //       but trains can travel to predecessors even when unidirectional
-  //       thus this distance is incorrect
-  double aepsp_metric1 =
-      instance.shortest_paths.at(state1.edge).at(state2.edge);
-  double aepsp_metric2 =
-      instance.shortest_paths.at(state2.edge).at(state1.edge);
+  const double dist_fw_fw = remain_dist_1_fw + remain_dist_2_fw +
+                            instance.shortest_paths[edge1.target][edge2.target];
+  const double dist_fw_bw = remain_dist_1_fw + remain_dist_2_bw +
+                            instance.shortest_paths[edge1.target][edge2.source];
+  const double dist_bw_bw = remain_dist_1_bw + remain_dist_2_bw +
+                            instance.shortest_paths[edge1.source][edge2.source];
+  const double dist_bw_fw = remain_dist_1_bw + remain_dist_2_fw +
+                            instance.shortest_paths[edge1.source][edge2.target];
 
-  // TODO: trains are not always traveling in edge direction even when
-  // unidirectional
-  double dist1 = aepsp_metric1 + (1 - state1.position) * edge_length1 -
-                 (1 - state2.position) * edge_length2;
-  double dist2 = aepsp_metric2 + (1 - state2.position) * edge_length2 -
-                 (1 - state1.position) * edge_length1;
+  const double min_dist = std::min(
+      dist_fw_fw, std::min(dist_fw_bw, std::min(dist_bw_bw, dist_bw_fw)));
 
-  if (std::min(dist1, dist2) < 0)
+  if (min_dist < 0)
     throw std::logic_error("Distance calculation failed.");
 
-  return std::min(dist1, dist2);
+  return min_dist;
 }
 
 void cda_rail::sim::TrainTrajectorySet::export_csv(
