@@ -40,8 +40,9 @@ function(enable_project_options target_name)
                                                     -fno-trapping-math>)
 
     # enable some more options for better debugging
-    target_compile_options(${target_name} INTERFACE $<$<CONFIG:DEBUG>:-O0 -fno-omit-frame-pointer
-                                                    -fno-optimize-sibling-calls -fno-inline-functions>)
+    target_compile_options(
+      ${target_name} INTERFACE $<$<CONFIG:DEBUG>:-O0 -Wno-cpp -Wno-unused-result -fno-omit-frame-pointer
+                               -fno-optimize-sibling-calls -fno-inline-functions>)
   endif()
 
   option(BINDINGS "Configure for building Python bindings")
