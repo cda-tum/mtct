@@ -1696,6 +1696,43 @@ cda_rail::Network::all_vertex_pairs_shortest_paths() const {
   return ret_val;
 }
 
+std::vector<std::vector<double>>
+cda_rail::Network::all_vertex_pairs_shortest_paths_undirected() const {
+  /**
+   * Calculates all shortest paths between all vertices.
+   * All edges are considered bidirectional.
+   * The distance is * std::numeric_limits<double>::max()/3 if no path exists.
+   * This method uses the Floyd-Warshall algorithm.
+   *
+   * @return: Matrix of distances between all edges
+   */
+  std::vector<std::vector<double>> ret_val(
+      number_of_vertices(), std::vector<double>(number_of_vertices(), INF));
+
+  for (size_t e = 0; e < number_of_edges(); ++e) {
+    Edge edge = get_edge(e);
+    ret_val[edge.source][edge.target] =
+        std::min(edge.length, ret_val[edge.source][edge.target]);
+    ret_val[edge.target][edge.source] =
+        std::min(edge.length, ret_val[edge.target][edge.source]);
+  }
+
+  for (size_t v = 0; v < number_of_vertices(); ++v) {
+    ret_val[v][v] = 0;
+  }
+
+  // Floyd-Warshall iterations
+  for (int k = 0; k < number_of_vertices(); ++k) {
+    for (int i = 0; i < number_of_vertices(); ++i) {
+      for (int j = 0; j < number_of_vertices(); ++j) {
+        ret_val[i][j] = std::min(ret_val[i][j], ret_val[i][k] + ret_val[k][j]);
+      }
+    }
+  }
+
+  return ret_val;
+}
+
 std::optional<double>
 cda_rail::Network::shortest_path(size_t source_edge_id,
                                  size_t target_vertex_id) const {
