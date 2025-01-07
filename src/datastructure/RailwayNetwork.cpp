@@ -1633,7 +1633,7 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
    * Given e0 = (v0, v1) and e1 = (v2, v3), the distance refers to the distance
    * between v1 and v3 by only using valid successors. If v0 or v2 are of
    * interest the value has to be post-processed accordingly. The distance is
-   * std::numeric_limits<double>::max()/3 if no path exists. This methods uses
+   * std::numeric_limits<double>::max()/3 if no path exists. This method uses
    * the Floyd-Warshall algorithm.
    *
    * @return: Matrix of distances between all edges
@@ -1655,6 +1655,39 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
   for (size_t k = 0; k < number_of_edges(); ++k) {
     for (size_t i = 0; i < number_of_edges(); ++i) {
       for (size_t j = 0; j < number_of_edges(); ++j) {
+        ret_val[i][j] = std::min(ret_val[i][j], ret_val[i][k] + ret_val[k][j]);
+      }
+    }
+  }
+
+  return ret_val;
+}
+
+std::vector<std::vector<double>>
+cda_rail::Network::all_vertex_pairs_shortest_paths() const {
+  /**
+   * Calculates all shortest paths between all vertices.
+   * The distance is * std::numeric_limits<double>::max()/3 if no path exists.
+   * This method uses the Floyd-Warshall algorithm.
+   *
+   * @return: Matrix of distances between all edges
+   */
+  std::vector<std::vector<double>> ret_val(
+      number_of_vertices(), std::vector<double>(number_of_vertices(), INF));
+
+  for (size_t e = 0; e < number_of_edges(); ++e) {
+    Edge edge                         = get_edge(e);
+    ret_val[edge.source][edge.target] = edge.length;
+  }
+
+  for (size_t v = 0; v < number_of_vertices(); ++v) {
+    ret_val[v][v] = 0;
+  }
+
+  // Floyd-Warshall iterations
+  for (int k = 0; k < number_of_vertices(); ++k) {
+    for (int i = 0; i < number_of_vertices(); ++i) {
+      for (int j = 0; j < number_of_vertices(); ++j) {
         ret_val[i][j] = std::min(ret_val[i][j], ret_val[i][k] + ret_val[k][j]);
       }
     }
