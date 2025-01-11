@@ -93,3 +93,5 @@ bool cda_rail::sim::SpeedTargets::is_first_target(u_int64_t timestep) const {
     return true;
   return false;
 }
+
+size_t cda_rail::sim::SpeedTargets::size() const { return targets.size(); }

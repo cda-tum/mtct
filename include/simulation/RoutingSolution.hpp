@@ -24,10 +24,15 @@ struct RoutingSolution {
 
 public:
   RoutingSolution() = delete;
-  // Constructors
-  // Generate a random solution
+  // Stationary solution
+  RoutingSolution(const SimulationInstance& instance);
+  // Random solution
   RoutingSolution(const SimulationInstance& instance, const Train& train,
                   std::ranlux24_base& rng_engine);
+  // Specific solution
+  RoutingSolution(const SimulationInstance& instance,
+                  const SpeedTargets& targets, std::vector<double> directions,
+                  const Train& train);
 };
 
 }; // namespace cda_rail::sim

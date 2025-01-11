@@ -17,7 +17,9 @@ struct RoutingSolutionSet {
 
 public:
   RoutingSolutionSet() = delete;
-  // Generate random solutions
+  // Stationary solutions
+  RoutingSolutionSet(const SimulationInstance& instance);
+  // Random solutions
   RoutingSolutionSet(const SimulationInstance& instance,
                      std::ranlux24_base&       rng_engine);
 };

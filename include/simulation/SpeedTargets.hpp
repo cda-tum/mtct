@@ -28,6 +28,7 @@ public:
   std::optional<u_int64_t>    find_next_reversal(u_int64_t timestep) const;
   std::map<u_int64_t, double> copy_range(u_int64_t start, u_int64_t end) const;
   bool                        is_first_target(u_int64_t timestep) const;
+  size_t                      size() const;
 };
 
 }; // namespace cda_rail::sim

@@ -7,3 +7,11 @@ cda_rail::sim::RoutingSolutionSet::RoutingSolutionSet(
     solutions.insert({train.name, sol});
   }
 }
+
+cda_rail::sim::RoutingSolutionSet::RoutingSolutionSet(
+    const SimulationInstance& instance) {
+  for (const Train& train : instance.timetable.get_train_list()) {
+    RoutingSolution sol{instance};
+    solutions.insert({train.name, sol});
+  }
+}
