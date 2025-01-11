@@ -235,14 +235,32 @@ cda_rail::sim::TrainState
 cda_rail::sim::TrainTrajectory::read_initial_train_state() const {
   cda_rail::Schedule train_schedule =
       instance.timetable.get_schedule(train.name);
-  return TrainState{
-      .timestep = (u_int64_t)train_schedule.get_t_0(),
-      .edge =
-          instance.network.get_successors(train_schedule.get_entry()).front(),
-      // TODO: starting edge is not always directed away from starting vertex
-      .position    = 0,
-      .orientation = true,
-      .speed       = train_schedule.get_v_0()};
+
+  size_t entry_vertex = train_schedule.get_entry();
+  size_t entry_edge;
+  if (!instance.network.out_edges(entry_vertex).empty()) {
+    entry_edge = instance.network.out_edges(entry_vertex).front();
+  } else if (!instance.network.in_edges(entry_vertex).empty()) {
+    entry_edge = instance.network.in_edges(entry_vertex).front();
+  } else {
+    throw std::logic_error("Entry vertex has no adjacent edges.");
+  }
+
+  double position;
+  bool   orientation;
+  if (instance.network.get_edge(entry_edge).target == entry_vertex) {
+    position    = 1.0;
+    orientation = false;
+  } else {
+    position    = 0.0;
+    orientation = true;
+  }
+
+  return TrainState{.timestep    = (u_int64_t)train_schedule.get_t_0(),
+                    .edge        = entry_edge,
+                    .position    = position,
+                    .orientation = orientation,
+                    .speed       = train_schedule.get_v_0()};
 }
 
 void cda_rail::sim::TrainTrajectory::check_speed_limits() const {
