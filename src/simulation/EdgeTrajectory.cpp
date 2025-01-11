@@ -61,8 +61,11 @@ cda_rail::sim::EdgeTrajectory::EdgeTrajectory(
 
 cda_rail::sim::EdgeEntry
 cda_rail::sim::EdgeTrajectory::enter_next_edge(double switch_direction) const {
-  if (!traversal.has_value())
+  if (!traversal.has_value()) {
+    if (get_last_timestep() < instance.n_timesteps - 1)
+      throw std::logic_error("Premature trajectory termination.");
     return EdgeEntry{TIME_END, {}};
+  }
 
   // traversal along edges until no longer overshooting on first step
   //

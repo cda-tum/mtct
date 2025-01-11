@@ -12,17 +12,20 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
       double switch_direction =
           solution.switch_directions.at(edge_trajs.size());
 
-      EdgeEntry entry = edge_trajs.back().enter_next_edge(switch_direction);
+      const EdgeEntry entry =
+          edge_trajs.back().enter_next_edge(switch_direction);
 
-      switch (entry.outcome) {
-      case OVERSPEED: {
+      if (entry.outcome == TIME_END) {
+        if (get_last_timestep() < instance.n_timesteps - 1)
+          throw std::logic_error("Premature trajectory termination.");
+        return;
+      } else if (entry.outcome == OVERSPEED) {
         double prev_speed_limit =
             instance.network.get_edge(entry.new_state.value().edge).max_speed;
         BrakingPeriod braking_period = add_braking(prev_speed_limit, {}, {});
         backtrack_trajectory(std::get<0>(braking_period));
         continue;
-      }
-      case DEADEND: {
+      } else if (entry.outcome == DEADEND) {
         std::optional<u_int64_t> reversal_time =
             solution.v_targets.find_next_reversal(
                 edge_trajs.back().get_last_timestep());
@@ -31,8 +34,7 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
             0, reversal_time.value_or(instance.n_timesteps - 1), {});
         backtrack_trajectory(std::get<0>(braking_period));
         continue;
-      }
-      case PLANNED_STOP: {
+      } else if (entry.outcome == PLANNED_STOP) {
         ScheduledStop stop = edge_trajs.back().get_stop();
         if (std::find(visited_stops.begin(), visited_stops.end(), stop) ==
             visited_stops.end()) {
@@ -45,13 +47,10 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
         } else {
           initial_edge_state = entry.new_state.value();
         }
-      }
-      case TIME_END: {
-        return;
-      }
-      case NORMAL: {
+      } else if (entry.outcome == NORMAL) {
         initial_edge_state = entry.new_state.value();
-      }
+      } else {
+        throw std::logic_error("Invalid EdgeEntry outcome.");
       }
     }
 
