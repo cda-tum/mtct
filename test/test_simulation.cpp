@@ -229,7 +229,7 @@ TEST(Simulation, TrainDistance) {
               1e-3);
 }
 
-TEST(Simulation, CollisionPenalty) {
+TEST(Simulation, Penalties) {
   const ulong seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
@@ -243,7 +243,8 @@ TEST(Simulation, CollisionPenalty) {
   for (int i = 0; i < 100; i++) {
     sim::RoutingSolutionSet solution_set{instance, rng_engine};
     sim::TrainTrajectorySet traj{instance, solution_set};
-    sim::collision_penalty(traj, sim::reciprocal_dist_penalty, 50);
+    sim::collision_penalty(traj);
+    sim::destination_penalty(traj);
   }
 }
 
@@ -255,12 +256,8 @@ TEST(Simulation, RoutingSolver) {
 
   sim::SimulationInstance instance{network, timetable, 20, false};
   sim::RoutingSolver      solver{instance};
-  std::function<double(sim::TrainTrajectorySet)> obj_fct =
-      [](sim::TrainTrajectorySet traj) {
-        return sim::collision_penalty(traj, sim::reciprocal_dist_penalty, 50);
-      };
-
-  if (std::optional<sim::SolverResult> sol = solver.random_search(obj_fct, 5)) {
+  if (std::optional<sim::SolverResult> sol =
+          solver.random_search(sim::combined_objective, 5)) {
     cda_rail::is_directory_and_create("tmp");
     std::filesystem::path p = "tmp/trajectory.csv";
     sol.value().trajectories.export_csv(p);

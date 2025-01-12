@@ -26,6 +26,8 @@ public:
 
   std::optional<double> train_distance(std::string train1, std::string train2,
                                        size_t timestep) const;
+  std::optional<double> train_vertex_distance(std::string train, size_t vertex,
+                                              size_t timestep) const;
 
   void export_csv(const std::filesystem::path& p) const;
 

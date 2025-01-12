@@ -53,6 +53,38 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
   return min_dist;
 }
 
+std::optional<double> cda_rail::sim::TrainTrajectorySet::train_vertex_distance(
+    std::string train, size_t vertex, size_t timestep) const {
+  const std::optional<TrainState> state_opt =
+      trajectories.at(train).get_state(timestep);
+
+  if (!state_opt.has_value())
+    return {};
+  const TrainState state = state_opt.value();
+
+  const Edge& edge = instance.network.get_edge(state.edge);
+
+  const double remain_dist_fw = (1 - state.position) * edge.length;
+  const double remain_dist_bw = state.position * edge.length;
+
+  if (edge.target == vertex)
+    return remain_dist_fw;
+  if (edge.source == vertex)
+    return remain_dist_bw;
+
+  const double dist_fw =
+      remain_dist_fw + instance.shortest_paths[edge.target][vertex];
+  const double dist_bw =
+      remain_dist_bw + instance.shortest_paths[edge.source][vertex];
+
+  const double min_dist = std::min(dist_fw, dist_bw);
+
+  if (min_dist < 0)
+    throw std::logic_error("Distance calculation failed.");
+
+  return min_dist;
+}
+
 void cda_rail::sim::TrainTrajectorySet::export_csv(
     const std::filesystem::path& p) const {
   std::ofstream csvfile(p);

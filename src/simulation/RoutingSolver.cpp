@@ -25,7 +25,7 @@ cda_rail::sim::RoutingSolver::random_search(
     if (round_score < best_score) {
       last_time  = round_time;
       best_score = round_score;
-      PLOGI << "Best Score: " << best_score;
+      std::cerr << "Best Score: " << best_score << std::endl;
 
       best_result.reset();
       best_result.emplace(SolverResult{

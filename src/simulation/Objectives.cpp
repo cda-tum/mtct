@@ -1,9 +1,13 @@
 #include "simulation/Objectives.hpp"
 
-double
-cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
-                                 std::function<double(double)> dist_penalty_fct,
-                                 double safety_distance) {
+double cda_rail::sim::combined_objective(const TrainTrajectorySet& traj_set) {
+  /**
+   * Combined objectives
+   */
+  return collision_penalty(traj_set) + destination_penalty(traj_set);
+}
+
+double cda_rail::sim::collision_penalty(const TrainTrajectorySet& traj_set) {
   /**
    * Check all trains for violation in minimum distances
    * Train position is assumed to be the center of the train
@@ -13,7 +17,11 @@ cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
    * safety_distance Distance argument is normalized (0-1)
    * @param safety_distance  Distance between trains below which penalties are
    * applied
+   * @return Normalized penalty score from 0 to 1, lower is better
    */
+
+  constexpr double safety_distance = 100;
+
   const SimulationInstance& instance   = traj_set.get_instance();
   const TrainList&          train_list = instance.timetable.get_train_list();
   double                    score      = 0;
@@ -50,19 +58,45 @@ cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
           size_t guaranteed_safe_time = std::floor(min_time_to_collision);
           timestep = timestep + std::max(guaranteed_safe_time, (size_t)1);
         } else {
-          double penalty = dist_penalty_fct(dist / required_dist);
-          if (penalty < 0)
-            throw std::logic_error("Negative distance penalty.");
-          score = score + penalty;
+          double penalty = 1 - (dist / required_dist);
+          score          = score + penalty;
           timestep++;
         }
       }
     }
   }
 
-  return score;
+  size_t n_pairs = (train_list.size() * (train_list.size() - 1)) / 2;
+  return score / n_pairs;
 }
 
-double cda_rail::sim::reciprocal_dist_penalty(double dist) {
-  return ((1 / dist) - 1);
+double cda_rail::sim::destination_penalty(const TrainTrajectorySet& traj_set) {
+  /**
+   * Penalize all trains for the distance from their scheduled exit at their
+   * final position Train position is assumed to be the center of the train
+   *
+   * @param traj_set Set of train trajectories
+   * @return Normalized penalty score from 0 to 1, lower is better
+   */
+
+  const SimulationInstance& instance   = traj_set.get_instance();
+  const TrainList&          train_list = instance.timetable.get_train_list();
+  double                    score      = 0;
+
+  for (auto train = train_list.begin(); train != train_list.end(); train++) {
+    size_t dest_vertex =
+        instance.timetable.get_schedule((*train).name).get_exit();
+    size_t final_timestep =
+        traj_set.get_traj((*train).name).get_last_timestep();
+    double max_dist =
+        *std::max_element(instance.shortest_paths.at(dest_vertex).begin(),
+                          instance.shortest_paths.at(dest_vertex).end());
+    ;
+    double dist =
+        traj_set
+            .train_vertex_distance((*train).name, dest_vertex, final_timestep)
+            .value();
+    score = score + dist / max_dist;
+  }
+  return score / train_list.size();
 }

@@ -4,9 +4,11 @@
 
 namespace cda_rail::sim {
 
-double collision_penalty(const TrainTrajectorySet&     traj_set,
-                         std::function<double(double)> dist_penalty_fct,
-                         double                        dist_safe_thres);
+double combined_objective(const TrainTrajectorySet& traj_set);
+
+double collision_penalty(const TrainTrajectorySet& traj_set);
+
+double destination_penalty(const TrainTrajectorySet& traj_set);
 
 double reciprocal_dist_penalty(double dist);
 
