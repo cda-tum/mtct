@@ -4,7 +4,8 @@ double cda_rail::sim::combined_objective(const TrainTrajectorySet& traj_set) {
   /**
    * Combined objectives
    */
-  return collision_penalty(traj_set) + destination_penalty(traj_set);
+  return collision_penalty(traj_set) + destination_penalty(traj_set) +
+         stop_penalty(traj_set);
 }
 
 double cda_rail::sim::collision_penalty(const TrainTrajectorySet& traj_set) {
@@ -99,4 +100,30 @@ double cda_rail::sim::destination_penalty(const TrainTrajectorySet& traj_set) {
     score = score + dist / max_dist;
   }
   return score / train_list.size();
+}
+
+double cda_rail::sim::stop_penalty(const TrainTrajectorySet& traj_set) {
+  /**
+   * Penalize trains not visiting their scheduled stop
+   *
+   * @param traj_set Set of train trajectories
+   * @return Normalized penalty score from 0 to 1, lower is better
+   */
+
+  const SimulationInstance& instance   = traj_set.get_instance();
+  const TrainList&          train_list = instance.timetable.get_train_list();
+  size_t                    n_all_visited_stops   = 0;
+  size_t                    n_all_scheduled_stops = 0;
+  for (auto train = train_list.begin(); train != train_list.end(); train++) {
+    size_t n_scheduled_stops =
+        instance.timetable.get_schedule((*train).name).get_stops().size();
+    size_t n_visited_stops =
+        traj_set.get_traj((*train).name).get_visited_stop_amount();
+    if (n_visited_stops > n_scheduled_stops)
+      throw std::logic_error("Visited more stops than scheduled.");
+    n_all_scheduled_stops += n_scheduled_stops;
+    n_all_visited_stops += n_visited_stops;
+  }
+
+  return (n_all_scheduled_stops - n_all_visited_stops) / n_all_scheduled_stops;
 }

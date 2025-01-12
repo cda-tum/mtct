@@ -245,6 +245,7 @@ TEST(Simulation, Penalties) {
     sim::TrainTrajectorySet traj{instance, solution_set};
     sim::collision_penalty(traj);
     sim::destination_penalty(traj);
+    sim::stop_penalty(traj);
   }
 }
 

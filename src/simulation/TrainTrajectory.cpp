@@ -210,6 +210,10 @@ size_t cda_rail::sim::TrainTrajectory::get_matching_trajectory(
   throw std::out_of_range("Timestep not contained in any trajectory.");
 }
 
+size_t cda_rail::sim::TrainTrajectory::get_visited_stop_amount() const {
+  return visited_stops.size();
+}
+
 size_t cda_rail::sim::TrainTrajectory::get_earliest_affected_trajectory(
     u_int64_t timestep) const {
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
