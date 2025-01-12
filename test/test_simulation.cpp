@@ -190,6 +190,9 @@ TEST(Simulation, TrainDistance) {
   const TrainList&        list = instance.timetable.get_train_list();
 
   // Starting positions
+  ASSERT_EQ(traj.train_distance("tr2lr", "tr2lr", 0), 0);
+  ASSERT_EQ(traj.train_distance("tr2rl", "tr2rl", 0), 0);
+
   ASSERT_EQ(traj.train_distance("tr2lr", "tr2rl", 0), 23000);
   ASSERT_EQ(traj.train_distance("tr2rl", "tr2lr", 0), 23000);
   ASSERT_EQ(traj.train_distance("tr1lr", "tr1rl", 180), 23000);
@@ -198,7 +201,7 @@ TEST(Simulation, TrainDistance) {
   ASSERT_FALSE(traj.train_distance("tr2rl", "tr1lr", 0).has_value());
 
   // We give a solution with speeds 0. Due to initial speed trains still run
-  // out. tr1lr comes to a halt at time 204 position 0.00753769 on edge v4-v5
+  // tr1lr comes to a halt at time 204 position 0.00753769 on edge v4-v5
   // tr1rl comes to a halt at time 204 position 0.00753769 on edge v11-v10
   // tr2lr comes to a halt at time 16 position 0.412632 on edge v1c-v2c
   // tr2rl comes to a halt at time 16 position 0.412632 on edge v14a-v13a

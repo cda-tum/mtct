@@ -31,10 +31,10 @@ cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
       if (last_step1 < first_step2 || last_step2 < first_step1)
         continue;
 
-      double safe_dist =
+      double required_dist =
           0.5 * (*train1).length + 0.5 * (*train2).length + safety_distance;
 
-      if (2 * safe_dist < (*train1).max_speed + (*train2).max_speed)
+      if (2 * required_dist < (*train1).max_speed + (*train2).max_speed)
         throw std::logic_error("Time resolution too low.");
 
       for (size_t timestep = std::max(first_step1, first_step2);
@@ -43,15 +43,17 @@ cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
             traj_set.train_distance((*train1).name, (*train2).name, timestep)
                 .value();
 
-        if (dist >= safe_dist) {
-          // TODO: we could differentiate here between uni/bidirectional and the
-          // two trains
-          size_t guaranteed_safe_time =
-              std::floor((dist - safe_dist) /
-                         std::max((*train1).max_speed, (*train2).max_speed));
+        if (dist >= required_dist) {
+          double max_approach_speed = (*train1).max_speed + (*train2).max_speed;
+          double min_time_to_collision =
+              std::max((dist - required_dist), 0.0) / max_approach_speed;
+          size_t guaranteed_safe_time = std::floor(min_time_to_collision);
           timestep = timestep + std::max(guaranteed_safe_time, (size_t)1);
         } else {
-          score = score + dist_penalty_fct(dist / safe_dist);
+          double penalty = dist_penalty_fct(dist / required_dist);
+          if (penalty < 0)
+            throw std::logic_error("Negative distance penalty.");
+          score = score + penalty;
           timestep++;
         }
       }
@@ -62,5 +64,5 @@ cda_rail::sim::collision_penalty(const TrainTrajectorySet&     traj_set,
 }
 
 double cda_rail::sim::reciprocal_dist_penalty(double dist) {
-  return (1 / dist - 1);
+  return ((1 / dist) - 1);
 }
