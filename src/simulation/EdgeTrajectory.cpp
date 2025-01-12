@@ -20,12 +20,13 @@ cda_rail::sim::EdgeTrajectory::EdgeTrajectory(
       edge(initial_state.edge), orientation(initial_state.orientation) {
   double edge_length         = instance.network.get_edge(edge).length;
   double edge_length_divisor = 1 / edge_length;
+  // TODO: narrowing cast should be avoided
+  size_t exit_time = instance.timetable.get_schedule(train.name).get_t_n();
 
   speeds.push_back(initial_state.speed);
   positions.push_back(initial_state.position);
 
-  for (int timestep = first_timestep + 1; timestep < instance.n_timesteps;
-       timestep++) {
+  for (int timestep = first_timestep + 1; timestep <= exit_time; timestep++) {
     double speed_disparity =
         v_targets.find_target_speed(timestep - 1) - speeds.back();
     double acceleration;
@@ -62,8 +63,6 @@ cda_rail::sim::EdgeTrajectory::EdgeTrajectory(
 cda_rail::sim::EdgeEntry
 cda_rail::sim::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   if (!traversal.has_value()) {
-    if (get_last_timestep() < instance.n_timesteps - 1)
-      throw std::logic_error("Premature trajectory termination.");
     return EdgeEntry{TIME_END, {}};
   }
 

@@ -16,8 +16,6 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
           edge_trajs.back().enter_next_edge(switch_direction);
 
       if (entry.outcome == TIME_END) {
-        if (get_last_timestep() < instance.n_timesteps - 1)
-          throw std::logic_error("Premature trajectory termination.");
         return;
       } else if (entry.outcome == OVERSPEED) {
         double prev_speed_limit =
