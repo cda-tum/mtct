@@ -59,6 +59,8 @@ double cda_rail::sim::collision_penalty(const TrainTrajectorySet& traj_set) {
           size_t guaranteed_safe_time = std::floor(min_time_to_collision);
           timestep = timestep + std::max(guaranteed_safe_time, (size_t)1);
         } else {
+          // TODO: normalization does not work since the amount of timesteps
+          // checked is changing
           double penalty = 1 - (dist / required_dist);
           score          = score + penalty;
           timestep++;
@@ -97,6 +99,7 @@ double cda_rail::sim::destination_penalty(const TrainTrajectorySet& traj_set) {
         traj_set
             .train_vertex_distance((*train).name, dest_vertex, final_timestep)
             .value();
+    // TODO: Penalize wrong exit speed as well as position
     score = score + dist / max_dist;
   }
   return score / train_list.size();
