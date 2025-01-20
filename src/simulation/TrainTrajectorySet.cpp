@@ -1,6 +1,10 @@
 #include "simulation/TrainTrajectorySet.hpp"
 
 cda_rail::sim::TrainTrajectorySet::TrainTrajectorySet(
+    const SimulationInstance& instance)
+    : instance(instance) {}
+
+cda_rail::sim::TrainTrajectorySet::TrainTrajectorySet(
     const SimulationInstance& instance, const RoutingSolutionSet& solution_set)
     : instance(instance) {
   const TrainList& trainlist = instance.timetable.get_train_list();
@@ -11,8 +15,21 @@ cda_rail::sim::TrainTrajectorySet::TrainTrajectorySet(
   }
 }
 
+void cda_rail::sim::TrainTrajectorySet::insert_or_assign(
+    std::string name, cda_rail::sim::TrainTrajectory traj) {
+  const TrainList& trainlist = instance.timetable.get_train_list();
+  if (!trainlist.has_train(name))
+    throw std::invalid_argument("No train with such name in timetable.");
+
+  trajectories.insert_or_assign(name, traj);
+}
+
 std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
     std::string train1, std::string train2, size_t timestep) const {
+  if (!trajectories.count(train1) || !trajectories.count(train2)) {
+    return {};
+  }
+
   const std::optional<TrainState> state_opt1 =
       trajectories.at(train1).get_state(timestep);
   const std::optional<TrainState> state_opt2 =
@@ -55,6 +72,9 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
 
 std::optional<double> cda_rail::sim::TrainTrajectorySet::train_vertex_distance(
     std::string train, size_t vertex, size_t timestep) const {
+  if (!trajectories.count(train))
+    return {};
+
   const std::optional<TrainState> state_opt =
       trajectories.at(train).get_state(timestep);
 
@@ -119,9 +139,13 @@ void cda_rail::sim::TrainTrajectorySet::check_speed_limits() const {
   }
 }
 
-const cda_rail::sim::TrainTrajectory&
+std::optional<cda_rail::sim::TrainTrajectory>
 cda_rail::sim::TrainTrajectorySet::get_traj(std::string train_name) const {
-  return trajectories.at(train_name);
+  if (trajectories.count(train_name)) {
+    return trajectories.at(train_name);
+  } else {
+    return {};
+  }
 }
 
 const cda_rail::sim::SimulationInstance&

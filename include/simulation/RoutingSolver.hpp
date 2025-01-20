@@ -29,14 +29,12 @@ public:
   RoutingSolver() = delete;
   RoutingSolver(SimulationInstance instance);
 
-  /**
-   * Random search exits when score decreases slower than abort_improv_rate
-   *
-   * @param abort_improv_rate Minimum improvement in score / milliseconds
-   * @param objective Objective function that gets minimized
-   */
   std::optional<SolverResult>
   random_search(std::function<double(TrainTrajectorySet)> objective_fct,
+                size_t                                    timeout);
+
+  std::optional<SolverResult>
+  greedy_search(std::function<double(TrainTrajectorySet)> objective_fct,
                 size_t                                    timeout);
 };
 

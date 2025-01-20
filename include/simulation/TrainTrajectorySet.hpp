@@ -21,8 +21,11 @@ class TrainTrajectorySet {
 
 public:
   TrainTrajectorySet() = delete;
+  TrainTrajectorySet(const SimulationInstance& instance);
   TrainTrajectorySet(const SimulationInstance& instance,
                      const RoutingSolutionSet& solution_set);
+
+  void insert_or_assign(std::string name, TrainTrajectory traj);
 
   std::optional<double> train_distance(std::string train1, std::string train2,
                                        size_t timestep) const;
@@ -33,7 +36,8 @@ public:
 
   void check_speed_limits() const;
 
-  const TrainTrajectory&    get_traj(std::string train_name) const;
+  std::optional<cda_rail::sim::TrainTrajectory>
+                            get_traj(std::string train_name) const;
   const SimulationInstance& get_instance() const;
   size_t                    size() const;
 };

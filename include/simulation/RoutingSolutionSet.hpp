@@ -16,7 +16,8 @@ struct RoutingSolutionSet {
   std::unordered_map<std::string, RoutingSolution> solutions;
 
 public:
-  RoutingSolutionSet() = delete;
+  // No Solutions
+  RoutingSolutionSet();
   // Stationary solutions
   RoutingSolutionSet(const SimulationInstance& instance);
   // Random solutions

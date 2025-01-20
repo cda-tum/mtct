@@ -28,14 +28,22 @@ double cda_rail::sim::collision_penalty(const TrainTrajectorySet& traj_set) {
   double                    score      = 0;
 
   for (auto train1 = train_list.begin(); train1 != train_list.end(); train1++) {
-    const TrainTrajectory& traj1       = traj_set.get_traj((*train1).name);
-    size_t                 first_step1 = traj1.get_first_timestep();
-    size_t                 last_step1  = traj1.get_last_timestep();
+    size_t first_step1, last_step1;
+    if (const auto traj1 = traj_set.get_traj((*train1).name)) {
+      first_step1 = traj1.value().get_first_timestep();
+      last_step1  = traj1.value().get_last_timestep();
+    } else {
+      continue;
+    }
 
     for (auto train2 = train1 + 1; train2 != train_list.end(); train2++) {
-      const TrainTrajectory& traj2       = traj_set.get_traj((*train2).name);
-      size_t                 first_step2 = traj2.get_first_timestep();
-      size_t                 last_step2  = traj2.get_last_timestep();
+      size_t first_step2, last_step2;
+      if (const auto traj2 = traj_set.get_traj((*train2).name)) {
+        first_step2 = traj2.value().get_first_timestep();
+        last_step2  = traj2.value().get_last_timestep();
+      } else {
+        continue;
+      }
 
       if (last_step1 < first_step2 || last_step2 < first_step1)
         continue;
@@ -87,10 +95,15 @@ double cda_rail::sim::destination_penalty(const TrainTrajectorySet& traj_set) {
   double                    score      = 0;
 
   for (auto train = train_list.begin(); train != train_list.end(); train++) {
+    size_t final_timestep;
+    if (const auto traj_opt = traj_set.get_traj((*train).name)) {
+      size_t final_timestep = traj_opt.value().get_last_timestep();
+    } else {
+      continue;
+    }
+
     size_t dest_vertex =
         instance.timetable.get_schedule((*train).name).get_exit();
-    size_t final_timestep =
-        traj_set.get_traj((*train).name).get_last_timestep();
     double max_dist =
         *std::max_element(instance.shortest_paths.at(dest_vertex).begin(),
                           instance.shortest_paths.at(dest_vertex).end());
@@ -118,10 +131,15 @@ double cda_rail::sim::stop_penalty(const TrainTrajectorySet& traj_set) {
   size_t                    n_all_visited_stops   = 0;
   size_t                    n_all_scheduled_stops = 0;
   for (auto train = train_list.begin(); train != train_list.end(); train++) {
+    size_t n_visited_stops;
+    if (const auto traj_opt = traj_set.get_traj((*train).name)) {
+      n_visited_stops = traj_opt.value().get_visited_stop_amount();
+    } else {
+      continue;
+    }
+
     size_t n_scheduled_stops =
         instance.timetable.get_schedule((*train).name).get_stops().size();
-    size_t n_visited_stops =
-        traj_set.get_traj((*train).name).get_visited_stop_amount();
     if (n_visited_stops > n_scheduled_stops)
       throw std::logic_error("Visited more stops than scheduled.");
     n_all_scheduled_stops += n_scheduled_stops;
