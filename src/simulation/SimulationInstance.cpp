@@ -2,11 +2,10 @@
 
 cda_rail::sim::SimulationInstance::SimulationInstance(Network   network,
                                                       Timetable timetable,
-                                                      u_int64_t n_v_target_vars,
                                                       bool bidirectional_travel)
     : network(network), timetable(timetable),
       shortest_paths(network.all_vertex_pairs_shortest_paths_undirected()),
-      n_timesteps(get_last_train_departure()), n_v_target_vars(n_v_target_vars),
+      n_timesteps(get_last_train_departure()),
       n_switch_vars(std::ceil((get_max_train_speed() * n_timesteps) /
                               get_shortest_track())),
       bidirectional_travel(bidirectional_travel) {}

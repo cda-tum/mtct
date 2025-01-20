@@ -24,7 +24,7 @@ TEST(Simulation, RandomSolution) {
     const Train& train =
         timetable.get_train_list().get_train(random_train_index(rng_engine));
 
-    sim::SimulationInstance    instance(network, timetable, 10, true);
+    sim::SimulationInstance    instance(network, timetable, true);
     const sim::RoutingSolution sol{instance, train, rng_engine};
     for (auto target : sol.v_targets.targets) {
       ASSERT_GE(target.first, 0);
@@ -33,7 +33,8 @@ TEST(Simulation, RandomSolution) {
                 -(instance.bidirectional_travel * train.max_speed));
       ASSERT_LE(target.second, train.max_speed);
     }
-    ASSERT_EQ(sol.v_targets.size(), instance.n_v_target_vars);
+    ASSERT_GE(sol.v_targets.size(), 1);
+    ASSERT_LE(sol.v_targets.size(), instance.n_timesteps);
     ASSERT_EQ(sol.switch_directions.size(), instance.n_switch_vars);
   }
 }
@@ -82,7 +83,7 @@ TEST(Simulation, SimulationInstance) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleStation/timetable/", network);
 
-  sim::SimulationInstance instance(network, timetable, 20, true);
+  sim::SimulationInstance instance(network, timetable, true);
 
   ASSERT_EQ(instance.get_max_train_speed(), 83.33);
   ASSERT_EQ(instance.get_shortest_track(), 5);
@@ -97,7 +98,7 @@ TEST(Simulation, EdgeTrajectory) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleNetwork/timetable/", network);
 
-  sim::SimulationInstance              instance(network, timetable, 20, true);
+  sim::SimulationInstance              instance(network, timetable, true);
   std::uniform_int_distribution<ulong> random_train_index(
       0, timetable.get_train_list().size() - 1);
 
@@ -105,7 +106,7 @@ TEST(Simulation, EdgeTrajectory) {
     Train train =
         timetable.get_train_list().get_train(random_train_index(rng_engine));
 
-    sim::SimulationInstance instance(network, timetable, 20, true);
+    sim::SimulationInstance instance(network, timetable, true);
     sim::RoutingSolution    solution(instance, train, rng_engine);
 
     Schedule train_schedule = instance.timetable.get_schedule(train.name);
@@ -134,17 +135,15 @@ TEST(Simulation, TrainTrajectory) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleNetwork/timetable/", network);
 
-  sim::SimulationInstance               instance(network, timetable, 20, true);
+  sim::SimulationInstance               instance(network, timetable, true);
   std::uniform_int_distribution<size_t> random_train_index(
       0, timetable.get_train_list().size() - 1);
-  std::uniform_int_distribution<size_t> random_target_amount(1, 100);
 
   for (int i = 0; i < 100; i++) {
     size_t train_idx = random_train_index(rng_engine);
 
     Train train = timetable.get_train_list().get_train(train_idx);
-    sim::SimulationInstance instance(network, timetable,
-                                     random_target_amount(rng_engine), true);
+    sim::SimulationInstance instance(network, timetable, true);
     sim::RoutingSolution    solution(instance, train, rng_engine);
 
     sim::TrainTrajectory traj(instance, train, solution);
@@ -162,7 +161,7 @@ TEST(Simulation, TrainTrajectorySet) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleNetwork/timetable/", network);
 
-  sim::SimulationInstance               instance(network, timetable, 20, true);
+  sim::SimulationInstance               instance(network, timetable, true);
   std::uniform_int_distribution<size_t> random_train_index(
       0, timetable.get_train_list().size() - 1);
   std::uniform_int_distribution<size_t> random_target_amount(1, 100);
@@ -184,7 +183,7 @@ TEST(Simulation, TrainDistance) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleNetwork/timetable/", network);
 
-  sim::SimulationInstance instance(network, timetable, 20, true);
+  sim::SimulationInstance instance(network, timetable, true);
   sim::RoutingSolutionSet solution_set{instance};
   sim::TrainTrajectorySet traj{instance, solution_set};
   const TrainList&        list = instance.timetable.get_train_list();
@@ -238,7 +237,7 @@ TEST(Simulation, Penalties) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleNetwork/timetable/", network);
 
-  sim::SimulationInstance instance(network, timetable, 20, false);
+  sim::SimulationInstance instance(network, timetable, false);
 
   for (int i = 0; i < 100; i++) {
     sim::RoutingSolutionSet solution_set{instance, rng_engine};
@@ -255,7 +254,7 @@ TEST(Simulation, RoutingSolver) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleNetwork/timetable/", network);
 
-  sim::SimulationInstance instance{network, timetable, 20, false};
+  sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
   if (std::optional<sim::SolverResult> sol =
           solver.random_search(sim::combined_objective, 5)) {

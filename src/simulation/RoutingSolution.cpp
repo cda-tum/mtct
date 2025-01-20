@@ -15,6 +15,8 @@ cda_rail::sim::RoutingSolution::RoutingSolution(
   std::uniform_real_distribution<double>   uniform(0, 1);
   std::uniform_int_distribution<u_int64_t> uniform_timestep(
       0, instance.n_timesteps - 1);
+  std::uniform_int_distribution<u_int64_t> uniform_n_v_target_vars(
+      1, instance.n_timesteps);
   double min_speed = 0;
   if (instance.bidirectional_travel)
     min_speed = -train.max_speed;
@@ -26,7 +28,8 @@ cda_rail::sim::RoutingSolution::RoutingSolution(
     switch_directions.push_back(uniform(rng_engine));
   }
 
-  while (v_targets.size() < instance.n_v_target_vars) {
+  // TODO: ignores duplicates and produces less than n_v_target_vars variables
+  while (v_targets.size() < uniform_n_v_target_vars(rng_engine)) {
     v_targets.targets.insert(
         {uniform_timestep(rng_engine), uniform_train_speed(rng_engine)});
   }
