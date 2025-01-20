@@ -89,26 +89,24 @@ void cda_rail::sim::TrainTrajectorySet::export_csv(
     const std::filesystem::path& p) const {
   std::ofstream csvfile(p);
   csvfile << "train_idx,train_name,timestep,edge_idx,edge_src_node,edge_dst_"
-             "node,edge_pos\n";
+             "node,edge_pos,speed\n";
 
   const TrainList& train_list = instance.timetable.get_train_list();
 
   for (auto traj : trajectories) {
     for (size_t timestep = traj.second.get_first_timestep();
          timestep <= traj.second.get_last_timestep(); timestep++) {
-      csvfile << train_list.get_train_index(traj.first) << ",";
-      csvfile << traj.first << ",";
-
-      csvfile << timestep << ",";
-
       TrainState  state = traj.second.get_state(timestep).value();
       const Edge& edge  = instance.network.get_edge(state.edge);
 
+      csvfile << train_list.get_train_index(traj.first) << ",";
+      csvfile << traj.first << ",";
+      csvfile << timestep << ",";
       csvfile << state.edge << ",";
       csvfile << instance.network.get_vertex(edge.source).name << ",";
       csvfile << instance.network.get_vertex(edge.target).name << ",";
-
-      csvfile << state.position << "\n";
+      csvfile << state.position << ",";
+      csvfile << state.speed << "\n";
     }
   }
 
