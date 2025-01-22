@@ -97,11 +97,12 @@ cda_rail::sim::RoutingSolver::greedy_search(
         working_sol_set.solutions.insert_or_assign((*train).name, new_sol);
       }
 
-      if (interval > round_timeout)
+      if (interval > round_timeout) {
         if (!working_traj_set.get_traj((*train).name))
           return {};
 
-      break;
+        break;
+      }
     }
   }
 
