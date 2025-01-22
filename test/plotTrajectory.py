@@ -3,8 +3,9 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import sys
 
-traj = pd.read_csv('tmp/trajectory.csv', index_col=False)
+traj = pd.read_csv(sys.argv[1], index_col=False)
 G = nx.read_graphml("example-networks/SimpleNetwork/network/tracks.graphml")
 
 n_trains = int(traj["train_idx"].max() + 1)

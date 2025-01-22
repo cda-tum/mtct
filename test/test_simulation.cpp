@@ -259,7 +259,7 @@ TEST(Simulation, RandomSearch) {
   if (std::optional<sim::SolverResult> sol =
           solver.random_search(sim::combined_objective, 5)) {
     cda_rail::is_directory_and_create("tmp");
-    std::filesystem::path p = "tmp/trajectory.csv";
+    std::filesystem::path p = "tmp/test_traj_random.csv";
     sol.value().trajectories.export_csv(p);
     // std::filesystem::remove_all("tmp");
   }
@@ -274,9 +274,9 @@ TEST(Simulation, GreedySearch) {
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
   if (std::optional<sim::SolverResult> sol =
-          solver.greedy_search(sim::combined_objective, 5)) {
+          solver.greedy_search(sim::combined_objective, 0.1)) {
     cda_rail::is_directory_and_create("tmp");
-    std::filesystem::path p = "tmp/trajectory.csv";
+    std::filesystem::path p = "tmp/test_traj_greedy.csv";
     sol.value().trajectories.export_csv(p);
     // std::filesystem::remove_all("tmp");
   }
