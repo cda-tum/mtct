@@ -131,6 +131,10 @@ double cda_rail::sim::stop_penalty(const TrainTrajectorySet& traj_set) {
   const TrainList&          train_list = instance.timetable.get_train_list();
   size_t                    n_all_visited_stops   = 0;
   size_t                    n_all_scheduled_stops = 0;
+
+  if (traj_set.size() < 1)
+    throw std::invalid_argument("Cannot evaluate empty trajectory set.");
+
   for (auto train = train_list.begin(); train != train_list.end(); train++) {
     size_t n_visited_stops;
     if (const auto traj_opt = traj_set.get_traj((*train).name)) {
@@ -146,6 +150,9 @@ double cda_rail::sim::stop_penalty(const TrainTrajectorySet& traj_set) {
     n_all_scheduled_stops += n_scheduled_stops;
     n_all_visited_stops += n_visited_stops;
   }
+
+  if (n_all_scheduled_stops == 0)
+    return 0;
 
   return (n_all_scheduled_stops - n_all_visited_stops) / n_all_scheduled_stops;
 }
