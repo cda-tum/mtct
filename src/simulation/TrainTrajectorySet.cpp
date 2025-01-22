@@ -80,9 +80,9 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_vertex_distance(
 
   if (!state_opt.has_value())
     return {};
-  const TrainState state = state_opt.value();
 
-  const Edge& edge = instance.network.get_edge(state.edge);
+  const TrainState state = state_opt.value();
+  const Edge&      edge  = instance.network.get_edge(state.edge);
 
   const double remain_dist_fw = (1 - state.position) * edge.length;
   const double remain_dist_bw = state.position * edge.length;

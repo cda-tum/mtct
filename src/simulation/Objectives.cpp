@@ -97,7 +97,7 @@ double cda_rail::sim::destination_penalty(const TrainTrajectorySet& traj_set) {
   for (auto train = train_list.begin(); train != train_list.end(); train++) {
     size_t final_timestep;
     if (const auto traj_opt = traj_set.get_traj((*train).name)) {
-      size_t final_timestep = traj_opt.value().get_last_timestep();
+      final_timestep = traj_opt.value().get_last_timestep();
     } else {
       continue;
     }
@@ -115,6 +115,7 @@ double cda_rail::sim::destination_penalty(const TrainTrajectorySet& traj_set) {
     // TODO: Penalize wrong exit speed as well as position
     score = score + dist / max_dist;
   }
+
   return score / train_list.size();
 }
 
