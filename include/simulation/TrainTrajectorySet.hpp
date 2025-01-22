@@ -40,6 +40,7 @@ public:
                             get_traj(std::string train_name) const;
   const SimulationInstance& get_instance() const;
   size_t                    size() const;
+  bool                      contains(std::string train_name) const;
 };
 
 }; // namespace cda_rail::sim

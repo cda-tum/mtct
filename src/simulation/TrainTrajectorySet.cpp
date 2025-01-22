@@ -26,7 +26,7 @@ void cda_rail::sim::TrainTrajectorySet::insert_or_assign(
 
 std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
     std::string train1, std::string train2, size_t timestep) const {
-  if (!trajectories.count(train1) || !trajectories.count(train2)) {
+  if (!contains(train1) || !contains(train2)) {
     return {};
   }
 
@@ -72,7 +72,7 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
 
 std::optional<double> cda_rail::sim::TrainTrajectorySet::train_vertex_distance(
     std::string train, size_t vertex, size_t timestep) const {
-  if (!trajectories.count(train))
+  if (!contains(train))
     return {};
 
   const std::optional<TrainState> state_opt =
@@ -141,7 +141,7 @@ void cda_rail::sim::TrainTrajectorySet::check_speed_limits() const {
 
 std::optional<cda_rail::sim::TrainTrajectory>
 cda_rail::sim::TrainTrajectorySet::get_traj(std::string train_name) const {
-  if (trajectories.count(train_name)) {
+  if (contains(train_name)) {
     return trajectories.at(train_name);
   } else {
     return {};
@@ -155,4 +155,8 @@ cda_rail::sim::TrainTrajectorySet::get_instance() const {
 
 size_t cda_rail::sim::TrainTrajectorySet::size() const {
   return trajectories.size();
+}
+
+bool cda_rail::sim::TrainTrajectorySet::contains(std::string train_name) const {
+  return trajectories.count(train_name);
 }
