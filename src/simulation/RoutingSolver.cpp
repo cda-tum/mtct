@@ -68,6 +68,7 @@ cda_rail::sim::RoutingSolver::greedy_search(
   const TrainList& train_list = instance.timetable.get_train_list();
   double           score      = 0;
 
+  // TODO: randomize train order
   for (auto train = train_list.begin(); train != train_list.end(); train++) {
     std::cerr << "Train " << (*train).name << std::endl;
     double                                best_score = DBL_MAX;
