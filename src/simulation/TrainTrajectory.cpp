@@ -3,7 +3,8 @@
 cda_rail::sim::TrainTrajectory::TrainTrajectory(
     const SimulationInstance& instance, const Train& train,
     RoutingSolution init_solution)
-    : instance(instance), train(train), solution(init_solution) {
+    : instance_r(std::ref(instance)), train_r(std::ref(train)),
+      solution(init_solution) {
   for (size_t abort = 0;; abort++) {
     TrainState initial_edge_state;
     if (edge_trajs.size() == 0) {
@@ -19,7 +20,9 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
         return;
       } else if (entry.outcome == OVERSPEED) {
         double prev_speed_limit =
-            instance.network.get_edge(entry.new_state.value().edge).max_speed;
+            instance_r.get()
+                .network.get_edge(entry.new_state.value().edge)
+                .max_speed;
         BrakingPeriod braking_period = add_braking(prev_speed_limit, {}, {});
         backtrack_trajectory(std::get<0>(braking_period));
         continue;
@@ -29,7 +32,7 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
                 edge_trajs.back().get_last_timestep());
 
         BrakingPeriod braking_period = add_braking(
-            0, reversal_time.value_or(instance.n_timesteps - 1), {});
+            0, reversal_time.value_or(instance_r.get().n_timesteps - 1), {});
         backtrack_trajectory(std::get<0>(braking_period));
         continue;
       } else if (entry.outcome == PLANNED_STOP) {
@@ -55,21 +58,22 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
     SpeedTargets previous_targets(solution.v_targets);
 
     double curr_speed_limit =
-        instance.network.get_edge(initial_edge_state.edge).max_speed;
+        instance_r.get().network.get_edge(initial_edge_state.edge).max_speed;
     solution.v_targets.limit_speed_from(curr_speed_limit,
                                         initial_edge_state.timestep);
 
-    edge_trajs.push_back(EdgeTrajectory(instance, train, solution.v_targets,
-                                        initial_edge_state));
+    edge_trajs.push_back(EdgeTrajectory(
+        instance_r, train_r.get(), solution.v_targets, initial_edge_state));
 
     // Restore original targets after leaving edge
     // TODO: Braking can shift traversal forwards when changing direction
     // so we sometimes constrain speeds unnecessarily
     if (u_int64_t last_step = edge_trajs.back().get_last_timestep();
-        last_step < instance.n_timesteps - 1) {
-      solution.v_targets.delete_range(last_step + 1, instance.n_timesteps - 1);
-      solution.v_targets.insert(
-          previous_targets.copy_range(last_step + 1, instance.n_timesteps - 1));
+        last_step < instance_r.get().n_timesteps - 1) {
+      solution.v_targets.delete_range(last_step + 1,
+                                      instance_r.get().n_timesteps - 1);
+      solution.v_targets.insert(previous_targets.copy_range(
+          last_step + 1, instance_r.get().n_timesteps - 1));
     }
 
     if (abort > 1000)
@@ -155,9 +159,9 @@ cda_rail::sim::TrainTrajectory::is_feasible_braking_point(
 
   double accel;
   if (accel_direction) {
-    accel = train.acceleration;
+    accel = train_r.get().acceleration;
   } else {
-    accel = train.deceleration;
+    accel = train_r.get().deceleration;
   }
 
   u_int64_t required_braking_time = std::ceil(speed_diff_abs / accel);
@@ -235,21 +239,21 @@ size_t cda_rail::sim::TrainTrajectory::get_last_timestep() const {
 cda_rail::sim::TrainState
 cda_rail::sim::TrainTrajectory::read_initial_train_state() const {
   cda_rail::Schedule train_schedule =
-      instance.timetable.get_schedule(train.name);
+      instance_r.get().timetable.get_schedule(train_r.get().name);
 
   size_t entry_vertex = train_schedule.get_entry();
   size_t entry_edge;
-  if (!instance.network.out_edges(entry_vertex).empty()) {
-    entry_edge = instance.network.out_edges(entry_vertex).front();
-  } else if (!instance.network.in_edges(entry_vertex).empty()) {
-    entry_edge = instance.network.in_edges(entry_vertex).front();
+  if (!instance_r.get().network.out_edges(entry_vertex).empty()) {
+    entry_edge = instance_r.get().network.out_edges(entry_vertex).front();
+  } else if (!instance_r.get().network.in_edges(entry_vertex).empty()) {
+    entry_edge = instance_r.get().network.in_edges(entry_vertex).front();
   } else {
     throw std::logic_error("Entry vertex has no adjacent edges.");
   }
 
   double position;
   bool   orientation;
-  if (instance.network.get_edge(entry_edge).target == entry_vertex) {
+  if (instance_r.get().network.get_edge(entry_edge).target == entry_vertex) {
     position    = 1.0;
     orientation = false;
   } else {

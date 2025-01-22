@@ -16,12 +16,14 @@ cda_rail::sim::EdgeEntry::EdgeEntry(
 cda_rail::sim::EdgeTrajectory::EdgeTrajectory(
     const SimulationInstance& instance, const Train& train,
     SpeedTargets& v_targets, TrainState initial_state)
-    : instance(instance), train(train), first_timestep(initial_state.timestep),
-      edge(initial_state.edge), orientation(initial_state.orientation) {
-  double edge_length         = instance.network.get_edge(edge).length;
+    : instance_r(std::ref(instance)), train_r(std::ref(train)),
+      first_timestep(initial_state.timestep), edge(initial_state.edge),
+      orientation(initial_state.orientation) {
+  double edge_length         = instance_r.get().network.get_edge(edge).length;
   double edge_length_divisor = 1 / edge_length;
   // TODO: narrowing cast should be avoided
-  size_t exit_time = instance.timetable.get_schedule(train.name).get_t_n();
+  size_t exit_time =
+      instance_r.get().timetable.get_schedule(train_r.get().name).get_t_n();
 
   speeds.push_back(initial_state.speed);
   positions.push_back(initial_state.position);
@@ -31,9 +33,9 @@ cda_rail::sim::EdgeTrajectory::EdgeTrajectory(
         v_targets.find_target_speed(timestep - 1) - speeds.back();
     double acceleration;
     if (speed_disparity >= 0) {
-      acceleration = std::min(speed_disparity, train.acceleration);
+      acceleration = std::min(speed_disparity, train_r.get().acceleration);
     } else {
-      acceleration = std::max(speed_disparity, -train.deceleration);
+      acceleration = std::max(speed_disparity, -train_r.get().deceleration);
     }
     speeds.push_back(speeds.back() + acceleration);
     positions.push_back(positions.back() +
@@ -42,14 +44,14 @@ cda_rail::sim::EdgeTrajectory::EdgeTrajectory(
 
     if (positions.back() > 1 || positions.back() < 0) {
       last_timestep = first_timestep + positions.size() - 2;
-      traversal =
-          determine_exit(instance.network, TrainState{
-                                               .timestep    = last_timestep + 1,
-                                               .edge        = edge,
-                                               .position    = positions.back(),
-                                               .orientation = orientation,
-                                               .speed       = speeds.back(),
-                                           });
+      traversal     = determine_exit(instance_r.get().network,
+                                     TrainState{
+                                         .timestep    = last_timestep + 1,
+                                         .edge        = edge,
+                                         .position    = positions.back(),
+                                         .orientation = orientation,
+                                         .speed       = speeds.back(),
+                                 });
       positions.pop_back();
       speeds.pop_back();
       return;
@@ -84,8 +86,8 @@ cda_rail::sim::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   for (bool overshot = true; overshot != false;) {
     // TODO: select separate direction for each iteration
     // TODO: trains should be able to exit the network at their designated node
-    std::optional<TrainState> new_state_result =
-        determine_first_state(instance.network, edge_exit, switch_direction);
+    std::optional<TrainState> new_state_result = determine_first_state(
+        instance_r.get().network, edge_exit, switch_direction);
 
     if (!new_state_result.has_value()) {
       return EdgeEntry{DEADEND, {}};
@@ -96,13 +98,13 @@ cda_rail::sim::EdgeTrajectory::enter_next_edge(double switch_direction) const {
     overshot = (new_state.position < 0 || new_state.position > 1);
 
     if (overshot) {
-      edge_exit = determine_exit(instance.network, new_state);
+      edge_exit = determine_exit(instance_r.get().network, new_state);
     }
   }
 
   EdgeEntryOutcome outcome;
   if (std::abs(edge_exit.speed) >
-      instance.network.get_edge(new_state.edge).max_speed) {
+      instance_r.get().network.get_edge(new_state.edge).max_speed) {
     outcome = OVERSPEED;
   } else if (is_planned_stop()) {
     outcome = PLANNED_STOP;
@@ -187,9 +189,12 @@ cda_rail::sim::determine_exit(const cda_rail::Network&  network,
 }
 
 bool cda_rail::sim::EdgeTrajectory::is_planned_stop() const {
-  for (auto stop : instance.timetable.get_schedule(train.name).get_stops()) {
-    auto stop_station = instance.timetable.get_station_list().get_station(
-        stop.get_station_name());
+  for (auto stop : instance_r.get()
+                       .timetable.get_schedule(train_r.get().name)
+                       .get_stops()) {
+    auto stop_station =
+        instance_r.get().timetable.get_station_list().get_station(
+            stop.get_station_name());
 
     if (std::find(stop_station.tracks.begin(), stop_station.tracks.end(),
                   edge) != stop_station.tracks.end())
@@ -201,10 +206,11 @@ bool cda_rail::sim::EdgeTrajectory::is_planned_stop() const {
 
 void cda_rail::sim::EdgeTrajectory::check_speed_limits() const {
   double speed_limit =
-      std::max(instance.network.get_edge(edge).max_speed, train.max_speed);
+      std::max(instance_r.get().network.get_edge(edge).max_speed,
+               train_r.get().max_speed);
 
   if (positions.size() > 1) {
-    double edge_length = instance.network.get_edge(edge).length;
+    double edge_length = instance_r.get().network.get_edge(edge).length;
     for (auto pos = positions.begin() + 1; pos != positions.end(); pos++) {
       if (std::abs((*pos) - *(pos - 1)) * edge_length > speed_limit)
         throw std::logic_error("Overspeed detected.");
@@ -218,9 +224,12 @@ void cda_rail::sim::EdgeTrajectory::check_speed_limits() const {
 }
 
 cda_rail::ScheduledStop cda_rail::sim::EdgeTrajectory::get_stop() const {
-  for (auto stop : instance.timetable.get_schedule(train.name).get_stops()) {
-    auto stop_station = instance.timetable.get_station_list().get_station(
-        stop.get_station_name());
+  for (auto stop : instance_r.get()
+                       .timetable.get_schedule(train_r.get().name)
+                       .get_stops()) {
+    auto stop_station =
+        instance_r.get().timetable.get_station_list().get_station(
+            stop.get_station_name());
 
     if (std::find(stop_station.tracks.begin(), stop_station.tracks.end(),
                   edge) != stop_station.tracks.end())

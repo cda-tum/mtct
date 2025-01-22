@@ -49,8 +49,8 @@ class EdgeTrajectory {
   /**
    * Continuous train state on one edge
    */
-  const SimulationInstance& instance;
-  const Train&              train;
+  std::reference_wrapper<const SimulationInstance> instance_r;
+  std::reference_wrapper<const Train>              train_r;
 
   u_int64_t first_timestep; // [0, n_timesteps - 1]
   u_int64_t last_timestep;  // [0, n_timesteps - 1]

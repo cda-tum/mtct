@@ -16,8 +16,8 @@ class TrainTrajectory {
    * Path of a single train over entire timespan
    * Repairs solution speeds to be feasible
    */
-  const SimulationInstance& instance;
-  const Train&              train;
+  std::reference_wrapper<const SimulationInstance> instance_r;
+  std::reference_wrapper<const Train>              train_r;
 
   std::vector<EdgeTrajectory> edge_trajs;
   std::vector<ScheduledStop>  visited_stops;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "simulation/RoutingSolutionSet.hpp"
 #include "simulation/TrainTrajectorySet.hpp"
 
 #include <chrono>
