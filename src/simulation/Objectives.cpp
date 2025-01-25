@@ -94,12 +94,8 @@ double cda_rail::sim::destination_penalty(const TrainTrajectorySet& traj_set) {
   const TrainList&          train_list = instance.timetable.get_train_list();
   double                    score      = 0;
 
-  for (auto train = train_list.begin(); train != train_list.end(); train++) {
-    if (const auto traj_opt = traj_set.get_traj((*train).name)) {
-      score = score + destination_penalty(traj_opt.value());
-    } else {
-      continue;
-    }
+  for (auto const& [train_name, traj] : traj_set.get_map()) {
+    score = score + destination_penalty(traj);
   }
 
   return score / traj_set.size();
@@ -145,12 +141,8 @@ double cda_rail::sim::stop_penalty(const TrainTrajectorySet& traj_set) {
   if (traj_set.size() < 1)
     throw std::invalid_argument("Cannot evaluate empty trajectory set.");
 
-  for (auto train = train_list.begin(); train != train_list.end(); train++) {
-    if (const auto traj_opt = traj_set.get_traj((*train).name)) {
-      score = score + stop_penalty(traj_opt.value());
-    } else {
-      continue;
-    }
+  for (auto const& [train_name, traj] : traj_set.get_map()) {
+    score = score + stop_penalty(traj);
   }
 
   return score / traj_set.size();

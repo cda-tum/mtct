@@ -139,6 +139,11 @@ void cda_rail::sim::TrainTrajectorySet::check_speed_limits() const {
   }
 }
 
+const std::unordered_map<std::string, cda_rail::sim::TrainTrajectory>&
+cda_rail::sim::TrainTrajectorySet::get_map() const {
+  return trajectories;
+}
+
 std::optional<cda_rail::sim::TrainTrajectory>
 cda_rail::sim::TrainTrajectorySet::get_traj(std::string train_name) const {
   if (contains(train_name)) {

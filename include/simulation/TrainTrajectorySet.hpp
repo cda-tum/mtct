@@ -36,6 +36,7 @@ public:
 
   void check_speed_limits() const;
 
+  const std::unordered_map<std::string, TrainTrajectory>& get_map() const;
   std::optional<cda_rail::sim::TrainTrajectory>
                             get_traj(std::string train_name) const;
   const SimulationInstance& get_instance() const;
