@@ -34,6 +34,7 @@ void cda_rail::sim::SolverResult::insert_or_assign(
   destination_scores.insert_or_assign(trajectory.get_train().name,
                                       destination_penalty(trajectory));
 
+  // TODO: don't need to recompute all pairs for new train
   collision_score = collision_penalty(trajectories);
 }
 
