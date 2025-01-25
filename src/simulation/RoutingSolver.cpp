@@ -4,8 +4,7 @@ cda_rail::sim::RoutingSolver::RoutingSolver(SimulationInstance instance)
     : instance(instance), rng_engine(std::ranlux24_base(time(NULL))) {};
 
 std::optional<cda_rail::sim::SolverResult>
-cda_rail::sim::RoutingSolver::random_search(
-    std::function<double(TrainTrajectorySet)> objective_fct, size_t timeout) {
+cda_rail::sim::RoutingSolver::random_search(size_t timeout) {
   /**
    * Random search exits when score decreases slower than abort_improv_rate
    *
@@ -47,9 +46,7 @@ cda_rail::sim::RoutingSolver::random_search(
 }
 
 std::optional<cda_rail::sim::SolverResult>
-cda_rail::sim::RoutingSolver::greedy_search(
-    std::function<double(TrainTrajectorySet)> objective_fct,
-    size_t                                    round_timeout) {
+cda_rail::sim::RoutingSolver::greedy_solution(size_t round_timeout) {
   std::chrono::steady_clock::time_point last_time =
       std::chrono::steady_clock::now();
   /**

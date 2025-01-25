@@ -26,13 +26,9 @@ public:
   RoutingSolver() = delete;
   RoutingSolver(SimulationInstance instance);
 
-  std::optional<SolverResult>
-  random_search(std::function<double(TrainTrajectorySet)> objective_fct,
-                size_t                                    timeout);
+  std::optional<SolverResult> random_search(size_t timeout);
 
-  std::optional<SolverResult>
-  greedy_search(std::function<double(TrainTrajectorySet)> objective_fct,
-                size_t                                    timeout);
+  std::optional<SolverResult> greedy_solution(size_t timeout);
 };
 
 }; // namespace cda_rail::sim
