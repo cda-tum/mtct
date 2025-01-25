@@ -20,7 +20,7 @@ class TrainTrajectory {
   std::reference_wrapper<const Train>              train_r;
 
   std::vector<EdgeTrajectory> edge_trajs;
-  std::vector<ScheduledStop>  visited_stops;
+  std::vector<ScheduledStop>  remaining_planned_stops;
   RoutingSolution             solution;
 
 private:
@@ -47,7 +47,7 @@ public:
 
   std::optional<TrainState> get_state(u_int64_t timestep) const;
   size_t                    get_matching_trajectory(u_int64_t timestep) const;
-  size_t                    get_visited_stop_amount() const;
+  size_t                    get_remaining_stop_amount() const;
   size_t get_earliest_affected_trajectory(u_int64_t timestep) const;
   size_t get_first_timestep() const;
   size_t get_last_timestep() const;

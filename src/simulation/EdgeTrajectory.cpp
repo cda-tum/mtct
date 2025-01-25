@@ -6,8 +6,7 @@ cda_rail::sim::EdgeEntry::EdgeEntry(
     cda_rail::sim::EdgeEntryOutcome          outcome,
     std::optional<cda_rail::sim::TrainState> new_state)
     : outcome(outcome), new_state(new_state) {
-  bool requires_state =
-      (outcome == NORMAL || outcome == OVERSPEED || outcome == PLANNED_STOP);
+  bool requires_state = (outcome == NORMAL || outcome == OVERSPEED);
   if (requires_state && !new_state.has_value() ||
       !requires_state && new_state.has_value())
     throw std::logic_error("Improper result of edge entry.");
@@ -106,8 +105,6 @@ cda_rail::sim::EdgeTrajectory::enter_next_edge(double switch_direction) const {
   if (std::abs(edge_exit.speed) >
       instance_r.get().network.get_edge(new_state.edge).max_speed) {
     outcome = OVERSPEED;
-  } else if (is_planned_stop()) {
-    outcome = PLANNED_STOP;
   } else {
     outcome = NORMAL;
   }
@@ -186,22 +183,6 @@ cda_rail::sim::determine_exit(const cda_rail::Network&  network,
         .speed                = overshot_state.speed,
     };
   }
-}
-
-bool cda_rail::sim::EdgeTrajectory::is_planned_stop() const {
-  for (auto stop : instance_r.get()
-                       .timetable.get_schedule(train_r.get().name)
-                       .get_stops()) {
-    auto stop_station =
-        instance_r.get().timetable.get_station_list().get_station(
-            stop.get_station_name());
-
-    if (std::find(stop_station.tracks.begin(), stop_station.tracks.end(),
-                  edge) != stop_station.tracks.end())
-      return true;
-  }
-
-  return false;
 }
 
 void cda_rail::sim::EdgeTrajectory::check_speed_limits() const {

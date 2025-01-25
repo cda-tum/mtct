@@ -4,7 +4,9 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
     const SimulationInstance& instance, const Train& train,
     RoutingSolution init_solution)
     : instance_r(std::ref(instance)), train_r(std::ref(train)),
-      solution(init_solution) {
+      solution(init_solution),
+      remaining_planned_stops(
+          instance.timetable.get_schedule(train.name).get_stops()) {
   for (size_t abort = 0;; abort++) {
     TrainState initial_edge_state;
     if (edge_trajs.size() == 0) {
@@ -35,21 +37,31 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
             0, reversal_time.value_or(instance_r.get().n_timesteps - 1), {});
         backtrack_trajectory(std::get<0>(braking_period));
         continue;
-      } else if (entry.outcome == PLANNED_STOP) {
-        ScheduledStop stop = edge_trajs.back().get_stop();
-        if (std::find(visited_stops.begin(), visited_stops.end(), stop) ==
-            visited_stops.end()) {
-          // TODO: unsafe cast
-          BrakingPeriod braking_period =
-              add_braking(0, {}, stop.get_min_stopping_time());
-          backtrack_trajectory(std::get<0>(braking_period));
-          visited_stops.push_back(stop);
+      } else if (entry.outcome == NORMAL) {
+        // Check for scheduled stop
+        bool found_stop = false;
+        for (auto stop = remaining_planned_stops.begin();
+             stop != remaining_planned_stops.end() && !found_stop; stop++) {
+          auto stop_station =
+              instance_r.get().timetable.get_station_list().get_station(
+                  (*stop).get_station_name());
+
+          if (std::find(stop_station.tracks.begin(), stop_station.tracks.end(),
+                        edge_trajs.back().get_edge()) !=
+              stop_station.tracks.end()) {
+            BrakingPeriod braking_period =
+                add_braking(0, {}, (*stop).get_min_stopping_time());
+            backtrack_trajectory(std::get<0>(braking_period));
+            remaining_planned_stops.erase(stop);
+            found_stop = true;
+          }
+        }
+
+        if (found_stop) {
           continue;
         } else {
           initial_edge_state = entry.new_state.value();
         }
-      } else if (entry.outcome == NORMAL) {
-        initial_edge_state = entry.new_state.value();
       } else {
         throw std::logic_error("Invalid EdgeEntry outcome.");
       }
@@ -214,8 +226,8 @@ size_t cda_rail::sim::TrainTrajectory::get_matching_trajectory(
   throw std::out_of_range("Timestep not contained in any trajectory.");
 }
 
-size_t cda_rail::sim::TrainTrajectory::get_visited_stop_amount() const {
-  return visited_stops.size();
+size_t cda_rail::sim::TrainTrajectory::get_remaining_stop_amount() const {
+  return remaining_planned_stops.size();
 }
 
 size_t cda_rail::sim::TrainTrajectory::get_earliest_affected_trajectory(

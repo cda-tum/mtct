@@ -23,7 +23,6 @@ enum EdgeEntryOutcome {
   NORMAL,
   OVERSPEED,
   DEADEND,
-  PLANNED_STOP,
   TIME_END,
 };
 
@@ -69,8 +68,6 @@ public:
                  SpeedTargets& v_targets, TrainState initial_state);
 
   EdgeEntry enter_next_edge(double switch_direction) const;
-
-  bool is_planned_stop() const;
 
   void check_speed_limits() const;
 

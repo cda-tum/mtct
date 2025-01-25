@@ -163,17 +163,14 @@ double cda_rail::sim::stop_penalty(const TrainTrajectory& traj) {
    * @param traj train trajectory
    * @return Normalized penalty score from 0 to 1, lower is better
    */
-  size_t n_visited_stops   = traj.get_visited_stop_amount();
+  size_t n_remaining_stops = traj.get_remaining_stop_amount();
   size_t n_scheduled_stops = traj.get_instance()
                                  .timetable.get_schedule(traj.get_train().name)
                                  .get_stops()
                                  .size();
 
-  if (n_visited_stops > n_scheduled_stops)
-    throw std::logic_error("Visited more stops than scheduled.");
-
   if (n_scheduled_stops == 0)
     return 0;
 
-  return (n_scheduled_stops - n_visited_stops) / n_scheduled_stops;
+  return n_remaining_stops / n_scheduled_stops;
 }
