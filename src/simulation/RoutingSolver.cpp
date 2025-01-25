@@ -65,12 +65,17 @@ cda_rail::sim::RoutingSolver::greedy_search(
   TrainTrajectorySet working_traj_set{instance};
   RoutingSolutionSet working_sol_set{};
 
-  const TrainList& train_list = instance.timetable.get_train_list();
-  double           score      = 0;
+  TrainList train_list = instance.timetable.get_train_list();
 
-  // TODO: randomize train order
-  for (auto train = train_list.begin(); train != train_list.end(); train++) {
-    std::cerr << "Train " << (*train).name << std::endl;
+  double           score = 0;
+  std::vector<int> train_idxs(train_list.size());
+  std::iota(std::begin(train_idxs), std::end(train_idxs), 0);
+  std::shuffle(train_idxs.begin(), train_idxs.end(), rng_engine);
+
+  for (auto train_idx = train_idxs.begin(); train_idx != train_idxs.end();
+       train_idx++) {
+    const auto train = train_list.get_train(*train_idx);
+    std::cerr << "Train " << train.name << std::endl;
     double                                best_score = DBL_MAX;
     std::chrono::steady_clock::time_point last_time =
         std::chrono::steady_clock::now();
@@ -82,11 +87,11 @@ cda_rail::sim::RoutingSolver::greedy_search(
                           round_time - last_time)
                           .count();
 
-      RoutingSolution new_sol{instance, (*train), rng_engine};
-      TrainTrajectory new_traj{instance, (*train), new_sol};
+      RoutingSolution new_sol{instance, train, rng_engine};
+      TrainTrajectory new_traj{instance, train, new_sol};
 
       TrainTrajectorySet test_traj_set{working_traj_set};
-      test_traj_set.insert_or_assign((*train).name, new_traj);
+      test_traj_set.insert_or_assign(train.name, new_traj);
 
       double round_score = objective_fct(test_traj_set);
 
@@ -94,12 +99,12 @@ cda_rail::sim::RoutingSolver::greedy_search(
         std::cerr << "Best Score: " << best_score << std::endl;
         last_time  = round_time;
         best_score = round_score;
-        working_traj_set.insert_or_assign((*train).name, new_traj);
-        working_sol_set.solutions.insert_or_assign((*train).name, new_sol);
+        working_traj_set.insert_or_assign(train.name, new_traj);
+        working_sol_set.solutions.insert_or_assign(train.name, new_sol);
       }
 
       if (interval > round_timeout) {
-        if (!working_traj_set.get_traj((*train).name))
+        if (!working_traj_set.get_traj(train.name))
           return {};
 
         break;
