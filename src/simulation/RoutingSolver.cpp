@@ -35,10 +35,7 @@ cda_rail::sim::RoutingSolver::random_search(
       std::cerr << "Best Score: " << best_score << std::endl;
 
       best_result.reset();
-      best_result.emplace(SolverResult{
-          .solution     = round_sol,
-          .trajectories = round_traj,
-      });
+      best_result.emplace(SolverResult{round_sol, round_traj});
     }
 
     if (interval > timeout)
@@ -62,12 +59,10 @@ cda_rail::sim::RoutingSolver::greedy_search(
    * improvement during this time Maximum runtime is n_trains * round_timeout
    */
 
-  TrainTrajectorySet working_traj_set{instance};
-  RoutingSolutionSet working_sol_set{};
+  SolverResult result{instance};
 
-  TrainList train_list = instance.timetable.get_train_list();
-
-  double           score = 0;
+  TrainList        train_list = instance.timetable.get_train_list();
+  double           score      = 0;
   std::vector<int> train_idxs(train_list.size());
   std::iota(std::begin(train_idxs), std::end(train_idxs), 0);
   std::shuffle(train_idxs.begin(), train_idxs.end(), rng_engine);
@@ -90,7 +85,7 @@ cda_rail::sim::RoutingSolver::greedy_search(
       RoutingSolution new_sol{instance, train, rng_engine};
       TrainTrajectory new_traj{instance, train, new_sol};
 
-      TrainTrajectorySet test_traj_set{working_traj_set};
+      TrainTrajectorySet test_traj_set = result.get_trajectories();
       test_traj_set.insert_or_assign(train.name, new_traj);
 
       double round_score = objective_fct(test_traj_set);
@@ -99,12 +94,11 @@ cda_rail::sim::RoutingSolver::greedy_search(
         std::cerr << "Best Score: " << best_score << std::endl;
         last_time  = round_time;
         best_score = round_score;
-        working_traj_set.insert_or_assign(train.name, new_traj);
-        working_sol_set.solutions.insert_or_assign(train.name, new_sol);
+        result.insert_or_assign(new_sol, new_traj);
       }
 
       if (interval > round_timeout) {
-        if (!working_traj_set.get_traj(train.name))
+        if (!result.get_trajectories().get_traj(train.name))
           return {};
 
         break;
@@ -112,8 +106,5 @@ cda_rail::sim::RoutingSolver::greedy_search(
     }
   }
 
-  return SolverResult{
-      .solution     = working_sol_set,
-      .trajectories = working_traj_set,
-  };
-}
+  return result;
+};

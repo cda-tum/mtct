@@ -43,6 +43,8 @@ add_library(
   simulation/RoutingSolutionSet.cpp
   ${PROJECT_SOURCE_DIR}/include/simulation/RoutingSolver.hpp
   simulation/RoutingSolver.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/SolverResult.hpp
+  simulation/SolverResult.cpp
   ${PROJECT_SOURCE_DIR}/include/simulation/EdgeTrajectory.hpp
   simulation/EdgeTrajectory.cpp
   ${PROJECT_SOURCE_DIR}/include/simulation/TrainTrajectory.hpp

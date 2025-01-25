@@ -236,6 +236,10 @@ size_t cda_rail::sim::TrainTrajectory::get_last_timestep() const {
   return edge_trajs.back().get_last_timestep();
 }
 
+const cda_rail::Train& cda_rail::sim::TrainTrajectory::get_train() const {
+  return train_r.get();
+}
+
 cda_rail::sim::TrainState
 cda_rail::sim::TrainTrajectory::read_initial_train_state() const {
   cda_rail::Schedule train_schedule =

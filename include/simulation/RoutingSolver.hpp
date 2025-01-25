@@ -1,6 +1,7 @@
 #pragma once
 
 #include "simulation/RoutingSolutionSet.hpp"
+#include "simulation/SolverResult.hpp"
 #include "simulation/TrainTrajectorySet.hpp"
 
 #include <chrono>
@@ -9,11 +10,6 @@
 #include <random>
 
 namespace cda_rail::sim {
-
-struct SolverResult {
-  RoutingSolutionSet solution;
-  TrainTrajectorySet trajectories;
-};
 
 class RoutingSolver {
   /**
