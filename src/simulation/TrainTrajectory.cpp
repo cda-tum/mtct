@@ -240,6 +240,11 @@ const cda_rail::Train& cda_rail::sim::TrainTrajectory::get_train() const {
   return train_r.get();
 }
 
+const cda_rail::sim::SimulationInstance&
+cda_rail::sim::TrainTrajectory::get_instance() const {
+  return instance_r.get();
+}
+
 cda_rail::sim::TrainState
 cda_rail::sim::TrainTrajectory::read_initial_train_state() const {
   cda_rail::Schedule train_schedule =
@@ -276,4 +281,36 @@ void cda_rail::sim::TrainTrajectory::check_speed_limits() const {
   for (auto traj : edge_trajs) {
     traj.check_speed_limits();
   }
+}
+
+std::optional<double>
+cda_rail::sim::TrainTrajectory::train_vertex_distance(size_t vertex,
+                                                      size_t timestep) const {
+  const std::optional<TrainState> state_opt = get_state(timestep);
+
+  if (!state_opt.has_value())
+    return {};
+
+  const TrainState state = state_opt.value();
+  const Edge&      edge  = instance_r.get().network.get_edge(state.edge);
+
+  const double remain_dist_fw = (1 - state.position) * edge.length;
+  const double remain_dist_bw = state.position * edge.length;
+
+  if (edge.target == vertex)
+    return remain_dist_fw;
+  if (edge.source == vertex)
+    return remain_dist_bw;
+
+  const double dist_fw =
+      remain_dist_fw + instance_r.get().shortest_paths[edge.target][vertex];
+  const double dist_bw =
+      remain_dist_bw + instance_r.get().shortest_paths[edge.source][vertex];
+
+  const double min_dist = std::min(dist_fw, dist_bw);
+
+  if (min_dist < 0)
+    throw std::logic_error("Distance calculation failed.");
+
+  return min_dist;
 }

@@ -95,26 +95,39 @@ double cda_rail::sim::destination_penalty(const TrainTrajectorySet& traj_set) {
   double                    score      = 0;
 
   for (auto train = train_list.begin(); train != train_list.end(); train++) {
-    size_t final_timestep;
     if (const auto traj_opt = traj_set.get_traj((*train).name)) {
-      final_timestep = traj_opt.value().get_last_timestep();
+      score = score + destination_penalty(traj_opt.value());
     } else {
       continue;
     }
-
-    size_t dest_vertex =
-        instance.timetable.get_schedule((*train).name).get_exit();
-    double max_dist =
-        *std::max_element(instance.shortest_paths.at(dest_vertex).begin(),
-                          instance.shortest_paths.at(dest_vertex).end());
-    ;
-    double dist =
-        traj_set
-            .train_vertex_distance((*train).name, dest_vertex, final_timestep)
-            .value();
-    // TODO: Penalize wrong exit speed as well as position
-    score = score + dist / max_dist;
   }
+
+  return score / train_list.size();
+}
+
+double cda_rail::sim::destination_penalty(const TrainTrajectory& traj) {
+  /**
+   * Penalize a train for the distance from their scheduled exit at their
+   * final position Train position is assumed to be the center of the train
+   *
+   * @param trajSet train trajectory
+   * @return Normalized penalty score from 0 to 1, lower is better
+   */
+
+  const SimulationInstance& instance   = traj.get_instance();
+  const TrainList&          train_list = instance.timetable.get_train_list();
+  double                    score      = 0;
+
+  size_t dest_vertex =
+      instance.timetable.get_schedule(traj.get_train().name).get_exit();
+  double max_dist =
+      *std::max_element(instance.shortest_paths.at(dest_vertex).begin(),
+                        instance.shortest_paths.at(dest_vertex).end());
+  ;
+  double dist =
+      traj.train_vertex_distance(dest_vertex, traj.get_last_timestep()).value();
+  // TODO: Penalize wrong exit speed as well as position
+  score = score + dist / max_dist;
 
   return score / train_list.size();
 }

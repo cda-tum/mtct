@@ -48,13 +48,17 @@ public:
   std::optional<TrainState> get_state(u_int64_t timestep) const;
   size_t                    get_matching_trajectory(u_int64_t timestep) const;
   size_t                    get_visited_stop_amount() const;
-  size_t       get_earliest_affected_trajectory(u_int64_t timestep) const;
-  size_t       get_first_timestep() const;
-  size_t       get_last_timestep() const;
-  const Train& get_train() const;
+  size_t get_earliest_affected_trajectory(u_int64_t timestep) const;
+  size_t get_first_timestep() const;
+  size_t get_last_timestep() const;
 
-  TrainState read_initial_train_state() const;
-  void       check_speed_limits() const;
+  const Train&              get_train() const;
+  const SimulationInstance& get_instance() const;
+
+  TrainState            read_initial_train_state() const;
+  void                  check_speed_limits() const;
+  std::optional<double> train_vertex_distance(size_t vertex,
+                                              size_t timestep) const;
 };
 
 }; // namespace cda_rail::sim
