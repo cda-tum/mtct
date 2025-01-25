@@ -19,12 +19,12 @@ void cda_rail::sim::SolverResult::insert_or_assign(
   trajectories.insert_or_assign(trajectory.get_train().name, trajectory);
 }
 
-const cda_rail::sim::RoutingSolutionSet
+const cda_rail::sim::RoutingSolutionSet&
 cda_rail::sim::SolverResult::get_solutions() const {
   return solutions;
 }
 
-const cda_rail::sim::TrainTrajectorySet
+const cda_rail::sim::TrainTrajectorySet&
 cda_rail::sim::SolverResult::get_trajectories() const {
   return trajectories;
 }
