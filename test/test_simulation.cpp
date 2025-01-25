@@ -248,6 +248,49 @@ TEST(Simulation, Penalties) {
   }
 }
 
+TEST(Simulation, SolverResult) {
+  Network network =
+      Network::import_network("./example-networks/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks/SimpleNetwork/timetable/", network);
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+
+  sim::SimulationInstance instance{network, timetable, false};
+
+  TrainList train_list = instance.timetable.get_train_list();
+
+  for (size_t i = 0; i < 100; i++) {
+    sim::SolverResult result{instance};
+
+    std::vector<int> train_idxs(train_list.size());
+    std::iota(std::begin(train_idxs), std::end(train_idxs), 0);
+    std::shuffle(train_idxs.begin(), train_idxs.end(), rng_engine);
+
+    for (auto train_idx = train_idxs.begin(); train_idx != train_idxs.end();
+         train_idx++) {
+      const auto           train          = train_list.get_train(*train_idx);
+      double               previous_score = result.get_score();
+      sim::RoutingSolution round_sol{instance, train, rng_engine};
+      sim::TrainTrajectory round_traj{instance, train, round_sol};
+      result.insert_or_assign(round_sol, round_traj);
+      ASSERT_GE(result.get_score(), previous_score);
+    }
+  }
+}
+
+TEST(Simulation, GreedySolution) {
+  Network network =
+      Network::import_network("./example-networks/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks/SimpleNetwork/timetable/", network);
+
+  sim::SimulationInstance          instance{network, timetable, false};
+  sim::RoutingSolver               solver{instance};
+  std::optional<sim::SolverResult> sol = solver.greedy_solution(1);
+}
+
 TEST(Simulation, RandomSearch) {
   Network network =
       Network::import_network("./example-networks/SimpleNetwork/network/");
@@ -264,17 +307,6 @@ TEST(Simulation, RandomSearch) {
   }
 }
 
-TEST(Simulation, GreedySolution) {
-  Network network =
-      Network::import_network("./example-networks/SimpleNetwork/network/");
-  Timetable timetable = Timetable::import_timetable(
-      "./example-networks/SimpleNetwork/timetable/", network);
-
-  sim::SimulationInstance          instance{network, timetable, false};
-  sim::RoutingSolver               solver{instance};
-  std::optional<sim::SolverResult> sol = solver.greedy_solution(0.02);
-}
-
 TEST(Simulation, GreedySearch) {
   Network network =
       Network::import_network("./example-networks/SimpleNetwork/network/");
@@ -283,7 +315,7 @@ TEST(Simulation, GreedySearch) {
 
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
-  if (std::optional<sim::SolverResult> sol = solver.greedy_search(5, 0.002)) {
+  if (std::optional<sim::SolverResult> sol = solver.greedy_search(5, 1)) {
     cda_rail::is_directory_and_create("tmp");
     std::filesystem::path p = "tmp/test_traj_greedy.csv";
     sol.value().get_trajectories().export_csv(p);
