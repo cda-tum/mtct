@@ -28,7 +28,10 @@ public:
 
   std::optional<SolverResult> random_search(size_t timeout);
 
-  std::optional<SolverResult> greedy_solution(size_t timeout);
+  std::optional<SolverResult> greedy_search(size_t global_timeout,
+                                            size_t per_train_timeout);
+
+  std::optional<SolverResult> greedy_solution(size_t per_train_timeout);
 };
 
 }; // namespace cda_rail::sim

@@ -270,9 +270,20 @@ TEST(Simulation, GreedySolution) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks/SimpleNetwork/timetable/", network);
 
+  sim::SimulationInstance          instance{network, timetable, false};
+  sim::RoutingSolver               solver{instance};
+  std::optional<sim::SolverResult> sol = solver.greedy_solution(0.02);
+}
+
+TEST(Simulation, GreedySearch) {
+  Network network =
+      Network::import_network("./example-networks/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks/SimpleNetwork/timetable/", network);
+
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
-  if (std::optional<sim::SolverResult> sol = solver.greedy_solution(0.02)) {
+  if (std::optional<sim::SolverResult> sol = solver.greedy_search(5, 0.002)) {
     cda_rail::is_directory_and_create("tmp");
     std::filesystem::path p = "tmp/test_traj_greedy.csv";
     sol.value().get_trajectories().export_csv(p);
