@@ -102,7 +102,7 @@ double cda_rail::sim::destination_penalty(const TrainTrajectorySet& traj_set) {
     }
   }
 
-  return score / train_list.size();
+  return score / traj_set.size();
 }
 
 double cda_rail::sim::destination_penalty(const TrainTrajectory& traj) {
@@ -110,7 +110,7 @@ double cda_rail::sim::destination_penalty(const TrainTrajectory& traj) {
    * Penalize a train for the distance from their scheduled exit at their
    * final position Train position is assumed to be the center of the train
    *
-   * @param trajSet train trajectory
+   * @param traj train trajectory
    * @return Normalized penalty score from 0 to 1, lower is better
    */
 
@@ -123,13 +123,11 @@ double cda_rail::sim::destination_penalty(const TrainTrajectory& traj) {
   double max_dist =
       *std::max_element(instance.shortest_paths.at(dest_vertex).begin(),
                         instance.shortest_paths.at(dest_vertex).end());
-  ;
   double dist =
       traj.train_vertex_distance(dest_vertex, traj.get_last_timestep()).value();
-  // TODO: Penalize wrong exit speed as well as position
-  score = score + dist / max_dist;
 
-  return score / train_list.size();
+  // TODO: Penalize wrong exit speed as well as position
+  return dist / max_dist;
 }
 
 double cda_rail::sim::stop_penalty(const TrainTrajectorySet& traj_set) {
@@ -142,30 +140,40 @@ double cda_rail::sim::stop_penalty(const TrainTrajectorySet& traj_set) {
 
   const SimulationInstance& instance   = traj_set.get_instance();
   const TrainList&          train_list = instance.timetable.get_train_list();
-  size_t                    n_all_visited_stops   = 0;
-  size_t                    n_all_scheduled_stops = 0;
+  double                    score      = 0;
 
   if (traj_set.size() < 1)
     throw std::invalid_argument("Cannot evaluate empty trajectory set.");
 
   for (auto train = train_list.begin(); train != train_list.end(); train++) {
-    size_t n_visited_stops;
     if (const auto traj_opt = traj_set.get_traj((*train).name)) {
-      n_visited_stops = traj_opt.value().get_visited_stop_amount();
+      score = score + stop_penalty(traj_opt.value());
     } else {
       continue;
     }
-
-    size_t n_scheduled_stops =
-        instance.timetable.get_schedule((*train).name).get_stops().size();
-    if (n_visited_stops > n_scheduled_stops)
-      throw std::logic_error("Visited more stops than scheduled.");
-    n_all_scheduled_stops += n_scheduled_stops;
-    n_all_visited_stops += n_visited_stops;
   }
 
-  if (n_all_scheduled_stops == 0)
+  return score / traj_set.size();
+}
+
+double cda_rail::sim::stop_penalty(const TrainTrajectory& traj) {
+  /**
+   * Penalize train not visiting their scheduled stop
+   *
+   * @param traj train trajectory
+   * @return Normalized penalty score from 0 to 1, lower is better
+   */
+  size_t n_visited_stops   = traj.get_visited_stop_amount();
+  size_t n_scheduled_stops = traj.get_instance()
+                                 .timetable.get_schedule(traj.get_train().name)
+                                 .get_stops()
+                                 .size();
+
+  if (n_visited_stops > n_scheduled_stops)
+    throw std::logic_error("Visited more stops than scheduled.");
+
+  if (n_scheduled_stops == 0)
     return 0;
 
-  return (n_all_scheduled_stops - n_all_visited_stops) / n_all_scheduled_stops;
+  return (n_scheduled_stops - n_visited_stops) / n_scheduled_stops;
 }
