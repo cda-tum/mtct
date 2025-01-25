@@ -19,15 +19,16 @@ cda_rail::sim::RoutingSolver::random_search(
   std::chrono::steady_clock::time_point last_time =
       std::chrono::steady_clock::now();
   for (;;) {
-    RoutingSolutionSet                    round_sol{instance, rng_engine};
-    TrainTrajectorySet                    round_traj{instance, round_sol};
     std::chrono::steady_clock::time_point round_time =
         std::chrono::steady_clock::now();
     auto interval =
         std::chrono::duration_cast<std::chrono::seconds>(round_time - last_time)
             .count();
 
-    double round_score = objective_fct(round_traj);
+    SolverResult round_result{instance,
+                              RoutingSolutionSet{instance, rng_engine}};
+
+    double round_score = round_result.get_score();
 
     if (round_score < best_score) {
       last_time  = round_time;
@@ -35,7 +36,7 @@ cda_rail::sim::RoutingSolver::random_search(
       std::cerr << "Best Score: " << best_score << std::endl;
 
       best_result.reset();
-      best_result.emplace(SolverResult{round_sol, round_traj});
+      best_result.emplace(round_result);
     }
 
     if (interval > timeout)
@@ -71,9 +72,12 @@ cda_rail::sim::RoutingSolver::greedy_search(
        train_idx++) {
     const auto train = train_list.get_train(*train_idx);
     std::cerr << "Train " << train.name << std::endl;
-    double                                best_score = DBL_MAX;
     std::chrono::steady_clock::time_point last_time =
         std::chrono::steady_clock::now();
+
+    double          best_score = DBL_MAX;
+    RoutingSolution best_sol{instance};
+    TrainTrajectory best_traj{instance, train, best_sol};
 
     for (;;) {
       std::chrono::steady_clock::time_point round_time =
@@ -82,25 +86,25 @@ cda_rail::sim::RoutingSolver::greedy_search(
                           round_time - last_time)
                           .count();
 
-      RoutingSolution new_sol{instance, train, rng_engine};
-      TrainTrajectory new_traj{instance, train, new_sol};
+      RoutingSolution round_sol{instance, train, rng_engine};
+      TrainTrajectory round_traj{instance, train, round_sol};
+      result.insert_or_assign(round_sol, round_traj);
 
-      TrainTrajectorySet test_traj_set = result.get_trajectories();
-      test_traj_set.insert_or_assign(train.name, new_traj);
-
-      double round_score = objective_fct(test_traj_set);
+      double round_score = result.get_score();
 
       if (round_score < best_score) {
         std::cerr << "Best Score: " << best_score << std::endl;
         last_time  = round_time;
         best_score = round_score;
-        result.insert_or_assign(new_sol, new_traj);
+        best_sol   = round_sol;
+        best_traj  = round_traj;
       }
 
       if (interval > round_timeout) {
         if (!result.get_trajectories().get_traj(train.name))
           return {};
 
+        result.insert_or_assign(best_sol, best_traj);
         break;
       }
     }
