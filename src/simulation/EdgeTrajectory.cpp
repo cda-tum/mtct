@@ -28,18 +28,18 @@ cda_rail::sim::EdgeTrajectory::EdgeTrajectory(
   positions.push_back(initial_state.position);
 
   for (int timestep = first_timestep + 1; timestep <= exit_time; timestep++) {
-    double speed_disparity =
-        v_targets.find_target_speed(timestep - 1) - speeds.back();
+    double speed           = speeds.back();
+    double speed_disparity = v_targets.find_target_speed(timestep - 1) - speed;
     double acceleration;
     if (speed_disparity >= 0) {
       acceleration = std::min(speed_disparity, train_r.get().acceleration);
     } else {
       acceleration = std::max(speed_disparity, -train_r.get().deceleration);
     }
+
     speeds.push_back(speeds.back() + acceleration);
-    positions.push_back(positions.back() +
-                        ((2 * ((double)orientation) - 1) * speeds.back() *
-                         edge_length_divisor));
+    positions.push_back(positions.back() + ((2 * ((double)orientation) - 1) *
+                                            speed * edge_length_divisor));
 
     if (positions.back() > 1 || positions.back() < 0) {
       last_timestep = first_timestep + positions.size() - 2;

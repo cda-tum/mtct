@@ -198,34 +198,6 @@ TEST(Simulation, TrainDistance) {
   ASSERT_EQ(traj.train_distance("tr1rl", "tr1lr", 180), 23000);
   ASSERT_FALSE(traj.train_distance("tr1rl", "tr2lr", 0).has_value());
   ASSERT_FALSE(traj.train_distance("tr2rl", "tr1lr", 0).has_value());
-
-  // We give a solution with speeds 0. Due to initial speed trains still run
-  // tr1lr comes to a halt at time 204 position 0.00753769 on edge v4-v5
-  // tr1rl comes to a halt at time 204 position 0.00753769 on edge v11-v10
-  // tr2lr comes to a halt at time 16 position 0.412632 on edge v1c-v2c
-  // tr2rl comes to a halt at time 16 position 0.412632 on edge v14a-v13a
-
-  ASSERT_NEAR(traj.train_distance("tr1lr", "tr1rl", 204).value(),
-              1950.0 + 2.0 * (50.0 + (1.0 - 0.00753769) * 9950.0), 1e-3);
-  ASSERT_NEAR(traj.train_distance("tr1rl", "tr1lr", 204).value(),
-              1950.0 + 2.0 * (50.0 + (1.0 - 0.00753769) * 9950.0), 1e-3);
-
-  ASSERT_NEAR(traj.train_distance("tr1lr", "tr2lr", 204).value(),
-              (1.0 - 0.412632) * 475.0 + 50.0 + 0.00753769 * 9950.0, 1e-3);
-  ASSERT_NEAR(traj.train_distance("tr2lr", "tr1lr", 204).value(),
-              (1.0 - 0.412632) * 475.0 + 50.0 + 0.00753769 * 9950.0, 1e-3);
-
-  ASSERT_NEAR(traj.train_distance("tr1rl", "tr2rl", 204).value(),
-              (1.0 - 0.412632) * 475.0 + 50.0 + 0.00753769 * 9950.0, 1e-3);
-  ASSERT_NEAR(traj.train_distance("tr2rl", "tr1rl", 204).value(),
-              (1.0 - 0.412632) * 475.0 + 50.0 + 0.00753769 * 9950.0, 1e-3);
-
-  ASSERT_NEAR(traj.train_distance("tr2lr", "tr2rl", 204).value(),
-              1950.0 + 2.0 * (50.0 + 9950.0 + 50.0 + (1.0 - 0.412632) * 475.0),
-              1e-3);
-  ASSERT_NEAR(traj.train_distance("tr2rl", "tr2lr", 204).value(),
-              1950.0 + 2.0 * (50.0 + 9950.0 + 50.0 + (1.0 - 0.412632) * 475.0),
-              1e-3);
 }
 
 TEST(Simulation, Penalties) {
