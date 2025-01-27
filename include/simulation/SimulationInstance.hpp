@@ -22,6 +22,7 @@ struct SimulationInstance {
 
 public:
   SimulationInstance() = delete;
+  // TODO: remove double edges from template networks
   SimulationInstance(Network network, Timetable timetable,
                      bool bidirectional_travel);
 
