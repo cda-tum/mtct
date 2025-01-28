@@ -11,6 +11,8 @@
 
 namespace cda_rail::sim {
 
+using ScoreHistory = std::vector<std::tuple<std::chrono::milliseconds, double>>;
+
 class RoutingSolver {
   /**
    * Performs heuristic routing for a SimulationInstance
@@ -26,10 +28,11 @@ public:
   RoutingSolver() = delete;
   RoutingSolver(SimulationInstance instance);
 
-  std::optional<SolverResult> random_search(size_t timeout);
+  std::tuple<std::optional<SolverResult>, ScoreHistory>
+  random_search(size_t timeout);
 
-  std::optional<SolverResult> greedy_search(size_t global_timeout,
-                                            size_t per_train_timeout);
+  std::tuple<std::optional<SolverResult>, ScoreHistory>
+  greedy_search(size_t global_timeout, size_t per_train_timeout);
 
   std::optional<SolverResult> greedy_solution(size_t per_train_timeout);
 };
