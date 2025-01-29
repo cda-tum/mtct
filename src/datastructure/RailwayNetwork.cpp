@@ -296,7 +296,8 @@ void cda_rail::Network::add_successor(size_t edge_in, size_t edge_out) {
   if (!has_edge(edge_out)) {
     throw exceptions::EdgeNotExistentException(edge_out);
   }
-  if (edges[edge_in].target != edges[edge_out].source) {
+  if (edges[edge_in].target != edges[edge_out].source &&
+      edges[edge_in].target != edges[edge_out].target) {
     throw exceptions::ConsistencyException("Edge " + std::to_string(edge_out) +
                                            " is not adjacent to " +
                                            std::to_string(edge_in));
