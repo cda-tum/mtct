@@ -16,6 +16,12 @@ struct ScoreHistory
   void export_csv(const std::filesystem::path& p) const;
 };
 
+class ScoreHistoryCollection : std::vector<ScoreHistory> {
+public:
+  void export_csv(const std::filesystem::path& p) const;
+  void add(ScoreHistory hist);
+};
+
 class RoutingSolver {
   /**
    * Performs heuristic routing for a SimulationInstance

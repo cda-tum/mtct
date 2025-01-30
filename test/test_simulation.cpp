@@ -269,17 +269,23 @@ TEST(Simulation, RandomSearch) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks-unidirec/SimpleNetwork/timetable/", network);
 
-  sim::SimulationInstance instance{network, timetable, false};
-  sim::RoutingSolver      solver{instance};
-  auto                    res = solver.random_search(5);
+  sim::SimulationInstance     instance{network, timetable, false};
+  sim::RoutingSolver          solver{instance};
+  sim::ScoreHistoryCollection score_coll;
 
-  if (std::get<0>(res)) {
-    cda_rail::is_directory_and_create("tmp");
-    std::filesystem::path p = "tmp/test_traj_random.csv";
-    std::get<0>(res).value().get_trajectories().export_csv(p);
-    std::get<1>(res).export_csv("tmp/score_hist_random.csv");
-    // std::filesystem::remove_all("tmp");
+  for (size_t sample = 0; sample < 30; sample++) {
+    auto res = solver.random_search(4);
+
+    if (std::get<0>(res)) {
+      cda_rail::is_directory_and_create("tmp");
+      std::filesystem::path p = "tmp/test_traj_greedy.csv";
+      std::get<0>(res).value().get_trajectories().export_csv(p);
+      score_coll.add(std::get<1>(res));
+      // std::filesystem::remove_all("tmp");
+    }
   }
+
+  score_coll.export_csv("tmp/score_hist_random.csv");
 }
 
 TEST(Simulation, GreedySearch) {
@@ -290,14 +296,24 @@ TEST(Simulation, GreedySearch) {
 
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
-  auto                    res = solver.greedy_search(5, 1);
 
-  if (std::get<0>(res)) {
-    cda_rail::is_directory_and_create("tmp");
-    std::filesystem::path p = "tmp/test_traj_greedy.csv";
-    std::get<0>(res).value().get_trajectories().export_csv(p);
-    std::get<1>(res).export_csv("tmp/score_hist_greedy.csv");
-    // std::filesystem::remove_all("tmp");
+  for (double train_to = 1; train_to < 20; train_to = train_to + 2) {
+    sim::ScoreHistoryCollection score_coll;
+
+    for (size_t sample = 0; sample < 30; sample++) {
+      auto res = solver.greedy_search(4, train_to);
+
+      if (std::get<0>(res)) {
+        cda_rail::is_directory_and_create("tmp");
+        std::filesystem::path p = "tmp/test_traj_greedy.csv";
+        std::get<0>(res).value().get_trajectories().export_csv(p);
+        score_coll.add(std::get<1>(res));
+        // std::filesystem::remove_all("tmp");
+      }
+    }
+
+    score_coll.export_csv("tmp/score_hist_greedy" + std::to_string(train_to) +
+                          ".csv");
   }
 }
 

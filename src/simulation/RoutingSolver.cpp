@@ -12,6 +12,25 @@ void cda_rail::sim::ScoreHistory::export_csv(
   csvfile.close();
 }
 
+void cda_rail::sim::ScoreHistoryCollection::export_csv(
+    const std::filesystem::path& p) const {
+  std::ofstream csvfile(p);
+  csvfile << "time,score" << std::endl;
+
+  for (auto hist_it = begin(); hist_it != end(); hist_it++) {
+    for (auto it = (*hist_it).begin(); it != (*hist_it).end(); it++) {
+      csvfile << std::get<0>(*it).count() << "," << std::get<1>(*it)
+              << std::endl;
+    }
+  }
+
+  csvfile.close();
+}
+
+void cda_rail::sim::ScoreHistoryCollection::add(ScoreHistory hist) {
+  push_back(hist);
+}
+
 cda_rail::sim::RoutingSolver::RoutingSolver(SimulationInstance instance)
     : instance(instance), rng_engine(std::ranlux24_base(time(NULL))) {};
 
