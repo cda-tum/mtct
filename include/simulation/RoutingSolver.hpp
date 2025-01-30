@@ -11,7 +11,10 @@
 
 namespace cda_rail::sim {
 
-using ScoreHistory = std::vector<std::tuple<std::chrono::milliseconds, double>>;
+struct ScoreHistory
+    : public std::vector<std::tuple<std::chrono::milliseconds, double>> {
+  void export_csv(const std::filesystem::path& p) const;
+};
 
 class RoutingSolver {
   /**

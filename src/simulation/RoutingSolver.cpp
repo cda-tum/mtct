@@ -1,5 +1,17 @@
 #include "simulation/RoutingSolver.hpp"
 
+void cda_rail::sim::ScoreHistory::export_csv(
+    const std::filesystem::path& p) const {
+  std::ofstream csvfile(p);
+  csvfile << "time,score" << std::endl;
+
+  for (auto it = begin(); it != end(); it++) {
+    csvfile << std::get<0>(*it).count() << "," << std::get<1>(*it) << std::endl;
+  }
+
+  csvfile.close();
+}
+
 cda_rail::sim::RoutingSolver::RoutingSolver(SimulationInstance instance)
     : instance(instance), rng_engine(std::ranlux24_base(time(NULL))) {};
 
