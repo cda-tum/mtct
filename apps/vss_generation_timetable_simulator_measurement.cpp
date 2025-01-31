@@ -39,7 +39,6 @@ int main(int argc, char** argv) {
       cda_rail::Timetable::import_timetable(model_path + "/timetable", network);
 
   cda_rail::sim::SimulationInstance instance{network, timetable, false};
-  cda_rail::sim::RoutingSolver      solver{instance};
 
   for (double train_to = 1; train_to < 20; train_to = train_to + 2) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
@@ -48,7 +47,8 @@ int main(int argc, char** argv) {
     std::vector<std::thread> workers;
     for (size_t sample = 0; sample < 100; sample++) {
       workers.push_back(std::thread{[&]() {
-        auto res = solver.greedy_search(4, train_to);
+        cda_rail::sim::RoutingSolver solver{instance};
+        auto                         res = solver.greedy_search(4, train_to);
 
         if (std::get<0>(res)) {
           const std::lock_guard<std::mutex> lock(hist_mutex);

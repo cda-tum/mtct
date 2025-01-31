@@ -30,12 +30,12 @@ class RoutingSolver {
    * @param rng_engine used for solution generation
    */
 
-  const SimulationInstance instance;
-  std::ranlux24_base       rng_engine;
+  const SimulationInstance& instance;
+  std::ranlux24_base        rng_engine;
 
 public:
   RoutingSolver() = delete;
-  RoutingSolver(SimulationInstance instance);
+  RoutingSolver(const SimulationInstance& instance);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
   random_search(size_t timeout);
