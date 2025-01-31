@@ -67,7 +67,6 @@ cda_rail::sim::RoutingSolver::random_search(size_t timeout) {
     if (round_score < best_score) {
       last_time  = round_time;
       best_score = round_score;
-      std::cerr << "Best Score: " << best_score << std::endl;
       best_result.reset();
       best_result.emplace(round_result);
       hist.push_back({std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -124,7 +123,6 @@ cda_rail::sim::RoutingSolver::greedy_search(size_t global_timeout,
     if (round_score < best_score) {
       last_time  = round_time;
       best_score = round_score;
-      std::cerr << "Best Score: " << best_score << std::endl;
       best_result.reset();
       best_result.emplace(round_result_opt.value());
       hist.push_back({std::chrono::duration_cast<std::chrono::milliseconds>(
