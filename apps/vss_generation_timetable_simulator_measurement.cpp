@@ -49,24 +49,25 @@ int main(int argc, char** argv) {
     std::mutex                            hist_mutex;
 
     std::vector<std::thread> workers;
-    for (size_t sample = 0; sample < std::floor(100 / processor_count);
-         sample++) {
-      for (size_t process = 0; process < processor_count; process++) {
-        workers.push_back(std::thread{[&]() {
-          cda_rail::sim::RoutingSolver solver{instance};
-          auto                         res = solver.greedy_search(4, train_to);
+    for (size_t process = 0; process < processor_count; process++) {
+      workers.push_back(std::thread{[&]() {
+        cda_rail::sim::RoutingSolver solver{instance};
+
+        for (size_t sample = 0; sample < std::floor(100 / processor_count);
+             sample++) {
+          auto res = solver.greedy_search(4, train_to);
 
           if (std::get<0>(res)) {
             const std::lock_guard<std::mutex> lock(hist_mutex);
             score_coll.add(std::get<1>(res));
           }
-        }});
-      }
+        }
+      }});
+    }
 
-      while (workers.size() > 0) {
-        workers.back().join();
-        workers.pop_back();
-      }
+    while (workers.size() > 0) {
+      workers.back().join();
+      workers.pop_back();
     }
 
     score_coll.export_csv(output_path + "/score_hist_" +
