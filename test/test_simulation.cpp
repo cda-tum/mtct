@@ -260,7 +260,8 @@ TEST(Simulation, GreedySolution) {
 
   sim::SimulationInstance          instance{network, timetable, false};
   sim::RoutingSolver               solver{instance};
-  std::optional<sim::SolverResult> sol = solver.greedy_solution(1);
+  std::optional<sim::SolverResult> sol =
+      solver.greedy_solution(std::chrono::milliseconds{10});
 }
 
 TEST(Simulation, RandomSearch) {
@@ -272,7 +273,7 @@ TEST(Simulation, RandomSearch) {
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
 
-  auto res = solver.random_search(4);
+  auto res = solver.random_search(std::chrono::seconds{4});
 
   if (std::get<0>(res)) {
     cda_rail::is_directory_and_create("tmp");
@@ -291,7 +292,8 @@ TEST(Simulation, GreedySearch) {
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
 
-  auto res = solver.greedy_search(1, 0.05);
+  auto res = solver.greedy_search(std::chrono::seconds{1},
+                                  std::chrono::milliseconds{50});
 
   if (std::get<0>(res)) {
     cda_rail::is_directory_and_create("tmp");

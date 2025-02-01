@@ -36,7 +36,7 @@ cda_rail::sim::RoutingSolver::RoutingSolver(const SimulationInstance& instance)
 
 std::tuple<std::optional<cda_rail::sim::SolverResult>,
            cda_rail::sim::ScoreHistory>
-cda_rail::sim::RoutingSolver::random_search(size_t timeout) {
+cda_rail::sim::RoutingSolver::random_search(std::chrono::seconds timeout) {
   /**
    * Random search exits when score decreases slower than abort_improv_rate
    *
@@ -55,9 +55,8 @@ cda_rail::sim::RoutingSolver::random_search(size_t timeout) {
   for (;;) {
     std::chrono::steady_clock::time_point round_time =
         std::chrono::steady_clock::now();
-    auto interval =
-        std::chrono::duration_cast<std::chrono::seconds>(round_time - last_time)
-            .count();
+    auto interval = std::chrono::duration_cast<std::chrono::seconds>(
+        round_time - last_time);
 
     SolverResult round_result{instance,
                               RoutingSolutionSet{instance, rng_engine}};
@@ -83,8 +82,9 @@ cda_rail::sim::RoutingSolver::random_search(size_t timeout) {
 
 std::tuple<std::optional<cda_rail::sim::SolverResult>,
            cda_rail::sim::ScoreHistory>
-cda_rail::sim::RoutingSolver::greedy_search(size_t global_timeout,
-                                            size_t per_train_timeout) {
+cda_rail::sim::RoutingSolver::greedy_search(
+    std::chrono::seconds      global_timeout,
+    std::chrono::milliseconds per_train_timeout) {
   /**
    * Random search exits when score decreases slower than abort_improv_rate
    *
@@ -106,9 +106,8 @@ cda_rail::sim::RoutingSolver::greedy_search(size_t global_timeout,
   for (;;) {
     std::chrono::steady_clock::time_point round_time =
         std::chrono::steady_clock::now();
-    auto interval =
-        std::chrono::duration_cast<std::chrono::seconds>(round_time - last_time)
-            .count();
+    auto interval = std::chrono::duration_cast<std::chrono::seconds>(
+        round_time - last_time);
 
     if (interval > global_timeout)
       break;
@@ -135,7 +134,8 @@ cda_rail::sim::RoutingSolver::greedy_search(size_t global_timeout,
 }
 
 std::optional<cda_rail::sim::SolverResult>
-cda_rail::sim::RoutingSolver::greedy_solution(size_t per_train_timeout) {
+cda_rail::sim::RoutingSolver::greedy_solution(
+    std::chrono::milliseconds per_train_timeout) {
   std::chrono::steady_clock::time_point last_time =
       std::chrono::steady_clock::now();
   /**
@@ -169,8 +169,7 @@ cda_rail::sim::RoutingSolver::greedy_solution(size_t per_train_timeout) {
       std::chrono::steady_clock::time_point round_time =
           std::chrono::steady_clock::now();
       auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(
-                          round_time - last_time)
-                          .count();
+          round_time - last_time);
 
       RoutingSolution round_sol{instance, train, rng_engine};
       TrainTrajectory round_traj{instance, train, round_sol};
