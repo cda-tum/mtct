@@ -36,13 +36,18 @@ cda_rail::sim::RoutingSolver::RoutingSolver(const SimulationInstance& instance)
 
 std::tuple<std::optional<cda_rail::sim::SolverResult>,
            cda_rail::sim::ScoreHistory>
-cda_rail::sim::RoutingSolver::random_search(std::chrono::seconds timeout) {
+cda_rail::sim::RoutingSolver::random_search(
+    std::optional<std::chrono::seconds> max_search_time,
+    std::optional<std::chrono::seconds> max_stall_time) {
   /**
    * Random search exits when score decreases slower than abort_improv_rate
    *
    * @param objective Objective function that gets minimized
    * @param timeout Stop search after no improvement during this time
    */
+  if (!max_search_time.has_value() && !max_stall_time.has_value())
+    throw std::invalid_argument(
+        "Need at least one abort criterium for search.");
 
   double                      best_score = DBL_MAX;
   std::optional<SolverResult> best_result;
@@ -57,6 +62,8 @@ cda_rail::sim::RoutingSolver::random_search(std::chrono::seconds timeout) {
         std::chrono::steady_clock::now();
     auto interval = std::chrono::duration_cast<std::chrono::seconds>(
         round_time - last_time);
+    auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
+        round_time - initial_time);
 
     SolverResult round_result{instance,
                               RoutingSolutionSet{instance, rng_engine}};
@@ -73,8 +80,15 @@ cda_rail::sim::RoutingSolver::random_search(std::chrono::seconds timeout) {
                       best_score});
     }
 
-    if (interval > timeout)
-      break;
+    if (max_stall_time.has_value()) {
+      if (interval > max_stall_time.value())
+        break;
+    }
+
+    if (max_search_time.has_value()) {
+      if (total_time > max_search_time.value())
+        break;
+    }
   }
 
   return {best_result, hist};
@@ -83,8 +97,9 @@ cda_rail::sim::RoutingSolver::random_search(std::chrono::seconds timeout) {
 std::tuple<std::optional<cda_rail::sim::SolverResult>,
            cda_rail::sim::ScoreHistory>
 cda_rail::sim::RoutingSolver::greedy_search(
-    std::chrono::seconds      global_timeout,
-    std::chrono::milliseconds per_train_timeout) {
+    std::optional<std::chrono::seconds> max_search_time,
+    std::optional<std::chrono::seconds> max_stall_time,
+    std::chrono::milliseconds           per_train_stall_time) {
   /**
    * Random search exits when score decreases slower than abort_improv_rate
    *
@@ -95,27 +110,29 @@ cda_rail::sim::RoutingSolver::greedy_search(
    * in milliseconds
    */
 
+  if (!max_search_time.has_value() && !max_stall_time.has_value())
+    throw std::invalid_argument(
+        "Need at least one abort criterium for search.");
+
   double                      best_score = DBL_MAX;
   std::optional<SolverResult> best_result;
   ScoreHistory                hist;
 
   std::chrono::steady_clock::time_point initial_time =
       std::chrono::steady_clock::now();
-
   std::chrono::steady_clock::time_point last_time = initial_time;
+
   for (;;) {
+    std::optional<cda_rail::sim::SolverResult> round_result_opt =
+        greedy_solution(per_train_stall_time);
+
     std::chrono::steady_clock::time_point round_time =
         std::chrono::steady_clock::now();
+
     auto interval = std::chrono::duration_cast<std::chrono::seconds>(
         round_time - last_time);
-
-    if (interval > global_timeout)
-      break;
-
-    std::optional<cda_rail::sim::SolverResult> round_result_opt =
-        greedy_solution(per_train_timeout);
-    if (!round_result_opt)
-      continue;
+    auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
+        round_time - initial_time);
 
     double round_score = round_result_opt.value().get_score();
 
@@ -124,10 +141,24 @@ cda_rail::sim::RoutingSolver::greedy_search(
       best_score = round_score;
       best_result.reset();
       best_result.emplace(round_result_opt.value());
-      hist.push_back({std::chrono::duration_cast<std::chrono::milliseconds>(
-                          round_time - initial_time),
-                      best_score});
+      auto total_time_spent =
+          std::chrono::duration_cast<std::chrono::milliseconds>(round_time -
+                                                                initial_time);
+      hist.push_back({total_time_spent, best_score});
     }
+
+    if (max_stall_time.has_value()) {
+      if (interval > max_stall_time.value())
+        break;
+    }
+
+    if (max_search_time.has_value()) {
+      if (total_time > max_search_time.value())
+        break;
+    }
+
+    if (!round_result_opt)
+      continue;
   }
 
   return {best_result, hist};
@@ -135,7 +166,7 @@ cda_rail::sim::RoutingSolver::greedy_search(
 
 std::optional<cda_rail::sim::SolverResult>
 cda_rail::sim::RoutingSolver::greedy_solution(
-    std::chrono::milliseconds per_train_timeout) {
+    std::chrono::milliseconds per_train_stall_time) {
   std::chrono::steady_clock::time_point last_time =
       std::chrono::steady_clock::now();
   /**
@@ -166,16 +197,15 @@ cda_rail::sim::RoutingSolver::greedy_solution(
     TrainTrajectory best_traj{instance, train, best_sol};
 
     for (;;) {
+      RoutingSolution round_sol{instance, train, rng_engine};
+      TrainTrajectory round_traj{instance, train, round_sol};
+      result.insert_or_assign(round_sol, round_traj);
+      double round_score = result.get_score();
+
       std::chrono::steady_clock::time_point round_time =
           std::chrono::steady_clock::now();
       auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(
           round_time - last_time);
-
-      RoutingSolution round_sol{instance, train, rng_engine};
-      TrainTrajectory round_traj{instance, train, round_sol};
-      result.insert_or_assign(round_sol, round_traj);
-
-      double round_score = result.get_score();
 
       if (round_score < best_score) {
         last_time  = round_time;
@@ -184,7 +214,7 @@ cda_rail::sim::RoutingSolver::greedy_solution(
         best_traj  = round_traj;
       }
 
-      if (interval > per_train_timeout) {
+      if (interval > per_train_stall_time) {
         if (!result.get_trajectories().get_traj(train.name))
           return {};
 

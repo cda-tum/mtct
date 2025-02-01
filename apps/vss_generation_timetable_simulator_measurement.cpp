@@ -44,7 +44,9 @@ int main(int argc, char** argv) {
   if (processor_count == 0)
     processor_count = 1;
 
-  for (size_t train_to = 10; train_to <= 1000; train_to = train_to * 2) {
+  std::vector<size_t> test_timeouts = {5, 10, 50, 100, 250, 500};
+
+  for (size_t train_to : test_timeouts) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
     std::mutex                            hist_mutex;
 
@@ -55,7 +57,7 @@ int main(int argc, char** argv) {
 
         for (size_t sample = 0; sample < std::floor(100 / processor_count);
              sample++) {
-          auto res = solver.greedy_search(std::chrono::seconds{4},
+          auto res = solver.greedy_search(std::chrono::seconds{6}, {},
                                           std::chrono::milliseconds{train_to});
 
           if (std::get<0>(res)) {

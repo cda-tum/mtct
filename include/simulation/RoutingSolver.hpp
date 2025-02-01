@@ -38,14 +38,16 @@ public:
   RoutingSolver(const SimulationInstance& instance);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
-  random_search(std::chrono::seconds timeout);
+  random_search(std::optional<std::chrono::seconds> max_search_time,
+                std::optional<std::chrono::seconds> max_stall_time);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
-  greedy_search(std::chrono::seconds      global_timeout,
-                std::chrono::milliseconds per_train_timeout);
+  greedy_search(std::optional<std::chrono::seconds> max_search_time,
+                std::optional<std::chrono::seconds> max_stall_time,
+                std::chrono::milliseconds           per_train_stall_time);
 
   std::optional<SolverResult>
-  greedy_solution(std::chrono::milliseconds per_train_timeout);
+  greedy_solution(std::chrono::milliseconds per_train_stall_time);
 };
 
 }; // namespace cda_rail::sim
