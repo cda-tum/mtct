@@ -110,13 +110,19 @@ TEST(Simulation, EdgeTrajectory) {
     sim::RoutingSolution    solution(instance, train, rng_engine);
 
     Schedule train_schedule = instance.timetable.get_schedule(train.name);
-    sim::TrainState init_state{
-        .timestep = (ulong)train_schedule.get_t_0(),
-        .edge =
-            instance.network.get_successors(train_schedule.get_entry()).front(),
-        .position    = 0,
-        .orientation = true,
-        .speed       = train_schedule.get_v_0()};
+
+    size_t entry    = train_schedule.get_entry();
+    auto   outedges = instance.network.get_successors(entry);
+    if (outedges.empty())
+      outedges = instance.network.get_predecessors(entry);
+    if (outedges.empty())
+      throw std::logic_error("Train entry vertex is has no connected edges.");
+
+    sim::TrainState init_state{.timestep    = (ulong)train_schedule.get_t_0(),
+                               .edge        = outedges.front(),
+                               .position    = 0,
+                               .orientation = true,
+                               .speed       = train_schedule.get_v_0()};
 
     sim::EdgeTrajectory edge_traj(instance, train, solution.v_targets,
                                   init_state);
@@ -277,9 +283,8 @@ TEST(Simulation, RandomSearch) {
 
   if (std::get<0>(res)) {
     cda_rail::is_directory_and_create("tmp");
-    std::filesystem::path p = "tmp/test_traj_greedy.csv";
+    std::filesystem::path p = "tmp/test_traj_random.csv";
     std::get<0>(res).value().get_trajectories().export_csv(p);
-    std::filesystem::remove_all("tmp");
   }
 }
 
@@ -299,7 +304,6 @@ TEST(Simulation, GreedySearch) {
     cda_rail::is_directory_and_create("tmp");
     std::filesystem::path p = "tmp/test_traj_greedy.csv";
     std::get<0>(res).value().get_trajectories().export_csv(p);
-    std::filesystem::remove_all("tmp");
   }
 }
 
