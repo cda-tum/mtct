@@ -6,7 +6,7 @@ import pandas as pd
 import sys
 
 traj = pd.read_csv(sys.argv[1], index_col=False)
-G = nx.read_graphml("example-networks/SimpleNetwork/network/tracks.graphml")
+G = nx.read_graphml("example-networks-unidirec/" + sys.argv[2] + "/network/tracks.graphml")
 
 n_trains = int(traj["train_idx"].max() + 1)
 max_timestep = int(traj["timestep"].max() + 1)
