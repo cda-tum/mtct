@@ -39,12 +39,6 @@ std::tuple<std::optional<cda_rail::sim::SolverResult>,
 cda_rail::sim::RoutingSolver::random_search(
     std::optional<std::chrono::seconds> max_search_time,
     std::optional<std::chrono::seconds> max_stall_time) {
-  /**
-   * Random search exits when score decreases slower than abort_improv_rate
-   *
-   * @param objective Objective function that gets minimized
-   * @param timeout Stop search after no improvement during this time
-   */
   if (!max_search_time.has_value() && !max_stall_time.has_value())
     throw std::invalid_argument(
         "Need at least one abort criterium for search.");
@@ -100,16 +94,6 @@ cda_rail::sim::RoutingSolver::greedy_search(
     std::optional<std::chrono::seconds> max_search_time,
     std::optional<std::chrono::seconds> max_stall_time,
     std::chrono::milliseconds           per_train_stall_time) {
-  /**
-   * Random search exits when score decreases slower than abort_improv_rate
-   *
-   * @param objective Objective function that gets minimized
-   * @param global_timeout Stop search after no improvement during this time in
-   * seconds
-   * @param per_train_timeout Stop search after no improvement during this time
-   * in milliseconds
-   */
-
   if (!max_search_time.has_value() && !max_stall_time.has_value())
     throw std::invalid_argument(
         "Need at least one abort criterium for search.");
@@ -207,14 +191,6 @@ cda_rail::sim::RoutingSolver::greedy_solution(
     std::chrono::milliseconds per_train_stall_time) {
   std::chrono::steady_clock::time_point last_time =
       std::chrono::steady_clock::now();
-  /**
-   * Greedily place one train after another considering objective
-   *
-   * @param objective Objective function that gets minimized
-   * @param per_train_timeout Stop search after no improvement during this time
-   * in milliseconds improvement during this time Maximum runtime is n_trains *
-   * round_timeout
-   */
 
   SolverResult result{instance};
 
