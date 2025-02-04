@@ -13,21 +13,6 @@
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
 
 int main(int argc, char** argv) {
-  // Only log to console using std::cerr and std::cout respectively unless
-  // initialized differently
-  if (plog::get() == nullptr) {
-    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
-    plog::init(plog::debug, &console_appender);
-  }
-
-  if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0 ||
-      argc != 3) {
-    PLOGI << "Usage: vss_generation_timetable_simulator [NETWORK PATH] [OUTPUT "
-             "PATH]"
-          << std::endl;
-    std::exit(0);
-  }
-
   auto args = gsl::span<char*>(argv, argc);
 
   const std::string model_path  = args[1];
