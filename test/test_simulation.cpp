@@ -334,4 +334,37 @@ TEST(Simulation, LocalSearch) {
   auto                    res = solver.local_search(solution_set, 0.5, 1e-5);
 }
 
+TEST(Simulation, RandomLocalSearch) {
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+  Network            network = Network::import_network(
+      "./example-networks-unidirec/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+
+  sim::SimulationInstance instance{network, timetable, false};
+  sim::RoutingSolver      solver{instance};
+
+  sim::RoutingSolutionSet solution_set{instance, rng_engine};
+  auto res = solver.random_local_search(std::chrono::seconds{1}, 0.1, 1e-3);
+}
+
+TEST(Simulation, GraspSearch) {
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+  Network            network = Network::import_network(
+      "./example-networks-unidirec/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+
+  sim::SimulationInstance instance{network, timetable, false};
+  sim::RoutingSolver      solver{instance};
+
+  sim::RoutingSolutionSet solution_set{instance, rng_engine};
+  auto                    res = solver.grasp_search(std::chrono::seconds{1},
+                                                    std::chrono::milliseconds{50}, 0.1, 1e-3);
+}
+
 // TODO: test for invariance of solution after being repaired and used again

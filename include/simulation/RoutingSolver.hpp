@@ -38,6 +38,15 @@ public:
   RoutingSolver(const SimulationInstance& instance);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
+  random_local_search(std::chrono::seconds max_search_time,
+                      double start_sampling_frac, double stop_sampling_frac);
+
+  std::tuple<std::optional<SolverResult>, ScoreHistory>
+  grasp_search(std::chrono::seconds      max_search_time,
+               std::chrono::milliseconds per_train_stall_time,
+               double start_sampling_frac, double stop_sampling_frac);
+
+  std::tuple<std::optional<SolverResult>, ScoreHistory>
   random_search(std::optional<std::chrono::seconds> max_search_time,
                 std::optional<std::chrono::seconds> max_stall_time);
 

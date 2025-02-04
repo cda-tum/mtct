@@ -54,10 +54,11 @@ int main(int argc, char** argv) {
             res = solver.greedy_search(std::chrono::seconds{6}, {},
                                        std::chrono::milliseconds{50});
           } else if (method == "random+local") {
-            res = solver.random_local_search(std::chrono::seconds{6});
+            res =
+                solver.random_local_search(std::chrono::seconds{6}, 0.1, 1e-4);
           } else if (method == "greedy+local_grasp") {
             res = solver.grasp_search(std::chrono::seconds{6},
-                                      std::chrono::milliseconds{50});
+                                      std::chrono::milliseconds{50}, 0.1, 1e-4);
           }
 
           if (std::get<0>(res)) {
