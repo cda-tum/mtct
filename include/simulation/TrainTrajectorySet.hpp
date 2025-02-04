@@ -15,7 +15,7 @@ class TrainTrajectorySet {
    * @param trajectories Map containing train name and corresponding
    * TrainTrajectory
    */
-  const SimulationInstance& instance;
+  std::reference_wrapper<const SimulationInstance> instance;
 
   std::unordered_map<std::string, TrainTrajectory> trajectories;
 

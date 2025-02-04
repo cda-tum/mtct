@@ -46,6 +46,11 @@ public:
                 std::optional<std::chrono::seconds> max_stall_time,
                 std::chrono::milliseconds           per_train_stall_time);
 
+  std::tuple<SolverResult, ScoreHistory>
+  local_search(RoutingSolutionSet starting_solution,
+               double             start_sampling_range_fraction,
+               double             abort_sampling_range_fraction);
+
   std::optional<SolverResult>
   greedy_solution(std::chrono::milliseconds per_train_stall_time);
 };

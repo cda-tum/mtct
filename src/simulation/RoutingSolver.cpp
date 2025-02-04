@@ -164,6 +164,44 @@ cda_rail::sim::RoutingSolver::greedy_search(
   return {best_result, hist};
 }
 
+std::tuple<cda_rail::sim::SolverResult, cda_rail::sim::ScoreHistory>
+cda_rail::sim::RoutingSolver::local_search(
+    cda_rail::sim::RoutingSolutionSet starting_solution,
+    double                            start_sampling_range_fraction,
+    double                            abort_sampling_range_fraction) {
+  /**
+   * Luus–Jaakola Local Search
+   */
+  std::chrono::steady_clock::time_point initial_time =
+      std::chrono::steady_clock::now();
+
+  ScoreHistory hist;
+  double       sampling_range_fraction = start_sampling_range_fraction;
+  SolverResult last_result{instance, starting_solution};
+  double       last_score = last_result.get_score();
+  hist.push_back({std::chrono::duration_cast<std::chrono::milliseconds>(
+                      std::chrono::steady_clock::now() - initial_time),
+                  last_score});
+
+  while (sampling_range_fraction > abort_sampling_range_fraction) {
+    RoutingSolutionSet new_sol = last_result.get_solutions();
+    new_sol.perturb(instance, sampling_range_fraction, rng_engine);
+    SolverResult new_result{instance, new_sol};
+
+    if (double new_score = new_result.get_score(); new_score < last_score) {
+      last_result = new_result;
+      last_score  = new_score;
+      hist.push_back({std::chrono::duration_cast<std::chrono::milliseconds>(
+                          std::chrono::steady_clock::now() - initial_time),
+                      last_score});
+    } else {
+      sampling_range_fraction = sampling_range_fraction * 0.95;
+    }
+  }
+
+  return {last_result, hist};
+}
+
 std::optional<cda_rail::sim::SolverResult>
 cda_rail::sim::RoutingSolver::greedy_solution(
     std::chrono::milliseconds per_train_stall_time) {

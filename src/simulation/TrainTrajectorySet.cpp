@@ -17,7 +17,7 @@ cda_rail::sim::TrainTrajectorySet::TrainTrajectorySet(
 
 void cda_rail::sim::TrainTrajectorySet::insert_or_assign(
     std::string name, cda_rail::sim::TrainTrajectory traj) {
-  const TrainList& trainlist = instance.timetable.get_train_list();
+  const TrainList& trainlist = instance.get().timetable.get_train_list();
   if (!trainlist.has_train(name))
     throw std::invalid_argument("No train with such name in timetable.");
 
@@ -41,8 +41,8 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
 
   const TrainState state1 = state_opt1.value();
   const TrainState state2 = state_opt2.value();
-  const Edge&      edge1  = instance.network.get_edge(state1.edge);
-  const Edge&      edge2  = instance.network.get_edge(state2.edge);
+  const Edge&      edge1  = instance.get().network.get_edge(state1.edge);
+  const Edge&      edge2  = instance.get().network.get_edge(state2.edge);
 
   if (state1.edge == state2.edge)
     return std::abs(state1.position - state2.position) * edge1.length;
@@ -52,14 +52,18 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_distance(
   const double remain_dist_2_fw = (1 - state2.position) * edge2.length;
   const double remain_dist_2_bw = state2.position * edge2.length;
 
-  const double dist_fw_fw = remain_dist_1_fw + remain_dist_2_fw +
-                            instance.shortest_paths[edge1.target][edge2.target];
-  const double dist_fw_bw = remain_dist_1_fw + remain_dist_2_bw +
-                            instance.shortest_paths[edge1.target][edge2.source];
-  const double dist_bw_bw = remain_dist_1_bw + remain_dist_2_bw +
-                            instance.shortest_paths[edge1.source][edge2.source];
-  const double dist_bw_fw = remain_dist_1_bw + remain_dist_2_fw +
-                            instance.shortest_paths[edge1.source][edge2.target];
+  const double dist_fw_fw =
+      remain_dist_1_fw + remain_dist_2_fw +
+      instance.get().shortest_paths[edge1.target][edge2.target];
+  const double dist_fw_bw =
+      remain_dist_1_fw + remain_dist_2_bw +
+      instance.get().shortest_paths[edge1.target][edge2.source];
+  const double dist_bw_bw =
+      remain_dist_1_bw + remain_dist_2_bw +
+      instance.get().shortest_paths[edge1.source][edge2.source];
+  const double dist_bw_fw =
+      remain_dist_1_bw + remain_dist_2_fw +
+      instance.get().shortest_paths[edge1.source][edge2.target];
 
   const double min_dist = std::min(
       dist_fw_fw, std::min(dist_fw_bw, std::min(dist_bw_bw, dist_bw_fw)));
@@ -82,7 +86,7 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_vertex_distance(
     return {};
 
   const TrainState state = state_opt.value();
-  const Edge&      edge  = instance.network.get_edge(state.edge);
+  const Edge&      edge  = instance.get().network.get_edge(state.edge);
 
   const double remain_dist_fw = (1 - state.position) * edge.length;
   const double remain_dist_bw = state.position * edge.length;
@@ -93,9 +97,9 @@ std::optional<double> cda_rail::sim::TrainTrajectorySet::train_vertex_distance(
     return remain_dist_bw;
 
   const double dist_fw =
-      remain_dist_fw + instance.shortest_paths[edge.target][vertex];
+      remain_dist_fw + instance.get().shortest_paths[edge.target][vertex];
   const double dist_bw =
-      remain_dist_bw + instance.shortest_paths[edge.source][vertex];
+      remain_dist_bw + instance.get().shortest_paths[edge.source][vertex];
 
   const double min_dist = std::min(dist_fw, dist_bw);
 
@@ -111,20 +115,20 @@ void cda_rail::sim::TrainTrajectorySet::export_csv(
   csvfile << "train_idx,train_name,timestep,edge_idx,edge_src_node,edge_dst_"
              "node,edge_pos,speed\n";
 
-  const TrainList& train_list = instance.timetable.get_train_list();
+  const TrainList& train_list = instance.get().timetable.get_train_list();
 
   for (auto traj : trajectories) {
     for (size_t timestep = traj.second.get_first_timestep();
          timestep <= traj.second.get_last_timestep(); timestep++) {
       TrainState  state = traj.second.get_state(timestep).value();
-      const Edge& edge  = instance.network.get_edge(state.edge);
+      const Edge& edge  = instance.get().network.get_edge(state.edge);
 
       csvfile << train_list.get_train_index(traj.first) << ",";
       csvfile << traj.first << ",";
       csvfile << timestep << ",";
       csvfile << state.edge << ",";
-      csvfile << instance.network.get_vertex(edge.source).name << ",";
-      csvfile << instance.network.get_vertex(edge.target).name << ",";
+      csvfile << instance.get().network.get_vertex(edge.source).name << ",";
+      csvfile << instance.get().network.get_vertex(edge.target).name << ",";
       csvfile << state.position << ",";
       csvfile << state.speed << "\n";
     }

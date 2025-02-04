@@ -179,6 +179,17 @@ TEST(Simulation, TrainTrajectorySet) {
     ASSERT_EQ(solution_set.solutions.size(), 4);
     ASSERT_EQ(traj.size(), 4);
     traj.check_speed_limits();
+
+    const auto old_solution_set = solution_set;
+    solution_set.perturb(instance, 0.01, rng_engine);
+    for (auto old_solution : old_solution_set.solutions) {
+      ASSERT_FALSE(
+          old_solution.second.v_targets.targets ==
+          solution_set.solutions.at(old_solution.first).v_targets.targets);
+      ASSERT_FALSE(
+          old_solution.second.switch_directions ==
+          solution_set.solutions.at(old_solution.first).switch_directions);
+    }
   }
 }
 
@@ -279,7 +290,7 @@ TEST(Simulation, RandomSearch) {
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
 
-  auto res = solver.random_search({}, std::chrono::seconds{4});
+  auto res = solver.random_search({}, std::chrono::seconds{1});
 
   if (std::get<0>(res)) {
     cda_rail::is_directory_and_create("tmp");
@@ -305,6 +316,22 @@ TEST(Simulation, GreedySearch) {
     std::filesystem::path p = "tmp/test_traj_greedy.csv";
     std::get<0>(res).value().get_trajectories().export_csv(p);
   }
+}
+
+TEST(Simulation, LocalSearch) {
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+  Network            network = Network::import_network(
+      "./example-networks-unidirec/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+
+  sim::SimulationInstance instance{network, timetable, false};
+  sim::RoutingSolver      solver{instance};
+
+  sim::RoutingSolutionSet solution_set{instance, rng_engine};
+  auto                    res = solver.local_search(solution_set, 0.5, 1e-5);
 }
 
 // TODO: test for invariance of solution after being repaired and used again

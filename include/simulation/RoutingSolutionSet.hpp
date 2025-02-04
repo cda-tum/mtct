@@ -3,6 +3,8 @@
 #include "simulation/RoutingSolution.hpp"
 #include "simulation/SimulationInstance.hpp"
 
+#include <algorithm>
+
 namespace cda_rail::sim {
 
 struct RoutingSolutionSet {
@@ -23,6 +25,9 @@ public:
   // Random solutions
   RoutingSolutionSet(const SimulationInstance& instance,
                      std::ranlux24_base&       rng_engine);
+
+  void perturb(const SimulationInstance& instance, double fraction,
+               std::ranlux24_base& rng_engine);
 };
 
 }; // namespace cda_rail::sim
