@@ -45,7 +45,7 @@ It should also be compatible with any current version of g++ supporting C++17 an
 
 Moreover, the tool requires a local installation of a recent Gurobi [[8]](#references) version available at [https://www.gurobi.com/downloads/gurobi-software/](https://www.gurobi.com/downloads/gurobi-software/) as well as a valid [license](https://www.gurobi.com/solutions/licensing/).
 For academic purposes, Gurobi offers [free academic licenses](https://www.gurobi.com/academia/academic-program-and-licenses/).
-The project currently tests with Gurobi v12.0.0.
+The project currently tests with Gurobi v12.0.1.
 
 #### Build
 
