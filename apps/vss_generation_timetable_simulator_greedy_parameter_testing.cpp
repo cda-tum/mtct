@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     }
 
     score_coll.export_csv(output_path + "/score_hist_" +
-                          std::to_string(train_to) + ".csv");
+                          std::to_string(train_to).substr(0, 5) + ".csv");
   }
 }
 

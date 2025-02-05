@@ -29,9 +29,10 @@ int main(int argc, char** argv) {
   if (processor_count == 0)
     processor_count = 1;
 
-  std::vector<double> contr_coeffs = {0.5, 0.7, 0.9, 0.95, 0.99};
+  std::vector<std::tuple<double, double, double>> params = {
+      {0.1, 0.001, 0.5}, {0.05, 0.001, 0.9}, {0.3, 0.01, 0.99}};
 
-  for (double contr_coeff : contr_coeffs) {
+  for (std::tuple<double, double, double> param : params) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
     std::mutex                            hist_mutex;
 
@@ -42,8 +43,9 @@ int main(int argc, char** argv) {
 
         for (size_t sample = 0; sample < std::floor(100 / processor_count);
              sample++) {
-          auto res = solver.random_local_search(std::chrono::seconds{8}, 0.1,
-                                                1e-4, contr_coeff);
+          auto res = solver.random_local_search(
+              std::chrono::seconds{10}, std::get<0>(param), std::get<1>(param),
+              std::get<2>(param));
 
           if (std::get<0>(res)) {
             const std::lock_guard<std::mutex> lock(hist_mutex);
@@ -58,74 +60,11 @@ int main(int argc, char** argv) {
       workers.pop_back();
     }
 
-    score_coll.export_csv(output_path + "/score_hist_" +
-                          std::to_string(contr_coeff) + ".csv");
-  }
-
-  std::vector<double> stop_sampl_fracs = {1e-2, 1e-3, 1e-4, 1e-5};
-
-  for (double stop_sampl_frac : stop_sampl_fracs) {
-    cda_rail::sim::ScoreHistoryCollection score_coll;
-    std::mutex                            hist_mutex;
-
-    std::vector<std::thread> workers;
-    for (size_t process = 0; process < processor_count; process++) {
-      workers.push_back(std::thread{[&]() {
-        cda_rail::sim::RoutingSolver solver{instance};
-
-        for (size_t sample = 0; sample < std::floor(100 / processor_count);
-             sample++) {
-          auto res = solver.random_local_search(std::chrono::seconds{8}, 0.1,
-                                                stop_sampl_frac, 0.95);
-
-          if (std::get<0>(res)) {
-            const std::lock_guard<std::mutex> lock(hist_mutex);
-            score_coll.add(std::get<1>(res));
-          }
-        }
-      }});
-    }
-
-    while (workers.size() > 0) {
-      workers.back().join();
-      workers.pop_back();
-    }
-
-    score_coll.export_csv(output_path + "/score_hist_" +
-                          std::to_string(stop_sampl_frac) + ".csv");
-  }
-
-  std::vector<double> start_sampl_fracs = {0.001, 0.01, 0.1, 0.5};
-
-  for (double start_sampl_frac : start_sampl_fracs) {
-    cda_rail::sim::ScoreHistoryCollection score_coll;
-    std::mutex                            hist_mutex;
-
-    std::vector<std::thread> workers;
-    for (size_t process = 0; process < processor_count; process++) {
-      workers.push_back(std::thread{[&]() {
-        cda_rail::sim::RoutingSolver solver{instance};
-
-        for (size_t sample = 0; sample < std::floor(100 / processor_count);
-             sample++) {
-          auto res = solver.random_local_search(std::chrono::seconds{8},
-                                                start_sampl_frac, 1e-3, 0.95);
-
-          if (std::get<0>(res)) {
-            const std::lock_guard<std::mutex> lock(hist_mutex);
-            score_coll.add(std::get<1>(res));
-          }
-        }
-      }});
-    }
-
-    while (workers.size() > 0) {
-      workers.back().join();
-      workers.pop_back();
-    }
-
-    score_coll.export_csv(output_path + "/score_hist_" +
-                          std::to_string(start_sampl_frac) + ".csv");
+    score_coll.export_csv(
+        output_path + "/score_hist_" +
+        std::to_string(std::get<0>(param)).substr(0, 5) + "-" +
+        std::to_string(std::get<1>(param)).substr(0, 5) + "-" +
+        std::to_string((std::get<2>(param))).substr(0, 5) + ".csv");
   }
 }
 
