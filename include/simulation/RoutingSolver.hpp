@@ -39,12 +39,14 @@ public:
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
   random_local_search(std::chrono::seconds max_search_time,
-                      double start_sampling_frac, double stop_sampling_frac);
+                      double start_sampl_frac, double stop_sampl_frac,
+                      double contr_coeff);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
   grasp_search(std::chrono::seconds      max_search_time,
                std::chrono::milliseconds per_train_stall_time,
-               double start_sampling_frac, double stop_sampling_frac);
+               double start_sampl_frac, double stop_sampl_frac,
+               double contr_coeff);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
   random_search(std::optional<std::chrono::seconds> max_search_time,
@@ -58,7 +60,7 @@ public:
   std::tuple<SolverResult, ScoreHistory>
   local_search(RoutingSolutionSet starting_solution,
                double             start_sampling_range_fraction,
-               double             abort_sampling_range_fraction);
+               double abort_sampling_range_fraction, double contr_coeff);
 
   std::optional<SolverResult>
   greedy_solution(std::chrono::milliseconds per_train_stall_time);

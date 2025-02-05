@@ -331,7 +331,7 @@ TEST(Simulation, LocalSearch) {
   sim::RoutingSolver      solver{instance};
 
   sim::RoutingSolutionSet solution_set{instance, rng_engine};
-  auto                    res = solver.local_search(solution_set, 0.5, 1e-5);
+  auto res = solver.local_search(solution_set, 0.5, 1e-5, 0.95);
 }
 
 TEST(Simulation, RandomLocalSearch) {
@@ -347,7 +347,8 @@ TEST(Simulation, RandomLocalSearch) {
   sim::RoutingSolver      solver{instance};
 
   sim::RoutingSolutionSet solution_set{instance, rng_engine};
-  auto res = solver.random_local_search(std::chrono::seconds{1}, 0.1, 1e-3);
+  auto                    res =
+      solver.random_local_search(std::chrono::seconds{1}, 0.1, 1e-3, 0.95);
 }
 
 TEST(Simulation, GraspSearch) {
@@ -363,8 +364,8 @@ TEST(Simulation, GraspSearch) {
   sim::RoutingSolver      solver{instance};
 
   sim::RoutingSolutionSet solution_set{instance, rng_engine};
-  auto                    res = solver.grasp_search(std::chrono::seconds{1},
-                                                    std::chrono::milliseconds{50}, 0.1, 1e-3);
+  auto                    res = solver.grasp_search(
+      std::chrono::seconds{1}, std::chrono::milliseconds{50}, 0.1, 1e-3, 0.95);
 }
 
 // TODO: test for invariance of solution after being repaired and used again

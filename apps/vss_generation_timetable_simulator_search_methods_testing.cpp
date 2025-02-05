@@ -49,16 +49,17 @@ int main(int argc, char** argv) {
                      cda_rail::sim::ScoreHistory>
               res;
           if (method == "random") {
-            res = solver.random_search(std::chrono::seconds{6}, {});
+            res = solver.random_search(std::chrono::seconds{10}, {});
           } else if (method == "greedy") {
-            res = solver.greedy_search(std::chrono::seconds{6}, {},
+            res = solver.greedy_search(std::chrono::seconds{10}, {},
                                        std::chrono::milliseconds{50});
           } else if (method == "random+local") {
-            res =
-                solver.random_local_search(std::chrono::seconds{6}, 0.1, 1e-4);
+            res = solver.random_local_search(std::chrono::seconds{10}, 0.1,
+                                             1e-4, 0.95);
           } else if (method == "greedy+local_grasp") {
-            res = solver.grasp_search(std::chrono::seconds{6},
-                                      std::chrono::milliseconds{50}, 0.1, 1e-4);
+            res = solver.grasp_search(std::chrono::seconds{10},
+                                      std::chrono::milliseconds{50}, 0.1, 1e-4,
+                                      0.95);
           }
 
           if (std::get<0>(res)) {
