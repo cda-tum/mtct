@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
     processor_count = 1;
 
   std::vector<std::string> methods = {"random", "greedy", "random+local",
-                                      "greedy+local_grasp"};
+                                      "grasp"};
 
   for (std::string method : methods) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
@@ -54,12 +54,12 @@ int main(int argc, char** argv) {
             res = solver.greedy_search(std::chrono::seconds{10}, {},
                                        std::chrono::milliseconds{50});
           } else if (method == "random+local") {
-            res = solver.random_local_search(std::chrono::seconds{10}, 0.1,
-                                             1e-4, 0.95);
-          } else if (method == "greedy+local_grasp") {
+            res = solver.random_local_search(std::chrono::seconds{10}, 0.3,
+                                             0.01, 0.99);
+          } else if (method == "grasp") {
             res = solver.grasp_search(std::chrono::seconds{10},
-                                      std::chrono::milliseconds{50}, 0.1, 1e-4,
-                                      0.95);
+                                      std::chrono::milliseconds{50}, 0.3, 0.01,
+                                      0.99);
           }
 
           if (std::get<0>(res)) {
