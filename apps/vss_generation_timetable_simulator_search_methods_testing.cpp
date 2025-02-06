@@ -55,11 +55,11 @@ int main(int argc, char** argv) {
                                        std::chrono::milliseconds{50});
           } else if (method == "random+local") {
             res = solver.random_local_search(std::chrono::seconds{10}, 0.3,
-                                             0.01, 0.99);
+                                             0.005, 0.9);
           } else if (method == "grasp") {
             res = solver.grasp_search(std::chrono::seconds{10},
-                                      std::chrono::milliseconds{50}, 0.3, 0.01,
-                                      0.99);
+                                      std::chrono::milliseconds{50}, 0.3, 0.005,
+                                      0.9);
           }
 
           if (std::get<0>(res)) {
