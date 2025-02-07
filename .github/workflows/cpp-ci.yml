@@ -33,7 +33,7 @@ jobs:
         with:
           paths: ./.github/gurobi_version.json
       - name: Export variables for next jobs
-        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
+        uses: UnlyEd/github-action-store-variable@v4 # See https://github.com/UnlyEd/github-action-store-variable
         with:
           variables: |
             gurobiVersion=${{ env.gurobiVersion }}
@@ -55,7 +55,7 @@ jobs:
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
       - name: Import variables
-        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
+        uses: UnlyEd/github-action-store-variable@v4 # See https://github.com/UnlyEd/github-action-store-variable
         with:
           variables: |
             gurobiVersion
@@ -92,7 +92,7 @@ jobs:
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
       - name: Import variables
-        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
+        uses: UnlyEd/github-action-store-variable@v4 # See https://github.com/UnlyEd/github-action-store-variable
         with:
           variables: |
             gurobiVersion
@@ -129,7 +129,7 @@ jobs:
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
       - name: Import variables
-        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
+        uses: UnlyEd/github-action-store-variable@v4 # See https://github.com/UnlyEd/github-action-store-variable
         with:
           variables: |
             gurobiVersion
@@ -183,7 +183,7 @@ jobs:
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
       - name: Import variables
-        uses: UnlyEd/github-action-store-variable@v3 # See https://github.com/UnlyEd/github-action-store-variable
+        uses: UnlyEd/github-action-store-variable@v4 # See https://github.com/UnlyEd/github-action-store-variable
         with:
           variables: |
             gurobiVersion
