@@ -317,3 +317,20 @@ cda_rail::sim::RoutingSolver::greedy_solution(
 
   return result;
 };
+
+std::tuple<std::optional<cda_rail::sim::SolverResult>,
+           cda_rail::sim::ScoreHistory>
+cda_rail::sim::RoutingSolver::genetic_search() {
+  /**
+   * Genetic algorithm for entire solution sets
+   */
+
+  // Middlecost is the double type objective score
+  typedef EA::Genetic<RoutingSolutionSet, double>        GA_Type;
+  typedef EA::GenerationType<RoutingSolutionSet, double> Generation_Type;
+}
+
+void cda_rail::sim::RoutingSolver::init_genes(
+    RoutingSolutionSet& p, const std::function<double(void)>& rnd01) {
+  p = RoutingSolutionSet{instance, rnd01};
+}

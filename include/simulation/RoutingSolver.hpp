@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../extern/openGA/src/openGA.hpp"
 #include "simulation/RoutingSolutionSet.hpp"
 #include "simulation/SolverResult.hpp"
 #include "simulation/TrainTrajectorySet.hpp"
@@ -64,6 +65,11 @@ public:
 
   std::optional<SolverResult>
   greedy_solution(std::chrono::milliseconds per_train_stall_time);
+
+  std::tuple<std::optional<SolverResult>, ScoreHistory> genetic_search();
+
+  void init_genes(RoutingSolutionSet&                p,
+                  const std::function<double(void)>& rnd01);
 };
 
 }; // namespace cda_rail::sim

@@ -29,6 +29,8 @@ public:
   // Random solution
   RoutingSolution(const SimulationInstance& instance, const Train& train,
                   std::ranlux24_base& rng_engine);
+  RoutingSolution(const SimulationInstance& instance, const Train& train,
+                  const std::function<double(void)>& rnd01);
   // Specific solution
   RoutingSolution(const SimulationInstance& instance,
                   const SpeedTargets& targets, std::vector<double> directions,

@@ -36,6 +36,39 @@ cda_rail::sim::RoutingSolution::RoutingSolution(
 }
 
 cda_rail::sim::RoutingSolution::RoutingSolution(
+    const SimulationInstance& instance, const Train& train,
+    const std::function<double(void)>& rnd01) {
+  auto uniform_n_v_target_vars = [instance, rnd01]() {
+    return (u_int64_t)std::round(1 + (rnd01() * (instance.n_timesteps - 1)));
+  };
+
+  auto uniform_timestep = [instance, rnd01]() {
+    return (u_int64_t)std::round((rnd01() * (instance.n_timesteps - 1)));
+  };
+
+  std::function<double()> uniform_train_speed;
+  if (instance.bidirectional_travel) {
+    uniform_train_speed = [train, rnd01]() {
+      return (2 * rnd01() - 1) * train.max_speed;
+    };
+  } else {
+    uniform_train_speed = [train, rnd01]() {
+      return rnd01() * train.max_speed;
+    };
+  }
+
+  switch_directions.reserve(instance.n_switch_vars);
+  while (switch_directions.size() < instance.n_switch_vars) {
+    switch_directions.push_back(rnd01());
+  }
+
+  // TODO: ignores duplicates and produces less than n_v_target_vars variables
+  while (v_targets.size() < uniform_n_v_target_vars()) {
+    v_targets.targets.insert({uniform_timestep(), uniform_train_speed()});
+  }
+}
+
+cda_rail::sim::RoutingSolution::RoutingSolution(
     const SimulationInstance& instance, const SpeedTargets& targets,
     std::vector<double> directions, const Train& train)
     : v_targets(targets), switch_directions(directions) {

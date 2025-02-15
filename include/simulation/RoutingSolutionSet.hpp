@@ -25,6 +25,8 @@ public:
   // Random solutions
   RoutingSolutionSet(const SimulationInstance& instance,
                      std::ranlux24_base&       rng_engine);
+  RoutingSolutionSet(const SimulationInstance&          instance,
+                     const std::function<double(void)>& rnd01);
 
   void perturb(const SimulationInstance& instance, double fraction,
                std::ranlux24_base& rng_engine);

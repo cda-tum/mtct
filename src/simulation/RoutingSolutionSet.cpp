@@ -11,6 +11,15 @@ cda_rail::sim::RoutingSolutionSet::RoutingSolutionSet(
 }
 
 cda_rail::sim::RoutingSolutionSet::RoutingSolutionSet(
+    const SimulationInstance&          instance,
+    const std::function<double(void)>& rnd01) {
+  for (const Train& train : instance.timetable.get_train_list()) {
+    RoutingSolution sol{instance, train, rnd01};
+    solutions.insert({train.name, sol});
+  }
+}
+
+cda_rail::sim::RoutingSolutionSet::RoutingSolutionSet(
     const SimulationInstance& instance) {
   for (const Train& train : instance.timetable.get_train_list()) {
     RoutingSolution sol{instance};
