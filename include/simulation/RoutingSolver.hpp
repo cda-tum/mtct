@@ -70,6 +70,12 @@ public:
 
   void init_genes(RoutingSolutionSet&                p,
                   const std::function<double(void)>& rnd01);
+
+  bool eval_solution(const RoutingSolutionSet& p, double& c);
+
+  RoutingSolutionSet mutate(const RoutingSolutionSet&          X_base,
+                            const std::function<double(void)>& rnd01,
+                            double                             shrink_scale);
 };
 
 }; // namespace cda_rail::sim

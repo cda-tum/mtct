@@ -30,6 +30,8 @@ public:
 
   void perturb(const SimulationInstance& instance, double fraction,
                std::ranlux24_base& rng_engine);
+  void perturb(const SimulationInstance& instance, double fraction,
+               const std::function<double(void)>& rnd01);
 };
 
 }; // namespace cda_rail::sim

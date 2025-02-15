@@ -68,3 +68,46 @@ void cda_rail::sim::RoutingSolutionSet::perturb(
     (*sol_it).second.switch_directions = new_switch_directions;
   }
 }
+
+void cda_rail::sim::RoutingSolutionSet::perturb(
+    const SimulationInstance& instance, double fraction,
+    const std::function<double(void)>& rnd01) {
+  auto uniform_direction_perturbation = [fraction, rnd01]() {
+    return (rnd01() * 2 - 1) * fraction;
+  };
+
+  for (auto sol_it = solutions.begin(); sol_it != solutions.end(); sol_it++) {
+    double max_speed = instance.timetable.get_train_list()
+                           .get_train((*sol_it).first)
+                           .max_speed;
+    double max_speed_perturbation = fraction * 2 * max_speed;
+    size_t max_timestep_perturbation =
+        (size_t)std::ceil(fraction * instance.n_timesteps);
+
+    auto uniform_speed_perturbation = [max_speed_perturbation, rnd01]() {
+      return (rnd01() * 2 - 1) * max_speed_perturbation;
+    };
+    auto uniform_timestep_perturbation = [max_timestep_perturbation, rnd01]() {
+      return (int64_t)std::round((rnd01() * 2 - 1) * max_timestep_perturbation);
+    };
+
+    SpeedTargets new_targets;
+    for (auto old_target : (*sol_it).second.v_targets.targets) {
+      new_targets.targets.insert_or_assign(
+          std::clamp(old_target.first + uniform_timestep_perturbation(),
+                     (size_t)0, instance.n_timesteps - 1),
+          std::clamp(old_target.second + uniform_speed_perturbation(),
+                     -max_speed, max_speed));
+    }
+
+    std::vector<double> new_switch_directions;
+
+    for (auto old_direction : (*sol_it).second.switch_directions) {
+      new_switch_directions.push_back(std::clamp(
+          old_direction + uniform_direction_perturbation(), 0.0, 1.0));
+    }
+
+    (*sol_it).second.v_targets         = new_targets;
+    (*sol_it).second.switch_directions = new_switch_directions;
+  }
+}

@@ -334,3 +334,19 @@ void cda_rail::sim::RoutingSolver::init_genes(
     RoutingSolutionSet& p, const std::function<double(void)>& rnd01) {
   p = RoutingSolutionSet{instance, rnd01};
 }
+
+bool cda_rail::sim::RoutingSolver::eval_solution(const RoutingSolutionSet& p,
+                                                 double&                   c) {
+  SolverResult round_result{instance, p};
+  c = round_result.get_score();
+  return true;
+}
+
+cda_rail::sim::RoutingSolutionSet
+cda_rail::sim::RoutingSolver::mutate(const RoutingSolutionSet&          X_base,
+                                     const std::function<double(void)>& rnd01,
+                                     double shrink_scale) {
+  RoutingSolutionSet X_new(X_base);
+  X_new.perturb(instance, shrink_scale, rnd01);
+  return X_new;
+}
