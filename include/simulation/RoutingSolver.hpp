@@ -68,6 +68,14 @@ public:
 
   std::tuple<std::optional<SolverResult>, ScoreHistory> genetic_search();
 
+  // GA Helpers
+  struct MiddleCost {
+    double score;
+  };
+
+  typedef EA::Genetic<RoutingSolutionSet, MiddleCost>        GA_Type;
+  typedef EA::GenerationType<RoutingSolutionSet, MiddleCost> Generation_Type;
+
   void init_genes(RoutingSolutionSet&                p,
                   const std::function<double(void)>& rnd01);
 
@@ -76,6 +84,18 @@ public:
   RoutingSolutionSet mutate(const RoutingSolutionSet&          X_base,
                             const std::function<double(void)>& rnd01,
                             double                             shrink_scale);
+
+  RoutingSolutionSet
+  RoutingSolver::crossover(const RoutingSolutionSet&          X1,
+                           const RoutingSolutionSet&          X2,
+                           const std::function<double(void)>& rnd01);
+
+  double calculate_SO_total_fitness(const GA_Type::thisChromosomeType& X);
+
+  void SO_report_generation(
+      int generation_number,
+      const EA::GenerationType<RoutingSolutionSet, MiddleCost>& last_generation,
+      const RoutingSolutionSet&                                 best_genes)
 };
 
 }; // namespace cda_rail::sim

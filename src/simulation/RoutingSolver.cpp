@@ -324,10 +324,27 @@ cda_rail::sim::RoutingSolver::genetic_search() {
   /**
    * Genetic algorithm for entire solution sets
    */
+  EA::Chronometer timer;
+  timer.tic();
 
-  // Middlecost is the double type objective score
-  typedef EA::Genetic<RoutingSolutionSet, double>        GA_Type;
-  typedef EA::GenerationType<RoutingSolutionSet, double> Generation_Type;
+  GA_Type ga_obj;
+  ga_obj.problem_mode               = EA::GA_MODE::SOGA;
+  ga_obj.multi_threading            = true;
+  ga_obj.idle_delay_us              = 1; // switch between threads quickly
+  ga_obj.verbose                    = false;
+  ga_obj.population                 = 1000;
+  ga_obj.generation_max             = 1000;
+  ga_obj.calculate_SO_total_fitness = calculate_SO_total_fitness;
+  ga_obj.init_genes                 = init_genes;
+  ga_obj.eval_solution              = eval_solution;
+  ga_obj.mutate                     = mutate;
+  ga_obj.crossover                  = crossover;
+  ga_obj.SO_report_generation       = SO_report_generation;
+  ga_obj.best_stall_max             = 10;
+  ga_obj.elite_count                = 50;
+  ga_obj.crossover_fraction         = 0.7;
+  ga_obj.mutation_rate              = 0.1;
+  ga_obj.solve();
 }
 
 void cda_rail::sim::RoutingSolver::init_genes(
@@ -349,4 +366,38 @@ cda_rail::sim::RoutingSolver::mutate(const RoutingSolutionSet&          X_base,
   RoutingSolutionSet X_new(X_base);
   X_new.perturb(instance, shrink_scale, rnd01);
   return X_new;
+}
+
+cda_rail::sim::RoutingSolutionSet cda_rail::sim::RoutingSolver::crossover(
+    const RoutingSolutionSet& X1, const RoutingSolutionSet& X2,
+    const std::function<double(void)>& rnd01) {
+  RoutingSolutionSet X_new;
+
+  // Randomly select individual train solutions
+  for (auto sol_it = X1.solutions.begin(); sol_it != X1.solutions.end();
+       sol_it++) {
+    if (rnd01() > 0.5) {
+      X_new.solutions.insert_or_assign((*sol_it).first, (*sol_it).second);
+    } else {
+      X_new.solutions.insert_or_assign((*sol_it).first,
+                                       X2.solutions.at((*sol_it).first));
+    }
+  }
+
+  return X_new;
+}
+
+double cda_rail::sim::RoutingSolver::calculate_SO_total_fitness(
+    const GA_Type::thisChromosomeType& X) {
+  return X.middle_costs.score;
+}
+
+void cda_rail::sim::RoutingSolver::SO_report_generation(
+    int                                                       generation_number,
+    const EA::GenerationType<RoutingSolutionSet, MiddleCost>& last_generation,
+    const RoutingSolutionSet&                                 best_genes) {
+  std::cout << "Generation [" << generation_number << "], "
+            << "Best=" << last_generation.best_total_cost << ", "
+            << "Average=" << last_generation.average_cost << ", "
+            << "Exe_time=" << last_generation.exe_time << std::endl;
 }
