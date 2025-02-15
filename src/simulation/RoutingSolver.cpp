@@ -334,16 +334,25 @@ cda_rail::sim::RoutingSolver::genetic_search() {
   ga_obj.verbose                    = false;
   ga_obj.population                 = 1000;
   ga_obj.generation_max             = 1000;
-  ga_obj.calculate_SO_total_fitness = calculate_SO_total_fitness;
-  ga_obj.init_genes                 = init_genes;
-  ga_obj.eval_solution              = eval_solution;
-  ga_obj.mutate                     = mutate;
-  ga_obj.crossover                  = crossover;
-  ga_obj.SO_report_generation       = SO_report_generation;
-  ga_obj.best_stall_max             = 10;
-  ga_obj.elite_count                = 50;
-  ga_obj.crossover_fraction         = 0.7;
-  ga_obj.mutation_rate              = 0.1;
+  ga_obj.calculate_SO_total_fitness = std::bind(
+      &RoutingSolver::calculate_SO_total_fitness, this, std::placeholders::_1);
+  ga_obj.init_genes = std::bind(&RoutingSolver::init_genes, this,
+                                std::placeholders::_1, std::placeholders::_2);
+  ga_obj.eval_solution =
+      std::bind(&RoutingSolver::eval_solution, this, std::placeholders::_1,
+                std::placeholders::_2);
+  ga_obj.mutate = std::bind(&RoutingSolver::mutate, this, std::placeholders::_1,
+                            std::placeholders::_2, std::placeholders::_3);
+  ga_obj.crossover =
+      std::bind(&RoutingSolver::crossover, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3);
+  ga_obj.SO_report_generation = std::bind(
+      &RoutingSolver::SO_report_generation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  ga_obj.best_stall_max     = 10;
+  ga_obj.elite_count        = 50;
+  ga_obj.crossover_fraction = 0.7;
+  ga_obj.mutation_rate      = 0.1;
   ga_obj.solve();
 }
 
@@ -353,9 +362,9 @@ void cda_rail::sim::RoutingSolver::init_genes(
 }
 
 bool cda_rail::sim::RoutingSolver::eval_solution(const RoutingSolutionSet& p,
-                                                 double&                   c) {
+                                                 MiddleCost&               c) {
   SolverResult round_result{instance, p};
-  c = round_result.get_score();
+  c.score = round_result.get_score();
   return true;
 }
 
