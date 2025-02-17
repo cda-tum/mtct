@@ -324,9 +324,7 @@ cda_rail::sim::RoutingSolver::genetic_search(GeneticParams params) {
   /**
    * Genetic algorithm for entire solution sets
    */
-  ScoreHistory                          hist;
-  std::chrono::steady_clock::time_point starting_time =
-      std::chrono::steady_clock::now();
+  ScoreHistory hist;
 
   GA_Type ga_obj;
   ga_obj.problem_mode               = EA::GA_MODE::SOGA;
@@ -347,9 +345,13 @@ cda_rail::sim::RoutingSolver::genetic_search(GeneticParams params) {
   ga_obj.crossover =
       std::bind(&RoutingSolver::crossover, this, std::placeholders::_1,
                 std::placeholders::_2, std::placeholders::_3);
+
+  std::chrono::steady_clock::time_point starting_time =
+      std::chrono::steady_clock::now();
   ga_obj.SO_report_generation = std::bind(
       &RoutingSolver::SO_report_generation, this, starting_time, std::ref(hist),
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
   ga_obj.best_stall_max     = params.stall_max;
   ga_obj.elite_count        = params.n_elite;
   ga_obj.crossover_fraction = params.xover_frac;
