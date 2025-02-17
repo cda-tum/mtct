@@ -368,4 +368,20 @@ TEST(Simulation, GraspSearch) {
       std::chrono::seconds{1}, std::chrono::milliseconds{50}, 0.1, 1e-3, 0.95);
 }
 
+TEST(Simulation, GeneticSearch) {
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+  Network            network = Network::import_network(
+      "./example-networks-unidirec/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+
+  sim::SimulationInstance instance{network, timetable, false};
+  sim::RoutingSolver      solver{instance};
+
+  sim::RoutingSolutionSet solution_set{instance, rng_engine};
+  auto                    res = solver.genetic_search();
+}
+
 // TODO: test for invariance of solution after being repaired and used again

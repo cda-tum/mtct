@@ -330,9 +330,9 @@ cda_rail::sim::RoutingSolver::genetic_search() {
   GA_Type ga_obj;
   ga_obj.problem_mode               = EA::GA_MODE::SOGA;
   ga_obj.multi_threading            = true;
-  ga_obj.idle_delay_us              = 1; // switch between threads quickly
+  ga_obj.idle_delay_us              = 0; // switch between threads quickly
   ga_obj.verbose                    = false;
-  ga_obj.population                 = 1000;
+  ga_obj.population                 = 10000;
   ga_obj.generation_max             = 1000;
   ga_obj.calculate_SO_total_fitness = std::bind(
       &RoutingSolver::calculate_SO_total_fitness, this, std::placeholders::_1);
@@ -350,7 +350,7 @@ cda_rail::sim::RoutingSolver::genetic_search() {
       &RoutingSolver::SO_report_generation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   ga_obj.best_stall_max     = 10;
-  ga_obj.elite_count        = 50;
+  ga_obj.elite_count        = 1000;
   ga_obj.crossover_fraction = 0.7;
   ga_obj.mutation_rate      = 0.1;
   ga_obj.solve();
