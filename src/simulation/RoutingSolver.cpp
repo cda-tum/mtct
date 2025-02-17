@@ -324,8 +324,9 @@ cda_rail::sim::RoutingSolver::genetic_search() {
   /**
    * Genetic algorithm for entire solution sets
    */
-  EA::Chronometer timer;
-  timer.tic();
+  ScoreHistory                          hist;
+  std::chrono::steady_clock::time_point starting_time =
+      std::chrono::steady_clock::now();
 
   GA_Type ga_obj;
   ga_obj.problem_mode               = EA::GA_MODE::SOGA;
@@ -347,13 +348,20 @@ cda_rail::sim::RoutingSolver::genetic_search() {
       std::bind(&RoutingSolver::crossover, this, std::placeholders::_1,
                 std::placeholders::_2, std::placeholders::_3);
   ga_obj.SO_report_generation = std::bind(
-      &RoutingSolver::SO_report_generation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
+      &RoutingSolver::SO_report_generation, this, starting_time, hist,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   ga_obj.best_stall_max     = 10;
   ga_obj.elite_count        = 1000;
   ga_obj.crossover_fraction = 0.7;
   ga_obj.mutation_rate      = 0.1;
   ga_obj.solve();
+
+  const RoutingSolutionSet& best_solution =
+      ga_obj.last_generation.chromosomes
+          .at(ga_obj.last_generation.best_chromosome_index)
+          .genes;
+
+  return {SolverResult{instance, best_solution}, hist};
 }
 
 void cda_rail::sim::RoutingSolver::init_genes(
@@ -402,11 +410,19 @@ double cda_rail::sim::RoutingSolver::calculate_SO_total_fitness(
 }
 
 void cda_rail::sim::RoutingSolver::SO_report_generation(
-    int                                                       generation_number,
+    const std::chrono::steady_clock::time_point starting_time,
+    ScoreHistory& hist, int generation_number,
     const EA::GenerationType<RoutingSolutionSet, MiddleCost>& last_generation,
     const RoutingSolutionSet&                                 best_genes) {
   std::cout << "Generation [" << generation_number << "], "
             << "Best=" << last_generation.best_total_cost << ", "
             << "Average=" << last_generation.average_cost << ", "
             << "Exe_time=" << last_generation.exe_time << std::endl;
+
+  std::chrono::steady_clock::time_point round_time =
+      std::chrono::steady_clock::now();
+  std::chrono::milliseconds past_time =
+      std::chrono::duration_cast<std::chrono::milliseconds>(round_time -
+                                                            starting_time);
+  hist.push_back({past_time, last_generation.best_total_cost});
 }

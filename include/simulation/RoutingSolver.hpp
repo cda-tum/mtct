@@ -92,7 +92,8 @@ public:
   double calculate_SO_total_fitness(const GA_Type::thisChromosomeType& X);
 
   void SO_report_generation(
-      int generation_number,
+      const std::chrono::steady_clock::time_point starting_time,
+      ScoreHistory& hist, int generation_number,
       const EA::GenerationType<RoutingSolutionSet, MiddleCost>& last_generation,
       const RoutingSolutionSet&                                 best_genes);
 };
