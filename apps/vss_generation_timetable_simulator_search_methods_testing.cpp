@@ -30,7 +30,8 @@ int main(int argc, char** argv) {
     processor_count = 1;
 
   std::vector<std::string> methods = {"random", "greedy", "random+local",
-                                      "grasp"};
+                                      "grasp"
+                                      "genetic"};
 
   for (std::string method : methods) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
@@ -60,6 +61,8 @@ int main(int argc, char** argv) {
             res = solver.grasp_search(std::chrono::seconds{10},
                                       std::chrono::milliseconds{50}, 0.3, 0.005,
                                       0.9);
+          } else if (method == "genetic") {
+            res = solver.genetic_search();
           }
 
           if (std::get<0>(res)) {
