@@ -35,13 +35,13 @@ int main(int argc, char** argv) {
       .gen_max        = 20,
       .stall_max      = 5,
       .n_elite        = 100,
-      .xover_frac     = 0,
-      .mut_rate       = 0,
+      .xover_frac     = 0.7,
+      .mut_rate       = 0.1,
   };
 
   std::vector<double> xover_fractions = {0.1, 0.5, 0.7, 0.9};
 
-  for (size_t xover_fraction : xover_fractions) {
+  for (double xover_fraction : xover_fractions) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
     std::mutex                            hist_mutex;
 
@@ -52,8 +52,7 @@ int main(int argc, char** argv) {
       workers.push_back(std::thread{[&]() {
         cda_rail::sim::RoutingSolver solver{instance};
 
-        for (size_t sample = 0; sample < std::floor(100 / processor_count);
-             sample++) {
+        for (size_t sample_runs = 0; sample_runs < 1; sample_runs++) {
           auto res = solver.genetic_search(ga_params);
 
           if (std::get<0>(res)) {
