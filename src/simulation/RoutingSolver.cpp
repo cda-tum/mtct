@@ -348,7 +348,7 @@ cda_rail::sim::RoutingSolver::genetic_search(GeneticParams params) {
       std::bind(&RoutingSolver::crossover, this, std::placeholders::_1,
                 std::placeholders::_2, std::placeholders::_3);
   ga_obj.SO_report_generation = std::bind(
-      &RoutingSolver::SO_report_generation, this, starting_time, hist,
+      &RoutingSolver::SO_report_generation, this, starting_time, std::ref(hist),
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   ga_obj.best_stall_max     = params.stall_max;
   ga_obj.elite_count        = params.n_elite;
