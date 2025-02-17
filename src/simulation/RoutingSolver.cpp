@@ -320,7 +320,7 @@ cda_rail::sim::RoutingSolver::greedy_solution(
 
 std::tuple<std::optional<cda_rail::sim::SolverResult>,
            cda_rail::sim::ScoreHistory>
-cda_rail::sim::RoutingSolver::genetic_search() {
+cda_rail::sim::RoutingSolver::genetic_search(GeneticParams params) {
   /**
    * Genetic algorithm for entire solution sets
    */
@@ -330,11 +330,11 @@ cda_rail::sim::RoutingSolver::genetic_search() {
 
   GA_Type ga_obj;
   ga_obj.problem_mode               = EA::GA_MODE::SOGA;
-  ga_obj.multi_threading            = false;
+  ga_obj.multi_threading            = params.is_multithread;
   ga_obj.idle_delay_us              = 0; // switch between threads quickly
   ga_obj.verbose                    = false;
-  ga_obj.population                 = 10000;
-  ga_obj.generation_max             = 1000;
+  ga_obj.population                 = params.population;
+  ga_obj.generation_max             = params.gen_max;
   ga_obj.calculate_SO_total_fitness = std::bind(
       &RoutingSolver::calculate_SO_total_fitness, this, std::placeholders::_1);
   ga_obj.init_genes = std::bind(&RoutingSolver::init_genes, this,
@@ -350,10 +350,10 @@ cda_rail::sim::RoutingSolver::genetic_search() {
   ga_obj.SO_report_generation = std::bind(
       &RoutingSolver::SO_report_generation, this, starting_time, hist,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  ga_obj.best_stall_max     = 10;
-  ga_obj.elite_count        = 1000;
-  ga_obj.crossover_fraction = 0.7;
-  ga_obj.mutation_rate      = 0.1;
+  ga_obj.best_stall_max     = params.stall_max;
+  ga_obj.elite_count        = params.n_elite;
+  ga_obj.crossover_fraction = params.xover_frac;
+  ga_obj.mutation_rate      = params.mut_rate;
   ga_obj.solve();
 
   const RoutingSolutionSet& best_solution =
@@ -414,10 +414,10 @@ void cda_rail::sim::RoutingSolver::SO_report_generation(
     ScoreHistory& hist, int generation_number,
     const EA::GenerationType<RoutingSolutionSet, MiddleCost>& last_generation,
     const RoutingSolutionSet&                                 best_genes) {
-  std::cout << "Generation [" << generation_number << "], "
-            << "Best=" << last_generation.best_total_cost << ", "
-            << "Average=" << last_generation.average_cost << ", "
-            << "Exe_time=" << last_generation.exe_time << std::endl;
+  // std::cout << "Generation [" << generation_number << "], "
+  //           << "Best=" << last_generation.best_total_cost << ", "
+  //           << "Average=" << last_generation.average_cost << ", "
+  //           << "Exe_time=" << last_generation.exe_time << std::endl;
 
   std::chrono::steady_clock::time_point round_time =
       std::chrono::steady_clock::now();

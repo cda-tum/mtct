@@ -29,6 +29,16 @@ int main(int argc, char** argv) {
   if (processor_count == 0)
     processor_count = 1;
 
+  cda_rail::sim::GeneticParams ga_params{
+      .is_multithread = false,
+      .population     = 1000,
+      .gen_max        = 20,
+      .stall_max      = 5,
+      .n_elite        = 100,
+      .xover_frac     = 0.7,
+      .mut_rate       = 0.1,
+  };
+
   std::vector<std::string> methods = {"random", "greedy", "random+local",
                                       "grasp"
                                       "genetic"};
@@ -62,7 +72,7 @@ int main(int argc, char** argv) {
                                       std::chrono::milliseconds{50}, 0.3, 0.005,
                                       0.9);
           } else if (method == "genetic") {
-            res = solver.genetic_search();
+            res = solver.genetic_search(ga_params);
           }
 
           if (std::get<0>(res)) {

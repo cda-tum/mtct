@@ -23,6 +23,16 @@ public:
   void add(ScoreHistory hist);
 };
 
+struct GeneticParams {
+  bool   is_multithread;
+  uint   population;
+  int    gen_max;
+  int    stall_max;
+  int    n_elite;
+  double xover_frac;
+  double mut_rate;
+};
+
 class RoutingSolver {
   /**
    * Performs heuristic routing for a SimulationInstance
@@ -66,7 +76,8 @@ public:
   std::optional<SolverResult>
   greedy_solution(std::chrono::milliseconds per_train_stall_time);
 
-  std::tuple<std::optional<SolverResult>, ScoreHistory> genetic_search();
+  std::tuple<std::optional<SolverResult>, ScoreHistory>
+  genetic_search(GeneticParams params);
 
   // GA Helpers
   struct MiddleCost {
