@@ -33,12 +33,10 @@ jobs:
         with:
           paths: ./.github/gurobi_version.json
       - name: Export variables for next jobs
-        uses: UnlyEd/github-action-store-variable@v4 # See https://github.com/UnlyEd/github-action-store-variable
-        with:
-          variables: |
-            gurobiVersion=${{ env.gurobiVersion }}
-            gurobiShortVersion=${{ env.gurobiShortVersion }}
-            gurobiFolder=${{ env.gurobiFolder }}
+        run: |
+            echo "gurobiVersion=${{ env.gurobiVersion }}" >> $GITHUB_OUTPUT
+            echo "gurobiShortVersion=${{ env.gurobiShortVersion }}" >> $GITHUB_OUTPUT
+            echo "gurobiFolder=${{ env.gurobiFolder }}" >> $GITHUB_OUTPUT
   cpp-ubuntu-latest:
     name: cpp-ubuntu-latest
     runs-on: ubuntu-latest
@@ -54,19 +52,12 @@ jobs:
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
-      - name: Import variables
-        uses: UnlyEd/github-action-store-variable@v4 # See https://github.com/UnlyEd/github-action-store-variable
-        with:
-          variables: |
-            gurobiVersion
-            gurobiShortVersion
-            gurobiFolder
       - name: download-gurobi-linux
         env:
-          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
-          GUROBI_VERSION: ${{ env.gurobiVersion }}
-          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
-          GUROBI_FILE: gurobi${{ env.gurobiVersion }}_linux64.tar.gz
+          GUROBI_VERSION_SHORT: ${{ needs.read-parameters.output.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ needs.read-parameters.output.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ needs.read-parameters.output.gurobiFolder }}
+          GUROBI_FILE: gurobi${{ needs.read-parameters.output.gurobiVersion }}_linux64.tar.gz
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           tar -xvzf ${{ env.GUROBI_FILE }}
@@ -91,19 +82,12 @@ jobs:
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
-      - name: Import variables
-        uses: UnlyEd/github-action-store-variable@v4 # See https://github.com/UnlyEd/github-action-store-variable
-        with:
-          variables: |
-            gurobiVersion
-            gurobiShortVersion
-            gurobiFolder
       - name: download-gurobi-mac
         env:
-          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
-          GUROBI_VERSION: ${{ env.gurobiVersion }}
-          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
-          GUROBI_FILE: gurobi${{ env.gurobiVersion }}_macos_universal2.pkg
+          GUROBI_VERSION_SHORT: ${{ needs.read-parameters.output.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ needs.read-parameters.output.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ needs.read-parameters.output.gurobiFolder }}
+          GUROBI_FILE: gurobi${{ needs.read-parameters.output.gurobiVersion }}_macos_universal2.pkg
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           sudo installer -pkg ${{ env.GUROBI_FILE }} -target /
@@ -128,20 +112,13 @@ jobs:
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
-      - name: Import variables
-        uses: UnlyEd/github-action-store-variable@v4 # See https://github.com/UnlyEd/github-action-store-variable
-        with:
-          variables: |
-            gurobiVersion
-            gurobiShortVersion
-            gurobiFolder
       - name: download-gurobi-windows
         shell: powershell
         env:
-          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
-          GUROBI_VERSION: ${{ env.gurobiVersion }}
-          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
-          GUROBI_FILE: Gurobi-${{ env.gurobiVersion }}-win64.msi
+          GUROBI_VERSION_SHORT: ${{ needs.read-parameters.output.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ needs.read-parameters.output.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ needs.read-parameters.output.gurobiFolder }}
+          GUROBI_FILE: Gurobi-${{ needs.read-parameters.output.gurobiVersion }}-win64.msi
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
           New-Item -itemType directory gurobi
@@ -182,19 +159,12 @@ jobs:
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
-      - name: Import variables
-        uses: UnlyEd/github-action-store-variable@v4 # See https://github.com/UnlyEd/github-action-store-variable
-        with:
-          variables: |
-            gurobiVersion
-            gurobiShortVersion
-            gurobiFolder
       - name: download-gurobi-linux
         env:
-          GUROBI_VERSION_SHORT: ${{ env.gurobiShortVersion }}
-          GUROBI_VERSION: ${{ env.gurobiVersion }}
-          GUROBI_VERSION_FOLDER: ${{ env.gurobiFolder }}
-          GUROBI_FILE: gurobi${{ env.gurobiVersion }}_linux64.tar.gz
+          GUROBI_VERSION_SHORT: ${{ needs.read-parameters.output.gurobiShortVersion }}
+          GUROBI_VERSION: ${{ needs.read-parameters.output.gurobiVersion }}
+          GUROBI_VERSION_FOLDER: ${{ needs.read-parameters.output.gurobiFolder }}
+          GUROBI_FILE: gurobi${{ needs.read-parameters.output.gurobiVersion }}_linux64.tar.gz
         run: |
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           tar -xvzf ${{ env.GUROBI_FILE }}
