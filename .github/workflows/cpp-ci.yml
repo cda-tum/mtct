@@ -34,9 +34,9 @@ jobs:
           paths: ./.github/gurobi_version.json
       - name: Export variables for next jobs
         run: |
-            echo "gurobiVersion=${{ env.gurobiVersion }}" >> $GITHUB_OUTPUT
-            echo "gurobiShortVersion=${{ env.gurobiShortVersion }}" >> $GITHUB_OUTPUT
-            echo "gurobiFolder=${{ env.gurobiFolder }}" >> $GITHUB_OUTPUT
+          echo "gurobiVersion=${{ env.gurobiVersion }}" >> $GITHUB_OUTPUT
+          echo "gurobiShortVersion=${{ env.gurobiShortVersion }}" >> $GITHUB_OUTPUT
+          echo "gurobiFolder=${{ env.gurobiFolder }}" >> $GITHUB_OUTPUT
   cpp-ubuntu-latest:
     name: cpp-ubuntu-latest
     runs-on: ubuntu-latest
