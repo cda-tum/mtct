@@ -145,6 +145,42 @@ int main(int argc, char** argv) {
                             std::to_string(pop).substr(0, 5) + ".csv");
     }
   }
+
+  {
+    std::vector<double> elites = {0.01, 0.05, 0.1, 0.25, 0.5};
+
+    for (double elite : elites) {
+      cda_rail::sim::ScoreHistoryCollection score_coll;
+      std::mutex                            hist_mutex;
+
+      ga_params.n_elite =
+          (size_t)std::round(elite * (double)ga_params.population);
+
+      std::vector<std::thread> workers;
+      for (size_t process = 0; process < processor_count; process++) {
+        workers.push_back(std::thread{[&]() {
+          cda_rail::sim::RoutingSolver solver{instance};
+
+          for (size_t sample_runs = 0; sample_runs < 3; sample_runs++) {
+            auto res = solver.genetic_search(ga_params);
+
+            if (std::get<0>(res)) {
+              const std::lock_guard<std::mutex> lock(hist_mutex);
+              score_coll.add(std::get<1>(res));
+            }
+          }
+        }});
+      }
+
+      while (workers.size() > 0) {
+        workers.back().join();
+        workers.pop_back();
+      }
+
+      score_coll.export_csv(output_path + "/score_hist_" +
+                            std::to_string(elite).substr(0, 5) + ".csv");
+    }
+  }
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
