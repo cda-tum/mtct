@@ -75,9 +75,9 @@ int main(int argc, char** argv) {
     }
   }
 
-  std::vector<double> mut_rates = {0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99};
-
   {
+    std::vector<double> mut_rates = {0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99};
+
     for (double mut_rate : mut_rates) {
       cda_rail::sim::ScoreHistoryCollection score_coll;
       std::mutex                            hist_mutex;
@@ -107,6 +107,42 @@ int main(int argc, char** argv) {
 
       score_coll.export_csv(output_path + "/score_hist_" +
                             std::to_string(mut_rate).substr(0, 5) + ".csv");
+    }
+  }
+
+  {
+    std::vector<size_t> pops = {10, 100, 1000, 10000};
+
+    for (size_t pop : pops) {
+      cda_rail::sim::ScoreHistoryCollection score_coll;
+      std::mutex                            hist_mutex;
+
+      ga_params.population = pop;
+      ga_params.n_elite    = (size_t)std::round(0.1 * pop);
+
+      std::vector<std::thread> workers;
+      for (size_t process = 0; process < processor_count; process++) {
+        workers.push_back(std::thread{[&]() {
+          cda_rail::sim::RoutingSolver solver{instance};
+
+          for (size_t sample_runs = 0; sample_runs < 3; sample_runs++) {
+            auto res = solver.genetic_search(ga_params);
+
+            if (std::get<0>(res)) {
+              const std::lock_guard<std::mutex> lock(hist_mutex);
+              score_coll.add(std::get<1>(res));
+            }
+          }
+        }});
+      }
+
+      while (workers.size() > 0) {
+        workers.back().join();
+        workers.pop_back();
+      }
+
+      score_coll.export_csv(output_path + "/score_hist_" +
+                            std::to_string(pop).substr(0, 5) + ".csv");
     }
   }
 }
