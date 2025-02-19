@@ -24,6 +24,10 @@ jobs:
   read-parameters:
     name: read-parameters
     runs-on: ubuntu-latest
+    outputs:
+      gurobiVersion: ${{ steps.set-output.outputs.gurobiVersion }}
+      gurobiShortVersion: ${{ steps.set-output.outputs.gurobiShortVersion }}
+      gurobiFolder: ${{ steps.set-output.outputs.gurobiFolder }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,6 +37,7 @@ jobs:
         with:
           paths: ./.github/gurobi_version.json
       - name: Export variables for next jobs
+        id: set-output
         run: |
           echo "gurobiVersion=${{ env.gurobiVersion }}" >> $GITHUB_OUTPUT
           echo "gurobiShortVersion=${{ env.gurobiShortVersion }}" >> $GITHUB_OUTPUT
