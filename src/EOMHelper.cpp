@@ -688,7 +688,10 @@ double cda_rail::pos_on_edge_at_time(double v_1, double v_2, double v_line,
     const auto total_time_dv = time_on_edge(v_1, v_2, v_line_dv, a, d, s);
     if (t > total_time_dv + GRB_EPS) {
       throw exceptions::InvalidInputException(
-          "Time exceeds total travel time.");
+          "Time exceeds total travel time in cda_rail::pos_on_edge_at_time "
+          "with t = " +
+          std::to_string(t) +
+          " and total_time_dv = " + std::to_string(total_time_dv));
     }
     return s;
   }
@@ -726,7 +729,10 @@ double cda_rail::vel_on_edge_at_time(double v_1, double v_2, double v_line,
     const auto total_time_dv = time_on_edge(v_1, v_2, v_line_dv, a, d, s);
     if (t > total_time_dv + GRB_EPS) {
       throw exceptions::InvalidInputException(
-          "Time exceeds total travel time.");
+          "Time exceeds total travel time in cda_rail::vel_on_edge_at_time "
+          "with t = " +
+          std::to_string(t) +
+          " and total_time_dv = " + std::to_string(total_time_dv));
     }
     return v_2;
   }
