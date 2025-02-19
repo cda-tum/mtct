@@ -73,11 +73,17 @@ public:
                double             start_sampling_range_fraction,
                double abort_sampling_range_fraction, double contr_coeff);
 
+  std::tuple<SolverResult, ScoreHistory>
+  local_search(RoutingSolutionSet starting_solution,
+               double             start_sampling_range_fraction,
+               double abort_sampling_range_fraction, double contr_coeff,
+               const std::function<double(void)>& rng01);
+
   std::optional<SolverResult>
   greedy_solution(std::chrono::milliseconds per_train_stall_time);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
-  genetic_search(GeneticParams params);
+  genetic_search(GeneticParams params, bool local_improv = false);
 
   // GA Helpers
   struct MiddleCost {
@@ -99,6 +105,11 @@ public:
   RoutingSolutionSet crossover(const RoutingSolutionSet&          X1,
                                const RoutingSolutionSet&          X2,
                                const std::function<double(void)>& rnd01);
+
+  RoutingSolutionSet
+  crossover_local_improv(const RoutingSolutionSet&          X1,
+                         const RoutingSolutionSet&          X2,
+                         const std::function<double(void)>& rnd01);
 
   double calculate_SO_total_fitness(const GA_Type::thisChromosomeType& X);
 

@@ -331,7 +331,7 @@ TEST(Simulation, LocalSearch) {
   sim::RoutingSolver      solver{instance};
 
   sim::RoutingSolutionSet solution_set{instance, rng_engine};
-  auto res = solver.local_search(solution_set, 0.5, 1e-5, 0.95);
+  auto res = solver.local_search(solution_set, 0.1, 0.01, 0.95);
 }
 
 TEST(Simulation, RandomLocalSearch) {
@@ -378,11 +378,11 @@ TEST(Simulation, GeneticSearch) {
       "./example-networks-unidirec/SimpleNetwork/timetable/", network);
 
   cda_rail::sim::GeneticParams ga_params{
-      .is_multithread = false,
-      .population     = 1000,
-      .gen_max        = 20,
-      .stall_max      = 5,
-      .n_elite        = 100,
+      .is_multithread = true,
+      .population     = 10,
+      .gen_max        = 3,
+      .stall_max      = 2,
+      .n_elite        = 2,
       .xover_frac     = 0.7,
       .mut_rate       = 0.1,
   };
@@ -391,7 +391,8 @@ TEST(Simulation, GeneticSearch) {
   sim::RoutingSolver      solver{instance};
 
   sim::RoutingSolutionSet solution_set{instance, rng_engine};
-  auto                    res = solver.genetic_search(ga_params);
+  auto                    res  = solver.genetic_search(ga_params);
+  auto                    res2 = solver.genetic_search(ga_params, true);
 }
 
 // TODO: test for invariance of solution after being repaired and used again
