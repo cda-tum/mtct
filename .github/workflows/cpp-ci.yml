@@ -67,11 +67,11 @@ jobs:
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           tar -xvzf ${{ env.GUROBI_FILE }}
       - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build --config Debug
       - name: Test
-        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 500
+        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 500
   cpp-macos-latest:
     name: cpp-macos-latest
     runs-on: macos-latest
@@ -97,11 +97,11 @@ jobs:
           wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
           sudo installer -pkg ${{ env.GUROBI_FILE }} -target /
       - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build --config Debug
       - name: Test
-        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 500
+        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 500
   cpp-windows-latest:
     name: cpp-windows-latest
     runs-on: windows-latest
@@ -146,11 +146,11 @@ jobs:
           echo "GUROBI_HOME=$PWD\gurobi\${{ needs.read-parameters.outputs.gurobiFolder }}\win64" >> $env:GITHUB_ENV
           echo "$PWD\gurobi\${{ needs.read-parameters.outputs.gurobiFolder }}\win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build --config Debug
       - name: Test
-        run: ctest -C Release --output-on-failure --test-dir build --repeat until-pass:3 --timeout 500
+        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 500
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
