@@ -105,7 +105,9 @@ jobs:
   cpp-windows-latest:
     name: cpp-windows-latest
     runs-on: windows-latest
-    needs: cpp-macos-latest
+    needs:
+      - cpp-macos-latest
+      - read-parameters
     steps:
       - uses: actions/checkout@v4
         with:
@@ -152,7 +154,9 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-    needs: cpp-ubuntu-latest
+    needs:
+      - cpp-ubuntu-latest
+      - read-parameters
     steps:
       - uses: actions/checkout@v4
         with:
