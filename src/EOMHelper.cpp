@@ -128,8 +128,8 @@ double cda_rail::max_travel_time_from_start_stopping_allowed(
 
   const double bd = v_1 * v_1 / (2 * d); // Distance to stop
 
-  if (bd <= s_1) {
-    if (x >= s_1) {
+  if (bd <= s_1 + EPS) {
+    if (x + EPS >= s_1) {
       // Infinite, because train could have stopped
       return std::numeric_limits<double>::infinity();
     }
