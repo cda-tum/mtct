@@ -31,17 +31,16 @@ int main(int argc, char** argv) {
 
   cda_rail::sim::GeneticParams ga_params{
       .is_multithread = false,
-      .population     = 1000,
-      .gen_max        = 20,
-      .stall_max      = 5,
-      .n_elite        = 100,
+      .population     = 100,
+      .gen_max        = 10,
+      .stall_max      = 4,
+      .n_elite        = 10,
       .xover_frac     = 0.7,
       .mut_rate       = 0.1,
   };
 
   std::vector<std::string> methods = {"random", "greedy", "random+local",
-                                      "grasp"
-                                      "genetic"};
+                                      "grasp"};
 
   for (std::string method : methods) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
@@ -52,33 +51,36 @@ int main(int argc, char** argv) {
       workers.push_back(std::thread{[&]() {
         cda_rail::sim::RoutingSolver solver{instance};
 
-        for (size_t sample = 0; sample < std::floor(100 / processor_count);
-             sample++) {
+        for (size_t sample = 0; sample < 2; sample++) {
           // Method here
 
           std::tuple<std::optional<cda_rail::sim::SolverResult>,
                      cda_rail::sim::ScoreHistory>
               res;
           if (method == "random") {
-            res = solver.random_search(std::chrono::seconds{10}, {});
+            res = solver.random_search(std::chrono::seconds{200}, {});
           } else if (method == "greedy") {
-            res = solver.greedy_search(std::chrono::seconds{10}, {},
+            res = solver.greedy_search(std::chrono::seconds{200}, {},
                                        std::chrono::milliseconds{50});
           } else if (method == "random+local") {
-            res = solver.random_local_search(std::chrono::seconds{10}, 0.3,
+            res = solver.random_local_search(std::chrono::seconds{200}, 0.3,
                                              0.005, 0.9);
           } else if (method == "grasp") {
-            res = solver.grasp_search(std::chrono::seconds{10},
+            res = solver.grasp_search(std::chrono::seconds{200},
                                       std::chrono::milliseconds{50}, 0.3, 0.005,
                                       0.9);
           } else if (method == "genetic") {
             res = solver.genetic_search(ga_params);
+          } else if (method == "genetic+local") {
+            res = solver.genetic_search(ga_params, true);
           }
 
           if (std::get<0>(res)) {
             const std::lock_guard<std::mutex> lock(hist_mutex);
             score_coll.add(std::get<1>(res));
           }
+
+          std::cout << "Sample completed." << std::endl;
         }
       }});
     }
