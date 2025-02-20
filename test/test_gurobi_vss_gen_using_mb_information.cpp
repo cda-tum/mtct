@@ -1,10 +1,8 @@
-#include "VSSModel.hpp"
+#include "Definitions.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
 #include <filesystem>
-#include <iostream>
-#include <string>
 
 TEST(VSSGenMBInfoSolver, Default1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
