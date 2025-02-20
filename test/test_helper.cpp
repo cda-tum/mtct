@@ -946,6 +946,10 @@ TEST(Helper, EoMMinimalTimePushMA) {
   // MA is 200+450 = 650 before initial point
   // Hence, braking overlap is 650 - 50 = 600
   EXPECT_APPROX_EQ(cda_rail::min_time_to_push_ma_forward(10, 2, 1, 600), 10);
+
+  EXPECT_THROW(
+      cda_rail::min_time_to_push_ma_forward(10, 2, -cda_rail::GRB_EPS / 2, 72),
+      cda_rail::exceptions::InvalidInputException);
 }
 
 TEST(Helper, EoMMinimalTimeMA) {
@@ -1296,6 +1300,14 @@ TEST(Helper, EoMMinTimeMoveMABackwards) {
   EXPECT_APPROX_EQ(
       cda_rail::min_time_to_push_ma_fully_backward(10 * std::sqrt(3), 2, 1),
       5 * (std::sqrt(3) - 1));
+
+  EXPECT_THROW(cda_rail::min_time_to_push_ma_backward(
+                   -cda_rail::GRB_EPS / 2, -cda_rail::GRB_EPS / 2,
+                   -cda_rail::GRB_EPS / 2, -cda_rail::GRB_EPS / 2),
+               cda_rail::exceptions::InvalidInputException);
+
+  EXPECT_THROW(cda_rail::min_time_to_push_ma_backward(9, 2, 3, 13.6),
+               cda_rail::exceptions::InvalidInputException);
 }
 
 TEST(Helper, EoMMaximalLineSpeed) {
@@ -1387,6 +1399,12 @@ TEST(Helper, EoMTravelTimePerLineSpeed) {
 
   EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 6, 8, 2, 1, 64), 8);
   EXPECT_APPROX_EQ(cda_rail::time_on_edge(10, 6, 8, 2, 1, 32), 4);
+
+  EXPECT_THROW(
+      cda_rail::time_on_edge(-cda_rail::GRB_EPS / 2, -cda_rail::GRB_EPS / 2,
+                             -cda_rail::GRB_EPS / 2, -cda_rail::GRB_EPS / 2,
+                             -cda_rail::GRB_EPS / 2, -cda_rail::GRB_EPS / 2),
+      cda_rail::exceptions::InvalidInputException);
 }
 
 TEST(Helper, EoMGetLineSpeed) {
@@ -1599,6 +1617,169 @@ TEST(Helper, EoMPosOnEdgeAtTime) {
   EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 6, 8, 2, 1, 32, 0), 10);
   EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 6, 8, 2, 1, 32, 2), 8);
   EXPECT_APPROX_EQ(cda_rail::vel_on_edge_at_time(10, 6, 8, 2, 1, 32, 4), 6);
+
+  EXPECT_THROW(cda_rail::pos_on_edge_at_time(10, 10, 10, 1, 1, 100, 11),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::vel_on_edge_at_time(10, 10, 10, 1, 1, 100, 11),
+               cda_rail::exceptions::InvalidInputException);
+}
+
+TEST(Helper, ConsistencySmallNegativeValues) {
+  auto   v1_in = -cda_rail::GRB_EPS / 2;
+  auto   v2_in = -cda_rail::GRB_EPS / 2;
+  double a_in  = 1.0;
+  double d_in  = 1.0;
+  double s_in  = 1.0;
+  auto   x_in  = -cda_rail::GRB_EPS / 2;
+
+  EXPECT_NO_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                           d_in, s_in, x_in));
+  EXPECT_EQ(v1_in, 0);
+  EXPECT_EQ(v2_in, 0);
+  EXPECT_EQ(a_in, 1);
+  EXPECT_EQ(d_in, 1);
+  EXPECT_EQ(s_in, 1);
+  EXPECT_EQ(x_in, 0);
+
+  v1_in = 1;
+  v2_in = 1;
+  a_in  = -cda_rail::GRB_EPS / 2;
+  d_in  = 1;
+  s_in  = 1;
+  x_in  = 1;
+  EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                        d_in, s_in, x_in),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_EQ(v1_in, 1);
+  EXPECT_EQ(v2_in, 1);
+  EXPECT_EQ(a_in, 0);
+  EXPECT_EQ(d_in, 1);
+  EXPECT_EQ(s_in, 1);
+  EXPECT_EQ(x_in, 1);
+
+  v1_in = 1;
+  v2_in = 1;
+  a_in  = 1;
+  d_in  = -cda_rail::GRB_EPS / 2;
+  s_in  = 1;
+  x_in  = 1;
+  EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                        d_in, s_in, x_in),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_EQ(v1_in, 1);
+  EXPECT_EQ(v2_in, 1);
+  EXPECT_EQ(a_in, 1);
+  EXPECT_EQ(d_in, 0);
+  EXPECT_EQ(s_in, 1);
+  EXPECT_EQ(x_in, 1);
+
+  v1_in = 1;
+  v2_in = 1;
+  a_in  = 1;
+  d_in  = 1;
+  s_in  = -2 * cda_rail::GRB_EPS;
+  x_in  = 1;
+  EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                        d_in, s_in, x_in),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_EQ(v1_in, 1);
+  EXPECT_EQ(v2_in, 1);
+  EXPECT_EQ(a_in, 1);
+  EXPECT_EQ(d_in, 1);
+  EXPECT_EQ(s_in, -2 * cda_rail::GRB_EPS);
+  EXPECT_EQ(x_in, 1);
+
+  v1_in = 1;
+  v2_in = 1;
+  a_in  = 1;
+  d_in  = 1;
+  s_in  = 1;
+  x_in  = 2;
+  EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                        d_in, s_in, x_in),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_EQ(v1_in, 1);
+  EXPECT_EQ(v2_in, 1);
+  EXPECT_EQ(a_in, 1);
+  EXPECT_EQ(d_in, 1);
+  EXPECT_EQ(s_in, 1);
+  EXPECT_EQ(x_in, 2);
+
+  v1_in = 6;
+  v2_in = std::sqrt(66);
+  a_in  = 3;
+  d_in  = 4;
+  s_in  = 5;
+  x_in  = 4;
+  EXPECT_NO_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                           d_in, s_in, x_in));
+
+  v1_in = 6;
+  v2_in = std::sqrt(67);
+  a_in  = 3;
+  d_in  = 4;
+  s_in  = 5;
+  x_in  = 4;
+  EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                        d_in, s_in, x_in),
+               cda_rail::exceptions::ConsistencyException);
+
+  v1_in = std::sqrt(51);
+  v2_in = 9;
+  a_in  = 3;
+  d_in  = 4;
+  s_in  = 5;
+  x_in  = 4;
+  EXPECT_NO_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                           d_in, s_in, x_in));
+
+  v1_in = std::sqrt(50);
+  v2_in = 9;
+  a_in  = 3;
+  d_in  = 4;
+  s_in  = 5;
+  x_in  = 4;
+  EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                        d_in, s_in, x_in),
+               cda_rail::exceptions::ConsistencyException);
+
+  v1_in = 9;
+  v2_in = sqrt(41);
+  a_in  = 3;
+  d_in  = 4;
+  s_in  = 5;
+  x_in  = 4;
+  EXPECT_NO_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                           d_in, s_in, x_in));
+
+  v1_in = 9;
+  v2_in = sqrt(40);
+  a_in  = 3;
+  d_in  = 4;
+  s_in  = 5;
+  x_in  = 4;
+  EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                        d_in, s_in, x_in),
+               cda_rail::exceptions::ConsistencyException);
+
+  v1_in = std::sqrt(76);
+  v2_in = 6;
+  a_in  = 3;
+  d_in  = 4;
+  s_in  = 5;
+  x_in  = 4;
+  EXPECT_NO_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                           d_in, s_in, x_in));
+
+  v1_in = std::sqrt(77);
+  v2_in = 6;
+  a_in  = 3;
+  d_in  = 4;
+  s_in  = 5;
+  x_in  = 4;
+  EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                        d_in, s_in, x_in),
+               cda_rail::exceptions::ConsistencyException);
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)
