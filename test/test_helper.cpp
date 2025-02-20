@@ -4,9 +4,13 @@
 #include "VSSModel.hpp"
 
 #include "gtest/gtest.h"
+#include <algorithm>
 #include <cmath>
-#include <iostream>
+#include <cstddef>
 #include <limits>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #define EXPECT_APPROX_EQ(a, b)                                                 \
   EXPECT_TRUE(std::abs((a) - (b)) < 1e-6) << (a) << " !=(approx.) " << (b)
