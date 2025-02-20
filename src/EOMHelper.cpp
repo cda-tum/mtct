@@ -58,8 +58,8 @@ double cda_rail::min_travel_time(double v_1, double v_2, double v_m, double a,
 
 bool cda_rail::possible_by_eom(double v_1, double v_2, double a, double d,
                                double s) {
-  return v_1 <= v_2 ? (v_2 + v_1) * (v_2 - v_1) <= 2 * a * s
-                    : (v_1 + v_2) * (v_1 - v_2) <= 2 * d * s;
+  return v_1 <= v_2 ? (v_2 + v_1) * (v_2 - v_1) <= 2 * a * s + GRB_EPS
+                    : (v_1 + v_2) * (v_1 - v_2) <= 2 * d * s + GRB_EPS;
 }
 
 double cda_rail::max_travel_time_from_start_no_stopping(double v_1, double v_2,
@@ -186,6 +186,10 @@ void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
     throw exceptions::ConsistencyException(
         "All input values must be non-negative.");
   }
+  if (a < GRB_EPS || d < GRB_EPS) {
+    throw exceptions::ConsistencyException(
+        "Both acceleration and deceleration must be strictly positive.");
+  }
 
   if (x > s) {
     throw exceptions::ConsistencyException(
@@ -194,7 +198,7 @@ void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
 
   if (!possible_by_eom(v_1, v_2, a, d, s)) {
     throw exceptions::ConsistencyException(
-        "Travel time not possible by equations of motion.");
+        "Entry and exit velocities not possible by equations of motion.");
   }
 }
 
@@ -255,7 +259,7 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
   // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
   if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
     throw exceptions::InvalidInputException(
-        "We need v_0 >= 0, a >= 0, d > 0, s >= 0");
+        "We need v_0 >= 0, a > 0, d > 0, s >= 0");
   }
 
   // ma(t) = v_0*t + 0.5*a*t^2 + (v_0+a*t)^2/(2d) != s + v_0^2/(2d)
