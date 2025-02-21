@@ -64,7 +64,6 @@ jobs:
           tidy-checks: ""
           version: ${{ env.clang-version }}
           ignore: "build | test/example-networks | test/example-networks-gen-po | gurobi*"
-          files-changed-only: false
           thread-comments: true
           step-summary: true
           database: "build"
