@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "GeneralProblemInstance.hpp"
@@ -8,14 +9,19 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <optional>
+#include <stdexcept>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -217,7 +223,7 @@ public:
     j["lambda"] = lambda;
 
     std::ofstream file(path / "problem_data.json");
-    file << j << std::endl;
+    file << j << '\n';
   };
 
   [[nodiscard]] bool check_consistency() const override {
@@ -264,7 +270,7 @@ template <typename T>
 class SolGeneralPerformanceOptimizationInstance
     : public SolGeneralProblemInstanceWithScheduleAndRoutes<T> {
   static_assert(
-      std::is_base_of<GeneralPerformanceOptimizationInstance, T>::value,
+      std::is_base_of_v<GeneralPerformanceOptimizationInstance, T>,
       "T must be derived from GeneralPerformanceOptimizationInstance");
   std::vector<std::map<double, double>> train_pos;
   std::vector<std::map<double, double>> train_speed;
@@ -701,9 +707,11 @@ public:
     SolGeneralProblemInstanceWithScheduleAndRoutes<
         T>::export_general_solution_data_with_routes(p, export_instance, true);
 
+    // NOLINTBEGIN(misc-const-correctness)
     json train_pos_json;
     json train_speed_json;
     json train_routed_json;
+    // NOLINTEND(misc-const-correctness)
     for (size_t tr_id = 0; tr_id < this->instance.get_train_list().size();
          ++tr_id) {
       const auto& train = this->instance.get_train_list().get_train(tr_id);
@@ -713,15 +721,15 @@ public:
     }
 
     std::ofstream train_pos_file(p / "solution" / "train_pos.json");
-    train_pos_file << train_pos_json << std::endl;
+    train_pos_file << train_pos_json << '\n';
     train_pos_file.close();
 
     std::ofstream train_speed_file(p / "solution" / "train_speed.json");
-    train_speed_file << train_speed_json << std::endl;
+    train_speed_file << train_speed_json << '\n';
     train_speed_file.close();
 
     std::ofstream train_routed_file(p / "solution" / "train_routed.json");
-    train_routed_file << train_routed_json << std::endl;
+    train_routed_file << train_routed_json << '\n';
     train_routed_file.close();
   };
   [[nodiscard]] bool check_consistency() const override {
@@ -807,7 +815,7 @@ template <typename T>
 class SolVSSGeneralPerformanceOptimizationInstance
     : public SolGeneralPerformanceOptimizationInstance<T> {
   static_assert(
-      std::is_base_of<GeneralPerformanceOptimizationInstance, T>::value,
+      std::is_base_of_v<GeneralPerformanceOptimizationInstance, T>,
       "T must be derived from GeneralPerformanceOptimizationInstance");
 
   std::vector<std::vector<double>> vss_pos;
@@ -921,6 +929,7 @@ public:
     SolGeneralPerformanceOptimizationInstance<T>::export_solution(
         p, export_instance);
 
+    // NOLINTNEXTLINE(misc-const-correctness)
     json vss_pos_json;
     for (size_t edge_id = 0;
          edge_id < this->instance.const_n().number_of_edges(); ++edge_id) {
@@ -931,7 +940,7 @@ public:
     }
 
     std::ofstream vss_pos_file(p / "solution" / "vss_pos.json");
-    vss_pos_file << vss_pos_json << std::endl;
+    vss_pos_file << vss_pos_json << '\n';
     vss_pos_file.close();
   };
   [[nodiscard]] bool check_consistency() const override {
