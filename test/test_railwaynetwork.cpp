@@ -3,15 +3,23 @@
 #include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
+#include "datastructure/Station.hpp"
 #include "datastructure/Timetable.hpp"
-#include "nlohmann/json.hpp"
+#include "datastructure/Train.hpp"
 #include "nlohmann/json_fwd.hpp"
 
 #include "gtest/gtest.h"
 #include <algorithm>
+#include <cstddef>
+#include <filesystem>
+#include <limits>
 #include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 using json = nlohmann::json;
+using std::size_t;
 
 struct EdgeTarget {
   std::string source;
@@ -23,10 +31,10 @@ struct EdgeTarget {
   double      min_stop_block_length = 100;
 };
 
-// NOLINTBEGIN(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores)
+// NOLINTBEGIN(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores,bugprone-unchecked-optional-access)
 
 TEST(Functionality, NetworkTTDIntersection) {
-  std::vector<std::pair<size_t, size_t>> expected({{0, 1}, {2, 4}});
+  const std::vector<std::pair<size_t, size_t>> expected({{0, 1}, {2, 4}});
   const auto actual = cda_rail::Network::get_intersecting_ttd(
       {0, 1, 2, 3, 4}, {{1, 2, 5}, {6, 9, 10}, {11, 4, 10}});
   EXPECT_EQ(actual, expected);
@@ -3342,6 +3350,7 @@ TEST(Functionality, TimetableConsistency) {
   auto network2 = cda_rail::Network::import_network(
       "./example-networks/SimpleStation/network/");
   network2.add_edge("r0", "l1", 100, 10, false);
+  // NOLINTNEXTLINE(misc-const-correctness)
   cda_rail::Network network3;
   cda_rail::Network network4;
   network4.add_vertex("l0", cda_rail::VertexType::TTD);
@@ -3765,4 +3774,4 @@ TEST(Functionality, IsFullyInStation) {
   EXPECT_FALSE(stations.is_fully_in_station("Station1", {0, 2}));
 }
 
-// NOLINTEND(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores)
+// NOLINTEND(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores,bugprone-unchecked-optional-access)

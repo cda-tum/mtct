@@ -2,7 +2,6 @@
 
 #include "gtest/gtest.h"
 #include <cstddef>
-#include <iostream>
 #include <stdexcept>
 #include <vector>
 

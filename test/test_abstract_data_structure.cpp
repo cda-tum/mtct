@@ -1,14 +1,21 @@
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
+#include "datastructure/Timetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "probleminstances/VSSGenerationTimetable.hpp"
 
 #include "gtest/gtest.h"
+#include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <utility>
+#include <vector>
 
 using namespace cda_rail;
+using std::size_t;
 
 TEST(GeneralAbstractDataStructure, GeneralScheduledStopExceptions) {
   EXPECT_THROW(cda_rail::GeneralScheduledStop({10, 9}, {12, 15}, 1, "Test1"),
@@ -202,7 +209,7 @@ TEST(GeneralAbstractDataStructure, GeneralTimetableExportImport) {
   // Write timetable to directory
   timetable.export_timetable("./tmp/test-general-timetable/", network);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable_read(
+  const GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable_read(
       "./tmp/test-general-timetable/", network);
 
   std::filesystem::remove_all("./tmp");
@@ -265,10 +272,10 @@ TEST(GeneralAbstractDataStructure, GeneralTimetableExportImport) {
 }
 
 TEST(GeneralAbstractDataStructure, ParseSchedule) {
-  cda_rail::ScheduledStop stop1(0, 4, "Test");
-  cda_rail::ScheduledStop stop2(6, 8, "Test");
+  const cda_rail::ScheduledStop stop1(0, 4, "Test");
+  const cda_rail::ScheduledStop stop2(6, 8, "Test");
 
-  cda_rail::Schedule schedule(0, 10, 1, 20, 5, 2, {stop1, stop2});
+  const cda_rail::Schedule schedule(0, 10, 1, 20, 5, 2, {stop1, stop2});
 
   const auto general_schedule = schedule.parse_to_general_schedule();
   EXPECT_EQ(general_schedule.get_t_0_range(), (std::pair<int, int>(0, 0)));
@@ -555,8 +562,8 @@ void check_instance_import_general_cast(
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
   for (size_t i = 0; i < vertex_names.size(); i++) {
-    std::string      v_name = vertex_names[i];
-    cda_rail::Vertex v      = network.get_vertex(v_name);
+    const std::string       v_name = vertex_names[i];
+    const cda_rail::Vertex& v      = network.get_vertex(v_name);
     EXPECT_EQ(v.name, v_name);
     EXPECT_EQ(v.type, type[i]);
   }
@@ -588,7 +595,7 @@ void check_instance_import_general_cast(
 
   EXPECT_EQ(network.number_of_edges(), edge_targets.size());
   for (const auto& edge : edge_targets) {
-    cda_rail::Edge e = network.get_edge(edge.source, edge.target);
+    const cda_rail::Edge e = network.get_edge(edge.source, edge.target);
     EXPECT_EQ(network.get_vertex(e.source).name, edge.source);
     EXPECT_EQ(network.get_vertex(e.target).name, edge.target);
     EXPECT_EQ(e.length, edge.length);

@@ -100,10 +100,14 @@ public:
   [[nodiscard]] const std::string& get_station_name() const { return station; }
 
   // Constructor
+  // NOLINTBEGIN(modernize-pass-by-value)
+  // cpp-linter cycles here because std::move were trivial for std::pair and
+  // should not be used in that context
   GeneralScheduledStop(std::pair<int, int> begin, std::pair<int, int> end,
                        int min_stopping_time, std::string station)
       : begin(begin), end(end), min_stopping_time(min_stopping_time),
         station(std::move(station)) {
+    // NOLINTEND(modernize-pass-by-value)
     if (this->begin.second < this->begin.first) {
       throw exceptions::InvalidInputException(
           "Interval begin has negative length");

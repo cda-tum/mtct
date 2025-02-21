@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 using std::size_t;
