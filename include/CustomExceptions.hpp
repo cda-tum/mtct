@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <exception>
 #include <string>
 #include <utility>

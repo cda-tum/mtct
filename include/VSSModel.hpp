@@ -1,16 +1,19 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace cda_rail::vss {
 using SeparationFunction = std::function<double(size_t, size_t)>;
 
-enum class ModelType {
+enum class ModelType : std::uint8_t {
   Discrete    = 0,
   Continuous  = 1,
   Inferred    = 2,
@@ -20,9 +23,7 @@ enum class ModelType {
 namespace functions {
 [[nodiscard]] static double uniform(size_t i, size_t n) {
   double ret_val = (static_cast<double>(i) + 1) / static_cast<double>(n);
-  if (ret_val > 1) {
-    ret_val = 1;
-  }
+  ret_val        = std::min<double>(ret_val, 1);
   return ret_val;
 }
 
@@ -34,7 +35,7 @@ namespace functions {
   const auto       n_points = static_cast<double>(n) - 1;
   const auto       k        = n_points - static_cast<double>(i);
   constexpr double pi       = 3.14159265358979323846;
-  return 0.5 + 0.5 * std::cos((2 * k - 1) * pi / (2 * n_points));
+  return 0.5 + (0.5 * std::cos((2 * k - 1) * pi / (2 * n_points)));
 }
 
 [[nodiscard]] static size_t max_n_blocks(const SeparationFunction& sep_func,
@@ -57,15 +58,15 @@ namespace functions {
     }
   }
 
-  return static_cast<size_t>(std::floor(1 / min_frac + eps));
+  return static_cast<size_t>(std::floor((1 / min_frac) + eps));
 }
 } // namespace functions
 
 class Model {
 private:
-  ModelType                       model_type           = ModelType::Continuous;
-  bool                            only_stop_at_vss     = false;
-  std::vector<SeparationFunction> separation_functions = {};
+  ModelType                       model_type       = ModelType::Continuous;
+  bool                            only_stop_at_vss = false;
+  std::vector<SeparationFunction> separation_functions;
 
 public:
   // Constructors

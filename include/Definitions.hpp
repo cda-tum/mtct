@@ -1,8 +1,13 @@
 #pragma once
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <limits>
+#include <stdexcept>
+#include <string>
+#include <system_error>
+#include <utility>
 #include <vector>
 
 namespace cda_rail {
@@ -17,15 +22,20 @@ constexpr double ABS_PWL_ERROR            = 10;
 constexpr double LINE_SPEED_ACCURACY      = 0.1;
 constexpr double LINE_SPEED_TIME_ACCURACY = 0.1;
 
-enum class VertexType { NoBorder = 0, VSS = 1, TTD = 2, NoBorderVSS = 3 };
-enum class SolutionStatus {
+enum class VertexType : std::uint8_t {
+  NoBorder    = 0,
+  VSS         = 1,
+  TTD         = 2,
+  NoBorderVSS = 3
+};
+enum class SolutionStatus : std::uint8_t {
   Optimal    = 0,
   Feasible   = 1,
   Infeasible = 2,
   Timeout    = 3,
   Unknown    = 4
 };
-enum class ExportOption {
+enum class ExportOption : std::uint8_t {
   NoExport                        = 0,
   ExportSolution                  = 1,
   ExportSolutionWithInstance      = 2,
@@ -33,8 +43,15 @@ enum class ExportOption {
   ExportSolutionAndLP             = 4,
   ExportSolutionWithInstanceAndLP = 5
 };
-enum class OptimalityStrategy { Optimal = 0, TradeOff = 1, Feasible = 2 };
-enum class VelocityRefinementStrategy { None = 0, MinOneStep = 1 };
+enum class OptimalityStrategy : std::uint8_t {
+  Optimal  = 0,
+  TradeOff = 1,
+  Feasible = 2
+};
+enum class VelocityRefinementStrategy : std::uint8_t {
+  None       = 0,
+  MinOneStep = 1
+};
 
 // Helper functions
 

@@ -7,7 +7,6 @@
 
 #include <cmath>
 #include <cstddef>
-#include <math.h>
 #include <string>
 
 // NOLINTBEGIN(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)

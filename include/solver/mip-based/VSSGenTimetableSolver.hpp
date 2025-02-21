@@ -5,17 +5,20 @@
 #include "gurobi_c++.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "probleminstances/VSSGenerationTimetable.hpp"
+#include "solver/GeneralSolver.hpp"
 #include "unordered_map"
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace cda_rail::solver::mip_based {
 
-enum class UpdateStrategy { Fixed = 0, Relative = 1 };
+enum class UpdateStrategy : std::uint8_t { Fixed = 0, Relative = 1 };
 
 struct SolverStrategy {
   bool                         iterative_approach = false;
@@ -46,6 +49,7 @@ struct ModelDetailMBInformation {
 };
 
 struct ModelSettings {
+  // NOLINTNEXTLINE(readability-redundant-member-init)
   vss::Model model_type        = vss::Model();
   bool       use_pwl           = false;
   bool       use_schedule_cuts = true;
