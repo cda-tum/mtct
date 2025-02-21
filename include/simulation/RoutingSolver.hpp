@@ -33,6 +33,16 @@ struct GeneticParams {
   double mut_rate;
 };
 
+struct LocalParams {
+  double start_sampling_range_fraction;
+  double abort_sampling_range_fraction;
+  double contraction_coeff;
+};
+
+struct GreedyParams {
+  std::chrono::milliseconds per_train_stall_time;
+};
+
 class RoutingSolver {
   /**
    * Performs heuristic routing for a SimulationInstance
@@ -48,39 +58,30 @@ public:
   RoutingSolver() = delete;
   RoutingSolver(const SimulationInstance& instance);
 
-  std::tuple<std::optional<SolverResult>, ScoreHistory>
-  random_local_search(std::chrono::seconds max_search_time,
-                      double start_sampl_frac, double stop_sampl_frac,
-                      double contr_coeff);
+  std::tuple<SolverResult, ScoreHistory>
+  local_search(RoutingSolutionSet starting_solution, LocalParams params);
+
+  std::tuple<SolverResult, ScoreHistory>
+  local_search(RoutingSolutionSet starting_solution, LocalParams params,
+               const std::function<double(void)>& rng01);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
-  grasp_search(std::chrono::seconds      max_search_time,
-               std::chrono::milliseconds per_train_stall_time,
-               double start_sampl_frac, double stop_sampl_frac,
-               double contr_coeff);
+  grasp_search(std::chrono::seconds max_search_time, GreedyParams gre_params,
+               LocalParams loc_params);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
   random_search(std::optional<std::chrono::seconds> max_search_time,
                 std::optional<std::chrono::seconds> max_stall_time);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
+  random_local_search(std::chrono::seconds max_search_time, LocalParams params);
+
+  std::tuple<std::optional<SolverResult>, ScoreHistory>
   greedy_search(std::optional<std::chrono::seconds> max_search_time,
                 std::optional<std::chrono::seconds> max_stall_time,
-                std::chrono::milliseconds           per_train_stall_time);
+                GreedyParams                        params);
 
-  std::tuple<SolverResult, ScoreHistory>
-  local_search(RoutingSolutionSet starting_solution,
-               double             start_sampling_range_fraction,
-               double abort_sampling_range_fraction, double contr_coeff);
-
-  std::tuple<SolverResult, ScoreHistory>
-  local_search(RoutingSolutionSet starting_solution,
-               double             start_sampling_range_fraction,
-               double abort_sampling_range_fraction, double contr_coeff,
-               const std::function<double(void)>& rng01);
-
-  std::optional<SolverResult>
-  greedy_solution(std::chrono::milliseconds per_train_stall_time);
+  std::optional<SolverResult> greedy_solution(GreedyParams params);
 
   std::tuple<std::optional<SolverResult>, ScoreHistory>
   genetic_search(GeneticParams params, bool local_improv = false);

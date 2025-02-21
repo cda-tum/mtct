@@ -278,7 +278,7 @@ TEST(Simulation, GreedySolution) {
   sim::SimulationInstance          instance{network, timetable, false};
   sim::RoutingSolver               solver{instance};
   std::optional<sim::SolverResult> sol =
-      solver.greedy_solution(std::chrono::milliseconds{10});
+      solver.greedy_solution({std::chrono::milliseconds{10}});
 }
 
 TEST(Simulation, RandomSearch) {
@@ -309,7 +309,7 @@ TEST(Simulation, GreedySearch) {
   sim::RoutingSolver      solver{instance};
 
   auto res = solver.greedy_search({}, std::chrono::seconds{1},
-                                  std::chrono::milliseconds{50});
+                                  {std::chrono::milliseconds{50}});
 
   if (std::get<0>(res)) {
     cda_rail::is_directory_and_create("tmp");
@@ -331,7 +331,7 @@ TEST(Simulation, LocalSearch) {
   sim::RoutingSolver      solver{instance};
 
   sim::RoutingSolutionSet solution_set{instance, rng_engine};
-  auto res = solver.local_search(solution_set, 0.1, 0.01, 0.95);
+  auto res = solver.local_search(solution_set, {0.1, 0.01, 0.95});
 }
 
 TEST(Simulation, RandomLocalSearch) {
@@ -348,7 +348,7 @@ TEST(Simulation, RandomLocalSearch) {
 
   sim::RoutingSolutionSet solution_set{instance, rng_engine};
   auto                    res =
-      solver.random_local_search(std::chrono::seconds{1}, 0.1, 1e-3, 0.95);
+      solver.random_local_search(std::chrono::seconds{1}, {0.1, 1e-3, 0.95});
 }
 
 TEST(Simulation, GraspSearch) {
@@ -364,8 +364,9 @@ TEST(Simulation, GraspSearch) {
   sim::RoutingSolver      solver{instance};
 
   sim::RoutingSolutionSet solution_set{instance, rng_engine};
-  auto                    res = solver.grasp_search(
-      std::chrono::seconds{1}, std::chrono::milliseconds{50}, 0.1, 1e-3, 0.95);
+  auto                    res =
+      solver.grasp_search(std::chrono::seconds{1},
+                          {std::chrono::milliseconds{50}}, {0.1, 1e-3, 0.95});
 }
 
 TEST(Simulation, GeneticSearch) {

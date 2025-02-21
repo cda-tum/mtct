@@ -37,8 +37,7 @@ cda_rail::sim::RoutingSolver::RoutingSolver(const SimulationInstance& instance)
 std::tuple<std::optional<cda_rail::sim::SolverResult>,
            cda_rail::sim::ScoreHistory>
 cda_rail::sim::RoutingSolver::random_local_search(
-    std::chrono::seconds max_search_time, double start_sampl_frac,
-    double stop_sampl_frac, double contr_coeff) {
+    std::chrono::seconds max_search_time, LocalParams params) {
   double                      best_score = DBL_MAX;
   std::optional<SolverResult> best_result;
   ScoreHistory                hist;
@@ -47,8 +46,7 @@ cda_rail::sim::RoutingSolver::random_local_search(
       std::chrono::steady_clock::now();
 
   for (;;) {
-    auto   res         = local_search(RoutingSolutionSet{instance, rng_engine},
-                                      start_sampl_frac, stop_sampl_frac, contr_coeff);
+    auto   res = local_search(RoutingSolutionSet{instance, rng_engine}, params);
     double round_score = std::get<0>(res).get_score();
 
     std::chrono::steady_clock::time_point round_time =
@@ -73,10 +71,9 @@ cda_rail::sim::RoutingSolver::random_local_search(
 
 std::tuple<std::optional<cda_rail::sim::SolverResult>,
            cda_rail::sim::ScoreHistory>
-cda_rail::sim::RoutingSolver::grasp_search(
-    std::chrono::seconds      max_search_time,
-    std::chrono::milliseconds per_train_stall_time, double start_sampl_frac,
-    double stop_sampl_frac, double contr_coeff) {
+cda_rail::sim::RoutingSolver::grasp_search(std::chrono::seconds max_search_time,
+                                           GreedyParams         gre_params,
+                                           LocalParams          loc_params) {
   double                      best_score = DBL_MAX;
   std::optional<SolverResult> best_result;
   ScoreHistory                hist;
@@ -86,12 +83,12 @@ cda_rail::sim::RoutingSolver::grasp_search(
 
   for (;;) {
     std::optional<cda_rail::sim::SolverResult> greedy_sol_opt =
-        greedy_solution(per_train_stall_time);
+        greedy_solution(gre_params);
     if (!greedy_sol_opt.has_value())
       continue;
 
-    auto   res         = local_search(greedy_sol_opt.value().get_solutions(),
-                                      start_sampl_frac, stop_sampl_frac, contr_coeff);
+    auto res =
+        local_search(RoutingSolutionSet{instance, rng_engine}, loc_params);
     double round_score = std::get<0>(res).get_score();
 
     std::chrono::steady_clock::time_point round_time =
@@ -171,8 +168,7 @@ std::tuple<std::optional<cda_rail::sim::SolverResult>,
            cda_rail::sim::ScoreHistory>
 cda_rail::sim::RoutingSolver::greedy_search(
     std::optional<std::chrono::seconds> max_search_time,
-    std::optional<std::chrono::seconds> max_stall_time,
-    std::chrono::milliseconds           per_train_stall_time) {
+    std::optional<std::chrono::seconds> max_stall_time, GreedyParams params) {
   if (!max_search_time.has_value() && !max_stall_time.has_value())
     throw std::invalid_argument(
         "Need at least one abort criterium for search.");
@@ -187,7 +183,7 @@ cda_rail::sim::RoutingSolver::greedy_search(
 
   for (;;) {
     std::optional<cda_rail::sim::SolverResult> round_result_opt =
-        greedy_solution(per_train_stall_time);
+        greedy_solution(params);
     double round_score = round_result_opt.value().get_score();
 
     std::chrono::steady_clock::time_point round_time =
@@ -227,9 +223,7 @@ cda_rail::sim::RoutingSolver::greedy_search(
 
 std::tuple<cda_rail::sim::SolverResult, cda_rail::sim::ScoreHistory>
 cda_rail::sim::RoutingSolver::local_search(
-    cda_rail::sim::RoutingSolutionSet starting_solution,
-    double start_sampling_range_fraction, double abort_sampling_range_fraction,
-    double contr_coeff) {
+    cda_rail::sim::RoutingSolutionSet starting_solution, LocalParams params) {
   /**
    * Luus–Jaakola Local Search
    */
@@ -237,14 +231,14 @@ cda_rail::sim::RoutingSolver::local_search(
       std::chrono::steady_clock::now();
 
   ScoreHistory hist;
-  double       sampling_range_fraction = start_sampling_range_fraction;
+  double       sampling_range_fraction = params.start_sampling_range_fraction;
   SolverResult last_result{instance, starting_solution};
   double       last_score = last_result.get_score();
   hist.push_back({std::chrono::duration_cast<std::chrono::milliseconds>(
                       std::chrono::steady_clock::now() - initial_time),
                   last_score});
 
-  while (sampling_range_fraction > abort_sampling_range_fraction) {
+  while (sampling_range_fraction > params.abort_sampling_range_fraction) {
     RoutingSolutionSet new_sol = last_result.get_solutions();
     new_sol.perturb(instance, sampling_range_fraction, rng_engine);
     SolverResult new_result{instance, new_sol};
@@ -256,7 +250,8 @@ cda_rail::sim::RoutingSolver::local_search(
                           std::chrono::steady_clock::now() - initial_time),
                       last_score});
     } else {
-      sampling_range_fraction = sampling_range_fraction * contr_coeff;
+      sampling_range_fraction =
+          sampling_range_fraction * params.contraction_coeff;
     }
   }
 
@@ -265,21 +260,20 @@ cda_rail::sim::RoutingSolver::local_search(
 
 std::tuple<cda_rail::sim::SolverResult, cda_rail::sim::ScoreHistory>
 cda_rail::sim::RoutingSolver::local_search(
-    cda_rail::sim::RoutingSolutionSet starting_solution,
-    double start_sampling_range_fraction, double abort_sampling_range_fraction,
-    double contr_coeff, const std::function<double(void)>& rng01) {
+    RoutingSolutionSet starting_solution, LocalParams params,
+    const std::function<double(void)>& rng01) {
   std::chrono::steady_clock::time_point initial_time =
       std::chrono::steady_clock::now();
 
   ScoreHistory hist;
-  double       sampling_range_fraction = start_sampling_range_fraction;
+  double       sampling_range_fraction = params.start_sampling_range_fraction;
   SolverResult last_result{instance, starting_solution};
   double       last_score = last_result.get_score();
   hist.push_back({std::chrono::duration_cast<std::chrono::milliseconds>(
                       std::chrono::steady_clock::now() - initial_time),
                   last_score});
 
-  while (sampling_range_fraction > abort_sampling_range_fraction) {
+  while (sampling_range_fraction > params.abort_sampling_range_fraction) {
     RoutingSolutionSet new_sol = last_result.get_solutions();
     new_sol.perturb(instance, sampling_range_fraction, rng01);
     SolverResult new_result{instance, new_sol};
@@ -291,7 +285,8 @@ cda_rail::sim::RoutingSolver::local_search(
                           std::chrono::steady_clock::now() - initial_time),
                       last_score});
     } else {
-      sampling_range_fraction = sampling_range_fraction * contr_coeff;
+      sampling_range_fraction =
+          sampling_range_fraction * params.contraction_coeff;
     }
   }
 
@@ -299,8 +294,7 @@ cda_rail::sim::RoutingSolver::local_search(
 }
 
 std::optional<cda_rail::sim::SolverResult>
-cda_rail::sim::RoutingSolver::greedy_solution(
-    std::chrono::milliseconds per_train_stall_time) {
+cda_rail::sim::RoutingSolver::greedy_solution(GreedyParams params) {
   std::chrono::steady_clock::time_point last_time =
       std::chrono::steady_clock::now();
 
@@ -340,7 +334,7 @@ cda_rail::sim::RoutingSolver::greedy_solution(
         best_traj  = round_traj;
       }
 
-      if (interval > per_train_stall_time) {
+      if (interval > params.per_train_stall_time) {
         if (!result.get_trajectories().get_traj(train.name))
           return {};
 
@@ -454,7 +448,8 @@ cda_rail::sim::RoutingSolver::crossover_local_improv(
     const RoutingSolutionSet& X1, const RoutingSolutionSet& X2,
     const std::function<double(void)>& rnd01) {
   auto X_new = crossover(X1, X2, rnd01);
-  auto res   = local_search(X_new, 0.05, 0.01, 0.95, rnd01);
+  // TODO: pass localsearch parameters without modifying openGA.hpp
+  auto res = local_search(X_new, {0.05, 0.01, 0.9}, rnd01);
 
   return std::get<0>(res).get_solutions();
 }
@@ -469,10 +464,10 @@ void cda_rail::sim::RoutingSolver::SO_report_generation(
     ScoreHistory& hist, int generation_number,
     const EA::GenerationType<RoutingSolutionSet, MiddleCost>& last_generation,
     const RoutingSolutionSet&                                 best_genes) {
-  // std::cout << "Generation [" << generation_number << "], "
-  //           << "Best=" << last_generation.best_total_cost << ", "
-  //           << "Average=" << last_generation.average_cost << ", "
-  //           << "Exe_time=" << last_generation.exe_time << std::endl;
+  std::cout << "Generation [" << generation_number << "], "
+            << "Best=" << last_generation.best_total_cost << ", "
+            << "Average=" << last_generation.average_cost << ", "
+            << "Exe_time=" << last_generation.exe_time << std::endl;
 
   std::chrono::steady_clock::time_point round_time =
       std::chrono::steady_clock::now();

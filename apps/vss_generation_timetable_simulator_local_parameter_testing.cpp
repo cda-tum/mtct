@@ -44,8 +44,8 @@ int main(int argc, char** argv) {
         for (size_t sample = 0; sample < std::floor(100 / processor_count);
              sample++) {
           auto res = solver.random_local_search(
-              std::chrono::seconds{10}, std::get<0>(param), std::get<1>(param),
-              std::get<2>(param));
+              std::chrono::seconds{10},
+              {std::get<0>(param), std::get<1>(param), std::get<2>(param)});
 
           if (std::get<0>(res)) {
             const std::lock_guard<std::mutex> lock(hist_mutex);

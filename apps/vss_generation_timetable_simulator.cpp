@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
   cda_rail::sim::RoutingSolver solver{instance};
 
   auto res = solver.greedy_search(std::chrono::seconds{6}, {},
-                                  std::chrono::milliseconds{50});
+                                  {std::chrono::milliseconds{50}});
 
   if (std::get<0>(res))
     std::get<0>(res).value().get_trajectories().export_csv(output_path +

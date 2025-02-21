@@ -32,8 +32,8 @@ int main(int argc, char** argv) {
   cda_rail::sim::GeneticParams ga_params{
       .is_multithread = false,
       .population     = 100,
-      .gen_max        = 10,
-      .stall_max      = 4,
+      .gen_max        = 50,
+      .stall_max      = 5,
       .n_elite        = 10,
       .xover_frac     = 0.7,
       .mut_rate       = 0.1,
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
       workers.push_back(std::thread{[&]() {
         cda_rail::sim::RoutingSolver solver{instance};
 
-        for (size_t sample = 0; sample < 2; sample++) {
+        for (size_t sample = 0; sample < 3; sample++) {
           // Method here
 
           std::tuple<std::optional<cda_rail::sim::SolverResult>,
@@ -61,14 +61,14 @@ int main(int argc, char** argv) {
             res = solver.random_search(std::chrono::seconds{200}, {});
           } else if (method == "greedy") {
             res = solver.greedy_search(std::chrono::seconds{200}, {},
-                                       std::chrono::milliseconds{50});
+                                       {std::chrono::milliseconds{50}});
           } else if (method == "random+local") {
-            res = solver.random_local_search(std::chrono::seconds{200}, 0.3,
-                                             0.005, 0.9);
+            res = solver.random_local_search(std::chrono::seconds{200},
+                                             {0.3, 0.005, 0.9});
           } else if (method == "grasp") {
             res = solver.grasp_search(std::chrono::seconds{200},
-                                      std::chrono::milliseconds{50}, 0.3, 0.005,
-                                      0.9);
+                                      {std::chrono::milliseconds{50}},
+                                      {0.3, 0.005, 0.9});
           } else if (method == "genetic") {
             res = solver.genetic_search(ga_params);
           } else if (method == "genetic+local") {

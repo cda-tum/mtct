@@ -42,8 +42,9 @@ int main(int argc, char** argv) {
 
         for (size_t sample = 0; sample < std::floor(100 / processor_count);
              sample++) {
-          auto res = solver.greedy_search(std::chrono::seconds{6}, {},
-                                          std::chrono::milliseconds{train_to});
+          auto res =
+              solver.greedy_search(std::chrono::seconds{6}, {},
+                                   {std::chrono::milliseconds{train_to}});
 
           if (std::get<0>(res)) {
             const std::lock_guard<std::mutex> lock(hist_mutex);
