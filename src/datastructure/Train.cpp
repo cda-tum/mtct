@@ -3,6 +3,7 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <cstddef>
 #include <filesystem>

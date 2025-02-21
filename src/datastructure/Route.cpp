@@ -5,6 +5,7 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Train.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -12,9 +13,11 @@
 #include <filesystem>
 #include <fstream>
 #include <numeric>
+#include <utility>
 #include <vector>
 
 using json = nlohmann::json;
+using std::size_t;
 
 void cda_rail::Route::push_back_edge(size_t         edge_index,
                                      const Network& network) {

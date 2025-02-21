@@ -1,6 +1,5 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
-#include "MultiArray.hpp"
 #include "VSSModel.hpp"
 #include "gurobi_c++.h"
 #include "probleminstances/VSSGenerationTimetable.hpp"
@@ -9,17 +8,14 @@
 
 #include <algorithm>
 #include <cassert>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
-#include <memory>
 #include <optional>
-#include <plog/Appenders/ColorConsoleAppender.h>
-#include <plog/Formatters/TxtFormatter.h>
-#include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
 #include <string>
 #include <utility>
+
+using std::size_t;
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 

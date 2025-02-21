@@ -4,6 +4,7 @@
 #include "gurobi_c++.h"
 #include "gurobi_c.h"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "plog/Severity.h"
 #include "probleminstances/GeneralProblemInstance.hpp"
 #include "probleminstances/VSSGenerationTimetable.hpp"

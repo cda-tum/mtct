@@ -22,6 +22,8 @@
 #include <utility>
 #include <vector>
 
+using std::size_t;
+
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 
 std::vector<size_t>
@@ -671,7 +673,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       export_option == ExportOption::ExportSolutionAndLP ||
       export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
     PLOGI << "Saving model and solution";
-    std::filesystem::path path = solution_settings.path;
+    const std::filesystem::path path = solution_settings.path;
 
     if (!is_directory_and_create(path)) {
       PLOGE << "Could not create directory " << path.string();

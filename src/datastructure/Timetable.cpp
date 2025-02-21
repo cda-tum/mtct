@@ -1,18 +1,12 @@
 #include "datastructure/Timetable.hpp"
 
 #include "CustomExceptions.hpp"
-#include "Definitions.hpp"
-#include "datastructure/Station.hpp"
-#include "nlohmann/json.hpp"
 
-#include <algorithm>
 #include <cstddef>
-#include <filesystem>
-#include <fstream>
 #include <string>
 #include <utility>
 
-using json = nlohmann::json;
+using std::size_t;
 
 std::pair<size_t, size_t>
 cda_rail::Timetable::time_index_interval(size_t train_index, int dt,

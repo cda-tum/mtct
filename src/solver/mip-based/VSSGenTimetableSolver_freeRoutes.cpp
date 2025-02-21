@@ -10,6 +10,8 @@
 #include <cstddef>
 #include <string>
 
+using std::size_t;
+
 // NOLINTBEGIN(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
@@ -686,7 +688,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "]";
     const auto& e_len = edge.length;
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
-      for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
         const auto& tr_name = instance.get_train_list().get_train(tr).name;
         for (size_t t = train_interval[tr].first + 2;
              t <= train_interval[tr].second; ++t) {
@@ -714,7 +716,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
     const auto& e_len = edge.length;
-    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+    for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
       const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {

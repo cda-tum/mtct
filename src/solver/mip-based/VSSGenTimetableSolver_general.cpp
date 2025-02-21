@@ -1,6 +1,9 @@
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "MultiArray.hpp"
+#include "VSSModel.hpp"
 #include "gurobi_c++.h"
+#include "gurobi_c.h"
 #include "plog/Init.h"
 #include "plog/Logger.h"
 #include "plog/Severity.h"
@@ -8,7 +11,7 @@
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
-#include <chrono>
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
@@ -16,10 +19,13 @@
 #include <optional>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
-#include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
+#include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
+
+using std::size_t;
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 
@@ -278,7 +284,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       vars["b_pos"](i, vss) =
           model->addVar(lb, ub, 0, GRB_CONTINUOUS,
                         "b_pos_" + edge_name + "_" + std::to_string(vss));
-      for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
         for (size_t t = train_interval[tr].first;
              t <= train_interval[tr].second; ++t) {
           vars["b_front"](tr, t, i, vss) = model->addVar(
@@ -383,7 +389,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
-      for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
         const auto& tr_name = instance.get_train_list().get_train(tr).name;
         for (size_t t = train_interval[tr].first + 2;
              t <= train_interval[tr].second; ++t) {
@@ -401,7 +407,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& edge_name = "[" + instance.n().get_vertex(edge.source).name +
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
-    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+    for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
       const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
@@ -1532,7 +1538,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& edge_name =
         "[" + instance.const_n().get_vertex(edge.source).name + "," +
         instance.const_n().get_vertex(edge.target).name + "]";
-    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+    for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
       const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
@@ -1561,7 +1567,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       vss_e             = instance.const_n().max_vss_on_edge(e);
     }
 
-    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+    for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
       const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
@@ -1585,7 +1591,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_name = instance.get_train_list().get_train(tr).name;
     const auto& edge_used_tr =
         instance.edges_used_by_train(tr, this->fix_routes);
-    for (size_t e : edge_used_tr) {
+    for (const size_t e : edge_used_tr) {
       const auto& edge = instance.const_n().get_edge(e);
       const auto& edge_name =
           "[" + instance.const_n().get_vertex(edge.source).name + "," +
@@ -1626,7 +1632,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         "[" + instance.const_n().get_vertex(edge.source).name + "," +
         instance.const_n().get_vertex(edge.target).name + "]";
     const auto& vss_e = instance.const_n().max_vss_on_edge(e);
-    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+    for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
       const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
@@ -1654,7 +1660,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (size_t t = train_interval[tr].first + 2;
          t <= train_interval[tr].second; ++t) {
       GRBLinExpr lhs = 0;
-      for (size_t e : edge_used_tr) {
+      for (const size_t e : edge_used_tr) {
         lhs += vars["e_tight"](tr, t, e);
         const auto& edge = instance.const_n().get_edge(e);
         if (!edge.breakable) {

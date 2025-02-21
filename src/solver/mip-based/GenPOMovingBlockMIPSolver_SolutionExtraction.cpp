@@ -1,13 +1,11 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
-#include "MultiArray.hpp"
 #include "gurobi_c++.h"
 #include "gurobi_c.h"
 #include "plog/Log.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
-#include "solver/mip-based/GeneralMIPSolver.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -17,6 +15,8 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+using std::size_t;
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 

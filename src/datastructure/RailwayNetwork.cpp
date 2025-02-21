@@ -2,9 +2,9 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
-#include "MultiArray.hpp"
 #include "VSSModel.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -1530,7 +1530,8 @@ cda_rail::Network::sort_edge_pairs(
   std::unordered_map<size_t, std::unordered_set<size_t>> vertex_neighbors;
   for (size_t i = 0; i < edge_pairs.size(); ++i) {
     const auto& edge_pair = edge_pairs[i];
-    const auto& edge      = get_edge(edge_pair.first.value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    const auto& edge = get_edge(edge_pair.first.value());
     vertex_neighbors[edge.source].emplace(i);
     vertex_neighbors[edge.target].emplace(i);
   }
@@ -1555,6 +1556,7 @@ cda_rail::Network::sort_edge_pairs(
     const auto  edge_pair_index = *vertex_neighbors[j].begin();
     const auto& edge_pair       = edge_pairs[edge_pair_index];
 
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     const auto& edge = get_edge(edge_pair.first.value());
     vertex_neighbors[edge.source].erase(edge_pair_index);
     vertex_neighbors[edge.target].erase(edge_pair_index);
@@ -1738,10 +1740,12 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
         "Desired length is not strictly positive");
   }
 
+  // NOLINTBEGIN(readability-avoid-nested-conditional-operator)
   const std::vector<size_t> edges_to_consider_tmp =
       v_0.has_value()
           ? (reverse_direction ? in_edges(v_0.value()) : out_edges(v_0.value()))
           : std::vector<size_t>{e_0.value()};
+  // NOLINTEND(readability-avoid-nested-conditional-operator)
 
   auto edges_to_consider = edges_used_by_train.empty() ? edges_to_consider_tmp
                                                        : std::vector<size_t>();
@@ -1843,6 +1847,7 @@ double cda_rail::Network::maximal_vertex_speed(
       max_speed_neighboring_vertex = other_vertex(e, v);
     } else if (edge.max_speed > second_max_speed &&
                max_speed_neighboring_vertex.has_value() &&
+               // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
                other_vertex(e, v) != max_speed_neighboring_vertex.value()) {
       second_max_speed = edge.max_speed;
     }

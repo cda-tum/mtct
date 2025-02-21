@@ -156,7 +156,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
       solution_settings.export_option ==
           ExportOption::ExportSolutionWithInstanceAndLP) {
     PLOGI << "Saving model and solution";
-    std::filesystem::path path = solution_settings.path;
+    const std::filesystem::path path = solution_settings.path;
 
     if (!is_directory_and_create(path)) {
       PLOGE << "Could not create directory " << path.string();
@@ -1638,6 +1638,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
       // departure because ma might move forward, otherwise arrival and
       // departure are equal due to non-zero velocity
+      // NOLINTNEXTLINE(misc-const-correctness)
       GRBVar tr_t_var = vars["t_front_departure"](tr, v_source);
 
       const auto tr_on_e = instance.trains_on_edge_mixed_routing(
