@@ -549,7 +549,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           const auto                 tr_index_tmp =
               std::find(rel_tr_order_ttd.begin(), rel_tr_order_ttd.end(), tr) -
               rel_tr_order_ttd.begin();
-          assert(tr_index != rel_tr_order_ttd.end() - rel_tr_order_ttd.begin());
+          assert(tr_index_tmp !=
+                 rel_tr_order_ttd.end() - rel_tr_order_ttd.begin());
           for (size_t tr_other_idx = 0; tr_other_idx < rel_tr_order_ttd.size();
                tr_other_idx++) {
             if (tr_other_idx == tr_index_tmp) {
