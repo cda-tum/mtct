@@ -10,6 +10,7 @@
 #include "nlohmann/json.hpp"
 
 #include <cassert>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <map>

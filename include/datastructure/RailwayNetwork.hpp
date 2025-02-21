@@ -5,6 +5,7 @@
 #include "VSSModel.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <numeric>
 #include <optional>
@@ -284,7 +285,7 @@ public:
   }
 
   [[nodiscard]] std::vector<size_t>
-  vertices_used_by_edges(const std::vector<size_t>& edges) const;
+  vertices_used_by_edges(const std::vector<size_t>& edges_tmp) const;
 
   [[nodiscard]] std::vector<std::vector<size_t>>
   all_paths_of_length_starting_in_vertex(

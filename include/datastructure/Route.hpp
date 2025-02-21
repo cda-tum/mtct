@@ -2,6 +2,7 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Train.hpp"
 
+#include <cstddef>
 #include <filesystem>
 #include <optional>
 #include <string>

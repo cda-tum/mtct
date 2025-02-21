@@ -1,19 +1,27 @@
 #include "CustomExceptions.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
+#include "plog/Init.h"
+#include "plog/Logger.h"
+#include "plog/Severity.h"
+#include "probleminstances/VSSGenerationTimetable.hpp"
+#include "solver/mip-based/GeneralMIPSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <chrono>
 #include <cmath>
+#include <cstddef>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
+#include <string>
 #include <utility>
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
@@ -1720,4 +1728,4 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::create_constraints() {
 
 // NOLINTEND(performance-inefficient-string-concatenation)
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)

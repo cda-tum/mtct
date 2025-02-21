@@ -3,6 +3,8 @@
 #include "EOMHelper.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
+#include "gurobi_c.h"
+#include "plog/Log.h"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
@@ -470,8 +472,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         const auto intersecting_ttd =
             cda_rail::Network::get_intersecting_ttd(p, solver->ttd_sections);
         for (const auto& [ttd_index, e_index] : intersecting_ttd) {
-          const auto& p_tmp =
-              std::vector<size_t>(p.begin(), p.begin() + e_index);
+          const auto& p_tmp = std::vector<size_t>(
+              p.begin(),
+              p.begin() +
+                  static_cast<std::vector<size_t>::difference_type>(e_index));
           const auto p_tmp_len = std::accumulate(
               p_tmp.begin(), p_tmp.end(), 0.0,
               [this](double sum, const auto& edge_index) {
@@ -542,23 +546,23 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // this TTD section
           const auto& rel_tr_order_ttd = train_orders_on_ttd.at(ttd_index);
           std::unordered_set<size_t> other_trains_ttd;
-          const auto                 tr_index =
+          const auto                 tr_index_tmp =
               std::find(rel_tr_order_ttd.begin(), rel_tr_order_ttd.end(), tr) -
               rel_tr_order_ttd.begin();
           assert(tr_index != rel_tr_order_ttd.end() - rel_tr_order_ttd.begin());
           for (size_t tr_other_idx = 0; tr_other_idx < rel_tr_order_ttd.size();
                tr_other_idx++) {
-            if (tr_other_idx == tr_index) {
+            if (tr_other_idx == tr_index_tmp) {
               continue;
             }
             if (solver->solver_strategy.lazy_train_selection_strategy ==
                     LazyTrainSelectionStrategy::OnlyAdjacent &&
                 std::abs(static_cast<int>(tr_other_idx) -
-                         static_cast<int>(tr_index)) > 1) {
+                         static_cast<int>(tr_index_tmp)) > 1) {
               continue;
             }
             if (!solver->solver_strategy.include_reverse_headways &&
-                tr_other_idx > tr_index) {
+                tr_other_idx > tr_index_tmp) {
               // In this case tr_other follows tr, which is irrelevant for tr ma
               continue;
             }
@@ -666,8 +670,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                                     std::vector<std::pair<size_t, bool>>>>&
             train_orders_on_edges) {
   // Check for violated vertex headways
-  bool violated_constraint_found = false;
-  bool only_one_constraint =
+  bool       violated_constraint_found = false;
+  const bool only_one_constraint =
       solver->solver_strategy.lazy_constraint_selection_strategy ==
       LazyConstraintSelectionStrategy::OnlyFirstFound;
 
@@ -856,8 +860,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                                     std::vector<std::pair<size_t, bool>>>>&
             train_orders_on_edges) {
   // Prevent trains from front crashing into each other
-  bool violated_constraint_found = false;
-  bool only_one_constraint =
+  bool       violated_constraint_found = false;
+  const bool only_one_constraint =
       solver->solver_strategy.lazy_constraint_selection_strategy ==
       LazyConstraintSelectionStrategy::OnlyFirstFound;
 
@@ -966,8 +970,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                                     std::vector<std::pair<size_t, bool>>>>&
                                                 train_orders_on_edges,
         const std::vector<std::vector<size_t>>& train_orders_on_ttd) {
-  bool violated_constraint_found = false;
-  bool only_one_constraint =
+  bool       violated_constraint_found = false;
+  const bool only_one_constraint =
       solver->solver_strategy.lazy_constraint_selection_strategy ==
       LazyConstraintSelectionStrategy::OnlyFirstFound;
 

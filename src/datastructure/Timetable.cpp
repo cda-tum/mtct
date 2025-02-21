@@ -6,9 +6,11 @@
 #include "nlohmann/json.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <utility>
 
 using json = nlohmann::json;
 
@@ -40,7 +42,7 @@ cda_rail::Timetable::time_index_interval(size_t train_index, int dt,
 
   const auto t_0_index = t_0 / dt;
   const auto t_n_index =
-      (t_n % dt == 0 ? t_n / dt - 1 : t_n / dt) + (tn_inclusive ? 1 : 0);
+      (t_n % dt == 0 ? (t_n / dt) - 1 : t_n / dt) + (tn_inclusive ? 1 : 0);
 
   return {static_cast<size_t>(t_0_index), static_cast<size_t>(t_n_index)};
 }

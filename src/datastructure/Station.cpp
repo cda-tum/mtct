@@ -5,10 +5,14 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "nlohmann/json.hpp"
 
+#include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 using json = nlohmann::json;
 
@@ -90,7 +94,7 @@ void cda_rail::StationList::export_stations(const std::filesystem::path& p,
   }
 
   std::ofstream file(p / "stations.json");
-  file << j << std::endl;
+  file << j << '\n';
 }
 
 std::vector<std::string> cda_rail::StationList::get_station_names() const {

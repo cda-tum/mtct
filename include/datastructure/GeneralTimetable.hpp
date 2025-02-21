@@ -7,6 +7,7 @@
 #include "nlohmann/json.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <string>

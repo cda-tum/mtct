@@ -4,6 +4,7 @@
 #include "gurobi_c++.h"
 #include "solver/GeneralSolver.hpp"
 
+#include <cstddef>
 #include <optional>
 #include <plog/Log.h>
 #include <string>

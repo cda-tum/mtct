@@ -2,9 +2,12 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
+#include <cstddef>
 #include <numeric>
+#include <vector>
 
 void cda_rail::instances::VSSGenerationTimetable::discretize(
     const vss::SeparationFunction& sep_func) {

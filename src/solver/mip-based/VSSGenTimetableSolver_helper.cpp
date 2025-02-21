@@ -1,11 +1,28 @@
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
+#include "VSSModel.hpp"
+#include "gurobi_c++.h"
+#include "gurobi_c.h"
+#include "plog/Logger.h"
+#include "plog/Severity.h"
+#include "probleminstances/VSSGenerationTimetable.hpp"
+#include "solver/mip-based/GeneralMIPSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <optional>
 #include <plog/Log.h>
+#include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 
 std::vector<size_t>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
@@ -221,9 +238,7 @@ bool cda_rail::solver::mip_based::VSSGenTimetableSolver::update_vss(
                                  ? static_cast<size_t>(std::round(obj_ub - 1))
                                  : current_vss_number_e + increase_val;
 
-  if (target_vss_number_e >= vss_number_e) {
-    target_vss_number_e = vss_number_e;
-  }
+  target_vss_number_e = std::min<uint64_t>(target_vss_number_e, vss_number_e);
   if (target_vss_number_e <= current_vss_number_e) {
     return false;
   }
@@ -457,7 +472,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_timeout(
                       model_created - start)
                       .count();
 
-    auto time_left = time_limit - create_time / 1000;
+    auto time_left = time_limit - (create_time / 1000);
     if (time_left < 0 && time_limit > 0) {
       time_left = 1;
     }
@@ -554,9 +569,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
               static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1;
         }
       }
-      if (obj_lb_tmp > obj_lb) {
-        obj_lb = obj_lb_tmp;
-      }
+      obj_lb = std::max(obj_lb_tmp, obj_lb);
 
       if (obj_lb + GRB_EPS >= obj_ub && (sol_object->has_solution())) {
         PLOGD << "Break because obj_lb (" << obj_lb << ") >= obj_ub (" << obj_ub
@@ -614,7 +627,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
                                                                   start)
                 .count();
 
-        auto time_left = time_limit - current_time_span / 1000;
+        auto time_left = time_limit - (current_time_span / 1000);
 
         if (time_left < 0) {
           PLOGD << "Break because of timeout";
@@ -692,4 +705,4 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   }
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)

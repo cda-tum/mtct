@@ -6,6 +6,7 @@
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 
+#include <cstddef>
 #include <filesystem>
 #include <optional>
 

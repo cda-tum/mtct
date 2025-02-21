@@ -7,6 +7,7 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "unordered_map"
 
+#include <cstddef>
 #include <filesystem>
 #include <optional>
 #include <string>

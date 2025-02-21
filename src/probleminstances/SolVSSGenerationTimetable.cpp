@@ -1,13 +1,24 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "VSSModel.hpp"
+#include "gurobi_c++.h"
+#include "gurobi_c.h"
 #include "nlohmann/json.hpp"
+#include "plog/Severity.h"
+#include "probleminstances/GeneralProblemInstance.hpp"
 #include "probleminstances/VSSGenerationTimetable.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <filesystem>
 #include <fstream>
+#include <optional>
 #include <plog/Log.h>
+#include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 using json = nlohmann::json;
@@ -53,8 +64,8 @@ cda_rail::instances::SolVSSGenerationTimetable::get_train_pos(size_t train_id,
 
   if (approx_equal(x_2 - x_1, 0.5 * dt * (v_1 + v_2))) {
     const auto a   = (v_2 - v_1) / dt;
-    const auto tau = time - static_cast<double>(t0 + t_1) * dt;
-    return x_1 + v_1 * tau + 0.5 * a * tau * tau;
+    const auto tau = time - (static_cast<double>(t0 + t_1) * dt);
+    return x_1 + (v_1 * tau) + (0.5 * a * tau * tau);
   }
 
   throw exceptions::ConsistencyException(
@@ -90,8 +101,8 @@ double cda_rail::instances::SolVSSGenerationTimetable::get_train_speed(
 
   if (approx_equal(x_2 - x_1, 0.5 * dt * (v_1 + v_2))) {
     const auto a   = (v_2 - v_1) / dt;
-    const auto tau = time - static_cast<double>(t0 + t_1) * dt;
-    return v_1 + a * tau;
+    const auto tau = time - (static_cast<double>(t0 + t_1) * dt);
+    return v_1 + (a * tau);
   }
 
   throw exceptions::ConsistencyException(
@@ -248,7 +259,7 @@ bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
   }
   for (size_t tr_id = 0; tr_id < train_speed.size(); ++tr_id) {
     const auto& train = instance.get_train_list().get_train(tr_id);
-    for (double v : train_speed.at(tr_id)) {
+    for (const double v : train_speed.at(tr_id)) {
       if (v + EPS < 0 || v > train.max_speed + EPS) {
         return false;
       }
@@ -304,7 +315,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
   data["mip_obj"]       = mip_obj;
   data["postprocessed"] = postprocessed;
   std::ofstream data_file(p / "solution" / "data.json");
-  data_file << data << std::endl;
+  data_file << data << '\n';
   data_file.close();
 
   json vss_pos_json;
@@ -317,7 +328,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
   }
 
   std::ofstream vss_pos_file(p / "solution" / "vss_pos.json");
-  vss_pos_file << vss_pos_json << std::endl;
+  vss_pos_file << vss_pos_json << '\n';
   vss_pos_file.close();
 
   json train_pos_json;
@@ -337,11 +348,11 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
   }
 
   std::ofstream train_pos_file(p / "solution" / "train_pos.json");
-  train_pos_file << train_pos_json << std::endl;
+  train_pos_file << train_pos_json << '\n';
   train_pos_file.close();
 
   std::ofstream train_speed_file(p / "solution" / "train_speed.json");
-  train_speed_file << train_speed_json << std::endl;
+  train_speed_file << train_speed_json << '\n';
   train_speed_file.close();
 }
 
@@ -698,9 +709,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
               const double e_pos = sol_obj.get_instance()
                                        .route_edge_pos(train.name, e_index)
                                        .first;
-              if (lda_val + e_pos < train_pos) {
-                train_pos = lda_val + e_pos;
-              }
+              train_pos = std::min(lda_val + e_pos, train_pos);
             }
           }
         }
@@ -712,7 +721,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     }
 
     auto   t_final         = train_interval[tr].second + 1;
-    double train_pos_final = -1;
+    double train_pos_final = NAN;
     if (fix_routes) {
       train_pos_final =
           round_to(vars.at("mu").at(tr, t_final - 1).get(GRB_DoubleAttr_X),

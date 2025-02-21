@@ -1,11 +1,16 @@
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
+#include "gurobi_c.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <string>
 
-// NOLINTBEGIN(performance-inefficient-string-concatenation)
+// NOLINTBEGIN(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_variables() {
@@ -504,9 +509,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           dist_before = INF;
           for (const auto& e_tmp : before_after_struct.edges_before) {
             const auto tmp_val = apsp[e_tmp][e] - e_len;
-            if (tmp_val < dist_before) {
-              dist_before = tmp_val;
-            }
+            dist_before        = std::min(tmp_val, dist_before);
           }
         }
 
@@ -537,9 +540,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           for (const auto& e_tmp : before_after_struct.edges_after) {
             const auto tmp_val =
                 apsp[e][e_tmp] - instance.n().get_edge(e_tmp).length;
-            if (tmp_val < dist_after) {
-              dist_after = tmp_val;
-            }
+            dist_after = std::min(tmp_val, dist_after);
           }
         }
 
@@ -745,4 +746,4 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   }
 }
 
-// NOLINTEND(performance-inefficient-string-concatenation)
+// NOLINTEND(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)

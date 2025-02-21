@@ -1,11 +1,16 @@
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
+#include "gurobi_c.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <cmath>
+#include <cstddef>
+#include <math.h>
+#include <string>
 
-// NOLINTBEGIN(performance-inefficient-string-concatenation)
+// NOLINTBEGIN(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_fixed_routes_variables() {
@@ -484,4 +489,4 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   }
 }
 
-// NOLINTEND(performance-inefficient-string-concatenation)
+// NOLINTEND(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)

@@ -2,6 +2,7 @@
 #include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
+#include <cstddef>
 #include <filesystem>
 #include <string>
 #include <unordered_map>

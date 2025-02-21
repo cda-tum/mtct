@@ -3,6 +3,7 @@
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <chrono>
+#include <cstddef>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Initializers/ConsoleInitializer.h>
