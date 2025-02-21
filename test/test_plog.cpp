@@ -3,11 +3,11 @@
 #include "gtest/gtest.h"
 #include <filesystem>
 #include <fstream>
-#include <iostream>
+#include <memory>
+#include <plog/Appenders/RollingFileAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
-#include <plog/Initializers/RollingFileInitializer.h>
-#include <plog/Log.h>
 #include <plog/Logger.h>
+#include <plog/Severity.h>
 #include <string>
 
 TEST(Logging, VSSGenDefaultLogging) {
