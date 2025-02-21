@@ -1,11 +1,17 @@
 #include "Definitions.hpp"
+#include "plog/Init.h"
+#include "plog/Logger.h"
+#include "plog/Severity.h"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "probleminstances/VSSGenerationTimetable.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 
+#include <cstdlib>
 #include <gsl/span>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
-#include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
+#include <string>
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
 

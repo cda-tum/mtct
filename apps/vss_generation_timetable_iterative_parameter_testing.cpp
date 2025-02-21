@@ -1,12 +1,16 @@
 #include "Definitions.hpp"
 #include "VSSModel.hpp"
+#include "plog/Init.h"
+#include "plog/Logger.h"
+#include "plog/Severity.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
+#include <cstdlib>
 #include <gsl/span>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
-#include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
+#include <string>
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
@@ -98,7 +102,7 @@ int main(int argc, char** argv) {
   PLOGI << "   output path: " << output_path;
   PLOGI << "   file name: " << file_name;
 
-  cda_rail::vss::Model vss_model(cda_rail::vss::ModelType::Continuous);
+  const cda_rail::vss::Model vss_model(cda_rail::vss::ModelType::Continuous);
 
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve(
