@@ -1,5 +1,6 @@
 #include "simulation/RoutingSolver.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <future>
 #include <gsl/span>
@@ -17,6 +18,8 @@ int main(int argc, char** argv) {
 
   const std::string model_path  = args[1];
   const std::string output_path = args[2];
+  const std::string model_name =
+      model_path.substr(model_path.find_last_of("/"), model_path.length());
 
   cda_rail::Network network =
       cda_rail::Network::import_network(model_path + "/network");
@@ -39,8 +42,8 @@ int main(int argc, char** argv) {
       .mut_rate       = 0.1,
   };
 
-  std::vector<std::string> methods = {"random", "greedy", "random+local",
-                                      "grasp"};
+  std::vector<std::string> methods = {"random", "greedy",  "random+local",
+                                      "grasp",  "genetic", "genetic+local"};
 
   for (std::string method : methods) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
@@ -90,7 +93,8 @@ int main(int argc, char** argv) {
       workers.pop_back();
     }
 
-    score_coll.export_csv(output_path + "/score_hist_" + method + ".csv");
+    score_coll.export_csv(output_path + "/" + model_name + "_" + method +
+                          ".csv");
   }
 }
 
