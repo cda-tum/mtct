@@ -42,6 +42,12 @@ int main(int argc, char** argv) {
       .mut_rate       = 0.1,
   };
 
+  cda_rail::sim::LocalParams loc_params{
+      .start_sampling_range_fraction = 0.3,
+      .abort_sampling_range_fraction = 0.005,
+      .contraction_coeff             = 0.9,
+  };
+
   std::vector<std::string> methods = {"random", "greedy",  "random+local",
                                       "grasp",  "genetic", "genetic+local"};
 
@@ -61,17 +67,17 @@ int main(int argc, char** argv) {
                      cda_rail::sim::ScoreHistory>
               res;
           if (method == "random") {
-            res = solver.random_search(std::chrono::seconds{200}, {});
+            res = solver.random_search(std::chrono::seconds{300}, {});
           } else if (method == "greedy") {
-            res = solver.greedy_search(std::chrono::seconds{200}, {},
+            res = solver.greedy_search(std::chrono::seconds{300}, {},
                                        {std::chrono::milliseconds{50}});
           } else if (method == "random+local") {
-            res = solver.random_local_search(std::chrono::seconds{200},
-                                             {0.3, 0.005, 0.9});
+            res = solver.random_local_search(std::chrono::seconds{300},
+                                             loc_params);
           } else if (method == "grasp") {
-            res = solver.grasp_search(std::chrono::seconds{200},
+            res = solver.grasp_search(std::chrono::seconds{300},
                                       {std::chrono::milliseconds{50}},
-                                      {0.3, 0.005, 0.9});
+                                      loc_params);
           } else if (method == "genetic") {
             res = solver.genetic_search(ga_params);
           } else if (method == "genetic+local") {
