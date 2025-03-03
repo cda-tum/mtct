@@ -169,3 +169,22 @@ size_t cda_rail::sim::TrainTrajectorySet::size() const {
 bool cda_rail::sim::TrainTrajectorySet::contains(std::string train_name) const {
   return trajectories.count(train_name);
 }
+
+cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
+    cda_rail::instances::GeneralPerformanceOptimizationInstance>
+cda_rail::sim::TrainTrajectorySet::to_vss_solution(
+    const cda_rail::Network& network_bidirec) const {
+  cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
+      cda_rail::instances::GeneralPerformanceOptimizationInstance>
+      sol_instance{};
+
+  for (auto [tr_name, traj] : trajectories) {
+    Route               route;
+    std::vector<double> route_pos;
+    std::tie(route, route_pos) = traj.convert_to_vss_format(network_bidirec);
+
+    // TODO: how are start and exit times managed?
+
+    sol_instance.set_train_routed(tr_name);
+  }
+}

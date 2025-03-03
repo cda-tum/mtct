@@ -1,5 +1,6 @@
 #pragma once
 
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulation/RoutingSolutionSet.hpp"
 #include "simulation/TrainTrajectory.hpp"
 
@@ -42,6 +43,10 @@ public:
   const SimulationInstance& get_instance() const;
   size_t                    size() const;
   bool                      contains(std::string train_name) const;
+
+  instances::SolGeneralPerformanceOptimizationInstance<
+      instances::GeneralPerformanceOptimizationInstance>
+  to_vss_solution(const cda_rail::Network& bidirec_network) const;
 };
 
 }; // namespace cda_rail::sim

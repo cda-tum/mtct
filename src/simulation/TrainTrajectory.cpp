@@ -203,7 +203,7 @@ cda_rail::sim::TrainTrajectory::get_state(u_int64_t timestep) const {
     return {};
 
   const EdgeTrajectory& relevant_trajectory =
-      edge_trajs.at(get_matching_trajectory(timestep));
+      edge_trajs.at(find_traj_idx(timestep));
   size_t trajectory_idx = timestep - relevant_trajectory.get_first_timestep();
 
   return TrainState{
@@ -215,8 +215,7 @@ cda_rail::sim::TrainTrajectory::get_state(u_int64_t timestep) const {
   };
 }
 
-size_t cda_rail::sim::TrainTrajectory::get_matching_trajectory(
-    u_int64_t timestep) const {
+size_t cda_rail::sim::TrainTrajectory::find_traj_idx(u_int64_t timestep) const {
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
     if ((*it).get_first_timestep() <= timestep &&
         (*it).get_last_timestep() >= timestep) {
@@ -325,4 +324,63 @@ cda_rail::sim::TrainTrajectory::train_vertex_distance(size_t vertex,
     throw std::logic_error("Distance calculation failed.");
 
   return min_dist;
+}
+
+std::tuple<cda_rail::Route, std::vector<double>>
+cda_rail::sim::TrainTrajectory::convert_to_vss_format(
+    const Network& network_bidirec) const {
+  if (instance_r.get().allow_reversing)
+    throw std::runtime_error(
+        "Converting solutions that allow reversing to VSS compatible solution "
+        "is not yet supported, since position can't be easily represented in "
+        "distance from starting point.");
+
+  const Network& network_unidirec = instance_r.get().network;
+
+  if (network_unidirec.number_of_vertices() !=
+      network_bidirec.number_of_vertices())
+    throw std::invalid_argument(
+        "Networks must be the same except in uni/bidirectional format.");
+
+  Route               route;
+  std::vector<double> route_trav_dist;
+  double              passed_edges_dist = 0;
+
+  for (auto edge_traj : edge_trajs) {
+    Edge edge_unidirec = network_unidirec.get_edge(edge_traj.get_edge());
+    bool orientation   = edge_traj.get_orientation();
+
+    // Find corresponding edge in bidirectional network and add to route
+    if (orientation) {
+      if (!network_bidirec.has_edge(edge_unidirec.source, edge_unidirec.target))
+        throw std::logic_error("Bidirectional network does not correspond to "
+                               "unidirectional network.");
+      route.push_back_edge(network_bidirec.get_edge_index(edge_unidirec.source,
+                                                          edge_unidirec.target),
+                           network_bidirec);
+    } else {
+      if (!network_bidirec.has_edge(edge_unidirec.target, edge_unidirec.source))
+        throw std::logic_error("Bidirectional network does not correspond to "
+                               "unidirectional network.");
+      route.push_back_edge(network_bidirec.get_edge_index(edge_unidirec.target,
+                                                          edge_unidirec.source),
+                           network_bidirec);
+    }
+
+    // Record distances from route origin
+    for (double position : edge_traj.get_positions()) {
+      double edge_trav_dist;
+      if (orientation) {
+        edge_trav_dist = edge_unidirec.length * position;
+      } else {
+        edge_trav_dist = edge_unidirec.length * (1 - position);
+      }
+
+      route_trav_dist.push_back(passed_edges_dist + edge_trav_dist);
+    }
+
+    passed_edges_dist = passed_edges_dist + edge_unidirec.length;
+  }
+
+  return std::make_tuple(route, route_trav_dist);
 }

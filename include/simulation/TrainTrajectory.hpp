@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datastructure/Route.hpp"
 #include "simulation/EdgeTrajectory.hpp"
 
 #include <algorithm>
@@ -46,7 +47,7 @@ public:
                   RoutingSolution solution);
 
   std::optional<TrainState> get_state(u_int64_t timestep) const;
-  size_t                    get_matching_trajectory(u_int64_t timestep) const;
+  size_t                    find_traj_idx(u_int64_t timestep) const;
   size_t                    get_remaining_stop_amount() const;
   size_t get_earliest_affected_trajectory(u_int64_t timestep) const;
   size_t get_first_timestep() const;
@@ -59,6 +60,10 @@ public:
   void                  check_speed_limits() const;
   std::optional<double> train_vertex_distance(size_t vertex,
                                               size_t timestep) const;
+
+  // Return route in bidirectional format and position on this route
+  std::tuple<cda_rail::Route, std::vector<double>>
+  convert_to_vss_format(const Network& network_bidirec) const;
 };
 
 }; // namespace cda_rail::sim

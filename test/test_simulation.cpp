@@ -29,8 +29,7 @@ TEST(Simulation, RandomSolution) {
     for (auto target : sol.v_targets.targets) {
       ASSERT_GE(target.first, 0);
       ASSERT_LT(target.first, instance.n_timesteps);
-      ASSERT_GE(target.second,
-                -(instance.bidirectional_travel * train.max_speed));
+      ASSERT_GE(target.second, -(instance.allow_reversing * train.max_speed));
       ASSERT_LE(target.second, train.max_speed);
     }
     ASSERT_GE(sol.v_targets.size(), 1);
@@ -290,7 +289,8 @@ TEST(Simulation, RandomSearch) {
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
 
-  auto res = solver.random_search({}, std::chrono::seconds{1});
+  auto res =
+      solver.random_search(std::chrono::seconds{1}, std::chrono::seconds{1});
 
   if (std::get<0>(res)) {
     cda_rail::is_directory_and_create("tmp");
@@ -394,6 +394,13 @@ TEST(Simulation, GeneticSearch) {
   sim::RoutingSolutionSet solution_set{instance, rng_engine};
   auto                    res  = solver.genetic_search(ga_params);
   auto                    res2 = solver.genetic_search(ga_params, true);
+}
+
+TEST(Simulation, ExportVSSSolution) {
+  Network network = Network::import_network(
+      "./example-networks-unidirec/SimpleNetwork/network/");
+  Network network_bidirec =
+      Network::import_network("./example-networks/SimpleNetwork/network/");
 }
 
 // TODO: test for invariance of solution after being repaired and used again

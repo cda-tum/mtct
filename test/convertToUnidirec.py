@@ -1,4 +1,12 @@
 # Remove all reciprocal edges from graph and adjust successor_list, routes and timetable accordingly
+
+# In the unidirectional edges each edge corresponds to a physical rail section
+# which can be traversed in both directions
+
+# Networks can be converted to unidirectional using this script
+# Solutions generated in the simulator can be converted back
+# into the double edge representation with TrainTrajectory::convert_to_vss_format
+
 #
 # Usage:
 # python convertToUnidirec.py NETWORK_NAME_IN_DIRECTORY_STRUCTURE

@@ -18,7 +18,7 @@ cda_rail::sim::RoutingSolution::RoutingSolution(
   std::uniform_int_distribution<u_int64_t> uniform_n_v_target_vars(
       1, instance.n_timesteps);
   double min_speed = 0;
-  if (instance.bidirectional_travel)
+  if (instance.allow_reversing)
     min_speed = -train.max_speed;
   std::uniform_real_distribution<double> uniform_train_speed(min_speed,
                                                              train.max_speed);
@@ -47,7 +47,7 @@ cda_rail::sim::RoutingSolution::RoutingSolution(
   };
 
   std::function<double()> uniform_train_speed;
-  if (instance.bidirectional_travel) {
+  if (instance.allow_reversing) {
     uniform_train_speed = [train, rnd01]() {
       return (2 * rnd01() - 1) * train.max_speed;
     };
@@ -77,7 +77,7 @@ cda_rail::sim::RoutingSolution::RoutingSolution(
 
   // Check speed targets
   double min_speed = 0;
-  if (instance.bidirectional_travel)
+  if (instance.allow_reversing)
     min_speed = -train.max_speed;
 
   for (const auto& target : targets.targets) {
