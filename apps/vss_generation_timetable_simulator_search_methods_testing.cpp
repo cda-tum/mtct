@@ -48,7 +48,8 @@ int main(int argc, char** argv) {
       .contraction_coeff             = 0.9,
   };
 
-  std::vector<std::string> methods = {"genetic"};
+  std::vector<std::string> methods = {"greedy", "random+local", "grasp",
+                                      "genetic"};
 
   for (std::string method : methods) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
@@ -59,22 +60,22 @@ int main(int argc, char** argv) {
       workers.push_back(std::thread{[&]() {
         cda_rail::sim::RoutingSolver solver{instance};
 
-        for (size_t sample = 0; sample < 3; sample++) {
+        for (size_t sample = 0; sample < 4; sample++) {
           // Method here
 
           std::tuple<std::optional<cda_rail::sim::SolverResult>,
                      cda_rail::sim::ScoreHistory>
               res;
           if (method == "random") {
-            res = solver.random_search(std::chrono::seconds{300}, {});
+            res = solver.random_search(std::chrono::seconds{200}, {});
           } else if (method == "greedy") {
-            res = solver.greedy_search(std::chrono::seconds{300}, {},
+            res = solver.greedy_search(std::chrono::seconds{200}, {},
                                        {std::chrono::milliseconds{50}});
           } else if (method == "random+local") {
-            res = solver.random_local_search(std::chrono::seconds{300},
+            res = solver.random_local_search(std::chrono::seconds{200},
                                              loc_params);
           } else if (method == "grasp") {
-            res = solver.grasp_search(std::chrono::seconds{300},
+            res = solver.grasp_search(std::chrono::seconds{200},
                                       {std::chrono::milliseconds{50}},
                                       loc_params);
           } else if (method == "genetic") {
