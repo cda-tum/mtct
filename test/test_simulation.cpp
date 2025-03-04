@@ -29,8 +29,7 @@ TEST(Simulation, RandomSolution) {
     for (auto target : sol.v_targets.targets) {
       ASSERT_GE(target.first, 0);
       ASSERT_LT(target.first, instance.n_timesteps);
-      ASSERT_GE(target.second,
-                -(instance.bidirectional_travel * train.max_speed));
+      ASSERT_GE(target.second, -(instance.allow_reversing * train.max_speed));
       ASSERT_LE(target.second, train.max_speed);
     }
     ASSERT_GE(sol.v_targets.size(), 1);
@@ -290,7 +289,8 @@ TEST(Simulation, RandomSearch) {
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
 
-  auto res = solver.random_search({}, std::chrono::seconds{1});
+  auto res =
+      solver.random_search(std::chrono::seconds{1}, std::chrono::seconds{1});
 
   if (std::get<0>(res)) {
     cda_rail::is_directory_and_create("tmp");
@@ -394,6 +394,27 @@ TEST(Simulation, GeneticSearch) {
   sim::RoutingSolutionSet solution_set{instance, rng_engine};
   auto                    res  = solver.genetic_search(ga_params);
   auto                    res2 = solver.genetic_search(ga_params, true);
+}
+
+TEST(Simulation, ExportVSSSolution) {
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+  Network            network = Network::import_network(
+      "./example-networks-unidirec/SimpleNetwork/network/");
+  Network network_bidirec =
+      Network::import_network("./example-networks/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+  sim::SimulationInstance instance{network, timetable, false};
+
+  for (size_t i = 0; i < 100; i++) {
+    sim::RoutingSolutionSet sol{instance, rng_engine};
+    sim::TrainTrajectorySet traj{instance, sol};
+    auto converted_sol = traj.to_vss_solution(network_bidirec);
+
+    // TODO: needs one directional tracks to contain only valid routes
+  }
 }
 
 // TODO: test for invariance of solution after being repaired and used again
