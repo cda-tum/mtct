@@ -34,10 +34,10 @@ int main(int argc, char** argv) {
 
   cda_rail::sim::GeneticParams ga_params{
       .is_multithread = false,
-      .population     = 100,
-      .gen_max        = 50,
-      .stall_max      = 5,
-      .n_elite        = 10,
+      .population     = 1000,
+      .gen_max        = 100,
+      .stall_max      = 10,
+      .n_elite        = 50,
       .xover_frac     = 0.7,
       .mut_rate       = 0.1,
   };
@@ -48,8 +48,7 @@ int main(int argc, char** argv) {
       .contraction_coeff             = 0.9,
   };
 
-  std::vector<std::string> methods = {"random", "greedy",  "random+local",
-                                      "grasp",  "genetic", "genetic+local"};
+  std::vector<std::string> methods = {"genetic"};
 
   for (std::string method : methods) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
