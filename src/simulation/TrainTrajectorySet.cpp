@@ -174,17 +174,30 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
     cda_rail::instances::GeneralPerformanceOptimizationInstance>
 cda_rail::sim::TrainTrajectorySet::to_vss_solution(
     const cda_rail::Network& network_bidirec) const {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance general_instance{
+      network_bidirec, instance.get().timetable.parse_to_general_timetable(),
+      RouteMap{}};
   cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
       cda_rail::instances::GeneralPerformanceOptimizationInstance>
-      sol_instance{};
+      general_sol_instance{general_instance};
 
   for (auto [tr_name, traj] : trajectories) {
-    Route               route;
-    std::vector<double> route_pos;
-    std::tie(route, route_pos) = traj.convert_to_vss_format(network_bidirec);
+    Route                                  route;
+    std::vector<std::pair<double, double>> route_positions;
+    std::tie(route, route_positions) =
+        traj.convert_to_vss_format(network_bidirec);
 
-    // TODO: how are start and exit times managed?
+    for (std::pair<double, double> route_position : route_positions) {
+      general_sol_instance.add_train_pos(tr_name, route_position.first,
+                                         route_position.second);
+      general_sol_instance.add_train_speed(
+          tr_name, route_position.first,
+          traj.get_state(route_position.first).value().speed);
+    }
 
-    sol_instance.set_train_routed(tr_name);
+    general_sol_instance.set_route(tr_name, route);
+    general_sol_instance.set_train_routed(tr_name);
   }
+
+  general_sol_instance.check_consistency();
 }

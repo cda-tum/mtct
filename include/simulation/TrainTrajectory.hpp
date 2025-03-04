@@ -62,7 +62,7 @@ public:
                                               size_t timestep) const;
 
   // Return route in bidirectional format and position on this route
-  std::tuple<cda_rail::Route, std::vector<double>>
+  std::tuple<cda_rail::Route, std::vector<std::pair<double, double>>>
   convert_to_vss_format(const Network& network_bidirec) const;
 };
 

@@ -397,10 +397,22 @@ TEST(Simulation, GeneticSearch) {
 }
 
 TEST(Simulation, ExportVSSSolution) {
-  Network network = Network::import_network(
+  const ulong seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  std::ranlux24_base rng_engine(seed);
+  Network            network = Network::import_network(
       "./example-networks-unidirec/SimpleNetwork/network/");
   Network network_bidirec =
       Network::import_network("./example-networks/SimpleNetwork/network/");
+  Timetable timetable = Timetable::import_timetable(
+      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+  sim::SimulationInstance instance{network, timetable, false};
+
+  for (size_t i = 0; i < 100; i++) {
+    sim::RoutingSolutionSet sol{instance, rng_engine};
+    sim::TrainTrajectorySet traj{instance, sol};
+    auto converted_sol = traj.to_vss_solution(network_bidirec);
+  }
 }
 
 // TODO: test for invariance of solution after being repaired and used again

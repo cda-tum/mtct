@@ -326,7 +326,7 @@ cda_rail::sim::TrainTrajectory::train_vertex_distance(size_t vertex,
   return min_dist;
 }
 
-std::tuple<cda_rail::Route, std::vector<double>>
+std::tuple<cda_rail::Route, std::vector<std::pair<double, double>>>
 cda_rail::sim::TrainTrajectory::convert_to_vss_format(
     const Network& network_bidirec) const {
   if (instance_r.get().allow_reversing)
@@ -342,9 +342,9 @@ cda_rail::sim::TrainTrajectory::convert_to_vss_format(
     throw std::invalid_argument(
         "Networks must be the same except in uni/bidirectional format.");
 
-  Route               route;
-  std::vector<double> route_trav_dist;
-  double              passed_edges_dist = 0;
+  Route                                  route;
+  std::vector<std::pair<double, double>> route_pos;
+  double                                 passed_edges_dist = 0;
 
   for (auto edge_traj : edge_trajs) {
     Edge edge_unidirec = network_unidirec.get_edge(edge_traj.get_edge());
@@ -368,6 +368,7 @@ cda_rail::sim::TrainTrajectory::convert_to_vss_format(
     }
 
     // Record distances from route origin
+    uint time = edge_traj.get_first_timestep();
     for (double position : edge_traj.get_positions()) {
       double edge_trav_dist;
       if (orientation) {
@@ -376,11 +377,12 @@ cda_rail::sim::TrainTrajectory::convert_to_vss_format(
         edge_trav_dist = edge_unidirec.length * (1 - position);
       }
 
-      route_trav_dist.push_back(passed_edges_dist + edge_trav_dist);
+      route_pos.push_back({time, passed_edges_dist + edge_trav_dist});
+      time++;
     }
 
     passed_edges_dist = passed_edges_dist + edge_unidirec.length;
   }
 
-  return std::make_tuple(route, route_trav_dist);
+  return std::make_tuple(route, route_pos);
 }
