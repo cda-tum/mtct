@@ -6,13 +6,21 @@
 
 namespace cda_rail::sim {
 
+struct ScoreSet {
+  std::unordered_map<std::string, double> stop_scores;
+  std::unordered_map<std::string, double> destination_scores;
+  double                                  collision_score = 0;
+
+  double get_score() const;
+  double get_collision_score() const;
+  double get_stop_score() const;
+  double get_destination_score() const;
+};
+
 class SolverResult {
   RoutingSolutionSet solutions;
   TrainTrajectorySet trajectories;
-
-  std::unordered_map<std::string, double> stop_scores;
-  std::unordered_map<std::string, double> destination_scores;
-  double                                  collision_score;
+  ScoreSet           scores;
 
 public:
   SolverResult(const SimulationInstance& instance);
@@ -24,7 +32,7 @@ public:
 
   const RoutingSolutionSet& get_solutions() const;
   const TrainTrajectorySet& get_trajectories() const;
-  double                    get_score() const;
+  const ScoreSet&           get_score_set() const;
 };
 
 }; // namespace cda_rail::sim

@@ -259,11 +259,11 @@ TEST(Simulation, SolverResult) {
     for (auto train_idx = train_idxs.begin(); train_idx != train_idxs.end();
          train_idx++) {
       const auto           train          = train_list.get_train(*train_idx);
-      double               previous_score = result.get_score();
+      double               previous_score = result.get_score_set().get_score();
       sim::RoutingSolution round_sol{instance, train, rng_engine};
       sim::TrainTrajectory round_traj{instance, train, round_sol};
       result.insert_or_assign(round_sol, round_traj);
-      ASSERT_GE(result.get_score(), previous_score);
+      ASSERT_GE(result.get_score_set().get_score(), previous_score);
     }
   }
 }

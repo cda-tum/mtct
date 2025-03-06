@@ -13,7 +13,7 @@
 namespace cda_rail::sim {
 
 struct ScoreHistory
-    : public std::vector<std::tuple<std::chrono::milliseconds, double>> {
+    : public std::vector<std::tuple<std::chrono::milliseconds, ScoreSet>> {
   void export_csv(const std::filesystem::path& p) const;
 };
 
