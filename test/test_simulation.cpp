@@ -294,8 +294,9 @@ TEST(Simulation, RandomSearch) {
 
   if (std::get<0>(res)) {
     cda_rail::is_directory_and_create("tmp");
-    std::filesystem::path p = "tmp/test_traj_random.csv";
-    std::get<0>(res).value().get_trajectories().export_csv(p);
+    std::get<0>(res).value().get_trajectories().export_csv(
+        "tmp/test_traj_random.csv");
+    std::get<1>(res).export_csv("tmp/test_hist_random.csv")
   }
 }
 
@@ -313,8 +314,9 @@ TEST(Simulation, GreedySearch) {
 
   if (std::get<0>(res)) {
     cda_rail::is_directory_and_create("tmp");
-    std::filesystem::path p = "tmp/test_traj_greedy.csv";
-    std::get<0>(res).value().get_trajectories().export_csv(p);
+    std::get<0>(res).value().get_trajectories().export_csv(
+        "tmp/test_traj_greedy.csv");
+    std::get<1>(res).export_csv("tmp/test_hist_greedy.csv")
   }
 }
 

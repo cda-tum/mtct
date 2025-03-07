@@ -14,7 +14,8 @@ cda_rail::sim::SolverResult::SolverResult(const SimulationInstance& instance,
         "Solutions and Trajectories are not the same size");
 
   for (auto const& [train_name, traj] : trajectories.get_map()) {
-    scores.stop_scores.insert_or_assign(train_name, stop_penalty(traj));
+    double pen = stop_penalty(traj);
+    scores.stop_scores.insert_or_assign(train_name, pen);
   }
 
   for (auto const& [train_name, traj] : trajectories.get_map()) {

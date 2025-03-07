@@ -3,7 +3,7 @@
 void cda_rail::sim::ScoreHistory::export_csv(
     const std::filesystem::path& p) const {
   std::ofstream csvfile(p);
-  csvfile << "time,overall_score,collision_score,destination_score,stop_score"
+  csvfile << "time,score,collision_score,destination_score,stop_score"
           << std::endl;
 
   for (auto it = begin(); it != end(); it++) {
@@ -19,7 +19,7 @@ void cda_rail::sim::ScoreHistory::export_csv(
 void cda_rail::sim::ScoreHistoryCollection::export_csv(
     const std::filesystem::path& p) const {
   std::ofstream csvfile(p);
-  csvfile << "time,overall_score,collision_score,destination_score,stop_score"
+  csvfile << "time,score,collision_score,destination_score,stop_score"
           << std::endl;
 
   for (auto hist_it = begin(); hist_it != end(); hist_it++) {

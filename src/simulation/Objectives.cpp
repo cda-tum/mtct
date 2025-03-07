@@ -141,7 +141,7 @@ double cda_rail::sim::stop_penalty(const TrainTrajectorySet& traj_set) {
     score = score + stop_penalty(traj);
   }
 
-  return score / traj_set.size();
+  return score / (double)traj_set.size();
 }
 
 double cda_rail::sim::stop_penalty(const TrainTrajectory& traj) {
@@ -158,7 +158,7 @@ double cda_rail::sim::stop_penalty(const TrainTrajectory& traj) {
                                  .size();
 
   if (n_scheduled_stops == 0)
-    return 0;
+    return 0.0;
 
-  return n_remaining_stops / n_scheduled_stops;
+  return (double)n_remaining_stops / (double)n_scheduled_stops;
 }
