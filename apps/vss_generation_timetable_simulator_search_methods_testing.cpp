@@ -48,8 +48,8 @@ int main(int argc, char** argv) {
       .contraction_coeff             = 0.9,
   };
 
-  std::vector<std::string> methods = {"greedy", "random+local", "grasp",
-                                      "genetic"};
+  std::vector<std::string> methods = {"random", "random+local", "greedy",
+                                      "grasp", "genetic"};
 
   for (std::string method : methods) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
@@ -60,22 +60,29 @@ int main(int argc, char** argv) {
       workers.push_back(std::thread{[&]() {
         cda_rail::sim::RoutingSolver solver{instance};
 
-        for (size_t sample = 0; sample < 4; sample++) {
+        int max_samples;
+        if (method == "random" || method == "greedy" ||
+            method == "random+local" || method == "grasp")
+          max_samples = 4;
+        else
+          max_samples = 2;
+
+        for (size_t sample = 0; sample < max_samples; sample++) {
           // Method here
 
           std::tuple<std::optional<cda_rail::sim::SolverResult>,
                      cda_rail::sim::ScoreHistory>
               res;
           if (method == "random") {
-            res = solver.random_search(std::chrono::seconds{200}, {});
+            res = solver.random_search(std::chrono::seconds{2500}, {});
           } else if (method == "greedy") {
-            res = solver.greedy_search(std::chrono::seconds{200}, {},
+            res = solver.greedy_search(std::chrono::seconds{2500}, {},
                                        {std::chrono::milliseconds{50}});
           } else if (method == "random+local") {
-            res = solver.random_local_search(std::chrono::seconds{200},
+            res = solver.random_local_search(std::chrono::seconds{2500},
                                              loc_params);
           } else if (method == "grasp") {
-            res = solver.grasp_search(std::chrono::seconds{200},
+            res = solver.grasp_search(std::chrono::seconds{2500},
                                       {std::chrono::milliseconds{50}},
                                       loc_params);
           } else if (method == "genetic") {
@@ -87,6 +94,9 @@ int main(int argc, char** argv) {
           if (std::get<0>(res)) {
             const std::lock_guard<std::mutex> lock(hist_mutex);
             score_coll.add(std::get<1>(res));
+            std::get<0>(res).value().get_trajectories().export_csv(
+                output_path + "/" + model_name + "_best_traj_" + method +
+                ".csv");
           }
 
           std::cout << "Sample completed." << std::endl;

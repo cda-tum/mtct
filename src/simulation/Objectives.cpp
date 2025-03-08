@@ -157,8 +157,9 @@ double cda_rail::sim::stop_penalty(const TrainTrajectory& traj) {
                                  .get_stops()
                                  .size();
 
-  if (n_scheduled_stops == 0)
+  if (n_scheduled_stops == (size_t)0) {
     return 0.0;
+  }
 
   return (double)n_remaining_stops / (double)n_scheduled_stops;
 }
