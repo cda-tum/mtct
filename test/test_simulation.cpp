@@ -415,8 +415,6 @@ TEST(Simulation, ExportVSSSolution) {
     sim::RoutingSolutionSet sol{instance, rng_engine};
     sim::TrainTrajectorySet traj{instance, sol};
     auto converted_sol = traj.to_vss_solution(network_bidirec);
-
-    // TODO: needs one directional tracks to contain only valid routes
   }
 }
 
