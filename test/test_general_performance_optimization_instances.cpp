@@ -1,4 +1,3 @@
-#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "datastructure/GeneralTimetable.hpp"
@@ -6,6 +5,7 @@
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
 #include "gtest/gtest.h"
+#include <cmath>
 #include <tuple>
 #include <utility>
 

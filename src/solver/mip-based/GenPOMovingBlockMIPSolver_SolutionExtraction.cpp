@@ -1,16 +1,24 @@
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
-#include "MultiArray.hpp"
 #include "gurobi_c++.h"
+#include "gurobi_c.h"
+#include "plog/Log.h"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
-#include "solver/mip-based/GeneralMIPSolver.hpp"
 
+#include <algorithm>
+#include <cassert>
+#include <cmath>
 #include <cstddef>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
+using std::size_t;
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
     cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
@@ -159,4 +167,4 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
                                          std::to_string(vertex_id));
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)

@@ -1,10 +1,16 @@
+#include "Definitions.hpp"
 #include "VSSModel.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
+#include <cmath>
+#include <cstddef>
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <system_error>
+
+using std::size_t;
 
 TEST(Solver, GurobiVSSDiscretizeInstanceWithoutChange) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
@@ -25,19 +31,19 @@ TEST(Solver, GurobiVSSGenDeltaTDefault) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
-            << std::endl;
+            << '\n';
   auto obj_val_6 = solver.solve({6});
   std::cout << "--------------------- TEST 2 ---------------------------"
-            << std::endl;
+            << '\n';
   auto obj_val_15 = solver.solve({15});
   std::cout << "--------------------- TEST 3 ---------------------------"
-            << std::endl;
+            << '\n';
   auto obj_val_11 = solver.solve({11});
   std::cout << "--------------------- TEST 4 ---------------------------"
-            << std::endl;
+            << '\n';
   auto obj_val_18 = solver.solve({18});
   std::cout << "--------------------- TEST 5 ---------------------------"
-            << std::endl;
+            << '\n';
   auto obj_val_30 = solver.solve({30});
 
   EXPECT_EQ(obj_val_6.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -64,13 +70,13 @@ TEST(Solver, GurobiVSSGenDeltaT) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_2 = solver.solve({30, false});
   std::cout << "--------------------- TEST 2 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_1 = solver.solve({30, true});
   std::cout << "--------------------- TEST 3 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_3 = solver.solve(
       {30, true, false, false},
       {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
@@ -95,7 +101,7 @@ TEST(Solver, GurobiVSSGenDefault) {
 
   // Test various options
   std::cout << "--------------------- DEFAULT ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_default = solver.solve();
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
@@ -103,13 +109,13 @@ TEST(Solver, GurobiVSSGenDefault) {
 }
 
 TEST(Solver, GurobiVSSGenDefaultInstance) {
-  cda_rail::instances::VSSGenerationTimetable instance(
+  const cda_rail::instances::VSSGenerationTimetable instance(
       "./example-networks/SimpleStation/");
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
 
   // Test various options
   std::cout << "--------------------- DEFAULT ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_default = solver.solve();
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
@@ -117,12 +123,13 @@ TEST(Solver, GurobiVSSGenDefaultInstance) {
 }
 
 TEST(Solver, GurobiVSSGenDefaultInstancePath) {
-  std::filesystem::path instance_path("./example-networks/SimpleStation/");
+  const std::filesystem::path instance_path(
+      "./example-networks/SimpleStation/");
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance_path);
 
   // Test various options
   std::cout << "--------------------- DEFAULT ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_default = solver.solve();
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
@@ -130,12 +137,12 @@ TEST(Solver, GurobiVSSGenDefaultInstancePath) {
 }
 
 TEST(Solver, GurobiVSSGenDefaultInstanceString) {
-  std::string instance_path("./example-networks/SimpleStation/");
+  const std::string instance_path("./example-networks/SimpleStation/");
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance_path);
 
   // Test various options
   std::cout << "--------------------- DEFAULT ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_default = solver.solve();
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
@@ -147,15 +154,15 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_1 = solver.solve({}, {}, {}, {}, 60, true);
 
   std::cout << "--------------------- TEST 2 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_2 = solver.solve({}, {}, {}, {}, 60, true);
 
   std::cout << "--------------------- TEST 3 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_3 =
       solver.solve({15, true, true, false},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
@@ -163,19 +170,19 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
                    {}, {}, 60, true);
 
   std::cout << "--------------------- TEST 4 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_4 = solver.solve(
       {},
       {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous), true, true},
       {}, {}, 60, true);
 
   std::cout << "--------------------- TEST 5 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_5 =
       solver.solve({15, true, true, false}, {}, {}, {}, 60, true);
 
   std::cout << "--------------------- TEST 6 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_6 =
       solver.solve({15, true, false, false}, {}, {}, {}, 60, true);
 
@@ -207,7 +214,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree1) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_1 = solver.solve({15, false}, {}, {}, {}, 280, true);
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -220,7 +227,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree2) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 2 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_2 = solver.solve({15, false}, {}, {}, {}, 280, true);
 
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -233,7 +240,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree3) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 3 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_3 = solver.solve(
       {15, false}, {cda_rail::vss::Model(), true, true}, {}, {}, 280, true);
 
@@ -247,7 +254,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree4) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 4 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_4 =
       solver.solve({15, false, true, false}, {}, {}, {}, 280, true);
 
@@ -261,7 +268,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree5) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 5 ---------------------------"
-            << std::endl;
+            << '\n';
   const auto obj_val_5 =
       solver.solve({15, false, false, false}, {}, {}, {}, 280, true);
 
@@ -291,7 +298,7 @@ TEST(Solver, GurobiVSSGenTim) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
-            << std::endl;
+            << '\n';
 
   EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
   EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
@@ -299,7 +306,7 @@ TEST(Solver, GurobiVSSGenTim) {
 
   const auto obj_val_1 = solver.solve({15, false});
   std::cout << "--------------------- TEST 2 ---------------------------"
-            << std::endl;
+            << '\n';
 
   solver.editable_instance().editable_tr("tr1").tim = false;
 
@@ -309,7 +316,7 @@ TEST(Solver, GurobiVSSGenTim) {
 
   const auto obj_val_2 = solver.solve({15, false});
   std::cout << "--------------------- TEST 3 ---------------------------"
-            << std::endl;
+            << '\n';
 
   solver.editable_instance().editable_tr("tr1").tim = true;
   solver.editable_instance().editable_tr("tr2").tim = false;
@@ -336,7 +343,7 @@ TEST(Solver, GurobiVSSGenTimFixed) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
-            << std::endl;
+            << '\n';
 
   EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
   EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
@@ -344,7 +351,7 @@ TEST(Solver, GurobiVSSGenTimFixed) {
 
   const auto obj_val_1 = solver.solve();
   std::cout << "--------------------- TEST 2 ---------------------------"
-            << std::endl;
+            << '\n';
 
   solver.editable_instance().editable_tr("tr1").tim = false;
 
@@ -354,7 +361,7 @@ TEST(Solver, GurobiVSSGenTimFixed) {
 
   const auto obj_val_2 = solver.solve();
   std::cout << "--------------------- TEST 3 ---------------------------"
-            << std::endl;
+            << '\n';
 
   solver.editable_instance().editable_tr("tr1").tim = true;
   solver.editable_instance().editable_tr("tr2").tim = false;
@@ -381,7 +388,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete1) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
-            << std::endl;
+            << '\n';
 
   EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
   EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
@@ -403,7 +410,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete2) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 2 ---------------------------"
-            << std::endl;
+            << '\n';
 
   solver.editable_instance().editable_tr("tr1").tim = false;
 
@@ -427,7 +434,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete3) {
       "./example-networks/SimpleStation/");
 
   std::cout << "--------------------- TEST 3 ---------------------------"
-            << std::endl;
+            << '\n';
 
   solver.editable_instance().editable_tr("tr2").tim = false;
 

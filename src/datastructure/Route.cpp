@@ -3,11 +3,21 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
+#include "datastructure/Train.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <filesystem>
 #include <fstream>
+#include <numeric>
+#include <utility>
+#include <vector>
 
 using json = nlohmann::json;
+using std::size_t;
 
 void cda_rail::Route::push_back_edge(size_t         edge_index,
                                      const Network& network) {
@@ -395,7 +405,7 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
   }
 
   std::ofstream file(p / "routes.json");
-  file << j << std::endl;
+  file << j << '\n';
 }
 
 void cda_rail::RouteMap::push_back_edge(const std::string& train_name,

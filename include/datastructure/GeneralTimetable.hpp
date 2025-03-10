@@ -1,12 +1,15 @@
 #pragma once
 
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "RailwayNetwork.hpp"
 #include "Station.hpp"
 #include "Train.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -83,12 +86,9 @@ public:
 
   [[nodiscard]] std::pair<int, int> get_forced_stopping_interval() const {
     std::pair<int, int> interval = {begin.second, end.first};
-    if (begin.first + min_stopping_time > interval.second) {
-      interval.second = begin.first + min_stopping_time;
-    }
-    if (end.second - min_stopping_time < interval.first) {
-      interval.first = end.second - min_stopping_time;
-    }
+    interval.second =
+        std::max(begin.first + min_stopping_time, interval.second);
+    interval.first = std::min(end.second - min_stopping_time, interval.first);
     return interval;
   }
 
@@ -100,10 +100,14 @@ public:
   [[nodiscard]] const std::string& get_station_name() const { return station; }
 
   // Constructor
+  // NOLINTBEGIN(modernize-pass-by-value)
+  // cpp-linter cycles here because std::move were trivial for std::pair and
+  // should not be used in that context
   GeneralScheduledStop(std::pair<int, int> begin, std::pair<int, int> end,
                        int min_stopping_time, std::string station)
-      : begin(std::move(begin)), end(std::move(end)),
-        min_stopping_time(min_stopping_time), station(std::move(station)) {
+      : begin(begin), end(end), min_stopping_time(min_stopping_time),
+        station(std::move(station)) {
+    // NOLINTEND(modernize-pass-by-value)
     if (this->begin.second < this->begin.first) {
       throw exceptions::InvalidInputException(
           "Interval begin has negative length");
@@ -464,7 +468,7 @@ public:
     }
 
     std::ofstream file(p / "schedules.json");
-    file << j << std::endl;
+    file << j << '\n';
   };
 
   Train& editable_tr(size_t index) { return train_list.editable_tr(index); };

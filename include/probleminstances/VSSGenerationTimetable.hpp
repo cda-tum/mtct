@@ -6,8 +6,12 @@
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 
+#include <cstddef>
 #include <filesystem>
 #include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace cda_rail::instances {
 class VSSGenerationTimetable
@@ -47,7 +51,7 @@ public:
   [[nodiscard]] static VSSGenerationTimetable
   import_instance(const std::filesystem::path& p,
                   bool every_train_must_have_route = true) {
-    VSSGenerationTimetable return_instance(p);
+    const VSSGenerationTimetable return_instance(p);
     if (!return_instance.check_consistency(every_train_must_have_route)) {
       throw exceptions::ConsistencyException(
           "Imported instance object is not consistent");

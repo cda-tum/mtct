@@ -1,12 +1,16 @@
 #include "Definitions.hpp"
 #include "VSSModel.hpp"
+#include "plog/Init.h"
+#include "plog/Logger.h"
+#include "plog/Severity.h"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
+#include <cstdlib>
 #include <filesystem>
 #include <gsl/span>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
-#include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
 #include <string>
 
@@ -94,7 +98,7 @@ int main(int argc, char** argv) {
   } else {
     const std::filesystem::path vss_instance_path =
         std::filesystem::path(instance_path) / "instance";
-    cda_rail::instances::GeneralPerformanceOptimizationInstance
+    const cda_rail::instances::GeneralPerformanceOptimizationInstance
                vss_instance_before_parse(vss_instance_path);
     const auto vss_instance =
         vss_instance_before_parse.cast_to_vss_generation(true);

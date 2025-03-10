@@ -2,9 +2,11 @@
 #include "CustomExceptions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
+#include <cstddef>
 #include <filesystem>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace cda_rail {
@@ -14,7 +16,8 @@ struct Station {
    * @param name Name of the station
    * @param tracks Unordered set of edges that define the station.
    */
-  std::string         name;
+  std::string name;
+  // NOLINTNEXTLINE(readability-redundant-member-init)
   std::vector<size_t> tracks = {};
 };
 

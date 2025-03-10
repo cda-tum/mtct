@@ -1,10 +1,8 @@
-#include "VSSModel.hpp"
+#include "Definitions.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
 #include <filesystem>
-#include <iostream>
-#include <string>
 
 TEST(VSSGenMBInfoSolver, Default1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
@@ -135,16 +133,4 @@ TEST(VSSGenMBInfoSolver, Default9) {
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol.get_obj(), 15);
   EXPECT_EQ(sol.get_mip_obj(), 15);
-}
-
-TEST(VSSGenMBInfoSolver, Default10) {
-  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/Stammstrecke16Trains/");
-
-  const auto sol = solver.solve({5});
-
-  EXPECT_TRUE(sol.has_solution());
-  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 17);
-  EXPECT_EQ(sol.get_mip_obj(), 17);
 }

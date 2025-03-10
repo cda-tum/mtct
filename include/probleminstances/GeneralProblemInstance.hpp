@@ -1,16 +1,25 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
+#include "datastructure/Station.hpp"
+#include "datastructure/Train.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
+#include <fstream>
+#include <numeric>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 using json = nlohmann::json;
 
@@ -548,7 +557,7 @@ public:
 };
 
 template <typename T> class SolGeneralProblemInstance {
-  static_assert(std::is_base_of<GeneralProblemInstance, T>::value,
+  static_assert(std::is_base_of_v<GeneralProblemInstance, T>,
                 "T must be a child of GeneralProblemInstance");
 
 protected:
@@ -581,7 +590,7 @@ protected:
       data["obj"]          = obj;
       data["has_solution"] = has_sol;
       std::ofstream data_file(p / "solution" / "data.json");
-      data_file << data << std::endl;
+      data_file << data << '\n';
       data_file.close();
     }
   };
@@ -644,7 +653,7 @@ public:
 template <typename T>
 class SolGeneralProblemInstanceWithScheduleAndRoutes
     : public SolGeneralProblemInstance<T> {
-  static_assert(std::is_base_of<GeneralProblemInstance, T>::value,
+  static_assert(std::is_base_of_v<GeneralProblemInstance, T>,
                 "T must be a child of GeneralProblemInstance");
 
 protected:

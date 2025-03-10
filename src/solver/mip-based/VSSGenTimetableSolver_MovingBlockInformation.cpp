@@ -1,23 +1,23 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
-#include "MultiArray.hpp"
+#include "VSSModel.hpp"
 #include "gurobi_c++.h"
+#include "probleminstances/VSSGenerationTimetable.hpp"
+#include "solver/mip-based/GeneralMIPSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include <algorithm>
-#include <chrono>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
-#include <memory>
 #include <optional>
-#include <plog/Appenders/ColorConsoleAppender.h>
-#include <plog/Formatters/TxtFormatter.h>
-#include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
 #include <string>
 #include <utility>
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+using std::size_t;
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
@@ -119,11 +119,12 @@ void cda_rail::solver::mip_based::
          t_steps < train_interval[tr].second; ++t_steps) {
       const auto t = t_steps * dt;
       const auto approx_info =
-          moving_block_solution.get_approximate_train_pos_and_vel(tr_name, t);
+          moving_block_solution.get_approximate_train_pos_and_vel(
+              tr_name, static_cast<double>(t));
       if (approx_info.has_value()) {
         const auto& [pos_approx, vel_approx] = approx_info.value();
         if (std::abs(vel_approx) < GRB_EPS &&
-            instance.is_forced_to_stop(tr_name, t)) {
+            instance.is_forced_to_stop(tr_name, static_cast<int>(t))) {
           // Train is stopping
           model->addConstr(
               vars["lda"](tr, t_steps) >= pos_approx - tr_len - STOP_TOLERANCE,
@@ -164,7 +165,8 @@ void cda_rail::solver::mip_based::
          t_steps <= train_interval[tr].second; t_steps++) {
       const auto t = t_steps * dt;
       const auto [pos_lb, pos_ub, vel_lb, vel_ub] =
-          moving_block_solution.get_exact_pos_and_vel_bounds(tr_name, t);
+          moving_block_solution.get_exact_pos_and_vel_bounds(
+              tr_name, static_cast<double>(t));
 
       if (fix_exact_positions) {
         model->addConstr(
@@ -222,7 +224,8 @@ void cda_rail::solver::mip_based::
          t_steps <= train_interval[tr].second + 1; ++t_steps) {
       const auto t = t_steps * dt;
       const auto approx_info =
-          moving_block_solution.get_approximate_train_pos_and_vel(tr_name, t);
+          moving_block_solution.get_approximate_train_pos_and_vel(
+              tr_name, static_cast<double>(t));
       if (approx_info.has_value()) {
         const auto& [pos_approx, vel_approx] = approx_info.value();
         const double bl = include_braking_curves ? vel_approx * vel_approx /
@@ -327,7 +330,7 @@ void cda_rail::solver::mip_based::
            t_idx <=
            std::max(tr_prev_interval.second, tr_following_interval.second);
            ++t_idx) {
-        const int t = t_idx * dt;
+        const int t = static_cast<int>(t_idx) * dt;
         if (t_idx >= tr_prev_interval.first &&
             t_idx <= tr_prev_interval.second) {
           prev_x_expr += vars["x"](tr_prev, t_idx, prev_e);
@@ -373,4 +376,4 @@ void cda_rail::solver::mip_based::
 
 // NOLINTEND(performance-inefficient-string-concatenation)
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)

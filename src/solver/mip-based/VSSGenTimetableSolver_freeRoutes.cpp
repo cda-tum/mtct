@@ -1,11 +1,18 @@
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
+#include "gurobi_c.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <string>
 
-// NOLINTBEGIN(performance-inefficient-string-concatenation)
+using std::size_t;
+
+// NOLINTBEGIN(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_variables() {
@@ -504,9 +511,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           dist_before = INF;
           for (const auto& e_tmp : before_after_struct.edges_before) {
             const auto tmp_val = apsp[e_tmp][e] - e_len;
-            if (tmp_val < dist_before) {
-              dist_before = tmp_val;
-            }
+            dist_before        = std::min(tmp_val, dist_before);
           }
         }
 
@@ -537,9 +542,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           for (const auto& e_tmp : before_after_struct.edges_after) {
             const auto tmp_val =
                 apsp[e][e_tmp] - instance.n().get_edge(e_tmp).length;
-            if (tmp_val < dist_after) {
-              dist_after = tmp_val;
-            }
+            dist_after = std::min(tmp_val, dist_after);
           }
         }
 
@@ -685,7 +688,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "]";
     const auto& e_len = edge.length;
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
-      for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+      for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
         const auto& tr_name = instance.get_train_list().get_train(tr).name;
         for (size_t t = train_interval[tr].first + 2;
              t <= train_interval[tr].second; ++t) {
@@ -713,7 +716,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                             "," + instance.n().get_vertex(edge.target).name +
                             "]";
     const auto& e_len = edge.length;
-    for (size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
+    for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
       const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
@@ -745,4 +748,4 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   }
 }
 
-// NOLINTEND(performance-inefficient-string-concatenation)
+// NOLINTEND(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
