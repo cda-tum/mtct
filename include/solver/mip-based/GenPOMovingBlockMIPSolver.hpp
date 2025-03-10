@@ -1,11 +1,14 @@
 #pragma once
 
 #include "Definitions.hpp"
-#include "datastructure/GeneralTimetable.hpp"
+#include "datastructure/RailwayNetwork.hpp"
+#include "datastructure/Train.hpp"
+#include "gurobi_c++.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
+// NOLINTNEXTLINE(misc-include-cleaner)
 #include "gtest/gtest_prod.h"
 #include <cstddef>
 #include <cstdint>

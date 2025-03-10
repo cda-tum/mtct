@@ -2,20 +2,28 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
-#include "MultiArray.hpp"
+#include "VSSModel.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
+#include <cctype>
+#include <cmath>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <ios>
 #include <limits>
 #include <optional>
 #include <queue>
+#include <sstream>
 #include <stack>
 #include <string>
 #include <tinyxml2.h>
+#include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 using json = nlohmann::json;
@@ -640,10 +648,10 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   std::ofstream file(p / "tracks.graphml");
 
   // Write the header.
-  file << "<?xml version='1.0' encoding='UTF-8'?>" << std::endl;
+  file << "<?xml version='1.0' encoding='UTF-8'?>" << '\n';
   file
       << R"(<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">)"
-      << std::endl;
+      << '\n';
 
   // Write the key relations
   std::string const breakable             = "d0";
@@ -654,60 +662,56 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   std::string const type                  = "d5";
   std::string const headway               = "d6";
   file << "<key id=\"" << breakable
-       << R"(" for="edge" attr.name="breakable" attr.type="boolean"/>)"
-       << std::endl;
+       << R"(" for="edge" attr.name="breakable" attr.type="boolean"/>)" << '\n';
   file << "<key id=\"" << length
-       << R"(" for="edge" attr.name="length" attr.type="double"/>)"
-       << std::endl;
+       << R"(" for="edge" attr.name="length" attr.type="double"/>)" << '\n';
   file << "<key id=\"" << max_speed
-       << R"(" for="edge" attr.name="max_speed" attr.type="double"/>)"
-       << std::endl;
+       << R"(" for="edge" attr.name="max_speed" attr.type="double"/>)" << '\n';
   file << "<key id=\"" << min_block_length
        << R"(" for="edge" attr.name="min_block_length" attr.type="double"/>)"
-       << std::endl;
+       << '\n';
   file
       << "<key id=\"" << min_stop_block_length
       << R"(" for="edge" attr.name="min_stop_block_length" attr.type="double"/>)"
-      << std::endl;
+      << '\n';
   file << "<key id=\"" << type
-       << R"(" for="vertex" attr.name="type" attr.type="long"/>)" << std::endl;
+       << R"(" for="vertex" attr.name="type" attr.type="long"/>)" << '\n';
   file << "<key id=\"" << headway
-       << R"(" for="vertex" attr.name="headway" attr.type="double"/>)"
-       << std::endl;
+       << R"(" for="vertex" attr.name="headway" attr.type="double"/>)" << '\n';
 
   // Write the graph header
-  file << "<graph edgedefault=\"directed\">" << std::endl;
+  file << "<graph edgedefault=\"directed\">" << '\n';
 
   // Write the vertices
   for (const auto& vertex : vertices) {
-    file << "<node id=\"" << vertex.name << "\">" << std::endl;
+    file << "<node id=\"" << vertex.name << "\">" << '\n';
     file << "<data key=\"" << type << "\">" << static_cast<int>(vertex.type)
-         << "</data>" << std::endl;
+         << "</data>" << '\n';
     file << "<data key=\"" << headway << "\">" << vertex.headway << "</data>"
-         << std::endl;
-    file << "</node>" << std::endl;
+         << '\n';
+    file << "</node>" << '\n';
   }
 
   // Write the edges
   for (const auto& edge : edges) {
     file << "<edge source=\"" << vertices[edge.source].name << "\" target=\""
-         << vertices[edge.target].name << "\">" << std::endl;
+         << vertices[edge.target].name << "\">" << '\n';
     file << "<data key=\"" << breakable << "\">" << std::boolalpha
-         << edge.breakable << "</data>" << std::endl;
+         << edge.breakable << "</data>" << '\n';
     file << "<data key=\"" << length << "\">" << edge.length << "</data>"
-         << std::endl;
+         << '\n';
     file << "<data key=\"" << max_speed << "\">" << edge.max_speed << "</data>"
-         << std::endl;
+         << '\n';
     file << "<data key=\"" << min_block_length << "\">" << edge.min_block_length
-         << "</data>" << std::endl;
+         << "</data>" << '\n';
     file << "<data key=\"" << min_stop_block_length << "\">"
-         << edge.min_stop_block_length << "</data>" << std::endl;
-    file << "</edge>" << std::endl;
+         << edge.min_stop_block_length << "</data>" << '\n';
+    file << "</edge>" << '\n';
   }
 
   // Write the footer
-  file << "</graph>" << std::endl;
-  file << "</graphml>" << std::endl;
+  file << "</graph>" << '\n';
+  file << "</graphml>" << '\n';
 
   // Close the file.
   file.close();
@@ -735,7 +739,7 @@ void cda_rail::Network::export_successors_cpp(
   }
 
   std::ofstream file(p / "successors_cpp.json");
-  file << j << std::endl;
+  file << j << '\n';
 }
 
 void cda_rail::Network::export_successors_python(
@@ -762,7 +766,7 @@ void cda_rail::Network::export_successors_python(
          << vertices[edge.target].name << "'): ";
     write_successor_set_to_file(file, i);
   }
-  file << "}" << std::endl;
+  file << "}" << '\n';
 }
 
 void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,
@@ -1526,7 +1530,8 @@ cda_rail::Network::sort_edge_pairs(
   std::unordered_map<size_t, std::unordered_set<size_t>> vertex_neighbors;
   for (size_t i = 0; i < edge_pairs.size(); ++i) {
     const auto& edge_pair = edge_pairs[i];
-    const auto& edge      = get_edge(edge_pair.first.value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    const auto& edge = get_edge(edge_pair.first.value());
     vertex_neighbors[edge.source].emplace(i);
     vertex_neighbors[edge.target].emplace(i);
   }
@@ -1551,6 +1556,7 @@ cda_rail::Network::sort_edge_pairs(
     const auto  edge_pair_index = *vertex_neighbors[j].begin();
     const auto& edge_pair       = edge_pairs[edge_pair_index];
 
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     const auto& edge = get_edge(edge_pair.first.value());
     vertex_neighbors[edge.source].erase(edge_pair_index);
     vertex_neighbors[edge.target].erase(edge_pair_index);
@@ -1734,10 +1740,12 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
         "Desired length is not strictly positive");
   }
 
+  // NOLINTBEGIN(readability-avoid-nested-conditional-operator)
   const std::vector<size_t> edges_to_consider_tmp =
       v_0.has_value()
           ? (reverse_direction ? in_edges(v_0.value()) : out_edges(v_0.value()))
           : std::vector<size_t>{e_0.value()};
+  // NOLINTEND(readability-avoid-nested-conditional-operator)
 
   auto edges_to_consider = edges_used_by_train.empty() ? edges_to_consider_tmp
                                                        : std::vector<size_t>();
@@ -1799,9 +1807,9 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
 }
 
 std::vector<size_t> cda_rail::Network::vertices_used_by_edges(
-    const std::vector<size_t>& edges) const {
+    const std::vector<size_t>& edges_tmp) const {
   std::unordered_set<size_t> used_vertices;
-  for (const auto& edge : edges) {
+  for (const auto& edge : edges_tmp) {
     used_vertices.insert(get_edge(edge).source);
     used_vertices.insert(get_edge(edge).target);
   }
@@ -1839,6 +1847,7 @@ double cda_rail::Network::maximal_vertex_speed(
       max_speed_neighboring_vertex = other_vertex(e, v);
     } else if (edge.max_speed > second_max_speed &&
                max_speed_neighboring_vertex.has_value() &&
+               // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
                other_vertex(e, v) != max_speed_neighboring_vertex.value()) {
       second_max_speed = edge.max_speed;
     }

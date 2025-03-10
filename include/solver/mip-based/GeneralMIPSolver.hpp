@@ -1,14 +1,19 @@
 #pragma once
 
+#include "Definitions.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
+#include "gurobi_c.h"
+#include "probleminstances/GeneralProblemInstance.hpp"
 #include "solver/GeneralSolver.hpp"
 
+#include <filesystem>
 #include <optional>
 #include <plog/Log.h>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <vector>
 
 namespace cda_rail::solver::mip_based {
 

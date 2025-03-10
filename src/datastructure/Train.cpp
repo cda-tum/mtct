@@ -3,7 +3,9 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -95,7 +97,7 @@ void cda_rail::TrainList::export_trains(const std::filesystem::path& p) const {
   }
 
   std::ofstream file(p / "trains.json");
-  file << j << std::endl;
+  file << j << '\n';
 }
 
 cda_rail::TrainList::TrainList(const std::filesystem::path& p) {

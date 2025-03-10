@@ -1,12 +1,21 @@
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "datastructure/GeneralTimetable.hpp"
+#include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
+#include "datastructure/Timetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "probleminstances/VSSGenerationTimetable.hpp"
 
 #include "gtest/gtest.h"
+#include <algorithm>
+#include <cstddef>
+#include <filesystem>
 #include <utility>
+#include <vector>
 
 using namespace cda_rail;
+using std::size_t;
 
 TEST(GeneralAbstractDataStructure, GeneralScheduledStopExceptions) {
   EXPECT_THROW(cda_rail::GeneralScheduledStop({10, 9}, {12, 15}, 1, "Test1"),
@@ -28,7 +37,7 @@ TEST(GeneralAbstractDataStructure, GeneralScheduledStopExceptions) {
 }
 
 TEST(GeneralAbstractDataStructure, GeneralScheduledStopConstructor) {
-  cda_rail::GeneralScheduledStop stop({0, 2}, {3, 4}, 2, "Test");
+  const cda_rail::GeneralScheduledStop stop({0, 2}, {3, 4}, 2, "Test");
   EXPECT_EQ(stop.get_begin_range(), (std::pair<int, int>(0, 2)));
   EXPECT_EQ(stop.get_end_range(), (std::pair<int, int>(3, 4)));
   EXPECT_EQ(stop.get_min_stopping_time(), 2);
@@ -36,17 +45,17 @@ TEST(GeneralAbstractDataStructure, GeneralScheduledStopConstructor) {
 }
 
 TEST(GeneralAbstractDataStructure, GeneralSchedulesStopForcedStoppingInterval) {
-  cda_rail::GeneralScheduledStop stop1({0, 2}, {3, 4}, 1, "Test");
+  const cda_rail::GeneralScheduledStop stop1({0, 2}, {3, 4}, 1, "Test");
   EXPECT_EQ(stop1.get_forced_stopping_interval(), (std::pair<int, int>(2, 3)));
   EXPECT_FALSE(stop1.is_forced_to_stop(1));
   EXPECT_TRUE(stop1.is_forced_to_stop(2));
   EXPECT_TRUE(stop1.is_forced_to_stop(3));
   EXPECT_FALSE(stop1.is_forced_to_stop(4));
 
-  cda_rail::GeneralScheduledStop stop2({0, 2}, {3, 4}, 2, "Test");
+  const cda_rail::GeneralScheduledStop stop2({0, 2}, {3, 4}, 2, "Test");
   EXPECT_EQ(stop2.get_forced_stopping_interval(), (std::pair<int, int>(2, 3)));
 
-  cda_rail::GeneralScheduledStop stop3({0, 2}, {3, 4}, 3, "Test");
+  const cda_rail::GeneralScheduledStop stop3({0, 2}, {3, 4}, 3, "Test");
   EXPECT_EQ(stop3.get_forced_stopping_interval(), (std::pair<int, int>(1, 3)));
   EXPECT_FALSE(stop3.is_forced_to_stop(0));
   EXPECT_TRUE(stop3.is_forced_to_stop(1));
@@ -54,24 +63,24 @@ TEST(GeneralAbstractDataStructure, GeneralSchedulesStopForcedStoppingInterval) {
   EXPECT_TRUE(stop3.is_forced_to_stop(3));
   EXPECT_FALSE(stop3.is_forced_to_stop(4));
 
-  cda_rail::GeneralScheduledStop stop4({0, 2}, {3, 4}, 4, "Test");
+  const cda_rail::GeneralScheduledStop stop4({0, 2}, {3, 4}, 4, "Test");
   EXPECT_EQ(stop4.get_forced_stopping_interval(), (std::pair<int, int>(0, 4)));
 
-  cda_rail::GeneralScheduledStop stop5({0, 5}, {0, 5}, 1, "Test");
+  const cda_rail::GeneralScheduledStop stop5({0, 5}, {0, 5}, 1, "Test");
   EXPECT_EQ(stop5.get_forced_stopping_interval(), (std::pair<int, int>(4, 1)));
 }
 
 TEST(GeneralAbstractDataStructure, GeneralScheduledStopConflicts) {
-  cda_rail::GeneralScheduledStop stop1({0, 2}, {3, 4}, 1, "Test");
-  cda_rail::GeneralScheduledStop stop2({5, 6}, {7, 8}, 1, "Test");
+  const cda_rail::GeneralScheduledStop stop1({0, 2}, {3, 4}, 1, "Test");
+  const cda_rail::GeneralScheduledStop stop2({5, 6}, {7, 8}, 1, "Test");
 
   EXPECT_TRUE(stop1.conflicts(stop2));
   EXPECT_TRUE(stop2.conflicts(stop1));
 
-  cda_rail::GeneralScheduledStop stop3({4, 5}, {10, 11}, 1, "Test1");
-  cda_rail::GeneralScheduledStop stop4({0, 1}, {7, 8}, 1, "Test2");
-  cda_rail::GeneralScheduledStop stop5({0, 1}, {2, 3}, 1, "Test3");
-  cda_rail::GeneralScheduledStop stop6({0, 5}, {0, 5}, 1, "Test4");
+  const cda_rail::GeneralScheduledStop stop3({4, 5}, {10, 11}, 1, "Test1");
+  const cda_rail::GeneralScheduledStop stop4({0, 1}, {7, 8}, 1, "Test2");
+  const cda_rail::GeneralScheduledStop stop5({0, 1}, {2, 3}, 1, "Test3");
+  const cda_rail::GeneralScheduledStop stop6({0, 5}, {0, 5}, 1, "Test4");
 
   EXPECT_TRUE(stop3.conflicts(stop4));
   EXPECT_TRUE(stop4.conflicts(stop3));
@@ -93,7 +102,7 @@ TEST(GeneralAbstractDataStructure, GeneralScheduledStopConflicts) {
 }
 
 TEST(GeneralAbstractDataStructure, GeneralTimetable) {
-  Network network("./example-networks/SimpleStation/network/");
+  const Network network("./example-networks/SimpleStation/network/");
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
 
@@ -176,7 +185,7 @@ TEST(GeneralAbstractDataStructure, GeneralTimetable) {
 }
 
 TEST(GeneralAbstractDataStructure, GeneralTimetableExportImport) {
-  Network network("./example-networks/SimpleStation/network/");
+  const Network network("./example-networks/SimpleStation/network/");
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
 
@@ -200,7 +209,7 @@ TEST(GeneralAbstractDataStructure, GeneralTimetableExportImport) {
   // Write timetable to directory
   timetable.export_timetable("./tmp/test-general-timetable/", network);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable_read(
+  const GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable_read(
       "./tmp/test-general-timetable/", network);
 
   std::filesystem::remove_all("./tmp");
@@ -263,10 +272,10 @@ TEST(GeneralAbstractDataStructure, GeneralTimetableExportImport) {
 }
 
 TEST(GeneralAbstractDataStructure, ParseSchedule) {
-  cda_rail::ScheduledStop stop1(0, 4, "Test");
-  cda_rail::ScheduledStop stop2(6, 8, "Test");
+  const cda_rail::ScheduledStop stop1(0, 4, "Test");
+  const cda_rail::ScheduledStop stop2(6, 8, "Test");
 
-  cda_rail::Schedule schedule(0, 10, 1, 20, 5, 2, {stop1, stop2});
+  const cda_rail::Schedule schedule(0, 10, 1, 20, 5, 2, {stop1, stop2});
 
   const auto general_schedule = schedule.parse_to_general_schedule();
   EXPECT_EQ(general_schedule.get_t_0_range(), (std::pair<int, int>(0, 0)));
@@ -553,8 +562,8 @@ void check_instance_import_general_cast(
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
   for (size_t i = 0; i < vertex_names.size(); i++) {
-    std::string      v_name = vertex_names[i];
-    cda_rail::Vertex v      = network.get_vertex(v_name);
+    const std::string       v_name = vertex_names[i];
+    const cda_rail::Vertex& v      = network.get_vertex(v_name);
     EXPECT_EQ(v.name, v_name);
     EXPECT_EQ(v.type, type[i]);
   }
@@ -586,7 +595,7 @@ void check_instance_import_general_cast(
 
   EXPECT_EQ(network.number_of_edges(), edge_targets.size());
   for (const auto& edge : edge_targets) {
-    cda_rail::Edge e = network.get_edge(edge.source, edge.target);
+    const cda_rail::Edge e = network.get_edge(edge.source, edge.target);
     EXPECT_EQ(network.get_vertex(e.source).name, edge.source);
     EXPECT_EQ(network.get_vertex(e.target).name, edge.target);
     EXPECT_EQ(e.length, edge.length);

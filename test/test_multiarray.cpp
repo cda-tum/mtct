@@ -1,7 +1,11 @@
 #include "MultiArray.hpp"
 
 #include "gtest/gtest.h"
-#include <iostream>
+#include <cstddef>
+#include <stdexcept>
+#include <vector>
+
+using std::size_t;
 
 TEST(Functionality, MultiArray) {
   cda_rail::MultiArray<size_t> a1(1, 2, 3);
@@ -19,7 +23,7 @@ TEST(Functionality, MultiArray) {
   for (size_t i = 0; i < 1; ++i) {
     for (size_t j = 0; j < 2; ++j) {
       for (size_t k = 0; k < 3; ++k) {
-        EXPECT_EQ(a1(i, j, k), 6 * i + 3 * j + k);
+        EXPECT_EQ(a1(i, j, k), (6 * i) + (3 * j + k));
       }
     }
   }

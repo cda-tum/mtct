@@ -1,5 +1,5 @@
 #pragma once
-#include <memory>
+#include <cstddef>
 #include <sstream>
 #include <stdexcept>
 #include <vector>

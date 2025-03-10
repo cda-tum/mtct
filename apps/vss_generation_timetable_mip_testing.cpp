@@ -1,12 +1,16 @@
 #include "Definitions.hpp"
 #include "VSSModel.hpp"
+#include "plog/Init.h"
+#include "plog/Logger.h"
+#include "plog/Severity.h"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
+#include <cstdlib>
 #include <gsl/span>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
-#include <plog/Initializers/ConsoleInitializer.h>
 #include <plog/Log.h>
+#include <string>
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
@@ -74,7 +78,7 @@ int main(int argc, char** argv) {
       std::to_string(static_cast<int>(use_schedule_cuts)) + "_" +
       std::to_string(timeout);
 
-  cda_rail::vss::Model vss_model =
+  const cda_rail::vss::Model vss_model =
       discretize_vss_positions
           ? cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                                  {&cda_rail::vss::functions::uniform})

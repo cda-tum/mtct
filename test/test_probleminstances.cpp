@@ -1,7 +1,17 @@
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "datastructure/RailwayNetwork.hpp"
+#include "datastructure/Timetable.hpp"
 #include "probleminstances/VSSGenerationTimetable.hpp"
 
 #include "gtest/gtest.h"
+#include <algorithm>
+#include <cstddef>
+#include <filesystem>
+#include <string>
+#include <vector>
+
+using std::size_t;
 
 struct EdgeTarget {
   std::string source;
@@ -33,8 +43,8 @@ void check_instance_import(
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
   for (size_t i = 0; i < vertex_names.size(); i++) {
-    std::string      v_name = vertex_names[i];
-    cda_rail::Vertex v      = network.get_vertex(v_name);
+    const std::string       v_name = vertex_names[i];
+    const cda_rail::Vertex& v      = network.get_vertex(v_name);
     EXPECT_EQ(v.name, v_name);
     EXPECT_EQ(v.type, type[i]);
   }
@@ -66,7 +76,7 @@ void check_instance_import(
 
   EXPECT_EQ(network.number_of_edges(), edge_targets.size());
   for (const auto& edge : edge_targets) {
-    cda_rail::Edge e = network.get_edge(edge.source, edge.target);
+    const cda_rail::Edge e = network.get_edge(edge.source, edge.target);
     EXPECT_EQ(network.get_vertex(e.source).name, edge.source);
     EXPECT_EQ(network.get_vertex(e.target).name, edge.target);
     EXPECT_EQ(e.length, edge.length);
@@ -385,7 +395,7 @@ TEST(Functionality, VSSGenerationTimetableInstanceImport1) {
 }
 
 TEST(Functionality, VSSGenerationTimetableInstanceImport2) {
-  std::string p("./example-networks/SimpleStation/");
+  const std::string p("./example-networks/SimpleStation/");
 
   auto instance =
       cda_rail::instances::VSSGenerationTimetable::import_instance(p);
@@ -394,7 +404,7 @@ TEST(Functionality, VSSGenerationTimetableInstanceImport2) {
 }
 
 TEST(Functionality, VSSGenerationTimetableInstanceImport3) {
-  std::filesystem::path p("./example-networks/SimpleStation/");
+  const std::filesystem::path p("./example-networks/SimpleStation/");
 
   auto instance =
       cda_rail::instances::VSSGenerationTimetable::import_instance(p);
@@ -485,15 +495,15 @@ TEST(Functionality, VSSGenerationTimetableExport) {
     const auto&         successors_target = network.get_successors(i);
     std::vector<size_t> successors_target_transformed;
     for (auto successor : successors_target) {
-      const auto& e      = network.get_edge(successor);
-      std::string source = network.get_vertex(e.source).name;
-      std::string target = network.get_vertex(e.target).name;
+      const auto&       e      = network.get_edge(successor);
+      const std::string source = network.get_vertex(e.source).name;
+      const std::string target = network.get_vertex(e.target).name;
       successors_target_transformed.emplace_back(
           network_read.get_edge_index(source, target));
     }
-    const auto& e               = network.get_edge(i);
-    std::string source          = network.get_vertex(e.source).name;
-    std::string target          = network.get_vertex(e.target).name;
+    const auto&       e         = network.get_edge(i);
+    const std::string source    = network.get_vertex(e.source).name;
+    const std::string target    = network.get_vertex(e.target).name;
     auto successors_target_read = network_read.get_successors(source, target);
     std::sort(successors_target_transformed.begin(),
               successors_target_transformed.end());
@@ -2168,10 +2178,10 @@ TEST(Example, Stammstrecke) {
   auto ost3_donnersberger =
       pairs[e28rl_3][e9rl_a] + instance.n().get_edge(e28rl_3).length;
 
-  int full_expected          = 11090;
-  int laim_expected_lr       = 7788;
-  int laim_expected_rl       = laim_expected_lr + 210 + 370 + 30;
-  int donnersberger_expected = 5391;
+  const int full_expected          = 11090;
+  const int laim_expected_lr       = 7788;
+  const int laim_expected_rl       = laim_expected_lr + 210 + 370 + 30;
+  const int donnersberger_expected = 5391;
 
   EXPECT_EQ(pasing_ost4, full_expected);
   EXPECT_EQ(pasing_ost5, full_expected);
@@ -2385,9 +2395,9 @@ TEST(Functionality, SolVSSGenerationTimetable) {
   EXPECT_EQ(sol1.get_train_speed(tr1, 30), 5);
   EXPECT_EQ(sol1.get_train_speed(tr2, 258), 7);
 
-  std::vector<double> vss_pos        = {20, 30, 60};
-  std::vector<double> vss_pos_simple = {40};
-  std::vector<double> vss_pos_empty  = {};
+  const std::vector<double> vss_pos        = {20, 30, 60};
+  const std::vector<double> vss_pos_simple = {40};
+  const std::vector<double> vss_pos_empty  = {};
 
   sol1.set_vss_pos(v0_v1, vss_pos_simple);
   EXPECT_EQ(sol1.get_vss_pos(v0_v1), vss_pos_simple);
@@ -2573,9 +2583,9 @@ TEST(ProblemInstances, TimetableConsistency) {
   network2.add_vertex("v1", cda_rail::VertexType::TTD);
   network2.add_vertex("v2", cda_rail::VertexType::TTD);
 
-  int e11 = network1.add_edge("v0", "v1", 100, 10, true, 10);
-  int e12 = network2.add_edge("v0", "v1", 100, 10, true, 10);
-  int e22 = network2.add_edge("v1", "v2", 100, 10, true, 10);
+  const int e11 = network1.add_edge("v0", "v1", 100, 10, true, 10);
+  const int e12 = network2.add_edge("v0", "v1", 100, 10, true, 10);
+  const int e22 = network2.add_edge("v1", "v2", 100, 10, true, 10);
 
   EXPECT_EQ(e11, e12);
 

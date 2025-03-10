@@ -1,14 +1,13 @@
 #pragma once
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
-#include "MultiArray.hpp"
 #include "VSSModel.hpp"
 
-#include <algorithm>
+#include <cstddef>
 #include <filesystem>
+#include <fstream>
 #include <numeric>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <tinyxml2.h>
 #include <unordered_map>
@@ -284,7 +283,7 @@ public:
   }
 
   [[nodiscard]] std::vector<size_t>
-  vertices_used_by_edges(const std::vector<size_t>& edges) const;
+  vertices_used_by_edges(const std::vector<size_t>& edges_tmp) const;
 
   [[nodiscard]] std::vector<std::vector<size_t>>
   all_paths_of_length_starting_in_vertex(

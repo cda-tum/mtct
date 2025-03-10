@@ -1,10 +1,14 @@
 #pragma once
 #include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
+#include "datastructure/Station.hpp"
+#include "datastructure/Train.hpp"
 
+#include <cstddef>
 #include <filesystem>
+#include <stdexcept>
 #include <string>
-#include <unordered_map>
+#include <type_traits>
 #include <utility>
 #include <vector>
 

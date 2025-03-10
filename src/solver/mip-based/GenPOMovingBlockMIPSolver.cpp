@@ -1,21 +1,33 @@
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
+#include "gurobi_c.h"
+#include "plog/Log.h"
+#include "plog/Logger.h"
+#include "plog/Severity.h"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
 #include <algorithm>
+#include <cassert>
+#include <chrono>
 #include <cmath>
+#include <cstddef>
+#include <filesystem>
 #include <limits>
 #include <numeric>
 #include <optional>
+#include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
     cda_rail::instances::GeneralPerformanceOptimizationInstance>
@@ -79,8 +91,9 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   for (size_t i = 0; i < num_vars; i++) {
     auto col_v = model->getCol(vars_tmp[i]);
     for (size_t j = 0; j < col_v.size(); j++) {
-      if (std::abs(col_v.getCoeff(j)) < integer_tol && col_v.getCoeff(j) != 0) {
-        auto c = col_v.getConstr(j);
+      if (std::abs(col_v.getCoeff(static_cast<int>(j))) < integer_tol &&
+          col_v.getCoeff(static_cast<int>(j)) != 0) {
+        auto c = col_v.getConstr(static_cast<int>(j));
         model->chgCoeff(c, vars_tmp[i], 0);
         num_fixed++;
       }
@@ -96,7 +109,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
                       model_created - start)
                       .count();
 
-    auto time_left = time_limit - create_time / 1000;
+    auto time_left = time_limit - (create_time / 1000);
     if (time_left < 0 && time_limit > 0) {
       time_left = 1;
     }
@@ -143,7 +156,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
       solution_settings.export_option ==
           ExportOption::ExportSolutionWithInstanceAndLP) {
     PLOGI << "Saving model and solution";
-    std::filesystem::path path = solution_settings.path;
+    const std::filesystem::path path = solution_settings.path;
 
     if (!is_directory_and_create(path)) {
       PLOGE << "Could not create directory " << path.string();
@@ -489,9 +502,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       double speed = 0;
       while (speed < max_vertex_speed) {
         speed += model_detail.max_velocity_delta;
-        if (speed > max_vertex_speed) {
-          speed = max_vertex_speed;
-        }
+        speed = std::min(speed, max_vertex_speed);
         v_velocity_extensions.emplace_back(speed);
       }
       tr_velocity_extensions.emplace_back(v_velocity_extensions);
@@ -537,7 +548,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         // Buffer, because due to numerics some values might be slightly too
         // big.
         const auto sqrt_tmp = std::max(
-            std::sqrt(speed * speed + 2 * tr_speed_change * min_n_length) -
+            std::sqrt((speed * speed) + (2 * tr_speed_change * min_n_length)) -
                 V_MIN,
             speed + V_MIN);
         speed = std::min({speed + model_detail.max_velocity_delta, sqrt_tmp,
@@ -1627,6 +1638,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
       // departure because ma might move forward, otherwise arrival and
       // departure are equal due to non-zero velocity
+      // NOLINTNEXTLINE(misc-const-correctness)
       GRBVar tr_t_var = vars["t_front_departure"](tr, v_source);
 
       const auto tr_on_e = instance.trains_on_edge_mixed_routing(
@@ -2108,12 +2120,8 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
           hw_tmp = t_bound;
         }
 
-        if (hw_tmp > hw_max) {
-          hw_max = hw_tmp;
-        }
-        if (hw_tmp_ttd > hw_max_ttd) {
-          hw_max_ttd = hw_tmp_ttd;
-        }
+        hw_max     = std::max(hw_tmp, hw_max);
+        hw_max_ttd = std::max(hw_tmp_ttd, hw_max_ttd);
 
         headway_tr_on_e +=
             vars["y"](tr, e, v_source_index, v_target_index) * hw_tmp;
@@ -2143,4 +2151,4 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::cleanup() {
   relevant_reverse_edges.clear();
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
