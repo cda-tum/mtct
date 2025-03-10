@@ -11,9 +11,9 @@ using namespace cda_rail;
 
 TEST(Simulation, RandomSolution) {
   const Network network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   const Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
   const ulong seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base                   rng_engine(seed);
@@ -78,9 +78,9 @@ TEST(Simulation, SpeedTargets) {
 
 TEST(Simulation, SimulationInstance) {
   Network network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance instance(network, timetable, true);
 
@@ -93,9 +93,9 @@ TEST(Simulation, EdgeTrajectory) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance              instance(network, timetable, true);
   std::uniform_int_distribution<ulong> random_train_index(
@@ -136,9 +136,9 @@ TEST(Simulation, TrainTrajectory) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance               instance(network, timetable, true);
   std::uniform_int_distribution<size_t> random_train_index(
@@ -162,9 +162,9 @@ TEST(Simulation, TrainTrajectorySet) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance               instance(network, timetable, true);
   std::uniform_int_distribution<size_t> random_train_index(
@@ -195,9 +195,9 @@ TEST(Simulation, TrainTrajectorySet) {
 TEST(Simulation, TrainDistance) {
   // Generate a stationary solution set
   Network network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance instance(network, timetable, true);
   sim::RoutingSolutionSet solution_set{instance};
@@ -221,9 +221,9 @@ TEST(Simulation, Penalties) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance instance(network, timetable, true);
 
@@ -238,9 +238,9 @@ TEST(Simulation, Penalties) {
 
 TEST(Simulation, SolverResult) {
   Network network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
   const ulong seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
@@ -270,9 +270,9 @@ TEST(Simulation, SolverResult) {
 
 TEST(Simulation, GreedySolution) {
   Network network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance          instance{network, timetable, false};
   sim::RoutingSolver               solver{instance};
@@ -282,9 +282,9 @@ TEST(Simulation, GreedySolution) {
 
 TEST(Simulation, RandomSearch) {
   Network network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
@@ -302,15 +302,16 @@ TEST(Simulation, RandomSearch) {
 
 TEST(Simulation, GreedySearch) {
   Network network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
 
-  auto res = solver.greedy_search({}, std::chrono::seconds{1},
-                                  {std::chrono::milliseconds{50}});
+  auto res =
+      solver.greedy_search(std::chrono::seconds{1}, std::chrono::seconds{1},
+                           {std::chrono::milliseconds{50}});
 
   if (std::get<0>(res)) {
     cda_rail::is_directory_and_create("tmp");
@@ -325,9 +326,9 @@ TEST(Simulation, LocalSearch) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
@@ -341,9 +342,9 @@ TEST(Simulation, RandomLocalSearch) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
@@ -358,9 +359,9 @@ TEST(Simulation, GraspSearch) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   sim::SimulationInstance instance{network, timetable, false};
   sim::RoutingSolver      solver{instance};
@@ -376,9 +377,9 @@ TEST(Simulation, GeneticSearch) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
   cda_rail::sim::GeneticParams ga_params{
       .is_multithread = true,
@@ -403,11 +404,11 @@ TEST(Simulation, ExportVSSSolution) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
-      "./example-networks-unidirec/SimpleNetwork/network/");
-  Network network_bidirec =
-      Network::import_network("./example-networks/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/SimpleNetwork/network/");
+  Network network_bidirec = Network::import_network(
+      "./example-networks-sim-bidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
   sim::SimulationInstance instance{network, timetable, false};
 
   for (size_t i = 0; i < 100; i++) {

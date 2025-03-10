@@ -1,3 +1,10 @@
+# Takes a csv file exported from a TrainTrajectorySet Object using export_csv()
+
+#
+# Usage:
+# python plotTrajectory.py PATH_TO_CSV
+#
+
 import plotly.graph_objects as go
 import networkx as nx
 import numpy as np
@@ -5,7 +12,7 @@ import pandas as pd
 import sys
 
 traj = pd.read_csv(sys.argv[1], index_col=False)
-G = nx.read_graphml("example-networks-unidirec/" + sys.argv[2] + "/network/tracks.graphml")
+G = nx.read_graphml("example-networks-sim-unidirec/" + sys.argv[2] + "/network/tracks.graphml")
 
 n_trains = int(traj["train_idx"].max() + 1)
 max_timestep = int(traj["timestep"].max() + 1)

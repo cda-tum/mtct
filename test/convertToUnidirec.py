@@ -30,7 +30,7 @@ def writeJson(obj, path):
         json.dump(obj, g, indent=4)
 
 origin_p = "./example-networks/" + sys.argv[1]
-destination_p = "./example-networks-unidirec/" + sys.argv[1]
+destination_p = "./example-networks-sim-unidirec/" + sys.argv[1]
 
 print("Opening files ...")
 old_graph = nx.read_graphml(origin_p + "/network/tracks.graphml")

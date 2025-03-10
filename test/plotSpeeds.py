@@ -1,3 +1,10 @@
+# Takes a csv file exported from a TrainTrajectorySet Object using export_csv()
+
+#
+# Usage:
+# python plotSpeeds.py PATH_TO_CSV
+#
+
 import plotly.graph_objects as go
 import networkx as nx
 import numpy as np
