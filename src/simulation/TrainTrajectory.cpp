@@ -331,15 +331,23 @@ cda_rail::sim::TrainTrajectory::convert_to_vss_format(
     const Network& network_bidirec) const {
   if (instance_r.get().allow_reversing)
     throw std::runtime_error(
-        "Converting solutions that allow reversing to VSS compatible solution "
-        "is not yet supported, since position can't be easily represented in "
-        "distance from starting point.");
+        "Cannot export to VSS compatible solution. "
+        "Converting solutions that allow reversing is not yet supported. "
+        "Position can't be easily represented as covered distance.");
+
+  if (instance_r.get().get_max_train_speed() >
+      instance_r.get().get_shortest_track())
+    throw std::runtime_error(
+        "Cannot export to VSS compatible solution. "
+        "Max train speed is higher than smallest track size. "
+        "Trains can skip tracks which is not representable as a 'Route'.");
 
   const Network& network_unidirec = instance_r.get().network;
 
   if (network_unidirec.number_of_vertices() !=
       network_bidirec.number_of_vertices())
     throw std::invalid_argument(
+        "Cannot export to VSS compatible solution. "
         "Networks must be the same except in uni/bidirectional format.");
 
   Route                                  route;
