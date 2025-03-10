@@ -200,4 +200,5 @@ cda_rail::sim::TrainTrajectorySet::to_vss_solution(
   }
 
   general_sol_instance.check_consistency();
+  return general_sol_instance;
 }

@@ -1,4 +1,4 @@
-## Explanation
+## Explanation Bidirectional Networks
 
 The continuous simulator cannot export solutions back to the original network used to generate its unidirectional representation (from convertToUnidirec.py),
 since information about directional edges is lost.

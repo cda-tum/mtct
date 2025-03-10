@@ -404,11 +404,11 @@ TEST(Simulation, ExportVSSSolution) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
-      "./example-networks-sim-unidirec/SimpleNetwork/network/");
+      "./example-networks-sim-unidirec/Overtake_slow/network/");
   Network network_bidirec = Network::import_network(
-      "./example-networks-sim-bidirec/SimpleNetwork/network/");
+      "./example-networks-sim-bidirec/Overtake_slow/network/");
   Timetable timetable = Timetable::import_timetable(
-      "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
+      "./example-networks-sim-unidirec/Overtake_slow/timetable/", network);
   sim::SimulationInstance instance{network, timetable, false};
 
   for (size_t i = 0; i < 100; i++) {
