@@ -17,6 +17,8 @@ int main(int argc, char** argv) {
 
   const std::string model_path  = args[1];
   const std::string output_path = args[2];
+  const std::string model_name =
+      model_path.substr(model_path.find_last_of("/"), model_path.length());
 
   cda_rail::Network network =
       cda_rail::Network::import_network(model_path + "/network");
@@ -60,8 +62,10 @@ int main(int argc, char** argv) {
       workers.pop_back();
     }
 
+    auto save_path = output_path + "/results/local_params/multi/" + model_name;
+    cda_rail::is_directory_and_create(save_path);
     score_coll.export_csv(
-        output_path + "/score_hist_" +
+        save_path + "/score_hist_" +
         std::to_string(std::get<0>(param)).substr(0, 5) + "-" +
         std::to_string(std::get<1>(param)).substr(0, 5) + "-" +
         std::to_string((std::get<2>(param))).substr(0, 5) + ".csv");

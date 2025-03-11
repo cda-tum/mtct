@@ -17,6 +17,8 @@ int main(int argc, char** argv) {
 
   const std::string model_path  = args[1];
   const std::string output_path = args[2];
+  const std::string model_name =
+      model_path.substr(model_path.find_last_of("/"), model_path.length());
 
   cda_rail::Network network =
       cda_rail::Network::import_network(model_path + "/network");
@@ -69,7 +71,10 @@ int main(int argc, char** argv) {
         workers.pop_back();
       }
 
-      score_coll.export_csv(output_path + "/score_hist_" +
+      auto save_path =
+          output_path + "/results/genetic_params/crossover/" + model_name;
+      cda_rail::is_directory_and_create(save_path);
+      score_coll.export_csv(save_path + "/score_hist_" +
                             std::to_string(xover_fraction).substr(0, 5) +
                             ".csv");
     }
@@ -105,7 +110,10 @@ int main(int argc, char** argv) {
         workers.pop_back();
       }
 
-      score_coll.export_csv(output_path + "/score_hist_" +
+      auto save_path =
+          output_path + "/results/genetic_params/mut_rate/" + model_name;
+      cda_rail::is_directory_and_create(save_path);
+      score_coll.export_csv(save_path + "/score_hist_" +
                             std::to_string(mut_rate).substr(0, 5) + ".csv");
     }
   }
@@ -141,7 +149,10 @@ int main(int argc, char** argv) {
         workers.pop_back();
       }
 
-      score_coll.export_csv(output_path + "/score_hist_" +
+      auto save_path =
+          output_path + "/results/genetic_params/pop/" + model_name;
+      cda_rail::is_directory_and_create(save_path);
+      score_coll.export_csv(save_path + "/score_hist_" +
                             std::to_string(pop).substr(0, 5) + ".csv");
     }
   }
@@ -177,7 +188,10 @@ int main(int argc, char** argv) {
         workers.pop_back();
       }
 
-      score_coll.export_csv(output_path + "/score_hist_" +
+      auto save_path =
+          output_path + "/results/genetic_params/elite/" + model_name;
+      cda_rail::is_directory_and_create(save_path);
+      score_coll.export_csv(save_path + "/score_hist_" +
                             std::to_string(elite).substr(0, 5) + ".csv");
     }
   }

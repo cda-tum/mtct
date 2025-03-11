@@ -17,6 +17,8 @@ int main(int argc, char** argv) {
 
   const std::string model_path  = args[1];
   const std::string output_path = args[2];
+  const std::string model_name =
+      model_path.substr(model_path.find_last_of("/"), model_path.length());
 
   cda_rail::Network network =
       cda_rail::Network::import_network(model_path + "/network");
@@ -29,7 +31,7 @@ int main(int argc, char** argv) {
   if (processor_count == 0)
     processor_count = 1;
 
-  std::vector<size_t> test_timeouts = {5, 10, 50, 100, 250, 500};
+  std::vector<size_t> test_timeouts = {1, 2, 5, 10, 50, 100, 250};
 
   for (size_t train_to : test_timeouts) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
@@ -59,7 +61,10 @@ int main(int argc, char** argv) {
       workers.pop_back();
     }
 
-    score_coll.export_csv(output_path + "/score_hist_" +
+    auto save_path =
+        output_path + "/results/greedy_params/stall_time/" + model_name;
+    cda_rail::is_directory_and_create(save_path);
+    score_coll.export_csv(save_path + "/score_hist_" +
                           std::to_string(train_to).substr(0, 5) + ".csv");
   }
 }
