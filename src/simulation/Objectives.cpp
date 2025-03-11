@@ -14,7 +14,7 @@ double cda_rail::sim::collision_penalty(const TrainTrajectorySet& traj_set) {
    * Train position is assumed to be the center of the train
    *
    * @param traj_set Set of train trajectories
-   * @return Normalized penalty score from 0 to 1, lower is better
+   * @return Penalty score, lower is better
    */
 
   constexpr double safety_distance = 100;

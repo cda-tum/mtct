@@ -13,8 +13,8 @@ struct ScoreSet {
 
   double get_score() const;
   double get_collision_score() const;
-  double get_stop_score() const;
-  double get_destination_score() const;
+  double get_norm_stop_score() const;
+  double get_norm_destination_score() const;
 };
 
 class SolverResult {

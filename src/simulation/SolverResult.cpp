@@ -14,8 +14,7 @@ cda_rail::sim::SolverResult::SolverResult(const SimulationInstance& instance,
         "Solutions and Trajectories are not the same size");
 
   for (auto const& [train_name, traj] : trajectories.get_map()) {
-    double pen = stop_penalty(traj);
-    scores.stop_scores.insert_or_assign(train_name, pen);
+    scores.stop_scores.insert_or_assign(train_name, stop_penalty(traj));
   }
 
   for (auto const& [train_name, traj] : trajectories.get_map()) {
@@ -54,8 +53,8 @@ double cda_rail::sim::ScoreSet::get_score() const {
   double score_sum = 0;
 
   score_sum += get_collision_score();
-  score_sum += get_destination_score();
-  score_sum += get_stop_score();
+  score_sum += get_norm_destination_score();
+  score_sum += get_norm_stop_score();
 
   return score_sum;
 }
@@ -64,22 +63,22 @@ double cda_rail::sim::ScoreSet::get_collision_score() const {
   return collision_score;
 }
 
-double cda_rail::sim::ScoreSet::get_stop_score() const {
+double cda_rail::sim::ScoreSet::get_norm_stop_score() const {
   double score_sum = 0;
   for (auto const& [train_name, score] : stop_scores) {
     score_sum = score_sum + score;
   }
 
-  return score_sum;
+  return score_sum / (double)stop_scores.size();
 }
 
-double cda_rail::sim::ScoreSet::get_destination_score() const {
+double cda_rail::sim::ScoreSet::get_norm_destination_score() const {
   double score_sum = 0;
   for (auto const& [train_name, score] : destination_scores) {
     score_sum = score_sum + score;
   }
 
-  return score_sum;
+  return score_sum / (double)stop_scores.size();
 }
 
 const cda_rail::sim::ScoreSet&

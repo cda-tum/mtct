@@ -9,8 +9,9 @@ void cda_rail::sim::ScoreHistory::export_csv(
   for (auto it = begin(); it != end(); it++) {
     const ScoreSet& set = std::get<1>(*it);
     csvfile << std::get<0>(*it).count() << "," << set.get_score() << ","
-            << set.get_collision_score() << "," << set.get_destination_score()
-            << "," << set.get_stop_score() << "," << std::endl;
+            << set.get_collision_score() << ","
+            << set.get_norm_destination_score() << ","
+            << set.get_norm_stop_score() << "," << std::endl;
   }
 
   csvfile.close();
@@ -26,8 +27,9 @@ void cda_rail::sim::ScoreHistoryCollection::export_csv(
     for (auto it = (*hist_it).begin(); it != (*hist_it).end(); it++) {
       const ScoreSet& set = std::get<1>(*it);
       csvfile << std::get<0>(*it).count() << "," << set.get_score() << ","
-              << set.get_collision_score() << "," << set.get_destination_score()
-              << "," << set.get_stop_score() << "," << std::endl;
+              << set.get_collision_score() << ","
+              << set.get_norm_destination_score() << ","
+              << set.get_norm_stop_score() << "," << std::endl;
     }
   }
 

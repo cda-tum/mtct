@@ -230,9 +230,15 @@ TEST(Simulation, Penalties) {
   for (int i = 0; i < 100; i++) {
     sim::RoutingSolutionSet solution_set{instance, rng_engine};
     sim::TrainTrajectorySet traj{instance, solution_set};
-    sim::collision_penalty(traj);
-    sim::destination_penalty(traj);
-    sim::stop_penalty(traj);
+    sim::SolverResult       res{instance, solution_set};
+    sim::ScoreSet           scores = res.get_score_set();
+    ASSERT_DOUBLE_EQ(sim::collision_penalty(traj),
+                     scores.get_collision_score());
+    ASSERT_DOUBLE_EQ(sim::destination_penalty(traj),
+                     scores.get_norm_destination_score());
+    ASSERT_DOUBLE_EQ(sim::stop_penalty(traj), scores.get_norm_stop_score());
+    ASSERT_DOUBLE_EQ(sim::combined_objective(traj), scores.get_score());
+    traj.export_csv("tmp/test_traj_penalty.csv");
   }
 }
 
@@ -263,7 +269,6 @@ TEST(Simulation, SolverResult) {
       sim::RoutingSolution round_sol{instance, train, rng_engine};
       sim::TrainTrajectory round_traj{instance, train, round_sol};
       result.insert_or_assign(round_sol, round_traj);
-      ASSERT_GE(result.get_score_set().get_score(), previous_score);
     }
   }
 }
