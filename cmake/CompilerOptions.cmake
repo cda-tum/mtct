@@ -20,7 +20,7 @@ function(enable_project_options target_name)
     # enable coverage collection options
     option(ENABLE_COVERAGE "Enable coverage reporting for gcc/clang" FALSE)
     if(ENABLE_COVERAGE)
-      target_compile_options(${target_name} INTERFACE --coverage -fprofile-arcs -ftest-coverage -O0)
+      target_compile_options(${target_name} INTERFACE --coverage -fprofile-arcs -ftest-coverage)
       target_link_libraries(${target_name} INTERFACE gcov --coverage)
     endif()
 
@@ -36,12 +36,12 @@ function(enable_project_options target_name)
     endif()
 
     # enable some more optimizations in release mode
-    target_compile_options(${target_name} INTERFACE $<$<CONFIG:RELEASE>:-fno-math-errno -ffinite-math-only
+    target_compile_options(${target_name} INTERFACE $<$<CONFIG:RELEASE>:-O3 -fno-math-errno -ffinite-math-only
                                                     -fno-trapping-math>)
 
     # enable some more options for better debugging
     target_compile_options(
-      ${target_name} INTERFACE $<$<CONFIG:DEBUG>:-O0 -Wno-cpp -Wno-unused-result -fno-omit-frame-pointer
+      ${target_name} INTERFACE $<$<CONFIG:DEBUG>:-Wno-cpp -Wno-unused-result -fno-omit-frame-pointer
                                -fno-optimize-sibling-calls -fno-inline-functions>)
   endif()
 
