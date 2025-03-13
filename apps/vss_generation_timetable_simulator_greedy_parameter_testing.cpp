@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
         for (size_t sample = 0; sample < std::floor(100 / processor_count);
              sample++) {
           auto res =
-              solver.greedy_search(std::chrono::seconds{6}, {},
+              solver.greedy_search(std::chrono::seconds{10}, {},
                                    {std::chrono::milliseconds{train_to}});
 
           if (std::get<0>(res)) {

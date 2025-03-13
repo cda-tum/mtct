@@ -43,13 +43,13 @@ int main(int argc, char** argv) {
   };
 
   cda_rail::sim::LocalParams loc_params{
-      .start_sampling_range_fraction = 0.3,
-      .abort_sampling_range_fraction = 0.005,
-      .contraction_coeff             = 0.9,
+      .start_sampling_range_fraction = 0.4,
+      .abort_sampling_range_fraction = 0.001,
+      .contraction_coeff             = 0.99,
   };
 
   std::vector<std::string> methods = {"random", "random+local", "greedy",
-                                      "grasp"};
+                                      "grasp", "genetic"};
 
   for (std::string method : methods) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
@@ -63,9 +63,9 @@ int main(int argc, char** argv) {
         int max_samples;
         if (method == "random" || method == "greedy" ||
             method == "random+local" || method == "grasp")
-          max_samples = 1;
+          max_samples = 10;
         else
-          max_samples = 1;
+          max_samples = 3;
 
         for (size_t sample = 0; sample < max_samples; sample++) {
           // Method here
@@ -74,15 +74,15 @@ int main(int argc, char** argv) {
                      cda_rail::sim::ScoreHistory>
               res;
           if (method == "random") {
-            res = solver.random_search(std::chrono::seconds{10}, {});
+            res = solver.random_search(std::chrono::seconds{100}, {});
           } else if (method == "greedy") {
-            res = solver.greedy_search(std::chrono::seconds{10}, {},
+            res = solver.greedy_search(std::chrono::seconds{100}, {},
                                        {std::chrono::milliseconds{50}});
           } else if (method == "random+local") {
-            res = solver.random_local_search(std::chrono::seconds{10},
+            res = solver.random_local_search(std::chrono::seconds{100},
                                              loc_params);
           } else if (method == "grasp") {
-            res = solver.grasp_search(std::chrono::seconds{10},
+            res = solver.grasp_search(std::chrono::seconds{100},
                                       {std::chrono::milliseconds{50}},
                                       loc_params);
           } else if (method == "genetic") {
@@ -95,8 +95,8 @@ int main(int argc, char** argv) {
             const std::lock_guard<std::mutex> lock(hist_mutex);
             score_coll.add(std::get<1>(res));
             std::get<0>(res).value().get_trajectories().export_csv(
-                output_path + "/" + model_name + "_best_traj_" + method +
-                ".csv");
+                output_path + "/results/methods/" + model_name + "/best_traj_" +
+                method + ".csv");
           }
 
           std::cout << "Sample completed." << std::endl;
@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
 
     cda_rail::is_directory_and_create(output_path + "/results/methods/" +
                                       model_name);
-    score_coll.export_csv(output_path + "/methods/" + model_name +
+    score_coll.export_csv(output_path + "/results/methods/" + model_name +
                           "/score_hist_" + method + ".csv");
   }
 }

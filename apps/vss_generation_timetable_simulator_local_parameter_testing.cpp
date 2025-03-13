@@ -32,7 +32,9 @@ int main(int argc, char** argv) {
     processor_count = 1;
 
   std::vector<std::tuple<double, double, double>> params = {
-      {0.1, 0.001, 0.5}, {0.05, 0.001, 0.9}, {0.3, 0.01, 0.99}};
+      {0.3, 0.01, 0.99},  {0.4, 0.01, 0.99}, {0.4, 0.001, 0.99},
+      {0.6, 0.01, 0.99},  {0.4, 0.01, 0.99}, {0.4, 0.01, 0.999},
+      {0.4, 0.0001, 0.99}};
 
   for (std::tuple<double, double, double> param : params) {
     cda_rail::sim::ScoreHistoryCollection score_coll;
@@ -43,10 +45,9 @@ int main(int argc, char** argv) {
       workers.push_back(std::thread{[&]() {
         cda_rail::sim::RoutingSolver solver{instance};
 
-        for (size_t sample = 0; sample < std::floor(100 / processor_count);
-             sample++) {
+        for (size_t sample = 0; sample < 20; sample++) {
           auto res = solver.random_local_search(
-              std::chrono::seconds{10},
+              std::chrono::seconds{8},
               {std::get<0>(param), std::get<1>(param), std::get<2>(param)});
 
           if (std::get<0>(res)) {
