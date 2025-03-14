@@ -37,8 +37,8 @@ int main(int argc, char** argv) {
       .population     = 1000,
       .gen_max        = 100,
       .stall_max      = 10,
-      .n_elite        = 50,
-      .xover_frac     = 0.7,
+      .n_elite        = 10,
+      .xover_frac     = 0.99,
       .mut_rate       = 0.1,
   };
 
@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
             res = solver.random_search(std::chrono::seconds{100}, {});
           } else if (method == "greedy") {
             res = solver.greedy_search(std::chrono::seconds{100}, {},
-                                       {std::chrono::milliseconds{50}});
+                                       {std::chrono::milliseconds{10}});
           } else if (method == "random+local") {
             res = solver.random_local_search(std::chrono::seconds{100},
                                              loc_params);

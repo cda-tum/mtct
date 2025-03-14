@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
       .population     = 1000,
       .gen_max        = 20,
       .stall_max      = 5,
-      .n_elite        = 100,
+      .n_elite        = 10,
       .xover_frac     = 0.7,
       .mut_rate       = 0.1,
   };
