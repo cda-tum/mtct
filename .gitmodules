@@ -16,3 +16,6 @@
 [submodule "extern/plog"]
 	path = extern/plog
 	url = https://github.com/SergiusTheBest/plog.git
+[submodule "extern/openGA"]
+	path = extern/openGA
+	url = https://github.com/Arash-codedev/openGA.git
