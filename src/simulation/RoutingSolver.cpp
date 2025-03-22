@@ -43,7 +43,11 @@ void cda_rail::sim::ScoreHistoryCollection::add(ScoreHistory hist) {
 }
 
 cda_rail::sim::RoutingSolver::RoutingSolver(const SimulationInstance& instance)
-    : instance(instance), rng_engine(std::ranlux24_base(time(NULL))) {};
+    : instance(instance),
+      rng_engine(std::ranlux24_base(
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+              std::chrono::high_resolution_clock::now().time_since_epoch())
+              .count())) {};
 
 std::tuple<std::optional<cda_rail::sim::SolverResult>,
            cda_rail::sim::ScoreHistory>
