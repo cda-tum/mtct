@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
       .population     = 1000,
       .gen_max        = 100,
       .stall_max      = 10,
-      .n_elite        = 10,
+      .n_elite        = 100,
       .xover_frac     = 0.99,
       .mut_rate       = 0.1,
   };
@@ -74,16 +74,16 @@ int main(int argc, char** argv) {
                      cda_rail::sim::ScoreHistory>
               res;
           if (method == "random") {
-            res = solver.random_search(std::chrono::seconds{100}, {});
+            res = solver.random_search(std::chrono::seconds{400}, {});
           } else if (method == "greedy") {
-            res = solver.greedy_search(std::chrono::seconds{100}, {},
+            res = solver.greedy_search(std::chrono::seconds{400}, {},
                                        {std::chrono::milliseconds{10}});
           } else if (method == "random+local") {
-            res = solver.random_local_search(std::chrono::seconds{100},
+            res = solver.random_local_search(std::chrono::seconds{400},
                                              loc_params);
           } else if (method == "grasp") {
-            res = solver.grasp_search(std::chrono::seconds{100},
-                                      {std::chrono::milliseconds{50}},
+            res = solver.grasp_search(std::chrono::seconds{400},
+                                      {std::chrono::milliseconds{10}},
                                       loc_params);
           } else if (method == "genetic") {
             res = solver.genetic_search(ga_params);

@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
   }
 
   {
-    std::vector<size_t> pops = {10, 100, 1000, 10000};
+    std::vector<size_t> pops = {10, 100, 1000};
 
     for (size_t pop : pops) {
       cda_rail::sim::ScoreHistoryCollection score_coll;
