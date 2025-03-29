@@ -195,6 +195,30 @@ int main(int argc, char** argv) {
                             std::to_string(elite).substr(0, 5) + ".csv");
     }
   }
+
+  {
+    std::vector<bool> multithreads = {false, true};
+
+    for (bool multithread : multithreads) {
+      cda_rail::sim::ScoreHistoryCollection score_coll;
+      std::mutex                            hist_mutex;
+
+      ga_params.is_multithread = multithread;
+
+      cda_rail::sim::RoutingSolver solver{instance};
+
+      for (size_t sample_runs = 0; sample_runs < 5; sample_runs++) {
+        auto res = solver.genetic_search(ga_params);
+        score_coll.add(std::get<1>(res));
+      }
+
+      auto save_path =
+          output_path + "/results/genetic_params/multithread/" + model_name;
+      cda_rail::is_directory_and_create(save_path);
+      score_coll.export_csv(save_path + "/score_hist_" +
+                            std::to_string(multithread) + ".csv");
+    }
+  }
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
