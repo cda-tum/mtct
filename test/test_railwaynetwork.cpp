@@ -2810,6 +2810,34 @@ TEST(Functionality, ShortestPaths) {
   EXPECT_EQ(shortest_paths_4_val.value(), 0);
   EXPECT_EQ(shortest_paths_4_path.size(), 1);
   EXPECT_EQ(shortest_paths_4_path, std::vector<size_t>({v1_v2}));
+
+  // Shortest paths between vertices
+  const auto vertex_shortest_paths = network.all_vertex_pairs_shortest_paths();
+
+  EXPECT_EQ(vertex_shortest_paths[4][4], 0);
+  EXPECT_EQ(vertex_shortest_paths[2][2], 0);
+  EXPECT_EQ(vertex_shortest_paths[5][4], 1000);
+  EXPECT_EQ(vertex_shortest_paths[4][5], 1000);
+  EXPECT_EQ(vertex_shortest_paths[3][0], 500);
+  EXPECT_EQ(vertex_shortest_paths[0][3], 600);
+  EXPECT_EQ(vertex_shortest_paths[5][0], 1900);
+  EXPECT_EQ(vertex_shortest_paths[2][5], 1500);
+
+  const auto vertex_shortest_paths_undir =
+      network.all_vertex_pairs_shortest_paths_undirected();
+
+  EXPECT_EQ(vertex_shortest_paths_undir[4][4], 0);
+  EXPECT_EQ(vertex_shortest_paths_undir[2][2], 0);
+  EXPECT_EQ(vertex_shortest_paths_undir[5][4], 1000);
+  EXPECT_EQ(vertex_shortest_paths_undir[4][5], 1000);
+  EXPECT_EQ(vertex_shortest_paths_undir[3][0], 500);
+  EXPECT_EQ(vertex_shortest_paths_undir[0][3], 500);
+  EXPECT_EQ(vertex_shortest_paths_undir[5][0], 1800);
+  EXPECT_EQ(vertex_shortest_paths_undir[2][5], 1500);
+  EXPECT_EQ(vertex_shortest_paths_undir[4][2], 500);
+  EXPECT_EQ(vertex_shortest_paths_undir[2][4], 500);
+  EXPECT_EQ(vertex_shortest_paths_undir[2][0], 300);
+  EXPECT_EQ(vertex_shortest_paths_undir[0][2], 300);
 }
 
 TEST(Functionality, ReadTrains) {
