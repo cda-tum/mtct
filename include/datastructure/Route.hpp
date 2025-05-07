@@ -106,6 +106,10 @@ public:
   void add_empty_route(const std::string& train_name);
   void add_empty_route(const std::string& train_name, const TrainList& trains);
 
+  void set_route(const std::string& train_name, const Route& route) {
+    routes.insert_or_assign(train_name, route);
+  };
+
   void push_back_edge(const std::string& train_name, size_t edge_index,
                       const Network& network);
   void push_back_edge(const std::string& train_name, size_t source,

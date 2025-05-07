@@ -241,6 +241,10 @@ public:
     routes.add_empty_route(train_name, get_train_list());
   };
 
+  void set_route(const std::string& train_name, const Route& route) {
+    routes.set_route(train_name, route);
+  };
+
   void push_back_edge_to_route(const std::string& train_name,
                                size_t             edge_index) {
     routes.push_back_edge(train_name, edge_index, this->const_n());
@@ -689,6 +693,10 @@ public:
   }
   void add_empty_route(const std::string& train_name) {
     this->instance.add_empty_route(train_name);
+  };
+
+  void set_route(const std::string& train_name, const Route& route) {
+    this->instance.set_route(train_name, route);
   };
 
   void push_back_edge_to_route(const std::string& train_name,
