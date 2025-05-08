@@ -1,5 +1,9 @@
 #include "simulation/RoutingSolver.hpp"
 
+namespace EA {
+std::mutex mtx_rand;
+}
+
 void cda_rail::sim::ScoreHistory::export_csv(
     const std::filesystem::path& p) const {
   std::ofstream csvfile(p);

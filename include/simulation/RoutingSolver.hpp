@@ -11,10 +11,6 @@
 #include <plog/Log.h>
 #include <random>
 
-namespace EA {
-static std::mutex mtx_rand;
-}
-
 namespace cda_rail::sim {
 
 struct ScoreHistory
