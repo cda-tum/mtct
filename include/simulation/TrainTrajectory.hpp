@@ -10,7 +10,7 @@
 
 namespace cda_rail::sim {
 
-using BrakingPeriod = std::tuple<u_int64_t, u_int64_t>;
+using BrakingPeriod = std::tuple<size_t, size_t>;
 
 class TrainTrajectory {
   /**
@@ -25,31 +25,31 @@ class TrainTrajectory {
   RoutingSolution             solution;
 
 private:
-  void backtrack_trajectory(u_int64_t timestep);
+  void backtrack_trajectory(size_t timestep);
 
   // Modify speed targets to reach velocity before last edge traversal
-  BrakingPeriod add_braking(double                   target_speed,
-                            std::optional<u_int64_t> hold_until,
-                            std::optional<u_int64_t> hold_at_least);
+  BrakingPeriod add_braking(double                target_speed,
+                            std::optional<size_t> hold_until,
+                            std::optional<size_t> hold_at_least);
 
   std::optional<BrakingPeriod>
   find_latest_braking_period(double target_speed) const;
 
   // Returns end of braking if braking is feasible
-  std::optional<u_int64_t> is_feasible_braking_point(u_int64_t start_braking,
-                                                     double target_speed) const;
+  std::optional<size_t> is_feasible_braking_point(size_t start_braking,
+                                                  double target_speed) const;
 
-  double distance_to_last_traversal(u_int64_t timestep) const;
+  double distance_to_last_traversal(size_t timestep) const;
 
 public:
   TrainTrajectory() = delete;
   TrainTrajectory(const SimulationInstance& instance, const Train& train,
                   RoutingSolution solution);
 
-  std::optional<TrainState> get_state(u_int64_t timestep) const;
-  size_t                    find_traj_idx(u_int64_t timestep) const;
+  std::optional<TrainState> get_state(size_t timestep) const;
+  size_t                    find_traj_idx(size_t timestep) const;
   size_t                    get_remaining_stop_amount() const;
-  size_t get_earliest_affected_trajectory(u_int64_t timestep) const;
+  size_t get_earliest_affected_trajectory(size_t timestep) const;
   size_t get_first_timestep() const;
   size_t get_last_timestep() const;
 

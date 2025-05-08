@@ -29,7 +29,7 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
         backtrack_trajectory(std::get<0>(braking_period));
         continue;
       } else if (entry.outcome == DEADEND) {
-        std::optional<u_int64_t> reversal_time =
+        std::optional<size_t> reversal_time =
             solution.v_targets.find_next_reversal(
                 edge_trajs.back().get_last_timestep());
 
@@ -80,7 +80,7 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
     // Restore original targets after leaving edge
     // TODO: Braking can shift traversal forwards when changing direction
     // so we sometimes constrain speeds unnecessarily
-    if (u_int64_t last_step = edge_trajs.back().get_last_timestep();
+    if (size_t last_step = edge_trajs.back().get_last_timestep();
         last_step < instance_r.get().n_timesteps - 1) {
       solution.v_targets.delete_range(last_step + 1,
                                       instance_r.get().n_timesteps - 1);
@@ -93,7 +93,7 @@ cda_rail::sim::TrainTrajectory::TrainTrajectory(
   }
 }
 
-void cda_rail::sim::TrainTrajectory::backtrack_trajectory(u_int64_t timestep) {
+void cda_rail::sim::TrainTrajectory::backtrack_trajectory(size_t timestep) {
   size_t i = get_earliest_affected_trajectory(timestep);
 
   while (edge_trajs.size() > i) {
@@ -102,8 +102,8 @@ void cda_rail::sim::TrainTrajectory::backtrack_trajectory(u_int64_t timestep) {
 }
 
 cda_rail::sim::BrakingPeriod cda_rail::sim::TrainTrajectory::add_braking(
-    double abs_target_speed, std::optional<u_int64_t> hold_until,
-    std::optional<u_int64_t> hold_at_least) {
+    double abs_target_speed, std::optional<size_t> hold_until,
+    std::optional<size_t> hold_at_least) {
   if (!edge_trajs.back().get_traversal().has_value())
     throw std::logic_error("No traversal to brake for.");
 
@@ -117,9 +117,9 @@ cda_rail::sim::BrakingPeriod cda_rail::sim::TrainTrajectory::add_braking(
   if (!braking_period.has_value())
     throw std::logic_error("No feasible braking period found.");
 
-  u_int64_t start_braking, end_braking;
+  size_t start_braking, end_braking;
   std::tie(start_braking, end_braking) = braking_period.value();
-  u_int64_t end_hold                   = end_braking;
+  size_t end_hold                      = end_braking;
 
   if (hold_until.has_value() && hold_until.value() > end_hold)
     end_hold = hold_until.value();
@@ -138,12 +138,12 @@ cda_rail::sim::BrakingPeriod cda_rail::sim::TrainTrajectory::add_braking(
 std::optional<cda_rail::sim::BrakingPeriod>
 cda_rail::sim::TrainTrajectory::find_latest_braking_period(
     double target_speed) const {
-  u_int64_t last_timestep  = edge_trajs.back().get_last_timestep();
-  u_int64_t first_timestep = edge_trajs.front().get_first_timestep();
+  size_t last_timestep  = edge_trajs.back().get_last_timestep();
+  size_t first_timestep = edge_trajs.front().get_first_timestep();
 
-  for (u_int64_t start_braking = last_timestep; start_braking >= first_timestep;
+  for (size_t start_braking = last_timestep; start_braking >= first_timestep;
        start_braking--) {
-    std::optional<u_int64_t> end_braking =
+    std::optional<size_t> end_braking =
         is_feasible_braking_point(start_braking, target_speed);
 
     if (end_braking.has_value())
@@ -155,9 +155,8 @@ cda_rail::sim::TrainTrajectory::find_latest_braking_period(
   return {};
 }
 
-std::optional<u_int64_t>
-cda_rail::sim::TrainTrajectory::is_feasible_braking_point(
-    u_int64_t start_braking, double target_speed) const {
+std::optional<size_t> cda_rail::sim::TrainTrajectory::is_feasible_braking_point(
+    size_t start_braking, double target_speed) const {
   TrainState start_state          = get_state(start_braking).value();
   double abs_diff_to_target_speed = std::abs(start_state.speed - target_speed);
   if (start_braking > edge_trajs.back().get_last_timestep() ||
@@ -176,7 +175,7 @@ cda_rail::sim::TrainTrajectory::is_feasible_braking_point(
     accel = train_r.get().deceleration;
   }
 
-  u_int64_t required_braking_time = std::ceil(speed_diff_abs / accel);
+  size_t required_braking_time = std::ceil(speed_diff_abs / accel);
 
   // This is the definite integral under the braking curve
   // As defined in EdgeTrajectory speed changes are done at maximum acceleration
@@ -187,7 +186,7 @@ cda_rail::sim::TrainTrajectory::is_feasible_braking_point(
                                (required_braking_time * accel),
                            speed_diff));
 
-  u_int64_t end_braking = start_braking + required_braking_time;
+  size_t end_braking = start_braking + required_braking_time;
 
   if (end_braking <= edge_trajs.back().get_last_timestep()) {
     return end_braking;
@@ -197,7 +196,7 @@ cda_rail::sim::TrainTrajectory::is_feasible_braking_point(
 }
 
 std::optional<cda_rail::sim::TrainState>
-cda_rail::sim::TrainTrajectory::get_state(u_int64_t timestep) const {
+cda_rail::sim::TrainTrajectory::get_state(size_t timestep) const {
   if (timestep > edge_trajs.back().get_last_timestep() ||
       timestep < edge_trajs.front().get_first_timestep())
     return {};
@@ -215,7 +214,7 @@ cda_rail::sim::TrainTrajectory::get_state(u_int64_t timestep) const {
   };
 }
 
-size_t cda_rail::sim::TrainTrajectory::find_traj_idx(u_int64_t timestep) const {
+size_t cda_rail::sim::TrainTrajectory::find_traj_idx(size_t timestep) const {
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
     if ((*it).get_first_timestep() <= timestep &&
         (*it).get_last_timestep() >= timestep) {
@@ -230,7 +229,7 @@ size_t cda_rail::sim::TrainTrajectory::get_remaining_stop_amount() const {
 }
 
 size_t cda_rail::sim::TrainTrajectory::get_earliest_affected_trajectory(
-    u_int64_t timestep) const {
+    size_t timestep) const {
   for (auto it = edge_trajs.begin(); it != edge_trajs.end(); it++) {
     if ((*it).get_last_timestep() >= timestep) {
       return (size_t)std::distance(edge_trajs.begin(), it);
@@ -281,7 +280,7 @@ cda_rail::sim::TrainTrajectory::read_initial_train_state() const {
     orientation = true;
   }
 
-  return TrainState{.timestep    = (u_int64_t)train_schedule.get_t_0(),
+  return TrainState{.timestep    = (size_t)train_schedule.get_t_0(),
                     .edge        = entry_edge,
                     .position    = position,
                     .orientation = orientation,
@@ -376,7 +375,7 @@ cda_rail::sim::TrainTrajectory::convert_to_vss_format(
     }
 
     // Record distances from route origin
-    uint time = edge_traj.get_first_timestep();
+    size_t time = edge_traj.get_first_timestep();
     for (double position : edge_traj.get_positions()) {
       double edge_trav_dist;
       if (orientation) {

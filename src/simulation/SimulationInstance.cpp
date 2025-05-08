@@ -30,11 +30,11 @@ double cda_rail::sim::SimulationInstance::get_shortest_track() const {
   return shortest_edge_length;
 }
 
-u_int64_t cda_rail::sim::SimulationInstance::get_last_train_departure() const {
-  u_int64_t last_departure = 1;
+size_t cda_rail::sim::SimulationInstance::get_last_train_departure() const {
+  size_t last_departure = 1;
   for (auto train : timetable.get_train_list()) {
     // TODO: narrowing cast should be avoided
-    u_int64_t departure = timetable.get_schedule(train.name).get_t_n();
+    size_t departure = timetable.get_schedule(train.name).get_t_n();
     if (departure > last_departure)
       last_departure = departure;
   }

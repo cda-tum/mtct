@@ -20,8 +20,8 @@ struct SimulationInstance {
   const Timetable                        timetable;
   const std::vector<std::vector<double>> shortest_paths;
 
-  const u_int64_t n_timesteps;
-  const u_int64_t n_switch_vars;
+  const size_t n_timesteps;
+  const size_t n_switch_vars;
   // Determines if trains can leave an edge in the direction they came from
   const bool allow_reversing;
 
@@ -31,9 +31,9 @@ public:
   SimulationInstance(Network network, Timetable timetable,
                      bool allow_reversing);
 
-  double    get_max_train_speed() const;
-  double    get_shortest_track() const;
-  u_int64_t get_last_train_departure() const;
+  double get_max_train_speed() const;
+  double get_shortest_track() const;
+  size_t get_last_train_departure() const;
 };
 
 }; // namespace cda_rail::sim

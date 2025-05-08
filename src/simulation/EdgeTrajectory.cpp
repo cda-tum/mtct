@@ -219,11 +219,11 @@ cda_rail::ScheduledStop cda_rail::sim::EdgeTrajectory::get_stop() const {
   throw std::invalid_argument("No associated scheduled stop found.");
 }
 
-u_int64_t cda_rail::sim::EdgeTrajectory::get_first_timestep() const {
+size_t cda_rail::sim::EdgeTrajectory::get_first_timestep() const {
   return first_timestep;
 }
 
-u_int64_t cda_rail::sim::EdgeTrajectory::get_last_timestep() const {
+size_t cda_rail::sim::EdgeTrajectory::get_last_timestep() const {
   return last_timestep;
 }
 

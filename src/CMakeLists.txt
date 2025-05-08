@@ -82,9 +82,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC Microsoft.GSL::GSL)
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/plog extern/plog)
 target_link_libraries(${PROJECT_NAME} PUBLIC plog::plog)
 
-# Create an INTERFACE library for openGA
-add_library(EA INTERFACE)
-target_include_directories(EA INTERFACE ${PROJECT_SOURCE_DIR}/extern/openGA)
+# Include openGA
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/extern/openGA/src)
 
 # add gtest for FRIEND_TEST
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/googletest extern/googletest)

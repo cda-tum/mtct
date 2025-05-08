@@ -1,13 +1,21 @@
+#include "datastructure/RailwayNetwork.hpp"
+#include "datastructure/Timetable.hpp"
 #include "simulation/Objectives.hpp"
 #include "simulation/RoutingSolver.hpp"
+#include "simulation/SimulationInstance.hpp"
 #include "simulation/TrainTrajectorySet.hpp"
+
+#include <chrono>
+#include <random>
 
 using namespace cda_rail;
 
 #include "gtest/gtest.h"
+#include <cstdint>
 #include <plog/Log.h>
 #include <plog/Logger.h>
 #include <vector>
+using ulong = uint64_t;
 
 TEST(Simulation, RandomSolution) {
   const Network network = Network::import_network(

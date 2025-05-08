@@ -12,10 +12,10 @@ cda_rail::sim::RoutingSolution::RoutingSolution(
 cda_rail::sim::RoutingSolution::RoutingSolution(
     const SimulationInstance& instance, const Train& train,
     std::ranlux24_base& rng_engine) {
-  std::uniform_real_distribution<double>   uniform(0, 1);
-  std::uniform_int_distribution<u_int64_t> uniform_timestep(
+  std::uniform_real_distribution<double> uniform(0, 1);
+  std::uniform_int_distribution<size_t>  uniform_timestep(
       0, instance.n_timesteps - 1);
-  std::uniform_int_distribution<u_int64_t> uniform_n_v_target_vars(
+  std::uniform_int_distribution<size_t> uniform_n_v_target_vars(
       1, instance.n_timesteps);
   double min_speed = 0;
   if (instance.allow_reversing)
@@ -39,11 +39,11 @@ cda_rail::sim::RoutingSolution::RoutingSolution(
     const SimulationInstance& instance, const Train& train,
     const std::function<double(void)>& rnd01) {
   auto uniform_n_v_target_vars = [instance, rnd01]() {
-    return (u_int64_t)std::round(1 + (rnd01() * (instance.n_timesteps - 1)));
+    return (size_t)std::round(1 + (rnd01() * (instance.n_timesteps - 1)));
   };
 
   auto uniform_timestep = [instance, rnd01]() {
-    return (u_int64_t)std::round((rnd01() * (instance.n_timesteps - 1)));
+    return (size_t)std::round((rnd01() * (instance.n_timesteps - 1)));
   };
 
   std::function<double()> uniform_train_speed;

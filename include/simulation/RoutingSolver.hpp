@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../extern/openGA/src/openGA.hpp"
 #include "simulation/RoutingSolutionSet.hpp"
 #include "simulation/SolverResult.hpp"
 #include "simulation/TrainTrajectorySet.hpp"
@@ -8,6 +7,7 @@
 #include <chrono>
 #include <functional>
 #include <iterator>
+#include <openGA.hpp>
 #include <plog/Log.h>
 #include <random>
 
@@ -26,7 +26,7 @@ public:
 
 struct GeneticParams {
   bool   is_multithread;
-  uint   population;
+  size_t population;
   int    gen_max;
   int    stall_max;
   int    n_elite;

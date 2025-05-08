@@ -1,14 +1,18 @@
 #include "simulation/SpeedTargets.hpp"
 
-cda_rail::sim::SpeedTargets::SpeedTargets(std::vector<u_int64_t> timesteps,
-                                          std::vector<double>    speeds) {
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+
+cda_rail::sim::SpeedTargets::SpeedTargets(std::vector<size_t> timesteps,
+                                          std::vector<double> speeds) {
   for (size_t i = 0; i < timesteps.size(); i++) {
     targets.insert({timesteps.at(i), speeds.at(i)});
   };
 };
 
-void cda_rail::sim::SpeedTargets::limit_speed_from(double    maximum,
-                                                   u_int64_t timestep) {
+void cda_rail::sim::SpeedTargets::limit_speed_from(double maximum,
+                                                   size_t timestep) {
   // Cap targets in range
   for (auto it = targets.lower_bound(timestep); it != targets.end(); it++) {
     if (std::abs((*it).second) > maximum) {
@@ -22,12 +26,11 @@ void cda_rail::sim::SpeedTargets::limit_speed_from(double    maximum,
     targets.insert_or_assign(timestep, std::copysign(maximum, previous_target));
 }
 
-void cda_rail::sim::SpeedTargets::insert(
-    std::map<u_int64_t, double> add_targets) {
+void cda_rail::sim::SpeedTargets::insert(std::map<size_t, double> add_targets) {
   targets.insert(add_targets.begin(), add_targets.end());
 }
 
-void cda_rail::sim::SpeedTargets::delete_range(u_int64_t start, u_int64_t end) {
+void cda_rail::sim::SpeedTargets::delete_range(size_t start, size_t end) {
   if (start > end)
     throw std::invalid_argument("Invalid timestep range.");
 
@@ -40,8 +43,8 @@ void cda_rail::sim::SpeedTargets::delete_range(u_int64_t start, u_int64_t end) {
   }
 }
 
-std::optional<u_int64_t>
-cda_rail::sim::SpeedTargets::find_next_reversal(u_int64_t timestep) const {
+std::optional<size_t>
+cda_rail::sim::SpeedTargets::find_next_reversal(size_t timestep) const {
   bool previous_direction = !std::signbit(find_target_speed(timestep));
   for (auto it = targets.upper_bound(timestep); it != targets.end(); it++) {
     if (!std::signbit((*it).second) != previous_direction)
@@ -50,7 +53,7 @@ cda_rail::sim::SpeedTargets::find_next_reversal(u_int64_t timestep) const {
   return {};
 }
 
-void cda_rail::sim::SpeedTargets::set_range(u_int64_t start, u_int64_t end,
+void cda_rail::sim::SpeedTargets::set_range(size_t start, size_t end,
                                             double value) {
   if (start > end)
     throw std::invalid_argument("Invalid timestep range.");
@@ -59,10 +62,8 @@ void cda_rail::sim::SpeedTargets::set_range(u_int64_t start, u_int64_t end,
   targets.insert_or_assign(start, value);
 }
 
-double
-cda_rail::sim::SpeedTargets::find_target_speed(u_int64_t timestep) const {
-  std::map<u_int64_t, double>::const_iterator it =
-      targets.upper_bound(timestep);
+double cda_rail::sim::SpeedTargets::find_target_speed(size_t timestep) const {
+  std::map<size_t, double>::const_iterator it = targets.upper_bound(timestep);
   if (it != targets.begin()) {
     --it;
   }
@@ -73,12 +74,12 @@ cda_rail::sim::SpeedTargets::find_target_speed(u_int64_t timestep) const {
   return it->second;
 };
 
-std::map<u_int64_t, double>
-cda_rail::sim::SpeedTargets::copy_range(u_int64_t start, u_int64_t end) const {
+std::map<size_t, double>
+cda_rail::sim::SpeedTargets::copy_range(size_t start, size_t end) const {
   if (start > end)
     throw std::invalid_argument("Invalid timestep range.");
 
-  std::map<u_int64_t, double> new_map;
+  std::map<size_t, double> new_map;
   for (auto it = targets.lower_bound(start);
        (*it).first <= end && it != targets.end(); it++) {
     new_map.insert({(*it).first, (*it).second});
@@ -86,9 +87,8 @@ cda_rail::sim::SpeedTargets::copy_range(u_int64_t start, u_int64_t end) const {
   return new_map;
 }
 
-bool cda_rail::sim::SpeedTargets::is_first_target(u_int64_t timestep) const {
-  std::map<u_int64_t, double>::const_iterator it =
-      targets.upper_bound(timestep);
+bool cda_rail::sim::SpeedTargets::is_first_target(size_t timestep) const {
+  std::map<size_t, double>::const_iterator it = targets.upper_bound(timestep);
   if (it == targets.begin() || it-- == targets.begin())
     return true;
   return false;
