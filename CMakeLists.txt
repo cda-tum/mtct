@@ -22,6 +22,18 @@ macro(CHECK_SUBMODULE_PRESENT modulename)
   endif()
 endmacro()
 
+# check whether the submodule ``modulename`` is correctly cloned in the ``/extern`` directory as a header-only, e.g.,
+# openGA.
+macro(CHECK_SUBMODULE_PRESENT_MAKEFILE modulename)
+  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/${modulename}/Makefile")
+    message(
+      FATAL_ERROR
+        "${modulename} submodule not cloned properly. \
+        Please run `git submodule update --init --recursive` \
+        from the main project directory")
+  endif()
+endmacro()
+
 include(cmake/StandardProjectSettings.cmake)
 if(NOT TARGET project_options)
   # Use the options specified in CompilerOptions.cmake
@@ -41,7 +53,7 @@ check_submodule_present("json")
 check_submodule_present("tinyxml2")
 check_submodule_present("gsl")
 check_submodule_present("plog")
-check_submodule_present("openGA")
+check_submodule_present_makefile("openGA")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
