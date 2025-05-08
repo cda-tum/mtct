@@ -54,8 +54,7 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/simulation/SpeedTargets.hpp
   simulation/SpeedTargets.cpp
   ${PROJECT_SOURCE_DIR}/include/simulation/Objectives.hpp
-  simulation/Objectives.cpp
-  ${PROJECT_SOURCE_DIR}/extern/openGA/src/openGA.hpp)
+  simulation/Objectives.cpp)
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
@@ -82,6 +81,10 @@ target_link_libraries(${PROJECT_NAME} PUBLIC Microsoft.GSL::GSL)
 # add plog
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/plog extern/plog)
 target_link_libraries(${PROJECT_NAME} PUBLIC plog::plog)
+
+# add plog
+add_subdirectory(${PROJECT_SOURCE_DIR}/extern/openGA extern/openGA)
+target_link_libraries(${PROJECT_NAME} PUBLIC EA)
 
 # add gtest for FRIEND_TEST
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/googletest extern/googletest)

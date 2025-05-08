@@ -41,6 +41,7 @@ check_submodule_present("json")
 check_submodule_present("tinyxml2")
 check_submodule_present("gsl")
 check_submodule_present("plog")
+check_submodule_present("openGA")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
