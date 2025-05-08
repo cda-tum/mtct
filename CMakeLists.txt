@@ -12,7 +12,6 @@ project(
   DESCRIPTION "")
 
 # Settings for openGA header
-add_definitions(-DNS_EA_BEGIN)
 add_definitions(-DOPENGA_EXTERN_LOCAL_VARS)
 
 # check whether the submodule ``modulename`` is correctly cloned in the ``/extern`` directory.
