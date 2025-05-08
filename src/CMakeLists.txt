@@ -82,7 +82,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC Microsoft.GSL::GSL)
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/plog extern/plog)
 target_link_libraries(${PROJECT_NAME} PUBLIC plog::plog)
 
-# add plog
+# add openGA
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/openGA extern/openGA)
 target_link_libraries(${PROJECT_NAME} PUBLIC EA)
 
