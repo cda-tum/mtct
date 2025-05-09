@@ -96,8 +96,8 @@ void cda_rail::sim::RoutingSolutionSet::perturb(
     SpeedTargets new_targets;
     for (auto old_target : (*sol_it).second.v_targets.targets) {
       new_targets.targets.insert_or_assign(
-          std::clamp(old_target.first + uniform_timestep_perturbation(),
-                     (size_t)0, instance.n_timesteps - 1),
+          std::clamp<size_t>(old_target.first + uniform_timestep_perturbation(),
+                             static_cast<size_t>(0), instance.n_timesteps - 1),
           std::clamp(old_target.second + uniform_speed_perturbation(),
                      -max_speed, max_speed));
     }
