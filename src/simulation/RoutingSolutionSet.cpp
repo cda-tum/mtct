@@ -1,5 +1,7 @@
 #include "simulation/RoutingSolutionSet.hpp"
 
+#include <algorithm>
+
 cda_rail::sim::RoutingSolutionSet::RoutingSolutionSet() {}
 
 cda_rail::sim::RoutingSolutionSet::RoutingSolutionSet(
@@ -49,9 +51,9 @@ void cda_rail::sim::RoutingSolutionSet::perturb(
     SpeedTargets new_targets;
     for (auto old_target : (*sol_it).second.v_targets.targets) {
       new_targets.targets.insert_or_assign(
-          std::clamp(old_target.first +
-                         uniform_timestep_perturbation(rng_engine),
-                     (size_t)0, instance.n_timesteps - 1),
+          std::clamp<size_t>(old_target.first +
+                                 uniform_timestep_perturbation(rng_engine),
+                             static_cast<size_t>(0), instance.n_timesteps - 1),
           std::clamp(old_target.second + uniform_speed_perturbation(rng_engine),
                      -max_speed, max_speed));
     }
