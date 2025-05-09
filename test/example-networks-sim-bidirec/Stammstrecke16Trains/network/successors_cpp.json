@@ -1,0 +1,394 @@
+{
+  "('DonnersbergerEntry', 'HackerbrueckeSwitchEntry')": [
+    ["HackerbrueckeSwitchEntry", "HackerbrueckeSwitch1"]
+  ],
+  "('Donnersbergerbruecke1L', 'Donnersbergerbruecke1R')": [
+    ["Donnersbergerbruecke1R", "HackerbrueckeSwitchEntry"]
+  ],
+  "('Donnersbergerbruecke1R', 'HackerbrueckeSwitchEntry')": [
+    ["HackerbrueckeSwitchEntry", "HackerbrueckeSwitch1"]
+  ],
+  "('Donnersbergerbruecke2L', 'Hirschgarten2R')": [
+    ["Hirschgarten2R", "Hirschgarten2L"]
+  ],
+  "('Donnersbergerbruecke2R', 'Donnersbergerbruecke2L')": [
+    ["Donnersbergerbruecke2L", "Hirschgarten2R"]
+  ],
+  "('Hackerbruecke1L', 'Hackerbruecke1R')": [["Hackerbruecke1R", "Hbf1L"]],
+  "('Hackerbruecke1R', 'Hbf1L')": [["Hbf1L", "Hbf1R"]],
+  "('Hackerbruecke2L', 'HackerbrueckeSwitch3')": [
+    ["HackerbrueckeSwitch3", "HackerbrueckeSwitchC"],
+    ["HackerbrueckeSwitch3", "HackerbrueckeSwitch4"]
+  ],
+  "('Hackerbruecke2R', 'Hackerbruecke2L')": [
+    ["Hackerbruecke2L", "HackerbrueckeSwitch3"]
+  ],
+  "('HackerbrueckeSwitch1', 'HackerbrueckeSwitch2')": [
+    ["HackerbrueckeSwitch2", "Hackerbruecke1L"]
+  ],
+  "('HackerbrueckeSwitch1', 'HackerbrueckeSwitchC')": [
+    ["HackerbrueckeSwitchC", "HackerbrueckeSwitch3"]
+  ],
+  "('HackerbrueckeSwitch2', 'Hackerbruecke1L')": [
+    ["Hackerbruecke1L", "Hackerbruecke1R"]
+  ],
+  "('HackerbrueckeSwitch2', 'HackerbrueckeSwitchC')": [
+    ["HackerbrueckeSwitchC", "HackerbrueckeSwitch4"]
+  ],
+  "('HackerbrueckeSwitch3', 'HackerbrueckeSwitch4')": [
+    ["HackerbrueckeSwitch4", "HackerbrueckeSwitchExit"]
+  ],
+  "('HackerbrueckeSwitch3', 'HackerbrueckeSwitchC')": [
+    ["HackerbrueckeSwitchC", "HackerbrueckeSwitch1"]
+  ],
+  "('HackerbrueckeSwitch4', 'HackerbrueckeSwitchC')": [
+    ["HackerbrueckeSwitchC", "HackerbrueckeSwitch2"]
+  ],
+  "('HackerbrueckeSwitch4', 'HackerbrueckeSwitchExit')": [
+    ["HackerbrueckeSwitchExit", "DonnersbergerExit"],
+    ["HackerbrueckeSwitchExit", "Donnersbergerbruecke2R"]
+  ],
+  "('HackerbrueckeSwitchC', 'HackerbrueckeSwitch1')": [
+    ["HackerbrueckeSwitch1", "HackerbrueckeSwitchEntry"]
+  ],
+  "('HackerbrueckeSwitchC', 'HackerbrueckeSwitch2')": [
+    ["HackerbrueckeSwitch2", "Hackerbruecke1L"]
+  ],
+  "('HackerbrueckeSwitchC', 'HackerbrueckeSwitch3')": [
+    ["HackerbrueckeSwitch3", "Hackerbruecke2L"]
+  ],
+  "('HackerbrueckeSwitchC', 'HackerbrueckeSwitch4')": [
+    ["HackerbrueckeSwitch4", "HackerbrueckeSwitchExit"]
+  ],
+  "('HackerbrueckeSwitchEntry', 'HackerbrueckeSwitch1')": [
+    ["HackerbrueckeSwitch1", "HackerbrueckeSwitchC"],
+    ["HackerbrueckeSwitch1", "HackerbrueckeSwitch2"]
+  ],
+  "('HackerbrueckeSwitchExit', 'DonnersbergerExit')": [],
+  "('HackerbrueckeSwitchExit', 'Donnersbergerbruecke2R')": [
+    ["Donnersbergerbruecke2R", "Donnersbergerbruecke2L"]
+  ],
+  "('Hbf1L', 'Hbf1R')": [["Hbf1R", "Karlsplatz1L"]],
+  "('Hbf1R', 'Karlsplatz1L')": [["Karlsplatz1L", "Karlsplatz1R"]],
+  "('Hbf2L', 'Hackerbruecke2R')": [["Hackerbruecke2R", "Hackerbruecke2L"]],
+  "('Hbf2R', 'Hbf2L')": [["Hbf2L", "Hackerbruecke2R"]],
+  "('Hirschgarten1L', 'Hirschgarten1R')": [
+    ["Hirschgarten1R", "Donnersbergerbruecke1L"]
+  ],
+  "('Hirschgarten1R', 'Donnersbergerbruecke1L')": [
+    ["Donnersbergerbruecke1L", "Donnersbergerbruecke1R"]
+  ],
+  "('Hirschgarten2L', 'Laim3R')": [["Laim3R", "Laim3L"]],
+  "('Hirschgarten2R', 'Hirschgarten2L')": [["Hirschgarten2L", "Laim3R"]],
+  "('Isartor1L', 'Isartor1R')": [["Isartor1R", "IsartorSwitchR_LR"]],
+  "('Isartor1L', 'IsartorSwitchLR')": [
+    ["IsartorSwitchLR", "IsartorSwitchRL"],
+    ["IsartorSwitchLR", "Marienplatz1R"]
+  ],
+  "('Isartor1R', 'Isartor1L')": [["Isartor1L", "IsartorSwitchLR"]],
+  "('Isartor1R', 'IsartorSwitchR_LR')": [
+    ["IsartorSwitchR_LR", "IsartorSwitchR_RL"],
+    ["IsartorSwitchR_LR", "Rosenheimer1L"]
+  ],
+  "('Isartor2L', 'IsartorSwitchRL')": [["IsartorSwitchRL", "Marienplatz2R"]],
+  "('Isartor2R', 'Isartor2L')": [["Isartor2L", "IsartorSwitchRL"]],
+  "('IsartorSwitchLR', 'Isartor1L')": [["Isartor1L", "Isartor1R"]],
+  "('IsartorSwitchLR', 'IsartorSwitchRL')": [],
+  "('IsartorSwitchRL', 'IsartorSwitchLR')": [["IsartorSwitchLR", "Isartor1L"]],
+  "('IsartorSwitchRL', 'Marienplatz2R')": [["Marienplatz2R", "Marienplatz2L"]],
+  "('IsartorSwitchR_LR', 'Isartor1R')": [["Isartor1R", "Isartor1L"]],
+  "('IsartorSwitchR_LR', 'IsartorSwitchR_RL')": [
+    ["IsartorSwitchR_RL", "Rosenheimer2L"]
+  ],
+  "('IsartorSwitchR_LR', 'Rosenheimer1L')": [
+    ["Rosenheimer1L", "Rosenheimer1R"]
+  ],
+  "('IsartorSwitchR_RL', 'Isartor2R')": [["Isartor2R", "Isartor2L"]],
+  "('IsartorSwitchR_RL', 'IsartorSwitchR_LR')": [
+    ["IsartorSwitchR_LR", "Isartor1R"]
+  ],
+  "('Karlsplatz1L', 'Karlsplatz1R')": [["Karlsplatz1R", "Marienplatz1L"]],
+  "('Karlsplatz1R', 'Marienplatz1L')": [["Marienplatz1L", "Marienplatz1R"]],
+  "('Karlsplatz2L', 'Hbf2R')": [["Hbf2R", "Hbf2L"]],
+  "('Karlsplatz2R', 'Karlsplatz2L')": [["Karlsplatz2L", "Hbf2R"]],
+  "('Laim1L', 'Laim1R')": [["Laim1R", "LaimSwitchHirschgarten"]],
+  "('Laim1R', 'LaimSwitchHirschgarten')": [
+    ["LaimSwitchHirschgarten", "Hirschgarten1L"]
+  ],
+  "('Laim3L', 'LaimSwitchNymphenburg')": [
+    ["LaimSwitchNymphenburg", "PasingSwitch2"],
+    ["LaimSwitchNymphenburg", "LaimExitNymphenburg"]
+  ],
+  "('Laim3R', 'Laim3L')": [["Laim3L", "LaimSwitchNymphenburg"]],
+  "('LaimEntry', 'LaimSwitchHirschgarten')": [
+    ["LaimSwitchHirschgarten", "Hirschgarten1L"]
+  ],
+  "('LaimSwitchHirschgarten', 'Hirschgarten1L')": [
+    ["Hirschgarten1L", "Hirschgarten1R"]
+  ],
+  "('LaimSwitchNymphenburg', 'LaimExitNymphenburg')": [],
+  "('LaimSwitchNymphenburg', 'PasingSwitch2')": [
+    ["PasingSwitch2", "PasingExit"]
+  ],
+  "('Marienplatz1L', 'Marienplatz1R')": [["Marienplatz1R", "IsartorSwitchLR"]],
+  "('Marienplatz1R', 'IsartorSwitchLR')": [["IsartorSwitchLR", "Isartor1L"]],
+  "('Marienplatz2L', 'Karlsplatz2R')": [["Karlsplatz2R", "Karlsplatz2L"]],
+  "('Marienplatz2R', 'Marienplatz2L')": [["Marienplatz2L", "Karlsplatz2R"]],
+  "('Ost1Entry', 'OstSwitch1_RL')": [["OstSwitch1_RL", "Rosenheimer2R"]],
+  "('Ost2Entry', 'OstSwitch2_RL')": [["OstSwitch2_RL", "OstSwitch1_RL"]],
+  "('Ost3Entry', 'OstSwitch3_RL')": [["OstSwitch3_RL", "OstSwitch2_RL"]],
+  "('OstSwitch1_RL', 'Rosenheimer2R')": [["Rosenheimer2R", "Rosenheimer2L"]],
+  "('OstSwitch2_RL', 'OstSwitch1_RL')": [["OstSwitch1_RL", "Rosenheimer2R"]],
+  "('OstSwitch3_RL', 'OstSwitch2_RL')": [["OstSwitch2_RL", "OstSwitch1_RL"]],
+  "('OstSwitch4_LR', 'Ost4Exit')": [],
+  "('OstSwitch5_LR', 'Ost5Exit')": [],
+  "('OstSwitch5_LR', 'OstSwitch4_LR')": [["OstSwitch4_LR", "Ost4Exit"]],
+  "('PasingEntry', 'PasingSwitch1')": [["PasingSwitch1", "Laim1L"]],
+  "('PasingSwitch1', 'Laim1L')": [["Laim1L", "Laim1R"]],
+  "('PasingSwitch1', 'PasingSwitch2')": [["PasingSwitch2", "PasingExit"]],
+  "('PasingSwitch2', 'PasingExit')": [],
+  "('PasingSwitch2', 'PasingSwitch1')": [["PasingSwitch1", "Laim1L"]],
+  "('Rosenheimer1L', 'Rosenheimer1R')": [["Rosenheimer1R", "OstSwitch5_LR"]],
+  "('Rosenheimer1R', 'OstSwitch5_LR')": [
+    ["OstSwitch5_LR", "OstSwitch4_LR"],
+    ["OstSwitch5_LR", "Ost5Exit"]
+  ],
+  "('Rosenheimer2L', 'IsartorSwitchR_RL')": [
+    ["IsartorSwitchR_RL", "IsartorSwitchR_LR"],
+    ["IsartorSwitchR_RL", "Isartor2R"]
+  ],
+  "('Rosenheimer2R', 'Rosenheimer2L')": [
+    ["Rosenheimer2L", "IsartorSwitchR_RL"]
+  ],
+  "('Laim1L', 'PasingSwitch1')": [
+    ["PasingSwitch1", "PasingEntry"],
+    ["PasingSwitch1", "PasingEntry"],
+    ["PasingSwitch1", "PasingSwitch2"]
+  ],
+  "('Laim1R', 'Laim1L')": [
+    ["Laim1L", "PasingSwitch1"],
+    ["Laim1L", "PasingSwitch1"]
+  ],
+  "('PasingExit', 'PasingSwitch2')": [
+    ["PasingSwitch2", "LaimSwitchNymphenburg"],
+    ["PasingSwitch2", "PasingSwitch1"],
+    ["PasingSwitch2", "LaimSwitchNymphenburg"]
+  ],
+  "('LaimSwitchHirschgarten', 'Laim1R')": [
+    ["Laim1R", "Laim1L"],
+    ["Laim1R", "Laim1L"]
+  ],
+  "('PasingSwitch2', 'LaimSwitchNymphenburg')": [
+    ["LaimSwitchNymphenburg", "Laim3L"],
+    ["LaimSwitchNymphenburg", "Laim3L"]
+  ],
+  "('LaimExitNymphenburg', 'LaimSwitchNymphenburg')": [
+    ["LaimSwitchNymphenburg", "Laim3L"],
+    ["LaimSwitchNymphenburg", "Laim3L"]
+  ],
+  "('LaimSwitchNymphenburg', 'Laim3L')": [
+    ["Laim3L", "Laim3R"],
+    ["Laim3L", "Laim3R"]
+  ],
+  "('Hirschgarten1L', 'LaimSwitchHirschgarten')": [
+    ["LaimSwitchHirschgarten", "Laim1R"],
+    ["LaimSwitchHirschgarten", "LaimEntry"],
+    ["LaimSwitchHirschgarten", "Laim1R"],
+    ["LaimSwitchHirschgarten", "LaimEntry"]
+  ],
+  "('Laim3L', 'Laim3R')": [
+    ["Laim3R", "Hirschgarten2L"],
+    ["Laim3R", "Hirschgarten2L"]
+  ],
+  "('Hirschgarten1R', 'Hirschgarten1L')": [
+    ["Hirschgarten1L", "LaimSwitchHirschgarten"],
+    ["Hirschgarten1L", "LaimSwitchHirschgarten"]
+  ],
+  "('Donnersbergerbruecke1L', 'Hirschgarten1R')": [
+    ["Hirschgarten1R", "Hirschgarten1L"],
+    ["Hirschgarten1R", "Hirschgarten1L"]
+  ],
+  "('Laim3R', 'Hirschgarten2L')": [
+    ["Hirschgarten2L", "Hirschgarten2R"],
+    ["Hirschgarten2L", "Hirschgarten2R"]
+  ],
+  "('Donnersbergerbruecke1R', 'Donnersbergerbruecke1L')": [
+    ["Donnersbergerbruecke1L", "Hirschgarten1R"],
+    ["Donnersbergerbruecke1L", "Hirschgarten1R"]
+  ],
+  "('Hirschgarten2L', 'Hirschgarten2R')": [
+    ["Hirschgarten2R", "Donnersbergerbruecke2L"],
+    ["Hirschgarten2R", "Donnersbergerbruecke2L"]
+  ],
+  "('HackerbrueckeSwitchEntry', 'Donnersbergerbruecke1R')": [
+    ["Donnersbergerbruecke1R", "Donnersbergerbruecke1L"],
+    ["Donnersbergerbruecke1R", "Donnersbergerbruecke1L"]
+  ],
+  "('Hirschgarten2R', 'Donnersbergerbruecke2L')": [
+    ["Donnersbergerbruecke2L", "Donnersbergerbruecke2R"],
+    ["Donnersbergerbruecke2L", "Donnersbergerbruecke2R"]
+  ],
+  "('HackerbrueckeSwitch1', 'HackerbrueckeSwitchEntry')": [
+    ["HackerbrueckeSwitchEntry", "Donnersbergerbruecke1R"],
+    ["HackerbrueckeSwitchEntry", "DonnersbergerEntry"],
+    ["HackerbrueckeSwitchEntry", "Donnersbergerbruecke1R"],
+    ["HackerbrueckeSwitchEntry", "DonnersbergerEntry"]
+  ],
+  "('Donnersbergerbruecke2L', 'Donnersbergerbruecke2R')": [
+    ["Donnersbergerbruecke2R", "HackerbrueckeSwitchExit"],
+    ["Donnersbergerbruecke2R", "HackerbrueckeSwitchExit"]
+  ],
+  "('Hackerbruecke1L', 'HackerbrueckeSwitch2')": [
+    ["HackerbrueckeSwitch2", "HackerbrueckeSwitch1"],
+    ["HackerbrueckeSwitch2", "HackerbrueckeSwitch1"],
+    ["HackerbrueckeSwitch2", "HackerbrueckeSwitchC"]
+  ],
+  "('HackerbrueckeSwitch2', 'HackerbrueckeSwitch1')": [
+    ["HackerbrueckeSwitch1", "HackerbrueckeSwitchEntry"],
+    ["HackerbrueckeSwitch1", "HackerbrueckeSwitchEntry"]
+  ],
+  "('Hackerbruecke1R', 'Hackerbruecke1L')": [
+    ["Hackerbruecke1L", "HackerbrueckeSwitch2"],
+    ["Hackerbruecke1L", "HackerbrueckeSwitch2"]
+  ],
+  "('HackerbrueckeSwitchExit', 'HackerbrueckeSwitch4')": [
+    ["HackerbrueckeSwitch4", "HackerbrueckeSwitch3"],
+    ["HackerbrueckeSwitch4", "HackerbrueckeSwitch3"],
+    ["HackerbrueckeSwitch4", "HackerbrueckeSwitchC"]
+  ],
+  "('HackerbrueckeSwitch4', 'HackerbrueckeSwitch3')": [
+    ["HackerbrueckeSwitch3", "Hackerbruecke2L"],
+    ["HackerbrueckeSwitch3", "Hackerbruecke2L"]
+  ],
+  "('DonnersbergerExit', 'HackerbrueckeSwitchExit')": [
+    ["HackerbrueckeSwitchExit", "HackerbrueckeSwitch4"],
+    ["HackerbrueckeSwitchExit", "HackerbrueckeSwitch4"]
+  ],
+  "('Donnersbergerbruecke2R', 'HackerbrueckeSwitchExit')": [
+    ["HackerbrueckeSwitchExit", "HackerbrueckeSwitch4"],
+    ["HackerbrueckeSwitchExit", "HackerbrueckeSwitch4"]
+  ],
+  "('Hbf1L', 'Hackerbruecke1R')": [
+    ["Hackerbruecke1R", "Hackerbruecke1L"],
+    ["Hackerbruecke1R", "Hackerbruecke1L"]
+  ],
+  "('HackerbrueckeSwitch3', 'Hackerbruecke2L')": [
+    ["Hackerbruecke2L", "Hackerbruecke2R"],
+    ["Hackerbruecke2L", "Hackerbruecke2R"]
+  ],
+  "('Hbf1R', 'Hbf1L')": [
+    ["Hbf1L", "Hackerbruecke1R"],
+    ["Hbf1L", "Hackerbruecke1R"]
+  ],
+  "('Hackerbruecke2L', 'Hackerbruecke2R')": [
+    ["Hackerbruecke2R", "Hbf2L"],
+    ["Hackerbruecke2R", "Hbf2L"]
+  ],
+  "('Karlsplatz1L', 'Hbf1R')": [
+    ["Hbf1R", "Hbf1L"],
+    ["Hbf1R", "Hbf1L"]
+  ],
+  "('Hackerbruecke2R', 'Hbf2L')": [
+    ["Hbf2L", "Hbf2R"],
+    ["Hbf2L", "Hbf2R"]
+  ],
+  "('Karlsplatz1R', 'Karlsplatz1L')": [
+    ["Karlsplatz1L", "Hbf1R"],
+    ["Karlsplatz1L", "Hbf1R"]
+  ],
+  "('Hbf2L', 'Hbf2R')": [
+    ["Hbf2R", "Karlsplatz2L"],
+    ["Hbf2R", "Karlsplatz2L"]
+  ],
+  "('Marienplatz1L', 'Karlsplatz1R')": [
+    ["Karlsplatz1R", "Karlsplatz1L"],
+    ["Karlsplatz1R", "Karlsplatz1L"]
+  ],
+  "('Hbf2R', 'Karlsplatz2L')": [
+    ["Karlsplatz2L", "Karlsplatz2R"],
+    ["Karlsplatz2L", "Karlsplatz2R"]
+  ],
+  "('Marienplatz1R', 'Marienplatz1L')": [
+    ["Marienplatz1L", "Karlsplatz1R"],
+    ["Marienplatz1L", "Karlsplatz1R"]
+  ],
+  "('Karlsplatz2L', 'Karlsplatz2R')": [
+    ["Karlsplatz2R", "Marienplatz2L"],
+    ["Karlsplatz2R", "Marienplatz2L"]
+  ],
+  "('IsartorSwitchLR', 'Marienplatz1R')": [
+    ["Marienplatz1R", "Marienplatz1L"],
+    ["Marienplatz1R", "Marienplatz1L"]
+  ],
+  "('Karlsplatz2R', 'Marienplatz2L')": [
+    ["Marienplatz2L", "Marienplatz2R"],
+    ["Marienplatz2L", "Marienplatz2R"]
+  ],
+  "('Marienplatz2L', 'Marienplatz2R')": [
+    ["Marienplatz2R", "IsartorSwitchRL"],
+    ["Marienplatz2R", "IsartorSwitchRL"]
+  ],
+  "('Marienplatz2R', 'IsartorSwitchRL')": [
+    ["IsartorSwitchRL", "Isartor2L"],
+    ["IsartorSwitchRL", "Isartor2L"]
+  ],
+  "('IsartorSwitchRL', 'Isartor2L')": [
+    ["Isartor2L", "Isartor2R"],
+    ["Isartor2L", "Isartor2R"]
+  ],
+  "('Isartor2L', 'Isartor2R')": [
+    ["Isartor2R", "IsartorSwitchR_RL"],
+    ["Isartor2R", "IsartorSwitchR_RL"]
+  ],
+  "('Rosenheimer1R', 'Rosenheimer1L')": [
+    ["Rosenheimer1L", "IsartorSwitchR_LR"],
+    ["Rosenheimer1L", "IsartorSwitchR_LR"]
+  ],
+  "('Rosenheimer1L', 'IsartorSwitchR_LR')": [
+    ["IsartorSwitchR_LR", "Isartor1R"]
+  ],
+  "('Isartor2R', 'IsartorSwitchR_RL')": [
+    ["IsartorSwitchR_RL", "Rosenheimer2L"],
+    ["IsartorSwitchR_RL", "Rosenheimer2L"]
+  ],
+  "('OstSwitch5_LR', 'Rosenheimer1R')": [
+    ["Rosenheimer1R", "Rosenheimer1L"],
+    ["Rosenheimer1R", "Rosenheimer1L"]
+  ],
+  "('IsartorSwitchR_RL', 'Rosenheimer2L')": [
+    ["Rosenheimer2L", "Rosenheimer2R"],
+    ["Rosenheimer2L", "Rosenheimer2R"]
+  ],
+  "('OstSwitch4_LR', 'OstSwitch5_LR')": [
+    ["OstSwitch5_LR", "Rosenheimer1R"],
+    ["OstSwitch5_LR", "Rosenheimer1R"]
+  ],
+  "('Ost5Exit', 'OstSwitch5_LR')": [
+    ["OstSwitch5_LR", "Rosenheimer1R"],
+    ["OstSwitch5_LR", "Rosenheimer1R"]
+  ],
+  "('Rosenheimer2L', 'Rosenheimer2R')": [
+    ["Rosenheimer2R", "OstSwitch1_RL"],
+    ["Rosenheimer2R", "OstSwitch1_RL"]
+  ],
+  "('Ost4Exit', 'OstSwitch4_LR')": [
+    ["OstSwitch4_LR", "OstSwitch5_LR"],
+    ["OstSwitch4_LR", "OstSwitch5_LR"]
+  ],
+  "('Rosenheimer2R', 'OstSwitch1_RL')": [
+    ["OstSwitch1_RL", "Ost1Entry"],
+    ["OstSwitch1_RL", "OstSwitch2_RL"],
+    ["OstSwitch1_RL", "OstSwitch2_RL"],
+    ["OstSwitch1_RL", "Ost1Entry"]
+  ],
+  "('OstSwitch1_RL', 'OstSwitch2_RL')": [
+    ["OstSwitch2_RL", "Ost2Entry"],
+    ["OstSwitch2_RL", "OstSwitch3_RL"],
+    ["OstSwitch2_RL", "OstSwitch3_RL"],
+    ["OstSwitch2_RL", "Ost2Entry"]
+  ],
+  "('OstSwitch2_RL', 'OstSwitch3_RL')": [
+    ["OstSwitch3_RL", "Ost3Entry"],
+    ["OstSwitch3_RL", "Ost3Entry"]
+  ]
+}
