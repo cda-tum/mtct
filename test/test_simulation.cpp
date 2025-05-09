@@ -15,17 +15,16 @@ using namespace cda_rail;
 #include <plog/Log.h>
 #include <plog/Logger.h>
 #include <vector>
-using ulong = uint64_t;
 
 TEST(Simulation, RandomSolution) {
   const Network network = Network::import_network(
       "./example-networks-sim-unidirec/SimpleNetwork/network/");
   const Timetable timetable = Timetable::import_timetable(
       "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::ranlux24_base                   rng_engine(seed);
-  std::uniform_int_distribution<ulong> random_train_index(
+  std::ranlux24_base                    rng_engine(seed);
+  std::uniform_int_distribution<size_t> random_train_index(
       0, timetable.get_train_list().size() - 1);
 
   for (int i = 0; i <= 100; i++) {
@@ -47,7 +46,7 @@ TEST(Simulation, RandomSolution) {
 }
 
 TEST(Simulation, SpeedTargets) {
-  std::vector<ulong>  timesteps = {3, 20, 50, 75, 87};
+  std::vector<size_t> timesteps = {3, 20, 50, 75, 87};
   std::vector<double> speeds    = {0.4, 0.6, 0.5, -0.2, -0.5};
 
   sim::SpeedTargets v_targets(timesteps, speeds);
@@ -69,7 +68,7 @@ TEST(Simulation, SpeedTargets) {
   ASSERT_EQ(v_targets.targets.at(75), -0.2);
   ASSERT_EQ(v_targets.targets.at(87), -0.3);
 
-  std::map<ulong, double> cop = v_targets.copy_range(20, 50);
+  std::map<size_t, double> cop = v_targets.copy_range(20, 50);
   ASSERT_EQ(cop.size(), 3);
   ASSERT_EQ(cop.at(20), 0.6);
   ASSERT_EQ(cop.at(45), 0.3);
@@ -97,7 +96,7 @@ TEST(Simulation, SimulationInstance) {
 }
 
 TEST(Simulation, EdgeTrajectory) {
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
@@ -105,8 +104,8 @@ TEST(Simulation, EdgeTrajectory) {
   Timetable timetable = Timetable::import_timetable(
       "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
 
-  sim::SimulationInstance              instance(network, timetable, true);
-  std::uniform_int_distribution<ulong> random_train_index(
+  sim::SimulationInstance               instance(network, timetable, true);
+  std::uniform_int_distribution<size_t> random_train_index(
       0, timetable.get_train_list().size() - 1);
 
   for (int i = 0; i < 500; i++) {
@@ -125,7 +124,7 @@ TEST(Simulation, EdgeTrajectory) {
     if (outedges.empty())
       throw std::logic_error("Train entry vertex is has no connected edges.");
 
-    sim::TrainState init_state{.timestep    = (ulong)train_schedule.get_t_0(),
+    sim::TrainState init_state{.timestep    = (size_t)train_schedule.get_t_0(),
                                .edge        = outedges.front(),
                                .position    = 0,
                                .orientation = true,
@@ -140,7 +139,7 @@ TEST(Simulation, EdgeTrajectory) {
 }
 
 TEST(Simulation, TrainTrajectory) {
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
@@ -166,7 +165,7 @@ TEST(Simulation, TrainTrajectory) {
 }
 
 TEST(Simulation, TrainTrajectorySet) {
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
@@ -225,7 +224,7 @@ TEST(Simulation, TrainDistance) {
 }
 
 TEST(Simulation, Penalties) {
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
@@ -255,7 +254,7 @@ TEST(Simulation, SolverResult) {
       "./example-networks-sim-unidirec/SimpleNetwork/network/");
   Timetable timetable = Timetable::import_timetable(
       "./example-networks-sim-unidirec/SimpleNetwork/timetable/", network);
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
 
@@ -335,7 +334,7 @@ TEST(Simulation, GreedySearch) {
 }
 
 TEST(Simulation, LocalSearch) {
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
@@ -351,7 +350,7 @@ TEST(Simulation, LocalSearch) {
 }
 
 TEST(Simulation, RandomLocalSearch) {
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
@@ -368,7 +367,7 @@ TEST(Simulation, RandomLocalSearch) {
 }
 
 TEST(Simulation, GraspSearch) {
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
@@ -386,7 +385,7 @@ TEST(Simulation, GraspSearch) {
 }
 
 TEST(Simulation, GeneticSearch) {
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
@@ -413,7 +412,7 @@ TEST(Simulation, GeneticSearch) {
 }
 
 TEST(Simulation, ExportVSSSolution) {
-  const ulong seed =
+  const size_t seed =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::ranlux24_base rng_engine(seed);
   Network            network = Network::import_network(
