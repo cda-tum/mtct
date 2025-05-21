@@ -41,7 +41,7 @@ The tool is under active development, and more features will follow.
 #### System Requirements
 
 The tool has been tested under Windows 11 (64-bit) using the MSVC compiler.
-It should also be compatible with any current version of g++ supporting C++17 and a minimum CMake version of 3.19.
+It should also be compatible with any current version of g++ supporting C++20 and a minimum CMake version of 3.24.
 
 Moreover, the tool requires a local installation of a recent Gurobi [[8]](#references) version available at [https://www.gurobi.com/downloads/gurobi-software/](https://www.gurobi.com/downloads/gurobi-software/) as well as a valid [license](https://www.gurobi.com/solutions/licensing/).
 For academic purposes, Gurobi offers [free academic licenses](https://www.gurobi.com/academia/academic-program-and-licenses/).
