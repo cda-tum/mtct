@@ -2812,6 +2812,60 @@ TEST(Functionality, ShortestPaths) {
   EXPECT_EQ(shortest_paths_4_path, std::vector<size_t>({v1_v2}));
 }
 
+TEST(Functionality, QuickestPaths) {
+  cda_rail::Network network;
+
+  // Add 5 vertices
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v4 = network.add_vertex("v4", cda_rail::VertexType::TTD);
+  const auto v5 = network.add_vertex("v5", cda_rail::VertexType::TTD);
+
+  // Add v1 -> v2 -> v3 -> v4 edges with max speed 10
+  const auto v1_v2 = network.add_edge("v1", "v2", 100, 10, false);
+  const auto v2_v3 = network.add_edge("v2", "v3", 200, 10, false);
+  const auto v3_v4 = network.add_edge("v3", "v4", 100, 10, false);
+
+  // Add v2 -> v5 -> v3 each of lengths 200 with max speed 40
+  const auto v2_v5 = network.add_edge("v2", "v5", 200, 40, false);
+  const auto v5_v3 = network.add_edge("v5", "v3", 200, 40, false);
+
+  // Add successors
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v1_v2, v2_v5);
+  network.add_successor(v2_v3, v3_v4);
+  network.add_successor(v2_v5, v5_v3);
+  network.add_successor(v5_v3, v3_v4);
+
+  // Calculate shortest path
+  const auto shortest_dist = network.shortest_path(v1_v2, v4, false);
+  EXPECT_TRUE(shortest_dist.has_value());
+  // 200+100
+  EXPECT_EQ(shortest_dist.value(), 300);
+
+  // Calculate quickest path
+  const auto quickest_dist_1 = network.shortest_path(v1_v2, v4, true);
+  EXPECT_TRUE(quickest_dist_1.has_value());
+  // 200/40 + 200/40 + 100/10 = 20
+  EXPECT_EQ(quickest_dist_1.value(), 20);
+
+  // Calculate quickest path with max speed 25
+  const auto quickest_dist_2 = network.shortest_path(v1_v2, v4, true, 25);
+  EXPECT_TRUE(quickest_dist_2.has_value());
+  // 200/25 + 200/25 + 100/10 = 26
+  EXPECT_EQ(quickest_dist_2.value(), 26);
+
+  // Calculate quickest path with max speed 15
+  const auto quickest_dist_3 = network.shortest_path(v1_v2, v4, true, 15);
+  EXPECT_TRUE(quickest_dist_3.has_value());
+  // 200/10 + 100/10 = 30
+  EXPECT_EQ(quickest_dist_3.value(), 30);
+
+  EXPECT_THROW(network.shortest_path(v1_v2, v4, true, -1),
+               cda_rail::exceptions::InvalidInputException);
+}
+
 TEST(Functionality, ReadTrains) {
   auto trains = cda_rail::TrainList::import_trains(
       "./example-networks/SimpleStation/timetable/");
