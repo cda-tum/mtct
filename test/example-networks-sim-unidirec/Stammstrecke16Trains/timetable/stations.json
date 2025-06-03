@@ -1,0 +1,35 @@
+{
+  "Donnersbergerbruecke": [
+    ["Donnersbergerbruecke1L", "Donnersbergerbruecke1R"],
+    ["Donnersbergerbruecke2R", "Donnersbergerbruecke2L"]
+  ],
+  "Hackerbruecke": [
+    ["Hackerbruecke1L", "Hackerbruecke1R"],
+    ["Hackerbruecke2R", "Hackerbruecke2L"]
+  ],
+  "Hbf": [
+    ["Hbf1L", "Hbf1R"],
+    ["Hbf2R", "Hbf2L"]
+  ],
+  "Hirschgarten": [
+    ["Hirschgarten1L", "Hirschgarten1R"],
+    ["Hirschgarten2R", "Hirschgarten2L"]
+  ],
+  "Isartor": [["Isartor2R", "Isartor2L"]],
+  "Karlsplatz": [
+    ["Karlsplatz1L", "Karlsplatz1R"],
+    ["Karlsplatz2R", "Karlsplatz2L"]
+  ],
+  "Laim": [
+    ["Laim1L", "Laim1R"],
+    ["Laim3R", "Laim3L"]
+  ],
+  "Marienplatz": [
+    ["Marienplatz1L", "Marienplatz1R"],
+    ["Marienplatz2R", "Marienplatz2L"]
+  ],
+  "RosenheimerPlatz": [
+    ["Rosenheimer1L", "Rosenheimer1R"],
+    ["Rosenheimer2R", "Rosenheimer2L"]
+  ]
+}

@@ -684,8 +684,8 @@ public:
     return get_schedule(train_list.get_train_index(train_name));
   };
 
-  virtual bool is_forced_to_stop(const std::string& train_name,
-                                 int                time) const {
+  [[nodiscard]] bool is_forced_to_stop(const std::string& train_name,
+                                       int                time) const override {
     return get_schedule(train_name).is_forced_to_stop(time);
   }
 

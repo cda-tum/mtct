@@ -34,7 +34,27 @@ add_library(
   solver/mip-based/VSSGenTimetableSolver_MovingBlockInformation.cpp
   solver/mip-based/GenPOMovingBlockMIPSolver.cpp
   solver/mip-based/GenPOMovingBlockMIPSolver_SolutionExtraction.cpp
-  solver/mip-based/GenPOMovingBlockMIPSolver_Lazy.cpp)
+  solver/mip-based/GenPOMovingBlockMIPSolver_Lazy.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/SimulationInstance.hpp
+  simulation/SimulationInstance.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/RoutingSolution.hpp
+  simulation/RoutingSolution.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/RoutingSolutionSet.hpp
+  simulation/RoutingSolutionSet.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/RoutingSolver.hpp
+  simulation/RoutingSolver.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/SolverResult.hpp
+  simulation/SolverResult.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/EdgeTrajectory.hpp
+  simulation/EdgeTrajectory.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/TrainTrajectory.hpp
+  simulation/TrainTrajectory.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/TrainTrajectorySet.hpp
+  simulation/TrainTrajectorySet.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/SpeedTargets.hpp
+  simulation/SpeedTargets.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulation/Objectives.hpp
+  simulation/Objectives.cpp)
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
@@ -61,6 +81,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC Microsoft.GSL::GSL)
 # add plog
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/plog extern/plog)
 target_link_libraries(${PROJECT_NAME} PUBLIC plog::plog)
+
+# Include openGA
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/extern/openGA/src)
 
 # add gtest for FRIEND_TEST
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/googletest extern/googletest)

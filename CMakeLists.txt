@@ -1,19 +1,33 @@
 # set required cmake version
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.24)
 
 # This avoids googletest complaining that this (IPO) policy is not set
 cmake_policy(SET CMP0069 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 project(
   rail
   LANGUAGES CXX
   DESCRIPTION "")
 
+# Settings for openGA header
+add_definitions(-DOPENGA_EXTERN_LOCAL_VARS)
+
 # check whether the submodule ``modulename`` is correctly cloned in the ``/extern`` directory.
 macro(CHECK_SUBMODULE_PRESENT modulename)
   if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/${modulename}/CMakeLists.txt")
+    message(
+      FATAL_ERROR
+        "${modulename} submodule not cloned properly. \
+        Please run `git submodule update --init --recursive` \
+        from the main project directory")
+  endif()
+endmacro()
+
+# check whether openGA is present under modulename
+macro(CHECK_OPENGA_PRESENT modulename)
+  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/${modulename}/src/${modulename}.hpp")
     message(
       FATAL_ERROR
         "${modulename} submodule not cloned properly. \
@@ -41,6 +55,7 @@ check_submodule_present("json")
 check_submodule_present("tinyxml2")
 check_submodule_present("gsl")
 check_submodule_present("plog")
+check_openga_present("openGA")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
