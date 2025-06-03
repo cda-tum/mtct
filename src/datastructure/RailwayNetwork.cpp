@@ -2151,7 +2151,7 @@ cda_rail::Network::shortest_path_using_edges(size_t source_edge_id,
         double delta_dist = successor_edge.length;
         if (use_minimal_time) {
           // If minimal time is used, calculate time needed with maximal speed
-          double vel = std::min(max_v, successor_edge.max_speed);
+          const double vel = std::min(max_v, successor_edge.max_speed);
           if (vel <= 0) {
             throw exceptions::InvalidInputException(
                 "Maximum speed of every edge must be strictly positive if "
