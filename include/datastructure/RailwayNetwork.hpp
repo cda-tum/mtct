@@ -546,12 +546,15 @@ public:
   all_edge_pairs_shortest_paths() const;
 
   [[nodiscard]] std::optional<double>
-  shortest_path(size_t source_edge_id, size_t target_vertex_id) const;
+  shortest_path(size_t source_edge_id, size_t target_vertex_id,
+                bool use_minimal_time = false, double max_v = INF) const;
 
   [[nodiscard]] std::pair<std::optional<double>, std::vector<size_t>>
   shortest_path_using_edges(size_t source_edge_id, size_t target_vertex_id,
-                            bool only_use_valid_successors   = true,
-                            std::vector<size_t> edges_to_use = {}) const;
+                            bool only_use_valid_successors       = true,
+                            std::vector<size_t> edges_to_use     = {},
+                            bool                use_minimal_time = false,
+                            double              max_v            = INF) const;
 };
 
 // HELPER

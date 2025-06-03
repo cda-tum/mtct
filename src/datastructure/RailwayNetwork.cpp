@@ -1669,17 +1669,26 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
   return ret_val;
 }
 
-std::optional<double>
-cda_rail::Network::shortest_path(size_t source_edge_id,
-                                 size_t target_vertex_id) const {
+std::optional<double> cda_rail::Network::shortest_path(size_t source_edge_id,
+                                                       size_t target_vertex_id,
+                                                       bool   use_minimal_time,
+                                                       double max_v) const {
   /**
    * Calculates the shortest path from a source edge e to a target vertex w.
    * If e = (u,v), then the length of the shortest path between v and w is
    * returned. However, only valid successors of e can be used as a first edge.
    * If no path exists, the optional has no value.
+   *
+   * @param source_edge_id: Index of the source edge e.
+   * @param target_vertex_id: Index of the target vertex w.
+   * @param use_minimal_time: If true, the minimal time is used instead of the
+   * distance
+   * @param max_v: Maximum speed of the train considered.
    */
 
-  return shortest_path_using_edges(source_edge_id, target_vertex_id).first;
+  return shortest_path_using_edges(source_edge_id, target_vertex_id, true, {},
+                                   use_minimal_time, max_v)
+      .first;
 }
 
 std::vector<std::pair<size_t, std::vector<size_t>>>
@@ -2033,9 +2042,12 @@ bool cda_rail::Network::is_on_same_unbreakable_section(size_t e1,
 }
 
 std::pair<std::optional<double>, std::vector<size_t>>
-cda_rail::Network::shortest_path_using_edges(
-    size_t source_edge_id, size_t target_vertex_id,
-    bool only_use_valid_successors, std::vector<size_t> edges_to_use) const {
+cda_rail::Network::shortest_path_using_edges(size_t source_edge_id,
+                                             size_t target_vertex_id,
+                                             bool   only_use_valid_successors,
+                                             std::vector<size_t> edges_to_use,
+                                             bool   use_minimal_time,
+                                             double max_v) const {
   /**
    * Calculates the shortest path from a source edge e to a target vertex w.
    * If e = (u,v), then the length of the shortest path between v and w is
@@ -2043,6 +2055,16 @@ cda_rail::Network::shortest_path_using_edges(
    * empty. If only_use_valid_successors is true, only valid successors of e can
    * be used as a first edge and for all preceding edges. If edges_to_use is not
    * empty, only these edges are used, otherwise all edges are used.
+   *
+   * @param source_edge_id: Index of the source edge e.
+   * @param target_vertex_id: Index of the target vertex w.
+   * @param only_use_valid_successors: If true, only valid successors of the
+   * source edge are used as first edge and for all preceding edges.
+   * @param edges_to_use: If not empty, only these edges are used, otherwise all
+   * edges are used.
+   * @param use_minimal_time: If true, the minimal time is used instead of the
+   * distance.
+   * @param max_v: Maximum speed of the train considered.
    */
 
   if (!has_edge(source_edge_id)) {
@@ -2050,6 +2072,10 @@ cda_rail::Network::shortest_path_using_edges(
   }
   if (!has_vertex(target_vertex_id)) {
     throw exceptions::VertexNotExistentException(target_vertex_id);
+  }
+  if (use_minimal_time && max_v <= 0) {
+    throw exceptions::InvalidInputException(
+        "Maximum speed must be strictly positive if minimal time is used");
   }
 
   // If source edge already leads to the target, then the distance is 0
@@ -2122,7 +2148,18 @@ cda_rail::Network::shortest_path_using_edges(
       }
       if (dist + successor_edge.length < distances[successor]) {
         // Update entry in priority queue
-        distances[successor]    = dist + successor_edge.length;
+        double delta_dist = successor_edge.length;
+        if (use_minimal_time) {
+          // If minimal time is used, calculate time needed with maximal speed
+          double vel = std::min(max_v, successor_edge.max_speed);
+          if (vel <= 0) {
+            throw exceptions::InvalidInputException(
+                "Maximum speed of every edge must be strictly positive if "
+                "minimal time is used");
+          }
+          delta_dist /= vel;
+        }
+        distances[successor]    = dist + delta_dist;
         predecessors[successor] = edge_id;
         pq.emplace(distances[successor], successor);
       }
