@@ -2839,30 +2839,32 @@ TEST(Functionality, QuickestPaths) {
   network.add_successor(v5_v3, v3_v4);
 
   // Calculate shortest path
-  const auto shortest_dist = network.shortest_path(v1_v2, v4, false);
+  const auto shortest_dist = network.shortest_path(v1_v2, v4, false, false);
   EXPECT_TRUE(shortest_dist.has_value());
   // 200+100
   EXPECT_EQ(shortest_dist.value(), 300);
 
   // Calculate quickest path
-  const auto quickest_dist_1 = network.shortest_path(v1_v2, v4, true);
+  const auto quickest_dist_1 = network.shortest_path(v1_v2, v4, false, true);
   EXPECT_TRUE(quickest_dist_1.has_value());
   // 200/40 + 200/40 + 100/10 = 20
   EXPECT_EQ(quickest_dist_1.value(), 20);
 
   // Calculate quickest path with max speed 25
-  const auto quickest_dist_2 = network.shortest_path(v1_v2, v4, true, 25);
+  const auto quickest_dist_2 =
+      network.shortest_path(v1_v2, v4, false, true, 25);
   EXPECT_TRUE(quickest_dist_2.has_value());
   // 200/25 + 200/25 + 100/10 = 26
   EXPECT_EQ(quickest_dist_2.value(), 26);
 
   // Calculate quickest path with max speed 15
-  const auto quickest_dist_3 = network.shortest_path(v1_v2, v4, true, 15);
+  const auto quickest_dist_3 =
+      network.shortest_path(v1_v2, v4, false, true, 15);
   EXPECT_TRUE(quickest_dist_3.has_value());
   // 200/10 + 100/10 = 30
   EXPECT_EQ(quickest_dist_3.value(), 30);
 
-  EXPECT_THROW(network.shortest_path(v1_v2, v4, true, -1),
+  EXPECT_THROW(network.shortest_path(v1_v2, v4, false, true, -1),
                cda_rail::exceptions::InvalidInputException);
 }
 

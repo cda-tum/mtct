@@ -547,12 +547,28 @@ public:
 
   [[nodiscard]] std::optional<double>
   shortest_path(size_t source_edge_id, size_t target_vertex_id,
-                bool use_minimal_time = false, double max_v = INF) const;
+                bool target_is_edge = false, bool use_minimal_time = false,
+                double max_v = INF) const;
 
   [[nodiscard]] std::pair<std::optional<double>, std::vector<size_t>>
   shortest_path_using_edges(size_t source_edge_id, size_t target_vertex_id,
                             bool only_use_valid_successors       = true,
                             std::vector<size_t> edges_to_use     = {},
+                            bool                target_is_edge   = false,
+                            bool                use_minimal_time = false,
+                            double              max_v            = INF) const {
+    return shortest_path_using_edges(
+        std::vector<size_t>{source_edge_id},
+        std::vector<size_t>{target_vertex_id}, only_use_valid_successors,
+        std::move(edges_to_use), target_is_edge, use_minimal_time, max_v);
+  };
+
+  [[nodiscard]] std::pair<std::optional<double>, std::vector<size_t>>
+  shortest_path_using_edges(std::vector<size_t> source_edge_ids,
+                            std::vector<size_t> target_ids,
+                            bool only_use_valid_successors       = true,
+                            std::vector<size_t> edges_to_use     = {},
+                            bool                target_is_edge   = false,
                             bool                use_minimal_time = false,
                             double              max_v            = INF) const;
 };
