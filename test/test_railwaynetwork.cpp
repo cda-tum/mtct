@@ -2844,11 +2844,21 @@ TEST(Functionality, QuickestPaths) {
   // 200+100
   EXPECT_EQ(shortest_dist.value(), 300);
 
+  const auto shortest_dist_edge =
+      network.shortest_path(v1_v2, v3_v4, true, false);
+  EXPECT_TRUE(shortest_dist.has_value());
+  EXPECT_EQ(shortest_dist.value(), 300);
+
   // Calculate quickest path
   const auto quickest_dist_1 = network.shortest_path(v1_v2, v4, false, true);
   EXPECT_TRUE(quickest_dist_1.has_value());
   // 200/40 + 200/40 + 100/10 = 20
   EXPECT_EQ(quickest_dist_1.value(), 20);
+
+  const auto quickest_dist_1_edge =
+      network.shortest_path(v1_v2, v3_v4, true, true);
+  EXPECT_TRUE(quickest_dist_1_edge.has_value());
+  EXPECT_EQ(quickest_dist_1_edge.value(), 20);
 
   // Calculate quickest path with max speed 25
   const auto quickest_dist_2 =
@@ -2857,12 +2867,34 @@ TEST(Functionality, QuickestPaths) {
   // 200/25 + 200/25 + 100/10 = 26
   EXPECT_EQ(quickest_dist_2.value(), 26);
 
+  const auto quickest_dist_2_edge =
+      network.shortest_path(v1_v2, v3_v4, true, true, 25);
+  EXPECT_TRUE(quickest_dist_2_edge.has_value());
+  EXPECT_EQ(quickest_dist_2_edge.value(), 26);
+
   // Calculate quickest path with max speed 15
   const auto quickest_dist_3 =
       network.shortest_path(v1_v2, v4, false, true, 15);
   EXPECT_TRUE(quickest_dist_3.has_value());
   // 200/10 + 100/10 = 30
   EXPECT_EQ(quickest_dist_3.value(), 30);
+
+  const auto quickest_dist_3_edge =
+      network.shortest_path(v1_v2, v3_v4, true, true, 15);
+  EXPECT_TRUE(quickest_dist_3_edge.has_value());
+  EXPECT_EQ(quickest_dist_3_edge.value(), 30);
+
+  const auto& quickest_dist_4 =
+      network.shortest_path(v1_v2, v3, false, true, 10);
+  EXPECT_TRUE(quickest_dist_4.has_value());
+  // 200/10 = 20
+  EXPECT_EQ(quickest_dist_4.value(), 20);
+
+  const auto& quickest_dist_4_edge =
+      network.shortest_path(v1_v2, v5_v3, true, true, 10);
+  EXPECT_TRUE(quickest_dist_4_edge.has_value());
+  // 200/10 + 200/10 = 40
+  EXPECT_EQ(quickest_dist_4_edge.value(), 40);
 
   EXPECT_THROW(network.shortest_path(v1_v2, v4, false, true, -1),
                cda_rail::exceptions::InvalidInputException);
