@@ -554,9 +554,9 @@ public:
       std::vector<size_t> source_edge_ids, std::vector<size_t> target_ids,
       bool target_is_edge = false, bool use_minimal_time = false,
       double max_v = INF) const {
-    return shortest_path_between_sets_using_edges(source_edge_ids, target_ids,
-                                                  true, {}, target_is_edge,
-                                                  use_minimal_time, max_v)
+    return shortest_path_between_sets_using_edges(
+               std::move(source_edge_ids), std::move(target_ids), true, {},
+               target_is_edge, use_minimal_time, max_v)
         .first;
   };
 
