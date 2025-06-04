@@ -2849,6 +2849,16 @@ TEST(Functionality, QuickestPaths) {
   EXPECT_TRUE(shortest_dist.has_value());
   EXPECT_EQ(shortest_dist.value(), 300);
 
+  const auto shortest_dist_zero =
+      network.shortest_path(v1_v2, v2, false, false);
+  EXPECT_TRUE(shortest_dist_zero.has_value());
+  EXPECT_EQ(shortest_dist_zero.value(), 0);
+
+  const auto shortest_dist_zero_edge =
+      network.shortest_path(v1_v2, v1_v2, true, false);
+  EXPECT_TRUE(shortest_dist_zero_edge.has_value());
+  EXPECT_EQ(shortest_dist_zero_edge.value(), 0);
+
   // Calculate quickest path
   const auto quickest_dist_1 = network.shortest_path(v1_v2, v4, false, true);
   EXPECT_TRUE(quickest_dist_1.has_value());
@@ -2974,6 +2984,17 @@ TEST(Functionality, ShortestPathsBetweenSets) {
       network.shortest_path_between_sets({v4_v3, v3_v4}, {v2_v1, v5_v6}, true);
   EXPECT_TRUE(shortest_dist_4_edge.has_value());
   EXPECT_EQ(shortest_dist_4_edge.value(), 200);
+
+  EXPECT_THROW(network.shortest_path_between_sets({}, {0}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(network.shortest_path_between_sets({0}, {}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(network.shortest_path_between_sets({1000}, {v1}, false),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW(network.shortest_path_between_sets({v2_v1}, {1000}, false),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW(network.shortest_path_between_sets({v2_v1}, {1000}, true),
+               cda_rail::exceptions::EdgeNotExistentException);
 }
 
 TEST(Functionality, ReadTrains) {
