@@ -546,9 +546,19 @@ public:
   all_edge_pairs_shortest_paths() const;
 
   [[nodiscard]] std::optional<double>
-  shortest_path(size_t source_edge_id, size_t target_vertex_id,
+  shortest_path(size_t source_edge_id, size_t target_id,
                 bool target_is_edge = false, bool use_minimal_time = false,
                 double max_v = INF) const;
+
+  [[nodiscard]] std::optional<double> shortest_path_between_sets(
+      std::vector<size_t> source_edge_ids, std::vector<size_t> target_ids,
+      bool target_is_edge = false, bool use_minimal_time = false,
+      double max_v = INF) const {
+    return shortest_path_between_sets_using_edges(source_edge_ids, target_ids,
+                                                  true, {}, target_is_edge,
+                                                  use_minimal_time, max_v)
+        .first;
+  };
 
   [[nodiscard]] std::pair<std::optional<double>, std::vector<size_t>>
   shortest_path_using_edges(size_t source_edge_id, size_t target_vertex_id,
@@ -557,20 +567,20 @@ public:
                             bool                target_is_edge   = false,
                             bool                use_minimal_time = false,
                             double              max_v            = INF) const {
-    return shortest_path_using_edges(
+    return shortest_path_between_sets_using_edges(
         std::vector<size_t>{source_edge_id},
         std::vector<size_t>{target_vertex_id}, only_use_valid_successors,
         std::move(edges_to_use), target_is_edge, use_minimal_time, max_v);
   };
 
   [[nodiscard]] std::pair<std::optional<double>, std::vector<size_t>>
-  shortest_path_using_edges(std::vector<size_t> source_edge_ids,
-                            std::vector<size_t> target_ids,
-                            bool only_use_valid_successors       = true,
-                            std::vector<size_t> edges_to_use     = {},
-                            bool                target_is_edge   = false,
-                            bool                use_minimal_time = false,
-                            double              max_v            = INF) const;
+  shortest_path_between_sets_using_edges(std::vector<size_t> source_edge_ids,
+                                         std::vector<size_t> target_ids,
+                                         bool only_use_valid_successors = true,
+                                         std::vector<size_t> edges_to_use = {},
+                                         bool   target_is_edge   = false,
+                                         bool   use_minimal_time = false,
+                                         double max_v            = INF) const;
 };
 
 // HELPER

@@ -1670,7 +1670,7 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
 }
 
 std::optional<double> cda_rail::Network::shortest_path(size_t source_edge_id,
-                                                       size_t target_vertex_id,
+                                                       size_t target_id,
                                                        bool   target_is_edge,
                                                        bool   use_minimal_time,
                                                        double max_v) const {
@@ -1681,7 +1681,7 @@ std::optional<double> cda_rail::Network::shortest_path(size_t source_edge_id,
    * If no path exists, the optional has no value.
    *
    * @param source_edge_id: Index of the source edge e.
-   * @param target_vertex_id: Index of the target vertex w.
+   * @param target_id: Index of the target vertex or edge.
    * @param target_is_edge: If true, the target is an edge, otherwise it is a
    * vertex.
    * @param use_minimal_time: If true, the minimal time is used instead of the
@@ -1689,7 +1689,7 @@ std::optional<double> cda_rail::Network::shortest_path(size_t source_edge_id,
    * @param max_v: Maximum speed of the train considered.
    */
 
-  return shortest_path_using_edges(source_edge_id, target_vertex_id, true, {},
+  return shortest_path_using_edges(source_edge_id, target_id, true, {},
                                    target_is_edge, use_minimal_time, max_v)
       .first;
 }
@@ -2045,7 +2045,7 @@ bool cda_rail::Network::is_on_same_unbreakable_section(size_t e1,
 }
 
 std::pair<std::optional<double>, std::vector<size_t>>
-cda_rail::Network::shortest_path_using_edges(
+cda_rail::Network::shortest_path_between_sets_using_edges(
     std::vector<size_t> source_edge_ids, std::vector<size_t> target_ids,
     bool only_use_valid_successors, std::vector<size_t> edges_to_use,
     bool target_is_edge, bool use_minimal_time, double max_v) const {
