@@ -51,7 +51,7 @@ public:
       throw cda_rail::exceptions::InvalidInputException(
           "Size of train_edges does not match number of trains in instance.");
     }
-    train_edges = std::move(train_edges);
+    train_edges = std::move(tr_edges);
   };
   void set_train_edges_of_tr(size_t train_id, std::vector<size_t> edges) {
     if (!instance->get_timetable().get_train_list().has_train(train_id)) {
