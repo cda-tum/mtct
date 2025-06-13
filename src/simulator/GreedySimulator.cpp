@@ -1,6 +1,12 @@
 #include "simulator/GreedySimulator.hpp"
 
+#include <cstddef>
+
 bool cda_rail::simulator::GreedySimulator::check_consistency() const {
+  if (!instance->check_consistency(false)) {
+    return false;
+  }
+
   // All vectors are of correct size
   if (train_edges.size() != instance->get_timetable().get_train_list().size()) {
     return false;
@@ -23,7 +29,8 @@ bool cda_rail::simulator::GreedySimulator::check_consistency() const {
 
   // All edges are valid successors of each other
   for (const auto& edges : train_edges) {
-    for (size_t i = 0; i < edges.size() - 1; ++i) {
+    const auto& s = edges.size();
+    for (size_t i = 0; s > 1 && i < s - 1; ++i) {
       if (!instance->const_n().is_valid_successor(edges[i], edges[i + 1])) {
         return false;
       }
