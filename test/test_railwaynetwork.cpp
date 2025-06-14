@@ -2812,6 +2812,191 @@ TEST(Functionality, ShortestPaths) {
   EXPECT_EQ(shortest_paths_4_path, std::vector<size_t>({v1_v2}));
 }
 
+TEST(Functionality, QuickestPaths) {
+  cda_rail::Network network;
+
+  // Add 5 vertices
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v4 = network.add_vertex("v4", cda_rail::VertexType::TTD);
+  const auto v5 = network.add_vertex("v5", cda_rail::VertexType::TTD);
+
+  // Add v1 -> v2 -> v3 -> v4 edges with max speed 10
+  const auto v1_v2 = network.add_edge("v1", "v2", 100, 10, false);
+  const auto v2_v3 = network.add_edge("v2", "v3", 200, 10, false);
+  const auto v3_v4 = network.add_edge("v3", "v4", 100, 10, false);
+
+  // Add v2 -> v5 -> v3 each of lengths 200 with max speed 40
+  const auto v2_v5 = network.add_edge("v2", "v5", 200, 40, false);
+  const auto v5_v3 = network.add_edge("v5", "v3", 200, 40, false);
+
+  // Add successors
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v1_v2, v2_v5);
+  network.add_successor(v2_v3, v3_v4);
+  network.add_successor(v2_v5, v5_v3);
+  network.add_successor(v5_v3, v3_v4);
+
+  // Calculate shortest path
+  const auto shortest_dist = network.shortest_path(v1_v2, v4, false, false);
+  EXPECT_TRUE(shortest_dist.has_value());
+  // 200+100
+  EXPECT_EQ(shortest_dist.value(), 300);
+
+  const auto shortest_dist_edge =
+      network.shortest_path(v1_v2, v3_v4, true, false);
+  EXPECT_TRUE(shortest_dist.has_value());
+  EXPECT_EQ(shortest_dist.value(), 300);
+
+  const auto shortest_dist_zero =
+      network.shortest_path(v1_v2, v2, false, false);
+  EXPECT_TRUE(shortest_dist_zero.has_value());
+  EXPECT_EQ(shortest_dist_zero.value(), 0);
+
+  const auto shortest_dist_zero_edge =
+      network.shortest_path(v1_v2, v1_v2, true, false);
+  EXPECT_TRUE(shortest_dist_zero_edge.has_value());
+  EXPECT_EQ(shortest_dist_zero_edge.value(), 0);
+
+  // Calculate quickest path
+  const auto quickest_dist_1 = network.shortest_path(v1_v2, v4, false, true);
+  EXPECT_TRUE(quickest_dist_1.has_value());
+  // 200/40 + 200/40 + 100/10 = 20
+  EXPECT_EQ(quickest_dist_1.value(), 20);
+
+  const auto quickest_dist_1_edge =
+      network.shortest_path(v1_v2, v3_v4, true, true);
+  EXPECT_TRUE(quickest_dist_1_edge.has_value());
+  EXPECT_EQ(quickest_dist_1_edge.value(), 20);
+
+  // Calculate quickest path with max speed 25
+  const auto quickest_dist_2 =
+      network.shortest_path(v1_v2, v4, false, true, 25);
+  EXPECT_TRUE(quickest_dist_2.has_value());
+  // 200/25 + 200/25 + 100/10 = 26
+  EXPECT_EQ(quickest_dist_2.value(), 26);
+
+  const auto quickest_dist_2_edge =
+      network.shortest_path(v1_v2, v3_v4, true, true, 25);
+  EXPECT_TRUE(quickest_dist_2_edge.has_value());
+  EXPECT_EQ(quickest_dist_2_edge.value(), 26);
+
+  // Calculate quickest path with max speed 15
+  const auto quickest_dist_3 =
+      network.shortest_path(v1_v2, v4, false, true, 15);
+  EXPECT_TRUE(quickest_dist_3.has_value());
+  // 200/10 + 100/10 = 30
+  EXPECT_EQ(quickest_dist_3.value(), 30);
+
+  const auto quickest_dist_3_edge =
+      network.shortest_path(v1_v2, v3_v4, true, true, 15);
+  EXPECT_TRUE(quickest_dist_3_edge.has_value());
+  EXPECT_EQ(quickest_dist_3_edge.value(), 30);
+
+  const auto& quickest_dist_4 =
+      network.shortest_path(v1_v2, v3, false, true, 10);
+  EXPECT_TRUE(quickest_dist_4.has_value());
+  // 200/10 = 20
+  EXPECT_EQ(quickest_dist_4.value(), 20);
+
+  const auto& quickest_dist_4_edge =
+      network.shortest_path(v1_v2, v5_v3, true, true, 10);
+  EXPECT_TRUE(quickest_dist_4_edge.has_value());
+  // 200/10 + 200/10 = 40
+  EXPECT_EQ(quickest_dist_4_edge.value(), 40);
+
+  EXPECT_THROW(network.shortest_path(v1_v2, v4, false, true, -1),
+               cda_rail::exceptions::InvalidInputException);
+}
+
+TEST(Functionality, ShortestPathsBetweenSets) {
+  cda_rail::Network network;
+
+  // Add 6 vertices
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v4 = network.add_vertex("v4", cda_rail::VertexType::TTD);
+  const auto v5 = network.add_vertex("v5", cda_rail::VertexType::TTD);
+  const auto v6 = network.add_vertex("v6", cda_rail::VertexType::TTD);
+
+  // Add v4 -> v3 -> v2 -> v1 edges with lengths 100 each
+  const auto v4_v3 = network.add_edge("v4", "v3", 100, 10, false);
+  const auto v3_v2 = network.add_edge("v3", "v2", 100, 10, false);
+  const auto v2_v1 = network.add_edge("v2", "v1", 100, 10, false);
+
+  // Add v3 -> v4 -> v5 -> v6 edges with lengths 100 each (except v4 -> v5 which
+  // is 200)
+  const auto v3_v4 = network.add_edge("v3", "v4", 100, 10, false);
+  const auto v4_v5 = network.add_edge("v4", "v5", 200, 10, false);
+  const auto v5_v6 = network.add_edge("v5", "v6", 100, 10, false);
+
+  // Add v2 -> v5 edge with length 500
+  const auto v2_v5 = network.add_edge("v2", "v5", 500, 10, false);
+
+  // Add successors
+  // v4 -> v3 -> v2 -> v1
+  network.add_successor(v4_v3, v3_v2);
+  network.add_successor(v3_v2, v2_v1);
+  // v3 -> v4 -> v5 -> v6
+  network.add_successor(v3_v4, v4_v5);
+  network.add_successor(v4_v5, v5_v6);
+  // v3 -> v2 -> v5 -> v6
+  network.add_successor(v3_v2, v2_v5);
+  network.add_successor(v2_v5, v5_v6);
+
+  // Calculate shortest paths between sets
+  const auto shortest_dist_1 = network.shortest_path(v4_v3, v6, false);
+  // 100 + 500 + 100 = 700
+  EXPECT_TRUE(shortest_dist_1.has_value());
+  EXPECT_EQ(shortest_dist_1.value(), 700);
+  const auto shortest_dist_1_edge = network.shortest_path(v4_v3, v5_v6, true);
+  EXPECT_TRUE(shortest_dist_1_edge.has_value());
+  EXPECT_EQ(shortest_dist_1_edge.value(), 700);
+
+  const auto shortest_dist_2 =
+      network.shortest_path_between_sets({v4_v3}, {v6, v1}, false);
+  // 100 + 100 = 200
+  EXPECT_TRUE(shortest_dist_2.has_value());
+  EXPECT_EQ(shortest_dist_2.value(), 200);
+  const auto shortest_dist_2_edge =
+      network.shortest_path_between_sets({v4_v3}, {v5_v6, v2_v1}, true);
+  EXPECT_TRUE(shortest_dist_2_edge.has_value());
+  EXPECT_EQ(shortest_dist_2_edge.value(), 200);
+
+  const auto shortest_dist_3 =
+      network.shortest_path_between_sets({v4_v3, v3_v4}, {v6}, false);
+  // 200 + 100 = 300
+  EXPECT_TRUE(shortest_dist_3.has_value());
+  EXPECT_EQ(shortest_dist_3.value(), 300);
+  const auto shortest_dist_3_edge =
+      network.shortest_path_between_sets({v4_v3, v3_v4}, {v5_v6}, true);
+  EXPECT_TRUE(shortest_dist_3_edge.has_value());
+  EXPECT_EQ(shortest_dist_3_edge.value(), 300);
+
+  const auto shortest_dist_4 =
+      network.shortest_path_between_sets({v4_v3, v3_v4}, {v1, v6}, false);
+  // 100 + 100 = 200
+  EXPECT_TRUE(shortest_dist_4.has_value());
+  EXPECT_EQ(shortest_dist_4.value(), 200);
+  const auto shortest_dist_4_edge =
+      network.shortest_path_between_sets({v4_v3, v3_v4}, {v2_v1, v5_v6}, true);
+  EXPECT_TRUE(shortest_dist_4_edge.has_value());
+  EXPECT_EQ(shortest_dist_4_edge.value(), 200);
+
+  EXPECT_THROW(network.shortest_path_between_sets({}, {0}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(network.shortest_path_between_sets({0}, {}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(network.shortest_path_between_sets({1000}, {v1}, false),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW(network.shortest_path_between_sets({v2_v1}, {1000}, false),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW(network.shortest_path_between_sets({v2_v1}, {1000}, true),
+               cda_rail::exceptions::EdgeNotExistentException);
+}
+
 TEST(Functionality, ReadTrains) {
   auto trains = cda_rail::TrainList::import_trains(
       "./example-networks/SimpleStation/timetable/");
