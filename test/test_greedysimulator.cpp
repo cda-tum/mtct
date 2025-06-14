@@ -1,8 +1,14 @@
+#include "CustomExceptions.hpp"
+#include "datastructure/GeneralTimetable.hpp"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GreedySimulator.hpp"
 
 #include "gtest/gtest.h"
 
 using namespace cda_rail;
+
+// NOLINTBEGIN
+// (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
 
 TEST(GreedySimulator, CheckConsistency) {
   // Create instance
@@ -240,3 +246,6 @@ TEST(GreedySimulator, BasicFunctions) {
   EXPECT_THROW(simulator.set_entry_orders_of_vertex(1000, {tr1}),
                cda_rail::exceptions::InvalidInputException);
 }
+
+// NOLINTEND
+// (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
