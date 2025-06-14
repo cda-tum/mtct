@@ -3,10 +3,26 @@
 #include "CustomExceptions.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
+// NOLINTNEXTLINE(misc-include-cleaner)
+#include "gtest/gtest_prod.h"
 #include <cstddef>
 #include <memory>
 #include <utility>
 #include <vector>
+
+// If TEST_FRIENDS has value true, the corresponding test is friended to test
+// complex private functions
+// This is not good practice, however after consideration, it was decided that
+// - it is not reasonable to make the functions public
+// - they have a complexity that should be tested
+// - by only testing the overall solution, there is too much code tested at once
+#ifndef TEST_FRIENDS
+#define TEST_FRIENDS false
+#endif
+#if TEST_FRIENDS
+class GreedySimulator;
+class GreedySimulator_BasicPrivateFunctions_Test;
+#endif
 
 namespace cda_rail::simulator {
 
@@ -18,6 +34,13 @@ class GreedySimulator {
   std::vector<std::vector<size_t>> train_edges;
   std::vector<std::vector<size_t>> ttd_orders;
   std::vector<std::vector<size_t>> entry_orders;
+
+private:
+#if TEST_FRIENDS
+  FRIEND_TEST(::GreedySimulator, BasicPrivateFunctions);
+#endif
+
+  double braking_distance(size_t tr, double v);
 
 public:
   explicit GreedySimulator(
@@ -127,7 +150,9 @@ public:
     return entry_orders.at(vertex_id);
   };
 
-  [[nodiscard]] std::vector<double> simulate() const;
+  [[nodiscard]] std::pair<bool, std::vector<double>>
+  simulate(bool late_entry_possible = false, bool late_exit_possible = false,
+           bool late_stop_possible = false) const;
 };
 
 } // namespace cda_rail::simulator

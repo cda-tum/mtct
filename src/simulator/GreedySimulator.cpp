@@ -1,6 +1,10 @@
 #include "simulator/GreedySimulator.hpp"
 
+#include "EOMHelper.hpp"
+
 #include <cstddef>
+#include <utility>
+#include <vector>
 
 bool cda_rail::simulator::GreedySimulator::check_consistency() const {
   if (!instance->check_consistency(false)) {
@@ -79,4 +83,59 @@ bool cda_rail::simulator::GreedySimulator::check_consistency() const {
   }
 
   return true;
+}
+
+std::pair<bool, std::vector<double>>
+cda_rail::simulator::GreedySimulator::simulate(bool late_entry_possible,
+                                               bool late_exit_possible,
+                                               bool late_stop_possible) const {
+  /**
+   * This function simulates train movements as specified by the member
+   * variables. It returns a vector of doubles denoting the travel times of each
+   * of the trains The (possibly weighted) sum of these values is usually the
+   * current objective value.
+   *
+   * @param late_entry_possible: If true, trains can enter the network later
+   * than scheduled, otherwise the settings are infeasible.
+   * @param late_exit_possible: If true, trains can exit the network later than
+   * scheduled, otherwise the settings are infeasible.
+   * @param late_stop_possible: If true, trains can stop later than scheduled,
+   * otherwise the settings are infeasible.
+   *
+   * @return: A pair containing a boolean indicating whether the simulation was
+   * successful and a vector of doubles with the travel times of each train.
+   */
+
+  // Initialize return values
+  std::vector<double> travel_times(
+      instance->get_timetable().get_train_list().size(),
+      -1); // -1 indicates that a train has not entered the network yet
+  bool feasible = true;
+
+  return {feasible, travel_times};
+}
+
+double cda_rail::simulator::GreedySimulator::braking_distance(size_t tr,
+                                                              double v) {
+  /**
+   * Calculates the braking distance for a train with id `tr` at velocity `v`.
+   *
+   * @param tr: The id of the train for which the braking distance is
+   * calculated.
+   * @param v: The velocity at which the braking distance is calculated.
+   *
+   * @return: The braking distance for the train at the given velocity.
+   */
+  if (!instance->get_timetable().get_train_list().has_train(tr)) {
+    throw cda_rail::exceptions::TrainNotExistentException(tr);
+  }
+  if (v < -EPS) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Velocity must be non-negative.");
+  }
+  if (v < 0) {
+    return 0.0; // No braking distance if the train is not moving
+  }
+  return cda_rail::braking_distance(
+      v, instance->get_train_list().get_train(tr).deceleration);
 }

@@ -1,3 +1,5 @@
+#define TEST_FRIENDS true
+
 #include "CustomExceptions.hpp"
 #include "datastructure/GeneralTimetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
@@ -244,6 +246,47 @@ TEST(GreedySimulator, BasicFunctions) {
   EXPECT_THROW(simulator.get_entry_orders_of_vertex(1000),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(simulator.set_entry_orders_of_vertex(1000, {tr1}),
+               cda_rail::exceptions::InvalidInputException);
+}
+
+TEST(GreedySimulator, BasicPrivateFunctions) {
+  // Create instance
+  Network     network("./example-networks/SimpleStation/network/");
+  const auto& ttd_sections = network.unbreakable_sections();
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, {0, 60},
+                                       0, "l0", {360, 420}, 0, "r0", network);
+  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, {0, 60},
+                                       10, "r0", {400, 460}, 5, "l0", network);
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", "g00", "g01", network);
+  timetable.add_track_to_station("Station1", "g01", "g00", network);
+  timetable.add_track_to_station("Station1", "g10", "g11", network);
+  timetable.add_track_to_station("Station1", "g11", "g10", network);
+  timetable.add_stop("Train1", "Station1", {60, 120}, {120, 180}, 60);
+  EXPECT_TRUE(timetable.check_consistency(network));
+
+  RouteMap routes;
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+
+  // Braking distance
+  EXPECT_EQ(simulator.braking_distance(tr1, 0), 0.0);
+  EXPECT_EQ(simulator.braking_distance(tr1, -EPS / 2), 0.0);
+  EXPECT_EQ(simulator.braking_distance(tr1, 1), 1.0 / 4.0);
+  EXPECT_EQ(simulator.braking_distance(tr1, 2), 1.0);
+  EXPECT_EQ(simulator.braking_distance(tr1, 3), 9.0 / 4.0);
+  EXPECT_EQ(simulator.braking_distance(tr2, 0), 0.0);
+  EXPECT_EQ(simulator.braking_distance(tr2, 1), 1.0 / 6.0);
+  EXPECT_EQ(simulator.braking_distance(tr2, 2), 2.0 / 3.0);
+  EXPECT_EQ(simulator.braking_distance(tr2, 3), 3.0 / 2.0);
+  EXPECT_THROW(simulator.braking_distance(1000, 1),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.braking_distance(tr1, -1),
                cda_rail::exceptions::InvalidInputException);
 }
 
