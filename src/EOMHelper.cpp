@@ -781,3 +781,14 @@ double cda_rail::vel_on_edge_at_time(double v_1, double v_2, double v_line,
   }
   return v_2 - (a2 * (total_time - t));
 }
+
+double cda_rail::braking_distance(double v, double d) {
+  if (v < 0) {
+    throw exceptions::InvalidInputException("Speed must be non-negative.");
+  }
+  if (d <= EPS) {
+    throw exceptions::InvalidInputException("Deceleration must be positive.");
+  }
+
+  return (v * v) / (2 * d);
+}
