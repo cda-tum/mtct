@@ -150,8 +150,9 @@ public:
     return entry_orders.at(vertex_id);
   };
 
-  [[nodiscard]] std::pair<bool, std::vector<double>>
-  simulate(bool late_entry_possible = false, bool late_exit_possible = false,
+  [[nodiscard]] std::pair<bool, std::vector<int>>
+  simulate(int dt = 6, bool late_entry_possible = false,
+           bool late_exit_possible = false,
            bool late_stop_possible = false) const;
 };
 
