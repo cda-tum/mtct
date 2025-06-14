@@ -5,6 +5,7 @@
 using namespace cda_rail;
 
 TEST(GreedySimulator, CheckConsistency) {
+  // Create instance
   Network     network("./example-networks/SimpleStation/network/");
   const auto& ttd_sections = network.unbreakable_sections();
   const auto& l0_l1        = network.get_edge_index("l0", "l1");
@@ -39,6 +40,8 @@ TEST(GreedySimulator, CheckConsistency) {
   instance2.add_empty_route("Train1");
   instance2.push_back_edge_to_route("Train1", "l0", "l1");
   EXPECT_FALSE(instance2.check_consistency(false));
+
+  // Test constructors of GreedySimulator
 
   cda_rail::simulator::GreedySimulator simulator1(
       instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
@@ -118,6 +121,8 @@ TEST(GreedySimulator, CheckConsistency) {
 
   cda_rail::simulator::GreedySimulator simulator_instance2(instance2,
                                                            ttd_sections);
+
+  // Check if consistency is determined correctly
   EXPECT_FALSE(simulator1.check_consistency());
   EXPECT_FALSE(simulator2.check_consistency());
   EXPECT_FALSE(simulator3.check_consistency());
@@ -134,6 +139,7 @@ TEST(GreedySimulator, CheckConsistency) {
 }
 
 TEST(GreedySimulator, BasicFunctions) {
+  // Create instance
   Network     network("./example-networks/SimpleStation/network/");
   const auto& ttd_sections = network.unbreakable_sections();
   const auto& l0_l1        = network.get_edge_index("l0", "l1");
@@ -169,6 +175,9 @@ TEST(GreedySimulator, BasicFunctions) {
   instance2.push_back_edge_to_route("Train1", "l0", "l1");
   EXPECT_FALSE(instance2.check_consistency(false));
 
+  // Test basic functions of GreedySimulator
+
+  // Train Edges
   cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
   EXPECT_THROW(simulator.set_train_edges({{l0_l1}}),
                cda_rail::exceptions::InvalidInputException);
@@ -189,7 +198,10 @@ TEST(GreedySimulator, BasicFunctions) {
   EXPECT_EQ(tr_edges2[1], l1_l2);
   EXPECT_THROW(simulator.get_train_edges_of_tr(1000),
                cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.set_train_edges_of_tr(1000, {l0_l1}),
+               cda_rail::exceptions::TrainNotExistentException);
 
+  // TTD Orders
   EXPECT_THROW(simulator.set_ttd_orders({}),
                cda_rail::exceptions::InvalidInputException);
   simulator.set_ttd_orders(std::vector<std::vector<size_t>>(
@@ -206,7 +218,10 @@ TEST(GreedySimulator, BasicFunctions) {
   EXPECT_EQ(ttd_orders2[1], tr2);
   EXPECT_THROW(simulator.get_ttd_orders_of_ttd(1000),
                cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.set_ttd_orders_of_ttd(1000, {tr1}),
+               cda_rail::exceptions::InvalidInputException);
 
+  // Entry Orders
   EXPECT_THROW(simulator.set_entry_orders({}),
                cda_rail::exceptions::InvalidInputException);
   simulator.set_entry_orders(std::vector<std::vector<size_t>>(
@@ -221,5 +236,7 @@ TEST(GreedySimulator, BasicFunctions) {
   EXPECT_EQ(entry_orders2.size(), 1);
   EXPECT_EQ(entry_orders2[0], tr1);
   EXPECT_THROW(simulator.get_entry_orders_of_vertex(1000),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.set_entry_orders_of_vertex(1000, {tr1}),
                cda_rail::exceptions::InvalidInputException);
 }
