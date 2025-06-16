@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <limits>
-#include <set>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -135,19 +135,23 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
       {-1.0, -1.0}); // {rear, front} positions
   std::vector<double> train_velocities(
       instance->get_timetable().get_train_list().size(), -1.0); // velocities
-  std::set<size_t> trains_in_network;
-  std::vector<int> tr_stop_until(
+  std::unordered_set<size_t> trains_in_network;
+  std::unordered_set<size_t> trains_left;
+  std::vector<int>           tr_stop_until(
       instance->get_timetable().get_train_list().size(),
       -1); // time until train stops in station
   std::vector<double> tr_next_stop(
       instance->get_timetable().get_train_list().size(),
       -1.0); // next scheduled stop position
 
+  const auto tr_to_enter = get_entering_trains(
+      min_T, trains_in_network, trains_left, late_entry_possible);
+
   return {feasible, travel_times};
 }
 
 double cda_rail::simulator::GreedySimulator::braking_distance(size_t tr,
-                                                              double v) {
+                                                              double v) const {
   /**
    * Calculates the braking distance for a train with id `tr` at velocity `v`.
    *
@@ -169,4 +173,70 @@ double cda_rail::simulator::GreedySimulator::braking_distance(size_t tr,
   }
   return cda_rail::braking_distance(
       v, instance->get_train_list().get_train(tr).deceleration);
+}
+
+std::pair<bool, std::unordered_set<size_t>>
+cda_rail::simulator::GreedySimulator::get_entering_trains(
+    int t, const std::unordered_set<size_t>& tr_present,
+    const std::unordered_set<size_t>& tr_left, bool late_entry_possible) const {
+  /**
+   * This function checks which trains are scheduled to enter the network at
+   * time `t` or later, and returns a vector of their indices.
+   *
+   * @param t: The time at which to check for entering trains.
+   * @param tr_present: A set of train indices that are currently present in the
+   * network.
+   * @param tr_left: A set of train indices that have left the network.
+   * @param late_entry_possible: If true, trains can enter the network later
+   * than scheduled.
+   *
+   * @return: A pair containing a boolean indicating whether the operation was
+   * successful, and a set of train indices that are scheduled to enter the
+   * network at time `t` or later.
+   */
+
+  std::unordered_set<size_t> entering_trains;
+  for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
+       ++tr) {
+    // Check if the train is already present in the network
+    if (tr_present.contains(tr) || tr_left.contains(tr)) {
+      continue; // Train is already present, skip it
+    }
+    // Check if the train is scheduled to enter the network at time t or later
+    const auto& schedule = instance->get_timetable().get_schedule(tr);
+    if (t < schedule.get_t_0_range().first) {
+      continue; // Train is not scheduled to enter at this time
+    }
+
+    // Check if the train scheduled to enter before tr is already in the network
+    const auto& entry_node  = schedule.get_entry();
+    const auto& entry_order = entry_orders.at(entry_node);
+    // Find index of tr in the entry order (if it exists)
+    const auto it = std::find(entry_order.begin(), entry_order.end(), tr);
+    // If tr is not in the entry order, it means it is scheduled to enter
+    if (it == entry_order.end()) {
+      continue; // Train is not scheduled to enter at all
+    }
+
+    if (!late_entry_possible && t > schedule.get_t_0_range().second) {
+      // Train can no longer enter the network
+      return {false, {tr}};
+    }
+
+    // If tr is not the first train in the entry order, check if previous trains
+    // are already in the network
+    if (it != entry_order.begin()) {
+      // Check if any previous train in the entry order is already in the
+      // network
+      const auto& prev_tr = *(it - 1);
+      if (!tr_present.contains(prev_tr) && !tr_left.contains(prev_tr)) {
+        // Previous train is not in the network, so tr cannot enter yet
+        continue;
+      }
+    }
+
+    // If we reach here, the train is scheduled to enter the network at time t
+    entering_trains.insert(tr);
+  }
+  return {true, entering_trains};
 }

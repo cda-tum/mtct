@@ -7,6 +7,7 @@
 #include "gtest/gtest_prod.h"
 #include <cstddef>
 #include <memory>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -40,7 +41,11 @@ private:
   FRIEND_TEST(::GreedySimulator, BasicPrivateFunctions);
 #endif
 
-  double braking_distance(size_t tr, double v);
+  double braking_distance(size_t tr, double v) const;
+  [[nodiscard]] std::pair<bool, std::unordered_set<size_t>>
+  get_entering_trains(int t, const std::unordered_set<size_t>& tr_present,
+                      const std::unordered_set<size_t>& tr_left,
+                      bool late_entry_possible) const;
 
 public:
   explicit GreedySimulator(
