@@ -161,14 +161,8 @@ TEST(GreedySimulator, BasicFunctions) {
   const auto r0  = network.get_vertex_index("r0");
   const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 1, true, {0, 60},
                                        0, "l0", {360, 420}, 0, "r0", network);
-  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 1, false, {0, 60},
+  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 1, false, {30, 90},
                                        10, r0, {400, 460}, 5, l0, network);
-  timetable.add_station("Station1");
-  timetable.add_track_to_station("Station1", "g00", "g01", network);
-  timetable.add_track_to_station("Station1", "g01", "g00", network);
-  timetable.add_track_to_station("Station1", "g10", "g11", network);
-  timetable.add_track_to_station("Station1", "g11", "g10", network);
-  timetable.add_stop("Train1", "Station1", {60, 120}, {120, 180}, 60);
   EXPECT_TRUE(timetable.check_consistency(network));
 
   RouteMap routes;
@@ -253,18 +247,21 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   // Create instance
   Network     network("./example-networks/SimpleStation/network/");
   const auto& ttd_sections = network.unbreakable_sections();
+  const auto& l0           = network.get_vertex_index("l0");
+  const auto& r0           = network.get_vertex_index("r0");
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, {0, 60},
-                                       0, "l0", {360, 420}, 0, "r0", network);
-  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, {0, 60},
+                                       0, "l0", {360, 420}, 10, "r0", network);
+  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, {30, 90},
                                        10, "r0", {400, 460}, 5, "l0", network);
-  timetable.add_station("Station1");
-  timetable.add_track_to_station("Station1", "g00", "g01", network);
-  timetable.add_track_to_station("Station1", "g01", "g00", network);
-  timetable.add_track_to_station("Station1", "g10", "g11", network);
-  timetable.add_track_to_station("Station1", "g11", "g10", network);
-  timetable.add_stop("Train1", "Station1", {60, 120}, {120, 180}, 60);
+  const auto tr3 = timetable.add_train("Train3", 100, 10, 1, 4, true, {0, 150},
+                                       0, "l0", {360, 420}, 10, "r0", network);
+  const auto tr4 = timetable.add_train("Train4", 100, 10, 1, 5, false, {30, 90},
+                                       0, "l0", {400, 460}, 10, "r0", network);
+  const auto tr5 =
+      timetable.add_train("Train5", 100, 10, 1, 6, true, {120, 180}, 0, "l0",
+                          {360, 420}, 10, "r0", network);
   EXPECT_TRUE(timetable.check_consistency(network));
 
   RouteMap routes;
@@ -273,6 +270,9 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
       network, timetable, routes);
 
   cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+
+  simulator.set_entry_orders_of_vertex(r0, {tr2});
+  simulator.set_entry_orders_of_vertex(l0, {tr1, tr3, tr5});
 
   // Braking distance
   EXPECT_EQ(simulator.braking_distance(tr1, 0), 0.0);
@@ -288,6 +288,84 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
                cda_rail::exceptions::TrainNotExistentException);
   EXPECT_THROW(simulator.braking_distance(tr1, -1),
                cda_rail::exceptions::InvalidInputException);
+
+  // Trains entering
+  const auto& [success_0, entering_tr_0] =
+      simulator.get_entering_trains(0, {}, {}, false);
+  EXPECT_TRUE(success_0);
+  // Expect only tr1
+  EXPECT_EQ(entering_tr_0.size(), 1);
+  EXPECT_TRUE(entering_tr_0.contains(tr1));
+
+  const auto& [success_30, entering_tr_30] =
+      simulator.get_entering_trains(30, {}, {}, false);
+  EXPECT_TRUE(success_30);
+  // Expect tr1 and tr2
+  EXPECT_EQ(entering_tr_30.size(), 2);
+  EXPECT_TRUE(entering_tr_30.contains(tr1));
+  EXPECT_TRUE(entering_tr_30.contains(tr2));
+
+  const auto& [success_60, entering_tr_60] =
+      simulator.get_entering_trains(60, {}, {}, false);
+  EXPECT_TRUE(success_60);
+  // Expect tr1, tr2
+  EXPECT_EQ(entering_tr_60.size(), 2);
+  EXPECT_TRUE(entering_tr_60.contains(tr1));
+  EXPECT_TRUE(entering_tr_60.contains(tr2));
+
+  const auto& [success_61, entering_tr_61] =
+      simulator.get_entering_trains(61, {}, {}, false);
+  EXPECT_FALSE(success_61); // tr1 too late
+  EXPECT_EQ(entering_tr_61.size(), 1);
+  EXPECT_TRUE(entering_tr_61.contains(tr1));
+
+  const auto& [success_61_t, entering_tr_61_t] =
+      simulator.get_entering_trains(61, {}, {}, true);
+  EXPECT_TRUE(success_61_t); // tr1 still entering
+  EXPECT_EQ(entering_tr_61_t.size(), 2);
+  EXPECT_TRUE(entering_tr_61_t.contains(tr1));
+  EXPECT_TRUE(entering_tr_61_t.contains(tr2));
+
+  const auto& [success_30_tr1tr2, entering_tr_30_tr1tr2] =
+      simulator.get_entering_trains(30, {tr1, tr2}, {}, false);
+  EXPECT_TRUE(success_30_tr1tr2);
+  // Expect tr3
+  EXPECT_EQ(entering_tr_30_tr1tr2.size(), 1);
+  EXPECT_TRUE(entering_tr_30_tr1tr2.contains(tr3));
+
+  const auto& [success_30_tr1tr2_l, entering_tr_30_tr1tr2_l] =
+      simulator.get_entering_trains(30, {tr2}, {tr1}, false);
+  EXPECT_TRUE(success_30_tr1tr2_l);
+  // Expect tr3
+  EXPECT_EQ(entering_tr_30_tr1tr2_l.size(), 1);
+  EXPECT_TRUE(entering_tr_30_tr1tr2_l.contains(tr3));
+
+  const auto& [success_60_tr1tr3, entering_tr_60_tr1tr3] =
+      simulator.get_entering_trains(60, {tr1, tr3}, {}, false);
+  EXPECT_TRUE(success_60_tr1tr3);
+  // Expect tr2
+  EXPECT_EQ(entering_tr_60_tr1tr3.size(), 1);
+  EXPECT_TRUE(entering_tr_60_tr1tr3.contains(tr2));
+
+  const auto& [success_60_tr1tr2tr3, entering_tr_60_tr1tr2tr3] =
+      simulator.get_entering_trains(60, {tr2}, {tr1, tr3}, false);
+  EXPECT_TRUE(success_60_tr1tr2tr3);
+  // Expect no train to enter
+  EXPECT_TRUE(entering_tr_60_tr1tr2tr3.empty());
+
+  const auto& [success_120_tr1tr2, entering_tr_120_tr1tr2] =
+      simulator.get_entering_trains(120, {tr1, tr2}, {}, false);
+  EXPECT_TRUE(success_120_tr1tr2);
+  // Expect tr3
+  EXPECT_EQ(entering_tr_120_tr1tr2.size(), 1);
+  EXPECT_TRUE(entering_tr_120_tr1tr2.contains(tr3));
+
+  const auto& [success_120_tr1tr2tr3, entering_tr_120_tr1tr2tr3] =
+      simulator.get_entering_trains(120, {tr1, tr2, tr3}, {}, false);
+  EXPECT_TRUE(success_120_tr1tr2tr3);
+  // Expect tr5
+  EXPECT_EQ(entering_tr_120_tr1tr2tr3.size(), 1);
+  EXPECT_TRUE(entering_tr_120_tr1tr2tr3.contains(tr5));
 }
 
 // NOLINTEND
