@@ -257,6 +257,10 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   const auto& l0           = network.get_vertex_index("l0");
   const auto& r0           = network.get_vertex_index("r0");
 
+  const auto& l0_l1 = network.get_edge_index("l0", "l1");
+  const auto& l1_l2 = network.get_edge_index("l1", "l2");
+  const auto& l2_l3 = network.get_edge_index("l2", "l3");
+
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, {0, 60},
                                        0, "l0", {360, 420}, 10, "r0", network);
@@ -373,6 +377,30 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   // Expect tr5
   EXPECT_EQ(entering_tr_120_tr1tr2tr3.size(), 1);
   EXPECT_TRUE(entering_tr_120_tr1tr2tr3.contains(tr5));
+
+  // Milestones
+  simulator.append_train_edge_to_tr(tr1, l0_l1);
+  simulator.append_train_edge_to_tr(tr1, l1_l2);
+  simulator.append_train_edge_to_tr(tr1, l2_l3);
+  simulator.append_train_edge_to_tr(tr3, l0_l1);
+
+  const auto& milestones_tr1 = simulator.edge_milestones(tr1);
+  EXPECT_EQ(milestones_tr1.size(), 4);
+  EXPECT_EQ(milestones_tr1[0], 0.0);
+  EXPECT_EQ(milestones_tr1[1], 500.0);
+  EXPECT_EQ(milestones_tr1[2], 1000.0);
+  EXPECT_EQ(milestones_tr1[3], 1005.0);
+
+  const auto& milestones_tr2 = simulator.edge_milestones(tr2);
+  EXPECT_TRUE(milestones_tr2.empty()); // No edges for tr2
+
+  const auto& milestones_tr3 = simulator.edge_milestones(tr3);
+  EXPECT_EQ(milestones_tr3.size(), 2);
+  EXPECT_EQ(milestones_tr3[0], 0.0);
+  EXPECT_EQ(milestones_tr3[1], 500.0);
+
+  EXPECT_THROW(simulator.edge_milestones(1000),
+               cda_rail::exceptions::TrainNotExistentException);
 }
 
 // NOLINTEND
