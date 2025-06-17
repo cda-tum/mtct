@@ -41,7 +41,7 @@ private:
   FRIEND_TEST(::GreedySimulator, BasicPrivateFunctions);
 #endif
 
-  double braking_distance(size_t tr, double v) const;
+  [[nodiscard]] double braking_distance(size_t tr, double v) const;
   [[nodiscard]] std::pair<bool, std::unordered_set<size_t>>
   get_entering_trains(int t, const std::unordered_set<size_t>& tr_present,
                       const std::unordered_set<size_t>& tr_left,
