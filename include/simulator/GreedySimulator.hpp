@@ -46,6 +46,7 @@ private:
   get_entering_trains(int t, const std::unordered_set<size_t>& tr_present,
                       const std::unordered_set<size_t>& tr_left,
                       bool late_entry_possible) const;
+  [[nodiscard]] std::vector<double> edge_milestones(size_t tr) const;
 
 public:
   explicit GreedySimulator(

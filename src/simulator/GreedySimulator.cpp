@@ -240,3 +240,31 @@ cda_rail::simulator::GreedySimulator::get_entering_trains(
   }
   return {true, entering_trains};
 }
+
+std::vector<double>
+cda_rail::simulator::GreedySimulator::edge_milestones(size_t tr) const {
+  /**
+   * This function returns the individual milestones, i.e., the distance on the
+   * individual route to each edges starting point. The last value is the
+   * distance to the exit node.
+   *
+   * @param tr: The id of the train for which the milestones are calculated.
+   * @return: A vector of doubles with the milestones for each edge of the
+   * train.
+   */
+  if (!instance->get_timetable().get_train_list().has_train(tr)) {
+    throw cda_rail::exceptions::TrainNotExistentException(tr);
+  }
+  const auto& edges = train_edges.at(tr);
+  if (edges.empty()) {
+    return {}; // No edges, no milestones
+  }
+  std::vector<double> milestones;
+  milestones.reserve(edges.size());
+  milestones.emplace_back(0.0); // First milestone is always 0
+  for (const auto& edge_id : edges) {
+    const auto& edge = instance->const_n().get_edge(edge_id);
+    milestones.emplace_back(milestones.back() + edge.length);
+  }
+  return milestones;
+}
