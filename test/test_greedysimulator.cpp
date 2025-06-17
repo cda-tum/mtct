@@ -198,6 +198,13 @@ TEST(GreedySimulator, BasicFunctions) {
   EXPECT_EQ(tr_edges2.size(), 2);
   EXPECT_EQ(tr_edges2[0], l0_l1);
   EXPECT_EQ(tr_edges2[1], l1_l2);
+  simulator.append_train_edge_to_tr(0, l2_l3);
+  const auto& tr_edges3 = simulator.get_train_edges_of_tr(0);
+  EXPECT_EQ(tr_edges3.size(), 3);
+  EXPECT_EQ(tr_edges3[0], l0_l1);
+  EXPECT_EQ(tr_edges3[1], l1_l2);
+  EXPECT_EQ(tr_edges3[2], l2_l3);
+
   EXPECT_THROW(simulator.get_train_edges_of_tr(1000),
                cda_rail::exceptions::TrainNotExistentException);
   EXPECT_THROW(simulator.set_train_edges_of_tr(1000, {l0_l1}),

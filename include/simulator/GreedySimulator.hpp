@@ -87,6 +87,12 @@ public:
     }
     train_edges.at(train_id) = std::move(edges);
   };
+  void append_train_edge_to_tr(size_t train_id, size_t edge) {
+    if (!instance->get_timetable().get_train_list().has_train(train_id)) {
+      throw cda_rail::exceptions::TrainNotExistentException(train_id);
+    }
+    train_edges.at(train_id).push_back(edge);
+  };
   [[nodiscard]] const std::vector<std::vector<size_t>>&
   get_train_edges() const {
     return train_edges;
