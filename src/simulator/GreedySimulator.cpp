@@ -299,12 +299,6 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
   if (milestones.empty()) {
     milestones = edge_milestones(tr);
   }
-  if (edge_number >= train_edges.at(tr).size()) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Edge number out of bounds for train " + std::to_string(tr) +
-        ". Train has only " + std::to_string(train_edges.at(tr).size()) +
-        " edges.");
-  }
   if (train_edges.at(tr).size() + 1 != milestones.size()) {
     throw cda_rail::exceptions::ConsistencyException(
         "Milestones size does not match number of edges for train " +
@@ -312,6 +306,13 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
         std::to_string(train_edges.at(tr).size() + 1) + ", got " +
         std::to_string(milestones.size()) + ".");
   }
+  if (edge_number >= train_edges.at(tr).size()) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Edge number out of bounds for train " + std::to_string(tr) +
+        ". Train has only " + std::to_string(train_edges.at(tr).size()) +
+        " edges.");
+  }
+
   const std::pair<double, double> milestone_pair = {
       milestones[edge_number], milestones[edge_number + 1]};
   const auto& tr_obj = instance->get_timetable().get_train_list().get_train(tr);
