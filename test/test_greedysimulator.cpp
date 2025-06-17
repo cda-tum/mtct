@@ -257,9 +257,11 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   const auto& l0           = network.get_vertex_index("l0");
   const auto& r0           = network.get_vertex_index("r0");
 
-  const auto& l0_l1 = network.get_edge_index("l0", "l1");
-  const auto& l1_l2 = network.get_edge_index("l1", "l2");
-  const auto& l2_l3 = network.get_edge_index("l2", "l3");
+  const auto& l0_l1   = network.get_edge_index("l0", "l1");
+  const auto& l1_l2   = network.get_edge_index("l1", "l2");
+  const auto& l2_l3   = network.get_edge_index("l2", "l3");
+  const auto& l3_g00  = network.get_edge_index("l3", "g00");
+  const auto& g00_g01 = network.get_edge_index("g00", "g01");
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, {0, 60},
@@ -382,14 +384,18 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   simulator.append_train_edge_to_tr(tr1, l0_l1);
   simulator.append_train_edge_to_tr(tr1, l1_l2);
   simulator.append_train_edge_to_tr(tr1, l2_l3);
+  simulator.append_train_edge_to_tr(tr1, l3_g00);
+  simulator.append_train_edge_to_tr(tr1, g00_g01);
   simulator.append_train_edge_to_tr(tr3, l0_l1);
 
   const auto& milestones_tr1 = simulator.edge_milestones(tr1);
-  EXPECT_EQ(milestones_tr1.size(), 4);
+  EXPECT_EQ(milestones_tr1.size(), 6);
   EXPECT_EQ(milestones_tr1[0], 0.0);
   EXPECT_EQ(milestones_tr1[1], 500.0);
   EXPECT_EQ(milestones_tr1[2], 1000.0);
   EXPECT_EQ(milestones_tr1[3], 1005.0);
+  EXPECT_EQ(milestones_tr1[4], 1010.0);
+  EXPECT_EQ(milestones_tr1[5], 1310.0);
 
   const auto& milestones_tr2 = simulator.edge_milestones(tr2);
   EXPECT_TRUE(milestones_tr2.empty()); // No edges for tr2
@@ -401,6 +407,94 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
 
   EXPECT_THROW(simulator.edge_milestones(1000),
                cda_rail::exceptions::TrainNotExistentException);
+
+  // Edge position
+  const auto& [on_edge, occupation, pos] =
+      simulator.get_position_on_edge(tr1, 0, l0_l1);
+  EXPECT_FALSE(on_edge);
+  EXPECT_FALSE(occupation.first);
+  EXPECT_FALSE(occupation.second);
+
+  const auto& [on_edge2, occupation2, pos2] =
+      simulator.get_position_on_edge(tr1, 50, l0_l1);
+  EXPECT_TRUE(on_edge2);
+  EXPECT_FALSE(occupation2.first);
+  EXPECT_TRUE(occupation2.second);
+  EXPECT_EQ(pos2.first, 0);
+  EXPECT_EQ(pos2.second, 50);
+
+  const auto& [on_edge3, occupation3, pos3] =
+      simulator.get_position_on_edge(tr1, 50, l1_l2);
+  EXPECT_FALSE(on_edge3);
+  EXPECT_FALSE(occupation3.first);
+  EXPECT_FALSE(occupation3.second);
+
+  const auto& [on_edge4, occupation4, pos4] =
+      simulator.get_position_on_edge(tr1, 500, l0_l1);
+  EXPECT_TRUE(on_edge4);
+  EXPECT_TRUE(occupation4.first);
+  EXPECT_TRUE(occupation4.second);
+  EXPECT_EQ(pos4.first, 400);
+  EXPECT_EQ(pos4.second, 500);
+
+  const auto& [on_edge5, occupation5, pos5] =
+      simulator.get_position_on_edge(tr1, 1020, l0_l1);
+  EXPECT_FALSE(on_edge5);
+  EXPECT_FALSE(occupation5.first);
+  EXPECT_FALSE(occupation5.second);
+
+  const auto& [on_edge6, occupation6, pos6] =
+      simulator.get_position_on_edge(tr1, 1020, l1_l2);
+  EXPECT_TRUE(on_edge6);
+  EXPECT_TRUE(occupation6.first);
+  EXPECT_FALSE(occupation6.second);
+  EXPECT_EQ(pos6.first, 420);
+  EXPECT_EQ(pos6.second, 500);
+
+  const auto& [on_edge7, occupation7, pos7] =
+      simulator.get_position_on_edge(tr1, 1020, l2_l3);
+  EXPECT_TRUE(on_edge7);
+  EXPECT_FALSE(occupation7.first);
+  EXPECT_FALSE(occupation7.second);
+  EXPECT_EQ(pos7.first, 0);
+  EXPECT_EQ(pos7.second, 5);
+
+  const auto& [on_edge8, occupation8, pos8] =
+      simulator.get_position_on_edge(tr1, 1020, l3_g00);
+  EXPECT_TRUE(on_edge8);
+  EXPECT_FALSE(occupation8.first);
+  EXPECT_FALSE(occupation8.second);
+  EXPECT_EQ(pos8.first, 0);
+  EXPECT_EQ(pos8.second, 5);
+
+  const auto& [on_edge9, occupation9, pos9] =
+      simulator.get_position_on_edge(tr1, 1020, g00_g01);
+  EXPECT_TRUE(on_edge9);
+  EXPECT_FALSE(occupation9.first);
+  EXPECT_TRUE(occupation9.second);
+  EXPECT_EQ(pos9.first, 0);
+  EXPECT_EQ(pos9.second, 10);
+
+  const auto& [on_edge10, occupation10, pos10] =
+      simulator.get_position_on_edge(tr1, 100, l0_l1, {0, 10, 20, 30, 40, 50});
+  EXPECT_TRUE(on_edge10);
+  EXPECT_TRUE(occupation10.first);
+  EXPECT_FALSE(occupation10.second);
+  EXPECT_EQ(pos10.first, 0);
+  EXPECT_EQ(pos10.second, 10);
+
+  EXPECT_THROW(
+      simulator.get_position_on_edge(tr1, 100, l0_l1, {0, 10, 20, 30, 40}),
+      cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(simulator.get_position_on_edge(tr1, 100, l0_l1,
+                                              {0, 10, 20, 30, 40, 50, 60}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(simulator.get_position_on_edge(1000, 100, l0_l1),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.get_position_on_route_edge(1000, 100, 0),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.get_position_on_route_edge(tr1, 100, 5),
+               cda_rail::exceptions::InvalidInputException);
 }
 
 // NOLINTEND
