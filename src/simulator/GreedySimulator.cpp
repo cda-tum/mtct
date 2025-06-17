@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <limits>
+#include <string>
+#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -267,4 +269,61 @@ cda_rail::simulator::GreedySimulator::edge_milestones(size_t tr) const {
     milestones.emplace_back(milestones.back() + edge.length);
   }
   return milestones;
+}
+
+std::tuple<bool, std::pair<double, double>, std::pair<double, double>>
+cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
+    size_t tr, double pos, size_t edge_number,
+    std::vector<double> milestones) const {
+  /**
+   * This function returns the position of a train on a specific edge of its
+   * route.
+   *
+   * @param tr: The id of the train for which the position is calculated.
+   * @param pos: The position of the train on its route.
+   * @param edge_number: The index of the edge in the train's route.
+   * @param milestones: A vector of doubles representing the possibly
+   * precomputed milestones.
+   *
+   * @return: A tuple containing:
+   * - a boolean indicating whether the train is on the edge,
+   * - a pair of booleans indicating whether the trains rear and/or front is on
+   * the edge,
+   * - a pair of doubles with the rear and front positions of the train on the
+   * edge.
+   */
+  if (!instance->get_timetable().get_train_list().has_train(tr)) {
+    throw cda_rail::exceptions::TrainNotExistentException(tr);
+  }
+
+  if (milestones.empty()) {
+    milestones = edge_milestones(tr);
+  }
+  if (edge_number >= train_edges.at(tr).size()) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Edge number out of bounds for train " + std::to_string(tr) +
+        ". Train has only " + std::to_string(train_edges.at(tr).size()) +
+        " edges.");
+  }
+  if (train_edges.at(tr).size() + 1 != milestones.size()) {
+    throw cda_rail::exceptions::ConsistencyException(
+        "Milestones size does not match number of edges for train " +
+        std::to_string(tr) + ". Expected " +
+        std::to_string(train_edges.at(tr).size() + 1) + ", got " +
+        std::to_string(milestones.size()) + ".");
+  }
+  const std::pair<double, double> milestone_pair = {
+      milestones[edge_number], milestones[edge_number + 1]};
+  const auto& tr_obj = instance->get_timetable().get_train_list().get_train(tr);
+  const bool  is_on_edge = (pos > milestone_pair.first + EPS &&
+                           pos - tr_obj.length <= milestone_pair.second);
+  const bool  rear_on_edge =
+      is_on_edge && (pos - tr_obj.length >= milestone_pair.first);
+  const bool front_on_edge = is_on_edge && (pos <= milestone_pair.second);
+
+  return {is_on_edge,
+          {rear_on_edge, front_on_edge},
+          {std::max(0.0, pos - milestone_pair.first - tr_obj.length),
+           std::min(milestone_pair.second - milestone_pair.first,
+                    pos - milestone_pair.first)}};
 }

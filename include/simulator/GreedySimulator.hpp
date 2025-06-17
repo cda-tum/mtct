@@ -47,6 +47,30 @@ private:
                       const std::unordered_set<size_t>& tr_left,
                       bool late_entry_possible) const;
   [[nodiscard]] std::vector<double> edge_milestones(size_t tr) const;
+  [[nodiscard]] std::tuple<bool, std::pair<double, double>,
+                           std::pair<double, double>>
+  get_position_on_route_edge(size_t tr, double pos, size_t edge_number,
+                             std::vector<double> milestones = {}) const;
+  [[nodiscard]] std::tuple<bool, std::pair<double, double>,
+                           std::pair<double, double>>
+  get_position_on_edge(size_t tr, double pos, size_t edge_id) const {
+    if (!instance->get_timetable().get_train_list().has_train(tr)) {
+      throw cda_rail::exceptions::TrainNotExistentException(tr);
+    }
+    if (!instance->const_n().has_edge(edge_id)) {
+      throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
+    }
+    const auto& tr_edges = train_edges.at(tr);
+    const auto  edge_number =
+        std::find(tr_edges.begin(), tr_edges.end(), edge_id);
+    if (edge_number == tr_edges.end()) {
+      throw cda_rail::exceptions::ConsistencyException(
+          "Train " + std::to_string(tr) + " does not have edge " +
+          std::to_string(edge_id) + " in its route.");
+    }
+    const auto edge_index = std::distance(tr_edges.begin(), edge_number);
+    return get_position_on_route_edge(tr, pos, edge_index);
+  };
 
 public:
   explicit GreedySimulator(
