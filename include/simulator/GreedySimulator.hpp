@@ -53,7 +53,8 @@ private:
                              std::vector<double> milestones = {}) const;
   [[nodiscard]] std::tuple<bool, std::pair<double, double>,
                            std::pair<double, double>>
-  get_position_on_edge(size_t tr, double pos, size_t edge_id) const {
+  get_position_on_edge(size_t tr, double pos, size_t edge_id,
+                       std::vector<double> milestones = {}) const {
     if (!instance->get_timetable().get_train_list().has_train(tr)) {
       throw cda_rail::exceptions::TrainNotExistentException(tr);
     }
@@ -69,7 +70,7 @@ private:
           std::to_string(edge_id) + " in its route.");
     }
     const auto edge_index = std::distance(tr_edges.begin(), edge_number);
-    return get_position_on_route_edge(tr, pos, edge_index);
+    return get_position_on_route_edge(tr, pos, edge_index, milestones);
   };
 
 public:
