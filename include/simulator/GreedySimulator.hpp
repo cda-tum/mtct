@@ -23,6 +23,7 @@
 #if TEST_FRIENDS
 class GreedySimulator;
 class GreedySimulator_BasicPrivateFunctions_Test;
+class GreedySimulator_EdgePositions_Test;
 #endif
 
 namespace cda_rail::simulator {
@@ -39,6 +40,7 @@ class GreedySimulator {
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GreedySimulator, BasicPrivateFunctions);
+  FRIEND_TEST(::GreedySimulator, EdgePositions);
 #endif
 
   [[nodiscard]] double braking_distance(size_t tr, double v) const;
