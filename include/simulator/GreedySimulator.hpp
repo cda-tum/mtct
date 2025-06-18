@@ -29,6 +29,7 @@
 class GreedySimulator;
 class GreedySimulator_BasicPrivateFunctions_Test;
 class GreedySimulator_EdgePositions_Test;
+class GreedySimulator_TrainsOnEdges_Test;
 #endif
 
 namespace cda_rail::simulator {
@@ -46,6 +47,7 @@ private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GreedySimulator, BasicPrivateFunctions);
   FRIEND_TEST(::GreedySimulator, EdgePositions);
+  FRIEND_TEST(::GreedySimulator, TrainsOnEdges);
 #endif
 
   enum class TTDOccupationType : std::uint8_t {

@@ -409,6 +409,73 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
                cda_rail::exceptions::TrainNotExistentException);
 }
 
+TEST(GreedySimulator, TrainsOnEdges) {
+  // Create instance
+  Network     network("./example-networks/SimpleStation/network/");
+  const auto& ttd_sections = network.unbreakable_sections();
+  const auto& l0           = network.get_vertex_index("l0");
+  const auto& r0           = network.get_vertex_index("r0");
+
+  const auto& l0_l1   = network.get_edge_index("l0", "l1");
+  const auto& l1_l2   = network.get_edge_index("l1", "l2");
+  const auto& l2_l3   = network.get_edge_index("l2", "l3");
+  const auto& l3_g00  = network.get_edge_index("l3", "g00");
+  const auto& g00_g01 = network.get_edge_index("g00", "g01");
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, {0, 60},
+                                       0, "l0", {360, 420}, 10, "r0", network);
+  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, {30, 90},
+                                       10, "r0", {400, 460}, 5, "l0", network);
+  const auto tr3 = timetable.add_train("Train3", 100, 10, 1, 4, true, {0, 150},
+                                       0, "l0", {360, 420}, 10, "r0", network);
+  const auto tr4 = timetable.add_train("Train4", 100, 10, 1, 5, false, {30, 90},
+                                       0, "l0", {400, 460}, 10, "r0", network);
+  const auto tr5 =
+      timetable.add_train("Train5", 100, 10, 1, 6, true, {120, 180}, 0, "l0",
+                          {360, 420}, 10, "r0", network);
+  EXPECT_TRUE(timetable.check_consistency(network));
+
+  RouteMap routes;
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+
+  simulator.append_train_edge_to_tr(tr1, l0_l1);
+  simulator.append_train_edge_to_tr(tr1, l1_l2);
+  simulator.append_train_edge_to_tr(tr1, l2_l3);
+  simulator.append_train_edge_to_tr(tr2, l0_l1);
+  simulator.append_train_edge_to_tr(tr3, l1_l2);
+  simulator.append_train_edge_to_tr(tr4, l0_l1);
+  simulator.append_train_edge_to_tr(tr4, l3_g00);
+
+  const auto tr_on_edges = simulator.tr_on_edges();
+
+  EXPECT_EQ(tr_on_edges.size(), network.number_of_edges());
+  for (size_t i = 0; i < network.number_of_edges(); ++i) {
+    if (i == l0_l1) {
+      EXPECT_EQ(tr_on_edges.at(i).size(), 3);
+      EXPECT_TRUE(tr_on_edges.at(i).contains(tr1));
+      EXPECT_TRUE(tr_on_edges.at(i).contains(tr2));
+      EXPECT_TRUE(tr_on_edges.at(i).contains(tr4));
+    } else if (i == l1_l2) {
+      EXPECT_EQ(tr_on_edges.at(i).size(), 2);
+      EXPECT_TRUE(tr_on_edges.at(i).contains(tr1));
+      EXPECT_TRUE(tr_on_edges.at(i).contains(tr3));
+    } else if (i == l2_l3) {
+      EXPECT_EQ(tr_on_edges.at(i).size(), 1);
+      EXPECT_TRUE(tr_on_edges.at(i).contains(tr1));
+    } else if (i == l3_g00) {
+      EXPECT_EQ(tr_on_edges.at(i).size(), 1);
+      EXPECT_TRUE(tr_on_edges.at(i).contains(tr4));
+    } else {
+      EXPECT_TRUE(tr_on_edges.at(i).empty());
+    }
+  }
+}
+
 TEST(GreedySimulator, EdgePositions) {
   // Create instance
   Network     network("./example-networks/SimpleStation/network/");
