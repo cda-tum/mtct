@@ -90,7 +90,15 @@ private:
     return std::find(tr_edges.begin(), tr_edges.end(), edge_id) !=
            tr_edges.end();
   };
-  [[nodiscard]] bool is_on_ttd(size_t tr, size_t ttd, double pos) const;
+  [[nodiscard]] bool is_on_ttd(size_t tr, size_t ttd, double pos,
+                               bool or_behind = false) const;
+  [[nodiscard]] bool is_on_or_behind_ttd(size_t tr, size_t ttd,
+                                         double pos) const {
+    return is_on_ttd(tr, ttd, pos, true);
+  };
+  [[nodiscard]] bool is_behind_ttd(size_t tr, size_t ttd, double pos) const {
+    return is_on_or_behind_ttd(tr, ttd, pos) && !is_on_ttd(tr, ttd, pos);
+  };
 
 public:
   explicit GreedySimulator(

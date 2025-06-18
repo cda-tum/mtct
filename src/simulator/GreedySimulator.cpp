@@ -330,13 +330,18 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
 }
 
 bool cda_rail::simulator::GreedySimulator::is_on_ttd(size_t tr, size_t ttd,
-                                                     double pos) const {
+                                                     double pos,
+                                                     bool   or_behind) const {
   /**
    * This function checks if a train is on a TTD section at a given position.
    *
    * @param tr: The id of the train to check.
    * @param ttd: The index of the TTD section to check.
    * @param pos: The position of the train on its route.
+   * @param or_behind: If true, the function also returns true if the train has
+   * already passed the TTD section.
+   *
+   * @return: A boolean indicating whether the train is on the TTD section.
    */
   if (ttd >= ttd_sections.size()) {
     throw cda_rail::exceptions::InvalidInputException(
@@ -353,6 +358,9 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(size_t tr, size_t ttd,
         get_position_on_edge(tr, pos, edge_id, milestones);
     if (occ_status) {
       return true; // Train is on the edge
+    } else if (or_behind && pos_on_edge.first >=
+                                instance->const_n().get_edge(edge_id).length) {
+      return true; // Train is behind the edge, but or_behind is true
     }
   }
   return false; // Train is not on the TTD section
