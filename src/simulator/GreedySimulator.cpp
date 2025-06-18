@@ -274,7 +274,7 @@ cda_rail::simulator::GreedySimulator::edge_milestones(size_t tr) const {
 
 std::tuple<bool, std::pair<double, double>, std::pair<double, double>>
 cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
-    size_t tr, double pos, size_t edge_number,
+    size_t tr, const std::pair<double, double>& pos, size_t edge_number,
     std::vector<double> milestones) const {
   /**
    * This function returns the position of a train on a specific edge of its
@@ -317,21 +317,21 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
   const std::pair<double, double> milestone_pair = {
       milestones[edge_number], milestones[edge_number + 1]};
   const auto& tr_obj = instance->get_timetable().get_train_list().get_train(tr);
-  const bool  is_on_edge = (pos > milestone_pair.first + EPS &&
-                           pos - tr_obj.length < milestone_pair.second - EPS);
-  const bool  rear_on_edge =
-      is_on_edge && (pos - tr_obj.length >= milestone_pair.first);
-  const bool front_on_edge = is_on_edge && (pos <= milestone_pair.second);
+  const bool  is_on_edge   = (pos.second > milestone_pair.first + EPS &&
+                           pos.first < milestone_pair.second - EPS);
+  const bool  rear_on_edge = is_on_edge && (pos.first >= milestone_pair.first);
+  const bool  front_on_edge =
+      is_on_edge && (pos.second <= milestone_pair.second);
 
   return {is_on_edge,
           {rear_on_edge, front_on_edge},
-          {std::max(0.0, pos - milestone_pair.first - tr_obj.length),
+          {std::max(0.0, pos.first - milestone_pair.first),
            std::min(milestone_pair.second - milestone_pair.first,
-                    pos - milestone_pair.first)}};
+                    pos.second - milestone_pair.first)}};
 }
 
 bool cda_rail::simulator::GreedySimulator::is_on_ttd(
-    size_t tr, size_t ttd, double pos,
+    size_t tr, size_t ttd, const std::pair<double, double>& pos,
     TTDOccupationType occupation_type) const {
   /**
    * This function checks if a train is on a TTD section at a given position.

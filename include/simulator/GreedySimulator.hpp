@@ -65,11 +65,13 @@ private:
   [[nodiscard]] std::vector<double> edge_milestones(size_t tr) const;
   [[nodiscard]] std::tuple<bool, std::pair<double, double>,
                            std::pair<double, double>>
-  get_position_on_route_edge(size_t tr, double pos, size_t edge_number,
+  get_position_on_route_edge(size_t tr, const std::pair<double, double>& pos,
+                             size_t              edge_number,
                              std::vector<double> milestones = {}) const;
   [[nodiscard]] std::tuple<bool, std::pair<double, double>,
                            std::pair<double, double>>
-  get_position_on_edge(size_t tr, double pos, size_t edge_id,
+  get_position_on_edge(size_t tr, const std::pair<double, double>& pos,
+                       size_t              edge_id,
                        std::vector<double> milestones = {}) const {
     if (!instance->get_timetable().get_train_list().has_train(tr)) {
       throw cda_rail::exceptions::TrainNotExistentException(tr);
@@ -100,14 +102,17 @@ private:
     return std::find(tr_edges.begin(), tr_edges.end(), edge_id) !=
            tr_edges.end();
   };
-  [[nodiscard]] bool is_on_ttd(size_t tr, size_t ttd, double pos,
+  [[nodiscard]] bool is_on_ttd(size_t tr, size_t ttd,
+                               const std::pair<double, double>& pos,
                                TTDOccupationType occupation_type =
                                    TTDOccupationType::OnlyOccupied) const;
-  [[nodiscard]] bool is_on_or_behind_ttd(size_t tr, size_t ttd,
-                                         double pos) const {
+  [[nodiscard]] bool
+  is_on_or_behind_ttd(size_t tr, size_t ttd,
+                      const std::pair<double, double>& pos) const {
     return is_on_ttd(tr, ttd, pos, TTDOccupationType::OccupiedOrBehind);
   };
-  [[nodiscard]] bool is_behind_ttd(size_t tr, size_t ttd, double pos) const {
+  [[nodiscard]] bool is_behind_ttd(size_t tr, size_t ttd,
+                                   const std::pair<double, double>& pos) const {
     return is_on_ttd(tr, ttd, pos, TTDOccupationType::OnlyBehind);
   };
   [[nodiscard]] std::vector<std::unordered_set<size_t>> tr_on_edges() const;
