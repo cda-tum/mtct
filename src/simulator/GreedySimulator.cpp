@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <limits>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <unordered_set>
