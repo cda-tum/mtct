@@ -491,6 +491,10 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
                cda_rail::exceptions::ConsistencyException);
   EXPECT_THROW(simulator.get_position_on_edge(1000, 100, l0_l1),
                cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.get_position_on_edge(tr1, 100, 1000),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW(simulator.get_position_on_edge(tr3, 100, l2_l3),
+               cda_rail::exceptions::ConsistencyException);
   EXPECT_THROW(simulator.get_position_on_route_edge(1000, 100, 0),
                cda_rail::exceptions::TrainNotExistentException);
   EXPECT_THROW(simulator.get_position_on_route_edge(tr1, 100, 5),
