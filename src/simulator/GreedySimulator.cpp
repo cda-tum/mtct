@@ -401,3 +401,18 @@ cda_rail::simulator::GreedySimulator::tr_on_edges() const {
   }
   return trains_on_edges;
 }
+
+std::optional<size_t>
+cda_rail::simulator::GreedySimulator::get_ttd(size_t edge_id) const {
+  if (!instance->const_n().has_edge(edge_id)) {
+    throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
+  }
+  for (size_t ttd_index = 0; ttd_index < ttd_sections.size(); ++ttd_index) {
+    const auto& ttd_section = ttd_sections[ttd_index];
+    if (std::find(ttd_section.begin(), ttd_section.end(), edge_id) !=
+        ttd_section.end()) {
+      return ttd_index; // Found the TTD section containing the edge
+    }
+  }
+  return {}; // Edge is not part of any TTD section
+}

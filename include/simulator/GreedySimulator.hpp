@@ -110,6 +110,7 @@ private:
     return is_on_ttd(tr, ttd, pos, TTDOccupationType::OnlyBehind);
   };
   [[nodiscard]] std::vector<std::unordered_set<size_t>> tr_on_edges() const;
+  [[nodiscard]] std::optional<size_t> get_ttd(size_t edge_id) const;
 
 public:
   explicit GreedySimulator(
