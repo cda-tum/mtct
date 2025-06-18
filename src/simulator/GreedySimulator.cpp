@@ -13,6 +13,66 @@
 #include <utility>
 #include <vector>
 
+std::pair<bool, std::vector<int>>
+cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
+                                               bool late_exit_possible,
+                                               bool late_stop_possible) const {
+  /**
+   * This function simulates train movements as specified by the member
+   * variables. It returns a vector of doubles denoting the travel times of each
+   * of the trains The (possibly weighted) sum of these values is usually the
+   * current objective value.
+   *
+   * @param dt: The time step for the simulation. This is the time in seconds.
+   * Default: 6s
+   * @param late_entry_possible: If true, trains can enter the network later
+   * than scheduled, otherwise the settings are infeasible. Default: false
+   * @param late_exit_possible: If true, trains can exit the network later than
+   * scheduled, otherwise the settings are infeasible. Default: false
+   * @param late_stop_possible: If true, trains can stop later than scheduled,
+   * otherwise the settings are infeasible. Default: false
+   *
+   * @return: A pair containing a boolean indicating whether the simulation was
+   * successful and a vector of doubles with the travel times of each train.
+   */
+
+  // Initialize return values
+  std::vector<int> travel_times(
+      instance->get_timetable().get_train_list().size(),
+      -1); // -1 indicates that a train has not entered the network yet
+  bool feasible = true;
+
+  // Find first time step
+  int min_T = std::numeric_limits<int>::max();
+  for (const auto& train : instance->get_timetable().get_train_list()) {
+    min_T = std::min(min_T, instance->get_timetable()
+                                .get_schedule(train.name)
+                                .get_t_0_range()
+                                .first);
+  }
+  int max_T = instance->get_timetable().max_t();
+
+  // Initialize variables to keep track of positions and velocities
+  std::vector<std::pair<double, double>> train_positions(
+      instance->get_timetable().get_train_list().size(),
+      {-1.0, -1.0}); // {rear, front} positions
+  std::vector<double> train_velocities(
+      instance->get_timetable().get_train_list().size(), -1.0); // velocities
+  std::unordered_set<size_t> trains_in_network;
+  std::unordered_set<size_t> trains_left;
+  std::vector<int>           tr_stop_until(
+      instance->get_timetable().get_train_list().size(),
+      -1); // time until train stops in station
+  std::vector<double> tr_next_stop(
+      instance->get_timetable().get_train_list().size(),
+      -1.0); // next scheduled stop position
+
+  const auto tr_to_enter = get_entering_trains(
+      min_T, trains_in_network, trains_left, late_entry_possible);
+
+  return {feasible, travel_times};
+}
+
 bool cda_rail::simulator::GreedySimulator::check_consistency() const {
   if (!instance->check_consistency(false)) {
     return false;
@@ -90,66 +150,6 @@ bool cda_rail::simulator::GreedySimulator::check_consistency() const {
   }
 
   return true;
-}
-
-std::pair<bool, std::vector<int>>
-cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
-                                               bool late_exit_possible,
-                                               bool late_stop_possible) const {
-  /**
-   * This function simulates train movements as specified by the member
-   * variables. It returns a vector of doubles denoting the travel times of each
-   * of the trains The (possibly weighted) sum of these values is usually the
-   * current objective value.
-   *
-   * @param dt: The time step for the simulation. This is the time in seconds.
-   * Default: 6s
-   * @param late_entry_possible: If true, trains can enter the network later
-   * than scheduled, otherwise the settings are infeasible. Default: false
-   * @param late_exit_possible: If true, trains can exit the network later than
-   * scheduled, otherwise the settings are infeasible. Default: false
-   * @param late_stop_possible: If true, trains can stop later than scheduled,
-   * otherwise the settings are infeasible. Default: false
-   *
-   * @return: A pair containing a boolean indicating whether the simulation was
-   * successful and a vector of doubles with the travel times of each train.
-   */
-
-  // Initialize return values
-  std::vector<int> travel_times(
-      instance->get_timetable().get_train_list().size(),
-      -1); // -1 indicates that a train has not entered the network yet
-  bool feasible = true;
-
-  // Find first time step
-  int min_T = std::numeric_limits<int>::max();
-  for (const auto& train : instance->get_timetable().get_train_list()) {
-    min_T = std::min(min_T, instance->get_timetable()
-                                .get_schedule(train.name)
-                                .get_t_0_range()
-                                .first);
-  }
-  int max_T = instance->get_timetable().max_t();
-
-  // Initialize variables to keep track of positions and velocities
-  std::vector<std::pair<double, double>> train_positions(
-      instance->get_timetable().get_train_list().size(),
-      {-1.0, -1.0}); // {rear, front} positions
-  std::vector<double> train_velocities(
-      instance->get_timetable().get_train_list().size(), -1.0); // velocities
-  std::unordered_set<size_t> trains_in_network;
-  std::unordered_set<size_t> trains_left;
-  std::vector<int>           tr_stop_until(
-      instance->get_timetable().get_train_list().size(),
-      -1); // time until train stops in station
-  std::vector<double> tr_next_stop(
-      instance->get_timetable().get_train_list().size(),
-      -1.0); // next scheduled stop position
-
-  const auto tr_to_enter = get_entering_trains(
-      min_T, trains_in_network, trains_left, late_entry_possible);
-
-  return {feasible, travel_times};
 }
 
 double cda_rail::simulator::GreedySimulator::braking_distance(size_t tr,
