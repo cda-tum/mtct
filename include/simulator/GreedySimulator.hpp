@@ -7,6 +7,7 @@
 #include "gtest/gtest_prod.h"
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -75,8 +76,21 @@ private:
           std::to_string(edge_id) + " in its route.");
     }
     const auto edge_index = std::distance(tr_edges.begin(), edge_number);
-    return get_position_on_route_edge(tr, pos, edge_index, milestones);
+    return get_position_on_route_edge(tr, pos, edge_index,
+                                      std::move(milestones));
   };
+  [[nodiscard]] bool is_on_route(size_t tr, size_t edge_id) const {
+    if (!instance->get_timetable().get_train_list().has_train(tr)) {
+      throw cda_rail::exceptions::TrainNotExistentException(tr);
+    }
+    if (!instance->const_n().has_edge(edge_id)) {
+      throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
+    }
+    const auto& tr_edges = train_edges.at(tr);
+    return std::find(tr_edges.begin(), tr_edges.end(), edge_id) !=
+           tr_edges.end();
+  };
+  [[nodiscard]] bool is_on_ttd(size_t tr, size_t ttd, double pos) const;
 
 public:
   explicit GreedySimulator(

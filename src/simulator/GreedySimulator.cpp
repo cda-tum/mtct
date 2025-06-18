@@ -328,3 +328,32 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
            std::min(milestone_pair.second - milestone_pair.first,
                     pos - milestone_pair.first)}};
 }
+
+bool cda_rail::simulator::GreedySimulator::is_on_ttd(size_t tr, size_t ttd,
+                                                     double pos) const {
+  /**
+   * This function checks if a train is on a TTD section at a given position.
+   *
+   * @param tr: The id of the train to check.
+   * @param ttd: The index of the TTD section to check.
+   * @param pos: The position of the train on its route.
+   */
+  if (ttd >= ttd_sections.size()) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "TTD index out of bounds: " + std::to_string(ttd) +
+        ". Maximum index is " + std::to_string(ttd_sections.size() - 1) + ".");
+  }
+  const auto  milestones  = edge_milestones(tr);
+  const auto& ttd_section = ttd_sections[ttd];
+  for (const auto& edge_id : ttd_section) {
+    if (!is_on_route(tr, edge_id)) {
+      continue; // Train is not on this edge
+    }
+    const auto [occ_status, detailed_occ_status, pos_on_edge] =
+        get_position_on_edge(tr, pos, edge_id, milestones);
+    if (occ_status) {
+      return true; // Train is on the edge
+    }
+  }
+  return false; // Train is not on the TTD section
+}
