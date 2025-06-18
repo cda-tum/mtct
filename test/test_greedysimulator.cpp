@@ -459,6 +459,8 @@ TEST(GreedySimulator, EdgePositions) {
   EXPECT_FALSE(on_edge);
   EXPECT_FALSE(occupation.first);
   EXPECT_FALSE(occupation.second);
+  EXPECT_EQ(pos.first, 0);
+  EXPECT_EQ(pos.second, 0);
 
   const auto& [on_edge2, occupation2, pos2] =
       simulator.get_position_on_edge(tr1, 50, l0_l1);
@@ -473,6 +475,8 @@ TEST(GreedySimulator, EdgePositions) {
   EXPECT_FALSE(on_edge3);
   EXPECT_FALSE(occupation3.first);
   EXPECT_FALSE(occupation3.second);
+  EXPECT_EQ(pos3.first, 0);
+  EXPECT_EQ(pos3.second, -450);
 
   const auto& [on_edge4, occupation4, pos4] =
       simulator.get_position_on_edge(tr1, 500, l0_l1);
@@ -487,6 +491,8 @@ TEST(GreedySimulator, EdgePositions) {
   EXPECT_FALSE(on_edge4b);
   EXPECT_FALSE(occupation4b.first);
   EXPECT_FALSE(occupation4b.second);
+  EXPECT_EQ(pos4b.first, 500);
+  EXPECT_EQ(pos4b.second, 500);
 
   const auto& [on_edge4c, occupation4c, pos4c] =
       simulator.get_position_on_edge(tr1, 600, l1_l2);
@@ -501,6 +507,8 @@ TEST(GreedySimulator, EdgePositions) {
   EXPECT_FALSE(on_edge5);
   EXPECT_FALSE(occupation5.first);
   EXPECT_FALSE(occupation5.second);
+  EXPECT_EQ(pos5.first, 920);
+  EXPECT_EQ(pos5.second, 500);
 
   const auto& [on_edge6, occupation6, pos6] =
       simulator.get_position_on_edge(tr1, 1020, l1_l2);
@@ -509,6 +517,14 @@ TEST(GreedySimulator, EdgePositions) {
   EXPECT_FALSE(occupation6.second);
   EXPECT_EQ(pos6.first, 420);
   EXPECT_EQ(pos6.second, 500);
+
+  const auto& [on_edge6b, occupation6b, pos6b] =
+      simulator.get_position_on_edge(tr1, 1120, l1_l2);
+  EXPECT_FALSE(on_edge6b);
+  EXPECT_FALSE(occupation6b.first);
+  EXPECT_FALSE(occupation6b.second);
+  EXPECT_EQ(pos6b.first, 520);
+  EXPECT_EQ(pos6b.second, 500);
 
   const auto& [on_edge7, occupation7, pos7] =
       simulator.get_position_on_edge(tr1, 1020, l2_l3);
@@ -579,6 +595,36 @@ TEST(GreedySimulator, EdgePositions) {
   EXPECT_THROW(simulator.is_on_ttd(1000, 1, 1000),
                cda_rail::exceptions::TrainNotExistentException);
   EXPECT_THROW(simulator.is_on_ttd(tr1, 2, 1000),
+               cda_rail::exceptions::InvalidInputException);
+
+  // Is behind TTD
+  EXPECT_FALSE(simulator.is_behind_ttd(tr1, 1, 1000));
+  EXPECT_FALSE(simulator.is_behind_ttd(tr1, 1, 1001));
+  EXPECT_FALSE(simulator.is_behind_ttd(tr1, 1, 1005));
+  EXPECT_FALSE(simulator.is_behind_ttd(tr1, 1, 1006));
+  EXPECT_FALSE(simulator.is_behind_ttd(tr1, 1, 1010));
+  EXPECT_FALSE(simulator.is_behind_ttd(tr1, 1, 1100));
+  EXPECT_FALSE(simulator.is_behind_ttd(tr1, 1, 1109));
+  EXPECT_TRUE(simulator.is_behind_ttd(tr1, 1, 1110));
+  EXPECT_TRUE(simulator.is_behind_ttd(tr1, 1, 1200));
+  EXPECT_THROW(simulator.is_behind_ttd(1000, 1, 1000),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.is_behind_ttd(tr1, 2, 1000),
+               cda_rail::exceptions::InvalidInputException);
+
+  // Is on or behind TTD
+  EXPECT_FALSE(simulator.is_on_or_behind_ttd(tr1, 1, 1000));
+  EXPECT_TRUE(simulator.is_on_or_behind_ttd(tr1, 1, 1001));
+  EXPECT_TRUE(simulator.is_on_or_behind_ttd(tr1, 1, 1005));
+  EXPECT_TRUE(simulator.is_on_or_behind_ttd(tr1, 1, 1006));
+  EXPECT_TRUE(simulator.is_on_or_behind_ttd(tr1, 1, 1010));
+  EXPECT_TRUE(simulator.is_on_or_behind_ttd(tr1, 1, 1100));
+  EXPECT_TRUE(simulator.is_on_or_behind_ttd(tr1, 1, 1109));
+  EXPECT_TRUE(simulator.is_on_or_behind_ttd(tr1, 1, 1110));
+  EXPECT_TRUE(simulator.is_on_or_behind_ttd(tr1, 1, 1200));
+  EXPECT_THROW(simulator.is_on_or_behind_ttd(1000, 1, 1000),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.is_on_or_behind_ttd(tr1, 2, 1000),
                cda_rail::exceptions::InvalidInputException);
 }
 
