@@ -412,14 +412,14 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
 TEST(GreedySimulator, EdgePositions) {
   // Create instance
   Network     network("./example-networks/SimpleStation/network/");
-  const auto& ttd_sections = network.unbreakable_sections();
-  const auto& l0           = network.get_vertex_index("l0");
-  const auto& r0           = network.get_vertex_index("r0");
+  const auto& l0 = network.get_vertex_index("l0");
+  const auto& r0 = network.get_vertex_index("r0");
 
   const auto& l0_l1   = network.get_edge_index("l0", "l1");
   const auto& l1_l2   = network.get_edge_index("l1", "l2");
   const auto& l2_l3   = network.get_edge_index("l2", "l3");
   const auto& l3_g00  = network.get_edge_index("l3", "g00");
+  const auto& l3_g10  = network.get_edge_index("l3", "g10");
   const auto& g00_g01 = network.get_edge_index("g00", "g01");
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
@@ -441,7 +441,8 @@ TEST(GreedySimulator, EdgePositions) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
 
-  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+  cda_rail::simulator::GreedySimulator simulator(
+      instance, {{l0_l1, l1_l2}, {l2_l3, l3_g00, l3_g10}});
 
   simulator.set_entry_orders_of_vertex(r0, {tr2});
   simulator.set_entry_orders_of_vertex(l0, {tr1, tr3, tr5});
@@ -543,6 +544,24 @@ TEST(GreedySimulator, EdgePositions) {
                cda_rail::exceptions::TrainNotExistentException);
   EXPECT_THROW(simulator.get_position_on_route_edge(tr1, 100, 5),
                cda_rail::exceptions::InvalidInputException);
+
+  // Is on route
+  EXPECT_TRUE(simulator.is_on_route(tr1, l3_g00));
+  EXPECT_FALSE(simulator.is_on_route(tr1, l3_g10));
+  EXPECT_THROW(simulator.is_on_route(1000, l3_g00),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.is_on_route(tr1, 1000),
+               cda_rail::exceptions::EdgeNotExistentException);
+
+  // Is on TTD
+  EXPECT_FALSE(simulator.is_on_ttd(tr1, 1, 1000));
+  EXPECT_TRUE(simulator.is_on_ttd(tr1, 1, 1001));
+  EXPECT_TRUE(simulator.is_on_ttd(tr1, 1, 1005));
+  EXPECT_TRUE(simulator.is_on_ttd(tr1, 1, 1006));
+  EXPECT_TRUE(simulator.is_on_ttd(tr1, 1, 1010));
+  EXPECT_TRUE(simulator.is_on_ttd(tr1, 1, 1100));
+  EXPECT_TRUE(simulator.is_on_ttd(tr1, 1, 1109));
+  EXPECT_FALSE(simulator.is_on_ttd(tr1, 1, 1110));
 }
 
 // NOLINTEND
