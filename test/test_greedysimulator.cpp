@@ -511,6 +511,16 @@ TEST(GreedySimulator, EdgePositions) {
   cda_rail::simulator::GreedySimulator simulator(
       instance, {{l0_l1, l1_l2}, {l2_l3, l3_g00, l3_g10}});
 
+  // Test TTD sections
+  EXPECT_EQ(simulator.get_ttd(l0_l1), 0);
+  EXPECT_EQ(simulator.get_ttd(l1_l2), 0);
+  EXPECT_EQ(simulator.get_ttd(l2_l3), 1);
+  EXPECT_EQ(simulator.get_ttd(l3_g00), 1);
+  EXPECT_EQ(simulator.get_ttd(l3_g10), 1);
+  EXPECT_FALSE(simulator.get_ttd(g00_g01).has_value());
+  EXPECT_THROW(simulator.get_ttd(1000),
+               cda_rail::exceptions::EdgeNotExistentException);
+
   simulator.set_entry_orders_of_vertex(r0, {tr2});
   simulator.set_entry_orders_of_vertex(l0, {tr1, tr3, tr5});
   simulator.append_train_edge_to_tr(tr1, l0_l1);
