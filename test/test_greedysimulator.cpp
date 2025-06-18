@@ -482,6 +482,20 @@ TEST(GreedySimulator, EdgePositions) {
   EXPECT_EQ(pos4.first, 400);
   EXPECT_EQ(pos4.second, 500);
 
+  const auto& [on_edge4b, occupation4b, pos4b] =
+      simulator.get_position_on_edge(tr1, 600, l0_l1);
+  EXPECT_FALSE(on_edge4b);
+  EXPECT_FALSE(occupation4b.first);
+  EXPECT_FALSE(occupation4b.second);
+
+  const auto& [on_edge4c, occupation4c, pos4c] =
+      simulator.get_position_on_edge(tr1, 600, l1_l2);
+  EXPECT_TRUE(on_edge4c);
+  EXPECT_TRUE(occupation4c.first);
+  EXPECT_TRUE(occupation4c.second);
+  EXPECT_EQ(pos4c.first, 0);
+  EXPECT_EQ(pos4c.second, 100);
+
   const auto& [on_edge5, occupation5, pos5] =
       simulator.get_position_on_edge(tr1, 1020, l0_l1);
   EXPECT_FALSE(on_edge5);
