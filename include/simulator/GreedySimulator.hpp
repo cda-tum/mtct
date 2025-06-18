@@ -7,6 +7,7 @@
 #include "gtest/gtest_prod.h"
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <memory>
 #include <string>
