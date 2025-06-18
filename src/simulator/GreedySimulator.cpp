@@ -382,3 +382,22 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(
   }
   return potentially_behind; // Train is not on the TTD section
 }
+
+std::vector<std::unordered_set<size_t>>
+cda_rail::simulator::GreedySimulator::tr_on_edges() const {
+  /**
+   * This function returns a vector of unordered sets, where each set
+   * contains the indices of trains that are routed on a specific edge.
+   */
+
+  std::vector<std::unordered_set<size_t>> trains_on_edges(
+      instance->const_n().number_of_edges());
+  for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
+       ++tr) {
+    const auto& edges = train_edges.at(tr);
+    for (const auto& edge_id : edges) {
+      trains_on_edges[edge_id].insert(tr);
+    }
+  }
+  return trains_on_edges;
+}

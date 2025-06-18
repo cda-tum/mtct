@@ -107,6 +107,7 @@ private:
   [[nodiscard]] bool is_behind_ttd(size_t tr, size_t ttd, double pos) const {
     return is_on_ttd(tr, ttd, pos, TTDOccupationType::OnlyBehind);
   };
+  [[nodiscard]] std::vector<std::unordered_set<size_t>> tr_on_edges() const;
 
 public:
   explicit GreedySimulator(
