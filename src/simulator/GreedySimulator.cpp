@@ -317,7 +317,7 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
       milestones[edge_number], milestones[edge_number + 1]};
   const auto& tr_obj = instance->get_timetable().get_train_list().get_train(tr);
   const bool  is_on_edge = (pos > milestone_pair.first + EPS &&
-                           pos - tr_obj.length <= milestone_pair.second);
+                           pos - tr_obj.length < milestone_pair.second - EPS);
   const bool  rear_on_edge =
       is_on_edge && (pos - tr_obj.length >= milestone_pair.first);
   const bool front_on_edge = is_on_edge && (pos <= milestone_pair.second);
