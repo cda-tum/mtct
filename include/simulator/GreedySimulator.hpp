@@ -117,6 +117,10 @@ private:
   };
   [[nodiscard]] std::vector<std::unordered_set<size_t>> tr_on_edges() const;
   [[nodiscard]] std::optional<size_t> get_ttd(size_t edge_id) const;
+  [[nodiscard]] bool                  is_ok_to_enter(
+                       size_t tr, const std::vector<std::pair<double, double>>& train_positions,
+                       const std::unordered_set<size_t>&              trains_in_network,
+                       const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
 
 public:
   explicit GreedySimulator(

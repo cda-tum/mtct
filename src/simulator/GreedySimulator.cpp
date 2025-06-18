@@ -417,3 +417,55 @@ cda_rail::simulator::GreedySimulator::get_ttd(size_t edge_id) const {
   }
   return {}; // Edge is not part of any TTD section
 }
+
+bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
+    size_t tr, const std::vector<std::pair<double, double>>& train_positions,
+    const std::unordered_set<size_t>&              trains_in_network,
+    const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
+  /**
+   * This function checks if it is ok for a train to enter the network, i.e., if
+   * all of its initial braking distance is cleared.
+   *
+   * @param tr: The id of the train to check.
+   * @param train_positions: A vector of pairs containing the rear and front
+   * positions of each train in the network.
+   * @param trains_in_network: A set of train ids that are currently in the
+   * network.
+   */
+
+  const auto v0         = instance->get_timetable().get_schedule(tr).get_v_0();
+  const auto bd         = braking_distance(tr, v0);
+  const auto milestones = edge_milestones(tr);
+  for (size_t i = 0; i < train_edges.at(tr).size() && milestones[i] + EPS < bd;
+       ++i) {
+    const auto& edge_id          = train_edges.at(tr).at(i);
+    const auto& potential_trains = tr_on_edges.at(edge_id);
+    for (const auto& other_tr : potential_trains) {
+      if (other_tr == tr || !trains_in_network.contains(other_tr)) {
+        continue; // Skip the train itself or trains that are not in the network
+      }
+      const auto& other_pos = train_positions.at(other_tr);
+      const auto [occ, det_occ, det_pos] =
+          get_position_on_edge(other_tr, other_pos, edge_id);
+      if (occ && det_pos.first <= bd - milestones[i] + EPS) {
+        return false; // Other train is occupying the edge within the braking
+                      // distance
+      }
+    }
+
+    const auto ttd_sec = get_ttd(edge_id);
+    if (!ttd_sec.has_value()) {
+      continue;
+    }
+    for (const auto& other_tr : ttd_orders.at(ttd_sec.value())) {
+      if (other_tr == tr || !trains_in_network.contains(other_tr)) {
+        continue; // Skip the train itself or trains that are not in the network
+      }
+      const auto& other_pos = train_positions.at(other_tr);
+      if (is_on_ttd(tr, ttd_sec.value(), other_pos)) {
+        return false; // Other train is occupying the TTD section
+      }
+    }
+  }
+  return true;
+}
