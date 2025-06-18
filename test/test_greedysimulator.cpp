@@ -123,9 +123,9 @@ TEST(GreedySimulator, CheckConsistency) {
                                        std::vector<size_t>()),
       std::vector<std::vector<size_t>>(network.number_of_vertices(),
                                        std::vector<size_t>()));
-  simulator10.set_entry_orders_of_vertex(l0, {tr1});
-  simulator11.set_entry_orders_of_vertex(l0, {1000});
-  simulator12.set_entry_orders_of_vertex(l0, {tr1, tr2});
+  simulator10.set_vertex_orders_of_vertex(l0, {tr1});
+  simulator11.set_vertex_orders_of_vertex(l0, {1000});
+  simulator12.set_vertex_orders_of_vertex(l0, {tr1, tr2});
 
   cda_rail::simulator::GreedySimulator simulator_instance2(instance2,
                                                            ttd_sections);
@@ -231,22 +231,22 @@ TEST(GreedySimulator, BasicFunctions) {
                cda_rail::exceptions::InvalidInputException);
 
   // Entry Orders
-  EXPECT_THROW(simulator.set_entry_orders({}),
+  EXPECT_THROW(simulator.set_vertex_orders({}),
                cda_rail::exceptions::InvalidInputException);
-  simulator.set_entry_orders(std::vector<std::vector<size_t>>(
+  simulator.set_vertex_orders(std::vector<std::vector<size_t>>(
       network.number_of_vertices(), std::vector<size_t>()));
-  const auto& entry_orders1 = simulator.get_entry_orders();
-  EXPECT_EQ(entry_orders1.size(), network.number_of_vertices());
-  for (const auto& orders : entry_orders1) {
+  const auto& vertex_orders1 = simulator.get_vertex_orders();
+  EXPECT_EQ(vertex_orders1.size(), network.number_of_vertices());
+  for (const auto& orders : vertex_orders1) {
     EXPECT_TRUE(orders.empty());
   }
-  simulator.set_entry_orders_of_vertex(l0, {tr1});
-  const auto& entry_orders2 = simulator.get_entry_orders_of_vertex(l0);
-  EXPECT_EQ(entry_orders2.size(), 1);
-  EXPECT_EQ(entry_orders2[0], tr1);
-  EXPECT_THROW(simulator.get_entry_orders_of_vertex(1000),
+  simulator.set_vertex_orders_of_vertex(l0, {tr1});
+  const auto& vertex_orders2 = simulator.get_vertex_orders_of_vertex(l0);
+  EXPECT_EQ(vertex_orders2.size(), 1);
+  EXPECT_EQ(vertex_orders2[0], tr1);
+  EXPECT_THROW(simulator.get_vertex_orders_of_vertex(1000),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(simulator.set_entry_orders_of_vertex(1000, {tr1}),
+  EXPECT_THROW(simulator.set_vertex_orders_of_vertex(1000, {tr1}),
                cda_rail::exceptions::InvalidInputException);
 }
 
@@ -284,8 +284,8 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
 
   cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
 
-  simulator.set_entry_orders_of_vertex(r0, {tr2});
-  simulator.set_entry_orders_of_vertex(l0, {tr1, tr3, tr5});
+  simulator.set_vertex_orders_of_vertex(r0, {tr2});
+  simulator.set_vertex_orders_of_vertex(l0, {tr1, tr3, tr5});
 
   // Braking distance
   EXPECT_EQ(simulator.braking_distance(tr1, 0), 0.0);
@@ -521,8 +521,8 @@ TEST(GreedySimulator, EdgePositions) {
   EXPECT_THROW(simulator.get_ttd(1000),
                cda_rail::exceptions::EdgeNotExistentException);
 
-  simulator.set_entry_orders_of_vertex(r0, {tr2});
-  simulator.set_entry_orders_of_vertex(l0, {tr1, tr3, tr5});
+  simulator.set_vertex_orders_of_vertex(r0, {tr2});
+  simulator.set_vertex_orders_of_vertex(l0, {tr1, tr3, tr5});
   simulator.append_train_edge_to_tr(tr1, l0_l1);
   simulator.append_train_edge_to_tr(tr1, l1_l2);
   simulator.append_train_edge_to_tr(tr1, l2_l3);
@@ -712,6 +712,8 @@ TEST(GreedySimulator, EdgePositions) {
   EXPECT_THROW(simulator.is_on_or_behind_ttd(tr1, 2, {900, 1000}),
                cda_rail::exceptions::InvalidInputException);
 }
+
+TEST(GreedySimulator, IsOkToEnter) {}
 
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

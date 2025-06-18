@@ -86,7 +86,7 @@ bool cda_rail::simulator::GreedySimulator::check_consistency() const {
   if (ttd_orders.size() != ttd_sections.size()) {
     return false;
   }
-  if (entry_orders.size() != instance->const_n().number_of_vertices()) {
+  if (vertex_orders.size() != instance->const_n().number_of_vertices()) {
     return false;
   }
 
@@ -130,8 +130,8 @@ bool cda_rail::simulator::GreedySimulator::check_consistency() const {
     }
   }
 
-  // entry_orders only contains valid train indices
-  for (const auto& orders : entry_orders) {
+  // vertex_orders only contains valid train indices
+  for (const auto& orders : vertex_orders) {
     for (const auto& train_id : orders) {
       if (!instance->get_timetable().get_train_list().has_train(train_id)) {
         return false;
@@ -141,8 +141,8 @@ bool cda_rail::simulator::GreedySimulator::check_consistency() const {
 
   // entry orders only contain trains that are entering the network through the
   // respective vertex
-  for (size_t vertex_id = 0; vertex_id < entry_orders.size(); ++vertex_id) {
-    for (const auto& train_id : entry_orders[vertex_id]) {
+  for (size_t vertex_id = 0; vertex_id < vertex_orders.size(); ++vertex_id) {
+    for (const auto& train_id : vertex_orders[vertex_id]) {
       if (vertex_id !=
           instance->get_timetable().get_schedule(train_id).get_entry()) {
         return false;
@@ -213,7 +213,7 @@ cda_rail::simulator::GreedySimulator::get_entering_trains(
 
     // Check if the train scheduled to enter before tr is already in the network
     const auto& entry_node  = schedule.get_entry();
-    const auto& entry_order = entry_orders.at(entry_node);
+    const auto& entry_order = vertex_orders.at(entry_node);
     // Find index of tr in the entry order (if it exists)
     const auto it = std::find(entry_order.begin(), entry_order.end(), tr);
     // If tr is not in the entry order, it means it is scheduled to enter

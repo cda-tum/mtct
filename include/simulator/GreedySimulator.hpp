@@ -31,6 +31,7 @@ class GreedySimulator;
 class GreedySimulator_BasicPrivateFunctions_Test;
 class GreedySimulator_EdgePositions_Test;
 class GreedySimulator_TrainsOnEdges_Test;
+class GreedySimulator_IsOkToEnter_Test;
 #endif
 
 namespace cda_rail::simulator {
@@ -42,13 +43,14 @@ class GreedySimulator {
 
   std::vector<std::vector<size_t>> train_edges;
   std::vector<std::vector<size_t>> ttd_orders;
-  std::vector<std::vector<size_t>> entry_orders;
+  std::vector<std::vector<size_t>> vertex_orders;
 
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GreedySimulator, BasicPrivateFunctions);
   FRIEND_TEST(::GreedySimulator, EdgePositions);
   FRIEND_TEST(::GreedySimulator, TrainsOnEdges);
+  FRIEND_TEST(::GreedySimulator, IsOkToEnter);
 #endif
 
   enum class TTDOccupationType : std::uint8_t {
@@ -132,20 +134,20 @@ public:
         ttd_sections(std::move(ttd_sections)) {
     train_edges.resize(instance.get_timetable().get_train_list().size());
     ttd_orders.resize(this->ttd_sections.size());
-    entry_orders.resize(instance.const_n().number_of_vertices());
+    vertex_orders.resize(instance.const_n().number_of_vertices());
   };
   explicit GreedySimulator(
       cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
       std::vector<std::vector<size_t>>                             ttd_sections,
       std::vector<std::vector<size_t>>                             train_edges,
       std::vector<std::vector<size_t>>                             ttd_orders,
-      std::vector<std::vector<size_t>>                             entry_orders)
+      std::vector<std::vector<size_t>> vertex_orders)
       : instance(std::make_shared<
                  cda_rail::instances::GeneralPerformanceOptimizationInstance>(
             instance)),
         ttd_sections(std::move(ttd_sections)),
         train_edges(std::move(train_edges)), ttd_orders(std::move(ttd_orders)),
-        entry_orders(std::move(entry_orders)) {};
+        vertex_orders(std::move(vertex_orders)) {};
   GreedySimulator() = delete;
   [[nodiscard]] bool check_consistency() const;
 
@@ -207,33 +209,33 @@ public:
     return ttd_orders.at(ttd_index);
   };
 
-  void set_entry_orders(std::vector<std::vector<size_t>> orders) {
+  void set_vertex_orders(std::vector<std::vector<size_t>> orders) {
     if (orders.size() != instance->const_n().number_of_vertices()) {
       throw cda_rail::exceptions::InvalidInputException(
-          "Size of entry_orders does not match number of vertices in "
+          "Size of vertex_orders does not match number of vertices in "
           "instance.");
     }
-    entry_orders = std::move(orders);
+    vertex_orders = std::move(orders);
   };
-  void set_entry_orders_of_vertex(size_t              vertex_id,
-                                  std::vector<size_t> orders) {
-    if (vertex_id >= entry_orders.size()) {
+  void set_vertex_orders_of_vertex(size_t              vertex_id,
+                                   std::vector<size_t> orders) {
+    if (vertex_id >= vertex_orders.size()) {
       throw cda_rail::exceptions::InvalidInputException(
           "Vertex index out of bounds.");
     }
-    entry_orders.at(vertex_id) = std::move(orders);
+    vertex_orders.at(vertex_id) = std::move(orders);
   };
   [[nodiscard]] const std::vector<std::vector<size_t>>&
-  get_entry_orders() const {
-    return entry_orders;
+  get_vertex_orders() const {
+    return vertex_orders;
   };
   [[nodiscard]] const std::vector<size_t>&
-  get_entry_orders_of_vertex(size_t vertex_id) const {
-    if (vertex_id >= entry_orders.size()) {
+  get_vertex_orders_of_vertex(size_t vertex_id) const {
+    if (vertex_id >= vertex_orders.size()) {
       throw cda_rail::exceptions::InvalidInputException(
           "Vertex index out of bounds.");
     }
-    return entry_orders.at(vertex_id);
+    return vertex_orders.at(vertex_id);
   };
 
   [[nodiscard]] std::pair<bool, std::vector<int>>
