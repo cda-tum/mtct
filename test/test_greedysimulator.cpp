@@ -576,6 +576,10 @@ TEST(GreedySimulator, EdgePositions) {
   EXPECT_TRUE(simulator.is_on_ttd(tr1, 1, 1100));
   EXPECT_TRUE(simulator.is_on_ttd(tr1, 1, 1109));
   EXPECT_FALSE(simulator.is_on_ttd(tr1, 1, 1110));
+  EXPECT_THROW(simulator.is_on_ttd(1000, 1, 1000),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.is_on_ttd(tr1, 2, 1000),
+               cda_rail::exceptions::InvalidInputException);
 }
 
 // NOLINTEND
