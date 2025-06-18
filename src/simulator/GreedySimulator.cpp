@@ -329,17 +329,20 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
                     pos - milestone_pair.first)}};
 }
 
-bool cda_rail::simulator::GreedySimulator::is_on_ttd(size_t tr, size_t ttd,
-                                                     double pos,
-                                                     bool   or_behind) const {
+bool cda_rail::simulator::GreedySimulator::is_on_ttd(
+    size_t tr, size_t ttd, double pos,
+    TTDOccupationType occupation_type) const {
   /**
    * This function checks if a train is on a TTD section at a given position.
    *
    * @param tr: The id of the train to check.
    * @param ttd: The index of the TTD section to check.
    * @param pos: The position of the train on its route.
-   * @param or_behind: If true, the function also returns true if the train has
-   * already passed the TTD section.
+   * @param occupation_type: The type of occupation to check for. It can be one
+   * of the following:
+   * - OnlyOccupied: The train must be on the TTD section.
+   * - OnlyBehind: The train must be behind the TTD section.
+   * - OccupiedOrBehind: The train can be either on or behind the TTD section.
    *
    * @return: A boolean indicating whether the train is on the TTD section.
    */
@@ -348,20 +351,34 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(size_t tr, size_t ttd,
         "TTD index out of bounds: " + std::to_string(ttd) +
         ". Maximum index is " + std::to_string(ttd_sections.size() - 1) + ".");
   }
-  const auto  milestones  = edge_milestones(tr);
-  const auto& ttd_section = ttd_sections[ttd];
+  const auto  milestones         = edge_milestones(tr);
+  const auto& ttd_section        = ttd_sections[ttd];
+  bool        potentially_behind = false;
   for (const auto& edge_id : ttd_section) {
     if (!is_on_route(tr, edge_id)) {
       continue; // Train is not on this edge
     }
     const auto [occ_status, detailed_occ_status, pos_on_edge] =
         get_position_on_edge(tr, pos, edge_id, milestones);
-    if (occ_status) {
+    if (occ_status &&
+        (occupation_type == TTDOccupationType::OnlyOccupied ||
+         occupation_type == TTDOccupationType::OccupiedOrBehind)) {
       return true; // Train is on the edge
-    } else if (or_behind && pos_on_edge.first >=
-                                instance->const_n().get_edge(edge_id).length) {
-      return true; // Train is behind the edge, but or_behind is true
+    }
+    if (occ_status && occupation_type == TTDOccupationType::OnlyBehind) {
+      return false; // Train is on the edge, but we only want to check if it is
+                    // truly behind
+    }
+    if (!occ_status &&
+        (occupation_type == TTDOccupationType::OnlyBehind ||
+         occupation_type == TTDOccupationType::OccupiedOrBehind) &&
+        pos_on_edge.first >= instance->const_n().get_edge(edge_id).length) {
+      potentially_behind =
+          true; // Train is either behind ttd section or on a later ttd edge
+      if (occupation_type == TTDOccupationType::OccupiedOrBehind) {
+        return true;
+      }
     }
   }
-  return false; // Train is not on the TTD section
+  return potentially_behind; // Train is not on the TTD section
 }

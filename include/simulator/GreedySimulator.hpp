@@ -47,6 +47,12 @@ private:
   FRIEND_TEST(::GreedySimulator, EdgePositions);
 #endif
 
+  enum class TTDOccupationType : std::uint8_t {
+    OnlyOccupied,
+    OnlyBehind,
+    OccupiedOrBehind
+  };
+
   [[nodiscard]] double braking_distance(size_t tr, double v) const;
   [[nodiscard]] std::pair<bool, std::unordered_set<size_t>>
   get_entering_trains(int t, const std::unordered_set<size_t>& tr_present,
@@ -91,13 +97,14 @@ private:
            tr_edges.end();
   };
   [[nodiscard]] bool is_on_ttd(size_t tr, size_t ttd, double pos,
-                               bool or_behind = false) const;
+                               TTDOccupationType occupation_type =
+                                   TTDOccupationType::OnlyOccupied) const;
   [[nodiscard]] bool is_on_or_behind_ttd(size_t tr, size_t ttd,
                                          double pos) const {
-    return is_on_ttd(tr, ttd, pos, true);
+    return is_on_ttd(tr, ttd, pos, TTDOccupationType::OccupiedOrBehind);
   };
   [[nodiscard]] bool is_behind_ttd(size_t tr, size_t ttd, double pos) const {
-    return is_on_or_behind_ttd(tr, ttd, pos) && !is_on_ttd(tr, ttd, pos);
+    return is_on_ttd(tr, ttd, pos, TTDOccupationType::OnlyBehind);
   };
 
 public:
