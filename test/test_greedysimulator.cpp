@@ -262,6 +262,10 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   const auto& l2_l3   = network.get_edge_index("l2", "l3");
   const auto& l3_g00  = network.get_edge_index("l3", "g00");
   const auto& g00_g01 = network.get_edge_index("g00", "g01");
+  const auto& g01_r2  = network.get_edge_index("g01", "r2");
+  const auto& r2_r1   = network.get_edge_index("r2", "r1");
+  const auto& r1_r0   = network.get_edge_index("r1", "r0");
+  const auto& r0_r1   = network.get_edge_index("r0", "r1");
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, {0, 60},
@@ -284,7 +288,20 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
 
   cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
 
-  simulator.set_vertex_orders_of_vertex(r0, {tr2});
+  simulator.append_train_edge_to_tr(tr1, l0_l1);
+  simulator.append_train_edge_to_tr(tr1, l1_l2);
+  simulator.append_train_edge_to_tr(tr1, l2_l3);
+  simulator.append_train_edge_to_tr(tr1, l3_g00);
+  simulator.append_train_edge_to_tr(tr1, g00_g01);
+  simulator.append_train_edge_to_tr(tr1, g01_r2);
+  simulator.append_train_edge_to_tr(tr1, r2_r1);
+  simulator.append_train_edge_to_tr(tr1, r1_r0);
+  simulator.append_train_edge_to_tr(tr2, r0_r1);
+  simulator.append_train_edge_to_tr(tr3, l0_l1);
+  simulator.append_train_edge_to_tr(tr3, l1_l2);
+  simulator.append_train_edge_to_tr(tr5, l0_l1);
+
+  simulator.set_vertex_orders_of_vertex(r0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(l0, {tr1, tr3, tr5});
 
   // Braking distance
@@ -313,18 +330,31 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   const auto& [success_30, entering_tr_30] =
       simulator.get_entering_trains(30, {}, {}, false);
   EXPECT_TRUE(success_30);
-  // Expect tr1 and tr2
-  EXPECT_EQ(entering_tr_30.size(), 2);
+  // Expect only tr1
+  EXPECT_EQ(entering_tr_30.size(), 1);
   EXPECT_TRUE(entering_tr_30.contains(tr1));
-  EXPECT_TRUE(entering_tr_30.contains(tr2));
+
+  const auto& [success_30b, entering_tr_30b] =
+      simulator.get_entering_trains(30, {}, {tr1}, false);
+  EXPECT_TRUE(success_30b);
+  // Expect only tr2, tr3
+  EXPECT_EQ(entering_tr_30b.size(), 2);
+  EXPECT_TRUE(entering_tr_30b.contains(tr2));
+  EXPECT_TRUE(entering_tr_30b.contains(tr3));
+
+  const auto& [success_30c, entering_tr_30c] =
+      simulator.get_entering_trains(30, {tr1}, {}, false);
+  EXPECT_TRUE(success_30c);
+  // Expect only tr3
+  EXPECT_EQ(entering_tr_30c.size(), 1);
+  EXPECT_TRUE(entering_tr_30c.contains(tr3));
 
   const auto& [success_60, entering_tr_60] =
       simulator.get_entering_trains(60, {}, {}, false);
   EXPECT_TRUE(success_60);
-  // Expect tr1, tr2
-  EXPECT_EQ(entering_tr_60.size(), 2);
+  // Expect tr1
+  EXPECT_EQ(entering_tr_60.size(), 1);
   EXPECT_TRUE(entering_tr_60.contains(tr1));
-  EXPECT_TRUE(entering_tr_60.contains(tr2));
 
   const auto& [success_61, entering_tr_61] =
       simulator.get_entering_trains(61, {}, {}, false);
@@ -335,9 +365,8 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   const auto& [success_61_t, entering_tr_61_t] =
       simulator.get_entering_trains(61, {}, {}, true);
   EXPECT_TRUE(success_61_t); // tr1 still entering
-  EXPECT_EQ(entering_tr_61_t.size(), 2);
+  EXPECT_EQ(entering_tr_61_t.size(), 1);
   EXPECT_TRUE(entering_tr_61_t.contains(tr1));
-  EXPECT_TRUE(entering_tr_61_t.contains(tr2));
 
   const auto& [success_30_tr1tr2, entering_tr_30_tr1tr2] =
       simulator.get_entering_trains(30, {tr1, tr2}, {}, false);
@@ -354,7 +383,7 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   EXPECT_TRUE(entering_tr_30_tr1tr2_l.contains(tr3));
 
   const auto& [success_60_tr1tr3, entering_tr_60_tr1tr3] =
-      simulator.get_entering_trains(60, {tr1, tr3}, {}, false);
+      simulator.get_entering_trains(60, {tr3}, {tr1}, false);
   EXPECT_TRUE(success_60_tr1tr3);
   // Expect tr2
   EXPECT_EQ(entering_tr_60_tr1tr3.size(), 1);
@@ -367,26 +396,25 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   EXPECT_TRUE(entering_tr_60_tr1tr2tr3.empty());
 
   const auto& [success_120_tr1tr2, entering_tr_120_tr1tr2] =
-      simulator.get_entering_trains(120, {tr1, tr2}, {}, false);
+      simulator.get_entering_trains(120, {tr2}, {tr1}, false);
   EXPECT_TRUE(success_120_tr1tr2);
   // Expect tr3
   EXPECT_EQ(entering_tr_120_tr1tr2.size(), 1);
   EXPECT_TRUE(entering_tr_120_tr1tr2.contains(tr3));
 
   const auto& [success_120_tr1tr2tr3, entering_tr_120_tr1tr2tr3] =
-      simulator.get_entering_trains(120, {tr1, tr2, tr3}, {}, false);
+      simulator.get_entering_trains(120, {tr2, tr3}, {tr1}, false);
   EXPECT_TRUE(success_120_tr1tr2tr3);
   // Expect tr5
   EXPECT_EQ(entering_tr_120_tr1tr2tr3.size(), 1);
   EXPECT_TRUE(entering_tr_120_tr1tr2tr3.contains(tr5));
 
   // Milestones
-  simulator.append_train_edge_to_tr(tr1, l0_l1);
-  simulator.append_train_edge_to_tr(tr1, l1_l2);
-  simulator.append_train_edge_to_tr(tr1, l2_l3);
-  simulator.append_train_edge_to_tr(tr1, l3_g00);
-  simulator.append_train_edge_to_tr(tr1, g00_g01);
-  simulator.append_train_edge_to_tr(tr3, l0_l1);
+  simulator.set_train_edges_of_tr(tr1, {l0_l1, l1_l2, l2_l3, l3_g00, g00_g01});
+  simulator.set_train_edges_of_tr(tr2, {});
+  simulator.set_train_edges_of_tr(tr3, {l0_l1});
+  simulator.set_train_edges_of_tr(tr4, {});
+  simulator.set_train_edges_of_tr(tr5, {});
 
   const auto& milestones_tr1 = simulator.edge_milestones(tr1);
   EXPECT_EQ(milestones_tr1.size(), 6);
