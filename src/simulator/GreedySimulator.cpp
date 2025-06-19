@@ -231,9 +231,12 @@ cda_rail::simulator::GreedySimulator::get_entering_trains(
     if (it != entry_order.begin()) {
       // Check if any previous train in the entry order is already in the
       // network
-      const auto& prev_tr = *(it - 1);
-      if (!tr_present.contains(prev_tr) && !tr_left.contains(prev_tr)) {
-        // Previous train is not in the network, so tr cannot enter yet
+      const auto& prev_tr    = *(it - 1);
+      const auto& prev_entry = instance->get_schedule(prev_tr).get_entry();
+      if (((entry_node != prev_entry) || !tr_present.contains(prev_tr)) &&
+          !tr_left.contains(prev_tr)) {
+        // Previous train is not in the network (or left if needed), so tr
+        // cannot enter yet
         continue;
       }
     }
