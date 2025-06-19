@@ -741,7 +741,150 @@ TEST(GreedySimulator, EdgePositions) {
                cda_rail::exceptions::InvalidInputException);
 }
 
-TEST(GreedySimulator, IsOkToEnter) {}
+TEST(GreedySimulator, IsOkToEnter) {
+  Network network;
+  network.add_vertex("v00", VertexType::TTD);
+  network.add_vertex("v01", VertexType::TTD);
+  network.add_vertex("v10", VertexType::TTD);
+  network.add_vertex("v11", VertexType::TTD);
+  network.add_vertex("v2", VertexType::NoBorder);
+  network.add_vertex("v3", VertexType::TTD);
+  network.add_vertex("v4", VertexType::TTD);
+
+  const auto v00_v10 = network.add_edge("v00", "v10", 100, 55, true);
+  const auto v10_v2  = network.add_edge("v10", "v2", 10, 55, false);
+  const auto v2_v3   = network.add_edge("v2", "v3", 10, 55, false);
+  const auto v3_v4   = network.add_edge("v3", "v4", 100, 55, true);
+  const auto v01_v11 = network.add_edge("v01", "v11", 101, 30, true);
+  const auto v11_v2  = network.add_edge("v11", "v2", 10, 30, false);
+
+  network.add_successor(v00_v10, v10_v2);
+  network.add_successor(v10_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+  network.add_successor(v01_v11, v11_v2);
+  network.add_successor(v11_v2, v2_v3);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto                                              tr1 =
+      timetable.add_train("Train1", 50, 55, 1, 2, true, {0, 60}, 10, "v01",
+                          {360, 420}, 10, "v4", network);
+  const auto tr2 =
+      timetable.add_train("Train2", 50, 55, 1, 2, true, {0, 60}, 20, "v01",
+                          {360, 420}, 10, "v4", network);
+  const auto tr3 =
+      timetable.add_train("Train3", 50, 55, 1, 3, true, {0, 60}, 25, "v00",
+                          {360, 420}, 10, "v4", network);
+  const auto tr4 =
+      timetable.add_train("Train4", 50, 55, 1, 1, true, {0, 60}, 15, "v01",
+                          {360, 420}, 10, "v4", network);
+  const auto tr5 =
+      timetable.add_train("Train5", 50, 55, 1, 3, true, {0, 60}, 30, "v00",
+                          {360, 420}, 10, "v4", network);
+
+  RouteMap routes;
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::simulator::GreedySimulator simulator(instance,
+                                                 {{v10_v2, v11_v2, v2_v3}});
+
+  simulator.set_train_edges_of_tr(tr1, {v01_v11, v11_v2, v2_v3, v3_v4});
+  simulator.set_train_edges_of_tr(tr2, {v01_v11, v11_v2, v2_v3, v3_v4});
+  simulator.set_train_edges_of_tr(tr3, {v00_v10, v10_v2, v2_v3, v3_v4});
+  simulator.set_train_edges_of_tr(tr4, {v01_v11, v11_v2, v2_v3, v3_v4});
+  simulator.set_train_edges_of_tr(tr5, {v00_v10, v10_v2, v2_v3, v3_v4});
+
+  simulator.set_ttd_orders_of_ttd(0, {tr1, tr2, tr3, tr4, tr5});
+
+  const auto tr_on_edges = simulator.tr_on_edges();
+
+  // tr1: v01 with 10*10/4 = 25m braking distance
+  // tr2: v01 with 20*20/4 = 100m braking distance
+  // tr3: v00 with 25*25/6 = 104.1667m braking distance
+  // tr4: v01 with 15*15/2 = 112.5m braking distance
+  // tr5: v00 with 30*30/6 = 150m braking distance
+
+  std::vector<std::pair<double, double>> train_pos = {
+      {-1, -1}, // tr1
+      {-1, -1}, // tr2
+      {-1, -1}, // tr3
+      {-1, -1}, // tr4
+      {-1, -1}  // tr5
+  };
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr1, train_pos, {}, tr_on_edges));
+
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr2, train_pos, {}, tr_on_edges));
+  train_pos[tr1] = {50, 100};
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr2, train_pos, {tr1}, tr_on_edges));
+  train_pos[tr1] = {100.1, 150.1};
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr2, train_pos, {tr1}, tr_on_edges));
+  train_pos[tr1] = {200, 250};
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr2, train_pos, {tr1}, tr_on_edges));
+
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr3, train_pos, {tr1}, tr_on_edges));
+  train_pos[tr2] = {40, 90};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  train_pos[tr2] = {55, 105};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  train_pos[tr2] = {100, 150};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  train_pos[tr2] = {112, 162};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  train_pos[tr2] = {120, 170};
+  EXPECT_TRUE(
+      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  train_pos[tr1] = {220, 270};
+  train_pos[tr2] = {200, 250};
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr3, train_pos, {tr2}, tr_on_edges));
+
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr4, train_pos, {tr2}, tr_on_edges));
+  train_pos[tr3] = {40, 90};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr4, train_pos, {tr2, tr3}, tr_on_edges));
+  train_pos[tr3] = {55, 105};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr4, train_pos, {tr2, tr3}, tr_on_edges));
+  train_pos[tr3] = {100, 150};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr4, train_pos, {tr2, tr3}, tr_on_edges));
+  train_pos[tr3] = {112, 162};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr4, train_pos, {tr2, tr3}, tr_on_edges));
+  train_pos[tr3] = {120, 170};
+  EXPECT_TRUE(
+      simulator.is_ok_to_enter(tr4, train_pos, {tr2, tr3}, tr_on_edges));
+  train_pos[tr2] = {220, 270};
+  train_pos[tr3] = {200, 250};
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr4, train_pos, {tr3}, tr_on_edges));
+
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr5, train_pos, {tr3}, tr_on_edges));
+  train_pos[tr4] = {40, 90};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  train_pos[tr4] = {55, 105};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  train_pos[tr4] = {100, 150};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  train_pos[tr4] = {101, 151};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  train_pos[tr4] = {121, 171};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  train_pos[tr4] = {150.1, 200.1};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  train_pos[tr4] = {151.1, 201.1};
+  EXPECT_TRUE(
+      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+}
 
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
