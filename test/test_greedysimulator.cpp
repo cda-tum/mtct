@@ -836,6 +836,9 @@ TEST(GreedySimulator, IsOkToEnter) {
   EXPECT_FALSE(
       simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
   train_pos[tr2] = {120, 170};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  train_pos[tr2] = {121, 171};
   EXPECT_TRUE(
       simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
   train_pos[tr1] = {220, 270};
