@@ -460,14 +460,17 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
     if (!ttd_sec.has_value()) {
       continue;
     }
-    for (const auto& other_tr : ttd_orders.at(ttd_sec.value())) {
-      if (other_tr == tr || !trains_in_network.contains(other_tr)) {
-        continue; // Skip the train itself or trains that are not in the network
-      }
-      const auto& other_pos = train_positions.at(other_tr);
-      if (is_on_ttd(tr, ttd_sec.value(), other_pos)) {
-        return false; // Other train is occupying the TTD section
-      }
+    const auto& ttd_order = ttd_orders.at(ttd_sec.value());
+    const auto  ttd_pos   = std::find(ttd_order.begin(), ttd_order.end(), tr);
+    if (ttd_pos == ttd_order.begin()) {
+      continue; // Train is the first in the TTD order, no other train can block
+                // it
+    }
+    const auto& other_tr  = *(ttd_pos - 1); // Previous train in the TTD order
+    const auto& other_pos = train_positions.at(other_tr);
+    if (!trains_in_network.contains(other_tr) ||
+        !is_behind_ttd(other_tr, ttd_sec.value(), other_pos)) {
+      return false; // Other train is occupying the TTD section
     }
   }
   return true;
