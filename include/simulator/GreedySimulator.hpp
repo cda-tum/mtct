@@ -34,6 +34,7 @@ class GreedySimulator_EdgePositions_Test;
 class GreedySimulator_TrainsOnEdges_Test;
 class GreedySimulator_IsOkToEnter_Test;
 class GreedySimulator_AbsoluteDistanceMA_Test;
+class GreedySimulator_FutureSpeedRestrictionConstraints_Test;
 #endif
 
 namespace cda_rail::simulator {
@@ -54,6 +55,7 @@ private:
   FRIEND_TEST(::GreedySimulator, TrainsOnEdges);
   FRIEND_TEST(::GreedySimulator, IsOkToEnter);
   FRIEND_TEST(::GreedySimulator, AbsoluteDistanceMA);
+  FRIEND_TEST(::GreedySimulator, FutureSpeedRestrictionConstraints);
 #endif
 
   enum class TTDOccupationType : std::uint8_t {
