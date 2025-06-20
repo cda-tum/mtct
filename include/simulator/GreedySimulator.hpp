@@ -68,12 +68,12 @@ private:
                       const std::unordered_set<size_t>& tr_left,
                       bool late_entry_possible) const;
   [[nodiscard]] std::vector<double> edge_milestones(size_t tr) const;
-  [[nodiscard]] std::tuple<bool, std::pair<double, double>,
+  [[nodiscard]] std::tuple<bool, std::pair<bool, bool>,
                            std::pair<double, double>>
   get_position_on_route_edge(size_t tr, const std::pair<double, double>& pos,
                              size_t              edge_number,
                              std::vector<double> milestones = {}) const;
-  [[nodiscard]] std::tuple<bool, std::pair<double, double>,
+  [[nodiscard]] std::tuple<bool, std::pair<bool, bool>,
                            std::pair<double, double>>
   get_position_on_edge(size_t tr, const std::pair<double, double>& pos,
                        size_t              edge_id,
@@ -133,10 +133,10 @@ private:
       const std::vector<std::pair<double, double>>&  train_positions,
       const std::unordered_set<size_t>&              trains_in_network,
       const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
-  [[nodiscard]] std::pair<double, double> get_future_max_speed_constraints(
-      size_t tr, const Train& train, double pos, double v_0,
-      double max_displacement, int dt,
-      bool also_limit_by_leaving_edges = true) const;
+  [[nodiscard]] std::pair<double, double>
+  get_future_max_speed_constraints(size_t tr, const Train& train, double pos,
+                                   double v_0, double max_displacement, int dt,
+                                   bool also_limit_by_leaving_edges) const;
 
   [[nodiscard]] double
   get_ma(size_t tr, int t, int dt,

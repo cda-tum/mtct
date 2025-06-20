@@ -275,7 +275,7 @@ cda_rail::simulator::GreedySimulator::edge_milestones(size_t tr) const {
   return milestones;
 }
 
-std::tuple<bool, std::pair<double, double>, std::pair<double, double>>
+std::tuple<bool, std::pair<bool, bool>, std::pair<double, double>>
 cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
     size_t tr, const std::pair<double, double>& pos, size_t edge_number,
     std::vector<double> milestones) const {
@@ -579,7 +579,7 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
       if (check_other_tr && first_edge) {
         // Other train could be behind train on the same edge
         const auto [occ_tr, det_occ_tr, det_pos_tr] =
-            get_position_on_route_edge(tr, train_positions.at(tr), edge_id,
+            get_position_on_route_edge(tr, train_positions.at(tr), i,
                                        milestones);
         if (occ_tr && det_pos_tr.first >= det_pos.second) {
           check_other_tr = false; // Train is not behind the other train
@@ -633,7 +633,7 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
         "Maximum displacement must be non-negative.");
   }
 
-  double max_v = train.max_speed;
+  double max_v = std::min(train.max_speed, v_0 + (train.acceleration * dt));
   double ma    = max_displacement;
 
   const auto milestones = edge_milestones(tr);
@@ -650,7 +650,7 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     const auto& edge_id                = train_edges.at(tr).at(i);
     const auto& edge                   = instance->const_n().get_edge(edge_id);
     const auto [occ, det_occ, det_pos] = get_position_on_route_edge(
-        tr, {pos - train.length, pos}, edge_id, milestones);
+        tr, {pos - train.length, pos}, i, milestones);
     if (det_occ.second || (!also_limit_by_leaving_edges && occ)) {
       max_v = std::min(max_v, edge.max_speed); // Train is on the edge
     } else {
@@ -662,8 +662,8 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
       } else {
         // Train cannot reach the next edge, so we limit the moving authority
         ma = std::min(ma, milestones.at(i) +
-                              edge.max_speed * edge.max_speed /
-                                  (2.0 * train.deceleration) -
+                              ((edge.max_speed * edge.max_speed) /
+                               (2.0 * train.deceleration)) -
                               pos);
       }
     }
