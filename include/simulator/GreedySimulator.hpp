@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CustomExceptions.hpp"
+#include "datastructure/Train.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
 // NOLINTNEXTLINE(misc-include-cleaner)
@@ -125,6 +126,18 @@ private:
                        const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
   [[nodiscard]] double max_displacement(const Train& train, double v_0,
                                         int dt) const;
+  [[nodiscard]] double get_absolute_distance_ma(
+      size_t tr, double max_displacement,
+      const std::vector<std::pair<double, double>>&  train_positions,
+      const std::unordered_set<size_t>&              trains_in_network,
+      const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
+
+  [[nodiscard]] double
+  get_ma(size_t tr, int t, int dt,
+         const std::vector<std::pair<double, double>>&  train_positions,
+         const std::unordered_set<size_t>&              trains_in_network,
+         const std::unordered_set<size_t>&              trains_left,
+         const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
 
 public:
   explicit GreedySimulator(

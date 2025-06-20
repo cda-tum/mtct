@@ -490,3 +490,100 @@ double cda_rail::simulator::GreedySimulator::max_displacement(
   return cda_rail::max_braking_pos_after_dt_linear_movement(
       v_0, train.max_speed, train.acceleration, train.deceleration, dt);
 }
+
+double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
+    size_t tr, double max_displacement,
+    const std::vector<std::pair<double, double>>&  train_positions,
+    const std::unordered_set<size_t>&              trains_in_network,
+    const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
+  /**
+   * Calculate the shortest distance of tr to the following train.
+   *
+   * @param tr: The id of the train for which the distance is calculated.
+   * @param max_displacement: The maximum displacement of the train (no search
+   * after this distance).
+   * @param train_positions: A vector of pairs containing the rear and front
+   * positions of each train in the network.
+   * @param trains_in_network: A set of train ids that are currently in the
+   * network.
+   * @param tr_on_edges: A vector of unordered sets, where each set contains the
+   * indices of trains that are routed on a specific edge.
+   *
+   * @return: The absolute distance of the train to the next train in the
+   * network.
+   */
+  if (!trains_in_network.contains(tr)) {
+    throw cda_rail::exceptions::ConsistencyException(
+        "Train " + std::to_string(tr) + " is not in the network.");
+  }
+  if (max_displacement < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Maximum displacement must be non-negative.");
+  }
+
+  const auto milestones = edge_milestones(tr);
+  for (size_t i = 0; i < train_edges.at(tr).size() &&
+                     milestones.at(i) + EPS <
+                         train_positions.at(tr).second + max_displacement;
+       ++i) {
+    if (milestones.at(i + 1) >= train_positions.at(tr).second) {
+      continue; // The edge is behind the train's front position
+    }
+    const auto& edge_id = train_edges.at(tr).at(i);
+
+    // First check if TTD can be entered
+    if (milestones.at(i) >= train_positions.at(tr).second) {
+      const auto ttd_sec = get_ttd(edge_id);
+      if (ttd_sec.has_value()) {
+        bool check_ttd = true;
+        if (i >= 1) {
+          const auto& prev_edge_id = train_edges.at(tr).at(i - 1);
+          const auto  prev_ttd_sec = get_ttd(prev_edge_id);
+          if (prev_ttd_sec.has_value() &&
+              prev_ttd_sec.value() == ttd_sec.value()) {
+            check_ttd = false; // Previous edge is part of the same TTD section,
+                               // hence, TTD condition has already been checked
+          }
+        }
+        if (check_ttd) {
+          const auto& ttd_order = ttd_orders.at(ttd_sec.value());
+          const auto  ttd_pos =
+              std::find(ttd_order.begin(), ttd_order.end(), tr);
+          if (ttd_pos != ttd_order.begin()) {
+            const auto& other_tr =
+                *(ttd_pos - 1); // Previous train in the TTD order
+            const auto& other_pos = train_positions.at(other_tr);
+            if (!trains_in_network.contains(other_tr) ||
+                !is_behind_ttd(other_tr, ttd_sec.value(), other_pos)) {
+              return milestones.at(i) -
+                     train_positions.at(tr).second; // Other train is occupying
+                                                    // the future TTD section
+            }
+          }
+        }
+      }
+    }
+
+    double      potential_limit   = milestones.at(i + 1) - milestones.at(i);
+    bool        found_other_train = false;
+    const auto& potential_trains  = tr_on_edges.at(edge_id);
+    for (const auto& other_tr : potential_trains) {
+      if (other_tr == tr || !trains_in_network.contains(other_tr)) {
+        continue; // Skip the train itself or trains that are not in the network
+      }
+      const auto& other_pos = train_positions.at(other_tr);
+      const auto [occ, det_occ, det_pos] =
+          get_position_on_edge(other_tr, other_pos, edge_id);
+      if (occ) {
+        found_other_train = true;
+        potential_limit   = std::min(potential_limit, det_pos.first);
+      }
+    }
+    if (found_other_train) {
+      return milestones.at(i) + potential_limit -
+             train_positions.at(tr).second; // Found a train on the edge
+    }
+  }
+  return max_displacement; // No train found within the maximum displacement
+                           // range
+}
