@@ -522,11 +522,12 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
   }
 
   const auto milestones = edge_milestones(tr);
+  bool       first_edge = true;
   for (size_t i = 0; i < train_edges.at(tr).size() &&
                      milestones.at(i) + EPS <
                          train_positions.at(tr).second + max_displacement;
        ++i) {
-    if (milestones.at(i + 1) >= train_positions.at(tr).second) {
+    if (milestones.at(i + 1) <= train_positions.at(tr).second) {
       continue; // The edge is behind the train's front position
     }
     const auto& edge_id = train_edges.at(tr).at(i);
@@ -574,15 +575,29 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
       const auto& other_pos = train_positions.at(other_tr);
       const auto [occ, det_occ, det_pos] =
           get_position_on_edge(other_tr, other_pos, edge_id);
-      if (occ) {
+      bool check_other_tr = occ;
+      if (check_other_tr && first_edge) {
+        // Other train could be behind train on the same edge
+        const auto [occ_tr, det_occ_tr, det_pos_tr] =
+            get_position_on_route_edge(tr, train_positions.at(tr), edge_id,
+                                       milestones);
+        if (occ_tr && det_pos_tr.first >= det_pos.second) {
+          check_other_tr = false; // Train is not behind the other train
+        }
+      }
+      if (check_other_tr) {
         found_other_train = true;
         potential_limit   = std::min(potential_limit, det_pos.first);
       }
     }
     if (found_other_train) {
-      return milestones.at(i) + potential_limit -
-             train_positions.at(tr).second; // Found a train on the edge
+      return std::min(
+          max_displacement,
+          milestones.at(i) + potential_limit -
+              train_positions.at(tr).second); // Found a train on the edge
     }
+    first_edge = false; // After the first edge, we do not need to check if
+                        // other train might be behind
   }
   return max_displacement; // No train found within the maximum displacement
                            // range
