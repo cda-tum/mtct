@@ -100,4 +100,7 @@ double get_line_speed(double v_1, double v_2, double v_min, double v_max,
                       double a, double d, double s, double t);
 
 double braking_distance(double v, double d);
+
+double max_braking_pos_after_dt_linear_movement(double v_0, double v_max,
+                                                double a, double d, int dt);
 } // namespace cda_rail

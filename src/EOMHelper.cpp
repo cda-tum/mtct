@@ -792,3 +792,58 @@ double cda_rail::braking_distance(double v, double d) {
 
   return (v * v) / (2 * d);
 }
+
+double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
+                                                          double v_max,
+                                                          double a, double d,
+                                                          int dt) {
+  /**
+   * Calculates the maximum position of the braking point after dt seconds.
+   * The movement within the dt seconds is linear, i.e., the acceleration is
+   * constant.
+   *
+   * @param v_0 Initial speed
+   * @param v_max Maximum speed
+   * @param a Acceleration
+   * @param d Deceleration
+   * @param dt Time in seconds
+   */
+  if (std::abs(v_0) < EPS) {
+    v_0 = 0;
+  }
+  if (std::abs(v_max) < EPS) {
+    v_max = 0;
+  }
+  if (std::abs(a) < EPS) {
+    a = 0;
+  }
+  if (std::abs(d) < EPS) {
+    d = 0;
+  }
+  if (std::abs(v_0 - v_max) < EPS) {
+    v_max = v_0;
+  }
+
+  if (dt < 0) {
+    throw exceptions::InvalidInputException("Time must be non-negative.");
+  }
+  if (v_0 < 0) {
+    throw exceptions::InvalidInputException(
+        "Initial speed must be non-negative.");
+  }
+  if (v_max < v_0) {
+    throw exceptions::InvalidInputException(
+        "Maximum speed must be greater than or equal to initial speed.");
+  }
+  if (a <= 0) {
+    throw exceptions::InvalidInputException("Acceleration must be positive.");
+  }
+  if (d <= 0) {
+    throw exceptions::InvalidInputException("Deceleration must be positive.");
+  }
+
+  double v_1 = std::min(v_max, v_0 + a * dt);
+  double x_1 = (v_0 + v_1) * dt / 2;     // Distance travelled in dt seconds
+  double bd  = braking_distance(v_1, d); // Braking distance at v_1
+  return x_1 + bd; // Maximum position of the braking point
+}
