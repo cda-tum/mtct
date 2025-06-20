@@ -1062,5 +1062,126 @@ TEST(GreedySimulator, AbsoluteDistanceMA) {
                cda_rail::exceptions::TrainNotExistentException);
 }
 
+TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", VertexType::TTD);
+  const auto v4 = network.add_vertex("v4", VertexType::TTD);
+  const auto v5 = network.add_vertex("v5", VertexType::TTD);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 100, 40, true);
+  const auto v1_v2 = network.add_edge(v1, v2, 110, 30, true);
+  const auto v2_v3 = network.add_edge(v2, v3, 200, 20, true);
+  const auto v3_v4 = network.add_edge(v3, v4, 100, 50, true);
+  const auto v4_v5 = network.add_edge(v4, v5, 1500, 55, true);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+  network.add_successor(v3_v4, v4_v5);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 200, 51, 3, 2, true, {0, 60},
+                                       10, v0, {360, 420}, 10, v5, network);
+
+  RouteMap routes;
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::simulator::GreedySimulator simulator(instance, {{}});
+  simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3, v3_v4, v4_v5});
+
+  const auto& train =
+      simulator.instance->get_timetable().get_train_list().get_train(tr1);
+
+  const auto [ma1, vm1] = simulator.get_future_max_speed_constraints(
+      tr1, train, 0, 10, 500, 10, true);
+  EXPECT_EQ(ma1, 310);
+  EXPECT_EQ(vm1, 30);
+  const auto [ma1tol, vm1tol] = simulator.get_future_max_speed_constraints(
+      tr1, train, -cda_rail::EPS / 2.0, 10, 500, 10, true);
+  EXPECT_EQ(ma1tol, 310);
+  EXPECT_EQ(vm1tol, 30);
+  const auto [ma2, vm2] = simulator.get_future_max_speed_constraints(
+      tr1, train, 0, 10, 500, 2, true);
+  EXPECT_EQ(ma2, 310);
+  EXPECT_EQ(vm2, 16);
+  const auto [ma2_0, vm2_0] =
+      simulator.get_future_max_speed_constraints(tr1, train, 0, 10, 0, 2, true);
+  EXPECT_EQ(ma2_0, 0);
+  EXPECT_EQ(vm2_0, 16);
+  const auto [ma2_0tol, vm2_0tol] = simulator.get_future_max_speed_constraints(
+      tr1, train, 0, 10, -cda_rail::EPS / 2.0, 2, true);
+  EXPECT_EQ(ma2_0tol, 0);
+  EXPECT_EQ(vm2_0tol, 16);
+  const auto [ma3, vm3] = simulator.get_future_max_speed_constraints(
+      tr1, train, 0, 10, 200, 10, true);
+  EXPECT_EQ(ma3, 200);
+  EXPECT_EQ(vm3, 30);
+  const auto [ma4, vm4] = simulator.get_future_max_speed_constraints(
+      tr1, train, 0, 10, 100, 10, true);
+  EXPECT_EQ(ma4, 100);
+  EXPECT_EQ(vm4, 40);
+  const auto [ma5, vm5] = simulator.get_future_max_speed_constraints(
+      tr1, train, 0, 10, 50, 10, true);
+  EXPECT_EQ(ma5, 50);
+  EXPECT_EQ(vm5, 40);
+
+  const auto [ma6, vm6] = simulator.get_future_max_speed_constraints(
+      tr1, train, 50, 40, 600, 10, true);
+  EXPECT_EQ(ma6, 600);
+  EXPECT_EQ(vm6, 20);
+  const auto [ma7, vm7] = simulator.get_future_max_speed_constraints(
+      tr1, train, 50, 40, 1200, 6, true);
+  EXPECT_EQ(ma7, 985);
+  EXPECT_EQ(vm7, 20);
+
+  const auto [ma8, vm8] = simulator.get_future_max_speed_constraints(
+      tr1, train, 250, 19, 1000, 1, true);
+  EXPECT_EQ(ma8, 785);
+  EXPECT_EQ(vm8, 20);
+  const auto [ma9, vm9] = simulator.get_future_max_speed_constraints(
+      tr1, train, 250, 19, 1000, 1, false);
+  EXPECT_EQ(ma9, 785);
+  EXPECT_EQ(vm9, 20);
+
+  const auto [ma10, vm10] = simulator.get_future_max_speed_constraints(
+      tr1, train, 500, 19, 1000, 1, true);
+  EXPECT_EQ(ma10, 1000);
+  EXPECT_EQ(vm10, 20);
+  const auto [ma11, vm11] = simulator.get_future_max_speed_constraints(
+      tr1, train, 500, 19, 1000, 1, false);
+  EXPECT_EQ(ma11, 1000);
+  EXPECT_EQ(vm11, 22);
+
+  const auto [ma12, vm12] = simulator.get_future_max_speed_constraints(
+      tr1, train, 0, 0, 1000, 1, true);
+  EXPECT_EQ(ma12, 310);
+  EXPECT_EQ(vm12, 3);
+  const auto [ma12tol, vm12tol] = simulator.get_future_max_speed_constraints(
+      tr1, train, 0, -cda_rail::EPS / 2.0, 1000, 1, true);
+  EXPECT_EQ(ma12tol, 310);
+  EXPECT_EQ(vm12tol, 3);
+
+  EXPECT_THROW(simulator.get_future_max_speed_constraints(tr1, train, -1, 10,
+                                                          10, 10, true),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.get_future_max_speed_constraints(tr1, train, 10, -1,
+                                                          10, 10, true),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.get_future_max_speed_constraints(tr1, train, 10, 10,
+                                                          -1, 10, true),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.get_future_max_speed_constraints(tr1, train, 10, 10,
+                                                          10, -1, true),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.get_future_max_speed_constraints(1000, train, 10, 10,
+                                                          10, 10, true),
+               cda_rail::exceptions::TrainNotExistentException);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
