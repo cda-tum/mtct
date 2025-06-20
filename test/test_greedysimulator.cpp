@@ -751,12 +751,12 @@ TEST(GreedySimulator, IsOkToEnter) {
   network.add_vertex("v3", VertexType::TTD);
   network.add_vertex("v4", VertexType::TTD);
 
-  const auto v00_v10 = network.add_edge("v00", "v10", 100, 55, true);
-  const auto v10_v2  = network.add_edge("v10", "v2", 10, 55, false);
   const auto v2_v3   = network.add_edge("v2", "v3", 10, 55, false);
-  const auto v3_v4   = network.add_edge("v3", "v4", 100, 55, true);
-  const auto v01_v11 = network.add_edge("v01", "v11", 101, 30, true);
   const auto v11_v2  = network.add_edge("v11", "v2", 10, 30, false);
+  const auto v10_v2  = network.add_edge("v10", "v2", 10, 55, false);
+  const auto v01_v11 = network.add_edge("v01", "v11", 101, 30, true);
+  const auto v3_v4   = network.add_edge("v3", "v4", 100, 55, true);
+  const auto v00_v10 = network.add_edge("v00", "v10", 100, 55, true);
 
   network.add_successor(v00_v10, v10_v2);
   network.add_successor(v10_v2, v2_v3);
@@ -915,12 +915,12 @@ TEST(GreedySimulator, AbsoluteDistanceMA) {
   network.add_vertex("v3", VertexType::TTD);
   network.add_vertex("v4", VertexType::TTD);
 
-  const auto v00_v10 = network.add_edge("v00", "v10", 100, 55, true);
-  const auto v10_v2  = network.add_edge("v10", "v2", 10, 55, false);
-  const auto v2_v3   = network.add_edge("v2", "v3", 10, 55, false);
   const auto v3_v4   = network.add_edge("v3", "v4", 100, 55, true);
-  const auto v01_v11 = network.add_edge("v01", "v11", 101, 30, true);
+  const auto v10_v2  = network.add_edge("v10", "v2", 10, 55, false);
   const auto v11_v2  = network.add_edge("v11", "v2", 10, 30, false);
+  const auto v2_v3   = network.add_edge("v2", "v3", 10, 55, false);
+  const auto v00_v10 = network.add_edge("v00", "v10", 100, 55, true);
+  const auto v01_v11 = network.add_edge("v01", "v11", 101, 30, true);
 
   network.add_successor(v00_v10, v10_v2);
   network.add_successor(v10_v2, v2_v3);
@@ -1071,11 +1071,11 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
   const auto v4 = network.add_vertex("v4", VertexType::TTD);
   const auto v5 = network.add_vertex("v5", VertexType::TTD);
 
+  const auto v4_v5 = network.add_edge(v4, v5, 1500, 55, true);
+  const auto v2_v3 = network.add_edge(v2, v3, 200, 20, true);
   const auto v0_v1 = network.add_edge(v0, v1, 100, 40, true);
   const auto v1_v2 = network.add_edge(v1, v2, 110, 30, true);
-  const auto v2_v3 = network.add_edge(v2, v3, 200, 20, true);
   const auto v3_v4 = network.add_edge(v3, v4, 100, 50, true);
-  const auto v4_v5 = network.add_edge(v4, v5, 1500, 55, true);
 
   network.add_successor(v0_v1, v1_v2);
   network.add_successor(v1_v2, v2_v3);
