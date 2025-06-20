@@ -123,6 +123,8 @@ private:
                        size_t tr, const std::vector<std::pair<double, double>>& train_positions,
                        const std::unordered_set<size_t>&              trains_in_network,
                        const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
+  [[nodiscard]] double max_displacement(const Train& train, double v_0,
+                                        int dt) const;
 
 public:
   explicit GreedySimulator(

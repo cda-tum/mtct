@@ -475,3 +475,18 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
   }
   return true;
 }
+
+double cda_rail::simulator::GreedySimulator::max_displacement(
+    const cda_rail::Train& train, double v_0, int dt) const {
+  /**
+   * Calculate the maximum displacement of a train in a given time step.
+   *
+   * @param train: The train for which the maximum displacement is calculated.
+   * @param v_0: The initial velocity of the train in m/s.
+   * @param dt: The time step in seconds.
+   *
+   * @return: The maximum displacement of the train in the given time step.
+   */
+  return cda_rail::max_braking_pos_after_dt_linear_movement(
+      v_0, train.max_speed, train.acceleration, train.deceleration, dt);
+}
