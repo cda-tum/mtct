@@ -766,7 +766,7 @@ TEST(GreedySimulator, IsOkToEnter) {
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto                                              tr1 =
-      timetable.add_train("Train1", 50, 55, 1, 2, true, {0, 60}, 10, "v01",
+      timetable.add_train("Train1", 50, 55, 1, 1, true, {0, 60}, 15, "v01",
                           {360, 420}, 10, "v4", network);
   const auto tr2 =
       timetable.add_train("Train2", 50, 55, 1, 2, true, {0, 60}, 20, "v01",
@@ -779,6 +779,9 @@ TEST(GreedySimulator, IsOkToEnter) {
                           {360, 420}, 10, "v4", network);
   const auto tr5 =
       timetable.add_train("Train5", 50, 55, 1, 3, true, {0, 60}, 30, "v00",
+                          {360, 420}, 10, "v4", network);
+  const auto tr6 =
+      timetable.add_train("Train6", 50, 55, 1, 2, true, {0, 60}, 20, "v00",
                           {360, 420}, 10, "v4", network);
 
   RouteMap routes;
@@ -794,23 +797,26 @@ TEST(GreedySimulator, IsOkToEnter) {
   simulator.set_train_edges_of_tr(tr3, {v00_v10, v10_v2, v2_v3, v3_v4});
   simulator.set_train_edges_of_tr(tr4, {v01_v11, v11_v2, v2_v3, v3_v4});
   simulator.set_train_edges_of_tr(tr5, {v00_v10, v10_v2, v2_v3, v3_v4});
+  simulator.set_train_edges_of_tr(tr6, {v00_v10, v10_v2, v2_v3, v3_v4});
 
-  simulator.set_ttd_orders_of_ttd(0, {tr1, tr2, tr3, tr4, tr5});
+  simulator.set_ttd_orders_of_ttd(0, {tr1, tr2, tr3, tr4, tr5, tr6});
 
   const auto tr_on_edges = simulator.tr_on_edges();
 
-  // tr1: v01 with 10*10/4 = 25m braking distance
+  // tr1: v01 with 15*15/2 = 112.5m braking distance
   // tr2: v01 with 20*20/4 = 100m braking distance
   // tr3: v00 with 25*25/6 = 104.1667m braking distance
   // tr4: v01 with 15*15/2 = 112.5m braking distance
   // tr5: v00 with 30*30/6 = 150m braking distance
+  // tr6: v00 with 20*20/4 = 100m braking distance
 
   std::vector<std::pair<double, double>> train_pos = {
       {-1, -1}, // tr1
       {-1, -1}, // tr2
       {-1, -1}, // tr3
       {-1, -1}, // tr4
-      {-1, -1}  // tr5
+      {-1, -1}, // tr5
+      {-1, -1}  // tr6
   };
   EXPECT_TRUE(simulator.is_ok_to_enter(tr1, train_pos, {}, tr_on_edges));
 
@@ -887,6 +893,16 @@ TEST(GreedySimulator, IsOkToEnter) {
   train_pos[tr4] = {151.1, 201.1};
   EXPECT_TRUE(
       simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  train_pos[tr3] = {220, 270};
+  train_pos[tr4] = {200, 250};
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr5, train_pos, {tr4}, tr_on_edges));
+
+  train_pos[tr5] = {99.9, 149.9};
+  EXPECT_FALSE(
+      simulator.is_ok_to_enter(tr6, train_pos, {tr4, tr5}, tr_on_edges));
+  train_pos[tr5] = {100.1, 150.1};
+  EXPECT_TRUE(
+      simulator.is_ok_to_enter(tr6, train_pos, {tr4, tr5}, tr_on_edges));
 }
 
 // NOLINTEND
