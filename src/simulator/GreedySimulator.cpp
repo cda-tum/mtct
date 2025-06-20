@@ -602,3 +602,71 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
   return max_displacement; // No train found within the maximum displacement
                            // range
 }
+
+std::pair<double, double>
+cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
+    size_t tr, const cda_rail::Train& train, double pos, double v_0,
+    double max_displacement, int dt, bool also_limit_by_leaving_edges) const {
+  /**
+   * This function calculates the future maximum speed constraints for a train.
+   * If an edge is reachable, the trains speed is restricted directly.
+   * Otherwise, future speed restrictions are modelled through restrictions on
+   * the trains moving authority to ensure braking well in advance.
+   *
+   * @param tr: The id of the train for which the constraints are calculated.
+   * @param train: The train object containing the train's properties.
+   * @param pos: The current position of the train on its route.
+   * @param v_0: The initial velocity of the train in m/s.
+   * @param max_displacement: The maximum displacement of the train in the next
+   * time step.
+   * @param dt: The time step in seconds.
+   * @param also_limit_by_leaving_edges: If true, the speed is limited by the
+   * edges the train is leaving, otherwise only by the front of the train.
+   *
+   * @return: A pair of doubles representing the:
+   * - maximum moving authority from the trains current position and
+   * - the maximum speed allowed for the next speed
+   */
+
+  if (max_displacement < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Maximum displacement must be non-negative.");
+  }
+
+  double max_v = train.max_speed;
+  double ma    = max_displacement;
+
+  const auto milestones = edge_milestones(tr);
+  for (size_t i = 0; i < train_edges.at(tr).size() &&
+                     milestones.at(i) + EPS < pos + max_displacement;
+       ++i) {
+    if (milestones.at(i + 1) <= pos - train.length) {
+      continue; // Train has fully left the edge already
+    }
+    if (!also_limit_by_leaving_edges && milestones.at(i + 1) <= pos) {
+      continue; // Train's front has already left the edge
+    }
+
+    const auto& edge_id                = train_edges.at(tr).at(i);
+    const auto& edge                   = instance->const_n().get_edge(edge_id);
+    const auto [occ, det_occ, det_pos] = get_position_on_route_edge(
+        tr, {pos - train.length, pos}, edge_id, milestones);
+    if (det_occ.second || (!also_limit_by_leaving_edges && occ)) {
+      max_v = std::min(max_v, edge.max_speed); // Train is on the edge
+    } else {
+      // Can the train reach the next edge within one time step?
+      const auto max_dist = (v_0 + edge.max_speed) * dt / 2.0;
+      if (pos + max_dist >= milestones.at(i)) {
+        // Train can reach the edge -> limit speed directly
+        max_v = std::min(max_v, edge.max_speed);
+      } else {
+        // Train cannot reach the next edge, so we limit the moving authority
+        ma = std::min(ma, milestones.at(i) +
+                              edge.max_speed * edge.max_speed /
+                                  (2.0 * train.deceleration) -
+                              pos);
+      }
+    }
+  }
+  return {ma, max_v};
+}
