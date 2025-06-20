@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdlib>
 #include <limits>
 #include <optional>
 #include <string>
@@ -628,9 +629,31 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
    * - the maximum speed allowed for the next speed
    */
 
+  if (std::abs(pos) < EPS) {
+    pos = 0;
+  }
+  if (std::abs(v_0) < EPS) {
+    v_0 = 0;
+  }
+  if (std::abs(max_displacement) < EPS) {
+    max_displacement = 0;
+  }
+
+  if (pos < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Position must be non-negative.");
+  }
+  if (v_0 < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Initial velocity must be non-negative.");
+  }
   if (max_displacement < 0) {
     throw cda_rail::exceptions::InvalidInputException(
         "Maximum displacement must be non-negative.");
+  }
+  if (dt < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Time step must be non-negative.");
   }
 
   double max_v = std::min(train.max_speed, v_0 + (train.acceleration * dt));
