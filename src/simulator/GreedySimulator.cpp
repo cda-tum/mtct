@@ -693,3 +693,36 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
   }
   return {ma, max_v};
 }
+
+double cda_rail::simulator::GreedySimulator::get_next_stop_ma(
+    size_t tr, double max_displacement, double pos,
+    std::optional<size_t> next_stop_edge) const {
+  /*
+   * This function calculates the maximum moving authority to the next stop.
+   * This can either be the next scheduled stop or the last edge of the train's
+   * route, if the train does not leave the network.
+   *
+   * @param tr: The id of the train for which the moving authority is
+   * calculated.
+   * @param max_displacement: The maximum displacement of the train in the next
+   * time step.
+   * @param pos: The current position of the train on its route.
+   * @param next_stop_edge: The edge id of the next scheduled stop, if any.
+   *
+   * @return: The maximum moving authority to the next stop.
+   */
+
+  const auto milestones = edge_milestones(tr);
+  for (size_t i = 0; i < train_edges.at(tr).size() &&
+                     milestones.at(i) + EPS < pos + max_displacement;
+       ++i) {
+    if ((next_stop_edge.has_value() &&
+         (train_edges.at(tr).at(i) == next_stop_edge.value())) ||
+        ((i == train_edges.at(tr).size() - 1) &&
+         (instance->get_schedule(tr).get_exit() ==
+          instance->const_n().get_edge(train_edges.at(tr).at(i)).target))) {
+      return std::min(max_displacement, milestones.at(i + 1) - pos);
+    }
+  }
+  return max_displacement;
+}
