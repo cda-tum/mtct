@@ -145,7 +145,7 @@ private:
                                    bool also_limit_by_leaving_edges) const;
   [[nodiscard]] double
   get_next_stop_ma(size_t tr, double max_displacement, double pos,
-                   std::optional<size_t> next_stop_edge = {}) const;
+                   std::optional<size_t> next_stop_edge) const;
 
   [[nodiscard]] double
   get_ma(size_t tr, int t, int dt,
