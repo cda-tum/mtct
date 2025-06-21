@@ -712,14 +712,34 @@ double cda_rail::simulator::GreedySimulator::get_next_stop_ma(
    * @return: The maximum moving authority to the next stop.
    */
 
+  if (std::abs(pos) < EPS) {
+    pos = 0;
+  }
+  if (std::abs(max_displacement) < EPS) {
+    max_displacement = 0;
+  }
+
+  if (pos < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Position must be non-negative.");
+  }
+  if (max_displacement < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Maximum displacement must be non-negative.");
+  }
+
   const auto milestones = edge_milestones(tr);
   for (size_t i = 0; i < train_edges.at(tr).size() &&
                      milestones.at(i) + EPS < pos + max_displacement;
        ++i) {
+    if (milestones.at(i + 1) <= pos) {
+      continue; // Train's front has already left the edge
+    }
+
     if ((next_stop_edge.has_value() &&
          (train_edges.at(tr).at(i) == next_stop_edge.value())) ||
         ((i == train_edges.at(tr).size() - 1) &&
-         (instance->get_schedule(tr).get_exit() ==
+         (instance->get_schedule(tr).get_exit() !=
           instance->const_n().get_edge(train_edges.at(tr).at(i)).target))) {
       return std::min(max_displacement, milestones.at(i + 1) - pos);
     }
