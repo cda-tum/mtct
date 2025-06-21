@@ -320,11 +320,10 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
 
   const std::pair<double, double> milestone_pair = {
       milestones[edge_number], milestones[edge_number + 1]};
-  const auto& tr_obj = instance->get_timetable().get_train_list().get_train(tr);
-  const bool  is_on_edge   = (pos.second > milestone_pair.first + EPS &&
+  const bool is_on_edge   = (pos.second > milestone_pair.first + EPS &&
                            pos.first < milestone_pair.second - EPS);
-  const bool  rear_on_edge = is_on_edge && (pos.first >= milestone_pair.first);
-  const bool  front_on_edge =
+  const bool rear_on_edge = is_on_edge && (pos.first >= milestone_pair.first);
+  const bool front_on_edge =
       is_on_edge && (pos.second <= milestone_pair.second);
 
   return {is_on_edge,
