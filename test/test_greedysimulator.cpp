@@ -1183,7 +1183,7 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
                cda_rail::exceptions::TrainNotExistentException);
 }
 
-TEST(Helper, EoMDisplacement) {
+TEST(GreedySimulator, EoMDisplacement) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
   cda_rail::simulator::GreedySimulator simulator(instance, {});
 
