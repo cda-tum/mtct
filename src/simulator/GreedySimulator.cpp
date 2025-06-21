@@ -362,7 +362,7 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(
     if (!is_on_route(tr, edge_id)) {
       continue; // Train is not on this edge
     }
-    const auto [occ_status, detailed_occ_status, pos_on_edge] =
+    [[maybe_unused]] const auto [occ_status, detailed_occ_status, pos_on_edge] =
         get_position_on_edge(tr, pos, edge_id, milestones);
     if (occ_status &&
         (occupation_type == TTDOccupationType::OnlyOccupied ||
@@ -448,7 +448,7 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
         continue; // Skip the train itself or trains that are not in the network
       }
       const auto& other_pos = train_positions.at(other_tr);
-      const auto [occ, det_occ, det_pos] =
+      [[maybe_unused]] const auto [occ, det_occ, det_pos] =
           get_position_on_edge(other_tr, other_pos, edge_id);
       if (occ && det_pos.first <= bd - milestones[i] + EPS) {
         return false; // Other train is occupying the edge within the braking
@@ -573,12 +573,12 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
         continue; // Skip the train itself or trains that are not in the network
       }
       const auto& other_pos = train_positions.at(other_tr);
-      const auto [occ, det_occ, det_pos] =
+      [[maybe_unused]] const auto [occ, det_occ, det_pos] =
           get_position_on_edge(other_tr, other_pos, edge_id);
       bool check_other_tr = occ;
       if (check_other_tr && first_edge) {
         // Other train could be behind train on the same edge
-        const auto [occ_tr, det_occ_tr, det_pos_tr] =
+        [[maybe_unused]] const auto [occ_tr, det_occ_tr, det_pos_tr] =
             get_position_on_route_edge(tr, train_positions.at(tr), i,
                                        milestones);
         if (occ_tr && det_pos_tr.first >= det_pos.second) {
@@ -669,10 +669,11 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
       continue; // Train's front has already left the edge
     }
 
-    const auto& edge_id                = train_edges.at(tr).at(i);
-    const auto& edge                   = instance->const_n().get_edge(edge_id);
-    const auto [occ, det_occ, det_pos] = get_position_on_route_edge(
-        tr, {pos - train.length, pos}, i, milestones);
+    const auto& edge_id = train_edges.at(tr).at(i);
+    const auto& edge    = instance->const_n().get_edge(edge_id);
+    [[maybe_unused]] const auto [occ, det_occ, det_pos] =
+        get_position_on_route_edge(tr, {pos - train.length, pos}, i,
+                                   milestones);
     if (det_occ.second || (!also_limit_by_leaving_edges && occ)) {
       max_v = std::min(max_v, edge.max_speed); // Train is on the edge
     } else {
