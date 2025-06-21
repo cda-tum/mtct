@@ -1787,4 +1787,20 @@ TEST(Helper, ConsistencySmallNegativeValues) {
                cda_rail::exceptions::ConsistencyException);
 }
 
+TEST(Helper, EoMBraking) {
+  EXPECT_THROW(cda_rail::braking_distance(-1, 2),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_NO_THROW(cda_rail::braking_distance(0, 2));
+  EXPECT_THROW(cda_rail::braking_distance(1, -2),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::braking_distance(1, 0),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_NO_THROW(cda_rail::braking_distance(1, 1));
+
+  EXPECT_EQ(cda_rail::braking_distance(0, 2), 0);
+  EXPECT_EQ(cda_rail::braking_distance(1, 2), 1.0 / 4.0);
+  EXPECT_EQ(cda_rail::braking_distance(2, 2), 1);
+  EXPECT_EQ(cda_rail::braking_distance(3, 2), 9.0 / 4.0);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
