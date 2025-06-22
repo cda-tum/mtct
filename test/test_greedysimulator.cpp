@@ -9,6 +9,11 @@
 
 using namespace cda_rail;
 
+#define EXPECT_APPROX_EQ_6(a, b) EXPECT_APPROX_EQ(a, b, 1e-6)
+
+#define EXPECT_APPROX_EQ(a, b, c)                                              \
+  EXPECT_TRUE(std::abs((a) - (b)) < (c)) << (a) << " !=(approx.) " << (b)
+
 // NOLINTBEGIN
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
 
@@ -1594,6 +1599,107 @@ TEST(GreedySimulator, TimeToExitObjective) {
   EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
                    10, 14, 18, 128, 3, 4, 0),
                cda_rail::exceptions::InvalidInputException);
+}
+
+TEST(GreedySimulator, ExitHeadwaySpeedConstraint) {
+  Network network;
+  network.add_vertex("v0", VertexType::TTD);
+  network.add_vertex("v1", VertexType::TTD);
+  network.add_vertex("v2", VertexType::TTD);
+  network.add_vertex("v3", VertexType::TTD);
+
+  const auto v2_v3 = network.add_edge("v2", "v3", 400, 55, true);
+  const auto v1_v2 = network.add_edge("v1", "v2", 80, 55, true);
+  const auto v0_v1 = network.add_edge("v0", "v1", 20, 55, true);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 24, 3, 4, true, {0, 60},
+                                       15, "v0", {360, 420}, 12, "v3", network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.append_train_edge_to_tr(tr1, v0_v1);
+  simulator.append_train_edge_to_tr(tr1, v1_v2);
+
+  const auto& train1 = simulator.instance->get_train_list().get_train(tr1);
+
+  // Route does not reach exit vertex yet
+  EXPECT_EQ(simulator.get_max_speed_exit_headway(tr1, train1, 10, 10, 120, 2),
+            16);
+  EXPECT_EQ(simulator.get_max_speed_exit_headway(tr1, train1, 10, 10, 120, 5),
+            24);
+
+  simulator.append_train_edge_to_tr(tr1, v2_v3);
+
+  // v_0 = 0
+  // v_n = 12
+  // v_n^2-v_0^2 = 12^2 - 0^2 = 144 = 2*a*s = 2*3*s = 6*s
+  // s = 144 / 6 = 24 --> pos = 500-24 = 476
+  // This takes 12/3 = 4 seconds
+  EXPECT_APPROX_EQ(
+      simulator.get_max_speed_exit_headway(tr1, train1, 476, 0, 4, 2), 6,
+      LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(simulator.get_max_speed_exit_headway(
+                       tr1, train1, 476, -cda_rail::EPS / 2.0, 4, 2),
+                   6, LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(
+      simulator.get_max_speed_exit_headway(tr1, train1, 476, 0, 5, 2), 0,
+      LINE_SPEED_ACCURACY);
+
+  // v_0 = 0
+  // v_1 = 3 after 5 seconds
+  // x_1 = (0 + 3) * 5 / 2 = 7.5
+  // v_n = 12 after additional 3 seconds
+  // x_2 = (3 + 12) * 3 / 2 = 22.5
+  // s = 7.5 + 22.5 = 30 --> pos = 500 - 30 = 470
+  EXPECT_APPROX_EQ(
+      simulator.get_max_speed_exit_headway(tr1, train1, 470, 0, 8, 5), 3,
+      LINE_SPEED_ACCURACY);
+
+  // v_0 = 0
+  // v_1 = 16 after 10 seconds
+  // x_1 = (0 + 16) * 10 / 2 = 80
+  // v_n = 12 after additional 1 second deceleration
+  // x_2 = (16 + 12) * 1 / 2 = 14
+  // s = 80 + 14 = 94 --> pos = 500 - 94 = 406
+  EXPECT_APPROX_EQ(
+      simulator.get_max_speed_exit_headway(tr1, train1, 406, 0, 11, 10), 16,
+      LINE_SPEED_ACCURACY);
+
+  // v_0 = 5
+  // v_1 = 10 after 4 seconds
+  // x_1 = (5 + 10) * 4 / 2 = 30
+  // Decelerate for 1 second until speed is 10 - 4 = 6
+  // x_2 = (6 + 10) * 1 / 2 = 8
+  // Accelerate for 2 seconds until speed is 6 + 2*3 = 12
+  // x_3 = (12 + 6) * 2 / 2 = 18
+  // s = 30 + 8 + 18 = 56 --> pos = 500 - 56 = 444
+  // h = 4 + 1 + 2 = 7
+  EXPECT_APPROX_EQ(
+      simulator.get_max_speed_exit_headway(tr1, train1, 444, 5, 7, 4), 10,
+      LINE_SPEED_ACCURACY);
+
+  // v_0 = 5
+  // v_1 = 8 after 2 seconds
+  // x_1 = (5 + 8) * 2 / 2 = 13
+  // Decelerate for 2 seconds until speed is 8 - 2*4 = 0
+  // x_2 = (0 + 8) * 2 / 2 = 8
+  // Accelerate for 4 seconds until speed is 0 + 4*3 = 12
+  // x_3 = (12 + 0) * 4 / 2 = 24
+  // s = 13 + 8 + 24 = 45 --> pos = 500 - 45 = 455
+  // t = 2 + 2 + 4 = 8
+  EXPECT_APPROX_EQ(
+      simulator.get_max_speed_exit_headway(tr1, train1, 455, 5, 8, 2), 8,
+      LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(
+      simulator.get_max_speed_exit_headway(tr1, train1, 455, 5, 10, 2), 8,
+      LINE_SPEED_ACCURACY);
 }
 
 // NOLINTEND
