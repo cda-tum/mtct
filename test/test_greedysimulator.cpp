@@ -1438,5 +1438,138 @@ TEST(GreedySimulator, NextStopMA) {
                cda_rail::exceptions::TrainNotExistentException);
 }
 
+TEST(GreedySimulator, TimeToExitObjective) {
+  // Train : a = 3, d = 4
+  // v_0 = 10
+  // v_1 = 14 after 5 seconds
+  // x_1 = (10 + 14) * 5 / 2 = 60
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 14, 15, 59, 3, 4, 5),
+            5);
+  // From there decelerate for 2s until speed is 14 - 2*4 = 6
+  // x_2 = (6+14)* 2/2 = 20
+  // x_1 + x_2 = 60 + 20 = 80
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 14, 6, 80, 3, 4, 5),
+            7);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 14, 5, 80, 3, 4, 5),
+            7);
+  // From x_2 accelerate for 4s until speed is 6 + 4*3 = 18
+  // x_3 = (18+6)* 4/2 = 48
+  // x_1 + x_2 + x_3 = 60 + 20 + 48 = 128
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 14, 18, 128, 3, 4, 5),
+            11);
+
+  // From x_1 accelerate for 2s until speed is 14 + 2*3 = 20
+  // x_2 = (20+14)* 2/2 = 34
+  // x_1 + x_2 = 60 + 34 = 94
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 14, 20, 94, 3, 4, 5),
+            7);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 14, 21, 94, 3, 4, 5),
+            7);
+
+  // v_0 = 0
+  // v_1 = 14 after 5 seconds
+  // x_1 = (0 + 14) * 5 / 2 = 35 --> All s are 60-35 = 25 smaller
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                0, 14, 15, 34, 3, 4, 5),
+            5);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                0, 14, 6, 55, 3, 4, 5),
+            7);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                0, 14, 5, 55, 3, 4, 5),
+            7);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                0, 14, 18, 103, 3, 4, 5),
+            11);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                0, 14, 20, 69, 3, 4, 5),
+            7);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                0, 14, 21, 69, 3, 4, 5),
+            7);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                -cda_rail::EPS / 2.0, 14, 15, 34, 3, 4, 5),
+            5);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                -cda_rail::EPS / 2.0, 14, 6, 55, 3, 4, 5),
+            7);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                -cda_rail::EPS / 2.0, 14, 5, 55, 3, 4, 5),
+            7);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                -cda_rail::EPS / 2.0, 14, 18, 103, 3, 4, 5),
+            11);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                -cda_rail::EPS / 2.0, 14, 20, 69, 3, 4, 5),
+            7);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                -cda_rail::EPS / 2.0, 14, 21, 69, 3, 4, 5),
+            7);
+
+  // v_0 = 10
+  // v_1 = 0 after 5 seconds
+  // x_1 = (10 + 0) * 5 / 2 = 25
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 0, 6, 24, 3, 4, 5),
+            5);
+  // It then accelerates for 2s until speed is 0 + 2*3 = 6
+  // x_2 = (6 + 0) * 2 / 2 = 6
+  // x_1 + x_2 = 25 + 6 = 31
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 0, 6, 31, 3, 4, 5),
+            std::numeric_limits<double>::infinity());
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 0, 6, 30, 3, 4, 5),
+            std::numeric_limits<double>::infinity());
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, -cda_rail::EPS / 2.0, 6, 31, 3, 4, 5),
+            std::numeric_limits<double>::infinity());
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, -cda_rail::EPS / 2.0, 6, 30, 3, 4, 5),
+            std::numeric_limits<double>::infinity());
+
+  // s = 0
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 14, 18, 0, 3, 4, 5),
+            5);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                10, 14, 18, -cda_rail::EPS / 2.0, 3, 4, 5),
+            5);
+
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                   -1, 14, 18, 128, 3, 4, 5),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                   10, -1, 18, 128, 3, 4, 5),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                   10, 14, 0, 80, 3, 4, 5),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                   10, 14, V_MIN / 2.0, 80, 3, 4, 5),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                   10, 14, 18, 128, 0, 4, 5),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                   10, 14, 18, 128, EPS / 2.0, 4, 5),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                   10, 14, 18, 128, 3, 0, 5),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                   10, 14, 18, 128, 3, EPS / 2.0, 5),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                   10, 14, 18, 128, 3, 4, 0),
+               cda_rail::exceptions::InvalidInputException);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

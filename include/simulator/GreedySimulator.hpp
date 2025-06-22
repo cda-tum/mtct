@@ -37,6 +37,7 @@ class GreedySimulator_AbsoluteDistanceMA_Test;
 class GreedySimulator_FutureSpeedRestrictionConstraints_Test;
 class GreedySimulator_EoMDisplacement_Test;
 class GreedySimulator_NextStopMA_Test;
+class GreedySimulator_TimeToExitObjective_Test;
 #endif
 
 namespace cda_rail::simulator {
@@ -60,6 +61,7 @@ private:
   FRIEND_TEST(::GreedySimulator, FutureSpeedRestrictionConstraints);
   FRIEND_TEST(::GreedySimulator, EoMDisplacement);
   FRIEND_TEST(::GreedySimulator, NextStopMA);
+  FRIEND_TEST(::GreedySimulator, TimeToExitObjective);
 #endif
 
   enum class TTDOccupationType : std::uint8_t {
