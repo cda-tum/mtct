@@ -1343,6 +1343,8 @@ TEST(GreedySimulator, NextStopMA) {
   EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 50, {}), 51);
   EXPECT_EQ(simulator.get_next_stop_ma(tr1, 100, 50, {}), 51);
   EXPECT_EQ(simulator.get_next_stop_ma(tr1, 50, 50, {}), 50);
+  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 0, 50, {}), 0);
+  EXPECT_EQ(simulator.get_next_stop_ma(tr1, -cda_rail::EPS / 2.0, 50, {}), 0);
 
   simulator.append_train_edge_to_tr(tr1, v11_v2);
   simulator.append_train_edge_to_tr(tr1, v2_v3);
