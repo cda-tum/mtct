@@ -143,6 +143,10 @@ private:
   get_future_max_speed_constraints(size_t tr, const Train& train, double pos,
                                    double v_0, double max_displacement, int dt,
                                    bool also_limit_by_leaving_edges) const;
+  [[nodiscard]] static std::pair<double, double>
+  speed_restriction_helper(double ma, double max_v, double pos,
+                           double vertex_pos, double v_0, double v_m, double d,
+                           int dt);
   [[nodiscard]] double
   get_next_stop_ma(size_t tr, double max_displacement, double pos,
                    std::optional<size_t> next_stop_edge) const;

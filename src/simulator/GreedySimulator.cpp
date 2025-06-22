@@ -612,6 +612,8 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
    * If an edge is reachable, the trains speed is restricted directly.
    * Otherwise, future speed restrictions are modelled through restrictions on
    * the trains moving authority to ensure braking well in advance.
+   * OBS: The speed restriction can also be induced by the exit velocity of the
+   * train.
    *
    * @param tr: The id of the train for which the constraints are calculated.
    * @param train: The train object containing the train's properties.
@@ -659,6 +661,20 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
   double ma    = max_displacement;
 
   const auto milestones = edge_milestones(tr);
+
+  // Check exit
+  const auto& last_edge_id = train_edges.at(tr).back();
+  const auto& last_edge    = instance->const_n().get_edge(last_edge_id);
+  if (pos + max_displacement >= milestones.back()) {
+    const auto tr_schedule = instance->get_schedule(tr);
+    if (last_edge.target == tr_schedule.get_exit()) {
+      // Train is leaving the network at the end of its route
+      std::tie(ma, max_v) = speed_restriction_helper(
+          ma, max_v, pos, milestones.back(), v_0, tr_schedule.get_v_n(),
+          train.deceleration, dt);
+    }
+  }
+
   for (size_t i = 0; i < train_edges.at(tr).size() &&
                      milestones.at(i) + EPS < pos + max_displacement;
        ++i) {
@@ -677,19 +693,26 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     if (det_occ.second || (!also_limit_by_leaving_edges && occ)) {
       max_v = std::min(max_v, edge.max_speed); // Train is on the edge
     } else {
-      // Can the train reach the next edge within one time step?
-      const auto max_dist = (v_0 + edge.max_speed) * dt / 2.0;
-      if (pos + max_dist >= milestones.at(i)) {
-        // Train can reach the edge -> limit speed directly
-        max_v = std::min(max_v, edge.max_speed);
-      } else {
-        // Train cannot reach the next edge, so we limit the moving authority
-        ma = std::min(ma, milestones.at(i) +
-                              ((edge.max_speed * edge.max_speed) /
-                               (2.0 * train.deceleration)) -
-                              pos);
-      }
+      std::tie(ma, max_v) =
+          speed_restriction_helper(ma, max_v, pos, milestones.at(i), v_0,
+                                   edge.max_speed, train.deceleration, dt);
     }
+  }
+  return {ma, max_v};
+}
+
+std::pair<double, double>
+cda_rail::simulator::GreedySimulator::speed_restriction_helper(
+    double ma, double max_v, double pos, double vertex_pos, double v_0,
+    double v_m, double d, int dt) {
+  // Can the train reach the next edge within one time step?
+  const auto max_dist = (v_0 + v_m) * dt / 2.0;
+  if (pos + max_dist >= vertex_pos) {
+    // Train can reach the edge -> limit speed directly
+    max_v = std::min(max_v, v_m);
+  } else {
+    // Train cannot reach the next edge, so we limit the moving authority
+    ma = std::min(ma, vertex_pos + ((v_m * v_m) / (2.0 * d)) - pos);
   }
   return {ma, max_v};
 }
