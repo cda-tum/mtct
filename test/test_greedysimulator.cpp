@@ -1175,15 +1175,30 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
   EXPECT_EQ(ma13, 259);
   EXPECT_EQ(vm13, 50);
 
+  const auto [ma13b, vm13b] = simulator.get_future_max_speed_constraints(
+      tr1, train, 1800, 20, 100, 10, false);
+  EXPECT_EQ(ma13b, 100);
+  EXPECT_EQ(vm13b, 50);
+
   const auto [ma14, vm14] = simulator.get_future_max_speed_constraints(
       tr1, train, 1840, 20, 1000, 10, false);
   EXPECT_EQ(ma14, 1000);
   EXPECT_EQ(vm14, 14);
 
   const auto [ma15, vm15] = simulator.get_future_max_speed_constraints(
-      tr1, train, 1840.1, 20, 1000, 10, false);
+      tr1, train, 1841, 20, 1000, 10, false);
   EXPECT_EQ(ma15, 1000);
   EXPECT_EQ(vm15, 14);
+
+  const auto [ma15b, vm15b] = simulator.get_future_max_speed_constraints(
+      tr1, train, 1841, 20, 100, 10, false);
+  EXPECT_EQ(ma15b, 100);
+  EXPECT_EQ(vm15b, 50);
+
+  const auto [ma16, vm16] = simulator.get_future_max_speed_constraints(
+      tr1, train, 2100, 20, 1000, 10, false);
+  EXPECT_EQ(ma16, 1000);
+  EXPECT_EQ(vm16, 14);
 
   EXPECT_THROW(simulator.get_future_max_speed_constraints(tr1, train, -1, 10,
                                                           10, 10, true),
