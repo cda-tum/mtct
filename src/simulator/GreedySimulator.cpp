@@ -770,7 +770,7 @@ double cda_rail::simulator::GreedySimulator::get_next_stop_ma(
   return max_displacement;
 }
 
-double cda_rail::simulator::GreedySimulator::det_max_speed_exit_headway(
+double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
     size_t tr, const cda_rail::Train& train, double pos, double v_0, int h,
     int dt) const {
   /**
