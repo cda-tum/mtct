@@ -885,21 +885,12 @@ double cda_rail::simulator::GreedySimulator::time_to_exit_objective(
   if (std::abs(v_1) < EPS) {
     v_1 = 0;
   }
-  if (std::abs(v_e) < EPS) {
-    v_e = 0;
-  }
   if (std::abs(s) < EPS) {
     s = 0;
   }
-  if (std::abs(a) < EPS) {
-    a = 0;
-  }
-  if (std::abs(d) < EPS) {
-    d = 0;
-  }
-  if (dt < 0) {
+  if (dt <= 0) {
     throw cda_rail::exceptions::InvalidInputException(
-        "Time step must be non-negative.");
+        "Time step must be positive.");
   }
   if (v_0 < 0) {
     throw cda_rail::exceptions::InvalidInputException(
@@ -909,19 +900,19 @@ double cda_rail::simulator::GreedySimulator::time_to_exit_objective(
     throw cda_rail::exceptions::InvalidInputException(
         "Velocity at the end of the time step must be non-negative.");
   }
-  if (v_e < 0) {
+  if (v_e < V_MIN) {
     throw cda_rail::exceptions::InvalidInputException(
-        "Exit velocity must be non-negative.");
+        "Exit velocity must be positive for simulation.");
   }
   if (s < 0) {
     throw cda_rail::exceptions::InvalidInputException(
         "Distance to the exit must be non-negative.");
   }
-  if (a <= 0) {
+  if (a < EPS) {
     throw cda_rail::exceptions::InvalidInputException(
         "Acceleration must be positive.");
   }
-  if (d <= 0) {
+  if (d < EPS) {
     throw cda_rail::exceptions::InvalidInputException(
         "Deceleration must be positive.");
   }
@@ -930,6 +921,10 @@ double cda_rail::simulator::GreedySimulator::time_to_exit_objective(
       (v_0 + v_1) * dt / 2.0; // Distance traveled in the first time step
   if (x_1 >= s) {
     return dt; // Train reaches the exit in the first time step
+  }
+  if (v_1 == 0) {
+    return std::numeric_limits<double>::
+        infinity(); // Train is stopped, can reach exit as late as needed
   }
   const auto distance_remaining = s - x_1;
   if (!possible_by_eom(v_1, v_e, a, d, distance_remaining)) {
