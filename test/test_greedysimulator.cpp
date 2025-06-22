@@ -1084,7 +1084,7 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 200, 51, 3, 2, true, {0, 60},
-                                       10, v0, {360, 420}, 10, v5, network);
+                                       10, v0, {360, 420}, 14, v5, network);
 
   RouteMap routes;
 
@@ -1165,6 +1165,25 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
       tr1, train, 0, -cda_rail::EPS / 2.0, 1000, 1, true);
   EXPECT_EQ(ma12tol, 310);
   EXPECT_EQ(vm12tol, 3);
+
+  // Test exit speed limit at 2010
+  // Linear movement 20 -> 14 over 10s: 170m
+  // Braking distance: 14*14/4 = 49 to 2059
+  // if-case: 2010 - 170 = 1840
+  const auto [ma13, vm13] = simulator.get_future_max_speed_constraints(
+      tr1, train, 1800, 20, 1000, 10, false);
+  EXPECT_EQ(ma13, 259);
+  EXPECT_EQ(vm13, 50);
+
+  const auto [ma14, vm14] = simulator.get_future_max_speed_constraints(
+      tr1, train, 1840, 20, 1000, 10, false);
+  EXPECT_EQ(ma14, 1000);
+  EXPECT_EQ(vm14, 14);
+
+  const auto [ma15, vm15] = simulator.get_future_max_speed_constraints(
+      tr1, train, 1840.1, 20, 1000, 10, false);
+  EXPECT_EQ(ma15, 1000);
+  EXPECT_EQ(vm15, 14);
 
   EXPECT_THROW(simulator.get_future_max_speed_constraints(tr1, train, -1, 10,
                                                           10, 10, true),
