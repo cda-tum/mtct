@@ -150,6 +150,13 @@ private:
   [[nodiscard]] double
   get_next_stop_ma(size_t tr, double max_displacement, double pos,
                    std::optional<size_t> next_stop_edge) const;
+  [[nodiscard]] double det_max_speed_exit_headway(size_t tr, const Train& train,
+                                                  double pos, double v_0, int h,
+                                                  int dt) const;
+  [[nodiscard]] static double time_to_exit_objective(double v_0, double v_1,
+                                                     double v_e, double s,
+                                                     double a, double d,
+                                                     int dt);
 
   [[nodiscard]] double
   get_ma(size_t tr, int t, int dt,

@@ -769,3 +769,184 @@ double cda_rail::simulator::GreedySimulator::get_next_stop_ma(
   }
   return max_displacement;
 }
+
+double cda_rail::simulator::GreedySimulator::det_max_speed_exit_headway(
+    size_t tr, const cda_rail::Train& train, double pos, double v_0, int h,
+    int dt) const {
+  /**
+   * This function limits the maximum speed so that the exit headway can still
+   * be maintained using the exit velocity.
+   *
+   * @param tr: The id of the train for which the maximum speed is calculated.
+   * @param train: The train object containing the train's properties.
+   * @param pos: The current position of the train on its route.
+   * @param v_0: The initial velocity of the train in m/s.
+   * @param h: The (remaining) exit headway in seconds.
+   * @param dt: The time step in seconds.
+   *
+   * @return: The maximum speed allowed for the next speed step.
+   */
+
+  if (std::abs(pos) < EPS) {
+    pos = 0;
+  }
+  if (std::abs(v_0) < EPS) {
+    v_0 = 0;
+  }
+  if (h < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Exit headway must be non-negative.");
+  }
+  if (dt < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Time step must be non-negative.");
+  }
+  if (pos < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Position must be non-negative.");
+  }
+  if (v_0 < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Initial velocity must be non-negative.");
+  }
+
+  double v_ub = std::min(train.max_speed, v_0 + (train.acceleration * dt));
+  double v_lb = std::max(0.0, v_0 - (train.deceleration * dt));
+
+  if (h == 0) {
+    return v_ub; // No exit headway to consider
+  }
+
+  const auto& last_edge_id = train_edges.at(tr).back();
+  const auto& last_edge    = instance->const_n().get_edge(last_edge_id);
+  const auto& tr_schedule  = instance->get_schedule(tr);
+  if (last_edge.target != tr_schedule.get_exit()) {
+    // Train does not leave the network at the end of its route
+    return v_ub; // No exit headway to consider
+  }
+
+  const auto milestones    = edge_milestones(tr);
+  const auto exit_distance = milestones.back() - pos;
+  v_ub                     = std::min(v_ub, ((2.0 * exit_distance) / dt) - v_0);
+  if (v_ub < v_lb - EPS) {
+    throw cda_rail::exceptions::ConsistencyException(
+        "v_ub < v_lb, this should not have happened.");
+  }
+  if (v_ub < v_lb) {
+    return v_lb;
+  }
+
+  double obj_vub =
+      time_to_exit_objective(v_0, v_ub, tr_schedule.get_v_n(), exit_distance,
+                             train.acceleration, train.deceleration, dt);
+  double obj_vlb =
+      time_to_exit_objective(v_0, v_lb, tr_schedule.get_v_n(), exit_distance,
+                             train.acceleration, train.deceleration, dt);
+
+  // Binary search for the maximum speed that satisfies the exit headway
+  // constraint We want to solve exit_time(v_1) >= h (as close to h as possible)
+  while ((v_ub - v_lb > LINE_SPEED_ACCURACY) &&
+         (obj_vub - obj_vlb > LINE_SPEED_TIME_ACCURACY)) {
+    const double v_mid = (v_ub + v_lb) / 2.0;
+    const double obj_vmid =
+        time_to_exit_objective(v_0, v_mid, tr_schedule.get_v_n(), exit_distance,
+                               train.acceleration, train.deceleration, dt);
+    if (obj_vmid < h) {
+      v_ub    = v_mid; // We need to decrease the speed
+      obj_vub = obj_vmid;
+    } else {
+      v_lb    = v_mid; // We can still increase the speed
+      obj_vlb = obj_vmid;
+    }
+  }
+
+  return v_lb; // Return the lower bound as the maximum speed
+}
+
+double cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+    double v_0, double v_1, double v_e, double s, double a, double d, int dt) {
+  /**
+   * This function calculates the time to exit objective value used in the
+   * headway constraints calculation.
+   *
+   * @param v_0: The initial velocity of the train in m/s.
+   * @param v_1: The velocity of the train at the end of the time step in m/s.
+   * @param v_e: The exit velocity of the train in m/s.
+   * @param s: The distance to the exit in m.
+   * @param a: The acceleration of the train in m/s^2.
+   * @param d: The deceleration of the train in m/s^2.
+   * @param dt: The time step in seconds.
+   *
+   * @return: The time to exit objective value.
+   */
+  if (std::abs(v_0) < EPS) {
+    v_0 = 0;
+  }
+  if (std::abs(v_1) < EPS) {
+    v_1 = 0;
+  }
+  if (std::abs(v_e) < EPS) {
+    v_e = 0;
+  }
+  if (std::abs(s) < EPS) {
+    s = 0;
+  }
+  if (std::abs(a) < EPS) {
+    a = 0;
+  }
+  if (std::abs(d) < EPS) {
+    d = 0;
+  }
+  if (dt < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Time step must be non-negative.");
+  }
+  if (v_0 < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Initial velocity must be non-negative.");
+  }
+  if (v_1 < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Velocity at the end of the time step must be non-negative.");
+  }
+  if (v_e < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Exit velocity must be non-negative.");
+  }
+  if (s < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Distance to the exit must be non-negative.");
+  }
+  if (a <= 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Acceleration must be positive.");
+  }
+  if (d <= 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Deceleration must be positive.");
+  }
+
+  const auto x_1 =
+      (v_0 + v_1) * dt / 2.0; // Distance traveled in the first time step
+  if (x_1 >= s) {
+    return dt; // Train reaches the exit in the first time step
+  }
+  const auto distance_remaining = s - x_1;
+  if (!possible_by_eom(v_1, v_e, a, d, distance_remaining)) {
+    // In this case, we assume that the train accelerates or decelerates as much
+    // as possible i.e., at rate -d or a (say p) respectively
+    const auto p = (v_1 < v_e) ? a : -d;
+    // x(t) = integral_0^t (v_1 + p * t) dt = v_1 * t + 0.5 * p * t^2
+    // We need to solve the equation x(t) = distance_remaining (say x) for t
+    // Wolframalpha: t = (sqrt(2*p*x + v_1^2) - v_1) / p
+    // This is not numerically stable, so we multiply by (sqrt(2*p*x + v_1^2) +
+    // v_1) / (sqrt(2*p*x + v_1^2) + v_1) t = (2*p*x + v_1^2 - v_1^2) / (p *
+    // (sqrt(2*p*x + v_1^2) + v_1)) Simplifying gives us: t = 2 * x /
+    // (sqrt(2*p*x + v_1^2) + v_1)
+    return ((2.0 * distance_remaining) /
+            (std::sqrt((2.0 * p * distance_remaining) + (v_1 * v_1)) + v_1)) +
+           static_cast<double>(dt);
+  }
+  return cda_rail::max_travel_time_stopping_allowed(v_1, v_e, a, d, s - x_1) +
+         static_cast<double>(dt);
+}
