@@ -813,10 +813,6 @@ double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
   double v_ub = std::min(train.max_speed, v_0 + (train.acceleration * dt));
   double v_lb = std::max(0.0, v_0 - (train.deceleration * dt));
 
-  if (h == 0) {
-    return v_ub; // No exit headway to consider
-  }
-
   const auto& last_edge_id = train_edges.at(tr).back();
   const auto& last_edge    = instance->const_n().get_edge(last_edge_id);
   const auto& tr_schedule  = instance->get_schedule(tr);
@@ -832,38 +828,44 @@ double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
     throw cda_rail::exceptions::ConsistencyException(
         "v_ub < v_lb, this should not have happened.");
   }
-  if (v_ub < v_lb) {
-    return v_lb;
+  if ((h == 0) || (v_ub < v_lb)) {
+    return std::max(v_lb, v_ub);
   }
 
-  double obj_vub =
+  auto [bool_vub, obj_vub] =
       time_to_exit_objective(v_0, v_ub, tr_schedule.get_v_n(), exit_distance,
                              train.acceleration, train.deceleration, dt);
-  double obj_vlb =
+  auto [bool_vlb, obj_vlb] =
       time_to_exit_objective(v_0, v_lb, tr_schedule.get_v_n(), exit_distance,
                              train.acceleration, train.deceleration, dt);
 
+  if (bool_vub && (obj_vub >= h)) {
+    return v_ub;
+  }
+
   // Binary search for the maximum speed that satisfies the exit headway
   // constraint We want to solve exit_time(v_1) >= h (as close to h as possible)
-  while ((v_ub - v_lb > LINE_SPEED_ACCURACY) &&
-         (obj_vub - obj_vlb > LINE_SPEED_TIME_ACCURACY)) {
+  while (v_ub - v_lb > LINE_SPEED_ACCURACY) {
     const double v_mid = (v_ub + v_lb) / 2.0;
-    const double obj_vmid =
+    const auto [bool_vmid, obj_vmid] =
         time_to_exit_objective(v_0, v_mid, tr_schedule.get_v_n(), exit_distance,
                                train.acceleration, train.deceleration, dt);
-    if (obj_vmid < h) {
+    if ((obj_vmid < h) || (bool_vlb && !bool_vmid)) {
       v_ub    = v_mid; // We need to decrease the speed
       obj_vub = obj_vmid;
+      // bool_vub = bool_vmid; not needed hence not updated
     } else {
-      v_lb    = v_mid; // We can still increase the speed
-      obj_vlb = obj_vmid;
+      v_lb     = v_mid; // We can still increase the speed
+      obj_vlb  = obj_vmid;
+      bool_vlb = bool_vmid;
     }
   }
 
   return v_lb; // Return the lower bound as the maximum speed
 }
 
-double cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+std::pair<bool, double>
+cda_rail::simulator::GreedySimulator::time_to_exit_objective(
     double v_0, double v_1, double v_e, double s, double a, double d, int dt) {
   /**
    * This function calculates the time to exit objective value used in the
@@ -920,11 +922,14 @@ double cda_rail::simulator::GreedySimulator::time_to_exit_objective(
   const auto x_1 =
       (v_0 + v_1) * dt / 2.0; // Distance traveled in the first time step
   if (x_1 >= s) {
-    return dt; // Train reaches the exit in the first time step
+    return {std::abs(v_1 - v_e) < EPS,
+            dt}; // Train reaches the exit in the first time step
   }
   if (v_1 == 0) {
-    return std::numeric_limits<double>::
-        infinity(); // Train is stopped, can reach exit as late as needed
+    return {
+        true,
+        std::numeric_limits<double>::infinity()}; // Train is stopped, can reach
+                                                  // exit as late as needed
   }
   const auto distance_remaining = s - x_1;
   if (!possible_by_eom(v_1, v_e, a, d, distance_remaining)) {
@@ -938,10 +943,12 @@ double cda_rail::simulator::GreedySimulator::time_to_exit_objective(
     // v_1) / (sqrt(2*p*x + v_1^2) + v_1) t = (2*p*x + v_1^2 - v_1^2) / (p *
     // (sqrt(2*p*x + v_1^2) + v_1)) Simplifying gives us: t = 2 * x /
     // (sqrt(2*p*x + v_1^2) + v_1)
-    return ((2.0 * distance_remaining) /
-            (std::sqrt((2.0 * p * distance_remaining) + (v_1 * v_1)) + v_1)) +
-           static_cast<double>(dt);
+    return {false,
+            ((2.0 * distance_remaining) /
+             (std::sqrt((2.0 * p * distance_remaining) + (v_1 * v_1)) + v_1)) +
+                static_cast<double>(dt)};
   }
-  return cda_rail::max_travel_time_stopping_allowed(v_1, v_e, a, d, s - x_1) +
-         static_cast<double>(dt);
+  return {true,
+          cda_rail::max_travel_time_stopping_allowed(v_1, v_e, a, d, s - x_1) +
+              static_cast<double>(dt)};
 }

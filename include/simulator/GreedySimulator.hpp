@@ -155,10 +155,9 @@ private:
   [[nodiscard]] double get_max_speed_exit_headway(size_t tr, const Train& train,
                                                   double pos, double v_0, int h,
                                                   int dt) const;
-  [[nodiscard]] static double time_to_exit_objective(double v_0, double v_1,
-                                                     double v_e, double s,
-                                                     double a, double d,
-                                                     int dt);
+  [[nodiscard]] static std::pair<bool, double>
+  time_to_exit_objective(double v_0, double v_1, double v_e, double s, double a,
+                         double d, int dt);
 
   [[nodiscard]] double
   get_ma(size_t tr, int t, int dt,
