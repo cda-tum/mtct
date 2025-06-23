@@ -1876,6 +1876,8 @@ TEST(GreedySimulator, MAandMaxV) {
 
   simulator.append_stop_edge_to_tr(tr5, v2b_v3);
 
+  simulator.set_ttd_orders({{tr1, tr2, tr3, tr4, tr5, tr6, tr7, tr8}});
+
   std::vector<std::pair<double, double>> train_pos = {
       {2080, 2090}, // Train1
       {1970, 1980}, // Train2
@@ -1896,6 +1898,15 @@ TEST(GreedySimulator, MAandMaxV) {
   // Train 6: Bound by Train 5 in TTD
   // Train 7: Bound by speed limit of edge
   // Train 8: Bound by future speed limit of v1t_v2t
+
+  std::unordered_set<size_t> train_ids   = {tr1, tr2, tr3, tr4,
+                                            tr5, tr6, tr7, tr8};
+  const auto                 tr_on_edges = simulator.tr_on_edges();
+
+  const auto [ma1, max_v1] = simulator.get_ma_and_maxv(
+      tr1, 15, {}, 0, 1, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_APPROX_EQ(max_v1, 16, LINE_SPEED_ACCURACY);
+  EXPECT_LE((15 + max_v1) * 1.0 / 2.0, ma1);
 }
 
 // NOLINTEND
