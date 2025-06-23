@@ -942,7 +942,7 @@ cda_rail::simulator::GreedySimulator::time_to_exit_objective(
 }
 
 std::pair<double, double> cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
-    size_t tr, int t, double v_0, double next_stop, double h, int dt,
+    size_t tr, double v_0, double next_stop, double h, int dt,
     const std::vector<std::pair<double, double>>&  train_positions,
     const std::unordered_set<size_t>&              trains_in_network,
     const std::unordered_set<size_t>&              trains_left,

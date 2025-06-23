@@ -39,6 +39,7 @@ class GreedySimulator_EoMDisplacement_Test;
 class GreedySimulator_NextStopMA_Test;
 class GreedySimulator_TimeToExitObjective_Test;
 class GreedySimulator_ExitHeadwaySpeedConstraint_Test;
+class GreedySimulator_MAandMaxV_Test;
 #endif
 
 namespace cda_rail::simulator {
@@ -65,6 +66,7 @@ private:
   FRIEND_TEST(::GreedySimulator, NextStopMA);
   FRIEND_TEST(::GreedySimulator, TimeToExitObjective);
   FRIEND_TEST(::GreedySimulator, ExitHeadwaySpeedConstraint);
+  FRIEND_TEST(::GreedySimulator, MAandMaxV);
 #endif
 
   enum class TTDOccupationType : std::uint8_t {
@@ -164,8 +166,7 @@ private:
                          double d, int dt);
 
   [[nodiscard]] std::pair<double, double>
-  get_ma_and_maxv(size_t tr, int t, double v_0, double next_stop, double h,
-                  int                                           dt,
+  get_ma_and_maxv(size_t tr, double v_0, double next_stop, double h, int dt,
                   const std::vector<std::pair<double, double>>& train_positions,
                   const std::unordered_set<size_t>& trains_in_network,
                   const std::unordered_set<size_t>& trains_left,
