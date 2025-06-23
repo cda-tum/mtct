@@ -312,6 +312,10 @@ public:
     stop_positions.at(train_id) = std::move(positions);
   }
   void append_stop_position_to_tr(size_t train_id, double position) {
+    if (position < 0) {
+      throw cda_rail::exceptions::InvalidInputException(
+          "Stop position must be non-negative.");
+    }
     if (train_id >= stop_positions.size()) {
       throw cda_rail::exceptions::TrainNotExistentException(train_id);
     }
@@ -320,6 +324,14 @@ public:
       throw cda_rail::exceptions::ConsistencyException(
           "All scheduled stops for train " + std::to_string(train_id) +
           " are already set.");
+    }
+    if (!stop_positions.at(train_id).empty() &&
+        position < stop_positions.at(train_id).back()) {
+      throw cda_rail::exceptions::ConsistencyException(
+          "Stop positions must be non-decreasing for train " +
+          std::to_string(train_id) + ". Last position is " +
+          std::to_string(stop_positions.at(train_id).back()) +
+          ", new position is " + std::to_string(position) + ".");
     }
     stop_positions.at(train_id).push_back(position);
   }

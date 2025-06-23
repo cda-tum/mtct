@@ -164,6 +164,16 @@ bool cda_rail::simulator::GreedySimulator::check_consistency() const {
     if (stop_positions.at(train_id).size() > train_schedule_size) {
       return false; // Too many stop positions for the train
     }
+    // stop_positions.at(train_id) must be non-negative and sorted
+    if (std::any_of(stop_positions.at(train_id).begin(),
+                    stop_positions.at(train_id).end(),
+                    [](double pos) { return pos < 0; })) {
+      return false; // Negative stop position found
+    }
+    if (!std::is_sorted(stop_positions.at(train_id).begin(),
+                        stop_positions.at(train_id).end())) {
+      return false; // Stop positions are not sorted
+    }
   }
 
   return true;
