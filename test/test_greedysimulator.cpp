@@ -80,6 +80,27 @@ TEST(GreedySimulator, CheckConsistency) {
       std::vector<std::vector<size_t>>(network.number_of_vertices(),
                                        std::vector<size_t>()),
       {{}, {}, {}});
+  cda_rail::simulator::GreedySimulator simulator3c(
+      instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
+      std::vector<std::vector<size_t>>(ttd_sections.size(),
+                                       std::vector<size_t>()),
+      std::vector<std::vector<size_t>>(network.number_of_vertices(),
+                                       std::vector<size_t>()),
+      {{100}, {}});
+  cda_rail::simulator::GreedySimulator simulator3d(
+      instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
+      std::vector<std::vector<size_t>>(ttd_sections.size(),
+                                       std::vector<size_t>()),
+      std::vector<std::vector<size_t>>(network.number_of_vertices(),
+                                       std::vector<size_t>()),
+      {{}, {100}});
+  cda_rail::simulator::GreedySimulator simulator3e(
+      instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
+      std::vector<std::vector<size_t>>(ttd_sections.size(),
+                                       std::vector<size_t>()),
+      std::vector<std::vector<size_t>>(network.number_of_vertices(),
+                                       std::vector<size_t>()),
+      {{100, 200}, {}});
   cda_rail::simulator::GreedySimulator simulator4(
       instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
       std::vector<std::vector<size_t>>(ttd_sections.size(),
@@ -158,6 +179,9 @@ TEST(GreedySimulator, CheckConsistency) {
   EXPECT_FALSE(simulator2.check_consistency());
   EXPECT_FALSE(simulator3.check_consistency());
   EXPECT_FALSE(simulator3b.check_consistency());
+  EXPECT_TRUE(simulator3c.check_consistency());
+  EXPECT_FALSE(simulator3d.check_consistency());
+  EXPECT_FALSE(simulator3e.check_consistency());
   EXPECT_TRUE(simulator4.check_consistency());
   EXPECT_TRUE(simulator5.check_consistency());
   EXPECT_FALSE(simulator6.check_consistency());

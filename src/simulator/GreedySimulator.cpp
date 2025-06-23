@@ -155,6 +155,17 @@ bool cda_rail::simulator::GreedySimulator::check_consistency() const {
     }
   }
 
+  // Every train can have at most as many stop positions as scheduled stops
+  for (size_t train_id = 0;
+       train_id < instance->get_timetable().get_train_list().size();
+       ++train_id) {
+    const auto train_schedule_size =
+        instance->get_timetable().get_schedule(train_id).get_stops().size();
+    if (stop_positions.at(train_id).size() > train_schedule_size) {
+      return false; // Too many stop positions for the train
+    }
+  }
+
   return true;
 }
 
