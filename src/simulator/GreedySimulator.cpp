@@ -940,3 +940,26 @@ cda_rail::simulator::GreedySimulator::time_to_exit_objective(
           cda_rail::max_travel_time_stopping_allowed(v_1, v_e, a, d, s - x_1) +
               static_cast<double>(dt)};
 }
+
+std::pair<double, double> cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
+    size_t tr, int t, double v_0, double next_stop, double h, int dt,
+    const std::vector<std::pair<double, double>>&  train_positions,
+    const std::unordered_set<size_t>&              trains_in_network,
+    const std::unordered_set<size_t>&              trains_left,
+    const std::vector<std::unordered_set<size_t>>& tr_on_edges,
+    bool also_limit_speed_by_leaving_edges) const {
+  const auto& train = instance->get_timetable().get_train_list().get_train(tr);
+  double      ma    = max_displacement(train, v_0, dt);
+  ma = get_next_stop_ma(ma, train_positions.at(tr).second, next_stop);
+  double max_v;
+  ma = get_absolute_distance_ma(tr, ma, train_positions, trains_in_network,
+                                trains_left, tr_on_edges);
+  std::tie(ma, max_v) = get_future_max_speed_constraints(
+      tr, train, train_positions.at(tr).second, v_0, ma, dt,
+      also_limit_speed_by_leaving_edges);
+  max_v = std::min(max_v,
+                   get_max_speed_exit_headway(
+                       tr, train, train_positions.at(tr).second, v_0, h, dt));
+
+  return {ma, max_v};
+}

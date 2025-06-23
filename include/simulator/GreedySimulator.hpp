@@ -163,12 +163,14 @@ private:
   time_to_exit_objective(double v_0, double v_1, double v_e, double s, double a,
                          double d, int dt);
 
-  [[nodiscard]] std::pair<double, double> get_ma_and_vmax(
-      size_t tr, int t, double v_0, double h, int dt,
-      const std::vector<std::pair<double, double>>&  train_positions,
-      const std::unordered_set<size_t>&              trains_in_network,
-      const std::unordered_set<size_t>&              trains_left,
-      const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
+  [[nodiscard]] std::pair<double, double>
+  get_ma_and_maxv(size_t tr, int t, double v_0, double next_stop, double h,
+                  int                                           dt,
+                  const std::vector<std::pair<double, double>>& train_positions,
+                  const std::unordered_set<size_t>& trains_in_network,
+                  const std::unordered_set<size_t>& trains_left,
+                  const std::vector<std::unordered_set<size_t>>& tr_on_edges,
+                  bool also_limit_speed_by_leaving_edges) const;
 
 public:
   explicit GreedySimulator(
