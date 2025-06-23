@@ -346,7 +346,7 @@ TEST(GreedySimulator, BasicFunctions) {
   EXPECT_TRUE(stop_positions1[1].empty());
   EXPECT_THROW(simulator.set_stop_positions_of_tr(1000, {100}),
                cda_rail::exceptions::TrainNotExistentException);
-  EXPECT_THROW(simulator.set_stop_positions_of_tr(tr1, {100, 200}),
+  EXPECT_THROW(simulator.set_stop_positions_of_tr(tr1, {100, 200, 300}),
                cda_rail::exceptions::InvalidInputException);
   simulator.set_stop_positions_of_tr(tr1, {150});
   const auto& stop_positions2 = simulator.get_stop_positions_of_tr(tr1);
