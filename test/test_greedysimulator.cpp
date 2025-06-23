@@ -1133,104 +1133,107 @@ TEST(GreedySimulator, AbsoluteDistanceMA) {
       {-50, 0}, // tr3
   };
 
-  EXPECT_EQ(simulator.get_absolute_distance_ma(tr1, 200, train_pos, {tr1},
+  EXPECT_EQ(simulator.get_absolute_distance_ma(tr1, 200, train_pos, {tr1}, {},
                                                tr_on_edges),
             200);
   train_pos[tr1] = {40, 90};
-  EXPECT_EQ(simulator.get_absolute_distance_ma(tr1, 200, train_pos, {tr1},
+  EXPECT_EQ(simulator.get_absolute_distance_ma(tr1, 200, train_pos, {tr1}, {},
                                                tr_on_edges),
             200);
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             100);
+  EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr2},
+                                               {tr1}, tr_on_edges),
+            200);
   train_pos[tr2] = {0, 50};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             50);
   train_pos[tr1] = {52, 102};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             50);
   train_pos[tr1] = {90, 140};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             50);
   train_pos[tr1] = {102, 152};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             50);
   train_pos[tr1] = {112, 162};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             50);
   train_pos[tr1] = {120, 170};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             50);
   train_pos[tr1] = {120, 200};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             50);
   train_pos[tr1] = {121, 200};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             70);
   train_pos[tr1] = {121.1, 200};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             70.1);
   train_pos[tr1] = {150, 200};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             99);
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 98, train_pos, {tr1, tr2},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             98);
   train_pos[tr1] = {200, 250};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr3, 200, train_pos, {tr1, tr3},
-                                               tr_on_edges),
+                                               {}, tr_on_edges),
             100);
   train_pos[tr2] = {50, 100};
-  EXPECT_EQ(simulator.get_absolute_distance_ma(tr3, 200, train_pos,
-                                               {tr1, tr2, tr3}, tr_on_edges),
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 200, train_pos, {tr1, tr2, tr3}, {}, tr_on_edges),
             50);
   train_pos[tr2] = {105, 155};
-  EXPECT_EQ(simulator.get_absolute_distance_ma(tr3, 200, train_pos,
-                                               {tr1, tr2, tr3}, tr_on_edges),
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 200, train_pos, {tr1, tr2, tr3}, {}, tr_on_edges),
             100);
-  EXPECT_EQ(simulator.get_absolute_distance_ma(tr3, 99, train_pos,
-                                               {tr1, tr2, tr3}, tr_on_edges),
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 99, train_pos, {tr1, tr2, tr3}, {}, tr_on_edges),
             99);
   train_pos[tr3] = {50, 100};
-  EXPECT_EQ(simulator.get_absolute_distance_ma(tr3, 200, train_pos,
-                                               {tr1, tr2, tr3}, tr_on_edges),
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 200, train_pos, {tr1, tr2, tr3}, {}, tr_on_edges),
             0);
   train_pos[tr2] = {140, 190};
-  EXPECT_EQ(simulator.get_absolute_distance_ma(tr3, 200, train_pos,
-                                               {tr1, tr2, tr3}, tr_on_edges),
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 200, train_pos, {tr1, tr2, tr3}, {}, tr_on_edges),
             40);
 
   train_pos[tr1] = {200, 250};
   train_pos[tr2] = {160, 195};
   train_pos[tr3] = {140, 150};
-  EXPECT_EQ(simulator.get_absolute_distance_ma(tr1, 200, train_pos,
-                                               {tr1, tr2, tr3}, tr_on_edges),
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr1, 200, train_pos, {tr1, tr2, tr3}, {}, tr_on_edges),
             200);
-  EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
-                                               {tr1, tr2, tr3}, tr_on_edges),
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr2, 200, train_pos, {tr1, tr2, tr3}, {}, tr_on_edges),
             4);
-  EXPECT_EQ(simulator.get_absolute_distance_ma(tr3, 200, train_pos,
-                                               {tr1, tr2, tr3}, tr_on_edges),
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 200, train_pos, {tr1, tr2, tr3}, {}, tr_on_edges),
             10);
 
   EXPECT_THROW(simulator.get_absolute_distance_ma(tr3, 200, train_pos,
-                                                  {tr1, tr2}, tr_on_edges),
+                                                  {tr1, tr2}, {}, tr_on_edges),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(simulator.get_absolute_distance_ma(tr3, -1, train_pos,
-                                                  {tr1, tr2, tr3}, tr_on_edges),
+  EXPECT_THROW(simulator.get_absolute_distance_ma(
+                   tr3, -1, train_pos, {tr1, tr2, tr3}, {}, tr_on_edges),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(simulator.get_absolute_distance_ma(
-                   1000, 200, train_pos, {tr1, tr2, 1000}, tr_on_edges),
+                   1000, 200, train_pos, {tr1, tr2, 1000}, {}, tr_on_edges),
                cda_rail::exceptions::TrainNotExistentException);
 }
 

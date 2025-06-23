@@ -143,6 +143,7 @@ private:
       size_t tr, double max_displacement,
       const std::vector<std::pair<double, double>>&  train_positions,
       const std::unordered_set<size_t>&              trains_in_network,
+      const std::unordered_set<size_t>&              trains_left,
       const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
   [[nodiscard]] std::pair<double, double>
   get_future_max_speed_constraints(size_t tr, const Train& train, double pos,

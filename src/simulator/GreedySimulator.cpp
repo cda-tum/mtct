@@ -520,6 +520,7 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
     size_t tr, double max_displacement,
     const std::vector<std::pair<double, double>>&  train_positions,
     const std::unordered_set<size_t>&              trains_in_network,
+    const std::unordered_set<size_t>&              trains_left,
     const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
   /**
    * Calculate the shortest distance of tr to the following train.
@@ -579,8 +580,9 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
             const auto& other_tr =
                 *(ttd_pos - 1); // Previous train in the TTD order
             const auto& other_pos = train_positions.at(other_tr);
-            if (!trains_in_network.contains(other_tr) ||
-                !is_behind_ttd(other_tr, ttd_sec.value(), other_pos)) {
+            if (!trains_left.contains(other_tr) &&
+                (!trains_in_network.contains(other_tr) ||
+                 !is_behind_ttd(other_tr, ttd_sec.value(), other_pos))) {
               return milestones.at(i) -
                      train_positions.at(tr).second; // Other train is occupying
                                                     // the future TTD section
@@ -590,6 +592,7 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
       }
     }
 
+    // Absolute distance to trains on edge
     double      potential_limit   = milestones.at(i + 1) - milestones.at(i);
     bool        found_other_train = false;
     const auto& potential_trains  = tr_on_edges.at(edge_id);
