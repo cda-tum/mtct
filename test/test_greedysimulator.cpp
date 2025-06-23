@@ -119,6 +119,13 @@ TEST(GreedySimulator, CheckConsistency) {
       std::vector<std::vector<size_t>>(network.number_of_vertices(),
                                        std::vector<size_t>()),
       {{200, 100}, {}});
+  cda_rail::simulator::GreedySimulator simulator3h(
+      instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
+      std::vector<std::vector<size_t>>(ttd_sections.size(),
+                                       std::vector<size_t>()),
+      std::vector<std::vector<size_t>>(network.number_of_vertices(),
+                                       std::vector<size_t>()),
+      {{-100, 100}, {}});
   cda_rail::simulator::GreedySimulator simulator4(
       instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
       std::vector<std::vector<size_t>>(ttd_sections.size(),
@@ -202,6 +209,7 @@ TEST(GreedySimulator, CheckConsistency) {
   EXPECT_FALSE(simulator3e.check_consistency());
   EXPECT_FALSE(simulator3f.check_consistency());
   EXPECT_FALSE(simulator3g.check_consistency());
+  EXPECT_FALSE(simulator3h.check_consistency());
   EXPECT_TRUE(simulator4.check_consistency());
   EXPECT_TRUE(simulator5.check_consistency());
   EXPECT_FALSE(simulator6.check_consistency());
@@ -353,6 +361,9 @@ TEST(GreedySimulator, BasicFunctions) {
   EXPECT_TRUE(stop_positions3.empty());
   const auto& stop_positions4 = simulator.get_stop_positions_of_tr(tr2);
   EXPECT_TRUE(stop_positions4.empty());
+
+  EXPECT_THROW(simulator.append_stop_position_to_tr(tr1, -100),
+               cda_rail::exceptions::InvalidInputException);
 
   simulator.append_stop_position_to_tr(tr1, 300);
   const auto& stop_positions5 = simulator.get_stop_positions_of_tr(tr1);
