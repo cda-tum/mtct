@@ -1585,6 +1585,9 @@ TEST(GreedySimulator, TimeToExitObjective) {
                    10, 14, V_MIN / 2.0, 80, 3, 4, 5),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
+                   10, 14, 18, -1, 3, 4, 5),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
                    10, 14, 18, 128, 0, 4, 5),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
@@ -1632,6 +1635,11 @@ TEST(GreedySimulator, ExitHeadwaySpeedConstraint) {
   // Route does not reach exit vertex yet
   EXPECT_EQ(simulator.get_max_speed_exit_headway(tr1, train1, 10, 10, 120, 2),
             16);
+  EXPECT_EQ(simulator.get_max_speed_exit_headway(tr1, train1, 10, 0, 120, 2),
+            6);
+  EXPECT_EQ(simulator.get_max_speed_exit_headway(tr1, train1, 10,
+                                                 -cda_rail::EPS / 2.0, 120, 2),
+            6);
   EXPECT_EQ(simulator.get_max_speed_exit_headway(tr1, train1, 10, 10, 120, 5),
             24);
 
@@ -1660,6 +1668,9 @@ TEST(GreedySimulator, ExitHeadwaySpeedConstraint) {
   // s = 7.5 + 22.5 = 30 --> pos = 500 - 30 = 470
   EXPECT_APPROX_EQ(
       simulator.get_max_speed_exit_headway(tr1, train1, 470, 0, 8, 5), 3,
+      LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(
+      simulator.get_max_speed_exit_headway(tr1, train1, 100, 0, 0, 5), 15,
       LINE_SPEED_ACCURACY);
 
   // v_0 = 0
@@ -1700,6 +1711,15 @@ TEST(GreedySimulator, ExitHeadwaySpeedConstraint) {
   EXPECT_APPROX_EQ(
       simulator.get_max_speed_exit_headway(tr1, train1, 455, 5, 10, 2), 8,
       LINE_SPEED_ACCURACY);
+
+  EXPECT_THROW(simulator.get_max_speed_exit_headway(tr1, train1, -1, 5, 8, 2),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.get_max_speed_exit_headway(tr1, train1, 455, -1, 8, 2),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.get_max_speed_exit_headway(tr1, train1, 455, 5, -1, 2),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.get_max_speed_exit_headway(tr1, train1, 455, 5, 8, -1),
+               cda_rail::exceptions::InvalidInputException);
 }
 
 // NOLINTEND
