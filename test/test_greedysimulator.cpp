@@ -231,6 +231,11 @@ TEST(GreedySimulator, BasicFunctions) {
   const auto& l2_l3        = network.get_edge_index("l2", "l3");
   const auto& r0_r1        = network.get_edge_index("r0", "r1");
   const auto& r1_r2        = network.get_edge_index("r1", "r2");
+  const auto& l3_g00       = network.get_edge_index("l3", "g00");
+  const auto& g00_g01      = network.get_edge_index("g00", "g01");
+  const auto& g01_r2       = network.get_edge_index("g01", "r2");
+  const auto& r2_r1        = network.get_edge_index("r2", "r1");
+  const auto& r1_r0        = network.get_edge_index("r1", "r0");
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto l0  = network.get_vertex_index("l0");
@@ -385,6 +390,35 @@ TEST(GreedySimulator, BasicFunctions) {
                cda_rail::exceptions::ConsistencyException);
 
   EXPECT_THROW(simulator.append_stop_position_to_tr(tr2, 500),
+               cda_rail::exceptions::ConsistencyException);
+
+  simulator.set_train_edges_of_tr(tr1, {});
+  simulator.set_stop_positions_of_tr(tr1, {});
+  EXPECT_THROW(simulator.append_current_stop_position_of_tr(tr1),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(simulator.append_current_stop_position_of_tr(1000),
+               cda_rail::exceptions::TrainNotExistentException);
+  simulator.append_train_edge_to_tr(tr1, l0_l1);
+  EXPECT_THROW(simulator.append_current_stop_position_of_tr(tr1),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(simulator.append_stop_edge_to_tr(tr1, g00_g01),
+               cda_rail::exceptions::ConsistencyException);
+  simulator.set_train_edges_of_tr(
+      tr1, {l0_l1, l1_l2, l2_l3, l3_g00, g00_g01, g01_r2, r2_r1});
+  EXPECT_THROW(simulator.append_current_stop_position_of_tr(tr1),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(simulator.append_stop_edge_to_tr(1000, g00_g01),
+               cda_rail::exceptions::TrainNotExistentException);
+  simulator.append_stop_edge_to_tr(tr1, g00_g01);
+  const auto& stop_positions8 = simulator.get_stop_positions_of_tr(tr1);
+  EXPECT_EQ(stop_positions8.size(), 1);
+  EXPECT_EQ(stop_positions8[0], 1310);
+  simulator.append_current_stop_position_of_tr(tr1);
+  const auto& stop_positions9 = simulator.get_stop_positions_of_tr(tr1);
+  EXPECT_EQ(stop_positions9.size(), 2);
+  EXPECT_EQ(stop_positions9[0], 1310);
+  EXPECT_EQ(stop_positions9[1], 1320);
+  EXPECT_THROW(simulator.append_current_stop_position_of_tr(tr1),
                cda_rail::exceptions::ConsistencyException);
 }
 
