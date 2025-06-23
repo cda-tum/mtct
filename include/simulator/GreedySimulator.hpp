@@ -152,9 +152,9 @@ private:
   speed_restriction_helper(double ma, double max_v, double pos,
                            double vertex_pos, double v_0, double v_m, double d,
                            int dt);
-  [[nodiscard]] double
-  get_next_stop_ma(size_t tr, double max_displacement, double pos,
-                   std::optional<size_t> next_stop_edge) const;
+  [[nodiscard]] static double
+                       get_next_stop_ma(double max_displacement, double pos,
+                                        std::optional<double> next_stop_pos);
   [[nodiscard]] double get_max_speed_exit_headway(size_t tr, const Train& train,
                                                   double pos, double v_0, int h,
                                                   int dt) const;

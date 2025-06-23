@@ -1500,114 +1500,12 @@ TEST(GreedySimulator, EoMDisplacement) {
 }
 
 TEST(GreedySimulator, NextStopMA) {
-  Network network;
-  network.add_vertex("v00", VertexType::TTD);
-  network.add_vertex("v01", VertexType::TTD);
-  network.add_vertex("v10", VertexType::TTD);
-  network.add_vertex("v11", VertexType::TTD);
-  network.add_vertex("v2", VertexType::NoBorder);
-  network.add_vertex("v3", VertexType::TTD);
-  network.add_vertex("v4", VertexType::TTD);
-  network.add_vertex("v42", VertexType::TTD);
-
-  const auto v3_v4   = network.add_edge("v3", "v4", 100, 55, true);
-  const auto v10_v2  = network.add_edge("v10", "v2", 10, 55, false);
-  const auto v11_v2  = network.add_edge("v11", "v2", 10, 30, false);
-  const auto v2_v3   = network.add_edge("v2", "v3", 10, 55, false);
-  const auto v00_v10 = network.add_edge("v00", "v10", 100, 55, true);
-  const auto v3_v42  = network.add_edge("v3", "v42", 50, 55, true);
-  const auto v01_v11 = network.add_edge("v01", "v11", 101, 30, true);
-
-  network.add_successor(v00_v10, v10_v2);
-  network.add_successor(v10_v2, v2_v3);
-  network.add_successor(v2_v3, v3_v4);
-  network.add_successor(v01_v11, v11_v2);
-  network.add_successor(v11_v2, v2_v3);
-
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto                                              tr1 =
-      timetable.add_train("Train1", 50, 55, 1, 1, true, {0, 60}, 15, "v01",
-                          {360, 420}, 10, "v4", network);
-  const auto tr2 =
-      timetable.add_train("Train2", 50, 55, 1, 2, true, {0, 60}, 20, "v00",
-                          {360, 420}, 10, "v42", network);
-
-  RouteMap routes;
-
-  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      network, timetable, routes);
-
-  cda_rail::simulator::GreedySimulator simulator(instance, {{}});
-  simulator.append_train_edge_to_tr(tr1, v01_v11);
-  simulator.append_train_edge_to_tr(tr2, v00_v10);
-
-  // Train 1
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 0, {}), 101);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, -cda_rail::EPS / 2.0, {}),
-            101);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 100, 0, {}), 100);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 50, {}), 51);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 100, 50, {}), 51);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 50, 50, {}), 50);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 0, 50, {}), 0);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, -cda_rail::EPS / 2.0, 50, {}), 0);
-
-  simulator.append_train_edge_to_tr(tr1, v11_v2);
-  simulator.append_train_edge_to_tr(tr1, v2_v3);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 50, {}), 71);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 50, {v11_v2}), 61);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 50, {v01_v11}), 51);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 55, 50, {}), 55);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 55, 50, {v11_v2}), 55);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 55, 50, {v01_v11}), 51);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 110, {}), 11);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 110, {v11_v2}), 1);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 110, {v01_v11}), 11);
-
-  simulator.append_train_edge_to_tr(tr1, v3_v4);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 110, {}), 500);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 110, {v3_v4}), 111);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 110, {v2_v3}), 11);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 110, {v11_v2}), 1);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 500, 110, {v01_v11}), 500);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr1, 99, 110, {v3_v4}), 99);
-
-  // Train 2
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 0, {}), 100);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, -cda_rail::EPS / 2.0, {}),
-            100);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 99, 0, {}), 99);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 50, {}), 50);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 99, 50, {}), 50);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 49, 50, {}), 49);
-
-  simulator.append_train_edge_to_tr(tr2, v10_v2);
-  simulator.append_train_edge_to_tr(tr2, v2_v3);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 50, {}), 70);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 50, {v10_v2}), 60);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 50, {v00_v10}), 50);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 55, 50, {}), 55);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 55, 50, {v10_v2}), 55);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 55, 50, {v00_v10}), 50);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 109, {}), 11);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 109, {v10_v2}), 1);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 109, {v00_v10}), 11);
-
-  simulator.append_train_edge_to_tr(tr2, v3_v42);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 109, {}), 500);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 109, {v3_v42}), 61);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 109, {v2_v3}), 11);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 109, {v10_v2}), 1);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 500, 109, {v00_v10}), 500);
-  EXPECT_EQ(simulator.get_next_stop_ma(tr2, 49, 109, {v3_v42}), 49);
-
-  // Errors
-  EXPECT_THROW(simulator.get_next_stop_ma(tr1, 500, -1, {}),
-               cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(simulator.get_next_stop_ma(tr1, -1, 0, {}),
-               cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(simulator.get_next_stop_ma(1000, 500, 0, {}),
-               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_next_stop_ma(10, 20, 50),
+            10);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_next_stop_ma(50, 20, 50),
+            30);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_next_stop_ma(10, 20, {}),
+            10);
 }
 
 TEST(GreedySimulator, TimeToExitObjective) {
