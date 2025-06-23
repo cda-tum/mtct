@@ -51,6 +51,7 @@ class GreedySimulator {
   std::vector<std::vector<size_t>> train_edges;
   std::vector<std::vector<size_t>> ttd_orders;
   std::vector<std::vector<size_t>> vertex_orders;
+  std::vector<std::vector<size_t>> stop_positions;
 
 private:
 #if TEST_FRIENDS
@@ -179,19 +180,22 @@ public:
     train_edges.resize(instance.get_timetable().get_train_list().size());
     ttd_orders.resize(this->ttd_sections.size());
     vertex_orders.resize(instance.const_n().number_of_vertices());
+    stop_positions.resize(instance.get_timetable().get_train_list().size());
   };
   explicit GreedySimulator(
       cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
       std::vector<std::vector<size_t>>                             ttd_sections,
       std::vector<std::vector<size_t>>                             train_edges,
       std::vector<std::vector<size_t>>                             ttd_orders,
-      std::vector<std::vector<size_t>> vertex_orders)
+      std::vector<std::vector<size_t>> vertex_orders,
+      std::vector<std::vector<size_t>> stop_positions)
       : instance(std::make_shared<
                  cda_rail::instances::GeneralPerformanceOptimizationInstance>(
             instance)),
         ttd_sections(std::move(ttd_sections)),
         train_edges(std::move(train_edges)), ttd_orders(std::move(ttd_orders)),
-        vertex_orders(std::move(vertex_orders)) {};
+        vertex_orders(std::move(vertex_orders)),
+        stop_positions(std::move(stop_positions)) {};
   GreedySimulator() = delete;
   [[nodiscard]] bool check_consistency() const;
 

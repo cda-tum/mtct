@@ -90,6 +90,10 @@ bool cda_rail::simulator::GreedySimulator::check_consistency() const {
   if (vertex_orders.size() != instance->const_n().number_of_vertices()) {
     return false;
   }
+  if (stop_positions.size() !=
+      instance->get_timetable().get_train_list().size()) {
+    return false;
+  }
 
   // All edges are valid
   for (const auto& edges : train_edges) {
