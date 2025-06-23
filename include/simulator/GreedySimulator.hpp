@@ -51,7 +51,7 @@ class GreedySimulator {
   std::vector<std::vector<size_t>> train_edges;
   std::vector<std::vector<size_t>> ttd_orders;
   std::vector<std::vector<size_t>> vertex_orders;
-  std::vector<std::vector<size_t>> stop_positions;
+  std::vector<std::vector<double>> stop_positions;
 
 private:
 #if TEST_FRIENDS
@@ -188,7 +188,7 @@ public:
       std::vector<std::vector<size_t>>                             train_edges,
       std::vector<std::vector<size_t>>                             ttd_orders,
       std::vector<std::vector<size_t>> vertex_orders,
-      std::vector<std::vector<size_t>> stop_positions)
+      std::vector<std::vector<double>> stop_positions)
       : instance(std::make_shared<
                  cda_rail::instances::GeneralPerformanceOptimizationInstance>(
             instance)),
@@ -284,6 +284,55 @@ public:
           "Vertex index out of bounds.");
     }
     return vertex_orders.at(vertex_id);
+  };
+  void set_stop_positions(std::vector<std::vector<double>> positions) {
+    if (positions.size() != instance->get_timetable().get_train_list().size()) {
+      throw cda_rail::exceptions::InvalidInputException(
+          "Size of stop_positions does not match number of trains in "
+          "instance.");
+    }
+    stop_positions = std::move(positions);
+  }
+  void set_stop_positions_of_tr(size_t              train_id,
+                                std::vector<double> positions) {
+    if (stop_positions.size() <= train_id) {
+      throw cda_rail::exceptions::TrainNotExistentException(train_id);
+    }
+    if (positions.size() >
+        instance->get_timetable().get_schedule(train_id).get_stops().size()) {
+      throw cda_rail::exceptions::InvalidInputException(
+          "Too many stop positions for train " + std::to_string(train_id) +
+          ". Train has only " +
+          std::to_string(instance->get_timetable()
+                             .get_schedule(train_id)
+                             .get_stops()
+                             .size()) +
+          " scheduled stops.");
+    }
+    stop_positions.at(train_id) = std::move(positions);
+  }
+  void append_stop_position_to_tr(size_t train_id, double position) {
+    if (train_id >= stop_positions.size()) {
+      throw cda_rail::exceptions::TrainNotExistentException(train_id);
+    }
+    if (stop_positions.at(train_id).size() >=
+        instance->get_timetable().get_schedule(train_id).get_stops().size()) {
+      throw cda_rail::exceptions::ConsistencyException(
+          "All scheduled stops for train " + std::to_string(train_id) +
+          " are already set.");
+    }
+    stop_positions.at(train_id).push_back(position);
+  }
+  [[nodiscard]] const std::vector<std::vector<double>>&
+  get_stop_positions() const {
+    return stop_positions;
+  };
+  [[nodiscard]] const std::vector<double>&
+  get_stop_positions_of_tr(size_t train_id) const {
+    if (train_id >= stop_positions.size()) {
+      throw cda_rail::exceptions::TrainNotExistentException(train_id);
+    }
+    return stop_positions.at(train_id);
   };
 
   [[nodiscard]] std::pair<bool, std::vector<int>>

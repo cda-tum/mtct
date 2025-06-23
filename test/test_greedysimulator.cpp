@@ -40,6 +40,10 @@ TEST(GreedySimulator, CheckConsistency) {
   timetable.add_track_to_station("Station1", "g10", "g11", network);
   timetable.add_track_to_station("Station1", "g11", "g10", network);
   timetable.add_stop("Train1", "Station1", {60, 120}, {120, 180}, 60);
+
+  timetable.add_station("Station2");
+  timetable.add_track_to_station("Station2", "r2", "r1", network);
+  timetable.add_stop("Train1", "Station2", {120, 200}, {200, 300}, 60);
   EXPECT_TRUE(timetable.check_consistency(network));
 
   RouteMap routes;
@@ -86,7 +90,7 @@ TEST(GreedySimulator, CheckConsistency) {
                                        std::vector<size_t>()),
       std::vector<std::vector<size_t>>(network.number_of_vertices(),
                                        std::vector<size_t>()),
-      {{100}, {}});
+      {{100, 200}, {}});
   cda_rail::simulator::GreedySimulator simulator3d(
       instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
       std::vector<std::vector<size_t>>(ttd_sections.size(),
@@ -100,7 +104,21 @@ TEST(GreedySimulator, CheckConsistency) {
                                        std::vector<size_t>()),
       std::vector<std::vector<size_t>>(network.number_of_vertices(),
                                        std::vector<size_t>()),
-      {{100, 200}, {}});
+      {{100, 200, 300}, {}});
+  cda_rail::simulator::GreedySimulator simulator3f(
+      instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
+      std::vector<std::vector<size_t>>(ttd_sections.size(),
+                                       std::vector<size_t>()),
+      std::vector<std::vector<size_t>>(network.number_of_vertices(),
+                                       std::vector<size_t>()),
+      {{100}, {}});
+  cda_rail::simulator::GreedySimulator simulator3g(
+      instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
+      std::vector<std::vector<size_t>>(ttd_sections.size(),
+                                       std::vector<size_t>()),
+      std::vector<std::vector<size_t>>(network.number_of_vertices(),
+                                       std::vector<size_t>()),
+      {{200, 100}, {}});
   cda_rail::simulator::GreedySimulator simulator4(
       instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
       std::vector<std::vector<size_t>>(ttd_sections.size(),
@@ -182,6 +200,8 @@ TEST(GreedySimulator, CheckConsistency) {
   EXPECT_TRUE(simulator3c.check_consistency());
   EXPECT_FALSE(simulator3d.check_consistency());
   EXPECT_FALSE(simulator3e.check_consistency());
+  EXPECT_FALSE(simulator3f.check_consistency());
+  EXPECT_FALSE(simulator3g.check_consistency());
   EXPECT_TRUE(simulator4.check_consistency());
   EXPECT_TRUE(simulator5.check_consistency());
   EXPECT_FALSE(simulator6.check_consistency());
@@ -211,6 +231,16 @@ TEST(GreedySimulator, BasicFunctions) {
                                        0, "l0", {360, 420}, 0, "r0", network);
   const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 1, false, {30, 90},
                                        10, r0, {400, 460}, 5, l0, network);
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", "g00", "g01", network);
+  timetable.add_track_to_station("Station1", "g01", "g00", network);
+  timetable.add_track_to_station("Station1", "g10", "g11", network);
+  timetable.add_track_to_station("Station1", "g11", "g10", network);
+  timetable.add_stop("Train1", "Station1", {60, 120}, {120, 180}, 60);
+
+  timetable.add_station("Station2");
+  timetable.add_track_to_station("Station2", "r2", "r1", network);
+  timetable.add_stop("Train1", "Station2", {120, 200}, {200, 300}, 60);
   EXPECT_TRUE(timetable.check_consistency(network));
 
   RouteMap routes;
@@ -296,6 +326,55 @@ TEST(GreedySimulator, BasicFunctions) {
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(simulator.set_vertex_orders_of_vertex(1000, {tr1}),
                cda_rail::exceptions::InvalidInputException);
+
+  // Stop positions
+  EXPECT_THROW(simulator.set_stop_positions({{}}),
+               cda_rail::exceptions::InvalidInputException);
+  simulator.set_stop_positions({{100}, {}});
+  const auto& stop_positions1 = simulator.get_stop_positions();
+  EXPECT_EQ(stop_positions1.size(), 2);
+  EXPECT_EQ(stop_positions1[0].size(), 1);
+  EXPECT_EQ(stop_positions1[0][0], 100);
+  EXPECT_TRUE(stop_positions1[1].empty());
+  EXPECT_THROW(simulator.set_stop_positions_of_tr(1000, {100}),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.set_stop_positions_of_tr(tr1, {100, 200}),
+               cda_rail::exceptions::InvalidInputException);
+  simulator.set_stop_positions_of_tr(tr1, {150});
+  const auto& stop_positions2 = simulator.get_stop_positions_of_tr(tr1);
+  EXPECT_EQ(stop_positions2.size(), 1);
+  EXPECT_EQ(stop_positions2[0], 150);
+
+  EXPECT_THROW(simulator.get_stop_positions_of_tr(1000),
+               cda_rail::exceptions::TrainNotExistentException);
+
+  simulator.set_stop_positions_of_tr(tr1, {});
+  const auto& stop_positions3 = simulator.get_stop_positions_of_tr(tr1);
+  EXPECT_TRUE(stop_positions3.empty());
+  const auto& stop_positions4 = simulator.get_stop_positions_of_tr(tr2);
+  EXPECT_TRUE(stop_positions4.empty());
+
+  simulator.append_stop_position_to_tr(tr1, 300);
+  const auto& stop_positions5 = simulator.get_stop_positions_of_tr(tr1);
+  EXPECT_EQ(stop_positions5.size(), 1);
+  EXPECT_EQ(stop_positions5[0], 300);
+  const auto& stop_positions6 = simulator.get_stop_positions_of_tr(tr2);
+  EXPECT_TRUE(stop_positions6.empty());
+
+  EXPECT_THROW(simulator.append_stop_position_to_tr(1000, 500),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(simulator.append_stop_position_to_tr(tr1, 200),
+               cda_rail::exceptions::ConsistencyException);
+  simulator.append_stop_position_to_tr(tr1, 400);
+  const auto& stop_positions7 = simulator.get_stop_positions_of_tr(tr1);
+  EXPECT_EQ(stop_positions7.size(), 2);
+  EXPECT_EQ(stop_positions7[0], 300);
+  EXPECT_EQ(stop_positions7[1], 400);
+  EXPECT_THROW(simulator.append_stop_position_to_tr(tr1, 500),
+               cda_rail::exceptions::ConsistencyException);
+
+  EXPECT_THROW(simulator.append_stop_position_to_tr(tr2, 500),
+               cda_rail::exceptions::ConsistencyException);
 }
 
 TEST(GreedySimulator, BasicPrivateFunctions) {
