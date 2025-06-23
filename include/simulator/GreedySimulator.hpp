@@ -292,7 +292,7 @@ public:
           "instance.");
     }
     stop_positions = std::move(positions);
-  }
+  };
   void set_stop_positions_of_tr(size_t              train_id,
                                 std::vector<double> positions) {
     if (stop_positions.size() <= train_id) {
@@ -310,7 +310,7 @@ public:
           " scheduled stops.");
     }
     stop_positions.at(train_id) = std::move(positions);
-  }
+  };
   void append_stop_position_to_tr(size_t train_id, double position) {
     if (position < 0) {
       throw cda_rail::exceptions::InvalidInputException(
@@ -334,6 +334,38 @@ public:
           ", new position is " + std::to_string(position) + ".");
     }
     stop_positions.at(train_id).push_back(position);
+  };
+  void append_stop_edge_to_tr(size_t train_id, size_t edge) {
+    const auto& stop_positions_of_tr = get_stop_positions_of_tr(train_id);
+    const auto& tr_stops =
+        instance->get_timetable().get_schedule(train_id).get_stops();
+    if (stop_positions_of_tr.size() >= tr_stops.size()) {
+      throw cda_rail::exceptions::ConsistencyException(
+          "All scheduled stops for train " + std::to_string(train_id) +
+          " are already set.");
+    }
+    const auto& next_stop =
+        tr_stops.at(stop_positions_of_tr.size()).get_station_name();
+    const auto& next_stop_edges =
+        instance->get_station_list().get_station(next_stop).tracks;
+    if (std::find(next_stop_edges.begin(), next_stop_edges.end(), edge) ==
+        next_stop_edges.end()) {
+      throw cda_rail::exceptions::ConsistencyException(
+          "Edge " + std::to_string(edge) +
+          " is not a valid stop edge for "
+          "train " +
+          std::to_string(train_id) + ". Next stop is " + next_stop + ".");
+    }
+    append_stop_position_to_tr(train_id, get_edge_position(train_id, edge));
+  };
+  void append_current_stop_position_of_tr(size_t train_id) {
+    const auto& tr_edges = get_train_edges_of_tr(train_id);
+    if (tr_edges.empty()) {
+      throw cda_rail::exceptions::ConsistencyException(
+          "Train " + std::to_string(train_id) +
+          " has no edges in its route. Cannot append current stop position.");
+    }
+    append_stop_edge_to_tr(train_id, tr_edges.back());
   }
   [[nodiscard]] const std::vector<std::vector<double>>&
   get_stop_positions() const {
@@ -345,6 +377,23 @@ public:
       throw cda_rail::exceptions::TrainNotExistentException(train_id);
     }
     return stop_positions.at(train_id);
+  };
+  [[nodiscard]] double get_edge_position(size_t train_id,
+                                         size_t edge_id) const {
+    if (!instance->const_n().has_edge(edge_id)) {
+      throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
+    }
+    const auto& tr_edges = get_train_edges_of_tr(train_id);
+    double      pos      = 0.0;
+    for (const auto& edge : tr_edges) {
+      pos += instance->const_n().get_edge(edge).length;
+      if (edge == edge_id) {
+        return pos;
+      }
+    }
+    throw cda_rail::exceptions::ConsistencyException(
+        "Edge " + std::to_string(edge_id) + " not found in train " +
+        std::to_string(train_id) + "'s route.");
   };
 
   [[nodiscard]] std::pair<bool, std::vector<int>>
