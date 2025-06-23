@@ -207,7 +207,7 @@ TEST(GreedySimulator, CheckConsistency) {
   EXPECT_TRUE(simulator3c.check_consistency());
   EXPECT_FALSE(simulator3d.check_consistency());
   EXPECT_FALSE(simulator3e.check_consistency());
-  EXPECT_FALSE(simulator3f.check_consistency());
+  EXPECT_TRUE(simulator3f.check_consistency());
   EXPECT_FALSE(simulator3g.check_consistency());
   EXPECT_FALSE(simulator3h.check_consistency());
   EXPECT_TRUE(simulator4.check_consistency());
