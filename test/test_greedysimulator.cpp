@@ -1790,5 +1790,113 @@ TEST(GreedySimulator, ExitHeadwaySpeedConstraint) {
                cda_rail::exceptions::InvalidInputException);
 }
 
+TEST(GreedySimulator, MAandMaxV) {
+  Network    network;
+  const auto v0t = network.add_vertex("v0t", VertexType::TTD);
+  const auto v0b = network.add_vertex("v0b", VertexType::TTD);
+  const auto v1t = network.add_vertex("v1t", VertexType::TTD);
+  const auto v1b = network.add_vertex("v1b", VertexType::TTD);
+  const auto v2t = network.add_vertex("v2t", VertexType::TTD);
+  const auto v2b = network.add_vertex("v2b", VertexType::TTD);
+  const auto v3  = network.add_vertex("v3", VertexType::TTD);
+  const auto v4  = network.add_vertex("v4", VertexType::TTD);
+  const auto v5  = network.add_vertex("v5", VertexType::TTD);
+  const auto v6  = network.add_vertex("v6", VertexType::TTD);
+
+  const auto v0t_v1t = network.add_edge("v0t", "v1t", 800, 50, true);
+  const auto v0b_v1b = network.add_edge("v0b", "v1b", 100, 5, true);
+  const auto v1t_v2t = network.add_edge("v1t", "v2t", 100, 5, true);
+  const auto v1b_v2b = network.add_edge("v1b", "v2b", 100, 10, true);
+  const auto v2t_v3  = network.add_edge("v2t", "v3", 50, 50, false);
+  const auto v2b_v3  = network.add_edge("v2b", "v3", 50, 50, false);
+  const auto v3_v4   = network.add_edge("v3", "v4", 50, 50, false);
+  const auto v4_v5   = network.add_edge("v4", "v5", 1000, 50, true);
+  const auto v5_v6   = network.add_edge("v5", "v6", 100, 50, true);
+
+  network.add_successor(v0t_v1t, v1t_v2t);
+  network.add_successor(v0b_v1b, v1b_v2b);
+  network.add_successor(v1t_v2t, v2t_v3);
+  network.add_successor(v1b_v2b, v2b_v3);
+  network.add_successor(v2t_v3, v3_v4);
+  network.add_successor(v2b_v3, v3_v4);
+  network.add_successor(v3_v4, v4_v5);
+  network.add_successor(v4_v5, v5_v6);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto                                              tr1 =
+      timetable.add_train("Train1", 10, 50, 8, 16, true, {0, 60}, 15, "v0t",
+                          {360, 420}, 16, "v6", network);
+  const auto tr2 =
+      timetable.add_train("Train2", 10, 50, 7, 14, true, {0, 60}, 15, "v0t",
+                          {360, 420}, 14, "v6", network);
+  const auto tr3 =
+      timetable.add_train("Train3", 10, 50, 6, 12, true, {0, 60}, 15, "v0t",
+                          {360, 420}, 12, "v6", network);
+  const auto tr4 =
+      timetable.add_train("Train4", 10, 50, 5, 10, true, {0, 60}, 15, "v0b",
+                          {360, 420}, 10, "v6", network);
+  const auto tr5 = timetable.add_train("Train5", 10, 50, 4, 8, true, {0, 60},
+                                       15, "v0b", {360, 420}, 8, "v6", network);
+  const auto tr6 = timetable.add_train("Train6", 10, 50, 3, 6, true, {0, 60},
+                                       15, "v0t", {360, 420}, 6, "v6", network);
+  const auto tr7 = timetable.add_train("Train7", 10, 50, 2, 4, true, {0, 60},
+                                       15, "v0b", {360, 420}, 4, "v6", network);
+  const auto tr8 = timetable.add_train("Train8", 10, 50, 1, 2, true, {0, 60},
+                                       15, "v0t", {360, 420}, 2, "v6", network);
+
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", v2b_v3, network);
+
+  timetable.add_stop(tr5, "Station1", {30, 60}, {60, 90}, 30);
+
+  RouteMap routes;
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::simulator::GreedySimulator simulator(instance,
+                                                 {{v2t_v3, v2b_v3, v3_v4}});
+
+  simulator.set_train_edges_of_tr(
+      tr1, {v0t_v1t, v1t_v2t, v2t_v3, v3_v4, v4_v5, v5_v6});
+  simulator.set_train_edges_of_tr(tr2,
+                                  {v0t_v1t, v1t_v2t, v2t_v3, v3_v4, v4_v5});
+  simulator.set_train_edges_of_tr(tr3,
+                                  {v0t_v1t, v1t_v2t, v2t_v3, v3_v4, v4_v5});
+  simulator.set_train_edges_of_tr(tr4,
+                                  {v0b_v1b, v1b_v2b, v2b_v3, v3_v4, v4_v5});
+  simulator.set_train_edges_of_tr(tr5,
+                                  {v0b_v1b, v1b_v2b, v2b_v3, v3_v4, v4_v5});
+  simulator.set_train_edges_of_tr(tr6,
+                                  {v0t_v1t, v1t_v2t, v2t_v3, v3_v4, v4_v5});
+  simulator.set_train_edges_of_tr(tr7,
+                                  {v0b_v1b, v1b_v2b, v2b_v3, v3_v4, v4_v5});
+  simulator.set_train_edges_of_tr(tr8,
+                                  {v0t_v1t, v1t_v2t, v2t_v3, v3_v4, v4_v5});
+
+  simulator.append_stop_edge_to_tr(tr5, v2b_v3);
+
+  std::vector<std::pair<double, double>> train_pos = {
+      {2080, 2090}, // Train1
+      {1970, 1980}, // Train2
+      {1090, 1100}, // Train3
+      {340, 350},   // Train4
+      {240, 250},   // Train5 (stopped at Station1)
+      {875, 885},   // Train6
+      {90, 110},    // Train7
+      {770, 780}    // Train8
+  };
+
+  // Check that the ma and max speed constraints are correctly calculated
+  // Train 1: Bound by leaving headway
+  // Train 2: Bound by final edge
+  // Train 3: No bounds -> maximal displacement
+  // Train 4: Bound by Train 3
+  // Train 5: Bound by stopping at Station1
+  // Train 6: Bound by Train 5 in TTD
+  // Train 7: Bound by speed limit of edge
+  // Train 8: Bound by future speed limit of v1t_v2t
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
