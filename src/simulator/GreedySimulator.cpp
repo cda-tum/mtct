@@ -811,13 +811,14 @@ double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
 
   const auto milestones    = edge_milestones(tr);
   const auto exit_distance = milestones.back() - pos;
-  v_ub                     = std::min(v_ub, ((2.0 * exit_distance) / dt) - v_0);
+  if (h == 0) {
+    return v_ub; // No constraint by exit headway, maximal speed ensured by
+                 // future speed restriction headway
+  }
+  v_ub = std::min(v_ub, ((2.0 * exit_distance) / dt) - v_0);
   if (v_ub < v_lb - EPS) {
     throw cda_rail::exceptions::ConsistencyException(
         "v_ub < v_lb, this should not have happened.");
-  }
-  if ((h == 0) || (v_ub < v_lb)) {
-    return std::max(v_lb, v_ub);
   }
 
   auto [bool_vub, obj_vub] =
@@ -849,7 +850,9 @@ double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
     }
   }
 
-  return v_lb; // Return the lower bound as the maximum speed
+  return (!bool_vlb && obj_vub >= h)
+             ? v_ub
+             : v_lb; // Return the lower bound as the maximum speed
 }
 
 std::pair<bool, double>
