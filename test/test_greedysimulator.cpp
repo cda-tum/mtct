@@ -1843,9 +1843,8 @@ TEST(GreedySimulator, MAandMaxV) {
   network.add_successor(v4_v5, v5_v6);
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto                                              tr1 =
-      timetable.add_train("Train1", 10, 50, 8, 16, true, {0, 60}, 15, "v0t",
-                          {360, 420}, 16, "v6", network);
+  const auto tr1 = timetable.add_train("Train1", 10, 50, 4, 2, true, {0, 60},
+                                       15, "v0t", {360, 420}, 2, "v6", network);
   const auto tr2 =
       timetable.add_train("Train2", 10, 50, 7, 14, true, {0, 60}, 15, "v0t",
                           {360, 420}, 14, "v6", network);
@@ -1859,10 +1858,11 @@ TEST(GreedySimulator, MAandMaxV) {
                                        15, "v0b", {360, 420}, 8, "v6", network);
   const auto tr6 = timetable.add_train("Train6", 10, 50, 3, 6, true, {0, 60},
                                        15, "v0t", {360, 420}, 6, "v6", network);
-  const auto tr7 = timetable.add_train("Train7", 10, 50, 2, 4, true, {0, 60},
+  const auto tr7 = timetable.add_train("Train7", 20, 50, 2, 4, true, {0, 60},
                                        15, "v0b", {360, 420}, 4, "v6", network);
-  const auto tr8 = timetable.add_train("Train8", 10, 50, 1, 2, true, {0, 60},
-                                       15, "v0t", {360, 420}, 2, "v6", network);
+  const auto tr8 =
+      timetable.add_train("Train8", 10, 50, 8, 16, true, {0, 60}, 15, "v0t",
+                          {360, 420}, 16, "v6", network);
 
   timetable.add_station("Station1");
   timetable.add_track_to_station("Station1", v2b_v3, network);
@@ -1906,7 +1906,7 @@ TEST(GreedySimulator, MAandMaxV) {
       {240, 250},   // Train5 (stopped at Station1)
       {875, 885},   // Train6
       {90, 110},    // Train7
-      {770, 780}    // Train8
+      {590, 600}    // Train8
   };
 
   // Check that the ma and max speed constraints are correctly calculated
@@ -1923,10 +1923,89 @@ TEST(GreedySimulator, MAandMaxV) {
                                             tr5, tr6, tr7, tr8};
   const auto                 tr_on_edges = simulator.tr_on_edges();
 
+  // Train 1: Bound by leaving headway, a = 4, d = 2
   const auto [ma1, max_v1] = simulator.get_ma_and_maxv(
-      tr1, 15, {}, 0, 1, train_pos, train_ids, {}, tr_on_edges, true);
-  EXPECT_APPROX_EQ(max_v1, 16, LINE_SPEED_ACCURACY);
-  EXPECT_LE((15 + max_v1) * 1.0 / 2.0, ma1);
+      tr1, 1, {}, 0, 10, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_APPROX_EQ(max_v1, 2, LINE_SPEED_ACCURACY);
+  EXPECT_LE((15 + max_v1) * 1.0 / 2.0 + ((max_v1 * max_v1) / (2 * 2)), ma1);
+  // in the last second the train decelerates from v_1 = 4 to v_n = 2 -> (4+2) *
+  // 1/2 = 3m Before that the train needs to cover 7m, say within 3s
+  // --> (v_0 + 4) * 3 / 2 = 7 --> v_0 = 2/3
+  // h = 1 + 3 = 4s
+  const auto [ma1b, max_v1b] = simulator.get_ma_and_maxv(
+      tr1, 2.0 / 3.0, {}, 4, 3, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_APPROX_EQ(max_v1b, 4, LINE_SPEED_ACCURACY);
+  EXPECT_LE((2.0 / 3.0 + max_v1b) * 3.0 / 2.0 + ((max_v1b * max_v1b) / (2 * 2)),
+            ma1b);
+
+  // Train 2: Bound by final edge, a = 7, d = 14
+  const auto [ma2, max_v2] = simulator.get_ma_and_maxv(
+      tr2, 23, {}, 0, 2, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_EQ(ma2, 20);
+  EXPECT_EQ(max_v2, 0);
+  const auto [ma2b, max_v2b] = simulator.get_ma_and_maxv(
+      tr2, 10, {}, 0, 1, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_EQ(ma2b, 20);
+  EXPECT_GE((10.0 + max_v2b) * 1.0 / 2.0 + ((max_v2b * max_v2b) / (2 * 14)),
+            ma2b);
+
+  // Train 3: No bounds -> maximal displacement, a = 6, d = 12
+  const auto [ma3, max_v3] = simulator.get_ma_and_maxv(
+      tr3, 10, {}, 0, 2, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_APPROX_EQ_6(ma3, 52.0 + 1.0 / 6.0);
+  EXPECT_GE((10.0 + max_v3) * 2.0 / 2.0 + ((max_v3 * max_v3) / (2 * 12)), ma3);
+  const auto [ma3b, max_v3b] =
+      simulator.get_ma_and_maxv(tr3, 30, {}, 0, 20, train_pos, train_ids, {},
+                                tr_on_edges, true); // this time limited by tr2
+  EXPECT_EQ(ma3b, 870);
+  EXPECT_GE((30.0 + max_v3b) * 20.0 / 2.0 + ((max_v3b * max_v3b) / (2 * 12)),
+            ma3b);
+
+  // Train 4: Bound by Train 3, a = 5, d = 10
+  const auto [ma4, max_v4] = simulator.get_ma_and_maxv(
+      tr4, 28, {}, 0, 2, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_EQ(ma4, 40);
+  EXPECT_GE((28.0 + max_v4) * 2.0 / 2.0 + ((max_v4 * max_v4) / (2 * 10)), ma4);
+
+  // Train 5: Bound by stopping at Station1, a = 4, d = 8
+  const auto [ma5, max_v5] = simulator.get_ma_and_maxv(
+      tr5, 0, {250}, 0, 2, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_EQ(ma5, 0);
+  EXPECT_GE((0.0 + max_v5) * 2.0 / 2.0 + ((max_v5 * max_v5) / (2 * 8)), ma5);
+  // Otherwise 90m away from tr4
+  const auto [ma5b, max_v5b] = simulator.get_ma_and_maxv(
+      tr5, 30, {}, 0, 2, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_EQ(ma5b, 90);
+  EXPECT_GE((30.0 + max_v5b) * 2.0 / 2.0 + ((max_v5b * max_v5b) / (2 * 8)),
+            ma5b);
+
+  // Train 6: Bound by Train 5 in TTD, a = 3, d = 6
+  // 15m away from TTD
+  const auto [ma6, max_v6] = simulator.get_ma_and_maxv(
+      tr6, 10, {}, 0, 2, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_EQ(ma6, 15);
+  EXPECT_GE((10.0 + max_v6) * 2.0 / 2.0 + ((max_v6 * max_v6) / (2 * 6)), ma6);
+
+  // Train 7: Bound by speed limit of edge, a = 2, d = 4
+  const auto [ma7, max_v7] = simulator.get_ma_and_maxv(
+      tr7, 4, {}, 0, 4, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_EQ(max_v7, 5);
+  EXPECT_LE((4.0 + max_v7) * 4.0 / 2.0 + ((max_v7 * max_v7) / (2 * 4)), ma7);
+  const auto [ma7b, max_v7b] = simulator.get_ma_and_maxv(
+      tr7, 4, {}, 0, 4, train_pos, train_ids, {}, tr_on_edges, false);
+  EXPECT_EQ(max_v7b, 10);
+  EXPECT_LE((4.0 + max_v7b) * 4.0 / 2.0 + ((max_v7b * max_v7b) / (2 * 4)),
+            ma7b);
+
+  // Train 8: Bound by future speed limit of v1t_v2t, a = 8, d = 16
+  // At pos = 800 limit of 5 m/s starts
+  // bd = 5 * 5 / (2*16) = 25 / 32 = 0.78125
+  // --> ma at 800.78125
+  // Train is 200m away from position 800
+  const auto [ma8, max_v8] = simulator.get_ma_and_maxv(
+      tr8, 30, {}, 0, 5, train_pos, train_ids, {}, tr_on_edges, true);
+  EXPECT_EQ(ma8, 200.78125);
+  EXPECT_GE((30.0 + max_v8) * 5.0 / 2.0 + ((max_v8 * max_v8) / (2 * 4)), ma8);
 }
 
 // NOLINTEND
