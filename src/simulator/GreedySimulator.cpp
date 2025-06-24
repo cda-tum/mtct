@@ -971,3 +971,61 @@ std::pair<double, double> cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
 
   return {ma, max_v};
 }
+
+double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
+                                                            double ma, double d,
+                                                            int dt) {
+  /**
+   * This function calculates the maximum velocity at the end of a time step
+   * without exceeding the moving authority.
+   *
+   * @param v_0: The initial velocity of the train in m/s.
+   * @param ma: The moving authority in m.
+   * @param d: The deceleration of the train in m/s^2.
+   * @param dt: The time step in seconds.
+   *
+   * @return: The maximum velocity at the end of the time step in m/s.
+   */
+
+  // Assume that a train accelerates linearly during the time step from v_0
+  // (given) to v_1 (to be calculated). x_1 = (v_0 + v_1) * dt/2 bd = v_1 * v_1
+  // / (2 * d) x_1 + bd = ma Wolframalpha: v_1 = 0.5 *
+  // (sqrt((d*dt)^2+4*(2*d*ma-d*dt*v_0)) - d*dt) Set A := d*dt, B :=
+  // 2*d*ma-d*dt*v_0) v_1 = 0.5 * (sqrt(A^2 + 4*B) - A)
+  if (std::abs(v_0) < EPS) {
+    v_0 = 0;
+  }
+  if (std::abs(ma) < EPS) {
+    ma = 0;
+  }
+  if (std::abs(d) < EPS) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Deceleration must be positive.");
+  }
+  if (dt < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Time step must be positive.");
+  }
+  if (ma < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Moving authority must be non-negative.");
+  }
+
+  if (v_0 * static_cast<double>(dt) / 2.0 >= ma) {
+    // If linearly stopping, train will run over the moving authority
+    // Hence, the train must brake quicker and stop within the time step already
+    return -1; // Train stops at ma
+  }
+
+  const double a = d * dt;
+  const double b = (2 * d * ma) - (d * dt * v_0);
+
+  // Recall: v_1 = 0.5 * (sqrt(A^2 + 4*B) - A)
+  // This is not numerically stable, so we multiply by
+  // (sqrt(A^2 + 4*B) + A) / (sqrt(A^2 + 4*B) + A)
+  // v_1 = 0.5 * (A^2 + 4*B - A^2) / (A + sqrt(A^2 + 4*B))
+  // Simplifying gives us:
+  // v_1 = 0.5 * (4*B) / (A + sqrt(A^2 + 4*B))
+  // v_1 = 2 * B / (A + sqrt(A^2 + 4*B))
+  return 2.0 * b / (a + std::sqrt(a * a + 4.0 * b));
+}

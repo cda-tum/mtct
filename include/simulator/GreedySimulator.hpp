@@ -173,6 +173,8 @@ private:
                   const std::unordered_set<size_t>& trains_left,
                   const std::vector<std::unordered_set<size_t>>& tr_on_edges,
                   bool also_limit_speed_by_leaving_edges) const;
+  [[nodiscard]] static double get_v1_from_ma(double v_0, double ma, double d,
+                                             int dt);
 
 public:
   explicit GreedySimulator(
