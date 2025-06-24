@@ -695,12 +695,13 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
   const auto& last_edge    = instance->const_n().get_edge(last_edge_id);
   if (pos + max_displacement >= milestones.back()) {
     const auto tr_schedule = instance->get_schedule(tr);
-    if (last_edge.target == tr_schedule.get_exit()) {
-      // Train is leaving the network at the end of its route
-      std::tie(ma, max_v) = speed_restriction_helper(
-          ma, max_v, pos, milestones.back(), v_0, tr_schedule.get_v_n(),
-          train.deceleration, dt);
-    }
+    const bool last_edge_leaves_network =
+        (last_edge.target == tr_schedule.get_exit());
+    const double last_edge_exit_restriction =
+        last_edge_leaves_network ? tr_schedule.get_v_n() : 0;
+    std::tie(ma, max_v) = speed_restriction_helper(
+        ma, max_v, pos, milestones.back(), v_0, last_edge_exit_restriction,
+        train.deceleration, dt);
   }
 
   for (size_t i = 0; i < train_edges.at(tr).size() &&
@@ -738,6 +739,10 @@ cda_rail::simulator::GreedySimulator::speed_restriction_helper(
   if (pos + max_dist >= vertex_pos) {
     // Train can reach the edge -> limit speed directly
     max_v = std::min(max_v, v_m);
+    if (v_m == 0) {
+      // Possibly full stop before dt ends
+      ma = std::min(ma, vertex_pos - pos);
+    }
   } else {
     // Train cannot reach the next edge, so we limit the moving authority
     ma = std::min(ma, vertex_pos + ((v_m * v_m) / (2.0 * d)) - pos);
