@@ -1002,6 +1002,10 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
     throw cda_rail::exceptions::InvalidInputException(
         "Deceleration must be positive.");
   }
+  if (v_0 < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Initial velocity must be non-negative.");
+  }
   if (dt < 0) {
     throw cda_rail::exceptions::InvalidInputException(
         "Time step must be positive.");
