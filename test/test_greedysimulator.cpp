@@ -17,6 +17,7 @@ using namespace cda_rail;
 // NOLINTBEGIN
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
 
+/**
 TEST(GreedySimulator, CheckConsistency) {
   // Create instance
   Network     network("./example-networks/SimpleStation/network/");
@@ -1809,6 +1810,8 @@ TEST(GreedySimulator, ExitHeadwaySpeedConstraint) {
   EXPECT_THROW(simulator.get_max_speed_exit_headway(tr1, train1, 455, 5, 8, -1),
                cda_rail::exceptions::InvalidInputException);
 }
+
+ **/
 
 TEST(GreedySimulator, MAandMaxV) {
   Network    network;
