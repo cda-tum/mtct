@@ -1014,7 +1014,7 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
   if (v_0 * static_cast<double>(dt) / 2.0 >= ma) {
     // If linearly stopping, train will run over the moving authority
     // Hence, the train must brake quicker and stop within the time step already
-    return -1; // Train stops at ma
+    return 0; // Train stops at ma
   }
 
   const double a = d * dt;
