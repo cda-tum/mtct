@@ -2008,5 +2008,59 @@ TEST(GreedySimulator, MAandMaxV) {
   EXPECT_GE((30.0 + max_v8) * 5.0 / 2.0 + ((max_v8 * max_v8) / (2 * 4)), ma8);
 }
 
+TEST(GreedySimulator, MAtoV) {
+  // v_0 = 5
+  // v_1 = 10 after 6 seconds
+  // x_1 = (5 + 10) * 6 / 2 = 45
+  // d = 4
+  // bd = 10 * 10 / (2 * 4) = 12.5
+  // x_1 + bd = 45 + 12.5 = 57.5
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_v1_from_ma(5, 57.5, 4, 6),
+            10);
+
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_v1_from_ma(0, 0, 4, 5),
+            0);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_v1_from_ma(
+                -cda_rail::EPS / 2.0, 0, 4, 5),
+            0);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_v1_from_ma(
+                0, -cda_rail::EPS / 2.0, 4, 5),
+            0);
+
+  // v_0 = 0
+  // v_0 = 6 after 5 seconds
+  // x_1 = (0 + 6) * 5 / 2 = 15
+  // d = 3
+  // bd = 6 * 6 / (2 * 3) = 6
+  // x_1 + bd = 15 + 6 = 21
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_v1_from_ma(0, 21, 3, 5),
+            6);
+
+  // v_0 = 10
+  // d = 2
+  // bd = 10 * 10 / (2 * 2) = 25
+  // t = 10/2 = 5s
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_v1_from_ma(10, 25, 2, 5),
+            0);
+  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_v1_from_ma(10, 25, 2, 6),
+            0);
+
+  EXPECT_THROW(
+      cda_rail::simulator::GreedySimulator::get_v1_from_ma(-1, 57.5, 4, 6),
+      cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(
+      cda_rail::simulator::GreedySimulator::get_v1_from_ma(5, -1, 4, 6),
+      cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(
+      cda_rail::simulator::GreedySimulator::get_v1_from_ma(5, 57.5, 0, 6),
+      cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::get_v1_from_ma(
+                   5, 57.5, cda_rail::EPS / 2.0, 6),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(
+      cda_rail::simulator::GreedySimulator::get_v1_from_ma(5, 57.5, 4, -1),
+      cda_rail::exceptions::InvalidInputException);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

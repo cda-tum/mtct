@@ -40,6 +40,7 @@ class GreedySimulator_NextStopMA_Test;
 class GreedySimulator_TimeToExitObjective_Test;
 class GreedySimulator_ExitHeadwaySpeedConstraint_Test;
 class GreedySimulator_MAandMaxV_Test;
+class GreedySimulator_MAtoV_Test;
 #endif
 
 namespace cda_rail::simulator {
@@ -67,6 +68,7 @@ private:
   FRIEND_TEST(::GreedySimulator, TimeToExitObjective);
   FRIEND_TEST(::GreedySimulator, ExitHeadwaySpeedConstraint);
   FRIEND_TEST(::GreedySimulator, MAandMaxV);
+  FRIEND_TEST(::GreedySimulator, MAtoV);
 #endif
 
   enum class TTDOccupationType : std::uint8_t {
