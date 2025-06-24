@@ -1027,5 +1027,5 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
   // Simplifying gives us:
   // v_1 = 0.5 * (4*B) / (A + sqrt(A^2 + 4*B))
   // v_1 = 2 * B / (A + sqrt(A^2 + 4*B))
-  return 2.0 * b / (a + std::sqrt(a * a + 4.0 * b));
+  return 2.0 * b / (a + std::sqrt((a * a) + (4.0 * b)));
 }
