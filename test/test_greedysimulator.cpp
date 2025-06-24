@@ -1780,6 +1780,14 @@ TEST(GreedySimulator, ExitHeadwaySpeedConstraint) {
       simulator.get_max_speed_exit_headway(tr1, train1, 455, 5, 10, 2), 8,
       LINE_SPEED_ACCURACY);
 
+  // v_0 = 10
+  // v_1 = 8 after 2 seconds
+  // x_1 = (10 + 8) * 2 / 2 = 18
+  // -> pos = 500 - 18 = 482
+  EXPECT_APPROX_EQ(
+      simulator.get_max_speed_exit_headway(tr1, train1, 482, 10, 2, 2), 8,
+      LINE_SPEED_ACCURACY);
+
   EXPECT_THROW(simulator.get_max_speed_exit_headway(tr1, train1, -1, 5, 8, 2),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(simulator.get_max_speed_exit_headway(tr1, train1, 455, -1, 8, 2),
