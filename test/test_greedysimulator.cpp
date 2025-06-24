@@ -1375,6 +1375,18 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
   EXPECT_EQ(ma16, 1000);
   EXPECT_EQ(vm16, 14);
 
+  // Stopping on route edge after 510m
+  simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3, v3_v4});
+  const auto [ma17, vm17] = simulator.get_future_max_speed_constraints(
+      tr1, train, 400, 20, 1000, 5, false);
+  EXPECT_EQ(ma17, 110);
+  EXPECT_EQ(vm17, 20);
+
+  const auto [ma18, vm18] = simulator.get_future_max_speed_constraints(
+      tr1, train, 400, 20, 1000, 20, true);
+  EXPECT_EQ(ma18, 110);
+  EXPECT_EQ(vm18, 0);
+
   EXPECT_THROW(simulator.get_future_max_speed_constraints(tr1, train, -1, 10,
                                                           10, 10, true),
                cda_rail::exceptions::InvalidInputException);
