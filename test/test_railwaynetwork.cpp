@@ -3959,4 +3959,27 @@ TEST(Functionality, IsFullyInStation) {
   EXPECT_FALSE(stations.is_fully_in_station("Station1", {0, 2}));
 }
 
+TEST(Functionality, NetworkRouteLen) {
+  cda_rail::Network network;
+
+  network.add_vertex("v0", cda_rail::VertexType::TTD);
+  network.add_vertex("v1", cda_rail::VertexType::TTD);
+  network.add_vertex("v2", cda_rail::VertexType::TTD);
+  network.add_vertex("v3", cda_rail::VertexType::TTD);
+
+  const auto e1 = network.add_edge("v1", "v2", 20, 5, false);
+  const auto e2 = network.add_edge("v2", "v3", 30, 5, false);
+  const auto e0 = network.add_edge("v0", "v1", 10, 5, false);
+
+  EXPECT_EQ(network.length_of_path({e0, e1, e2}), 60);
+  EXPECT_EQ(network.length_of_path({e1, e2}), 50);
+  EXPECT_EQ(network.length_of_path({e0, e1}), 30);
+  EXPECT_EQ(network.length_of_path({e2}), 30);
+  EXPECT_EQ(network.length_of_path({e1}), 20);
+  EXPECT_EQ(network.length_of_path({e0}), 10);
+  EXPECT_EQ(network.length_of_path({}), 0);
+  EXPECT_THROW(network.length_of_path({e0, e1, 1000, e2}),
+               cda_rail::exceptions::EdgeNotExistentException);
+}
+
 // NOLINTEND(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores,bugprone-unchecked-optional-access)
