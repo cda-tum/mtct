@@ -2126,6 +2126,10 @@ TEST(GreedySimulator, MoveTrain) {
   EXPECT_EQ(train_pos[2].second, 300 + 25);
   EXPECT_EQ(train_pos[3].first, 500);
   EXPECT_EQ(train_pos[3].second, 800);
+
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator::move_train(4, 5, 0, 6, 8,
+                                                                train_pos),
+               cda_rail::exceptions::TrainNotExistentException);
 }
 
 // NOLINTEND
