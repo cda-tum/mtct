@@ -1136,11 +1136,11 @@ bool cda_rail::simulator::GreedySimulator::is_feasible_to_schedule(
 
   for (size_t tr = 0; tr < train_positions.size(); ++tr) {
     const auto& tr_schedule = instance->get_timetable().get_schedule(tr);
-    if (!late_entry_possible && (tr_schedule.get_t_0_range().second < t) &&
+    if (!late_entry_possible && (tr_schedule.get_t_0_range().second <= t) &&
         !trains_in_network.contains(tr) && !trains_left.contains(tr)) {
       return false; // Train is not allowed to enter the network late
     }
-    if (!late_exit_possible && (tr_schedule.get_t_n_range().second > t) &&
+    if (!late_exit_possible && (tr_schedule.get_t_n_range().second <= t) &&
         !trains_left.contains(tr)) {
       // Train is not allowed to leave the network late, however, maybe this is
       // because its route is not yet completely specified and it has already
@@ -1157,7 +1157,7 @@ bool cda_rail::simulator::GreedySimulator::is_feasible_to_schedule(
         tr_schedule.get_stops()
                 .at(next_stop_id.at(tr).value())
                 .get_begin_range()
-                .second < t) {
+                .second <= t) {
       // Train is not allowed to stop late
       return false;
     }
