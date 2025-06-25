@@ -42,15 +42,14 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
   std::vector<int> exit_times(
       instance->get_timetable().get_train_list().size(),
       0); // 0 indicates that a train has not entered the network yet
-  bool feasible = true;
 
   // Find first time step
   int min_T = std::numeric_limits<int>::max();
-  for (const auto& train : instance->get_timetable().get_train_list()) {
-    min_T = std::min(min_T, instance->get_timetable()
-                                .get_schedule(train.name)
-                                .get_t_0_range()
-                                .first);
+  for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
+       ++tr) {
+    min_T = std::min(
+        min_T,
+        instance->get_timetable().get_schedule(tr).get_t_0_range().first);
   }
   int max_T = instance->get_timetable().max_t();
 
@@ -69,10 +68,31 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
       instance->get_timetable().get_train_list().size(),
       -1.0); // next scheduled stop position
 
+  int  t                   = min_T;
+  bool continue_simulation = true;
+
+  while (continue_simulation) {
+    // Calculate MAs for every train
+
+    // Move trains
+
+    // Remove trains that have left the network
+
+    // Update stop information if a train has reached its next stop
+
+    // Check for new trains entering the network
+
+    // Check if all trains have left their destination
+
+    // Check if there might be a deadlock situation
+
+    continue_simulation = false;
+  }
+
   const auto tr_to_enter = get_entering_trains(
       min_T, trains_in_network, trains_left, late_entry_possible);
 
-  return {feasible, exit_times};
+  return {true, exit_times};
 }
 
 bool cda_rail::simulator::GreedySimulator::check_consistency() const {
