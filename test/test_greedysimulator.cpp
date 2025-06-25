@@ -422,6 +422,10 @@ TEST(GreedySimulator, BasicFunctions) {
                cda_rail::exceptions::ConsistencyException);
 }
 
+// ---------------------------
+// Test private functions
+// ---------------------------
+
 TEST(GreedySimulator, BasicPrivateFunctions) {
   // Create instance
   Network     network("./example-networks/SimpleStation/network/");
@@ -2412,6 +2416,34 @@ TEST(GreedySimulator, ScheduleFeasibility) {
                    -1, {{}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}},
                    {tr3}, {tr1, tr2}, false, false, false),
                cda_rail::exceptions::InvalidInputException);
+}
+
+// -------------------
+// Test simulation
+// -------------------
+
+TEST(GreedySimulation, SimpleSimulation) {
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {200, 400}, 40, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1});
+
+  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+
+  std::cout << "Simulation success: " << success
+            << ", Objective value: " << obj.back() << std::endl;
 }
 
 // NOLINTEND
