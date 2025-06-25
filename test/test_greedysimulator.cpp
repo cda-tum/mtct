@@ -2132,5 +2132,131 @@ TEST(GreedySimulator, MoveTrain) {
                cda_rail::exceptions::TrainNotExistentException);
 }
 
+TEST(GreedySimulator, UpdateRearPositions) {
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 20, 50, 4, 2, true, {0, 60},
+                                       15, v0, {360, 420}, 2, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 12, 50, 7, 14, true, {0, 60},
+                                       15, v0, {360, 420}, 14, v1, network);
+  const auto tr3 = timetable.add_train("Train3", 300, 50, 6, 12, true, {0, 60},
+                                       15, "v0", {360, 420}, 12, "v1", network);
+  const auto tr4 = timetable.add_train("Train4", 5, 50, 5, 10, true, {0, 60},
+                                       15, "v0", {360, 420}, 10, "v1", network);
+  const auto tr5 = timetable.add_train("Train5", 15, 50, 4, 8, true, {0, 60},
+                                       15, "v0", {360, 420}, 8, "v1", network);
+  const auto tr6 = timetable.add_train("Train6", 20, 50, 3, 6, true, {0, 60},
+                                       15, "v0", {360, 420}, 6, "v1", network);
+  const auto tr7 = timetable.add_train("Train7", 150, 50, 2, 4, true, {0, 60},
+                                       15, "v0", {360, 420}, 4, "v1", network);
+  const auto tr8 = timetable.add_train("Train8", 9, 50, 8, 16, true, {0, 60},
+                                       15, "v0", {360, 420}, 16, "v1", network);
+
+  RouteMap routes;
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_train_edges_of_tr(tr2, {v0_v1});
+  simulator.set_train_edges_of_tr(tr3, {v0_v1});
+  simulator.set_train_edges_of_tr(tr4, {v0_v1});
+  simulator.set_train_edges_of_tr(tr5, {v0_v1});
+  simulator.set_train_edges_of_tr(tr6, {v0_v1});
+  simulator.set_train_edges_of_tr(tr7, {v0_v1});
+  simulator.set_train_edges_of_tr(tr8, {v0_v1});
+
+  std::vector<std::pair<double, double>> train_pos = {
+      {2010, 2090}, // Train1, length 20
+      {1900, 1980}, // Train2, length 12
+      {500, 1100},  // Train3, length 300
+      {320, 350},   // Train4, length 5
+      {200, 250},   // Train5, length 15
+      {775, 885},   // Train6, length 20
+      {-50, 110},   // Train7, length 150
+      {580, 600}    // Train8, length 9
+  };
+
+  simulator.update_rear_positions(train_pos);
+  EXPECT_EQ(train_pos.size(), 8);
+  // Train 1, length 20
+  // Front: 2090
+  // Rear: 2090 - 20 = 2070
+  EXPECT_EQ(train_pos[0].first, 2070);
+  EXPECT_EQ(train_pos[0].second, 2090);
+  // Train 2, length 12
+  // Front: 1980
+  // Rear: 1980 - 12 = 1968
+  EXPECT_EQ(train_pos[1].first, 1968);
+  EXPECT_EQ(train_pos[1].second, 1980);
+  // Train 3, length 300
+  // Front: 1100
+  // Rear: 1100 - 300 = 800
+  EXPECT_EQ(train_pos[2].first, 800);
+  EXPECT_EQ(train_pos[2].second, 1100);
+  // Train 4, length 5
+  // Front: 350
+  // Rear: 350 - 5 = 345
+  EXPECT_EQ(train_pos[3].first, 345);
+  EXPECT_EQ(train_pos[3].second, 350);
+  // Train 5, length 15
+  // Front: 250
+  // Rear: 250 - 15 = 235
+  EXPECT_EQ(train_pos[4].first, 235);
+  EXPECT_EQ(train_pos[4].second, 250);
+  // Train 6, length 20
+  // Front: 885
+  // Rear: 885 - 20 = 865
+  EXPECT_EQ(train_pos[5].first, 865);
+  EXPECT_EQ(train_pos[5].second, 885);
+  // Train 7, length 150
+  // Front: 110
+  // Rear: 110 - 150 = -40
+  EXPECT_EQ(train_pos[6].first, -40);
+  EXPECT_EQ(train_pos[6].second, 110);
+  // Train 8, length 9
+  // Front: 600
+  // Rear: 600 - 9 = 591
+  EXPECT_EQ(train_pos[7].first, 591);
+  EXPECT_EQ(train_pos[7].second, 600);
+
+  train_pos = {
+      {2010, 2090}, // Train1, length 20
+      {1900, 1980}, // Train2, length 12
+      {500, 1100},  // Train3, length 300
+      {320, 350},   // Train4, length 5
+      {200, 250},   // Train5, length 15
+      {775, 885},   // Train6, length 20
+      {-50, 110},   // Train7, length 150
+  };
+
+  // Train 8 is missing
+  EXPECT_THROW(simulator.update_rear_positions(train_pos),
+               cda_rail::exceptions::InvalidInputException);
+
+  train_pos = {
+      {2010, 2090}, // Train1, length 20
+      {1900, 1980}, // Train2, length 12
+      {500, 1100},  // Train3, length 300
+      {320, 350},   // Train4, length 5
+      {200, 250},   // Train5, length 15
+      {775, 885},   // Train6, length 20
+      {-50, 110},   // Train7, length 150
+      {580, 600},   // Train8, length 9
+      {0, 50}       // Additional train
+  };
+
+  // Too many trains
+  EXPECT_THROW(simulator.update_rear_positions(train_pos),
+               cda_rail::exceptions::InvalidInputException);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
