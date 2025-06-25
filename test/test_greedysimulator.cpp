@@ -2062,5 +2062,71 @@ TEST(GreedySimulator, MAtoV) {
       cda_rail::exceptions::InvalidInputException);
 }
 
+TEST(GreedySimulator, MoveTrain) {
+  std::vector<std::pair<double, double>> train_pos = {
+      {-10, 2},   // Train 0
+      {10, 80},   // Train 1
+      {250, 300}, // Train 2
+      {500, 800}  // Train 3
+  };
+
+  // v_0 = 5
+  // Stopping within 6m
+  // dt = 8 -> theoretical distance = 5 * 8/2 = 20
+  cda_rail::simulator::GreedySimulator::move_train(0, 5, 0, 6, 8, train_pos);
+  EXPECT_EQ(train_pos.size(), 4);
+  EXPECT_EQ(train_pos[0].first, -10);
+  EXPECT_EQ(train_pos[0].second, 2 + 6);
+  EXPECT_EQ(train_pos[1].first, 10);
+  EXPECT_EQ(train_pos[1].second, 80);
+  EXPECT_EQ(train_pos[2].first, 250);
+  EXPECT_EQ(train_pos[2].second, 300);
+  EXPECT_EQ(train_pos[3].first, 500);
+  EXPECT_EQ(train_pos[3].second, 800);
+
+  // v_0 = 10
+  // v_1 = 20 after 4 seconds
+  // x_1 = (10 + 20) * 4 / 2 = 60
+  cda_rail::simulator::GreedySimulator::move_train(1, 10, 20, 100, 4,
+                                                   train_pos);
+  EXPECT_EQ(train_pos.size(), 4);
+  EXPECT_EQ(train_pos[0].first, -10);
+  EXPECT_EQ(train_pos[0].second, 2 + 6);
+  EXPECT_EQ(train_pos[1].first, 10);
+  EXPECT_EQ(train_pos[1].second, 80 + 60);
+  EXPECT_EQ(train_pos[2].first, 250);
+  EXPECT_EQ(train_pos[2].second, 300);
+  EXPECT_EQ(train_pos[3].first, 500);
+  EXPECT_EQ(train_pos[3].second, 800);
+
+  // v_0 = 10
+  // v_1 = 0 after 5 seconds
+  // x_1 = (10 + 0) * 5 / 2 = 25
+  cda_rail::simulator::GreedySimulator::move_train(2, 10, 0, 150, 5, train_pos);
+  EXPECT_EQ(train_pos.size(), 4);
+  EXPECT_EQ(train_pos[0].first, -10);
+  EXPECT_EQ(train_pos[0].second, 2 + 6);
+  EXPECT_EQ(train_pos[1].first, 10);
+  EXPECT_EQ(train_pos[1].second, 80 + 60);
+  EXPECT_EQ(train_pos[2].first, 250);
+  EXPECT_EQ(train_pos[2].second, 300 + 25);
+  EXPECT_EQ(train_pos[3].first, 500);
+  EXPECT_EQ(train_pos[3].second, 800);
+
+  // v_0 = 0
+  // v_1 = 0 after 10 seconds
+  // x_1 = (0 + 0) * 10 / 2 = 0
+  cda_rail::simulator::GreedySimulator::move_train(3, 0, 0, 500, 10, train_pos);
+  EXPECT_EQ(train_pos.size(), 4);
+  EXPECT_EQ(train_pos[0].first, -10);
+  EXPECT_EQ(train_pos[0].second, 2 + 6);
+  EXPECT_EQ(train_pos[1].first, 10);
+  EXPECT_EQ(train_pos[1].second, 80 + 60);
+  EXPECT_EQ(train_pos[2].first, 250);
+  EXPECT_EQ(train_pos[2].second, 300 + 25);
+  EXPECT_EQ(train_pos[3].first, 500);
+  EXPECT_EQ(train_pos[3].second, 800);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
