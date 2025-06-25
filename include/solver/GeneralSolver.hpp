@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Definitions.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <chrono>
@@ -31,12 +32,7 @@ protected:
   int64_t                                             solve_time  = 0;
 
   void solve_init_general(int time_limit, bool debug_input) {
-    if (plog::get() == nullptr) {
-      static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
-      plog::init(plog::debug, &console_appender);
-    }
-
-    plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
+    cda_rail::initalize_plog(debug_input);
 
     if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
       start = std::chrono::high_resolution_clock::now();
