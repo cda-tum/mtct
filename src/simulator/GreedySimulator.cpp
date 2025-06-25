@@ -1088,3 +1088,80 @@ void cda_rail::simulator::GreedySimulator::update_rear_positions(
         train_positions[tr].second - train.length; // Update rear position
   }
 }
+
+bool cda_rail::simulator::GreedySimulator::is_feasible_to_schedule(
+    int t, const std::vector<std::optional<size_t>>& next_stop_id,
+    const std::vector<std::pair<double, double>>& train_positions,
+    const std::unordered_set<size_t>&             trains_in_network,
+    const std::unordered_set<size_t>& trains_left, bool late_entry_possible,
+    bool late_exit_possible, bool late_stop_possible) const {
+  /**
+   * This function checks if the current state of the simulation is feasible
+   * (after all trains have been moved to time t) or some violation becomes
+   * unavoidable. This function assumes that the next_stop will be updated as
+   * soon as a train reaches a stop. The minimal stopping time in a station has
+   * to be ensured without the usage of the next_stop_id vector.
+   *
+   * @param t: The current time step.
+   * @param next_stop_id: A vector of optional size_t containing the next stop
+   * id for each train.
+   * @param tr_stopped_until: A vector of integers indicating until which time
+   * step each train is stopped.
+   * @param train_positions: A vector of pairs containing the rear and front
+   * positions of each train in the network.
+   * @param trains_in_network: A set of train ids that are currently in the
+   * network.
+   * @param trains_left: A set of train ids that have not yet left the network.
+   * @param late_entry_possible: If true, late entry is allowed.
+   * @param late_exit_possible: If true, late exit is allowed.
+   * @param late_stop_possible: If true, late stop is allowed.
+   *
+   * @return: A boolean indicating whether the current state is feasible.
+   */
+
+  if (next_stop_id.size() !=
+      instance->get_timetable().get_train_list().size()) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Next stop id size does not match the number of trains.");
+  }
+  if (train_positions.size() !=
+      instance->get_timetable().get_train_list().size()) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Train positions size does not match the number of trains.");
+  }
+  if (t < 0) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Time step must be non-negative.");
+  }
+
+  for (size_t tr = 0; tr < train_positions.size(); ++tr) {
+    const auto& tr_schedule = instance->get_timetable().get_schedule(tr);
+    if (!late_entry_possible && (tr_schedule.get_t_0_range().second < t) &&
+        !trains_in_network.contains(tr) && !trains_left.contains(tr)) {
+      return false; // Train is not allowed to enter the network late
+    }
+    if (!late_exit_possible && (tr_schedule.get_t_n_range().second > t) &&
+        !trains_left.contains(tr)) {
+      // Train is not allowed to leave the network late, however, maybe this is
+      // because its route is not yet completely specified and it has already
+      // reached the end of its specified route.
+      if (!train_edges.at(tr).empty() &&
+          (instance->const_n().get_edge(train_edges.at(tr).back()).target ==
+               tr_schedule.get_exit() ||
+           train_positions.at(tr).second < train_edge_length(tr))) {
+        // The above reason does not hold
+        return false;
+      }
+    }
+    if (!late_stop_possible && next_stop_id.at(tr).has_value() &&
+        tr_schedule.get_stops()
+                .at(next_stop_id.at(tr).value())
+                .get_begin_range()
+                .second < t) {
+      // Train is not allowed to stop late
+      return false;
+    }
+  }
+
+  return true;
+}

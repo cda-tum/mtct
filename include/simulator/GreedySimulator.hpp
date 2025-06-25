@@ -186,6 +186,18 @@ private:
                   std::vector<std::pair<double, double>>& train_positions);
   void update_rear_positions(
       std::vector<std::pair<double, double>>& train_positions) const;
+  [[nodiscard]] bool is_feasible_to_schedule(
+      int t, const std::vector<std::optional<size_t>>& next_stop_id,
+      const std::vector<std::pair<double, double>>& train_positions,
+      const std::unordered_set<size_t>&             trains_in_network,
+      const std::unordered_set<size_t>& trains_left, bool late_entry_possible,
+      bool late_exit_possible, bool late_stop_possible) const;
+  [[nodiscard]] double train_edge_length(size_t tr) const {
+    if (train_edges.size() <= tr) {
+      throw cda_rail::exceptions::TrainNotExistentException(tr);
+    }
+    return instance->const_n().length_of_path(train_edges.at(tr));
+  };
 
 public:
   explicit GreedySimulator(

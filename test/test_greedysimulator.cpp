@@ -473,6 +473,12 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   simulator.append_train_edge_to_tr(tr3, l1_l2);
   simulator.append_train_edge_to_tr(tr5, l0_l1);
 
+  EXPECT_EQ(simulator.train_edge_length(tr1), 1820);
+  EXPECT_EQ(simulator.train_edge_length(tr2), 500);
+  EXPECT_EQ(simulator.train_edge_length(tr3), 1000);
+  EXPECT_EQ(simulator.train_edge_length(tr4), 0);
+  EXPECT_EQ(simulator.train_edge_length(tr5), 500);
+
   simulator.set_vertex_orders_of_vertex(r0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(l0, {tr1, tr3, tr5});
 
