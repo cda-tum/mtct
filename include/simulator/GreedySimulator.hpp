@@ -180,8 +180,10 @@ private:
   [[nodiscard]] static double get_v1_from_ma(double v_0, double ma, double d,
                                              int dt);
   static void
-  move_train(size_t tr, double v_0, double v_1, double ma, int dt,
-             std::vector<std::pair<double, double>>& train_positions);
+       move_train(size_t tr, double v_0, double v_1, double ma, int dt,
+                  std::vector<std::pair<double, double>>& train_positions);
+  void update_rear_positions(
+      std::vector<std::pair<double, double>>& train_positions) const;
 
 public:
   explicit GreedySimulator(

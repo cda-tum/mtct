@@ -1058,3 +1058,27 @@ void cda_rail::simulator::GreedySimulator::move_train(
       std::min(ma, (v_0 + v_1) * dt / 2.0); // Distance moved in the time step
   train_positions[tr].second += move_distance; // Update the front position
 }
+
+void cda_rail::simulator::GreedySimulator::update_rear_positions(
+    std::vector<std::pair<double, double>>& train_positions) const {
+  /**
+   * Update the rear positions of all trains based on their front positions and
+   * train lengths. Tis function changes the train_positions passed by
+   * reference.
+   *
+   * @param train_positions: A vector of pairs containing the rear and front
+   */
+
+  if (train_positions.size() !=
+      instance->get_timetable().get_train_list().size()) {
+    throw cda_rail::exceptions::ConsistencyException(
+        "Train positions size does not match the number of trains.");
+  }
+
+  for (size_t tr = 0; tr < train_positions.size(); ++tr) {
+    const auto& train =
+        instance->get_timetable().get_train_list().get_train(tr);
+    train_positions[tr].first =
+        train_positions[tr].second - train.length; // Update rear position
+  }
+}
