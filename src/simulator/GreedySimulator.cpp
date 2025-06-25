@@ -1071,7 +1071,7 @@ void cda_rail::simulator::GreedySimulator::update_rear_positions(
 
   if (train_positions.size() !=
       instance->get_timetable().get_train_list().size()) {
-    throw cda_rail::exceptions::ConsistencyException(
+    throw cda_rail::exceptions::InvalidInputException(
         "Train positions size does not match the number of trains.");
   }
 
