@@ -43,6 +43,7 @@ class GreedySimulator_MAandMaxV_Test;
 class GreedySimulator_MAtoV_Test;
 class GreedySimulator_MoveTrain_Test;
 class GreedySimulator_UpdateRearPositions_Test;
+class GreedySimulator_ScheduleFeasibility_Test;
 #endif
 
 namespace cda_rail::simulator {
@@ -73,6 +74,7 @@ private:
   FRIEND_TEST(::GreedySimulator, MAtoV);
   FRIEND_TEST(::GreedySimulator, MoveTrain);
   FRIEND_TEST(::GreedySimulator, UpdateRearPositions);
+  FRIEND_TEST(::GreedySimulator, ScheduleFeasibility);
 #endif
 
   enum class TTDOccupationType : std::uint8_t {

@@ -2267,5 +2267,152 @@ TEST(GreedySimulator, UpdateRearPositions) {
                cda_rail::exceptions::InvalidInputException);
 }
 
+TEST(GreedySimulator, ScheduleFeasibility) {
+  Network    network;
+  const auto v3 = network.add_vertex("v3", VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD);
+  const auto v0 = network.add_vertex("v0", VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", VertexType::TTD);
+
+  const auto e2 = network.add_edge(v1, v2, 200, 50, true);
+  const auto e3 = network.add_edge(v2, v3, 300, 50, true);
+  const auto e1 = network.add_edge(v0, v1, 100, 50, true);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 10, 50, 4, 2, true, {0, 60},
+                                       15, v0, {360, 420}, 2, v3, network);
+  const auto tr2 = timetable.add_train("Train2", 10, 50, 7, 14, true, {30, 90},
+                                       15, v0, {360, 480}, 14, v3, network);
+  const auto tr3 =
+      timetable.add_train("Train3", 10, 50, 6, 12, true, {120, 180}, 15, v0,
+                          {360, 500}, 12, v3, network);
+
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", e2, network);
+  timetable.add_station("Station2");
+  timetable.add_track_to_station("Station2", e3, network);
+
+  timetable.add_stop(tr1, "Station1", {60, 90}, {90, 120}, 30);
+  timetable.add_stop(tr1, "Station2", {120, 150}, {150, 180}, 30);
+  timetable.add_stop(tr2, "Station1", {100, 150}, {130, 200}, 30);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(0, {{}, {}, {}},
+                                                {{-10, 0}, {-10, 0}, {-10, 0}},
+                                                {}, {}, false, false, false));
+  EXPECT_FALSE(simulator.is_feasible_to_schedule(60, {{}, {}, {}},
+                                                 {{-10, 0}, {-10, 0}, {-10, 0}},
+                                                 {}, {}, false, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(60, {{}, {}, {}},
+                                                {{-10, 0}, {-10, 0}, {-10, 0}},
+                                                {}, {}, true, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      60, {{}, {}, {}}, {{-10, 0}, {-10, 0}, {-10, 0}}, {tr1}, {}, false, false,
+      false));
+
+  simulator.append_train_edge_to_tr(tr1, e1);
+  simulator.append_train_edge_to_tr(tr1, e2);
+  simulator.append_train_edge_to_tr(tr2, e1);
+  simulator.append_train_edge_to_tr(tr3, e1);
+
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      89, {{0}, {}, {}}, {{190, 200}, {-10, 0}, {-10, 0}}, {tr1}, {}, false,
+      false, false));
+  EXPECT_FALSE(simulator.is_feasible_to_schedule(
+      90, {{0}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      false, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      90, {{0}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      false, false, true));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      90, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      false, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      149, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      false, false, false));
+  EXPECT_FALSE(simulator.is_feasible_to_schedule(
+      150, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      false, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      150, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      false, false, true));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      150, {{}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      false, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      410, {{}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
+      false, false, false));
+  EXPECT_FALSE(simulator.is_feasible_to_schedule(
+      420, {{}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
+      false, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      420, {{}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
+      false, true, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      420, {{}, {}, {}}, {{290, 300}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
+      false, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      430, {{}, {}, {}}, {{290, 300}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
+      false, false, false));
+  EXPECT_FALSE(simulator.is_feasible_to_schedule(
+      480, {{}, {}, {}}, {{290, 300}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
+      false, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      480, {{}, {}, {}}, {{290, 300}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
+      false, true, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      480, {{}, {}, {}}, {{290, 300}, {90, 100}, {-10, 0}}, {tr1, tr2, tr3}, {},
+      false, false, false));
+
+  simulator.set_train_edges_of_tr(tr1, {e1, e2, e3});
+  simulator.set_train_edges_of_tr(tr2, {e1, e2, e3});
+  simulator.set_train_edges_of_tr(tr3, {e1, e2, e3});
+
+  EXPECT_FALSE(simulator.is_feasible_to_schedule(
+      420, {{}, {}, {}}, {{600, 610}, {490, 500}, {470, 480}}, {tr1, tr2, tr3},
+      {}, false, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      420, {{}, {}, {}}, {{600, 610}, {490, 500}, {470, 480}}, {tr1, tr2, tr3},
+      {}, false, true, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      420, {{}, {}, {}}, {{600, 610}, {490, 500}, {470, 480}}, {tr2, tr3},
+      {tr1}, false, false, false));
+  EXPECT_FALSE(simulator.is_feasible_to_schedule(
+      480, {{}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}}, {tr2, tr3},
+      {tr1}, false, false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      480, {{}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}}, {tr2, tr3},
+      {tr1}, false, true, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      480, {{}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}}, {tr3},
+      {tr1, tr2}, false, false, false));
+
+  EXPECT_THROW(simulator.is_feasible_to_schedule(
+                   480, {{}, {}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}},
+                   {tr3}, {tr1, tr2}, false, false, false),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.is_feasible_to_schedule(
+                   480, {{}, {}}, {{600, 610}, {600, 610}, {470, 480}}, {tr3},
+                   {tr1, tr2}, false, false, false),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.is_feasible_to_schedule(
+                   480, {{}, {}, {}},
+                   {{600, 610}, {600, 610}, {470, 480}, {0, 1}}, {tr3},
+                   {tr1, tr2}, false, false, false),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.is_feasible_to_schedule(
+                   480, {{}, {}, {}}, {{600, 610}, {600, 610}}, {tr3},
+                   {tr1, tr2}, false, false, false),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(simulator.is_feasible_to_schedule(
+                   -1, {{}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}},
+                   {tr3}, {tr1, tr2}, false, false, false),
+               cda_rail::exceptions::InvalidInputException);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
