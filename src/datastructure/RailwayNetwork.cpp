@@ -2201,3 +2201,18 @@ cda_rail::Network::shortest_path_between_sets_using_edges(
 
   return {std::nullopt, {}};
 }
+
+double
+cda_rail::Network::length_of_path(const std::vector<size_t>& path) const {
+  /**
+   * Calculates the length of a path given by a vector of edge indices.
+   * @param path: Vector of edge indices
+   * @return: Length of the path
+   */
+
+  double len = 0.0;
+  for (const auto& edge_index : path) {
+    len += get_edge(edge_index).length;
+  }
+  return len;
+}

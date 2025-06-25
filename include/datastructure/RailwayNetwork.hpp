@@ -581,6 +581,8 @@ public:
                                          bool   target_is_edge   = false,
                                          bool   use_minimal_time = false,
                                          double max_v            = INF) const;
+
+  [[nodiscard]] double length_of_path(const std::vector<size_t>& path) const;
 };
 
 // HELPER
