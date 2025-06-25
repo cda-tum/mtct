@@ -1051,10 +1051,7 @@ void cda_rail::simulator::GreedySimulator::move_train(
    */
 
   if (tr >= train_positions.size()) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Train index out of bounds: " + std::to_string(tr) +
-        ". Maximum index is " + std::to_string(train_positions.size() - 1) +
-        ".");
+    throw cda_rail::exceptions::TrainNotExistentException(tr);
   }
 
   const double move_distance =
