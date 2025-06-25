@@ -35,13 +35,13 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
    * otherwise the settings are infeasible. Default: false
    *
    * @return: A pair containing a boolean indicating whether the simulation was
-   * successful and a vector of doubles with the travel times of each train.
+   * successful and a vector of doubles with the exit times of each train.
    */
 
   // Initialize return values
-  std::vector<int> travel_times(
+  std::vector<int> exit_times(
       instance->get_timetable().get_train_list().size(),
-      -1); // -1 indicates that a train has not entered the network yet
+      0); // 0 indicates that a train has not entered the network yet
   bool feasible = true;
 
   // Find first time step
@@ -72,7 +72,7 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
   const auto tr_to_enter = get_entering_trains(
       min_T, trains_in_network, trains_left, late_entry_possible);
 
-  return {feasible, travel_times};
+  return {feasible, exit_times};
 }
 
 bool cda_rail::simulator::GreedySimulator::check_consistency() const {
