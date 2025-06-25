@@ -1033,3 +1033,31 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
   // v_1 = 2 * B / (A + sqrt(A^2 + 4*B))
   return 2.0 * b / (a + std::sqrt((a * a) + (4.0 * b)));
 }
+
+void cda_rail::simulator::GreedySimulator::move_train(
+    size_t tr, double v_0, double v_1, double ma, int dt,
+    std::vector<std::pair<double, double>>& train_positions) {
+  /**
+   * Move the trains front position based on the given parameters assuming
+   * linear movement. This function changes the train_position passed by
+   * reference.
+   *
+   * @param tr: The id of the train to move.
+   * @param v_0: The initial velocity of the train in m/s.
+   * @param v_1: The velocity of the train at the end of the time step in m/s.
+   * @param ma: The moving authority in m.
+   * @param dt: The time step in seconds.
+   * @param train_positions: A vector of pairs containing the rear and front
+   */
+
+  if (tr >= train_positions.size()) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Train index out of bounds: " + std::to_string(tr) +
+        ". Maximum index is " + std::to_string(train_positions.size() - 1) +
+        ".");
+  }
+
+  const double move_distance =
+      std::min(ma, (v_0 + v_1) * dt / 2.0); // Distance moved in the time step
+  train_positions[tr].second += move_distance; // Update the front position
+}
