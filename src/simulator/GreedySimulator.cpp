@@ -44,12 +44,16 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
       0); // 0 indicates that a train has not entered the network yet
 
   // Find first time step
-  int min_T = std::numeric_limits<int>::max();
+  int min_T              = std::numeric_limits<int>::max();
+  int last_entering_time = std::numeric_limits<int>::min();
   for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
        ++tr) {
     min_T = std::min(
         min_T,
         instance->get_timetable().get_schedule(tr).get_t_0_range().first);
+    last_entering_time = std::max(
+        last_entering_time,
+        instance->get_timetable().get_schedule(tr).get_t_0_range().second);
   }
   int max_T = instance->get_timetable().max_t();
 
@@ -82,7 +86,9 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
 
     // Check for new trains entering the network
 
-    // Check if all trains have left their destination
+    // Check if the end state can still be reached
+
+    // Check if all trains have reached their destination
 
     // Check if there might be a deadlock situation
 
