@@ -3,6 +3,7 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
+#include "plog/Log.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -18,7 +19,8 @@
 std::pair<bool, std::vector<int>>
 cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
                                                bool late_exit_possible,
-                                               bool late_stop_possible) const {
+                                               bool late_stop_possible,
+                                               bool debug_input) const {
   /**
    * This function simulates train movements as specified by the member
    * variables. It returns a vector of doubles denoting the travel times of each
@@ -37,6 +39,8 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
    * @return: A pair containing a boolean indicating whether the simulation was
    * successful and a vector of doubles with the exit times of each train.
    */
+
+  cda_rail::initalize_plog(debug_input);
 
   // Initialize return values
   std::vector<int> exit_times(
@@ -68,14 +72,24 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
   std::vector<int>           tr_stop_until(
       instance->get_timetable().get_train_list().size(),
       -1); // time until train stops in station
-  std::vector<double> tr_next_stop(
-      instance->get_timetable().get_train_list().size(),
-      -1.0); // next scheduled stop position
+  std::vector<std::optional<size_t>> tr_next_stop_id(
+      instance->get_timetable()
+          .get_train_list()
+          .size()); // next scheduled stop position
+  std::vector<int> vertex_headways(instance->const_n().number_of_vertices(),
+                                   0); // headways for vertices
+
+  const auto trains_on_edges = tr_on_edges();
 
   int  t                   = min_T;
   bool continue_simulation = true;
 
+  PLOGD << "Starting simulation from time " << min_T
+        << " to approximately time " << max_T;
+
   while (continue_simulation) {
+    PLOGD << "----------------------------";
+    PLOGD << "Current time: " << t;
     // Calculate MAs for every train
 
     // Move trains
@@ -85,6 +99,48 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
     // Update stop information if a train has reached its next stop
 
     // Check for new trains entering the network
+    const auto [tr_to_enter_success, tr_to_enter] = get_entering_trains(
+        t, trains_in_network, trains_left, late_entry_possible);
+    if (!tr_to_enter_success) {
+      PLOGD
+          << "Simulation failed: Not all trains can enter the network at time "
+          << t;
+      return {false, exit_times};
+    }
+    for (const auto& tr : tr_to_enter) {
+      const auto& train_schedule = instance->get_timetable().get_schedule(tr);
+      const auto& entry_vertex =
+          instance->const_n().get_vertex(train_schedule.get_entry());
+      if (vertex_headways.at(train_schedule.get_entry()) > t) {
+        PLOGD << "At time " << t << ", "
+              << instance->get_train_list().get_train(tr).name
+              << " cannot enter the network at " << entry_vertex.name
+              << " due to vertex headway constraints until time "
+              << vertex_headways.at(train_schedule.get_entry());
+      } else if (!is_ok_to_enter(tr, train_positions, trains_in_network,
+                                 trains_on_edges)) {
+        PLOGD << "At time " << t << ", "
+              << instance->get_train_list().get_train(tr).name
+              << " cannot enter the network at " << entry_vertex.name
+              << "due to moving authority constraints constraints.";
+      } else {
+        trains_in_network.insert(tr);
+        vertex_headways.at(train_schedule.get_entry()) =
+            t + std::ceil(entry_vertex.headway);
+        train_positions.at(tr) = {
+            -instance->get_train_list().get_train(tr).length,
+            0.0}; // Initialize positions
+        train_velocities.at(tr) = train_schedule.get_v_0();
+        if (!train_schedule.get_stops().empty()) {
+          tr_next_stop_id.at(tr) = 0;
+        }
+        PLOGD << "At time " << t << ", "
+              << instance->get_train_list().get_train(tr).name
+              << " entered the network at " << entry_vertex.name;
+        PLOGD << "New entry blocked until time "
+              << vertex_headways.at(train_schedule.get_entry());
+      }
+    }
 
     // Check if the end state can still be reached
 
@@ -92,11 +148,11 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
 
     // Check if there might be a deadlock situation
 
-    continue_simulation = false;
-  }
+    // Update time
+    t += dt;
 
-  const auto tr_to_enter = get_entering_trains(
-      min_T, trains_in_network, trains_left, late_entry_possible);
+    continue_simulation = t <= max_T;
+  }
 
   return {true, exit_times};
 }
@@ -1190,4 +1246,35 @@ bool cda_rail::simulator::GreedySimulator::is_feasible_to_schedule(
   }
 
   return true;
+}
+
+cda_rail::simulator::GreedySimulator::DestinationType
+cda_rail::simulator::GreedySimulator::tr_reached_end(
+    size_t tr, const std::vector<std::pair<double, double>>& train_pos) const {
+  /**
+   * This function checks if a train has reached the end of its route.
+   * If yes, it determines if this is due to the train leaving the network or
+   * stopping at the end of its route. In the latter case, it is checked if the
+   * route end is a station stop.
+   */
+
+  const auto  route_len = train_edge_length(tr);
+  const auto& pos       = train_pos.at(tr).second;
+  if (pos < route_len) {
+    // Train has not reached the end of its route
+    return DestinationType::None;
+  }
+  // Determine type of end
+  if (instance->get_timetable().get_schedule(tr).get_exit() ==
+      instance->const_n().get_edge(train_edges.at(tr).back()).target) {
+    // Train leaves the network at the end of its route
+    return DestinationType::Network;
+  }
+  if (!stop_positions.at(tr).empty() &&
+      stop_positions.at(tr).back() >= route_len - EPS) {
+    // Train stops at the end of its route
+    return DestinationType::Station;
+  }
+  // Train stops at the end of its route, but not at a station stop
+  return DestinationType::Edge;
 }

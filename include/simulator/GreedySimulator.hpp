@@ -82,6 +82,7 @@ private:
     OnlyBehind,
     OccupiedOrBehind
   };
+  enum class DestinationType : std::uint8_t { None, Network, Station, Edge };
 
   [[nodiscard]] double braking_distance(size_t tr, double v) const;
   [[nodiscard]] std::pair<bool, std::unordered_set<size_t>>
@@ -200,6 +201,9 @@ private:
     }
     return instance->const_n().length_of_path(train_edges.at(tr));
   };
+  [[nodiscard]] DestinationType
+  tr_reached_end(size_t                                        tr,
+                 const std::vector<std::pair<double, double>>& train_pos) const;
 
 public:
   explicit GreedySimulator(
@@ -430,8 +434,8 @@ public:
 
   [[nodiscard]] std::pair<bool, std::vector<int>>
   simulate(int dt = 6, bool late_entry_possible = false,
-           bool late_exit_possible = false,
-           bool late_stop_possible = false) const;
+           bool late_exit_possible = false, bool late_stop_possible = false,
+           bool debug_input = false) const;
 };
 
 } // namespace cda_rail::simulator
