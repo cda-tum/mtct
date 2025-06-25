@@ -181,7 +181,7 @@ private:
                   bool also_limit_speed_by_leaving_edges) const;
   [[nodiscard]] static double get_v1_from_ma(double v_0, double ma, double d,
                                              int dt);
-  static void
+  [[nodiscard]] static bool
        move_train(size_t tr, double v_0, double v_1, double ma, int dt,
                   std::vector<std::pair<double, double>>& train_positions);
   void update_rear_positions(

@@ -1034,7 +1034,7 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
   return 2.0 * b / (a + std::sqrt((a * a) + (4.0 * b)));
 }
 
-void cda_rail::simulator::GreedySimulator::move_train(
+bool cda_rail::simulator::GreedySimulator::move_train(
     size_t tr, double v_0, double v_1, double ma, int dt,
     std::vector<std::pair<double, double>>& train_positions) {
   /**
@@ -1048,6 +1048,8 @@ void cda_rail::simulator::GreedySimulator::move_train(
    * @param ma: The moving authority in m.
    * @param dt: The time step in seconds.
    * @param train_positions: A vector of pairs containing the rear and front
+   *
+   * @return : A boolean indicating whether the train moved forward.
    */
 
   if (tr >= train_positions.size()) {
@@ -1056,7 +1058,11 @@ void cda_rail::simulator::GreedySimulator::move_train(
 
   const double move_distance =
       std::min(ma, (v_0 + v_1) * dt / 2.0); // Distance moved in the time step
+  if (std::abs(move_distance) < EPS) {
+    return false;
+  }
   train_positions[tr].second += move_distance; // Update the front position
+  return move_distance > 0;
 }
 
 void cda_rail::simulator::GreedySimulator::update_rear_positions(
