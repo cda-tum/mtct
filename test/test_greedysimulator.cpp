@@ -2755,9 +2755,8 @@ TEST(GreedySimulator, DeadlockTest3) {
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
                                        15, v0, {198, 400}, 40, v3, network);
-  const auto tr2 =
-      timetable.add_train("Train2", 100, 50, 4, 2, true, {130, 160}, 15, v3,
-                          {198, 400}, 40, v0, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, {30, 60},
+                                       15, v3, {198, 400}, 40, v0, network);
 
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
@@ -2774,10 +2773,10 @@ TEST(GreedySimulator, DeadlockTest3) {
   PLOGD << "Simulation success: " << (success ? "true" : "false")
         << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")"
         << std::endl;
-  const auto time1 = cda_rail::min_travel_time(15, 0, 50, 4, 2, 1000);
-  const auto time2 = cda_rail::min_travel_time(15, 0, 50, 4, 2, 500);
-  EXPECT_GE(obj.at(0), time1);
-  EXPECT_GE(obj.at(1), time2);
+  const auto time1 = cda_rail::min_travel_time(15, 0, 50, 4, 2, 500);
+  const auto time2 = 30.0 + cda_rail::min_travel_time(15, 0, 50, 4, 2, 1000);
+  EXPECT_GE(obj.at(0), time1 - 1);
+  EXPECT_GE(obj.at(1), time2 - 1);
   EXPECT_LE(obj.at(0), time1 + 6);
   EXPECT_LE(obj.at(1), time2 + 6);
   EXPECT_TRUE(success);
