@@ -233,8 +233,7 @@ public:
 
   using GeneralSolver::solve;
   [[nodiscard]] virtual instances::SolVSSGenerationTimetable
-  solve(int time_limit, bool debug_input,
-        bool overwrite_severity = true) override {
+  solve(int time_limit, bool debug_input, bool overwrite_severity) override {
     return solve({}, {}, {}, {}, time_limit, debug_input, overwrite_severity);
   }
 };
@@ -293,8 +292,7 @@ public:
 
   using GeneralSolver::solve;
   [[nodiscard]] virtual instances::SolVSSGenerationTimetable
-  solve(int time_limit, bool debug_input,
-        bool overwrite_severity = true) override {
+  solve(int time_limit, bool debug_input, bool overwrite_severity) override {
     return solve({}, {}, {}, {}, time_limit, debug_input, overwrite_severity);
   }
 };

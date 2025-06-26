@@ -47,7 +47,10 @@ public:
   [[nodiscard]] const T& get_instance() const { return instance; }
   [[nodiscard]] T&       editable_instance() { return instance; }
 
-  [[nodiscard]] S         solve() { return solve(-1, false, true); };
+  [[nodiscard]] S solve() { return solve(-1, false); };
+  [[nodiscard]] S solve(int time_limit, bool debug_input) {
+    return solve(time_limit, debug_input, true);
+  };
   [[nodiscard]] virtual S solve(int time_limit, bool debug_input,
                                 bool overwrite_severity) = 0;
 

@@ -232,8 +232,7 @@ public:
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
       instances::GeneralPerformanceOptimizationInstance>
-  solve(int time_limit, bool debug_input,
-        bool overwrite_severity = true) override {
+  solve(int time_limit, bool debug_input, bool overwrite_severity) override {
     return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
   };
 
