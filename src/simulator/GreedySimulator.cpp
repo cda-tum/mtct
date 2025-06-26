@@ -130,6 +130,7 @@ cda_rail::simulator::GreedySimulator::simulate(
                      train_positions)) {
         movement_detected = true;
       }
+      train_velocities.at(tr) = tr_new_speed;
       PLOGD << "At time " << t << ", " << train_object.name << " moved to "
             << train_positions.at(tr).second << " with speed " << tr_new_speed
             << " and MA "
@@ -170,9 +171,9 @@ cda_rail::simulator::GreedySimulator::simulate(
         const auto& last_stop =
             instance->get_timetable().get_schedule(tr).get_stops().at(
                 tr_next_stop_id.at(tr).value());
-        exit_times.at(tr)   = std::max(last_stop.get_end_range().first,
-                                       t + last_stop.get_min_stopping_time());
-        tr_next_stop_id[tr] = {};
+        exit_times.at(tr)      = std::max(last_stop.get_end_range().first,
+                                          t + last_stop.get_min_stopping_time());
+        tr_next_stop_id.at(tr) = {};
         trains_finished_simulating.insert(tr);
         PLOGD << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
@@ -1242,7 +1243,7 @@ bool cda_rail::simulator::GreedySimulator::move_train(
   if (std::abs(move_distance) < EPS) {
     return false;
   }
-  train_positions[tr].second += move_distance; // Update the front position
+  train_positions.at(tr).second += move_distance; // Update the front position
   return move_distance > 0;
 }
 
@@ -1265,8 +1266,8 @@ void cda_rail::simulator::GreedySimulator::update_rear_positions(
   for (size_t tr = 0; tr < train_positions.size(); ++tr) {
     const auto& train =
         instance->get_timetable().get_train_list().get_train(tr);
-    train_positions[tr].first =
-        train_positions[tr].second - train.length; // Update rear position
+    train_positions.at(tr).first =
+        train_positions.at(tr).second - train.length; // Update rear position
   }
 }
 
