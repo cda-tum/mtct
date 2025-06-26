@@ -20,8 +20,7 @@
 std::pair<bool, std::vector<int>>
 cda_rail::simulator::GreedySimulator::simulate(
     int dt, bool late_entry_possible, bool late_exit_possible,
-    bool late_stop_possible, bool limit_speed_by_leaving_edges,
-    bool debug_input) const {
+    bool late_stop_possible, bool limit_speed_by_leaving_edges) const {
   /**
    * This function simulates train movements as specified by the member
    * variables. It returns a vector of doubles denoting the travel times of each
@@ -41,7 +40,7 @@ cda_rail::simulator::GreedySimulator::simulate(
    * successful and a vector of doubles with the exit times of each train.
    */
 
-  cda_rail::initalize_plog(debug_input);
+  cda_rail::initialize_plog(false);
 
   // Initialize return values
   std::vector<int> exit_times(
@@ -86,12 +85,12 @@ cda_rail::simulator::GreedySimulator::simulate(
   int  t                   = min_T;
   bool continue_simulation = true;
 
-  PLOGD << "Starting simulation from time " << min_T
+  PLOGV << "Starting simulation from time " << min_T
         << " to approximately time " << max_T;
 
   while (continue_simulation) {
-    PLOGD << "----------------------------";
-    PLOGD << "Current time: " << t;
+    PLOGV << "----------------------------";
+    PLOGV << "Current time: " << t;
 
     bool movement_detected = false;
 
@@ -99,7 +98,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       const auto& train_object = instance->get_train_list().get_train(tr);
 
       if (trains_finished_simulating.contains(tr)) {
-        PLOGD << train_object.name << " skipped.";
+        PLOGV << train_object.name << " skipped.";
         continue;
       }
 
@@ -113,11 +112,11 @@ cda_rail::simulator::GreedySimulator::simulate(
           get_ma_and_maxv(tr, train_velocities, tr_next_stop_id.at(tr), h, dt,
                           train_positions, trains_in_network, trains_left,
                           trains_on_edges, limit_speed_by_leaving_edges);
-      PLOGD << train_object.name << " positioned at "
+      PLOGV << train_object.name << " positioned at "
             << train_positions.at(tr).second
             << " has MA: " << train_positions.at(tr).second + tr_ma
             << " and max velocity: " << tr_v1;
-      PLOGD << "h = " << h;
+      PLOGV << "h = " << h;
       auto tr_new_speed =
           std::min(tr_v1, get_v1_from_ma(train_velocities.at(tr), tr_ma,
                                          train_object.deceleration, dt));
@@ -131,7 +130,7 @@ cda_rail::simulator::GreedySimulator::simulate(
         movement_detected = true;
       }
       train_velocities.at(tr) = tr_new_speed;
-      PLOGD << "At time " << t << ", " << train_object.name << " moved to "
+      PLOGV << "At time " << t << ", " << train_object.name << " moved to "
             << train_positions.at(tr).second << " with speed " << tr_new_speed
             << " and MA "
             << train_positions.at(tr).second +
@@ -155,14 +154,14 @@ cda_rail::simulator::GreedySimulator::simulate(
         trains_left.insert(tr);
         trains_finished_simulating.insert(tr);
         exit_times.at(tr) = t;
-        PLOGD << "At time " << t << ", "
+        PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " left the network.";
         continue;
       } else if (tr_status == DestinationType::Edge) {
         trains_finished_simulating.insert(tr);
         exit_times.at(tr) = t;
-        PLOGD << "At time " << t << ", "
+        PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " reached the end of its route on an edge within the network.";
         continue;
@@ -177,7 +176,7 @@ cda_rail::simulator::GreedySimulator::simulate(
                          last_stop.get_min_stopping_time());
         tr_next_stop_id.at(tr) = {};
         trains_finished_simulating.insert(tr);
-        PLOGD << "At time " << t << ", "
+        PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " reached the end of its route at station "
               << last_stop.get_station_name() << ", stopping until "
@@ -200,7 +199,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     const auto [tr_to_enter_success, tr_to_enter] = get_entering_trains(
         t, trains_in_network, trains_left, late_entry_possible);
     if (!tr_to_enter_success) {
-      PLOGD
+      PLOGV
           << "Simulation failed: Not all trains can enter the network at time "
           << t;
       return {false, exit_times};
@@ -210,14 +209,14 @@ cda_rail::simulator::GreedySimulator::simulate(
       const auto& entry_vertex =
           instance->const_n().get_vertex(train_schedule.get_entry());
       if (vertex_headways.at(train_schedule.get_entry()) > t) {
-        PLOGD << "At time " << t << ", "
+        PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " cannot enter the network at " << entry_vertex.name
               << " due to vertex headway constraints until time "
               << vertex_headways.at(train_schedule.get_entry());
       } else if (!is_ok_to_enter(tr, train_positions, train_velocities,
                                  trains_in_network, trains_on_edges)) {
-        PLOGD << "At time " << t << ", "
+        PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " cannot enter the network at " << entry_vertex.name
               << "due to moving authority constraints constraints.";
@@ -233,10 +232,10 @@ cda_rail::simulator::GreedySimulator::simulate(
           tr_next_stop_id.at(tr) = 0;
         }
         movement_detected = true;
-        PLOGD << "At time " << t << ", "
+        PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " entered the network at " << entry_vertex.name;
-        PLOGD << "New entry blocked until time "
+        PLOGV << "New entry blocked until time "
               << vertex_headways.at(train_schedule.get_entry());
       }
     }

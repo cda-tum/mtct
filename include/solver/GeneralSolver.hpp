@@ -32,7 +32,7 @@ protected:
   int64_t                                             solve_time  = 0;
 
   void solve_init_general(int time_limit, bool debug_input) {
-    cda_rail::initalize_plog(debug_input);
+    cda_rail::initialize_plog(debug_input);
 
     if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
       start = std::chrono::high_resolution_clock::now();

@@ -6,6 +6,11 @@
 #include "simulator/GreedySimulator.hpp"
 
 #include "gtest/gtest.h"
+#include <plog/Appenders/ColorConsoleAppender.h>
+#include <plog/Formatters/TxtFormatter.h>
+#include <plog/Init.h>
+#include <plog/Logger.h>
+#include <plog/Severity.h>
 
 using namespace cda_rail;
 
@@ -2584,6 +2589,9 @@ TEST(GreedySimulator, ReverseEdgeMA) {
 // -------------------
 
 TEST(GreedySimulation, SimpleSimulation) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
   Network    network;
   const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
@@ -2601,8 +2609,7 @@ TEST(GreedySimulation, SimpleSimulation) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
-  const auto [success, obj] =
-      simulator.simulate(6, false, false, false, true, true);
+  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
 
   std::cout << "Simulation success: " << success
             << ", Objective value: " << obj.back() << std::endl;

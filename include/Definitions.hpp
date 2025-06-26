@@ -60,13 +60,14 @@ enum class VelocityRefinementStrategy : std::uint8_t {
 
 // Helper functions
 
-static void initalize_plog(bool debug_input) {
+static void initialize_plog(bool debug_input) {
   if (plog::get() == nullptr) {
     static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
     plog::init(plog::debug, &console_appender);
   }
-
-  plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
+  if (plog::get()->getMaxSeverity() <= plog::info) {
+    plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
+  }
 };
 
 static bool is_directory_and_create(const std::filesystem::path& p) {
