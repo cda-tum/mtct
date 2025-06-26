@@ -1000,91 +1000,104 @@ TEST(GreedySimulator, IsOkToEnter) {
       {-1, -1}, // tr5
       {-1, -1}  // tr6
   };
-  EXPECT_TRUE(simulator.is_ok_to_enter(tr1, train_pos, {}, tr_on_edges));
+  const std::vector<double> train_velocities(6, 0);
 
-  EXPECT_TRUE(simulator.is_ok_to_enter(tr2, train_pos, {}, tr_on_edges));
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr1, train_pos, train_velocities, {},
+                                       tr_on_edges));
+
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr2, train_pos, train_velocities, {},
+                                       tr_on_edges));
   train_pos[tr1] = {50, 100};
-  EXPECT_FALSE(simulator.is_ok_to_enter(tr2, train_pos, {tr1}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr2, train_pos, train_velocities, {tr1},
+                                        tr_on_edges));
   train_pos[tr1] = {100.1, 150.1};
-  EXPECT_TRUE(simulator.is_ok_to_enter(tr2, train_pos, {tr1}, tr_on_edges));
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr2, train_pos, train_velocities, {tr1},
+                                       tr_on_edges));
   train_pos[tr1] = {200, 250};
-  EXPECT_TRUE(simulator.is_ok_to_enter(tr2, train_pos, {tr1}, tr_on_edges));
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr2, train_pos, train_velocities, {tr1},
+                                       tr_on_edges));
 
-  EXPECT_FALSE(simulator.is_ok_to_enter(tr3, train_pos, {tr1}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr3, train_pos, train_velocities, {tr1},
+                                        tr_on_edges));
   train_pos[tr2] = {40, 90};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr3, train_pos, train_velocities,
+                                        {tr1, tr2}, tr_on_edges));
   train_pos[tr2] = {55, 105};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr3, train_pos, train_velocities,
+                                        {tr1, tr2}, tr_on_edges));
   train_pos[tr2] = {100, 150};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr3, train_pos, train_velocities,
+                                        {tr1, tr2}, tr_on_edges));
   train_pos[tr2] = {112, 162};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr3, train_pos, train_velocities,
+                                        {tr1, tr2}, tr_on_edges));
   train_pos[tr2] = {120, 170};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr3, train_pos, train_velocities,
+                                        {tr1, tr2}, tr_on_edges));
   train_pos[tr2] = {121, 171};
-  EXPECT_TRUE(
-      simulator.is_ok_to_enter(tr3, train_pos, {tr1, tr2}, tr_on_edges));
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr3, train_pos, train_velocities,
+                                       {tr1, tr2}, tr_on_edges));
   train_pos[tr1] = {220, 270};
   train_pos[tr2] = {200, 250};
-  EXPECT_TRUE(simulator.is_ok_to_enter(tr3, train_pos, {tr2}, tr_on_edges));
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr3, train_pos, train_velocities, {tr2},
+                                       tr_on_edges));
 
-  EXPECT_FALSE(simulator.is_ok_to_enter(tr4, train_pos, {tr2}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr4, train_pos, train_velocities, {tr2},
+                                        tr_on_edges));
   train_pos[tr3] = {40, 90};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr4, train_pos, {tr2, tr3}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr4, train_pos, train_velocities,
+                                        {tr2, tr3}, tr_on_edges));
   train_pos[tr3] = {55, 105};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr4, train_pos, {tr2, tr3}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr4, train_pos, train_velocities,
+                                        {tr2, tr3}, tr_on_edges));
   train_pos[tr3] = {100, 150};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr4, train_pos, {tr2, tr3}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr4, train_pos, train_velocities,
+                                        {tr2, tr3}, tr_on_edges));
   train_pos[tr3] = {112, 162};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr4, train_pos, {tr2, tr3}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr4, train_pos, train_velocities,
+                                        {tr2, tr3}, tr_on_edges));
   train_pos[tr3] = {120, 170};
-  EXPECT_TRUE(
-      simulator.is_ok_to_enter(tr4, train_pos, {tr2, tr3}, tr_on_edges));
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr4, train_pos, train_velocities,
+                                       {tr2, tr3}, tr_on_edges));
   train_pos[tr2] = {220, 270};
   train_pos[tr3] = {200, 250};
-  EXPECT_TRUE(simulator.is_ok_to_enter(tr4, train_pos, {tr3}, tr_on_edges));
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr4, train_pos, train_velocities, {tr3},
+                                       tr_on_edges));
 
-  EXPECT_FALSE(simulator.is_ok_to_enter(tr5, train_pos, {tr3}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr5, train_pos, train_velocities, {tr3},
+                                        tr_on_edges));
   train_pos[tr4] = {40, 90};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr5, train_pos, train_velocities,
+                                        {tr3, tr4}, tr_on_edges));
   train_pos[tr4] = {55, 105};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr5, train_pos, train_velocities,
+                                        {tr3, tr4}, tr_on_edges));
   train_pos[tr4] = {100, 150};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr5, train_pos, train_velocities,
+                                        {tr3, tr4}, tr_on_edges));
   train_pos[tr4] = {101, 151};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr5, train_pos, train_velocities,
+                                        {tr3, tr4}, tr_on_edges));
   train_pos[tr4] = {121, 171};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr5, train_pos, train_velocities,
+                                        {tr3, tr4}, tr_on_edges));
   train_pos[tr4] = {150.1, 200.1};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr5, train_pos, train_velocities,
+                                        {tr3, tr4}, tr_on_edges));
   train_pos[tr4] = {151.1, 201.1};
-  EXPECT_TRUE(
-      simulator.is_ok_to_enter(tr5, train_pos, {tr3, tr4}, tr_on_edges));
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr5, train_pos, train_velocities,
+                                       {tr3, tr4}, tr_on_edges));
   train_pos[tr3] = {220, 270};
   train_pos[tr4] = {200, 250};
-  EXPECT_TRUE(simulator.is_ok_to_enter(tr5, train_pos, {tr4}, tr_on_edges));
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr5, train_pos, train_velocities, {tr4},
+                                       tr_on_edges));
 
   train_pos[tr5] = {99.9, 149.9};
-  EXPECT_FALSE(
-      simulator.is_ok_to_enter(tr6, train_pos, {tr4, tr5}, tr_on_edges));
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr6, train_pos, train_velocities,
+                                        {tr4, tr5}, tr_on_edges));
   train_pos[tr5] = {100.1, 150.1};
-  EXPECT_TRUE(
-      simulator.is_ok_to_enter(tr6, train_pos, {tr4, tr5}, tr_on_edges));
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr6, train_pos, train_velocities,
+                                       {tr4, tr5}, tr_on_edges));
 }
 
 TEST(GreedySimulator, AbsoluteDistanceMA) {

@@ -213,8 +213,8 @@ cda_rail::simulator::GreedySimulator::simulate(
               << " cannot enter the network at " << entry_vertex.name
               << " due to vertex headway constraints until time "
               << vertex_headways.at(train_schedule.get_entry());
-      } else if (!is_ok_to_enter(tr, train_positions, trains_in_network,
-                                 trains_on_edges)) {
+      } else if (!is_ok_to_enter(tr, train_positions, train_velocities,
+                                 trains_in_network, trains_on_edges)) {
         PLOGD << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " cannot enter the network at " << entry_vertex.name
@@ -630,6 +630,7 @@ cda_rail::simulator::GreedySimulator::get_ttd(size_t edge_id) const {
 
 bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
     size_t tr, const std::vector<std::pair<double, double>>& train_positions,
+    const std::vector<double>&                     train_velocities,
     const std::unordered_set<size_t>&              trains_in_network,
     const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
   /**
