@@ -2440,7 +2440,8 @@ TEST(GreedySimulation, SimpleSimulation) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
-  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  const auto [success, obj] =
+      simulator.simulate(6, false, false, false, true, true);
 
   std::cout << "Simulation success: " << success
             << ", Objective value: " << obj.back() << std::endl;

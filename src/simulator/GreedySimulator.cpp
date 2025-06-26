@@ -6,6 +6,7 @@
 #include "plog/Log.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <limits>
@@ -17,10 +18,10 @@
 #include <vector>
 
 std::pair<bool, std::vector<int>>
-cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
-                                               bool late_exit_possible,
-                                               bool late_stop_possible,
-                                               bool debug_input) const {
+cda_rail::simulator::GreedySimulator::simulate(
+    int dt, bool late_entry_possible, bool late_exit_possible,
+    bool late_stop_possible, bool limit_speed_by_leaving_edges,
+    bool debug_input) const {
   /**
    * This function simulates train movements as specified by the member
    * variables. It returns a vector of doubles denoting the travel times of each
@@ -69,6 +70,7 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
       instance->get_timetable().get_train_list().size(), -1.0); // velocities
   std::unordered_set<size_t> trains_in_network;
   std::unordered_set<size_t> trains_left;
+  std::unordered_set<size_t> trains_finished_simulating;
   std::vector<int>           tr_stop_until(
       instance->get_timetable().get_train_list().size(),
       -1); // time until train stops in station
@@ -90,13 +92,106 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
   while (continue_simulation) {
     PLOGD << "----------------------------";
     PLOGD << "Current time: " << t;
-    // Calculate MAs for every train
 
-    // Move trains
+    bool movement_detected = false;
+
+    for (const auto& tr : trains_in_network) {
+      const auto& train_object = instance->get_train_list().get_train(tr);
+
+      if (trains_finished_simulating.contains(tr)) {
+        PLOGD << train_object.name << " skipped.";
+        continue;
+      }
+
+      // Calculate MAs for every train
+      const auto& tr_schedule = instance->get_timetable().get_schedule(tr);
+      const auto  h =
+          std::max({tr_schedule.get_t_n_range().first - t,
+                    vertex_headways.at(tr_schedule.get_exit()) - t, 0});
+
+      const auto [tr_ma, tr_v1] = get_ma_and_maxv(
+          tr, train_velocities.at(tr), tr_next_stop_id.at(tr), h, dt,
+          train_positions, trains_in_network, trains_left, trains_on_edges,
+          limit_speed_by_leaving_edges);
+      PLOGD << train_object.name << " positioned at "
+            << train_positions.at(tr).second
+            << " has MA: " << train_positions.at(tr).second + tr_ma
+            << " and max velocity: " << tr_v1;
+      PLOGD << "h = " << h;
+      auto tr_new_speed =
+          std::min(tr_v1, get_v1_from_ma(train_velocities.at(tr), tr_ma,
+                                         train_object.deceleration, dt));
+      if (tr_new_speed < V_MIN) {
+        tr_new_speed = 0.0; // Train is stopped
+      }
+
+      // Move trains
+      if (move_train(tr, train_velocities.at(tr), tr_new_speed, tr_ma, dt,
+                     train_positions)) {
+        movement_detected = true;
+      }
+      PLOGD << "At time " << t << ", " << train_object.name << " moved to "
+            << train_positions.at(tr).second << " with speed " << tr_new_speed
+            << " and MA "
+            << train_positions.at(tr).second +
+                   cda_rail::braking_distance(tr_new_speed,
+                                              train_object.deceleration);
+    }
+
+    // Update rear positions of trains
+    update_rear_positions(train_positions);
+
+    std::vector<size_t> trains_to_remove;
+    for (const auto& tr : trains_in_network) {
+      if (trains_finished_simulating.contains(tr)) {
+        continue;
+      }
+
+      // Remove trains that have left the network
+      const auto tr_status = tr_reached_end(tr, train_positions);
+      if (tr_status == DestinationType::Network) {
+        trains_to_remove.emplace_back(tr);
+        trains_left.insert(tr);
+        trains_finished_simulating.insert(tr);
+        exit_times.at(tr) = t;
+        PLOGD << "At time " << t << ", "
+              << instance->get_train_list().get_train(tr).name
+              << " left the network.";
+        continue;
+      } else if (tr_status == DestinationType::Edge) {
+        trains_finished_simulating.insert(tr);
+        exit_times.at(tr) = t;
+        PLOGD << "At time " << t << ", "
+              << instance->get_train_list().get_train(tr).name
+              << " reached the end of its route on an edge within the network.";
+        continue;
+      } else if (tr_status == DestinationType::Station) {
+        assert(tr_next_stop_id.at(tr).has_value());
+        const auto& last_stop =
+            instance->get_timetable().get_schedule(tr).get_stops().at(
+                tr_next_stop_id.at(tr).value());
+        exit_times.at(tr)   = std::max(last_stop.get_end_range().first,
+                                       t + last_stop.get_min_stopping_time());
+        tr_next_stop_id[tr] = {};
+        trains_finished_simulating.insert(tr);
+        PLOGD << "At time " << t << ", "
+              << instance->get_train_list().get_train(tr).name
+              << " reached the end of its route at station "
+              << last_stop.get_station_name() << ", stopping until "
+              << exit_times.at(tr);
+        continue;
+      }
+
+      // Update stop information if a train has reached its next stop
+      if (tr_next_stop_id.at(tr).has_value()) {
+        // TODO
+      }
+    }
 
     // Remove trains that have left the network
-
-    // Update stop information if a train has reached its next stop
+    for (const auto& tr : trains_to_remove) {
+      trains_in_network.erase(tr);
+    }
 
     // Check for new trains entering the network
     const auto [tr_to_enter_success, tr_to_enter] = get_entering_trains(
@@ -126,7 +221,7 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
       } else {
         trains_in_network.insert(tr);
         vertex_headways.at(train_schedule.get_entry()) =
-            t + std::ceil(entry_vertex.headway);
+            t + static_cast<int>(std::ceil(entry_vertex.headway));
         train_positions.at(tr) = {
             -instance->get_train_list().get_train(tr).length,
             0.0}; // Initialize positions
@@ -134,6 +229,7 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
         if (!train_schedule.get_stops().empty()) {
           tr_next_stop_id.at(tr) = 0;
         }
+        movement_detected = true;
         PLOGD << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " entered the network at " << entry_vertex.name;
@@ -143,10 +239,13 @@ cda_rail::simulator::GreedySimulator::simulate(int dt, bool late_entry_possible,
     }
 
     // Check if the end state can still be reached
+    // TODO
 
     // Check if all trains have reached their destination
+    // TODO
 
     // Check if there might be a deadlock situation
+    // TODO
 
     // Update time
     t += dt;

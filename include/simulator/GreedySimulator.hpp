@@ -435,7 +435,8 @@ public:
   [[nodiscard]] std::pair<bool, std::vector<int>>
   simulate(int dt = 6, bool late_entry_possible = false,
            bool late_exit_possible = false, bool late_stop_possible = false,
-           bool debug_input = false) const;
+           bool limit_speed_by_leaving_edges = true,
+           bool debug_input                  = false) const;
 };
 
 } // namespace cda_rail::simulator
