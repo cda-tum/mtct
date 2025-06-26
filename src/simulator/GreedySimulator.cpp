@@ -6,16 +6,20 @@
 #include "plog/Log.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <limits>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
 
 std::pair<bool, std::vector<int>>
 cda_rail::simulator::GreedySimulator::simulate(
@@ -48,18 +52,18 @@ cda_rail::simulator::GreedySimulator::simulate(
       0); // 0 indicates that a train has not entered the network yet
 
   // Find first time step
-  int min_T              = std::numeric_limits<int>::max();
+  int min_t              = std::numeric_limits<int>::max();
   int last_entering_time = std::numeric_limits<int>::min();
   for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
        ++tr) {
-    min_T = std::min(
-        min_T,
+    min_t = std::min(
+        min_t,
         instance->get_timetable().get_schedule(tr).get_t_0_range().first);
     last_entering_time = std::max(
         last_entering_time,
         instance->get_timetable().get_schedule(tr).get_t_0_range().second);
   }
-  int max_T = instance->get_timetable().max_t();
+  const int max_t = instance->get_timetable().max_t();
 
   // Initialize variables to keep track of positions and velocities
   std::vector<std::pair<double, double>> train_positions(
@@ -82,11 +86,10 @@ cda_rail::simulator::GreedySimulator::simulate(
 
   const auto trains_on_edges = tr_on_edges();
 
-  int  t                   = min_T;
-  bool continue_simulation = true;
+  int t = min_t;
 
-  PLOGV << "Starting simulation from time " << min_T
-        << " to approximately time " << max_T;
+  PLOGV << "Starting simulation from time " << min_t
+        << " to approximately time " << max_t;
 
   // Detect trains that are not scheduled to enter the network
   for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
@@ -96,7 +99,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     }
   }
 
-  while (t < 10 * max_T) {
+  while (t < 10 * max_t) {
     PLOGV << "----------------------------";
     PLOGV << "Current time: " << t;
 
@@ -165,14 +168,12 @@ cda_rail::simulator::GreedySimulator::simulate(
         PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " left the network.";
-        continue;
       } else if (tr_status == DestinationType::Edge) {
         trains_finished_simulating.insert(tr);
         exit_times.at(tr) = t;
         PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " reached the end of its route on an edge within the network.";
-        continue;
       } else if (tr_status == DestinationType::Station) {
         assert(tr_next_stop_id.at(tr).has_value());
         const auto& last_stop =
@@ -189,38 +190,39 @@ cda_rail::simulator::GreedySimulator::simulate(
               << " reached the end of its route at station "
               << last_stop.get_station_name() << ", stopping until "
               << exit_times.at(tr);
-        continue;
-      }
+      } else {
+        // Train is still in the network
+        // Update stop information if a train has reached its next stop
+        if (tr_next_stop_id.at(tr).has_value()) {
+          if (train_velocities.at(tr) < V_MIN &&
+              (train_positions.at(tr).second >=
+               stop_positions.at(tr).at(tr_next_stop_id.at(tr).value()) -
+                   STOP_TOLERANCE)) {
+            // Train has reached its next stop
+            const auto& tr_stops =
+                instance->get_timetable().get_schedule(tr).get_stops();
+            const auto& stop_info = tr_stops.at(tr_next_stop_id.at(tr).value());
+            tr_stop_until.at(tr) =
+                std::max(stop_info.get_end_range().first,
+                         std::max(t, stop_info.get_begin_range().first) +
+                             stop_info.get_min_stopping_time());
+            PLOGV << "At time " << t << ", "
+                  << instance->get_train_list().get_train(tr).name
+                  << " reached its next stop at "
+                  << stop_info.get_station_name() << ", stopping until "
+                  << tr_stop_until.at(tr);
 
-      // Update stop information if a train has reached its next stop
-      if (tr_next_stop_id.at(tr).has_value()) {
-        if (train_velocities.at(tr) < V_MIN &&
-            (train_positions.at(tr).second >=
-             stop_positions.at(tr).at(tr_next_stop_id.at(tr).value()) -
-                 STOP_TOLERANCE)) {
-          // Train has reached its next stop
-          const auto& tr_stops =
-              instance->get_timetable().get_schedule(tr).get_stops();
-          const auto& stop_info = tr_stops.at(tr_next_stop_id.at(tr).value());
-          tr_stop_until.at(tr) =
-              std::max(stop_info.get_end_range().first,
-                       std::max(t, stop_info.get_begin_range().first) +
-                           stop_info.get_min_stopping_time());
-          PLOGV << "At time " << t << ", "
-                << instance->get_train_list().get_train(tr).name
-                << " reached its next stop at " << stop_info.get_station_name()
-                << ", stopping until " << tr_stop_until.at(tr);
-
-          if (tr_next_stop_id.at(tr).value() + 1 < tr_stops.size()) {
-            // Update next stop ID
-            tr_next_stop_id.at(tr) = tr_next_stop_id.at(tr).value() + 1;
-            PLOGV << "Next stop: "
-                  << tr_stops.at(tr_next_stop_id.at(tr).value())
-                         .get_station_name();
-          } else {
-            // No more stops scheduled
-            tr_next_stop_id.at(tr) = std::nullopt;
-            PLOGV << "No more stops scheduled";
+            if (tr_next_stop_id.at(tr).value() + 1 < tr_stops.size()) {
+              // Update next stop ID
+              tr_next_stop_id.at(tr) = tr_next_stop_id.at(tr).value() + 1;
+              PLOGV << "Next stop: "
+                    << tr_stops.at(tr_next_stop_id.at(tr).value())
+                           .get_station_name();
+            } else {
+              // No more stops scheduled
+              tr_next_stop_id.at(tr) = std::nullopt;
+              PLOGV << "No more stops scheduled";
+            }
           }
         }
       }
@@ -337,10 +339,12 @@ cda_rail::simulator::GreedySimulator::simulate(
   }
 
   // This point should never be reached.
-  PLOGE << "Simulation exceeded maximum time limit of " << 10 * max_T
+  PLOGE << "Simulation exceeded maximum time limit of " << 10 * max_t
         << " seconds. Aborting simulation.";
   throw std::overflow_error("Simulation might be stuck in an infinite loop.");
 }
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
 bool cda_rail::simulator::GreedySimulator::check_consistency() const {
   if (!instance->check_consistency(false)) {
@@ -1481,11 +1485,14 @@ bool cda_rail::simulator::GreedySimulator::is_feasible_to_schedule(
         return false;
       }
     }
+    // NOLINTBEGIN(bugprone-unchecked-optional-access)
+    // false positive
     if (!late_stop_possible && next_stop_id.at(tr).has_value() &&
         tr_schedule.get_stops()
                 .at(next_stop_id.at(tr).value())
                 .get_begin_range()
                 .second <= t) {
+      // NOLINTEND(bugprone-unchecked-optional-access)
       // Train is not allowed to stop late
       return false;
     }

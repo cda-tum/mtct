@@ -6,9 +6,6 @@
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
-#include <plog/Appenders/ColorConsoleAppender.h>
-#include <plog/Formatters/TxtFormatter.h>
-#include <plog/Init.h>
 #include <plog/Logger.h>
 #include <plog/Severity.h>
 #include <string>

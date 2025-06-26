@@ -842,8 +842,8 @@ double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
     throw exceptions::InvalidInputException("Deceleration must be positive.");
   }
 
-  double v_1 = std::min(v_max, v_0 + a * dt);
-  double x_1 = (v_0 + v_1) * dt / 2;     // Distance travelled in dt seconds
-  double bd  = braking_distance(v_1, d); // Braking distance at v_1
+  const double v_1 = std::min(v_max, v_0 + a * dt);
+  const double x_1 = (v_0 + v_1) * dt / 2; // Distance travelled in dt seconds
+  const double bd  = braking_distance(v_1, d); // Braking distance at v_1
   return x_1 + bd; // Maximum position of the braking point
 }

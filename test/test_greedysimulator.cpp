@@ -1,3 +1,4 @@
+#include <cstdlib>
 #define TEST_FRIENDS true
 
 #include "CustomExceptions.hpp"
@@ -6,11 +7,11 @@
 #include "simulator/GreedySimulator.hpp"
 
 #include "gtest/gtest.h"
+#include <cmath>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Init.h>
 #include <plog/Log.h>
-#include <plog/Logger.h>
 #include <plog/Severity.h>
 
 using namespace cda_rail;
