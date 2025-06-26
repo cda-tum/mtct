@@ -146,7 +146,7 @@ private:
   void extract_solution(
       instances::SolGeneralPerformanceOptimizationInstance<
           instances::GeneralPerformanceOptimizationInstance>& sol) const;
-  double        extract_speed(size_t tr, size_t vertex_id) const;
+  [[nodiscard]] double extract_speed(size_t tr, size_t vertex_id) const;
   static double headway(const Train& tr_obj, const Edge& e_obj, double v_0,
                         double v_1, bool entry_vertex = false);
 
@@ -232,8 +232,9 @@ public:
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
       instances::GeneralPerformanceOptimizationInstance>
-  solve(int time_limit, bool debug_input) override {
-    return solve({}, {}, {}, time_limit, debug_input);
+  solve(int time_limit, bool debug_input,
+        bool overwrite_severity = true) override {
+    return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
   };
 
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
@@ -241,7 +242,8 @@ public:
   solve(const ModelDetail&                 model_detail_input,
         const SolverStrategyMovingBlock&   solver_strategy_input,
         const SolutionSettingsMovingBlock& solution_settings_input,
-        int time_limit = -1, bool debug_input = false);
+        int time_limit = -1, bool debug_input = false,
+        bool overwrite_severity = true);
 };
 
 } // namespace cda_rail::solver::mip_based

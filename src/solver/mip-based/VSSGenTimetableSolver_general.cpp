@@ -72,8 +72,8 @@ cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     const ModelDetail& model_detail, const ModelSettings& model_settings,
     const SolverStrategy&   solver_strategy,
-    const SolutionSettings& solution_settings, int time_limit,
-    bool debug_input) {
+    const SolutionSettings& solution_settings, int time_limit, bool debug_input,
+    bool overwrite_severity) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
    * flexible MILP formulation. The level of detail can be controlled using the
@@ -128,13 +128,15 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    *
    * @param debug: If true, (more detailed) debug output is printed. Default:
    * false
+   * @param overwrite_severity: If true, the severity of the log is overwritten
+   * even if this decreases the logging level. Default: true
    *
    * @return Solution object containing status, objective value, and solution
    */
 
-  auto old_instance =
-      initialize_variables(model_detail, model_settings, solver_strategy,
-                           solution_settings, time_limit, debug_input);
+  auto old_instance = initialize_variables(
+      model_detail, model_settings, solver_strategy, solution_settings,
+      time_limit, debug_input, overwrite_severity);
 
   create_variables();
   set_objective();

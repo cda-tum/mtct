@@ -206,11 +206,13 @@ private:
                        const ModelSettings&    model_settings,
                        const SolverStrategy&   solver_strategy,
                        const SolutionSettings& solution_settings,
-                       int time_limit, bool debug_input);
+                       int time_limit, bool debug_input,
+                       bool overwrite_severity);
 
 protected:
-  void solve_init_vss_gen_timetable(int time_limit, bool debug_input) {
-    this->solve_init_general_mip(time_limit, debug_input);
+  void solve_init_vss_gen_timetable(int time_limit, bool debug_input,
+                                    bool overwrite_severity) {
+    this->solve_init_general_mip(time_limit, debug_input, overwrite_severity);
   };
 
 public:
@@ -227,12 +229,13 @@ public:
         const ModelSettings&    model_settings    = {},
         const SolverStrategy&   solver_strategy   = {},
         const SolutionSettings& solution_settings = {}, int time_limit = -1,
-        bool debug_input = false);
+        bool debug_input = false, bool overwrite_severity = true);
 
   using GeneralSolver::solve;
   [[nodiscard]] virtual instances::SolVSSGenerationTimetable
-  solve(int time_limit, bool debug_input) override {
-    return solve({}, {}, {}, {}, time_limit, debug_input);
+  solve(int time_limit, bool debug_input,
+        bool overwrite_severity = true) override {
+    return solve({}, {}, {}, {}, time_limit, debug_input, overwrite_severity);
   }
 };
 
@@ -286,12 +289,13 @@ public:
         const ModelSettings&            model_settings  = {},
         const SolverStrategy&           solver_strategy = {},
         const SolutionSettings& solution_settings = {}, int time_limit = -1,
-        bool debug_input = false);
+        bool debug_input = false, bool overwrite_severity = true);
 
   using GeneralSolver::solve;
   [[nodiscard]] virtual instances::SolVSSGenerationTimetable
-  solve(int time_limit, bool debug_input) override {
-    return solve({}, {}, {}, {}, time_limit, debug_input);
+  solve(int time_limit, bool debug_input,
+        bool overwrite_severity = true) override {
+    return solve({}, {}, {}, {}, time_limit, debug_input, overwrite_severity);
   }
 };
 

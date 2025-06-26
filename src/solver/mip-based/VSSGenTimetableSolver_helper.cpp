@@ -327,12 +327,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
     const cda_rail::solver::mip_based::ModelSettings&    model_settings,
     const cda_rail::solver::mip_based::SolverStrategy&   solver_strategy,
     const cda_rail::solver::mip_based::SolutionSettings& solution_settings,
-    int time_limit, bool debug_input) {
+    int time_limit, bool debug_input, bool overwrite_severity) {
   /**
    * This function initializes the variables affecting the model creation and
    * optimization process
    */
-  this->solve_init_vss_gen_timetable(time_limit, debug_input);
+  this->solve_init_vss_gen_timetable(time_limit, debug_input,
+                                     overwrite_severity);
 
   if (!model_settings.model_type.check_consistency()) {
     PLOGE << "Model type  and separation types/functions are not consistent.";

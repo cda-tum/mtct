@@ -60,12 +60,12 @@ enum class VelocityRefinementStrategy : std::uint8_t {
 
 // Helper functions
 
-static void initialize_plog(bool debug_input) {
+static void initialize_plog(bool debug_input, bool overwrite_severity = false) {
   if (plog::get() == nullptr) {
     static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
     plog::init(plog::debug, &console_appender);
   }
-  if (plog::get()->getMaxSeverity() <= plog::info) {
+  if (overwrite_severity || plog::get()->getMaxSeverity() <= plog::info) {
     plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
   }
 };

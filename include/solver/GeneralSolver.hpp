@@ -28,8 +28,9 @@ protected:
   int64_t                                             create_time = 0;
   int64_t                                             solve_time  = 0;
 
-  void solve_init_general(int time_limit, bool debug_input) {
-    cda_rail::initialize_plog(debug_input);
+  void solve_init_general(int time_limit, bool debug_input,
+                          bool overwrite_severity) {
+    cda_rail::initialize_plog(debug_input, overwrite_severity);
 
     if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
       start = std::chrono::high_resolution_clock::now();
@@ -46,8 +47,9 @@ public:
   [[nodiscard]] const T& get_instance() const { return instance; }
   [[nodiscard]] T&       editable_instance() { return instance; }
 
-  [[nodiscard]] S         solve() { return solve(-1, false); };
-  [[nodiscard]] virtual S solve(int time_limit, bool debug_input) = 0;
+  [[nodiscard]] S         solve() { return solve(-1, false, true); };
+  [[nodiscard]] virtual S solve(int time_limit, bool debug_input,
+                                bool overwrite_severity) = 0;
 
   virtual ~GeneralSolver() = default;
 };

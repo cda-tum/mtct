@@ -35,7 +35,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     const ModelDetail&                 model_detail_input,
     const SolverStrategyMovingBlock&   solver_strategy_input,
     const SolutionSettingsMovingBlock& solution_settings_input, int time_limit,
-    bool debug_input) {
+    bool debug_input, bool overwrite_severity) {
   /**
    * Solves initiated performance optimization problem with moving block
    * signaling/routing. Only breakable edges can use moving block. On all
@@ -45,6 +45,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
    * @param time_limit: time limit for the solver in seconds. If -1, no time
    * limit is set.
    * @param debug_input: if true, the debug output is enabled.
+   * @param overwrite_severity: if true, the severity of the log is overwritten
    *
    * @return: respective solution object
    */
@@ -52,9 +53,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   std::optional<LazyCallback> cb;
   if (solver_strategy_input.use_lazy_constraints) {
     cb = LazyCallback(this);
-    this->solve_init_general_mip(time_limit, debug_input, &(cb.value()));
+    this->solve_init_general_mip(time_limit, debug_input, overwrite_severity,
+                                 &(cb.value()));
   } else {
-    this->solve_init_general_mip(time_limit, debug_input);
+    this->solve_init_general_mip(time_limit, debug_input, overwrite_severity);
   }
 
   if (!instance.n().is_consistent_for_transformation()) {
