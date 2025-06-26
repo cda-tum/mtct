@@ -1381,10 +1381,13 @@ bool cda_rail::simulator::GreedySimulator::move_train(
     throw cda_rail::exceptions::TrainNotExistentException(tr);
   }
 
-  const double move_distance =
+  double move_distance =
       std::min(ma, (v_0 + v_1) * dt / 2.0); // Distance moved in the time step
   if (std::abs(move_distance) < EPS) {
     return false;
+  }
+  if (std::abs(ma - move_distance) < STOP_TOLERANCE) {
+    move_distance = ma;
   }
   train_positions.at(tr).second += move_distance; // Update the front position
   return move_distance > 0;
