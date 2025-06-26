@@ -9,6 +9,7 @@
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Init.h>
+#include <plog/Log.h>
 #include <plog/Logger.h>
 #include <plog/Severity.h>
 
@@ -2610,9 +2611,13 @@ TEST(GreedySimulation, SimpleSimulation) {
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
   const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (success ? "true" : "false")
+        << ", Objective value: " << obj.back() << std::endl;
 
-  std::cout << "Simulation success: " << success
-            << ", Objective value: " << obj.back() << std::endl;
+  EXPECT_TRUE(success);
+  EXPECT_EQ(obj.size(), 1);
+  EXPECT_GE(obj[0], 198);
+  EXPECT_LE(obj[0], 198 + 6);
 }
 
 // NOLINTEND
