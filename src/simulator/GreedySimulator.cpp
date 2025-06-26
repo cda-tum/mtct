@@ -171,8 +171,10 @@ cda_rail::simulator::GreedySimulator::simulate(
         const auto& last_stop =
             instance->get_timetable().get_schedule(tr).get_stops().at(
                 tr_next_stop_id.at(tr).value());
-        exit_times.at(tr)      = std::max(last_stop.get_end_range().first,
-                                          t + last_stop.get_min_stopping_time());
+        exit_times.at(tr) =
+            std::max(last_stop.get_end_range().first,
+                     std::max(t, last_stop.get_begin_range().first) +
+                         last_stop.get_min_stopping_time());
         tr_next_stop_id.at(tr) = {};
         trains_finished_simulating.insert(tr);
         PLOGD << "At time " << t << ", "
