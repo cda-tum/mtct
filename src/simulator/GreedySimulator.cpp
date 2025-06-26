@@ -88,7 +88,7 @@ cda_rail::simulator::GreedySimulator::simulate(
   PLOGV << "Starting simulation from time " << min_T
         << " to approximately time " << max_T;
 
-  while (continue_simulation) {
+  while (t < 10 * max_T) {
     PLOGV << "----------------------------";
     PLOGV << "Current time: " << t;
 
@@ -97,7 +97,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     for (const auto& tr : trains_in_network) {
       const auto& train_object = instance->get_train_list().get_train(tr);
 
-      if (trains_finished_simulating.contains(tr)) {
+      if (trains_finished_simulating.contains(tr) || t < tr_stop_until.at(tr)) {
         PLOGV << train_object.name << " skipped.";
         continue;
       }
@@ -186,7 +186,35 @@ cda_rail::simulator::GreedySimulator::simulate(
 
       // Update stop information if a train has reached its next stop
       if (tr_next_stop_id.at(tr).has_value()) {
-        // TODO
+        if (train_velocities.at(tr) < V_MIN &&
+            (train_positions.at(tr).second >=
+             stop_positions.at(tr).at(tr_next_stop_id.at(tr).value()) -
+                 STOP_TOLERANCE)) {
+          // Train has reached its next stop
+          const auto& tr_stops =
+              instance->get_timetable().get_schedule(tr).get_stops();
+          const auto& stop_info = tr_stops.at(tr_next_stop_id.at(tr).value());
+          tr_stop_until.at(tr) =
+              std::max(stop_info.get_end_range().first,
+                       std::max(t, stop_info.get_begin_range().first) +
+                           stop_info.get_min_stopping_time());
+          PLOGV << "At time " << t << ", "
+                << instance->get_train_list().get_train(tr).name
+                << " reached its next stop at " << stop_info.get_station_name()
+                << ", stopping until " << tr_stop_until.at(tr);
+
+          if (tr_next_stop_id.at(tr).value() + 1 < tr_stops.size()) {
+            // Update next stop ID
+            tr_next_stop_id.at(tr) = tr_next_stop_id.at(tr).value() + 1;
+            PLOGV << "Next stop: "
+                  << tr_stops.at(tr_next_stop_id.at(tr).value())
+                         .get_station_name();
+          } else {
+            // No more stops scheduled
+            tr_next_stop_id.at(tr) = std::nullopt;
+            PLOGV << "No more stops scheduled";
+          }
+        }
       }
     }
 
@@ -240,22 +268,70 @@ cda_rail::simulator::GreedySimulator::simulate(
       }
     }
 
-    // Check if the end state can still be reached
-    // TODO
-
     // Check if all trains have reached their destination
-    // TODO
+    if (trains_finished_simulating.size() ==
+        instance->get_timetable().get_train_list().size()) {
+      PLOGV << "All trains have reached their destination at time " << t;
+      return {true, exit_times};
+    }
+
+    // Check if the end state can still be reached
+    if (!is_feasible_to_schedule(
+            t, tr_next_stop_id, train_positions, trains_in_network, trains_left,
+            late_entry_possible, late_exit_possible, late_stop_possible)) {
+      PLOGV << "Simulation failed: Not all trains can be scheduled at time "
+            << t;
+      return {false, exit_times};
+    }
 
     // Check if there might be a deadlock situation
-    // TODO
+    if (!movement_detected) {
+      // There might be a deadlock situation if none of the constraints depend
+      // on time
+      PLOGV << "No movement detected at time " << t;
+      bool reason_found = false;
+      if (std::any_of(vertex_headways.begin(), vertex_headways.end(),
+                      [t](int vertex_headway) { return vertex_headway > t; })) {
+        PLOGV << "Vertex headway constraint prevents movement.";
+        reason_found = true;
+      } else {
+        for (size_t tr = 0; tr < train_velocities.size(); ++tr) {
+          if (!trains_finished_simulating.contains(tr)) {
+            if (trains_in_network.contains(tr)) {
+              if ((instance->const_n()
+                       .get_edge(train_edges.at(tr).back())
+                       .target == instance->get_schedule(tr).get_exit()) &&
+                  instance->get_schedule(tr).get_t_n_range().first > t) {
+                PLOGV << instance->get_train_list().get_train(tr).name
+                      << " is blocked by earliest exit.";
+                reason_found = true;
+                break;
+              }
+            } else {
+              if (instance->get_schedule(tr).get_t_0_range().first > t) {
+                PLOGV << instance->get_train_list().get_train(tr).name
+                      << " is blocked by earliest entry.";
+                reason_found = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+      if (!reason_found) {
+        PLOGV << "Trains are in a deadlock situation.";
+        return {false, exit_times};
+      }
+    }
 
     // Update time
     t += dt;
-
-    continue_simulation = t <= max_T;
   }
 
-  return {true, exit_times};
+  // This point should never be reached.
+  PLOGE << "Simulation exceeded maximum time limit of " << 10 * max_T
+        << " seconds. Aborting simulation.";
+  throw std::overflow_error("Simulation might be stuck in an infinite loop.");
 }
 
 bool cda_rail::simulator::GreedySimulator::check_consistency() const {
