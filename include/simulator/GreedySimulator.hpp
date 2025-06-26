@@ -153,6 +153,7 @@ private:
   [[nodiscard]] double get_absolute_distance_ma(
       size_t tr, double max_displacement,
       const std::vector<std::pair<double, double>>&  train_positions,
+      const std::vector<double>&                     train_velocities,
       const std::unordered_set<size_t>&              trains_in_network,
       const std::unordered_set<size_t>&              trains_left,
       const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
@@ -175,8 +176,8 @@ private:
                          double d, int dt);
 
   [[nodiscard]] std::pair<double, double>
-  get_ma_and_maxv(size_t tr, double v_0, std::optional<double> next_stop,
-                  double h, int dt,
+  get_ma_and_maxv(size_t tr, const std::vector<double>& train_velocities,
+                  std::optional<double> next_stop, double h, int dt,
                   const std::vector<std::pair<double, double>>& train_positions,
                   const std::unordered_set<size_t>& trains_in_network,
                   const std::unordered_set<size_t>& trains_left,

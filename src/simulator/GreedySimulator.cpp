@@ -109,10 +109,10 @@ cda_rail::simulator::GreedySimulator::simulate(
           std::max({tr_schedule.get_t_n_range().first - t,
                     vertex_headways.at(tr_schedule.get_exit()) - t, 0});
 
-      const auto [tr_ma, tr_v1] = get_ma_and_maxv(
-          tr, train_velocities.at(tr), tr_next_stop_id.at(tr), h, dt,
-          train_positions, trains_in_network, trains_left, trains_on_edges,
-          limit_speed_by_leaving_edges);
+      const auto [tr_ma, tr_v1] =
+          get_ma_and_maxv(tr, train_velocities, tr_next_stop_id.at(tr), h, dt,
+                          train_positions, trains_in_network, trains_left,
+                          trains_on_edges, limit_speed_by_leaving_edges);
       PLOGD << train_object.name << " positioned at "
             << train_positions.at(tr).second
             << " has MA: " << train_positions.at(tr).second + tr_ma
@@ -701,6 +701,7 @@ double cda_rail::simulator::GreedySimulator::max_displacement(
 double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
     size_t tr, double max_displacement,
     const std::vector<std::pair<double, double>>&  train_positions,
+    const std::vector<double>&                     train_velocities,
     const std::unordered_set<size_t>&              trains_in_network,
     const std::unordered_set<size_t>&              trains_left,
     const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
@@ -712,6 +713,9 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
    * after this distance).
    * @param train_positions: A vector of pairs containing the rear and front
    * positions of each train in the network.
+   * @param train_velocities: A vector containing the velocities of each train.
+   * This is needed to check for collisions with trains traveling in the
+   * opposite direction.
    * @param trains_in_network: A set of train ids that are currently in the
    * network.
    * @param tr_on_edges: A vector of unordered sets, where each set contains the
@@ -740,7 +744,8 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
     }
     const auto& edge_id = train_edges.at(tr).at(i);
 
-    // First check if TTD can be entered
+    // First edge is entirely blocked due to TTD section or train travelling in
+    // opposite direction
     if (milestones.at(i) >= train_positions.at(tr).second) {
       const auto ttd_sec = get_ttd(edge_id);
       if (ttd_sec.has_value()) {
@@ -769,6 +774,31 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
                      train_positions.at(tr).second; // Other train is occupying
                                                     // the future TTD section
             }
+          }
+        }
+      }
+
+      const auto reverse_edge_id =
+          instance->const_n().get_reverse_edge_index(edge_id);
+      if (reverse_edge_id.has_value()) {
+        const auto& potential_trains_reverse =
+            tr_on_edges.at(reverse_edge_id.value());
+        for (const auto& other_tr : potential_trains_reverse) {
+          if (other_tr == tr || !trains_in_network.contains(other_tr)) {
+            continue; // Skip the train itself or trains that are not in the
+                      // network
+          }
+          [[maybe_unused]] const auto [occ_rev, det_occ_rev, det_pos_rev] =
+              get_position_on_edge(
+                  other_tr,
+                  {train_positions.at(other_tr).first,
+                   train_positions.at(other_tr).second +
+                       braking_distance(other_tr,
+                                        train_velocities.at(other_tr))},
+                  edge_id);
+          if (occ_rev) {
+            // Other train has already been cleared to enter the reverse edge
+            return milestones.at(i) - train_positions.at(tr).second;
           }
         }
       }
@@ -1132,24 +1162,25 @@ cda_rail::simulator::GreedySimulator::time_to_exit_objective(
 }
 
 std::pair<double, double> cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
-    size_t tr, double v_0, std::optional<double> next_stop, double h, int dt,
+    size_t tr, const std::vector<double>& train_velocities,
+    std::optional<double> next_stop, double h, int dt,
     const std::vector<std::pair<double, double>>&  train_positions,
     const std::unordered_set<size_t>&              trains_in_network,
     const std::unordered_set<size_t>&              trains_left,
     const std::vector<std::unordered_set<size_t>>& tr_on_edges,
     bool also_limit_speed_by_leaving_edges) const {
   const auto& train = instance->get_timetable().get_train_list().get_train(tr);
-  double      ma    = max_displacement(train, v_0, dt);
+  double      ma    = max_displacement(train, train_velocities.at(tr), dt);
   ma = get_next_stop_ma(ma, train_positions.at(tr).second, next_stop);
   double max_v;
-  ma = get_absolute_distance_ma(tr, ma, train_positions, trains_in_network,
-                                trains_left, tr_on_edges);
+  ma = get_absolute_distance_ma(tr, ma, train_positions, train_velocities,
+                                trains_in_network, trains_left, tr_on_edges);
   std::tie(ma, max_v) = get_future_max_speed_constraints(
-      tr, train, train_positions.at(tr).second, v_0, ma, dt,
+      tr, train, train_positions.at(tr).second, train_velocities.at(tr), ma, dt,
       also_limit_speed_by_leaving_edges);
-  max_v = std::min(max_v,
-                   get_max_speed_exit_headway(
-                       tr, train, train_positions.at(tr).second, v_0, h, dt));
+  max_v = std::min(max_v, get_max_speed_exit_headway(
+                              tr, train, train_positions.at(tr).second,
+                              train_velocities.at(tr), h, dt));
 
   return {ma, max_v};
 }
