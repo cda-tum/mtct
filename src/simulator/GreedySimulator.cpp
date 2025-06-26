@@ -764,6 +764,8 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
           continue; // Skip the train itself or trains that are not in the
                     // network
         }
+        // NOLINTBEGIN(bugprone-unchecked-optional-access)
+        // false positive
         [[maybe_unused]] const auto [occ_rev, det_occ_rev, det_pos_rev] =
             get_position_on_edge(
                 other_tr,
@@ -771,6 +773,7 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
                  train_positions.at(other_tr).second +
                      braking_distance(other_tr, train_velocities.at(other_tr))},
                 reverse_edge_id.value());
+        // NOLINTEND(bugprone-unchecked-optional-access)
         if (occ_rev) {
           return false; // Other train is occupying the reverse edge within the
                         // braking distance
@@ -798,7 +801,7 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
 }
 
 double cda_rail::simulator::GreedySimulator::max_displacement(
-    const cda_rail::Train& train, double v_0, int dt) const {
+    const cda_rail::Train& train, double v_0, int dt) {
   /**
    * Calculate the maximum displacement of a train in a given time step.
    *
@@ -1277,7 +1280,7 @@ cda_rail::simulator::GreedySimulator::time_to_exit_objective(
 
 std::pair<double, double> cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
     size_t tr, const std::vector<double>& train_velocities,
-    std::optional<double> next_stop, double h, int dt,
+    std::optional<double> next_stop, int h, int dt,
     const std::vector<std::pair<double, double>>&  train_positions,
     const std::unordered_set<size_t>&              trains_in_network,
     const std::unordered_set<size_t>&              trains_left,
@@ -1288,7 +1291,7 @@ std::pair<double, double> cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
   ma = get_next_stop_ma(ma, train_positions.at(tr).second, next_stop);
   ma = get_exit_vertex_order_ma(tr, train, train_positions.at(tr).second, ma,
                                 trains_in_network, trains_left);
-  double max_v;
+  double max_v = NAN;
   ma = get_absolute_distance_ma(tr, ma, train_positions, train_velocities,
                                 trains_in_network, trains_left, tr_on_edges);
   std::tie(ma, max_v) = get_future_max_speed_constraints(
