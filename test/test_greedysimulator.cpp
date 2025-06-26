@@ -2485,6 +2485,100 @@ TEST(GreedySimulator, ScheduleFeasibility) {
                cda_rail::exceptions::InvalidInputException);
 }
 
+TEST(GreedySimulator, ReverseEdgeMA) {
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", VertexType::TTD);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 200, 50, true);
+  const auto v1_v0 = network.add_edge(v1, v0, 200, 50, true);
+  const auto v1_v2 = network.add_edge(v1, v2, 300, 50, true);
+  const auto v2_v3 = network.add_edge(v2, v3, 400, 50, true);
+  const auto v3_v2 = network.add_edge(v3, v2, 400, 50, true);
+  const auto v2_v1 = network.add_edge(v2, v1, 300, 50, true);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 10, 50, 1, 2, true, {0, 60},
+                                       30, v0, {360, 420}, 2, v3, network);
+  const auto tr2 = timetable.add_train("Train2", 10, 50, 2, 4, true, {30, 90},
+                                       15, v3, {360, 480}, 14, v0, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3});
+  simulator.set_train_edges_of_tr(tr2, {v3_v2, v2_v1, v1_v0});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
+  simulator.set_vertex_orders_of_vertex(v3, {tr2, tr1});
+
+  std::vector<std::pair<double, double>> train_pos = {
+      {160, 170}, // Train1, 30m away from conflicting edge
+      {340, 350}  // Train2, 50m away from conflicting edge
+  };
+  std::vector<double> train_velocities(2, 0);
+
+  const auto tr_on_edges = simulator.tr_on_edges();
+
+  // No conflict, Train 1 can move as far as possible
+  // v_0 = 0, v_1 = 0+ 2*1 = 2 after 2s
+  // x_1 = (0 + 2) * 2 / 2 = 2
+  // bd = 2 * 2 / (2*2) = 1
+  // ma = x_1 + bd = 2 + 1 = 3
+  const auto [ma1, max_v1] =
+      simulator.get_ma_and_maxv(tr1, train_velocities, {}, 0, 2, train_pos,
+                                {tr1, tr2}, {}, tr_on_edges, true);
+  EXPECT_EQ(ma1, 3);
+  EXPECT_EQ(max_v1, 2);
+
+  // Similar for Train 2
+  // v_0 = 0, v_1 = 0 + 10 * 2 = 20 after 10s
+  // x_1 = (0 + 20) * 10 / 2 = 100
+  // bd = 20 * 20 / (2*4) = 50
+  // ma = x_1 + bd = 100 + 50 = 150
+  const auto [ma2, max_v2] =
+      simulator.get_ma_and_maxv(tr2, train_velocities, {}, 0, 10, train_pos,
+                                {tr1, tr2}, {}, tr_on_edges, true);
+  EXPECT_EQ(ma2, 150);
+  EXPECT_EQ(max_v2, 20);
+
+  // Now Train 1 has v_0 = 11
+  // bd = 11 * 11 / (2*2) = 30.25 -> Entering conflicting edge
+  // Hence Train 2 cannot enter and only move 50m.
+  // On the other hand, Train 1 is not limited.
+  // v_0 = 11, v_1 = 11 + 2 * 1 = 13 after 2s
+  // x_1 = (11 + 13) * 2 / 2 = 24
+  // bd = 13 * 13 / (2*2) = 42.25
+  // ma = x_1 + bd = 24 + 42.25 = 66.25
+  train_velocities.at(tr1) = 11;
+  const auto [ma1b, max_v1b] =
+      simulator.get_ma_and_maxv(tr1, train_velocities, {}, 0, 2, train_pos,
+                                {tr1, tr2}, {}, tr_on_edges, true);
+  EXPECT_EQ(ma1b, 66.25);
+  EXPECT_EQ(max_v1b, 13);
+
+  const auto [ma2b, max_v2b] =
+      simulator.get_ma_and_maxv(tr2, train_velocities, {}, 0, 10, train_pos,
+                                {tr1, tr2}, {}, tr_on_edges, true);
+  EXPECT_EQ(ma2b, 50);
+  EXPECT_GE((10.0 + max_v2b) * 10.0 / 2.0 + ((max_v2b * max_v2b) / (2.0 * 4.0)),
+            ma2b);
+
+  // Check reverse edge problem for entering trains. Train 1 can reach the
+  // conflicting edge.
+  train_velocities.at(tr1) = 0;
+  train_velocities.at(tr2) = 0;
+  EXPECT_TRUE(simulator.is_ok_to_enter(tr1, train_pos, train_velocities, {tr2},
+                                       tr_on_edges));
+
+  train_velocities.at(tr2) = 25; // Train 2 has ma into conflicting edge
+  EXPECT_FALSE(simulator.is_ok_to_enter(tr1, train_pos, train_velocities, {tr2},
+                                        tr_on_edges));
+}
+
 // -------------------
 // Test simulation
 // -------------------
