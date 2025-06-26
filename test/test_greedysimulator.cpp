@@ -2648,9 +2648,10 @@ TEST(GreedySimulator, DeadlockTest1) {
   simulator.set_vertex_orders_of_vertex(v1, {tr2, tr1});
 
   const auto [success, obj] = simulator.simulate(6, true, true, true, true);
+  EXPECT_EQ(obj.size(), 2);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << obj.back() << std::endl;
-
+        << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")"
+        << std::endl;
   EXPECT_FALSE(success);
 }
 
