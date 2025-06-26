@@ -2620,5 +2620,39 @@ TEST(GreedySimulation, SimpleSimulation) {
   EXPECT_LE(obj[0], 198 + 6);
 }
 
+TEST(GreedySimulator, DeadlockTest1) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  const auto v1_v0 = network.add_edge(v1, v0, 5000, 50, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto                                              tr2 =
+      timetable.add_train("Train2", 100, 50, 4, 2, true, {130, 160}, 15, v1,
+                          {198, 400}, 40, v0, network);
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {198, 400}, 40, v1, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_train_edges_of_tr(tr2, {v1_v0});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
+  simulator.set_vertex_orders_of_vertex(v1, {tr2, tr1});
+
+  const auto [success, obj] = simulator.simulate(6, true, true, true, true);
+  PLOGD << "Simulation success: " << (success ? "true" : "false")
+        << ", Objective value: " << obj.back() << std::endl;
+
+  EXPECT_FALSE(success);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
