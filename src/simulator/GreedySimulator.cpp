@@ -247,7 +247,7 @@ cda_rail::simulator::GreedySimulator::simulate(
         PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " cannot enter the network at " << entry_vertex.name
-              << "due to moving authority constraints constraints.";
+              << " due to moving authority constraints constraints.";
       } else {
         trains_in_network.insert(tr);
         vertex_headways.at(train_schedule.get_entry()) =
