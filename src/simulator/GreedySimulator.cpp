@@ -796,7 +796,7 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
                    train_positions.at(other_tr).second +
                        braking_distance(other_tr,
                                         train_velocities.at(other_tr))},
-                  edge_id);
+                  reverse_edge_id.value());
           if (occ_rev) {
             // Other train has already been cleared to enter the reverse edge
             return milestones.at(i) - train_positions.at(tr).second;
