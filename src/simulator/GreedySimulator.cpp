@@ -88,6 +88,14 @@ cda_rail::simulator::GreedySimulator::simulate(
   PLOGV << "Starting simulation from time " << min_T
         << " to approximately time " << max_T;
 
+  // Detect trains that are not scheduled to enter the network
+  for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
+       ++tr) {
+    if (train_edges.at(tr).empty()) {
+      trains_finished_simulating.insert(tr);
+    }
+  }
+
   while (t < 10 * max_T) {
     PLOGV << "----------------------------";
     PLOGV << "Current time: " << t;
@@ -1274,6 +1282,8 @@ std::pair<double, double> cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
   const auto& train = instance->get_timetable().get_train_list().get_train(tr);
   double      ma    = max_displacement(train, train_velocities.at(tr), dt);
   ma = get_next_stop_ma(ma, train_positions.at(tr).second, next_stop);
+  ma = get_exit_vertex_order_ma(tr, train, train_positions.at(tr).second, ma,
+                                trains_in_network, trains_left);
   double max_v;
   ma = get_absolute_distance_ma(tr, ma, train_positions, train_velocities,
                                 trains_in_network, trains_left, tr_on_edges);
@@ -1510,4 +1520,61 @@ cda_rail::simulator::GreedySimulator::tr_reached_end(
   }
   // Train stops at the end of its route, but not at a station stop
   return DestinationType::Edge;
+}
+
+double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
+    size_t tr, const cda_rail::Train& train, double pos,
+    double                            max_displacement,
+    const std::unordered_set<size_t>& trains_in_network,
+    const std::unordered_set<size_t>& trains_left) const {
+  /**
+   * This function limits the moving authority if the train cannot leave the
+   * network due to the exit vertex order. The MA is such that the train has
+   * enough space to accelerate to the exit velocity.
+   *
+   * @param tr: The id of the train for which the moving authority is
+   * calculated.
+   * @param train: The train object containing the train's properties.
+   * @param pos: The current position of the train on its route.
+   * @param max_displacement: The maximum displacement of the train in the next
+   * time step.
+   * @param trains_in_network: A unordered_set containing the ids of trains that
+   * are currently in the network.
+   * @param trains_left: A unordered_set containing the ids of trains that have
+   * not yet left the network.
+   *
+   * @return: The maximum moving authority to the exit vertex order.
+   */
+
+  if (train_edges.empty()) {
+    return max_displacement; // No edges, no moving authority
+  }
+  const auto& last_edge =
+      instance->const_n().get_edge(train_edges.at(tr).back());
+  const auto& tr_schedule = instance->get_timetable().get_schedule(tr);
+  if (last_edge.target != tr_schedule.get_exit()) {
+    return max_displacement; // Train does not leave the network at the end of
+                             // its route
+  }
+  const auto& exit_vertex_order = vertex_orders.at(last_edge.target);
+  const auto  idx =
+      std::find(exit_vertex_order.begin(), exit_vertex_order.end(), tr);
+  if (idx == exit_vertex_order.begin()) {
+    // Train is the first in the exit vertex order, hence, no restriction
+    return max_displacement;
+  }
+  const auto& prev_tr = *(idx - 1); // Previous train in the exit vertex order
+  const auto  prev_tr_entering =
+      (instance->get_schedule(prev_tr).get_entry() == last_edge.target);
+  if (trains_left.contains(prev_tr) ||
+      (prev_tr_entering && trains_in_network.contains(prev_tr))) {
+    // Previous train has already cleared vertex
+    return max_displacement; // No restriction
+  }
+
+  // Train cannot leave the network due to the exit vertex order
+  const auto acceleration_dist =
+      cda_rail::braking_distance(tr_schedule.get_v_n(), train.acceleration);
+  return std::min(max_displacement,
+                  train_edge_length(tr) - acceleration_dist - pos);
 }

@@ -164,6 +164,12 @@ private:
   get_future_max_speed_constraints(size_t tr, const Train& train, double pos,
                                    double v_0, double max_displacement, int dt,
                                    bool also_limit_by_leaving_edges) const;
+  [[nodiscard]] double
+  get_exit_vertex_order_ma(size_t tr, const Train& train, double pos,
+                           double                            max_displacement,
+                           const std::unordered_set<size_t>& trains_in_network,
+                           const std::unordered_set<size_t>& trains_left) const;
+
   [[nodiscard]] static std::pair<double, double>
   speed_restriction_helper(double ma, double max_v, double pos,
                            double vertex_pos, double v_0, double v_m, double d,
