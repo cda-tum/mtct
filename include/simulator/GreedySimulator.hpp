@@ -45,6 +45,7 @@ class GreedySimulator_MoveTrain_Test;
 class GreedySimulator_UpdateRearPositions_Test;
 class GreedySimulator_ScheduleFeasibility_Test;
 class GreedySimulator_ReverseEdgeMA_Test;
+class GreedySimulator_ExitVertexOrder_Test;
 #endif
 
 namespace cda_rail::simulator {
@@ -77,6 +78,7 @@ private:
   FRIEND_TEST(::GreedySimulator, UpdateRearPositions);
   FRIEND_TEST(::GreedySimulator, ScheduleFeasibility);
   FRIEND_TEST(::GreedySimulator, ReverseEdgeMA);
+  FRIEND_TEST(::GreedySimulator, ExitVertexOrder);
 #endif
 
   enum class TTDOccupationType : std::uint8_t {
