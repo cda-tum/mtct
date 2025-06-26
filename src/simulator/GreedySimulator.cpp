@@ -664,21 +664,45 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
       }
     }
 
+    // Potentially train on reverse edge
+    const auto reverse_edge_id =
+        instance->const_n().get_reverse_edge_index(edge_id);
+    if (reverse_edge_id.has_value()) {
+      const auto& potential_trains_reverse =
+          tr_on_edges.at(reverse_edge_id.value());
+      for (const auto& other_tr : potential_trains_reverse) {
+        if (other_tr == tr || !trains_in_network.contains(other_tr)) {
+          continue; // Skip the train itself or trains that are not in the
+                    // network
+        }
+        [[maybe_unused]] const auto [occ_rev, det_occ_rev, det_pos_rev] =
+            get_position_on_edge(
+                other_tr,
+                {train_positions.at(other_tr).first,
+                 train_positions.at(other_tr).second +
+                     braking_distance(other_tr, train_velocities.at(other_tr))},
+                reverse_edge_id.value());
+        if (occ_rev) {
+          return false; // Other train is occupying the reverse edge within the
+                        // braking distance
+        }
+      }
+    }
+
     const auto ttd_sec = get_ttd(edge_id);
-    if (!ttd_sec.has_value()) {
-      continue;
-    }
-    const auto& ttd_order = ttd_orders.at(ttd_sec.value());
-    const auto  ttd_pos   = std::find(ttd_order.begin(), ttd_order.end(), tr);
-    if (ttd_pos == ttd_order.begin()) {
-      continue; // Train is the first in the TTD order, no other train can block
-                // it
-    }
-    const auto& other_tr  = *(ttd_pos - 1); // Previous train in the TTD order
-    const auto& other_pos = train_positions.at(other_tr);
-    if (!trains_in_network.contains(other_tr) ||
-        !is_behind_ttd(other_tr, ttd_sec.value(), other_pos)) {
-      return false; // Other train is occupying the TTD section
+    if (ttd_sec.has_value()) {
+      const auto& ttd_order = ttd_orders.at(ttd_sec.value());
+      const auto  ttd_pos   = std::find(ttd_order.begin(), ttd_order.end(), tr);
+      if (ttd_pos == ttd_order.begin()) {
+        continue; // Train is the first in the TTD order, no other train can
+                  // block it
+      }
+      const auto& other_tr  = *(ttd_pos - 1); // Previous train in the TTD order
+      const auto& other_pos = train_positions.at(other_tr);
+      if (!trains_in_network.contains(other_tr) ||
+          !is_behind_ttd(other_tr, ttd_sec.value(), other_pos)) {
+        return false; // Other train is occupying the TTD section
+      }
     }
   }
   return true;
