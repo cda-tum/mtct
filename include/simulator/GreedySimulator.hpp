@@ -92,6 +92,7 @@ private:
   [[nodiscard]] std::pair<bool, std::unordered_set<size_t>>
   get_entering_trains(int t, const std::unordered_set<size_t>& tr_present,
                       const std::unordered_set<size_t>& tr_left,
+                      const std::unordered_set<size_t>& tr_finished_simulating,
                       bool late_entry_possible) const;
   [[nodiscard]] std::vector<double> edge_milestones(size_t tr) const;
   [[nodiscard]] std::tuple<bool, std::pair<bool, bool>,
@@ -177,8 +178,7 @@ private:
                            double vertex_pos, double v_0, double v_m, double d,
                            int dt);
   [[nodiscard]] static double
-                       get_next_stop_ma(double max_displacement, double pos,
-                                        std::optional<double> next_stop_pos);
+  get_next_stop_ma(double max_displacement, double pos, double next_stop_pos);
   [[nodiscard]] double get_max_speed_exit_headway(size_t tr, const Train& train,
                                                   double pos, double v_0, int h,
                                                   int dt) const;
@@ -205,8 +205,10 @@ private:
       int t, const std::vector<std::optional<size_t>>& next_stop_id,
       const std::vector<std::pair<double, double>>& train_positions,
       const std::unordered_set<size_t>&             trains_in_network,
-      const std::unordered_set<size_t>& trains_left, bool late_entry_possible,
-      bool late_exit_possible, bool late_stop_possible) const;
+      const std::unordered_set<size_t>&             trains_left,
+      const std::unordered_set<size_t>&             trains_finished_simulating,
+      bool late_entry_possible, bool late_exit_possible,
+      bool late_stop_possible) const;
   [[nodiscard]] double train_edge_length(size_t tr) const {
     if (train_edges.size() <= tr) {
       throw cda_rail::exceptions::TrainNotExistentException(tr);

@@ -510,21 +510,21 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
 
   // Trains entering
   const auto& [success_0, entering_tr_0] =
-      simulator.get_entering_trains(0, {}, {}, false);
+      simulator.get_entering_trains(0, {}, {}, {}, false);
   EXPECT_TRUE(success_0);
   // Expect only tr1
   EXPECT_EQ(entering_tr_0.size(), 1);
   EXPECT_TRUE(entering_tr_0.contains(tr1));
 
   const auto& [success_30, entering_tr_30] =
-      simulator.get_entering_trains(30, {}, {}, false);
+      simulator.get_entering_trains(30, {}, {}, {}, false);
   EXPECT_TRUE(success_30);
   // Expect only tr1
   EXPECT_EQ(entering_tr_30.size(), 1);
   EXPECT_TRUE(entering_tr_30.contains(tr1));
 
   const auto& [success_30b, entering_tr_30b] =
-      simulator.get_entering_trains(30, {}, {tr1}, false);
+      simulator.get_entering_trains(30, {}, {tr1}, {}, false);
   EXPECT_TRUE(success_30b);
   // Expect only tr2, tr3
   EXPECT_EQ(entering_tr_30b.size(), 2);
@@ -532,71 +532,78 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   EXPECT_TRUE(entering_tr_30b.contains(tr3));
 
   const auto& [success_30c, entering_tr_30c] =
-      simulator.get_entering_trains(30, {tr1}, {}, false);
+      simulator.get_entering_trains(30, {tr1}, {}, {}, false);
   EXPECT_TRUE(success_30c);
   // Expect only tr3
   EXPECT_EQ(entering_tr_30c.size(), 1);
   EXPECT_TRUE(entering_tr_30c.contains(tr3));
 
   const auto& [success_60, entering_tr_60] =
-      simulator.get_entering_trains(60, {}, {}, false);
+      simulator.get_entering_trains(60, {}, {}, {}, false);
   EXPECT_TRUE(success_60);
   // Expect tr1
   EXPECT_EQ(entering_tr_60.size(), 1);
   EXPECT_TRUE(entering_tr_60.contains(tr1));
 
   const auto& [success_61, entering_tr_61] =
-      simulator.get_entering_trains(61, {}, {}, false);
+      simulator.get_entering_trains(61, {}, {}, {}, false);
   EXPECT_FALSE(success_61); // tr1 too late
   EXPECT_EQ(entering_tr_61.size(), 1);
   EXPECT_TRUE(entering_tr_61.contains(tr1));
 
   const auto& [success_61_t, entering_tr_61_t] =
-      simulator.get_entering_trains(61, {}, {}, true);
+      simulator.get_entering_trains(61, {}, {}, {}, true);
   EXPECT_TRUE(success_61_t); // tr1 still entering
   EXPECT_EQ(entering_tr_61_t.size(), 1);
   EXPECT_TRUE(entering_tr_61_t.contains(tr1));
 
   const auto& [success_30_tr1tr2, entering_tr_30_tr1tr2] =
-      simulator.get_entering_trains(30, {tr1, tr2}, {}, false);
+      simulator.get_entering_trains(30, {tr1, tr2}, {}, {}, false);
   EXPECT_TRUE(success_30_tr1tr2);
   // Expect tr3
   EXPECT_EQ(entering_tr_30_tr1tr2.size(), 1);
   EXPECT_TRUE(entering_tr_30_tr1tr2.contains(tr3));
 
   const auto& [success_30_tr1tr2_l, entering_tr_30_tr1tr2_l] =
-      simulator.get_entering_trains(30, {tr2}, {tr1}, false);
+      simulator.get_entering_trains(30, {tr2}, {tr1}, {}, false);
   EXPECT_TRUE(success_30_tr1tr2_l);
   // Expect tr3
   EXPECT_EQ(entering_tr_30_tr1tr2_l.size(), 1);
   EXPECT_TRUE(entering_tr_30_tr1tr2_l.contains(tr3));
 
   const auto& [success_60_tr1tr3, entering_tr_60_tr1tr3] =
-      simulator.get_entering_trains(60, {tr3}, {tr1}, false);
+      simulator.get_entering_trains(60, {tr3}, {tr1}, {}, false);
   EXPECT_TRUE(success_60_tr1tr3);
   // Expect tr2
   EXPECT_EQ(entering_tr_60_tr1tr3.size(), 1);
   EXPECT_TRUE(entering_tr_60_tr1tr3.contains(tr2));
 
   const auto& [success_60_tr1tr2tr3, entering_tr_60_tr1tr2tr3] =
-      simulator.get_entering_trains(60, {tr2}, {tr1, tr3}, false);
+      simulator.get_entering_trains(60, {tr2}, {tr1, tr3}, {}, false);
   EXPECT_TRUE(success_60_tr1tr2tr3);
   // Expect no train to enter
   EXPECT_TRUE(entering_tr_60_tr1tr2tr3.empty());
 
   const auto& [success_120_tr1tr2, entering_tr_120_tr1tr2] =
-      simulator.get_entering_trains(120, {tr2}, {tr1}, false);
+      simulator.get_entering_trains(120, {tr2}, {tr1}, {}, false);
   EXPECT_TRUE(success_120_tr1tr2);
   // Expect tr3
   EXPECT_EQ(entering_tr_120_tr1tr2.size(), 1);
   EXPECT_TRUE(entering_tr_120_tr1tr2.contains(tr3));
 
   const auto& [success_120_tr1tr2tr3, entering_tr_120_tr1tr2tr3] =
-      simulator.get_entering_trains(120, {tr2, tr3}, {tr1}, false);
+      simulator.get_entering_trains(120, {tr2, tr3}, {tr1}, {}, false);
   EXPECT_TRUE(success_120_tr1tr2tr3);
   // Expect tr5
   EXPECT_EQ(entering_tr_120_tr1tr2tr3.size(), 1);
   EXPECT_TRUE(entering_tr_120_tr1tr2tr3.contains(tr5));
+
+  const auto& [success_120_tr1tr2tr3b, entering_tr_120_tr1tr2tr3b] =
+      simulator.get_entering_trains(120, {tr2, tr3}, {}, {tr1}, false);
+  EXPECT_TRUE(success_120_tr1tr2tr3b);
+  // Expect tr5
+  EXPECT_EQ(entering_tr_120_tr1tr2tr3b.size(), 1);
+  EXPECT_TRUE(entering_tr_120_tr1tr2tr3b.contains(tr5));
 
   // Milestones
   simulator.set_train_edges_of_tr(tr1, {l0_l1, l1_l2, l2_l3, l3_g00, g00_g01});
@@ -1575,8 +1582,6 @@ TEST(GreedySimulator, NextStopMA) {
             10);
   EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_next_stop_ma(50, 20, 50),
             30);
-  EXPECT_EQ(cda_rail::simulator::GreedySimulator::get_next_stop_ma(10, 20, {}),
-            10);
 }
 
 TEST(GreedySimulator, TimeToExitObjective) {
@@ -2379,18 +2384,18 @@ TEST(GreedySimulator, ScheduleFeasibility) {
       network, timetable, routes);
   cda_rail::simulator::GreedySimulator simulator(instance, {});
 
-  EXPECT_TRUE(simulator.is_feasible_to_schedule(0, {{}, {}, {}},
-                                                {{-10, 0}, {-10, 0}, {-10, 0}},
-                                                {}, {}, false, false, false));
-  EXPECT_FALSE(simulator.is_feasible_to_schedule(60, {{}, {}, {}},
-                                                 {{-10, 0}, {-10, 0}, {-10, 0}},
-                                                 {}, {}, false, false, false));
-  EXPECT_TRUE(simulator.is_feasible_to_schedule(60, {{}, {}, {}},
-                                                {{-10, 0}, {-10, 0}, {-10, 0}},
-                                                {}, {}, true, false, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
-      60, {{}, {}, {}}, {{-10, 0}, {-10, 0}, {-10, 0}}, {tr1}, {}, false, false,
+      0, {{}, {}, {}}, {{-10, 0}, {-10, 0}, {-10, 0}}, {}, {}, {}, false, false,
       false));
+  EXPECT_FALSE(simulator.is_feasible_to_schedule(
+      60, {{}, {}, {}}, {{-10, 0}, {-10, 0}, {-10, 0}}, {}, {}, {}, false,
+      false, false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      60, {{}, {}, {}}, {{-10, 0}, {-10, 0}, {-10, 0}}, {}, {}, {}, true, false,
+      false));
+  EXPECT_TRUE(simulator.is_feasible_to_schedule(
+      60, {{}, {}, {}}, {{-10, 0}, {-10, 0}, {-10, 0}}, {tr1}, {}, {}, false,
+      false, false));
 
   simulator.append_train_edge_to_tr(tr1, e1);
   simulator.append_train_edge_to_tr(tr1, e2);
@@ -2398,53 +2403,53 @@ TEST(GreedySimulator, ScheduleFeasibility) {
   simulator.append_train_edge_to_tr(tr3, e1);
 
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
-      89, {{0}, {}, {}}, {{190, 200}, {-10, 0}, {-10, 0}}, {tr1}, {}, false,
+      89, {{0}, {}, {}}, {{190, 200}, {-10, 0}, {-10, 0}}, {tr1}, {}, {}, false,
       false, false));
   EXPECT_FALSE(simulator.is_feasible_to_schedule(
-      90, {{0}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      90, {{0}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {}, {},
       false, false, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
-      90, {{0}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      90, {{0}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {}, {},
       false, false, true));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
-      90, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      90, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {}, {},
       false, false, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
-      149, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      149, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {}, {},
       false, false, false));
   EXPECT_FALSE(simulator.is_feasible_to_schedule(
-      150, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      150, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {}, {},
       false, false, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
-      150, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      150, {{1}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {}, {},
       false, false, true));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
-      150, {{}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {},
+      150, {{}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2}, {}, {},
       false, false, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
       410, {{}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
-      false, false, false));
+      {}, false, false, false));
   EXPECT_FALSE(simulator.is_feasible_to_schedule(
       420, {{}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
-      false, false, false));
+      {}, false, false, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
       420, {{}, {}, {}}, {{190, 200}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
-      false, true, false));
+      {}, false, true, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
       420, {{}, {}, {}}, {{290, 300}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
-      false, false, false));
+      {}, false, false, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
       430, {{}, {}, {}}, {{290, 300}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
-      false, false, false));
+      {}, false, false, false));
   EXPECT_FALSE(simulator.is_feasible_to_schedule(
       480, {{}, {}, {}}, {{290, 300}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
-      false, false, false));
+      {}, false, false, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
       480, {{}, {}, {}}, {{290, 300}, {80, 90}, {-10, 0}}, {tr1, tr2, tr3}, {},
-      false, true, false));
+      {}, false, true, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
       480, {{}, {}, {}}, {{290, 300}, {90, 100}, {-10, 0}}, {tr1, tr2, tr3}, {},
-      false, false, false));
+      {}, false, false, false));
 
   simulator.set_train_edges_of_tr(tr1, {e1, e2, e3});
   simulator.set_train_edges_of_tr(tr2, {e1, e2, e3});
@@ -2452,43 +2457,43 @@ TEST(GreedySimulator, ScheduleFeasibility) {
 
   EXPECT_FALSE(simulator.is_feasible_to_schedule(
       420, {{}, {}, {}}, {{600, 610}, {490, 500}, {470, 480}}, {tr1, tr2, tr3},
-      {}, false, false, false));
+      {}, {}, false, false, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
       420, {{}, {}, {}}, {{600, 610}, {490, 500}, {470, 480}}, {tr1, tr2, tr3},
-      {}, false, true, false));
+      {}, {}, false, true, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
       420, {{}, {}, {}}, {{600, 610}, {490, 500}, {470, 480}}, {tr2, tr3},
-      {tr1}, false, false, false));
+      {tr1}, {}, false, false, false));
   EXPECT_FALSE(simulator.is_feasible_to_schedule(
       480, {{}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}}, {tr2, tr3},
-      {tr1}, false, false, false));
+      {tr1}, {}, false, false, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
       480, {{}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}}, {tr2, tr3},
-      {tr1}, false, true, false));
+      {tr1}, {}, false, true, false));
   EXPECT_TRUE(simulator.is_feasible_to_schedule(
       480, {{}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}}, {tr3},
-      {tr1, tr2}, false, false, false));
+      {tr1, tr2}, {}, false, false, false));
 
   EXPECT_THROW(simulator.is_feasible_to_schedule(
                    480, {{}, {}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}},
-                   {tr3}, {tr1, tr2}, false, false, false),
+                   {tr3}, {tr1, tr2}, {}, false, false, false),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(simulator.is_feasible_to_schedule(
                    480, {{}, {}}, {{600, 610}, {600, 610}, {470, 480}}, {tr3},
-                   {tr1, tr2}, false, false, false),
+                   {tr1, tr2}, {}, false, false, false),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(simulator.is_feasible_to_schedule(
                    480, {{}, {}, {}},
                    {{600, 610}, {600, 610}, {470, 480}, {0, 1}}, {tr3},
-                   {tr1, tr2}, false, false, false),
+                   {tr1, tr2}, {}, false, false, false),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(simulator.is_feasible_to_schedule(
                    480, {{}, {}, {}}, {{600, 610}, {600, 610}}, {tr3},
-                   {tr1, tr2}, false, false, false),
+                   {tr1, tr2}, {}, false, false, false),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(simulator.is_feasible_to_schedule(
                    -1, {{}, {}, {}}, {{600, 610}, {600, 610}, {470, 480}},
-                   {tr3}, {tr1, tr2}, false, false, false),
+                   {tr3}, {tr1, tr2}, {}, false, false, false),
                cda_rail::exceptions::InvalidInputException);
 }
 
@@ -2656,6 +2661,75 @@ TEST(GreedySimulation, SimpleSimulation) {
   EXPECT_LE(obj[0], 198 + 6);
 }
 
+TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {198, 400}, 40, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, {0, 60},
+                                       15, v1, {198, 400}, 40, v0, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
+
+  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (success ? "true" : "false")
+        << ", Objective value: " << "(" << obj[0] << ", " << obj[1] << ")";
+
+  EXPECT_TRUE(success);
+  EXPECT_EQ(obj.size(), 2);
+  EXPECT_GE(obj[0], 198);
+  EXPECT_LE(obj[0], 198 + 6);
+  EXPECT_EQ(obj[1], 0);
+}
+
+TEST(GreedySimulation, SimpleSimulationTwoTrains) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 120);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 20, 4, 2, true, {0, 180},
+                                       20, v0, {10, 1000}, 20, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 20, 4, 2, true, {0, 180},
+                                       20, v0, {10, 1000}, 20, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_train_edges_of_tr(tr2, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
+
+  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  EXPECT_EQ(obj.size(), 2);
+  PLOGD << "Simulation success: " << (success ? "true" : "false")
+        << ", Objective value: " << "(" << obj[0] << ", " << obj[1] << ")";
+  EXPECT_TRUE(success);
+  EXPECT_GE(obj[0], 250);
+  EXPECT_LE(obj[0], 250 + 6);
+  EXPECT_GE(obj[1], 120 + 250);
+  EXPECT_LE(obj[1], 120 + 250 + 6);
+}
+
 TEST(GreedySimulator, DeadlockTest1) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
@@ -2686,8 +2760,7 @@ TEST(GreedySimulator, DeadlockTest1) {
   const auto [success, obj] = simulator.simulate(6, true, true, true, true);
   EXPECT_EQ(obj.size(), 2);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")"
-        << std::endl;
+        << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")";
   EXPECT_EQ(obj.at(0), 0);
   EXPECT_EQ(obj.at(1), 0);
   EXPECT_FALSE(success);
@@ -2710,6 +2783,11 @@ TEST(GreedySimulator, DeadlockTest2) {
   const auto v2_v3 = network.add_edge(v2, v3, 1000, 50, true);
   const auto v3_v2 = network.add_edge(v3, v2, 1000, 50, true);
 
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v3_v2, v2_v1);
+  network.add_successor(v2_v1, v1_v0);
+
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
                                        15, v0, {198, 400}, 40, v3, network);
@@ -2729,8 +2807,7 @@ TEST(GreedySimulator, DeadlockTest2) {
   const auto [success, obj] = simulator.simulate(6, true, true, true, true);
   EXPECT_EQ(obj.size(), 2);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")"
-        << std::endl;
+        << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")";
   EXPECT_EQ(obj.at(0), 0);
   EXPECT_EQ(obj.at(1), 0);
   EXPECT_FALSE(success);
@@ -2753,6 +2830,11 @@ TEST(GreedySimulator, DeadlockTest3) {
   const auto v2_v3 = network.add_edge(v2, v3, 1000, 50, true);
   const auto v3_v2 = network.add_edge(v3, v2, 1000, 50, true);
 
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v3_v2, v2_v1);
+  network.add_successor(v2_v1, v1_v0);
+
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
                                        15, v0, {198, 400}, 40, v3, network);
@@ -2772,15 +2854,112 @@ TEST(GreedySimulator, DeadlockTest3) {
   const auto [success, obj] = simulator.simulate(6, true, true, true, true);
   EXPECT_EQ(obj.size(), 2);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")"
-        << std::endl;
+        << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")";
   const auto time1 = cda_rail::min_travel_time(15, 0, 50, 4, 2, 500);
   const auto time2 = 30.0 + cda_rail::min_travel_time(15, 0, 50, 4, 2, 1000);
-  EXPECT_GE(obj.at(0), time1 - 1);
-  EXPECT_GE(obj.at(1), time2 - 1);
+  EXPECT_GE(obj.at(0), time1 - 3);
+  EXPECT_GE(obj.at(1), time2 - 3);
   EXPECT_LE(obj.at(0), time1 + 6);
   EXPECT_LE(obj.at(1), time2 + 6);
   EXPECT_TRUE(success);
+}
+
+TEST(GreedySimulator, OneStationTest) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 500, 50, true);
+  const auto v1_v0 = network.add_edge(v1, v0, 500, 50, true);
+  const auto v1_v2 = network.add_edge(v1, v2, 600, 50, true);
+  const auto v2_v1 = network.add_edge(v2, v1, 600, 50, true);
+  const auto v2_v3 = network.add_edge(v2, v3, 1000, 50, true);
+  const auto v3_v2 = network.add_edge(v3, v2, 1000, 50, true);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v3_v2, v2_v1);
+  network.add_successor(v2_v1, v1_v0);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {198, 400}, 40, v3, network);
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", v1_v2, network);
+  timetable.add_stop(tr1, "Station1", {10, 120}, {40, 150}, 30);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2});
+  simulator.append_current_stop_position_of_tr(tr1);
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+
+  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  EXPECT_EQ(obj.size(), 1);
+  PLOGD << "Simulation success: " << (success ? "true" : "false")
+        << ", Objective value: " << obj.at(0);
+  const auto time1 = cda_rail::min_travel_time(15, 0, 50, 4, 2, 1100);
+  EXPECT_TRUE(success);
+  EXPECT_GE(obj.at(0), time1 + 30 - 3);
+  EXPECT_LE(obj.at(0), time1 + 30 + 6);
+}
+
+TEST(GreedySimulator, TwoStationTest) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", VertexType::TTD);
+  const auto v4 = network.add_vertex("v4", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 500, 50, true);
+  const auto v1_v2 = network.add_edge(v1, v2, 600, 50, true);
+  const auto v2_v3 = network.add_edge(v2, v3, 1000, 50, true);
+  const auto v3_v4 = network.add_edge(v3, v4, 500, 50, true);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {300, 600}, 40, v4, network);
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", v1_v2, network);
+  timetable.add_stop(tr1, "Station1", {60, 120}, {90, 150}, 30);
+  timetable.add_station("Station2");
+  timetable.add_track_to_station("Station2", v2_v3, network);
+  timetable.add_stop(tr1, "Station2", {90, 200}, {150, 260}, 60);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3});
+  simulator.append_stop_edge_to_tr(tr1, v1_v2);
+  simulator.append_stop_edge_to_tr(tr1, v2_v3);
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+
+  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  EXPECT_EQ(obj.size(), 1);
+  PLOGD << "Simulation success: " << (success ? "true" : "false")
+        << ", Objective value: " << obj.at(0);
+  const auto time1 = cda_rail::min_travel_time(0, 0, 50, 4, 2, 1000);
+  EXPECT_TRUE(success);
+  EXPECT_GE(obj.at(0), 90 + time1 + 60 - 3);
+  EXPECT_LE(obj.at(0), 90 + time1 + 60 + 6);
 }
 
 // NOLINTEND

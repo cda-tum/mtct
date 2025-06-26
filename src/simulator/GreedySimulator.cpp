@@ -234,8 +234,9 @@ cda_rail::simulator::GreedySimulator::simulate(
     }
 
     // Check for new trains entering the network
-    const auto [tr_to_enter_success, tr_to_enter] = get_entering_trains(
-        t, trains_in_network, trains_left, late_entry_possible);
+    const auto [tr_to_enter_success, tr_to_enter] =
+        get_entering_trains(t, trains_in_network, trains_left,
+                            trains_finished_simulating, late_entry_possible);
     if (!tr_to_enter_success) {
       PLOGV
           << "Simulation failed: Not all trains can enter the network at time "
@@ -288,9 +289,11 @@ cda_rail::simulator::GreedySimulator::simulate(
     // Check if the end state can still be reached
     if (!is_feasible_to_schedule(
             t, tr_next_stop_id, train_positions, trains_in_network, trains_left,
-            late_entry_possible, late_exit_possible, late_stop_possible)) {
-      PLOGV << "Simulation failed: Not all trains can be scheduled at time "
-            << t;
+            trains_finished_simulating, late_entry_possible, late_exit_possible,
+            late_stop_possible)) {
+      PLOGV
+          << "Simulation failed: Simulation cannot become feasible after time "
+          << t;
       return {false, exit_times};
     }
 
@@ -303,6 +306,10 @@ cda_rail::simulator::GreedySimulator::simulate(
       if (std::any_of(vertex_headways.begin(), vertex_headways.end(),
                       [t](int vertex_headway) { return vertex_headway > t; })) {
         PLOGV << "Vertex headway constraint prevents movement.";
+        reason_found = true;
+      } else if (std::any_of(tr_stop_until.begin(), tr_stop_until.end(),
+                             [t](int stop_time) { return stop_time > t; })) {
+        PLOGV << "Train stop constraint prevents movement.";
         reason_found = true;
       } else {
         for (size_t tr = 0; tr < train_velocities.size(); ++tr) {
@@ -478,7 +485,9 @@ double cda_rail::simulator::GreedySimulator::braking_distance(size_t tr,
 std::pair<bool, std::unordered_set<size_t>>
 cda_rail::simulator::GreedySimulator::get_entering_trains(
     int t, const std::unordered_set<size_t>& tr_present,
-    const std::unordered_set<size_t>& tr_left, bool late_entry_possible) const {
+    const std::unordered_set<size_t>& tr_left,
+    const std::unordered_set<size_t>& tr_finished_simulating,
+    bool                              late_entry_possible) const {
   /**
    * This function checks which trains are scheduled to enter the network at
    * time `t` or later, and returns a vector of their indices.
@@ -499,7 +508,8 @@ cda_rail::simulator::GreedySimulator::get_entering_trains(
   for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
        ++tr) {
     // Check if the train is already present in the network
-    if (tr_present.contains(tr) || tr_left.contains(tr)) {
+    if (tr_present.contains(tr) || tr_finished_simulating.contains(tr) ||
+        tr_left.contains(tr)) {
       continue; // Train is already present, skip it
     }
     // Check if the train is scheduled to enter the network at time t or later
@@ -1080,16 +1090,12 @@ cda_rail::simulator::GreedySimulator::speed_restriction_helper(
 }
 
 double cda_rail::simulator::GreedySimulator::get_next_stop_ma(
-    double max_displacement, double pos, std::optional<double> next_stop_pos) {
+    double max_displacement, double pos, double next_stop_pos) {
   /*
    * This function calculates the maximum moving authority to the next stop.
    */
 
-  if (!next_stop_pos.has_value()) {
-    // No next stop, return the maximum displacement
-    return max_displacement;
-  }
-  return std::min(max_displacement, next_stop_pos.value() - pos);
+  return std::min(max_displacement, next_stop_pos - pos);
 }
 
 double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
@@ -1288,7 +1294,10 @@ std::pair<double, double> cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
     bool also_limit_speed_by_leaving_edges) const {
   const auto& train = instance->get_timetable().get_train_list().get_train(tr);
   double      ma    = max_displacement(train, train_velocities.at(tr), dt);
-  ma = get_next_stop_ma(ma, train_positions.at(tr).second, next_stop);
+  if (next_stop.has_value()) {
+    ma = get_next_stop_ma(ma, train_positions.at(tr).second,
+                          stop_positions.at(tr).at(next_stop.value()));
+  }
   ma = get_exit_vertex_order_ma(tr, train, train_positions.at(tr).second, ma,
                                 trains_in_network, trains_left);
   double max_v = NAN;
@@ -1393,7 +1402,7 @@ bool cda_rail::simulator::GreedySimulator::move_train(
   if (std::abs(move_distance) < EPS) {
     return false;
   }
-  if (std::abs(ma - move_distance) < STOP_TOLERANCE) {
+  if (v_1 < V_MIN && std::abs(ma - move_distance) < STOP_TOLERANCE) {
     move_distance = ma;
   }
   train_positions.at(tr).second += move_distance; // Update the front position
@@ -1428,8 +1437,10 @@ bool cda_rail::simulator::GreedySimulator::is_feasible_to_schedule(
     int t, const std::vector<std::optional<size_t>>& next_stop_id,
     const std::vector<std::pair<double, double>>& train_positions,
     const std::unordered_set<size_t>&             trains_in_network,
-    const std::unordered_set<size_t>& trains_left, bool late_entry_possible,
-    bool late_exit_possible, bool late_stop_possible) const {
+    const std::unordered_set<size_t>&             trains_left,
+    const std::unordered_set<size_t>&             trains_finished_simulating,
+    bool late_entry_possible, bool late_exit_possible,
+    bool late_stop_possible) const {
   /**
    * This function checks if the current state of the simulation is feasible
    * (after all trains have been moved to time t) or some violation becomes
@@ -1470,6 +1481,10 @@ bool cda_rail::simulator::GreedySimulator::is_feasible_to_schedule(
   }
 
   for (size_t tr = 0; tr < train_positions.size(); ++tr) {
+    if (trains_finished_simulating.contains(tr)) {
+      // Train has already finished simulating, hence. no problem with it
+      continue;
+    }
     const auto& tr_schedule = instance->get_timetable().get_schedule(tr);
     if (!late_entry_possible && (tr_schedule.get_t_0_range().second <= t) &&
         !trains_in_network.contains(tr) && !trains_left.contains(tr)) {
@@ -1478,7 +1493,7 @@ bool cda_rail::simulator::GreedySimulator::is_feasible_to_schedule(
     if (!late_exit_possible && (tr_schedule.get_t_n_range().second <= t) &&
         !trains_left.contains(tr)) {
       // Train is not allowed to leave the network late, however, maybe this is
-      // because its route is not yet completely specified and it has already
+      // because its route is not yet completely specified, and it has already
       // reached the end of its specified route.
       if (!train_edges.at(tr).empty() &&
           (instance->const_n().get_edge(train_edges.at(tr).back()).target ==
@@ -1572,8 +1587,9 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
   const auto& exit_vertex_order = vertex_orders.at(last_edge.target);
   const auto  idx =
       std::find(exit_vertex_order.begin(), exit_vertex_order.end(), tr);
-  if (idx == exit_vertex_order.begin()) {
-    // Train is the first in the exit vertex order, hence, no restriction
+  if (idx == exit_vertex_order.begin() || idx == exit_vertex_order.end()) {
+    // Train is the first in the exit vertex order (or does not leave), hence,
+    // no restriction
     return max_displacement;
   }
   const auto& prev_tr = *(idx - 1); // Previous train in the exit vertex order
