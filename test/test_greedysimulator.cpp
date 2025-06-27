@@ -1472,6 +1472,43 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
                cda_rail::exceptions::TrainNotExistentException);
 }
 
+TEST(GreedySimulator, FutureSpeedRestrictionConstraintsAfterLeaving) {
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 70, 15, true);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 20, 3, 2, true, {0, 60},
+                                       10, v0, {360, 420}, 10, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {{}});
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders({{tr1}, {tr1}});
+  const auto& train =
+      simulator.instance->get_timetable().get_train_list().get_train(tr1);
+
+  // Train 1 has 50 minute to exit the TTD at v_n = 10
+  // Linear movement takes 4 seconds to reach the exit
+  const auto [ma1, vm1] = simulator.get_future_max_speed_constraints(
+      tr1, train, 120, 15, 500, 4, false);
+  EXPECT_EQ(vm1, 10);
+  EXPECT_GE(ma1, (15.0 + 10.0) * 4.0 / 2.0 + 10.0 * 10.0 / 4.0);
+
+  const auto [ma2, vm2] = simulator.get_future_max_speed_constraints(
+      tr1, train, 120, 15, 500, 1, false);
+  EXPECT_EQ(ma2, 50 + 10.0 * 10.0 / 4.0);
+  EXPECT_GE((15.0 + vm2) * 1.0 / 2.0 + vm2 * vm2 / 4.0, ma2);
+
+  const auto [ma3, vm3] = simulator.get_future_max_speed_constraints(
+      tr1, train, 120, 15, 500, 1, true);
+  EXPECT_EQ(vm3, 15);
+  EXPECT_GE(ma3, (15.0 + 15.0) * 1.0 / 2.0 + 15.0 * 15.0 / 4.0);
+}
+
 TEST(GreedySimulator, EoMDisplacement) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
   cda_rail::simulator::GreedySimulator simulator(instance, {});

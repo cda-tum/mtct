@@ -46,6 +46,7 @@ class GreedySimulator_UpdateRearPositions_Test;
 class GreedySimulator_ScheduleFeasibility_Test;
 class GreedySimulator_ReverseEdgeMA_Test;
 class GreedySimulator_ExitVertexOrder_Test;
+class GreedySimulator_FutureSpeedRestrictionConstraintsAfterLeaving_Test;
 #endif
 
 namespace cda_rail::simulator {
@@ -79,6 +80,7 @@ private:
   FRIEND_TEST(::GreedySimulator, ScheduleFeasibility);
   FRIEND_TEST(::GreedySimulator, ReverseEdgeMA);
   FRIEND_TEST(::GreedySimulator, ExitVertexOrder);
+  FRIEND_TEST(::GreedySimulator, FutureSpeedRestrictionConstraintsAfterLeaving);
 #endif
 
   enum class TTDOccupationType : std::uint8_t {
