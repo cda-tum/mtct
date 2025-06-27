@@ -3181,5 +3181,188 @@ TEST(GreedySimulation, TightEntry) {
   EXPECT_EQ(vertex_headways.at(v1), 0);
 }
 
+TEST(GreedySimulation, ExitNetworkSpeedZero) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {0, 400}, 0, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1});
+
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (success ? "true" : "false")
+        << ", Objective value: " << obj.back() << std::endl;
+
+  const auto time1 = cda_rail::min_travel_time(15, 0, 50, 4, 2, 5100);
+  EXPECT_TRUE(success);
+  EXPECT_EQ(obj.size(), 1);
+  EXPECT_GE(obj[0], time1 - 3);
+  EXPECT_LE(obj[0], time1 + 6);
+  EXPECT_EQ(vertex_headways.size(), 2);
+  EXPECT_EQ(vertex_headways.at(v0), 60);
+  EXPECT_EQ(vertex_headways.at(v1), obj[0] + 30);
+}
+
+TEST(GreedySimulation, SimpleNetwork) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "example-networks-gen-po/GeneralSimpleNetworkB6Trains");
+
+  const auto v2c_v3 = instance.const_n().get_edge_index("v2c", "v3");
+  const auto v2b_v3 = instance.const_n().get_edge_index("v2b", "v3");
+  const auto v3_v2b = instance.const_n().get_edge_index("v3", "v2b");
+  const auto v3_v2a = instance.const_n().get_edge_index("v3", "v2a");
+  const auto v3_v4  = instance.const_n().get_edge_index("v3", "v4");
+  const auto v4_v3  = instance.const_n().get_edge_index("v4", "v3");
+
+  const auto v5_v6  = instance.const_n().get_edge_index("v5", "v6");
+  const auto v6_v5  = instance.const_n().get_edge_index("v6", "v5");
+  const auto v6_v7a = instance.const_n().get_edge_index("v6", "v7a");
+  const auto v6_v7b = instance.const_n().get_edge_index("v6", "v7b");
+  const auto v7a_v6 = instance.const_n().get_edge_index("v7a", "v6");
+  const auto v7b_v6 = instance.const_n().get_edge_index("v7b", "v6");
+
+  const auto v8a_v9 = instance.const_n().get_edge_index("v8a", "v9");
+  const auto v8b_v9 = instance.const_n().get_edge_index("v8b", "v9");
+  const auto v9_v8a = instance.const_n().get_edge_index("v9", "v8a");
+  const auto v9_v8b = instance.const_n().get_edge_index("v9", "v8b");
+  const auto v9_v10 = instance.const_n().get_edge_index("v9", "v10");
+  const auto v10_v9 = instance.const_n().get_edge_index("v10", "v9");
+
+  const auto v11_v12  = instance.const_n().get_edge_index("v11", "v12");
+  const auto v12_v11  = instance.const_n().get_edge_index("v12", "v11");
+  const auto v12_v13c = instance.const_n().get_edge_index("v12", "v13c");
+  const auto v12_v13b = instance.const_n().get_edge_index("v12", "v13b");
+  const auto v13b_v12 = instance.const_n().get_edge_index("v13b", "v12");
+  const auto v13a_v12 = instance.const_n().get_edge_index("v13a", "v12");
+
+  cda_rail::simulator::GreedySimulator simulator(
+      instance, {{v2c_v3, v2b_v3, v3_v2b, v3_v2a, v3_v4, v4_v3},
+                 {v5_v6, v6_v5, v6_v7a, v6_v7b, v7a_v6, v7b_v6},
+                 {v8a_v9, v8b_v9, v9_v8a, v9_v8b, v9_v10, v10_v9},
+                 {v11_v12, v12_v11, v12_v13c, v12_v13b, v13b_v12, v13a_v12}});
+
+  const auto v2a_v1a = instance.const_n().get_edge_index("v2a", "v1a");
+  const auto v2b_v1b = instance.const_n().get_edge_index("v2b", "v1b");
+  const auto v1b_v2b = instance.const_n().get_edge_index("v1b", "v2b");
+  const auto v1c_v2c = instance.const_n().get_edge_index("v1c", "v2c");
+
+  const auto v4_v5   = instance.const_n().get_edge_index("v4", "v5");
+  const auto v5_v4   = instance.const_n().get_edge_index("v5", "v4");
+  const auto v7a_v8a = instance.const_n().get_edge_index("v7a", "v8a");
+  const auto v7b_v8b = instance.const_n().get_edge_index("v7b", "v8b");
+  const auto v8a_v7a = instance.const_n().get_edge_index("v8a", "v7a");
+  const auto v8b_v7b = instance.const_n().get_edge_index("v8b", "v7b");
+  const auto v10_v11 = instance.const_n().get_edge_index("v10", "v11");
+  const auto v11_v10 = instance.const_n().get_edge_index("v11", "v10");
+
+  const auto v13c_v14c = instance.const_n().get_edge_index("v13c", "v14c");
+  const auto v13b_v14b = instance.const_n().get_edge_index("v13b", "v14b");
+  const auto v14b_v13b = instance.const_n().get_edge_index("v14b", "v13b");
+  const auto v14a_v13a = instance.const_n().get_edge_index("v14a", "v13a");
+
+  const auto tr00 = instance.get_train_list().get_train_index("Train0_0");
+  const auto tr01 = instance.get_train_list().get_train_index("Train0_1");
+  const auto tr02 = instance.get_train_list().get_train_index("Train0_2");
+  const auto tr10 = instance.get_train_list().get_train_index("Train1_0");
+  const auto tr11 = instance.get_train_list().get_train_index("Train1_1");
+  const auto tr12 = instance.get_train_list().get_train_index("Train1_2");
+
+  const auto v1a  = instance.const_n().get_vertex_index("v1a");
+  const auto v1b  = instance.const_n().get_vertex_index("v1b");
+  const auto v1c  = instance.const_n().get_vertex_index("v1c");
+  const auto v14a = instance.const_n().get_vertex_index("v14a");
+  const auto v14b = instance.const_n().get_vertex_index("v14b");
+  const auto v14c = instance.const_n().get_vertex_index("v14c");
+
+  simulator.set_train_edges_of_tr(tr00, {v14a_v13a, v13a_v12, v12_v11, v11_v10,
+                                         v10_v9, v9_v8a, v8a_v7a, v7a_v6, v6_v5,
+                                         v5_v4, v4_v3, v3_v2a, v2a_v1a});
+  simulator.set_train_edges_of_tr(
+      tr01, {v1c_v2c, v2c_v3, v3_v4, v4_v5, v5_v6, v6_v7b, v7b_v8b, v8b_v9,
+             v9_v10, v10_v11, v11_v12, v12_v13c, v13c_v14c});
+  simulator.set_train_edges_of_tr(
+      tr02, {v1c_v2c, v2c_v3, v3_v4, v4_v5, v5_v6, v6_v7b, v7b_v8b, v8b_v9,
+             v9_v10, v10_v11, v11_v12, v12_v13c, v13c_v14c});
+  simulator.set_train_edges_of_tr(
+      tr10, {v1b_v2b, v2b_v3, v3_v4, v4_v5, v5_v6, v6_v7b, v7b_v8b, v8b_v9,
+             v9_v10, v10_v11, v11_v12, v12_v13b, v13b_v14b});
+  simulator.set_train_edges_of_tr(tr11, {v14b_v13b, v13b_v12, v12_v11, v11_v10,
+                                         v10_v9, v9_v8a, v8a_v7a, v7a_v6, v6_v5,
+                                         v5_v4, v4_v3, v3_v2b, v2b_v1b});
+  simulator.set_train_edges_of_tr(tr12, {v14b_v13b, v13b_v12, v12_v11, v11_v10,
+                                         v10_v9, v9_v8a, v8a_v7a, v7a_v6, v6_v5,
+                                         v5_v4, v4_v3, v3_v2b, v2b_v1b});
+
+  simulator.append_stop_edge_to_tr(tr00, v14a_v13a);
+  simulator.append_stop_edge_to_tr(tr00, v2a_v1a);
+  simulator.append_stop_edge_to_tr(tr01, v1c_v2c);
+  simulator.append_stop_edge_to_tr(tr01, v13c_v14c);
+  simulator.append_stop_edge_to_tr(tr02, v1c_v2c);
+  simulator.append_stop_edge_to_tr(tr02, v13c_v14c);
+
+  simulator.set_vertex_orders_of_vertex(v1a, {tr00});
+  simulator.set_vertex_orders_of_vertex(v1b, {tr10, tr11, tr12});
+  simulator.set_vertex_orders_of_vertex(v1c, {tr01, tr02});
+  simulator.set_vertex_orders_of_vertex(v14a, {tr00});
+  simulator.set_vertex_orders_of_vertex(v14b, {tr11, tr12, tr10});
+  simulator.set_vertex_orders_of_vertex(v14c, {tr01, tr02});
+
+  simulator.set_ttd_orders_of_ttd(0, {tr01, tr02, tr10, tr00, tr11, tr12});
+  simulator.set_ttd_orders_of_ttd(1, {tr01, tr02, tr10, tr00, tr11, tr12});
+  simulator.set_ttd_orders_of_ttd(2, {tr00, tr11, tr12, tr01, tr02, tr10});
+  simulator.set_ttd_orders_of_ttd(3, {tr00, tr11, tr12, tr01, tr02, tr10});
+
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (success ? "true" : "false");
+  for (size_t tr = 0; tr < instance.get_train_list().size(); ++tr) {
+    const auto& tr_name = instance.get_train_list().get_train(tr).name;
+    PLOGD << "Objective value for train " << tr_name << ": " << obj.at(tr);
+  }
+  PLOGD << "Vertex headways at v1a: " << vertex_headways.at(v1a)
+        << ", v1b: " << vertex_headways.at(v1b)
+        << ", v1c: " << vertex_headways.at(v1c)
+        << ", v14a: " << vertex_headways.at(v14a)
+        << ", v14b: " << vertex_headways.at(v14b)
+        << ", v14c: " << vertex_headways.at(v14c);
+
+  EXPECT_TRUE(success);
+  EXPECT_EQ(vertex_headways.at(v1a), obj.at(tr00) + 60);
+  EXPECT_EQ(vertex_headways.at(v1b), obj.at(tr12) + 60);
+  EXPECT_GE(vertex_headways.at(v1c), 60 + 60);
+  EXPECT_EQ(vertex_headways.at(v14a), 60);
+  EXPECT_EQ(vertex_headways.at(v14b), obj.at(tr10) + 60);
+  EXPECT_EQ(vertex_headways.at(v14c), obj.at(tr02) + 60);
+  EXPECT_GE(obj.at(tr00), 900);
+  EXPECT_LE(obj.at(tr00), 1950);
+  EXPECT_GE(obj.at(tr01), 900);
+  EXPECT_LE(obj.at(tr01), 1950);
+  EXPECT_GE(obj.at(tr02), 900);
+  EXPECT_LE(obj.at(tr02), 1950);
+  EXPECT_GE(obj.at(tr10), 1900);
+  EXPECT_LE(obj.at(tr10), 3450);
+  EXPECT_GE(obj.at(tr11), 1900);
+  EXPECT_LE(obj.at(tr11), 3450);
+  EXPECT_GE(obj.at(tr12), 1900);
+  EXPECT_LE(obj.at(tr12), 3450);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
