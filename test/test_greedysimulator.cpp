@@ -3034,9 +3034,9 @@ TEST(GreedySimulator, DeadlockTest3) {
   EXPECT_GE(braking_times.at(tr2).first, 0);
   EXPECT_GE(braking_times.at(tr2).second, 0);
   EXPECT_APPROX_EQ(braking_times.at(tr1).first, 0, 6);
-  EXPECT_APPROX_EQ(braking_times.at(tr1).second, 0, 10);
+  EXPECT_APPROX_EQ(braking_times.at(tr1).second, 500 - 0, 10);
   EXPECT_APPROX_EQ(braking_times.at(tr2).first, 36, 6);
-  EXPECT_APPROX_EQ(braking_times.at(tr2).second, 162, 10);
+  EXPECT_APPROX_EQ(braking_times.at(tr2).second, 1000 - 162, 10);
 }
 
 TEST(GreedySimulator, OneStationTest) {
@@ -3096,7 +3096,7 @@ TEST(GreedySimulator, OneStationTest) {
   EXPECT_GE(braking_times.at(tr1).first, 0);
   EXPECT_GE(braking_times.at(tr1).second, 0);
   EXPECT_APPROX_EQ(braking_times.at(tr1).first, 12, 6);
-  EXPECT_APPROX_EQ(braking_times.at(tr1).second, 429, 10);
+  EXPECT_APPROX_EQ(braking_times.at(tr1).second, 1100 - 429, 10);
 }
 
 TEST(GreedySimulator, TwoStationTest) {
@@ -3159,7 +3159,7 @@ TEST(GreedySimulator, TwoStationTest) {
   EXPECT_GE(braking_times.at(tr1).first, 0);
   EXPECT_GE(braking_times.at(tr1).second, 0);
   EXPECT_APPROX_EQ(braking_times.at(tr1).first, 96, 6);
-  EXPECT_APPROX_EQ(braking_times.at(tr1).second, 1388, 10);
+  EXPECT_APPROX_EQ(braking_times.at(tr1).second, 2100 - 1388, 10);
 }
 
 TEST(GreedySimulator, TwoStationTestWithExit) {

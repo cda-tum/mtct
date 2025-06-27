@@ -44,7 +44,7 @@ cda_rail::simulator::GreedySimulator::simulate(
    * @return: A tuple containing
    *  - a boolean indicating whether the simulation was successful,
    *  - a vector of doubles with the exit times of each train,
-   *  - a vector with the braking times and positions due to route ending for
+   *  - a vector with the braking times and distances due to route ending for
    * every train,
    *  - a vector of doubles with the final vertex headways
    */
@@ -134,14 +134,16 @@ cda_rail::simulator::GreedySimulator::simulate(
             << train_positions.at(tr).second
             << " has MA: " << train_positions.at(tr).second + tr_ma
             << " and max velocity: " << tr_v1;
+      const int tr_edge_len = train_edge_length(tr);
       if ((braking_times.at(tr).second < 0) &&
           (instance->const_n().get_edge(train_edges.at(tr).back()).target !=
            tr_schedule.get_exit()) &&
           (train_positions.at(tr).second + tr_ma + STOP_TOLERANCE >=
-           train_edge_length(tr))) {
+           tr_edge_len)) {
         PLOGV << train_object.name
               << " starts braking due to end of route constraint.";
-        braking_times.at(tr) = {t - dt, train_positions.at(tr).second};
+        braking_times.at(tr) = {t - dt,
+                                tr_edge_len - train_positions.at(tr).second};
       }
       PLOGV << "h = " << h;
       auto tr_new_speed =
