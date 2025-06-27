@@ -2047,7 +2047,7 @@ TEST(GreedySimulator, MAandMaxV) {
   // Train 5: Bound by stopping at Station1, a = 4, d = 8
   train_velocities.at(tr5) = 0;
   const auto [ma5, max_v5] =
-      simulator.get_ma_and_maxv(tr5, train_velocities, {250}, 0, 2, train_pos,
+      simulator.get_ma_and_maxv(tr5, train_velocities, {0}, 0, 2, train_pos,
                                 train_ids, {}, tr_on_edges, true);
   EXPECT_EQ(ma5, 0);
   EXPECT_GE((0.0 + max_v5) * 2.0 / 2.0 + ((max_v5 * max_v5) / (2 * 8)), ma5);
