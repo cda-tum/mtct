@@ -3003,5 +3003,135 @@ TEST(GreedySimulator, TwoStationTest) {
   EXPECT_EQ(vertex_headways.at(v4), 0); // Train does not reach v4
 }
 
+TEST(GreedySimulator, TwoStationTestWithExit) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", VertexType::TTD);
+  const auto v4 = network.add_vertex("v4", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 500, 50, true);
+  const auto v1_v2 = network.add_edge(v1, v2, 600, 50, true);
+  const auto v2_v3 = network.add_edge(v2, v3, 1000, 50, true);
+  const auto v3_v4 = network.add_edge(v3, v4, 500, 50, true);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {300, 600}, 40, v4, network);
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", v1_v2, network);
+  timetable.add_stop(tr1, "Station1", {60, 120}, {90, 150}, 30);
+  timetable.add_station("Station2");
+  timetable.add_track_to_station("Station2", v2_v3, network);
+  timetable.add_stop(tr1, "Station2", {90, 200}, {150, 260}, 60);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3, v3_v4});
+  simulator.append_stop_edge_to_tr(tr1, v1_v2);
+  simulator.append_stop_edge_to_tr(tr1, v2_v3);
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, false, false, false, true);
+  EXPECT_EQ(obj.size(), 1);
+  PLOGD << "Simulation success: " << (success ? "true" : "false")
+        << ", Objective value: " << obj.at(0);
+  const auto time1 = cda_rail::min_travel_time(0, 0, 50, 4, 2, 1000);
+  const auto time2 = cda_rail::min_travel_time(0, 40, 50, 4, 2, 500);
+  EXPECT_TRUE(success);
+  EXPECT_GE(obj.at(0), 300);
+  EXPECT_LE(obj.at(0), 306);
+  EXPECT_EQ(vertex_headways.size(), 5);
+  EXPECT_EQ(vertex_headways.at(v0), 60);
+  EXPECT_EQ(vertex_headways.at(v1), 0);
+  EXPECT_EQ(vertex_headways.at(v2), 0);
+  EXPECT_EQ(vertex_headways.at(v3), 0);
+  EXPECT_EQ(vertex_headways.at(v4), obj.at(0) + 30);
+}
+
+TEST(GreedySimulation, TightSchedule) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {30, 90}, 40, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1});
+
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (success ? "true" : "false")
+        << ", Objective value: " << obj.back() << std::endl;
+
+  EXPECT_FALSE(success);
+  EXPECT_EQ(obj.size(), 1);
+  EXPECT_EQ(obj[0], 0);
+  EXPECT_EQ(vertex_headways.size(), 2);
+  EXPECT_EQ(vertex_headways.at(v0), 60);
+  EXPECT_EQ(vertex_headways.at(v1), 0);
+}
+
+TEST(GreedySimulation, TightEntry) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 6);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 15, 4, 2, true, {0, 12},
+                                       15, v0, {198, 400}, 15, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 15, 4, 0.5, true, {0, 12},
+                                       15, v0, {198, 400}, 15, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_train_edges_of_tr(tr2, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
+
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (success ? "true" : "false")
+        << ", Objective value: " << obj.back() << std::endl;
+
+  EXPECT_FALSE(success);
+  EXPECT_EQ(obj.size(), 2);
+  EXPECT_EQ(obj[0], 0);
+  EXPECT_EQ(obj[1], 0);
+  EXPECT_EQ(vertex_headways.size(), 2);
+  EXPECT_EQ(vertex_headways.at(v0), 6);
+  EXPECT_EQ(vertex_headways.at(v1), 0);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
