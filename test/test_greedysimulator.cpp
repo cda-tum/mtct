@@ -429,6 +429,73 @@ TEST(GreedySimulator, BasicFunctions) {
                cda_rail::exceptions::ConsistencyException);
 }
 
+TEST(GreedySimulator, ValidStopPos) {
+  Network    network;
+  const auto v4 = network.add_vertex("v4", cda_rail::VertexType::TTD);
+  const auto v0 = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", cda_rail::VertexType::TTD);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 50, 10);
+  const auto v3_v4 = network.add_edge(v3, v4, 75, 10);
+  const auto v2_v3 = network.add_edge(v2, v3, 50, 10);
+  const auto v1_v2 = network.add_edge(v1, v2, 30, 10);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr2 = timetable.add_train("Train2", 50, 10, 1, 1, true, {0, 60}, 0,
+                                       v0, {360, 420}, 0, v4, network);
+  const auto tr1 = timetable.add_train("Train1", 75, 10, 1, 1, true, {0, 60}, 0,
+                                       v0, {360, 420}, 0, v4, network);
+
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", v3_v4, network);
+  timetable.add_track_to_station("Station1", v2_v3, network);
+  timetable.add_station("Station2");
+  timetable.add_track_to_station("Station2", v0_v1, network);
+  timetable.add_track_to_station("Station2", v1_v2, network);
+
+  timetable.add_stop("Train1", "Station2", {60, 120}, {120, 180}, 60);
+  timetable.add_stop("Train1", "Station1", {120, 180}, {180, 230}, 60);
+  timetable.add_stop("Train2", "Station2", {120, 180}, {180, 230}, 60);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr1));
+  EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr2));
+
+  simulator.append_train_edge_to_tr(tr1, v0_v1);
+  simulator.append_train_edge_to_tr(tr2, v0_v1);
+  EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr1));
+  EXPECT_TRUE(simulator.is_current_pos_valid_stop_position(tr2));
+
+  simulator.append_train_edge_to_tr(tr1, v1_v2);
+  simulator.append_train_edge_to_tr(tr2, v1_v2);
+  EXPECT_TRUE(simulator.is_current_pos_valid_stop_position(tr1));
+  EXPECT_TRUE(simulator.is_current_pos_valid_stop_position(tr2));
+
+  simulator.append_stop_edge_to_tr(tr1, v1_v2);
+  simulator.append_stop_edge_to_tr(tr2, v0_v1);
+  EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr1));
+  EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr2));
+
+  simulator.append_train_edge_to_tr(tr1, v2_v3);
+  simulator.append_train_edge_to_tr(tr2, v2_v3);
+  EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr1));
+  EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr2));
+
+  simulator.append_train_edge_to_tr(tr1, v3_v4);
+  simulator.append_train_edge_to_tr(tr2, v3_v4);
+  EXPECT_TRUE(simulator.is_current_pos_valid_stop_position(tr1));
+  EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr2));
+
+  simulator.append_stop_edge_to_tr(tr1, v3_v4);
+  EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr1));
+}
+
 // ---------------------------
 // Test private functions
 // ---------------------------
