@@ -1623,3 +1623,43 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
   return std::min(max_displacement,
                   route_len + train.length - acceleration_dist - pos);
 }
+
+bool cda_rail::simulator::GreedySimulator::is_current_pos_valid_stop_position(
+    size_t tr) const {
+  /**
+   * This function checks if the current last edge can be used as a stop for a
+   * specific train. A stop is possible, if the train length back from the
+   * target vertex is fully within the next station.
+   *
+   * @param tr: The id of the train to check.
+   * @return: A boolean indicating whether the current position is a valid stop
+   * position.
+   */
+  if (!instance->get_timetable().get_train_list().has_train(tr)) {
+    throw cda_rail::exceptions::TrainNotExistentException(tr);
+  }
+  const auto& tr_length =
+      instance->get_timetable().get_train_list().get_train(tr).length;
+  const auto& tr_schedule =
+      instance->get_timetable().get_schedule(tr).get_stops();
+  if (stop_positions.at(tr).size() >= tr_schedule.size()) {
+    // All stops have been set, hence, no further stop is possible
+    return false;
+  }
+  const auto& next_station_name =
+      tr_schedule.at(stop_positions.at(tr).size()).get_station_name();
+  const auto& next_station_tracks =
+      instance->get_station_list().get_station(next_station_name).tracks;
+  double len = 0;
+  for (auto it = train_edges.at(tr).rbegin();
+       (len <= tr_length) && (it != train_edges.at(tr).rend()); ++it) {
+    if (std::find(next_station_tracks.begin(), next_station_tracks.end(),
+                  *it) == next_station_tracks.end()) {
+      // Track does not belong to the next station
+      return false;
+    }
+    len += instance->const_n().get_edge(*it).length;
+  }
+
+  return len >= tr_length;
+}
