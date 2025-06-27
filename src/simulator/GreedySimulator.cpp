@@ -1039,14 +1039,19 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
   // Check exit
   const auto& last_edge_id = train_edges.at(tr).back();
   const auto& last_edge    = instance->const_n().get_edge(last_edge_id);
-  if (pos + max_displacement >= milestones.back()) {
-    const auto tr_schedule = instance->get_schedule(tr);
-    const bool last_edge_leaves_network =
-        (last_edge.target == tr_schedule.get_exit());
+  const auto  tr_schedule  = instance->get_schedule(tr);
+  const bool  last_edge_leaves_network =
+      (last_edge.target == tr_schedule.get_exit());
+  const auto relevant_last_pos =
+      milestones.back() + (last_edge_leaves_network
+                               ? train.length
+                               : 0); // + train.length because train needs to
+                                     // fully leave the network
+  if (pos + max_displacement >= relevant_last_pos) {
     const double last_edge_exit_restriction =
         last_edge_leaves_network ? tr_schedule.get_v_n() : 0;
     std::tie(ma, max_v) = speed_restriction_helper(
-        ma, max_v, pos, milestones.back(), v_0, last_edge_exit_restriction,
+        ma, max_v, pos, relevant_last_pos, v_0, last_edge_exit_restriction,
         train.deceleration, dt);
   }
 
@@ -1156,8 +1161,8 @@ double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
     return v_ub; // No exit headway to consider
   }
 
-  const auto milestones    = edge_milestones(tr);
-  const auto exit_distance = milestones.back() - pos;
+  const auto route_len     = train_edge_length(tr);
+  const auto exit_distance = route_len + train.length - pos;
   if (h == 0) {
     return v_ub; // No constraint by exit headway, maximal speed ensured by
                  // future speed restriction headway
@@ -1545,8 +1550,11 @@ cda_rail::simulator::GreedySimulator::tr_reached_end(
   // Determine type of end
   if (instance->get_timetable().get_schedule(tr).get_exit() ==
       instance->const_n().get_edge(train_edges.at(tr).back()).target) {
-    // Train leaves the network at the end of its route
-    return DestinationType::Network;
+    // Train leaves the network at the end of its route, hence it has to fully
+    // leave the network
+    return pos >= route_len + instance->get_train_list().get_train(tr).length
+               ? DestinationType::Network
+               : DestinationType::None;
   }
   if (!stop_positions.at(tr).empty() &&
       stop_positions.at(tr).back() >= route_len - EPS) {
@@ -1611,6 +1619,7 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
   // Train cannot leave the network due to the exit vertex order
   const auto acceleration_dist =
       cda_rail::braking_distance(tr_schedule.get_v_n(), train.acceleration);
+  const auto route_len = train_edge_length(tr);
   return std::min(max_displacement,
-                  train_edge_length(tr) - acceleration_dist - pos);
+                  route_len + train.length - acceleration_dist - pos);
 }
