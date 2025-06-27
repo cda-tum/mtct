@@ -21,7 +21,8 @@
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
 
-std::tuple<bool, std::vector<int>, std::vector<int>>
+std::tuple<bool, std::vector<int>, std::vector<std::pair<int, double>>,
+           std::vector<int>>
 cda_rail::simulator::GreedySimulator::simulate(
     int dt, bool late_entry_possible, bool late_exit_possible,
     bool late_stop_possible, bool limit_speed_by_leaving_edges) const {
@@ -42,8 +43,10 @@ cda_rail::simulator::GreedySimulator::simulate(
    *
    * @return: A tuple containing
    *  - a boolean indicating whether the simulation was successful,
-   *  - a vector of doubles with the exit times of each train, and
-   *  - a vector of doubles with the final vertex headways.
+   *  - a vector of doubles with the exit times of each train,
+   *  - a vector with the braking times and positions due to route ending for
+   * every train,
+   *  - a vector of doubles with the final vertex headways
    */
 
   cda_rail::initialize_plog(false);
@@ -52,6 +55,8 @@ cda_rail::simulator::GreedySimulator::simulate(
   std::vector<int> exit_times(
       instance->get_timetable().get_train_list().size(),
       0); // 0 indicates that a train has not entered the network yet
+  std::vector<std::pair<int, double>> braking_times(
+      instance->get_timetable().get_train_list().size(), {-1, -1});
 
   // Find first time step
   int min_t              = std::numeric_limits<int>::max();
@@ -129,6 +134,15 @@ cda_rail::simulator::GreedySimulator::simulate(
             << train_positions.at(tr).second
             << " has MA: " << train_positions.at(tr).second + tr_ma
             << " and max velocity: " << tr_v1;
+      if ((braking_times.at(tr).second < 0) &&
+          (instance->const_n().get_edge(train_edges.at(tr).back()).target !=
+           tr_schedule.get_exit()) &&
+          (train_positions.at(tr).second + tr_ma + STOP_TOLERANCE >=
+           train_edge_length(tr))) {
+        PLOGV << train_object.name
+              << " starts braking due to end of route constraint.";
+        braking_times.at(tr) = {t - dt, train_positions.at(tr).second};
+      }
       PLOGV << "h = " << h;
       auto tr_new_speed =
           std::min(tr_v1, get_v1_from_ma(train_velocities.at(tr), tr_ma,
@@ -248,7 +262,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       PLOGV
           << "Simulation failed: Not all trains can enter the network at time "
           << t;
-      return {false, exit_times, vertex_headways};
+      return {false, exit_times, braking_times, vertex_headways};
     }
     for (const auto& tr : tr_to_enter) {
       const auto& train_schedule = instance->get_timetable().get_schedule(tr);
@@ -290,7 +304,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     if (trains_finished_simulating.size() ==
         instance->get_timetable().get_train_list().size()) {
       PLOGV << "All trains have reached their destination at time " << t;
-      return {true, exit_times, vertex_headways};
+      return {true, exit_times, braking_times, vertex_headways};
     }
 
     // Check if the end state can still be reached
@@ -301,7 +315,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       PLOGV
           << "Simulation failed: Simulation cannot become feasible after time "
           << t;
-      return {false, exit_times, vertex_headways};
+      return {false, exit_times, braking_times, vertex_headways};
     }
 
     // Check if there might be a deadlock situation
@@ -344,7 +358,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       }
       if (!reason_found) {
         PLOGV << "Trains are in a deadlock situation.";
-        return {false, exit_times, vertex_headways};
+        return {false, exit_times, braking_times, vertex_headways};
       }
     }
 
