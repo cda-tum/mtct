@@ -36,7 +36,9 @@ add_library(
   solver/mip-based/GenPOMovingBlockMIPSolver_SolutionExtraction.cpp
   solver/mip-based/GenPOMovingBlockMIPSolver_Lazy.cpp
   ${PROJECT_SOURCE_DIR}/include/simulator/GreedySimulator.hpp
-  simulator/GreedySimulator.cpp)
+  simulator/GreedySimulator.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulator/GreedyHeuristic.hpp
+  simulator/GreedyHeuristic.cpp)
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
