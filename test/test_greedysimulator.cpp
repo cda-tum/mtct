@@ -2651,7 +2651,8 @@ TEST(GreedySimulation, SimpleSimulation) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
-  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, false, false, false, true);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
         << ", Objective value: " << obj.back() << std::endl;
 
@@ -2659,6 +2660,9 @@ TEST(GreedySimulation, SimpleSimulation) {
   EXPECT_EQ(obj.size(), 1);
   EXPECT_GE(obj[0], 198);
   EXPECT_LE(obj[0], 198 + 6);
+  EXPECT_EQ(vertex_headways.size(), 2);
+  EXPECT_EQ(vertex_headways.at(v0), 60);
+  EXPECT_EQ(vertex_headways.at(v1), obj[0] + 30);
 }
 
 TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
@@ -2684,7 +2688,8 @@ TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
 
-  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, false, false, false, true);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
         << ", Objective value: " << "(" << obj[0] << ", " << obj[1] << ")";
 
@@ -2693,6 +2698,9 @@ TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
   EXPECT_GE(obj[0], 198);
   EXPECT_LE(obj[0], 198 + 6);
   EXPECT_EQ(obj[1], 0);
+  EXPECT_EQ(vertex_headways.size(), 2);
+  EXPECT_EQ(vertex_headways.at(v0), 60);
+  EXPECT_EQ(vertex_headways.at(v1), obj[0] + 30);
 }
 
 TEST(GreedySimulation, SimpleSimulationTwoTrains) {
@@ -2719,7 +2727,8 @@ TEST(GreedySimulation, SimpleSimulationTwoTrains) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
 
-  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, false, false, false, true);
   EXPECT_EQ(obj.size(), 2);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
         << ", Objective value: " << "(" << obj[0] << ", " << obj[1] << ")";
@@ -2728,6 +2737,9 @@ TEST(GreedySimulation, SimpleSimulationTwoTrains) {
   EXPECT_LE(obj[0], 250 + 6);
   EXPECT_GE(obj[1], 120 + 250);
   EXPECT_LE(obj[1], 120 + 250 + 6);
+  EXPECT_EQ(vertex_headways.size(), 2);
+  EXPECT_EQ(vertex_headways.at(v0), 240);
+  EXPECT_EQ(vertex_headways.at(v1), obj[1] + 30);
 }
 
 TEST(GreedySimulator, DeadlockTest1) {
@@ -2757,13 +2769,17 @@ TEST(GreedySimulator, DeadlockTest1) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v1, {tr2, tr1});
 
-  const auto [success, obj] = simulator.simulate(6, true, true, true, true);
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, true, true, true, true);
   EXPECT_EQ(obj.size(), 2);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
         << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")";
   EXPECT_EQ(obj.at(0), 0);
   EXPECT_EQ(obj.at(1), 0);
   EXPECT_FALSE(success);
+  EXPECT_EQ(vertex_headways.size(), 2);
+  EXPECT_EQ(vertex_headways.at(v0), 60);
+  EXPECT_EQ(vertex_headways.at(v1), 0);
 }
 
 TEST(GreedySimulator, DeadlockTest2) {
@@ -2804,13 +2820,19 @@ TEST(GreedySimulator, DeadlockTest2) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v3, {tr2, tr1});
 
-  const auto [success, obj] = simulator.simulate(6, true, true, true, true);
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, true, true, true, true);
   EXPECT_EQ(obj.size(), 2);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
         << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")";
   EXPECT_EQ(obj.at(0), 0);
   EXPECT_EQ(obj.at(1), 0);
   EXPECT_FALSE(success);
+  EXPECT_EQ(vertex_headways.size(), 4);
+  EXPECT_EQ(vertex_headways.at(v0), 60);
+  EXPECT_EQ(vertex_headways.at(v1), 0);
+  EXPECT_EQ(vertex_headways.at(v2), 0);
+  EXPECT_EQ(vertex_headways.at(v3), 30);
 }
 
 TEST(GreedySimulator, DeadlockTest3) {
@@ -2851,7 +2873,8 @@ TEST(GreedySimulator, DeadlockTest3) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v3, {tr2, tr1});
 
-  const auto [success, obj] = simulator.simulate(6, true, true, true, true);
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, true, true, true, true);
   EXPECT_EQ(obj.size(), 2);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
         << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")";
@@ -2862,6 +2885,11 @@ TEST(GreedySimulator, DeadlockTest3) {
   EXPECT_LE(obj.at(0), time1 + 6);
   EXPECT_LE(obj.at(1), time2 + 6);
   EXPECT_TRUE(success);
+  EXPECT_EQ(vertex_headways.size(), 4);
+  EXPECT_EQ(vertex_headways.at(v0), 60);
+  EXPECT_EQ(vertex_headways.at(v1), 0);
+  EXPECT_EQ(vertex_headways.at(v2), 0);
+  EXPECT_EQ(vertex_headways.at(v3), 30 + 30);
 }
 
 TEST(GreedySimulator, OneStationTest) {
@@ -2902,7 +2930,8 @@ TEST(GreedySimulator, OneStationTest) {
   simulator.append_current_stop_position_of_tr(tr1);
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
 
-  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, false, false, false, true);
   EXPECT_EQ(obj.size(), 1);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
         << ", Objective value: " << obj.at(0);
@@ -2910,6 +2939,11 @@ TEST(GreedySimulator, OneStationTest) {
   EXPECT_TRUE(success);
   EXPECT_GE(obj.at(0), time1 + 30 - 3);
   EXPECT_LE(obj.at(0), time1 + 30 + 6);
+  EXPECT_EQ(vertex_headways.size(), 4);
+  EXPECT_EQ(vertex_headways.at(v0), 60);
+  EXPECT_EQ(vertex_headways.at(v1), 0);
+  EXPECT_EQ(vertex_headways.at(v2), 0);
+  EXPECT_EQ(vertex_headways.at(v3), 0); // Train does not reach v3
 }
 
 TEST(GreedySimulator, TwoStationTest) {
@@ -2952,7 +2986,8 @@ TEST(GreedySimulator, TwoStationTest) {
   simulator.append_stop_edge_to_tr(tr1, v2_v3);
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
 
-  const auto [success, obj] = simulator.simulate(6, false, false, false, true);
+  const auto [success, obj, vertex_headways] =
+      simulator.simulate(6, false, false, false, true);
   EXPECT_EQ(obj.size(), 1);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
         << ", Objective value: " << obj.at(0);
@@ -2960,6 +2995,12 @@ TEST(GreedySimulator, TwoStationTest) {
   EXPECT_TRUE(success);
   EXPECT_GE(obj.at(0), 90 + time1 + 60 - 3);
   EXPECT_LE(obj.at(0), 90 + time1 + 60 + 6);
+  EXPECT_EQ(vertex_headways.size(), 5);
+  EXPECT_EQ(vertex_headways.at(v0), 60);
+  EXPECT_EQ(vertex_headways.at(v1), 0);
+  EXPECT_EQ(vertex_headways.at(v2), 0);
+  EXPECT_EQ(vertex_headways.at(v3), 0);
+  EXPECT_EQ(vertex_headways.at(v4), 0); // Train does not reach v4
 }
 
 // NOLINTEND

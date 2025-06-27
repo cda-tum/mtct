@@ -21,7 +21,7 @@
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
 
-std::pair<bool, std::vector<int>>
+std::tuple<bool, std::vector<int>, std::vector<int>>
 cda_rail::simulator::GreedySimulator::simulate(
     int dt, bool late_entry_possible, bool late_exit_possible,
     bool late_stop_possible, bool limit_speed_by_leaving_edges) const {
@@ -40,8 +40,10 @@ cda_rail::simulator::GreedySimulator::simulate(
    * @param late_stop_possible: If true, trains can stop later than scheduled,
    * otherwise the settings are infeasible. Default: false
    *
-   * @return: A pair containing a boolean indicating whether the simulation was
-   * successful and a vector of doubles with the exit times of each train.
+   * @return: A tuple containing
+   *  - a boolean indicating whether the simulation was successful,
+   *  - a vector of doubles with the exit times of each train, and
+   *  - a vector of doubles with the final vertex headways.
    */
 
   cda_rail::initialize_plog(false);
@@ -164,7 +166,12 @@ cda_rail::simulator::GreedySimulator::simulate(
         trains_to_remove.emplace_back(tr);
         trains_left.insert(tr);
         trains_finished_simulating.insert(tr);
-        exit_times.at(tr) = t;
+        exit_times.at(tr)           = t;
+        const auto& exit_vertex_idx = instance->get_schedule(tr).get_exit();
+        const auto& exit_vertex =
+            instance->const_n().get_vertex(exit_vertex_idx);
+        vertex_headways.at(exit_vertex_idx) =
+            t + static_cast<int>(std::ceil(exit_vertex.headway));
         PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " left the network.";
@@ -241,7 +248,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       PLOGV
           << "Simulation failed: Not all trains can enter the network at time "
           << t;
-      return {false, exit_times};
+      return {false, exit_times, vertex_headways};
     }
     for (const auto& tr : tr_to_enter) {
       const auto& train_schedule = instance->get_timetable().get_schedule(tr);
@@ -283,7 +290,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     if (trains_finished_simulating.size() ==
         instance->get_timetable().get_train_list().size()) {
       PLOGV << "All trains have reached their destination at time " << t;
-      return {true, exit_times};
+      return {true, exit_times, vertex_headways};
     }
 
     // Check if the end state can still be reached
@@ -294,7 +301,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       PLOGV
           << "Simulation failed: Simulation cannot become feasible after time "
           << t;
-      return {false, exit_times};
+      return {false, exit_times, vertex_headways};
     }
 
     // Check if there might be a deadlock situation
@@ -337,7 +344,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       }
       if (!reason_found) {
         PLOGV << "Trains are in a deadlock situation.";
-        return {false, exit_times};
+        return {false, exit_times, vertex_headways};
       }
     }
 

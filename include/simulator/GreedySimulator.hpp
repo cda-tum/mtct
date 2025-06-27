@@ -446,7 +446,7 @@ public:
         std::to_string(train_id) + "'s route.");
   };
 
-  [[nodiscard]] std::pair<bool, std::vector<int>>
+  [[nodiscard]] std::tuple<bool, std::vector<int>, std::vector<int>>
   simulate(int dt = 6, bool late_entry_possible = false,
            bool late_exit_possible = false, bool late_stop_possible = false,
            bool limit_speed_by_leaving_edges = true) const;
