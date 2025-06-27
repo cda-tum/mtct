@@ -52,7 +52,8 @@ class GreedySimulator_FutureSpeedRestrictionConstraintsAfterLeaving_Test;
 namespace cda_rail::simulator {
 
 class GreedySimulator {
-  std::shared_ptr<cda_rail::instances::GeneralPerformanceOptimizationInstance>
+  std::shared_ptr<
+      const cda_rail::instances::GeneralPerformanceOptimizationInstance>
                                    instance;
   std::vector<std::vector<size_t>> ttd_sections;
 
@@ -225,8 +226,8 @@ public:
   explicit GreedySimulator(
       cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
       std::vector<std::vector<size_t>>                             ttd_sections)
-      : instance(std::make_shared<
-                 cda_rail::instances::GeneralPerformanceOptimizationInstance>(
+      : instance(std::make_shared<const cda_rail::instances::
+                                      GeneralPerformanceOptimizationInstance>(
             instance)),
         ttd_sections(std::move(ttd_sections)) {
     train_edges.resize(instance.get_timetable().get_train_list().size());
@@ -241,8 +242,8 @@ public:
       std::vector<std::vector<size_t>>                             ttd_orders,
       std::vector<std::vector<size_t>> vertex_orders,
       std::vector<std::vector<double>> stop_positions)
-      : instance(std::make_shared<
-                 cda_rail::instances::GeneralPerformanceOptimizationInstance>(
+      : instance(std::make_shared<const cda_rail::instances::
+                                      GeneralPerformanceOptimizationInstance>(
             instance)),
         ttd_sections(std::move(ttd_sections)),
         train_edges(std::move(train_edges)), ttd_orders(std::move(ttd_orders)),
@@ -250,6 +251,12 @@ public:
         stop_positions(std::move(stop_positions)) {};
   GreedySimulator() = delete;
   [[nodiscard]] bool check_consistency() const;
+
+  [[nodiscard]] const std::shared_ptr<
+      const cda_rail::instances::GeneralPerformanceOptimizationInstance>
+  get_instance() const {
+    return instance;
+  }
 
   void set_train_edges(std::vector<std::vector<size_t>> tr_edges) {
     if (tr_edges.size() != instance->get_timetable().get_train_list().size()) {
