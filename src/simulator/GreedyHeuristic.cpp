@@ -89,7 +89,7 @@ std::pair<bool, double> cda_rail::simulator::simple_remaining_time_heuristic(
                  static_cast<double>(tr_schedule.get_t_0_range().first));
   }
 
-  const auto last_stop = simulator.get_stop_positions_of_tr(tr).size();
+  const auto first_next_stop = simulator.get_stop_positions_of_tr(tr).size();
 
   // Initial position of the train
   auto start_edges =
@@ -100,7 +100,7 @@ std::pair<bool, double> cda_rail::simulator::simple_remaining_time_heuristic(
   bool include_first_edge = tr_edges.empty();
 
   bool feasible = true;
-  for (size_t next_stop = last_stop + 1; next_stop < tr_stops.size();
+  for (size_t next_stop = first_next_stop; next_stop < tr_stops.size();
        ++next_stop) {
     // Quickest path to next station
     const auto& next_station_name = tr_stops.at(next_stop).get_station_name();
