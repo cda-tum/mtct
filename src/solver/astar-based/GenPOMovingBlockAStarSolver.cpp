@@ -36,8 +36,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
               ->const_n()
               .all_paths_of_length_starting_in_vertex(
                   tr_schedule.get_entry(),
-                  cda_rail::braking_distance(tr_obj.max_speed,
-                                             tr_obj.acceleration),
+                  cda_rail::braking_distance(tr_schedule.get_v_0(),
+                                             tr_obj.deceleration),
                   tr_schedule.get_exit());
       for (const auto& path : entry_paths) {
         GreedySimulatorState new_state{
@@ -48,6 +48,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
         new_state.train_edges.at(tr) = path;
         new_state.vertex_orders.at(tr_schedule.get_entry()).emplace_back(tr);
         next_state_ttd_helper(tr, new_state, simulator, path);
+        next_state_exit_vertex_helper(tr, new_state, simulator);
         next_states.insert(new_state);
       }
     } else {
@@ -60,6 +61,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
             .stop_positions = simulator.get_stop_positions()};
         new_state.stop_positions.at(tr).emplace_back(
             simulator.train_edge_length(tr));
+        next_state_exit_vertex_helper(tr, new_state, simulator);
         next_states.insert(new_state);
       }
       const auto next_edges =
@@ -73,6 +75,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
             .stop_positions = simulator.get_stop_positions()};
         new_state.train_edges.at(tr).emplace_back(next_edge);
         next_state_ttd_helper(tr, new_state, simulator, {next_edge});
+        next_state_exit_vertex_helper(tr, new_state, simulator);
         next_states.insert(new_state);
       }
     }
@@ -89,23 +92,40 @@ void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
   const auto& ttd_sections = simulator.get_ttd_sections();
 
   for (size_t ttd_id = 0; ttd_id < ttd_sections.size(); ++ttd_id) {
+    if (std::find(state.ttd_orders.at(ttd_id).begin(),
+                  state.ttd_orders.at(ttd_id).end(),
+                  tr) != state.ttd_orders.at(ttd_id).end()) {
+      // Train is already in the TTD section, no need to check further
+      continue;
+    }
     const auto& ttd_section = ttd_sections.at(ttd_id);
     for (const auto& edge : new_edges) {
       if (std::find(ttd_section.begin(), ttd_section.end(), edge) !=
           ttd_section.end()) {
         // Edge is part of the TTD section
         state.ttd_orders.at(ttd_id).emplace_back(tr);
-        continue; // No need to check further edge
+        break; // No need to check further edge
       }
     }
   }
+}
 
-  // Possibly update vertex orders
+void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+    next_state_exit_vertex_helper(
+        size_t tr, cda_rail::solver::astar_based::GreedySimulatorState& state,
+        const cda_rail::simulator::GreedySimulator& simulator) {
+  const auto& last_edge_id = state.train_edges.at(tr).back();
   const auto& last_edge =
-      simulator.get_instance()->const_n().get_edge(new_edges.back());
+      simulator.get_instance()->const_n().get_edge(last_edge_id);
   const auto& tr_schedule =
       simulator.get_instance()->get_timetable().get_schedule(tr);
-  if (tr_schedule.get_exit() == last_edge.target) {
-    state.vertex_orders.at(last_edge.target).emplace_back(tr);
+  if ((tr_schedule.get_exit() == last_edge.target) &&
+      (state.stop_positions.at(tr).size() == tr_schedule.get_stops().size())) {
+    if (std::find(state.vertex_orders.at(last_edge.target).begin(),
+                  state.vertex_orders.at(last_edge.target).end(),
+                  tr) == state.vertex_orders.at(last_edge.target).end()) {
+      // Train has reached the exit vertex, add it to the vertex orders
+      state.vertex_orders.at(last_edge.target).emplace_back(tr);
+    }
   }
 }

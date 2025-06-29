@@ -126,6 +126,9 @@ private:
   static void next_state_ttd_helper(size_t tr, GreedySimulatorState& state,
                                     const simulator::GreedySimulator& simulator,
                                     const std::vector<size_t>& new_edges);
+  static void
+  next_state_exit_vertex_helper(size_t tr, GreedySimulatorState& state,
+                                const simulator::GreedySimulator& simulator);
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states(const simulator::GreedySimulator& simulator,
               const NextStateStrategy&          next_state_strategy_input) {
