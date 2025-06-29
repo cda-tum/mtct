@@ -5,12 +5,28 @@
 #include "simulator/GreedySimulator.hpp"
 #include "solver/GeneralSolver.hpp"
 
+// NOLINTNEXTLINE(misc-include-cleaner)
+#include "gtest/gtest_prod.h"
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+// If TEST_FRIENDS has value true, the corresponding test is friended to test
+// complex private functions
+// This is not good practice, however after consideration, it was decided that
+// - it is not reasonable to make the functions public
+// - they have a complexity that should be tested
+// - by only testing the overall solution, there is too much code tested at once
+#ifndef TEST_FRIENDS
+#define TEST_FRIENDS false
+#endif
+#if TEST_FRIENDS
+class GenPOMovingBlockAStarSolver;
+class GenPOMovingBlockAStarSolver_NextStates_Test;
+#endif
 
 namespace cda_rail::solver::astar_based {
 enum class NextStateStrategy : std::uint8_t {
@@ -101,6 +117,10 @@ class GenPOMovingBlockAStarSolver
           instances::SolGeneralPerformanceOptimizationInstance<
               instances::GeneralPerformanceOptimizationInstance>> {
 private:
+#if TEST_FRIENDS
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
+#endif
+
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
