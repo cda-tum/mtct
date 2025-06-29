@@ -28,6 +28,9 @@ double cda_rail::simulator::simple_braking_time_heuristic(
    * braking and the minimal traveling time from the braking point.
    */
 
+  if (braking_time.first < 0 && braking_time.second < 0) {
+    return 0.0; // No braking time, no heuristic value
+  }
   assert(braking_time.first >= 0);
   assert(braking_time.second >= 0);
   assert(tr_exit_time >= 0);
