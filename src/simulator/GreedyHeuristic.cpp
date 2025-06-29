@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <iterator>
 #include <utility>
 #include <vector>
 
@@ -45,4 +46,119 @@ double cda_rail::simulator::simple_braking_time_heuristic(
     len += edge.length;
   }
   return ret_val;
+}
+
+std::pair<bool, double> cda_rail::simulator::simple_remaining_time_heuristic(
+    size_t tr, const cda_rail::simulator::GreedySimulator& simulator,
+    int tr_exit_time, double braking_time_heuristic, bool late_stop_possible,
+    bool late_exit_possible, bool consider_earliest_exit) {
+  /**
+   * This heuristic calculates the remaining time for a train to exit the
+   * network. It is assumed that the train will travel at its maximum speed.
+   * Acceleration and deceleration are not considered in this heuristic.
+   *
+   * @param tr The train for which the heuristic is calculated.
+   * @param simulator The simulator instance containing the train and its edges.
+   * @param tr_exit_time The time at which the train exits the network.
+   * @param braking_time_heuristic The heuristic value for braking time, usually
+   * negative
+   * @param late_stop_possible Indicates if the train can stop later than
+   * planned.
+   * @param late_exit_possible Indicates if the train can exit later than
+   * planned.
+   * @param consider_earliest_exit If true, the heuristic will consider the
+   * earliest exit time of each station and exit point.
+   *
+   * @return A pair containing:
+   * - bool: indicates if a valid timetable can still be achieved
+   * - double: the estimated remaining time for the train to exit the network
+   */
+
+  const double rel_exit_time =
+      std::max(static_cast<double>(tr_exit_time) + braking_time_heuristic, 0.0);
+  double heuristic_exit_time = rel_exit_time;
+
+  const auto& tr_edges    = simulator.get_train_edges_of_tr(tr);
+  const auto& tr_schedule = simulator.get_instance()->get_schedule(tr);
+  const auto& tr_stops    = tr_schedule.get_stops();
+  const auto& tr_obj = simulator.get_instance()->get_train_list().get_train(tr);
+
+  if (tr_edges.empty()) {
+    heuristic_exit_time =
+        std::max(heuristic_exit_time,
+                 static_cast<double>(tr_schedule.get_t_0_range().first));
+  }
+
+  bool       include_first_edge = tr_edges.empty();
+  bool       feasible           = true;
+  const auto last_stop          = simulator.get_stop_positions_of_tr(tr).size();
+
+  auto start_edges =
+      tr_edges.empty()
+          ? std::vector<size_t>{simulator.get_instance()->const_n().out_edges(
+                tr_schedule.get_entry())}
+          : std::vector<size_t>{tr_edges.back()};
+
+  for (size_t next_stop = last_stop + 1; next_stop < tr_stops.size();
+       ++next_stop) {
+    const auto& next_station_name = tr_stops.at(next_stop).get_station_name();
+    std::vector<size_t> next_station_tracks;
+    const auto&         stop_tracks =
+        simulator.get_instance()->get_stop_tracks(tr, next_station_name);
+    next_station_tracks.reserve(stop_tracks.size());
+    std::transform(stop_tracks.begin(), stop_tracks.end(),
+                   std::back_inserter(next_station_tracks),
+                   [](const auto& track_pair) { return track_pair.first; });
+
+    if (next_station_tracks.empty()) {
+      return {false, cda_rail::INF};
+    }
+    heuristic_exit_time += simulator.get_instance()
+                               ->const_n()
+                               .shortest_path_between_sets(
+                                   start_edges, next_station_tracks, true,
+                                   include_first_edge, true, tr_obj.max_speed)
+                               .value_or(cda_rail::INF);
+
+    if (!late_stop_possible &&
+        heuristic_exit_time > tr_stops.at(next_stop).get_begin_range().second) {
+      feasible = false;
+    }
+    // Stop train
+    if (consider_earliest_exit) {
+      heuristic_exit_time = std::max(
+          heuristic_exit_time,
+          static_cast<double>(tr_stops.at(next_stop).get_begin_range().first));
+    }
+    heuristic_exit_time += tr_stops.at(next_stop).get_min_stopping_time();
+    if (consider_earliest_exit) {
+      heuristic_exit_time = std::max(
+          heuristic_exit_time,
+          static_cast<double>(tr_stops.at(next_stop).get_end_range().first));
+    }
+    start_edges        = std::move(next_station_tracks);
+    include_first_edge = false;
+  }
+
+  // Move to exit vertex
+  heuristic_exit_time += simulator.get_instance()
+                             ->const_n()
+                             .shortest_path_between_sets(
+                                 start_edges, {tr_schedule.get_exit()}, false,
+                                 include_first_edge, true, tr_obj.max_speed)
+                             .value_or(cda_rail::INF);
+  heuristic_exit_time +=
+      tr_obj.length /
+      tr_obj.max_speed; // Only left after fully leaving the network
+  if (!late_exit_possible &&
+      heuristic_exit_time > tr_schedule.get_t_n_range().second) {
+    feasible = false;
+  }
+  if (consider_earliest_exit) {
+    heuristic_exit_time =
+        std::max(heuristic_exit_time,
+                 static_cast<double>(tr_schedule.get_t_n_range().first));
+  }
+
+  return {feasible, heuristic_exit_time - rel_exit_time};
 }
