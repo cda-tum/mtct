@@ -2221,7 +2221,7 @@ cda_rail::Network::length_of_path(const std::vector<size_t>& path) const {
 
 double cda_rail::Network::delta_dist_helper(const Edge& successor_edge,
                                             double      max_v,
-                                            bool use_minimal_time) const {
+                                            bool        use_minimal_time) {
   double delta_dist = successor_edge.length;
   if (use_minimal_time) {
     // If minimal time is used, calculate time needed with maximal speed

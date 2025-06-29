@@ -135,9 +135,9 @@ private:
     return get_edge(e).source == v ? get_edge(e).target : get_edge(e).source;
   };
 
-  [[nodiscard]] double delta_dist_helper(const Edge& successor_edge,
-                                         double      max_v,
-                                         bool        use_minimal_time) const;
+  [[nodiscard]] static double delta_dist_helper(const Edge& successor_edge,
+                                                double      max_v,
+                                                bool        use_minimal_time);
 
 public:
   // Constructors
