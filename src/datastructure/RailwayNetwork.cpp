@@ -1669,11 +1669,10 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
   return ret_val;
 }
 
-std::optional<double> cda_rail::Network::shortest_path(size_t source_edge_id,
-                                                       size_t target_id,
-                                                       bool   target_is_edge,
-                                                       bool   use_minimal_time,
-                                                       double max_v) const {
+std::optional<double>
+cda_rail::Network::shortest_path(size_t source_edge_id, size_t target_id,
+                                 bool target_is_edge, bool include_first_edge,
+                                 bool use_minimal_time, double max_v) const {
   /**
    * Calculates the shortest path from a source edge e to a target vertex w.
    * If e = (u,v), then the length of the shortest path between v and w is
@@ -1690,7 +1689,8 @@ std::optional<double> cda_rail::Network::shortest_path(size_t source_edge_id,
    */
 
   return shortest_path_using_edges(source_edge_id, target_id, true, {},
-                                   target_is_edge, use_minimal_time, max_v)
+                                   target_is_edge, include_first_edge,
+                                   use_minimal_time, max_v)
       .first;
 }
 
@@ -2048,7 +2048,8 @@ std::pair<std::optional<double>, std::vector<size_t>>
 cda_rail::Network::shortest_path_between_sets_using_edges(
     std::vector<size_t> source_edge_ids, std::vector<size_t> target_ids,
     bool only_use_valid_successors, std::vector<size_t> edges_to_use,
-    bool target_is_edge, bool use_minimal_time, double max_v) const {
+    bool target_is_edge, bool include_first_edge, bool use_minimal_time,
+    double max_v) const {
   /**
    * Calculates the shortest path from a source edge e to a target vertex w.
    * If e = (u,v), then the length of the shortest path between v and w is
@@ -2067,9 +2068,13 @@ cda_rail::Network::shortest_path_between_sets_using_edges(
    * edges are used.
    * @param target_is_edge: If true, the target is an edge, otherwise it is a
    * vertex.
+   * @param include_first_edge: If true, the first edge is included in the
+   * length, otherwise it is not.
    * @param use_minimal_time: If true, the minimal time is used instead of the
    * distance.
    * @param max_v: Maximum speed of the train considered.
+   *
+   * @return: A pair containing the distance and the path as a vector of edge
    */
 
   if (source_edge_ids.empty()) {
@@ -2098,14 +2103,16 @@ cda_rail::Network::shortest_path_between_sets_using_edges(
   }
 
   // If source edge already leads to the target, then the distance is 0
-  for (const auto& source_edge_id : source_edge_ids) {
-    const auto& source_edge = get_edge(source_edge_id);
-    for (const auto& target_id : target_ids) {
-      if (target_is_edge && source_edge_id == target_id) {
-        return {0, {source_edge_id}};
-      }
-      if (!target_is_edge && source_edge.target == target_id) {
-        return {0, {source_edge_id}};
+  if (!include_first_edge) {
+    for (const auto& source_edge_id : source_edge_ids) {
+      const auto& source_edge = get_edge(source_edge_id);
+      for (const auto& target_id : target_ids) {
+        if (target_is_edge && source_edge_id == target_id) {
+          return {0, {source_edge_id}};
+        }
+        if (!target_is_edge && source_edge.target == target_id) {
+          return {0, {source_edge_id}};
+        }
       }
     }
   }
@@ -2120,8 +2127,12 @@ cda_rail::Network::shortest_path_between_sets_using_edges(
                       std::vector<std::pair<double, size_t>>, std::greater<>>
       pq;
   for (const auto& source_edge_id : source_edge_ids) {
-    pq.emplace(0, source_edge_id);
-    distances[source_edge_id] = 0;
+    const double initial_dist =
+        (include_first_edge ? delta_dist_helper(get_edge(source_edge_id), max_v,
+                                                use_minimal_time)
+                            : 0.0);
+    pq.emplace(initial_dist, source_edge_id);
+    distances[source_edge_id] = initial_dist;
   }
 
   // Dijkstra
@@ -2181,17 +2192,8 @@ cda_rail::Network::shortest_path_between_sets_using_edges(
       }
       if (dist + successor_edge.length < distances[successor]) {
         // Update entry in priority queue
-        double delta_dist = successor_edge.length;
-        if (use_minimal_time) {
-          // If minimal time is used, calculate time needed with maximal speed
-          const double vel = std::min(max_v, successor_edge.max_speed);
-          if (vel <= 0) {
-            throw exceptions::InvalidInputException(
-                "Maximum speed of every edge must be strictly positive if "
-                "minimal time is used");
-          }
-          delta_dist /= vel;
-        }
+        const auto delta_dist =
+            delta_dist_helper(successor_edge, max_v, use_minimal_time);
         distances[successor]    = dist + delta_dist;
         predecessors[successor] = edge_id;
         pq.emplace(distances[successor], successor);
@@ -2215,4 +2217,21 @@ cda_rail::Network::length_of_path(const std::vector<size_t>& path) const {
     len += get_edge(edge_index).length;
   }
   return len;
+}
+
+double cda_rail::Network::delta_dist_helper(const Edge& successor_edge,
+                                            double      max_v,
+                                            bool use_minimal_time) const {
+  double delta_dist = successor_edge.length;
+  if (use_minimal_time) {
+    // If minimal time is used, calculate time needed with maximal speed
+    const double vel = std::min(max_v, successor_edge.max_speed);
+    if (vel <= 0) {
+      throw exceptions::InvalidInputException(
+          "Maximum speed of every edge must be strictly positive if "
+          "minimal time is used");
+    }
+    delta_dist /= vel;
+  }
+  return delta_dist;
 }
