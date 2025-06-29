@@ -55,4 +55,19 @@ remaining_time_heuristic(RemainingTimeHeuristicType type, size_t tr,
       "This code should not have been reachable...");
 };
 
+[[nodiscard]] inline std::pair<bool, double>
+greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
+                 RemainingTimeHeuristicType remaining_time_heuristic_type,
+                 size_t tr, const GreedySimulator& simulator, int tr_exit_time,
+                 const std::pair<int, double>& braking_time,
+                 bool late_stop_possible, bool late_exit_possible,
+                 bool consider_earliest_exit) {
+  const double bt_val = braking_time_heuristic(
+      braking_time_heuristic_type, tr, simulator, tr_exit_time, braking_time);
+  const auto [feas, obj] = remaining_time_heuristic(
+      remaining_time_heuristic_type, tr, simulator, tr_exit_time, bt_val,
+      late_stop_possible, late_exit_possible, consider_earliest_exit);
+  return {feas, bt_val + obj};
+}
+
 } // namespace cda_rail::simulator
