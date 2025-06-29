@@ -264,6 +264,10 @@ public:
                                               const Network&               network) const = 0;
   [[nodiscard]] virtual bool is_forced_to_stop(const std::string& tr_name,
                                                int time) const              = 0;
+  [[nodiscard]] virtual std::vector<
+      std::pair<size_t, std::vector<std::vector<size_t>>>>
+  get_stop_tracks(size_t tr, const std::string& name, const Network& network,
+                  const std::vector<size_t>& edges_to_consider) const = 0;
 };
 
 template <typename T = GeneralSchedule<GeneralScheduledStop>>
@@ -810,6 +814,14 @@ public:
     }
 
     return true;
+  };
+
+  [[nodiscard]] virtual std::vector<
+      std::pair<size_t, std::vector<std::vector<size_t>>>>
+  get_stop_tracks(size_t tr, const std::string& name, const Network& network,
+                  const std::vector<size_t>& edges_to_consider) const {
+    return get_station_list().get_stop_tracks(
+        name, train_list.get_train(tr).length, network, edges_to_consider);
   }
 };
 

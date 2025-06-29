@@ -19,6 +19,10 @@ struct Station {
   std::string name;
   // NOLINTNEXTLINE(readability-redundant-member-init)
   std::vector<size_t> tracks = {};
+
+  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+  get_stop_tracks(double tr_len, const Network& network,
+                  const std::vector<size_t>& edges_to_consider = {}) const;
 };
 
 class StationList {
@@ -100,5 +104,13 @@ public:
 
   void update_after_discretization(
       const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges);
+
+  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+  get_stop_tracks(const std::string& name, double tr_len,
+                  const Network&             network,
+                  const std::vector<size_t>& edges_to_consider = {}) const {
+    return get_station(name).get_stop_tracks(tr_len, network,
+                                             edges_to_consider);
+  }
 };
 } // namespace cda_rail

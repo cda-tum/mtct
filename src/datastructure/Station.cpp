@@ -187,3 +187,41 @@ bool cda_rail::StationList::is_fully_in_station(
                station_tracks.end();
       });
 }
+
+std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+cda_rail::Station::get_stop_tracks(
+    double tr_len, const cda_rail::Network& network,
+    const std::vector<size_t>& edges_to_consider) const {
+  /**
+   * This method returns the tracks of the station on which a train of length
+   * tr_len can stop at the target vertex.
+   * * @param tr_len The length of the train.
+   * * @param network The network to which the station belongs.
+   * * @param edges_to_consider The edges to consider. Default: {}, then all
+   * edges
+   *
+   * @return A vector of pairs:
+   * - The first element of the pair is the index of a possible stop edge
+   * - The second element lists all possible stop paths ending in that edge
+   * Note: The train has to use one of the stop paths if it stops at the (end of
+   * the) edge
+   */
+  auto station_tracks_to_consider =
+      edges_to_consider.empty() ? tracks : std::vector<size_t>();
+  for (const auto& tmp_e : edges_to_consider) {
+    if (std::find(tracks.begin(), tracks.end(), tmp_e) != tracks.end()) {
+      station_tracks_to_consider.emplace_back(tmp_e);
+    }
+  }
+
+  std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>> ret_val;
+  for (const auto& e : station_tracks_to_consider) {
+    const auto stop_paths = network.all_paths_of_length_ending_in_edge(
+        e, tr_len, {}, station_tracks_to_consider);
+    if (!stop_paths.empty()) {
+      ret_val.emplace_back(e, stop_paths);
+    }
+  }
+
+  return ret_val;
+}

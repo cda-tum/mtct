@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -160,8 +161,16 @@ public:
   };
 
   [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
-  possible_stop_vertices(size_t tr, const std::string& station_name,
-                         const std::vector<size_t>& edges_to_consider = {}) {
+  get_stop_tracks(size_t tr, const std::string& station_name,
+                  const std::vector<size_t>& edges_to_consider = {}) const {
+    return timetable.get_stop_tracks(tr, station_name, this->const_n(),
+                                     edges_to_consider);
+  };
+
+  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+  possible_stop_vertices(
+      size_t tr, const std::string& station_name,
+      const std::vector<size_t>& edges_to_consider = {}) const {
     /**
      * This method returns the possible stop vertices for a train at a station
      * together with the respective stop edges
@@ -178,42 +187,18 @@ public:
      * vertex
      */
 
-    const auto& station_tracks =
-        this->get_station_list().get_station(station_name).tracks;
+    auto stop_tracks = get_stop_tracks(tr, station_name, edges_to_consider);
+    std::unordered_map<size_t, std::vector<std::vector<size_t>>> combined;
 
-    auto station_tracks_to_consider =
-        edges_to_consider.empty() ? station_tracks : std::vector<size_t>();
-    for (const auto& tmp_e : edges_to_consider) {
-      if (std::find(station_tracks.begin(), station_tracks.end(), tmp_e) !=
-          station_tracks.end()) {
-        station_tracks_to_consider.emplace_back(tmp_e);
-      }
+    for (const auto& [edge_index, paths] : stop_tracks) {
+      size_t target = this->const_n().get_edge(edge_index).target;
+      auto&  vec    = combined[target];
+      vec.insert(vec.end(), paths.begin(), paths.end());
     }
 
-    const auto& tr_length = this->get_train_list().get_train(tr).length;
-    const auto  vertices_to_test =
-        this->const_n().vertices_used_by_edges(station_tracks_to_consider);
-
     std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>> ret_val;
-
-    for (const auto& v : vertices_to_test) {
-      const auto potential_stop_paths =
-          this->const_n().all_paths_of_length_ending_in_vertex(v, tr_length);
-      std::vector<std::vector<size_t>> stop_paths;
-      for (const auto& p : potential_stop_paths) {
-        // If all edges of p are in station_tracks, add p to stop_paths
-        if (std::all_of(
-                p.begin(), p.end(), [&station_tracks_to_consider](size_t e) {
-                  return std::find(station_tracks_to_consider.begin(),
-                                   station_tracks_to_consider.end(),
-                                   e) != station_tracks_to_consider.end();
-                })) {
-          stop_paths.push_back(p);
-        }
-      }
-      if (!stop_paths.empty()) {
-        ret_val.emplace_back(v, stop_paths);
-      }
+    for (auto& [target, paths] : combined) {
+      ret_val.emplace_back(target, std::move(paths));
     }
 
     return ret_val;
