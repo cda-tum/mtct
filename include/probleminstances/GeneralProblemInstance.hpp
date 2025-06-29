@@ -197,6 +197,7 @@ public:
     }
 
     std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>> ret_val;
+    ret_val.reserve(combined.size());
     for (auto& [target, paths] : combined) {
       ret_val.emplace_back(target, std::move(paths));
     }

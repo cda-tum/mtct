@@ -287,7 +287,8 @@ class GeneralTimetable : BaseTimetable {
       std::is_base_of_v<GeneralSchedule<stop_type>, T>,
       "T must be derived from GeneralSchedule with suitable stop type");
 
-  template <typename U, std::enable_if_t<std::is_same_v<U, int>, int> = 0>
+  template <typename U>
+    requires(std::is_same_v<U, int>)
   void add_json_data(json& j, const int i, const Network& network) const {
     const auto& schedule = schedules.at(i);
     json        stops;
@@ -309,8 +310,8 @@ class GeneralTimetable : BaseTimetable {
         {"stops", stops}};
   }
 
-  template <typename U,
-            std::enable_if_t<std::is_same_v<U, std::pair<int, int>>, int> = 0>
+  template <typename U>
+    requires(std::is_same_v<U, std::pair<int, int>>)
   void add_json_data(json& j, const int i, const Network& network) const {
     const auto& schedule = schedules.at(i);
     json        stops;
@@ -333,7 +334,8 @@ class GeneralTimetable : BaseTimetable {
         {"stops", stops}};
   }
 
-  template <typename U, std::enable_if_t<std::is_same_v<U, int>, int> = 0>
+  template <typename U>
+    requires(std::is_same_v<U, int>)
   void parse_schedule_data(const json& schedule_data, const int i) {
     this->schedules.at(i).set_t_0(static_cast<int>(schedule_data["t_0"]));
     this->schedules.at(i).set_t_n(static_cast<int>(schedule_data["t_n"]));
@@ -343,8 +345,8 @@ class GeneralTimetable : BaseTimetable {
                      stop_data["end"].get<int>());
     }
   }
-  template <typename U,
-            std::enable_if_t<std::is_same_v<U, std::pair<int, int>>, int> = 0>
+  template <typename U>
+    requires(std::is_same_v<U, std::pair<int, int>>)
   void parse_schedule_data(const json& schedule_data, const int i) {
     this->schedules.at(i).set_t_0_range({schedule_data["t_0"][0].get<int>(),
                                          schedule_data["t_0"][1].get<int>()});
