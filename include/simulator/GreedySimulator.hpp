@@ -316,6 +316,10 @@ public:
     }
     return ttd_orders.at(ttd_index);
   };
+  [[nodiscard]] const std::vector<std::vector<size_t>>&
+  get_ttd_sections() const {
+    return ttd_sections;
+  };
 
   void set_vertex_orders(std::vector<std::vector<size_t>> orders) {
     if (orders.size() != instance->const_n().number_of_vertices()) {

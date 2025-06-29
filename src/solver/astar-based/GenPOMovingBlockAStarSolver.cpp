@@ -46,6 +46,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
             .vertex_orders  = simulator.get_vertex_orders(),
             .stop_positions = simulator.get_stop_positions()};
         new_state.train_edges.at(tr) = path;
+        new_state.vertex_orders.at(tr_schedule.get_entry()).emplace_back(tr);
+        next_state_ttd_helper(tr, new_state, simulator, path);
         next_states.insert(new_state);
       }
     } else {
@@ -70,10 +72,40 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
             .vertex_orders  = simulator.get_vertex_orders(),
             .stop_positions = simulator.get_stop_positions()};
         new_state.train_edges.at(tr).emplace_back(next_edge);
+        next_state_ttd_helper(tr, new_state, simulator, {next_edge});
         next_states.insert(new_state);
       }
     }
   }
 
   return next_states;
+}
+
+void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+    next_state_ttd_helper(
+        size_t tr, cda_rail::solver::astar_based::GreedySimulatorState& state,
+        const cda_rail::simulator::GreedySimulator& simulator,
+        const std::vector<size_t>&                  new_edges) {
+  const auto& ttd_sections = simulator.get_ttd_sections();
+
+  for (size_t ttd_id = 0; ttd_id < ttd_sections.size(); ++ttd_id) {
+    const auto& ttd_section = ttd_sections.at(ttd_id);
+    for (const auto& edge : new_edges) {
+      if (std::find(ttd_section.begin(), ttd_section.end(), edge) !=
+          ttd_section.end()) {
+        // Edge is part of the TTD section
+        state.ttd_orders.at(ttd_id).emplace_back(tr);
+        continue; // No need to check further edge
+      }
+    }
+  }
+
+  // Possibly update vertex orders
+  const auto& last_edge =
+      simulator.get_instance()->const_n().get_edge(new_edges.back());
+  const auto& tr_schedule =
+      simulator.get_instance()->get_timetable().get_schedule(tr);
+  if (tr_schedule.get_exit() == last_edge.target) {
+    state.vertex_orders.at(last_edge.target).emplace_back(tr);
+  }
 }
