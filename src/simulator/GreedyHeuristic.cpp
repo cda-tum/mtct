@@ -1,5 +1,6 @@
 #include "simulator/GreedyHeuristic.hpp"
 
+#include "Definitions.hpp"
 #include "simulator/GreedySimulator.hpp"
 
 #include <algorithm>
