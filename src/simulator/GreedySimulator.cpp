@@ -1679,3 +1679,41 @@ bool cda_rail::simulator::GreedySimulator::is_current_pos_valid_stop_position(
 
   return len >= tr_length;
 }
+
+double cda_rail::simulator::GreedySimulator::obj(
+    std::vector<int> tr_exit_times) const {
+  if (tr_exit_times.size() !=
+      instance->get_timetable().get_train_list().size()) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Train exit times size does not match the number of trains.");
+  }
+
+  double obj_val = 0.0;
+  for (size_t tr = 0; tr < tr_exit_times.size(); ++tr) {
+    if (tr_exit_times.at(tr) < 0) {
+      continue;
+    }
+    obj_val += instance->get_train_weights().at(tr) *
+               static_cast<double>(tr_exit_times.at(tr));
+  }
+  return obj_val;
+}
+
+bool cda_rail::simulator::GreedySimulator::is_final_state() const {
+  for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
+       ++tr) {
+    if (train_edges.at(tr).empty()) {
+      return false;
+    }
+    if (instance->get_schedule(tr).get_stops().size() !=
+        stop_positions.at(tr).size()) {
+      return false; // Not all stops have been set for the train
+    }
+    if (instance->const_n().get_edge(train_edges.at(tr).back()).target !=
+        instance->get_schedule(tr).get_exit()) {
+      return false; // Train has not reached the end of its route
+    }
+  }
+  return true; // All trains have reached the end of their route and all stops
+               // have been set
+}

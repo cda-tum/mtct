@@ -212,12 +212,6 @@ private:
       const std::unordered_set<size_t>&             trains_finished_simulating,
       bool late_entry_possible, bool late_exit_possible,
       bool late_stop_possible) const;
-  [[nodiscard]] double train_edge_length(size_t tr) const {
-    if (train_edges.size() <= tr) {
-      throw cda_rail::exceptions::TrainNotExistentException(tr);
-    }
-    return instance->const_n().length_of_path(train_edges.at(tr));
-  };
   [[nodiscard]] DestinationType
   tr_reached_end(size_t                                        tr,
                  const std::vector<std::pair<double, double>>& train_pos) const;
@@ -257,6 +251,13 @@ public:
   get_instance() const {
     return instance;
   }
+
+  [[nodiscard]] double train_edge_length(size_t tr) const {
+    if (train_edges.size() <= tr) {
+      throw cda_rail::exceptions::TrainNotExistentException(tr);
+    }
+    return instance->const_n().length_of_path(train_edges.at(tr));
+  };
 
   void set_train_edges(std::vector<std::vector<size_t>> tr_edges) {
     if (tr_edges.size() != instance->get_timetable().get_train_list().size()) {
@@ -455,6 +456,9 @@ public:
         "Edge " + std::to_string(edge_id) + " not found in train " +
         std::to_string(train_id) + "'s route.");
   };
+
+  [[nodiscard]] double obj(std::vector<int> tr_exit_times) const;
+  [[nodiscard]] bool   is_final_state() const;
 
   [[nodiscard]] std::tuple<bool, std::vector<int>,
                            std::vector<std::pair<int, double>>,

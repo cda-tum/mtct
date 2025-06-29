@@ -3502,5 +3502,60 @@ TEST(GreedySimulation, SimpleNetwork) {
   EXPECT_EQ(braking_times.at(tr12).second, -1);
 }
 
+TEST(GreedySimulation, FinalState) {
+  Network    network;
+  const auto v0  = network.add_vertex("v0", VertexType::TTD);
+  const auto v1  = network.add_vertex("v1", VertexType::TTD);
+  const auto v2  = network.add_vertex("v2", VertexType::TTD);
+  const auto v3a = network.add_vertex("v3a", VertexType::TTD);
+  const auto v3b = network.add_vertex("v3b", VertexType::TTD);
+
+  const auto v0_v1  = network.add_edge(v0, v1, 1000, 50, true);
+  const auto v1_v2  = network.add_edge(v1, v2, 1000, 50, true);
+  const auto v2_v3a = network.add_edge(v2, v3a, 1000, 50, true);
+  const auto v2_v3b = network.add_edge(v2, v3b, 1000, 50, true);
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3a);
+  network.add_successor(v1_v2, v2_v3b);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {198, 400}, 40, v3a, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {198, 400}, 40, v3b, network);
+
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", v1_v2, network);
+  timetable.add_stop(tr1, "Station1", {10, 120}, {40, 150}, 30);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  EXPECT_FALSE(simulator.is_final_state());
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3a});
+  simulator.set_train_edges_of_tr(tr2, {v0_v1, v1_v2, v2_v3b});
+
+  EXPECT_FALSE(simulator.is_final_state());
+
+  simulator.append_stop_edge_to_tr(tr1, v1_v2);
+
+  EXPECT_TRUE(simulator.is_final_state());
+
+  simulator.set_train_edges_of_tr(tr2, {});
+
+  EXPECT_FALSE(simulator.is_final_state());
+
+  simulator.set_train_edges_of_tr(tr2, {v0_v1, v1_v2});
+
+  EXPECT_FALSE(simulator.is_final_state());
+
+  simulator.append_train_edge_to_tr(tr2, v2_v3b);
+
+  EXPECT_TRUE(simulator.is_final_state());
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

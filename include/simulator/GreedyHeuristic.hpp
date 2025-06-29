@@ -70,4 +70,27 @@ greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
   return {feas, bt_val + obj};
 }
 
+[[nodiscard]] inline std::pair<bool, double>
+full_greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
+                      RemainingTimeHeuristicType remaining_time_heuristic_type,
+                      const GreedySimulator&     simulator,
+                      std::vector<int>           tr_exit_times,
+                      const std::vector<std::pair<int, double>>& braking_times,
+                      bool late_stop_possible, bool late_exit_possible,
+                      bool consider_earliest_exit) {
+  bool   feas = true;
+  double obj  = 0.0;
+  for (size_t tr = 0;
+       tr < simulator.get_instance()->get_timetable().get_train_list().size();
+       ++tr) {
+    const auto [feas_tr, obj_tr] = greedy_heuristic(
+        braking_time_heuristic_type, remaining_time_heuristic_type, tr,
+        simulator, tr_exit_times.at(tr), braking_times.at(tr),
+        late_stop_possible, late_exit_possible, consider_earliest_exit);
+    feas = feas && feas_tr;
+    obj += simulator.get_instance()->get_train_weights().at(tr) * obj_tr;
+  }
+  return {feas, obj};
+};
+
 } // namespace cda_rail::simulator
