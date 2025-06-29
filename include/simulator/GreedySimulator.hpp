@@ -252,7 +252,7 @@ public:
   GreedySimulator() = delete;
   [[nodiscard]] bool check_consistency() const;
 
-  [[nodiscard]] const std::shared_ptr<
+  [[nodiscard]] std::shared_ptr<
       const cda_rail::instances::GeneralPerformanceOptimizationInstance>
   get_instance() const {
     return instance;

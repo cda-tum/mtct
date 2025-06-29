@@ -134,7 +134,7 @@ cda_rail::simulator::GreedySimulator::simulate(
             << train_positions.at(tr).second
             << " has MA: " << train_positions.at(tr).second + tr_ma
             << " and max velocity: " << tr_v1;
-      const int tr_edge_len = train_edge_length(tr);
+      const double tr_edge_len = train_edge_length(tr);
       if ((braking_times.at(tr).second < 0) &&
           (instance->const_n().get_edge(train_edges.at(tr).back()).target !=
            tr_schedule.get_exit()) &&

@@ -4,6 +4,7 @@
 #include "GreedySimulator.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <utility>
 #include <vector>
 
