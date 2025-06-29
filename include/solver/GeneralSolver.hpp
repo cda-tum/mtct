@@ -12,6 +12,18 @@
 #include <type_traits>
 
 namespace cda_rail::solver {
+enum class GeneralExportOption : std::uint8_t {
+  NoExport                   = 0,
+  ExportSolution             = 1,
+  ExportSolutionWithInstance = 2
+};
+
+struct GeneralSolutionSettings {
+  GeneralExportOption export_option = GeneralExportOption::NoExport;
+  std::string         name          = "model";
+  std::string         path;
+};
+
 template <typename T, typename S> class GeneralSolver {
   static_assert(
       std::is_base_of_v<cda_rail::instances::GeneralProblemInstance, T>,

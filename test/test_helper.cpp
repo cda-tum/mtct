@@ -2,6 +2,7 @@
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "VSSModel.hpp"
+#include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
 #include "gtest/gtest.h"
 #include <algorithm>
@@ -1801,6 +1802,67 @@ TEST(Helper, EoMBraking) {
   EXPECT_EQ(cda_rail::braking_distance(1, 2), 1.0 / 4.0);
   EXPECT_EQ(cda_rail::braking_distance(2, 2), 1);
   EXPECT_EQ(cda_rail::braking_distance(3, 2), 9.0 / 4.0);
+}
+
+TEST(Helper, GreedySimulatorStateHash) {
+  cda_rail::solver::astar_based::GreedySimulatorState state1;
+  cda_rail::solver::astar_based::GreedySimulatorState state2;
+  cda_rail::solver::astar_based::GreedySimulatorState state3;
+
+  EXPECT_TRUE(state1 == state2);
+  EXPECT_EQ(
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+
+  state1.train_edges.emplace_back();
+  EXPECT_FALSE(state1 == state2);
+  EXPECT_NE(
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+
+  state1.train_edges.emplace_back();
+  state1.train_edges.at(1).emplace_back(1);
+
+  EXPECT_FALSE(state1 == state2);
+  EXPECT_NE(
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+
+  state2.train_edges = {{}, {1}};
+  EXPECT_TRUE(state1 == state2);
+  EXPECT_EQ(
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+
+  state1.stop_positions = {{1, 2}, {0.5, 2.4}, {1.4}};
+  EXPECT_FALSE(state1 == state2);
+  EXPECT_NE(
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+
+  state2.stop_positions = {{1, 2}, {0.5, 2.4}, {1.4}};
+  EXPECT_TRUE(state1 == state2);
+  EXPECT_EQ(
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
+      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+
+  state3.ttd_orders = {{1, 2, 3}};
+
+  std::unordered_set<cda_rail::solver::astar_based::GreedySimulatorState>
+      states;
+  states.insert(state1);
+  states.insert(state3);
+
+  EXPECT_EQ(states.size(), 2);
+  EXPECT_TRUE(states.contains(state1));
+  EXPECT_TRUE(states.contains(state2));
+  EXPECT_TRUE(states.contains(state3));
+
+  states.insert(state2);
+  EXPECT_EQ(states.size(), 2);
+  EXPECT_TRUE(states.contains(state1));
+  EXPECT_TRUE(states.contains(state2));
+  EXPECT_TRUE(states.contains(state3));
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)
