@@ -39,7 +39,7 @@ TEST(GreedyHeuristic, SimpleBrakingTimeHeuristic) {
 
   EXPECT_DEATH(cda_rail::simulator::simple_braking_time_heuristic(
                    tr1, simulator, 100, {50, 60}),
-               "^Assertion failed");
+               "Assertion.*failed");
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3});
 
