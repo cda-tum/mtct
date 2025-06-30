@@ -147,7 +147,8 @@ private:
       return (a.first.first > b.first.first) ||
              (a.first.first == b.first.first && !a.first.second &&
               b.first.second) ||
-             (a.first.first == b.first.first && b.second > a.second);
+             (a.first.first == b.first.first && !a.first.second &&
+              !b.first.second && b.second > a.second);
     }
   };
 
