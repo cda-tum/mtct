@@ -1179,12 +1179,14 @@ double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
   }
 
   const auto route_len     = train_edge_length(tr);
-  const auto exit_distance = route_len + train.length - pos;
+  const auto exit_distance = std::max(
+      0.0,
+      route_len + (tr_schedule.get_v_n() < V_MIN ? 0 : train.length) - pos);
   if (h == 0) {
     return v_ub; // No constraint by exit headway, maximal speed ensured by
                  // future speed restriction headway
   }
-  v_ub = std::min(v_ub, ((2.0 * exit_distance) / dt) - v_0);
+  v_ub = std::max(std::min(v_ub, ((2.0 * exit_distance) / dt) - v_0), 0.0);
   if (v_ub < v_lb - EPS) {
     throw cda_rail::exceptions::ConsistencyException(
         "v_ub < v_lb, this should not have happened.");
