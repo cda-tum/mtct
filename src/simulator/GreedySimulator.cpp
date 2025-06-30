@@ -290,7 +290,7 @@ cda_rail::simulator::GreedySimulator::simulate(
             -instance->get_train_list().get_train(tr).length,
             0.0}; // Initialize positions
         train_velocities.at(tr) = train_schedule.get_v_0();
-        if (!train_schedule.get_stops().empty()) {
+        if (!stop_positions.at(tr).empty()) {
           tr_next_stop_id.at(tr) = 0;
         }
         movement_detected = true;
