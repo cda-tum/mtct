@@ -44,7 +44,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                   tr_schedule.get_entry(),
                   cda_rail::braking_distance(tr_schedule.get_v_0(),
                                              tr_obj.deceleration),
-                  tr_schedule.get_exit());
+                  tr_schedule.get_exit(), {}, true);
       for (const auto& path : entry_paths) {
         GreedySimulatorState new_state{
             .train_edges    = simulator.get_train_edges(),
@@ -121,7 +121,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                   tr_schedule.get_entry(),
                   cda_rail::braking_distance(tr_schedule.get_v_0(),
                                              tr_obj.deceleration),
-                  tr_schedule.get_exit());
+                  tr_schedule.get_exit(), {}, true);
       for (const auto& path : entry_paths) {
         GreedySimulatorState new_state{
             .train_edges    = simulator.get_train_edges(),
