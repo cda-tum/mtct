@@ -405,10 +405,15 @@ TEST(GenPOMovingBlockAStarSolver, SimpleInstance) {
 
 TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "example-networks-gen-po/GeneralSimpleNetworkB6Trains");
+      "example-networks-gen-po/GeneralSimpleNetworkB3Trains");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
-  const auto sol_obj = solver.solve(-1, true);
+  const auto sol_obj = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
+       .consider_earliest_exit = true},
+      {}, -1, true);
 }
 
 // NOLINTEND
