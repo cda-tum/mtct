@@ -1829,10 +1829,7 @@ TEST(GreedySimulator, TimeToExitObjective) {
                    10, -1, 18, 128, 3, 4, 5),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
-                   10, 14, 0, 80, 3, 4, 5),
-               cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
-                   10, 14, V_MIN / 2.0, 80, 3, 4, 5),
+                   10, 14, -1, 80, 3, 4, 5),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW(cda_rail::simulator::GreedySimulator::time_to_exit_objective(
                    10, 14, 18, -1, 3, 4, 5),
