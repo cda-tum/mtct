@@ -3585,7 +3585,7 @@ TEST(GreedySimulation, ExitEntryZero) {
       simulator.simulate(6, false, false, false, true);
   const auto time1 = cda_rail::min_travel_time(0, 0, 20, 4, 2, 2100);
   PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << obj.back() << std::endl;
+        << ", Objective value: " << obj.back() << ", expected: " << time1;
   EXPECT_TRUE(success);
   EXPECT_EQ(obj.size(), 1);
   EXPECT_GE(obj.at(0), time1 - 3);
