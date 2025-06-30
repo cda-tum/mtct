@@ -68,6 +68,16 @@ struct GreedySimulatorState {
            vertex_orders == other.vertex_orders &&
            stop_positions == other.stop_positions;
   }
+
+  bool operator>(const GreedySimulatorState& other) const {
+    const double this_obj = std::accumulate(
+        train_edges.begin(), train_edges.end(), 0.0,
+        [](double sum, const auto& tr_edge) { return sum + tr_edge.size(); });
+    const double other_obj = std::accumulate(
+        other.train_edges.begin(), other.train_edges.end(), 0.0,
+        [](double sum, const auto& tr_edge) { return sum + tr_edge.size(); });
+    return this_obj > other_obj;
+  }
 };
 } // namespace cda_rail::solver::astar_based
 
@@ -136,7 +146,8 @@ private:
                     const StateObjectivePair& b) const {
       return (a.first.first > b.first.first) ||
              (a.first.first == b.first.first && !a.first.second &&
-              b.first.second);
+              b.first.second) ||
+             (a.first.first == b.first.first && b.second > a.second);
     }
   };
 
