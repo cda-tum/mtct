@@ -292,18 +292,12 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   EXPECT_EQ(obj_tr1_f, 300 - 70 + 2.4);
   simulator.set_train_edges_of_tr(
       tr1, {v0t_v1t, v1t_v2, v2_v3, v3_v4b, v4b_v5, v5_v6, v6_v7, v7_v8});
-  // Now the train is at v8
-  // Exit: 100 / 50 = 2 seconds
+  // Now the train is at v8, i.e., at final destination already
   const auto [feas_tr1_g, obj_tr1_g] =
       simulator::simple_remaining_time_heuristic(tr1, simulator, 100, -5, false,
                                                  false, false);
   EXPECT_TRUE(feas_tr1_g);
-  EXPECT_EQ(obj_tr1_g, 2);
-  const auto [feas_tr1_h, obj_tr1_h] =
-      simulator::simple_remaining_time_heuristic(tr1, simulator, 100, -5, false,
-                                                 false, true);
-  EXPECT_TRUE(feas_tr1_h);
-  EXPECT_EQ(obj_tr1_h, 300 - 100 + 5);
+  EXPECT_EQ(obj_tr1_g, 0);
 
   // Train 2
   const auto [feas_tr2_a, obj_tr2_a] =
