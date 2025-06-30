@@ -1659,7 +1659,7 @@ bool cda_rail::simulator::GreedySimulator::is_route_end_valid_stop_pos(
   const auto& next_station_tracks =
       instance->get_station_list().get_station(next_station_name).tracks;
   double len = 0;
-  for (auto it = edges.rbegin(); (len <= tr_length) && (it != edges.rend());
+  for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
        ++it) {
     if (std::find(next_station_tracks.begin(), next_station_tracks.end(),
                   *it) == next_station_tracks.end()) {
