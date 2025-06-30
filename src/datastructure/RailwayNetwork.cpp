@@ -1717,7 +1717,8 @@ cda_rail::Network::separate_stop_edges(const std::vector<size_t>& stop_edges) {
 std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
     std::optional<size_t> v_0, std::optional<size_t> e_0, double desired_length,
     bool reverse_direction, std::optional<size_t> exit_node,
-    std::vector<size_t> edges_used_by_train) const {
+    std::vector<size_t> edges_used_by_train,
+    bool                return_successors_if_zero) const {
   /**
    * Finds all routes from a specified starting point in the specified
    * direction. The routes are of a specified length, i.e., at least that long,
@@ -1745,6 +1746,16 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
   }
   if (e_0.has_value() && !has_edge(e_0.value())) {
     throw exceptions::EdgeNotExistentException(e_0.value());
+  }
+
+  if (return_successors_if_zero && desired_length == 0 && v_0.has_value()) {
+    const auto neighboring_edges =
+        reverse_direction ? in_edges(v_0.value()) : out_edges(v_0.value());
+    std::vector<std::vector<size_t>> ret_val;
+    for (const auto& s : neighboring_edges) {
+      ret_val.emplace_back(1, s);
+    }
+    return ret_val;
   }
 
   if (desired_length <= 0) {

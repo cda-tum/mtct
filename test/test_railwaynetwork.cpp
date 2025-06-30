@@ -572,6 +572,23 @@ TEST(Functionality, NetworkForwardPathsFromVertex) {
                         std::vector<size_t>{e_4_5}) != forward_paths_14.end())
       << "e_4_5 is not in the forward paths from v_4 with length 50 and exit "
          "node v5";
+
+  EXPECT_THROW(
+      network.all_paths_of_length_starting_in_vertex(v_3, 0, v_5, {}, false),
+      cda_rail::exceptions::InvalidInputException);
+
+  const auto forward_paths_15 =
+      network.all_paths_of_length_starting_in_vertex(v_3, 0, v_5, {}, true);
+  EXPECT_EQ(forward_paths_15.size(), 3);
+  EXPECT_TRUE(std::find(forward_paths_15.begin(), forward_paths_15.end(),
+                        std::vector<size_t>{e_3_2}) != forward_paths_15.end())
+      << "e_3_2 is not in the forward paths from v_3 with length 0";
+  EXPECT_TRUE(std::find(forward_paths_15.begin(), forward_paths_15.end(),
+                        std::vector<size_t>{e_3_0}) != forward_paths_15.end())
+      << "e_3_0 is not in the forward paths from v_3 with length 0";
+  EXPECT_TRUE(std::find(forward_paths_15.begin(), forward_paths_15.end(),
+                        std::vector<size_t>{e_3_4}) != forward_paths_15.end())
+      << "e_3_4 is not in the forward paths from v_3 with length 0";
 }
 
 TEST(Functionality, NetworkForwardPathsFromEdge) {
