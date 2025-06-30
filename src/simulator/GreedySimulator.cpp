@@ -235,7 +235,8 @@ cda_rail::simulator::GreedySimulator::simulate(
                   << stop_info.get_station_name() << ", stopping until "
                   << tr_stop_until.at(tr);
 
-            if (tr_next_stop_id.at(tr).value() + 1 < tr_stops.size()) {
+            if (tr_next_stop_id.at(tr).value() + 1 <
+                stop_positions.at(tr).size()) {
               // Update next stop ID
               tr_next_stop_id.at(tr) = tr_next_stop_id.at(tr).value() + 1;
               PLOGV << "Next stop: "
