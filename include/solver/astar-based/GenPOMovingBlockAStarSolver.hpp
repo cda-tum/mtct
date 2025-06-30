@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "simulator/GreedySimulator.hpp"
@@ -10,8 +11,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 // If TEST_FRIENDS has value true, the corresponding test is friended to test

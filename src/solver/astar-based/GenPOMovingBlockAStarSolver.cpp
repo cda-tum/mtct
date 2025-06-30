@@ -3,8 +3,10 @@
 #include "EOMHelper.hpp"
 #include "simulator/GreedySimulator.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <unordered_set>
+#include <vector>
 
 std::unordered_set<cda_rail::solver::astar_based::GreedySimulatorState>
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::

@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <utility>
+#include <vector>
 
 namespace cda_rail::simulator {
 enum class BrakingTimeHeuristicType : std::uint8_t { Simple };
