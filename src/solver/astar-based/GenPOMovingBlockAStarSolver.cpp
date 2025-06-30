@@ -187,18 +187,29 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     explored_states.insert(init_state);
   }
 
-  size_t iteration = 0;
+  size_t               iteration = 0;
+  double               best_obj  = cda_rail::INF;
+  GreedySimulatorState best_state;
 
   // A* iteration
   while (!pq.empty()) {
     iteration++;
-    PLOGD << "----------------------------";
-    PLOGD << "Iteration " << iteration << ", queue size: " << pq.size();
 
     const auto [current_obj, current_state] = pq.top();
     pq.pop();
-    PLOGD << "Exploring state with objective = " << current_obj.first
-          << ", final = " << (current_obj.second ? "yes" : "no");
+
+    if (iteration % 100 == 0) {
+      PLOGD << "----------------------------";
+      PLOGD << "Iteration " << iteration << ", queue size: " << pq.size();
+      PLOGD << "Best objective so far: " << best_obj;
+      PLOGD << "Current lower bound: " << current_obj.first;
+    } else {
+      PLOGV << "----------------------------";
+      PLOGV << "Iteration " << iteration << ", queue size: " << pq.size();
+      PLOGV << "Best objective so far: " << best_obj;
+      PLOGV << "Current lower bound: " << current_obj.first;
+    }
+
     if (current_obj.second) {
       PLOGI << "Found final state with objective = " << current_obj.first
             << " after " << iteration << " iterations.";
@@ -212,17 +223,17 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
     const auto next_states_set =
         next_states(simulator, solver_strategy_input.next_state_strategy);
-    PLOGD << "Found " << next_states_set.size() << " next states.";
+    PLOGV << "Found " << next_states_set.size() << " next states.";
     size_t i = 0;
     for (const auto& s : next_states_set) {
       i++;
-      PLOGD << "Processing next state " << i << "/" << next_states_set.size();
+      PLOGV << "Processing next state " << i << "/" << next_states_set.size();
       simulator.set_train_edges(s.train_edges);
       simulator.set_ttd_orders(s.ttd_orders);
       simulator.set_vertex_orders(s.vertex_orders);
       simulator.set_stop_positions(s.stop_positions);
       if (explored_states.contains(s)) {
-        PLOGD << "State already explored, skipping.";
+        PLOGV << "State already explored, skipping.";
         continue;
       }
 
@@ -233,7 +244,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
                              model_detail_input.late_stop_possible,
                              model_detail_input.limit_speed_by_leaving_edges);
       if (!feas) {
-        PLOGD << "State is infeasible, skipping.";
+        PLOGV << "State is infeasible, skipping.";
         continue;
       }
       const auto obj = simulator::objective_val(simulator, exit_times);
@@ -246,14 +257,19 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
               solver_strategy_input.consider_earliest_exit);
       const auto new_obj = obj + heuristic_val;
       const auto final   = simulator.is_final_state();
-      PLOGD << "Objective = " << obj << ", heuristic = " << heuristic_val
+      PLOGV << "Objective = " << obj << ", heuristic = " << heuristic_val
             << ", total = " << new_obj << ", feasibility = "
             << (heuristic_feas ? "feasible" : "infeasible")
             << ", final = " << (final ? "yes" : "no");
+      if (final && new_obj < best_obj) {
+        PLOGD << "Explored new best final state with objective = " << new_obj;
+        best_obj   = new_obj;
+        best_state = s;
+      }
       if (heuristic_feas) {
         pq.push({{new_obj, final}, s});
         explored_states.insert(s);
-        PLOGD << "State added to priority queue.";
+        PLOGV << "State added to priority queue.";
       }
     }
   }
