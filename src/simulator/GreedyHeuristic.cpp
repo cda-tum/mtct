@@ -91,6 +91,15 @@ std::pair<bool, double> cda_rail::simulator::simple_remaining_time_heuristic(
     heuristic_exit_time =
         std::max(heuristic_exit_time,
                  static_cast<double>(tr_schedule.get_t_0_range().first));
+  } else {
+    // Check if the train is already at the exit vertex
+    const auto& last_edge =
+        simulator.get_instance()->const_n().get_edge(tr_edges.back());
+    if (tr_schedule.get_exit() == last_edge.target &&
+        tr_stops.size() == simulator.get_stop_positions_of_tr(tr).size()) {
+      // Train has reached the exit vertex, no further time needed
+      return {true, 0.0};
+    }
   }
 
   const auto first_next_stop = simulator.get_stop_positions_of_tr(tr).size();
