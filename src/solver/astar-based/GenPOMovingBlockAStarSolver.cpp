@@ -290,7 +290,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     const auto [current_obj, current_state] = pq.top();
     pq.pop();
 
-    if (iteration % 100 == 0) {
+    if (iteration % 10000 == 0) {
       PLOGD << "----------------------------";
       PLOGD << "Iteration " << iteration << ", queue size: " << pq.size();
       PLOGD << "Best objective so far: " << best_obj;
@@ -354,7 +354,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
             << (heuristic_feas ? "feasible" : "infeasible")
             << ", final = " << (final ? "yes" : "no");
       if (final && new_obj < best_obj) {
-        PLOGD << "Explored new best final state with objective = " << new_obj;
+        PLOGD << "Explored new best final state with objective = " << new_obj
+              << " after " << iteration << " iterations.";
         best_obj   = new_obj;
         best_state = s;
       }
