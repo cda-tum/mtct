@@ -3416,6 +3416,13 @@ TEST(GreedySimulation, SimpleNetwork) {
   const auto v14b = instance.const_n().get_vertex_index("v14b");
   const auto v14c = instance.const_n().get_vertex_index("v14c");
 
+  simulator.set_train_edges_of_tr(tr00, {v14a_v13a});
+  simulator.set_vertex_orders_of_vertex(v14a, {tr00});
+  const auto [success_init, obj_init, braking_times_init,
+              vertex_headways_init] =
+      simulator.simulate(6, false, false, false, true);
+  EXPECT_TRUE(success_init);
+
   simulator.set_train_edges_of_tr(tr00, {v14a_v13a, v13a_v12, v12_v11, v11_v10,
                                          v10_v9, v9_v8a, v8a_v7a, v7a_v6, v6_v5,
                                          v5_v4, v4_v3, v3_v2a, v2a_v1a});
