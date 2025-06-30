@@ -31,6 +31,7 @@
 #if TEST_FRIENDS
 class GenPOMovingBlockAStarSolver;
 class GenPOMovingBlockAStarSolver_NextStates_Test;
+class GenPOMovingBlockAStarSolver_NextStatesTTD_Test;
 #endif
 
 namespace cda_rail::solver::astar_based {
@@ -124,6 +125,7 @@ class GenPOMovingBlockAStarSolver
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStatesTTD);
 #endif
 
   using StateObjectivePair =
