@@ -1262,9 +1262,9 @@ cda_rail::simulator::GreedySimulator::time_to_exit_objective(
     throw cda_rail::exceptions::InvalidInputException(
         "Velocity at the end of the time step must be non-negative.");
   }
-  if (v_e < V_MIN) {
+  if (v_e < 0) {
     throw cda_rail::exceptions::InvalidInputException(
-        "Exit velocity must be positive for simulation.");
+        "Exit velocity must be non-negative.");
   }
   if (s < 0) {
     throw cda_rail::exceptions::InvalidInputException(
