@@ -12,9 +12,11 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <queue>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 // If TEST_FRIENDS has value true, the corresponding test is friended to test
@@ -51,7 +53,8 @@ struct SolverStrategyMBAStar {
       simulator::BrakingTimeHeuristicType::Simple;
   simulator::RemainingTimeHeuristicType remaining_time_heuristic_type =
       simulator::RemainingTimeHeuristicType::Simple;
-  NextStateStrategy next_state_strategy = NextStateStrategy::SingleEdge;
+  NextStateStrategy next_state_strategy    = NextStateStrategy::SingleEdge;
+  bool              consider_earliest_exit = true;
 };
 
 struct GreedySimulatorState {
@@ -123,6 +126,22 @@ private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
 #endif
+
+  using StateObjectivePair =
+      std::pair<std::pair<double, bool>, GreedySimulatorState>;
+
+  struct CompareByObjective {
+    bool operator()(const StateObjectivePair& a,
+                    const StateObjectivePair& b) const {
+      return (a.first.first > b.first.first) ||
+             (a.first.first == b.first.first && !a.first.second &&
+              b.first.second);
+    }
+  };
+
+  using MinPriorityQueue =
+      std::priority_queue<StateObjectivePair, std::vector<StateObjectivePair>,
+                          CompareByObjective>;
 
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);

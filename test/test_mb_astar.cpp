@@ -218,5 +218,32 @@ TEST(GenPOMovingBlockAStarSolver, NextStates) {
   EXPECT_TRUE(next_states7.empty());
 }
 
+TEST(GenPOMovingBlockAStarSolver, SimpleInstance) {
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {30, 400}, 40, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto sol_obj = solver.solve(-1, true);
+}
+
+/**
+TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
+    cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+            "example-networks-gen-po/GeneralSimpleNetworkB6Trains");
+
+    cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+    const auto sol_obj = solver.solve(-1, true);
+}
+ **/
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
