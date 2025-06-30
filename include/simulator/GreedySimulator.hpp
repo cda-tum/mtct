@@ -432,6 +432,8 @@ public:
     append_stop_edge_to_tr(train_id, tr_edges.back());
   };
   [[nodiscard]] bool is_current_pos_valid_stop_position(size_t tr) const;
+  [[nodiscard]] bool
+  is_route_end_valid_stop_pos(size_t tr, std::vector<size_t> edges) const;
   [[nodiscard]] const std::vector<std::vector<double>>&
   get_stop_positions() const {
     return stop_positions;

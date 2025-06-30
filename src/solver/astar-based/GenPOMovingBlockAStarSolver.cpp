@@ -90,6 +90,98 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
   return next_states;
 }
 
+std::unordered_set<cda_rail::solver::astar_based::GreedySimulatorState>
+cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+    next_states_next_ttd(
+        const cda_rail::simulator::GreedySimulator& simulator) {
+  /** This function determines all possible next states. This state could be
+   * obtained by:
+   * - a new train entering the network
+   * - a single train advancing on a path to the next TTD section
+   * - a single train advancing to a edge of its next stop and halting
+   */
+
+  std::unordered_set<GreedySimulatorState> next_states;
+  for (size_t tr = 0;
+       tr < simulator.get_instance()->get_timetable().get_train_list().size();
+       ++tr) {
+    const auto& train_edges = simulator.get_train_edges_of_tr(tr);
+    const auto& tr_schedule =
+        simulator.get_instance()->get_timetable().get_schedule(tr);
+    if (train_edges.empty()) {
+      // Train can enter the network
+      const auto& tr_schedule =
+          simulator.get_instance()->get_timetable().get_schedule(tr);
+      const auto& tr_obj =
+          simulator.get_instance()->get_train_list().get_train(tr);
+      const auto entry_paths =
+          simulator.get_instance()
+              ->const_n()
+              .all_paths_of_length_starting_in_vertex(
+                  tr_schedule.get_entry(),
+                  cda_rail::braking_distance(tr_schedule.get_v_0(),
+                                             tr_obj.deceleration),
+                  tr_schedule.get_exit());
+      for (const auto& path : entry_paths) {
+        GreedySimulatorState new_state{
+            .train_edges    = simulator.get_train_edges(),
+            .ttd_orders     = simulator.get_ttd_orders(),
+            .vertex_orders  = simulator.get_vertex_orders(),
+            .stop_positions = simulator.get_stop_positions()};
+        new_state.train_edges.at(tr) = path;
+        new_state.vertex_orders.at(tr_schedule.get_entry()).emplace_back(tr);
+        next_state_ttd_helper(tr, new_state, simulator, path);
+        next_state_exit_vertex_helper(tr, new_state, simulator);
+        next_states.insert(new_state);
+
+        if (simulator.is_route_end_valid_stop_pos(tr, path)) {
+          // Train can stop at the current edge
+          new_state.stop_positions.at(tr).emplace_back(
+              simulator.get_instance()->const_n().length_of_path(path));
+          next_states.insert(new_state);
+        }
+      }
+    } else {
+      // Move all the way to the next TTD section
+      const auto paths_to_next_ttd =
+          simulator.get_instance()->const_n().all_paths_ending_at_ttd(
+              train_edges.back(), simulator.get_ttd_sections(),
+              tr_schedule.get_exit());
+      for (const auto& path : paths_to_next_ttd) {
+        GreedySimulatorState new_state{
+            .train_edges    = simulator.get_train_edges(),
+            .ttd_orders     = simulator.get_ttd_orders(),
+            .vertex_orders  = simulator.get_vertex_orders(),
+            .stop_positions = simulator.get_stop_positions()};
+        for (size_t e_idx = 0; e_idx < path.size(); ++e_idx) {
+          const auto& e = path.at(e_idx);
+          new_state.train_edges.at(tr).emplace_back(e);
+          if (simulator.is_route_end_valid_stop_pos(
+                  tr, new_state.train_edges.at(tr))) {
+            GreedySimulatorState new_state_stop = new_state;
+            new_state_stop.stop_positions.at(tr).emplace_back(
+                simulator.get_instance()->const_n().length_of_path(
+                    new_state_stop.train_edges.at(tr)));
+            next_state_ttd_helper(
+                tr, new_state_stop, simulator,
+                std::vector<size_t>(
+                    path.begin(),
+                    path.begin() +
+                        static_cast<std::vector<size_t>::difference_type>(
+                            e_idx + 1)));
+            next_state_exit_vertex_helper(tr, new_state_stop, simulator);
+            next_states.insert(new_state_stop);
+          }
+        }
+        next_state_ttd_helper(tr, new_state, simulator, path);
+        next_state_exit_vertex_helper(tr, new_state, simulator);
+        next_states.insert(new_state);
+      }
+    }
+  }
+  return next_states;
+}
+
 void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     next_state_ttd_helper(
         size_t tr, cda_rail::solver::astar_based::GreedySimulatorState& state,

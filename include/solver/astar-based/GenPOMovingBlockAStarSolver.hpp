@@ -35,9 +35,8 @@ class GenPOMovingBlockAStarSolver_NextStates_Test;
 
 namespace cda_rail::solver::astar_based {
 enum class NextStateStrategy : std::uint8_t {
-  SingleEdge                = 0,
-  LongestSectionWithoutTTDs = 1,
-  NextStationOrTTD          = 2
+  SingleEdge = 0,
+  NextTTD    = 1,
 };
 
 struct ModelDetail {
@@ -145,6 +144,9 @@ private:
 
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);
+  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
+  next_states_next_ttd(const simulator::GreedySimulator& simulator);
+
   static void next_state_ttd_helper(size_t tr, GreedySimulatorState& state,
                                     const simulator::GreedySimulator& simulator,
                                     const std::vector<size_t>& new_edges);
@@ -157,12 +159,8 @@ private:
     switch (next_state_strategy_input) {
     case NextStateStrategy::SingleEdge:
       return next_states_single_edge(simulator);
-    case NextStateStrategy::LongestSectionWithoutTTDs:
-      throw std::logic_error(
-          "LongestSectionWithoutTTDs strategy is not implemented yet.");
-    case NextStateStrategy::NextStationOrTTD:
-      throw std::logic_error(
-          "NextStationOrTTD strategy is not implemented yet.");
+    case NextStateStrategy::NextTTD:
+      return next_states_next_ttd(simulator);
     default:
       throw cda_rail::exceptions::ConsistencyException(
           "Unknown next state strategy.");

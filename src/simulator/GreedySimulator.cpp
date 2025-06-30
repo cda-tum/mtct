@@ -1641,17 +1641,8 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
                   route_len + train.length - acceleration_dist - pos);
 }
 
-bool cda_rail::simulator::GreedySimulator::is_current_pos_valid_stop_position(
-    size_t tr) const {
-  /**
-   * This function checks if the current last edge can be used as a stop for a
-   * specific train. A stop is possible, if the train length back from the
-   * target vertex is fully within the next station.
-   *
-   * @param tr: The id of the train to check.
-   * @return: A boolean indicating whether the current position is a valid stop
-   * position.
-   */
+bool cda_rail::simulator::GreedySimulator::is_route_end_valid_stop_pos(
+    size_t tr, std::vector<size_t> edges) const {
   if (!instance->get_timetable().get_train_list().has_train(tr)) {
     throw cda_rail::exceptions::TrainNotExistentException(tr);
   }
@@ -1668,8 +1659,8 @@ bool cda_rail::simulator::GreedySimulator::is_current_pos_valid_stop_position(
   const auto& next_station_tracks =
       instance->get_station_list().get_station(next_station_name).tracks;
   double len = 0;
-  for (auto it = train_edges.at(tr).rbegin();
-       (len <= tr_length) && (it != train_edges.at(tr).rend()); ++it) {
+  for (auto it = edges.rbegin(); (len <= tr_length) && (it != edges.rend());
+       ++it) {
     if (std::find(next_station_tracks.begin(), next_station_tracks.end(),
                   *it) == next_station_tracks.end()) {
       // Track does not belong to the next station
@@ -1679,6 +1670,20 @@ bool cda_rail::simulator::GreedySimulator::is_current_pos_valid_stop_position(
   }
 
   return len >= tr_length;
+}
+
+bool cda_rail::simulator::GreedySimulator::is_current_pos_valid_stop_position(
+    size_t tr) const {
+  /**
+   * This function checks if the current last edge can be used as a stop for a
+   * specific train. A stop is possible, if the train length back from the
+   * target vertex is fully within the next station.
+   *
+   * @param tr: The id of the train to check.
+   * @return: A boolean indicating whether the current position is a valid stop
+   * position.
+   */
+  return is_route_end_valid_stop_pos(tr, train_edges.at(tr));
 }
 
 double cda_rail::simulator::GreedySimulator::obj(
