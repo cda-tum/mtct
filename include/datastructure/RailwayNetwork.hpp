@@ -139,6 +139,11 @@ private:
                                                 double      max_v,
                                                 bool        use_minimal_time);
 
+  [[nodiscard]] std::vector<std::vector<size_t>> all_paths_ending_at_ttd(
+      size_t e_0, const std::vector<std::vector<size_t>>& ttd_sections,
+      std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
+      bool first_edge) const;
+
 public:
   // Constructors
   Network() = default;
@@ -317,6 +322,10 @@ public:
     return all_routes_of_given_length(std::nullopt, e, desired_len, true,
                                       exit_node, std::move(edges_to_consider));
   }
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_paths_ending_at_ttd(size_t                                  e_0,
+                          const std::vector<std::vector<size_t>>& ttd_sections,
+                          std::optional<size_t> exit_node) const;
 
   [[nodiscard]] bool has_vertex(size_t index) const {
     return (index < vertices.size());

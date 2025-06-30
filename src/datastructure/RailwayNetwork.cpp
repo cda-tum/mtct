@@ -2235,3 +2235,73 @@ double cda_rail::Network::delta_dist_helper(const Edge& successor_edge,
   }
   return delta_dist;
 }
+
+std::vector<std::vector<size_t>> cda_rail::Network::all_paths_ending_at_ttd(
+    size_t e_0, const std::vector<std::vector<size_t>>& ttd_sections,
+    std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
+    bool first_edge) const {
+  /**
+   * Finds all paths starting at edge e_0 and ending at a TTD section, which is
+   * not safe_ttd.
+   */
+  std::vector<std::vector<size_t>> ret_val;
+
+  if (!has_edge(e_0)) {
+    throw exceptions::EdgeNotExistentException(e_0);
+  }
+  for (size_t ttd_idx = 0; ttd_idx < ttd_sections.size(); ++ttd_idx) {
+    if (safe_ttd.has_value() && ttd_idx == safe_ttd.value()) {
+      continue;
+    }
+    const auto& ttd_section = ttd_sections.at(ttd_idx);
+    if (std::find(ttd_section.begin(), ttd_section.end(), e_0) !=
+        ttd_section.end()) {
+      if (!first_edge) {
+        // Edge is in TTD section, but not the first edge
+        return {{}};
+      }
+      safe_ttd = ttd_idx;
+    }
+  }
+
+  const auto& e_0_edge = get_edge(e_0);
+  if (exit_node.has_value() && e_0_edge.target == exit_node.value()) {
+    // Edge is already at exit node
+    return {{e_0}};
+  }
+
+  const auto possible_successors = get_successors(e_0);
+  for (const auto& successor : possible_successors) {
+    const auto successor_paths = all_paths_ending_at_ttd(
+        successor, ttd_sections, exit_node, safe_ttd, false);
+    for (const auto& successor_path : successor_paths) {
+      ret_val.emplace_back();
+      ret_val.back().emplace_back(e_0);
+      ret_val.back().insert(ret_val.back().end(), successor_path.begin(),
+                            successor_path.end());
+    }
+  }
+
+  return ret_val;
+}
+
+std::vector<std::vector<size_t>> cda_rail::Network::all_paths_ending_at_ttd(
+    size_t e_0, const std::vector<std::vector<size_t>>& ttd_sections,
+    std::optional<size_t> exit_node) const {
+  /**
+   * All paths starting after(!) e_0 and ending in a TTD section.
+   */
+  std::vector<std::vector<size_t>> ret_val;
+
+  const auto possible_successors = get_successors(e_0);
+  for (const auto& successor : possible_successors) {
+    const auto successor_paths =
+        all_paths_ending_at_ttd(successor, ttd_sections, exit_node, {}, true);
+    for (const auto& successor_path : successor_paths) {
+      ret_val.emplace_back();
+      ret_val.back().insert(ret_val.back().end(), successor_path.begin(),
+                            successor_path.end());
+    }
+  }
+  return ret_val;
+}

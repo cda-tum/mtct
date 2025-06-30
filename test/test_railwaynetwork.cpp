@@ -3999,4 +3999,85 @@ TEST(Functionality, NetworkRouteLen) {
                cda_rail::exceptions::EdgeNotExistentException);
 }
 
+TEST(Functionality, NetworkNextTTD) {
+  cda_rail::Network network;
+  const auto        v0 = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto        v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2  = network.add_vertex("v2", cda_rail::VertexType::NoBorder);
+  const auto v3a = network.add_vertex("v3a", cda_rail::VertexType::TTD);
+  const auto v3b = network.add_vertex("v3b", cda_rail::VertexType::TTD);
+  const auto v4a = network.add_vertex("v4a", cda_rail::VertexType::TTD);
+  const auto v4b = network.add_vertex("v4b", cda_rail::VertexType::TTD);
+  const auto v5  = network.add_vertex("v5", cda_rail::VertexType::NoBorder);
+  const auto v6  = network.add_vertex("v6", cda_rail::VertexType::TTD);
+  const auto v7  = network.add_vertex("v7", cda_rail::VertexType::NoBorder);
+  const auto v8a = network.add_vertex("v8a", cda_rail::VertexType::TTD);
+  const auto v8b = network.add_vertex("v8b", cda_rail::VertexType::TTD);
+  const auto v9a = network.add_vertex("v9", cda_rail::VertexType::TTD);
+  const auto v9b = network.add_vertex("v9b", cda_rail::VertexType::TTD);
+
+  const auto v0_v1   = network.add_edge(v0, v1, 100, 20, true);
+  const auto v1_v2   = network.add_edge(v1, v2, 10, 20, false);
+  const auto v2_v3a  = network.add_edge(v2, v3a, 10, 20, false);
+  const auto v2_v3b  = network.add_edge(v2, v3b, 10, 20, false);
+  const auto v3a_v4a = network.add_edge(v3a, v4a, 100, 20, true);
+  const auto v3b_v4b = network.add_edge(v3b, v4b, 100, 20, true);
+  const auto v4a_v5  = network.add_edge(v4a, v5, 10, 20, false);
+  const auto v4b_v5  = network.add_edge(v4b, v5, 10, 20, false);
+  const auto v5_v6   = network.add_edge(v5, v6, 10, 20, false);
+  const auto v6_v7   = network.add_edge(v6, v7, 10, 20, false);
+  const auto v7_v8a  = network.add_edge(v7, v8a, 10, 20, false);
+  const auto v7_v8b  = network.add_edge(v7, v8b, 10, 20, false);
+  const auto v8a_v9a = network.add_edge(v8a, v9a, 100, 20, true);
+  const auto v8b_v9b = network.add_edge(v8b, v9b, 100, 20, true);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3a);
+  network.add_successor(v1_v2, v2_v3b);
+  network.add_successor(v2_v3a, v3a_v4a);
+  network.add_successor(v2_v3b, v3b_v4b);
+  network.add_successor(v3a_v4a, v4a_v5);
+  network.add_successor(v3b_v4b, v4b_v5);
+  network.add_successor(v4a_v5, v5_v6);
+  network.add_successor(v4b_v5, v5_v6);
+  network.add_successor(v5_v6, v6_v7);
+  network.add_successor(v6_v7, v7_v8a);
+  network.add_successor(v6_v7, v7_v8b);
+  network.add_successor(v7_v8a, v8a_v9a);
+  network.add_successor(v7_v8b, v8b_v9b);
+
+  const auto& ttd_sections = network.unbreakable_sections();
+  EXPECT_EQ(ttd_sections.size(), 3);
+
+  const auto routing1 =
+      network.all_paths_ending_at_ttd(v0_v1, ttd_sections, v9a);
+  // (v1_v2, v2_v3a, v3a_v3b) and (v1_v2, v2_v3b, v3b_c4b) are two different
+  // paths
+  EXPECT_EQ(routing1.size(), 2);
+  EXPECT_TRUE(std::find(routing1.begin(), routing1.end(),
+                        std::vector<size_t>{v1_v2, v2_v3a, v3a_v4a}) !=
+              routing1.end());
+  EXPECT_TRUE(std::find(routing1.begin(), routing1.end(),
+                        std::vector<size_t>{v1_v2, v2_v3b, v3b_v4b}) !=
+              routing1.end());
+
+  const auto routing2 =
+      network.all_paths_ending_at_ttd(v2_v3a, ttd_sections, v9a);
+  // Expect only (v3a_v4a) as the only path
+  EXPECT_EQ(routing2.size(), 1);
+  EXPECT_EQ(routing2.at(0), std::vector<size_t>({v3a_v4a}));
+
+  const auto routing3 =
+      network.all_paths_ending_at_ttd(v3a_v4a, ttd_sections, v9b);
+  // Expect only (v4a_v5, v5_v6)
+  EXPECT_EQ(routing3.size(), 1);
+  EXPECT_EQ(routing3.at(0), std::vector<size_t>({v4a_v5, v5_v6}));
+
+  const auto routing4 =
+      network.all_paths_ending_at_ttd(v5_v6, ttd_sections, v9b);
+  // Expect only (v6_v7, v7_v8b, v8b_v9b)
+  EXPECT_EQ(routing4.size(), 1);
+  EXPECT_EQ(routing4.at(0), std::vector<size_t>({v6_v7, v7_v8b, v8b_v9b}));
+}
+
 // NOLINTEND(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores,bugprone-unchecked-optional-access)
