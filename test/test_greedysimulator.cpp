@@ -3595,5 +3595,35 @@ TEST(GreedySimulation, ExitEntryZero) {
   EXPECT_EQ(braking_times.at(tr1).second, -1);
 }
 
+TEST(GreedySimulation, FaultyInstance) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "example-networks-gen-po/GeneralSimpleNetworkB6Trains");
+  const auto ttd_sections = instance.const_n().unbreakable_sections();
+  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+
+  simulator.set_train_edges_of_tr(
+      0, {21, 23, 24, 25, 26, 27, 29, 31, 33, 34, 35, 37, 39});
+  simulator.set_train_edges_of_tr(
+      2, {1, 3, 4, 5, 6, 7, 9, 11, 13, 14, 15, 17, 19});
+  simulator.set_train_edges_of_tr(3, {0, 2, 4, 5, 6, 7, 9, 11, 13, 14});
+  simulator.set_train_edges_of_tr(
+      5, {20, 22, 24, 25, 26, 27, 29, 31, 33, 34, 35, 36, 38});
+  simulator.set_ttd_orders_of_ttd(0, {0, 2, 5, 3});
+  simulator.set_ttd_orders_of_ttd(1, {0, 2, 3, 5});
+  simulator.set_ttd_orders_of_ttd(2, {0, 2, 5});
+  simulator.set_ttd_orders_of_ttd(3, {0, 2, 3, 5});
+  simulator.set_vertex_orders_of_vertex(1, {3, 5});
+  simulator.set_vertex_orders_of_vertex(2, {2});
+  simulator.set_vertex_orders_of_vertex(21, {0});
+  simulator.set_vertex_orders_of_vertex(22, {5});
+  simulator.set_stop_positions_of_tr(0, {475});
+  simulator.set_stop_positions_of_tr(2, {475});
+
+  EXPECT_NO_THROW(simulator.simulate(6, false, false, false, true));
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
