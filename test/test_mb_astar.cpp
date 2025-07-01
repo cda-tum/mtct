@@ -413,7 +413,11 @@ TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
        .consider_earliest_exit = true},
-      {}, -1, true);
+      {}, -1, false);
+
+  // TODO: Functionality to export solution
+  // EXPECT_TRUE(sol_obj.has_solution());
+  // EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
 }
 
 // NOLINTEND
