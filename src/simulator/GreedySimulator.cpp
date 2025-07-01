@@ -1189,6 +1189,21 @@ double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
     return v_ub; // No constraint by exit headway, maximal speed ensured by
                  // future speed restriction headway
   }
+
+  if (((v_0 + tr_schedule.get_v_n()) / 2.0 * static_cast<double>(dt) >=
+       exit_distance) &&
+      h < dt) {
+    // This might happen due to discretization and should not lead to
+    // infeasibility
+    if (tr_schedule.get_v_n() >= v_ub) {
+      return v_ub;
+    } else if (tr_schedule.get_v_n() <= v_lb) {
+      return v_lb;
+    } else {
+      return tr_schedule.get_v_n();
+    }
+  }
+
   v_ub = std::max(std::min(v_ub, ((2.0 * exit_distance) / dt) - v_0), 0.0);
   if (v_ub < v_lb - EPS) {
     throw cda_rail::exceptions::ConsistencyException(
