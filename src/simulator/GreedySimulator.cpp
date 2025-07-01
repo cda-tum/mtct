@@ -122,9 +122,12 @@ cda_rail::simulator::GreedySimulator::simulate(
 
       // Calculate MAs for every train
       const auto& tr_schedule = instance->get_timetable().get_schedule(tr);
-      const auto  h =
-          std::max({tr_schedule.get_t_n_range().first - t,
-                    vertex_headways.at(tr_schedule.get_exit()) - t, 0});
+      auto        h           = std::max({tr_schedule.get_t_n_range().first - t,
+                                          vertex_headways.at(tr_schedule.get_exit()) - t, 0});
+      if (h % dt != 0) {
+        h += dt - (h % dt); // Round up to the next time step
+      }
+      assert(h % dt == 0);
 
       const auto [tr_ma, tr_v1] =
           get_ma_and_maxv(tr, train_velocities, tr_next_stop_id.at(tr), h, dt,
