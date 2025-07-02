@@ -1,5 +1,6 @@
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
+#include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "plog/Log.h"
 #include "plog/Logger.h"
@@ -8,6 +9,7 @@
 #include "simulator/GreedySimulator.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <unordered_set>
 #include <vector>
@@ -244,6 +246,13 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   std::unordered_set<GreedySimulatorState> explored_states;
   MinPriorityQueue                         pq;
 
+  cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
+      cda_rail::instances::GeneralPerformanceOptimizationInstance>
+      sol_object(instance);
+
+  model_created =
+      std::chrono::high_resolution_clock::now(); // Start model creation timer
+
   PLOGI << "Starting A* search";
 
   const auto [init_feas, init_exit_times, init_braking, init_headways] =
@@ -285,6 +294,21 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
   // A* iteration
   while (!pq.empty()) {
+    // If timeout is reached break the loop
+    if (time_limit > 0) {
+      const auto now = std::chrono::high_resolution_clock::now();
+      const auto elapsed =
+          std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+      if (elapsed >= time_limit) {
+        PLOGI << "Time limit reached after " << elapsed
+              << " seconds, stopping search.";
+        if (!sol_object.has_solution()) {
+          sol_object.set_status(cda_rail::SolutionStatus::Timeout);
+        }
+        break;
+      }
+    }
+
     iteration++;
 
     const auto [current_obj, current_state] = pq.top();
@@ -305,7 +329,12 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     if (current_obj.second) {
       PLOGI << "Found final state with objective = " << current_obj.first
             << " after " << iteration << " iterations.";
-      return {};
+      best_obj   = current_obj.first;
+      best_state = current_state;
+      sol_object.set_obj(best_obj);
+      sol_object.set_solution_found();
+      sol_object.set_status(cda_rail::SolutionStatus::Optimal);
+      break;
     }
 
     simulator.set_train_edges(current_state.train_edges);
@@ -358,6 +387,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
               << " after " << iteration << " iterations.";
         best_obj   = new_obj;
         best_state = s;
+        sol_object.set_obj(best_obj);
+        sol_object.set_solution_found();
+        sol_object.set_status(cda_rail::SolutionStatus::Feasible);
       }
       if (heuristic_feas) {
         pq.push({{new_obj, final}, s});
@@ -367,7 +399,15 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     }
   }
 
-  PLOGI << "No final state found after " << iteration << " iterations.";
+  if (pq.empty() && !sol_object.has_solution()) {
+    PLOGI << "No final state found after " << iteration << " iterations.";
+    sol_object.set_status(cda_rail::SolutionStatus::Infeasible);
+  }
 
-  return {};
+  // TODO Add precise solution data to sol object
+
+  model_solved =
+      std::chrono::high_resolution_clock::now(); // Finished model solving
+
+  return sol_object;
 }
