@@ -415,9 +415,23 @@ TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
        .consider_earliest_exit = true},
       {}, -1, false);
 
-  // TODO: Functionality to export solution
-  // EXPECT_TRUE(sol_obj.has_solution());
-  // EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_TRUE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
+}
+TEST(GenPOMovingBlockAStarSolver, Timeout) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "example-networks-gen-po/GeneralSimpleNetworkB6Trains");
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto sol_obj = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
+       .consider_earliest_exit = true},
+      {}, 1, false);
+
+  EXPECT_FALSE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Timeout);
 }
 
 // NOLINTEND
