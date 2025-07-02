@@ -300,7 +300,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       const auto elapsed =
           std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
       if (elapsed >= time_limit) {
-        PLOGI << "Time limit reached after " << elapsed
+        PLOGD << "Timeout reached after " << elapsed
               << " seconds, stopping search.";
         if (!sol_object.has_solution()) {
           sol_object.set_status(cda_rail::SolutionStatus::Timeout);
@@ -327,8 +327,12 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     }
 
     if (current_obj.second) {
-      PLOGI << "Found final state with objective = " << current_obj.first
-            << " after " << iteration << " iterations.";
+      PLOGD << "Optimal solution found, obj = " << current_obj.first
+            << ", after " << iteration << " iterations, "
+            << std::chrono::duration_cast<std::chrono::seconds>(
+                   std::chrono::high_resolution_clock::now() - start)
+                   .count()
+            << " seconds.";
       best_obj   = current_obj.first;
       best_state = current_state;
       sol_object.set_obj(best_obj);
@@ -384,7 +388,11 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
             << ", final = " << (final ? "yes" : "no");
       if (final && new_obj < best_obj) {
         PLOGD << "Explored new best final state with objective = " << new_obj
-              << " after " << iteration << " iterations.";
+              << " after " << iteration << " iterations, "
+              << std::chrono::duration_cast<std::chrono::seconds>(
+                     std::chrono::high_resolution_clock::now() - start)
+                     .count()
+              << " seconds.";
         best_obj   = new_obj;
         best_state = s;
         sol_object.set_obj(best_obj);
@@ -400,14 +408,34 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   }
 
   if (pq.empty() && !sol_object.has_solution()) {
-    PLOGI << "No final state found after " << iteration << " iterations.";
     sol_object.set_status(cda_rail::SolutionStatus::Infeasible);
+  }
+
+  switch (sol_object.get_status()) {
+  case cda_rail::SolutionStatus::Optimal:
+    PLOGI << "Found optimal solution with objective " << sol_object.get_obj();
+    break;
+  case cda_rail::SolutionStatus::Feasible:
+    PLOGI << "Found feasible solution with objective " << sol_object.get_obj();
+    break;
+  case cda_rail::SolutionStatus::Infeasible:
+    PLOGI << "Problem is infeasible";
+    break;
+  case cda_rail::SolutionStatus::Timeout:
+    PLOGI << "Search terminated due to timeout.";
+    break;
   }
 
   // TODO Add precise solution data to sol object
 
   model_solved =
       std::chrono::high_resolution_clock::now(); // Finished model solving
+
+  PLOGD << "Terminated after " << iteration << " iterations, "
+        << std::chrono::duration_cast<std::chrono::seconds>(model_solved -
+                                                            start)
+               .count()
+        << " seconds.";
 
   return sol_object;
 }

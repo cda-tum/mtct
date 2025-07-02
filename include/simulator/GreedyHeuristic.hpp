@@ -9,8 +9,8 @@
 #include <vector>
 
 namespace cda_rail::simulator {
-enum class BrakingTimeHeuristicType : std::uint8_t { Simple };
-enum class RemainingTimeHeuristicType : std::uint8_t { Zero, Simple };
+enum class BrakingTimeHeuristicType : std::uint8_t { Simple = 0 };
+enum class RemainingTimeHeuristicType : std::uint8_t { Zero = 0, Simple = 1 };
 
 // Braking time heuristics for A*
 [[nodiscard]] double
