@@ -2,6 +2,7 @@
 #include "plog/Init.h"
 #include "plog/Logger.h"
 #include "plog/Severity.h"
+#include "simulator/GreedyHeuristic.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
 #include <cstdlib>
@@ -21,31 +22,39 @@ int main(int argc, char** argv) {
     plog::init(plog::debug, &console_appender);
   }
 
-  if (argc != 10) {
-    PLOGE << "Expected 9 arguments, got " << argc - 1;
+  if (argc != 11) {
+    PLOGE << "Expected 10 arguments, got " << argc - 1;
     std::exit(-1);
   }
 
   auto              args          = gsl::span<char*>(argv, argc);
   const std::string model_name    = args[1];
   const std::string instance_path = args[2];
-  auto              solver =
-      cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver(instance_path);
+  const bool        cast_instance = std::stoi(args[3]) != 0;
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver =
+      cast_instance
+          ? cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver(
+                cda_rail::instances::GeneralPerformanceOptimizationInstance::
+                    cast_from_vss_generation(
+                        cda_rail::instances::VSSGenerationTimetable(
+                            instance_path)))
+          : cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver(
+                instance_path);
 
-  const int  dt                           = std::stoi(args[3]);
-  const bool ensure_feasibility           = std::stoi(args[4]) != 0;
-  const bool limit_speed_by_leaving_edges = std::stoi(args[5]) != 0;
-  const int  next_state_strategy_int      = std::stoi(args[6]);
+  const int  dt                           = std::stoi(args[4]);
+  const bool ensure_feasibility           = std::stoi(args[5]) != 0;
+  const bool limit_speed_by_leaving_edges = std::stoi(args[6]) != 0;
+  const int  next_state_strategy_int      = std::stoi(args[7]);
   const auto next_state_strategy =
       static_cast<cda_rail::solver::astar_based::NextStateStrategy>(
           next_state_strategy_int);
-  const int  remaining_time_heuristic_int = std::stoi(args[7]);
+  const int  remaining_time_heuristic_int = std::stoi(args[8]);
   const auto remaining_time_heuristic =
       static_cast<cda_rail::simulator::RemainingTimeHeuristicType>(
           remaining_time_heuristic_int);
-  const bool consider_earliest_exit = std::stoi(args[8]) != 0;
+  const bool consider_earliest_exit = std::stoi(args[9]) != 0;
 
-  const int timeout = std::stoi(args[9]);
+  const int timeout = std::stoi(args[10]);
 
   PLOGI << "The following parameters were passed:";
   PLOGI << "Model name: " << model_name;
