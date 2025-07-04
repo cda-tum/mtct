@@ -432,9 +432,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       std::chrono::high_resolution_clock::now(); // Finished model solving
 
   PLOGD << "Terminated after " << iteration << " iterations, "
-        << std::chrono::duration_cast<std::chrono::seconds>(model_solved -
-                                                            start)
-               .count()
+        << (std::chrono::duration_cast<std::chrono::milliseconds>(model_solved -
+                                                                  start)
+                .count() /
+            1000.0)
         << " seconds.";
 
   return sol_object;

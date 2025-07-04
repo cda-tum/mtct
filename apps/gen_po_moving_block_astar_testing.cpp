@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
                 instance_path);
 
   const int  dt                           = std::stoi(args[4]);
-  const bool ensure_feasibility           = std::stoi(args[5]) != 0;
+  const bool allow_delays                 = std::stoi(args[5]) != 0;
   const bool limit_speed_by_leaving_edges = std::stoi(args[6]) != 0;
   const int  next_state_strategy_int      = std::stoi(args[7]);
   const auto next_state_strategy =
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   PLOGI << "Model name: " << model_name;
   PLOGI << "Instance path: " << instance_path;
   PLOGI << "Time step (dt): " << dt;
-  PLOGI << "Ensure feasibility: " << (ensure_feasibility ? "yes" : "no");
+  PLOGI << "Allow delays: " << (allow_delays ? "yes" : "no");
   PLOGI << "Limit speed by leaving edges: "
         << (limit_speed_by_leaving_edges ? "yes" : "no");
   switch (next_state_strategy) {
@@ -85,9 +85,9 @@ int main(int argc, char** argv) {
 
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve({.dt                           = dt,
-                .late_entry_possible          = ensure_feasibility,
-                .late_exit_possible           = ensure_feasibility,
-                .late_stop_possible           = ensure_feasibility,
+                .late_entry_possible          = allow_delays,
+                .late_exit_possible           = allow_delays,
+                .late_stop_possible           = allow_delays,
                 .limit_speed_by_leaving_edges = limit_speed_by_leaving_edges},
                {.remaining_time_heuristic_type = remaining_time_heuristic,
                 .next_state_strategy           = next_state_strategy,
