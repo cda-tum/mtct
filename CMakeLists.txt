@@ -14,10 +14,11 @@ if(APPLE)
     set(XCODE_VERSION_MINOR "${CMAKE_MATCH_2}")
     math(EXPR XCODE_VERSION "${XCODE_VERSION_MAJOR} * 100 + ${XCODE_VERSION_MINOR}")
     if(XCODE_VERSION LESS 1600)
-      message(WARNING "Xcode 16.0 or newer is required. Detected: ${XCODE_VERSION_OUTPUT}")
+      message(FATAL_ERROR "Xcode 16.0 or newer is required. Detected: ${XCODE_VERSION_OUTPUT}")
     endif()
   else()
-    message(STATUS "xcodebuild not found. Assuming only Command Line Tools are installed.")
+    message(
+      WARNING "xcodebuild not found. Some features may not work as expected. If so, try installing Xcode >= 16.0.")
   endif()
 endif()
 
