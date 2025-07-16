@@ -424,6 +424,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   case cda_rail::SolutionStatus::Timeout:
     PLOGI << "Search terminated due to timeout.";
     break;
+  default:
+    PLOGW << "Unknown solution status encountered.";
+    break;
   }
 
   // TODO Add precise solution data to sol object
