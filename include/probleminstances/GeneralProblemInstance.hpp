@@ -15,7 +15,6 @@
 #include <filesystem>
 #include <fstream>
 #include <numeric>
-#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <type_traits>

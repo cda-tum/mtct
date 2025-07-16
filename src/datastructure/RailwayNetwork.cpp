@@ -17,7 +17,6 @@
 #include <limits>
 #include <optional>
 #include <queue>
-#include <ranges>
 #include <sstream>
 #include <stack>
 #include <string>

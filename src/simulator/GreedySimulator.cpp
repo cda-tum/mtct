@@ -12,7 +12,6 @@
 #include <cstdlib>
 #include <limits>
 #include <optional>
-#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <tuple>
