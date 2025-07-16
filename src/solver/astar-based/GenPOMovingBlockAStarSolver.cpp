@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <ranges>
 #include <unordered_set>
 #include <vector>
 

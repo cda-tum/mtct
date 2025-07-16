@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <ranges>
 #include <string>
 #include <unordered_map>
 #include <utility>

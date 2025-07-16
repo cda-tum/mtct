@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <numeric>
+#include <ranges>
 #include <utility>
 #include <vector>
 

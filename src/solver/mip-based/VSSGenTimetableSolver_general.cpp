@@ -20,6 +20,7 @@
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Log.h>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
