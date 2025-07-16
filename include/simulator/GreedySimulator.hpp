@@ -62,8 +62,6 @@ class GreedySimulator {
   std::vector<std::vector<size_t>> vertex_orders;
   std::vector<std::vector<double>> stop_positions;
 
-  std::vector<std::pair<double, double>> train_positions;
-
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GreedySimulator, BasicPrivateFunctions);
@@ -470,7 +468,7 @@ public:
                            std::vector<int>>
   simulate(int dt = 6, bool late_entry_possible = false,
            bool late_exit_possible = false, bool late_stop_possible = false,
-           bool limit_speed_by_leaving_edges = true);
+           bool limit_speed_by_leaving_edges = true) const;
 };
 
 } // namespace cda_rail::simulator

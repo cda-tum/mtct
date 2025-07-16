@@ -25,7 +25,7 @@ std::tuple<bool, std::vector<int>, std::vector<std::pair<int, double>>,
            std::vector<int>>
 cda_rail::simulator::GreedySimulator::simulate(
     int dt, bool late_entry_possible, bool late_exit_possible,
-    bool late_stop_possible, bool limit_speed_by_leaving_edges) {
+    bool late_stop_possible, bool limit_speed_by_leaving_edges) const {
   /**
    * This function simulates train movements as specified by the member
    * variables. It returns a vector of doubles denoting the travel times of each
@@ -73,12 +73,9 @@ cda_rail::simulator::GreedySimulator::simulate(
   const int max_t = instance->get_timetable().max_t();
 
   // Initialize variables to keep track of positions and velocities
-  // Delete all entries of train_positions
-  train_positions.clear();
-  // Add initial positions for all trains
-  train_positions.resize(instance->get_timetable().get_train_list().size(),
-                         {-1.0, -1.0});
-
+  std::vector<std::pair<double, double>> train_positions(
+      instance->get_timetable().get_train_list().size(),
+      {-1.0, -1.0}); // {rear, front} positions
   std::vector<double> train_velocities(
       instance->get_timetable().get_train_list().size(), -1.0); // velocities
   std::unordered_set<size_t> trains_in_network;
