@@ -45,9 +45,7 @@ void cda_rail::StationList::add_track_to_station(const std::string& name,
   }
 
   // If stations.at(name).tracks already contains track, nothing happens.
-  if (std::find(stations.at(name).tracks.begin(),
-                stations.at(name).tracks.end(),
-                track) != stations.at(name).tracks.end()) {
+  if (std::ranges::contains(stations.at(name).tracks, track)) {
     return;
   }
   stations.at(name).tracks.emplace_back(track);
@@ -181,11 +179,9 @@ bool cda_rail::StationList::is_fully_in_station(
 
   const auto& station_tracks = get_station(station_name).tracks;
 
-  return std::all_of(
-      edges.begin(), edges.end(), [&station_tracks](size_t edge) {
-        return std::find(station_tracks.begin(), station_tracks.end(), edge) !=
-               station_tracks.end();
-      });
+  return std::ranges::all_of(edges, [&station_tracks](size_t edge) {
+    return std::ranges::contains(station_tracks, edge);
+  });
 }
 
 std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
@@ -209,7 +205,7 @@ cda_rail::Station::get_stop_tracks(
   auto station_tracks_to_consider =
       edges_to_consider.empty() ? tracks : std::vector<size_t>();
   for (const auto& tmp_e : edges_to_consider) {
-    if (std::find(tracks.begin(), tracks.end(), tmp_e) != tracks.end()) {
+    if (std::ranges::contains(tracks, tmp_e)) {
       station_tracks_to_consider.emplace_back(tmp_e);
     }
   }

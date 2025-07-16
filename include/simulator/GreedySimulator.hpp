@@ -114,9 +114,8 @@ private:
     if (!instance->const_n().has_edge(edge_id)) {
       throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
     }
-    const auto& tr_edges = train_edges.at(tr);
-    const auto  edge_number =
-        std::find(tr_edges.begin(), tr_edges.end(), edge_id);
+    const auto& tr_edges    = train_edges.at(tr);
+    const auto  edge_number = std::ranges::find(tr_edges, edge_id);
     if (edge_number == tr_edges.end()) {
       throw cda_rail::exceptions::ConsistencyException(
           "Train " + std::to_string(tr) + " does not have edge " +
@@ -134,8 +133,7 @@ private:
       throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
     }
     const auto& tr_edges = train_edges.at(tr);
-    return std::find(tr_edges.begin(), tr_edges.end(), edge_id) !=
-           tr_edges.end();
+    return std::ranges::contains(tr_edges, edge_id);
   };
   [[nodiscard]] bool is_on_ttd(size_t tr, size_t ttd,
                                const std::pair<double, double>& pos,
@@ -412,8 +410,7 @@ public:
         tr_stops.at(stop_positions_of_tr.size()).get_station_name();
     const auto& next_stop_edges =
         instance->get_station_list().get_station(next_stop).tracks;
-    if (std::find(next_stop_edges.begin(), next_stop_edges.end(), edge) ==
-        next_stop_edges.end()) {
+    if (!std::ranges::contains(next_stop_edges, edge)) {
       throw cda_rail::exceptions::ConsistencyException(
           "Edge " + std::to_string(edge) +
           " is not a valid stop edge for "

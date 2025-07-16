@@ -66,7 +66,7 @@ public:
   [[nodiscard]] const std::vector<size_t>& get_edges() const { return edges; };
 
   [[nodiscard]] bool contains_edge(size_t edge_index) const {
-    return std::find(edges.begin(), edges.end(), edge_index) != edges.end();
+    return std::ranges::contains(edges, edge_index);
   };
   [[nodiscard]] bool contains_edge(std::optional<size_t> edge_index) const {
     return edge_index.has_value() && contains_edge(edge_index.value());

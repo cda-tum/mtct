@@ -330,12 +330,14 @@ cda_rail::simulator::GreedySimulator::simulate(
       // on time
       PLOGV << "No movement detected at time " << t;
       bool reason_found = false;
-      if (std::any_of(vertex_headways.begin(), vertex_headways.end(),
-                      [t](int vertex_headway) { return vertex_headway > t; })) {
+      if (std::ranges::any_of(vertex_headways, [t](int vertex_headway) {
+            return vertex_headway > t;
+          })) {
         PLOGV << "Vertex headway constraint prevents movement.";
         reason_found = true;
-      } else if (std::any_of(tr_stop_until.begin(), tr_stop_until.end(),
-                             [t](int stop_time) { return stop_time > t; })) {
+      } else if (std::ranges::any_of(tr_stop_until, [t](int stop_time) {
+                   return stop_time > t;
+                 })) {
         PLOGV << "Train stop constraint prevents movement.";
         reason_found = true;
       } else {
@@ -470,9 +472,8 @@ bool cda_rail::simulator::GreedySimulator::check_consistency() const {
       return false; // Too many stop positions for the train
     }
     // stop_positions.at(train_id) must be non-negative and sorted
-    if (std::any_of(stop_positions.at(train_id).begin(),
-                    stop_positions.at(train_id).end(),
-                    [](double pos) { return pos < 0; })) {
+    if (std::ranges::any_of(stop_positions.at(train_id),
+                            [](double pos) { return pos < 0; })) {
       return false; // Negative stop position found
     }
     if (!std::is_sorted(stop_positions.at(train_id).begin(),
@@ -549,7 +550,7 @@ cda_rail::simulator::GreedySimulator::get_entering_trains(
     const auto& entry_node  = schedule.get_entry();
     const auto& entry_order = vertex_orders.at(entry_node);
     // Find index of tr in the entry order (if it exists)
-    const auto it = std::find(entry_order.begin(), entry_order.end(), tr);
+    const auto it = std::ranges::find(entry_order, tr);
     // If tr is not in the entry order, it means it is scheduled to enter
     if (it == entry_order.end()) {
       continue; // Train is not scheduled to enter at all
@@ -746,8 +747,7 @@ cda_rail::simulator::GreedySimulator::get_ttd(size_t edge_id) const {
   }
   for (size_t ttd_index = 0; ttd_index < ttd_sections.size(); ++ttd_index) {
     const auto& ttd_section = ttd_sections[ttd_index];
-    if (std::find(ttd_section.begin(), ttd_section.end(), edge_id) !=
-        ttd_section.end()) {
+    if (std::ranges::contains(ttd_section, edge_id)) {
       return ttd_index; // Found the TTD section containing the edge
     }
   }
@@ -821,7 +821,7 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
     const auto ttd_sec = get_ttd(edge_id);
     if (ttd_sec.has_value()) {
       const auto& ttd_order = ttd_orders.at(ttd_sec.value());
-      const auto  ttd_pos   = std::find(ttd_order.begin(), ttd_order.end(), tr);
+      const auto  ttd_pos   = std::ranges::find(ttd_order, tr);
       if (ttd_pos == ttd_order.begin()) {
         continue; // Train is the first in the TTD order, no other train can
                   // block it
@@ -915,8 +915,7 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
         }
         if (check_ttd) {
           const auto& ttd_order = ttd_orders.at(ttd_sec.value());
-          const auto  ttd_pos =
-              std::find(ttd_order.begin(), ttd_order.end(), tr);
+          const auto  ttd_pos   = std::ranges::find(ttd_order, tr);
           if (ttd_pos != ttd_order.begin()) {
             const auto& other_tr =
                 *(ttd_pos - 1); // Previous train in the TTD order
@@ -1637,8 +1636,7 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
                              // its route
   }
   const auto& exit_vertex_order = vertex_orders.at(last_edge.target);
-  const auto  idx =
-      std::find(exit_vertex_order.begin(), exit_vertex_order.end(), tr);
+  const auto  idx               = std::ranges::find(exit_vertex_order, tr);
   if (idx == exit_vertex_order.begin() || idx == exit_vertex_order.end()) {
     // Train is the first in the exit vertex order (or does not leave), hence,
     // no restriction
@@ -1681,8 +1679,7 @@ bool cda_rail::simulator::GreedySimulator::is_route_end_valid_stop_pos(
   double len = 0;
   for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
        ++it) {
-    if (std::find(next_station_tracks.begin(), next_station_tracks.end(),
-                  *it) == next_station_tracks.end()) {
+    if (!std::ranges::contains(next_station_tracks, *it)) {
       // Track does not belong to the next station
       return false;
     }

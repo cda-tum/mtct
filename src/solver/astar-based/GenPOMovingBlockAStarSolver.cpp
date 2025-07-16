@@ -190,16 +190,14 @@ void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
   const auto& ttd_sections = simulator.get_ttd_sections();
 
   for (size_t ttd_id = 0; ttd_id < ttd_sections.size(); ++ttd_id) {
-    if (std::find(state.ttd_orders.at(ttd_id).begin(),
-                  state.ttd_orders.at(ttd_id).end(),
-                  tr) != state.ttd_orders.at(ttd_id).end()) {
+    if (std::ranges::find(state.ttd_orders.at(ttd_id), tr) !=
+        state.ttd_orders.at(ttd_id).end()) {
       // Train is already in the TTD section, no need to check further
       continue;
     }
     const auto& ttd_section = ttd_sections.at(ttd_id);
     for (const auto& edge : new_edges) {
-      if (std::find(ttd_section.begin(), ttd_section.end(), edge) !=
-          ttd_section.end()) {
+      if (std::ranges::find(ttd_section, edge) != ttd_section.end()) {
         // Edge is part of the TTD section
         state.ttd_orders.at(ttd_id).emplace_back(tr);
         break; // No need to check further edge
@@ -219,9 +217,7 @@ void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
       simulator.get_instance()->get_timetable().get_schedule(tr);
   if ((tr_schedule.get_exit() == last_edge.target) &&
       (state.stop_positions.at(tr).size() == tr_schedule.get_stops().size())) {
-    if (std::find(state.vertex_orders.at(last_edge.target).begin(),
-                  state.vertex_orders.at(last_edge.target).end(),
-                  tr) == state.vertex_orders.at(last_edge.target).end()) {
+    if (!std::ranges::contains(state.vertex_orders.at(last_edge.target), tr)) {
       // Train has reached the exit vertex, add it to the vertex orders
       state.vertex_orders.at(last_edge.target).emplace_back(tr);
     }

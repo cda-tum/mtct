@@ -269,11 +269,9 @@ public:
      * @return true if every train has a route, false otherwise
      */
 
-    return std::all_of(get_train_list().begin(), get_train_list().end(),
-                       [this](const auto& tr) {
-                         return has_route(tr.name) &&
-                                !get_route(tr.name).empty();
-                       });
+    return std::ranges::all_of(get_train_list(), [this](const auto& tr) {
+      return has_route(tr.name) && !get_route(tr.name).empty();
+    });
   };
   [[nodiscard]] std::vector<size_t>
   trains_in_section(const std::vector<size_t>& section) const {
@@ -336,12 +334,10 @@ public:
     std::vector<size_t> return_vertices;
     for (const auto& e_id : edges) {
       const auto& edge = this->const_n().get_edge(e_id);
-      if (std::find(return_vertices.begin(), return_vertices.end(),
-                    edge.source) == return_vertices.end()) {
+      if (!std::ranges::contains(return_vertices, edge.source)) {
         return_vertices.push_back(edge.source);
       }
-      if (std::find(return_vertices.begin(), return_vertices.end(),
-                    edge.target) == return_vertices.end()) {
+      if (!std::ranges::contains(return_vertices, edge.target)) {
         return_vertices.push_back(edge.target);
       }
     }
@@ -365,7 +361,7 @@ public:
       const auto& section     = sections[section_id];
       bool        add_section = false;
       for (const auto& e_id : section) {
-        if (std::find(edges.begin(), edges.end(), e_id) != edges.end()) {
+        if (std::ranges::contains(edges, e_id)) {
           add_section = true;
           break;
         }
@@ -390,8 +386,7 @@ public:
       const auto edges_used =
           edges_used_by_train(i, fix_routes, error_if_no_route);
       for (const auto& e_id : section) {
-        if (std::find(edges_used.begin(), edges_used.end(), e_id) !=
-            edges_used.end()) {
+        if (std::ranges::contains(edges_used, e_id)) {
           tr_in_sec.push_back(i);
           break;
         }
