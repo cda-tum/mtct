@@ -1,5 +1,22 @@
 # set required cmake version
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.20)
+
+# Check for minimal Xcode version (e.g., 16.0)
+if(APPLE AND CMAKE_GENERATOR STREQUAL "Xcode")
+  execute_process(
+    COMMAND xcodebuild -version
+    OUTPUT_VARIABLE XCODE_VERSION_OUTPUT
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+  string(REGEX MATCH "Xcode ([0-9]+)\\.([0-9]+)" _ ${XCODE_VERSION_OUTPUT})
+  set(XCODE_VERSION_MAJOR "${CMAKE_MATCH_1}")
+  set(XCODE_VERSION_MINOR "${CMAKE_MATCH_2}")
+  math(EXPR XCODE_VERSION "${XCODE_VERSION_MAJOR} * 100 + ${XCODE_VERSION_MINOR}")
+
+  # Require Xcode 16.0 or newer
+  if(XCODE_VERSION LESS 1600)
+    message(FATAL_ERROR "Xcode 16.0 or newer is required. Detected: ${XCODE_VERSION_OUTPUT}")
+  endif()
+endif()
 
 # This avoids googletest complaining that this (IPO) policy is not set
 cmake_policy(SET CMP0069 NEW)
