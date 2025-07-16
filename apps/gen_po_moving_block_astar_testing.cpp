@@ -1,7 +1,8 @@
-#include "Definitions.hpp"
 #include "plog/Init.h"
 #include "plog/Logger.h"
 #include "plog/Severity.h"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "probleminstances/VSSGenerationTimetable.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 

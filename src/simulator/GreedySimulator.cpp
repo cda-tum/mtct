@@ -1197,11 +1197,11 @@ double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
     // infeasibility
     if (tr_schedule.get_v_n() >= v_ub) {
       return v_ub;
-    } else if (tr_schedule.get_v_n() <= v_lb) {
-      return v_lb;
-    } else {
-      return tr_schedule.get_v_n();
     }
+    if (tr_schedule.get_v_n() <= v_lb) {
+      return v_lb;
+    }
+    return tr_schedule.get_v_n();
   }
 
   v_ub = std::max(std::min(v_ub, ((2.0 * exit_distance) / dt) - v_0), 0.0);

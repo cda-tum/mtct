@@ -1752,6 +1752,7 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
     const auto neighboring_edges =
         reverse_direction ? in_edges(v_0.value()) : out_edges(v_0.value());
     std::vector<std::vector<size_t>> ret_val;
+    ret_val.reserve(neighboring_edges.size());
     for (const auto& s : neighboring_edges) {
       ret_val.emplace_back(1, s);
     }

@@ -3,10 +3,10 @@
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "plog/Log.h"
-#include "plog/Logger.h"
-#include "plog/Severity.h"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "simulator/GreedySimulator.hpp"
+#include "solver/GeneralSolver.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -228,6 +228,7 @@ void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
   }
 }
 
+// NOLINTBEGIN (cppcoreguidelines-pro-type-reinterpret-cast)
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
     cda_rail::instances::GeneralPerformanceOptimizationInstance>
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
@@ -441,3 +442,4 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
   return sol_object;
 }
+// NOLINTEND (cppcoreguidelines-pro-type-reinterpret-cast)
