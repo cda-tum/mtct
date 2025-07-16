@@ -192,7 +192,7 @@ public:
   [[nodiscard]] size_t                     get_exit() const { return exit; }
   [[nodiscard]] const std::vector<T>&      get_stops() const { return stops; }
 
-  [[nodiscard]] virtual bool is_forced_to_stop(int time) const override {
+  [[nodiscard]] bool is_forced_to_stop(int time) const override {
     for (const auto& stop : stops) {
       if (stop.is_forced_to_stop(time)) {
         return true;
@@ -682,8 +682,8 @@ public:
     return get_schedule(train_list.get_train_index(train_name));
   };
 
-  virtual bool is_forced_to_stop(const std::string& train_name,
-                                 int                time) const {
+  [[nodiscard]] bool is_forced_to_stop(const std::string& train_name,
+                                       int                time) const override {
     return get_schedule(train_name).is_forced_to_stop(time);
   }
 
@@ -809,10 +809,9 @@ public:
     return true;
   };
 
-  [[nodiscard]] virtual std::vector<
-      std::pair<size_t, std::vector<std::vector<size_t>>>>
+  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
   get_stop_tracks(size_t tr, const std::string& name, const Network& network,
-                  const std::vector<size_t>& edges_to_consider) const {
+                  const std::vector<size_t>& edges_to_consider) const override {
     return get_station_list().get_stop_tracks(
         name, train_list.get_train(tr).length, network, edges_to_consider);
   }
