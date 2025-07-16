@@ -112,8 +112,6 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
         simulator.get_instance()->get_timetable().get_schedule(tr);
     if (train_edges.empty()) {
       // Train can enter the network
-      const auto& tr_schedule =
-          simulator.get_instance()->get_timetable().get_schedule(tr);
       const auto& tr_obj =
           simulator.get_instance()->get_train_list().get_train(tr);
       const auto entry_paths =
