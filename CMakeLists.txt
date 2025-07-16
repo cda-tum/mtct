@@ -1,26 +1,23 @@
 # set required cmake version
 cmake_minimum_required(VERSION 3.20)
 
-message(STATUS "CMake version: ${CMAKE_VERSION}")
-message(STATUS "CMake APPLE" ${APPLE})
-message(STATUS "CMake generator: ${CMAKE_GENERATOR}")
-# Check for minimal Xcode version (e.g., 16.0)
-if(APPLE AND CMAKE_GENERATOR STREQUAL "Xcode")
-  execute_process(
-    COMMAND xcodebuild -version
-    OUTPUT_VARIABLE XCODE_VERSION_OUTPUT
-    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message(STATUS "Raw xcodebuild output: ${XCODE_VERSION_OUTPUT}")
-  string(REGEX MATCH "Xcode ([0-9]+)\\.([0-9]+)" _ ${XCODE_VERSION_OUTPUT})
-  message(STATUS "Regex match: major='${CMAKE_MATCH_1}', minor='${CMAKE_MATCH_2}'")
-  set(XCODE_VERSION_MAJOR "${CMAKE_MATCH_1}")
-  set(XCODE_VERSION_MINOR "${CMAKE_MATCH_2}")
-  math(EXPR XCODE_VERSION "${XCODE_VERSION_MAJOR} * 100 + ${XCODE_VERSION_MINOR}")
-  message(STATUS "Computed Xcode version: ${XCODE_VERSION}")
-
-  # Require Xcode 16.0 or newer
-  if(XCODE_VERSION LESS 1600)
-    message(FATAL_ERROR "Xcode 16.0 or newer is required. Detected: ${XCODE_VERSION_OUTPUT}")
+# Check for xcodebuild and its version, even if not using Xcode generator
+if(APPLE)
+  find_program(XCODEBUILD_EXECUTABLE xcodebuild)
+  if(XCODEBUILD_EXECUTABLE)
+    execute_process(
+      COMMAND "${XCODEBUILD_EXECUTABLE}" -version
+      OUTPUT_VARIABLE XCODE_VERSION_OUTPUT
+      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+    string(REGEX MATCH "Xcode ([0-9]+)\\.([0-9]+)" _ ${XCODE_VERSION_OUTPUT})
+    set(XCODE_VERSION_MAJOR "${CMAKE_MATCH_1}")
+    set(XCODE_VERSION_MINOR "${CMAKE_MATCH_2}")
+    math(EXPR XCODE_VERSION "${XCODE_VERSION_MAJOR} * 100 + ${XCODE_VERSION_MINOR}")
+    if(XCODE_VERSION LESS 1600)
+      message(WARNING "Xcode 16.0 or newer is required. Detected: ${XCODE_VERSION_OUTPUT}")
+    endif()
+  else()
+    message(STATUS "xcodebuild not found. Assuming only Command Line Tools are installed.")
   endif()
 endif()
 
