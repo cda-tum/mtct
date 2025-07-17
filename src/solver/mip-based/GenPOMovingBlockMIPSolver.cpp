@@ -35,7 +35,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     const ModelDetail&                 model_detail_input,
     const SolverStrategyMovingBlock&   solver_strategy_input,
     const SolutionSettingsMovingBlock& solution_settings_input, int time_limit,
-    bool debug_input) {
+    bool debug_input, bool overwrite_severity) {
   /**
    * Solves initiated performance optimization problem with moving block
    * signaling/routing. Only breakable edges can use moving block. On all
@@ -45,6 +45,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
    * @param time_limit: time limit for the solver in seconds. If -1, no time
    * limit is set.
    * @param debug_input: if true, the debug output is enabled.
+   * @param overwrite_severity: if true, the severity of the log is overwritten
    *
    * @return: respective solution object
    */
@@ -52,9 +53,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   std::optional<LazyCallback> cb;
   if (solver_strategy_input.use_lazy_constraints) {
     cb = LazyCallback(this);
-    this->solve_init_general_mip(time_limit, debug_input, &(cb.value()));
+    this->solve_init_general_mip(time_limit, debug_input, overwrite_severity,
+                                 &(cb.value()));
   } else {
-    this->solve_init_general_mip(time_limit, debug_input);
+    this->solve_init_general_mip(time_limit, debug_input, overwrite_severity);
   }
 
   if (!instance.n().is_consistent_for_transformation()) {
@@ -648,8 +650,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       if (v == entry) {
         GRBLinExpr lhs = 0;
         for (const auto& e : instance.const_n().out_edges(v)) {
-          if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
-                        e) != edges_used_by_train.end()) {
+          if (std::ranges::contains(edges_used_by_train, e)) {
             lhs += vars["x"](tr, e);
           }
         }
@@ -659,8 +660,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       } else if (v == exit) {
         GRBLinExpr lhs = 0;
         for (const auto& e : instance.const_n().in_edges(v)) {
-          if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
-                        e) != edges_used_by_train.end()) {
+          if (std::ranges::contains(edges_used_by_train, e)) {
             lhs += vars["x"](tr, e);
           }
         }
@@ -671,14 +671,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         GRBLinExpr x_in_edges  = 0;
         GRBLinExpr x_out_edges = 0;
         for (const auto& e : instance.const_n().in_edges(v)) {
-          if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
-                        e) != edges_used_by_train.end()) {
+          if (std::ranges::contains(edges_used_by_train, e)) {
             x_in_edges += vars["x"](tr, e);
           }
         }
         for (const auto& e : instance.const_n().out_edges(v)) {
-          if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
-                        e) != edges_used_by_train.end()) {
+          if (std::ranges::contains(edges_used_by_train, e)) {
             x_out_edges += vars["x"](tr, e);
           }
         }
@@ -694,9 +692,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           GRBLinExpr lhs = 0;
           GRBLinExpr rhs = 0;
           for (const auto& e : instance.const_n().in_edges(v)) {
-            if (std::find(edges_used_by_train.begin(),
-                          edges_used_by_train.end(),
-                          e) != edges_used_by_train.end()) {
+            if (std::ranges::contains(edges_used_by_train, e)) {
               const auto& edge = instance.const_n().get_edge(e);
               const auto& v2_values =
                   velocity_extensions.at(tr).at(edge.source);
@@ -719,9 +715,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             }
           }
           for (const auto& e : instance.const_n().out_edges(v)) {
-            if (std::find(edges_used_by_train.begin(),
-                          edges_used_by_train.end(),
-                          e) != edges_used_by_train.end()) {
+            if (std::ranges::contains(edges_used_by_train, e)) {
               const auto& edge = instance.const_n().get_edge(e);
               const auto  tmp_max_speed =
                   std::min(tr_object.max_speed, edge.max_speed);
@@ -763,8 +757,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto& v2_name = instance.const_n().get_vertex(v2).name;
       for (const auto& e2 : out_edges) {
         if (!instance.const_n().is_valid_successor(e, e2) &&
-            std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
-                      e2) != edges_used_by_train.end()) {
+            std::ranges::contains(edges_used_by_train, e2)) {
           const auto& v3_name =
               instance.const_n()
                   .get_vertex(instance.const_n().get_edge(e2).target)
@@ -857,8 +850,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       // vertex v
       GRBLinExpr speed_0_arcs = 0;
       for (const auto& e_in : instance.const_n().in_edges(v)) {
-        if (std::find(e_used_tr.begin(), e_used_tr.end(), e_in) !=
-            e_used_tr.end()) {
+        if (std::ranges::contains(e_used_tr, e_in)) {
           const auto& e_in_object = instance.const_n().get_edge(e_in);
           const auto& v1_velocities =
               velocity_extensions.at(tr).at(e_in_object.source);
@@ -878,8 +870,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         }
       }
       for (const auto& e_out : instance.const_n().out_edges(v)) {
-        if (std::find(e_used_tr.begin(), e_used_tr.end(), e_out) !=
-            e_used_tr.end()) {
+        if (std::ranges::contains(e_used_tr, e_out)) {
           const auto& e_out_object = instance.const_n().get_edge(e_out);
           const auto& v2_velocities =
               velocity_extensions.at(tr).at(e_out_object.target);
@@ -972,8 +963,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         const auto          in_edges          = instance.const_n().in_edges(v);
         std::vector<size_t> relevant_in_edges = {};
         for (const auto& e : in_edges) {
-          if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
-                        e) != edges_used_by_train.end()) {
+          if (std::ranges::contains(edges_used_by_train, e)) {
             relevant_in_edges.push_back(e);
           }
         }
@@ -1526,8 +1516,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 } else {
                   std::vector<size_t> rel_in_edges;
                   for (const auto& e : instance.const_n().in_edges(v)) {
-                    if (std::find(tr_used_edges.begin(), tr_used_edges.end(),
-                                  e) != tr_used_edges.end()) {
+                    if (std::ranges::contains(tr_used_edges, e)) {
                       rel_in_edges.push_back(e);
                     }
                   }
@@ -1669,11 +1658,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         // If all of neighboring_edges are in ttd_section, then it is not an
         // entering edge Hence, if at least one neighboring edge is not in
         // ttd_section, then we have an entering edge
-        const bool is_entering_edge = std::any_of(
-            neighboring_edges.begin(), neighboring_edges.end(),
-            [&ttd_section](const auto& e_tmp) {
-              return std::find(ttd_section.begin(), ttd_section.end(), e_tmp) ==
-                     ttd_section.end();
+        const bool is_entering_edge = std::ranges::any_of(
+            neighboring_edges, [&ttd_section](const auto& e_tmp) {
+              return !std::ranges::contains(ttd_section, e_tmp);
             });
         if (is_entering_edge) {
           // We need a constraint for each other train in the TTD section
@@ -1719,7 +1706,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       // relevant edges are intersection of ttd_section and e_tr
       std::vector<size_t> relevant_edges;
       for (const auto& e : ttd_section) {
-        if (std::find(e_tr.begin(), e_tr.end(), e) != e_tr.end()) {
+        if (std::ranges::contains(e_tr, e)) {
           relevant_edges.push_back(e);
         }
       }

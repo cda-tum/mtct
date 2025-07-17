@@ -241,9 +241,8 @@ public:
     if (train_weights.size() != num_tr || train_optional.size() != num_tr) {
       return false;
     }
-    return (lambda >= 0 &&
-            std::all_of(train_weights.begin(), train_weights.end(),
-                        [](double w) { return w >= 0; }));
+    return (lambda >= 0 && std::ranges::all_of(
+                               train_weights, [](double w) { return w >= 0; }));
   };
 
   [[nodiscard]] double get_approximate_leaving_time(size_t train) const;

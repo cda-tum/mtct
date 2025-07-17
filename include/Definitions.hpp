@@ -4,6 +4,11 @@
 #include <cstdint>
 #include <filesystem>
 #include <limits>
+#include <plog/Appenders/ColorConsoleAppender.h>
+#include <plog/Formatters/TxtFormatter.h>
+#include <plog/Init.h>
+#include <plog/Logger.h>
+#include <plog/Severity.h>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -54,6 +59,16 @@ enum class VelocityRefinementStrategy : std::uint8_t {
 };
 
 // Helper functions
+
+static void initialize_plog(bool debug_input, bool overwrite_severity = false) {
+  if (plog::get() == nullptr) {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+    plog::init(plog::debug, &console_appender);
+  }
+  if (overwrite_severity || plog::get()->getMaxSeverity() <= plog::info) {
+    plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
+  }
+};
 
 static bool is_directory_and_create(const std::filesystem::path& p) {
   /**

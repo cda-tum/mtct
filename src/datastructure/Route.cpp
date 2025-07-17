@@ -369,11 +369,10 @@ bool cda_rail::RouteMap::check_consistency(
     return false;
   }
 
-  return std::all_of(routes.begin(), routes.end(),
-                     [&trains, &network](const auto& route) {
-                       return trains.has_train(route.first) &&
-                              route.second.check_consistency(network);
-                     });
+  return std::ranges::all_of(routes, [&trains, &network](const auto& route) {
+    return trains.has_train(route.first) &&
+           route.second.check_consistency(network);
+  });
 }
 
 void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,

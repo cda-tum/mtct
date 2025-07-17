@@ -20,4 +20,7 @@ package_add_test(
   ${CMAKE_CURRENT_SOURCE_DIR}/test_abstract_data_structure.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_general_performance_optimization_instances.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_gen_po_movingblock_mip_solver.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi_vss_gen_using_mb_information.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi_vss_gen_using_mb_information.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_greedysimulator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_greedyheuristic.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_mb_astar.cpp)

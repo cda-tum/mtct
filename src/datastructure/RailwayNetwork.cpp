@@ -311,8 +311,7 @@ void cda_rail::Network::add_successor(size_t edge_in, size_t edge_out) {
   }
 
   // If successors[edges] already contains edge_out, do nothing
-  if (std::find(successors[edge_in].begin(), successors[edge_in].end(),
-                edge_out) != successors[edge_in].end()) {
+  if (std::ranges::contains(successors.at(edge_in), edge_out)) {
     return;
   }
 
@@ -424,10 +423,9 @@ bool cda_rail::Network::has_edge(size_t source_id, size_t target_id) const {
   if (!has_vertex(target_id)) {
     throw exceptions::VertexNotExistentException(target_id);
   }
-  return std::any_of(
-      edges.begin(), edges.end(), [source_id, target_id](const Edge& edge) {
-        return edge.source == source_id && edge.target == target_id;
-      });
+  return std::ranges::any_of(edges, [source_id, target_id](const Edge& edge) {
+    return edge.source == source_id && edge.target == target_id;
+  });
 }
 
 bool cda_rail::Network::has_edge(const std::string& source_name,
@@ -839,8 +837,7 @@ bool cda_rail::Network::is_valid_successor(size_t e0, size_t e1) const {
   if (edges[e0].target != edges[e1].source) {
     return false;
   }
-  return (std::find(successors[e0].begin(), successors[e0].end(), e1) !=
-          successors[e0].end());
+  return (std::ranges::contains(successors.at(e0), e1));
 }
 
 std::vector<size_t> cda_rail::Network::neighbors(size_t index) const {
@@ -858,14 +855,12 @@ std::vector<size_t> cda_rail::Network::neighbors(size_t index) const {
   auto                e_out = out_edges(index);
   auto                e_in  = in_edges(index);
   for (auto e : e_out) {
-    if (std::find(neighbors.begin(), neighbors.end(), get_edge(e).target) ==
-        neighbors.end()) {
+    if (!std::ranges::contains(neighbors, get_edge(e).target)) {
       neighbors.emplace_back(get_edge(e).target);
     }
   }
   for (auto e : e_in) {
-    if (std::find(neighbors.begin(), neighbors.end(), get_edge(e).source) ==
-        neighbors.end()) {
+    if (!std::ranges::contains(neighbors, get_edge(e).source)) {
       neighbors.emplace_back(get_edge(e).source);
     }
   }
@@ -1199,10 +1194,9 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
         return false;
       }
 
-      if (std::any_of(v_neighbors.begin(), v_neighbors.end(),
-                      [this](const auto& j) {
-                        return this->get_vertex(j).type == VertexType::NoBorder;
-                      })) {
+      if (std::ranges::any_of(v_neighbors, [this](const auto& j) {
+            return this->get_vertex(j).type == VertexType::NoBorder;
+          })) {
         return false;
       }
     }
@@ -1317,12 +1311,10 @@ void cda_rail::Network::dfs(std::vector<std::vector<size_t>>& ret_val,
       const auto neighbor_vertices = neighbors(current_vertex);
       for (const auto& neighbor : neighbor_vertices) {
         if (get_vertex(neighbor).type == section_type &&
-            std::find(visited_vertices.begin(), visited_vertices.end(),
-                      neighbor) == visited_vertices.end()) {
+            !std::ranges::contains(visited_vertices, neighbor)) {
           stack.emplace(neighbor);
         }
-        if (std::find(error_types.begin(), error_types.end(),
-                      get_vertex(neighbor).type) != error_types.end()) {
+        if (std::ranges::contains(error_types, get_vertex(neighbor).type)) {
           throw exceptions::ConsistencyException(
               "This should never happen, but I found error type vertex");
         }
@@ -1336,8 +1328,7 @@ void cda_rail::Network::dfs(std::vector<std::vector<size_t>>& ret_val,
                 "unbreakable section");
           }
 
-          if (std::find(ret_val.back().begin(), ret_val.back().end(),
-                        edge_index) == ret_val.back().end()) {
+          if (!std::ranges::contains(ret_val.back(), edge_index)) {
             ret_val.back().emplace_back(edge_index);
           }
         }
@@ -1351,8 +1342,7 @@ void cda_rail::Network::dfs(std::vector<std::vector<size_t>>& ret_val,
                 "unbreakable section");
           }
 
-          if (std::find(ret_val.back().begin(), ret_val.back().end(),
-                        edge_index) == ret_val.back().end()) {
+          if (!std::ranges::contains(ret_val.back(), edge_index)) {
             ret_val.back().emplace_back(edge_index);
           }
         }
@@ -1392,8 +1382,8 @@ cda_rail::Network::combine_reverse_edges(
    * @return: Vector of pairs of edge indices
    */
 
-  if (!std::all_of(edges_to_consider.begin(), edges_to_consider.end(),
-                   [this](size_t i) { return has_edge(i); })) {
+  if (!std::ranges::all_of(edges_to_consider,
+                           [this](size_t i) { return has_edge(i); })) {
     throw exceptions::EdgeNotExistentException();
   }
 
@@ -1506,23 +1496,21 @@ cda_rail::Network::sort_edge_pairs(
    * @return: Sorted vector of edge pairs
    */
 
-  if (!std::all_of(
-          edge_pairs.begin(), edge_pairs.end(),
-          [](const auto& edge_pair) { return edge_pair.first.has_value(); })) {
+  if (!std::ranges::all_of(edge_pairs, [](const auto& edge_pair) {
+        return edge_pair.first.has_value();
+      })) {
     throw exceptions::InvalidInputException("Edge pair first entry is empty");
   }
-  if (!std::all_of(edge_pairs.begin(), edge_pairs.end(),
-                   [this](const auto& edge_pair) {
-                     return has_edge(edge_pair.first.value());
-                   })) {
+  if (!std::ranges::all_of(edge_pairs, [this](const auto& edge_pair) {
+        return has_edge(edge_pair.first.value());
+      })) {
     throw exceptions::EdgeNotExistentException();
   }
 
-  if (!std::all_of(edge_pairs.begin(), edge_pairs.end(),
-                   [this](const auto& edge_pair) {
-                     return get_reverse_edge_index(edge_pair.first.value()) ==
-                            edge_pair.second;
-                   })) {
+  if (!std::ranges::all_of(edge_pairs, [this](const auto& edge_pair) {
+        return get_reverse_edge_index(edge_pair.first.value()) ==
+               edge_pair.second;
+      })) {
     throw exceptions::ConsistencyException(
         "Pairs are not reverse of each other");
   }
@@ -1596,19 +1584,18 @@ std::vector<size_t> cda_rail::Network::inverse_edges(
    * indices
    */
 
-  if (!std::all_of(edge_indices.begin(), edge_indices.end(),
-                   [this](size_t i) { return has_edge(i); })) {
+  if (!std::ranges::all_of(edge_indices,
+                           [this](size_t i) { return has_edge(i); })) {
     throw exceptions::EdgeNotExistentException();
   }
-  if (!std::all_of(edges_to_consider.begin(), edges_to_consider.end(),
-                   [this](size_t i) { return has_edge(i); })) {
+  if (!std::ranges::all_of(edges_to_consider,
+                           [this](size_t i) { return has_edge(i); })) {
     throw exceptions::EdgeNotExistentException();
   }
 
   std::vector<size_t> ret_val;
   for (const auto& edge_index : edges_to_consider) {
-    if (std::find(edge_indices.begin(), edge_indices.end(), edge_index) ==
-        edge_indices.end()) {
+    if (!std::ranges::contains(edge_indices, edge_index)) {
       ret_val.emplace_back(edge_index);
     }
   }
@@ -1670,16 +1657,28 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
 }
 
 std::optional<double>
-cda_rail::Network::shortest_path(size_t source_edge_id,
-                                 size_t target_vertex_id) const {
+cda_rail::Network::shortest_path(size_t source_edge_id, size_t target_id,
+                                 bool target_is_edge, bool include_first_edge,
+                                 bool use_minimal_time, double max_v) const {
   /**
    * Calculates the shortest path from a source edge e to a target vertex w.
    * If e = (u,v), then the length of the shortest path between v and w is
    * returned. However, only valid successors of e can be used as a first edge.
    * If no path exists, the optional has no value.
+   *
+   * @param source_edge_id: Index of the source edge e.
+   * @param target_id: Index of the target vertex or edge.
+   * @param target_is_edge: If true, the target is an edge, otherwise it is a
+   * vertex.
+   * @param use_minimal_time: If true, the minimal time is used instead of the
+   * distance
+   * @param max_v: Maximum speed of the train considered.
    */
 
-  return shortest_path_using_edges(source_edge_id, target_vertex_id).first;
+  return shortest_path_using_edges(source_edge_id, target_id, true, {},
+                                   target_is_edge, include_first_edge,
+                                   use_minimal_time, max_v)
+      .first;
 }
 
 std::vector<std::pair<size_t, std::vector<size_t>>>
@@ -1705,7 +1704,8 @@ cda_rail::Network::separate_stop_edges(const std::vector<size_t>& stop_edges) {
 std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
     std::optional<size_t> v_0, std::optional<size_t> e_0, double desired_length,
     bool reverse_direction, std::optional<size_t> exit_node,
-    std::vector<size_t> edges_used_by_train) const {
+    std::vector<size_t> edges_used_by_train,
+    bool                return_successors_if_zero) const {
   /**
    * Finds all routes from a specified starting point in the specified
    * direction. The routes are of a specified length, i.e., at least that long,
@@ -1735,6 +1735,17 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
     throw exceptions::EdgeNotExistentException(e_0.value());
   }
 
+  if (return_successors_if_zero && desired_length == 0 && v_0.has_value()) {
+    const auto neighboring_edges =
+        reverse_direction ? in_edges(v_0.value()) : out_edges(v_0.value());
+    std::vector<std::vector<size_t>> ret_val;
+    ret_val.reserve(neighboring_edges.size());
+    for (const auto& s : neighboring_edges) {
+      ret_val.emplace_back(1, s);
+    }
+    return ret_val;
+  }
+
   if (desired_length <= 0) {
     throw exceptions::InvalidInputException(
         "Desired length is not strictly positive");
@@ -1752,8 +1763,7 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
 
   if (!edges_used_by_train.empty()) {
     for (const auto& e : edges_to_consider_tmp) {
-      if (std::find(edges_used_by_train.begin(), edges_used_by_train.end(),
-                    e) != edges_used_by_train.end()) {
+      if (std::ranges::contains(edges_used_by_train, e)) {
         edges_to_consider.emplace_back(e);
       }
     }
@@ -1787,11 +1797,9 @@ std::vector<std::vector<size_t>> cda_rail::Network::all_routes_of_given_length(
         const auto edges_r = reverse_direction
                                  ? in_edges(get_edge(e_index).target)
                                  : out_edges(get_edge(e_index).source);
-        if (std::any_of(
-                edges_r.begin(), edges_r.end(), [&path_e_next](const auto& e) {
-                  return std::find(path_e_next.begin(), path_e_next.end(), e) !=
-                         path_e_next.end();
-                })) {
+        if (std::ranges::any_of(edges_r, [&path_e_next](const auto& e) {
+              return std::ranges::contains(path_e_next, e);
+            })) {
           continue;
         }
 
@@ -1822,8 +1830,7 @@ double cda_rail::Network::maximal_vertex_speed(
   auto        n_edges =
       edges_to_consider.empty() ? n_edges_tmp : std::vector<size_t>();
   for (const auto& e : n_edges_tmp) {
-    if (std::find(edges_to_consider.begin(), edges_to_consider.end(), e) !=
-        edges_to_consider.end()) {
+    if (std::ranges::contains(edges_to_consider, e)) {
       n_edges.emplace_back(e);
     }
   }
@@ -1868,8 +1875,7 @@ double cda_rail::Network::minimal_neighboring_edge_length(
   auto       n_edges =
       edges_to_consider.empty() ? n_edges_tmp : std::vector<size_t>();
   for (const auto& e : n_edges_tmp) {
-    if (std::find(edges_to_consider.begin(), edges_to_consider.end(), e) !=
-        edges_to_consider.end()) {
+    if (std::ranges::contains(edges_to_consider, e)) {
       n_edges.emplace_back(e);
     }
   }
@@ -1901,8 +1907,8 @@ std::vector<std::pair<size_t, size_t>> cda_rail::Network::get_intersecting_ttd(
     for (size_t edge_index = 0;
          !intersection_found && edge_index < edges_to_consider.size();
          ++edge_index) {
-      if (std::find(ttd_section.begin(), ttd_section.end(),
-                    edges_to_consider.at(edge_index)) != ttd_section.end()) {
+      if (std::ranges::contains(ttd_section,
+                                edges_to_consider.at(edge_index))) {
         ret_val.emplace_back(ttd_index, edge_index);
         intersection_found = true;
       }
@@ -1977,8 +1983,7 @@ cda_rail::Network::get_unbreakable_section_containing_edge(size_t e) const {
   while (!vertices_to_visit.empty()) {
     const auto& current_v = vertices_to_visit.front();
 
-    if (std::find(visited_vertices.begin(), visited_vertices.end(),
-                  current_v) != visited_vertices.end()) {
+    if (std::ranges::contains(visited_vertices, current_v)) {
       // Vertex already visited
       vertices_to_visit.pop();
       continue;
@@ -1989,23 +1994,20 @@ cda_rail::Network::get_unbreakable_section_containing_edge(size_t e) const {
       // This vertex can be used to further extend the section
       const auto& n_vertices = neighbors(current_v);
       for (const auto& v_tmp : n_vertices) {
-        if (std::find(visited_vertices.begin(), visited_vertices.end(),
-                      v_tmp) == visited_vertices.end()) {
+        if (!std::ranges::contains(visited_vertices, v_tmp)) {
           vertices_to_visit.push(v_tmp);
         }
 
         // Possibly add new edges
         if (has_edge(current_v, v_tmp)) {
           const auto& e_tmp = get_edge_index(current_v, v_tmp);
-          if (std::find(ret_val.begin(), ret_val.end(), e_tmp) ==
-              ret_val.end()) {
+          if (!std::ranges::contains(ret_val, e_tmp)) {
             ret_val.push_back(e_tmp);
           }
         }
         if (has_edge(v_tmp, current_v)) {
           const auto& e_tmp = get_edge_index(v_tmp, current_v);
-          if (std::find(ret_val.begin(), ret_val.end(), e_tmp) ==
-              ret_val.end()) {
+          if (!std::ranges::contains(ret_val, e_tmp)) {
             ret_val.push_back(e_tmp);
           }
         }
@@ -2028,14 +2030,15 @@ bool cda_rail::Network::is_on_same_unbreakable_section(size_t e1,
    */
 
   const auto section_tmp = get_unbreakable_section_containing_edge(e1);
-  return std::find(section_tmp.begin(), section_tmp.end(), e2) !=
-         section_tmp.end();
+  return std::ranges::contains(section_tmp, e2);
 }
 
 std::pair<std::optional<double>, std::vector<size_t>>
-cda_rail::Network::shortest_path_using_edges(
-    size_t source_edge_id, size_t target_vertex_id,
-    bool only_use_valid_successors, std::vector<size_t> edges_to_use) const {
+cda_rail::Network::shortest_path_between_sets_using_edges(
+    std::vector<size_t> source_edge_ids, std::vector<size_t> target_ids,
+    bool only_use_valid_successors, std::vector<size_t> edges_to_use,
+    bool target_is_edge, bool include_first_edge, bool use_minimal_time,
+    double max_v) const {
   /**
    * Calculates the shortest path from a source edge e to a target vertex w.
    * If e = (u,v), then the length of the shortest path between v and w is
@@ -2043,19 +2046,64 @@ cda_rail::Network::shortest_path_using_edges(
    * empty. If only_use_valid_successors is true, only valid successors of e can
    * be used as a first edge and for all preceding edges. If edges_to_use is not
    * empty, only these edges are used, otherwise all edges are used.
+   *
+   * @param source_edge_ids: Index of the source edge e. Train can start on any
+   * of the specified edges.
+   * @param target_ids: Index of the target. Train can end on any of the
+   * specified objects.
+   * @param only_use_valid_successors: If true, only valid successors of the
+   * source edge are used as first edge and for all preceding edges.
+   * @param edges_to_use: If not empty, only these edges are used, otherwise all
+   * edges are used.
+   * @param target_is_edge: If true, the target is an edge, otherwise it is a
+   * vertex.
+   * @param include_first_edge: If true, the first edge is included in the
+   * length, otherwise it is not.
+   * @param use_minimal_time: If true, the minimal time is used instead of the
+   * distance.
+   * @param max_v: Maximum speed of the train considered.
+   *
+   * @return: A pair containing the distance and the path as a vector of edge
    */
 
-  if (!has_edge(source_edge_id)) {
-    throw exceptions::EdgeNotExistentException(source_edge_id);
+  if (source_edge_ids.empty()) {
+    throw exceptions::InvalidInputException(
+        "Source edge IDs must not be empty");
   }
-  if (!has_vertex(target_vertex_id)) {
-    throw exceptions::VertexNotExistentException(target_vertex_id);
+  if (target_ids.empty()) {
+    throw exceptions::InvalidInputException("Target IDs must not be empty");
+  }
+  for (const auto& source_edge_id : source_edge_ids) {
+    if (!has_edge(source_edge_id)) {
+      throw exceptions::EdgeNotExistentException(source_edge_id);
+    }
+  }
+  for (const auto& target_id : target_ids) {
+    if (target_is_edge && !has_edge(target_id)) {
+      throw exceptions::EdgeNotExistentException(target_id);
+    }
+    if (!target_is_edge && !has_vertex(target_id)) {
+      throw exceptions::VertexNotExistentException(target_id);
+    }
+  }
+  if (use_minimal_time && max_v <= 0) {
+    throw exceptions::InvalidInputException(
+        "Maximum speed must be strictly positive if minimal time is used");
   }
 
   // If source edge already leads to the target, then the distance is 0
-  const auto& source_edge = get_edge(source_edge_id);
-  if (source_edge.target == target_vertex_id) {
-    return {0, {source_edge_id}};
+  if (!include_first_edge) {
+    for (const auto& source_edge_id : source_edge_ids) {
+      const auto& source_edge = get_edge(source_edge_id);
+      for (const auto& target_id : target_ids) {
+        if (target_is_edge && source_edge_id == target_id) {
+          return {0, {source_edge_id}};
+        }
+        if (!target_is_edge && source_edge.target == target_id) {
+          return {0, {source_edge_id}};
+        }
+      }
+    }
   }
 
   // Initialize vectors and queues for Dijkstra
@@ -2067,8 +2115,14 @@ cda_rail::Network::shortest_path_using_edges(
   std::priority_queue<std::pair<double, size_t>,
                       std::vector<std::pair<double, size_t>>, std::greater<>>
       pq;
-  pq.emplace(0, source_edge_id);
-  distances[source_edge_id] = 0;
+  for (const auto& source_edge_id : source_edge_ids) {
+    const double initial_dist =
+        (include_first_edge ? delta_dist_helper(get_edge(source_edge_id), max_v,
+                                                use_minimal_time)
+                            : 0.0);
+    pq.emplace(initial_dist, source_edge_id);
+    distances[source_edge_id] = initial_dist;
+  }
 
   // Dijkstra
   while (!pq.empty()) {
@@ -2083,13 +2137,16 @@ cda_rail::Network::shortest_path_using_edges(
 
     const auto& edge = get_edge(edge_id);
 
-    if (edge.target == target_vertex_id) {
+    const bool target_found = std::ranges::contains(
+        target_ids, target_is_edge ? edge_id : edge.target);
+
+    if (target_found) {
       std::vector<size_t> path;
       path.emplace_back(edge_id);
-      while (path.back() != source_edge_id &&
+      while (!std::ranges::contains(source_edge_ids, path.back()) &&
              predecessors[path.back()] != std::numeric_limits<size_t>::max()) {
         const size_t predecessor = predecessors[path.back()];
-        if (std::find(path.begin(), path.end(), predecessor) != path.end()) {
+        if (std::ranges::contains(path, predecessor)) {
           throw exceptions::ConsistencyException("Cycle in path");
         }
         path.emplace_back(predecessor);
@@ -2106,8 +2163,7 @@ cda_rail::Network::shortest_path_using_edges(
       cleaned_successors = possible_successors;
     } else {
       for (const auto& successor : possible_successors) {
-        if (std::find(edges_to_use.begin(), edges_to_use.end(), successor) !=
-            edges_to_use.end()) {
+        if (std::ranges::contains(edges_to_use, successor)) {
           cleaned_successors.emplace_back(successor);
         }
       }
@@ -2122,7 +2178,9 @@ cda_rail::Network::shortest_path_using_edges(
       }
       if (dist + successor_edge.length < distances[successor]) {
         // Update entry in priority queue
-        distances[successor]    = dist + successor_edge.length;
+        const auto delta_dist =
+            delta_dist_helper(successor_edge, max_v, use_minimal_time);
+        distances[successor]    = dist + delta_dist;
         predecessors[successor] = edge_id;
         pq.emplace(distances[successor], successor);
       }
@@ -2130,4 +2188,105 @@ cda_rail::Network::shortest_path_using_edges(
   }
 
   return {std::nullopt, {}};
+}
+
+double
+cda_rail::Network::length_of_path(const std::vector<size_t>& path) const {
+  /**
+   * Calculates the length of a path given by a vector of edge indices.
+   * @param path: Vector of edge indices
+   * @return: Length of the path
+   */
+
+  double len = 0.0;
+  for (const auto& edge_index : path) {
+    len += get_edge(edge_index).length;
+  }
+  return len;
+}
+
+double cda_rail::Network::delta_dist_helper(const Edge& successor_edge,
+                                            double      max_v,
+                                            bool        use_minimal_time) {
+  double delta_dist = successor_edge.length;
+  if (use_minimal_time) {
+    // If minimal time is used, calculate time needed with maximal speed
+    const double vel = std::min(max_v, successor_edge.max_speed);
+    if (vel <= 0) {
+      throw exceptions::InvalidInputException(
+          "Maximum speed of every edge must be strictly positive if "
+          "minimal time is used");
+    }
+    delta_dist /= vel;
+  }
+  return delta_dist;
+}
+
+std::vector<std::vector<size_t>> cda_rail::Network::all_paths_ending_at_ttd(
+    size_t e_0, const std::vector<std::vector<size_t>>& ttd_sections,
+    std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
+    bool first_edge) const {
+  /**
+   * Finds all paths starting at edge e_0 and ending at a TTD section, which is
+   * not safe_ttd.
+   */
+  std::vector<std::vector<size_t>> ret_val;
+
+  if (!has_edge(e_0)) {
+    throw exceptions::EdgeNotExistentException(e_0);
+  }
+  for (size_t ttd_idx = 0; ttd_idx < ttd_sections.size(); ++ttd_idx) {
+    if (safe_ttd.has_value() && ttd_idx == safe_ttd.value()) {
+      continue;
+    }
+    const auto& ttd_section = ttd_sections.at(ttd_idx);
+    if (std::ranges::contains(ttd_section, e_0)) {
+      if (!first_edge) {
+        // Edge is in TTD section, but not the first edge
+        return {{}};
+      }
+      safe_ttd = ttd_idx;
+    }
+  }
+
+  const auto& e_0_edge = get_edge(e_0);
+  if (exit_node.has_value() && e_0_edge.target == exit_node.value()) {
+    // Edge is already at exit node
+    return {{e_0}};
+  }
+
+  const auto possible_successors = get_successors(e_0);
+  for (const auto& successor : possible_successors) {
+    const auto successor_paths = all_paths_ending_at_ttd(
+        successor, ttd_sections, exit_node, safe_ttd, false);
+    for (const auto& successor_path : successor_paths) {
+      ret_val.emplace_back();
+      ret_val.back().emplace_back(e_0);
+      ret_val.back().insert(ret_val.back().end(), successor_path.begin(),
+                            successor_path.end());
+    }
+  }
+
+  return ret_val;
+}
+
+std::vector<std::vector<size_t>> cda_rail::Network::all_paths_ending_at_ttd(
+    size_t e_0, const std::vector<std::vector<size_t>>& ttd_sections,
+    std::optional<size_t> exit_node) const {
+  /**
+   * All paths starting after(!) e_0 and ending in a TTD section.
+   */
+  std::vector<std::vector<size_t>> ret_val;
+
+  const auto possible_successors = get_successors(e_0);
+  for (const auto& successor : possible_successors) {
+    const auto successor_paths =
+        all_paths_ending_at_ttd(successor, ttd_sections, exit_node, {}, true);
+    for (const auto& successor_path : successor_paths) {
+      ret_val.emplace_back();
+      ret_val.back().insert(ret_val.back().end(), successor_path.begin(),
+                            successor_path.end());
+    }
+  }
+  return ret_val;
 }

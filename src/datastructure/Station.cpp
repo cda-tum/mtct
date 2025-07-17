@@ -45,9 +45,7 @@ void cda_rail::StationList::add_track_to_station(const std::string& name,
   }
 
   // If stations.at(name).tracks already contains track, nothing happens.
-  if (std::find(stations.at(name).tracks.begin(),
-                stations.at(name).tracks.end(),
-                track) != stations.at(name).tracks.end()) {
+  if (std::ranges::contains(stations.at(name).tracks, track)) {
     return;
   }
   stations.at(name).tracks.emplace_back(track);
@@ -181,9 +179,45 @@ bool cda_rail::StationList::is_fully_in_station(
 
   const auto& station_tracks = get_station(station_name).tracks;
 
-  return std::all_of(
-      edges.begin(), edges.end(), [&station_tracks](size_t edge) {
-        return std::find(station_tracks.begin(), station_tracks.end(), edge) !=
-               station_tracks.end();
-      });
+  return std::ranges::all_of(edges, [&station_tracks](size_t edge) {
+    return std::ranges::contains(station_tracks, edge);
+  });
+}
+
+std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+cda_rail::Station::get_stop_tracks(
+    double tr_len, const cda_rail::Network& network,
+    const std::vector<size_t>& edges_to_consider) const {
+  /**
+   * This method returns the tracks of the station on which a train of length
+   * tr_len can stop at the target vertex.
+   * * @param tr_len The length of the train.
+   * * @param network The network to which the station belongs.
+   * * @param edges_to_consider The edges to consider. Default: {}, then all
+   * edges
+   *
+   * @return A vector of pairs:
+   * - The first element of the pair is the index of a possible stop edge
+   * - The second element lists all possible stop paths ending in that edge
+   * Note: The train has to use one of the stop paths if it stops at the (end of
+   * the) edge
+   */
+  auto station_tracks_to_consider =
+      edges_to_consider.empty() ? tracks : std::vector<size_t>();
+  for (const auto& tmp_e : edges_to_consider) {
+    if (std::ranges::contains(tracks, tmp_e)) {
+      station_tracks_to_consider.emplace_back(tmp_e);
+    }
+  }
+
+  std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>> ret_val;
+  for (const auto& e : station_tracks_to_consider) {
+    const auto stop_paths = network.all_paths_of_length_ending_in_edge(
+        e, tr_len, {}, station_tracks_to_consider);
+    if (!stop_paths.empty()) {
+      ret_val.emplace_back(e, stop_paths);
+    }
+  }
+
+  return ret_val;
 }

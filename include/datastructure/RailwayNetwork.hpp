@@ -125,15 +125,26 @@ private:
       std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
           edge_pairs) const;
 
-  [[nodiscard]] std::vector<std::vector<size_t>> all_routes_of_given_length(
-      std::optional<size_t> v_0, std::optional<size_t> e_0,
-      double desired_length, bool reverse_direction,
-      std::optional<size_t> exit_node           = {},
-      std::vector<size_t>   edges_used_by_train = {}) const;
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_routes_of_given_length(std::optional<size_t> v_0,
+                             std::optional<size_t> e_0, double desired_length,
+                             bool                  reverse_direction,
+                             std::optional<size_t> exit_node           = {},
+                             std::vector<size_t>   edges_used_by_train = {},
+                             bool return_successors_if_zero = false) const;
 
   [[nodiscard]] size_t other_vertex(size_t e, size_t v) const {
     return get_edge(e).source == v ? get_edge(e).target : get_edge(e).source;
   };
+
+  [[nodiscard]] static double delta_dist_helper(const Edge& successor_edge,
+                                                double      max_v,
+                                                bool        use_minimal_time);
+
+  [[nodiscard]] std::vector<std::vector<size_t>> all_paths_ending_at_ttd(
+      size_t e_0, const std::vector<std::vector<size_t>>& ttd_sections,
+      std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
+      bool first_edge) const;
 
 public:
   // Constructors
@@ -288,9 +299,11 @@ public:
   [[nodiscard]] std::vector<std::vector<size_t>>
   all_paths_of_length_starting_in_vertex(
       size_t v, double desired_len, std::optional<size_t> exit_node = {},
-      std::vector<size_t> edges_to_consider = {}) const {
+      std::vector<size_t> edges_to_consider         = {},
+      bool                return_successors_if_zero = false) const {
     return all_routes_of_given_length(v, std::nullopt, desired_len, false,
-                                      exit_node, std::move(edges_to_consider));
+                                      exit_node, std::move(edges_to_consider),
+                                      return_successors_if_zero);
   };
   [[nodiscard]] std::vector<std::vector<size_t>>
   all_paths_of_length_starting_in_edge(
@@ -313,6 +326,10 @@ public:
     return all_routes_of_given_length(std::nullopt, e, desired_len, true,
                                       exit_node, std::move(edges_to_consider));
   }
+  [[nodiscard]] std::vector<std::vector<size_t>>
+  all_paths_ending_at_ttd(size_t                                  e_0,
+                          const std::vector<std::vector<size_t>>& ttd_sections,
+                          std::optional<size_t> exit_node) const;
 
   [[nodiscard]] bool has_vertex(size_t index) const {
     return (index < vertices.size());
@@ -546,12 +563,46 @@ public:
   all_edge_pairs_shortest_paths() const;
 
   [[nodiscard]] std::optional<double>
-  shortest_path(size_t source_edge_id, size_t target_vertex_id) const;
+  shortest_path(size_t source_edge_id, size_t target_id,
+                bool target_is_edge = false, bool include_first_edge = false,
+                bool use_minimal_time = false, double max_v = INF) const;
+
+  [[nodiscard]] std::optional<double> shortest_path_between_sets(
+      std::vector<size_t> source_edge_ids, std::vector<size_t> target_ids,
+      bool target_is_edge = false, bool include_first_edge = false,
+      bool use_minimal_time = false, double max_v = INF) const {
+    return shortest_path_between_sets_using_edges(
+               std::move(source_edge_ids), std::move(target_ids), true, {},
+               target_is_edge, include_first_edge, use_minimal_time, max_v)
+        .first;
+  };
 
   [[nodiscard]] std::pair<std::optional<double>, std::vector<size_t>>
   shortest_path_using_edges(size_t source_edge_id, size_t target_vertex_id,
-                            bool only_use_valid_successors   = true,
-                            std::vector<size_t> edges_to_use = {}) const;
+                            bool only_use_valid_successors         = true,
+                            std::vector<size_t> edges_to_use       = {},
+                            bool                target_is_edge     = false,
+                            bool                include_first_edge = false,
+                            bool                use_minimal_time   = false,
+                            double              max_v = INF) const {
+    return shortest_path_between_sets_using_edges(
+        std::vector<size_t>{source_edge_id},
+        std::vector<size_t>{target_vertex_id}, only_use_valid_successors,
+        std::move(edges_to_use), target_is_edge, include_first_edge,
+        use_minimal_time, max_v);
+  };
+
+  [[nodiscard]] std::pair<std::optional<double>, std::vector<size_t>>
+  shortest_path_between_sets_using_edges(std::vector<size_t> source_edge_ids,
+                                         std::vector<size_t> target_ids,
+                                         bool only_use_valid_successors = true,
+                                         std::vector<size_t> edges_to_use = {},
+                                         bool   target_is_edge     = false,
+                                         bool   include_first_edge = false,
+                                         bool   use_minimal_time   = false,
+                                         double max_v              = INF) const;
+
+  [[nodiscard]] double length_of_path(const std::vector<size_t>& path) const;
 };
 
 // HELPER
