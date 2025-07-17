@@ -25,7 +25,8 @@ std::tuple<bool, std::vector<int>, std::vector<std::pair<int, double>>,
            std::vector<int>>
 cda_rail::simulator::GreedySimulator::simulate(
     int dt, bool late_entry_possible, bool late_exit_possible,
-    bool late_stop_possible, bool limit_speed_by_leaving_edges) const {
+    bool late_stop_possible, bool limit_speed_by_leaving_edges,
+    bool save_trajectories) {
   /**
    * This function simulates train movements as specified by the member
    * variables. It returns a vector of doubles denoting the travel times of each
@@ -73,6 +74,12 @@ cda_rail::simulator::GreedySimulator::simulate(
   const int max_t = instance->get_timetable().max_t();
 
   // Initialize variables to keep track of positions and velocities
+  if (save_trajectories) {
+    train_trajectories.clear();
+    train_trajectories.resize(
+        instance->get_timetable().get_train_list().size());
+  }
+
   std::vector<std::pair<double, double>> train_positions(
       instance->get_timetable().get_train_list().size(),
       {-1.0, -1.0}); // {rear, front} positions
@@ -168,6 +175,10 @@ cda_rail::simulator::GreedySimulator::simulate(
             << train_positions.at(tr).second +
                    cda_rail::braking_distance(tr_new_speed,
                                               train_object.deceleration);
+      if (save_trajectories) {
+        train_trajectories.at(tr)[t] = {train_positions.at(tr).second,
+                                        train_velocities.at(tr)};
+      }
     }
 
     // Update rear positions of trains
@@ -303,6 +314,10 @@ cda_rail::simulator::GreedySimulator::simulate(
               << " entered the network at " << entry_vertex.name;
         PLOGV << "New entry blocked until time "
               << vertex_headways.at(train_schedule.get_entry());
+        if (save_trajectories) {
+          train_trajectories.at(tr)[t] = {train_positions.at(tr).second,
+                                          train_velocities.at(tr)};
+        }
       }
     }
 

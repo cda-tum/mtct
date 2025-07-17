@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -61,6 +62,9 @@ class GreedySimulator {
   std::vector<std::vector<size_t>> ttd_orders;
   std::vector<std::vector<size_t>> vertex_orders;
   std::vector<std::vector<double>> stop_positions;
+
+  std::vector<std::map<int, std::pair<double, double>>>
+      train_trajectories; // time -> {pos, vel}
 
 private:
 #if TEST_FRIENDS
@@ -468,7 +472,8 @@ public:
                            std::vector<int>>
   simulate(int dt = 6, bool late_entry_possible = false,
            bool late_exit_possible = false, bool late_stop_possible = false,
-           bool limit_speed_by_leaving_edges = true) const;
+           bool limit_speed_by_leaving_edges = true,
+           bool save_trajectories            = false);
 };
 
 } // namespace cda_rail::simulator
