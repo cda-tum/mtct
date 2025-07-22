@@ -245,6 +245,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       cda_rail::instances::GeneralPerformanceOptimizationInstance>
       sol_object(instance);
 
+  sol_object.reset_routes();
+
   model_created =
       std::chrono::high_resolution_clock::now(); // Start model creation timer
 
@@ -402,9 +404,59 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     }
   }
 
+  model_solved =
+      std::chrono::high_resolution_clock::now(); // Finished model solving
+
+  PLOGD << "Terminated after " << iteration << " iterations, "
+        << (std::chrono::duration_cast<std::chrono::milliseconds>(model_solved -
+                                                                  start)
+                .count() /
+            1000.0)
+        << " seconds.";
+
+  PLOGI << "Extracting solution object...";
+
+  if (sol_object.has_solution()) {
+    // Add solution data to the solution object
+
+    simulator.set_train_edges(best_state.train_edges);
+    simulator.set_ttd_orders(best_state.ttd_orders);
+    simulator.set_vertex_orders(best_state.vertex_orders);
+    simulator.set_stop_positions(best_state.stop_positions);
+
+    // Determine trajectories
+    const auto [feas, exit_times, braking_times, headways] = simulator.simulate(
+        model_detail_input.dt, model_detail_input.late_entry_possible,
+        model_detail_input.late_exit_possible,
+        model_detail_input.late_stop_possible,
+        model_detail_input.limit_speed_by_leaving_edges, true);
+    const auto tr_trajectories = simulator.get_last_trajectories();
+
+    for (size_t tr = 0; tr < instance.get_timetable().get_train_list().size();
+         ++tr) {
+      const auto& tr_name =
+          sol_object.get_instance().get_train_list().get_train(tr).name;
+      const auto& tr_trajectory = tr_trajectories.at(tr);
+      const auto& tr_edges      = best_state.train_edges.at(tr);
+      sol_object.set_train_routed_value(tr_name, !tr_edges.empty());
+      if (!tr_edges.empty()) {
+        sol_object.add_empty_route(tr_name);
+        for (const auto& e : tr_edges) {
+          sol_object.push_back_edge_to_route(tr_name, e);
+        }
+      }
+      for (const auto& [time, pos] : tr_trajectory) {
+        sol_object.add_train_pos(tr_name, time, pos.first);
+        sol_object.add_train_speed(tr_name, time, pos.second);
+      }
+    }
+  }
+
   if (pq.empty() && !sol_object.has_solution()) {
     sol_object.set_status(cda_rail::SolutionStatus::Infeasible);
   }
+
+  PLOGI << "DONE! Solution extracted.";
 
   switch (sol_object.get_status()) {
   case cda_rail::SolutionStatus::Optimal:
@@ -424,17 +476,18 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     break;
   }
 
-  // TODO Add precise solution data to sol object
-
-  model_solved =
-      std::chrono::high_resolution_clock::now(); // Finished model solving
-
-  PLOGD << "Terminated after " << iteration << " iterations, "
-        << (std::chrono::duration_cast<std::chrono::milliseconds>(model_solved -
-                                                                  start)
-                .count() /
-            1000.0)
-        << " seconds.";
+  if (solution_settings_input.export_option ==
+          GeneralExportOption::ExportSolution ||
+      solution_settings_input.export_option ==
+          GeneralExportOption::ExportSolutionWithInstance) {
+    const bool export_instance =
+        (solution_settings_input.export_option ==
+         GeneralExportOption::ExportSolutionWithInstance);
+    PLOGI << "Saving solution";
+    std::filesystem::path path = solution_settings_input.path;
+    path /= solution_settings_input.name;
+    sol_object.export_solution(path, export_instance);
+  }
 
   return sol_object;
 }

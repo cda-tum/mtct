@@ -463,6 +463,10 @@ public:
         "Edge " + std::to_string(edge_id) + " not found in train " +
         std::to_string(train_id) + "'s route.");
   };
+  [[nodiscard]] std::vector<std::map<int, std::pair<double, double>>>
+  get_last_trajectories() const {
+    return train_trajectories;
+  };
 
   [[nodiscard]] double obj(std::vector<int> tr_exit_times) const;
   [[nodiscard]] bool   is_final_state() const;
