@@ -401,6 +401,74 @@ TEST(GenPOMovingBlockAStarSolver, SimpleInstance) {
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(-1, true);
+
+  EXPECT_TRUE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
+}
+
+TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 500, 20, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 2, 1, true, {10, 60},
+                                       0, v0, {10, 400}, 20, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto sol_obj = solver.solve({.dt = 5}, {}, {}, -1, false);
+
+  EXPECT_TRUE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_TRUE(sol_obj.get_train_routed("Train1"));
+  EXPECT_EQ(sol_obj.get_instance().get_route("Train1").size(), 1);
+  EXPECT_EQ(sol_obj.get_instance().get_route("Train1").get_edge(0), v0_v1);
+
+  EXPECT_EQ(sol_obj.get_train_times("Train1").size(), 8);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").at(0), 10);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").at(1), 15);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").at(2), 20);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").at(3), 25);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").at(4), 30);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").at(5), 35);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").at(6), 40);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").at(7), 45);
+
+  // At time 10, the train enters
+  EXPECT_EQ(sol_obj.get_train_pos("Train1", 10), 0);
+  EXPECT_EQ(sol_obj.get_train_speed("Train1", 10), 0);
+
+  // t = 15 -> v = 0 + 5*2 = 10 -> s = 0 + (0 + 10)/2 * 5 = 25
+  EXPECT_EQ(sol_obj.get_train_pos("Train1", 15), 25);
+  EXPECT_EQ(sol_obj.get_train_speed("Train1", 15), 10);
+
+  // t = 20 -> v = 10 + 5*2 = 20 -> s = 25 + (10 + 20)/2 * 5 = 100
+  EXPECT_EQ(sol_obj.get_train_pos("Train1", 20), 100);
+  EXPECT_EQ(sol_obj.get_train_speed("Train1", 20), 20);
+
+  // t = 25 -> v = 20 -> s = 100 + (20 + 20)/2 * 5 = 200
+  EXPECT_EQ(sol_obj.get_train_pos("Train1", 25), 200);
+  EXPECT_EQ(sol_obj.get_train_speed("Train1", 25), 20);
+
+  // t = 30 -> v = 20 -> s = 200 + (20 + 20)/2 * 5 = 300
+  EXPECT_EQ(sol_obj.get_train_pos("Train1", 30), 300);
+  EXPECT_EQ(sol_obj.get_train_speed("Train1", 30), 20);
+
+  // t = 35 -> v = 20 -> s = 300 + (20 + 20)/2 * 5 = 400
+  EXPECT_EQ(sol_obj.get_train_pos("Train1", 35), 400);
+  EXPECT_EQ(sol_obj.get_train_speed("Train1", 35), 20);
+
+  // t = 40 -> v = 20 -> s = 400 + (20 + 20)/2 * 5 = 500
+  EXPECT_EQ(sol_obj.get_train_pos("Train1", 40), 500);
+  EXPECT_EQ(sol_obj.get_train_speed("Train1", 40), 20);
+
+  // t = 45 -> v = 20 -> s = 500 + (20 + 20)/2 * 5 = 600
+  EXPECT_EQ(sol_obj.get_train_pos("Train1", 45), 600);
+  EXPECT_EQ(sol_obj.get_train_speed("Train1", 45), 20);
 }
 
 TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
