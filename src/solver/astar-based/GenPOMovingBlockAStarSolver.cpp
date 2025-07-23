@@ -425,7 +425,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     simulator.set_stop_positions(best_state.stop_positions);
 
     // Determine trajectories
-    const auto [feas, exit_times, braking_times, headways] = simulator.simulate(
+    const auto _ = simulator.simulate(
         model_detail_input.dt, model_detail_input.late_entry_possible,
         model_detail_input.late_exit_possible,
         model_detail_input.late_stop_possible,
