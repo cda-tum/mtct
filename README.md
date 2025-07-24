@@ -124,7 +124,30 @@ This functionality is based on [[5]](#references).
 
 ##### A\* Based
 
-TODO
+`rail_gen_po_moving_block_asstar_testing` is the command line interface for optimal train routing using moving block train control. Various settings can be set by the user affecting the solving process.
+The syntax is as follows
+
+```commandline
+.\build\apps\rail_gen_po_moving_block_asstar_testing [model_name] [instance_path] [cast_instance] [dt] [allow_delays] [limit_speed_by_leaving_edges] [next_state_strategy] [remaining_time_heuristic] [consider_earliest_exit] [timeout]
+```
+
+The parameters are defined as follows:
+
+- _cast_instance_: If the instance contains a general timetable, i.e., times are specified with lower and upper bounds only, this should be false. Otherwise, i.e., if the timetable is specified with exact arrival and departure times, this should be true to convert to a general timetable.
+- _dt_: The time step (in seconds) to be used for simulation.
+- _allow_delays_: If true, late trains are allowed and only penalized in the objective. If false, a routing in which a train is late will be considered infeasible.
+- _limit_speed_by_leaving_edges_: If true, all edges on which a train is present constitute towards its speed limit. If false, only the speed limit of the trains front position is considered.
+- _next_state_strategy_: If 0, trains are moved one edge at a time. If 1, trains are moved all the way to the next TTD section (or scheduled stop).
+- _remaining_time_heuristic_: If 0, the heuristic always outputs 0. If 1, it outputs the quickest path (neglecting acceleration and deceleration constraints).
+- _consider_earliest_exit_: If true, the heuristic considers the earliest exit times allowed by the timetable.
+- _timeout_: Time limit in seconds. No limit if negative.
+
+Booleans have to be passed as numbers (0 = false or 1 = true).
+Hence, the instance _SimpleStation_ could be solved by the following command:
+
+```commandline
+.\build\apps\rail_gen_po_moving_block_lazy_vss_gen_testing SimpleStation .\test\example-networks\SimpleStation 1 6 0 1 1 1 1 -1
+```
 
 #### VSS Generation
 
