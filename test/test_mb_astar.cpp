@@ -406,6 +406,29 @@ TEST(GenPOMovingBlockAStarSolver, SimpleInstance) {
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
 }
 
+TEST(GenPOMovingBlockAStarSolver, SimpleInfeasibleInstance) {
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 20},
+                                       15, v0, {30, 400}, 40, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, {0, 20},
+                                       15, v1, {30, 400}, 40, v0, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto sol_obj = solver.solve(-1, true);
+
+  EXPECT_FALSE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Infeasible);
+}
+
 TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
   Network    network;
   const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
@@ -469,6 +492,110 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
   // t = 45 -> v = 20 -> s = 500 + (20 + 20)/2 * 5 = 600
   EXPECT_EQ(sol_obj.get_train_pos("Train1", 45), 600);
   EXPECT_EQ(sol_obj.get_train_speed("Train1", 45), 20);
+}
+
+TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExport) {
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 500, 20, true);
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 2, 1, true, {10, 60},
+                                       0, v0, {10, 400}, 20, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  std::filesystem::remove_all("tmp1folder");
+  std::filesystem::remove_all("tmp2folder");
+  std::filesystem::remove_all("tmp3folder");
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto sol_obj = solver.solve(
+      {.dt = 5}, {},
+      {.export_option = cda_rail::solver::GeneralExportOption::NoExport,
+       .name          = "tmp1file",
+       .path          = "tmp1folder"},
+      -1, false);
+  EXPECT_FALSE(std::filesystem::exists("tmp1folder"));
+
+  const auto sol_obj_2 = solver.solve(
+      {.dt = 5}, {},
+      {.export_option = cda_rail::solver::GeneralExportOption::ExportSolution,
+       .name          = "tmp2file",
+       .path          = "tmp2folder"},
+      -1, false);
+
+  // Check that tmp2folder and tmp2folder/tmp2file exist
+  EXPECT_TRUE(std::filesystem::exists("tmp2folder"));
+  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file"));
+  // Expect that .../instance and .../solution exist
+  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file/instance"));
+  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file/solution"));
+  // Expect that .../instance/routes exists
+  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file/instance/routes"));
+  // Expect that .../instance/routes/routes.json exists and is not empty
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp2folder/tmp2file/instance/routes/routes.json"));
+  // Within .../solution expect data.json, train_pos.json, train_speed.json
+  EXPECT_TRUE(
+      std::filesystem::exists("tmp2folder/tmp2file/solution/data.json"));
+  EXPECT_TRUE(
+      std::filesystem::exists("tmp2folder/tmp2file/solution/train_pos.json"));
+  EXPECT_TRUE(
+      std::filesystem::exists("tmp2folder/tmp2file/solution/train_speed.json"));
+  // Expect folders .../instance/network and .../instance/timetable to not exist
+  EXPECT_FALSE(std::filesystem::exists("tmp2folder/tmp2file/instance/network"));
+  EXPECT_FALSE(
+      std::filesystem::exists("tmp2folder/tmp2file/instance/timetable"));
+
+  // Remove tmp2folder and its contents
+  std::filesystem::remove_all("tmp2folder");
+
+  const auto sol_obj_3 = solver.solve(
+      {.dt = 5}, {},
+      {.export_option =
+           cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance,
+       .name = "tmp3file",
+       .path = "tmp3folder"},
+      -1, false);
+
+  // Check that corresponding folders exist
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder"));
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file"));
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/instance"));
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/solution"));
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/instance/routes"));
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/instance/network"));
+  EXPECT_TRUE(
+      std::filesystem::exists("tmp3folder/tmp3file/instance/timetable"));
+  // Expect relevant files to exist and be not empty
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/tmp3file/instance/routes/routes.json"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/tmp3file/instance/network/successors.txt"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/tmp3file/instance/network/successors_cpp.json"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/tmp3file/instance/network/tracks.graphml"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/tmp3file/instance/timetable/schedules.json"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/tmp3file/instance/timetable/stations.json"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/tmp3file/instance/timetable/trains.json"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/tmp3file/instance/problem_data.json"));
+  EXPECT_TRUE(
+      std::filesystem::exists("tmp3folder/tmp3file/solution/data.json"));
+  EXPECT_TRUE(
+      std::filesystem::exists("tmp3folder/tmp3file/solution/train_pos.json"));
+  EXPECT_TRUE(
+      std::filesystem::exists("tmp3folder/tmp3file/solution/train_speed.json"));
+
+  // Remove tmp3folder and its contents
+  std::filesystem::remove_all("tmp3folder");
 }
 
 TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
