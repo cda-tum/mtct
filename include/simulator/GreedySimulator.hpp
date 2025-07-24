@@ -468,8 +468,7 @@ public:
     return train_trajectories;
   };
 
-  [[nodiscard]] double obj(std::vector<int> tr_exit_times) const;
-  [[nodiscard]] bool   is_final_state() const;
+  [[nodiscard]] bool is_final_state() const;
 
   [[nodiscard]] std::tuple<bool, std::vector<int>,
                            std::vector<std::pair<int, double>>,

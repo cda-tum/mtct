@@ -1718,25 +1718,6 @@ bool cda_rail::simulator::GreedySimulator::is_current_pos_valid_stop_position(
   return is_route_end_valid_stop_pos(tr, train_edges.at(tr));
 }
 
-double cda_rail::simulator::GreedySimulator::obj(
-    std::vector<int> tr_exit_times) const {
-  if (tr_exit_times.size() !=
-      instance->get_timetable().get_train_list().size()) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Train exit times size does not match the number of trains.");
-  }
-
-  double obj_val = 0.0;
-  for (size_t tr = 0; tr < tr_exit_times.size(); ++tr) {
-    if (tr_exit_times.at(tr) < 0) {
-      continue;
-    }
-    obj_val += instance->get_train_weights().at(tr) *
-               static_cast<double>(tr_exit_times.at(tr));
-  }
-  return obj_val;
-}
-
 bool cda_rail::simulator::GreedySimulator::is_final_state() const {
   for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
        ++tr) {
