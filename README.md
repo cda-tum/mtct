@@ -25,7 +25,7 @@ ETCS Hybrid Level 3 (ETCS HL3) is of great practical interest to achieve shorter
 It allows adding virtual subsections (VSS) that do not depend on trackside train detection (TTD) hardware.
 However, finding optimal layouts is non-trivial and is currently done mainly manually.
 In our research at the [Chair for Design Automation](https://www.cda.cit.tum.de/) of the [Technical University of Munich](https://www.tum.de/en/), we develop design methods to aid designers of such train control systems in automatically finding optimal layouts concerning various optimality criteria.
-A preprint describing the arising design tasks in more detail is available [[7]](#references)
+A journal article describing the arising design tasks in more detail is available [[7]](#references)
 
 First attempts using satisfiability solvers [[1]](#references) and heuristics [[2]](#references) have been implemented at [https://github.com/cda-tum/da_etcs](https://github.com/cda-tum/da_etcs).
 Since the methods used there cannot model continuous properties directly, simplifying assumptions were made.
@@ -80,7 +80,9 @@ Otherwise, they have to be set manually, see also https://support.gurobi.com/hc/
 
 Currently, the tool provides only basic access via the command line and supports the generation of minimal VSS layouts. More command line functions will be added shortly. Example networks can be found in `test/example-networks/`.
 
-#### MILP Based Routing under Moving Block
+#### Routing on Moving Block networks
+
+##### MILP Based
 
 `rail_gen_po_moving_block_lazy_testing` and `rail_gen_po_moving_block_lazy_vss_gen_testing` are command line interfaces for optimal train routing using moving block train control. Various settings can be set by the user affecting the solving process. More precisely, different strategies on how to select lazy constraints can be used.
 The syntax is as follows
@@ -119,7 +121,13 @@ A further variant with simpler headway constraints has also been implemented. In
 
 This functionality is based on [[5]](#references).
 
-#### MILP Based VSS Generation
+##### A\* Based
+
+TODO
+
+#### VSS Generation
+
+##### MILP Based
 
 `rail_vss_generation_timetable_mip_testing` provides access to generating minimal VSS layouts given a specific timetable at different levels of accuracy and with a predefined timeout.
 It produces additional debugging output and saves the raw model and solution to a file.
@@ -149,7 +157,7 @@ Hence, the instance _SimpleStation_ can be solved using default values by the fo
 
 This functionality is based on [[3]](#references).
 
-#### Iterative Approach
+##### Iterative Approach
 
 An iterative approach has been implemented, which can significantly improve the runtime. It uses the continuous model for placing VSS borders. The syntax is as follows
 
@@ -179,7 +187,7 @@ Hence, the instance _SimpleStation_ can be solved using default values by the fo
 
 This functionality is based on [[4]](#references).
 
-#### Using Precomputed Solution Information
+##### Using Precomputed Solution Information
 
 If a [routing under moving block](#milp-based-routing-under-moving-block) has been precomputed, this information can be used when generating minimal VSS layouts. For this, the app `rail_vss_generation_timetable_using_mb_information_testing` can be used.
 The syntax is as follows
@@ -219,14 +227,14 @@ If you have any questions, feel free to contact us via etcs.cda@xcit.tum.de or b
 
 [[2]](https://www.cda.cit.tum.de/files/eda/2022_rssrail_optimal_railway_routing_using_virtual_subsections.pdf) Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Optimal Railway Routing Using Virtual Subsections"**. Reliability, Safety and Security of Railway Systems (RSSRail), 2022 ([doi](https://doi.org/10.1007/978-3-031-05814-1_5), [pdf](https://www.cda.cit.tum.de/files/eda/2022_rssrail_optimal_railway_routing_using_virtual_subsections.pdf))
 
-[[3]](https://drops.dagstuhl.de/opus/volltexte/2023/18767/pdf/OASIcs-ATMOS-2023-6.pdf) Stefan Engels and Tom Peham and Robert Wille. **"A Symbolic Design Method for ETCS Hybrid Level 3 at Different Degrees of Accuracy"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2023 ([doi](https://doi.org/10.4230/OASIcs.ATMOS.2023.6), [pdf](https://drops.dagstuhl.de/opus/volltexte/2023/18767/pdf/OASIcs-ATMOS-2023-6.pdf))
+[[3]](https://www.cda.cit.tum.de/files/eda/2023_atmos_a_symbolic_design_method_for_etcs_hl3_at_different_degrees_of_accuracy.pdf) Stefan Engels and Tom Peham and Robert Wille. **"A Symbolic Design Method for ETCS Hybrid Level 3 at Different Degrees of Accuracy"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2023 ([doi](https://doi.org/10.4230/OASIcs.ATMOS.2023.6), [pdf](https://www.cda.cit.tum.de/files/eda/2023_atmos_a_symbolic_design_method_for_etcs_hl3_at_different_degrees_of_accuracy.pdf))
 
 [[4]](https://www.cda.cit.tum.de/files/eda/2024_date_lbr_iterative_da_for_train_control_with_htd.pdf) Stefan Engels and Robert Wille. **"Late Breaking Results: Iterative Design Automation for Train Control with Hybrid Train Detection"**. Design, Automation and Test in Europe (DATE), 2024 ([doi](https://doi.org/10.23919/DATE58400.2024.10546590), [pdf](https://www.cda.cit.tum.de/files/eda/2024_date_lbr_iterative_da_for_train_control_with_htd.pdf))
 
-[[5]](https://www.cda.cit.tum.de/files/eda/2024_fedcsis_lazy_constraint_selection_strategies_moving_block.pdf) Stefan Engels and Robert Wille. **"Comparing Lazy Constraint Selection Strategies in Train Routing with Moving Block Control"**. Conference on Computer Science and Intelligence Systems (FedCSIS), 2024 ([arXiv](https://arxiv.org/abs/2405.18977), [pdf](https://www.cda.cit.tum.de/files/eda/2024_fedcsis_lazy_constraint_selection_strategies_moving_block.pdf))
+[[5]](https://www.cda.cit.tum.de/files/eda/2024_fedcsis_lazy_constraint_selection_strategies_moving_block.pdf) Stefan Engels and Robert Wille. **"Comparing Lazy Constraint Selection Strategies in Train Routing with Moving Block Control"**. Conference on Computer Science and Intelligence Systems (FedCSIS), 2024 ([doi](https://doi.org/10.15439/2024F3041), [arXiv](https://arxiv.org/abs/2405.18977), [pdf](https://www.cda.cit.tum.de/files/eda/2024_fedcsis_lazy_constraint_selection_strategies_moving_block.pdf))
 
-[[6]](https://www.cda.cit.tum.de/files/eda/2024_atmos_optimization_pipieline_for_train_control_with_htd.pdf) Stefan Engels and Robert Wille. **"Towards an Optimization Pipeline for the Design of Train Control Systems with Hybrid Train Detection"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2024 ([pdf](https://www.cda.cit.tum.de/files/eda/2024_atmos_optimization_pipieline_for_train_control_with_htd.pdf))
+[[6]](https://www.cda.cit.tum.de/files/eda/2024_atmos_optimization_pipieline_for_train_control_with_htd.pdf) Stefan Engels and Robert Wille. **"Towards an Optimization Pipeline for the Design of Train Control Systems with Hybrid Train Detection"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2024 ([doi](https://doi.org/10.4230/OASIcs.ATMOS.2024.12), [pdf](https://www.cda.cit.tum.de/files/eda/2024_atmos_optimization_pipieline_for_train_control_with_htd.pdf))
 
-[[7]](https://www.cda.cit.tum.de/files/eda/2024_arXiv_etcs_design_tasks_and_complexity.pdf) Stefan Engels and Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Design Tasks and Their Complexity for the European Train Control System with Hybrid Train Detection"**. Preprint, 2024 ([arXiv](https://arxiv.org/abs/2308.02572), [pdf](https://www.cda.cit.tum.de/files/eda/2024_arXiv_etcs_design_tasks_and_complexity.pdf))
+[[7]](https://www.cda.cit.tum.de/files/eda/2025_eurojtl_etcs_design_tasks_and_complexity.pdf) Stefan Engels and Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Design tasks and their complexity for the European Train Control System with Hybrid Train Detection"**. EURO Journal on Transportation and Logistics, 2025 ([doi](https://doi.org/https://doi.org/10.1016/j.ejtl.2025.100161), [arXiv](https://arxiv.org/abs/2308.02572), [pdf](https://www.cda.cit.tum.de/files/eda/2025_eurojtl_etcs_design_tasks_and_complexity.pdf))
 
 [[8]](https://www.gurobi.com) Gurobi Optimization, LLC. **"Gurobi Optimizer Reference Manual"**. 2024
