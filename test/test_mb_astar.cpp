@@ -435,6 +435,7 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
   const auto v0_v1 = network.add_edge(v0, v1, 500, 20, true);
+  const auto v1_v0 = network.add_edge(v1, v0, 500, 20, true);
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 50, 2, 1, true, {10, 60},
                                        0, v0, {10, 400}, 20, v1, network);
