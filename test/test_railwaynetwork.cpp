@@ -4030,7 +4030,7 @@ TEST(Functionality, NetworkNextTTD) {
   const auto v7  = network.add_vertex("v7", cda_rail::VertexType::NoBorder);
   const auto v8a = network.add_vertex("v8a", cda_rail::VertexType::TTD);
   const auto v8b = network.add_vertex("v8b", cda_rail::VertexType::TTD);
-  const auto v9a = network.add_vertex("v9", cda_rail::VertexType::TTD);
+  const auto v9a = network.add_vertex("v9a", cda_rail::VertexType::TTD);
   const auto v9b = network.add_vertex("v9b", cda_rail::VertexType::TTD);
 
   const auto v0_v1   = network.add_edge(v0, v1, 100, 20, true);
