@@ -113,7 +113,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     }
   }
 
-  while (t < 10 * max_t) {
+  while (t < GREEDY_SIMULATOR_MAX_TIME_FACTOR * max_t) {
     PLOGV << "----------------------------";
     PLOGV << "Current time: " << t;
 
@@ -1119,6 +1119,14 @@ std::pair<double, double>
 cda_rail::simulator::GreedySimulator::speed_restriction_helper(
     double ma, double max_v, double pos, double vertex_pos, double v_0,
     double v_m, double d, int dt) {
+  /**
+   * This function serves as a helper function for the simulator at a certain
+   * position. If the train can reach the next edge within one time step, it
+   * limits the speed directly. Otherwise, it calculates the moving authority to
+   * ensure that the train can brake well in advance to arrive only at the
+   * limited speed when entering the edge.
+   */
+
   // Can the train reach the next edge within one time step?
   const auto max_dist = (v_0 + v_m) * dt / 2.0;
   if (pos + max_dist >= vertex_pos) {

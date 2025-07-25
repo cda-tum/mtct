@@ -312,7 +312,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     const auto [current_obj, current_state] = pq.top();
     pq.pop();
 
-    if (iteration % 10000 == 0) {
+    if (iteration % DEBUG_LOGGING_RATE == 0) {
       PLOGD << "----------------------------";
       PLOGD << "Iteration " << iteration << ", queue size: " << pq.size();
       PLOGD << "Best objective so far: " << best_obj;

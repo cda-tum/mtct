@@ -35,13 +35,15 @@ class GenPOMovingBlockAStarSolver_NextStatesTTD_Test;
 #endif
 
 namespace cda_rail::solver::astar_based {
+#define DEBUG_LOGGING_RATE 1000
+
 enum class NextStateStrategy : std::uint8_t {
   SingleEdge = 0,
   NextTTD    = 1,
 };
 
 struct ModelDetail {
-  int  dt                           = 6;
+  int  dt                           = 6; // DB simulation default is 6 seconds
   bool late_entry_possible          = false;
   bool late_exit_possible           = false;
   bool late_stop_possible           = false;

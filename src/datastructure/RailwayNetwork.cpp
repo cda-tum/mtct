@@ -2066,6 +2066,7 @@ cda_rail::Network::shortest_path_between_sets_using_edges(
    * @return: A pair containing the distance and the path as a vector of edge
    */
 
+  // Validate input
   if (source_edge_ids.empty()) {
     throw exceptions::InvalidInputException(
         "Source edge IDs must not be empty");

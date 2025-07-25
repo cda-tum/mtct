@@ -52,6 +52,8 @@ class GreedySimulator_FutureSpeedRestrictionConstraintsAfterLeaving_Test;
 
 namespace cda_rail::simulator {
 
+#define GREEDY_SIMULATOR_MAX_TIME_FACTOR 10
+
 class GreedySimulator {
   std::shared_ptr<
       const cda_rail::instances::GeneralPerformanceOptimizationInstance>
