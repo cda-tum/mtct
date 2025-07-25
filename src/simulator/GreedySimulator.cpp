@@ -897,10 +897,8 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
     throw cda_rail::exceptions::ConsistencyException(
         "Train " + std::to_string(tr) + " is not in the network.");
   }
-  if (max_displacement < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Maximum displacement must be non-negative.");
-  }
+  cda_rail::exceptions::throw_if_negative(max_displacement,
+                                          "Maximum displacement");
 
   const auto milestones = edge_milestones(tr);
   bool       first_edge = true;
@@ -1042,22 +1040,11 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
   round_towards_zero(v_0);
   round_towards_zero(max_displacement);
 
-  if (pos < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Position must be non-negative.");
-  }
-  if (v_0 < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Initial velocity must be non-negative.");
-  }
-  if (max_displacement < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Maximum displacement must be non-negative.");
-  }
-  if (dt < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Time step must be non-negative.");
-  }
+  cda_rail::exceptions::throw_if_negative(pos, "Position");
+  cda_rail::exceptions::throw_if_negative(v_0, "Initial velocity");
+  cda_rail::exceptions::throw_if_negative(max_displacement,
+                                          "Maximum displacement");
+  cda_rail::exceptions::throw_if_negative(dt, "Time step");
 
   double max_v = std::min(train.max_speed, v_0 + (train.acceleration * dt));
   double ma    = max_displacement;
@@ -1165,22 +1152,10 @@ double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
 
   round_towards_zero(pos);
   round_towards_zero(v_0);
-  if (h < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Exit headway must be non-negative.");
-  }
-  if (dt < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Time step must be non-negative.");
-  }
-  if (pos < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Position must be non-negative.");
-  }
-  if (v_0 < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Initial velocity must be non-negative.");
-  }
+  cda_rail::exceptions::throw_if_negative(h, "Exit headway");
+  cda_rail::exceptions::throw_if_negative(dt, "Time step");
+  cda_rail::exceptions::throw_if_negative(pos, "Position");
+  cda_rail::exceptions::throw_if_negative(v_0, "Initial velocity");
 
   double v_ub = std::min(train.max_speed, v_0 + (train.acceleration * dt));
   double v_lb = std::max(0.0, v_0 - (train.deceleration * dt));
@@ -1280,22 +1255,11 @@ cda_rail::simulator::GreedySimulator::time_to_exit_objective(
     throw cda_rail::exceptions::InvalidInputException(
         "Time step must be positive.");
   }
-  if (v_0 < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Initial velocity must be non-negative.");
-  }
-  if (v_1 < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Velocity at the end of the time step must be non-negative.");
-  }
-  if (v_e < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Exit velocity must be non-negative.");
-  }
-  if (s < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Distance to the exit must be non-negative.");
-  }
+  cda_rail::exceptions::throw_if_negative(v_0, "Initial velocity");
+  cda_rail::exceptions::throw_if_negative(
+      v_1, "Velocity at the end of the time step");
+  cda_rail::exceptions::throw_if_negative(v_e, "Exit velocity");
+  cda_rail::exceptions::throw_if_negative(s, "Distance to the exit");
   if (a < EPS) {
     throw cda_rail::exceptions::InvalidInputException(
         "Acceleration must be positive.");
@@ -1390,22 +1354,16 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
   // 2*d*ma-d*dt*v_0) v_1 = 0.5 * (sqrt(A^2 + 4*B) - A)
   round_towards_zero(v_0);
   round_towards_zero(ma);
-  if (std::abs(d) < EPS) {
+  if (d < EPS) {
     throw cda_rail::exceptions::InvalidInputException(
         "Deceleration must be positive.");
   }
-  if (v_0 < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Initial velocity must be non-negative.");
-  }
-  if (dt < 0) {
+  cda_rail::exceptions::throw_if_negative(v_0, "Initial velocity");
+  if (dt <= 0) {
     throw cda_rail::exceptions::InvalidInputException(
         "Time step must be positive.");
   }
-  if (ma < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Moving authority must be non-negative.");
-  }
+  cda_rail::exceptions::throw_if_negative(ma, "Moving authority");
 
   if (v_0 * static_cast<double>(dt) / 2.0 >= ma) {
     // If linearly stopping, train will run over the moving authority
@@ -1526,10 +1484,7 @@ bool cda_rail::simulator::GreedySimulator::is_feasible_to_schedule(
     throw cda_rail::exceptions::InvalidInputException(
         "Train positions size does not match the number of trains.");
   }
-  if (t < 0) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Time step must be non-negative.");
-  }
+  cda_rail::exceptions::throw_if_negative(t, "Time step");
 
   for (size_t tr = 0; tr < train_positions.size(); ++tr) {
     if (trains_finished_simulating.contains(tr)) {

@@ -159,4 +159,12 @@ public:
 private:
   std::string error_message;
 };
+
+static void throw_if_negative(double val, const std::string& name) {
+  if (val < 0) {
+    throw InvalidInputException(name + " must be non-negative, but is " +
+                                std::to_string(val) + ".");
+  }
+}
+
 } // namespace cda_rail::exceptions

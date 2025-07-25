@@ -381,10 +381,7 @@ public:
     stop_positions.at(train_id) = std::move(positions);
   };
   void append_stop_position_to_tr(size_t train_id, double position) {
-    if (position < 0) {
-      throw cda_rail::exceptions::InvalidInputException(
-          "Stop position must be non-negative.");
-    }
+    cda_rail::exceptions::throw_if_negative(position, "Stop position");
     if (train_id >= stop_positions.size()) {
       throw cda_rail::exceptions::TrainNotExistentException(train_id);
     }
