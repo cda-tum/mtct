@@ -1251,14 +1251,14 @@ cda_rail::simulator::GreedySimulator::time_to_exit_objective(
   round_towards_zero(v_0);
   round_towards_zero(v_1);
   round_towards_zero(s);
-  throw_if_non_positive(dt, = 0, "Time step");
+  cda_rail::exceptions::throw_if_non_positive(dt, = 0, "Time step");
   cda_rail::exceptions::throw_if_negative(v_0, "Initial velocity");
   cda_rail::exceptions::throw_if_negative(
       v_1, "Velocity at the end of the time step");
   cda_rail::exceptions::throw_if_negative(v_e, "Exit velocity");
   cda_rail::exceptions::throw_if_negative(s, "Distance to the exit");
-  throw_if_non_positive(a, EPS, "Acceleration");
-  throw_if_non_positive(d, EPS, "Deceleration");
+  cda_rail::exceptions::throw_if_non_positive(a, EPS, "Acceleration");
+  cda_rail::exceptions::throw_if_non_positive(d, EPS, "Deceleration");
 
   const auto x_1 =
       (v_0 + v_1) * dt / 2.0; // Distance traveled in the first time step
@@ -1345,9 +1345,9 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
   // 2*d*ma-d*dt*v_0) v_1 = 0.5 * (sqrt(A^2 + 4*B) - A)
   round_towards_zero(v_0);
   round_towards_zero(ma);
-  throw_if_non_positive(d, EPS, "Deceleration");
+  cda_rail::exceptions::throw_if_non_positive(d, EPS, "Deceleration");
   cda_rail::exceptions::throw_if_negative(v_0, "Initial velocity");
-  throw_if_non_positive(dt, = 0, "Time step");
+  cda_rail::exceptions::throw_if_non_positive(dt, = 0, "Time step");
   cda_rail::exceptions::throw_if_negative(ma, "Moving authority");
 
   if (v_0 * static_cast<double>(dt) / 2.0 >= ma) {
