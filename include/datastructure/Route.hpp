@@ -14,7 +14,7 @@
 namespace cda_rail {
 class Route {
 private:
-  std::vector<size_t> edges;
+  cda_rail::index_vector edges;
 
 public:
   void push_back_edge(size_t edge_index, const Network& network);
@@ -52,8 +52,8 @@ public:
   };
 
   [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::vector<size_t>& edges_to_consider,
-           const Network&             network) const;
+  edge_pos(const cda_rail::index_vector& edges_to_consider,
+           const Network&                network) const;
 
   [[nodiscard]] size_t get_edge_at_pos(double         pos,
                                        const Network& network) const;
@@ -63,7 +63,9 @@ public:
                                      const Network& network) const;
   [[nodiscard]] size_t      size() const { return edges.size(); };
   [[nodiscard]] bool        empty() const { return edges.empty(); };
-  [[nodiscard]] const std::vector<size_t>& get_edges() const { return edges; };
+  [[nodiscard]] const cda_rail::index_vector& get_edges() const {
+    return edges;
+  };
 
   [[nodiscard]] bool contains_edge(size_t edge_index) const {
     return std::ranges::contains(edges, edge_index);
@@ -75,7 +77,7 @@ public:
   [[nodiscard]] bool check_consistency(const Network& network) const;
 
   void update_after_discretization(
-      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges);
+      const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
 };
 
 class RouteMap {
@@ -150,7 +152,7 @@ public:
     return get_route(train_name).edge_pos(source, target, network);
   };
   [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::string& train_name, const std::vector<size_t>& edges,
+  edge_pos(const std::string& train_name, const cda_rail::index_vector& edges,
            const Network& network) const {
     return get_route(train_name).edge_pos(edges, network);
   };
@@ -182,6 +184,6 @@ public:
   };
 
   void update_after_discretization(
-      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges);
+      const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
 };
 } // namespace cda_rail

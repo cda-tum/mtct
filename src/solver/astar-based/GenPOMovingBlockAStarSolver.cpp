@@ -164,10 +164,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                     new_state_stop.train_edges.at(tr)));
             next_state_ttd_helper(
                 tr, new_state_stop, simulator,
-                std::vector<size_t>(
+                cda_rail::index_vector(
                     path.begin(),
                     path.begin() +
-                        static_cast<std::vector<size_t>::difference_type>(
+                        static_cast<cda_rail::index_vector::difference_type>(
                             e_idx + 1)));
             next_state_exit_vertex_helper(tr, new_state_stop, simulator);
             next_states.insert(new_state_stop);
@@ -186,7 +186,7 @@ void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     next_state_ttd_helper(
         size_t tr, cda_rail::solver::astar_based::GreedySimulatorState& state,
         const cda_rail::simulator::GreedySimulator& simulator,
-        const std::vector<size_t>&                  new_edges) {
+        const cda_rail::index_vector&               new_edges) {
   const auto& ttd_sections = simulator.get_ttd_sections();
 
   for (size_t ttd_id = 0; ttd_id < ttd_sections.size(); ++ttd_id) {

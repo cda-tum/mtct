@@ -160,17 +160,19 @@ public:
     return timetable.get_schedule(train_name);
   };
 
-  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+  [[nodiscard]] std::vector<
+      std::pair<size_t, std::vector<cda_rail::index_vector>>>
   get_stop_tracks(size_t tr, const std::string& station_name,
-                  const std::vector<size_t>& edges_to_consider = {}) const {
+                  const cda_rail::index_vector& edges_to_consider = {}) const {
     return timetable.get_stop_tracks(tr, station_name, this->const_n(),
                                      edges_to_consider);
   };
 
-  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+  [[nodiscard]] std::vector<
+      std::pair<size_t, std::vector<cda_rail::index_vector>>>
   possible_stop_vertices(
       size_t tr, const std::string& station_name,
-      const std::vector<size_t>& edges_to_consider = {}) const {
+      const cda_rail::index_vector& edges_to_consider = {}) const {
     /**
      * This method returns the possible stop vertices for a train at a station
      * together with the respective stop edges
@@ -188,7 +190,7 @@ public:
      */
 
     auto stop_tracks = get_stop_tracks(tr, station_name, edges_to_consider);
-    std::unordered_map<size_t, std::vector<std::vector<size_t>>> combined;
+    std::unordered_map<size_t, std::vector<cda_rail::index_vector>> combined;
 
     for (const auto& [edge_index, paths] : stop_tracks) {
       size_t target = this->const_n().get_edge(edge_index).target;
@@ -196,7 +198,7 @@ public:
       vec.insert(vec.end(), paths.begin(), paths.end());
     }
 
-    std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>> ret_val;
+    std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>> ret_val;
     ret_val.reserve(combined.size());
     for (auto& [target, paths] : combined) {
       ret_val.emplace_back(target, std::move(paths));
@@ -204,10 +206,11 @@ public:
 
     return ret_val;
   };
-  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
-  possible_stop_vertices(const std::string&         train_name,
-                         const std::string&         station_name,
-                         const std::vector<size_t>& edges_to_consider = {}) {
+  [[nodiscard]] std::vector<
+      std::pair<size_t, std::vector<cda_rail::index_vector>>>
+  possible_stop_vertices(const std::string&            train_name,
+                         const std::string&            station_name,
+                         const cda_rail::index_vector& edges_to_consider = {}) {
     return possible_stop_vertices(
         get_timetable().get_train_list().get_train_index(train_name),
         station_name, edges_to_consider);
@@ -273,8 +276,8 @@ public:
       return has_route(tr.name) && !get_route(tr.name).empty();
     });
   };
-  [[nodiscard]] std::vector<size_t>
-  trains_in_section(const std::vector<size_t>& section) const {
+  [[nodiscard]] cda_rail::index_vector
+  trains_in_section(const cda_rail::index_vector& section) const {
     /**
      * Returns the trains that traverse the given section
      *
@@ -282,7 +285,7 @@ public:
      * @return the trains that traverse the given section
      */
 
-    std::vector<size_t> tr_in_sec;
+    cda_rail::index_vector tr_in_sec;
     for (size_t i = 0; i < get_train_list().size(); ++i) {
       auto tr_name        = get_train_list().get_train(i).name;
       auto tr_route       = get_route(tr_name).get_edges();
@@ -299,7 +302,7 @@ public:
 
     return tr_in_sec;
   };
-  [[nodiscard]] std::vector<size_t>
+  [[nodiscard]] cda_rail::index_vector
   edges_used_by_train(const std::string& train_name, bool fixed_routes,
                       bool error_if_no_route = true) const {
     /**
@@ -314,24 +317,24 @@ public:
 
     if (!fixed_routes || (!error_if_no_route && !has_route(train_name))) {
       // return vector with values 0, 1, ..., num_edges-1
-      std::vector<size_t> return_edges(this->const_n().number_of_edges());
+      cda_rail::index_vector return_edges(this->const_n().number_of_edges());
       std::iota(return_edges.begin(), return_edges.end(), 0);
       return return_edges;
     }
     return get_route(train_name).get_edges();
   };
-  [[nodiscard]] std::vector<size_t>
+  [[nodiscard]] cda_rail::index_vector
   edges_used_by_train(size_t train_id, bool fixed_routes,
                       bool error_if_no_route = true) const {
     return edges_used_by_train(get_train_list().get_train(train_id).name,
                                fixed_routes, error_if_no_route);
   };
-  [[nodiscard]] std::vector<size_t>
+  [[nodiscard]] cda_rail::index_vector
   vertices_used_by_train(const std::string& tr_name, bool fixed_routes,
                          bool error_if_no_route = true) const {
     const auto edges =
         edges_used_by_train(tr_name, fixed_routes, error_if_no_route);
-    std::vector<size_t> return_vertices;
+    cda_rail::index_vector return_vertices;
     for (const auto& e_id : edges) {
       const auto& edge = this->const_n().get_edge(e_id);
       if (!std::ranges::contains(return_vertices, edge.source)) {
@@ -343,20 +346,20 @@ public:
     }
     return return_vertices;
   };
-  [[nodiscard]] std::vector<size_t>
+  [[nodiscard]] cda_rail::index_vector
   vertices_used_by_train(size_t tr_id, bool fixed_routes,
                          bool error_if_no_route = true) const {
     return vertices_used_by_train(get_train_list().get_train(tr_id).name,
                                   fixed_routes, error_if_no_route);
   };
-  [[nodiscard]] std::vector<size_t>
-  sections_used_by_train(const std::string&                      tr_name,
-                         const std::vector<std::vector<size_t>>& sections,
-                         bool                                    fixed_routes,
+  [[nodiscard]] cda_rail::index_vector
+  sections_used_by_train(const std::string&                         tr_name,
+                         const std::vector<cda_rail::index_vector>& sections,
+                         bool fixed_routes,
                          bool error_if_no_route = true) const {
     const auto edges =
         edges_used_by_train(tr_name, fixed_routes, error_if_no_route);
-    std::vector<size_t> return_sections;
+    cda_rail::index_vector return_sections;
     for (size_t section_id = 0; section_id < sections.size(); ++section_id) {
       const auto& section     = sections[section_id];
       bool        add_section = false;
@@ -372,16 +375,16 @@ public:
     }
     return return_sections;
   };
-  [[nodiscard]] std::vector<size_t> sections_used_by_train(
-      size_t tr_id, const std::vector<std::vector<size_t>>& sections,
+  [[nodiscard]] cda_rail::index_vector sections_used_by_train(
+      size_t tr_id, const std::vector<cda_rail::index_vector>& sections,
       bool fixed_routes, bool error_if_no_route = true) const {
     return sections_used_by_train(get_train_list().get_train(tr_id).name,
                                   sections, fixed_routes, error_if_no_route);
   };
-  [[nodiscard]] std::vector<size_t>
-  trains_in_section(const std::vector<size_t>& section, bool fix_routes,
+  [[nodiscard]] cda_rail::index_vector
+  trains_in_section(const cda_rail::index_vector& section, bool fix_routes,
                     bool error_if_no_route = true) const {
-    std::vector<size_t> tr_in_sec;
+    cda_rail::index_vector tr_in_sec;
     for (size_t i = 0; i < get_train_list().size(); ++i) {
       const auto edges_used =
           edges_used_by_train(i, fix_routes, error_if_no_route);
@@ -394,10 +397,10 @@ public:
     }
     return tr_in_sec;
   };
-  [[nodiscard]] std::vector<size_t>
+  [[nodiscard]] cda_rail::index_vector
   trains_on_edge(size_t edge_id, bool fixed_routes,
-                 const std::vector<size_t>& trains_to_consider,
-                 bool                       error_if_not_route = true) const {
+                 const cda_rail::index_vector& trains_to_consider,
+                 bool error_if_not_route = true) const {
     /**
      * Returns all trains that are present on a specific edge, but only consider
      * a subset of trains.
@@ -418,7 +421,7 @@ public:
     if (!fixed_routes) {
       return trains_to_consider;
     }
-    std::vector<size_t> return_trains;
+    cda_rail::index_vector return_trains;
     for (const auto tr : trains_to_consider) {
       bool add_train = false;
       if (!error_if_not_route &&
@@ -437,7 +440,7 @@ public:
     }
     return return_trains;
   };
-  [[nodiscard]] std::vector<size_t>
+  [[nodiscard]] cda_rail::index_vector
   trains_on_edge_mixed_routing(size_t edge_id, bool fixed_routes,
                                bool error_if_not_route = true) const {
     /**
@@ -449,13 +452,13 @@ public:
      *
      * @return all trains that are present on a specific edge at any time
      */
-    std::vector<size_t> trains_to_consider(get_train_list().size());
+    cda_rail::index_vector trains_to_consider(get_train_list().size());
     std::iota(trains_to_consider.begin(), trains_to_consider.end(), 0);
     return trains_on_edge(edge_id, fixed_routes, trains_to_consider,
                           error_if_not_route);
   }
-  [[nodiscard]] std::vector<size_t> trains_on_edge(size_t edge_id,
-                                                   bool   fixed_routes) const {
+  [[nodiscard]] cda_rail::index_vector trains_on_edge(size_t edge_id,
+                                                      bool fixed_routes) const {
     return trains_on_edge_mixed_routing(edge_id, fixed_routes, true);
   };
 
@@ -485,8 +488,8 @@ public:
     return routes.edge_pos(train_name, source, target, this->const_n());
   };
   [[nodiscard]] std::pair<double, double>
-  route_edge_pos(const std::string&         train_name,
-                 const std::vector<size_t>& edges) const {
+  route_edge_pos(const std::string&            train_name,
+                 const cda_rail::index_vector& edges) const {
     return routes.edge_pos(train_name, edges, this->const_n());
   };
 

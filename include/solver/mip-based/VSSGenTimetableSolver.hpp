@@ -68,32 +68,32 @@ private:
   size_t                                 num_edges              = 0;
   size_t                                 num_vertices           = 0;
   size_t                                 num_breakable_sections = 0;
-  std::vector<std::vector<size_t>>       unbreakable_sections;
-  std::vector<std::vector<size_t>>       no_border_vss_sections;
+  std::vector<cda_rail::index_vector>    unbreakable_sections;
+  std::vector<cda_rail::index_vector>    no_border_vss_sections;
   std::vector<std::pair<size_t, size_t>> train_interval;
   std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
-                      breakable_edges_pairs;
-  std::vector<size_t> no_border_vss_vertices;
-  std::vector<size_t> relevant_edges;
-  std::vector<size_t> breakable_edges;
-  bool                fix_routes = false;
-  vss::Model          vss_model  = vss::Model(vss::ModelType::Continuous);
-  bool                include_train_dynamics     = false;
-  bool                include_braking_curves     = false;
-  bool                use_pwl                    = false;
-  bool                use_schedule_cuts          = false;
-  bool                iterative_vss              = false;
-  OptimalityStrategy  optimality_strategy        = OptimalityStrategy::Optimal;
-  UpdateStrategy      iterative_update_strategy  = UpdateStrategy::Fixed;
-  double              iterative_initial_value    = 1;
-  double              iterative_update_value     = 2;
-  bool                iterative_include_cuts     = true;
-  bool                iterative_include_cuts_tmp = true;
-  bool                postprocess                = false;
-  ExportOption        export_option              = ExportOption::NoExport;
-  std::vector<size_t> max_vss_per_edge_in_iteration;
+                         breakable_edges_pairs;
+  cda_rail::index_vector no_border_vss_vertices;
+  cda_rail::index_vector relevant_edges;
+  cda_rail::index_vector breakable_edges;
+  bool                   fix_routes = false;
+  vss::Model             vss_model  = vss::Model(vss::ModelType::Continuous);
+  bool                   include_train_dynamics = false;
+  bool                   include_braking_curves = false;
+  bool                   use_pwl                = false;
+  bool                   use_schedule_cuts      = false;
+  bool                   iterative_vss          = false;
+  OptimalityStrategy     optimality_strategy    = OptimalityStrategy::Optimal;
+  UpdateStrategy         iterative_update_strategy  = UpdateStrategy::Fixed;
+  double                 iterative_initial_value    = 1;
+  double                 iterative_update_value     = 2;
+  bool                   iterative_include_cuts     = true;
+  bool                   iterative_include_cuts_tmp = true;
+  bool                   postprocess                = false;
+  ExportOption           export_option              = ExportOption::NoExport;
+  cda_rail::index_vector max_vss_per_edge_in_iteration;
   std::unordered_map<size_t, size_t> breakable_edge_indices;
-  std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
+  std::vector<std::pair<cda_rail::index_vector, cda_rail::index_vector>>
       fwd_bwd_sections;
 
   // Variable functions
@@ -162,25 +162,25 @@ private:
       const std::optional<cda_rail::instances::SolVSSGenerationTimetable>&
                               sol_object,
       const SolutionSettings& solution_settings);
-  [[nodiscard]] std::vector<size_t>
+  [[nodiscard]] cda_rail::index_vector
                        unbreakable_section_indices(size_t train_index) const;
   void                 calculate_fwd_bwd_sections();
   void                 calculate_fwd_bwd_sections_discretized();
   void                 calculate_fwd_bwd_sections_non_discretized();
   [[nodiscard]] double get_max_brakelen(const size_t& tr) const;
 
-  [[nodiscard]] std::pair<std::vector<std::vector<size_t>>,
-                          std::vector<std::vector<size_t>>>
+  [[nodiscard]] std::pair<std::vector<cda_rail::index_vector>,
+                          std::vector<cda_rail::index_vector>>
   common_entry_exit_vertices() const;
 
   struct TemporaryImpossibilityStruct {
-    bool                to_use;
-    size_t              t_before;
-    size_t              t_after;
-    double              v_before;
-    double              v_after;
-    std::vector<size_t> edges_before;
-    std::vector<size_t> edges_after;
+    bool                   to_use;
+    size_t                 t_before;
+    size_t                 t_after;
+    double                 v_before;
+    double                 v_after;
+    cda_rail::index_vector edges_before;
+    cda_rail::index_vector edges_after;
   };
   [[nodiscard]] TemporaryImpossibilityStruct
   get_temporary_impossibility_struct(const size_t& tr, const size_t& t) const;

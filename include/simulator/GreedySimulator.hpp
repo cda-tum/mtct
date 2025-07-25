@@ -57,13 +57,13 @@ namespace cda_rail::simulator {
 class GreedySimulator {
   std::shared_ptr<
       const cda_rail::instances::GeneralPerformanceOptimizationInstance>
-                                   instance;
-  std::vector<std::vector<size_t>> ttd_sections;
+                                      instance;
+  std::vector<cda_rail::index_vector> ttd_sections;
 
-  std::vector<std::vector<size_t>> train_edges;
-  std::vector<std::vector<size_t>> ttd_orders;
-  std::vector<std::vector<size_t>> vertex_orders;
-  std::vector<std::vector<double>> stop_positions;
+  std::vector<cda_rail::index_vector> train_edges;
+  std::vector<cda_rail::index_vector> ttd_orders;
+  std::vector<cda_rail::index_vector> vertex_orders;
+  std::vector<std::vector<double>>    stop_positions;
 
   std::vector<std::map<int, std::pair<double, double>>>
       train_trajectories; // time -> {pos, vel}
@@ -223,7 +223,7 @@ private:
 public:
   explicit GreedySimulator(
       cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
-      std::vector<std::vector<size_t>>                             ttd_sections)
+      std::vector<cda_rail::index_vector>                          ttd_sections)
       : instance(std::make_shared<const cda_rail::instances::
                                       GeneralPerformanceOptimizationInstance>(
             instance)),
@@ -235,11 +235,11 @@ public:
   };
   explicit GreedySimulator(
       cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
-      std::vector<std::vector<size_t>>                             ttd_sections,
-      std::vector<std::vector<size_t>>                             train_edges,
-      std::vector<std::vector<size_t>>                             ttd_orders,
-      std::vector<std::vector<size_t>> vertex_orders,
-      std::vector<std::vector<double>> stop_positions)
+      std::vector<cda_rail::index_vector>                          ttd_sections,
+      std::vector<cda_rail::index_vector>                          train_edges,
+      std::vector<cda_rail::index_vector>                          ttd_orders,
+      std::vector<cda_rail::index_vector> vertex_orders,
+      std::vector<std::vector<double>>    stop_positions)
       : instance(std::make_shared<const cda_rail::instances::
                                       GeneralPerformanceOptimizationInstance>(
             instance)),
@@ -263,14 +263,14 @@ public:
     return instance->const_n().length_of_path(train_edges.at(tr));
   };
 
-  void set_train_edges(std::vector<std::vector<size_t>> tr_edges) {
+  void set_train_edges(std::vector<cda_rail::index_vector> tr_edges) {
     if (tr_edges.size() != instance->get_timetable().get_train_list().size()) {
       throw cda_rail::exceptions::InvalidInputException(
           "Size of train_edges does not match number of trains in instance.");
     }
     train_edges = std::move(tr_edges);
   };
-  void set_train_edges_of_tr(size_t train_id, std::vector<size_t> edges) {
+  void set_train_edges_of_tr(size_t train_id, cda_rail::index_vector edges) {
     if (!instance->get_timetable().get_train_list().has_train(train_id)) {
       throw cda_rail::exceptions::TrainNotExistentException(train_id);
     }
@@ -282,11 +282,11 @@ public:
     }
     train_edges.at(train_id).push_back(edge);
   };
-  [[nodiscard]] const std::vector<std::vector<size_t>>&
+  [[nodiscard]] const std::vector<cda_rail::index_vector>&
   get_train_edges() const {
     return train_edges;
   };
-  [[nodiscard]] const std::vector<size_t>&
+  [[nodiscard]] const cda_rail::index_vector&
   get_train_edges_of_tr(size_t train_id) const {
     if (train_id >= train_edges.size()) {
       throw cda_rail::exceptions::TrainNotExistentException(train_id);
@@ -294,7 +294,7 @@ public:
     return train_edges.at(train_id);
   };
 
-  void set_ttd_orders(std::vector<std::vector<size_t>> orders) {
+  void set_ttd_orders(std::vector<cda_rail::index_vector> orders) {
     if (orders.size() != ttd_sections.size()) {
       throw cda_rail::exceptions::InvalidInputException(
           "Size of ttd_orders does not match number of ttd sections in "
@@ -302,17 +302,18 @@ public:
     }
     ttd_orders = std::move(orders);
   };
-  void set_ttd_orders_of_ttd(size_t ttd_index, std::vector<size_t> orders) {
+  void set_ttd_orders_of_ttd(size_t ttd_index, cda_rail::index_vector orders) {
     if (ttd_index >= ttd_orders.size()) {
       throw cda_rail::exceptions::InvalidInputException(
           "TTD index out of bounds.");
     }
     ttd_orders.at(ttd_index) = std::move(orders);
   };
-  [[nodiscard]] const std::vector<std::vector<size_t>>& get_ttd_orders() const {
+  [[nodiscard]] const std::vector<cda_rail::index_vector>&
+  get_ttd_orders() const {
     return ttd_orders;
   };
-  [[nodiscard]] const std::vector<size_t>&
+  [[nodiscard]] const cda_rail::index_vector&
   get_ttd_orders_of_ttd(size_t ttd_index) const {
     if (ttd_index >= ttd_orders.size()) {
       throw cda_rail::exceptions::InvalidInputException(
@@ -320,12 +321,12 @@ public:
     }
     return ttd_orders.at(ttd_index);
   };
-  [[nodiscard]] const std::vector<std::vector<size_t>>&
+  [[nodiscard]] const std::vector<cda_rail::index_vector>&
   get_ttd_sections() const {
     return ttd_sections;
   };
 
-  void set_vertex_orders(std::vector<std::vector<size_t>> orders) {
+  void set_vertex_orders(std::vector<cda_rail::index_vector> orders) {
     if (orders.size() != instance->const_n().number_of_vertices()) {
       throw cda_rail::exceptions::InvalidInputException(
           "Size of vertex_orders does not match number of vertices in "
@@ -333,19 +334,19 @@ public:
     }
     vertex_orders = std::move(orders);
   };
-  void set_vertex_orders_of_vertex(size_t              vertex_id,
-                                   std::vector<size_t> orders) {
+  void set_vertex_orders_of_vertex(size_t                 vertex_id,
+                                   cda_rail::index_vector orders) {
     if (vertex_id >= vertex_orders.size()) {
       throw cda_rail::exceptions::InvalidInputException(
           "Vertex index out of bounds.");
     }
     vertex_orders.at(vertex_id) = std::move(orders);
   };
-  [[nodiscard]] const std::vector<std::vector<size_t>>&
+  [[nodiscard]] const std::vector<cda_rail::index_vector>&
   get_vertex_orders() const {
     return vertex_orders;
   };
-  [[nodiscard]] const std::vector<size_t>&
+  [[nodiscard]] const cda_rail::index_vector&
   get_vertex_orders_of_vertex(size_t vertex_id) const {
     if (vertex_id >= vertex_orders.size()) {
       throw cda_rail::exceptions::InvalidInputException(
@@ -436,7 +437,7 @@ public:
   };
   [[nodiscard]] bool is_current_pos_valid_stop_position(size_t tr) const;
   [[nodiscard]] bool
-  is_route_end_valid_stop_pos(size_t tr, std::vector<size_t> edges) const;
+  is_route_end_valid_stop_pos(size_t tr, cda_rail::index_vector edges) const;
   [[nodiscard]] const std::vector<std::vector<double>>&
   get_stop_positions() const {
     return stop_positions;

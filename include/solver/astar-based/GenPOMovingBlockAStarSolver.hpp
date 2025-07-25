@@ -60,10 +60,10 @@ struct SolverStrategyMBAStar {
 };
 
 struct GreedySimulatorState {
-  std::vector<std::vector<size_t>> train_edges;
-  std::vector<std::vector<size_t>> ttd_orders;
-  std::vector<std::vector<size_t>> vertex_orders;
-  std::vector<std::vector<double>> stop_positions;
+  std::vector<cda_rail::index_vector> train_edges;
+  std::vector<cda_rail::index_vector> ttd_orders;
+  std::vector<cda_rail::index_vector> vertex_orders;
+  std::vector<std::vector<double>>    stop_positions;
 
   bool operator==(const GreedySimulatorState& other) const {
     return train_edges == other.train_edges && ttd_orders == other.ttd_orders &&
@@ -165,7 +165,7 @@ private:
 
   static void next_state_ttd_helper(size_t tr, GreedySimulatorState& state,
                                     const simulator::GreedySimulator& simulator,
-                                    const std::vector<size_t>& new_edges);
+                                    const cda_rail::index_vector& new_edges);
   static void
   next_state_exit_vertex_helper(size_t tr, GreedySimulatorState& state,
                                 const simulator::GreedySimulator& simulator);

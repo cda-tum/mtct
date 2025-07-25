@@ -453,7 +453,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
   for (size_t tr = 0; tr < num_tr; tr++) {
     std::vector<
-        std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>>
+        std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>>
         tr_data;
     tr_data.reserve(instance.get_schedule(tr).get_stops().size());
     for (const auto& stop : instance.get_schedule(tr).get_stops()) {
@@ -960,8 +960,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         const auto v_exit_velocities = velocity_extensions.at(tr).at(v);
         // t_rear_departure(v) >= t_front_departure(v)  + min_t selected by
         // incoming edge speed
-        const auto          in_edges          = instance.const_n().in_edges(v);
-        std::vector<size_t> relevant_in_edges = {};
+        const auto             in_edges = instance.const_n().in_edges(v);
+        cda_rail::index_vector relevant_in_edges = {};
         for (const auto& e : in_edges) {
           if (std::ranges::contains(edges_used_by_train, e)) {
             relevant_in_edges.push_back(e);
@@ -1468,7 +1468,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           const auto intersecting_ttd =
               cda_rail::Network::get_intersecting_ttd(p, ttd_sections);
           for (const auto& [ttd_index, e_index] : intersecting_ttd) {
-            const auto& p_tmp = std::vector<size_t>(
+            const auto& p_tmp = cda_rail::index_vector(
                 p.begin(), p.begin() + static_cast<std::ptrdiff_t>(e_index));
             const auto p_tmp_len = std::accumulate(
                 p_tmp.begin(), p_tmp.end(), 0.0,
@@ -1514,7 +1514,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                   lhs_from_rear -= vel <= GRB_EPS ? 0 : obd / vel;
                   is_relevant = true;
                 } else {
-                  std::vector<size_t> rel_in_edges;
+                  cda_rail::index_vector rel_in_edges;
                   for (const auto& e : instance.const_n().in_edges(v)) {
                     if (std::ranges::contains(tr_used_edges, e)) {
                       rel_in_edges.push_back(e);
@@ -1704,7 +1704,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto e_tr =
           instance.edges_used_by_train(tr, model_detail.fix_routes, false);
       // relevant edges are intersection of ttd_section and e_tr
-      std::vector<size_t> relevant_edges;
+      cda_rail::index_vector relevant_edges;
       for (const auto& e : ttd_section) {
         if (std::ranges::contains(e_tr, e)) {
           relevant_edges.push_back(e);
@@ -1911,7 +1911,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
 GRBLinExpr
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_edge_path_expr(
-    size_t tr, const std::vector<size_t>& p, double initial_velocity,
+    size_t tr, const cda_rail::index_vector& p, double initial_velocity,
     bool also_higher_velocities) {
   // Get linear expression that sums up all corresponding binary variables.
   // For the first edge, only extended vertices starting with the desired

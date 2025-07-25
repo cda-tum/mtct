@@ -1601,8 +1601,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         continue;
       }
 
-      const auto&         delta_out = instance.const_n().get_successors(e);
-      std::vector<size_t> delta_out_tr;
+      const auto&            delta_out = instance.const_n().get_successors(e);
+      cda_rail::index_vector delta_out_tr;
       for (const auto& e_out : delta_out) {
         if (std::ranges::contains(edge_used_tr, e_out)) {
           delta_out_tr.emplace_back(e_out);

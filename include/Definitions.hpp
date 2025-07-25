@@ -16,6 +16,9 @@
 #include <vector>
 
 namespace cda_rail {
+
+typedef std::vector<size_t> index_vector;
+
 // Constants
 constexpr double INF     = std::numeric_limits<double>::max() / 3;
 constexpr double EPS     = 10 * std::numeric_limits<double>::epsilon();
@@ -95,8 +98,8 @@ static bool is_directory_and_create(const std::filesystem::path& p) {
   return std::filesystem::is_directory(p);
 };
 
-static std::vector<std::vector<size_t>> subsets_of_size_k_indices(size_t n,
-                                                                  size_t k) {
+static std::vector<cda_rail::index_vector> subsets_of_size_k_indices(size_t n,
+                                                                     size_t k) {
   /**
    * Returns a vector of all subsets of size k of the set {0, 1, ..., n-1} as
    * pairs of indices. The order is not important, i.e. {0, 1} and {1, 0} are
@@ -120,7 +123,7 @@ static std::vector<std::vector<size_t>> subsets_of_size_k_indices(size_t n,
 
   // If k = n, return the set {0, 1, ..., n-1}
   if (k == n) {
-    std::vector<std::vector<size_t>> subsets;
+    std::vector<cda_rail::index_vector> subsets;
     subsets.emplace_back();
     for (size_t i = 0; i < n; i++) {
       subsets[0].emplace_back(i);

@@ -265,9 +265,9 @@ public:
   [[nodiscard]] virtual bool is_forced_to_stop(const std::string& tr_name,
                                                int time) const              = 0;
   [[nodiscard]] virtual std::vector<
-      std::pair<size_t, std::vector<std::vector<size_t>>>>
+      std::pair<size_t, std::vector<cda_rail::index_vector>>>
   get_stop_tracks(size_t tr, const std::string& name, const Network& network,
-                  const std::vector<size_t>& edges_to_consider) const = 0;
+                  const cda_rail::index_vector& edges_to_consider) const = 0;
 };
 
 template <typename T = GeneralSchedule<GeneralScheduledStop>>
@@ -744,7 +744,7 @@ public:
   }
 
   void update_after_discretization(
-      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
+      const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
     station_list.update_after_discretization(new_edges);
   };
 
@@ -809,9 +809,11 @@ public:
     return true;
   };
 
-  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
-  get_stop_tracks(size_t tr, const std::string& name, const Network& network,
-                  const std::vector<size_t>& edges_to_consider) const override {
+  [[nodiscard]] std::vector<
+      std::pair<size_t, std::vector<cda_rail::index_vector>>>
+  get_stop_tracks(
+      size_t tr, const std::string& name, const Network& network,
+      const cda_rail::index_vector& edges_to_consider) const override {
     return get_station_list().get_stop_tracks(
         name, train_list.get_train(tr).length, network, edges_to_consider);
   }

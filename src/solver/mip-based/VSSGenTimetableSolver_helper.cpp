@@ -26,7 +26,7 @@ using std::size_t;
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 
-std::vector<size_t>
+cda_rail::index_vector
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
     size_t train_index) const {
   /**
@@ -36,7 +36,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
    * @return vector of indices
    */
 
-  std::vector<size_t> indices;
+  cda_rail::index_vector indices;
   const auto& tr_name  = instance.get_train_list().get_train(train_index).name;
   const auto& tr_route = instance.get_route(tr_name).get_edges();
   for (size_t i = 0; i < unbreakable_sections.size(); ++i) {
@@ -142,7 +142,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(
   return ret_val;
 }
 
-std::pair<std::vector<std::vector<size_t>>, std::vector<std::vector<size_t>>>
+std::pair<std::vector<cda_rail::index_vector>,
+          std::vector<cda_rail::index_vector>>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
     const {
   /**
@@ -157,10 +158,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
     return train_interval[tr1].second > train_interval[tr2].second;
   };
 
-  std::pair<std::vector<std::vector<size_t>>, std::vector<std::vector<size_t>>>
-                                                  ret_val;
-  std::unordered_map<size_t, std::vector<size_t>> entry_vertices;
-  std::unordered_map<size_t, std::vector<size_t>> exit_vertices;
+  std::pair<std::vector<cda_rail::index_vector>,
+            std::vector<cda_rail::index_vector>>
+                                                     ret_val;
+  std::unordered_map<size_t, cda_rail::index_vector> entry_vertices;
+  std::unordered_map<size_t, cda_rail::index_vector> exit_vertices;
 
   for (size_t tr = 0; tr < num_tr; ++tr) {
     entry_vertices[instance.get_schedule(tr).get_entry()].push_back(tr);

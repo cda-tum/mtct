@@ -18,11 +18,12 @@ struct Station {
    */
   std::string name;
   // NOLINTNEXTLINE(readability-redundant-member-init)
-  std::vector<size_t> tracks = {};
+  cda_rail::index_vector tracks = {};
 
-  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+  [[nodiscard]] std::vector<
+      std::pair<size_t, std::vector<cda_rail::index_vector>>>
   get_stop_tracks(double tr_len, const Network& network,
-                  const std::vector<size_t>& edges_to_consider = {}) const;
+                  const cda_rail::index_vector& edges_to_consider = {}) const;
 };
 
 class StationList {
@@ -48,8 +49,8 @@ public:
   StationList& operator=(StationList&& other)      = default;
   ~StationList()                                   = default;
 
-  [[nodiscard]] bool is_fully_in_station(const std::string&  station_name,
-                                         std::vector<size_t> edges) const;
+  [[nodiscard]] bool is_fully_in_station(const std::string&     station_name,
+                                         cda_rail::index_vector edges) const;
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
@@ -103,12 +104,13 @@ public:
   };
 
   void update_after_discretization(
-      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges);
+      const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
 
-  [[nodiscard]] std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+  [[nodiscard]] std::vector<
+      std::pair<size_t, std::vector<cda_rail::index_vector>>>
   get_stop_tracks(const std::string& name, double tr_len,
-                  const Network&             network,
-                  const std::vector<size_t>& edges_to_consider = {}) const {
+                  const Network&                network,
+                  const cda_rail::index_vector& edges_to_consider = {}) const {
     return get_station(name).get_stop_tracks(tr_len, network,
                                              edges_to_consider);
   }

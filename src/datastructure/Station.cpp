@@ -143,7 +143,7 @@ cda_rail::StationList::StationList(const std::filesystem::path& p,
 }
 
 void cda_rail::StationList::update_after_discretization(
-    const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
+    const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
   /**
    * This method updates the timetable after the discretization of the network
    * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
@@ -172,7 +172,7 @@ void cda_rail::StationList::update_after_discretization(
 }
 
 bool cda_rail::StationList::is_fully_in_station(
-    const std::string& station_name, std::vector<size_t> edges) const {
+    const std::string& station_name, cda_rail::index_vector edges) const {
   if (!has_station(station_name)) {
     throw exceptions::StationNotExistentException(station_name);
   }
@@ -184,10 +184,10 @@ bool cda_rail::StationList::is_fully_in_station(
   });
 }
 
-std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>
+std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>
 cda_rail::Station::get_stop_tracks(
     double tr_len, const cda_rail::Network& network,
-    const std::vector<size_t>& edges_to_consider) const {
+    const cda_rail::index_vector& edges_to_consider) const {
   /**
    * This method returns the tracks of the station on which a train of length
    * tr_len can stop at the target vertex.
@@ -203,14 +203,14 @@ cda_rail::Station::get_stop_tracks(
    * the) edge
    */
   auto station_tracks_to_consider =
-      edges_to_consider.empty() ? tracks : std::vector<size_t>();
+      edges_to_consider.empty() ? tracks : cda_rail::index_vector();
   for (const auto& tmp_e : edges_to_consider) {
     if (std::ranges::contains(tracks, tmp_e)) {
       station_tracks_to_consider.emplace_back(tmp_e);
     }
   }
 
-  std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>> ret_val;
+  std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>> ret_val;
   for (const auto& e : station_tracks_to_consider) {
     const auto stop_paths = network.all_paths_of_length_ending_in_edge(
         e, tr_len, {}, station_tracks_to_consider);

@@ -555,8 +555,9 @@ public:
     std::sort(times.begin(), times.end());
     return times;
   };
-  [[nodiscard]] std::vector<size_t> get_train_order(size_t edge_index) const {
-    std::vector<size_t> tr_on_edge =
+  [[nodiscard]] cda_rail::index_vector
+  get_train_order(size_t edge_index) const {
+    cda_rail::index_vector tr_on_edge =
         this->get_instance().trains_on_edge(edge_index, true);
     std::map<size_t, double> tr_times;
     for (const auto& tr : tr_on_edge) {
@@ -575,11 +576,11 @@ public:
   };
   [[nodiscard]] std::vector<std::pair<size_t, bool>>
   get_train_order_with_reverse(size_t edge_index) const {
-    std::vector<size_t> tr_on_edge =
+    cda_rail::index_vector tr_on_edge =
         this->get_instance().trains_on_edge(edge_index, true);
     const std::optional<size_t> rev_e =
         this->get_instance().const_n().get_reverse_edge_index(edge_index);
-    std::vector<size_t> tr_on_rev_edge;
+    cda_rail::index_vector tr_on_rev_edge;
     if (rev_e.has_value()) {
       tr_on_rev_edge = this->get_instance().trains_on_edge(rev_e.value(), true);
     }

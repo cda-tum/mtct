@@ -78,20 +78,20 @@ private:
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, PrivateFillFunctions);
 #endif
 
-  SolutionSettingsMovingBlock      solution_settings = {};
-  ModelDetail                      model_detail      = {};
-  SolverStrategyMovingBlock        solver_strategy   = {};
-  size_t                           num_tr            = 0;
-  size_t                           num_edges         = 0;
-  size_t                           num_vertices      = 0;
-  size_t                           num_ttd           = 0;
-  int                              max_t             = 0;
-  std::vector<std::vector<size_t>> ttd_sections;
+  SolutionSettingsMovingBlock         solution_settings = {};
+  ModelDetail                         model_detail      = {};
+  SolverStrategyMovingBlock           solver_strategy   = {};
+  size_t                              num_tr            = 0;
+  size_t                              num_edges         = 0;
+  size_t                              num_vertices      = 0;
+  size_t                              num_ttd           = 0;
+  int                                 max_t             = 0;
+  std::vector<cda_rail::index_vector> ttd_sections;
   // tr_stop_data:
   // For every train, for every station, list of possible stop vertices together
   // with respective edges
   std::vector<std::vector<
-      std::vector<std::pair<size_t, std::vector<std::vector<size_t>>>>>>
+      std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>>>
                                                 tr_stop_data;
   std::vector<std::vector<std::vector<double>>> velocity_extensions;
   std::vector<std::pair<size_t, size_t>>        relevant_reverse_edges;
@@ -139,7 +139,7 @@ private:
 
   // Helper for headway normal and lazy constraints
   [[nodiscard]] GRBLinExpr
-  get_edge_path_expr(size_t tr, const std::vector<size_t>& p,
+  get_edge_path_expr(size_t tr, const cda_rail::index_vector& p,
                      double initial_velocity,
                      bool   also_higher_velocities = false);
 
@@ -161,22 +161,22 @@ private:
                           std::vector<std::pair<size_t, bool>>>>
     get_train_orders_on_edges(
         const std::vector<std::vector<std::pair<size_t, double>>>& routes);
-    std::vector<std::vector<size_t>> get_train_orders_on_ttd();
+    std::vector<cda_rail::index_vector> get_train_orders_on_ttd();
 
     bool create_lazy_edge_and_ttd_headway_constraints(
         const std::vector<std::vector<std::pair<size_t, double>>>& routes,
         const std::vector<std::unordered_map<size_t, double>>& train_velocities,
         const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
                                     std::vector<std::pair<size_t, bool>>>>&
-                                                train_orders_on_edges,
-        const std::vector<std::vector<size_t>>& train_orders_on_ttd);
+                                                   train_orders_on_edges,
+        const std::vector<cda_rail::index_vector>& train_orders_on_ttd);
     bool create_lazy_simplified_edge_constraints(
         const std::vector<std::vector<std::pair<size_t, double>>>& routes,
         const std::vector<std::unordered_map<size_t, double>>& train_velocities,
         const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
                                     std::vector<std::pair<size_t, bool>>>>&
-                                                train_orders_on_edges,
-        const std::vector<std::vector<size_t>>& train_orders_on_ttd);
+                                                   train_orders_on_edges,
+        const std::vector<cda_rail::index_vector>& train_orders_on_ttd);
     bool create_lazy_vertex_headway_constraints(
         const std::vector<std::vector<std::pair<size_t, double>>>& routes,
         const std::vector<std::unordered_map<size_t, double>>& train_velocities,

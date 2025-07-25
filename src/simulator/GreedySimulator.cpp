@@ -184,7 +184,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     // Update rear positions of trains
     update_rear_positions(train_positions);
 
-    std::vector<size_t> trains_to_remove;
+    cda_rail::index_vector trains_to_remove;
     for (const auto& tr : trains_in_network) {
       if (trains_finished_simulating.contains(tr)) {
         continue;
@@ -1683,7 +1683,7 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
 }
 
 bool cda_rail::simulator::GreedySimulator::is_route_end_valid_stop_pos(
-    size_t tr, std::vector<size_t> edges) const {
+    size_t tr, cda_rail::index_vector edges) const {
   if (!instance->get_timetable().get_train_list().has_train(tr)) {
     throw cda_rail::exceptions::TrainNotExistentException(tr);
   }

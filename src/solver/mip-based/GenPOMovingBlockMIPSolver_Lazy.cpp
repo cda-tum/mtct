@@ -104,9 +104,9 @@ std::vector<std::vector<std::pair<size_t, double>>> cda_rail::solver::
   return routes;
 }
 
-std::vector<std::vector<size_t>> cda_rail::solver::mip_based::
+std::vector<cda_rail::index_vector> cda_rail::solver::mip_based::
     GenPOMovingBlockMIPSolver::LazyCallback::get_train_orders_on_ttd() {
-  std::vector<std::vector<size_t>> train_orders_on_ttd;
+  std::vector<cda_rail::index_vector> train_orders_on_ttd;
   train_orders_on_ttd.reserve(solver->num_ttd);
   for (size_t ttd = 0; ttd < solver->num_ttd; ttd++) {
     train_orders_on_ttd.emplace_back();
@@ -247,8 +247,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         const std::vector<std::unordered_map<size_t, double>>& train_velocities,
         const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
                                     std::vector<std::pair<size_t, bool>>>>&
-                                                train_orders_on_edges,
-        const std::vector<std::vector<size_t>>& train_orders_on_ttd) {
+                                                   train_orders_on_edges,
+        const std::vector<cda_rail::index_vector>& train_orders_on_ttd) {
   bool       violated_constraint_found = false;
   const bool only_one_constraint =
       solver->solver_strategy.lazy_constraint_selection_strategy ==
@@ -291,8 +291,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         // Get used path, which is
         // routes.at(tr).at(i) -> routes.at(tr).at(i + 1) for i in [r_v_idx,
         // r_ma_idx]
-        const std::vector<size_t> p = [&]() {
-          std::vector<size_t> p_tmp;
+        const cda_rail::index_vector p = [&]() {
+          cda_rail::index_vector p_tmp;
           p_tmp.reserve(r_ma_idx - r_v_idx + 1);
           for (size_t i = r_v_idx; i <= r_ma_idx; i++) {
             p_tmp.emplace_back(solver->instance.const_n().get_edge_index(
@@ -477,10 +477,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         const auto intersecting_ttd =
             cda_rail::Network::get_intersecting_ttd(p, solver->ttd_sections);
         for (const auto& [ttd_index, e_index] : intersecting_ttd) {
-          const auto& p_tmp = std::vector<size_t>(
+          const auto& p_tmp = cda_rail::index_vector(
               p.begin(),
-              p.begin() +
-                  static_cast<std::vector<size_t>::difference_type>(e_index));
+              p.begin() + static_cast<cda_rail::index_vector::difference_type>(
+                              e_index));
           const auto p_tmp_len = std::accumulate(
               p_tmp.begin(), p_tmp.end(), 0.0,
               [this](double sum, const auto& edge_index) {
@@ -984,8 +984,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         const std::vector<std::unordered_map<size_t, double>>& train_velocities,
         const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
                                     std::vector<std::pair<size_t, bool>>>>&
-                                                train_orders_on_edges,
-        const std::vector<std::vector<size_t>>& train_orders_on_ttd) {
+                                                   train_orders_on_edges,
+        const std::vector<cda_rail::index_vector>& train_orders_on_ttd) {
   bool       violated_constraint_found = false;
   const bool only_one_constraint =
       solver->solver_strategy.lazy_constraint_selection_strategy ==

@@ -155,7 +155,7 @@ double cda_rail::Route::length(const Network& network) const {
 }
 
 void cda_rail::Route::update_after_discretization(
-    const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
+    const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
   /**
    * This method updates the route after the discretization of the network
    * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
@@ -164,7 +164,7 @@ void cda_rail::Route::update_after_discretization(
    * @param new_edges The new edges of the network.
    */
 
-  std::vector<size_t> edges_updated;
+  cda_rail::index_vector edges_updated;
   for (const auto& old_edge : edges) {
     bool replaced = false;
     for (const auto& [track, new_tracks] : new_edges) {
@@ -217,8 +217,8 @@ cda_rail::Route::edge_pos(size_t edge, const Network& network) const {
 }
 
 std::pair<double, double>
-cda_rail::Route::edge_pos(const std::vector<size_t>& edges_to_consider,
-                          const Network&             network) const {
+cda_rail::Route::edge_pos(const cda_rail::index_vector& edges_to_consider,
+                          const Network&                network) const {
   /**
    * Returns the minimal start and maximal end position of the given
    * edges_to_consider in the route. Throws an error only if none of the
@@ -567,7 +567,7 @@ double cda_rail::RouteMap::length(const std::string& train_name,
 }
 
 void cda_rail::RouteMap::update_after_discretization(
-    const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
+    const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
   /**
    * This method updates the routes after the discretization of the network
    * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
