@@ -2864,8 +2864,8 @@ TEST(Functionality, QuickestPaths) {
 
   const auto shortest_dist_edge =
       network.shortest_path(v1_v2, v3_v4, true, false, false);
-  EXPECT_TRUE(shortest_dist.has_value());
-  EXPECT_EQ(shortest_dist.value(), 300);
+  EXPECT_TRUE(shortest_dist_edge.has_value());
+  EXPECT_EQ(shortest_dist_edge.value(), 300);
 
   const auto shortest_dist_zero =
       network.shortest_path(v1_v2, v2, false, false, false);
