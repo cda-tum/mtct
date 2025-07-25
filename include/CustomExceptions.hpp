@@ -175,4 +175,11 @@ static void throw_if_non_positive(double val, double tol,
   }
 };
 
+static void throw_if_non_positive(int val, const std::string& name) {
+  if (val <= 0) {
+    throw InvalidInputException(name + " must be positive, but is " +
+                                std::to_string(val) + ".");
+  }
+};
+
 } // namespace cda_rail::exceptions

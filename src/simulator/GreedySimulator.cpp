@@ -1251,7 +1251,7 @@ cda_rail::simulator::GreedySimulator::time_to_exit_objective(
   round_towards_zero(v_0);
   round_towards_zero(v_1);
   round_towards_zero(s);
-  cda_rail::exceptions::throw_if_non_positive(dt, = 0, "Time step");
+  cda_rail::exceptions::throw_if_non_positive(dt, "Time step");
   cda_rail::exceptions::throw_if_negative(v_0, "Initial velocity");
   cda_rail::exceptions::throw_if_negative(
       v_1, "Velocity at the end of the time step");
@@ -1347,7 +1347,7 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
   round_towards_zero(ma);
   cda_rail::exceptions::throw_if_non_positive(d, EPS, "Deceleration");
   cda_rail::exceptions::throw_if_negative(v_0, "Initial velocity");
-  cda_rail::exceptions::throw_if_non_positive(dt, = 0, "Time step");
+  cda_rail::exceptions::throw_if_non_positive(dt, "Time step");
   cda_rail::exceptions::throw_if_negative(ma, "Moving authority");
 
   if (v_0 * static_cast<double>(dt) / 2.0 >= ma) {
