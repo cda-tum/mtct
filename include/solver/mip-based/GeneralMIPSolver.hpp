@@ -77,14 +77,16 @@ protected:
     env.reset();
   };
 
-  void solve_init_general_mip(int time_limit, bool debug_input) {
+  void solve_init_general_mip(int time_limit, bool debug_input,
+                              bool overwrite_severity) {
     static auto message_callback = MessageCallback();
-    this->solve_init_general_mip(time_limit, debug_input, &message_callback);
+    this->solve_init_general_mip(time_limit, debug_input, overwrite_severity,
+                                 &message_callback);
   };
 
   void solve_init_general_mip(int time_limit, bool debug_input,
-                              GRBCallback* cb) {
-    this->solve_init_general(time_limit, debug_input);
+                              bool overwrite_severity, GRBCallback* cb) {
+    this->solve_init_general(time_limit, debug_input, overwrite_severity);
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     PLOGD << "Create Gurobi environment and model";

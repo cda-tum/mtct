@@ -72,8 +72,8 @@ cda_rail::instances::SolVSSGenerationTimetable
 cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     const ModelDetail& model_detail, const ModelSettings& model_settings,
     const SolverStrategy&   solver_strategy,
-    const SolutionSettings& solution_settings, int time_limit,
-    bool debug_input) {
+    const SolutionSettings& solution_settings, int time_limit, bool debug_input,
+    bool overwrite_severity) {
   /**
    * Solves initiated VSSGenerationTimetable instance using Gurobi and a
    * flexible MILP formulation. The level of detail can be controlled using the
@@ -128,13 +128,15 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    *
    * @param debug: If true, (more detailed) debug output is printed. Default:
    * false
+   * @param overwrite_severity: If true, the severity of the log is overwritten
+   * even if this decreases the logging level. Default: true
    *
    * @return Solution object containing status, objective value, and solution
    */
 
-  auto old_instance =
-      initialize_variables(model_detail, model_settings, solver_strategy,
-                           solution_settings, time_limit, debug_input);
+  auto old_instance = initialize_variables(
+      model_detail, model_settings, solver_strategy, solution_settings,
+      time_limit, debug_input, overwrite_severity);
 
   create_variables();
   set_objective();
@@ -539,8 +541,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                 }
 
                 auto const v_overlap_index =
-                    std::find(no_border_vss_vertices.begin(),
-                              no_border_vss_vertices.end(), v_overlap.value()) -
+                    std::ranges::find(no_border_vss_vertices,
+                                      v_overlap.value()) -
                     no_border_vss_vertices.begin();
                 if (v_overlap_index >= no_border_vss_vertices.size()) {
                   throw exceptions::ConsistencyException(
@@ -690,8 +692,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         GRBLinExpr lhs = 0;
         for (auto const e : stop_edges) {
           // If e in tr_edges
-          if (std::find(tr_edges.begin(), tr_edges.end(), e) !=
-              tr_edges.end()) {
+          if (std::ranges::contains(tr_edges, e)) {
             lhs += vars["x"](tr, t, e);
           }
         }
@@ -994,14 +995,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (const auto& tr : instance.trains_on_edge(e, this->fix_routes)) {
       const auto vss_number_e = instance.n().max_vss_on_edge(e);
       // Get index of e in relevant_edges array
-      const auto find_index =
-          std::find(relevant_edges.begin(), relevant_edges.end(), e);
-      auto e_index_relevant = find_index - relevant_edges.begin();
+      const auto find_index       = std::ranges::find(relevant_edges, e);
+      auto       e_index_relevant = find_index - relevant_edges.begin();
       // If edge not found check reverse edge
       if (find_index == relevant_edges.end()) {
         const auto reverse_e = instance.n().get_reverse_edge_index(e).value();
         const auto find_index_reverse =
-            std::find(relevant_edges.begin(), relevant_edges.end(), reverse_e);
+            std::ranges::find(relevant_edges, reverse_e);
         if (find_index_reverse == relevant_edges.end()) {
           throw exceptions::ConsistencyException(
               "Edge " + std::to_string(e) + " and its reverse edge " +
@@ -1601,11 +1601,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         continue;
       }
 
-      const auto&         delta_out = instance.const_n().get_successors(e);
-      std::vector<size_t> delta_out_tr;
+      const auto&            delta_out = instance.const_n().get_successors(e);
+      cda_rail::index_vector delta_out_tr;
       for (const auto& e_out : delta_out) {
-        if (std::find(edge_used_tr.begin(), edge_used_tr.end(), e_out) !=
-            edge_used_tr.end()) {
+        if (std::ranges::contains(edge_used_tr, e_out)) {
           delta_out_tr.emplace_back(e_out);
         }
       }

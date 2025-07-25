@@ -104,9 +104,9 @@ std::vector<std::vector<std::pair<size_t, double>>> cda_rail::solver::
   return routes;
 }
 
-std::vector<std::vector<size_t>> cda_rail::solver::mip_based::
+std::vector<cda_rail::index_vector> cda_rail::solver::mip_based::
     GenPOMovingBlockMIPSolver::LazyCallback::get_train_orders_on_ttd() {
-  std::vector<std::vector<size_t>> train_orders_on_ttd;
+  std::vector<cda_rail::index_vector> train_orders_on_ttd;
   train_orders_on_ttd.reserve(solver->num_ttd);
   for (size_t ttd = 0; ttd < solver->num_ttd; ttd++) {
     train_orders_on_ttd.emplace_back();
@@ -247,8 +247,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         const std::vector<std::unordered_map<size_t, double>>& train_velocities,
         const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
                                     std::vector<std::pair<size_t, bool>>>>&
-                                                train_orders_on_edges,
-        const std::vector<std::vector<size_t>>& train_orders_on_ttd) {
+                                                   train_orders_on_edges,
+        const std::vector<cda_rail::index_vector>& train_orders_on_ttd) {
   bool       violated_constraint_found = false;
   const bool only_one_constraint =
       solver->solver_strategy.lazy_constraint_selection_strategy ==
@@ -291,8 +291,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         // Get used path, which is
         // routes.at(tr).at(i) -> routes.at(tr).at(i + 1) for i in [r_v_idx,
         // r_ma_idx]
-        const std::vector<size_t> p = [&]() {
-          std::vector<size_t> p_tmp;
+        const cda_rail::index_vector p = [&]() {
+          cda_rail::index_vector p_tmp;
           p_tmp.reserve(r_ma_idx - r_v_idx + 1);
           for (size_t i = r_v_idx; i <= r_ma_idx; i++) {
             p_tmp.emplace_back(solver->instance.const_n().get_edge_index(
@@ -314,9 +314,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         // this edge
         std::unordered_set<size_t> other_trains;
         const auto& tr_order = train_orders_on_edges.at(rel_e_idx).first;
-        const auto  tr_index = std::find(tr_order.begin(), tr_order.end(),
-                                         std::pair<size_t, bool>(tr, true)) -
-                              tr_order.begin();
+        const auto  tr_index =
+            std::ranges::find(tr_order, std::pair<size_t, bool>(tr, true)) -
+            tr_order.begin();
         assert(tr_index != tr_order.end() - tr_order.begin());
         for (size_t tr_other_idx = 0; tr_other_idx < tr_order.size();
              tr_other_idx++) {
@@ -477,10 +477,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         const auto intersecting_ttd =
             cda_rail::Network::get_intersecting_ttd(p, solver->ttd_sections);
         for (const auto& [ttd_index, e_index] : intersecting_ttd) {
-          const auto& p_tmp = std::vector<size_t>(
+          const auto& p_tmp = cda_rail::index_vector(
               p.begin(),
-              p.begin() +
-                  static_cast<std::vector<size_t>::difference_type>(e_index));
+              p.begin() + static_cast<cda_rail::index_vector::difference_type>(
+                              e_index));
           const auto p_tmp_len = std::accumulate(
               p_tmp.begin(), p_tmp.end(), 0.0,
               [this](double sum, const auto& edge_index) {
@@ -551,9 +551,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // this TTD section
           const auto& rel_tr_order_ttd = train_orders_on_ttd.at(ttd_index);
           std::unordered_set<size_t> other_trains_ttd;
-          const auto                 tr_index_tmp =
-              std::find(rel_tr_order_ttd.begin(), rel_tr_order_ttd.end(), tr) -
-              rel_tr_order_ttd.begin();
+          const auto tr_index_tmp = std::ranges::find(rel_tr_order_ttd, tr) -
+                                    rel_tr_order_ttd.begin();
           assert(tr_index_tmp !=
                  rel_tr_order_ttd.end() - rel_tr_order_ttd.begin());
           for (size_t tr_other_idx = 0; tr_other_idx < rel_tr_order_ttd.size();
@@ -605,19 +604,13 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               if (prev_edge_index.has_value()) {
                 assert(prev_vel.has_value());
                 const auto vel_idx =
-                    std::find(
-                        solver->velocity_extensions.at(tr).at(v_idx).begin(),
-                        solver->velocity_extensions.at(tr).at(v_idx).end(),
-                        vel) -
+                    std::ranges::find(
+                        solver->velocity_extensions.at(tr).at(v_idx), vel) -
                     solver->velocity_extensions.at(tr).at(v_idx).begin();
                 const auto prev_vel_idx =
-                    std::find(solver->velocity_extensions.at(tr)
-                                  .at(prev_v_idx.value())
-                                  .begin(),
-                              solver->velocity_extensions.at(tr)
-                                  .at(prev_v_idx.value())
-                                  .end(),
-                              prev_vel.value()) -
+                    std::ranges::find(solver->velocity_extensions.at(tr).at(
+                                          prev_v_idx.value()),
+                                      prev_vel.value()) -
                     solver->velocity_extensions.at(tr)
                         .at(prev_v_idx.value())
                         .begin();
@@ -721,12 +714,12 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                                              tr_object.deceleration));
 
       const auto tr_idx_source =
-          std::find(rel_tr_order_source.begin(), rel_tr_order_source.end(),
-                    std::pair<size_t, bool>(tr, true)) -
+          std::ranges::find(rel_tr_order_source,
+                            std::pair<size_t, bool>(tr, true)) -
           rel_tr_order_source.begin();
       const auto tr_idx_target =
-          std::find(rel_tr_order_target.begin(), rel_tr_order_target.end(),
-                    std::pair<size_t, bool>(tr, true)) -
+          std::ranges::find(rel_tr_order_target,
+                            std::pair<size_t, bool>(tr, true)) -
           rel_tr_order_target.begin();
       assert(tr_idx_source < rel_tr_order_source.size());
       assert(tr_idx_target < rel_tr_order_target.size());
@@ -772,8 +765,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         // If train order differs between source and target, also add vertex
         // constraints
         const auto other_tr_idx_target =
-            std::find(rel_tr_order_target.begin(), rel_tr_order_target.end(),
-                      std::pair<size_t, bool>(other_tr, true)) -
+            std::ranges::find(rel_tr_order_target,
+                              std::pair<size_t, bool>(other_tr, true)) -
             rel_tr_order_target.begin();
         assert(other_tr_idx_target < rel_tr_order_target.size());
         const bool same_order = other_tr_idx_target <
@@ -991,8 +984,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         const std::vector<std::unordered_map<size_t, double>>& train_velocities,
         const std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
                                     std::vector<std::pair<size_t, bool>>>>&
-                                                train_orders_on_edges,
-        const std::vector<std::vector<size_t>>& train_orders_on_ttd) {
+                                                   train_orders_on_edges,
+        const std::vector<cda_rail::index_vector>& train_orders_on_ttd) {
   bool       violated_constraint_found = false;
   const bool only_one_constraint =
       solver->solver_strategy.lazy_constraint_selection_strategy ==
@@ -1028,9 +1021,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 
       std::unordered_set<size_t> other_trains;
       const auto& tr_order = train_orders_on_edges.at(edge_index).first;
-      const auto  tr_index = std::find(tr_order.begin(), tr_order.end(),
-                                       std::pair<size_t, bool>(tr, true)) -
-                            tr_order.begin();
+      const auto  tr_index =
+          std::ranges::find(tr_order, std::pair<size_t, bool>(tr, true)) -
+          tr_order.begin();
       assert(tr_index != tr_order.end() - tr_order.begin());
       for (size_t tr_other_idx = 0; tr_other_idx < tr_order.size();
            tr_other_idx++) {
@@ -1103,19 +1096,16 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         // If all of neighboring_edges are in ttd_section, then it is not an
         // entering edge Hence, if at least one neighboring edge is not in
         // ttd_section, then we have an entering edge
-        const bool is_entering_edge = std::any_of(
-            neighboring_edges.begin(), neighboring_edges.end(),
-            [&ttd_section](const auto& e_tmp) {
-              return std::find(ttd_section.begin(), ttd_section.end(), e_tmp) ==
-                     ttd_section.end();
+        const bool is_entering_edge = std::ranges::any_of(
+            neighboring_edges, [&ttd_section](const auto& e_tmp) {
+              return !std::ranges::contains(ttd_section, e_tmp);
             });
         if (is_entering_edge) {
           // Check TTD condition on entering edge
           const auto& tr_order_ttd = train_orders_on_ttd.at(ttd_index);
           std::unordered_set<size_t> other_trains_ttd;
           const auto                 tr_index_ttd =
-              std::find(tr_order_ttd.begin(), tr_order_ttd.end(), tr) -
-              tr_order_ttd.begin();
+              std::ranges::find(tr_order_ttd, tr) - tr_order_ttd.begin();
           assert(tr_index_ttd < tr_order_ttd.end() - tr_order_ttd.begin());
 
           for (size_t tr_other_idx_ttd = 0;

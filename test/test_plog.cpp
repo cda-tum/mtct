@@ -22,7 +22,7 @@ TEST(Logging, VSSGenDefaultLogging) {
   EXPECT_EQ(plog::get()->getMaxSeverity(), plog::info);
 
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
-  solver.solve({}, {}, {}, {}, -1, true);
+  solver.solve(-1, true);
 
   EXPECT_EQ(plog::get()->getMaxSeverity(), plog::debug);
 }

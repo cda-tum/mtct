@@ -28,7 +28,7 @@ cda_rail::instances::SolVSSGenerationTimetable cda_rail::solver::mip_based::
         const cda_rail::solver::mip_based::ModelSettings&    model_settings,
         const cda_rail::solver::mip_based::SolverStrategy&   solver_strategy,
         const cda_rail::solver::mip_based::SolutionSettings& solution_settings,
-        int time_limit, bool debug_input) {
+        int time_limit, bool debug_input, bool overwrite_severity) {
   /**
    * This function solves the VSS generation problem.
    * It functions the same as the solve function in the parent class, but
@@ -56,7 +56,7 @@ cda_rail::instances::SolVSSGenerationTimetable cda_rail::solver::mip_based::
                             model_detail_mb_information.train_dynamics,
                             model_detail_mb_information.braking_curves},
                            model_settings, solver_strategy, solution_settings,
-                           time_limit, debug_input);
+                           time_limit, debug_input, overwrite_severity);
 
   assert(!old_instance.has_value());
 

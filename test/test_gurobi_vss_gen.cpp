@@ -285,7 +285,7 @@ TEST(Solver, GurobiVSSGenVSSDiscrete) {
       solver.solve({15, true, false, false},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                                          {&cda_rail::vss::functions::uniform})},
-                   {}, {}, 375, true);
+                   {}, {}, 600, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -398,7 +398,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete1) {
       solver.solve({15, true, false, false},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                                          {&cda_rail::vss::functions::uniform})},
-                   {}, {}, 375, true);
+                   {}, {}, 600, true);
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_1.get_obj(), 1);
@@ -422,7 +422,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete2) {
       solver.solve({15, true, false, false},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                                          {&cda_rail::vss::functions::uniform})},
-                   {}, {}, 375, true);
+                   {}, {}, 600, true);
 
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
@@ -446,7 +446,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete3) {
       solver.solve({15, true, false, false},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                                          {&cda_rail::vss::functions::uniform})},
-                   {}, {}, 375, true);
+                   {}, {}, 600, true);
 
   EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Infeasible);
 }
