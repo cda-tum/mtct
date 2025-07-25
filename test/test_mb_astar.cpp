@@ -391,6 +391,7 @@ TEST(GenPOMovingBlockAStarSolver, SimpleInstance) {
   const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
+  const auto v1_v0 = network.add_edge(v1, v0, 500, 20, true);
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
@@ -411,6 +412,7 @@ TEST(GenPOMovingBlockAStarSolver, SimpleInfeasibleInstance) {
   const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
+  const auto v1_v0 = network.add_edge(v1, v0, 500, 20, true);
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 20},
