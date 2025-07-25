@@ -252,9 +252,7 @@ cda_rail::Route::edge_pos(const cda_rail::index_vector& edges_to_consider,
 size_t
 cda_rail::Route::get_edge_at_pos(double                   pos,
                                  const cda_rail::Network& network) const {
-  if (std::abs(pos) < GRB_EPS) {
-    pos = 0;
-  }
+  round_towards_zero(pos, GRB_EPS);
   if (pos < 0) {
     throw exceptions::InvalidInputException("Position must be non-negative.");
   }

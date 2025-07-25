@@ -63,6 +63,14 @@ enum class VelocityRefinementStrategy : std::uint8_t {
 
 // Helper functions
 
+static void round_towards_zero(double& val, double tol) {
+  if (std::abs(val) < tol) {
+    val = 0;
+  }
+};
+
+static void round_towards_zero(double& val) { round_towards_zero(val, EPS); };
+
 static void initialize_plog(bool debug_input, bool overwrite_severity = false) {
   if (plog::get() == nullptr) {
     static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;

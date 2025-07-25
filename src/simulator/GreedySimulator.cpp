@@ -1038,15 +1038,9 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
    * - the maximum speed allowed for the next speed
    */
 
-  if (std::abs(pos) < EPS) {
-    pos = 0;
-  }
-  if (std::abs(v_0) < EPS) {
-    v_0 = 0;
-  }
-  if (std::abs(max_displacement) < EPS) {
-    max_displacement = 0;
-  }
+  round_towards_zero(pos);
+  round_towards_zero(v_0);
+  round_towards_zero(max_displacement);
 
   if (pos < 0) {
     throw cda_rail::exceptions::InvalidInputException(
@@ -1169,12 +1163,8 @@ double cda_rail::simulator::GreedySimulator::get_max_speed_exit_headway(
    * @return: The maximum speed allowed for the next speed step.
    */
 
-  if (std::abs(pos) < EPS) {
-    pos = 0;
-  }
-  if (std::abs(v_0) < EPS) {
-    v_0 = 0;
-  }
+  round_towards_zero(pos);
+  round_towards_zero(v_0);
   if (h < 0) {
     throw cda_rail::exceptions::InvalidInputException(
         "Exit headway must be non-negative.");
@@ -1283,15 +1273,9 @@ cda_rail::simulator::GreedySimulator::time_to_exit_objective(
    *
    * @return: The time to exit objective value.
    */
-  if (std::abs(v_0) < EPS) {
-    v_0 = 0;
-  }
-  if (std::abs(v_1) < EPS) {
-    v_1 = 0;
-  }
-  if (std::abs(s) < EPS) {
-    s = 0;
-  }
+  round_towards_zero(v_0);
+  round_towards_zero(v_1);
+  round_towards_zero(s);
   if (dt <= 0) {
     throw cda_rail::exceptions::InvalidInputException(
         "Time step must be positive.");
@@ -1404,12 +1388,8 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
   // / (2 * d) x_1 + bd = ma Wolframalpha: v_1 = 0.5 *
   // (sqrt((d*dt)^2+4*(2*d*ma-d*dt*v_0)) - d*dt) Set A := d*dt, B :=
   // 2*d*ma-d*dt*v_0) v_1 = 0.5 * (sqrt(A^2 + 4*B) - A)
-  if (std::abs(v_0) < EPS) {
-    v_0 = 0;
-  }
-  if (std::abs(ma) < EPS) {
-    ma = 0;
-  }
+  round_towards_zero(v_0);
+  round_towards_zero(ma);
   if (std::abs(d) < EPS) {
     throw cda_rail::exceptions::InvalidInputException(
         "Deceleration must be positive.");

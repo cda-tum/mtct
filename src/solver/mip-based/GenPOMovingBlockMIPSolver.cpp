@@ -1976,12 +1976,8 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::headway(
     const cda_rail::Train& tr_obj, const cda_rail::Edge& e_obj, double v_1,
     double v_2, bool entry_vertex) {
   // If Value is within GRB_EPS set to 0
-  if (std::abs(v_1) < GRB_EPS) {
-    v_1 = 0;
-  }
-  if (std::abs(v_2) < GRB_EPS) {
-    v_2 = 0;
-  }
+  round_towards_zero(v_1, GRB_EPS);
+  round_towards_zero(v_2, GRB_EPS);
 
   if (const auto bd = v_1 * v_1 / (2 * tr_obj.deceleration);
       bd >= e_obj.length - GRB_EPS) {
