@@ -259,28 +259,29 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
                          model_detail_input.late_stop_possible,
                          model_detail_input.limit_speed_by_leaving_edges);
   const auto init_obj = simulator::objective_val(simulator, init_exit_times);
-  const auto init_heuristic = simulator::full_greedy_heuristic(
-      solver_strategy_input.braking_time_heuristic_type,
-      solver_strategy_input.remaining_time_heuristic_type, simulator,
-      init_exit_times, init_braking, model_detail_input.late_stop_possible,
-      model_detail_input.late_exit_possible,
-      solver_strategy_input.consider_earliest_exit);
+  const auto [init_heuristic_feas, init_heuristic_val] =
+      simulator::full_greedy_heuristic(
+          solver_strategy_input.braking_time_heuristic_type,
+          solver_strategy_input.remaining_time_heuristic_type, simulator,
+          init_exit_times, init_braking, model_detail_input.late_stop_possible,
+          model_detail_input.late_exit_possible,
+          solver_strategy_input.consider_earliest_exit);
 
   PLOGD << "Initial state: final = "
         << (simulator.is_final_state() ? "yes" : "no")
         << ", objective = " << init_obj
-        << ", heuristic = " << init_heuristic.second
-        << ", total = " << init_obj + init_heuristic.second
+        << ", heuristic = " << init_heuristic_val
+        << ", total = " << init_obj + init_heuristic_val
         << ", heuristic feasibility = "
-        << (init_heuristic.first ? "feasible" : "infeasible");
+        << (init_heuristic_feas ? "feasible" : "infeasible");
 
-  if (init_feas && init_heuristic.first) {
+  if (init_feas && init_heuristic_feas) {
     const GreedySimulatorState init_state{
         .train_edges    = simulator.get_train_edges(),
         .ttd_orders     = simulator.get_ttd_orders(),
         .vertex_orders  = simulator.get_vertex_orders(),
         .stop_positions = simulator.get_stop_positions()};
-    pq.push({{init_obj + init_heuristic.second, simulator.is_final_state()},
+    pq.push({{init_obj + init_heuristic_val, simulator.is_final_state()},
              init_state});
     explored_states.insert(init_state);
   }
