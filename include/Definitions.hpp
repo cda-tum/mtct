@@ -17,7 +17,7 @@
 
 namespace cda_rail {
 
-typedef std::vector<size_t> index_vector;
+using index_vector = std::vector<size_t>;
 
 // Constants
 constexpr double INF     = std::numeric_limits<double>::max() / 3;

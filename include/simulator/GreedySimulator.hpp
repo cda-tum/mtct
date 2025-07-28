@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "datastructure/Train.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 

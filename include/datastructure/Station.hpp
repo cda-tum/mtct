@@ -1,5 +1,6 @@
 #pragma once
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
 #include <cstddef>

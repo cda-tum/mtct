@@ -1,4 +1,5 @@
 #pragma once
+#include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Train.hpp"
 

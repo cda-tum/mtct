@@ -1,5 +1,6 @@
 #pragma once
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "GeneralProblemInstance.hpp"
 #include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"

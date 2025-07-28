@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "simulator/GreedySimulator.hpp"

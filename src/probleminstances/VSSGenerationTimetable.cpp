@@ -1,12 +1,12 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
 #include <cstddef>
 #include <numeric>
-#include <vector>
 
 using std::size_t;
 
