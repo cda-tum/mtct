@@ -53,9 +53,9 @@ cda_rail::simulator::GreedySimulator::simulate(
   cda_rail::initialize_plog(false);
 
   // Initialize return values
-  std::vector<int> exit_times(
-      instance->get_timetable().get_train_list().size(),
-      0); // 0 indicates that a train has not entered the network yet
+  std::vector<int> exit_times(instance->get_timetable().get_train_list().size(),
+                              0); // Initially each train is simulated until
+                                  // time t=0, for t>0 the heuristic is needed.
   std::vector<std::pair<int, double>> braking_times(
       instance->get_timetable().get_train_list().size(), {-1, -1});
 
