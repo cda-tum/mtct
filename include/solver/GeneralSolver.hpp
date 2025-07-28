@@ -1,19 +1,29 @@
 #pragma once
 
+#include "Definitions.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
-#include <plog/Appenders/ColorConsoleAppender.h>
-#include <plog/Formatters/TxtFormatter.h>
-#include <plog/Init.h>
 #include <plog/Logger.h>
 #include <plog/Severity.h>
 #include <string>
 #include <type_traits>
 
 namespace cda_rail::solver {
+enum class GeneralExportOption : std::uint8_t {
+  NoExport                   = 0,
+  ExportSolution             = 1,
+  ExportSolutionWithInstance = 2
+};
+
+struct GeneralSolutionSettings {
+  GeneralExportOption export_option = GeneralExportOption::NoExport;
+  std::string         name          = "model";
+  std::string         path;
+};
+
 template <typename T, typename S> class GeneralSolver {
   static_assert(
       std::is_base_of_v<cda_rail::instances::GeneralProblemInstance, T>,
@@ -30,13 +40,9 @@ protected:
   int64_t                                             create_time = 0;
   int64_t                                             solve_time  = 0;
 
-  void solve_init_general(int time_limit, bool debug_input) {
-    if (plog::get() == nullptr) {
-      static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
-      plog::init(plog::debug, &console_appender);
-    }
-
-    plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
+  void solve_init_general(int time_limit, bool debug_input,
+                          bool overwrite_severity) {
+    cda_rail::initialize_plog(debug_input, overwrite_severity);
 
     if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
       start = std::chrono::high_resolution_clock::now();
@@ -53,8 +59,12 @@ public:
   [[nodiscard]] const T& get_instance() const { return instance; }
   [[nodiscard]] T&       editable_instance() { return instance; }
 
-  [[nodiscard]] S         solve() { return solve(-1, false); };
-  [[nodiscard]] virtual S solve(int time_limit, bool debug_input) = 0;
+  [[nodiscard]] S solve() { return solve(-1, false); };
+  [[nodiscard]] S solve(int time_limit, bool debug_input) {
+    return solve(time_limit, debug_input, true);
+  };
+  [[nodiscard]] virtual S solve(int time_limit, bool debug_input,
+                                bool overwrite_severity) = 0;
 
   virtual ~GeneralSolver() = default;
 };

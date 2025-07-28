@@ -49,3 +49,4 @@ venv.bak/
 
 gurobi*
 test/ras-datasets/
+.github/copilot-instructions.md

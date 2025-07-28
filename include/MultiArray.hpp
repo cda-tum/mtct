@@ -1,4 +1,6 @@
 #pragma once
+#include "Definitions.hpp"
+
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
@@ -7,8 +9,8 @@
 namespace cda_rail {
 template <typename T> class MultiArray {
 private:
-  std::vector<size_t> shape;
-  std::vector<T>      data;
+  cda_rail::index_vector shape;
+  std::vector<T>         data;
 
 public:
   // Constructor with arbitrary number of size_t parameters
@@ -20,8 +22,10 @@ public:
   template <typename... Args> T at(Args... args) const;
 
   // Function to obtain shape, size and dimensions
-  [[nodiscard]] const std::vector<size_t>& get_shape() const { return shape; };
-  [[nodiscard]] size_t                     size() const { return data.size(); };
+  [[nodiscard]] const cda_rail::index_vector& get_shape() const {
+    return shape;
+  };
+  [[nodiscard]] size_t size() const { return data.size(); };
   [[nodiscard]] size_t dimensions() const { return shape.size(); };
 };
 
@@ -47,7 +51,7 @@ T& MultiArray<T>::operator()(Args... args) {
         "Number of dimensions and number of arguments do not coincide.");
   }
   // If the value of any argument is too large throw an error
-  std::vector<size_t> arg_tuple = {static_cast<size_t>(args)...};
+  cda_rail::index_vector arg_tuple = {static_cast<size_t>(args)...};
   for (size_t i = 0; i < sizeof...(args); ++i) {
     if (arg_tuple[i] >= shape[i]) {
       std::stringstream ss;
@@ -89,7 +93,7 @@ T MultiArray<T>::at(Args... args) const {
         "Number of dimensions and number of arguments do not coincide.");
   }
   // If the value of any argument is too large throw an error
-  std::vector<size_t> arg_tuple = {static_cast<size_t>(args)...};
+  cda_rail::index_vector arg_tuple = {static_cast<size_t>(args)...};
   for (size_t i = 0; i < sizeof...(args); ++i) {
     if (arg_tuple[i] >= shape[i]) {
       std::stringstream ss;

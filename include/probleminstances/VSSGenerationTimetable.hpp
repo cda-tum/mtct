@@ -1,5 +1,6 @@
 #pragma once
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "GeneralProblemInstance.hpp"
 #include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
@@ -76,9 +77,9 @@ public:
 
   // Helper
 
-  [[nodiscard]] std::vector<size_t> trains_at_t(int t) const;
-  [[nodiscard]] std::vector<size_t>
-  trains_at_t(int t, const std::vector<size_t>& trains_to_consider) const;
+  [[nodiscard]] cda_rail::index_vector trains_at_t(int t) const;
+  [[nodiscard]] cda_rail::index_vector
+  trains_at_t(int t, const cda_rail::index_vector& trains_to_consider) const;
 };
 
 class SolVSSGenerationTimetable

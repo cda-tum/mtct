@@ -155,7 +155,7 @@ double cda_rail::Route::length(const Network& network) const {
 }
 
 void cda_rail::Route::update_after_discretization(
-    const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
+    const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
   /**
    * This method updates the route after the discretization of the network
    * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
@@ -164,7 +164,7 @@ void cda_rail::Route::update_after_discretization(
    * @param new_edges The new edges of the network.
    */
 
-  std::vector<size_t> edges_updated;
+  cda_rail::index_vector edges_updated;
   for (const auto& old_edge : edges) {
     bool replaced = false;
     for (const auto& [track, new_tracks] : new_edges) {
@@ -217,8 +217,8 @@ cda_rail::Route::edge_pos(size_t edge, const Network& network) const {
 }
 
 std::pair<double, double>
-cda_rail::Route::edge_pos(const std::vector<size_t>& edges_to_consider,
-                          const Network&             network) const {
+cda_rail::Route::edge_pos(const cda_rail::index_vector& edges_to_consider,
+                          const Network&                network) const {
   /**
    * Returns the minimal start and maximal end position of the given
    * edges_to_consider in the route. Throws an error only if none of the
@@ -252,9 +252,7 @@ cda_rail::Route::edge_pos(const std::vector<size_t>& edges_to_consider,
 size_t
 cda_rail::Route::get_edge_at_pos(double                   pos,
                                  const cda_rail::Network& network) const {
-  if (std::abs(pos) < GRB_EPS) {
-    pos = 0;
-  }
+  round_towards_zero(pos, GRB_EPS);
   if (pos < 0) {
     throw exceptions::InvalidInputException("Position must be non-negative.");
   }
@@ -369,11 +367,10 @@ bool cda_rail::RouteMap::check_consistency(
     return false;
   }
 
-  return std::all_of(routes.begin(), routes.end(),
-                     [&trains, &network](const auto& route) {
-                       return trains.has_train(route.first) &&
-                              route.second.check_consistency(network);
-                     });
+  return std::ranges::all_of(routes, [&trains, &network](const auto& route) {
+    return trains.has_train(route.first) &&
+           route.second.check_consistency(network);
+  });
 }
 
 void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
@@ -568,7 +565,7 @@ double cda_rail::RouteMap::length(const std::string& train_name,
 }
 
 void cda_rail::RouteMap::update_after_discretization(
-    const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
+    const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
   /**
    * This method updates the routes after the discretization of the network
    * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,

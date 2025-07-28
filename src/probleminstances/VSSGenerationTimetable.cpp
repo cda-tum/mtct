@@ -1,12 +1,12 @@
 #include "probleminstances/VSSGenerationTimetable.hpp"
 
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
 #include <cstddef>
 #include <numeric>
-#include <vector>
 
 using std::size_t;
 
@@ -24,7 +24,7 @@ void cda_rail::instances::VSSGenerationTimetable::discretize(
   this->editable_routes().update_after_discretization(new_edges);
 }
 
-std::vector<size_t>
+cda_rail::index_vector
 cda_rail::instances::VSSGenerationTimetable::trains_at_t(int t) const {
   /**
    * Returns a list of all trains present at time t.
@@ -32,14 +32,14 @@ cda_rail::instances::VSSGenerationTimetable::trains_at_t(int t) const {
    * @param t the time
    * @return a list of all trains present at time t.
    */
-  const auto          tr_number = get_train_list().size();
-  std::vector<size_t> trains_to_consider(tr_number);
+  const auto             tr_number = get_train_list().size();
+  cda_rail::index_vector trains_to_consider(tr_number);
   std::iota(trains_to_consider.begin(), trains_to_consider.end(), 0);
   return trains_at_t(t, trains_to_consider);
 }
 
-std::vector<size_t> cda_rail::instances::VSSGenerationTimetable::trains_at_t(
-    int t, const std::vector<size_t>& trains_to_consider) const {
+cda_rail::index_vector cda_rail::instances::VSSGenerationTimetable::trains_at_t(
+    int t, const cda_rail::index_vector& trains_to_consider) const {
   /**
    * Returns a list of all trains present at time t. But only considers the
    * trains in trains_to_consider.
@@ -59,7 +59,7 @@ std::vector<size_t> cda_rail::instances::VSSGenerationTimetable::trains_at_t(
     }
   }
 
-  std::vector<size_t> trains;
+  cda_rail::index_vector trains;
   for (const auto tr : trains_to_consider) {
     const auto& interval = this->get_timetable().time_interval(tr);
     if (interval.first <= t && t < interval.second) {

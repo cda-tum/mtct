@@ -192,7 +192,7 @@ public:
   [[nodiscard]] size_t                     get_exit() const { return exit; }
   [[nodiscard]] const std::vector<T>&      get_stops() const { return stops; }
 
-  [[nodiscard]] virtual bool is_forced_to_stop(int time) const override {
+  [[nodiscard]] bool is_forced_to_stop(int time) const override {
     for (const auto& stop : stops) {
       if (stop.is_forced_to_stop(time)) {
         return true;
@@ -264,6 +264,10 @@ public:
                                               const Network&               network) const = 0;
   [[nodiscard]] virtual bool is_forced_to_stop(const std::string& tr_name,
                                                int time) const              = 0;
+  [[nodiscard]] virtual std::vector<
+      std::pair<size_t, std::vector<cda_rail::index_vector>>>
+  get_stop_tracks(size_t tr, const std::string& name, const Network& network,
+                  const cda_rail::index_vector& edges_to_consider) const = 0;
 };
 
 template <typename T = GeneralSchedule<GeneralScheduledStop>>
@@ -283,7 +287,8 @@ class GeneralTimetable : BaseTimetable {
       std::is_base_of_v<GeneralSchedule<stop_type>, T>,
       "T must be derived from GeneralSchedule with suitable stop type");
 
-  template <typename U, std::enable_if_t<std::is_same_v<U, int>, int> = 0>
+  template <typename U>
+    requires(std::is_same_v<U, int>)
   void add_json_data(json& j, const int i, const Network& network) const {
     const auto& schedule = schedules.at(i);
     json        stops;
@@ -305,8 +310,8 @@ class GeneralTimetable : BaseTimetable {
         {"stops", stops}};
   }
 
-  template <typename U,
-            std::enable_if_t<std::is_same_v<U, std::pair<int, int>>, int> = 0>
+  template <typename U>
+    requires(std::is_same_v<U, std::pair<int, int>>)
   void add_json_data(json& j, const int i, const Network& network) const {
     const auto& schedule = schedules.at(i);
     json        stops;
@@ -329,7 +334,8 @@ class GeneralTimetable : BaseTimetable {
         {"stops", stops}};
   }
 
-  template <typename U, std::enable_if_t<std::is_same_v<U, int>, int> = 0>
+  template <typename U>
+    requires(std::is_same_v<U, int>)
   void parse_schedule_data(const json& schedule_data, const int i) {
     this->schedules.at(i).set_t_0(static_cast<int>(schedule_data["t_0"]));
     this->schedules.at(i).set_t_n(static_cast<int>(schedule_data["t_n"]));
@@ -339,8 +345,8 @@ class GeneralTimetable : BaseTimetable {
                      stop_data["end"].get<int>());
     }
   }
-  template <typename U,
-            std::enable_if_t<std::is_same_v<U, std::pair<int, int>>, int> = 0>
+  template <typename U>
+    requires(std::is_same_v<U, std::pair<int, int>>)
   void parse_schedule_data(const json& schedule_data, const int i) {
     this->schedules.at(i).set_t_0_range({schedule_data["t_0"][0].get<int>(),
                                          schedule_data["t_0"][1].get<int>()});
@@ -478,9 +484,8 @@ public:
 
   void add_station(const std::string& name) { station_list.add_station(name); };
 
-  template <typename StationType = std::string, typename... Args,
-            typename             = std::enable_if_t<
-                            std::is_convertible_v<StationType, std::string>>>
+  template <typename StationType = std::string, typename... Args>
+    requires(std::is_convertible_v<StationType, std::string>)
   void add_stop(size_t train_index, const StationType& station_name, bool sort,
                 decltype(T::time_type()) t0, decltype(T::time_type()) tn,
                 Args... args) {
@@ -508,31 +513,28 @@ public:
                   static_cast<std::string>(station_name));
   }
   template <typename TrainType   = std::string,
-            typename StationType = std::string, typename... Args,
-            typename             = std::enable_if_t<
-                            !std::is_convertible_v<TrainType, size_t> &&
-                            std::is_convertible_v<TrainType, std::string> &&
-                            std::is_convertible_v<StationType, std::string>>>
+            typename StationType = std::string, typename... Args>
+    requires(!std::is_convertible_v<TrainType, size_t> &&
+             std::is_convertible_v<TrainType, std::string> &&
+             std::is_convertible_v<StationType, std::string>)
   void add_stop(const TrainType& train_name, const StationType& station_name,
                 bool sort, decltype(T::time_type()) t0,
                 decltype(T::time_type()) tn, Args... args) {
     add_stop(train_list.get_train_index(static_cast<std::string>(train_name)),
              static_cast<std::string>(station_name), sort, t0, tn, args...);
   };
-  template <typename StationType = std::string, typename... Args,
-            typename             = std::enable_if_t<
-                            std::is_convertible_v<StationType, std::string>>>
+  template <typename StationType = std::string, typename... Args>
+    requires(std::is_convertible_v<StationType, std::string>)
   void add_stop(size_t train_index, const StationType& station_name,
                 decltype(T::time_type()) t0, decltype(T::time_type()) tn,
                 Args... args) {
     add_stop(train_index, station_name, true, t0, tn, args...);
   }
   template <typename TrainType   = std::string,
-            typename StationType = std::string, typename... Args,
-            typename             = std::enable_if_t<
-                            !std::is_convertible_v<TrainType, size_t> &&
-                            std::is_convertible_v<TrainType, std::string> &&
-                            std::is_convertible_v<StationType, std::string>>>
+            typename StationType = std::string, typename... Args>
+    requires(!std::is_convertible_v<TrainType, size_t> &&
+             std::is_convertible_v<TrainType, std::string> &&
+             std::is_convertible_v<StationType, std::string>)
   void add_stop(const TrainType& train_name, const StationType& station_name,
                 decltype(T::time_type()) t0, decltype(T::time_type()) tn,
                 Args... args) {
@@ -566,10 +568,9 @@ public:
     station_list.add_track_to_station(name, source, target, network);
   };
 
-  template <
-      typename TrainN = std::string,
-      typename = std::enable_if_t<!std::is_convertible_v<TrainN, size_t> &&
-                                  std::is_convertible_v<TrainN, std::string>>>
+  template <typename TrainN = std::string>
+    requires(!std::is_convertible_v<TrainN, size_t> &&
+             std::is_convertible_v<TrainN, std::string>)
   size_t add_train(const TrainN& name, int length, double max_speed,
                    double acceleration, double deceleration,
                    decltype(T::time_type()) t_0, double v_0, size_t entry,
@@ -579,15 +580,14 @@ public:
                      acceleration, deceleration, true, t_0, v_0, entry, t_n,
                      v_n, exit, network);
   };
-  template <
-      typename TrainN = std::string, typename EntryN = std::string,
-      typename ExitN = std::string,
-      typename = std::enable_if_t<!std::is_convertible_v<TrainN, size_t> &&
-                                  std::is_convertible_v<TrainN, std::string> &&
-                                  !std::is_convertible_v<EntryN, size_t> &&
-                                  std::is_convertible_v<EntryN, std::string> &&
-                                  !std::is_convertible_v<ExitN, size_t> &&
-                                  std::is_convertible_v<ExitN, std::string>>>
+  template <typename TrainN = std::string, typename EntryN = std::string,
+            typename ExitN = std::string>
+    requires(!std::is_convertible_v<TrainN, size_t> &&
+             std::is_convertible_v<TrainN, std::string> &&
+             !std::is_convertible_v<EntryN, size_t> &&
+             std::is_convertible_v<EntryN, std::string> &&
+             !std::is_convertible_v<ExitN, size_t> &&
+             std::is_convertible_v<ExitN, std::string>)
   size_t add_train(const TrainN& name, int length, double max_speed,
                    double acceleration, double deceleration,
                    decltype(T::time_type()) t_0, double v_0,
@@ -599,10 +599,9 @@ public:
         network.get_vertex_index(static_cast<std::string>(entry)), t_n, v_n,
         network.get_vertex_index(static_cast<std::string>(exit)), network);
   };
-  template <
-      typename TrainN = std::string,
-      typename = std::enable_if_t<!std::is_convertible_v<TrainN, size_t> &&
-                                  std::is_convertible_v<TrainN, std::string>>>
+  template <typename TrainN = std::string>
+    requires(!std::is_convertible_v<TrainN, size_t> &&
+             std::is_convertible_v<TrainN, std::string>)
   size_t add_train(const TrainN& name, int length, double max_speed,
                    double acceleration, double deceleration, bool tim,
                    decltype(T::time_type()) t_0, double v_0, size_t entry,
@@ -642,15 +641,14 @@ public:
     schedules.emplace_back(t_0, v_0, entry, t_n, v_n, exit);
     return index;
   }
-  template <
-      typename TrainN = std::string, typename EntryN = std::string,
-      typename ExitN = std::string,
-      typename = std::enable_if_t<!std::is_convertible_v<TrainN, size_t> &&
-                                  std::is_convertible_v<TrainN, std::string> &&
-                                  !std::is_convertible_v<EntryN, size_t> &&
-                                  std::is_convertible_v<EntryN, std::string> &&
-                                  !std::is_convertible_v<ExitN, size_t> &&
-                                  std::is_convertible_v<ExitN, std::string>>>
+  template <typename TrainN = std::string, typename EntryN = std::string,
+            typename ExitN = std::string>
+    requires(!std::is_convertible_v<TrainN, size_t> &&
+             std::is_convertible_v<TrainN, std::string> &&
+             !std::is_convertible_v<EntryN, size_t> &&
+             std::is_convertible_v<EntryN, std::string> &&
+             !std::is_convertible_v<ExitN, size_t> &&
+             std::is_convertible_v<ExitN, std::string>)
   size_t add_train(const TrainN& name, int length, double max_speed,
                    double acceleration, double deceleration, bool tim,
                    decltype(T::time_type()) t_0, double v_0,
@@ -684,8 +682,8 @@ public:
     return get_schedule(train_list.get_train_index(train_name));
   };
 
-  virtual bool is_forced_to_stop(const std::string& train_name,
-                                 int                time) const {
+  [[nodiscard]] bool is_forced_to_stop(const std::string& train_name,
+                                       int                time) const override {
     return get_schedule(train_name).is_forced_to_stop(time);
   }
 
@@ -725,10 +723,9 @@ public:
     return {schedule.get_t_0_range().first, schedule.get_t_n_range().second};
   };
 
-  template <
-      typename TrainN = std::string,
-      typename = std::enable_if_t<!std::is_convertible_v<TrainN, size_t> &&
-                                  std::is_convertible_v<TrainN, std::string>>>
+  template <typename TrainN = std::string>
+    requires(!std::is_convertible_v<TrainN, size_t> &&
+             std::is_convertible_v<TrainN, std::string>)
   [[nodiscard]] std::pair<int, int>
   time_interval(const TrainN& train_name) const {
     return time_interval(
@@ -747,7 +744,7 @@ public:
   }
 
   void update_after_discretization(
-      const std::vector<std::pair<size_t, std::vector<size_t>>>& new_edges) {
+      const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
     station_list.update_after_discretization(new_edges);
   };
 
@@ -810,6 +807,15 @@ public:
     }
 
     return true;
+  };
+
+  [[nodiscard]] std::vector<
+      std::pair<size_t, std::vector<cda_rail::index_vector>>>
+  get_stop_tracks(
+      size_t tr, const std::string& name, const Network& network,
+      const cda_rail::index_vector& edges_to_consider) const override {
+    return get_station_list().get_stop_tracks(
+        name, train_list.get_train(tr).length, network, edges_to_consider);
   }
 };
 
