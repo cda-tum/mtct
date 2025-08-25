@@ -57,6 +57,10 @@ jobs:
         run: |
           echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
           echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
+      - name: Verify Gurobi license file
+        run: |
+          ls -l $PWD/gurobi.lic
+          head -n 1 $PWD/gurobi.lic
       - name: download-gurobi-linux
         env:
           GUROBI_VERSION_SHORT: ${{ needs.read-parameters.outputs.gurobiShortVersion }}
