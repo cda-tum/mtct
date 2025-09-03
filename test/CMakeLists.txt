@@ -23,4 +23,5 @@ package_add_test(
   ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi_vss_gen_using_mb_information.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_greedysimulator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_greedyheuristic.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_mb_astar.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_mb_astar.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_temporary_create_ras_instances.cpp)
