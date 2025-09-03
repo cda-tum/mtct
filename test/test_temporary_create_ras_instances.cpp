@@ -260,7 +260,7 @@ create_ras_instance(const std::string& path) {
               neighbor_in_cell++;
             }
           }
-          if (neighbor_in_cell == 1) {
+          if (neighbor_in_cell == 1 && instance.const_n().has_edge(v, rel_n)) {
             entering_edges_prev_cell.emplace_back(
                 instance.const_n().get_edge_index(v, rel_n));
           }
