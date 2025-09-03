@@ -3,6 +3,7 @@
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
 #include "gtest/gtest.h"
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -236,6 +237,59 @@ create_ras_instance(const std::string& path) {
       assert(instance.const_n().neighbors(*intersection_next.begin()).size() ==
              2);
 
+      // First section
+      if (i == 1) {
+        const auto& relevant_edges_first = cell_edges[block_section[i - 1]];
+
+        // Get all entry edges, i.e.,
+        // for every vertex in cell
+        // with one neighbor within the cell
+        // the edge connecting the border vertex with the neighbor within the
+        // cell.
+        std::vector<size_t> entering_edges_prev_cell;
+        for (const auto& v : previous_cell) {
+          if (v == *intersection_prev.begin()) {
+            continue;
+          }
+          const auto neighbors        = instance.const_n().neighbors(v);
+          size_t     neighbor_in_cell = 0;
+          size_t     rel_n            = 0;
+          for (const auto& n : neighbors) {
+            if (current_cell.contains(n)) {
+              rel_n = n;
+              neighbor_in_cell++;
+            }
+          }
+          if (neighbor_in_cell == 1) {
+            entering_edges_prev_cell.emplace_back(
+                instance.const_n().get_edge_index(v, rel_n));
+          }
+        }
+
+        // Path from border vertices to first intersection vertex
+        assert(!entering_edges_prev_cell.empty());
+        for (const auto& entering_e : entering_edges_prev_cell) {
+          const auto [relevant_path_length, relevant_path] =
+              instance.const_n().shortest_path_using_edges(
+                  entering_e, *intersection_prev.begin(), false,
+                  relevant_edges_first);
+          assert(relevant_path_length.has_value());
+          assert(!relevant_path.empty());
+          for (size_t j = 0; j < relevant_path.size() - 1; ++j) {
+            instance.n().add_successor(relevant_path[j], relevant_path[j + 1]);
+            const auto e_j_reverse =
+                instance.const_n().get_reverse_edge_index(relevant_path[j]);
+            const auto e_j_plus_1_reverse =
+                instance.const_n().get_reverse_edge_index(relevant_path[j + 1]);
+            if (e_j_reverse.has_value() && e_j_plus_1_reverse.has_value()) {
+              instance.n().add_successor(e_j_plus_1_reverse.value(),
+                                         e_j_reverse.value());
+            }
+          }
+        }
+      }
+
+      // Path through middle section
       const auto out_edges =
           instance.const_n().out_edges(*intersection_prev.begin());
       const auto& relevant_edges = cell_edges[block_section[i]];
@@ -245,6 +299,8 @@ create_ras_instance(const std::string& path) {
           const auto [relevant_path_length, relevant_path] =
               instance.const_n().shortest_path_using_edges(
                   edge, *intersection_next.begin(), false, relevant_edges);
+          assert(relevant_path_length.has_value());
+          assert(!relevant_path.empty());
           for (size_t j = 0; j < relevant_path.size() - 1; ++j) {
             instance.n().add_successor(relevant_path[j], relevant_path[j + 1]);
             const auto e_j_reverse =
