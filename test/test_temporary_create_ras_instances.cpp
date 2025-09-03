@@ -255,7 +255,7 @@ create_ras_instance(const std::string& path) {
           size_t     neighbor_in_cell = 0;
           size_t     rel_n            = 0;
           for (const auto& n : neighbors) {
-            if (current_cell.contains(n)) {
+            if (previous_cell.contains(n)) {
               rel_n = n;
               neighbor_in_cell++;
             }
