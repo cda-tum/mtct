@@ -289,6 +289,57 @@ create_ras_instance(const std::string& path) {
         }
       }
 
+      // Last section
+      if (i == block_section.size() - 2) {
+        const auto& relevant_edges_last = cell_edges[block_section[i + 1]];
+        std::optional<size_t> first_edge;
+        for (const auto e :
+             instance.const_n().out_edges(*intersection_next.begin())) {
+          if (std::ranges::contains(relevant_edges_last, e)) {
+            first_edge = e;
+            break;
+          }
+        }
+        assert(first_edge.has_value());
+        std::vector<size_t> exiting_vertices;
+        for (const auto& v : next_cell) {
+          if (v == *intersection_next.begin()) {
+            continue;
+          }
+          const auto neighbors        = instance.const_n().neighbors(v);
+          size_t     neighbor_in_cell = 0;
+          for (const auto& n : neighbors) {
+            if (next_cell.contains(n)) {
+              neighbor_in_cell++;
+            }
+          }
+          if (neighbor_in_cell == 1) {
+            exiting_vertices.push_back(v);
+          }
+        }
+
+        // Path through last cell
+        assert(!exiting_vertices.empty());
+        for (const auto& exiting_v : exiting_vertices) {
+          const auto [relevant_path_length, relevant_path] =
+              instance.const_n().shortest_path_using_edges(
+                  first_edge.value(), exiting_v, false, relevant_edges_last);
+          assert(relevant_path_length.has_value());
+          assert(!relevant_path.empty());
+          for (size_t j = 0; j < relevant_path.size() - 1; ++j) {
+            instance.n().add_successor(relevant_path[j], relevant_path[j + 1]);
+            const auto e_j_reverse =
+                instance.const_n().get_reverse_edge_index(relevant_path[j]);
+            const auto e_j_plus_1_reverse =
+                instance.const_n().get_reverse_edge_index(relevant_path[j + 1]);
+            if (e_j_reverse.has_value() && e_j_plus_1_reverse.has_value()) {
+              instance.n().add_successor(e_j_plus_1_reverse.value(),
+                                         e_j_reverse.value());
+            }
+          }
+        }
+      }
+
       // Path through middle section
       const auto out_edges =
           instance.const_n().out_edges(*intersection_prev.begin());
