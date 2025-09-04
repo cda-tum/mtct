@@ -221,7 +221,7 @@ create_ras_instance(const std::string& path) {
           for (const auto n : c_n) {
             assert(cell.contains(n));
             const auto in_edges  = instance.const_n().in_edges(v);
-            const auto out_edges = instance.const_n().out_edges(n);
+            const auto out_edges = instance.const_n().out_edges(v);
             for (const auto& e : in_edges) {
               assert(!instance.const_n().get_reverse_edge_index(e).has_value());
             }
