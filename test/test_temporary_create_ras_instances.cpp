@@ -212,6 +212,130 @@ create_ras_instance(const std::string& path) {
 
   // Deduce successors from block sections
   for (const auto& block_section : block_sections) {
+    assert(block_section.size() >= 2);
+
+    // First and last cell
+    const auto& first_cell  = cell_vertices[block_section[0]];
+    const auto& second_cell = cell_vertices[block_section[1]];
+    const auto& last_cell =
+        cell_vertices[block_section[block_section.size() - 1]];
+    const auto& second_to_last_cell =
+        cell_vertices[block_section[block_section.size() - 2]];
+
+    // Intersection first
+    std::set<size_t> intersection_first;
+    std::set_intersection(
+        first_cell.begin(), first_cell.end(), second_cell.begin(),
+        second_cell.end(),
+        std::inserter(intersection_first, intersection_first.begin()));
+    // Intersection last
+    std::set<size_t> intersection_last;
+    std::set_intersection(
+        second_to_last_cell.begin(), second_to_last_cell.end(),
+        last_cell.begin(), last_cell.end(),
+        std::inserter(intersection_last, intersection_last.begin()));
+
+    // First section
+    const auto& relevant_edges_first = cell_edges[block_section[0]];
+
+    // Get all entry edges, i.e.,
+    // for every vertex in cell
+    // with one neighbor within the cell
+    // the edge connecting the border vertex with the neighbor within the
+    // cell.
+    std::vector<size_t> entering_edges_prev_cell;
+    for (const auto& v : first_cell) {
+      if (v == *intersection_first.begin()) {
+        continue;
+      }
+      const auto neighbors        = instance.const_n().neighbors(v);
+      size_t     neighbor_in_cell = 0;
+      size_t     rel_n            = 0;
+      for (const auto& n : neighbors) {
+        if (first_cell.contains(n)) {
+          rel_n = n;
+          neighbor_in_cell++;
+        }
+      }
+      if (neighbor_in_cell == 1 && instance.const_n().has_edge(v, rel_n)) {
+        entering_edges_prev_cell.emplace_back(
+            instance.const_n().get_edge_index(v, rel_n));
+      }
+    }
+
+    // Path from border vertices to first intersection vertex
+    assert(!entering_edges_prev_cell.empty());
+    for (const auto& entering_e : entering_edges_prev_cell) {
+      const auto [relevant_path_length, relevant_path] =
+          instance.const_n().shortest_path_using_edges(
+              entering_e, *intersection_first.begin(), false,
+              relevant_edges_first);
+      assert(relevant_path_length.has_value());
+      assert(!relevant_path.empty());
+      for (size_t j = 0; j < relevant_path.size() - 1; ++j) {
+        instance.n().add_successor(relevant_path[j], relevant_path[j + 1]);
+        const auto e_j_reverse =
+            instance.const_n().get_reverse_edge_index(relevant_path[j]);
+        const auto e_j_plus_1_reverse =
+            instance.const_n().get_reverse_edge_index(relevant_path[j + 1]);
+        if (e_j_reverse.has_value() && e_j_plus_1_reverse.has_value()) {
+          instance.n().add_successor(e_j_plus_1_reverse.value(),
+                                     e_j_reverse.value());
+        }
+      }
+    }
+
+    // Last section
+    const auto& relevant_edges_last =
+        cell_edges[block_section[block_section.size() - 1]];
+    std::optional<size_t> first_edge;
+    for (const auto e :
+         instance.const_n().out_edges(*intersection_last.begin())) {
+      if (std::ranges::contains(relevant_edges_last, e)) {
+        first_edge = e;
+        break;
+      }
+    }
+    assert(first_edge.has_value());
+    std::vector<size_t> exiting_vertices;
+    for (const auto& v : last_cell) {
+      if (v == *intersection_last.begin()) {
+        continue;
+      }
+      const auto neighbors        = instance.const_n().neighbors(v);
+      size_t     neighbor_in_cell = 0;
+      for (const auto& n : neighbors) {
+        if (last_cell.contains(n)) {
+          neighbor_in_cell++;
+        }
+      }
+      if (neighbor_in_cell == 1) {
+        exiting_vertices.push_back(v);
+      }
+    }
+
+    // Path through last cell
+    assert(!exiting_vertices.empty());
+    for (const auto& exiting_v : exiting_vertices) {
+      const auto [relevant_path_length, relevant_path] =
+          instance.const_n().shortest_path_using_edges(
+              first_edge.value(), exiting_v, false, relevant_edges_last);
+      assert(relevant_path_length.has_value());
+      assert(!relevant_path.empty());
+      for (size_t j = 0; j < relevant_path.size() - 1; ++j) {
+        instance.n().add_successor(relevant_path[j], relevant_path[j + 1]);
+        const auto e_j_reverse =
+            instance.const_n().get_reverse_edge_index(relevant_path[j]);
+        const auto e_j_plus_1_reverse =
+            instance.const_n().get_reverse_edge_index(relevant_path[j + 1]);
+        if (e_j_reverse.has_value() && e_j_plus_1_reverse.has_value()) {
+          instance.n().add_successor(e_j_plus_1_reverse.value(),
+                                     e_j_reverse.value());
+        }
+      }
+    }
+
+    // Middle cells
     for (size_t i = 1; i < block_section.size() - 1; ++i) {
       const auto& previous_cell = cell_vertices[block_section[i - 1]];
       const auto& current_cell  = cell_vertices[block_section[i]];
@@ -236,109 +360,6 @@ create_ras_instance(const std::string& path) {
              2);
       assert(instance.const_n().neighbors(*intersection_next.begin()).size() ==
              2);
-
-      // First section
-      if (i == 1) {
-        const auto& relevant_edges_first = cell_edges[block_section[i - 1]];
-
-        // Get all entry edges, i.e.,
-        // for every vertex in cell
-        // with one neighbor within the cell
-        // the edge connecting the border vertex with the neighbor within the
-        // cell.
-        std::vector<size_t> entering_edges_prev_cell;
-        for (const auto& v : previous_cell) {
-          if (v == *intersection_prev.begin()) {
-            continue;
-          }
-          const auto neighbors        = instance.const_n().neighbors(v);
-          size_t     neighbor_in_cell = 0;
-          size_t     rel_n            = 0;
-          for (const auto& n : neighbors) {
-            if (previous_cell.contains(n)) {
-              rel_n = n;
-              neighbor_in_cell++;
-            }
-          }
-          if (neighbor_in_cell == 1 && instance.const_n().has_edge(v, rel_n)) {
-            entering_edges_prev_cell.emplace_back(
-                instance.const_n().get_edge_index(v, rel_n));
-          }
-        }
-
-        // Path from border vertices to first intersection vertex
-        assert(!entering_edges_prev_cell.empty());
-        for (const auto& entering_e : entering_edges_prev_cell) {
-          const auto [relevant_path_length, relevant_path] =
-              instance.const_n().shortest_path_using_edges(
-                  entering_e, *intersection_prev.begin(), false,
-                  relevant_edges_first);
-          assert(relevant_path_length.has_value());
-          assert(!relevant_path.empty());
-          for (size_t j = 0; j < relevant_path.size() - 1; ++j) {
-            instance.n().add_successor(relevant_path[j], relevant_path[j + 1]);
-            const auto e_j_reverse =
-                instance.const_n().get_reverse_edge_index(relevant_path[j]);
-            const auto e_j_plus_1_reverse =
-                instance.const_n().get_reverse_edge_index(relevant_path[j + 1]);
-            if (e_j_reverse.has_value() && e_j_plus_1_reverse.has_value()) {
-              instance.n().add_successor(e_j_plus_1_reverse.value(),
-                                         e_j_reverse.value());
-            }
-          }
-        }
-      }
-
-      // Last section
-      if (i == block_section.size() - 2) {
-        const auto& relevant_edges_last = cell_edges[block_section[i + 1]];
-        std::optional<size_t> first_edge;
-        for (const auto e :
-             instance.const_n().out_edges(*intersection_next.begin())) {
-          if (std::ranges::contains(relevant_edges_last, e)) {
-            first_edge = e;
-            break;
-          }
-        }
-        assert(first_edge.has_value());
-        std::vector<size_t> exiting_vertices;
-        for (const auto& v : next_cell) {
-          if (v == *intersection_next.begin()) {
-            continue;
-          }
-          const auto neighbors        = instance.const_n().neighbors(v);
-          size_t     neighbor_in_cell = 0;
-          for (const auto& n : neighbors) {
-            if (next_cell.contains(n)) {
-              neighbor_in_cell++;
-            }
-          }
-          if (neighbor_in_cell == 1) {
-            exiting_vertices.push_back(v);
-          }
-        }
-
-        // Path through last cell
-        assert(!exiting_vertices.empty());
-        for (const auto& exiting_v : exiting_vertices) {
-          const auto [relevant_path_length, relevant_path] =
-              instance.const_n().shortest_path_using_edges(
-                  first_edge.value(), exiting_v, false, relevant_edges_last);
-          assert(relevant_path_length.has_value());
-          assert(!relevant_path.empty());
-          for (size_t j = 0; j < relevant_path.size() - 1; ++j) {
-            instance.n().add_successor(relevant_path[j], relevant_path[j + 1]);
-            const auto e_j_reverse =
-                instance.const_n().get_reverse_edge_index(relevant_path[j]);
-            const auto e_j_plus_1_reverse =
-                instance.const_n().get_reverse_edge_index(relevant_path[j + 1]);
-            if (e_j_reverse.has_value() && e_j_plus_1_reverse.has_value()) {
-              instance.n().add_successor(e_j_plus_1_reverse.value(),
-                                         e_j_reverse.value());
-            }
-          }
-        }
-      }
 
       // Path through middle section
       const auto out_edges =
