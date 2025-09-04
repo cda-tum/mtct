@@ -1453,4 +1453,36 @@ TEST(GeneralPerformanceOptimizationInstances, LeavingTimes) {
   EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr4, 5), 7.25);
 }
 
+TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
+  const std::vector<std::string> paths{"toy", "practical"};
+
+  for (const auto& p : paths) {
+    const std::string instance_path =
+        "./example-networks-gen-po-ras/" + p + "/";
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            instance_path);
+
+    for (size_t tr = 0; tr < instance.get_train_list().size(); ++tr) {
+      const auto tr_schedule = instance.get_schedule(tr);
+      const auto entry       = tr_schedule.get_entry();
+      const auto exit        = tr_schedule.get_exit();
+      const auto entry_edges = instance.const_n().out_edges(entry);
+      const auto tr_obj      = instance.get_train_list().get_train(tr);
+      const auto entry_obj   = instance.const_n().get_vertex(entry);
+      const auto exit_obj    = instance.const_n().get_vertex(exit);
+      EXPECT_EQ(entry_edges.size(), 1)
+          << "Instance" << p << ": Train " << tr_obj.name
+          << " does not have exactly one entry edge at entry vertex "
+          << entry_obj.name;
+      const auto entry_edge = entry_edges[0];
+      const auto p_len =
+          instance.const_n().shortest_path(entry_edge, exit, false, true);
+      EXPECT_TRUE(p_len.has_value())
+          << "Instance " << p << ": No path for train " << tr_obj.name
+          << " from " << entry_obj.name << " to " << exit_obj.name;
+    }
+  }
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
