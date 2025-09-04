@@ -1481,6 +1481,27 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
       EXPECT_TRUE(p_len.has_value())
           << "Instance " << p << ": No path for train " << tr_obj.name
           << " from " << entry_obj.name << " to " << exit_obj.name;
+
+      std::vector<size_t> last_edges   = {entry_edge};
+      std::string         last_station = "Entry " + entry_obj.name;
+      for (const auto& stop : tr_schedule.get_stops()) {
+        const auto station_name = stop.get_station_name();
+        const auto station =
+            instance.get_station_list().get_station(station_name);
+        const auto p_station_len =
+            instance.const_n().shortest_path_between_sets(
+                last_edges, station.tracks, true, true);
+        EXPECT_TRUE(p_station_len.has_value())
+            << "Instance " << p << ": No path for train " << tr_obj.name
+            << " from " << last_station << " to " << station_name;
+        last_edges   = station.tracks;
+        last_station = station_name;
+      }
+      const auto p_exit_len = instance.const_n().shortest_path_between_sets(
+          last_edges, {exit}, false, true);
+      EXPECT_TRUE(p_exit_len.has_value())
+          << "Instance " << p << ": No path for train " << tr_obj.name
+          << " from " << last_station << " to exit " << exit_obj.name;
     }
   }
 }
