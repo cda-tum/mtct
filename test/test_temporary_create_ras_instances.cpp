@@ -484,13 +484,28 @@ create_ras_instance(const std::string& path) {
   // Check for reverse edges
   for (size_t e = 0; e < instance.const_n().number_of_edges(); ++e) {
     const auto e_obj = instance.const_n().get_edge(e);
+    if (instance.const_n().get_successors(e).empty() &&
+        instance.const_n().get_predecessors(e).empty() &&
+        !instance.const_n().get_reverse_edge_index(e).has_value()) {
+      // add reverse edge
+      instance.n().add_edge(e_obj.target, e_obj.source, e_obj.length,
+                            e_obj.max_speed, e_obj.breakable,
+                            e_obj.min_block_length);
+    }
+  }
+  for (size_t e = 0; e < instance.const_n().number_of_edges(); ++e) {
+    const auto e_obj = instance.const_n().get_edge(e);
     if (instance.const_n().get_successors(e).empty()) {
       for (const auto e2 : instance.const_n().out_edges(e_obj.target)) {
         if (instance.const_n().get_reverse_edge_index(e2).has_value()) {
           instance.n().add_successor(e, e2);
         }
       }
-    } else {
+    }
+  }
+  for (size_t e = 0; e < instance.const_n().number_of_edges(); ++e) {
+    const auto e_obj = instance.const_n().get_edge(e);
+    if (!instance.const_n().get_successors(e).empty()) {
       const auto reverse_e = instance.const_n().get_reverse_edge_index(e);
       if (reverse_e.has_value()) {
         for (const auto e2 : instance.const_n().get_successors(e)) {
