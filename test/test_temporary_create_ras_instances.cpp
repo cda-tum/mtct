@@ -171,37 +171,6 @@ create_ras_instance(const std::string& path) {
     }
   }
 
-  // Some vertices are obvious because the edges are non-directional
-  for (size_t vertex_index = 0;
-       vertex_index < instance.const_n().number_of_vertices(); ++vertex_index) {
-    if (instance.const_n().neighbors(vertex_index).size() >= 3) {
-      const auto in_edges          = instance.const_n().in_edges(vertex_index);
-      const auto out_edges         = instance.const_n().out_edges(vertex_index);
-      bool       none_have_reverse = true;
-      for (const auto& e : in_edges) {
-        if (instance.const_n().get_reverse_edge_index(e).has_value()) {
-          none_have_reverse = false;
-          break;
-        }
-      }
-      for (const auto& e : out_edges) {
-        if (instance.const_n().get_reverse_edge_index(e).has_value()) {
-          none_have_reverse = false;
-          break;
-        }
-      }
-      if (none_have_reverse) {
-        // All edges are one-way, hence all possible successors are
-        // allowed
-        for (const auto& e_in : in_edges) {
-          for (const auto& e_out : out_edges) {
-            instance.n().add_successor(e_in, e_out);
-          }
-        }
-      }
-    }
-  }
-
   // For others, extract from Input_Block_Section.csv
   // block_section_id,cell_sequence_number,cell_id
   const auto path_to_input_block_section =
@@ -244,7 +213,48 @@ create_ras_instance(const std::string& path) {
   // Deduce successors from block sections
   for (const auto& block_section : block_sections) {
     if (block_section.size() < 2) {
-      continue;
+      // Some vertices are obvious because the edges are non-directional
+      const auto& cell = cell_vertices[block_section[0]];
+      for (const auto& vertex_index : cell) {
+        std::set<size_t> neighbors_tmp;
+        for (const auto n : instance.const_n().neighbors(vertex_index)) {
+          if (cell.contains(n)) {
+            neighbors_tmp.insert(n);
+          }
+        }
+        if (neighbors_tmp.size() >= 3) {
+          const auto in_edges  = instance.const_n().in_edges(vertex_index);
+          const auto out_edges = instance.const_n().out_edges(vertex_index);
+          bool       none_have_reverse = true;
+          for (const auto& e : in_edges) {
+            if (instance.const_n().get_reverse_edge_index(e).has_value()) {
+              none_have_reverse = false;
+              break;
+            }
+          }
+          for (const auto& e : out_edges) {
+            if (instance.const_n().get_reverse_edge_index(e).has_value()) {
+              none_have_reverse = false;
+              break;
+            }
+          }
+          if (none_have_reverse) {
+            // All edges are one-way, hence all possible successors are
+            // allowed
+            for (const auto& e_in : in_edges) {
+              const auto e_in_tmp_obj = instance.const_n().get_edge(e_in);
+              assert(e_in_tmp_obj.target == vertex_index);
+              assert(cell.contains(e_in_tmp_obj.source));
+              for (const auto& e_out : out_edges) {
+                const auto e_out_tmp_obj = instance.const_n().get_edge(e_out);
+                assert(e_out_tmp_obj.source == vertex_index);
+                assert(cell.contains(e_out_tmp_obj.target));
+                instance.n().add_successor(e_in, e_out);
+              }
+            }
+          }
+        }
+      }
     }
     assert(block_section.size() >= 2);
 
