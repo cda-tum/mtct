@@ -441,6 +441,46 @@ create_ras_instance(const std::string& path) {
     }
   }
 
+  // Some vertices are missing in data
+  for (size_t vertex_index = 0;
+       vertex_index < instance.const_n().number_of_vertices(); ++vertex_index) {
+    if (instance.const_n().neighbors(vertex_index).size() >= 3) {
+      const auto in_edges          = instance.const_n().in_edges(vertex_index);
+      const auto out_edges         = instance.const_n().out_edges(vertex_index);
+      bool       none_have_reverse = true;
+      bool       none_have_successors = true;
+      for (const auto& e : in_edges) {
+        if (!instance.const_n().get_successors(e).empty()) {
+          none_have_successors = false;
+          break;
+        }
+        if (instance.const_n().get_reverse_edge_index(e).has_value()) {
+          none_have_reverse = false;
+          break;
+        }
+      }
+      for (const auto& e : out_edges) {
+        if (!instance.const_n().get_successors(e).empty()) {
+          none_have_successors = false;
+          break;
+        }
+        if (instance.const_n().get_reverse_edge_index(e).has_value()) {
+          none_have_reverse = false;
+          break;
+        }
+      }
+      if (none_have_reverse && none_have_successors) {
+        // All edges are one-way, hence all possible successors are
+        // allowed
+        for (const auto& e_in : in_edges) {
+          for (const auto& e_out : out_edges) {
+            instance.n().add_successor(e_in, e_out);
+          }
+        }
+      }
+    }
+  }
+
   // Extract stations from InputM_Stations.csv
   // station_name,cell_id
   const auto path_to_input_station = path_to_instance / "InputM_Stations.csv";
