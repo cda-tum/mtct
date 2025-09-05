@@ -460,7 +460,7 @@ create_ras_instance(const std::string& path) {
         }
       }
       for (const auto& e : out_edges) {
-        if (!instance.const_n().get_successors(e).empty()) {
+        if (!instance.const_n().get_predecessors(e).empty()) {
           none_have_successors = false;
           break;
         }
