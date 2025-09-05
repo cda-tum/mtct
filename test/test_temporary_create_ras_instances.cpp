@@ -255,6 +255,7 @@ create_ras_instance(const std::string& path) {
           }
         }
       }
+      continue;
     }
     assert(block_section.size() >= 2);
 
