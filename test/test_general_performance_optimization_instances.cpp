@@ -1471,6 +1471,12 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
       const auto tr_obj      = instance.get_train_list().get_train(tr);
       const auto entry_obj   = instance.const_n().get_vertex(entry);
       const auto exit_obj    = instance.const_n().get_vertex(exit);
+      EXPECT_EQ(instance.const_n().neighbors(entry).size(), 1)
+          << "Instance " << p << ": Train " << tr_obj.name << ", entry vertex "
+          << entry_obj.name << " does not have exactly one neighbor";
+      EXPECT_EQ(instance.const_n().neighbors(exit).size(), 1)
+          << "Instance " << p << ": Train " << tr_obj.name << ", exit vertex "
+          << exit_obj.name << " does not have exactly one neighbor";
       EXPECT_EQ(entry_edges.size(), 1)
           << "Instance" << p << ": Train " << tr_obj.name
           << " does not have exactly one entry edge at entry vertex "
