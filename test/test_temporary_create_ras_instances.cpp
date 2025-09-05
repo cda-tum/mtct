@@ -578,9 +578,32 @@ create_ras_instance(const std::string& path) {
                    speed_multiplier * instance.const_n().get_edge(e).max_speed);
     }
 
+    const double acceleration = 1;
+    const double deceleration = 0.9;
+
+    for (const auto& [station_name_tmp, station_tmp] :
+         instance.get_station_list()) {
+      const auto p_len_tmp = instance.const_n().shortest_path_between_sets(
+          in_edges, station_tmp.tracks, true, true);
+      if (p_len_tmp.has_value()) {
+        initial_speed = std::min(
+            initial_speed, std::min(speed_multiplier, 0.75) *
+                               std::sqrt(2 * deceleration * p_len_tmp.value()));
+      }
+
+      const auto p_len_tmp_2 = instance.const_n().shortest_path_between_sets(
+          station_tmp.tracks, out_edges, true, true);
+      if (p_len_tmp_2.has_value()) {
+        target_speed =
+            std::min(target_speed,
+                     std::min(speed_multiplier, 0.75) *
+                         std::sqrt(2 * acceleration * p_len_tmp_2.value()));
+      }
+    }
+
     instance.add_train(
         "tr_" + train_id, std::min(400.0, min_station_length),
-        speed_multiplier * max_speed, 1, 0.9,
+        speed_multiplier * max_speed, acceleration, deceleration,
         {earliest_departure_time, latest_departure_time}, initial_speed,
         origin_vertex_index,
         {earliest_departure_time, latest_departure_time + 6 * 60 * 60},
