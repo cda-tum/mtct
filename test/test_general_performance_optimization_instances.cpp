@@ -1464,6 +1464,8 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
             instance_path);
 
     for (size_t tr = 0; tr < instance.get_train_list().size(); ++tr) {
+      double min_time = 0;
+
       const auto tr_schedule = instance.get_schedule(tr);
       const auto entry       = tr_schedule.get_entry();
       const auto exit        = tr_schedule.get_exit();
@@ -1482,11 +1484,12 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
           << " does not have exactly one entry edge at entry vertex "
           << entry_obj.name;
       const auto entry_edge = entry_edges[0];
-      const auto p_len =
-          instance.const_n().shortest_path(entry_edge, exit, false, true);
+      const auto p_len      = instance.const_n().shortest_path(
+          entry_edge, exit, false, true, true, tr_obj.max_speed);
       EXPECT_TRUE(p_len.has_value())
           << "Instance " << p << ": No path for train " << tr_obj.name
           << " from " << entry_obj.name << " to " << exit_obj.name;
+      min_time += p_len.value_or(0);
 
       std::vector<size_t> last_edges   = {entry_edge};
       std::string         last_station = "Entry " + entry_obj.name;
@@ -1496,18 +1499,30 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
             instance.get_station_list().get_station(station_name);
         const auto p_station_len =
             instance.const_n().shortest_path_between_sets(
-                last_edges, station.tracks, true, true);
+                last_edges, station.tracks, true, true, true, tr_obj.max_speed);
         EXPECT_TRUE(p_station_len.has_value())
             << "Instance " << p << ": No path for train " << tr_obj.name
             << " from " << last_station << " to " << station_name;
         last_edges   = station.tracks;
         last_station = station_name;
+        min_time += p_station_len.value_or(0);
+        min_time += stop.get_min_stopping_time();
       }
       const auto p_exit_len = instance.const_n().shortest_path_between_sets(
-          last_edges, {exit}, false, true);
+          last_edges, {exit}, false, true, true, tr_obj.max_speed);
       EXPECT_TRUE(p_exit_len.has_value())
           << "Instance " << p << ": No path for train " << tr_obj.name
           << " from " << last_station << " to exit " << exit_obj.name;
+      min_time += p_exit_len.value_or(0);
+
+      EXPECT_LE(min_time + 1 * 60 * 60, tr_schedule.get_t_n_range().second -
+                                            tr_schedule.get_t_0_range().second)
+          << "Instance " << p << ": Train " << tr_obj.name
+          << " cannot reach exit in scheduled time with 1h buffer"
+          << " (min time: " << min_time << ", scheduled time: "
+          << tr_schedule.get_t_n_range().second -
+                 tr_schedule.get_t_0_range().second
+          << ")";
     }
   }
 }
