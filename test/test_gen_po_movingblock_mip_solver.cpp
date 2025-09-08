@@ -1635,7 +1635,8 @@ TEST(GenPOMovingBlockMIPSolver, RASPractical) {
             instance_path);
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 2.78, cda_rail::VelocityRefinementStrategy::None, true, true},
+        {false, 10, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
+                                                     true},
         {true}, {}, 650, true);
 
     EXPECT_TRUE(sol.has_solution())
