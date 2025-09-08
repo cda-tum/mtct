@@ -638,6 +638,42 @@ create_ras_instance(const std::string& path) {
       }
     }
 
+    const auto initial_bd = initial_speed * initial_speed / (2 * deceleration);
+    const auto target_bd  = target_speed * target_speed / (2 * acceleration);
+
+    const auto entry_paths =
+        instance.const_n().all_paths_of_length_starting_in_vertex(
+            origin_vertex_index, initial_bd);
+    for (const auto& entry_path : entry_paths) {
+      double path_len = 0;
+      for (const auto& e : entry_path) {
+        const auto& edge_obj = instance.const_n().get_edge(e);
+        initial_speed =
+            std::min(initial_speed,
+                     std::min(speed_multiplier, 0.75) *
+                         std::sqrt(edge_obj.max_speed * edge_obj.max_speed +
+                                   2 * deceleration * path_len));
+        path_len += edge_obj.length;
+      }
+    }
+
+    const auto exit_paths =
+        instance.const_n().all_paths_of_length_ending_in_vertex(
+            destination_vertex_index, target_bd);
+    for (const auto& exit_path : exit_paths) {
+      double path_len = 0;
+      for (auto it = exit_path.rbegin(); it != exit_path.rend(); ++it) {
+        const auto& e        = *it;
+        const auto& edge_obj = instance.const_n().get_edge(e);
+        target_speed =
+            std::min(target_speed,
+                     std::min(speed_multiplier, 0.75) *
+                         std::sqrt(edge_obj.max_speed * edge_obj.max_speed +
+                                   2 * acceleration * path_len));
+        path_len += edge_obj.length;
+      }
+    }
+
     instance.add_train(
         "tr_" + train_id, std::min(400.0, min_station_length),
         speed_multiplier * max_speed, acceleration, deceleration,
