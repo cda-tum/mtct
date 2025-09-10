@@ -1134,11 +1134,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                              "rear_departure_half_leaving_1_" + tr_object.name +
                                  "_" + instance.const_n().get_vertex(v).name +
                                  "_" + std::to_string(p_ind));
-            model->addConstr(lhs <= vars["t_front_departure"](tr, exit) +
-                                        max_travel_time_expr,
-                             "rear_departure_half_leaving_2_" + tr_object.name +
+            // Removed one constraint since t_rear is pushed down anyway
+            /**model->addConstr(lhs - bigM <= vars["t_front_departure"](tr,
+               exit) + max_travel_time_expr, "rear_departure_half_leaving_2_" +
+               tr_object.name +
                                  "_" + instance.const_n().get_vertex(v).name +
-                                 "_" + std::to_string(p_ind));
+                                 "_" + std::to_string(p_ind));**/
 
           } else {
             // The relevant point is on an actual edge
