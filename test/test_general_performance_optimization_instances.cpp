@@ -1480,7 +1480,7 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
           << "Instance " << p << ": Train " << tr_obj.name << ", exit vertex "
           << exit_obj.name << " does not have exactly one neighbor";
       EXPECT_EQ(entry_edges.size(), 1)
-          << "Instance" << p << ": Train " << tr_obj.name
+          << "Instance " << p << ": Train " << tr_obj.name
           << " does not have exactly one entry edge at entry vertex "
           << entry_obj.name;
       const auto entry_edge = entry_edges[0];
