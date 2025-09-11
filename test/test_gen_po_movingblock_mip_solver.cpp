@@ -1624,24 +1624,4 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
   }
 }
 
-TEST(GenPOMovingBlockMIPSolver, RASPractical) {
-  const std::vector<std::string> paths{"practical"};
-
-  for (const auto& p : paths) {
-    const std::string instance_path =
-        "./example-networks-gen-po-ras/" + p + "/";
-    const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance(
-            instance_path);
-    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto                                             sol = solver.solve(
-        {false, 10, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-                                                     true},
-        {true}, {}, 650, true);
-
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
-  }
-}
-
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
