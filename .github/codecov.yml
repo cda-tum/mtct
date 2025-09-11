@@ -2,6 +2,7 @@ ignore:
   - "extern/**/*"
   - "apps/*"
   - "test/**/*"
+  - "test/*"
 
 coverage:
   range: 60..90
