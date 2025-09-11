@@ -1453,4 +1453,78 @@ TEST(GeneralPerformanceOptimizationInstances, LeavingTimes) {
   EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr4, 5), 7.25);
 }
 
+TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
+  const std::vector<std::string> paths{"toy", "practical"};
+
+  for (const auto& p : paths) {
+    const std::string instance_path =
+        "./example-networks-gen-po-ras/" + p + "/";
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            instance_path);
+
+    for (size_t tr = 0; tr < instance.get_train_list().size(); ++tr) {
+      double min_time = 0;
+
+      const auto tr_schedule = instance.get_schedule(tr);
+      const auto entry       = tr_schedule.get_entry();
+      const auto exit        = tr_schedule.get_exit();
+      const auto entry_edges = instance.const_n().out_edges(entry);
+      const auto tr_obj      = instance.get_train_list().get_train(tr);
+      const auto entry_obj   = instance.const_n().get_vertex(entry);
+      const auto exit_obj    = instance.const_n().get_vertex(exit);
+      EXPECT_EQ(instance.const_n().neighbors(entry).size(), 1)
+          << "Instance " << p << ": Train " << tr_obj.name << ", entry vertex "
+          << entry_obj.name << " does not have exactly one neighbor";
+      EXPECT_EQ(instance.const_n().neighbors(exit).size(), 1)
+          << "Instance " << p << ": Train " << tr_obj.name << ", exit vertex "
+          << exit_obj.name << " does not have exactly one neighbor";
+      EXPECT_EQ(entry_edges.size(), 1)
+          << "Instance " << p << ": Train " << tr_obj.name
+          << " does not have exactly one entry edge at entry vertex "
+          << entry_obj.name;
+      const auto entry_edge = entry_edges[0];
+      const auto p_len      = instance.const_n().shortest_path(
+          entry_edge, exit, false, true, true, tr_obj.max_speed);
+      EXPECT_TRUE(p_len.has_value())
+          << "Instance " << p << ": No path for train " << tr_obj.name
+          << " from " << entry_obj.name << " to " << exit_obj.name;
+      min_time += p_len.value_or(0);
+
+      std::vector<size_t> last_edges   = {entry_edge};
+      std::string         last_station = "Entry " + entry_obj.name;
+      for (const auto& stop : tr_schedule.get_stops()) {
+        const auto station_name = stop.get_station_name();
+        const auto station =
+            instance.get_station_list().get_station(station_name);
+        const auto p_station_len =
+            instance.const_n().shortest_path_between_sets(
+                last_edges, station.tracks, true, true, true, tr_obj.max_speed);
+        EXPECT_TRUE(p_station_len.has_value())
+            << "Instance " << p << ": No path for train " << tr_obj.name
+            << " from " << last_station << " to " << station_name;
+        last_edges   = station.tracks;
+        last_station = station_name;
+        min_time += p_station_len.value_or(0);
+        min_time += stop.get_min_stopping_time();
+      }
+      const auto p_exit_len = instance.const_n().shortest_path_between_sets(
+          last_edges, {exit}, false, true, true, tr_obj.max_speed);
+      EXPECT_TRUE(p_exit_len.has_value())
+          << "Instance " << p << ": No path for train " << tr_obj.name
+          << " from " << last_station << " to exit " << exit_obj.name;
+      min_time += p_exit_len.value_or(0);
+
+      EXPECT_LE(min_time + 1 * 60 * 60, tr_schedule.get_t_n_range().second -
+                                            tr_schedule.get_t_0_range().second)
+          << "Instance " << p << ": Train " << tr_obj.name
+          << " cannot reach exit in scheduled time with 1h buffer"
+          << " (min time: " << min_time << ", scheduled time: "
+          << tr_schedule.get_t_n_range().second -
+                 tr_schedule.get_t_0_range().second
+          << ")";
+    }
+  }
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

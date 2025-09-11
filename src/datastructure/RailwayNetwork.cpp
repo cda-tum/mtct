@@ -405,7 +405,8 @@ size_t cda_rail::Network::get_edge_index(size_t source_id,
       return i;
     }
   }
-  throw exceptions::EdgeNotExistentException(source_id, target_id);
+  throw exceptions::EdgeNotExistentException(get_vertex(source_id).name,
+                                             get_vertex(target_id).name);
 }
 
 bool cda_rail::Network::has_edge(size_t source_id, size_t target_id) const {
