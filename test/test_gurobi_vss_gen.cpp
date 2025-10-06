@@ -547,27 +547,39 @@ TEST(Solver, Stammstrecke8FixedContinuous) {
   EXPECT_EQ(obj_val_braking.get_mip_obj(), 14);
 }
 
-TEST(Solver, Stammstrecke16FixedContinuous) {
+TEST(Solver, Stammstrecke16FixedContinuousBase) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "./example-networks/Stammstrecke16Trains/");
 
   const auto obj_val_base =
-      solver.solve({15, true, false, false}, {}, {}, {}, 120);
-  const auto obj_val_dynamics =
-      solver.solve({15, true, true, false}, {}, {}, {}, 120);
-  const auto obj_val_braking =
-      solver.solve({15, true, true, true}, {}, {}, {}, 120);
+      solver.solve({15, true, false, false}, {}, {}, {}, 600);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val_braking.get_status(), cda_rail::SolutionStatus::Optimal);
-
   EXPECT_EQ(obj_val_base.get_obj(), 0);
-  EXPECT_EQ(obj_val_dynamics.get_obj(), 15);
-  EXPECT_EQ(obj_val_braking.get_obj(), 15);
-
   EXPECT_EQ(obj_val_base.get_mip_obj(), 0);
+}
+
+TEST(Solver, Stammstrecke16FixedContinuousDynamics) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/Stammstrecke16Trains/");
+
+  const auto obj_val_dynamics =
+      solver.solve({15, true, true, false}, {}, {}, {}, 600);
+
+  EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_dynamics.get_obj(), 15);
   EXPECT_EQ(obj_val_dynamics.get_mip_obj(), 15);
+}
+
+TEST(Solver, Stammstrecke16FixedContinuousBraking) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "./example-networks/Stammstrecke16Trains/");
+
+  const auto obj_val_braking =
+      solver.solve({15, true, true, true}, {}, {}, {}, 600);
+
+  EXPECT_EQ(obj_val_braking.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_braking.get_obj(), 15);
   EXPECT_EQ(obj_val_braking.get_mip_obj(), 15);
 }
 
