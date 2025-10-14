@@ -11,6 +11,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 package_add_test(
   ${PROJECT_NAME}_test
   ${PROJECT_NAME}
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_railwaynetwork.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_probleminstances.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_multiarray.cpp
