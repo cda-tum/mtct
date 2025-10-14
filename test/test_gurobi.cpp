@@ -32,7 +32,7 @@ TEST(Gurobi, GurobiInstallation) {
 
     EXPECT_EQ(model.get(GRB_IntAttr_Status), GRB_OPTIMAL);
     EXPECT_EQ(model.get(GRB_DoubleAttr_ObjVal), 4);
-  } catch (GRBException& e) {
+  } catch (const GRBException& e) {
     std::cout << "Error code = " << e.getErrorCode() << '\n';
     std::cout << e.getMessage() << '\n';
     throw e;
