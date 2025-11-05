@@ -48,5 +48,7 @@ venv.bak/
 .mypy_cache/
 
 gurobi*
+!.github/gurobi_version.json
+!.github/workflows/gurobi-auto-update.yml
 test/ras-datasets/
 .github/copilot-instructions.md
