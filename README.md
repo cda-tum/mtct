@@ -46,7 +46,7 @@ On macos, a minimum Xcode version of 16.0 is required.
 
 Moreover, the tool requires a local installation of a recent Gurobi [[8]](#references) version available at [https://www.gurobi.com/downloads/gurobi-software/](https://www.gurobi.com/downloads/gurobi-software/) as well as a valid [license](https://www.gurobi.com/solutions/licensing/).
 For academic purposes, Gurobi offers [free academic licenses](https://www.gurobi.com/academia/academic-program-and-licenses/).
-The project currently tests with Gurobi v13.0.0.
+The project currently tests with Gurobi v13.0.1.
 
 #### Build
 
