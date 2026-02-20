@@ -895,6 +895,7 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
     const auto& succ = conflicts.at(i);
 
     if (prev.pos1.second >= succ.pos1.first &&
+        prev.pos2.second >= succ.pos2.first &&
         succ.pos2.second >= prev.pos2.first) {
       // Because conflicts are sorted succ.pos1.first >= prev.pos1.first is
       // guaranteed
