@@ -3,8 +3,8 @@ updates:
   - package-ecosystem: "gitsubmodule"
     directory: "/"
     schedule:
-      interval: "monthly"
-      time: "06:00"
+      interval: "cron"
+      cronjob: "0 4 8 * *"
       timezone: "Europe/Vienna"
     assignees:
       - "sengels-tum"
@@ -12,8 +12,8 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
-      time: "00:30"
+      interval: "cron"
+      cronjob: "0 4 1 * *"
       timezone: "Europe/Vienna"
     assignees:
       - "sengels-tum"
