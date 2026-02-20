@@ -701,8 +701,9 @@ cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
       }
 
       // Store the found overlap
-      result.emplace_back(std::make_pair(start_pos1, pos1),
-                          std::make_pair(start_pos2, pos2), edges_in_overlap);
+      result.emplace_back(ConflictPair{std::make_pair(start_pos1, pos1),
+                                       std::make_pair(start_pos2, pos2),
+                                       edges_in_overlap});
     } else {
       // No overlap, move to the next edge in route1
       pos1 += network.get_edge(edge1).length;
@@ -760,9 +761,9 @@ cda_rail::RouteMap::get_ttd_overlaps(const std::string& train1,
       const auto start_pos1 = route1.get_first_pos_on_edges(ttd_sec, network);
       const auto end_pos1   = route1.get_last_pos_on_edges(ttd_sec, network);
       assert(start_pos1.has_value() && end_pos1.has_value());
-      result.emplace_back(std::make_pair(start_pos1.value(), end_pos1.value()),
-                          std::make_pair(start_pos2.value(), end_pos2.value()),
-                          ttd_tracks);
+      result.emplace_back(ConflictPair{
+          std::make_pair(start_pos1.value(), end_pos1.value()),
+          std::make_pair(start_pos2.value(), end_pos2.value()), ttd_tracks});
     }
   }
 
@@ -845,8 +846,9 @@ cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
       }
 
       // Store the found overlap
-      result.emplace_back(std::make_pair(start_pos1, pos1),
-                          std::make_pair(pos2, end_pos2), edges_in_overlap);
+      result.emplace_back(ConflictPair{std::make_pair(start_pos1, pos1),
+                                       std::make_pair(pos2, end_pos2),
+                                       edges_in_overlap});
     } else {
       // No overlap, move to the next edge in route1
       pos1 += network.get_edge(edge1).length;
@@ -875,9 +877,7 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
                    reverse_conflicts.end());
   std::ranges::sort(conflicts,
                     [](const ConflictPair& a, const ConflictPair& b) {
-                      const auto& [a1, a2, a3] = a;
-                      const auto& [b1, b2, b3] = b;
-                      return a1.first < b1.first;
+                      return a.pos1.first < b.pos1.first;
                     });
 
   // for any two conflicts, unite them if they are directly next to each other
@@ -891,19 +891,22 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
 
   result.emplace_back(conflicts.at(0));
   for (size_t i = 1; i < conflicts.size(); ++i) {
-    auto& [prev1, prev2, prev_edges] = result.back();
+    auto&       prev = result.back();
+    const auto& succ = conflicts.at(i);
 
-    if (const auto& [succ1, succ2, succ_edges] = conflicts.at(i);
-        prev1.second >= succ1.first && succ2.second >= prev2.first) {
-      // Because conflicts are sorted succ1.first >= prev1.first is guaranteed
-      prev1.second = std::max(prev1.second, succ1.second);
-      prev2.first  = std::min(prev2.first, succ2.first);
-      prev2.second = std::max(
-          prev2.second,
-          succ2.second); // usually this should not do anything by the problem
-                         // structure but better safe than sorry because it is
-                         // not 100% guaranteed that this can never happen
-      prev_edges.insert(succ_edges.begin(), succ_edges.end());
+    if (prev.pos1.second >= succ.pos1.first &&
+        succ.pos2.second >= prev.pos2.first) {
+      // Because conflicts are sorted succ.pos1.first >= prev.pos1.first is
+      // guaranteed
+      prev.pos1.second = std::max(prev.pos1.second, succ.pos1.second);
+      prev.pos2.first  = std::min(prev.pos2.first, succ.pos2.first);
+      prev.pos2.second = std::max(
+          prev.pos2.second,
+          succ.pos2
+              .second); // usually this should not do anything by the problem
+                        // structure but better safe than sorry because it is
+                        // not 100% guaranteed that this can never happen
+      prev.edges.insert(succ.edges.begin(), succ.edges.end());
     } else {
       result.emplace_back(conflicts.at(i));
     }

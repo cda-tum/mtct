@@ -16,9 +16,11 @@
 
 namespace cda_rail {
 
-using ConflictPair =
-    std::tuple<std::pair<double, double>, std::pair<double, double>,
-               std::unordered_set<size_t>>;
+struct ConflictPair {
+  std::pair<double, double>  pos1;
+  std::pair<double, double>  pos2;
+  std::unordered_set<size_t> edges;
+};
 
 class Route {
 private:

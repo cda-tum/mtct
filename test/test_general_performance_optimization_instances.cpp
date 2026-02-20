@@ -1574,69 +1574,65 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
 
   const auto tr12_parallel = instance.get_parallel_overlaps("tr1", "tr2");
   EXPECT_EQ(tr12_parallel.size(), 1);
-  const auto& [tr12_parallel_1, tr12_parallel_2, tr12_parallel_e] =
-      tr12_parallel.at(0);
-  EXPECT_EQ(tr12_parallel_1.first, 0);
-  EXPECT_EQ(tr12_parallel_1.second, 110);
-  EXPECT_EQ(tr12_parallel_2.first, 0);
-  EXPECT_EQ(tr12_parallel_2.second, 110);
-  EXPECT_EQ(tr12_parallel_e, std::unordered_set<size_t>({e01, e12}));
+  const auto& tr12_parallel_0 = tr12_parallel.at(0);
+  EXPECT_EQ(tr12_parallel_0.pos1.first, 0);
+  EXPECT_EQ(tr12_parallel_0.pos1.second, 110);
+  EXPECT_EQ(tr12_parallel_0.pos2.first, 0);
+  EXPECT_EQ(tr12_parallel_0.pos2.second, 110);
+  EXPECT_EQ(tr12_parallel_0.edges, std::unordered_set<size_t>({e01, e12}));
 
   const auto tr13_parallel = instance.get_parallel_overlaps("tr1", "tr3");
   EXPECT_TRUE(tr13_parallel.empty());
 
   const auto tr12_ttd = instance.get_ttd_overlaps("tr1", "tr2");
   EXPECT_EQ(tr12_ttd.size(), 1);
-  const auto& [tr12_ttd_1, tr12_ttd_2, tr12_ttd_e] = tr12_ttd.at(0);
-  EXPECT_EQ(tr12_ttd_1.first, 100);
-  EXPECT_EQ(tr12_ttd_1.second, 130);
-  EXPECT_EQ(tr12_ttd_2.first, 100);
-  EXPECT_EQ(tr12_ttd_2.second, 140);
-  EXPECT_EQ(tr12_ttd_e, std::unordered_set<size_t>({e12, e23, e24}));
+  const auto& tr12_ttd_0 = tr12_ttd.at(0);
+  EXPECT_EQ(tr12_ttd_0.pos1.first, 100);
+  EXPECT_EQ(tr12_ttd_0.pos1.second, 130);
+  EXPECT_EQ(tr12_ttd_0.pos2.first, 100);
+  EXPECT_EQ(tr12_ttd_0.pos2.second, 140);
+  EXPECT_EQ(tr12_ttd_0.edges, std::unordered_set<size_t>({e12, e23, e24}));
 
   const auto tr13_ttd = instance.get_ttd_overlaps("tr1", "tr3");
   EXPECT_EQ(tr13_ttd.size(), 1);
-  const auto& [tr13_ttd_1, tr13_ttd_2, tr13_ttd_e] = tr13_ttd.at(0);
-  EXPECT_EQ(tr13_ttd_1.first, 100);
-  EXPECT_EQ(tr13_ttd_1.second, 130);
-  EXPECT_EQ(tr13_ttd_2.first, 0);
-  EXPECT_EQ(tr13_ttd_2.second, 40);
-  EXPECT_EQ(tr13_ttd_e, std::unordered_set<size_t>({e12, e23, e24}));
+  const auto& tr13_ttd_0 = tr13_ttd.at(0);
+  EXPECT_EQ(tr13_ttd_0.pos1.first, 100);
+  EXPECT_EQ(tr13_ttd_0.pos1.second, 130);
+  EXPECT_EQ(tr13_ttd_0.pos2.first, 0);
+  EXPECT_EQ(tr13_ttd_0.pos2.second, 40);
+  EXPECT_EQ(tr13_ttd_0.edges, std::unordered_set<size_t>({e12, e23, e24}));
 
   const auto tr12_reverse = instance.get_reverse_overlaps("tr1", "tr2");
   EXPECT_TRUE(tr12_reverse.empty());
 
   const auto tr13_reverse = instance.get_reverse_overlaps("tr1", "tr3");
   EXPECT_EQ(tr13_reverse.size(), 1);
-  const auto& [tr13_reverse_1, tr13_reverse_2, tr13_reverse_e] =
-      tr13_reverse.at(0);
-  EXPECT_EQ(tr13_reverse_1.first, 0);
-  EXPECT_EQ(tr13_reverse_1.second, 110);
-  EXPECT_EQ(tr13_reverse_2.first, 30);
-  EXPECT_EQ(tr13_reverse_2.second, 140);
-  EXPECT_EQ(tr13_reverse_e, std::unordered_set<size_t>({e01, e12}));
+  const auto& tr13_reverse_0 = tr13_reverse.at(0);
+  EXPECT_EQ(tr13_reverse_0.pos1.first, 0);
+  EXPECT_EQ(tr13_reverse_0.pos1.second, 110);
+  EXPECT_EQ(tr13_reverse_0.pos2.first, 30);
+  EXPECT_EQ(tr13_reverse_0.pos2.second, 140);
+  EXPECT_EQ(tr13_reverse_0.edges, std::unordered_set<size_t>({e01, e12}));
 
   const auto tr12_crossing = instance.get_crossing_overlaps("tr1", "tr2");
   EXPECT_EQ(tr12_crossing.size(), 1);
   // equal to ttd12 conflict
-  const auto& [tr12_crossing_1, tr12_crossing_2, tr12_crossing_e] =
-      tr12_crossing.at(0);
-  EXPECT_EQ(tr12_crossing_1.first, 100);
-  EXPECT_EQ(tr12_crossing_1.second, 130);
-  EXPECT_EQ(tr12_crossing_2.first, 100);
-  EXPECT_EQ(tr12_crossing_2.second, 140);
-  EXPECT_EQ(tr12_crossing_e, std::unordered_set<size_t>({e12, e23, e24}));
+  const auto& tr12_crossing_0 = tr12_crossing.at(0);
+  EXPECT_EQ(tr12_crossing_0.pos1.first, 100);
+  EXPECT_EQ(tr12_crossing_0.pos1.second, 130);
+  EXPECT_EQ(tr12_crossing_0.pos2.first, 100);
+  EXPECT_EQ(tr12_crossing_0.pos2.second, 140);
+  EXPECT_EQ(tr12_crossing_0.edges, std::unordered_set<size_t>({e12, e23, e24}));
 
   const auto tr13_crossing = instance.get_crossing_overlaps("tr1", "tr3");
   EXPECT_EQ(tr13_crossing.size(), 1);
   // equal to ttd13 and reverse13 merged
-  const auto& [tr13_crossing_1, tr13_crossing_2, tr13_crossing_e] =
-      tr13_crossing.at(0);
-  EXPECT_EQ(tr13_crossing_1.first, 0);
-  EXPECT_EQ(tr13_crossing_1.second, 130);
-  EXPECT_EQ(tr13_crossing_2.first, 0);
-  EXPECT_EQ(tr13_crossing_2.second, 140);
-  EXPECT_EQ(tr13_crossing_e,
+  const auto& tr13_crossing_0 = tr13_crossing.at(0);
+  EXPECT_EQ(tr13_crossing_0.pos1.first, 0);
+  EXPECT_EQ(tr13_crossing_0.pos1.second, 130);
+  EXPECT_EQ(tr13_crossing_0.pos2.first, 0);
+  EXPECT_EQ(tr13_crossing_0.pos2.second, 140);
+  EXPECT_EQ(tr13_crossing_0.edges,
             std::unordered_set<size_t>({e01, e12, e12, e23, e24}));
 }
 
