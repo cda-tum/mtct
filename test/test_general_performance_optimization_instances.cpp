@@ -1527,4 +1527,94 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
   }
 }
 
+TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  // Create simple network with parallel edges
+  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::NoBorder);
+  const auto v3 = instance.n().add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v4 = instance.n().add_vertex("v4", cda_rail::VertexType::TTD);
+
+  const auto e01 = instance.n().add_edge(v0, v1, 100, 20, true);
+  const auto e12 = instance.n().add_edge(v1, v2, 10, 20, false);
+  const auto e23 = instance.n().add_edge(v2, v3, 20, 20, false);
+  const auto e24 = instance.n().add_edge(v2, v4, 30, 20, false);
+  const auto e42 = instance.n().add_edge(v4, v2, 30, 20, false);
+  const auto e21 = instance.n().add_edge(v2, v1, 10, 20, false);
+  const auto e10 = instance.n().add_edge(v1, v0, 100, 20, true);
+
+  instance.n().add_successor(e01, e12);
+  instance.n().add_successor(e12, e23);
+  instance.n().add_successor(e12, e24);
+  instance.n().add_successor(e42, e21);
+  instance.n().add_successor(e21, e10);
+
+  const auto tr1 = instance.add_train("tr1", 50, 20, 1, 2, {0, 60}, 20, v0,
+                                      {300, 360}, 0, v3);
+  const auto tr2 = instance.add_train("tr2", 50, 20, 1, 2, {0, 60}, 20, v0,
+                                      {300, 360}, 0, v4);
+  const auto tr3 = instance.add_train("tr3", 50, 20, 1, 2, {0, 60}, 20, v4,
+                                      {300, 360}, 0, v0);
+
+  instance.add_empty_route("tr1");
+  instance.add_empty_route("tr2");
+  instance.add_empty_route("tr3");
+
+  instance.push_back_edge_to_route("tr1", e01);
+  instance.push_back_edge_to_route("tr1", e12);
+  instance.push_back_edge_to_route("tr1", e23);
+  instance.push_back_edge_to_route("tr2", e01);
+  instance.push_back_edge_to_route("tr2", e12);
+  instance.push_back_edge_to_route("tr2", e24);
+  instance.push_back_edge_to_route("tr3", e42);
+  instance.push_back_edge_to_route("tr3", e21);
+  instance.push_back_edge_to_route("tr3", e10);
+
+  const auto tr12_parallel = instance.get_parallel_overlaps("tr1", "tr2");
+  EXPECT_EQ(tr12_parallel.size(), 1);
+  const auto& [tr12_parallel_1, tr12_parallel_2, tr12_parallel_e] =
+      tr12_parallel.at(0);
+  EXPECT_EQ(tr12_parallel_1.first, 0);
+  EXPECT_EQ(tr12_parallel_1.second, 110);
+  EXPECT_EQ(tr12_parallel_2.first, 0);
+  EXPECT_EQ(tr12_parallel_2.second, 110);
+  EXPECT_EQ(tr12_parallel_e, std::unordered_set<size_t>({e01, e12}));
+
+  const auto tr13_parallel = instance.get_parallel_overlaps("tr1", "tr3");
+  EXPECT_TRUE(tr13_parallel.empty());
+
+  const auto tr12_ttd = instance.get_ttd_overlaps("tr1", "tr2");
+  EXPECT_EQ(tr12_ttd.size(), 1);
+  const auto& [tr12_ttd_1, tr12_ttd_2, tr12_ttd_e] = tr12_ttd.at(0);
+  EXPECT_EQ(tr12_ttd_1.first, 100);
+  EXPECT_EQ(tr12_ttd_1.second, 130);
+  EXPECT_EQ(tr12_ttd_2.first, 100);
+  EXPECT_EQ(tr12_ttd_2.second, 140);
+  EXPECT_EQ(tr12_ttd_e, std::unordered_set<size_t>({e12, e23, e24}));
+
+  const auto tr13_ttd = instance.get_ttd_overlaps("tr1", "tr3");
+  EXPECT_EQ(tr13_ttd.size(), 1);
+  const auto& [tr13_ttd_1, tr13_ttd_2, tr13_ttd_e] = tr13_ttd.at(0);
+  EXPECT_EQ(tr13_ttd_1.first, 100);
+  EXPECT_EQ(tr13_ttd_1.second, 130);
+  EXPECT_EQ(tr13_ttd_2.first, 0);
+  EXPECT_EQ(tr13_ttd_2.second, 40);
+  EXPECT_EQ(tr13_ttd_e, std::unordered_set<size_t>({e12, e23, e24}));
+
+  const auto tr12_reverse = instance.get_reverse_overlaps("tr1", "tr2");
+  EXPECT_TRUE(tr12_reverse.empty());
+
+  const auto tr13_reverse = instance.get_reverse_overlaps("tr1", "tr3");
+  EXPECT_EQ(tr13_reverse.size(), 1);
+  const auto& [tr13_reverse_1, tr13_reverse_2, tr13_reverse_e] =
+      tr13_reverse.at(0);
+  EXPECT_EQ(tr13_reverse_1.first, 0);
+  EXPECT_EQ(tr13_reverse_1.second, 110);
+  EXPECT_EQ(tr13_reverse_2.first, 30);
+  EXPECT_EQ(tr13_reverse_2.second, 140);
+  EXPECT_EQ(tr13_reverse_e, std::unordered_set<size_t>({e01, e12}));
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

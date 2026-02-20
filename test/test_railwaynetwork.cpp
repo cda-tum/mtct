@@ -3924,6 +3924,12 @@ TEST(Functionality, RouteMapHelper) {
   EXPECT_EQ(station_pos, expected_station_pos);
 
   EXPECT_EQ(tr1_map.length(network), 60);
+
+  EXPECT_THROW(route_map.remove_route("nonexistingtrain"),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_TRUE(route_map.has_route("tr1"));
+  route_map.remove_route("tr1");
+  EXPECT_FALSE(route_map.has_route("tr1"));
 }
 
 TEST(Functionality, Iterators) {
@@ -4095,6 +4101,68 @@ TEST(Functionality, NetworkNextTTD) {
   // Expect only (v6_v7, v7_v8b, v8b_v9b)
   EXPECT_EQ(routing4.size(), 1);
   EXPECT_EQ(routing4.at(0), std::vector<size_t>({v6_v7, v7_v8b, v8b_v9b}));
+}
+
+TEST(NetworkFunctionality, TrackIndex) {
+  cda_rail::Network network;
+  const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+
+  const auto e0 = network.add_edge("v0", "v1", 1, 2, false, 0);
+  const auto e1 = network.add_edge("v1", "v2", 3, 4, true, 1.5);
+  const auto e2 = network.add_edge("v1", "v0", 1, 2, false, 0);
+
+  EXPECT_EQ(network.get_track_index(e1), e1);
+  EXPECT_EQ(network.get_track_index(e0), std::min(e0, e2));
+  EXPECT_EQ(network.get_track_index(e2), std::min(e0, e2));
+}
+
+TEST(RouteFunctionality, FirstPosOnEdge) {
+  cda_rail::Network network;
+  const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+
+  const auto e0 = network.add_edge("v0", "v1", 1, 2, false, 0);
+  const auto e1 = network.add_edge("v1", "v2", 3, 4, true, 1.5);
+  const auto e2 = network.add_edge("v1", "v0", 1, 2, false, 0);
+
+  network.add_successor(e0, e1);
+
+  cda_rail::Route route;
+  route.push_back_edge(e0, network);
+  route.push_back_edge(e1, network);
+
+  const auto p1 = route.get_first_pos_on_edges({e0, e1, e2}, network);
+  const auto p2 = route.get_first_pos_on_edges({e1}, network);
+  const auto p3 = route.get_first_pos_on_edges({e2}, network);
+
+  EXPECT_TRUE(p1.has_value());
+  EXPECT_TRUE(p2.has_value());
+  EXPECT_FALSE(p3.has_value());
+  EXPECT_EQ(p1.value_or(-1), 0);
+  EXPECT_EQ(p2.value_or(-1), 1);
+}
+
+TEST(RouteMapFunctionality, EmptyConflicts) {
+  auto network = cda_rail::Network::import_network(
+      "./example-networks/SimpleStation/network/");
+  auto train_list = cda_rail::TrainList();
+
+  train_list.add_train("tr1", 100, 83.33, 2, 1);
+  train_list.add_train("tr2", 100, 27.78, 2, 1);
+
+  auto route_map = cda_rail::RouteMap();
+
+  EXPECT_ANY_THROW(route_map.add_empty_route("tr3", train_list));
+
+  route_map.add_empty_route("tr1", train_list);
+  route_map.add_empty_route("tr2", train_list);
+  EXPECT_TRUE(route_map.get_reverse_overlaps("tr1", "tr2", network).empty());
+  EXPECT_TRUE(route_map.get_crossing_overlaps("tr1", "tr2", network).empty());
+  EXPECT_TRUE(route_map.get_parallel_overlaps("tr1", "tr2", network).empty());
+  EXPECT_TRUE(route_map.get_ttd_overlaps("tr1", "tr2", network).empty());
 }
 
 // NOLINTEND(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores,bugprone-unchecked-optional-access)
