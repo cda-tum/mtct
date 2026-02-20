@@ -6,6 +6,10 @@ updates:
       interval: "cron"
       cronjob: "0 4 8 * *"
       timezone: "Europe/Vienna"
+    groups:
+      all-submodules:
+        patterns:
+          - "*"
     assignees:
       - "sengels-tum"
 
