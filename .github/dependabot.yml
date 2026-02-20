@@ -3,8 +3,7 @@ updates:
   - package-ecosystem: "gitsubmodule"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "tuesday"
+      interval: "monthly"
       time: "06:00"
       timezone: "Europe/Vienna"
     assignees:
@@ -13,9 +12,8 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "thursday"
-      time: "06:00"
+      interval: "monthly"
+      time: "01:00"
       timezone: "Europe/Vienna"
     assignees:
       - "sengels-tum"
