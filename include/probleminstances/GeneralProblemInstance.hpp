@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <fstream>
 #include <numeric>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -166,6 +167,44 @@ public:
                   const cda_rail::index_vector& edges_to_consider = {}) const {
     return timetable.get_stop_tracks(tr, station_name, this->const_n(),
                                      edges_to_consider);
+  };
+
+  [[nodiscard]] std::optional<double>
+  get_last_stop_position_on_route(size_t             tr_id,
+                                  const std::string& station_name) const {
+    const auto& tr_obj      = get_train_list().get_train(tr_id);
+    const auto& route       = get_route(tr_obj.name);
+    const auto& route_edges = route.get_edges();
+    const auto  stop_tracks_tmp =
+        get_stop_tracks(tr_id, station_name, route_edges);
+    cda_rail::index_vector stop_tracks;
+    for (const auto& [idx, paths] : stop_tracks_tmp) {
+      for (const auto& path : paths) {
+        stop_tracks.insert(stop_tracks.end(), path.begin(), path.end());
+      }
+    }
+    return route.get_last_pos_on_edges(stop_tracks, this->const_n());
+  };
+
+  // Overlap functions
+  [[nodiscard]] std::vector<ConflictPair>
+  get_parallel_overlaps(const std::string& train1,
+                        const std::string& train2) const {
+    return get_routes().get_parallel_overlaps(train1, train2, this->const_n());
+  };
+  [[nodiscard]] std::vector<ConflictPair>
+  get_ttd_overlaps(const std::string& train1, const std::string& train2) const {
+    return get_routes().get_ttd_overlaps(train1, train2, this->const_n());
+  };
+  [[nodiscard]] std::vector<ConflictPair>
+  get_reverse_overlaps(const std::string& train1,
+                       const std::string& train2) const {
+    return get_routes().get_reverse_overlaps(train1, train2, this->const_n());
+  };
+  [[nodiscard]] std::vector<ConflictPair>
+  get_crossing_overlaps(const std::string& train1,
+                        const std::string& train2) const {
+    return get_routes().get_crossing_overlaps(train1, train2, this->const_n());
   };
 
   [[nodiscard]] std::vector<
