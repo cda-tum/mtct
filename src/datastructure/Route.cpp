@@ -735,7 +735,6 @@ cda_rail::RouteMap::get_ttd_overlaps(const std::string& train1,
   const auto& route1 = get_route(train1);
   const auto& route2 = get_route(train2);
   const auto& edges1 = route1.get_edges();
-  const auto& edges2 = route2.get_edges();
 
   std::unordered_set<size_t> blacklist;
   for (const auto& edge1 : edges1) {
