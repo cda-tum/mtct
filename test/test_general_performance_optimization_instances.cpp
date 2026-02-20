@@ -1636,4 +1636,59 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
             std::unordered_set<size_t>({e01, e12, e12, e23, e24}));
 }
 
+TEST(GeneralPerformanceOptimizationInstances, CrossingOverlapNoUnion) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  // Create simple network with parallel edges
+  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::NoBorder);
+  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::NoBorder);
+  const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::NoBorder);
+  const auto v3 = instance.n().add_vertex("v3", cda_rail::VertexType::NoBorder);
+  const auto v4 = instance.n().add_vertex("v4", cda_rail::VertexType::NoBorder);
+
+  const auto e01 = instance.n().add_edge(v0, v1, 100, 20, true);
+  const auto e12 = instance.n().add_edge(v1, v2, 10, 20, true);
+  const auto e23 = instance.n().add_edge(v2, v3, 20, 20, true);
+  const auto e34 = instance.n().add_edge(v3, v4, 30, 20, true);
+  const auto e43 = instance.n().add_edge(v4, v3, 30, 20, true);
+  const auto e31 = instance.n().add_edge(v3, v1, 10, 20, true);
+  const auto e10 = instance.n().add_edge(v1, v0, 100, 20, true);
+
+  instance.n().add_successor(e01, e12);
+  instance.n().add_successor(e12, e23);
+  instance.n().add_successor(e23, e34);
+  instance.n().add_successor(e43, e31);
+  instance.n().add_successor(e31, e10);
+
+  const auto tr1 = instance.add_train("tr1", 50, 20, 1, 2, {0, 60}, 20, v0,
+                                      {300, 360}, 0, v4);
+  const auto tr2 = instance.add_train("tr2", 50, 20, 1, 2, {0, 60}, 20, v4,
+                                      {300, 360}, 0, v0);
+
+  instance.add_empty_route("tr1");
+  instance.add_empty_route("tr2");
+  instance.push_back_edge_to_route("tr1", e01);
+  instance.push_back_edge_to_route("tr1", e12);
+  instance.push_back_edge_to_route("tr1", e23);
+  instance.push_back_edge_to_route("tr1", e34);
+  instance.push_back_edge_to_route("tr2", e43);
+  instance.push_back_edge_to_route("tr2", e31);
+  instance.push_back_edge_to_route("tr2", e10);
+
+  const auto tr12_crossing = instance.get_crossing_overlaps("tr1", "tr2");
+  EXPECT_EQ(tr12_crossing.size(), 2);
+  const auto& tr12_crossing_0 = tr12_crossing.at(0);
+  EXPECT_EQ(tr12_crossing_0.pos1.first, 0);
+  EXPECT_EQ(tr12_crossing_0.pos1.second, 100);
+  EXPECT_EQ(tr12_crossing_0.pos2.first, 40);
+  EXPECT_EQ(tr12_crossing_0.pos2.second, 140);
+  EXPECT_EQ(tr12_crossing_0.edges, std::unordered_set<size_t>({e01}));
+  const auto& tr12_crossing_1 = tr12_crossing.at(1);
+  EXPECT_EQ(tr12_crossing_1.pos1.first, 130);
+  EXPECT_EQ(tr12_crossing_1.pos1.second, 160);
+  EXPECT_EQ(tr12_crossing_1.pos2.first, 0);
+  EXPECT_EQ(tr12_crossing_1.pos2.second, 30);
+  EXPECT_EQ(tr12_crossing_1.edges, std::unordered_set<size_t>({e34}));
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
