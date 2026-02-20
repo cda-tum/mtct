@@ -1615,6 +1615,29 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
   EXPECT_EQ(tr13_reverse_2.first, 30);
   EXPECT_EQ(tr13_reverse_2.second, 140);
   EXPECT_EQ(tr13_reverse_e, std::unordered_set<size_t>({e01, e12}));
+
+  const auto tr12_crossing = instance.get_crossing_overlaps("tr1", "tr2");
+  EXPECT_EQ(tr12_crossing.size(), 1);
+  // equal to ttd12 conflict
+  const auto& [tr12_crossing_1, tr12_crossing_2, tr12_crossing_e] =
+      tr12_crossing.at(0);
+  EXPECT_EQ(tr12_crossing_1.first, 100);
+  EXPECT_EQ(tr12_crossing_1.second, 130);
+  EXPECT_EQ(tr12_crossing_2.first, 100);
+  EXPECT_EQ(tr12_crossing_2.second, 140);
+  EXPECT_EQ(tr12_crossing_e, std::unordered_set<size_t>({e12, e23, e24}));
+
+  const auto tr13_crossing = instance.get_crossing_overlaps("tr1", "tr3");
+  EXPECT_EQ(tr13_crossing.size(), 1);
+  // equal to ttd13 and reverse13 merged
+  const auto& [tr13_crossing_1, tr13_crossing_2, tr13_crossing_e] =
+      tr13_crossing.at(0);
+  EXPECT_EQ(tr13_crossing_1.first, 0);
+  EXPECT_EQ(tr13_crossing_1.second, 130);
+  EXPECT_EQ(tr13_crossing_2.first, 0);
+  EXPECT_EQ(tr13_crossing_2.second, 140);
+  EXPECT_EQ(tr13_crossing_e,
+            std::unordered_set<size_t>({e01, e12, e12, e23, e24}));
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

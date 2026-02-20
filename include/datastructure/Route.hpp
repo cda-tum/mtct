@@ -85,12 +85,12 @@ public:
   [[nodiscard]] bool check_consistency(const Network& network) const;
 
   [[nodiscard]] std::optional<double>
-  get_first_pos_on_edges(const std::vector<size_t>& edge_indices,
-                         const Network&             network) const;
+  get_first_pos_on_edges(const cda_rail::index_vector& edge_indices,
+                         const Network&                network) const;
 
   [[nodiscard]] std::optional<double>
-  get_last_pos_on_edges(const std::vector<size_t>& edge_indices,
-                        const Network&             network) const;
+  get_last_pos_on_edges(const cda_rail::index_vector& edge_indices,
+                        const Network&                network) const;
 
   void update_after_discretization(
       const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);

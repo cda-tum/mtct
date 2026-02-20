@@ -826,10 +826,12 @@ cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
 
       // Extend the overlap as long as edges match
       bool i2_at_end = false;
-      while (!i2_at_end && i1 < edges1.size() &&
-             network.get_reverse_edge_index(edges1.at(i1)).has_value() &&
-             network.get_reverse_edge_index(edges1.at(i1)).value_or(-1) ==
-                 edges2.at(i2)) {
+
+      while (!i2_at_end && i1 < edges1.size()) {
+        if (const auto rev = network.get_reverse_edge_index(edges1.at(i1));
+            !rev.has_value() || rev.value() != edges2.at(i2)) {
+          break;
+        }
         assert(network.get_track_index(edges1.at(i1)) ==
                network.get_track_index(edges2.at(i2)));
         edges_in_overlap.insert(network.get_track_index(edges1.at(i1)));

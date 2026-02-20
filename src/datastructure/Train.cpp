@@ -42,8 +42,9 @@ size_t cda_rail::TrainList::add_train(const Train& train) {
     throw exceptions::ConsistencyException("Train already exists.");
   }
   trains.emplace_back(train);
-  train_name_to_index[train.name] = trains.size() - 1;
-  return train_name_to_index[train.name];
+  const size_t idx                = trains.size() - 1;
+  train_name_to_index[train.name] = idx;
+  return idx;
 }
 
 size_t cda_rail::TrainList::get_train_index(const std::string& name) const {
