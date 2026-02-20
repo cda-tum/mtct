@@ -893,8 +893,14 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
 
     if (const auto& [succ1, succ2, succ_edges] = conflicts.at(i);
         prev1.second >= succ1.first && succ2.second >= prev2.first) {
+      // Because conflicts are sorted succ1.first >= prev1.first is guaranteed
       prev1.second = std::max(prev1.second, succ1.second);
       prev2.first  = std::min(prev2.first, succ2.first);
+      prev2.second = std::max(
+          prev2.second,
+          succ2.second); // usually this should not do anything by the problem
+                         // structure but better safe than sorry because it is
+                         // not 100% guaranteed that this can never happen
       prev_edges.insert(succ_edges.begin(), succ_edges.end());
     } else {
       result.emplace_back(conflicts.at(i));
