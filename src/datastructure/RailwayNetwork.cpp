@@ -1423,6 +1423,14 @@ cda_rail::Network::get_reverse_edge_index(size_t edge_index) const {
   return {};
 }
 
+size_t cda_rail::Network::get_track_index(size_t edge_index) const {
+  const auto reverse_edge_index = get_reverse_edge_index(edge_index);
+  if (reverse_edge_index.has_value()) {
+    return std::min(edge_index, reverse_edge_index.value());
+  }
+  return edge_index;
+}
+
 cda_rail::index_vector
 cda_rail::Network::get_vertices_by_type(VertexType type) const {
   /**

@@ -9,10 +9,18 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 namespace cda_rail {
+
+struct ConflictPair {
+  std::pair<double, double>  pos1;
+  std::pair<double, double>  pos2;
+  std::unordered_set<size_t> edges;
+};
+
 class Route {
 private:
   cda_rail::index_vector edges;
@@ -76,6 +84,14 @@ public:
   }
 
   [[nodiscard]] bool check_consistency(const Network& network) const;
+
+  [[nodiscard]] std::optional<double>
+  get_first_pos_on_edges(const cda_rail::index_vector& edge_indices,
+                         const Network&                network) const;
+
+  [[nodiscard]] std::optional<double>
+  get_last_pos_on_edges(const cda_rail::index_vector& edge_indices,
+                        const Network&                network) const;
 
   void update_after_discretization(
       const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
@@ -157,6 +173,20 @@ public:
            const Network& network) const {
     return get_route(train_name).edge_pos(edges, network);
   };
+
+  // Overlap functions
+  [[nodiscard]] std::vector<ConflictPair>
+  get_parallel_overlaps(const std::string& train1, const std::string& train2,
+                        const Network& network) const;
+  [[nodiscard]] std::vector<ConflictPair>
+  get_ttd_overlaps(const std::string& train1, const std::string& train2,
+                   const Network& network) const;
+  [[nodiscard]] std::vector<ConflictPair>
+  get_reverse_overlaps(const std::string& train1, const std::string& train2,
+                       const Network& network) const;
+  [[nodiscard]] std::vector<ConflictPair>
+  get_crossing_overlaps(const std::string& train1, const std::string& train2,
+                        const Network& network) const;
 
   [[nodiscard]] bool
   check_consistency(const TrainList& trains, const Network& network,

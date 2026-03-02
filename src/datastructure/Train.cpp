@@ -26,12 +26,25 @@ size_t cda_rail::TrainList::add_train(const std::string& name, int length,
    *
    * @return The index of the train in the list of trains.
    */
-  if (has_train(name)) {
+
+  return add_train({name, length, max_speed, acceleration, deceleration, tim});
+}
+
+size_t cda_rail::TrainList::add_train(const Train& train) {
+  /**
+   * Add a train to the list of trains.
+   *
+   * @param train The train to be added.
+   *
+   * @return The index of the train in the list of trains.
+   */
+  if (has_train(train.name)) {
     throw exceptions::ConsistencyException("Train already exists.");
   }
-  trains.emplace_back(name, length, max_speed, acceleration, deceleration, tim);
-  train_name_to_index[name] = trains.size() - 1;
-  return train_name_to_index[name];
+  trains.emplace_back(train);
+  const size_t idx                = trains.size() - 1;
+  train_name_to_index[train.name] = idx;
+  return idx;
 }
 
 size_t cda_rail::TrainList::get_train_index(const std::string& name) const {

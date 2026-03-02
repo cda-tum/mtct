@@ -195,11 +195,11 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // Test if stop data was set correctly
 
   const auto& tr_stop_data = solver.tr_stop_data;
-  EXPECT_EQ(tr_stop_data.size(), 2);
+  ASSERT_EQ(tr_stop_data.size(), 2);
   const auto& tr_1_data = tr_stop_data.at(0);
   const auto& tr_2_data = tr_stop_data.at(1);
-  EXPECT_EQ(tr_1_data.size(), 2);
-  EXPECT_EQ(tr_2_data.size(), 1);
+  ASSERT_EQ(tr_1_data.size(), 2);
+  ASSERT_EQ(tr_2_data.size(), 1);
   const auto& tr_1_1_data = tr_1_data.at(0);
   const auto& tr_1_2_data = tr_1_data.at(1);
   const auto& tr_2_1_data = tr_2_data.at(0);
@@ -283,7 +283,7 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   // Test if velocity data was set correctly
   const auto& vel_data = solver.velocity_extensions;
 
-  EXPECT_EQ(vel_data.size(), 2);
+  ASSERT_EQ(vel_data.size(), 2);
   const auto& vel_data_1 = vel_data.at(0);
   const auto& vel_data_2 = vel_data.at(1);
 

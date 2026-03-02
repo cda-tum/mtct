@@ -505,6 +505,7 @@ public:
     return edge_index.has_value() ? get_reverse_edge_index(edge_index.value())
                                   : std::optional<size_t>();
   }
+  [[nodiscard]] size_t                get_track_index(size_t edge_index) const;
   [[nodiscard]] std::optional<size_t> common_vertex(
       const std::pair<std::optional<size_t>, std::optional<size_t>>& pair1,
       const std::pair<std::optional<size_t>, std::optional<size_t>>& pair2)
