@@ -164,17 +164,18 @@ public:
   /**
    * @brief Retrieve possible stop tracks for a train at a station.
    *
-   * For the train identified by `tr` and the station named `station_name`, returns
-   * a list of candidate stop-track entries. Each entry is a pair whose first
-   * element is the target vertex index and whose second element is a vector of
-   * `index_vector` sequences representing stop-track index paths that reach that
-   * vertex.
+   * For the train identified by `tr` and the station named `station_name`,
+   * returns a list of candidate stop-track entries. Each entry is a pair whose
+   * first element is the target vertex index and whose second element is a
+   * vector of `index_vector` sequences representing stop-track index paths that
+   * reach that vertex.
    *
    * @param tr Train index in the timetable.
    * @param station_name Name of the station where stops are queried.
-   * @param edges_to_consider If non-empty, restricts search to the provided edge
-   *        indices; if empty, all relevant edges are considered.
-   * @return std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>> Vector of (target_vertex, list of stop-track index sequences).
+   * @param edges_to_consider If non-empty, restricts search to the provided
+   * edge indices; if empty, all relevant edges are considered.
+   * @return std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>
+   * Vector of (target_vertex, list of stop-track index sequences).
    */
   [[nodiscard]] std::vector<
       std::pair<size_t, std::vector<cda_rail::index_vector>>>
@@ -185,11 +186,12 @@ public:
   };
 
   /**
-   * @brief Returns the position along a train's route of its last stop at a station.
+   * @brief Returns the position along a train's route of its last stop at a
+   * station.
    *
-   * Looks up the train and its route, identifies stop vertices associated with the
-   * specified station, and returns the position along the route corresponding to
-   * the last such stop.
+   * Looks up the train and its route, identifies stop vertices associated with
+   * the specified station, and returns the position along the route
+   * corresponding to the last such stop.
    *
    * @param tr_id Index of the train in the timetable.
    * @param station_name Name of the station.
@@ -216,12 +218,14 @@ public:
   /**
    * @brief Compute parallel conflict pairs between two trains.
    *
-   * Each returned ConflictPair describes a parallel overlap between the specified trains
-   * with respect to the instance's network and routing information.
+   * Each returned ConflictPair describes a parallel overlap between the
+   * specified trains with respect to the instance's network and routing
+   * information.
    *
    * @param train1 Name of the first train.
    * @param train2 Name of the second train.
-   * @return std::vector<ConflictPair> Conflict pairs representing parallel overlaps between the two trains.
+   * @return std::vector<ConflictPair> Conflict pairs representing parallel
+   * overlaps between the two trains.
    */
   [[nodiscard]] std::vector<ConflictPair>
   get_parallel_overlaps(const std::string& train1,
@@ -229,11 +233,13 @@ public:
     return get_routes().get_parallel_overlaps(train1, train2, this->const_n());
   };
   /**
-   * @brief Compute time-to-departure (TTD) overlaps for the routes of two trains.
+   * @brief Compute time-to-departure (TTD) overlaps for the routes of two
+   * trains.
    *
    * @param train1 Name of the first train.
    * @param train2 Name of the second train.
-   * @return std::vector<ConflictPair> A list of conflict pairs representing TTD overlaps between the two trains' routes.
+   * @return std::vector<ConflictPair> A list of conflict pairs representing TTD
+   * overlaps between the two trains' routes.
    */
   [[nodiscard]] std::vector<ConflictPair>
   get_ttd_overlaps(const std::string& train1, const std::string& train2) const {
@@ -244,7 +250,8 @@ public:
    *
    * @param train1 Name of the first train.
    * @param train2 Name of the second train.
-   * @return std::vector<ConflictPair> A vector of conflict pairs representing reverse overlaps between the two trains.
+   * @return std::vector<ConflictPair> A vector of conflict pairs representing
+   * reverse overlaps between the two trains.
    */
   [[nodiscard]] std::vector<ConflictPair>
   get_reverse_overlaps(const std::string& train1,
@@ -256,7 +263,8 @@ public:
    *
    * @param train1 Name of the first train.
    * @param train2 Name of the second train.
-   * @return std::vector<ConflictPair> Vector of conflict pairs representing crossing overlaps between the two trains.
+   * @return std::vector<ConflictPair> Vector of conflict pairs representing
+   * crossing overlaps between the two trains.
    */
   [[nodiscard]] std::vector<ConflictPair>
   get_crossing_overlaps(const std::string& train1,
@@ -265,13 +273,17 @@ public:
   };
 
   /**
-   * @brief Computes possible stop vertices at a station for a given train and the stop paths that end at each vertex.
+   * @brief Computes possible stop vertices at a station for a given train and
+   * the stop paths that end at each vertex.
    *
    * @param tr Index of the train.
    * @param station_name Name of the station.
-   * @param edges_to_consider If non-empty, restricts consideration to these edge indices; if empty, all stop edges are considered.
-   * @return std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>> A list of (vertex_index, stop_paths) pairs where
-   * each vertex_index is a candidate stop vertex and stop_paths is a list of index_vectors representing stop paths that end at that vertex.
+   * @param edges_to_consider If non-empty, restricts consideration to these
+   * edge indices; if empty, all stop edges are considered.
+   * @return std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>
+   * A list of (vertex_index, stop_paths) pairs where each vertex_index is a
+   * candidate stop vertex and stop_paths is a list of index_vectors
+   * representing stop paths that end at that vertex.
    */
   [[nodiscard]] std::vector<
       std::pair<size_t, std::vector<cda_rail::index_vector>>>

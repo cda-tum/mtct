@@ -67,11 +67,11 @@ public:
                    double acceleration, double deceleration, bool tim = true);
   size_t add_train(const Train& train);
   /**
- * @brief Retrieves the number of trains in the list.
- *
- * @return size_t The number of Train objects stored in this TrainList.
- */
-[[nodiscard]] size_t size() const { return trains.size(); };
+   * @brief Retrieves the number of trains in the list.
+   *
+   * @return size_t The number of Train objects stored in this TrainList.
+   */
+  [[nodiscard]] size_t size() const { return trains.size(); };
 
   [[nodiscard]] size_t       get_train_index(const std::string& name) const;
   [[nodiscard]] const Train& get_train(size_t index) const;

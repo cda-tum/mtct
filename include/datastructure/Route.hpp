@@ -169,12 +169,16 @@ public:
     return get_route(train_name).edge_pos(source, target, network);
   };
   /**
-   * @brief Obtain the combined start and end positions along a train's route for a given set of edges.
+   * @brief Obtain the combined start and end positions along a train's route
+   * for a given set of edges.
    *
    * @param train_name Identifier of the train whose route is queried.
-   * @param edges Sequence of edge indices to consider when computing the combined position.
+   * @param edges Sequence of edge indices to consider when computing the
+   * combined position.
    * @param network Network used to resolve edge geometry and distances.
-   * @return std::pair<double,double> First element is the start position (distance along the route) of the combined span; second element is the end position. 
+   * @return std::pair<double,double> First element is the start position
+   * (distance along the route) of the combined span; second element is the end
+   * position.
    */
   [[nodiscard]] std::pair<double, double>
   edge_pos(const std::string& train_name, const cda_rail::index_vector& edges,

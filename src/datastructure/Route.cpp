@@ -637,7 +637,8 @@ cda_rail::Route::get_first_pos_on_edges(const std::vector<size_t>& edge_indices,
  *
  * @param edge_indices Vector of edge indices to consider.
  * @param network Network used to obtain edge lengths.
- * @return std::optional<double> Position in meters at the end of the last matching edge, or empty if none of the provided edges are in the route.
+ * @return std::optional<double> Position in meters at the end of the last
+ * matching edge, or empty if none of the provided edges are in the route.
  */
 std::optional<double>
 cda_rail::Route::get_last_pos_on_edges(const std::vector<size_t>& edge_indices,
@@ -756,12 +757,14 @@ cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
 }
 
 /**
- * @brief Finds time-distance (TTD) overlaps where both trains occupy the same unbreakable TTD section.
+ * @brief Finds time-distance (TTD) overlaps where both trains occupy the same
+ * unbreakable TTD section.
  *
  * @param train1 Name of the first train.
  * @param train2 Name of the second train.
  * @param network Network containing route and edge definitions.
- * @return std::vector<cda_rail::ConflictPair> Vector of ConflictPairs. Each ConflictPair holds:
+ * @return std::vector<cda_rail::ConflictPair> Vector of ConflictPairs. Each
+ * ConflictPair holds:
  *         - first: pair(start, end) positions on train1's route in meters,
  *         - second: pair(start, end) positions on train2's route in meters,
  *         - third: set of involved track indices for the TTD section.
@@ -823,15 +826,18 @@ cda_rail::RouteMap::get_ttd_overlaps(const std::string& train1,
 }
 
 /**
- * @brief Finds all route segments where the two trains traverse the same track in opposite directions.
+ * @brief Finds all route segments where the two trains traverse the same track
+ * in opposite directions.
  *
- * For each detected reverse overlap returns the start and end positions (in meters) of the overlapping segment on
- * train1's route and on train2's route, together with the set of involved track indices.
+ * For each detected reverse overlap returns the start and end positions (in
+ * meters) of the overlapping segment on train1's route and on train2's route,
+ * together with the set of involved track indices.
  *
  * @param train1 Name of the first train.
  * @param train2 Name of the second train.
  * @param network Network containing topology and edge metadata.
- * @return std::vector<ConflictPair> A vector of conflict entries. Each ConflictPair contains:
+ * @return std::vector<ConflictPair> A vector of conflict entries. Each
+ * ConflictPair contains:
  * - first: pair(start, end) positions on train1's route in meters,
  * - second: pair(start, end) positions on train2's route in meters,
  * - third: set of track indices involved in the overlap.
@@ -926,18 +932,20 @@ cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
 }
 
 /**
- * @brief Computes crossing conflicts between two trains by combining TTD and reverse overlaps.
+ * @brief Computes crossing conflicts between two trains by combining TTD and
+ * reverse overlaps.
  *
- * This method collects time-distance (TTD) overlaps and reverse-direction overlaps
- * between train1 and train2, sorts them by the start position on train1, and
- * merges adjacent or overlapping conflicts when their intervals overlap on both
- * trains. Merged conflicts have their position intervals extended to cover the
- * union and their edge index sets united.
+ * This method collects time-distance (TTD) overlaps and reverse-direction
+ * overlaps between train1 and train2, sorts them by the start position on
+ * train1, and merges adjacent or overlapping conflicts when their intervals
+ * overlap on both trains. Merged conflicts have their position intervals
+ * extended to cover the union and their edge index sets united.
  *
  * @param train1 Name of the first train.
  * @param train2 Name of the second train.
  * @param network Network used to resolve edges and positions.
- * @return std::vector<ConflictPair> Vector of merged crossing conflicts; empty if no conflicts exist.
+ * @return std::vector<ConflictPair> Vector of merged crossing conflicts; empty
+ * if no conflicts exist.
  */
 std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,

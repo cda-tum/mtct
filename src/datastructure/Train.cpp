@@ -47,9 +47,11 @@ size_t cda_rail::TrainList::add_train(const std::string& name, int length,
 /**
  * @brief Adds a Train to the collection and updates the name-to-index mapping.
  *
- * @param train Train object to add; its `name` must not duplicate an existing train.
+ * @param train Train object to add; its `name` must not duplicate an existing
+ * train.
  * @return size_t Index of the newly added train.
- * @throws exceptions::ConsistencyException If a train with the same name already exists.
+ * @throws exceptions::ConsistencyException If a train with the same name
+ * already exists.
  */
 size_t cda_rail::TrainList::add_train(const Train& train) {
   /**
@@ -73,7 +75,8 @@ size_t cda_rail::TrainList::add_train(const Train& train) {
  *
  * @param name Train name to look up.
  * @return size_t Index of the train.
- * @throws exceptions::TrainNotExistentException if no train with the given name exists.
+ * @throws exceptions::TrainNotExistentException if no train with the given name
+ * exists.
  */
 size_t cda_rail::TrainList::get_train_index(const std::string& name) const {
   /**
