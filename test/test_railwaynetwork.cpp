@@ -4087,19 +4087,19 @@ TEST(Functionality, NetworkNextTTD) {
   const auto routing2 =
       network.all_paths_ending_at_ttd(v2_v3a, ttd_sections, v9a);
   // Expect only (v3a_v4a) as the only path
-  EXPECT_EQ(routing2.size(), 1);
+  ASSERT_EQ(routing2.size(), 1);
   EXPECT_EQ(routing2.at(0), std::vector<size_t>({v3a_v4a}));
 
   const auto routing3 =
       network.all_paths_ending_at_ttd(v3a_v4a, ttd_sections, v9b);
   // Expect only (v4a_v5, v5_v6)
-  EXPECT_EQ(routing3.size(), 1);
+  ASSERT_EQ(routing3.size(), 1);
   EXPECT_EQ(routing3.at(0), std::vector<size_t>({v4a_v5, v5_v6}));
 
   const auto routing4 =
       network.all_paths_ending_at_ttd(v5_v6, ttd_sections, v9b);
   // Expect only (v6_v7, v7_v8b, v8b_v9b)
-  EXPECT_EQ(routing4.size(), 1);
+  ASSERT_EQ(routing4.size(), 1);
   EXPECT_EQ(routing4.at(0), std::vector<size_t>({v6_v7, v7_v8b, v8b_v9b}));
 }
 
