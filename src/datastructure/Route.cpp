@@ -8,11 +8,16 @@
 #include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <numeric>
+#include <optional>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -579,9 +584,414 @@ void cda_rail::RouteMap::update_after_discretization(
   }
 }
 
+/**
+ * @brief Remove the route for the given train.
+ *
+ * @param train_name Name of the train whose route will be removed.
+ *
+ * @throws exceptions::ConsistencyException if the train does not have a route.
+ */
 void cda_rail::RouteMap::remove_route(const std::string& train_name) {
   if (routes.find(train_name) == routes.end()) {
     throw exceptions::ConsistencyException("Train does not have a route.");
   }
   routes.erase(train_name);
+}
+
+/**
+ * Finds the route position corresponding to the start of the first edge in the
+ * route that matches any index from `edge_indices`.
+ *
+ * @param edge_indices Vector of edge indices to search for.
+ * @param network Network providing edge lengths.
+ * @return std::optional<double> Position in meters at the start of the first
+ * matching edge, or an empty optional if none of the edges are present in the
+ * route.
+ */
+std::optional<double>
+cda_rail::Route::get_first_pos_on_edges(const std::vector<size_t>& edge_indices,
+                                        const Network& network) const {
+  /**
+   * This functions returns the position at the beginning of the first route
+   * edge that is part of edge_indices.
+   *
+   * @param edge_indices The edge indices to consider.
+   * @param network The network to which the route belongs.
+   * @return The position at the beginning of the first route edge that is part
+   * of edge_indices
+   */
+
+  double position = 0.0;
+  for (const auto& edge : edges) {
+    if (std::ranges::contains(edge_indices, edge)) {
+      return position;
+    }
+    position += network.get_edge(edge).length;
+  }
+  return {};
+}
+
+/**
+ * Finds the position along the route corresponding to the end of the last edge
+ * that appears in the provided set of edge indices.
+ *
+ * @param edge_indices Vector of edge indices to consider.
+ * @param network Network used to obtain edge lengths.
+ * @return std::optional<double> Position in meters at the end of the last matching edge, or empty if none of the provided edges are in the route.
+ */
+std::optional<double>
+cda_rail::Route::get_last_pos_on_edges(const std::vector<size_t>& edge_indices,
+                                       const Network& network) const {
+  /**
+   * This functions returns the position at the end of the last route edge that
+   * is part of edge_indices.
+   *
+   * @param edge_indices The edge indices to consider.
+   * @param network The network to which the route belongs.
+   * @return The position at the end of the last route edge that is part of
+   * edge_indices.
+   */
+
+  double                position = 0.0;
+  std::optional<double> return_position;
+  for (const auto& edge : edges) {
+    position += network.get_edge(edge).length;
+    if (std::ranges::contains(edge_indices, edge)) {
+      return_position = position;
+    }
+  }
+  return return_position;
+}
+
+/**
+ * @brief Identifies all maximal consecutive track overlaps between two routes.
+ *
+ * For each contiguous sequence of edges that both trains traverse in the same
+ * direction on the same tracks, returns the start and end positions (in
+ * meters) of that sequence on each train's route and the set of involved track
+ * indices.
+ *
+ * @param train1 Name of the first train.
+ * @param train2 Name of the second train.
+ * @param network Network used to resolve edge lengths and track indices.
+ * @return std::vector<ConflictPair> Each element contains:
+ *         - first: pair(start,end) positions on train1's route in meters,
+ *         - second: pair(start,end) positions on train2's route in meters,
+ *         - third: set of track indices involved in the overlap.
+ */
+std::vector<cda_rail::ConflictPair>
+cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
+                                          const std::string& train2,
+                                          const Network&     network) const {
+  /**
+   * This functions returns all parallel overlaps between the routes of train1
+   * and train2. An overlap is an interval in which both trains are on the same
+   * tracks. The return information returns the start and end positions of the
+   * overlap ob both routes (in m). E.g., if train1 travels on e1, e2, e3, e4
+   * and train2 travels on e0, e2, e3, e5; then the overlap is on e2 and e3,
+   * i.e., the return value is {(length(e1), length(e1)+length(e2)+length(e3)),
+   * (length(e0), length(e0)+length(e2)+length(e3))}.
+   *
+   * @param train1 The name of the first train.
+   * @param train2 The name of the second train.
+   * @param network The network to which the routes belong.
+   * @return A vector of ConflictPairs representing the overlaps.
+   */
+
+  std::vector<ConflictPair> result;
+
+  // Get both routes
+  const auto& route1 = get_route(train1);
+  const auto& route2 = get_route(train2);
+
+  const auto& edges1 = route1.get_edges();
+  const auto& edges2 = route2.get_edges();
+
+  if (edges1.empty() || edges2.empty()) {
+    return result;
+  }
+
+  // Find all consecutive overlaps
+  size_t i1   = 0;
+  double pos1 = 0.0;
+  while (i1 < edges1.size()) {
+    // Check if current edge in route1 exists in route2
+    const size_t edge1 = edges1.at(i1);
+    if (const auto edge2_index = std::ranges::find(edges2, edge1);
+        edge2_index != edges2.end()) {
+      // Found an overlapping edge, now find the full overlap
+      size_t i2 = std::distance(edges2.begin(), edge2_index);
+      std::unordered_set<size_t> edges_in_overlap;
+
+      assert(i1 < edges1.size() && i2 < edges2.size() &&
+             edges1.at(i1) == edges2.at(i2));
+
+      // Calculate start position
+      double       pos2       = route2.edge_pos(edge1, network).first;
+      const double start_pos1 = pos1;
+      const double start_pos2 = pos2;
+
+      // Extend the overlap as long as edges match
+      while (i1 < edges1.size() && i2 < edges2.size() &&
+             edges1.at(i1) == edges2.at(i2)) {
+        edges_in_overlap.insert(network.get_track_index(edges1.at(i1)));
+        pos1 += network.get_edge(edges1.at(i1)).length;
+        pos2 += network.get_edge(edges2.at(i2)).length;
+        ++i1;
+        ++i2;
+      }
+
+      // Store the found overlap
+      result.emplace_back(ConflictPair{std::make_pair(start_pos1, pos1),
+                                       std::make_pair(start_pos2, pos2),
+                                       edges_in_overlap});
+    } else {
+      // No overlap, move to the next edge in route1
+      pos1 += network.get_edge(edge1).length;
+      ++i1;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * @brief Finds time-distance (TTD) overlaps where both trains occupy the same unbreakable TTD section.
+ *
+ * @param train1 Name of the first train.
+ * @param train2 Name of the second train.
+ * @param network Network containing route and edge definitions.
+ * @return std::vector<cda_rail::ConflictPair> Vector of ConflictPairs. Each ConflictPair holds:
+ *         - first: pair(start, end) positions on train1's route in meters,
+ *         - second: pair(start, end) positions on train2's route in meters,
+ *         - third: set of involved track indices for the TTD section.
+ */
+std::vector<cda_rail::ConflictPair>
+cda_rail::RouteMap::get_ttd_overlaps(const std::string& train1,
+                                     const std::string& train2,
+                                     const Network&     network) const {
+  /**
+   * This functions returns all ttd overlaps between the routes of train1
+   * and train2. An overlap is an interval in which both trains are on the same
+   * TTD section. The return information returns the start and end positions of
+   * the overlap ob both routes (in m), similarly to parallel overlaps.
+   *
+   * @param train1 The name of the first train.
+   * @param train2 The name of the second train.
+   * @param network The network to which the routes belong.
+   * @return A vector of ConflictPairs representing the overlaps.
+   */
+
+  std::vector<ConflictPair> result;
+
+  // Get both routes
+  const auto& route1 = get_route(train1);
+  const auto& route2 = get_route(train2);
+  const auto& edges1 = route1.get_edges();
+
+  std::unordered_set<size_t> blacklist;
+  for (const auto& edge1 : edges1) {
+    if (blacklist.contains(edge1)) {
+      continue;
+    }
+
+    if (const auto& e1_obj = network.get_edge(edge1); e1_obj.breakable) {
+      continue;
+    }
+    const auto& ttd_sec =
+        network.get_unbreakable_section_containing_edge(edge1);
+    assert(!ttd_sec.empty());
+    std::unordered_set<size_t> ttd_tracks;
+    for (const auto& ttd_sec_edge : ttd_sec) {
+      ttd_tracks.insert(network.get_track_index(ttd_sec_edge));
+      blacklist.insert(ttd_sec_edge);
+    }
+    const auto start_pos2 = route2.get_first_pos_on_edges(ttd_sec, network);
+    const auto end_pos2   = route2.get_last_pos_on_edges(ttd_sec, network);
+    assert(start_pos2.has_value() == end_pos2.has_value());
+    if (start_pos2.has_value() && end_pos2.has_value()) {
+      const auto start_pos1 = route1.get_first_pos_on_edges(ttd_sec, network);
+      const auto end_pos1   = route1.get_last_pos_on_edges(ttd_sec, network);
+      assert(start_pos1.has_value() && end_pos1.has_value());
+      result.emplace_back(ConflictPair{
+          std::make_pair(start_pos1.value(), end_pos1.value()),
+          std::make_pair(start_pos2.value(), end_pos2.value()), ttd_tracks});
+    }
+  }
+
+  return result;
+}
+
+/**
+ * @brief Finds all route segments where the two trains traverse the same track in opposite directions.
+ *
+ * For each detected reverse overlap returns the start and end positions (in meters) of the overlapping segment on
+ * train1's route and on train2's route, together with the set of involved track indices.
+ *
+ * @param train1 Name of the first train.
+ * @param train2 Name of the second train.
+ * @param network Network containing topology and edge metadata.
+ * @return std::vector<ConflictPair> A vector of conflict entries. Each ConflictPair contains:
+ * - first: pair(start, end) positions on train1's route in meters,
+ * - second: pair(start, end) positions on train2's route in meters,
+ * - third: set of track indices involved in the overlap.
+ */
+std::vector<cda_rail::ConflictPair>
+cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
+                                         const std::string& train2,
+                                         const Network&     network) const {
+  /**
+   * This functions returns all reverse overlaps between the routes of train1
+   * and train2, i.e., parts where both trains travel on the same track but in
+   * different direction. The return information returns the start and end
+   * positions of the overlap ob both routes (in m). E.g., if train1 travels on
+   * e1, e2, e3, e4 and train2 travels on e5, e3', e2', e0; (e3' and e2' being
+   * the reverse indices of e3 and r2), then the overlap is on e2 and e3, i.e.,
+   * the return value is {(length(e1), length(e1)+length(e2)+length(e3)),
+   * (length(e5), length(e5)+length(e2')+length(e3'))}.
+   *
+   * @param train1 The name of the first train.
+   * @param train2 The name of the second train.
+   * @param network The network to which the routes belong.
+   * @return A vector of ConflictPairs representing the overlaps.
+   */
+
+  std::vector<ConflictPair> result;
+
+  // Get both routes
+  const auto& route1 = get_route(train1);
+  const auto& route2 = get_route(train2);
+
+  const auto& edges1 = route1.get_edges();
+  const auto& edges2 = route2.get_edges();
+
+  if (edges1.empty() || edges2.empty()) {
+    return result;
+  }
+
+  // Find all consecutive overlaps
+  size_t i1   = 0;
+  double pos1 = 0.0;
+  while (i1 < edges1.size()) {
+    // Check if current edge in route1 exists in route2
+    const size_t edge1 = edges1.at(i1);
+    if (const auto edge1_reverse = network.get_reverse_edge_index(edge1);
+        (edge1_reverse.has_value() &&
+         std::ranges::contains(edges2, edge1_reverse.value()))) {
+      const auto edge2_index = std::ranges::find(edges2, edge1_reverse.value());
+      // Found an overlapping edge, now find the full overlap
+      size_t i2 = std::distance(edges2.begin(), edge2_index);
+      std::unordered_set<size_t> edges_in_overlap;
+
+      assert(i1 < edges1.size() && i2 < edges2.size() &&
+             edges2.at(i2) == edge1_reverse.value());
+
+      // Calculate start position
+      double pos2 = route2.edge_pos(edge1_reverse.value(), network).second;
+      const double start_pos1 = pos1;
+      const double end_pos2   = pos2;
+
+      // Extend the overlap as long as edges match
+      bool i2_at_end = false;
+
+      while (!i2_at_end && i1 < edges1.size()) {
+        if (const auto rev = network.get_reverse_edge_index(edges1.at(i1));
+            !rev.has_value() || rev.value() != edges2.at(i2)) {
+          break;
+        }
+        assert(network.get_track_index(edges1.at(i1)) ==
+               network.get_track_index(edges2.at(i2)));
+        edges_in_overlap.insert(network.get_track_index(edges1.at(i1)));
+        pos1 += network.get_edge(edges1.at(i1)).length;
+        pos2 -= network.get_edge(edges2.at(i2)).length;
+        ++i1;
+        i2_at_end = (i2 == 0);
+        if (!i2_at_end) {
+          --i2;
+        }
+      }
+
+      // Store the found overlap
+      result.emplace_back(ConflictPair{std::make_pair(start_pos1, pos1),
+                                       std::make_pair(pos2, end_pos2),
+                                       edges_in_overlap});
+    } else {
+      // No overlap, move to the next edge in route1
+      pos1 += network.get_edge(edge1).length;
+      ++i1;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * @brief Computes crossing conflicts between two trains by combining TTD and reverse overlaps.
+ *
+ * This method collects time-distance (TTD) overlaps and reverse-direction overlaps
+ * between train1 and train2, sorts them by the start position on train1, and
+ * merges adjacent or overlapping conflicts when their intervals overlap on both
+ * trains. Merged conflicts have their position intervals extended to cover the
+ * union and their edge index sets united.
+ *
+ * @param train1 Name of the first train.
+ * @param train2 Name of the second train.
+ * @param network Network used to resolve edges and positions.
+ * @return std::vector<ConflictPair> Vector of merged crossing conflicts; empty if no conflicts exist.
+ */
+std::vector<cda_rail::ConflictPair>
+cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
+                                          const std::string& train2,
+                                          const Network&     network) const {
+  /**
+   * combine ttd and reverse conflicts
+   */
+  const auto ttd_conflicts     = get_ttd_overlaps(train1, train2, network);
+  const auto reverse_conflicts = get_reverse_overlaps(train1, train2, network);
+
+  // concatenate conflicts and order by train 1 start
+  std::vector<ConflictPair> conflicts;
+  conflicts.reserve(ttd_conflicts.size() + reverse_conflicts.size());
+  conflicts.insert(conflicts.end(), ttd_conflicts.begin(), ttd_conflicts.end());
+  conflicts.insert(conflicts.end(), reverse_conflicts.begin(),
+                   reverse_conflicts.end());
+  std::ranges::sort(conflicts,
+                    [](const ConflictPair& a, const ConflictPair& b) {
+                      return a.pos1.first < b.pos1.first;
+                    });
+
+  // for any two conflicts, unite them if they are directly next to each other
+  // or overlap, i.e., if train1_end of prev >= train1_start of succ AND if
+  // train2_end of succ >= train_2 start of prev Then unite them into one
+  // conflict
+  std::vector<ConflictPair> result;
+  if (conflicts.empty()) {
+    return result;
+  }
+
+  result.emplace_back(conflicts.at(0));
+  for (size_t i = 1; i < conflicts.size(); ++i) {
+    auto&       prev = result.back();
+    const auto& succ = conflicts.at(i);
+
+    if (prev.pos1.second >= succ.pos1.first &&
+        prev.pos2.second >= succ.pos2.first &&
+        succ.pos2.second >= prev.pos2.first) {
+      // Because conflicts are sorted succ.pos1.first >= prev.pos1.first is
+      // guaranteed
+      prev.pos1.second = std::max(prev.pos1.second, succ.pos1.second);
+      prev.pos2.first  = std::min(prev.pos2.first, succ.pos2.first);
+      prev.pos2.second = std::max(
+          prev.pos2.second,
+          succ.pos2
+              .second); // usually this should not do anything by the problem
+                        // structure but better safe than sorry because it is
+                        // not 100% guaranteed that this can never happen
+      prev.edges.insert(succ.edges.begin(), succ.edges.end());
+    } else {
+      result.emplace_back(conflicts.at(i));
+    }
+  }
+
+  return result;
 }

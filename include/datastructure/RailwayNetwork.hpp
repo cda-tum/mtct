@@ -500,11 +500,22 @@ public:
                         bool                          sort = false) const;
   [[nodiscard]] std::optional<size_t>
   get_reverse_edge_index(size_t edge_index) const;
+  /**
+   * @brief Get the index of the reverse edge for an optionally provided edge index.
+   *
+   * If an edge index is provided, returns the index of the edge that runs in the reverse
+   * direction; if no reverse exists, the returned optional is empty. If no edge index is
+   * provided, returns an empty optional.
+   *
+   * @param edge_index Optional edge index to query.
+   * @return std::optional<size_t> Optional containing the reverse edge index when available, empty otherwise.
+   */
   [[nodiscard]] std::optional<size_t>
   get_reverse_edge_index(std::optional<size_t> edge_index) const {
     return edge_index.has_value() ? get_reverse_edge_index(edge_index.value())
                                   : std::optional<size_t>();
   }
+  [[nodiscard]] size_t                get_track_index(size_t edge_index) const;
   [[nodiscard]] std::optional<size_t> common_vertex(
       const std::pair<std::optional<size_t>, std::optional<size_t>>& pair1,
       const std::pair<std::optional<size_t>, std::optional<size_t>>& pair2)

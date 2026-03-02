@@ -1402,6 +1402,14 @@ cda_rail::Network::combine_reverse_edges(
   return ret_val;
 }
 
+/**
+ * @brief Obtain the index of the reverse edge for a given directed edge.
+ *
+ * @param edge_index Index of the edge whose reverse is requested.
+ * @returns std::optional<size_t> The index of the reverse edge if present; an empty optional if no reverse edge exists.
+ *
+ * @throws exceptions::EdgeNotExistentException if `edge_index` does not refer to a valid edge.
+ */
 std::optional<size_t>
 cda_rail::Network::get_reverse_edge_index(size_t edge_index) const {
   /**
@@ -1423,6 +1431,26 @@ cda_rail::Network::get_reverse_edge_index(size_t edge_index) const {
   return {};
 }
 
+/**
+ * @brief Computes the canonical track index for an edge, treating an edge and its reverse as one track.
+ *
+ * @param edge_index Index of the directed edge in the network.
+ * @return size_t The canonical track index: the smaller of the edge index and its reverse edge index if a reverse exists, otherwise the original edge index.
+ */
+size_t cda_rail::Network::get_track_index(size_t edge_index) const {
+  const auto reverse_edge_index = get_reverse_edge_index(edge_index);
+  if (reverse_edge_index.has_value()) {
+    return std::min(edge_index, reverse_edge_index.value());
+  }
+  return edge_index;
+}
+
+/**
+ * @brief Collects indices of all vertices that have the specified vertex type.
+ *
+ * @param type The VertexType to filter vertices by.
+ * @return cda_rail::index_vector Indices of vertices whose `type` equals the provided value.
+ */
 cda_rail::index_vector
 cda_rail::Network::get_vertices_by_type(VertexType type) const {
   /**

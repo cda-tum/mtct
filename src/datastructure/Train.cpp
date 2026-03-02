@@ -12,6 +12,20 @@
 
 using json = nlohmann::json;
 
+/**
+ * @brief Create and add a Train with the given properties to the list.
+ *
+ * Constructs a Train from the provided fields, appends it to the internal
+ * train container, and returns its index.
+ *
+ * @param name Train identifier.
+ * @param length Train length in meters.
+ * @param max_speed Maximum speed in meters per second.
+ * @param acceleration Acceleration in meters per second squared.
+ * @param deceleration Deceleration (braking) in meters per second squared.
+ * @param tim Boolean flag indicating TIM capability for the train.
+ * @return size_t Index of the newly added train in the internal list.
+ */
 size_t cda_rail::TrainList::add_train(const std::string& name, int length,
                                       double max_speed, double acceleration,
                                       double deceleration, bool tim) {
@@ -26,14 +40,41 @@ size_t cda_rail::TrainList::add_train(const std::string& name, int length,
    *
    * @return The index of the train in the list of trains.
    */
-  if (has_train(name)) {
-    throw exceptions::ConsistencyException("Train already exists.");
-  }
-  trains.emplace_back(name, length, max_speed, acceleration, deceleration, tim);
-  train_name_to_index[name] = trains.size() - 1;
-  return train_name_to_index[name];
+
+  return add_train({name, length, max_speed, acceleration, deceleration, tim});
 }
 
+/**
+ * @brief Adds a Train to the collection and updates the name-to-index mapping.
+ *
+ * @param train Train object to add; its `name` must not duplicate an existing train.
+ * @return size_t Index of the newly added train.
+ * @throws exceptions::ConsistencyException If a train with the same name already exists.
+ */
+size_t cda_rail::TrainList::add_train(const Train& train) {
+  /**
+   * Add a train to the list of trains.
+   *
+   * @param train The train to be added.
+   *
+   * @return The index of the train in the list of trains.
+   */
+  if (has_train(train.name)) {
+    throw exceptions::ConsistencyException("Train already exists.");
+  }
+  trains.emplace_back(train);
+  const size_t idx                = trains.size() - 1;
+  train_name_to_index[train.name] = idx;
+  return idx;
+}
+
+/**
+ * @brief Retrieve the index of the train identified by name.
+ *
+ * @param name Train name to look up.
+ * @return size_t Index of the train.
+ * @throws exceptions::TrainNotExistentException if no train with the given name exists.
+ */
 size_t cda_rail::TrainList::get_train_index(const std::string& name) const {
   /**
    * Returns the index of the train with the given name.
