@@ -1633,7 +1633,7 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
   EXPECT_EQ(tr13_crossing_0.pos2.first, 0);
   EXPECT_EQ(tr13_crossing_0.pos2.second, 140);
   EXPECT_EQ(tr13_crossing_0.edges,
-            std::unordered_set<size_t>({e01, e12, e12, e23, e24}));
+            std::unordered_set<size_t>({e01, e12, e23, e24}));
 }
 
 TEST(GeneralPerformanceOptimizationInstances, CrossingOverlapNoUnion) {
