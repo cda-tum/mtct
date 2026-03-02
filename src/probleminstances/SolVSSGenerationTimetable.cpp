@@ -710,7 +710,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
               const double e_pos = sol_obj.get_instance()
                                        .route_edge_pos(train.name, e_index)
                                        .first;
-              train_pos = std::min(lda_val + e_pos, train_pos);
+              train_pos          = std::min(lda_val + e_pos, train_pos);
             }
           }
         }

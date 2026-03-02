@@ -207,9 +207,9 @@ std::vector<std::unordered_map<size_t, double>> cda_rail::solver::mip_based::
       const auto& v_idx = routes[tr][route_v_idx].first;
       const auto  e_idx = (route_v_idx == routes[tr].size() - 1)
                               ? solver->instance.const_n().get_edge_index(
-                                   routes[tr][route_v_idx - 1].first, v_idx)
+                                    routes[tr][route_v_idx - 1].first, v_idx)
                               : solver->instance.const_n().get_edge_index(
-                                   v_idx, routes[tr][route_v_idx + 1].first);
+                                    v_idx, routes[tr][route_v_idx + 1].first);
       const auto& edge  = solver->instance.const_n().get_edge(e_idx);
       const auto& source_velocities =
           solver->velocity_extensions.at(tr).at(edge.source);
@@ -513,8 +513,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             prev_v_idx = routes.at(tr).at(r_v_idx - 1).first;
             prev_pos   = routes.at(tr).at(r_v_idx - 1).second;
             prev_vel   = train_velocities.at(tr).at(prev_v_idx.value());
-            const auto& prev_bd = prev_vel.value() * prev_vel.value() /
-                                  (2 * tr_object.deceleration);
+            const auto& prev_bd     = prev_vel.value() * prev_vel.value() /
+                                      (2 * tr_object.deceleration);
             const auto& prev_ma_pos = prev_pos.value() + prev_bd;
             prev_edge_index         = solver->instance.const_n().get_edge_index(
                 prev_v_idx.value(), v_idx);

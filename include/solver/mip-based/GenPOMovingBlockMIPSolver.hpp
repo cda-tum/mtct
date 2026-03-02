@@ -156,11 +156,11 @@ private:
 
     std::vector<std::vector<std::pair<size_t, double>>> get_routes();
     std::vector<std::unordered_map<size_t, double>>     get_train_velocities(
-            const std::vector<std::vector<std::pair<size_t, double>>>& routes);
+        const std::vector<std::vector<std::pair<size_t, double>>>& routes);
     std::vector<std::pair<std::vector<std::pair<size_t, bool>>,
                           std::vector<std::pair<size_t, bool>>>>
-    get_train_orders_on_edges(
-        const std::vector<std::vector<std::pair<size_t, double>>>& routes);
+                                        get_train_orders_on_edges(
+                                            const std::vector<std::vector<std::pair<size_t, double>>>& routes);
     std::vector<cda_rail::index_vector> get_train_orders_on_ttd();
 
     bool create_lazy_edge_and_ttd_headway_constraints(

@@ -158,19 +158,19 @@ private:
   [[nodiscard]] std::vector<std::unordered_set<size_t>> tr_on_edges() const;
   [[nodiscard]] std::optional<size_t> get_ttd(size_t edge_id) const;
   [[nodiscard]] bool                  is_ok_to_enter(
-                       size_t tr, const std::vector<std::pair<double, double>>& train_positions,
-                       const std::vector<double>&                     train_velocities,
-                       const std::unordered_set<size_t>&              trains_in_network,
-                       const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
+      size_t tr, const std::vector<std::pair<double, double>>& train_positions,
+      const std::vector<double>&                     train_velocities,
+      const std::unordered_set<size_t>&              trains_in_network,
+      const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
   [[nodiscard]] static double max_displacement(const Train& train, double v_0,
                                                int dt);
   [[nodiscard]] double        get_absolute_distance_ma(
-             size_t tr, double max_displacement,
-             const std::vector<std::pair<double, double>>&  train_positions,
-             const std::vector<double>&                     train_velocities,
-             const std::unordered_set<size_t>&              trains_in_network,
-             const std::unordered_set<size_t>&              trains_left,
-             const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
+      size_t tr, double max_displacement,
+      const std::vector<std::pair<double, double>>&  train_positions,
+      const std::vector<double>&                     train_velocities,
+      const std::unordered_set<size_t>&              trains_in_network,
+      const std::unordered_set<size_t>&              trains_left,
+      const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
   [[nodiscard]] std::pair<double, double>
   get_future_max_speed_constraints(size_t tr, const Train& train, double pos,
                                    double v_0, double max_displacement, int dt,

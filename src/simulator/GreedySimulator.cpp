@@ -129,8 +129,8 @@ cda_rail::simulator::GreedySimulator::simulate(
 
       // Calculate MAs for every train
       const auto& tr_schedule = instance->get_timetable().get_schedule(tr);
-      auto        h           = std::max({tr_schedule.get_t_n_range().first - t,
-                                          vertex_headways.at(tr_schedule.get_exit()) - t, 0});
+      auto h = std::max({tr_schedule.get_t_n_range().first - t,
+                         vertex_headways.at(tr_schedule.get_exit()) - t, 0});
       if (h % dt != 0) {
         h += dt - (h % dt); // Round up to the next time step
       }
@@ -670,7 +670,7 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
   const std::pair<double, double> milestone_pair = {
       milestones[edge_number], milestones[edge_number + 1]};
   const bool is_on_edge   = (pos.second > milestone_pair.first + EPS &&
-                           pos.first < milestone_pair.second - EPS);
+                             pos.first < milestone_pair.second - EPS);
   const bool rear_on_edge = is_on_edge && (pos.first >= milestone_pair.first);
   const bool front_on_edge =
       is_on_edge && (pos.second <= milestone_pair.second);
