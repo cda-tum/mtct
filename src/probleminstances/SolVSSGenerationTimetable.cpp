@@ -651,7 +651,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
               vars.at("x").at(tr, t, e).get(GRB_DoubleAttr_X) > 0.5;
           if (tr_on_edge &&
               !sol_obj.get_instance().get_route(train.name).contains_edge(e) &&
-              edge_list.count(e) == 0) {
+              !edge_list.contains(e)) {
             edge_list.emplace(e);
           }
         }

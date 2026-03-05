@@ -196,7 +196,7 @@ private:
   };
 
 protected:
-  virtual void cleanup() override;
+  void cleanup() override;
 
 public:
   GenPOMovingBlockMIPSolver() = default;
@@ -227,7 +227,7 @@ public:
             instances::SolGeneralPerformanceOptimizationInstance<
                 instances::GeneralPerformanceOptimizationInstance>>(path) {};
 
-  ~GenPOMovingBlockMIPSolver() = default;
+  ~GenPOMovingBlockMIPSolver() override = default;
 
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
