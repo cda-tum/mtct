@@ -196,7 +196,7 @@ private:
 
   [[nodiscard]] std::pair<double, double>
   get_ma_and_maxv(size_t tr, const std::vector<double>& train_velocities,
-                  std::optional<double> next_stop, int h, int dt,
+                  std::optional<size_t> next_stop, int h, int dt,
                   const std::vector<std::pair<double, double>>& train_positions,
                   const std::unordered_set<size_t>& trains_in_network,
                   const std::unordered_set<size_t>& trains_left,
