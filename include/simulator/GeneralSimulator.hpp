@@ -568,7 +568,7 @@ public:
   [[nodiscard]] virtual SimulatorResults
   simulate(bool late_entry_possible, bool late_exit_possible,
            bool late_stop_possible, bool limit_speed_by_leaving_edges,
-           bool save_trajectories) const;
+           bool save_trajectories) const = 0;
 
   [[nodiscard]] SimulatorResults
   simulate(bool late_entry_possible = false, bool late_exit_possible = false,
