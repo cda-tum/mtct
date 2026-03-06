@@ -86,18 +86,19 @@ private:
   };
   enum class DestinationType : std::uint8_t { None, Network, Station, Edge };
 
-  [[nodiscard]] double braking_distance(size_t tr, double v) const;
+  // private simulator helper functions
   [[nodiscard]] std::pair<bool, std::unordered_set<size_t>>
   get_entering_trains(int t, const std::unordered_set<size_t>& tr_present,
                       const std::unordered_set<size_t>& tr_left,
                       const std::unordered_set<size_t>& tr_finished_simulating,
                       bool late_entry_possible) const;
-  [[nodiscard]] std::vector<double> edge_milestones(size_t tr) const;
+
   [[nodiscard]] std::tuple<bool, std::pair<bool, bool>,
                            std::pair<double, double>>
   get_position_on_route_edge(size_t tr, const std::pair<double, double>& pos,
                              size_t              edge_number,
                              std::vector<double> milestones = {}) const;
+
   [[nodiscard]] std::tuple<bool, std::pair<bool, bool>,
                            std::pair<double, double>>
   get_position_on_edge(size_t tr, const std::pair<double, double>& pos,
@@ -120,49 +121,45 @@ private:
     return get_position_on_route_edge(tr, pos, edge_index,
                                       std::move(milestones));
   };
-  [[nodiscard]] bool is_on_route(size_t tr, size_t edge_id) const {
-    if (!instance->get_timetable().get_train_list().has_train(tr)) {
-      throw cda_rail::exceptions::TrainNotExistentException(tr);
-    }
-    if (!instance->const_n().has_edge(edge_id)) {
-      throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
-    }
-    const auto& tr_edges = train_edges.at(tr);
-    return std::ranges::contains(tr_edges, edge_id);
-  };
+
   [[nodiscard]] bool is_on_ttd(size_t tr, size_t ttd,
                                const std::pair<double, double>& pos,
                                TTDOccupationType occupation_type =
                                    TTDOccupationType::OnlyOccupied) const;
+
   [[nodiscard]] bool
   is_on_or_behind_ttd(size_t tr, size_t ttd,
                       const std::pair<double, double>& pos) const {
     return is_on_ttd(tr, ttd, pos, TTDOccupationType::OccupiedOrBehind);
   };
+
   [[nodiscard]] bool is_behind_ttd(size_t tr, size_t ttd,
                                    const std::pair<double, double>& pos) const {
     return is_on_ttd(tr, ttd, pos, TTDOccupationType::OnlyBehind);
   };
-  [[nodiscard]] std::vector<std::unordered_set<size_t>> tr_on_edges() const;
-  [[nodiscard]] std::optional<size_t> get_ttd(size_t edge_id) const;
-  [[nodiscard]] bool                  is_ok_to_enter(
+
+  [[nodiscard]] bool is_ok_to_enter(
       size_t tr, const std::vector<std::pair<double, double>>& train_positions,
       const std::vector<double>&                     train_velocities,
       const std::unordered_set<size_t>&              trains_in_network,
       const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
+
   [[nodiscard]] static double max_displacement(const Train& train, double v_0,
                                                int dt);
-  [[nodiscard]] double        get_absolute_distance_ma(
+
+  [[nodiscard]] double get_absolute_distance_ma(
       size_t tr, double max_displacement,
       const std::vector<std::pair<double, double>>&  train_positions,
       const std::vector<double>&                     train_velocities,
       const std::unordered_set<size_t>&              trains_in_network,
       const std::unordered_set<size_t>&              trains_left,
       const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
+
   [[nodiscard]] std::pair<double, double>
   get_future_max_speed_constraints(size_t tr, const Train& train, double pos,
                                    double v_0, double max_displacement, int dt,
                                    bool also_limit_by_leaving_edges) const;
+
   [[nodiscard]] double
   get_exit_vertex_order_ma(size_t tr, const Train& train, double pos,
                            double                            max_displacement,
@@ -173,11 +170,14 @@ private:
   speed_restriction_helper(double ma, double max_v, double pos,
                            double vertex_pos, double v_0, double v_m, double d,
                            int dt);
+
   [[nodiscard]] static double
   get_next_stop_ma(double max_displacement, double pos, double next_stop_pos);
+
   [[nodiscard]] double get_max_speed_exit_headway(size_t tr, const Train& train,
                                                   double pos, double v_0, int h,
                                                   int dt) const;
+
   [[nodiscard]] static std::pair<bool, double>
   time_to_exit_objective(double v_0, double v_1, double v_e, double s, double a,
                          double d, int dt);
@@ -190,13 +190,17 @@ private:
                   const std::unordered_set<size_t>& trains_left,
                   const std::vector<std::unordered_set<size_t>>& tr_on_edges,
                   bool also_limit_speed_by_leaving_edges) const;
+
   [[nodiscard]] static double get_v1_from_ma(double v_0, double ma, double d,
                                              int dt);
+
   [[nodiscard]] static bool
-       move_train(size_t tr, double v_0, double v_1, double ma, int dt,
-                  std::vector<std::pair<double, double>>& train_positions);
+  move_train(size_t tr, double v_0, double v_1, double ma, int dt,
+             std::vector<std::pair<double, double>>& train_positions);
+
   void update_rear_positions(
       std::vector<std::pair<double, double>>& train_positions) const;
+
   [[nodiscard]] bool is_feasible_to_schedule(
       int t, const std::vector<std::optional<size_t>>& next_stop_id,
       const std::vector<std::pair<double, double>>& train_positions,
@@ -205,6 +209,7 @@ private:
       const std::unordered_set<size_t>&             trains_finished_simulating,
       bool late_entry_possible, bool late_exit_possible,
       bool late_stop_possible) const;
+
   [[nodiscard]] DestinationType
   tr_reached_end(size_t                                        tr,
                  const std::vector<std::pair<double, double>>& train_pos) const;
@@ -228,10 +233,6 @@ public:
             std::move(ttd_orders), std::move(vertex_orders),
             std::move(stop_positions)) {};
   GreedySimulator() = delete;
-
-  [[nodiscard]] bool check_consistency() const;
-
-  [[nodiscard]] bool is_final_state() const;
 
   [[nodiscard]] std::tuple<bool, std::vector<int>,
                            std::vector<std::pair<int, double>>,

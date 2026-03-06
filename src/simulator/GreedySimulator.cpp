@@ -397,134 +397,6 @@ cda_rail::simulator::GreedySimulator::simulate(
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
-bool cda_rail::simulator::GreedySimulator::check_consistency() const {
-  if (!instance->check_consistency(false)) {
-    return false;
-  }
-
-  // All vectors are of correct size
-  if (train_edges.size() != instance->get_timetable().get_train_list().size()) {
-    return false;
-  }
-  if (ttd_orders.size() != ttd_sections.size()) {
-    return false;
-  }
-  if (vertex_orders.size() != instance->const_n().number_of_vertices()) {
-    return false;
-  }
-  if (stop_positions.size() !=
-      instance->get_timetable().get_train_list().size()) {
-    return false;
-  }
-
-  // All edges are valid
-  for (const auto& edges : train_edges) {
-    for (const auto& edge : edges) {
-      if (!instance->const_n().has_edge(edge)) {
-        return false;
-      }
-    }
-  }
-
-  // All edges are valid successors of each other
-  for (const auto& edges : train_edges) {
-    const auto& s = edges.size();
-    for (size_t i = 0; s > 1 && i < s - 1; ++i) {
-      if (!instance->const_n().is_valid_successor(edges[i], edges[i + 1])) {
-        return false;
-      }
-    }
-  }
-
-  // If not empty, the first edge of each train must be an entry edge
-  for (size_t train_id = 0; train_id < train_edges.size(); ++train_id) {
-    if (!train_edges[train_id].empty()) {
-      const auto& first_edge_id = train_edges[train_id].front();
-      const auto& first_edge    = instance->const_n().get_edge(first_edge_id);
-      if (first_edge.source !=
-          instance->get_timetable().get_schedule(train_id).get_entry()) {
-        return false;
-      }
-    }
-  }
-
-  // ttd_orders only contains valid train indices
-  for (const auto& orders : ttd_orders) {
-    for (const auto& train_id : orders) {
-      if (!instance->get_timetable().get_train_list().has_train(train_id)) {
-        return false;
-      }
-    }
-  }
-
-  // vertex_orders only contains valid train indices
-  for (const auto& orders : vertex_orders) {
-    for (const auto& train_id : orders) {
-      if (!instance->get_timetable().get_train_list().has_train(train_id)) {
-        return false;
-      }
-    }
-  }
-
-  // entry orders only contain trains that are entering the network through the
-  // respective vertex
-  for (size_t vertex_id = 0; vertex_id < vertex_orders.size(); ++vertex_id) {
-    for (const auto& train_id : vertex_orders[vertex_id]) {
-      if (vertex_id !=
-          instance->get_timetable().get_schedule(train_id).get_entry()) {
-        return false;
-      }
-    }
-  }
-
-  // Every train can have at most as many stop positions as scheduled stops
-  for (size_t train_id = 0;
-       train_id < instance->get_timetable().get_train_list().size();
-       ++train_id) {
-    const auto train_schedule_size =
-        instance->get_timetable().get_schedule(train_id).get_stops().size();
-    if (stop_positions.at(train_id).size() > train_schedule_size) {
-      return false; // Too many stop positions for the train
-    }
-    // stop_positions.at(train_id) must be non-negative and sorted
-    if (std::ranges::any_of(stop_positions.at(train_id),
-                            [](double pos) { return pos < 0; })) {
-      return false; // Negative stop position found
-    }
-    if (!std::is_sorted(stop_positions.at(train_id).begin(),
-                        stop_positions.at(train_id).end())) {
-      return false; // Stop positions are not sorted
-    }
-  }
-
-  return true;
-}
-
-double cda_rail::simulator::GreedySimulator::braking_distance(size_t tr,
-                                                              double v) const {
-  /**
-   * Calculates the braking distance for a train with id `tr` at velocity `v`.
-   *
-   * @param tr: The id of the train for which the braking distance is
-   * calculated.
-   * @param v: The velocity at which the braking distance is calculated.
-   *
-   * @return: The braking distance for the train at the given velocity.
-   */
-  if (!instance->get_timetable().get_train_list().has_train(tr)) {
-    throw cda_rail::exceptions::TrainNotExistentException(tr);
-  }
-  if (v < -EPS) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Velocity must be non-negative.");
-  }
-  if (v < 0) {
-    return 0.0; // No braking distance if the train is not moving
-  }
-  return cda_rail::braking_distance(
-      v, instance->get_train_list().get_train(tr).deceleration);
-}
-
 std::pair<bool, std::unordered_set<size_t>>
 cda_rail::simulator::GreedySimulator::get_entering_trains(
     int t, const std::unordered_set<size_t>& tr_present,
@@ -595,34 +467,6 @@ cda_rail::simulator::GreedySimulator::get_entering_trains(
     entering_trains.insert(tr);
   }
   return {true, entering_trains};
-}
-
-std::vector<double>
-cda_rail::simulator::GreedySimulator::edge_milestones(size_t tr) const {
-  /**
-   * This function returns the individual milestones, i.e., the distance on the
-   * individual route to each edges starting point. The last value is the
-   * distance to the exit node.
-   *
-   * @param tr: The id of the train for which the milestones are calculated.
-   * @return: A vector of doubles with the milestones for each edge of the
-   * train.
-   */
-  if (!instance->get_timetable().get_train_list().has_train(tr)) {
-    throw cda_rail::exceptions::TrainNotExistentException(tr);
-  }
-  const auto& edges = train_edges.at(tr);
-  if (edges.empty()) {
-    return {}; // No edges, no milestones
-  }
-  std::vector<double> milestones;
-  milestones.reserve(edges.size());
-  milestones.emplace_back(0.0); // First milestone is always 0
-  for (const auto& edge_id : edges) {
-    const auto& edge = instance->const_n().get_edge(edge_id);
-    milestones.emplace_back(milestones.back() + edge.length);
-  }
-  return milestones;
 }
 
 std::tuple<bool, std::pair<bool, bool>, std::pair<double, double>>
@@ -734,39 +578,6 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(
     }
   }
   return potentially_behind; // Train is not on the TTD section
-}
-
-std::vector<std::unordered_set<size_t>>
-cda_rail::simulator::GreedySimulator::tr_on_edges() const {
-  /**
-   * This function returns a vector of unordered sets, where each set
-   * contains the indices of trains that are routed on a specific edge.
-   */
-
-  std::vector<std::unordered_set<size_t>> trains_on_edges(
-      instance->const_n().number_of_edges());
-  for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
-       ++tr) {
-    const auto& edges = train_edges.at(tr);
-    for (const auto& edge_id : edges) {
-      trains_on_edges[edge_id].insert(tr);
-    }
-  }
-  return trains_on_edges;
-}
-
-std::optional<size_t>
-cda_rail::simulator::GreedySimulator::get_ttd(size_t edge_id) const {
-  if (!instance->const_n().has_edge(edge_id)) {
-    throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
-  }
-  for (size_t ttd_index = 0; ttd_index < ttd_sections.size(); ++ttd_index) {
-    const auto& ttd_section = ttd_sections[ttd_index];
-    if (std::ranges::contains(ttd_section, edge_id)) {
-      return ttd_index; // Found the TTD section containing the edge
-    }
-  }
-  return {}; // Edge is not part of any TTD section
 }
 
 bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
@@ -1600,23 +1411,4 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
   const auto route_len = train_edge_length(tr);
   return std::min(max_displacement,
                   route_len + train.length - acceleration_dist - pos);
-}
-
-bool cda_rail::simulator::GreedySimulator::is_final_state() const {
-  for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
-       ++tr) {
-    if (train_edges.at(tr).empty()) {
-      return false;
-    }
-    if (instance->get_schedule(tr).get_stops().size() !=
-        stop_positions.at(tr).size()) {
-      return false; // Not all stops have been set for the train
-    }
-    if (instance->const_n().get_edge(train_edges.at(tr).back()).target !=
-        instance->get_schedule(tr).get_exit()) {
-      return false; // Train has not reached the end of its route
-    }
-  }
-  return true; // All trains have reached the end of their route and all stops
-               // have been set
 }
