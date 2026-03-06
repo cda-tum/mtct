@@ -2763,21 +2763,21 @@ TEST(GreedySimulation, SimpleSimulation) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << obj.back() << std::endl;
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << sim_res.exit_times.back() << std::endl;
 
-  EXPECT_TRUE(success);
-  EXPECT_EQ(obj.size(), 1);
-  EXPECT_GE(obj[0], 198);
-  EXPECT_LE(obj[0], 198 + 6);
-  EXPECT_EQ(vertex_headways.size(), 2);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), obj[0] + 30);
-  EXPECT_EQ(braking_times.size(), 1);
-  EXPECT_EQ(braking_times.at(tr1).first, -1);
-  EXPECT_EQ(braking_times.at(tr1).second, -1);
+  EXPECT_TRUE(sim_res.success);
+  ASSERT_EQ(sim_res.exit_times.size(), 1);
+  EXPECT_GE(sim_res.exit_times[0], 198);
+  EXPECT_LE(sim_res.exit_times[0], 198 + 6);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 2);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[0] + 30);
+  ASSERT_EQ(sim_res.braking_times.size(), 1);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 1);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
 }
 
 TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
@@ -2803,24 +2803,26 @@ TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << "(" << obj[0] << ", " << obj[1] << ")";
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << "(" << sim_res.exit_times[0] << ", "
+        << sim_res.exit_times[1] << ")";
 
-  EXPECT_TRUE(success);
-  EXPECT_EQ(obj.size(), 2);
-  EXPECT_GE(obj[0], 198);
-  EXPECT_LE(obj[0], 198 + 6);
-  EXPECT_EQ(obj[1], 0);
-  EXPECT_EQ(vertex_headways.size(), 2);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), obj[0] + 30);
-  EXPECT_EQ(braking_times.size(), 2);
-  EXPECT_EQ(braking_times.at(tr1).first, -1);
-  EXPECT_EQ(braking_times.at(tr1).second, -1);
-  EXPECT_EQ(braking_times.at(tr2).first, -1);
-  EXPECT_EQ(braking_times.at(tr2).second, -1);
+  EXPECT_TRUE(sim_res.success);
+  ASSERT_EQ(sim_res.exit_times.size(), 2);
+  EXPECT_GE(sim_res.exit_times[0], 198);
+  EXPECT_LE(sim_res.exit_times[0], 198 + 6);
+  EXPECT_EQ(sim_res.exit_times[1], 0);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 2);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[0] + 30);
+  ASSERT_EQ(sim_res.braking_times.size(), 2);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
+  EXPECT_EQ(sim_res.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr2), -1);
 }
 
 TEST(GreedySimulation, SimpleSimulationTwoTrains) {
@@ -2847,24 +2849,26 @@ TEST(GreedySimulation, SimpleSimulationTwoTrains) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  EXPECT_EQ(obj.size(), 2);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << "(" << obj[0] << ", " << obj[1] << ")";
-  EXPECT_TRUE(success);
-  EXPECT_GE(obj[0], 255);
-  EXPECT_LE(obj[0], 255 + 6);
-  EXPECT_GE(obj[1], 120 + 255);
-  EXPECT_LE(obj[1], 120 + 255 + 6);
-  EXPECT_EQ(vertex_headways.size(), 2);
-  EXPECT_EQ(vertex_headways.at(v0), 240);
-  EXPECT_EQ(vertex_headways.at(v1), obj[1] + 30);
-  EXPECT_EQ(braking_times.size(), 2);
-  EXPECT_EQ(braking_times.at(tr1).first, -1);
-  EXPECT_EQ(braking_times.at(tr1).second, -1);
-  EXPECT_EQ(braking_times.at(tr2).first, -1);
-  EXPECT_EQ(braking_times.at(tr2).second, -1);
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  ASSERT_EQ(sim_res.exit_times.size(), 2);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << "(" << sim_res.exit_times[0] << ", "
+        << sim_res.exit_times[1] << ")";
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_GE(sim_res.exit_times[0], 255);
+  EXPECT_LE(sim_res.exit_times[0], 255 + 6);
+  EXPECT_GE(sim_res.exit_times[1], 120 + 255);
+  EXPECT_LE(sim_res.exit_times[1], 120 + 255 + 6);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 2);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 240);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[1] + 30);
+  ASSERT_EQ(sim_res.braking_times.size(), 2);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
+  EXPECT_EQ(sim_res.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr2), -1);
 }
 
 TEST(GreedySimulator, DeadlockTest1) {
@@ -2894,22 +2898,24 @@ TEST(GreedySimulator, DeadlockTest1) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v1, {tr2, tr1});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, true, true, true, true);
-  EXPECT_EQ(obj.size(), 2);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")";
-  EXPECT_EQ(obj.at(0), 0);
-  EXPECT_EQ(obj.at(1), 0);
-  EXPECT_FALSE(success);
-  EXPECT_EQ(vertex_headways.size(), 2);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), 0);
-  EXPECT_EQ(braking_times.size(), 2);
-  EXPECT_EQ(braking_times.at(tr1).first, -1);
-  EXPECT_EQ(braking_times.at(tr1).second, -1);
-  EXPECT_EQ(braking_times.at(tr2).first, -1);
-  EXPECT_EQ(braking_times.at(tr2).second, -1);
+  const auto sim_res = simulator.simulate(6, true, true, true, true);
+  ASSERT_EQ(sim_res.exit_times.size(), 2);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: (" << sim_res.exit_times.at(0) << ", "
+        << sim_res.exit_times.at(1) << ")";
+  EXPECT_EQ(sim_res.exit_times.at(0), 0);
+  EXPECT_EQ(sim_res.exit_times.at(1), 0);
+  EXPECT_FALSE(sim_res.success);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 2);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
+  ASSERT_EQ(sim_res.braking_times.size(), 2);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
+  EXPECT_EQ(sim_res.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr2), -1);
 }
 
 TEST(GreedySimulator, DeadlockTest2) {
@@ -2950,24 +2956,26 @@ TEST(GreedySimulator, DeadlockTest2) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v3, {tr2, tr1});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, true, true, true, true);
-  EXPECT_EQ(obj.size(), 2);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")";
-  EXPECT_EQ(obj.at(0), 0);
-  EXPECT_EQ(obj.at(1), 0);
-  EXPECT_FALSE(success);
-  EXPECT_EQ(vertex_headways.size(), 4);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), 0);
-  EXPECT_EQ(vertex_headways.at(v2), 0);
-  EXPECT_EQ(vertex_headways.at(v3), 30);
-  EXPECT_EQ(braking_times.size(), 2);
-  EXPECT_EQ(braking_times.at(tr1).first, -1);
-  EXPECT_EQ(braking_times.at(tr1).second, -1);
-  EXPECT_EQ(braking_times.at(tr2).first, -1);
-  EXPECT_EQ(braking_times.at(tr2).second, -1);
+  const auto sim_res = simulator.simulate(6, true, true, true, true);
+  ASSERT_EQ(sim_res.exit_times.size(), 2);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: (" << sim_res.exit_times.at(0) << ", "
+        << sim_res.exit_times.at(1) << ")";
+  EXPECT_EQ(sim_res.exit_times.at(0), 0);
+  EXPECT_EQ(sim_res.exit_times.at(1), 0);
+  EXPECT_FALSE(sim_res.success);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 4);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v3), 30);
+  ASSERT_EQ(sim_res.braking_times.size(), 2);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
+  EXPECT_EQ(sim_res.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr2), -1);
 }
 
 TEST(GreedySimulator, DeadlockTest3) {
@@ -3008,32 +3016,34 @@ TEST(GreedySimulator, DeadlockTest3) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v3, {tr2, tr1});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, true, true, true, true);
-  EXPECT_EQ(obj.size(), 2);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: (" << obj.at(0) << ", " << obj.at(1) << ")";
+  const auto sim_res = simulator.simulate(6, true, true, true, true);
+  ASSERT_EQ(sim_res.exit_times.size(), 2);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: (" << sim_res.exit_times.at(0) << ", "
+        << sim_res.exit_times.at(1) << ")";
   const auto time1 = cda_rail::min_travel_time(15, 0, 50, 4, 2, 500);
   const auto time2 = 30.0 + cda_rail::min_travel_time(15, 0, 50, 4, 2, 1000);
-  EXPECT_GE(obj.at(0), time1 - 3);
-  EXPECT_GE(obj.at(1), time2 - 3);
-  EXPECT_LE(obj.at(0), time1 + 6);
-  EXPECT_LE(obj.at(1), time2 + 6);
-  EXPECT_TRUE(success);
-  EXPECT_EQ(vertex_headways.size(), 4);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), 0);
-  EXPECT_EQ(vertex_headways.at(v2), 0);
-  EXPECT_EQ(vertex_headways.at(v3), 30 + 30);
-  EXPECT_EQ(braking_times.size(), 2);
-  EXPECT_GE(braking_times.at(tr1).first, 0);
-  EXPECT_GE(braking_times.at(tr1).second, 0);
-  EXPECT_GE(braking_times.at(tr2).first, 0);
-  EXPECT_GE(braking_times.at(tr2).second, 0);
-  EXPECT_APPROX_EQ(braking_times.at(tr1).first, 0, 6);
-  EXPECT_APPROX_EQ(braking_times.at(tr1).second, 500 - 0, 10);
-  EXPECT_APPROX_EQ(braking_times.at(tr2).first, 36, 6);
-  EXPECT_APPROX_EQ(braking_times.at(tr2).second, 1000 - 162, 10);
+  EXPECT_GE(sim_res.exit_times.at(0), time1 - 3);
+  EXPECT_GE(sim_res.exit_times.at(1), time2 - 3);
+  EXPECT_LE(sim_res.exit_times.at(0), time1 + 6);
+  EXPECT_LE(sim_res.exit_times.at(1), time2 + 6);
+  EXPECT_TRUE(sim_res.success);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 4);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v3), 30 + 30);
+  ASSERT_EQ(sim_res.braking_times.size(), 2);
+  EXPECT_GE(sim_res.braking_times.at(tr1), 0);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_GE(sim_res.braking_distances.at(tr1), 0);
+  EXPECT_GE(sim_res.braking_times.at(tr2), 0);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_GE(sim_res.braking_distances.at(tr2), 0);
+  EXPECT_APPROX_EQ(sim_res.braking_times.at(tr1), 0, 6);
+  EXPECT_APPROX_EQ(sim_res.braking_distances.at(tr1), 500 - 0, 10);
+  EXPECT_APPROX_EQ(sim_res.braking_times.at(tr2), 36, 6);
+  EXPECT_APPROX_EQ(sim_res.braking_distances.at(tr2), 1000 - 162, 10);
 }
 
 TEST(GreedySimulator, OneStationTest) {
@@ -3074,26 +3084,26 @@ TEST(GreedySimulator, OneStationTest) {
   simulator.append_current_stop_position_of_tr(tr1);
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  EXPECT_EQ(obj.size(), 1);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << obj.at(0);
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  ASSERT_EQ(sim_res.exit_times.size(), 1);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << sim_res.exit_times.at(0);
   const auto time1 = cda_rail::min_travel_time(15, 0, 50, 4, 2, 1100);
-  EXPECT_TRUE(success);
-  EXPECT_GE(obj.at(0), time1 + 30 - 3);
-  EXPECT_LE(obj.at(0), time1 + 30 + 6);
-  EXPECT_EQ(vertex_headways.size(), 4);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), 0);
-  EXPECT_EQ(vertex_headways.at(v2), 0);
-  EXPECT_EQ(vertex_headways.at(v3), 0); // Train does not reach v3
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_GE(sim_res.exit_times.at(0), time1 + 30 - 3);
+  EXPECT_LE(sim_res.exit_times.at(0), time1 + 30 + 6);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 4);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v3), 0); // Train does not reach v3
 
-  EXPECT_EQ(braking_times.size(), 1);
-  EXPECT_GE(braking_times.at(tr1).first, 0);
-  EXPECT_GE(braking_times.at(tr1).second, 0);
-  EXPECT_APPROX_EQ(braking_times.at(tr1).first, 12, 6);
-  EXPECT_APPROX_EQ(braking_times.at(tr1).second, 1100 - 429, 10);
+  ASSERT_EQ(sim_res.braking_times.size(), 1);
+  EXPECT_GE(sim_res.braking_times.at(tr1), 0);
+  ASSERT_EQ(sim_res.braking_distances.size(), 1);
+  EXPECT_GE(sim_res.braking_distances.at(tr1), 0);
+  EXPECT_APPROX_EQ(sim_res.braking_times.at(tr1), 12, 6);
+  EXPECT_APPROX_EQ(sim_res.braking_distances.at(tr1), 1100 - 429, 10);
 }
 
 TEST(GreedySimulator, TwoStationTest) {
@@ -3136,27 +3146,27 @@ TEST(GreedySimulator, TwoStationTest) {
   simulator.append_stop_edge_to_tr(tr1, v2_v3);
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  EXPECT_EQ(obj.size(), 1);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << obj.at(0);
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  ASSERT_EQ(sim_res.exit_times.size(), 1);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << sim_res.exit_times.at(0);
   const auto time1 = cda_rail::min_travel_time(0, 0, 50, 4, 2, 1000);
-  EXPECT_TRUE(success);
-  EXPECT_GE(obj.at(0), 90 + time1 + 60 - 3);
-  EXPECT_LE(obj.at(0), 90 + time1 + 60 + 6);
-  EXPECT_EQ(vertex_headways.size(), 5);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), 0);
-  EXPECT_EQ(vertex_headways.at(v2), 0);
-  EXPECT_EQ(vertex_headways.at(v3), 0);
-  EXPECT_EQ(vertex_headways.at(v4), 0); // Train does not reach v4
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_GE(sim_res.exit_times.at(0), 90 + time1 + 60 - 3);
+  EXPECT_LE(sim_res.exit_times.at(0), 90 + time1 + 60 + 6);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 5);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v3), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v4), 0); // Train does not reach v4
 
-  EXPECT_EQ(braking_times.size(), 1);
-  EXPECT_GE(braking_times.at(tr1).first, 0);
-  EXPECT_GE(braking_times.at(tr1).second, 0);
-  EXPECT_APPROX_EQ(braking_times.at(tr1).first, 96, 6);
-  EXPECT_APPROX_EQ(braking_times.at(tr1).second, 2100 - 1388, 10);
+  ASSERT_EQ(sim_res.braking_times.size(), 1);
+  EXPECT_GE(sim_res.braking_times.at(tr1), 0);
+  ASSERT_EQ(sim_res.braking_distances.size(), 1);
+  EXPECT_GE(sim_res.braking_distances.at(tr1), 0);
+  EXPECT_APPROX_EQ(sim_res.braking_times.at(tr1), 96, 6);
+  EXPECT_APPROX_EQ(sim_res.braking_distances.at(tr1), 2100 - 1388, 10);
 }
 
 TEST(GreedySimulator, TwoStationTestWithExit) {
@@ -3199,25 +3209,25 @@ TEST(GreedySimulator, TwoStationTestWithExit) {
   simulator.append_stop_edge_to_tr(tr1, v2_v3);
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  EXPECT_EQ(obj.size(), 1);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << obj.at(0);
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  ASSERT_EQ(sim_res.exit_times.size(), 1);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << sim_res.exit_times.at(0);
   const auto time1 = cda_rail::min_travel_time(0, 0, 50, 4, 2, 1000);
   const auto time2 = cda_rail::min_travel_time(0, 40, 50, 4, 2, 600);
-  EXPECT_TRUE(success);
-  EXPECT_GE(obj.at(0), 300);
-  EXPECT_LE(obj.at(0), 306);
-  EXPECT_EQ(vertex_headways.size(), 5);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), 0);
-  EXPECT_EQ(vertex_headways.at(v2), 0);
-  EXPECT_EQ(vertex_headways.at(v3), 0);
-  EXPECT_EQ(vertex_headways.at(v4), obj.at(0) + 30);
-  EXPECT_EQ(braking_times.size(), 1);
-  EXPECT_EQ(braking_times.at(tr1).first, -1);
-  EXPECT_EQ(braking_times.at(tr1).second, -1);
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_GE(sim_res.exit_times.at(0), 300);
+  EXPECT_LE(sim_res.exit_times.at(0), 306);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 5);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v3), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v4), sim_res.exit_times.at(0) + 30);
+  ASSERT_EQ(sim_res.braking_times.size(), 1);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 1);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
 }
 
 TEST(GreedySimulation, TightSchedule) {
@@ -3241,20 +3251,20 @@ TEST(GreedySimulation, TightSchedule) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << obj.back() << std::endl;
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << sim_res.exit_times.back() << std::endl;
 
-  EXPECT_FALSE(success);
-  EXPECT_EQ(obj.size(), 1);
-  EXPECT_EQ(obj[0], 0);
-  EXPECT_EQ(vertex_headways.size(), 2);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), 0);
-  EXPECT_EQ(braking_times.size(), 1);
-  EXPECT_EQ(braking_times.at(tr1).first, -1);
-  EXPECT_EQ(braking_times.at(tr1).second, -1);
+  EXPECT_FALSE(sim_res.success);
+  ASSERT_EQ(sim_res.exit_times.size(), 1);
+  EXPECT_EQ(sim_res.exit_times[0], 0);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 2);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
+  ASSERT_EQ(sim_res.braking_times.size(), 1);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 1);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
 }
 
 TEST(GreedySimulation, TightEntry) {
@@ -3281,23 +3291,24 @@ TEST(GreedySimulation, TightEntry) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
   simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << obj.back() << std::endl;
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << sim_res.exit_times.back() << std::endl;
 
-  EXPECT_FALSE(success);
-  EXPECT_EQ(obj.size(), 2);
-  EXPECT_EQ(obj[0], 0);
-  EXPECT_EQ(obj[1], 0);
-  EXPECT_EQ(vertex_headways.size(), 2);
-  EXPECT_EQ(vertex_headways.at(v0), 6);
-  EXPECT_EQ(vertex_headways.at(v1), 0);
-  EXPECT_EQ(braking_times.size(), 2);
-  EXPECT_EQ(braking_times.at(tr1).first, -1);
-  EXPECT_EQ(braking_times.at(tr1).second, -1);
-  EXPECT_EQ(braking_times.at(tr2).first, -1);
-  EXPECT_EQ(braking_times.at(tr2).second, -1);
+  EXPECT_FALSE(sim_res.success);
+  ASSERT_EQ(sim_res.exit_times.size(), 2);
+  EXPECT_EQ(sim_res.exit_times[0], 0);
+  EXPECT_EQ(sim_res.exit_times[1], 0);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 2);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 6);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
+  ASSERT_EQ(sim_res.braking_times.size(), 2);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
+  EXPECT_EQ(sim_res.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr2), -1);
 }
 
 TEST(GreedySimulation, ExitNetworkSpeedZero) {
@@ -3321,22 +3332,22 @@ TEST(GreedySimulation, ExitNetworkSpeedZero) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << obj.back() << std::endl;
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << sim_res.exit_times.back() << std::endl;
 
   const auto time1 = cda_rail::min_travel_time(15, 0, 50, 4, 2, 5100);
-  EXPECT_TRUE(success);
-  EXPECT_EQ(obj.size(), 1);
-  EXPECT_GE(obj[0], time1 - 3);
-  EXPECT_LE(obj[0], time1 + 6);
-  EXPECT_EQ(vertex_headways.size(), 2);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), obj[0] + 30);
-  EXPECT_EQ(braking_times.size(), 1);
-  EXPECT_EQ(braking_times.at(tr1).first, -1);
-  EXPECT_EQ(braking_times.at(tr1).second, -1);
+  EXPECT_TRUE(sim_res.success);
+  ASSERT_EQ(sim_res.exit_times.size(), 1);
+  EXPECT_GE(sim_res.exit_times[0], time1 - 3);
+  EXPECT_LE(sim_res.exit_times[0], time1 + 6);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 2);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[0] + 30);
+  ASSERT_EQ(sim_res.braking_times.size(), 1);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 1);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
 }
 
 TEST(GreedySimulation, SimpleNetwork) {
@@ -3415,10 +3426,8 @@ TEST(GreedySimulation, SimpleNetwork) {
 
   simulator.set_train_edges_of_tr(tr00, {v14a_v13a});
   simulator.set_vertex_orders_of_vertex(v14a, {tr00});
-  const auto [success_init, obj_init, braking_times_init,
-              vertex_headways_init] =
-      simulator.simulate(6, false, false, false, true);
-  EXPECT_TRUE(success_init);
+  const auto sim_res_init = simulator.simulate(6, false, false, false, true);
+  EXPECT_TRUE(sim_res_init.success);
 
   simulator.set_train_edges_of_tr(tr00, {v14a_v13a, v13a_v12, v12_v11, v11_v10,
                                          v10_v9, v9_v8a, v8a_v7a, v7a_v6, v6_v5,
@@ -3458,52 +3467,58 @@ TEST(GreedySimulation, SimpleNetwork) {
   simulator.set_ttd_orders_of_ttd(2, {tr00, tr11, tr12, tr01, tr02, tr10});
   simulator.set_ttd_orders_of_ttd(3, {tr00, tr11, tr12, tr01, tr02, tr10});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  PLOGD << "Simulation success: " << (success ? "true" : "false");
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false");
   for (size_t tr = 0; tr < instance.get_train_list().size(); ++tr) {
     const auto& tr_name = instance.get_train_list().get_train(tr).name;
-    PLOGD << "Objective value for train " << tr_name << ": " << obj.at(tr);
+    PLOGD << "Objective value for train " << tr_name << ": "
+          << sim_res.exit_times.at(tr);
   }
-  PLOGD << "Vertex headways at v1a: " << vertex_headways.at(v1a)
-        << ", v1b: " << vertex_headways.at(v1b)
-        << ", v1c: " << vertex_headways.at(v1c)
-        << ", v14a: " << vertex_headways.at(v14a)
-        << ", v14b: " << vertex_headways.at(v14b)
-        << ", v14c: " << vertex_headways.at(v14c);
+  PLOGD << "Vertex headways at v1a: " << sim_res.vertex_headways.at(v1a)
+        << ", v1b: " << sim_res.vertex_headways.at(v1b)
+        << ", v1c: " << sim_res.vertex_headways.at(v1c)
+        << ", v14a: " << sim_res.vertex_headways.at(v14a)
+        << ", v14b: " << sim_res.vertex_headways.at(v14b)
+        << ", v14c: " << sim_res.vertex_headways.at(v14c);
 
-  EXPECT_TRUE(success);
-  EXPECT_EQ(vertex_headways.at(v1a), obj.at(tr00) + 60);
-  EXPECT_EQ(vertex_headways.at(v1b), obj.at(tr12) + 60);
-  EXPECT_GE(vertex_headways.at(v1c), 60 + 60);
-  EXPECT_EQ(vertex_headways.at(v14a), 60);
-  EXPECT_EQ(vertex_headways.at(v14b), obj.at(tr10) + 60);
-  EXPECT_EQ(vertex_headways.at(v14c), obj.at(tr02) + 60);
-  EXPECT_GE(obj.at(tr00), 900);
-  EXPECT_LE(obj.at(tr00), 1950);
-  EXPECT_GE(obj.at(tr01), 900);
-  EXPECT_LE(obj.at(tr01), 1950);
-  EXPECT_GE(obj.at(tr02), 900);
-  EXPECT_LE(obj.at(tr02), 1950);
-  EXPECT_GE(obj.at(tr10), 1900);
-  EXPECT_LE(obj.at(tr10), 3450);
-  EXPECT_GE(obj.at(tr11), 1900);
-  EXPECT_LE(obj.at(tr11), 3450);
-  EXPECT_GE(obj.at(tr12), 1900);
-  EXPECT_LE(obj.at(tr12), 3450);
-  EXPECT_EQ(braking_times.size(), 6);
-  EXPECT_EQ(braking_times.at(tr00).first, -1);
-  EXPECT_EQ(braking_times.at(tr00).second, -1);
-  EXPECT_EQ(braking_times.at(tr01).first, -1);
-  EXPECT_EQ(braking_times.at(tr01).second, -1);
-  EXPECT_EQ(braking_times.at(tr02).first, -1);
-  EXPECT_EQ(braking_times.at(tr02).second, -1);
-  EXPECT_EQ(braking_times.at(tr10).first, -1);
-  EXPECT_EQ(braking_times.at(tr10).second, -1);
-  EXPECT_EQ(braking_times.at(tr11).first, -1);
-  EXPECT_EQ(braking_times.at(tr11).second, -1);
-  EXPECT_EQ(braking_times.at(tr12).first, -1);
-  EXPECT_EQ(braking_times.at(tr12).second, -1);
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1a), sim_res.exit_times.at(tr00) + 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1b), sim_res.exit_times.at(tr12) + 60);
+  EXPECT_GE(sim_res.vertex_headways.at(v1c), 60 + 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v14a), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v14b), sim_res.exit_times.at(tr10) + 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v14c), sim_res.exit_times.at(tr02) + 60);
+  EXPECT_GE(sim_res.exit_times.at(tr00), 900);
+  EXPECT_LE(sim_res.exit_times.at(tr00), 1950);
+  EXPECT_GE(sim_res.exit_times.at(tr01), 900);
+  EXPECT_LE(sim_res.exit_times.at(tr01), 1950);
+  EXPECT_GE(sim_res.exit_times.at(tr02), 900);
+  EXPECT_LE(sim_res.exit_times.at(tr02), 1950);
+  EXPECT_GE(sim_res.exit_times.at(tr10), 1900);
+  EXPECT_LE(sim_res.exit_times.at(tr10), 3450);
+  EXPECT_GE(sim_res.exit_times.at(tr11), 1900);
+  EXPECT_LE(sim_res.exit_times.at(tr11), 3450);
+  EXPECT_GE(sim_res.exit_times.at(tr12), 1900);
+  EXPECT_LE(sim_res.exit_times.at(tr12), 3450);
+  ASSERT_EQ(sim_res.braking_times.size(), 6);
+  EXPECT_EQ(sim_res.braking_times.at(tr00), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 6);
+  EXPECT_EQ(sim_res.braking_distances.at(tr00), -1);
+  EXPECT_EQ(sim_res.braking_times.at(tr01), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 6);
+  EXPECT_EQ(sim_res.braking_distances.at(tr01), -1);
+  EXPECT_EQ(sim_res.braking_times.at(tr02), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 6);
+  EXPECT_EQ(sim_res.braking_distances.at(tr02), -1);
+  EXPECT_EQ(sim_res.braking_times.at(tr10), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 6);
+  EXPECT_EQ(sim_res.braking_distances.at(tr10), -1);
+  EXPECT_EQ(sim_res.braking_times.at(tr11), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 6);
+  EXPECT_EQ(sim_res.braking_distances.at(tr11), -1);
+  EXPECT_EQ(sim_res.braking_times.at(tr12), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 6);
+  EXPECT_EQ(sim_res.braking_distances.at(tr12), -1);
 }
 
 TEST(GreedySimulation, FinalState) {
@@ -3578,21 +3593,22 @@ TEST(GreedySimulation, ExitEntryZero) {
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
-  const auto [success, obj, braking_times, vertex_headways] =
-      simulator.simulate(6, false, false, false, true);
-  const auto time1 = cda_rail::min_travel_time(0, 0, 20, 4, 2, 2100);
-  PLOGD << "Simulation success: " << (success ? "true" : "false")
-        << ", Objective value: " << obj.back() << ", expected: " << time1;
-  EXPECT_TRUE(success);
-  EXPECT_EQ(obj.size(), 1);
-  EXPECT_GE(obj.at(0), time1 - 3);
-  EXPECT_LE(obj.at(0), time1 + 6);
-  EXPECT_EQ(vertex_headways.size(), 2);
-  EXPECT_EQ(vertex_headways.at(v0), 60);
-  EXPECT_EQ(vertex_headways.at(v1), obj.at(0) + 30);
-  EXPECT_EQ(braking_times.size(), 1);
-  EXPECT_EQ(braking_times.at(tr1).first, -1);
-  EXPECT_EQ(braking_times.at(tr1).second, -1);
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  const auto time1   = cda_rail::min_travel_time(0, 0, 20, 4, 2, 2100);
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << sim_res.exit_times.back()
+        << ", expected: " << time1;
+  EXPECT_TRUE(sim_res.success);
+  ASSERT_EQ(sim_res.exit_times.size(), 1);
+  EXPECT_GE(sim_res.exit_times.at(0), time1 - 3);
+  EXPECT_LE(sim_res.exit_times.at(0), time1 + 6);
+  ASSERT_EQ(sim_res.vertex_headways.size(), 2);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times.at(0) + 30);
+  ASSERT_EQ(sim_res.braking_times.size(), 1);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 1);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
 }
 
 TEST(GreedySimulation, FaultyInstance) {
