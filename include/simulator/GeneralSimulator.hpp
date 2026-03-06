@@ -1,8 +1,17 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
+#include <algorithm>
+#include <cstddef>
+#include <map>
+#include <memory>
+#include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace cda_rail::simulator {
 
