@@ -35,6 +35,7 @@ add_library(
   solver/mip-based/GenPOMovingBlockMIPSolver.cpp
   solver/mip-based/GenPOMovingBlockMIPSolver_SolutionExtraction.cpp
   solver/mip-based/GenPOMovingBlockMIPSolver_Lazy.cpp
+  ${PROJECT_SOURCE_DIR}/include/simulator/GeneralSimulator.hpp
   ${PROJECT_SOURCE_DIR}/include/simulator/GreedySimulator.hpp
   simulator/GreedySimulator.cpp
   ${PROJECT_SOURCE_DIR}/include/simulator/GreedyHeuristic.hpp
