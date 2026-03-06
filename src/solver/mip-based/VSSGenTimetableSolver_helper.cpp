@@ -98,14 +98,14 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::
       s.edges_before = instance.get_station_list()
                            .get_station(tr_stop.get_station_name())
                            .tracks;
-      s.v_before = 0;
+      s.v_before     = 0;
     }
     if (t1 > t && t1 < s.t_after) {
       s.t_after     = t1;
       s.edges_after = instance.get_station_list()
                           .get_station(tr_stop.get_station_name())
                           .tracks;
-      s.v_after = 0;
+      s.v_after     = 0;
     }
   }
 
@@ -474,8 +474,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_timeout(
   if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
     model_created = std::chrono::high_resolution_clock::now();
     create_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
-                      model_created - start)
-                      .count();
+                        model_created - start)
+                        .count();
 
     auto time_left = time_limit - (create_time / 1000);
     if (time_left < 0 && time_limit > 0) {
@@ -657,8 +657,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
   IF_PLOG(plog::debug) {
     model_solved = std::chrono::high_resolution_clock::now();
     solve_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
-                     model_solved - model_created)
-                     .count();
+                       model_solved - model_created)
+                       .count();
     PLOGD << "Model created in " << (static_cast<double>(create_time) / 1000.0)
           << " s";
     PLOGD << "Model solved in " << (static_cast<double>(solve_time) / 1000.0)

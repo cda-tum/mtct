@@ -1010,9 +1010,9 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
         {true, true, false,
-                                                     cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
-                                                         AllChecked,
-                                                     cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
+         cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
+             AllChecked,
+         cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
         {}, 140);
 
     EXPECT_TRUE(sol.has_solution())
@@ -1040,9 +1040,9 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
     const auto                                             sol = solver.solve(
         {true, 5.55, cda_rail::VelocityRefinementStrategy::None},
         {true, true, false,
-                                                     cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
-                                                         AllChecked,
-                                                     cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
+         cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
+             AllChecked,
+         cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
         {}, 420);
 
     EXPECT_TRUE(sol.has_solution())
@@ -1071,9 +1071,9 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
     const auto                                             sol = solver.solve(
         {},
         {true, true, false,
-                                                     cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
-                                                         AllChecked,
-                                                     cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
+         cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
+             AllChecked,
+         cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
         {}, 130);
 
     EXPECT_TRUE(sol.has_solution())
@@ -1102,9 +1102,9 @@ TEST(GenPOMovingBlockMIPSolver, All3) {
     const auto                                             sol = solver.solve(
         {},
         {true, true, false,
-                                                     cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
-                                                         AllChecked,
-                                                     cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
+         cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
+             AllChecked,
+         cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
         {}, 130);
 
     EXPECT_TRUE(sol.has_solution())
@@ -1205,7 +1205,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-                                                     true},
+         true},
         {false}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution())
@@ -1232,7 +1232,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified2) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-                                                     true},
+         true},
         {false}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution())
@@ -1259,7 +1259,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified3) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-                                                     true},
+         true},
         {false}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution())
@@ -1286,7 +1286,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified1) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-                                                     true},
+         true},
         {true}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution())
@@ -1339,7 +1339,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified3) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-                                                     true},
+         true},
         {true}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution())
@@ -1616,7 +1616,7 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 10, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-                                                     true},
+         true},
         {true}, {}, 400, true);
 
     EXPECT_TRUE(sol.has_solution())

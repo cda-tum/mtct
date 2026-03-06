@@ -225,7 +225,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       const auto& stop_edges = instance.get_station_list()
                                    .get_station(tr_stop.get_station_name())
                                    .tracks;
-      const auto& stop_pos = instance.route_edge_pos(tr_name, stop_edges);
+      const auto& stop_pos   = instance.route_edge_pos(tr_name, stop_edges);
       // Other cases follow by increasing of lambda and mu
       model->addConstr(vars["mu"](tr, t0 - 1) >= stop_pos.first,
                        "mu_station_min_" + tr_name + "_" +
@@ -417,8 +417,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
     const auto& edge         = instance.n().get_edge(e);
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
-                            "," + instance.n().get_vertex(edge.target).name +
-                            "]";
+                               "," + instance.n().get_vertex(edge.target).name +
+                               "]";
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       for (const auto tr : instance.trains_on_edge(e, this->fix_routes)) {
         const auto& tr_name  = instance.get_train_list().get_train(tr).name;

@@ -39,8 +39,8 @@ double cda_rail::simulator::simple_braking_time_heuristic(
 
   const auto& train = simulator.get_instance()->get_train_list().get_train(tr);
   double      ret_val = static_cast<double>(braking_time.first) -
-                   static_cast<double>(tr_exit_time);
-  double len = 0.0;
+                        static_cast<double>(tr_exit_time);
+  double      len     = 0.0;
   for (auto it = tr_edges.rbegin();
        (len <= braking_time.second) && (it != tr_edges.rend()); ++it) {
     const auto& edge        = simulator.get_instance()->const_n().get_edge(*it);

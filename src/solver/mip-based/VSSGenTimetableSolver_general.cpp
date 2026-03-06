@@ -278,8 +278,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& edge         = instance.n().get_edge(e);
     const auto& edge_len     = edge.length;
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
-                            "," + instance.n().get_vertex(edge.target).name +
-                            "]";
+                               "," + instance.n().get_vertex(edge.target).name +
+                               "]";
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       const auto& lb = 0;
       const auto& ub = edge_len;
@@ -309,8 +309,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
     const auto& edge         = instance.n().get_edge(e);
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
-                            "," + instance.n().get_vertex(edge.target).name +
-                            "]";
+                               "," + instance.n().get_vertex(edge.target).name +
+                               "]";
 
     if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
       vars["num_vss_segments"](i) = model->addVar(
@@ -388,8 +388,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
     const auto& edge         = instance.n().get_edge(e);
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
-                            "," + instance.n().get_vertex(edge.target).name +
-                            "]";
+                               "," + instance.n().get_vertex(edge.target).name +
+                               "]";
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
         const auto& tr_name = instance.get_train_list().get_train(tr).name;
@@ -672,7 +672,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       const auto& stop_edges = instance.get_station_list()
                                    .get_station(tr_stop.get_station_name())
                                    .tracks;
-      const auto inverse_stop_edges =
+      const auto  inverse_stop_edges =
           instance.n().inverse_edges(stop_edges, tr_edges);
       for (size_t t = t0 - 1; t <= t1; ++t) {
         if (t >= t0) {
@@ -1113,8 +1113,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
     const auto& edge         = instance.n().get_edge(e);
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
-                            "," + instance.n().get_vertex(edge.target).name +
-                            "]";
+                               "," + instance.n().get_vertex(edge.target).name +
+                               "]";
     const auto& breakable_e_index = breakable_edge_indices.at(e);
     const auto& e_len             = instance.n().get_edge(e).length;
 
@@ -1212,8 +1212,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  vss_number_e = instance.n().max_vss_on_edge(e);
     const auto& edge         = instance.n().get_edge(e);
     const auto& edge_name    = "[" + instance.n().get_vertex(edge.source).name +
-                            "," + instance.n().get_vertex(edge.target).name +
-                            "]";
+                               "," + instance.n().get_vertex(edge.target).name +
+                               "]";
     const auto& breakable_e_index = breakable_edge_indices.at(e);
     const auto& e_len             = instance.n().get_edge(e).length;
 

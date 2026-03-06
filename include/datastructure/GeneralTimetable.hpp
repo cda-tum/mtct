@@ -263,7 +263,7 @@ public:
   virtual void               export_timetable(const std::filesystem::path& p,
                                               const Network&               network) const = 0;
   [[nodiscard]] virtual bool is_forced_to_stop(const std::string& tr_name,
-                                               int time) const              = 0;
+                                               int time) const = 0;
   [[nodiscard]] virtual std::vector<
       std::pair<size_t, std::vector<cda_rail::index_vector>>>
   get_stop_tracks(size_t tr, const std::string& name, const Network& network,
