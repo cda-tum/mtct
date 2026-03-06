@@ -15,6 +15,32 @@
 
 namespace cda_rail::simulator {
 
+struct PosVel {
+  double pos;
+  double vel;
+};
+
+struct SimulatorResults {
+  bool success; // true if simulation was successful, false if it was infeasible
+  std::vector<double> exit_times; // exit times of each train (or route end time
+                                  // if route was only partially simulated)
+  std::vector<std::vector<double>>
+      stop_times; // For every train, a vector of times at which scheduled stops
+                  // were reached
+  std::vector<double>
+      braking_times; // time (in seconds) at which each train had to brake due
+                     // to approaching their route end
+  std::vector<double>
+      braking_distances; // distance before route end at which each train had to
+                         // brake due to approaching their route end
+  std::vector<double>
+      vertex_headways; // final vertex headways that have to be respected after
+                       // the simulation until a next train can pass a vertex
+  std::vector<std::map<int, PosVel>>
+      train_trajectories; // For every train, a map of time to position and
+                          // velocity at that time
+};
+
 template <typename T> class GeneralSimulator {
   /**
    * This abstract class defines the interface for a general simulator to
@@ -48,9 +74,6 @@ protected:
   std::vector<cda_rail::index_vector> ttd_orders;
   std::vector<cda_rail::index_vector> vertex_orders;
   std::vector<std::vector<double>>    stop_positions;
-
-  std::vector<std::map<int, std::pair<double, double>>>
-      train_trajectories; // time -> {pos, vel}
 
   // helper functions
   [[nodiscard]] double braking_distance(size_t tr, double v) const {
@@ -417,10 +440,6 @@ public:
         "Edge " + std::to_string(edge_id) + " not found in train " +
         std::to_string(train_id) + "'s route.");
   };
-  [[nodiscard]] std::vector<std::map<int, std::pair<double, double>>>
-  get_last_trajectories() const {
-    return train_trajectories;
-  };
 
   // State helper (not needed for simulation itself)
   [[nodiscard]] bool is_final_state() const {
@@ -543,6 +562,21 @@ public:
     }
 
     return true;
+  };
+
+  // virtual function
+  [[nodiscard]] virtual SimulatorResults
+  simulate(bool late_entry_possible, bool late_exit_possible,
+           bool late_stop_possible, bool limit_speed_by_leaving_edges,
+           bool save_trajectories) const;
+
+  [[nodiscard]] SimulatorResults
+  simulate(bool late_entry_possible = false, bool late_exit_possible = false,
+           bool late_stop_possible = false,
+           bool limit_speed_by_leaving_edges =
+               true) const { // default values for virtual function
+    return simulate(late_entry_possible, late_exit_possible, late_stop_possible,
+                    limit_speed_by_leaving_edges, false);
   };
 };
 

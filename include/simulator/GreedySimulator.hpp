@@ -234,13 +234,20 @@ public:
             std::move(stop_positions)) {};
   GreedySimulator() = delete;
 
-  [[nodiscard]] std::tuple<bool, std::vector<int>,
-                           std::vector<std::pair<int, double>>,
-                           std::vector<int>>
+  [[nodiscard]] SimulatorResults
   simulate(int dt = 6, bool late_entry_possible = false,
            bool late_exit_possible = false, bool late_stop_possible = false,
            bool limit_speed_by_leaving_edges = true,
-           bool save_trajectories            = false);
+           bool save_trajectories            = false) const;
+
+  [[nodiscard]] SimulatorResults
+  simulate(bool late_entry_possible, bool late_exit_possible,
+           bool late_stop_possible, bool limit_speed_by_leaving_edges,
+           bool save_trajectories) const override {
+    return simulate(6, late_entry_possible, late_exit_possible,
+                    late_stop_possible, limit_speed_by_leaving_edges,
+                    save_trajectories);
+  }
 };
 
 } // namespace cda_rail::simulator
