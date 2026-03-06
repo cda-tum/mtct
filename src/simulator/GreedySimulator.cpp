@@ -1602,50 +1602,6 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
                   route_len + train.length - acceleration_dist - pos);
 }
 
-bool cda_rail::simulator::GreedySimulator::is_route_end_valid_stop_pos(
-    size_t tr, cda_rail::index_vector edges) const {
-  if (!instance->get_timetable().get_train_list().has_train(tr)) {
-    throw cda_rail::exceptions::TrainNotExistentException(tr);
-  }
-  const auto& tr_length =
-      instance->get_timetable().get_train_list().get_train(tr).length;
-  const auto& tr_schedule =
-      instance->get_timetable().get_schedule(tr).get_stops();
-  if (stop_positions.at(tr).size() >= tr_schedule.size()) {
-    // All stops have been set, hence, no further stop is possible
-    return false;
-  }
-  const auto& next_station_name =
-      tr_schedule.at(stop_positions.at(tr).size()).get_station_name();
-  const auto& next_station_tracks =
-      instance->get_station_list().get_station(next_station_name).tracks;
-  double len = 0;
-  for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
-       ++it) {
-    if (!std::ranges::contains(next_station_tracks, *it)) {
-      // Track does not belong to the next station
-      return false;
-    }
-    len += instance->const_n().get_edge(*it).length;
-  }
-
-  return len >= tr_length;
-}
-
-bool cda_rail::simulator::GreedySimulator::is_current_pos_valid_stop_position(
-    size_t tr) const {
-  /**
-   * This function checks if the current last edge can be used as a stop for a
-   * specific train. A stop is possible, if the train length back from the
-   * target vertex is fully within the next station.
-   *
-   * @param tr: The id of the train to check.
-   * @return: A boolean indicating whether the current position is a valid stop
-   * position.
-   */
-  return is_route_end_valid_stop_pos(tr, train_edges.at(tr));
-}
-
 bool cda_rail::simulator::GreedySimulator::is_final_state() const {
   for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
        ++tr) {
