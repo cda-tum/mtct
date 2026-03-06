@@ -57,7 +57,7 @@ namespace cda_rail::simulator {
 #define GREEDY_SIMULATOR_MAX_TIME_FACTOR 10
 
 class GreedySimulator
-    : GeneralSimulator<
+    : public GeneralSimulator<
           cda_rail::instances::GeneralPerformanceOptimizationInstance> {
 private:
 #if TEST_FRIENDS
