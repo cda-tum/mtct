@@ -186,7 +186,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Debug --target rail_test
       - name: Test
-        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:2 --timeout 750 --parallel 4
+        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:2 --timeout 750
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
