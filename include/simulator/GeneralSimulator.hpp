@@ -374,7 +374,8 @@ public:
     }
     append_stop_edge_to_tr(train_id, tr_edges.back());
   };
-  [[nodiscard]] bool is_current_pos_valid_stop_position(size_t tr) const {
+  [[nodiscard]] virtual bool
+  is_current_pos_valid_stop_position(size_t tr) const {
     /**
      * This function checks if the current last edge can be used as a stop for a
      * specific train. A stop is possible, if the train length back from the
@@ -384,7 +385,7 @@ public:
      * @return: A boolean indicating whether the current position is a valid
      * stop position.
      */
-    return is_route_end_valid_stop_pos(tr, train_edges.at(tr));
+    return is_route_end_valid_stop_pos(tr, get_train_edges_of_tr(tr));
   };
   [[nodiscard]] bool
   is_route_end_valid_stop_pos(size_t tr, cda_rail::index_vector edges) const {
@@ -541,7 +542,9 @@ public:
     for (size_t vertex_id = 0; vertex_id < vertex_orders.size(); ++vertex_id) {
       for (const auto& train_id : vertex_orders[vertex_id]) {
         if (vertex_id !=
-            instance->get_timetable().get_schedule(train_id).get_entry()) {
+                instance->get_timetable().get_schedule(train_id).get_entry() &&
+            vertex_id !=
+                instance->get_timetable().get_schedule(train_id).get_exit()) {
           return false;
         }
       }

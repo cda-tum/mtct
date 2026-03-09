@@ -3092,6 +3092,8 @@ TEST(GreedySimulator, OneStationTest) {
   EXPECT_TRUE(sim_res.success);
   EXPECT_GE(sim_res.exit_times.at(0), time1 + 30 - 3);
   EXPECT_LE(sim_res.exit_times.at(0), time1 + 30 + 6);
+  ASSERT_EQ(sim_res.stop_times.size(), 1);
+  EXPECT_EQ(sim_res.stop_times.at(tr1).size(), 1);
   ASSERT_EQ(sim_res.vertex_headways.size(), 4);
   EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
   EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
@@ -3154,6 +3156,8 @@ TEST(GreedySimulator, TwoStationTest) {
   EXPECT_TRUE(sim_res.success);
   EXPECT_GE(sim_res.exit_times.at(0), 90 + time1 + 60 - 3);
   EXPECT_LE(sim_res.exit_times.at(0), 90 + time1 + 60 + 6);
+  ASSERT_EQ(sim_res.stop_times.size(), 1);
+  EXPECT_EQ(sim_res.stop_times.at(tr1).size(), 2);
   ASSERT_EQ(sim_res.vertex_headways.size(), 5);
   EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
   EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
@@ -3167,6 +3171,30 @@ TEST(GreedySimulator, TwoStationTest) {
   EXPECT_GE(sim_res.braking_distances.at(tr1), 0);
   EXPECT_APPROX_EQ(sim_res.braking_times.at(tr1), 96, 6);
   EXPECT_APPROX_EQ(sim_res.braking_distances.at(tr1), 2100 - 1388, 10);
+}
+
+TEST(GreedySimulator, TrajectorySavingTest) {
+  Network    network;
+  const auto v0    = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1    = network.add_vertex("v1", VertexType::TTD, 30);
+  const auto v0_v1 = network.add_edge(v0, v1, 1100, 50, true);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
+                                       15, v0, {198, 400}, 40, v1, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+
+  const auto sim_res = simulator.simulate(6, false, false, false, true, true);
+  EXPECT_TRUE(sim_res.success);
+  ASSERT_EQ(sim_res.train_trajectories.size(), 1);
+  EXPECT_FALSE(sim_res.train_trajectories.at(tr1).empty());
 }
 
 TEST(GreedySimulator, TwoStationTestWithExit) {

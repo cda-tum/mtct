@@ -28,6 +28,9 @@ cda_rail::simulator::GreedySimulator::simulate(
     int dt, bool late_entry_possible, bool late_exit_possible,
     bool late_stop_possible, bool limit_speed_by_leaving_edges,
     bool save_trajectories) const {
+  if (dt <= 0) {
+    throw std::invalid_argument("dt must be positive.");
+  }
   /**
    * This function simulates train movements as specified by the member
    * variables. It returns a vector of doubles denoting the travel times of each
@@ -62,6 +65,8 @@ cda_rail::simulator::GreedySimulator::simulate(
       instance->get_timetable().get_train_list().size(), -1);
   std::vector<double> braking_distances(
       instance->get_timetable().get_train_list().size(), -1);
+  std::vector<std::vector<double>> stop_times(
+      instance->get_timetable().get_train_list().size());
   std::vector<std::map<int, PosVel>> train_trajectories; // time -> {pos, vel}
 
   // Find first time step
@@ -102,6 +107,21 @@ cda_rail::simulator::GreedySimulator::simulate(
           .size()); // next scheduled stop position
   std::vector<int> vertex_headways(instance->const_n().number_of_vertices(),
                                    0); // headways for vertices
+
+  auto build_results = [&](bool success) {
+    const std::vector<double> vertex_headways_double(vertex_headways.begin(),
+                                                     vertex_headways.end());
+    return SimulatorResults{
+        .success            = success,
+        .exit_times         = std::move(exit_times),
+        .stop_times         = std::move(stop_times),
+        .braking_times      = std::move(braking_times),
+        .braking_distances  = std::move(braking_distances),
+        .vertex_headways    = std::move(vertex_headways_double),
+        .train_trajectories = save_trajectories
+                                  ? std::move(train_trajectories)
+                                  : std::vector<std::map<int, PosVel>>()};
+  };
 
   const auto trains_on_edges = tr_on_edges();
 
@@ -225,6 +245,7 @@ cda_rail::simulator::GreedySimulator::simulate(
             std::max(last_stop.get_end_range().first,
                      std::max(t, last_stop.get_begin_range().first) +
                          last_stop.get_min_stopping_time());
+        stop_times.at(tr).push_back(static_cast<double>(t));
         tr_next_stop_id.at(tr) = {};
         trains_finished_simulating.insert(tr);
         PLOGV << "At time " << t << ", "
@@ -241,6 +262,7 @@ cda_rail::simulator::GreedySimulator::simulate(
                stop_positions.at(tr).at(tr_next_stop_id.at(tr).value()) -
                    STOP_TOLERANCE)) {
             // Train has reached its next stop
+            stop_times.at(tr).push_back(static_cast<double>(t));
             const auto& tr_stops =
                 instance->get_timetable().get_schedule(tr).get_stops();
             const auto& stop_info = tr_stops.at(tr_next_stop_id.at(tr).value());
@@ -284,18 +306,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       PLOGV
           << "Simulation failed: Not all trains can enter the network at time "
           << t;
-      // convert vertex_headways from std::vector<int> to std::vector<double>
-      // for the return type
-      const std::vector<double> vertex_headways_double(vertex_headways.begin(),
-                                                       vertex_headways.end());
-      return {.success            = false,
-              .exit_times         = exit_times,
-              .braking_times      = braking_times,
-              .braking_distances  = braking_distances,
-              .vertex_headways    = vertex_headways_double,
-              .train_trajectories = save_trajectories
-                                        ? train_trajectories
-                                        : std::vector<std::map<int, PosVel>>()};
+      return build_results(false);
     }
     for (const auto& tr : tr_to_enter) {
       const auto& train_schedule = instance->get_timetable().get_schedule(tr);
@@ -341,16 +352,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     if (trains_finished_simulating.size() ==
         instance->get_timetable().get_train_list().size()) {
       PLOGV << "All trains have reached their destination at time " << t;
-      const std::vector<double> vertex_headways_double(vertex_headways.begin(),
-                                                       vertex_headways.end());
-      return {.success            = true,
-              .exit_times         = exit_times,
-              .braking_times      = braking_times,
-              .braking_distances  = braking_distances,
-              .vertex_headways    = vertex_headways_double,
-              .train_trajectories = save_trajectories
-                                        ? train_trajectories
-                                        : std::vector<std::map<int, PosVel>>()};
+      return build_results(true);
     }
 
     // Check if the end state can still be reached
@@ -361,16 +363,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       PLOGV
           << "Simulation failed: Simulation cannot become feasible after time "
           << t;
-      const std::vector<double> vertex_headways_double(vertex_headways.begin(),
-                                                       vertex_headways.end());
-      return {.success            = false,
-              .exit_times         = exit_times,
-              .braking_times      = braking_times,
-              .braking_distances  = braking_distances,
-              .vertex_headways    = vertex_headways_double,
-              .train_trajectories = save_trajectories
-                                        ? train_trajectories
-                                        : std::vector<std::map<int, PosVel>>()};
+      return build_results(false);
     }
 
     // Check if there might be a deadlock situation
@@ -415,16 +408,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       }
       if (!reason_found) {
         PLOGV << "Trains are in a deadlock situation.";
-        const std::vector<double> vertex_headways_double(
-            vertex_headways.begin(), vertex_headways.end());
-        return {.success           = false,
-                .exit_times        = exit_times,
-                .braking_times     = braking_times,
-                .braking_distances = braking_distances,
-                .vertex_headways   = vertex_headways_double,
-                .train_trajectories =
-                    save_trajectories ? train_trajectories
-                                      : std::vector<std::map<int, PosVel>>()};
+        return build_results(false);
       }
     }
 

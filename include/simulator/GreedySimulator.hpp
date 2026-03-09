@@ -235,6 +235,7 @@ public:
   GreedySimulator()           = delete;
   ~GreedySimulator() override = default;
 
+  using GeneralSimulator::simulate;
   [[nodiscard]] SimulatorResults
   simulate(int dt = 6, bool late_entry_possible = false,
            bool late_exit_possible = false, bool late_stop_possible = false,
