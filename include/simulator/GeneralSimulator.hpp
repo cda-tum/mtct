@@ -444,6 +444,8 @@ public:
         std::to_string(train_id) + "'s route.");
   };
 
+  virtual ~GeneralSimulator() = default;
+
   // State helper (not needed for simulation itself)
   [[nodiscard]] bool is_final_state() const {
     for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();

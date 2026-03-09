@@ -232,7 +232,8 @@ public:
             instance, std::move(ttd_sections), std::move(train_edges),
             std::move(ttd_orders), std::move(vertex_orders),
             std::move(stop_positions)) {};
-  GreedySimulator() = delete;
+  GreedySimulator()           = delete;
+  ~GreedySimulator() override = default;
 
   [[nodiscard]] SimulatorResults
   simulate(int dt = 6, bool late_entry_possible = false,
