@@ -38,9 +38,8 @@ double cda_rail::simulator::simple_braking_time_heuristic(
   assert(!tr_edges.empty());
 
   const auto& train = simulator.get_instance()->get_train_list().get_train(tr);
-  double      ret_val =
-      static_cast<double>(braking_time) - static_cast<double>(tr_exit_time);
-  double len = 0.0;
+  double      ret_val = braking_time - tr_exit_time;
+  double      len     = 0.0;
   for (auto it = tr_edges.rbegin();
        (len <= braking_distance) && (it != tr_edges.rend()); ++it) {
     const auto& edge        = simulator.get_instance()->const_n().get_edge(*it);
@@ -79,7 +78,7 @@ std::pair<bool, double> cda_rail::simulator::simple_remaining_time_heuristic(
    */
 
   const double rel_exit_time =
-      std::max(static_cast<double>(tr_exit_time) + braking_time_heuristic, 0.0);
+      std::max(tr_exit_time + braking_time_heuristic, 0.0);
   double heuristic_exit_time = rel_exit_time;
 
   const auto& tr_edges    = simulator.get_train_edges_of_tr(tr);

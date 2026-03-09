@@ -4,6 +4,7 @@
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "plog/Log.h"
+#include "simulator/GeneralSimulator.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -11,6 +12,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <limits>
+#include <map>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -638,7 +640,7 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
    */
 
   const auto v0         = instance->get_timetable().get_schedule(tr).get_v_0();
-  const auto bd         = braking_distance(tr, v0);
+  const auto bd         = tr_braking_distance(tr, v0);
   const auto milestones = edge_milestones(tr);
   for (size_t i = 0; i < train_edges.at(tr).size() && milestones[i] + EPS < bd;
        ++i) {
@@ -675,7 +677,8 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
                 other_tr,
                 {train_positions.at(other_tr).first,
                  train_positions.at(other_tr).second +
-                     braking_distance(other_tr, train_velocities.at(other_tr))},
+                     tr_braking_distance(other_tr,
+                                         train_velocities.at(other_tr))},
                 reverse_edge_id.value());
         // NOLINTEND(bugprone-unchecked-optional-access)
         if (occ_rev) {
@@ -811,8 +814,8 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
                   other_tr,
                   {train_positions.at(other_tr).first,
                    train_positions.at(other_tr).second +
-                       braking_distance(other_tr,
-                                        train_velocities.at(other_tr))},
+                       tr_braking_distance(other_tr,
+                                           train_velocities.at(other_tr))},
                   reverse_edge_id.value());
           if (occ_rev) {
             // Other train has already been cleared to enter the reverse edge

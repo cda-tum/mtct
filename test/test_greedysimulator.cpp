@@ -561,18 +561,18 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   simulator.set_vertex_orders_of_vertex(l0, {tr1, tr3, tr5});
 
   // Braking distance
-  EXPECT_EQ(simulator.braking_distance(tr1, 0), 0.0);
-  EXPECT_EQ(simulator.braking_distance(tr1, -EPS / 2), 0.0);
-  EXPECT_EQ(simulator.braking_distance(tr1, 1), 1.0 / 4.0);
-  EXPECT_EQ(simulator.braking_distance(tr1, 2), 1.0);
-  EXPECT_EQ(simulator.braking_distance(tr1, 3), 9.0 / 4.0);
-  EXPECT_EQ(simulator.braking_distance(tr2, 0), 0.0);
-  EXPECT_EQ(simulator.braking_distance(tr2, 1), 1.0 / 6.0);
-  EXPECT_EQ(simulator.braking_distance(tr2, 2), 2.0 / 3.0);
-  EXPECT_EQ(simulator.braking_distance(tr2, 3), 3.0 / 2.0);
-  EXPECT_THROW(simulator.braking_distance(1000, 1),
+  EXPECT_EQ(simulator.tr_braking_distance(tr1, 0), 0.0);
+  EXPECT_EQ(simulator.tr_braking_distance(tr1, -EPS / 2), 0.0);
+  EXPECT_EQ(simulator.tr_braking_distance(tr1, 1), 1.0 / 4.0);
+  EXPECT_EQ(simulator.tr_braking_distance(tr1, 2), 1.0);
+  EXPECT_EQ(simulator.tr_braking_distance(tr1, 3), 9.0 / 4.0);
+  EXPECT_EQ(simulator.tr_braking_distance(tr2, 0), 0.0);
+  EXPECT_EQ(simulator.tr_braking_distance(tr2, 1), 1.0 / 6.0);
+  EXPECT_EQ(simulator.tr_braking_distance(tr2, 2), 2.0 / 3.0);
+  EXPECT_EQ(simulator.tr_braking_distance(tr2, 3), 3.0 / 2.0);
+  EXPECT_THROW(simulator.tr_braking_distance(1000, 1),
                cda_rail::exceptions::TrainNotExistentException);
-  EXPECT_THROW(simulator.braking_distance(tr1, -1),
+  EXPECT_THROW(simulator.tr_braking_distance(tr1, -1),
                cda_rail::exceptions::InvalidInputException);
 
   // Trains entering

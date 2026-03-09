@@ -2,14 +2,17 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "EOMHelper.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -76,7 +79,7 @@ protected:
   std::vector<std::vector<double>>    stop_positions;
 
   // helper functions
-  [[nodiscard]] double braking_distance(size_t tr, double v) const {
+  [[nodiscard]] double tr_braking_distance(size_t tr, double v) const {
     /**
      * Calculates the braking distance for a train with id `tr` at velocity `v`.
      *
