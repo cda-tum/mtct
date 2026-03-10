@@ -537,8 +537,8 @@ public:
       }
     }
 
-    // entry orders only contain trains that are entering the network through
-    // the respective vertex
+    // vertex orders only contain trains that are entering or leaving the
+    // network through the respective vertex
     for (size_t vertex_id = 0; vertex_id < vertex_orders.size(); ++vertex_id) {
       for (const auto& train_id : vertex_orders[vertex_id]) {
         if (vertex_id !=

@@ -36,6 +36,7 @@ TEST(GreedySimulator, CheckConsistency) {
 
   GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
   const auto l0  = network.get_vertex_index("l0");
+  const auto l1  = network.get_vertex_index("l1");
   const auto r0  = network.get_vertex_index("r0");
   const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 1, true, {0, 60},
                                        0, "l0", {360, 420}, 0, "r0", network);
@@ -201,7 +202,7 @@ TEST(GreedySimulator, CheckConsistency) {
       {{}, {}});
   simulator10.set_vertex_orders_of_vertex(l0, {tr1});
   simulator11.set_vertex_orders_of_vertex(l0, {1000});
-  simulator12.set_vertex_orders_of_vertex(l0, {tr1, tr2});
+  simulator12.set_vertex_orders_of_vertex(l1, {tr1, tr2});
 
   cda_rail::simulator::GreedySimulator simulator_instance2(instance2,
                                                            ttd_sections);
