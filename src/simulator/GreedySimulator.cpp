@@ -111,16 +111,16 @@ cda_rail::simulator::GreedySimulator::simulate(
   auto build_results = [&](bool success) {
     const std::vector<double> vertex_headways_double(vertex_headways.begin(),
                                                      vertex_headways.end());
-    return SimulatorResults{
-        .success            = success,
-        .exit_times         = std::move(exit_times),
-        .stop_times         = std::move(stop_times),
-        .braking_times      = std::move(braking_times),
-        .braking_distances  = std::move(braking_distances),
-        .vertex_headways    = std::move(vertex_headways_double),
-        .train_trajectories = save_trajectories
-                                  ? std::move(train_trajectories)
-                                  : std::vector<std::map<int, PosVel>>()};
+    return SimulatorResults{.success           = success,
+                            .exit_times        = std::move(exit_times),
+                            .stop_times        = std::move(stop_times),
+                            .braking_times     = std::move(braking_times),
+                            .braking_distances = std::move(braking_distances),
+                            .vertex_headways   = vertex_headways_double,
+                            .train_trajectories =
+                                save_trajectories
+                                    ? std::move(train_trajectories)
+                                    : std::vector<std::map<int, PosVel>>()};
   };
 
   const auto trains_on_edges = tr_on_edges();
