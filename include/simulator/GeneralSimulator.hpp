@@ -121,7 +121,7 @@ protected:
       return {}; // No edges, no milestones
     }
     std::vector<double> milestones;
-    milestones.reserve(edges.size());
+    milestones.reserve(edges.size() + 1);
     milestones.emplace_back(0.0); // First milestone is always 0
     for (const auto& edge_id : edges) {
       const auto& edge = instance->const_n().get_edge(edge_id);
