@@ -434,6 +434,11 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         model_detail_input.late_exit_possible,
         model_detail_input.late_stop_possible,
         model_detail_input.limit_speed_by_leaving_edges, true);
+    if (!final_simulation_result.success) {
+      throw cda_rail::exceptions::ConsistencyException(
+          "Final trajectory extraction failed for a previously feasible "
+          "state.");
+    }
 
     for (size_t tr = 0; tr < instance.get_timetable().get_train_list().size();
          ++tr) {
