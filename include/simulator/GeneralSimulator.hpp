@@ -388,7 +388,8 @@ public:
     return is_route_end_valid_stop_pos(tr, get_train_edges_of_tr(tr));
   };
   [[nodiscard]] bool
-  is_route_end_valid_stop_pos(size_t tr, cda_rail::index_vector edges) const {
+  is_route_end_valid_stop_pos(size_t                        tr,
+                              const cda_rail::index_vector& edges) const {
     if (!instance->get_timetable().get_train_list().has_train(tr)) {
       throw cda_rail::exceptions::TrainNotExistentException(tr);
     }
