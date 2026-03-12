@@ -374,8 +374,7 @@ public:
     }
     append_stop_edge_to_tr(train_id, tr_edges.back());
   };
-  [[nodiscard]] virtual bool
-  is_current_pos_valid_stop_position(size_t tr) const {
+  [[nodiscard]] bool is_current_pos_valid_stop_position(size_t tr) const {
     /**
      * This function checks if the current last edge can be used as a stop for a
      * specific train. A stop is possible, if the train length back from the
@@ -567,6 +566,14 @@ public:
       }
       if (!std::ranges::is_sorted(stop_positions.at(train_id))) {
         return false; // Stop positions are not sorted
+      }
+      if (!train_edges.at(train_id).empty()) {
+        const auto route_len = train_edge_length(train_id);
+        if (std::ranges::any_of(
+                stop_positions.at(train_id),
+                [route_len](double pos) { return pos > route_len + EPS; })) {
+          return false; // Stop lies beyond the routed path
+        }
       }
     }
 
