@@ -237,7 +237,7 @@ public:
 
   using GeneralSimulator::simulate;
   [[nodiscard]] SimulatorResults
-  simulate(int dt = 6, bool late_entry_possible = false,
+  simulate(int dt, bool late_entry_possible = false,
            bool late_exit_possible = false, bool late_stop_possible = false,
            bool limit_speed_by_leaving_edges = true,
            bool save_trajectories            = false) const;
