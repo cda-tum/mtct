@@ -193,10 +193,18 @@ public:
         train_edges(std::move(train_edges)), ttd_orders(std::move(ttd_orders)),
         vertex_orders(std::move(vertex_orders)),
         stop_positions(std::move(stop_positions)) {
-          // Intentionally sizes are not checked to allow partial initialization
-          // and editing before use. This is checked in the consistency check
-          // though.
-        };
+    if (this->train_edges.size() !=
+            this->instance->get_timetable().get_train_list().size() ||
+        this->ttd_orders.size() != this->ttd_sections.size() ||
+        this->vertex_orders.size() !=
+            this->instance->const_n().number_of_vertices() ||
+        this->stop_positions.size() !=
+            this->instance->get_timetable().get_train_list().size()) {
+      throw cda_rail::exceptions::InvalidInputException(
+          "Simulator state vector sizes do not match the referenced "
+          "instance.");
+    }
+  };
 
   [[nodiscard]] std::shared_ptr<const T> get_instance() const {
     return instance;
