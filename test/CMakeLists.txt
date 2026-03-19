@@ -11,17 +11,11 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 package_add_test(
   ${PROJECT_NAME}_test
   ${PROJECT_NAME}
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_railwaynetwork.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_probleminstances.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_multiarray.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi_vss_gen.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_helper.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_plog.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_abstract_data_structure.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_general_performance_optimization_instances.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_gen_po_movingblock_mip_solver.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi_vss_gen_using_mb_information.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_greedysimulator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_greedyheuristic.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_mb_astar.cpp)

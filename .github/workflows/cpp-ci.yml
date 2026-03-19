@@ -21,51 +21,13 @@ env:
   CTEST_PARALLEL_LEVEL: 4
 
 jobs:
-  read-parameters:
-    name: read-parameters
-    runs-on: ubuntu-latest
-    outputs:
-      gurobiVersion: ${{ steps.set-output.outputs.gurobiVersion }}
-      gurobiShortVersion: ${{ steps.set-output.outputs.gurobiShortVersion }}
-      gurobiFolder: ${{ steps.set-output.outputs.gurobiFolder }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-      - name: Read current gurobi Version
-        uses: zlatko-ms/varfiletoenv@v3
-        with:
-          paths: ./.github/gurobi_version.json
-      - name: Export variables for next jobs
-        id: set-output
-        run: |
-          echo "gurobiVersion=${{ env.gurobiVersion }}" >> $GITHUB_OUTPUT
-          echo "gurobiShortVersion=${{ env.gurobiShortVersion }}" >> $GITHUB_OUTPUT
-          echo "gurobiFolder=${{ env.gurobiFolder }}" >> $GITHUB_OUTPUT
   cpp-ubuntu-latest:
     name: cpp-ubuntu-latest
     runs-on: ubuntu-latest
-    needs: read-parameters
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: setup-gurobi-license
-        id: write-license
-        env:
-          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
-        run: |
-          echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
-          echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
-      - name: download-gurobi-linux
-        env:
-          GUROBI_VERSION_SHORT: ${{ needs.read-parameters.outputs.gurobiShortVersion }}
-          GUROBI_VERSION: ${{ needs.read-parameters.outputs.gurobiVersion }}
-          GUROBI_VERSION_FOLDER: ${{ needs.read-parameters.outputs.gurobiFolder }}
-          GUROBI_FILE: gurobi${{ needs.read-parameters.outputs.gurobiVersion }}_linux64.tar.gz
-        run: |
-          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
-          tar -xvzf ${{ env.GUROBI_FILE }}
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
       - name: Build
@@ -75,27 +37,10 @@ jobs:
   cpp-macos-latest:
     name: cpp-macos-latest
     runs-on: macos-latest
-    needs: read-parameters
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: setup-gurobi-license
-        id: write-license
-        env:
-          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE_TWO   }}
-        run: |
-          echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
-          echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
-      - name: download-gurobi-mac
-        env:
-          GUROBI_VERSION_SHORT: ${{ needs.read-parameters.outputs.gurobiShortVersion }}
-          GUROBI_VERSION: ${{ needs.read-parameters.outputs.gurobiVersion }}
-          GUROBI_VERSION_FOLDER: ${{ needs.read-parameters.outputs.gurobiFolder }}
-          GUROBI_FILE: gurobi${{ needs.read-parameters.outputs.gurobiVersion }}_macos_universal2.pkg
-        run: |
-          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
-          sudo installer -pkg ${{ env.GUROBI_FILE }} -target /
       - name: Configure Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -109,46 +54,11 @@ jobs:
   cpp-windows-latest:
     name: cpp-windows-latest
     runs-on: windows-latest
-    needs:
-      - cpp-macos-latest
-      - read-parameters
+    needs: cpp-macos-latest
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: setup-gurobi-license
-        id: write-license
-        env:
-          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE_TWO   }}
-        run: |
-          echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
-          echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
-      - name: download-gurobi-windows
-        shell: powershell
-        env:
-          GUROBI_VERSION_SHORT: ${{ needs.read-parameters.outputs.gurobiShortVersion }}
-          GUROBI_VERSION: ${{ needs.read-parameters.outputs.gurobiVersion }}
-          GUROBI_VERSION_FOLDER: ${{ needs.read-parameters.outputs.gurobiFolder }}
-          GUROBI_FILE: Gurobi-${{ needs.read-parameters.outputs.gurobiVersion }}-win64.msi
-        run: |
-          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }} -OutFile ${{ env.GUROBI_FILE }}
-          New-Item -itemType directory gurobi
-          $proc = Start-Process msiexec.exe -ArgumentList "/a ${{ env.GUROBI_FILE }} /qb /L*! install.log TARGETDIR=$PWD\gurobi" -NoNewWindow -PassThru
-          $timeouted = $null
-          $proc | Wait-Process -Timeout 120 -ErrorAction SilentlyContinue -ErrorVariable timeouted
-          if ($timeouted)
-          {
-            echo "TIMEOUT"
-            $proc.Kill()
-          }
-          cat install.log
-          ls $PWD\gurobi
-      - name: set-gurobi-env-variables
-        id: gurobi-env-variables
-        shell: powershell
-        run: |
-          echo "GUROBI_HOME=$PWD\gurobi\${{ needs.read-parameters.outputs.gurobiFolder }}\win64" >> $env:GITHUB_ENV
-          echo "$PWD\gurobi\${{ needs.read-parameters.outputs.gurobiFolder }}\win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON ${{ matrix.config.toolchain }}
       - name: Build
@@ -158,29 +68,11 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-    needs:
-      - cpp-ubuntu-latest
-      - read-parameters
+    needs: cpp-ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: setup-gurobi-license
-        id: write-license
-        env:
-          GUROBI_LICENSE: ${{ secrets.GUROBI_LICENSE   }}
-        run: |
-          echo "$GUROBI_LICENSE" > $PWD/gurobi.lic
-          echo "GRB_LICENSE_FILE=$PWD/gurobi.lic" >> $GITHUB_ENV
-      - name: download-gurobi-linux
-        env:
-          GUROBI_VERSION_SHORT: ${{ needs.read-parameters.outputs.gurobiShortVersion }}
-          GUROBI_VERSION: ${{ needs.read-parameters.outputs.gurobiVersion }}
-          GUROBI_VERSION_FOLDER: ${{ needs.read-parameters.outputs.gurobiFolder }}
-          GUROBI_FILE: gurobi${{ needs.read-parameters.outputs.gurobiVersion }}_linux64.tar.gz
-        run: |
-          wget https://packages.gurobi.com/${{ env.GUROBI_VERSION_SHORT }}/${{ env.GUROBI_FILE }}
-          tar -xvzf ${{ env.GUROBI_FILE }}
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DENABLE_COVERAGE=ON
       - name: Build
