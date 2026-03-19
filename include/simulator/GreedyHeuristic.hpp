@@ -4,6 +4,7 @@
 #include "GeneralSimulator.hpp"
 #include "GreedySimulator.hpp"
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
