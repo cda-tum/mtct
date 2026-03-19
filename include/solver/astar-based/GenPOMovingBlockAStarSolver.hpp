@@ -212,7 +212,7 @@ public:
                           instances::GeneralPerformanceOptimizationInstance>>(
             path) {};
 
-  ~GenPOMovingBlockAStarSolver() = default;
+  ~GenPOMovingBlockAStarSolver() override = default;
 
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<

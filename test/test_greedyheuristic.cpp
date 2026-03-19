@@ -38,11 +38,11 @@ TEST(GreedyHeuristic, SimpleBrakingTimeHeuristic) {
   cda_rail::simulator::GreedySimulator simulator(instance, {});
 
   EXPECT_DEATH(cda_rail::simulator::simple_braking_time_heuristic(
-                   tr1, simulator, 100, {50, 60}),
+                   tr1, simulator, 100, 50, 60),
                "Assertion.*failed");
 
   EXPECT_DOUBLE_EQ(cda_rail::simulator::simple_braking_time_heuristic(
-                       tr1, simulator, 0, {-1, -1}),
+                       tr1, simulator, 0, -1, -1),
                    0);
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3});
@@ -52,7 +52,7 @@ TEST(GreedyHeuristic, SimpleBrakingTimeHeuristic) {
   // Instead it took 12 seconds
   // Result should be -7 seconds
   EXPECT_DOUBLE_EQ(cda_rail::simulator::simple_braking_time_heuristic(
-                       tr1, simulator, 68, {68 - 12, 50}),
+                       tr1, simulator, 68, 68 - 12, 50),
                    -7.0);
 
   // 100 meters before exit
@@ -60,7 +60,7 @@ TEST(GreedyHeuristic, SimpleBrakingTimeHeuristic) {
   // Instead it took 25 seconds
   // Result should be -15 seconds
   EXPECT_DOUBLE_EQ(cda_rail::simulator::simple_braking_time_heuristic(
-                       tr1, simulator, 85, {85 - 25, 100}),
+                       tr1, simulator, 85, 85 - 25, 100),
                    -15.0);
 
   // 125 meters before exit
@@ -70,7 +70,7 @@ TEST(GreedyHeuristic, SimpleBrakingTimeHeuristic) {
   // Instead it took 30 seconds
   // Result should be -19 seconds
   EXPECT_DOUBLE_EQ(cda_rail::simulator::simple_braking_time_heuristic(
-                       tr1, simulator, 90, {90 - 30, 125}),
+                       tr1, simulator, 90, 90 - 30, 125),
                    -19.0);
 
   // 150 meters before exit
@@ -80,7 +80,7 @@ TEST(GreedyHeuristic, SimpleBrakingTimeHeuristic) {
   // Instead it took 40 seconds
   // Result should be -28 seconds
   EXPECT_DOUBLE_EQ(cda_rail::simulator::simple_braking_time_heuristic(
-                       tr1, simulator, 100, {100 - 40, 150}),
+                       tr1, simulator, 100, 100 - 40, 150),
                    -28.0);
 
   // 160 meters before exit
@@ -91,7 +91,7 @@ TEST(GreedyHeuristic, SimpleBrakingTimeHeuristic) {
   // Instead it took 50 seconds
   // Result should be -37.5 seconds
   EXPECT_DOUBLE_EQ(cda_rail::simulator::simple_braking_time_heuristic(
-                       tr1, simulator, 110, {110 - 50, 160}),
+                       tr1, simulator, 110, 110 - 50, 160),
                    -37.5);
 
   // 220 meters before exit
@@ -102,7 +102,7 @@ TEST(GreedyHeuristic, SimpleBrakingTimeHeuristic) {
   // Instead it took 70 seconds
   // Result should be -54.5 seconds
   EXPECT_DOUBLE_EQ(cda_rail::simulator::simple_braking_time_heuristic(
-                       tr1, simulator, 130, {130 - 70, 220}),
+                       tr1, simulator, 130, 130 - 70, 220),
                    -54.5);
 }
 
@@ -394,6 +394,56 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
                                                  false, false);
   EXPECT_FALSE(feas_tr5_a);
   EXPECT_EQ(obj_tr5_a, cda_rail::INF);
+}
+
+TEST(GreedyHeuristic, FullGreedyHeuristicRejectsMismatchedResultSizes) {
+  Network    network;
+  const auto v0    = network.add_vertex("v0", VertexType::TTD);
+  const auto v1    = network.add_vertex("v1", VertexType::TTD);
+  const auto v0_v1 = network.add_edge(v0, v1, 100, 10);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 1, true, {0, 60},
+                                       0, v0, {120, 600}, 0, v1, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+
+  cda_rail::simulator::SimulatorResults sim_results{};
+  sim_results.success            = true;
+  sim_results.exit_times         = {120.0};
+  sim_results.braking_times      = {0.0};
+  sim_results.braking_distances  = {0.0};
+  sim_results.stop_times         = {{}};
+  sim_results.vertex_headways    = {};
+  sim_results.train_trajectories = {};
+
+  auto bad_exit_times = sim_results;
+  bad_exit_times.exit_times.clear();
+  EXPECT_THROW(cda_rail::simulator::full_greedy_heuristic(
+                   cda_rail::simulator::BrakingTimeHeuristicType::Simple,
+                   cda_rail::simulator::RemainingTimeHeuristicType::Simple,
+                   simulator, bad_exit_times, false, false, false),
+               cda_rail::exceptions::ConsistencyException);
+
+  auto bad_braking_times = sim_results;
+  bad_braking_times.braking_times.clear();
+  EXPECT_THROW(cda_rail::simulator::full_greedy_heuristic(
+                   cda_rail::simulator::BrakingTimeHeuristicType::Simple,
+                   cda_rail::simulator::RemainingTimeHeuristicType::Simple,
+                   simulator, bad_braking_times, false, false, false),
+               cda_rail::exceptions::ConsistencyException);
+
+  auto bad_braking_distances = sim_results;
+  bad_braking_distances.braking_distances.clear();
+  EXPECT_THROW(cda_rail::simulator::full_greedy_heuristic(
+                   cda_rail::simulator::BrakingTimeHeuristicType::Simple,
+                   cda_rail::simulator::RemainingTimeHeuristicType::Simple,
+                   simulator, bad_braking_distances, false, false, false),
+               cda_rail::exceptions::ConsistencyException);
 }
 
 TEST(GreedyHeuristic, FinalStateHeuristic) {

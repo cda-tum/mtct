@@ -252,18 +252,19 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
   PLOGI << "Starting A* search";
 
-  const auto [init_feas, init_exit_times, init_braking, init_headways] =
-      simulator.simulate(model_detail_input.dt,
-                         model_detail_input.late_entry_possible,
-                         model_detail_input.late_exit_possible,
-                         model_detail_input.late_stop_possible,
-                         model_detail_input.limit_speed_by_leaving_edges);
-  const auto init_obj = simulator::objective_val(simulator, init_exit_times);
+  // const auto [init_feas, init_exit_times, init_braking, init_headways] =
+  const auto init_simulator_result = simulator.simulate(
+      model_detail_input.dt, model_detail_input.late_entry_possible,
+      model_detail_input.late_exit_possible,
+      model_detail_input.late_stop_possible,
+      model_detail_input.limit_speed_by_leaving_edges);
+  const auto init_obj =
+      simulator::objective_val(simulator, init_simulator_result.exit_times);
   const auto [init_heuristic_feas, init_heuristic_val] =
       simulator::full_greedy_heuristic(
           solver_strategy_input.braking_time_heuristic_type,
           solver_strategy_input.remaining_time_heuristic_type, simulator,
-          init_exit_times, init_braking, model_detail_input.late_stop_possible,
+          init_simulator_result, model_detail_input.late_stop_possible,
           model_detail_input.late_exit_possible,
           solver_strategy_input.consider_earliest_exit);
 
@@ -275,7 +276,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         << ", heuristic feasibility = "
         << (init_heuristic_feas ? "feasible" : "infeasible");
 
-  if (init_feas && init_heuristic_feas) {
+  if (init_simulator_result.success && init_heuristic_feas) {
     const GreedySimulatorState init_state{
         .train_edges    = simulator.get_train_edges(),
         .ttd_orders     = simulator.get_ttd_orders(),
@@ -360,22 +361,21 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         continue;
       }
 
-      const auto [feas, exit_times, braking_times, headways] =
-          simulator.simulate(model_detail_input.dt,
-                             model_detail_input.late_entry_possible,
-                             model_detail_input.late_exit_possible,
-                             model_detail_input.late_stop_possible,
-                             model_detail_input.limit_speed_by_leaving_edges);
-      if (!feas) {
+      const auto sim_res = simulator.simulate(
+          model_detail_input.dt, model_detail_input.late_entry_possible,
+          model_detail_input.late_exit_possible,
+          model_detail_input.late_stop_possible,
+          model_detail_input.limit_speed_by_leaving_edges);
+      if (!sim_res.success) {
         PLOGV << "State is infeasible, skipping.";
         continue;
       }
-      const auto obj = simulator::objective_val(simulator, exit_times);
+      const auto obj = simulator::objective_val(simulator, sim_res.exit_times);
       const auto [heuristic_feas, heuristic_val] =
           simulator::full_greedy_heuristic(
               solver_strategy_input.braking_time_heuristic_type,
               solver_strategy_input.remaining_time_heuristic_type, simulator,
-              exit_times, braking_times, model_detail_input.late_stop_possible,
+              sim_res, model_detail_input.late_stop_possible,
               model_detail_input.late_exit_possible,
               solver_strategy_input.consider_earliest_exit);
       const auto new_obj = obj + heuristic_val;
@@ -426,19 +426,24 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     simulator.set_stop_positions(best_state.stop_positions);
 
     // Determine trajectories
-    [[maybe_unused]] const auto final_simulation_result = simulator.simulate(
+    const auto final_simulation_result = simulator.simulate(
         model_detail_input.dt, model_detail_input.late_entry_possible,
         model_detail_input.late_exit_possible,
         model_detail_input.late_stop_possible,
         model_detail_input.limit_speed_by_leaving_edges, true);
-    const auto tr_trajectories = simulator.get_last_trajectories();
+    if (!final_simulation_result.success) {
+      throw cda_rail::exceptions::ConsistencyException(
+          "Final trajectory extraction failed for a previously feasible "
+          "state.");
+    }
 
     for (size_t tr = 0; tr < instance.get_timetable().get_train_list().size();
          ++tr) {
       const auto& tr_name =
           sol_object.get_instance().get_train_list().get_train(tr).name;
-      const auto& tr_trajectory = tr_trajectories.at(tr);
-      const auto& tr_edges      = best_state.train_edges.at(tr);
+      const auto& tr_trajectory =
+          final_simulation_result.train_trajectories.at(tr);
+      const auto& tr_edges = best_state.train_edges.at(tr);
       sol_object.set_train_routed_value(tr_name, !tr_edges.empty());
       if (!tr_edges.empty()) {
         sol_object.add_empty_route(tr_name);
@@ -446,9 +451,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
           sol_object.push_back_edge_to_route(tr_name, e);
         }
       }
-      for (const auto& [time, pos] : tr_trajectory) {
-        sol_object.add_train_pos(tr_name, time, pos.first);
-        sol_object.add_train_speed(tr_name, time, pos.second);
+      for (const auto& [time, posvel] : tr_trajectory) {
+        sol_object.add_train_pos(tr_name, time, posvel.pos);
+        sol_object.add_train_speed(tr_name, time, posvel.vel);
       }
     }
   }

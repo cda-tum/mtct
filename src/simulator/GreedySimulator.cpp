@@ -4,6 +4,7 @@
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "plog/Log.h"
+#include "simulator/GeneralSimulator.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -11,6 +12,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <limits>
+#include <map>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -21,12 +23,14 @@
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
 
-std::tuple<bool, std::vector<int>, std::vector<std::pair<int, double>>,
-           std::vector<int>>
+cda_rail::simulator::SimulatorResults
 cda_rail::simulator::GreedySimulator::simulate(
     int dt, bool late_entry_possible, bool late_exit_possible,
     bool late_stop_possible, bool limit_speed_by_leaving_edges,
-    bool save_trajectories) {
+    bool save_trajectories) const {
+  if (dt <= 0) {
+    throw std::invalid_argument("dt must be positive.");
+  }
   /**
    * This function simulates train movements as specified by the member
    * variables. It returns a vector of doubles denoting the travel times of each
@@ -53,11 +57,18 @@ cda_rail::simulator::GreedySimulator::simulate(
   cda_rail::initialize_plog(false);
 
   // Initialize return values
-  std::vector<int> exit_times(instance->get_timetable().get_train_list().size(),
-                              0); // Initially each train is simulated until
-                                  // time t=0, for t>0 the heuristic is needed.
-  std::vector<std::pair<int, double>> braking_times(
-      instance->get_timetable().get_train_list().size(), {-1, -1});
+  std::vector<double> exit_times(
+      instance->get_timetable().get_train_list().size(),
+      0); // Initially each train is simulated until
+          // time t=0, for t>0 the heuristic is needed.
+  std::vector<double> braking_times(
+      instance->get_timetable().get_train_list().size(), -1);
+  std::vector<double> braking_distances(
+      instance->get_timetable().get_train_list().size(), -1);
+  std::vector<std::vector<double>> stop_times(
+      instance->get_timetable().get_train_list().size());
+  std::vector<std::map<double, PosVel>>
+      train_trajectories; // time -> {pos, vel}
 
   // Find first time step
   int min_t              = std::numeric_limits<int>::max();
@@ -97,6 +108,21 @@ cda_rail::simulator::GreedySimulator::simulate(
           .size()); // next scheduled stop position
   std::vector<int> vertex_headways(instance->const_n().number_of_vertices(),
                                    0); // headways for vertices
+
+  auto build_results = [&](bool success) {
+    const std::vector<double> vertex_headways_double(vertex_headways.begin(),
+                                                     vertex_headways.end());
+    return SimulatorResults{.success           = success,
+                            .exit_times        = std::move(exit_times),
+                            .stop_times        = std::move(stop_times),
+                            .braking_times     = std::move(braking_times),
+                            .braking_distances = std::move(braking_distances),
+                            .vertex_headways   = vertex_headways_double,
+                            .train_trajectories =
+                                save_trajectories
+                                    ? std::move(train_trajectories)
+                                    : std::vector<std::map<double, PosVel>>()};
+  };
 
   const auto trains_on_edges = tr_on_edges();
 
@@ -145,15 +171,15 @@ cda_rail::simulator::GreedySimulator::simulate(
             << " has MA: " << train_positions.at(tr).second + tr_ma
             << " and max velocity: " << tr_v1;
       const auto tr_edge_len = train_edge_length(tr);
-      if ((braking_times.at(tr).second < 0) &&
+      if ((braking_distances.at(tr) < 0) &&
           (instance->const_n().get_edge(train_edges.at(tr).back()).target !=
            tr_schedule.get_exit()) &&
           (train_positions.at(tr).second + tr_ma + STOP_TOLERANCE >=
            tr_edge_len)) {
         PLOGV << train_object.name
               << " starts braking due to end of route constraint.";
-        braking_times.at(tr) = {t - dt,
-                                tr_edge_len - train_positions.at(tr).second};
+        braking_times.at(tr)     = t - dt;
+        braking_distances.at(tr) = tr_edge_len - train_positions.at(tr).second;
       }
       PLOGV << "h = " << h;
       auto tr_new_speed =
@@ -176,8 +202,8 @@ cda_rail::simulator::GreedySimulator::simulate(
                    cda_rail::braking_distance(tr_new_speed,
                                               train_object.deceleration);
       if (save_trajectories) {
-        train_trajectories.at(tr)[t] = {train_positions.at(tr).second,
-                                        train_velocities.at(tr)};
+        train_trajectories.at(tr)[t] = {.pos = train_positions.at(tr).second,
+                                        .vel = train_velocities.at(tr)};
       }
     }
 
@@ -220,6 +246,7 @@ cda_rail::simulator::GreedySimulator::simulate(
             std::max(last_stop.get_end_range().first,
                      std::max(t, last_stop.get_begin_range().first) +
                          last_stop.get_min_stopping_time());
+        stop_times.at(tr).push_back(static_cast<double>(t));
         tr_next_stop_id.at(tr) = {};
         trains_finished_simulating.insert(tr);
         PLOGV << "At time " << t << ", "
@@ -236,6 +263,7 @@ cda_rail::simulator::GreedySimulator::simulate(
                stop_positions.at(tr).at(tr_next_stop_id.at(tr).value()) -
                    STOP_TOLERANCE)) {
             // Train has reached its next stop
+            stop_times.at(tr).push_back(static_cast<double>(t));
             const auto& tr_stops =
                 instance->get_timetable().get_schedule(tr).get_stops();
             const auto& stop_info = tr_stops.at(tr_next_stop_id.at(tr).value());
@@ -279,7 +307,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       PLOGV
           << "Simulation failed: Not all trains can enter the network at time "
           << t;
-      return {false, exit_times, braking_times, vertex_headways};
+      return build_results(false);
     }
     for (const auto& tr : tr_to_enter) {
       const auto& train_schedule = instance->get_timetable().get_schedule(tr);
@@ -315,8 +343,8 @@ cda_rail::simulator::GreedySimulator::simulate(
         PLOGV << "New entry blocked until time "
               << vertex_headways.at(train_schedule.get_entry());
         if (save_trajectories) {
-          train_trajectories.at(tr)[t] = {train_positions.at(tr).second,
-                                          train_velocities.at(tr)};
+          train_trajectories.at(tr)[t] = {.pos = train_positions.at(tr).second,
+                                          .vel = train_velocities.at(tr)};
         }
       }
     }
@@ -325,7 +353,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     if (trains_finished_simulating.size() ==
         instance->get_timetable().get_train_list().size()) {
       PLOGV << "All trains have reached their destination at time " << t;
-      return {true, exit_times, braking_times, vertex_headways};
+      return build_results(true);
     }
 
     // Check if the end state can still be reached
@@ -336,7 +364,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       PLOGV
           << "Simulation failed: Simulation cannot become feasible after time "
           << t;
-      return {false, exit_times, braking_times, vertex_headways};
+      return build_results(false);
     }
 
     // Check if there might be a deadlock situation
@@ -381,7 +409,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       }
       if (!reason_found) {
         PLOGV << "Trains are in a deadlock situation.";
-        return {false, exit_times, braking_times, vertex_headways};
+        return build_results(false);
       }
     }
 
@@ -396,134 +424,6 @@ cda_rail::simulator::GreedySimulator::simulate(
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
-
-bool cda_rail::simulator::GreedySimulator::check_consistency() const {
-  if (!instance->check_consistency(false)) {
-    return false;
-  }
-
-  // All vectors are of correct size
-  if (train_edges.size() != instance->get_timetable().get_train_list().size()) {
-    return false;
-  }
-  if (ttd_orders.size() != ttd_sections.size()) {
-    return false;
-  }
-  if (vertex_orders.size() != instance->const_n().number_of_vertices()) {
-    return false;
-  }
-  if (stop_positions.size() !=
-      instance->get_timetable().get_train_list().size()) {
-    return false;
-  }
-
-  // All edges are valid
-  for (const auto& edges : train_edges) {
-    for (const auto& edge : edges) {
-      if (!instance->const_n().has_edge(edge)) {
-        return false;
-      }
-    }
-  }
-
-  // All edges are valid successors of each other
-  for (const auto& edges : train_edges) {
-    const auto& s = edges.size();
-    for (size_t i = 0; s > 1 && i < s - 1; ++i) {
-      if (!instance->const_n().is_valid_successor(edges[i], edges[i + 1])) {
-        return false;
-      }
-    }
-  }
-
-  // If not empty, the first edge of each train must be an entry edge
-  for (size_t train_id = 0; train_id < train_edges.size(); ++train_id) {
-    if (!train_edges[train_id].empty()) {
-      const auto& first_edge_id = train_edges[train_id].front();
-      const auto& first_edge    = instance->const_n().get_edge(first_edge_id);
-      if (first_edge.source !=
-          instance->get_timetable().get_schedule(train_id).get_entry()) {
-        return false;
-      }
-    }
-  }
-
-  // ttd_orders only contains valid train indices
-  for (const auto& orders : ttd_orders) {
-    for (const auto& train_id : orders) {
-      if (!instance->get_timetable().get_train_list().has_train(train_id)) {
-        return false;
-      }
-    }
-  }
-
-  // vertex_orders only contains valid train indices
-  for (const auto& orders : vertex_orders) {
-    for (const auto& train_id : orders) {
-      if (!instance->get_timetable().get_train_list().has_train(train_id)) {
-        return false;
-      }
-    }
-  }
-
-  // entry orders only contain trains that are entering the network through the
-  // respective vertex
-  for (size_t vertex_id = 0; vertex_id < vertex_orders.size(); ++vertex_id) {
-    for (const auto& train_id : vertex_orders[vertex_id]) {
-      if (vertex_id !=
-          instance->get_timetable().get_schedule(train_id).get_entry()) {
-        return false;
-      }
-    }
-  }
-
-  // Every train can have at most as many stop positions as scheduled stops
-  for (size_t train_id = 0;
-       train_id < instance->get_timetable().get_train_list().size();
-       ++train_id) {
-    const auto train_schedule_size =
-        instance->get_timetable().get_schedule(train_id).get_stops().size();
-    if (stop_positions.at(train_id).size() > train_schedule_size) {
-      return false; // Too many stop positions for the train
-    }
-    // stop_positions.at(train_id) must be non-negative and sorted
-    if (std::ranges::any_of(stop_positions.at(train_id),
-                            [](double pos) { return pos < 0; })) {
-      return false; // Negative stop position found
-    }
-    if (!std::is_sorted(stop_positions.at(train_id).begin(),
-                        stop_positions.at(train_id).end())) {
-      return false; // Stop positions are not sorted
-    }
-  }
-
-  return true;
-}
-
-double cda_rail::simulator::GreedySimulator::braking_distance(size_t tr,
-                                                              double v) const {
-  /**
-   * Calculates the braking distance for a train with id `tr` at velocity `v`.
-   *
-   * @param tr: The id of the train for which the braking distance is
-   * calculated.
-   * @param v: The velocity at which the braking distance is calculated.
-   *
-   * @return: The braking distance for the train at the given velocity.
-   */
-  if (!instance->get_timetable().get_train_list().has_train(tr)) {
-    throw cda_rail::exceptions::TrainNotExistentException(tr);
-  }
-  if (v < -EPS) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Velocity must be non-negative.");
-  }
-  if (v < 0) {
-    return 0.0; // No braking distance if the train is not moving
-  }
-  return cda_rail::braking_distance(
-      v, instance->get_train_list().get_train(tr).deceleration);
-}
 
 std::pair<bool, std::unordered_set<size_t>>
 cda_rail::simulator::GreedySimulator::get_entering_trains(
@@ -595,34 +495,6 @@ cda_rail::simulator::GreedySimulator::get_entering_trains(
     entering_trains.insert(tr);
   }
   return {true, entering_trains};
-}
-
-std::vector<double>
-cda_rail::simulator::GreedySimulator::edge_milestones(size_t tr) const {
-  /**
-   * This function returns the individual milestones, i.e., the distance on the
-   * individual route to each edges starting point. The last value is the
-   * distance to the exit node.
-   *
-   * @param tr: The id of the train for which the milestones are calculated.
-   * @return: A vector of doubles with the milestones for each edge of the
-   * train.
-   */
-  if (!instance->get_timetable().get_train_list().has_train(tr)) {
-    throw cda_rail::exceptions::TrainNotExistentException(tr);
-  }
-  const auto& edges = train_edges.at(tr);
-  if (edges.empty()) {
-    return {}; // No edges, no milestones
-  }
-  std::vector<double> milestones;
-  milestones.reserve(edges.size());
-  milestones.emplace_back(0.0); // First milestone is always 0
-  for (const auto& edge_id : edges) {
-    const auto& edge = instance->const_n().get_edge(edge_id);
-    milestones.emplace_back(milestones.back() + edge.length);
-  }
-  return milestones;
 }
 
 std::tuple<bool, std::pair<bool, bool>, std::pair<double, double>>
@@ -736,39 +608,6 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(
   return potentially_behind; // Train is not on the TTD section
 }
 
-std::vector<std::unordered_set<size_t>>
-cda_rail::simulator::GreedySimulator::tr_on_edges() const {
-  /**
-   * This function returns a vector of unordered sets, where each set
-   * contains the indices of trains that are routed on a specific edge.
-   */
-
-  std::vector<std::unordered_set<size_t>> trains_on_edges(
-      instance->const_n().number_of_edges());
-  for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
-       ++tr) {
-    const auto& edges = train_edges.at(tr);
-    for (const auto& edge_id : edges) {
-      trains_on_edges[edge_id].insert(tr);
-    }
-  }
-  return trains_on_edges;
-}
-
-std::optional<size_t>
-cda_rail::simulator::GreedySimulator::get_ttd(size_t edge_id) const {
-  if (!instance->const_n().has_edge(edge_id)) {
-    throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
-  }
-  for (size_t ttd_index = 0; ttd_index < ttd_sections.size(); ++ttd_index) {
-    const auto& ttd_section = ttd_sections[ttd_index];
-    if (std::ranges::contains(ttd_section, edge_id)) {
-      return ttd_index; // Found the TTD section containing the edge
-    }
-  }
-  return {}; // Edge is not part of any TTD section
-}
-
 bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
     size_t tr, const std::vector<std::pair<double, double>>& train_positions,
     const std::vector<double>&                     train_velocities,
@@ -786,7 +625,7 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
    */
 
   const auto v0         = instance->get_timetable().get_schedule(tr).get_v_0();
-  const auto bd         = braking_distance(tr, v0);
+  const auto bd         = tr_braking_distance(tr, v0);
   const auto milestones = edge_milestones(tr);
   for (size_t i = 0; i < train_edges.at(tr).size() && milestones[i] + EPS < bd;
        ++i) {
@@ -823,7 +662,8 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
                 other_tr,
                 {train_positions.at(other_tr).first,
                  train_positions.at(other_tr).second +
-                     braking_distance(other_tr, train_velocities.at(other_tr))},
+                     tr_braking_distance(other_tr,
+                                         train_velocities.at(other_tr))},
                 reverse_edge_id.value());
         // NOLINTEND(bugprone-unchecked-optional-access)
         if (occ_rev) {
@@ -911,7 +751,7 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
     }
     const auto& edge_id = train_edges.at(tr).at(i);
 
-    // First edge is entirely blocked due to TTD section or train travelling in
+    // First edge is entirely blocked due to TTD section or train traveling in
     // opposite direction
     if (milestones.at(i) >= train_positions.at(tr).second) {
       const auto ttd_sec = get_ttd(edge_id);
@@ -959,8 +799,8 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
                   other_tr,
                   {train_positions.at(other_tr).first,
                    train_positions.at(other_tr).second +
-                       braking_distance(other_tr,
-                                        train_velocities.at(other_tr))},
+                       tr_braking_distance(other_tr,
+                                           train_velocities.at(other_tr))},
                   reverse_edge_id.value());
           if (occ_rev) {
             // Other train has already been cleared to enter the reverse edge
@@ -1600,67 +1440,4 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
   const auto route_len = train_edge_length(tr);
   return std::min(max_displacement,
                   route_len + train.length - acceleration_dist - pos);
-}
-
-bool cda_rail::simulator::GreedySimulator::is_route_end_valid_stop_pos(
-    size_t tr, cda_rail::index_vector edges) const {
-  if (!instance->get_timetable().get_train_list().has_train(tr)) {
-    throw cda_rail::exceptions::TrainNotExistentException(tr);
-  }
-  const auto& tr_length =
-      instance->get_timetable().get_train_list().get_train(tr).length;
-  const auto& tr_schedule =
-      instance->get_timetable().get_schedule(tr).get_stops();
-  if (stop_positions.at(tr).size() >= tr_schedule.size()) {
-    // All stops have been set, hence, no further stop is possible
-    return false;
-  }
-  const auto& next_station_name =
-      tr_schedule.at(stop_positions.at(tr).size()).get_station_name();
-  const auto& next_station_tracks =
-      instance->get_station_list().get_station(next_station_name).tracks;
-  double len = 0;
-  for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
-       ++it) {
-    if (!std::ranges::contains(next_station_tracks, *it)) {
-      // Track does not belong to the next station
-      return false;
-    }
-    len += instance->const_n().get_edge(*it).length;
-  }
-
-  return len >= tr_length;
-}
-
-bool cda_rail::simulator::GreedySimulator::is_current_pos_valid_stop_position(
-    size_t tr) const {
-  /**
-   * This function checks if the current last edge can be used as a stop for a
-   * specific train. A stop is possible, if the train length back from the
-   * target vertex is fully within the next station.
-   *
-   * @param tr: The id of the train to check.
-   * @return: A boolean indicating whether the current position is a valid stop
-   * position.
-   */
-  return is_route_end_valid_stop_pos(tr, train_edges.at(tr));
-}
-
-bool cda_rail::simulator::GreedySimulator::is_final_state() const {
-  for (size_t tr = 0; tr < instance->get_timetable().get_train_list().size();
-       ++tr) {
-    if (train_edges.at(tr).empty()) {
-      return false;
-    }
-    if (instance->get_schedule(tr).get_stops().size() !=
-        stop_positions.at(tr).size()) {
-      return false; // Not all stops have been set for the train
-    }
-    if (instance->const_n().get_edge(train_edges.at(tr).back()).target !=
-        instance->get_schedule(tr).get_exit()) {
-      return false; // Train has not reached the end of its route
-    }
-  }
-  return true; // All trains have reached the end of their route and all stops
-               // have been set
 }
