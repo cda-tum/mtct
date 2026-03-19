@@ -264,9 +264,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       simulator::full_greedy_heuristic(
           solver_strategy_input.braking_time_heuristic_type,
           solver_strategy_input.remaining_time_heuristic_type, simulator,
-          init_simulator_result.exit_times, init_simulator_result.braking_times,
-          init_simulator_result.braking_distances,
-          model_detail_input.late_stop_possible,
+          init_simulator_result, model_detail_input.late_stop_possible,
           model_detail_input.late_exit_possible,
           solver_strategy_input.consider_earliest_exit);
 
@@ -377,8 +375,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
           simulator::full_greedy_heuristic(
               solver_strategy_input.braking_time_heuristic_type,
               solver_strategy_input.remaining_time_heuristic_type, simulator,
-              sim_res.exit_times, sim_res.braking_times,
-              sim_res.braking_distances, model_detail_input.late_stop_possible,
+              sim_res, model_detail_input.late_stop_possible,
               model_detail_input.late_exit_possible,
               solver_strategy_input.consider_earliest_exit);
       const auto new_obj = obj + heuristic_val;
