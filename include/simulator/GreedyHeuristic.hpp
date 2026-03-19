@@ -88,7 +88,7 @@ full_greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
     throw cda_rail::exceptions::ConsistencyException(
         "SimulatorResults size does not match simulator train count.");
   }
-
+  assert(sim_results.success);
   bool   feas = true;
   double obj  = 0.0;
   for (size_t tr = 0; tr < train_count; ++tr) {
