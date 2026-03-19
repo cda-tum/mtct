@@ -116,7 +116,7 @@ objective_val(const GreedySimulator&     simulator,
        tr < simulator.get_instance()->get_timetable().get_train_list().size();
        ++tr) {
     obj += simulator.get_instance()->get_train_weights().at(tr) *
-           static_cast<double>(tr_exit_times.at(tr));
+           tr_exit_times.at(tr);
   }
   return obj;
 };
