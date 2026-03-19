@@ -2794,6 +2794,7 @@ TEST(GreedySimulation, SimpleSimulation) {
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
   const auto sim_res = simulator.simulate(6, false, false, false, true);
+  ASSERT_FALSE(sim_res.exit_times.empty());
   PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
         << ", Objective value: " << sim_res.exit_times.back() << std::endl;
 
@@ -2834,6 +2835,7 @@ TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
   simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
 
   const auto sim_res = simulator.simulate(6, false, false, false, true);
+  ASSERT_FALSE(sim_res.exit_times.empty());
   PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
         << ", Objective value: " << "(" << sim_res.exit_times[0] << ", "
         << sim_res.exit_times[1] << ")";
@@ -3310,6 +3312,7 @@ TEST(GreedySimulation, TightSchedule) {
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
   const auto sim_res = simulator.simulate(6, false, false, false, true);
+  ASSERT_FALSE(sim_res.exit_times.empty());
   PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
         << ", Objective value: " << sim_res.exit_times.back() << std::endl;
 
@@ -3350,6 +3353,7 @@ TEST(GreedySimulation, TightEntry) {
   simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
 
   const auto sim_res = simulator.simulate(6, false, false, false, true);
+  ASSERT_FALSE(sim_res.exit_times.empty());
   PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
         << ", Objective value: " << sim_res.exit_times.back() << std::endl;
 
@@ -3391,6 +3395,7 @@ TEST(GreedySimulation, ExitNetworkSpeedZero) {
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
 
   const auto sim_res = simulator.simulate(6, false, false, false, true);
+  ASSERT_FALSE(sim_res.exit_times.empty());
   PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
         << ", Objective value: " << sim_res.exit_times.back() << std::endl;
 
@@ -3653,6 +3658,7 @@ TEST(GreedySimulation, ExitEntryZero) {
 
   const auto sim_res = simulator.simulate(6, false, false, false, true);
   const auto time1   = cda_rail::min_travel_time(0, 0, 20, 4, 2, 2100);
+  ASSERT_FALSE(sim_res.exit_times.empty());
   PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
         << ", Objective value: " << sim_res.exit_times.back()
         << ", expected: " << time1;
