@@ -1,4 +1,3 @@
-#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Timetable.hpp"
@@ -2210,9 +2209,9 @@ TEST(ProblemInstances, TimetableConsistency) {
   network2.add_vertex("v1", cda_rail::VertexType::TTD);
   network2.add_vertex("v2", cda_rail::VertexType::TTD);
 
-  const int e11 = network1.add_edge("v0", "v1", 100, 10, true, 10);
-  const int e12 = network2.add_edge("v0", "v1", 100, 10, true, 10);
-  const int e22 = network2.add_edge("v1", "v2", 100, 10, true, 10);
+  const size_t e11 = network1.add_edge("v0", "v1", 100, 10, true, 10);
+  const size_t e12 = network2.add_edge("v0", "v1", 100, 10, true, 10);
+  const size_t e22 = network2.add_edge("v1", "v2", 100, 10, true, 10);
 
   EXPECT_EQ(e11, e12);
 

@@ -7,12 +7,9 @@
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 
-#include <cstddef>
 #include <filesystem>
-#include <optional>
 #include <string>
 #include <utility>
-#include <vector>
 
 namespace cda_rail::instances {
 class VSSGenerationTimetable
@@ -31,7 +28,7 @@ public:
   explicit VSSGenerationTimetable(const Network& n, const Timetable& tt,
                                   const RouteMap& rm)
       : GeneralProblemInstanceWithScheduleAndRoutes<Timetable>(n, tt, rm) {};
-  ~VSSGenerationTimetable() = default;
+  ~VSSGenerationTimetable() override = default;
 
   [[nodiscard]] std::pair<size_t, size_t>
   time_index_interval(size_t train_index, int dt,
