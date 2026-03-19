@@ -396,6 +396,56 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   EXPECT_EQ(obj_tr5_a, cda_rail::INF);
 }
 
+TEST(GreedyHeuristic, FullGreedyHeuristicRejectsMismatchedResultSizes) {
+  Network    network;
+  const auto v0    = network.add_vertex("v0", VertexType::TTD);
+  const auto v1    = network.add_vertex("v1", VertexType::TTD);
+  const auto v0_v1 = network.add_edge(v0, v1, 100, 10);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 1, true, {0, 60},
+                                       0, v0, {120, 600}, 0, v1, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+
+  cda_rail::simulator::SimulatorResults sim_results{};
+  sim_results.success            = true;
+  sim_results.exit_times         = {120.0};
+  sim_results.braking_times      = {0.0};
+  sim_results.braking_distances  = {0.0};
+  sim_results.stop_times         = {{}};
+  sim_results.vertex_headways    = {};
+  sim_results.train_trajectories = {};
+
+  auto bad_exit_times = sim_results;
+  bad_exit_times.exit_times.clear();
+  EXPECT_THROW(cda_rail::simulator::full_greedy_heuristic(
+                   cda_rail::simulator::BrakingTimeHeuristicType::Simple,
+                   cda_rail::simulator::RemainingTimeHeuristicType::Simple,
+                   simulator, bad_exit_times, false, false, false),
+               cda_rail::exceptions::ConsistencyException);
+
+  auto bad_braking_times = sim_results;
+  bad_braking_times.braking_times.clear();
+  EXPECT_THROW(cda_rail::simulator::full_greedy_heuristic(
+                   cda_rail::simulator::BrakingTimeHeuristicType::Simple,
+                   cda_rail::simulator::RemainingTimeHeuristicType::Simple,
+                   simulator, bad_braking_times, false, false, false),
+               cda_rail::exceptions::ConsistencyException);
+
+  auto bad_braking_distances = sim_results;
+  bad_braking_distances.braking_distances.clear();
+  EXPECT_THROW(cda_rail::simulator::full_greedy_heuristic(
+                   cda_rail::simulator::BrakingTimeHeuristicType::Simple,
+                   cda_rail::simulator::RemainingTimeHeuristicType::Simple,
+                   simulator, bad_braking_distances, false, false, false),
+               cda_rail::exceptions::ConsistencyException);
+}
+
 TEST(GreedyHeuristic, FinalStateHeuristic) {
   Network    network;
   const auto v0 = network.add_vertex("v0", VertexType::TTD);

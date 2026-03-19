@@ -68,30 +68,37 @@ TEST(GreedySimulator, CheckConsistency) {
 
   // Test constructors of GreedySimulator
 
-  cda_rail::simulator::GreedySimulator simulator1(
-      instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
-      std::vector<std::vector<size_t>>(ttd_sections.size(),
-                                       std::vector<size_t>()),
-      {}, {{}, {}});
-  cda_rail::simulator::GreedySimulator simulator2(
-      instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}}, {},
-      std::vector<std::vector<size_t>>(network.number_of_vertices(),
-                                       std::vector<size_t>()),
-      {{}, {}});
-  cda_rail::simulator::GreedySimulator simulator3(
-      instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}},
-      std::vector<std::vector<size_t>>(ttd_sections.size(),
-                                       std::vector<size_t>()),
-      std::vector<std::vector<size_t>>(network.number_of_vertices(),
-                                       std::vector<size_t>()),
-      {{}, {}});
-  cda_rail::simulator::GreedySimulator simulator3b(
-      instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
-      std::vector<std::vector<size_t>>(ttd_sections.size(),
-                                       std::vector<size_t>()),
-      std::vector<std::vector<size_t>>(network.number_of_vertices(),
-                                       std::vector<size_t>()),
-      {{}, {}, {}});
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator(
+                   instance, ttd_sections,
+                   {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
+                   std::vector<std::vector<size_t>>(ttd_sections.size(),
+                                                    std::vector<size_t>()),
+                   {}, {{}, {}}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(
+      cda_rail::simulator::GreedySimulator(
+          instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}}, {},
+          std::vector<std::vector<size_t>>(network.number_of_vertices(),
+                                           std::vector<size_t>()),
+          {{}, {}}),
+      cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::simulator::GreedySimulator(
+                   instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}},
+                   std::vector<std::vector<size_t>>(ttd_sections.size(),
+                                                    std::vector<size_t>()),
+                   std::vector<std::vector<size_t>>(
+                       network.number_of_vertices(), std::vector<size_t>()),
+                   {{}, {}}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(
+      cda_rail::simulator::GreedySimulator(
+          instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
+          std::vector<std::vector<size_t>>(ttd_sections.size(),
+                                           std::vector<size_t>()),
+          std::vector<std::vector<size_t>>(network.number_of_vertices(),
+                                           std::vector<size_t>()),
+          {{}, {}, {}}),
+      cda_rail::exceptions::InvalidInputException);
   cda_rail::simulator::GreedySimulator simulator3c(
       instance, ttd_sections, {{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}},
       std::vector<std::vector<size_t>>(ttd_sections.size(),
@@ -231,10 +238,6 @@ TEST(GreedySimulator, CheckConsistency) {
                                                            ttd_sections);
 
   // Check if consistency is determined correctly
-  EXPECT_FALSE(simulator1.check_consistency());
-  EXPECT_FALSE(simulator2.check_consistency());
-  EXPECT_FALSE(simulator3.check_consistency());
-  EXPECT_FALSE(simulator3b.check_consistency());
   EXPECT_TRUE(simulator3c.check_consistency());
   EXPECT_FALSE(simulator3d.check_consistency());
   EXPECT_FALSE(simulator3e.check_consistency());
