@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CustomExceptions.hpp"
+#include "GeneralSimulator.hpp"
 #include "GreedySimulator.hpp"
 
 #include <cstddef>
