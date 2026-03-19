@@ -153,7 +153,7 @@ protected:
          ++tr) {
       const auto& edges = train_edges.at(tr);
       for (const auto& edge_id : edges) {
-        trains_on_edges[edge_id].insert(tr);
+        trains_on_edges.at(edge_id).insert(tr);
       }
     }
     return trains_on_edges;
