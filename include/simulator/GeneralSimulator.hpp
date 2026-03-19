@@ -193,18 +193,10 @@ public:
         train_edges(std::move(train_edges)), ttd_orders(std::move(ttd_orders)),
         vertex_orders(std::move(vertex_orders)),
         stop_positions(std::move(stop_positions)) {
-    if (this->train_edges.size() !=
-            this->instance->get_timetable().get_train_list().size() ||
-        this->ttd_orders.size() != this->ttd_sections.size() ||
-        this->vertex_orders.size() !=
-            this->instance->const_n().number_of_vertices() ||
-        this->stop_positions.size() !=
-            this->instance->get_timetable().get_train_list().size()) {
-      throw cda_rail::exceptions::InvalidInputException(
-          "Simulator state vector sizes do not match the referenced "
-          "instance.");
-    }
-  };
+          // Intentionally sizes are not checked to allow partial initialization
+          // and editing before use. This is checked in the consistency check
+          // though.
+        };
 
   [[nodiscard]] std::shared_ptr<const T> get_instance() const {
     return instance;
@@ -533,8 +525,10 @@ public:
 
     // ttd_orders only contains valid train indices
     for (const auto& orders : ttd_orders) {
+      std::unordered_set<size_t> seen;
       for (const auto& train_id : orders) {
-        if (!instance->get_timetable().get_train_list().has_train(train_id)) {
+        if (!instance->get_timetable().get_train_list().has_train(train_id) ||
+            !seen.insert(train_id).second) {
           return false;
         }
       }
@@ -542,8 +536,10 @@ public:
 
     // vertex_orders only contains valid train indices
     for (const auto& orders : vertex_orders) {
+      std::unordered_set<size_t> seen;
       for (const auto& train_id : orders) {
-        if (!instance->get_timetable().get_train_list().has_train(train_id)) {
+        if (!instance->get_timetable().get_train_list().has_train(train_id) ||
+            !seen.insert(train_id).second) {
           return false;
         }
       }
