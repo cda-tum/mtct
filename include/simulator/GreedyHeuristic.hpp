@@ -80,11 +80,18 @@ full_greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
                       const SimulatorResults&    sim_results,
                       bool late_stop_possible, bool late_exit_possible,
                       bool consider_earliest_exit) {
+  const auto train_count =
+      simulator.get_instance()->get_timetable().get_train_list().size();
+  if (sim_results.exit_times.size() != train_count ||
+      sim_results.braking_times.size() != train_count ||
+      sim_results.braking_distances.size() != train_count) {
+    throw cda_rail::exceptions::ConsistencyException(
+        "SimulatorResults size does not match simulator train count.");
+  }
+
   bool   feas = true;
   double obj  = 0.0;
-  for (size_t tr = 0;
-       tr < simulator.get_instance()->get_timetable().get_train_list().size();
-       ++tr) {
+  for (size_t tr = 0; tr < train_count; ++tr) {
     const auto [feas_tr, obj_tr] = greedy_heuristic(
         braking_time_heuristic_type, remaining_time_heuristic_type, tr,
         simulator, sim_results.exit_times.at(tr),
