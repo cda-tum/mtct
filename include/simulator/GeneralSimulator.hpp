@@ -39,7 +39,7 @@ struct SimulatorResults {
   std::vector<double>
       vertex_headways; // final vertex headways that have to be respected after
                        // the simulation until a next train can pass a vertex
-  std::vector<std::map<int, PosVel>>
+  std::vector<std::map<double, PosVel>>
       train_trajectories; // For every train, a map of time to position and
                           // velocity at that time
 };

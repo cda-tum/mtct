@@ -67,7 +67,8 @@ cda_rail::simulator::GreedySimulator::simulate(
       instance->get_timetable().get_train_list().size(), -1);
   std::vector<std::vector<double>> stop_times(
       instance->get_timetable().get_train_list().size());
-  std::vector<std::map<int, PosVel>> train_trajectories; // time -> {pos, vel}
+  std::vector<std::map<double, PosVel>>
+      train_trajectories; // time -> {pos, vel}
 
   // Find first time step
   int min_t              = std::numeric_limits<int>::max();
@@ -120,7 +121,7 @@ cda_rail::simulator::GreedySimulator::simulate(
                             .train_trajectories =
                                 save_trajectories
                                     ? std::move(train_trajectories)
-                                    : std::vector<std::map<int, PosVel>>()};
+                                    : std::vector<std::map<double, PosVel>>()};
   };
 
   const auto trains_on_edges = tr_on_edges();
