@@ -4,7 +4,6 @@
 #include "GeneralSimulator.hpp"
 #include "GreedySimulator.hpp"
 
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -89,7 +88,12 @@ full_greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
     throw cda_rail::exceptions::ConsistencyException(
         "SimulatorResults size does not match simulator train count.");
   }
-  assert(sim_results.success);
+  if (!sim_results.success) {
+    // this should never be reached
+    throw cda_rail::exceptions::InvalidInputException(
+        "SimulatorResults indicate unsuccessful simulation, heuristic cannot "
+        "be calculated.");
+  }
   bool   feas = true;
   double obj  = 0.0;
   for (size_t tr = 0; tr < train_count; ++tr) {
