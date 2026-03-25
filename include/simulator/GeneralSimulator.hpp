@@ -37,8 +37,7 @@ struct SimulatorResults {
       braking_distances; // distance before route end at which each train had to
                          // brake due to approaching their route end
   std::vector<double>
-      vertex_headways; // final vertex headways that have to be respected after
-                       // the simulation until a next train can pass a vertex
+      vertex_headways; // for every vertex, earliest time at which next train can enter
   std::vector<std::map<double, PosVel>>
       train_trajectories; // For every train, a map of time to position and
                           // velocity at that time
