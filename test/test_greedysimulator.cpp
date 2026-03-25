@@ -3705,5 +3705,306 @@ TEST(GreedySimulation, FaultyInstance) {
   EXPECT_NO_THROW(simulator.simulate(6, false, false, false, true));
 }
 
+TEST(GreedySimulation, TimeExtractions) {
+  // Train enters at speed 24 travels for 18 seconds -> t = 18
+  // position = 18 * 24 = 432
+
+  // If train travels for 6 seconds and then stops for 12 seconds -> t = 6+12 =
+  // 18 pos = 6*24 + 24*6 = 144 +  144 = 288
+
+  // then decelerating at rate 2 for 12 seconds -> t = 18+12 = 30
+  // position = 432 + 24*24/4 = 432 + 144 = 576
+
+  // stopping for 60 seconds -> t = 30 + 60 = 90
+
+  // then accelerating at rate 1 for 12 seconds -> t = 90+12 = 102
+  // position = 576 + 12*6 = 576 + 72 = 648
+
+  // then decelerating at rate 2 for 6 seconds -> t = 102 + 6 = 108
+  // position = 648 + 12*3 = 648 + 36 = 684
+
+  // sopping for 30 seconds -> t = 138
+
+  // accelerating at rate 1 for 18 seconds -> t = 138 + 6 = 144
+  // position = 684 + 18*9 = 684 + 162 = 846
+
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD);
+  const auto v2 = network.add_vertex("v2", VertexType::TTD);
+  const auto v3 = network.add_vertex("v3", VertexType::TTD);
+  const auto v4 = network.add_vertex("v4", VertexType::TTD, 30);
+
+  ASSERT_LE(v0, 4);
+  ASSERT_LE(v1, 4);
+  ASSERT_LE(v2, 4);
+  ASSERT_LE(v3, 4);
+  ASSERT_LE(v4, 4);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 288, 30, true);
+  const auto v1_v2 = network.add_edge(v1, v2, 576 - 288, 30, true);
+  const auto v2_v3 = network.add_edge(v2, v3, 684 - 576, 30, true);
+  const auto v3_v4 =
+      network.add_edge(v3, v4, 846 - 684 - 50, 30, true); // assuming 50m train
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+
+  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  timetable.add_station("Station1");
+  timetable.add_track_to_station("Station1", v1_v2, network);
+  timetable.add_station("Station2");
+  timetable.add_track_to_station("Station2", v2_v3, network);
+
+  const auto tr1 = timetable.add_train("Train1", 50, 24, 1, 2, true, {0, 60},
+                                       24, v0, {100, 200}, 18, v4, network);
+  timetable.add_stop(tr1, "Station1", {0, 60}, {60, 120}, 60);
+  timetable.add_stop(tr1, "Station2", {90, 140}, {120, 170}, 30);
+
+  // Train 2 is exact copy of train 1 shifted by 100 seconds
+  const auto tr2 =
+      timetable.add_train("Train2", 50, 24, 1, 2, true, {0 + 102, 60 + 102}, 24,
+                          v0, {100 + 102, 200 + 102}, 18, v4, network);
+  timetable.add_stop(tr2, "Station1", {0 + 102, 60 + 102},
+                     {60 + 102, 120 + 102}, 60);
+  timetable.add_stop(tr2, "Station2", {90 + 102, 140 + 102},
+                     {120 + 102, 170 + 102}, 30);
+
+  ASSERT_LE(tr1, 1);
+  ASSERT_LE(tr2, 1);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  // If train travels for 6 seconds and then stops for 12 seconds -> t = 6+12 =
+  // 18 pos = 6*24 + 24*6 = 144 +  144 = 288
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+
+  const auto sim_res = simulator.simulate(6, false, false, false, true);
+  EXPECT_TRUE(sim_res.success);
+  ASSERT_EQ(sim_res.exit_times.size(), 2);
+  EXPECT_EQ(sim_res.exit_times.at(tr1), 18);
+  EXPECT_EQ(sim_res.exit_times.at(tr2), 0);
+  ASSERT_EQ(sim_res.braking_times.size(), 2);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), 6);
+  EXPECT_EQ(sim_res.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), 144);
+  EXPECT_EQ(sim_res.braking_distances.at(tr2), -1);
+  ASSERT_EQ(sim_res.stop_times.size(), 2);
+  ASSERT_TRUE(sim_res.stop_times.at(tr1).empty());
+  ASSERT_TRUE(sim_res.stop_times.at(tr2).empty());
+  ASSERT_EQ(sim_res.vertex_headways.size(), 5);
+  EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v3), 0);
+  EXPECT_EQ(sim_res.vertex_headways.at(v4), 0);
+
+  // Train enters at speed 24 travels for 18 seconds -> t = 18
+  // position = 18 * 24 = 432
+
+  // then decelerating at rate 2 for 12 seconds -> t = 18+12 = 30
+  // position = 432 + 24*24/4 = 432 + 144 = 576
+
+  simulator.append_train_edge_to_tr(tr1, v1_v2);
+  const auto sim_res2 = simulator.simulate(6, false, false, false, true);
+  EXPECT_TRUE(sim_res2.success);
+  ASSERT_EQ(sim_res2.exit_times.size(), 2);
+  EXPECT_EQ(sim_res2.exit_times.at(tr1), 30);
+  EXPECT_EQ(sim_res2.exit_times.at(tr2), 0);
+  ASSERT_EQ(sim_res2.braking_times.size(), 2);
+  EXPECT_EQ(sim_res2.braking_times.at(tr1), 18);
+  EXPECT_EQ(sim_res2.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res2.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res2.braking_distances.at(tr1), 144);
+  EXPECT_EQ(sim_res2.braking_distances.at(tr2), -1);
+  ASSERT_EQ(sim_res2.stop_times.size(), 2);
+  ASSERT_TRUE(sim_res2.stop_times.at(tr1).empty());
+  ASSERT_TRUE(sim_res2.stop_times.at(tr2).empty());
+  ASSERT_EQ(sim_res2.vertex_headways.size(), 5);
+  EXPECT_EQ(sim_res2.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res2.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res2.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res2.vertex_headways.at(v3), 0);
+  EXPECT_EQ(sim_res2.vertex_headways.at(v4), 0);
+
+  // stopping for 60 seconds -> t = 30 + 60 = 90
+
+  simulator.append_current_stop_position_of_tr(tr1);
+  const auto sim_res3 = simulator.simulate(6, false, false, false, true);
+  EXPECT_TRUE(sim_res3.success);
+  ASSERT_EQ(sim_res3.exit_times.size(), 2);
+  EXPECT_EQ(sim_res3.exit_times.at(tr1), 90);
+  EXPECT_EQ(sim_res3.exit_times.at(tr2), 0);
+  ASSERT_EQ(sim_res3.braking_times.size(), 2);
+  EXPECT_EQ(sim_res3.braking_times.at(tr1), 90);
+  EXPECT_EQ(sim_res3.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res3.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res3.braking_distances.at(tr1), 0);
+  EXPECT_EQ(sim_res3.braking_distances.at(tr2), -1);
+  ASSERT_EQ(sim_res3.stop_times.size(), 2);
+  ASSERT_EQ(sim_res3.stop_times.at(tr1).size(), 1);
+  EXPECT_EQ(sim_res3.stop_times.at(tr1).at(0), 30);
+  ASSERT_TRUE(sim_res3.stop_times.at(tr2).empty());
+  ASSERT_EQ(sim_res3.vertex_headways.size(), 5);
+  EXPECT_EQ(sim_res3.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res3.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res3.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res3.vertex_headways.at(v3), 0);
+  EXPECT_EQ(sim_res3.vertex_headways.at(v4), 0);
+
+  // then accelerating at rate 1 for 12 seconds -> t = 90+12 = 102
+  // position = 576 + 12*6 = 576 + 72 = 648
+
+  // then decelerating at rate 2 for 6 seconds -> t = 102 + 6 = 108
+  // position = 648 + 12*3 = 648 + 36 = 684
+
+  simulator.append_train_edge_to_tr(tr1, v2_v3);
+  const auto sim_res4 = simulator.simulate(6, false, false, false, true);
+  EXPECT_TRUE(sim_res4.success);
+  ASSERT_EQ(sim_res4.exit_times.size(), 2);
+  EXPECT_EQ(sim_res4.exit_times.at(tr1), 108);
+  EXPECT_EQ(sim_res4.exit_times.at(tr2), 0);
+  ASSERT_EQ(sim_res4.braking_times.size(), 2);
+  EXPECT_EQ(sim_res4.braking_times.at(tr1), 102);
+  EXPECT_EQ(sim_res4.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res4.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res4.braking_distances.at(tr1), 36);
+  EXPECT_EQ(sim_res4.braking_distances.at(tr2), -1);
+  ASSERT_EQ(sim_res4.stop_times.size(), 2);
+  ASSERT_EQ(sim_res4.stop_times.at(tr1).size(), 1);
+  EXPECT_EQ(sim_res4.stop_times.at(tr1).at(0), 30);
+  ASSERT_TRUE(sim_res4.stop_times.at(tr2).empty());
+  ASSERT_EQ(sim_res4.vertex_headways.size(), 5);
+  EXPECT_EQ(sim_res4.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res4.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res4.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res4.vertex_headways.at(v3), 0);
+  EXPECT_EQ(sim_res4.vertex_headways.at(v4), 0);
+
+  // sopping for 30 seconds -> t = 138
+
+  simulator.append_current_stop_position_of_tr(tr1);
+  const auto sim_res5 = simulator.simulate(6, false, false, false, true);
+  EXPECT_TRUE(sim_res5.success);
+  ASSERT_EQ(sim_res5.exit_times.size(), 2);
+  EXPECT_EQ(sim_res5.exit_times.at(tr1), 138);
+  EXPECT_EQ(sim_res5.exit_times.at(tr2), 0);
+  ASSERT_EQ(sim_res5.braking_times.size(), 2);
+  EXPECT_EQ(sim_res5.braking_times.at(tr1), 138);
+  EXPECT_EQ(sim_res5.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res5.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res5.braking_distances.at(tr1), 0);
+  EXPECT_EQ(sim_res5.braking_distances.at(tr2), -1);
+  ASSERT_EQ(sim_res5.stop_times.size(), 2);
+  ASSERT_EQ(sim_res5.stop_times.at(tr1).size(), 2);
+  EXPECT_EQ(sim_res5.stop_times.at(tr1).at(0), 30);
+  EXPECT_EQ(sim_res5.stop_times.at(tr1).at(1), 108);
+  ASSERT_TRUE(sim_res5.stop_times.at(tr2).empty());
+  ASSERT_EQ(sim_res5.vertex_headways.size(), 5);
+  EXPECT_EQ(sim_res5.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res5.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res5.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res5.vertex_headways.at(v3), 0);
+  EXPECT_EQ(sim_res5.vertex_headways.at(v4), 0);
+
+  // accelerating at rate 1 for 18 seconds -> t = 138 + 6 = 144
+  // position = 684 + 18*9 = 684 + 162 = 846
+
+  simulator.append_train_edge_to_tr(tr1, v3_v4);
+  const auto sim_res6 = simulator.simulate(6, false, false, false, true);
+  EXPECT_TRUE(sim_res6.success);
+  ASSERT_EQ(sim_res6.exit_times.size(), 2);
+  EXPECT_EQ(sim_res6.exit_times.at(tr1), 144);
+  EXPECT_EQ(sim_res6.exit_times.at(tr2), 0);
+  ASSERT_EQ(sim_res6.braking_times.size(), 2);
+  EXPECT_EQ(sim_res6.braking_times.at(tr1), -1);
+  EXPECT_EQ(sim_res6.braking_times.at(tr2), -1);
+  ASSERT_EQ(sim_res6.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res6.braking_distances.at(tr1), -1);
+  EXPECT_EQ(sim_res6.braking_distances.at(tr2), -1);
+  ASSERT_EQ(sim_res6.stop_times.size(), 2);
+  ASSERT_EQ(sim_res6.stop_times.at(tr1).size(), 2);
+  EXPECT_EQ(sim_res6.stop_times.at(tr1).at(0), 30);
+  EXPECT_EQ(sim_res6.stop_times.at(tr1).at(1), 108);
+  ASSERT_TRUE(sim_res6.stop_times.at(tr2).empty());
+  ASSERT_EQ(sim_res6.vertex_headways.size(), 5);
+  EXPECT_EQ(sim_res6.vertex_headways.at(v0), 60);
+  EXPECT_EQ(sim_res6.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res6.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res6.vertex_headways.at(v3), 0);
+  EXPECT_EQ(sim_res6.vertex_headways.at(v4), 174);
+
+  // tr2 follows with 102s difference
+
+  simulator.set_train_edges_of_tr(tr2, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
+  const auto sim_res7 = simulator.simulate(6, false, false, false, true);
+  EXPECT_TRUE(sim_res7.success);
+  ASSERT_EQ(sim_res7.exit_times.size(), 2);
+  EXPECT_EQ(sim_res7.exit_times.at(tr1), 144);
+  ASSERT_EQ(sim_res7.braking_times.size(), 2);
+  EXPECT_EQ(sim_res7.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res7.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res7.braking_distances.at(tr1), -1);
+  ASSERT_EQ(sim_res7.stop_times.size(), 2);
+  ASSERT_EQ(sim_res7.stop_times.at(tr1).size(), 2);
+  EXPECT_EQ(sim_res7.stop_times.at(tr1).at(0), 30);
+  EXPECT_EQ(sim_res7.stop_times.at(tr1).at(1), 108);
+
+  EXPECT_EQ(sim_res7.exit_times.at(tr2), 18 + 102);
+  EXPECT_EQ(sim_res7.braking_times.at(tr2), 6 + 102);
+  EXPECT_EQ(sim_res7.braking_distances.at(tr2), 144);
+  ASSERT_TRUE(sim_res7.stop_times.at(tr2).empty());
+
+  ASSERT_EQ(sim_res7.vertex_headways.size(), 5);
+  EXPECT_EQ(sim_res7.vertex_headways.at(v0), 60 + 102);
+  EXPECT_EQ(sim_res7.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res7.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res7.vertex_headways.at(v3), 0);
+  EXPECT_EQ(sim_res7.vertex_headways.at(v4), 174);
+
+  simulator.append_train_edge_to_tr(tr2, v1_v2);
+  simulator.append_current_stop_position_of_tr(tr2);
+  simulator.append_train_edge_to_tr(tr2, v2_v3);
+  simulator.append_current_stop_position_of_tr(tr2);
+  simulator.append_train_edge_to_tr(tr2, v3_v4);
+  const auto sim_res8 = simulator.simulate(6, false, false, false, true);
+  EXPECT_TRUE(sim_res8.success);
+  ASSERT_EQ(sim_res8.exit_times.size(), 2);
+  EXPECT_EQ(sim_res8.exit_times.at(tr1), 144);
+  ASSERT_EQ(sim_res8.braking_times.size(), 2);
+  EXPECT_EQ(sim_res8.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res8.braking_distances.size(), 2);
+  EXPECT_EQ(sim_res8.braking_distances.at(tr1), -1);
+  ASSERT_EQ(sim_res8.stop_times.size(), 2);
+  ASSERT_EQ(sim_res8.stop_times.at(tr1).size(), 2);
+  EXPECT_EQ(sim_res8.stop_times.at(tr1).at(0), 30);
+  EXPECT_EQ(sim_res8.stop_times.at(tr1).at(1), 108);
+
+  EXPECT_EQ(sim_res8.exit_times.at(tr2), 144 + 102);
+  EXPECT_EQ(sim_res8.braking_times.at(tr2), -1);
+  EXPECT_EQ(sim_res8.braking_distances.at(tr2), -1);
+  ASSERT_EQ(sim_res8.stop_times.at(tr2).size(), 2);
+  EXPECT_EQ(sim_res8.stop_times.at(tr2).at(0), 30 + 102);
+  EXPECT_EQ(sim_res8.stop_times.at(tr2).at(1), 108 + 102);
+
+  ASSERT_EQ(sim_res8.vertex_headways.size(), 5);
+  EXPECT_EQ(sim_res8.vertex_headways.at(v0), 60 + 102);
+  EXPECT_EQ(sim_res8.vertex_headways.at(v1), 0);
+  EXPECT_EQ(sim_res8.vertex_headways.at(v2), 0);
+  EXPECT_EQ(sim_res8.vertex_headways.at(v3), 0);
+  EXPECT_EQ(sim_res8.vertex_headways.at(v4), 174 + 102);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
