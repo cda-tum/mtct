@@ -268,6 +268,8 @@ cda_rail::simulator::GreedySimulator::simulate(
         stop_times.at(tr).push_back(static_cast<double>(t));
         tr_next_stop_id.at(tr) = {};
         trains_finished_simulating.insert(tr);
+        braking_times.at(tr)     = exit_times.at(tr);
+        braking_distances.at(tr) = 0;
         PLOGV << "At time " << t << ", "
               << instance->get_train_list().get_train(tr).name
               << " reached the end of its route at station "
