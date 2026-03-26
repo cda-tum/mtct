@@ -148,7 +148,8 @@ cda_rail::simulator::GreedySimulator::simulate(
     for (const auto& tr : trains_in_network) {
       const auto& train_object = instance->get_train_list().get_train(tr);
 
-      if (trains_finished_simulating.contains(tr) || t < tr_stop_until.at(tr)) {
+      if (trains_finished_simulating.contains(tr) ||
+          t < tr_stop_until.at(tr) + dt) {
         PLOGV << train_object.name << " skipped.";
         continue;
       }
@@ -378,8 +379,8 @@ cda_rail::simulator::GreedySimulator::simulate(
           })) {
         PLOGV << "Vertex headway constraint prevents movement.";
         reason_found = true;
-      } else if (std::ranges::any_of(tr_stop_until, [t](int stop_time) {
-                   return stop_time > t;
+      } else if (std::ranges::any_of(tr_stop_until, [t, dt](int stop_time) {
+                   return stop_time + dt > t;
                  })) {
         PLOGV << "Train stop constraint prevents movement.";
         reason_found = true;
