@@ -3725,7 +3725,7 @@ TEST(GreedySimulation, TimeExtractions) {
 
   // sopping for 30 seconds -> t = 138
 
-  // accelerating at rate 1 for 18 seconds -> t = 138 + 6 = 144
+  // accelerating at rate 1 for 18 seconds -> t = 138 + 18 = 156
   // position = 684 + 18*9 = 684 + 162 = 846
 
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
@@ -3917,14 +3917,14 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res5.vertex_headways.at(v3), 0);
   EXPECT_EQ(sim_res5.vertex_headways.at(v4), 0);
 
-  // accelerating at rate 1 for 18 seconds -> t = 138 + 6 = 144
+  // accelerating at rate 1 for 18 seconds -> t = 138 + 18 = 156
   // position = 684 + 18*9 = 684 + 162 = 846
 
   simulator.append_train_edge_to_tr(tr1, v3_v4);
   const auto sim_res6 = simulator.simulate(6, false, false, false, true);
   EXPECT_TRUE(sim_res6.success);
   ASSERT_EQ(sim_res6.exit_times.size(), 2);
-  EXPECT_EQ(sim_res6.exit_times.at(tr1), 144);
+  EXPECT_EQ(sim_res6.exit_times.at(tr1), 156);
   EXPECT_EQ(sim_res6.exit_times.at(tr2), 0);
   ASSERT_EQ(sim_res6.braking_times.size(), 2);
   EXPECT_EQ(sim_res6.braking_times.at(tr1), -1);
@@ -3942,7 +3942,7 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res6.vertex_headways.at(v1), 0);
   EXPECT_EQ(sim_res6.vertex_headways.at(v2), 0);
   EXPECT_EQ(sim_res6.vertex_headways.at(v3), 0);
-  EXPECT_EQ(sim_res6.vertex_headways.at(v4), 174);
+  EXPECT_EQ(sim_res6.vertex_headways.at(v4), 156 + 30);
 
   // tr2 follows with 102s difference
 
@@ -3951,7 +3951,7 @@ TEST(GreedySimulation, TimeExtractions) {
   const auto sim_res7 = simulator.simulate(6, false, false, false, true);
   EXPECT_TRUE(sim_res7.success);
   ASSERT_EQ(sim_res7.exit_times.size(), 2);
-  EXPECT_EQ(sim_res7.exit_times.at(tr1), 144);
+  EXPECT_EQ(sim_res7.exit_times.at(tr1), 156);
   ASSERT_EQ(sim_res7.braking_times.size(), 2);
   EXPECT_EQ(sim_res7.braking_times.at(tr1), -1);
   ASSERT_EQ(sim_res7.braking_distances.size(), 2);
@@ -3971,7 +3971,7 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res7.vertex_headways.at(v1), 0);
   EXPECT_EQ(sim_res7.vertex_headways.at(v2), 0);
   EXPECT_EQ(sim_res7.vertex_headways.at(v3), 0);
-  EXPECT_EQ(sim_res7.vertex_headways.at(v4), 174);
+  EXPECT_EQ(sim_res7.vertex_headways.at(v4), 156 + 30);
 
   simulator.append_train_edge_to_tr(tr2, v1_v2);
   simulator.append_current_stop_position_of_tr(tr2);
@@ -3981,7 +3981,7 @@ TEST(GreedySimulation, TimeExtractions) {
   const auto sim_res8 = simulator.simulate(6, false, false, false, true);
   EXPECT_TRUE(sim_res8.success);
   ASSERT_EQ(sim_res8.exit_times.size(), 2);
-  EXPECT_EQ(sim_res8.exit_times.at(tr1), 144);
+  EXPECT_EQ(sim_res8.exit_times.at(tr1), 156);
   ASSERT_EQ(sim_res8.braking_times.size(), 2);
   EXPECT_EQ(sim_res8.braking_times.at(tr1), -1);
   ASSERT_EQ(sim_res8.braking_distances.size(), 2);
@@ -3991,7 +3991,7 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res8.stop_times.at(tr1).at(0), 30);
   EXPECT_EQ(sim_res8.stop_times.at(tr1).at(1), 108);
 
-  EXPECT_EQ(sim_res8.exit_times.at(tr2), 144 + 102);
+  EXPECT_EQ(sim_res8.exit_times.at(tr2), 156 + 102);
   EXPECT_EQ(sim_res8.braking_times.at(tr2), -1);
   EXPECT_EQ(sim_res8.braking_distances.at(tr2), -1);
   ASSERT_EQ(sim_res8.stop_times.at(tr2).size(), 2);
@@ -4003,7 +4003,7 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res8.vertex_headways.at(v1), 0);
   EXPECT_EQ(sim_res8.vertex_headways.at(v2), 0);
   EXPECT_EQ(sim_res8.vertex_headways.at(v3), 0);
-  EXPECT_EQ(sim_res8.vertex_headways.at(v4), 174 + 102);
+  EXPECT_EQ(sim_res8.vertex_headways.at(v4), 156 + 30 + 102);
 }
 
 // NOLINTEND
