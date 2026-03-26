@@ -163,20 +163,21 @@ cda_rail::simulator::GreedySimulator::simulate(
       }
       assert(h % dt == 0);
 
-      const auto [tr_ma, tr_v1] =
+      // const auto [tr_ma, tr_v1] =
+      const auto tr_ma_data =
           get_ma_and_maxv(tr, train_velocities, tr_next_stop_id.at(tr), h, dt,
                           train_positions, trains_in_network, trains_left,
                           trains_on_edges, limit_speed_by_leaving_edges);
       PLOGV << train_object.name << " positioned at "
             << train_positions.at(tr).second
-            << " has MA: " << train_positions.at(tr).second + tr_ma
-            << " and max velocity: " << tr_v1;
+            << " has MA: " << train_positions.at(tr).second + tr_ma_data.ma
+            << " (without route end this would be: "
+            << train_positions.at(tr).second + tr_ma_data.ma_without_route_end
+            << ")"
+            << " and max velocity: " << tr_ma_data.max_v;
       const auto tr_edge_len = train_edge_length(tr);
       if ((braking_distances.at(tr) < 0) &&
-          (instance->const_n().get_edge(train_edges.at(tr).back()).target !=
-           tr_schedule.get_exit()) &&
-          (train_positions.at(tr).second + tr_ma + STOP_TOLERANCE >=
-           tr_edge_len)) {
+          (tr_ma_data.ma < tr_ma_data.ma_without_route_end)) {
         PLOGV << train_object.name
               << " starts braking due to end of route constraint.";
         braking_times.at(tr)     = t - dt;
@@ -184,15 +185,16 @@ cda_rail::simulator::GreedySimulator::simulate(
       }
       PLOGV << "h = " << h;
       auto tr_new_speed =
-          std::min(tr_v1, get_v1_from_ma(train_velocities.at(tr), tr_ma,
-                                         train_object.deceleration, dt));
+          std::min(tr_ma_data.max_v,
+                   get_v1_from_ma(train_velocities.at(tr), tr_ma_data.ma,
+                                  train_object.deceleration, dt));
       if (tr_new_speed < V_MIN) {
         tr_new_speed = 0.0; // Train is stopped
       }
 
       // Move trains
-      if (move_train(tr, train_velocities.at(tr), tr_new_speed, tr_ma, dt,
-                     train_positions)) {
+      if (move_train(tr, train_velocities.at(tr), tr_new_speed, tr_ma_data.ma,
+                     dt, train_positions)) {
         movement_detected = true;
       }
       train_velocities.at(tr) = tr_new_speed;
@@ -850,7 +852,7 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
                            // range
 }
 
-std::pair<double, double>
+cda_rail::simulator::GreedySimulator::MaAndMaxVResult
 cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     size_t tr, const cda_rail::Train& train, double pos, double v_0,
     double max_displacement, int dt, bool also_limit_by_leaving_edges) const {
@@ -889,28 +891,9 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
 
   double max_v = std::min(train.max_speed, v_0 + (train.acceleration * dt));
   double ma    = max_displacement;
+  double ma_without_route_end = max_displacement;
 
   const auto milestones = edge_milestones(tr);
-
-  // Check exit
-  const auto& last_edge_id = train_edges.at(tr).back();
-  const auto& last_edge    = instance->const_n().get_edge(last_edge_id);
-  const auto  tr_schedule  = instance->get_schedule(tr);
-  const bool  last_edge_leaves_network =
-      (last_edge.target == tr_schedule.get_exit());
-  const auto relevant_last_pos =
-      milestones.back() + (last_edge_leaves_network
-                               ? train.length
-                               : 0); // + train.length because train needs to
-                                     // fully leave the network
-  if (pos + max_displacement >= relevant_last_pos) {
-    const double last_edge_exit_restriction =
-        last_edge_leaves_network ? tr_schedule.get_v_n() : 0;
-    std::tie(ma, max_v) = speed_restriction_helper(
-        ma, max_v, pos, relevant_last_pos, v_0, last_edge_exit_restriction,
-        train.deceleration, dt);
-  }
-
   for (size_t i = 0; i < train_edges.at(tr).size() &&
                      milestones.at(i) + EPS < pos + max_displacement;
        ++i) {
@@ -934,7 +917,31 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
                                    edge.max_speed, train.deceleration, dt);
     }
   }
-  return {ma, max_v};
+
+  // Check exit
+  const auto& last_edge_id = train_edges.at(tr).back();
+  const auto& last_edge    = instance->const_n().get_edge(last_edge_id);
+  const auto  tr_schedule  = instance->get_schedule(tr);
+  const bool  last_edge_leaves_network =
+      (last_edge.target == tr_schedule.get_exit());
+  const auto relevant_last_pos =
+      milestones.back() + (last_edge_leaves_network
+                               ? train.length
+                               : 0); // + train.length because train needs to
+                                     // fully leave the network
+  ma_without_route_end = ma;
+  if (pos + max_displacement >= relevant_last_pos) {
+    const double last_edge_exit_restriction =
+        last_edge_leaves_network ? tr_schedule.get_v_n() : 0;
+    std::tie(ma, max_v) = speed_restriction_helper(
+        ma, max_v, pos, relevant_last_pos, v_0, last_edge_exit_restriction,
+        train.deceleration, dt);
+  }
+  if (last_edge_leaves_network) {
+    ma_without_route_end = ma;
+  }
+  return {
+      .ma = ma, .ma_without_route_end = ma_without_route_end, .max_v = max_v};
 }
 
 std::pair<double, double>
@@ -1135,7 +1142,8 @@ cda_rail::simulator::GreedySimulator::time_to_exit_objective(
               static_cast<double>(dt)};
 }
 
-std::pair<double, double> cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
+cda_rail::simulator::GreedySimulator::MaAndMaxVResult
+cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
     size_t tr, const std::vector<double>& train_velocities,
     std::optional<size_t> next_stop, int h, int dt,
     const std::vector<std::pair<double, double>>&  train_positions,
@@ -1154,14 +1162,18 @@ std::pair<double, double> cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
   double max_v = NAN;
   ma = get_absolute_distance_ma(tr, ma, train_positions, train_velocities,
                                 trains_in_network, trains_left, tr_on_edges);
-  std::tie(ma, max_v) = get_future_max_speed_constraints(
+  const auto tmp_ma_data = get_future_max_speed_constraints(
       tr, train, train_positions.at(tr).second, train_velocities.at(tr), ma, dt,
       also_limit_speed_by_leaving_edges);
-  max_v = std::min(max_v, get_max_speed_exit_headway(
-                              tr, train, train_positions.at(tr).second,
-                              train_velocities.at(tr), h, dt));
+  ma    = tmp_ma_data.ma;
+  max_v = std::min(tmp_ma_data.max_v,
+                   get_max_speed_exit_headway(tr, train,
+                                              train_positions.at(tr).second,
+                                              train_velocities.at(tr), h, dt));
 
-  return {ma, max_v};
+  return {.ma                   = ma,
+          .ma_without_route_end = tmp_ma_data.ma_without_route_end,
+          .max_v                = max_v};
 }
 
 double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
