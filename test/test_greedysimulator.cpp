@@ -3878,6 +3878,12 @@ TEST(GreedySimulation, TimeExtractions) {
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
 
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+  PLOGD << "STARTING SIMULATION 1";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+
   const auto sim_res = simulator.simulate(6, false, false, false, true);
   EXPECT_TRUE(sim_res.success);
   ASSERT_EQ(sim_res.exit_times.size(), 2);
@@ -3905,6 +3911,13 @@ TEST(GreedySimulation, TimeExtractions) {
   // then decelerating at rate 2 for 12 seconds -> t = 18+12 = 30
   // position = 432 + 24*24/4 = 432 + 144 = 576
 
+  PLOGD << "";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+  PLOGD << "STARTING SIMULATION 2";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+
   simulator.append_train_edge_to_tr(tr1, v1_v2);
   const auto sim_res2 = simulator.simulate(6, false, false, false, true);
   EXPECT_TRUE(sim_res2.success);
@@ -3928,6 +3941,13 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res2.vertex_headways.at(v4), 0);
 
   // stopping for 60 seconds -> t = 30 + 60 = 90
+
+  PLOGD << "";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+  PLOGD << "STARTING SIMULATION 3";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
 
   simulator.append_current_stop_position_of_tr(tr1);
   const auto sim_res3 = simulator.simulate(6, false, false, false, true);
@@ -3958,6 +3978,13 @@ TEST(GreedySimulation, TimeExtractions) {
   // then decelerating at rate 2 for 6 seconds -> t = 102 + 6 = 108
   // position = 648 + 12*3 = 648 + 36 = 684
 
+  PLOGD << "";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+  PLOGD << "STARTING SIMULATION 4";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+
   simulator.append_train_edge_to_tr(tr1, v2_v3);
   const auto sim_res4 = simulator.simulate(6, false, false, false, true);
   EXPECT_TRUE(sim_res4.success);
@@ -3982,6 +4009,13 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res4.vertex_headways.at(v4), 0);
 
   // sopping for 30 seconds -> t = 138
+
+  PLOGD << "";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+  PLOGD << "STARTING SIMULATION 5";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
 
   simulator.append_current_stop_position_of_tr(tr1);
   const auto sim_res5 = simulator.simulate(6, false, false, false, true);
@@ -4010,6 +4044,13 @@ TEST(GreedySimulation, TimeExtractions) {
   // accelerating at rate 1 for 18 seconds -> t = 138 + 18 = 156
   // position = 684 + 18*9 = 684 + 162 = 846
 
+  PLOGD << "";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+  PLOGD << "STARTING SIMULATION 6";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+
   simulator.append_train_edge_to_tr(tr1, v3_v4);
   const auto sim_res6 = simulator.simulate(6, false, false, false, true);
   EXPECT_TRUE(sim_res6.success);
@@ -4035,6 +4076,13 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res6.vertex_headways.at(v4), 156 + 30);
 
   // tr2 follows with 102s difference
+
+  PLOGD << "";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+  PLOGD << "STARTING SIMULATION 7";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
 
   simulator.set_train_edges_of_tr(tr2, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
@@ -4062,6 +4110,13 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res7.vertex_headways.at(v2), 0);
   EXPECT_EQ(sim_res7.vertex_headways.at(v3), 0);
   EXPECT_EQ(sim_res7.vertex_headways.at(v4), 156 + 30);
+
+  PLOGD << "";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
+  PLOGD << "STARTING SIMULATION 8";
+  PLOGD << "-------------------------------------------------------------------"
+           "------------";
 
   simulator.append_train_edge_to_tr(tr2, v1_v2);
   simulator.append_current_stop_position_of_tr(tr2);
