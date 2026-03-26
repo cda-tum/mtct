@@ -268,6 +268,9 @@ cda_rail::simulator::GreedySimulator::simulate(
         stop_times.at(tr).push_back(static_cast<double>(t));
         tr_next_stop_id.at(tr) = {};
         trains_finished_simulating.insert(tr);
+        // set braking_times to the route end. Only after stopping at the
+        // station, the underdefined route is the only cause for the train not
+        // to continue
         braking_times.at(tr)     = exit_times.at(tr);
         braking_distances.at(tr) = 0;
         PLOGV << "At time " << t << ", "
