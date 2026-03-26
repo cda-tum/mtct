@@ -79,6 +79,13 @@ private:
   FRIEND_TEST(::GreedySimulator, FutureSpeedRestrictionConstraintsAfterLeaving);
 #endif
 
+  struct MaAndMaxVResult {
+    double ma;
+    double ma_without_route_end;
+    double max_v;
+    double max_v_without_route_end;
+  };
+
   enum class TTDOccupationType : std::uint8_t {
     OnlyOccupied,
     OnlyBehind,
@@ -155,7 +162,7 @@ private:
       const std::unordered_set<size_t>&              trains_left,
       const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
 
-  [[nodiscard]] std::pair<double, double>
+  [[nodiscard]] MaAndMaxVResult
   get_future_max_speed_constraints(size_t tr, const Train& train, double pos,
                                    double v_0, double max_displacement, int dt,
                                    bool also_limit_by_leaving_edges) const;
@@ -182,7 +189,7 @@ private:
   time_to_exit_objective(double v_0, double v_1, double v_e, double s, double a,
                          double d, int dt);
 
-  [[nodiscard]] std::pair<double, double>
+  [[nodiscard]] MaAndMaxVResult
   get_ma_and_maxv(size_t tr, const std::vector<double>& train_velocities,
                   std::optional<size_t> next_stop, int h, int dt,
                   const std::vector<std::pair<double, double>>& train_positions,
