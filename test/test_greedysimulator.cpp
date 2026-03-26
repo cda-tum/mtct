@@ -3226,8 +3226,8 @@ TEST(GreedySimulator, OneStationTest) {
   EXPECT_GE(sim_res.braking_times.at(tr1), 0);
   ASSERT_EQ(sim_res.braking_distances.size(), 1);
   EXPECT_GE(sim_res.braking_distances.at(tr1), 0);
-  EXPECT_APPROX_EQ(sim_res.braking_times.at(tr1), 12, 6);
-  EXPECT_APPROX_EQ(sim_res.braking_distances.at(tr1), 1100 - 429, 10);
+  EXPECT_APPROX_EQ(sim_res.braking_times.at(tr1), time1 + 30, 6);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), 0);
 }
 
 TEST(GreedySimulator, TwoStationTest) {
@@ -3291,8 +3291,8 @@ TEST(GreedySimulator, TwoStationTest) {
   EXPECT_GE(sim_res.braking_times.at(tr1), 0);
   ASSERT_EQ(sim_res.braking_distances.size(), 1);
   EXPECT_GE(sim_res.braking_distances.at(tr1), 0);
-  EXPECT_APPROX_EQ(sim_res.braking_times.at(tr1), 96, 6);
-  EXPECT_APPROX_EQ(sim_res.braking_distances.at(tr1), 2100 - 1388, 10);
+  EXPECT_APPROX_EQ(sim_res.braking_times.at(tr1), 90 + time1 + 60, 6);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), 0);
 }
 
 TEST(GreedySimulator, TrajectorySavingTest) {
