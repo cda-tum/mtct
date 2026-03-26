@@ -83,6 +83,7 @@ private:
     double ma;
     double ma_without_route_end;
     double max_v;
+    double max_v_without_route_end;
   };
 
   enum class TTDOccupationType : std::uint8_t {
