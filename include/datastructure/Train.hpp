@@ -183,72 +183,120 @@ public:
 class TrainList {
   /**
    * TrainList class
+   *
+   * @invariant train_name_to_index contains an entry for each train in trains,
+   * mapping the train's name to its index in the vector.
+   * @invariant All train names in trains are unique (enforced by add_train
+   * methods).
    */
 private:
-  std::vector<Train>                      trains;
-  std::unordered_map<std::string, size_t> train_name_to_index;
+  std::vector<Train> trains{}; // list of trains
+  std::unordered_map<std::string, size_t>
+      train_name_to_index{}; // helper struct: for any train name store its
+                             // index in the vector above
 
 public:
-  // Constructors
+  /*
+   * CONSTRUCTORS
+   */
+
   TrainList() = default;
-
-  explicit TrainList(const std::filesystem::path& p);
-  explicit TrainList(const std::string& path)
+  explicit TrainList(std::filesystem::path const& p);
+  explicit TrainList(std::string const& path)
       : TrainList(std::filesystem::path(path)) {};
-  explicit TrainList(const char* path)
+  explicit TrainList(char const* const path)
       : TrainList(std::filesystem::path(path)) {};
 
-  // Rule of 5
-  TrainList(const TrainList& other)                = default;
-  TrainList(TrainList&& other) noexcept            = default;
-  TrainList& operator=(const TrainList& other)     = default;
-  TrainList& operator=(TrainList&& other) noexcept = default;
-  ~TrainList()                                     = default;
+  // Rule of 0 suffices
 
-  // Iterators (for range-based for loops) that do not allow modification of the
-  // underlying data
-  [[nodiscard]] auto begin() const { return trains.begin(); };
-  [[nodiscard]] auto end() const { return trains.end(); };
-  [[nodiscard]] auto rbegin() const { return trains.rbegin(); };
-  [[nodiscard]] auto rend() const { return trains.rend(); };
+  /*
+   * ITERATORS (for range-based for loops) that do not allow modification of the
+   * underlying data
+   */
+  [[nodiscard]] constexpr auto cbegin() const { return trains.cbegin(); };
+  [[nodiscard]] constexpr auto cend() const { return trains.cend(); };
+  [[nodiscard]] constexpr auto crbegin() const { return trains.crbegin(); };
+  [[nodiscard]] constexpr auto crend() const { return trains.crend(); };
 
-  size_t add_train(const std::string& name, int length, double max_speed,
-                   double acceleration, double deceleration, bool tim = true);
-  size_t add_train(const Train& train);
-  [[nodiscard]] size_t size() const { return trains.size(); };
+  [[nodiscard]] size_t size() const { return get_number_of_trains(); };
 
-  [[nodiscard]] size_t       get_train_index(const std::string& name) const;
-  [[nodiscard]] const Train& get_train(size_t index) const;
-  [[nodiscard]] const Train& get_train(const std::string& name) const {
+  /*
+   * GETTER
+   */
+
+  /**
+   * Returns the index of the train with the given name.
+   *
+   * @param name The name of the train.
+   *
+   * @return The index of the train with the given name.
+   */
+  [[nodiscard]] size_t get_train_index(const std::string& name) const;
+  /**
+   * Returns the train with the given index.
+   *
+   * @param index The index of the train.
+   *
+   * @return The train with the given index.
+   */
+  [[nodiscard]] Train const& get_train(size_t index) const;
+  [[nodiscard]] Train const& get_train(std::string const& name) const {
     return get_train(get_train_index(name));
   };
-
-  [[nodiscard]] Train& editable_tr(size_t index);
-  [[nodiscard]] Train& editable_tr(const std::string& name) {
-    return editable_tr(get_train_index(name));
-  };
+  [[nodiscard]] size_t get_number_of_trains() const { return trains.size(); };
 
   [[nodiscard]] bool has_train(const std::string& name) const {
-    return train_name_to_index.find(name) != train_name_to_index.end();
+    return train_name_to_index.contains(name);
   };
-  [[nodiscard]] bool has_train(size_t index) const {
-    return (index < trains.size());
+  [[nodiscard]] bool has_train(size_t const index) const {
+    return (index < get_number_of_trains());
   };
 
-  void export_trains(const std::string& path) const {
+  /*
+   * TRAIN SETTERS
+   */
+
+  size_t add_train(std::string const& name, double const length,
+                   double const max_speed, double const acceleration,
+                   double const deceleration, bool const tim = true) {
+    return add_train(
+        {name, length, max_speed, acceleration, deceleration, tim});
+  };
+  /**
+   * Add a train to the list of trains.
+   *
+   * @param train The train to be added.
+   *
+   * @return The index of the train in the list of trains.
+   */
+  size_t add_train(Train train);
+
+  // No removal method for now (academic code): Is assumed that trains are only
+  // added and no "mistakes" are made.
+
+  /*
+   * EXPORT/IMPORT
+   */
+
+  void export_trains(std::string const& path) const {
     export_trains(std::filesystem::path(path));
   };
-  void export_trains(const char* path) const {
+  void export_trains(char const* const path) const {
     export_trains(std::filesystem::path(path));
   };
-  void export_trains(const std::filesystem::path& p) const;
-  [[nodiscard]] static TrainList import_trains(const std::string& path) {
+  /**
+   * This method exports all trains to a directory in trains.json.
+   *
+   * @param p The path to the directory to export to.
+   */
+  void export_trains(std::filesystem::path const& p) const;
+  [[nodiscard]] static TrainList import_trains(std::string const& path) {
     return TrainList(path);
   };
-  [[nodiscard]] static TrainList import_trains(const char* path) {
+  [[nodiscard]] static TrainList import_trains(char const* const path) {
     return TrainList(path);
   };
-  [[nodiscard]] static TrainList import_trains(const std::filesystem::path& p) {
+  [[nodiscard]] static TrainList import_trains(std::filesystem::path const& p) {
     return TrainList(p);
   };
 };
