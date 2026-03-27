@@ -315,7 +315,7 @@ void cda_rail::Network::add_successor(size_t edge_in, size_t edge_out) {
     return;
   }
 
-  successors[edge_in].emplace_back(edge_out);
+  successors[edge_in].insert(edge_out);
 }
 
 const cda_rail::Vertex& cda_rail::Network::get_vertex(size_t index) const {
@@ -546,7 +546,7 @@ void cda_rail::Network::set_edge_unbreakable(size_t index) {
   edges[index].breakable = false;
 }
 
-cda_rail::index_vector cda_rail::Network::out_edges(size_t index) const {
+cda_rail::index_set cda_rail::Network::out_edges(size_t index) const {
   /**
    * Gets all edges leaving a given vertex
    *
@@ -557,16 +557,16 @@ cda_rail::index_vector cda_rail::Network::out_edges(size_t index) const {
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  cda_rail::index_vector out_edges;
+  cda_rail::index_set out_edges;
   for (size_t i = 0; i < edges.size(); ++i) {
     if (edges[i].source == index) {
-      out_edges.emplace_back(i);
+      out_edges.insert(i);
     }
   }
   return out_edges;
 }
 
-cda_rail::index_vector cda_rail::Network::in_edges(size_t index) const {
+cda_rail::index_set cda_rail::Network::in_edges(size_t const index) const {
   /**
    * Gets all edges entering a given vertex
    *
@@ -577,16 +577,16 @@ cda_rail::index_vector cda_rail::Network::in_edges(size_t index) const {
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  cda_rail::index_vector in_edges;
+  cda_rail::index_set in_edges;
   for (size_t i = 0; i < edges.size(); ++i) {
     if (edges[i].target == index) {
-      in_edges.emplace_back(i);
+      in_edges.insert(i);
     }
   }
   return in_edges;
 }
 
-const cda_rail::index_vector&
+const cda_rail::index_set&
 cda_rail::Network::get_successors(size_t index) const {
   /**
    * Gets all successors of a given edge
@@ -601,7 +601,7 @@ cda_rail::Network::get_successors(size_t index) const {
   return successors[index];
 }
 
-cda_rail::index_vector cda_rail::Network::get_predecessors(size_t index) const {
+cda_rail::index_set cda_rail::Network::get_predecessors(size_t index) const {
   /**
    * Gets all predecessors of a given edge
    *
@@ -612,11 +612,11 @@ cda_rail::index_vector cda_rail::Network::get_predecessors(size_t index) const {
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  cda_rail::index_vector ret_val;
+  cda_rail::index_set ret_val;
 
   for (const auto& e_1 : in_edges(get_edge(index).source)) {
     if (is_valid_successor(e_1, index)) {
-      ret_val.push_back(e_1);
+      ret_val.insert(e_1);
     }
   }
 
@@ -995,9 +995,8 @@ cda_rail::Network::separate_edge_at(
   // - For the last new edge add the same successors as edge_index had (this has
   // already been done implicitly)
   for (const auto& incoming_edge_index : in_edges(edge.source)) {
-    std::replace(successors[incoming_edge_index].begin(),
-                 successors[incoming_edge_index].end(), edge_index,
-                 new_edges.front());
+    successors[incoming_edge_index].erase(edge_index);
+    successors[incoming_edge_index].insert(new_edges.front());
   }
   for (size_t i = 0; i < new_edges.size() - 1; ++i) {
     add_successor(new_edges[i], new_edges[i + 1]);
@@ -1038,9 +1037,8 @@ cda_rail::Network::separate_edge_at(
     new_reverse_edges.emplace_back(reverse_edge_index);
 
     for (const auto& incoming_edge_index : in_edges(edge.target)) {
-      std::replace(successors[incoming_edge_index].begin(),
-                   successors[incoming_edge_index].end(), reverse_edge_index,
-                   new_reverse_edges.front());
+      successors[incoming_edge_index].erase(reverse_edge_index);
+      successors[incoming_edge_index].insert(new_reverse_edges.front());
     }
     for (size_t i = 0; i < new_reverse_edges.size() - 1; ++i) {
       add_successor(new_reverse_edges[i], new_reverse_edges[i + 1]);
@@ -1715,8 +1713,8 @@ std::vector<cda_rail::index_vector>
 cda_rail::Network::all_routes_of_given_length(
     std::optional<size_t> v_0, std::optional<size_t> e_0, double desired_length,
     bool reverse_direction, std::optional<size_t> exit_node,
-    cda_rail::index_vector edges_used_by_train,
-    bool                   return_successors_if_zero) const {
+    cda_rail::index_set edges_used_by_train,
+    bool                return_successors_if_zero) const {
   /**
    * Finds all routes from a specified starting point in the specified
    * direction. The routes are of a specified length, i.e., at least that long,
@@ -1763,20 +1761,19 @@ cda_rail::Network::all_routes_of_given_length(
   }
 
   // NOLINTBEGIN(readability-avoid-nested-conditional-operator)
-  const cda_rail::index_vector edges_to_consider_tmp =
+  const cda_rail::index_set edges_to_consider_tmp =
       v_0.has_value()
           ? (reverse_direction ? in_edges(v_0.value()) : out_edges(v_0.value()))
-          : cda_rail::index_vector{e_0.value()};
+          : cda_rail::index_set{e_0.value()};
   // NOLINTEND(readability-avoid-nested-conditional-operator)
 
-  auto edges_to_consider = edges_used_by_train.empty()
-                               ? edges_to_consider_tmp
-                               : cda_rail::index_vector();
+  auto edges_to_consider = edges_used_by_train.empty() ? edges_to_consider_tmp
+                                                       : cda_rail::index_set();
 
   if (!edges_used_by_train.empty()) {
     for (const auto& e : edges_to_consider_tmp) {
-      if (std::ranges::contains(edges_used_by_train, e)) {
-        edges_to_consider.emplace_back(e);
+      if (edges_used_by_train.contains(e)) {
+        edges_to_consider.insert(e);
       }
     }
   }
@@ -1837,13 +1834,13 @@ cda_rail::index_vector cda_rail::Network::vertices_used_by_edges(
 }
 
 double cda_rail::Network::maximal_vertex_speed(
-    size_t v, const cda_rail::index_vector& edges_to_consider) const {
+    size_t v, const cda_rail::index_set& edges_to_consider) const {
   const auto& n_edges_tmp = neighboring_edges(v);
   auto        n_edges =
-      edges_to_consider.empty() ? n_edges_tmp : cda_rail::index_vector();
+      edges_to_consider.empty() ? n_edges_tmp : cda_rail::index_set();
   for (const auto& e : n_edges_tmp) {
     if (std::ranges::contains(edges_to_consider, e)) {
-      n_edges.emplace_back(e);
+      n_edges.insert(e);
     }
   }
 
@@ -1852,7 +1849,7 @@ double cda_rail::Network::maximal_vertex_speed(
   }
 
   if (neighbors(v).size() == 1) {
-    return get_edge(n_edges.front()).max_speed;
+    return get_edge(*n_edges.cbegin()).max_speed;
   }
 
   double                max_speed = 0;
@@ -1874,22 +1871,22 @@ double cda_rail::Network::maximal_vertex_speed(
   return second_max_speed;
 }
 
-cda_rail::index_vector
-cda_rail::Network::neighboring_edges(size_t index) const {
+cda_rail::index_set
+cda_rail::Network::neighboring_edges(size_t const index) const {
   auto       ret_val      = in_edges(index);
   const auto edges_to_add = out_edges(index);
-  ret_val.insert(ret_val.end(), edges_to_add.begin(), edges_to_add.end());
+  ret_val.insert(edges_to_add.begin(), edges_to_add.end());
   return ret_val;
 }
 
 double cda_rail::Network::minimal_neighboring_edge_length(
-    size_t v, const cda_rail::index_vector& edges_to_consider) const {
+    size_t v, const cda_rail::index_set& edges_to_consider) const {
   const auto n_edges_tmp = neighboring_edges(v);
   auto       n_edges =
-      edges_to_consider.empty() ? n_edges_tmp : cda_rail::index_vector();
+      edges_to_consider.empty() ? n_edges_tmp : cda_rail::index_set();
   for (const auto& e : n_edges_tmp) {
     if (std::ranges::contains(edges_to_consider, e)) {
-      n_edges.emplace_back(e);
+      n_edges.insert(e);
     }
   }
 
@@ -2169,16 +2166,16 @@ cda_rail::Network::shortest_path_between_sets_using_edges(
       return {dist, path};
     }
 
-    const auto&            possible_successors = only_use_valid_successors
-                                                     ? get_successors(edge_id)
-                                                     : out_edges(edge.target);
-    cda_rail::index_vector cleaned_successors;
+    const auto&         possible_successors = only_use_valid_successors
+                                                  ? get_successors(edge_id)
+                                                  : out_edges(edge.target);
+    cda_rail::index_set cleaned_successors;
     if (edges_to_use.empty()) {
       cleaned_successors = possible_successors;
     } else {
       for (const auto& successor : possible_successors) {
         if (std::ranges::contains(edges_to_use, successor)) {
-          cleaned_successors.emplace_back(successor);
+          cleaned_successors.insert(successor);
         }
       }
     }

@@ -17,14 +17,27 @@ struct Station {
    * @param name Name of the station
    * @param tracks Unordered set of edges that define the station.
    */
-  std::string name;
-  // NOLINTNEXTLINE(readability-redundant-member-init)
-  cda_rail::index_vector tracks = {};
+  std::string         name{};
+  cda_rail::index_set tracks{};
 
+  /**
+   * This method returns the tracks of the station on which a train of length
+   * tr_len can stop at the target vertex.
+   * * @param tr_len The length of the train.
+   * * @param network The network to which the station belongs.
+   * * @param edges_to_consider The edges to consider. Default: {}, then all
+   * edges
+   *
+   * @return A vector of pairs:
+   * - The first element of the pair is the index of a possible stop edge
+   * - The second element lists all possible stop paths ending in that edge
+   * Note: The train has to use one of the stop paths if it stops at the (end of
+   * the) edge
+   */
   [[nodiscard]] std::vector<
       std::pair<size_t, std::vector<cda_rail::index_vector>>>
-  get_stop_tracks(double tr_len, const Network& network,
-                  const cda_rail::index_vector& edges_to_consider = {}) const;
+  get_stop_tracks(double tr_len, Network const& network,
+                  cda_rail::index_vector const& edges_to_consider = {}) const;
 };
 
 class StationList {

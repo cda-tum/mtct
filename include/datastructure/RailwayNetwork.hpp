@@ -69,7 +69,7 @@ class Network {
 private:
   std::vector<Vertex>                     vertices;
   std::vector<Edge>                       edges;
-  std::vector<cda_rail::index_vector>     successors;
+  std::vector<cda_rail::index_set>        successors;
   std::unordered_map<std::string, size_t> vertex_name_to_index;
 
   std::unordered_map<std::size_t, std::pair<size_t, double>>
@@ -128,9 +128,9 @@ private:
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_routes_of_given_length(std::optional<size_t> v_0,
                              std::optional<size_t> e_0, double desired_length,
-                             bool                   reverse_direction,
-                             std::optional<size_t>  exit_node           = {},
-                             cda_rail::index_vector edges_used_by_train = {},
+                             bool                  reverse_direction,
+                             std::optional<size_t> exit_node           = {},
+                             cda_rail::index_set   edges_used_by_train = {},
                              bool return_successors_if_zero = false) const;
 
   [[nodiscard]] size_t other_vertex(size_t e, size_t v) const {
@@ -167,18 +167,19 @@ public:
   };
   [[nodiscard]] const std::vector<Edge>& get_edges() const { return edges; };
 
+  [[nodiscard]] double
+  maximal_vertex_speed(size_t                     v,
+                       const cda_rail::index_set& edges_to_consider = {}) const;
   [[nodiscard]] double maximal_vertex_speed(
-      size_t v, const cda_rail::index_vector& edges_to_consider = {}) const;
-  [[nodiscard]] double maximal_vertex_speed(
-      const std::string&            v_name,
-      const cda_rail::index_vector& edges_to_consider = {}) const {
+      const std::string&         v_name,
+      const cda_rail::index_set& edges_to_consider = {}) const {
     return maximal_vertex_speed(get_vertex_index(v_name), edges_to_consider);
   };
   [[nodiscard]] double minimal_neighboring_edge_length(
-      size_t v, const cda_rail::index_vector& edges_to_consider = {}) const;
+      size_t v, const cda_rail::index_set& edges_to_consider = {}) const;
   [[nodiscard]] double minimal_neighboring_edge_length(
-      const std::string&            v_name,
-      const cda_rail::index_vector& edges_to_consider = {}) const {
+      const std::string&         v_name,
+      const cda_rail::index_set& edges_to_consider = {}) const {
     return minimal_neighboring_edge_length(get_vertex_index(v_name),
                                            edges_to_consider);
   };
@@ -299,8 +300,8 @@ public:
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_of_length_starting_in_vertex(
       size_t v, double desired_len, std::optional<size_t> exit_node = {},
-      cda_rail::index_vector edges_to_consider         = {},
-      bool                   return_successors_if_zero = false) const {
+      cda_rail::index_set edges_to_consider         = {},
+      bool                return_successors_if_zero = false) const {
     return all_routes_of_given_length(v, std::nullopt, desired_len, false,
                                       exit_node, std::move(edges_to_consider),
                                       return_successors_if_zero);
@@ -308,23 +309,25 @@ public:
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_of_length_starting_in_edge(
       size_t e, double desired_len, std::optional<size_t> exit_node = {},
-      cda_rail::index_vector edges_to_consider = {}) const {
+      cda_rail::index_set edges_to_consider = {}) const {
     return all_routes_of_given_length(std::nullopt, e, desired_len, false,
                                       exit_node, std::move(edges_to_consider));
   };
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_of_length_ending_in_vertex(
       size_t v, double desired_len, std::optional<size_t> exit_node = {},
-      cda_rail::index_vector edges_to_consider = {}) const {
+      cda_rail::index_set edges_to_consider = {}) const {
     return all_routes_of_given_length(v, std::nullopt, desired_len, true,
                                       exit_node, std::move(edges_to_consider));
   };
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_of_length_ending_in_edge(
-      size_t e, double desired_len, std::optional<size_t> exit_node = {},
-      cda_rail::index_vector edges_to_consider = {}) const {
+      size_t const e, double const desired_len,
+      std::optional<size_t> exit_node         = {},
+      cda_rail::index_set   edges_to_consider = {}) const {
     return all_routes_of_given_length(std::nullopt, e, desired_len, true,
-                                      exit_node, std::move(edges_to_consider));
+                                      std::move(exit_node),
+                                      std::move(edges_to_consider));
   }
   [[nodiscard]] std::vector<cda_rail::index_vector> all_paths_ending_at_ttd(
       size_t e_0, const std::vector<cda_rail::index_vector>& ttd_sections,
@@ -411,17 +414,16 @@ public:
     set_edge_unbreakable(get_edge_index(source_name, target_name));
   };
 
-  [[nodiscard]] cda_rail::index_vector out_edges(size_t index) const;
-  [[nodiscard]] cda_rail::index_vector
-  out_edges(const std::string& name) const {
+  [[nodiscard]] cda_rail::index_set out_edges(size_t index) const;
+  [[nodiscard]] cda_rail::index_set out_edges(const std::string& name) const {
     return out_edges(get_vertex_index(name));
   };
-  [[nodiscard]] cda_rail::index_vector in_edges(size_t index) const;
-  [[nodiscard]] cda_rail::index_vector in_edges(const std::string& name) const {
+  [[nodiscard]] cda_rail::index_set in_edges(size_t index) const;
+  [[nodiscard]] cda_rail::index_set in_edges(const std::string& name) const {
     return in_edges(get_vertex_index(name));
   };
-  [[nodiscard]] cda_rail::index_vector neighboring_edges(size_t index) const;
-  [[nodiscard]] cda_rail::index_vector
+  [[nodiscard]] cda_rail::index_set neighboring_edges(size_t index) const;
+  [[nodiscard]] cda_rail::index_set
   neighboring_edges(const std::string& name) const {
     return neighboring_edges(get_vertex_index(name));
   };
@@ -430,14 +432,13 @@ public:
   get_intersecting_ttd(const cda_rail::index_vector&              edges,
                        const std::vector<cda_rail::index_vector>& ttd);
 
-  [[nodiscard]] cda_rail::index_vector get_predecessors(size_t index) const;
-  [[nodiscard]] const cda_rail::index_vector&
-  get_successors(size_t index) const;
-  [[nodiscard]] const cda_rail::index_vector&
+  [[nodiscard]] cda_rail::index_set        get_predecessors(size_t index) const;
+  [[nodiscard]] const cda_rail::index_set& get_successors(size_t index) const;
+  [[nodiscard]] const cda_rail::index_set&
   get_successors(size_t source_id, size_t target_id) const {
     return get_successors(get_edge_index(source_id, target_id));
   };
-  [[nodiscard]] const cda_rail::index_vector&
+  [[nodiscard]] const cda_rail::index_set&
   get_successors(const std::string& source_name,
                  const std::string& target_name) const {
     return get_successors(get_edge_index(source_name, target_name));

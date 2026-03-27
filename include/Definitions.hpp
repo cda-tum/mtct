@@ -12,12 +12,14 @@
 #include <stdexcept>
 #include <string>
 #include <system_error>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 namespace cda_rail {
 
 using index_vector = std::vector<size_t>;
+using index_set    = std::unordered_set<size_t>;
 
 // Constants
 constexpr double INF     = std::numeric_limits<double>::max() / 3;
