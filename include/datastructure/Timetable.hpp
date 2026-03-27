@@ -203,33 +203,19 @@ public:
    * @pre initialVelocity >= 0.
    * @pre exitVelocity >= 0.
    * @pre stops are ordered by service time and cover pairwise distinct stations
-   * @param entryTime Earliest allowed entry time.
-   * @param initialVelocity Initial velocity at entry.
-   * @param entryVertex Entry vertex id.
-   * @param exitTime Desired exit time.
-   * @param exitVelocity Desired velocity at exit.
-   * @param exitVertex Exit vertex id.
+   * @param entry_time Earliest allowed entry time.
+   * @param initial_velocity Initial velocity at entry.
+   * @param entry_vertex Entry vertex id.
+   * @param exit_time Desired exit time.
+   * @param exit_velocity Desired velocity at exit.
+   * @param exit_vertex Exit vertex id.
    * @param stops Ordered scheduled stops for this train.
    * @throws cda_rail::exceptions::InvalidInputException If any of the
    * preconditions is violated.
    */
-  Schedule(double const entryTime, double const initialVelocity,
-           size_t const entryVertex, double const exitTime,
-           double const exitVelocity, size_t const exitVertex,
-           std::vector<ScheduledStop> stops = {})
-      : m_entry_time(entryTime), m_exit_time(exitTime),
-        m_initial_velocity(initialVelocity), m_exit_velocity(exitVelocity),
-        m_entry_vertex(entryVertex), m_exit_vertex(exitVertex),
-        m_stops(std::move(stops)) {
-    cda_rail::exceptions::throw_if_negative(m_entry_time, "Entry time");
-    cda_rail::exceptions::throw_if_negative(
-        m_exit_time - m_entry_time,
-        "(to ensure exit_time >= entry_time) exit_time - entry_time");
-    cda_rail::exceptions::throw_if_negative(m_initial_velocity,
-                                            "Initial velocity");
-    cda_rail::exceptions::throw_if_negative(m_exit_velocity, "Exit velocity");
-    check_stops_validity(m_stops);
-  }
+  Schedule(double entry_time, double initial_velocity, size_t entry_vertex,
+           double exit_time, double exit_velocity, size_t exit_vertex,
+           std::vector<ScheduledStop> stops = {});
 
   // Rule of 0: defaults suffice
 

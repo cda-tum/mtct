@@ -13,6 +13,26 @@ using std::size_t;
  * SCHEDULE
  */
 
+cda_rail::Schedule::Schedule(double const entry_time,
+                             double const initial_velocity,
+                             size_t const entry_vertex, double const exit_time,
+                             double const               exit_velocity,
+                             size_t const               exit_vertex,
+                             std::vector<ScheduledStop> stops)
+    : m_entry_time(entry_time), m_exit_time(exit_time),
+      m_initial_velocity(initial_velocity), m_exit_velocity(exit_velocity),
+      m_entry_vertex(entry_vertex), m_exit_vertex(exit_vertex),
+      m_stops(std::move(stops)) {
+  cda_rail::exceptions::throw_if_negative(m_entry_time, "Entry time");
+  cda_rail::exceptions::throw_if_negative(
+      m_exit_time - m_entry_time,
+      "(to ensure exit_time >= entry_time) exit_time - entry_time");
+  cda_rail::exceptions::throw_if_negative(m_initial_velocity,
+                                          "Initial velocity");
+  cda_rail::exceptions::throw_if_negative(m_exit_velocity, "Exit velocity");
+  check_stops_validity(m_stops);
+}
+
 void cda_rail::Schedule::check_stops_validity(
     std::vector<ScheduledStop> const& stops) {
   // 1. Ordered by service time
