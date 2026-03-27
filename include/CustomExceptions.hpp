@@ -160,26 +160,46 @@ private:
   std::string error_message;
 };
 
-static void throw_if_negative(double val, const std::string& name) {
-  if (val < 0) {
-    throw InvalidInputException(name + " must be non-negative, but is " +
-                                std::to_string(val) + ".");
+static void throw_if_less(double const value, double const threshold,
+                          std::string const& name, bool inclusive) {
+  if (inclusive) {
+    if (value <= threshold) {
+      throw InvalidInputException(name + " must be strictly larger than " +
+                                  std::to_string(threshold) + ", but is " +
+                                  std::to_string(value) + ".");
+    }
+  } else {
+    if (value < threshold) {
+      throw InvalidInputException(name + " must be at least " +
+                                  std::to_string(threshold) + ", but is " +
+                                  std::to_string(value) + ".");
+    }
   }
 };
 
-static void throw_if_non_positive(double val, double tol,
+static void throw_if_less_than(double const value, double const threshold,
+                               std::string const& name) {
+  throw_if_less(value, threshold, name, false);
+};
+static void throw_if_less_than_or_equal(double const       value,
+                                        double const       threshold,
+                                        std::string const& name) {
+  throw_if_less(value, threshold, name, true);
+};
+
+static void throw_if_negative(double const value, std::string const& name) {
+  throw_if_less_than(value, 0, name);
+};
+
+static void throw_if_non_positive(double const value, double tolerance,
                                   const std::string& name) {
-  if (val <= tol) {
-    throw InvalidInputException(name + " must be positive, but is " +
-                                std::to_string(val) + ".");
-  }
+  throw_if_less_than_or_equal(value, tolerance, name);
 };
-
-static void throw_if_non_positive(int val, const std::string& name) {
-  if (val <= 0) {
-    throw InvalidInputException(name + " must be positive, but is " +
-                                std::to_string(val) + ".");
-  }
+static void throw_if_non_positive(double const value, const std::string& name) {
+  throw_if_non_positive(value, 0.0, name);
+};
+static void throw_if_non_positive(int const value, const std::string& name) {
+  throw_if_non_positive(static_cast<double>(value), 0.0, name);
 };
 
 } // namespace cda_rail::exceptions

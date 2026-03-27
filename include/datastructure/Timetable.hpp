@@ -302,9 +302,8 @@ public:
    * smaller than the current entry time.
    */
   void set_exit_time(double const newExitTime) {
-    cda_rail::exceptions::throw_if_negative(
-        newExitTime - m_entry_time,
-        "(to ensure exit_time >= entry_time) newExitTime - entry_time");
+    cda_rail::exceptions::throw_if_less_than(newExitTime, m_entry_time,
+                                             "Exit time");
     m_exit_time = newExitTime;
   }
 

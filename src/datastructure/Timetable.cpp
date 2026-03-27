@@ -24,9 +24,8 @@ cda_rail::Schedule::Schedule(double const entry_time,
       m_entry_vertex(entry_vertex), m_exit_vertex(exit_vertex),
       m_stops(std::move(stops)) {
   cda_rail::exceptions::throw_if_negative(m_entry_time, "Entry time");
-  cda_rail::exceptions::throw_if_negative(
-      m_exit_time - m_entry_time,
-      "(to ensure exit_time >= entry_time) exit_time - entry_time");
+  cda_rail::exceptions::throw_if_less_than(m_exit_time, m_entry_time,
+                                           "Exit time");
   cda_rail::exceptions::throw_if_negative(m_initial_velocity,
                                           "Initial velocity");
   cda_rail::exceptions::throw_if_negative(m_exit_velocity, "Exit velocity");
