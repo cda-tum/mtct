@@ -181,6 +181,16 @@ private:
 
   std::vector<ScheduledStop> m_stops{}; // list of stops, may be empty
 
+  /**
+   * @brief Validates a stop list for schedule consistency.
+   *
+   * Checks that stops are sorted in non-decreasing order by service time and
+   * that station names are pairwise distinct.
+   *
+   * @param stops Stop list to validate.
+   * @throws cda_rail::exceptions::InvalidInputException If stops are not
+   * ordered by service time or if a station appears more than once.
+   */
   static void check_stops_validity(std::vector<ScheduledStop> const& stops);
 
 public:
@@ -387,11 +397,43 @@ public:
     set_exit_vertex(newExitVertex);
   }
 
+  /**
+   * @brief Replaces the complete stop list.
+   *
+   * @pre `new_stops` is sorted by service time.
+   * @pre `new_stops` contains each station at most once.
+   * @param new_stops New stop list for this schedule.
+   * @throws cda_rail::exceptions::InvalidInputException If `new_stops`
+   * violates stop-list consistency rules.
+   */
   void set_stops(std::vector<ScheduledStop> new_stops) {
     check_stops_validity(new_stops);
     m_stops = std::move(new_stops);
   }
+
+  /**
+   * @brief Inserts one stop while preserving stop-list invariants.
+   *
+   * Inserts the stop such that the list remains ordered by service time.
+   * If other stops have the same service time, the new stop is inserted after
+   * them.
+   *
+   * @pre The station of `new_stop` does not already exist in this schedule.
+   * @param new_stop Stop to insert.
+   * @throws cda_rail::exceptions::InvalidInputException If the station already
+   * appears in the current stop list.
+   */
   void insert_stop(ScheduledStop new_stop);
+
+  /**
+   * @brief Removes a stop by station name.
+   *
+   * @param station_name Name of the station whose stop should be removed.
+   * @param throw_exception_if_not_existent If `true`, throw when no stop with
+   * `station_name` exists; if `false`, perform no action in that case.
+   * @throws cda_rail::exceptions::InvalidInputException If no matching stop
+   * exists and `throw_exception_if_not_existent` is `true`.
+   */
   void remove_stop(std::string const& station_name,
                    bool               throw_exception_if_not_existent = true);
 };
