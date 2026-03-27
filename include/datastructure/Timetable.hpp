@@ -44,21 +44,6 @@ private:
     }
   }
 
-  /**
-   * @brief Validates that a time value is non-negative.
-   *
-   * @param value Time value to validate.
-   * @param name Name of the parameter (for error message).
-   * @throws cda_rail::exceptions::InvalidInputException If `value` is
-   * negative.
-   */
-  static void check_non_negative_time(double value, const std::string& name) {
-    if (value < 0) {
-      throw cda_rail::exceptions::InvalidInputException(name +
-                                                        " cannot be negative");
-    }
-  }
-
 public:
   /*
    * CONSTRUCTOR
@@ -81,8 +66,9 @@ public:
                 std::shared_ptr<Station const> station)
       : m_service_time(serviceTime), m_service_duration(serviceDuration),
         m_station(std::move(station)) {
-    check_non_negative_time(m_service_time, "Service time");
-    check_non_negative_time(m_service_duration, "Service duration");
+    cda_rail::exceptions::throw_if_negative(m_service_time, "Service time");
+    cda_rail::exceptions::throw_if_negative(m_service_duration,
+                                            "Service duration");
     check_ptr_validity(m_station);
   }
 
@@ -137,7 +123,7 @@ public:
    * is negative.
    */
   void set_service_time(double new_service_time) {
-    check_non_negative_time(new_service_time, "Service time");
+    cda_rail::exceptions::throw_if_negative(new_service_time, "Service time");
     m_service_time = new_service_time;
   }
 
@@ -150,7 +136,8 @@ public:
    * `new_service_duration` is negative.
    */
   void set_service_duration(double new_service_duration) {
-    check_non_negative_time(new_service_duration, "Service duration");
+    cda_rail::exceptions::throw_if_negative(new_service_duration,
+                                            "Service duration");
     m_service_duration = new_service_duration;
   }
 
@@ -168,76 +155,101 @@ public:
   }
 };
 
-class Schedule : public GeneralSchedule<ScheduledStop> {
+class Schedule {
   /**
    * Specific Schedule object
    */
 
+private:
+  double m_entry_time; // (earliest) entry time: >= 0
+  double m_exit_time;  // (desired) exit time: >= entry_time
+
+  double m_initial_velocity; // initial velocity: >= 0
+  double m_exit_velocity;    // (desired) exit velocity: >= 0
+
+  size_t m_entry_vertex; // id of entry vertex
+  size_t m_exit_vertex;  // id of exit vertex
+
+  std::vector<ScheduledStop> m_stops{}; // list of stops, may be empty
+
 public:
-  [[nodiscard]] int get_t_0() const { return get_t_0_range().first; }
-  [[nodiscard]] int get_t_n() const { return get_t_n_range().first; }
-
-  void set_t_0(int t_0) { set_t_0_range({t_0, t_0}); }
-  void set_t_n(int t_n) { set_t_n_range({t_n, t_n}); }
-
-  [[nodiscard]] GeneralSchedule<GeneralScheduledStop>
-  parse_to_general_schedule() const {
-    const auto&                       stops = this->get_stops();
-    std::vector<GeneralScheduledStop> general_stops;
-    general_stops.reserve(stops.size());
-    for (const auto& stop : stops) {
-      general_stops.push_back(stop);
-    }
-    return {get_t_0_range(), get_v_0(),  get_entry(),  get_t_n_range(),
-            get_v_n(),       get_exit(), general_stops};
-  }
-
-  template <typename S, typename = std::enable_if_t<
-                            std::is_base_of_v<GeneralScheduledStop, S>>>
-  [[nodiscard]] static Schedule
-  cast_from_general_schedule(const GeneralSchedule<S>& general_schedule_obj,
-                             bool                      throw_error = true) {
-    const std::pair<int, int>& t_0_range = general_schedule_obj.get_t_0_range();
-    const std::pair<int, int>& t_n_range = general_schedule_obj.get_t_n_range();
-    if (throw_error && t_0_range.first != t_0_range.second) {
-      throw std::invalid_argument("Schedule must have fixed initial time");
-    }
-    if (throw_error && t_n_range.first != t_n_range.second) {
-      throw std::invalid_argument("Schedule must have fixed final time");
-    }
-
-    const std::vector<S>&      stops = general_schedule_obj.get_stops();
-    std::vector<ScheduledStop> scheduled_stops;
-    scheduled_stops.reserve(stops.size());
-    for (const auto& stop : stops) {
-      const std::pair<int, int>& b_range = stop.get_begin_range();
-      const std::pair<int, int>& e_range = stop.get_end_range();
-      const std::string&         s_name  = stop.get_station_name();
-      if (throw_error && b_range.first != b_range.second) {
-        throw std::invalid_argument("Scheduled stop must have fixed arrival");
-      }
-      if (throw_error && e_range.first != e_range.second) {
-        throw std::invalid_argument("Scheduled stop must have fixed departure");
-      }
-      scheduled_stops.emplace_back(b_range.first, e_range.first, s_name);
-    }
-
-    return {t_0_range.first,
-            general_schedule_obj.get_v_0(),
-            general_schedule_obj.get_entry(),
-            t_n_range.first,
-            general_schedule_obj.get_v_n(),
-            general_schedule_obj.get_exit(),
-            scheduled_stops};
-  }
-
-  // Constructor
-  // NOLINTNEXTLINE(readability-redundant-member-init)
-  Schedule() : GeneralSchedule() {}
-  Schedule(int t_0, double v_0, size_t entry, int t_n, double v_n, size_t exit,
+  // user-defined-constructor
+  Schedule(double const entryTime, double const initialVelocity,
+           size_t const entryVertex, double const exitTime,
+           double const exitVelocity, size_t const exitVertex,
            std::vector<ScheduledStop> stops = {})
-      : GeneralSchedule({t_0, t_0}, v_0, entry, {t_n, t_n}, v_n, exit,
-                        std::move(stops)) {}
+      : m_entry_time(entryTime), m_exit_time(exitTime),
+        m_initial_velocity(initialVelocity), m_exit_velocity(exitVelocity),
+        m_entry_vertex(entryVertex), m_exit_vertex(exitVertex),
+        m_stops(std::move(stops)) {
+    cda_rail::exceptions::throw_if_negative(m_entry_time, "Entry time");
+    cda_rail::exceptions::throw_if_negative(
+        m_exit_time - m_entry_time,
+        "(to ensure exit_time >= entry_time) exit_time - entry_time");
+    cda_rail::exceptions::throw_if_negative(m_initial_velocity,
+                                            "Initial velocity");
+    cda_rail::exceptions::throw_if_negative(m_exit_velocity, "Exit velocity");
+  }
+
+  // Rule of 0: defaults suffice
+
+  /*
+   * GETTER
+   */
+
+  [[nodiscard]] double get_entry_time() const { return m_entry_time; }
+  [[nodiscard]] double get_exit_time() const { return m_exit_time; }
+  [[nodiscard]] double get_initial_velocity() const {
+    return m_initial_velocity;
+  }
+  [[nodiscard]] double get_exit_velocity() const { return m_exit_velocity; }
+  [[nodiscard]] size_t get_entry_vertex() const { return m_entry_vertex; }
+  [[nodiscard]] size_t get_exit_vertex() const { return m_exit_vertex; }
+  [[nodiscard]] std::vector<ScheduledStop> const& get_stops() const {
+    return m_stops;
+  }
+
+  /*
+   * SETTER
+   */
+
+  void set_entry_time(double const newEntryTime) {
+    cda_rail::exceptions::throw_if_negative(newEntryTime, "Entry time");
+    m_entry_time = newEntryTime;
+  }
+  void set_exit_time(double const newExitTime) {
+    cda_rail::exceptions::throw_if_negative(
+        newExitTime - m_entry_time,
+        "(to ensure exit_time >= entry_time) newExitTime - entry_time");
+    m_exit_time = newExitTime;
+  }
+  void set_initial_velocity(double const newInitialVelocity) {
+    cda_rail::exceptions::throw_if_negative(newInitialVelocity,
+                                            "Initial velocity");
+    m_initial_velocity = newInitialVelocity;
+  }
+  void set_exit_velocity(double const newExitVelocity) {
+    cda_rail::exceptions::throw_if_negative(newExitVelocity, "Exit velocity");
+    m_exit_velocity = newExitVelocity;
+  }
+  void set_entry_vertex(size_t const newEntryVertex) {
+    m_entry_vertex = newEntryVertex;
+  }
+  void set_entry_vertex(size_t const newEntryVertex, Network const& network) {
+    if (!network.has_vertex(newEntryVertex)) {
+      throw exceptions::VertexNotExistentException(newEntryVertex);
+    }
+    set_entry_vertex(newEntryVertex);
+  }
+  void set_exit_vertex(size_t const newExitVertex) {
+    m_exit_vertex = newExitVertex;
+  }
+  void set_exit_vertex(size_t const newExitVertex, Network const& network) {
+    if (!network.has_vertex(newExitVertex)) {
+      throw exceptions::VertexNotExistentException(newExitVertex);
+    }
+    set_exit_vertex(newExitVertex);
+  }
 };
 
 class Timetable : public GeneralTimetable<Schedule> {
