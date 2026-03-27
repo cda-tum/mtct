@@ -12,6 +12,23 @@
 
 using json = nlohmann::json;
 
+/*
+ * TRAIN
+ */
+cda_rail::Train::Train(std::string name, double const length,
+                       double const max_speed, double const acceleration,
+                       double const deceleration, bool const tim)
+    : m_name(std::move(name)), m_length(length), m_max_speed(max_speed),
+      m_acceleration(acceleration), m_deceleration(deceleration), m_tim(tim) {
+  cda_rail::exceptions::throw_if_negative(m_length, "Train length");
+  cda_rail::exceptions::throw_if_less_than(m_max_speed, MIN_NON_ZERO,
+                                           "Train max speed");
+  cda_rail::exceptions::throw_if_less_than(m_acceleration, MIN_NON_ZERO,
+                                           "Train acceleration");
+  cda_rail::exceptions::throw_if_less_than(m_deceleration, MIN_NON_ZERO,
+                                           "Train deceleration");
+}
+
 size_t cda_rail::TrainList::add_train(const std::string& name, int length,
                                       double max_speed, double acceleration,
                                       double deceleration, bool tim) {

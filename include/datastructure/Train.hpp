@@ -1,4 +1,7 @@
 #pragma once
+#include "CustomExceptions.hpp"
+#include "Definitions.hpp"
+
 #include <cstddef>
 #include <filesystem>
 #include <string>
@@ -7,7 +10,7 @@
 #include <vector>
 
 namespace cda_rail {
-struct Train {
+class Train {
   /**
    * Train struct with relevant properties
    * @param name Name of the train
@@ -16,19 +19,57 @@ struct Train {
    * @param acceleration Acceleration of the train (in m/s^2)
    * @param deceleration Deceleration of the train (in m/s^2)
    */
+private:
+  std::string m_name;         // name of train
+  double      m_length;       // length of train in m: >= 0
+  double      m_max_speed;    // maximal speed of train in m/s: >= MIN_NON_ZERO
+  double      m_acceleration; // maximal acceleration in m/s^2: >= MIN_NON_ZERO
+  double      m_deceleration; // maximal deceleration in m/s^2: >= MIN_NON_ZERO
+  bool m_tim{true}; // indicates if train has a train integrity monitoring:
+                    // default true
 
-  std::string name;
-  double      length;
-  double      max_speed;
-  double      acceleration;
-  double      deceleration;
-  bool        tim = true; // train integrity monitoring
+public:
+  // Constructor
+  Train(std::string name, double length, double max_speed, double acceleration,
+        double deceleration, bool tim = true);
+  // Rule of 0 suffices
 
-  // Constructors
-  Train(std::string name, int length, double max_speed, double acceleration,
-        double deceleration, bool tim = true)
-      : name(std::move(name)), length(length), max_speed(max_speed),
-        acceleration(acceleration), deceleration(deceleration), tim(tim) {};
+  /*
+   * GETTER
+   */
+  [[nodiscard]] std::string get_name() const { return m_name; };
+  [[nodiscard]] double      get_length() const { return m_length; };
+  [[nodiscard]] double      get_max_speed() const { return m_max_speed; };
+  [[nodiscard]] double      get_acceleration() const { return m_acceleration; };
+  [[nodiscard]] double      get_deceleration() const { return m_deceleration; };
+  [[nodiscard]] bool        has_tim() const { return m_tim; };
+
+  /*
+   * SETTER
+   */
+  void set_name(std::string name) { m_name = std::move(name); };
+  void set_length(double const length) {
+    cda_rail::exceptions::throw_if_negative(length, "Train length");
+    m_length = length;
+  };
+  void set_max_speed(double const max_speed) {
+    cda_rail::exceptions::throw_if_less_than(max_speed, MIN_NON_ZERO,
+                                             "Train max speed");
+    m_max_speed = max_speed;
+  };
+  void set_acceleration(double const acceleration) {
+    cda_rail::exceptions::throw_if_less_than(acceleration, MIN_NON_ZERO,
+                                             "Train acceleration");
+    m_acceleration = acceleration;
+  }
+  void set_deceleration(double const deceleration) {
+    cda_rail::exceptions::throw_if_less_than(deceleration, MIN_NON_ZERO,
+                                             "Train deceleration");
+    m_deceleration = deceleration;
+  };
+  void set_tim_value(bool const tim) { m_tim = tim; };
+  void set_tim() { set_tim_value(true); };
+  void set_no_tim() { set_tim_value(false); };
 };
 
 class TrainList {
