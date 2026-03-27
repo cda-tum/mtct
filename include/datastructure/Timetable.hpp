@@ -15,9 +15,14 @@
 namespace cda_rail {
 class ScheduledStop {
   /**
-   * Scheduling information for a stop within a timetable.
-   * This includes information on the service time and service duration as well
-   * as a concrete station.
+   * @brief Scheduling information for a stop within a timetable.
+   *
+   * Stores the earliest service start time, the minimum service duration,
+   * and the associated station.
+   *
+   * @invariant m_service_time >= 0 (non-negative).
+   * @invariant m_service_duration >= 0 (non-negative).
+   * @invariant m_station is always non-null after construction.
    */
 
 private:
@@ -26,10 +31,31 @@ private:
   double                         m_service_duration; // minimal service duration
   std::shared_ptr<Station const> m_station;          // pointer to a station
 
+  /**
+   * @brief Validates that a station pointer is not null.
+   *
+   * @param ptr Pointer to validate.
+   * @throws cda_rail::exceptions::InvalidInputException If `ptr` is null.
+   */
   static void check_ptr_validity(std::shared_ptr<Station const> const& ptr) {
     if (!ptr) {
       throw cda_rail::exceptions::InvalidInputException(
           "Station pointer cannot be null");
+    }
+  }
+
+  /**
+   * @brief Validates that a time value is non-negative.
+   *
+   * @param value Time value to validate.
+   * @param name Name of the parameter (for error message).
+   * @throws cda_rail::exceptions::InvalidInputException If `value` is
+   * negative.
+   */
+  static void check_non_negative_time(double value, const std::string& name) {
+    if (value < 0) {
+      throw cda_rail::exceptions::InvalidInputException(name +
+                                                        " cannot be negative");
     }
   }
 
@@ -39,10 +65,24 @@ public:
    */
 
   // user-defined constructor
+  /**
+   * @brief Constructs a scheduled stop for a concrete station.
+   *
+   * @pre serviceTime >= 0 (non-negative).
+   * @pre serviceDuration >= 0 (non-negative).
+   * @pre station must not be null.
+   * @param serviceTime Earliest service start time.
+   * @param serviceDuration Minimum required service duration.
+   * @param station Station at which the stop is scheduled.
+   * @throws cda_rail::exceptions::InvalidInputException If preconditions are
+   * violated.
+   */
   ScheduledStop(double const serviceTime, double const serviceDuration,
                 std::shared_ptr<Station const> station)
       : m_service_time(serviceTime), m_service_duration(serviceDuration),
         m_station(std::move(station)) {
+    check_non_negative_time(m_service_time, "Service time");
+    check_non_negative_time(m_service_duration, "Service duration");
     check_ptr_validity(m_station);
   }
 
@@ -52,24 +92,76 @@ public:
   /*
    * GETTER
    */
+  /**
+   * @brief Returns the earliest service start time.
+   *
+   * @return Earliest service start time (guaranteed >= 0).
+   */
   [[nodiscard]] double get_service_time() const { return m_service_time; }
+
+  /**
+   * @brief Returns the earliest possible departure time from this stop.
+   *
+   * @return Earliest departure time, computed as service time plus service
+   * duration (guaranteed >= 0).
+   */
   [[nodiscard]] double get_earliest_departure() const {
     return m_service_time + m_service_duration;
   }
+
+  /**
+   * @brief Returns the minimum required service duration.
+   *
+   * @return Minimum service duration (guaranteed >= 0).
+   */
   [[nodiscard]] double get_service_duration() const {
     return m_service_duration;
   }
+
+  /**
+   * @brief Returns the station referenced by this stop.
+   *
+   * @return Constant reference to the associated station (guaranteed non-null).
+   */
   [[nodiscard]] Station const& get_station() const { return *m_station; }
 
   /*
    * SETTER
    */
+  /**
+   * @brief Sets the earliest service start time.
+   *
+   * @pre new_service_time >= 0 (non-negative).
+   * @param new_service_time New earliest service start time.
+   * @throws cda_rail::exceptions::InvalidInputException If `new_service_time`
+   * is negative.
+   */
   void set_service_time(double new_service_time) {
+    check_non_negative_time(new_service_time, "Service time");
     m_service_time = new_service_time;
   }
+
+  /**
+   * @brief Sets the minimum service duration.
+   *
+   * @pre new_service_duration >= 0 (non-negative).
+   * @param new_service_duration New minimum service duration.
+   * @throws cda_rail::exceptions::InvalidInputException If
+   * `new_service_duration` is negative.
+   */
   void set_service_duration(double new_service_duration) {
+    check_non_negative_time(new_service_duration, "Service duration");
     m_service_duration = new_service_duration;
   }
+
+  /**
+   * @brief Sets the station for this scheduled stop.
+   *
+   * @pre new_station must not be null.
+   * @param new_station New station pointer.
+   * @throws cda_rail::exceptions::InvalidInputException If `new_station` is
+   * null.
+   */
   void set_station(std::shared_ptr<Station const> new_station) {
     check_ptr_validity(new_station);
     m_station = std::move(new_station);
