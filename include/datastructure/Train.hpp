@@ -182,12 +182,15 @@ public:
 
 class TrainList {
   /**
-   * TrainList class
+   * @brief Container for trains with name-based indexing.
    *
-   * @invariant train_name_to_index contains an entry for each train in trains,
-   * mapping the train's name to its index in the vector.
-   * @invariant All train names in trains are unique (enforced by add_train
-   * methods).
+   * Maintains a sequence of trains and a lookup map from train name to index.
+   *
+   * @invariant `train_name_to_index` contains exactly one entry per train in
+   * `trains`.
+   * @invariant For every train name `n`, `train_name_to_index.at(n)` is the
+   * index of that train in `trains`.
+   * @invariant All train names in `trains` are unique.
    */
 private:
   std::vector<Train> trains{}; // list of trains
@@ -200,10 +203,37 @@ public:
    * CONSTRUCTORS
    */
 
+  /**
+   * @brief Constructs an empty train list.
+   */
   TrainList() = default;
+
+  /**
+   * @brief Constructs a train list by importing `trains.json` from a directory.
+   *
+   * @param p Path to the directory containing `trains.json`.
+   * @throws cda_rail::exceptions::ImportException If `p` is not an existing
+   * directory.
+   * @throws cda_rail::exceptions::ConsistencyException If imported train names
+   * are duplicated.
+   * @throws cda_rail::exceptions::InvalidInputException If imported train
+   * attributes violate train constraints.
+   */
   explicit TrainList(std::filesystem::path const& p);
+
+  /**
+   * @brief Constructs a train list by importing from a path string.
+   *
+   * @param path Path to the directory containing `trains.json`.
+   */
   explicit TrainList(std::string const& path)
       : TrainList(std::filesystem::path(path)) {};
+
+  /**
+   * @brief Constructs a train list by importing from a C-string path.
+   *
+   * @param path Path to the directory containing `trains.json`.
+   */
   explicit TrainList(char const* const path)
       : TrainList(std::filesystem::path(path)) {};
 
@@ -213,11 +243,40 @@ public:
    * ITERATORS (for range-based for loops) that do not allow modification of the
    * underlying data
    */
+
+  /**
+   * @brief Returns a const iterator to the first train.
+   *
+   * @return Const iterator to the first element.
+   */
   [[nodiscard]] constexpr auto cbegin() const { return trains.cbegin(); };
+
+  /**
+   * @brief Returns a const iterator to one-past-the-last train.
+   *
+   * @return Const iterator to the end sentinel.
+   */
   [[nodiscard]] constexpr auto cend() const { return trains.cend(); };
+
+  /**
+   * @brief Returns a const reverse iterator to the last train.
+   *
+   * @return Const reverse iterator to the first reverse element.
+   */
   [[nodiscard]] constexpr auto crbegin() const { return trains.crbegin(); };
+
+  /**
+   * @brief Returns a const reverse iterator to one-before-the-first train.
+   *
+   * @return Const reverse iterator to the reverse end sentinel.
+   */
   [[nodiscard]] constexpr auto crend() const { return trains.crend(); };
 
+  /**
+   * @brief Returns the number of trains.
+   *
+   * @return Number of trains in the list.
+   */
   [[nodiscard]] size_t size() const { return get_number_of_trains(); };
 
   /*
@@ -225,29 +284,60 @@ public:
    */
 
   /**
-   * Returns the index of the train with the given name.
+   * @brief Returns the index of a train by name.
    *
-   * @param name The name of the train.
-   *
-   * @return The index of the train with the given name.
+   * @param name Train name.
+   * @return Index of the train in the internal vector.
+   * @throws cda_rail::exceptions::TrainNotExistentException If no train with
+   * `name` exists.
    */
   [[nodiscard]] size_t get_train_index(const std::string& name) const;
+
   /**
-   * Returns the train with the given index.
+   * @brief Returns a train by index.
    *
-   * @param index The index of the train.
-   *
-   * @return The train with the given index.
+   * @param index Index of the train.
+   * @return Constant reference to the requested train.
+   * @throws cda_rail::exceptions::TrainNotExistentException If `index` is out
+   * of range.
    */
   [[nodiscard]] Train const& get_train(size_t index) const;
+
+  /**
+   * @brief Returns a train by name.
+   *
+   * @param name Train name.
+   * @return Constant reference to the requested train.
+   * @throws cda_rail::exceptions::TrainNotExistentException If no train with
+   * `name` exists.
+   */
   [[nodiscard]] Train const& get_train(std::string const& name) const {
     return get_train(get_train_index(name));
   };
+
+  /**
+   * @brief Returns the number of trains.
+   *
+   * @return Number of trains in the list.
+   */
   [[nodiscard]] size_t get_number_of_trains() const { return trains.size(); };
 
+  /**
+   * @brief Checks whether a train with the given name exists.
+   *
+   * @param name Train name.
+   * @return `true` if a train with `name` exists, otherwise `false`.
+   */
   [[nodiscard]] bool has_train(const std::string& name) const {
     return train_name_to_index.contains(name);
   };
+
+  /**
+   * @brief Checks whether a train index is valid.
+   *
+   * @param index Train index.
+   * @return `true` if `index` refers to an existing train, otherwise `false`.
+   */
   [[nodiscard]] bool has_train(size_t const index) const {
     return (index < get_number_of_trains());
   };
@@ -256,18 +346,35 @@ public:
    * TRAIN SETTERS
    */
 
+  /**
+   * @brief Creates and adds a train from its attributes.
+   *
+   * @param name Train name.
+   * @param length Train length in meters.
+   * @param max_speed Maximum speed in m/s.
+   * @param acceleration Maximum acceleration in m/s^2.
+   * @param deceleration Maximum deceleration in m/s^2.
+   * @param tim Train integrity monitoring flag.
+   * @return Index of the added train.
+   * @throws cda_rail::exceptions::ConsistencyException If a train with `name`
+   * already exists.
+   * @throws cda_rail::exceptions::InvalidInputException If train attributes are
+   * invalid.
+   */
   size_t add_train(std::string const& name, double const length,
                    double const max_speed, double const acceleration,
                    double const deceleration, bool const tim = true) {
     return add_train(
         {name, length, max_speed, acceleration, deceleration, tim});
   };
+
   /**
-   * Add a train to the list of trains.
+   * @brief Adds a train to the list.
    *
-   * @param train The train to be added.
-   *
-   * @return The index of the train in the list of trains.
+   * @param train Train to add.
+   * @return Index of the added train.
+   * @throws cda_rail::exceptions::ConsistencyException If a train with the
+   * same name already exists.
    */
   size_t add_train(Train train);
 
@@ -278,24 +385,62 @@ public:
    * EXPORT/IMPORT
    */
 
+  /**
+   * @brief Exports all trains to `trains.json` in the target directory.
+   *
+   * @param path Path to the export directory.
+   */
   void export_trains(std::string const& path) const {
     export_trains(std::filesystem::path(path));
   };
+
+  /**
+   * @brief Exports all trains to `trains.json` in the target directory.
+   *
+   * @param path Path to the export directory.
+   */
   void export_trains(char const* const path) const {
     export_trains(std::filesystem::path(path));
   };
+
   /**
-   * This method exports all trains to a directory in trains.json.
+   * @brief Exports all trains to `trains.json` in the target directory.
    *
-   * @param p The path to the directory to export to.
+   * Creates the directory if needed and writes one JSON object keyed by train
+   * name.
+   *
+   * @param p Path to the export directory.
+   * @throws cda_rail::exceptions::ExportException If the directory cannot be
+   * created.
    */
   void export_trains(std::filesystem::path const& p) const;
+
+  /**
+   * @brief Imports a train list from a path string.
+   *
+   * @param path Path to the directory containing `trains.json`.
+   * @return Imported train list.
+   */
   [[nodiscard]] static TrainList import_trains(std::string const& path) {
     return TrainList(path);
   };
+
+  /**
+   * @brief Imports a train list from a C-string path.
+   *
+   * @param path Path to the directory containing `trains.json`.
+   * @return Imported train list.
+   */
   [[nodiscard]] static TrainList import_trains(char const* const path) {
     return TrainList(path);
   };
+
+  /**
+   * @brief Imports a train list from a filesystem path.
+   *
+   * @param p Path to the directory containing `trains.json`.
+   * @return Imported train list.
+   */
   [[nodiscard]] static TrainList import_trains(std::filesystem::path const& p) {
     return TrainList(p);
   };
