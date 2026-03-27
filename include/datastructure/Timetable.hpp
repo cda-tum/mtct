@@ -1,11 +1,11 @@
 #pragma once
-#include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Station.hpp"
 #include "datastructure/Train.hpp"
 
 #include <cstddef>
 #include <filesystem>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -13,28 +13,67 @@
 #include <vector>
 
 namespace cda_rail {
-class ScheduledStop : public GeneralScheduledStop {
+class ScheduledStop {
   /**
-   * A scheduled stop with fixed times
+   * Scheduling information for a stop within a timetable.
+   * This includes information on the service time and service duration as well
+   * as a concrete station.
    */
 
+private:
+  // member variables have no default -> user-defined constructors
+  double                         m_service_time; // earliest start of service
+  double                         m_service_duration; // minimal service duration
+  std::shared_ptr<Station const> m_station;          // pointer to a station
+
+  static void check_ptr_validity(std::shared_ptr<Station const> const& ptr) {
+    if (!ptr) {
+      throw cda_rail::exceptions::InvalidInputException(
+          "Station pointer cannot be null");
+    }
+  }
+
 public:
-  [[nodiscard]] static int time_type() {
-    // return the type of the desired time type
-    return int();
+  /*
+   * CONSTRUCTOR
+   */
+
+  // user-defined constructor
+  ScheduledStop(double const serviceTime, double const serviceDuration,
+                std::shared_ptr<Station const> station)
+      : m_service_time(serviceTime), m_service_duration(serviceDuration),
+        m_station(std::move(station)) {
+    check_ptr_validity(m_station);
   }
 
-  [[nodiscard]] int arrival() const {
-    return GeneralScheduledStop::get_begin_range().first;
-  }
-  [[nodiscard]] int departure() const {
-    return GeneralScheduledStop::get_end_range().first;
-  }
+  // Rule of 0 (default constructor overwriting does not affect copy/move
+  // constructors and destructor)
 
-  // Constructor
-  ScheduledStop(int begin, int end, std::string station)
-      : GeneralScheduledStop({begin, begin}, {end, end}, end - begin,
-                             std::move(station)) {}
+  /*
+   * GETTER
+   */
+  [[nodiscard]] double get_service_time() const { return m_service_time; }
+  [[nodiscard]] double get_earliest_departure() const {
+    return m_service_time + m_service_duration;
+  }
+  [[nodiscard]] double get_service_duration() const {
+    return m_service_duration;
+  }
+  [[nodiscard]] Station const& get_station() const { return *m_station; }
+
+  /*
+   * SETTER
+   */
+  void set_service_time(double new_service_time) {
+    m_service_time = new_service_time;
+  }
+  void set_service_duration(double new_service_duration) {
+    m_service_duration = new_service_duration;
+  }
+  void set_station(std::shared_ptr<Station const> new_station) {
+    check_ptr_validity(new_station);
+    m_station = std::move(new_station);
+  }
 };
 
 class Schedule : public GeneralSchedule<ScheduledStop> {
