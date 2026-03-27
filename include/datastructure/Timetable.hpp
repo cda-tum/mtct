@@ -166,6 +166,7 @@ class Schedule {
    * @invariant m_exit_time >= m_entry_time.
    * @invariant m_initial_velocity >= 0.
    * @invariant m_exit_velocity >= 0.
+   * @invariant m_stops is ordered by service time
    */
 
 private:
@@ -180,6 +181,8 @@ private:
 
   std::vector<ScheduledStop> m_stops{}; // list of stops, may be empty
 
+  static void check_stops_validity(std::vector<ScheduledStop> const& stops);
+
 public:
   // user-defined-constructor
   /**
@@ -189,6 +192,7 @@ public:
    * @pre exitTime >= entryTime.
    * @pre initialVelocity >= 0.
    * @pre exitVelocity >= 0.
+   * @pre stops are ordered by service time and cover pairwise distinct stations
    * @param entryTime Earliest allowed entry time.
    * @param initialVelocity Initial velocity at entry.
    * @param entryVertex Entry vertex id.
@@ -196,8 +200,8 @@ public:
    * @param exitVelocity Desired velocity at exit.
    * @param exitVertex Exit vertex id.
    * @param stops Ordered scheduled stops for this train.
-   * @throws cda_rail::exceptions::InvalidInputException If a numeric
-   * precondition is violated.
+   * @throws cda_rail::exceptions::InvalidInputException If any of the
+   * preconditions is violated.
    */
   Schedule(double const entryTime, double const initialVelocity,
            size_t const entryVertex, double const exitTime,
@@ -214,6 +218,7 @@ public:
     cda_rail::exceptions::throw_if_negative(m_initial_velocity,
                                             "Initial velocity");
     cda_rail::exceptions::throw_if_negative(m_exit_velocity, "Exit velocity");
+    check_stops_validity(m_stops);
   }
 
   // Rule of 0: defaults suffice
@@ -381,6 +386,14 @@ public:
     }
     set_exit_vertex(newExitVertex);
   }
+
+  void set_stops(std::vector<ScheduledStop> new_stops) {
+    check_stops_validity(new_stops);
+    m_stops = std::move(new_stops);
+  }
+  void insert_stop(ScheduledStop new_stop);
+  void remove_stop(std::string const& station_name,
+                   bool               throw_exception_if_not_existent = true);
 };
 
 class Timetable : public GeneralTimetable<Schedule> {

@@ -4,9 +4,67 @@
 
 #include <cstddef>
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 using std::size_t;
+
+/*
+ * SCHEDULE
+ */
+
+void cda_rail::Schedule::check_stops_validity(
+    std::vector<ScheduledStop> const& stops) {
+  // 1. Ordered by service time
+  if (!std::ranges::is_sorted(stops, {}, &ScheduledStop::get_service_time)) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "Scheduled stops must be ordered by service time");
+  }
+
+  // 2. All station names are unique
+  std::unordered_set<std::string> station_names;
+  for (auto const& stop : stops) {
+    auto const& stop_name = stop.get_station().name;
+    station_names.contains(stop_name)
+        ? throw cda_rail::exceptions::InvalidInputException(
+              stop_name + " appears multiple times in the scheduled stops.")
+        : station_names.insert(stop_name);
+  }
+}
+
+void cda_rail::Schedule::insert_stop(ScheduledStop new_stop) {
+  auto const& stop_name = new_stop.get_station().name;
+  auto const& stop_time = new_stop.get_service_time();
+  if (std::ranges::contains(m_stops, stop_name, [](auto const& stop) {
+        return stop.get_station().name;
+      })) {
+    throw cda_rail::exceptions::InvalidInputException(
+        stop_name + " already appears in the scheduled stops.");
+  }
+
+  // Insert in stops while maintaining order by service time
+  // If multiple stops with the same service time exist, append
+  auto const insert_pos = std::ranges::upper_bound(
+      m_stops, stop_time, {}, &ScheduledStop::get_service_time);
+  m_stops.insert(insert_pos, std::move(new_stop));
+}
+
+void cda_rail::Schedule::remove_stop(
+    std::string const& station_name,
+    bool const         throw_exception_if_not_existent) {
+  auto const stop_it =
+      std::ranges::find(m_stops, station_name, [](auto const& stop) {
+        return stop.get_station().name;
+      });
+  if (stop_it == m_stops.end()) {
+    if (throw_exception_if_not_existent) {
+      throw cda_rail::exceptions::InvalidInputException(
+          station_name + " does not appear in the scheduled stops.");
+    }
+    return; // No stop to remove, but no exception thrown
+  }
+  m_stops.erase(stop_it);
+}
 
 std::pair<size_t, size_t>
 cda_rail::Timetable::time_index_interval(size_t train_index, int dt,
