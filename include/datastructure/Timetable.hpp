@@ -157,7 +157,15 @@ public:
 
 class Schedule {
   /**
-   * Specific Schedule object
+   * @brief Specific schedule object with fixed entry/exit constraints.
+   *
+   * Stores timing, velocity, path endpoints, and an ordered list of scheduled
+   * stops for one train.
+   *
+   * @invariant m_entry_time >= 0.
+   * @invariant m_exit_time >= m_entry_time.
+   * @invariant m_initial_velocity >= 0.
+   * @invariant m_exit_velocity >= 0.
    */
 
 private:
@@ -174,6 +182,23 @@ private:
 
 public:
   // user-defined-constructor
+  /**
+   * @brief Constructs a schedule with fixed entry/exit constraints.
+   *
+   * @pre entryTime >= 0.
+   * @pre exitTime >= entryTime.
+   * @pre initialVelocity >= 0.
+   * @pre exitVelocity >= 0.
+   * @param entryTime Earliest allowed entry time.
+   * @param initialVelocity Initial velocity at entry.
+   * @param entryVertex Entry vertex id.
+   * @param exitTime Desired exit time.
+   * @param exitVelocity Desired velocity at exit.
+   * @param exitVertex Exit vertex id.
+   * @param stops Ordered scheduled stops for this train.
+   * @throws cda_rail::exceptions::InvalidInputException If a numeric
+   * precondition is violated.
+   */
   Schedule(double const entryTime, double const initialVelocity,
            size_t const entryVertex, double const exitTime,
            double const exitVelocity, size_t const exitVertex,
@@ -197,14 +222,55 @@ public:
    * GETTER
    */
 
+  /**
+   * @brief Returns the entry time.
+   *
+   * @return Entry time.
+   */
   [[nodiscard]] double get_entry_time() const { return m_entry_time; }
+
+  /**
+   * @brief Returns the exit time.
+   *
+   * @return Exit time.
+   */
   [[nodiscard]] double get_exit_time() const { return m_exit_time; }
+
+  /**
+   * @brief Returns the initial velocity.
+   *
+   * @return Initial velocity.
+   */
   [[nodiscard]] double get_initial_velocity() const {
     return m_initial_velocity;
   }
+
+  /**
+   * @brief Returns the desired exit velocity.
+   *
+   * @return Exit velocity.
+   */
   [[nodiscard]] double get_exit_velocity() const { return m_exit_velocity; }
+
+  /**
+   * @brief Returns the entry vertex id.
+   *
+   * @return Entry vertex id.
+   */
   [[nodiscard]] size_t get_entry_vertex() const { return m_entry_vertex; }
+
+  /**
+   * @brief Returns the exit vertex id.
+   *
+   * @return Exit vertex id.
+   */
   [[nodiscard]] size_t get_exit_vertex() const { return m_exit_vertex; }
+
+  /**
+   * @brief Returns all scheduled stops.
+   *
+   * @return Constant reference to the list of scheduled stops.
+   */
   [[nodiscard]] std::vector<ScheduledStop> const& get_stops() const {
     return m_stops;
   }
@@ -213,37 +279,102 @@ public:
    * SETTER
    */
 
+  /**
+   * @brief Sets the entry time.
+   *
+   * @pre newEntryTime >= 0.
+   * @param newEntryTime New entry time.
+   * @throws cda_rail::exceptions::InvalidInputException If `newEntryTime` is
+   * negative.
+   */
   void set_entry_time(double const newEntryTime) {
     cda_rail::exceptions::throw_if_negative(newEntryTime, "Entry time");
     m_entry_time = newEntryTime;
   }
+
+  /**
+   * @brief Sets the exit time.
+   *
+   * @pre newExitTime >= m_entry_time.
+   * @param newExitTime New exit time.
+   * @throws cda_rail::exceptions::InvalidInputException If `newExitTime` is
+   * smaller than the current entry time.
+   */
   void set_exit_time(double const newExitTime) {
     cda_rail::exceptions::throw_if_negative(
         newExitTime - m_entry_time,
         "(to ensure exit_time >= entry_time) newExitTime - entry_time");
     m_exit_time = newExitTime;
   }
+
+  /**
+   * @brief Sets the initial velocity.
+   *
+   * @pre newInitialVelocity >= 0.
+   * @param newInitialVelocity New initial velocity.
+   * @throws cda_rail::exceptions::InvalidInputException If
+   * `newInitialVelocity` is negative.
+   */
   void set_initial_velocity(double const newInitialVelocity) {
     cda_rail::exceptions::throw_if_negative(newInitialVelocity,
                                             "Initial velocity");
     m_initial_velocity = newInitialVelocity;
   }
+
+  /**
+   * @brief Sets the exit velocity.
+   *
+   * @pre newExitVelocity >= 0.
+   * @param newExitVelocity New exit velocity.
+   * @throws cda_rail::exceptions::InvalidInputException If `newExitVelocity`
+   * is negative.
+   */
   void set_exit_velocity(double const newExitVelocity) {
     cda_rail::exceptions::throw_if_negative(newExitVelocity, "Exit velocity");
     m_exit_velocity = newExitVelocity;
   }
+
+  /**
+   * @brief Sets the entry vertex id.
+   *
+   * @param newEntryVertex New entry vertex id.
+   */
   void set_entry_vertex(size_t const newEntryVertex) {
     m_entry_vertex = newEntryVertex;
   }
+
+  /**
+   * @brief Sets the entry vertex id after validating it against a network.
+   *
+   * @param newEntryVertex New entry vertex id.
+   * @param network Network used for vertex existence validation.
+   * @throws cda_rail::exceptions::VertexNotExistentException If
+   * `newEntryVertex` does not exist in `network`.
+   */
   void set_entry_vertex(size_t const newEntryVertex, Network const& network) {
     if (!network.has_vertex(newEntryVertex)) {
       throw exceptions::VertexNotExistentException(newEntryVertex);
     }
     set_entry_vertex(newEntryVertex);
   }
+
+  /**
+   * @brief Sets the exit vertex id.
+   *
+   * @param newExitVertex New exit vertex id.
+   */
   void set_exit_vertex(size_t const newExitVertex) {
     m_exit_vertex = newExitVertex;
   }
+
+  /**
+   * @brief Sets the exit vertex id after validating it against a network.
+   *
+   * @param newExitVertex New exit vertex id.
+   * @param network Network used for vertex existence validation.
+   * @throws cda_rail::exceptions::VertexNotExistentException If
+   * `newExitVertex` does not exist in `network`.
+   */
   void set_exit_vertex(size_t const newExitVertex, Network const& network) {
     if (!network.has_vertex(newExitVertex)) {
       throw exceptions::VertexNotExistentException(newExitVertex);
