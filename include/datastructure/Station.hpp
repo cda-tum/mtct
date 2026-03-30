@@ -1,5 +1,6 @@
 #pragma once
 #include "CustomExceptions.hpp"
+#include "DeepConstSharedPtr.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
@@ -37,7 +38,10 @@ struct Station {
   [[nodiscard]] std::vector<
       std::pair<size_t, std::vector<cda_rail::index_vector>>>
   get_stop_tracks(double tr_len, Network const& network,
-                  cda_rail::index_vector const& edges_to_consider = {}) const;
+                  cda_rail::index_set const& edges_to_consider = {}) const;
+
+  [[nodiscard]] bool
+  is_fully_in_station(cda_rail::index_set const& edges) const;
 };
 
 class StationList {
@@ -45,52 +49,55 @@ class StationList {
    * StationList class
    */
 private:
-  std::unordered_map<std::string, Station> stations;
+  // DeepConstSharedPtr propagates constness (without using experimental)
+  std::unordered_map<std::string, DeepConstSharedPtr<Station>> stations;
 
 public:
   // Constructors
   StationList() = default;
-  StationList(const std::filesystem::path& p, const Network& network);
-  StationList(const std::string& path, const Network& network)
+  StationList(std::filesystem::path const& p, Network const& network);
+  StationList(std::string const& path, Network const& network)
       : StationList(std::filesystem::path(path), network) {};
-  StationList(const char* path, const Network& network)
+  StationList(char const* const path, Network const& network)
       : StationList(std::filesystem::path(path), network) {};
 
-  // Rule of 5
-  StationList(const StationList& other)            = default;
-  StationList(StationList&& other)                 = default;
-  StationList& operator=(const StationList& other) = default;
-  StationList& operator=(StationList&& other)      = default;
-  ~StationList()                                   = default;
-
-  [[nodiscard]] bool is_fully_in_station(const std::string&     station_name,
-                                         cda_rail::index_vector edges) const;
+  // Rule of 0 suffices
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
-  [[nodiscard]] auto begin() const { return stations.begin(); };
-  [[nodiscard]] auto end() const { return stations.end(); };
+  [[nodiscard]] constexpr auto cbegin() const { return stations.cbegin(); };
+  [[nodiscard]] constexpr auto cend() const { return stations.cend(); };
+  [[nodiscard]] size_t         size() const { return stations.size(); };
 
-  void add_station(const std::string& name) { stations[name] = Station{name}; };
-
+  /*
+   * GETTER
+   */
   [[nodiscard]] bool has_station(const std::string& name) const {
-    return stations.find(name) != stations.end();
+    return stations.contains(name);
   };
-  [[nodiscard]] const Station& get_station(const std::string& name) const;
+  [[nodiscard]] Station const& get_station(const std::string& name) const;
+  [[nodiscard]] std::unordered_set<std::string> get_station_names() const;
 
-  [[nodiscard]] size_t size() const { return stations.size(); };
-  [[nodiscard]] std::vector<std::string> get_station_names() const;
+  [[nodiscard]] bool
+  is_fully_in_station(std::string const&         station_name,
+                      cda_rail::index_set const& edges) const;
+
+  /*
+   * SETTER / EDITING
+   */
+
+  void add_empty_station(std::string const& name);
 
   void add_track_to_station(const std::string& name, size_t track);
-  void add_track_to_station(const std::string& name, size_t track,
+  void add_track_to_station(const std::string& name, size_t const track,
                             const Network& network) {
     if (!network.has_edge(track)) {
       throw exceptions::EdgeNotExistentException(track);
     }
     add_track_to_station(name, track);
   };
-  void add_track_to_station(const std::string& name, size_t source,
-                            size_t target, const Network& network) {
+  void add_track_to_station(const std::string& name, size_t const source,
+                            size_t const target, const Network& network) {
     add_track_to_station(name, network.get_edge_index(source, target), network);
   };
   void add_track_to_station(const std::string& name, const std::string& source,
@@ -98,12 +105,19 @@ public:
     add_track_to_station(name, network.get_edge_index(source, target), network);
   };
 
-  void export_stations(const std::string& path, const Network& network) const;
-  void export_stations(const char* path, const Network& network) const {
-    export_stations(std::filesystem::path(path), network);
-  };
+  /*
+   * EXPORT/IMPORT
+   */
+
   void export_stations(const std::filesystem::path& p,
                        const Network&               network) const;
+  void export_stations(std::string const& path, const Network& network) const {
+    std::filesystem::path const p(path);
+    export_stations(p, network);
+  };
+  void export_stations(char const* const path, const Network& network) const {
+    export_stations(std::filesystem::path(path), network);
+  };
   [[nodiscard]] static StationList import_stations(const std::string& path,
                                                    const Network&     network) {
     return {path, network};
@@ -117,14 +131,18 @@ public:
     return {p, network};
   };
 
+  /*
+   * HELPER
+   */
+
   void update_after_discretization(
-      const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
+      const std::vector<std::pair<size_t, cda_rail::index_set>>& new_edges);
 
   [[nodiscard]] std::vector<
       std::pair<size_t, std::vector<cda_rail::index_vector>>>
   get_stop_tracks(const std::string& name, double tr_len,
-                  const Network&                network,
-                  const cda_rail::index_vector& edges_to_consider = {}) const {
+                  const Network&             network,
+                  const cda_rail::index_set& edges_to_consider = {}) const {
     return get_station(name).get_stop_tracks(tr_len, network,
                                              edges_to_consider);
   }
