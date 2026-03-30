@@ -145,7 +145,7 @@ public:
   void remove_route(const std::string& train_name);
 
   [[nodiscard]] bool has_route(const std::string& train_name) const {
-    return routes.find(train_name) != routes.end();
+    return routes.contains(train_name);
   };
   [[nodiscard]] size_t       size() const { return routes.size(); };
   [[nodiscard]] bool         empty() const { return routes.empty(); };
