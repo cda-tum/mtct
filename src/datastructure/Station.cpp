@@ -63,15 +63,6 @@ bool cda_rail::Station::is_fully_in_station(
 
 cda_rail::StationList::StationList(std::filesystem::path const& p,
                                    Network const&               network) {
-  /**
-   * This method constructs the object and imports all stations from a file. The
-   * file is a json file with the structure described in export_stations. Hereby
-   * the names stored in the network reference are used for the edges.
-   *
-   * @param path The path to the file directory to import from.
-   * @param network The network reference to use for the edge names.
-   */
-
   if (!std::filesystem::exists(p)) {
     throw exceptions::ImportException("Path does not exist.");
   }
@@ -95,13 +86,6 @@ cda_rail::StationList::StationList(std::filesystem::path const& p,
 
 const cda_rail::Station&
 cda_rail::StationList::get_station(const std::string& name) const {
-  /**
-   * Returns the station with the given name.
-   *
-   * @param name The name of the station.
-   *
-   * @return The station with the given name.
-   */
   if (!has_station(name)) {
     throw exceptions::StationNotExistentException(name);
   }
@@ -110,13 +94,6 @@ cda_rail::StationList::get_station(const std::string& name) const {
 
 std::unordered_set<std::string>
 cda_rail::StationList::get_station_names() const {
-  /**
-   * This method returns a vector of all station names, i.e., the keys of
-   * stations.
-   *
-   * @return A vector of all station names.
-   */
-
   std::unordered_set<std::string> names;
   names.reserve(stations.size());
   for (const auto& name : stations | std::views::keys) {
@@ -138,12 +115,6 @@ void cda_rail::StationList::add_empty_station(std::string const& name) {
 
 void cda_rail::StationList::add_track_to_station(const std::string& name,
                                                  size_t const       track) {
-  /**
-   * Add a specified track to a specified station.
-   *
-   * @param name The name of the station.
-   * @param track The index of the track to add.
-   */
   // If stations.at(name).tracks already contains track, nothing happens.
   // get_station throws error if the station name does not exist
   if (get_station(name).tracks.contains(track)) {
@@ -156,16 +127,6 @@ void cda_rail::StationList::add_track_to_station(const std::string& name,
 
 void cda_rail::StationList::export_stations(const std::filesystem::path& p,
                                             const Network& network) const {
-  /**
-   * This method exports all stations to a file. The file is a json file with
-   * the following structure:
-   * {"station1_name": [["edge1_0", "edge1_1"], ["edge2_0", "edge2_1"], ...],
-   * "station2_name": ...} Hereby the names stored in the network reference are
-   * used for the edges.
-   *
-   * @param p The path to the directory to export to.
-   * @param network The network reference to use for the edge names.
-   */
   if (!is_directory_and_create(p)) {
     throw exceptions::ExportException("Could not create directory " +
                                       p.string());
@@ -190,17 +151,6 @@ void cda_rail::StationList::export_stations(const std::filesystem::path& p,
 
 void cda_rail::StationList::update_after_discretization(
     const std::vector<std::pair<size_t, cda_rail::index_set>>& new_edges) {
-  /**
-   * This method updates the timetable after the discretization of the network
-   * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
-   * ..., v_n. Concretely, the following changes are made:
-   * - For every station, the tracks are replaced by the new edges if
-   * applicable.
-   *
-   * @param new_edges The new edges of the network as returned from
-   * cda_rail::Network::discretize.
-   */
-
   for (auto& station : stations | std::views::values) {
     auto& tracks = station->tracks;
     for (const auto& [track, new_tracks] : new_edges) {
