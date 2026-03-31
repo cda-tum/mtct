@@ -1,6 +1,5 @@
 #pragma once
 #include "CustomExceptions.hpp"
-#include "DeepConstSharedPtr.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
@@ -67,8 +66,11 @@ struct Station {
  */
 class StationList {
 private:
-  // DeepConstSharedPtr propagates constness (without using experimental)
-  std::unordered_map<std::string, DeepConstSharedPtr<Station>> stations;
+  std::unordered_map<std::string, std::shared_ptr<Station>> stations;
+
+  friend class Timetable;
+  [[nodiscard]] std::shared_ptr<Station>
+  get_station_ptr(const std::string& name);
 
 public:
   // Constructors

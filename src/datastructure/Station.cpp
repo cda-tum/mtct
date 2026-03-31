@@ -84,6 +84,14 @@ cda_rail::StationList::StationList(std::filesystem::path const& p,
 
 // GETTER
 
+std::shared_ptr<cda_rail::Station>
+cda_rail::StationList::get_station_ptr(const std::string& name) {
+  if (!has_station(name)) {
+    throw exceptions::StationNotExistentException(name);
+  }
+  return stations.at(name);
+}
+
 const cda_rail::Station&
 cda_rail::StationList::get_station(const std::string& name) const {
   if (!has_station(name)) {
@@ -109,8 +117,7 @@ void cda_rail::StationList::add_empty_station(std::string const& name) {
     throw exceptions::ConsistencyException("Station with name '" + name +
                                            "' already exists.");
   }
-  stations.emplace(
-      name, cda_rail::make_deep_const_shared<Station>(Station{.name = name}));
+  stations.emplace(name, std::make_shared<Station>(Station{.name = name}));
 };
 
 void cda_rail::StationList::add_track_to_station(const std::string& name,

@@ -316,6 +316,35 @@ public:
   };
 
   /**
+   * @brief Returns a train by index. The train object is returned by reference
+   * and can be edited.
+   *
+   * @param index Index of the train.
+   * @return Reference to the requested train.
+   * @throws cda_rail::exceptions::TrainNotExistentException If `index` is out
+   * of range.
+   */
+  [[nodiscard]] Train& editable_train(size_t index) {
+    if (!has_train(index)) {
+      throw exceptions::TrainNotExistentException(index);
+    }
+    return trains.at(index);
+  };
+
+  /**
+   * @brief Returns a train by name. The train object is returned by reference
+   * and can be edited.
+   *
+   * @param name Train name.
+   * @return Reference to the requested train.
+   * @throws cda_rail::exceptions::TrainNotExistentException If `index` is out
+   * of range.
+   */
+  [[nodiscard]] Train& editable_train(std::string const& name) {
+    return editable_train(get_train_index(name));
+  }
+
+  /**
    * @brief Returns the number of trains.
    *
    * @return Number of trains in the list.

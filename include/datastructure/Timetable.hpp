@@ -2,6 +2,8 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Station.hpp"
 #include "datastructure/Train.hpp"
+#include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -13,6 +15,9 @@
 #include <vector>
 
 namespace cda_rail {
+
+using json = nlohmann::json;
+
 class ScheduledStop {
   /**
    * @brief Scheduling information for a stop within a timetable.
@@ -170,14 +175,14 @@ class Schedule {
    */
 
 private:
-  double m_entry_time; // (earliest) entry time: >= 0
-  double m_exit_time;  // (desired) exit time: >= entry_time
+  double m_entry_time{}; // (earliest) entry time: >= 0
+  double m_exit_time{};  // (desired) exit time: >= entry_time
 
-  double m_initial_velocity; // initial velocity: >= 0
-  double m_exit_velocity;    // (desired) exit velocity: >= 0
+  double m_initial_velocity{}; // initial velocity: >= 0
+  double m_exit_velocity{};    // (desired) exit velocity: >= 0
 
-  size_t m_entry_vertex; // id of entry vertex
-  size_t m_exit_vertex;  // id of exit vertex
+  size_t m_entry_vertex{}; // id of entry vertex
+  size_t m_exit_vertex{};  // id of exit vertex
 
   std::vector<ScheduledStop> m_stops{}; // list of stops, may be empty
 
@@ -192,6 +197,10 @@ private:
    * ordered by service time or if a station appears more than once.
    */
   static void check_stops_validity(std::vector<ScheduledStop> const& stops);
+
+  // private constructor to be used with care (invalid substate)
+  Schedule() = default;
+  friend class Timetable;
 
 public:
   // user-defined-constructor
@@ -421,62 +430,65 @@ public:
    */
   void remove_stop(std::string const& station_name,
                    bool               throw_exception_if_not_existent = true);
+
+  /*
+   * HELPER
+   */
+
+  void sort_stops_by_service_time() {
+    std::ranges::sort(m_stops, {}, &ScheduledStop::get_service_time);
+  }
 };
 
-class Timetable : public GeneralTimetable<Schedule> {
+class Timetable {
   /**
    * Timetable class
    */
+private:
+  StationList           station_list{};
+  TrainList             train_list{};
+  std::vector<Schedule> schedules{};
+
+  // private helpers
+
+  void set_train_list(const TrainList& tl) {
+    this->train_list = tl;
+    this->schedules  = std::vector<Schedule>(
+        tl.size(), Schedule()); // this requires friendship
+  }
+
+  void parse_schedule_data(const json& schedule_data, int i);
+
+  void add_json_data(json& j, size_t i, const Network& network) const;
+
+  void sort_stops_by_service_time() {
+    for (auto& schedule : schedules) {
+      schedule.sort_stops_by_service_time();
+    }
+  }
+
 public:
   // Constructors
   Timetable() = default;
-  Timetable(const std::filesystem::path& p, const Network& network)
-      : GeneralTimetable(p, network) {};
+  Timetable(StationList station_list, TrainList train_list,
+            const std::vector<Schedule>& schedules);
+  Timetable(const std::filesystem::path& p, const Network& network);
   Timetable(const std::string& path, const Network& network)
       : Timetable(std::filesystem::path(path), network) {};
-  Timetable(const char* path, const Network& network)
+  Timetable(char const* const path, Network const& network)
       : Timetable(std::filesystem::path(path), network) {};
-  Timetable(const StationList& station_list, const TrainList& train_list,
-            const std::vector<Schedule>& schedules)
-      : GeneralTimetable(station_list, train_list, schedules) {};
-  virtual ~Timetable() = default;
 
-  [[nodiscard]] std::pair<size_t, size_t>
-  time_index_interval(size_t train_index, int dt,
-                      bool tn_inclusive = true) const;
-  [[nodiscard]] std::pair<size_t, size_t>
-  time_index_interval(const std::string& train_name, int dt,
-                      bool tn_inclusive = true) const {
-    return time_index_interval(train_list.get_train_index(train_name), dt,
-                               tn_inclusive);
+  // Rule of 0 suffices
+
+  // Export / Import
+  void export_timetable(const std::filesystem::path& p,
+                        const Network&               network) const;
+  void export_timetable(const std::string& path, const Network& network) const {
+    export_timetable(std::filesystem::path(path), network);
   };
-
-  [[nodiscard]] GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>
-  parse_to_general_timetable() const {
-    std::vector<GeneralSchedule<GeneralScheduledStop>> general_schedules;
-    general_schedules.reserve(this->get_train_list().size());
-    for (const auto& schedule : schedules) {
-      general_schedules.push_back(schedule.parse_to_general_schedule());
-    }
-    return {station_list, train_list, general_schedules};
+  void export_timetable(char const* const path, Network const& network) const {
+    export_timetable(std::filesystem::path(path), network);
   };
-
-  template <typename S, typename = std::enable_if_t<
-                            std::is_base_of_v<GeneralScheduledStop, S>>>
-  [[nodiscard]] static Timetable cast_from_general_timetable(
-      const GeneralTimetable<GeneralSchedule<S>>& general_timetable_obj,
-      bool                                        throw_error = true) {
-    std::vector<Schedule> schedules;
-    const size_t          number_of_element =
-        general_timetable_obj.get_train_list().size();
-    schedules.reserve(number_of_element);
-    for (size_t tr = 0; tr < number_of_element; ++tr) {
-      schedules.push_back(Schedule::cast_from_general_schedule(
-          general_timetable_obj.get_schedule(tr), throw_error));
-    }
-    return {general_timetable_obj.get_station_list(),
-            general_timetable_obj.get_train_list(), schedules};
-  }
 
   [[nodiscard]] static Timetable import_timetable(const std::string& path,
                                                   const Network&     network) {
@@ -486,9 +498,118 @@ public:
   import_timetable(const std::filesystem::path& p, const Network& network) {
     return {p, network};
   };
-  [[nodiscard]] static Timetable import_timetable(const char*    path,
-                                                  const Network& network) {
+  [[nodiscard]] static Timetable import_timetable(char const* const path,
+                                                  const Network&    network) {
     return {path, network};
+  };
+
+  // Getter Methods
+
+  [[nodiscard]] StationList const& get_station_list() const {
+    return station_list;
+  };
+  [[nodiscard]] TrainList const& get_train_list() const { return train_list; };
+
+  [[nodiscard]] Schedule const& get_schedule(size_t const train_index) const {
+    if (!train_list.has_train(train_index)) {
+      throw exceptions::TrainNotExistentException(train_index);
+    }
+    return schedules.at(train_index);
+  };
+  [[nodiscard]] Schedule const&
+  get_schedule(std::string const& train_name) const {
+    return get_schedule(train_list.get_train_index(train_name));
+  };
+
+  [[nodiscard]] double latest_exit_time() const;
+
+  [[nodiscard]] Train& editable_train(size_t const index) {
+    return train_list.editable_train(index);
+  };
+  [[nodiscard]] Train& editable_train(std::string const& name) {
+    return train_list.editable_train(name);
+  };
+
+  [[nodiscard]] std::vector<
+      std::pair<size_t, std::vector<cda_rail::index_vector>>>
+  get_stop_tracks(size_t const tr, std::string const& station_name,
+                  Network const&             network,
+                  cda_rail::index_set const& edges_to_consider) {
+    return station_list.get_stop_tracks(station_name,
+                                        train_list.get_train(tr).get_length(),
+                                        network, edges_to_consider);
+  };
+
+  // Editing Methods
+
+  void add_empty_station(std::string station_name) {
+    station_list.add_empty_station(std::move(station_name));
+  };
+
+  void insert_stop(size_t train_index, std::string const& station_name,
+                   double service_time, double service_duration);
+  void insert_stop(std::string const& train_name,
+                   std::string const& station_name, double const service_time,
+                   double const service_duration) {
+    insert_stop(train_list.get_train_index(train_name), station_name,
+                service_time, service_duration);
+  };
+
+  void add_track_to_station(std::string const& station_name,
+                            size_t const track_id, Network const& network) {
+    station_list.add_track_to_station(station_name, track_id, network);
+  };
+  void add_track_to_station(std::string const& station_name,
+                            size_t const source, size_t const target,
+                            Network const& network) {
+    station_list.add_track_to_station(station_name, source, target, network);
+  };
+  void add_track_to_station(std::string const& station_name,
+                            std::string const& source,
+                            std::string const& target, Network const& network) {
+    station_list.add_track_to_station(station_name, source, target, network);
+  };
+
+  [[nodiscard]] size_t
+  add_train(std::string const& train_name, double const length,
+            double const max_speed, double const acceleration,
+            double const deceleration, bool const tim, double const entry_time,
+            double const initial_velocity, size_t const entry_vertex,
+            double const exit_time, double const exit_velocity,
+            size_t const exit_vertex, Network const& network);
+  [[nodiscard]] size_t
+  add_train(std::string const& train_name, double const length,
+            double const max_speed, double const acceleration,
+            double const deceleration, bool const tim, double const entry_time,
+            double const initial_velocity, std::string const& entry_vertex,
+            double const exit_time, double const exit_velocity,
+            std::string const& exit_vertex, Network const& network) {
+    return add_train(train_name, length, max_speed, acceleration, deceleration,
+                     tim, entry_time, initial_velocity,
+                     network.get_vertex_index(entry_vertex), exit_time,
+                     exit_velocity, network.get_vertex_index(exit_vertex),
+                     network);
+  };
+
+  // No stop removal for now
+
+  // Further helpers
+
+  [[nodiscard]] bool check_consistency(Network const& network);
+
+  void update_after_discretization(
+      std::vector<std::pair<size_t, cda_rail::index_set>> const& new_edges) {
+    station_list.update_after_discretization(new_edges);
+  };
+
+  [[nodiscard]] std::pair<size_t, size_t>
+  time_index_interval(size_t train_index, int dt,
+                      bool tn_inclusive = true) const;
+  [[nodiscard]] std::pair<size_t, size_t>
+  time_index_interval(const std::string& train_name, int dt,
+                      bool tn_inclusive = true) const {
+    return time_index_interval(train_list.get_train_index(train_name), dt,
+                               tn_inclusive);
   };
 };
 } // namespace cda_rail

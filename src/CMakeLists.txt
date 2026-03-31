@@ -3,7 +3,6 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/EOMHelper.hpp
   EOMHelper.cpp
   ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
-  ${PROJECT_SOURCE_DIR}/include/DeepConstSharedPtr.hpp
   ${PROJECT_SOURCE_DIR}/include/VSSModel.hpp
   ${PROJECT_SOURCE_DIR}/include/CustomExceptions.hpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/RailwayNetwork.hpp
