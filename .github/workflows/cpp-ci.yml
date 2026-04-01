@@ -188,7 +188,7 @@ jobs:
       - name: Test
         run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 750
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: true
           gcov: true
