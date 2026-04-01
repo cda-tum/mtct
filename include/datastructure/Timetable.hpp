@@ -570,13 +570,33 @@ public:
     station_list.add_track_to_station(station_name, source, target, network);
   };
 
-  [[nodiscard]] size_t
-  add_train(std::string const& train_name, double const length,
-            double const max_speed, double const acceleration,
-            double const deceleration, bool const tim, double const entry_time,
-            double const initial_velocity, size_t const entry_vertex,
-            double const exit_time, double const exit_velocity,
-            size_t const exit_vertex, Network const& network);
+  /**
+   * TODO: FIX DOCSTRING TO NEW VARIABLES
+   * This method adds a train to the timetable. The train is specified by its
+   * parameters.
+   *
+   * @param name The name of the train.
+   * @param length The length of the train in m.
+   * @param max_speed The maximum speed of the train in m/s.
+   * @param acceleration The acceleration of the train in m/s^2.
+   * @param deceleration The deceleration of the train in m/s^2.
+   * @param t_0 The time at which the train enters the network in s.
+   * @param v_0 The speed at which the train enters the network in m/s.
+   * @param entry The index of the entry vertex in the network.
+   * @param t_n The time at which the train leaves the network in s.
+   * @param v_n The speed at which the train leaves the network in m/s.
+   * @param exit The index of the exit vertex in the network.
+   * @param network The network to which the timetable belongs.
+   *
+   * @return The index of the train in the train list.
+   */
+  [[nodiscard]] size_t add_train(std::string const& train_name, double length,
+                                 double max_speed, double acceleration,
+                                 double deceleration, bool tim,
+                                 double entry_time, double initial_velocity,
+                                 size_t entry_vertex, double exit_time,
+                                 double exit_velocity, size_t exit_vertex,
+                                 Network const& network);
   [[nodiscard]] size_t
   add_train(std::string const& train_name, double const length,
             double const max_speed, double const acceleration,
@@ -590,11 +610,50 @@ public:
                      exit_velocity, network.get_vertex_index(exit_vertex),
                      network);
   };
+  [[nodiscard]] size_t add_train(std::string const& train_name, double length,
+                                 double max_speed, double acceleration,
+                                 double deceleration, double entry_time,
+                                 double initial_velocity, size_t entry_vertex,
+                                 double exit_time, double exit_velocity,
+                                 size_t exit_vertex, Network const& network) {
+    return add_train(train_name, length, max_speed, acceleration, deceleration,
+                     true, entry_time, initial_velocity, entry_vertex,
+                     exit_time, exit_velocity, exit_vertex, network);
+  };
+  [[nodiscard]] size_t
+  add_train(std::string const& train_name, double const length,
+            double const max_speed, double const acceleration,
+            double const deceleration, double const entry_time,
+            double const initial_velocity, std::string const& entry_vertex,
+            double const exit_time, double const exit_velocity,
+            std::string const& exit_vertex, Network const& network) {
+    return add_train(train_name, length, max_speed, acceleration, deceleration,
+                     true, entry_time, initial_velocity,
+                     network.get_vertex_index(entry_vertex), exit_time,
+                     exit_velocity, network.get_vertex_index(exit_vertex),
+                     network);
+  };
 
   // No stop removal for now
 
   // Further helpers
 
+  /**
+   * TODO: FIX DOCSTRING
+   * This method checks if the timetable is consistent with the network, i.e.,
+   * if the following holds:
+   * - All vertices used as entry and exit points are valid vertices of the
+   * network
+   * - Entry and exit vertices have exactly one neighboring vertex
+   * - All scheduled stops are ordered by time and on pairwise disjointstations
+   * - All edges of stations are valid edges of the network
+   * - All scheduled stops lie within t_0 and t_n
+   *
+   * @param network The network to which the timetable belongs.
+   *
+   * @return True if the timetable is consistent with the network, false
+   * otherwise.
+   */
   [[nodiscard]] bool check_consistency(Network const& network);
 
   void update_after_discretization(
@@ -603,11 +662,11 @@ public:
   };
 
   [[nodiscard]] std::pair<size_t, size_t>
-  time_index_interval(size_t train_index, int dt,
+  time_index_interval(size_t train_index, double dt,
                       bool tn_inclusive = true) const;
   [[nodiscard]] std::pair<size_t, size_t>
-  time_index_interval(const std::string& train_name, int dt,
-                      bool tn_inclusive = true) const {
+  time_index_interval(std::string const& train_name, double const dt,
+                      bool const tn_inclusive = true) const {
     return time_index_interval(train_list.get_train_index(train_name), dt,
                                tn_inclusive);
   };

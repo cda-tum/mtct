@@ -160,9 +160,9 @@ void cda_rail::Timetable::parse_schedule_data(json const& schedule_data,
   this->schedules.at(i).set_exit_time(
       static_cast<double>(schedule_data["t_n"]));
   for (const auto& stop_data : schedule_data["stops"]) {
-    this->add_stop(i, stop_data["station"].get<std::string>(), false,
-                   stop_data["begin"].get<double>(),
-                   stop_data["duration"].get<double>());
+    this->insert_stop(i, stop_data["station"].get<std::string>(),
+                      stop_data["begin"].get<double>(),
+                      stop_data["duration"].get<double>());
   }
 }
 
@@ -233,9 +233,8 @@ double cda_rail::Timetable::latest_exit_time() const {
                           std::views::transform(&Schedule::get_exit_time));
 }
 
-std::pair<size_t, size_t>
-cda_rail::Timetable::time_index_interval(size_t train_index, int dt,
-                                         bool tn_inclusive) const {
+std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
+    size_t const train_index, double const dt, bool const tn_inclusive) const {
   /**
    * This method returns the time interval of a train schedule as indices given
    * a time step length dt.
@@ -250,23 +249,67 @@ cda_rail::Timetable::time_index_interval(size_t train_index, int dt,
   if (!train_list.has_train(train_index)) {
     throw exceptions::TrainNotExistentException(train_index);
   }
+  cda_rail::exceptions::throw_if_non_positive(dt, "Time step length");
 
   const auto& schedule = schedules.at(train_index);
-  const auto& t_0      = schedule.get_t_0();
-  const auto& t_n      = schedule.get_t_n();
+  const auto& t_0      = schedule.get_entry_time();
+  const auto& t_n      = schedule.get_exit_time();
+
+  cda_rail::exceptions::throw_if_negative(t_0, "Entry time");
+  cda_rail::exceptions::throw_if_negative(t_n, "Exit time");
 
   if (t_0 < 0 || t_n < 0) {
     throw exceptions::ConsistencyException("Time cannot be negative.");
   }
 
-  const auto t_0_index = t_0 / dt;
-  const auto t_n_index =
-      (t_n % dt == 0 ? (t_n / dt) - 1 : t_n / dt) + (tn_inclusive ? 1 : 0);
+  size_t const t_0_index = static_cast<size_t>(std::floor(t_0 / dt));
+  // if t_n is divisible by dt (approx)
+  if (std::abs(std::fmod(t_n, dt)) < EPS) {
+    // if tn_inclusive, we want to include the time step at t_n, which is t_n /
+    // dt if tn_inclusive is false, we want to exclude the time step at t_n,
+    // which is (t_n / dt) - 1
+    return {t_0_index,
+            static_cast<size_t>(tn_inclusive ? (t_n / dt) : (t_n / dt) - 1)};
+  }
 
-  return {static_cast<size_t>(t_0_index), static_cast<size_t>(t_n_index)};
+  size_t const t_n_index = static_cast<size_t>(std::round(t_n / dt)) +
+                           (tn_inclusive ? 1 : 0) +
+                           (std::abs(std::fmod(t_n, dt)) < EPS ? -1 : 0);
+
+  return {t_0_index, t_n_index};
 }
 
 // EDITING
+
+size_t cda_rail::Timetable::add_train(
+    std::string const& train_name, double const length, double const max_speed,
+    double const acceleration, double const deceleration, bool const tim,
+    double const entry_time, double const initial_velocity,
+    size_t const entry_vertex, double const exit_time,
+    double const exit_velocity, size_t const exit_vertex,
+    Network const& network) {
+  if (!network.has_vertex(entry_vertex)) {
+    throw exceptions::VertexNotExistentException(entry_vertex);
+  }
+  if (!network.has_vertex(exit_vertex)) {
+    throw exceptions::VertexNotExistentException(exit_vertex);
+  }
+  if (train_list.has_train(train_name)) {
+    throw exceptions::ConsistencyException("Train " + train_name +
+                                           " already exists.");
+  }
+  auto const index = train_list.add_train(train_name, length, max_speed,
+                                          acceleration, deceleration, tim);
+  schedules.emplace_back(entry_time, initial_velocity, entry_vertex, exit_time,
+                         exit_velocity, exit_vertex);
+  if (schedules.size() != train_list.size()) {
+    throw exceptions::ConsistencyException(
+        "Schedule size (" + std::to_string(schedules.size()) +
+        ") does not match train list size (" +
+        std::to_string(train_list.size()) + ") after adding a train.");
+  }
+  return index;
+}
 
 void cda_rail::Timetable::insert_stop(size_t const       train_index,
                                       std::string const& station_name,
@@ -282,4 +325,49 @@ void cda_rail::Timetable::insert_stop(size_t const       train_index,
   schedules.at(train_index)
       .insert_stop({service_time, service_duration,
                     station_list.get_station_ptr(station_name)});
+}
+
+// HELPER
+
+bool cda_rail::Timetable::check_consistency(Network const& network) {
+  // Helper: Checks if a terminal vertex exists and has exactly one neighbor
+  auto is_valid_terminal = [&network](auto vertex) {
+    return network.has_vertex(vertex) && network.neighbors(vertex).size() == 1;
+  };
+
+  // Helper: Validates a single schedule (combines the 1st and 3rd loops)
+  auto is_schedule_consistent = [&](const auto& schedule) {
+    if (!is_valid_terminal(schedule.get_entry_vertex()) ||
+        !is_valid_terminal(schedule.get_exit_vertex())) {
+      return false;
+    }
+
+    try {
+      Schedule::check_stops_validity(schedule.get_stops());
+    } catch (const exceptions::InvalidInputException&) {
+      return false;
+    }
+
+    // Check that all stops fall within the schedule's timeframe
+    const auto& stops = schedule.get_stops();
+    return std::all_of(stops.begin(), stops.end(), [&](const auto& stop) {
+      return stop.get_service_time() >= schedule.get_entry_time() &&
+             stop.get_earliest_departure() <= schedule.get_exit_time();
+    });
+  };
+
+  // Helper: Validates that all tracks in a given station exist in the network
+  auto are_station_tracks_valid = [&](const auto& station_name) {
+    const auto& tracks = station_list.get_station(station_name).tracks;
+    return std::all_of(tracks.begin(), tracks.end(),
+                       [&](auto track) { return network.has_edge(track); });
+  };
+
+  // Execute checks: True if all schedules and all station tracks are valid
+  const auto& station_names = station_list.get_station_names();
+
+  return std::all_of(schedules.begin(), schedules.end(),
+                     is_schedule_consistent) &&
+         std::all_of(station_names.begin(), station_names.end(),
+                     are_station_tracks_valid);
 }
