@@ -3220,8 +3220,8 @@ TEST(Functionality, WriteStations) {
       "./example-networks/SimpleStation/network/");
   cda_rail::StationList stations;
 
-  stations.add_station("S1");
-  stations.add_station("S2");
+  stations.add_empty_station("S1");
+  stations.add_empty_station("S2");
 
   const auto& l0_l1 = network.get_edge_index("l0", "l1");
 
@@ -3959,8 +3959,8 @@ TEST(Functionality, Iterators) {
 
   // Create stations
   cda_rail::StationList stations;
-  stations.add_station("S1");
-  stations.add_station("S2");
+  stations.add_empty_station("S1");
+  stations.add_empty_station("S2");
 
   // Check range based for loop
   for (const auto& [name, station] : stations) {
@@ -3986,7 +3986,7 @@ TEST(Functionality, Iterators) {
 TEST(Functionality, IsFullyInStation) {
   cda_rail::StationList stations;
 
-  stations.add_station("Station1");
+  stations.add_empty_station("Station1");
 
   stations.add_track_to_station("Station1", 0);
   stations.add_track_to_station("Station1", 1);
