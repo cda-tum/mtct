@@ -56,6 +56,10 @@ struct Station {
    */
   [[nodiscard]] bool
   is_fully_in_station(cda_rail::index_set const& edges) const;
+
+  bool operator==(const Station& other) const {
+    return name == other.name && tracks == other.tracks;
+  }
 };
 
 /**

@@ -5,7 +5,9 @@
 #include <utility>
 
 namespace cda_rail::exceptions {
-class ModelCreationException : public std::exception {
+class CustomException : public std::exception {};
+
+class ModelCreationException : public CustomException {
 public:
   ModelCreationException() : error_message("Model creation failed.") {}
   explicit ModelCreationException(std::string message)
@@ -18,7 +20,7 @@ private:
   std::string error_message;
 };
 
-class ExportException : public std::exception {
+class ExportException : public CustomException {
 public:
   ExportException() : error_message("Export failed.") {}
   explicit ExportException(std::string message)
@@ -31,7 +33,7 @@ private:
   std::string error_message;
 };
 
-class ConsistencyException : public std::exception {
+class ConsistencyException : public CustomException {
 public:
   ConsistencyException() : error_message("Consistency check failed.") {}
   explicit ConsistencyException(std::string message)
@@ -44,7 +46,7 @@ private:
   std::string error_message;
 };
 
-class InvalidInputException : public std::exception {
+class InvalidInputException : public CustomException {
 public:
   InvalidInputException() : error_message("Invalid input.") {}
   explicit InvalidInputException(std::string message)
@@ -57,7 +59,7 @@ private:
   std::string error_message;
 };
 
-class ImportException : public std::exception {
+class ImportException : public CustomException {
 public:
   ImportException() : error_message("Import failed.") {}
   explicit ImportException(const std::string& import_name)
@@ -70,7 +72,7 @@ private:
   std::string error_message;
 };
 
-class VertexNotExistentException : public std::exception {
+class VertexNotExistentException : public CustomException {
 public:
   VertexNotExistentException()
       : error_message("Some vertex specified does not exist.") {}
@@ -87,7 +89,7 @@ private:
   std::string error_message;
 };
 
-class EdgeNotExistentException : public std::exception {
+class EdgeNotExistentException : public CustomException {
 public:
   EdgeNotExistentException()
       : error_message("Some edge specified does not exist.") {}
@@ -112,7 +114,7 @@ private:
   std::string error_message;
 };
 
-class TrainNotExistentException : public std::exception {
+class TrainNotExistentException : public CustomException {
 public:
   TrainNotExistentException()
       : error_message("Some train specified does not exist.") {}
@@ -129,7 +131,7 @@ private:
   std::string error_message;
 };
 
-class StationNotExistentException : public std::exception {
+class StationNotExistentException : public CustomException {
 public:
   StationNotExistentException()
       : error_message("Some station specified does not exist.") {}
@@ -143,7 +145,7 @@ private:
   std::string error_message;
 };
 
-class ScheduleNotExistentException : public std::exception {
+class ScheduleNotExistentException : public CustomException {
 public:
   ScheduleNotExistentException()
       : error_message("Some schedule specified does not exist.") {}

@@ -34,22 +34,36 @@ cda_rail::Schedule::Schedule(double const entry_time,
   check_stops_validity(m_stops);
 }
 
-void cda_rail::Schedule::check_stops_validity(
+std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
+cda_rail::Schedule::check_stops_validity_helper(
     std::vector<ScheduledStop> const& stops) {
   // 1. Ordered by service time
   if (!std::ranges::is_sorted(stops, {}, &ScheduledStop::get_service_time)) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Scheduled stops must be ordered by service time");
+    return {false, cda_rail::exceptions::InvalidInputException(
+                       "Scheduled stops must be ordered by service time")};
   }
 
   // 2. All station names are unique
   std::unordered_set<std::string> station_names;
   for (auto const& stop : stops) {
     auto const& stop_name = stop.get_station().name;
-    station_names.contains(stop_name)
-        ? throw cda_rail::exceptions::InvalidInputException(
-              stop_name + " appears multiple times in the scheduled stops.")
-        : station_names.insert(stop_name);
+    if (station_names.contains(stop_name)) {
+      return {false, cda_rail::exceptions::InvalidInputException(
+                         stop_name +
+                         " appears multiple times in the scheduled stops.")};
+    }
+    station_names.insert(stop_name);
+  }
+
+  return {true, {}};
+}
+
+void cda_rail::Schedule::check_stops_validity(
+    std::vector<ScheduledStop> const& stops) {
+  if (auto const [result, exception] = check_stops_validity_helper(stops);
+      !result) {
+    throw exception.value_or(cda_rail::exceptions::ConsistencyException(
+        "Consistency check returned false, but no error object was returned."));
   }
 }
 
@@ -117,26 +131,26 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
   }
 
   this->set_train_list(TrainList::import_trains(p));
-  this->station_list = StationList::import_stations(p, network);
+  this->m_station_list = StationList::import_stations(p, network);
 
   std::ifstream f(p / "schedules.json");
   json          data = json::parse(f);
 
-  for (size_t i = 0; i < this->train_list.size(); i++) {
-    const auto& tr = this->train_list.get_train(i);
+  for (size_t i = 0; i < this->m_train_list.size(); i++) {
+    const auto& tr = this->m_train_list.get_train(i);
     if (!data.contains(tr.get_name())) {
       throw exceptions::ScheduleNotExistentException(tr.get_name());
     }
 
     const auto& schedule_data = data.at(tr.get_name());
 
-    this->schedules.at(i).set_initial_velocity(
+    this->m_schedules.at(i).set_initial_velocity(
         static_cast<double>(schedule_data["v_0"]));
-    this->schedules.at(i).set_entry_vertex(
+    this->m_schedules.at(i).set_entry_vertex(
         network.get_vertex_index(schedule_data["entry"]));
-    this->schedules.at(i).set_exit_velocity(
+    this->m_schedules.at(i).set_exit_velocity(
         static_cast<double>(schedule_data["v_n"]));
-    this->schedules.at(i).set_exit_vertex(
+    this->m_schedules.at(i).set_exit_vertex(
         network.get_vertex_index(schedule_data["exit"]));
 
     parse_schedule_data(schedule_data, i);
@@ -147,17 +161,24 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
 
 cda_rail::Timetable::Timetable(StationList station_list, TrainList train_list,
                                const std::vector<Schedule>& schedules)
-    : station_list(std::move(station_list)), train_list(std::move(train_list)),
-      schedules(schedules) {
-  // TODO: check conformity
+    : m_station_list(std::move(station_list)),
+      m_train_list(std::move(train_list)), m_schedules(schedules) {
+  auto const [consistency_result, consistency_details] =
+      check_consistency_helper();
+  if (!consistency_result) {
+    throw consistency_details.value_or(
+        cda_rail::exceptions::ConsistencyException(
+            "Consistency check returned false, but no error object was "
+            "returned."));
+  }
 }
 
 // Private helpers
 void cda_rail::Timetable::parse_schedule_data(json const& schedule_data,
                                               int const   i) {
-  this->schedules.at(i).set_entry_time(
+  this->m_schedules.at(i).set_entry_time(
       static_cast<double>(schedule_data["t_0"]));
-  this->schedules.at(i).set_exit_time(
+  this->m_schedules.at(i).set_exit_time(
       static_cast<double>(schedule_data["t_n"]));
   for (const auto& stop_data : schedule_data["stops"]) {
     this->insert_stop(i, stop_data["station"].get<std::string>(),
@@ -168,7 +189,7 @@ void cda_rail::Timetable::parse_schedule_data(json const& schedule_data,
 
 void cda_rail::Timetable::add_json_data(json& j, const size_t i,
                                         const Network& network) const {
-  const auto& schedule = schedules.at(i);
+  const auto& schedule = m_schedules.at(i);
   json        stops;
 
   for (const auto& stop : schedule.get_stops()) {
@@ -176,7 +197,7 @@ void cda_rail::Timetable::add_json_data(json& j, const size_t i,
                      {"duration", stop.get_service_duration()},
                      {"station", stop.get_station().name}});
   }
-  j.at(train_list.get_train(i).get_name()) = {
+  j.at(m_train_list.get_train(i).get_name()) = {
       {"t_0", schedule.get_entry_time()},
       {"v_0", schedule.get_initial_velocity()},
       {"entry", network.get_vertex(schedule.get_entry_vertex()).name},
@@ -211,11 +232,11 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
                                       p.string());
   }
 
-  train_list.export_trains(p);
-  station_list.export_stations(p, network);
+  m_train_list.export_trains(p);
+  m_station_list.export_stations(p, network);
 
   json j;
-  for (size_t i = 0; i < schedules.size(); ++i) {
+  for (size_t i = 0; i < m_schedules.size(); ++i) {
     add_json_data(j, i, network);
   }
 
@@ -226,10 +247,10 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
 // GETTER
 
 double cda_rail::Timetable::latest_exit_time() const {
-  if (schedules.empty()) {
+  if (m_schedules.empty()) {
     return NAN;
   }
-  return std::ranges::max(schedules |
+  return std::ranges::max(m_schedules |
                           std::views::transform(&Schedule::get_exit_time));
 }
 
@@ -246,12 +267,12 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
    * leaves the network.
    */
 
-  if (!train_list.has_train(train_index)) {
+  if (!m_train_list.has_train(train_index)) {
     throw exceptions::TrainNotExistentException(train_index);
   }
   cda_rail::exceptions::throw_if_non_positive(dt, "Time step length");
 
-  const auto& schedule = schedules.at(train_index);
+  const auto& schedule = m_schedules.at(train_index);
   const auto& t_0      = schedule.get_entry_time();
   const auto& t_n      = schedule.get_exit_time();
 
@@ -294,19 +315,19 @@ size_t cda_rail::Timetable::add_train(
   if (!network.has_vertex(exit_vertex)) {
     throw exceptions::VertexNotExistentException(exit_vertex);
   }
-  if (train_list.has_train(train_name)) {
+  if (m_train_list.has_train(train_name)) {
     throw exceptions::ConsistencyException("Train " + train_name +
                                            " already exists.");
   }
-  auto const index = train_list.add_train(train_name, length, max_speed,
-                                          acceleration, deceleration, tim);
-  schedules.emplace_back(entry_time, initial_velocity, entry_vertex, exit_time,
-                         exit_velocity, exit_vertex);
-  if (schedules.size() != train_list.size()) {
+  auto const index = m_train_list.add_train(train_name, length, max_speed,
+                                            acceleration, deceleration, tim);
+  m_schedules.emplace_back(entry_time, initial_velocity, entry_vertex,
+                           exit_time, exit_velocity, exit_vertex);
+  if (m_schedules.size() != m_train_list.size()) {
     throw exceptions::ConsistencyException(
-        "Schedule size (" + std::to_string(schedules.size()) +
+        "Schedule size (" + std::to_string(m_schedules.size()) +
         ") does not match train list size (" +
-        std::to_string(train_list.size()) + ") after adding a train.");
+        std::to_string(m_train_list.size()) + ") after adding a train.");
   }
   return index;
 }
@@ -315,59 +336,102 @@ void cda_rail::Timetable::insert_stop(size_t const       train_index,
                                       std::string const& station_name,
                                       double const       service_time,
                                       double const       service_duration) {
-  if (!train_list.has_train(train_index)) {
+  if (!m_train_list.has_train(train_index)) {
     throw exceptions::TrainNotExistentException(train_index);
   }
-  if (!station_list.has_station(station_name)) {
+  if (!m_station_list.has_station(station_name)) {
     throw exceptions::StationNotExistentException(station_name);
   }
 
-  schedules.at(train_index)
+  m_schedules.at(train_index)
       .insert_stop({service_time, service_duration,
-                    station_list.get_station_ptr(station_name)});
+                    m_station_list.get_station_ptr(station_name)});
 }
 
 // HELPER
 
+std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
+cda_rail::Timetable::check_consistency_helper() const {
+  // size of train list and schedule is consistent
+  if (m_train_list.size() != m_schedules.size()) {
+    return {false, cda_rail::exceptions::ConsistencyException(
+                       "Schedule size (" + std::to_string(m_schedules.size()) +
+                       ") does not match train list size (" +
+                       std::to_string(m_train_list.size()) + ").")};
+  }
+
+  // for every schedule the stop list is consistent
+  for (auto const& schedule : m_schedules) {
+    if (auto [result_tmp, exception_obj] =
+            cda_rail::Schedule::check_stops_validity_helper(
+                schedule.get_stops());
+        !result_tmp) {
+      return {false, std::move(exception_obj)};
+    }
+  }
+
+  for (auto const& schedule : m_schedules) {
+    for (auto const& stop : schedule.get_stops()) {
+      auto const& station = stop.get_station();
+      if (!m_station_list.has_station(station.name)) {
+        return {false, cda_rail::exceptions::ConsistencyException(
+                           "Station " + station.name +
+                           " does not exist in station list.")};
+      }
+      if (station != m_station_list.get_station(station.name)) {
+        return {false, cda_rail::exceptions::ConsistencyException(
+                           "Scheduled stop station object " + station.name +
+                           " differs from the station specified in station "
+                           "list (e.g. different tracks).")};
+      }
+      if (std::addressof(station) !=
+          std::addressof(m_station_list.get_station(station.name))) {
+        return {false, cda_rail::exceptions::ConsistencyException(
+                           "Scheduled stop station " + station.name +
+                           " points to an equivalent object.")};
+      }
+    }
+  }
+
+  return {true, {}};
+}
+
 bool cda_rail::Timetable::check_consistency(Network const& network) {
+  if (auto const [result, exception] = check_consistency_helper(); !result) {
+    return false;
+  }
+
   // Helper: Checks if a terminal vertex exists and has exactly one neighbor
   auto is_valid_terminal = [&network](auto vertex) {
     return network.has_vertex(vertex) && network.neighbors(vertex).size() == 1;
   };
 
+  // Helper: Validates that all tracks in a given station exist in the network
+  auto are_station_tracks_valid = [&network](ScheduledStop const& stop) {
+    return std::ranges::all_of(
+        stop.get_station().tracks,
+        [&network](auto track) { return network.has_edge(track); });
+  };
+
   // Helper: Validates a single schedule (combines the 1st and 3rd loops)
-  auto is_schedule_consistent = [&](const auto& schedule) {
+  auto is_schedule_consistent = [&is_valid_terminal, &are_station_tracks_valid](
+                                    Schedule const& schedule) {
     if (!is_valid_terminal(schedule.get_entry_vertex()) ||
         !is_valid_terminal(schedule.get_exit_vertex())) {
       return false;
     }
 
-    try {
-      Schedule::check_stops_validity(schedule.get_stops());
-    } catch (const exceptions::InvalidInputException&) {
+    if (!std::ranges::all_of(schedule.get_stops(), are_station_tracks_valid)) {
       return false;
     }
 
     // Check that all stops fall within the schedule's timeframe
     const auto& stops = schedule.get_stops();
-    return std::all_of(stops.begin(), stops.end(), [&](const auto& stop) {
+    return std::ranges::all_of(stops, [schedule](const auto& stop) {
       return stop.get_service_time() >= schedule.get_entry_time() &&
              stop.get_earliest_departure() <= schedule.get_exit_time();
     });
   };
 
-  // Helper: Validates that all tracks in a given station exist in the network
-  auto are_station_tracks_valid = [&](const auto& station_name) {
-    const auto& tracks = station_list.get_station(station_name).tracks;
-    return std::all_of(tracks.begin(), tracks.end(),
-                       [&](auto track) { return network.has_edge(track); });
-  };
-
-  // Execute checks: True if all schedules and all station tracks are valid
-  const auto& station_names = station_list.get_station_names();
-
-  return std::all_of(schedules.begin(), schedules.end(),
-                     is_schedule_consistent) &&
-         std::all_of(station_names.begin(), station_names.end(),
-                     are_station_tracks_valid);
+  return std::ranges::all_of(m_schedules, is_schedule_consistent);
 }

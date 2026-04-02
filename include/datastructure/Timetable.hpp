@@ -32,9 +32,9 @@ class ScheduledStop {
 
 private:
   // member variables have no default -> user-defined constructors
-  double                         m_service_time; // earliest start of service
-  double                         m_service_duration; // minimal service duration
-  std::shared_ptr<Station const> m_station;          // pointer to a station
+  double                   m_service_time;     // earliest start of service
+  double                   m_service_duration; // minimal service duration
+  std::shared_ptr<Station> m_station;          // pointer to a station
 
   /**
    * @brief Validates that a station pointer is not null.
@@ -68,7 +68,7 @@ public:
    * violated.
    */
   ScheduledStop(double const serviceTime, double const serviceDuration,
-                std::shared_ptr<Station const> station)
+                std::shared_ptr<Station> station)
       : m_service_time(serviceTime), m_service_duration(serviceDuration),
         m_station(std::move(station)) {
     cda_rail::exceptions::throw_if_negative(m_service_time, "Service time");
@@ -154,7 +154,7 @@ public:
    * @throws cda_rail::exceptions::InvalidInputException If `new_station` is
    * null.
    */
-  void set_station(std::shared_ptr<Station const> new_station) {
+  void set_station(std::shared_ptr<Station> new_station) {
     check_ptr_validity(new_station);
     m_station = std::move(new_station);
   }
@@ -197,6 +197,9 @@ private:
    * ordered by service time or if a station appears more than once.
    */
   static void check_stops_validity(std::vector<ScheduledStop> const& stops);
+
+  static std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
+  check_stops_validity_helper(std::vector<ScheduledStop> const& stops);
 
   // private constructor to be used with care (invalid substate)
   Schedule() = default;
@@ -445,15 +448,15 @@ class Timetable {
    * Timetable class
    */
 private:
-  StationList           station_list{};
-  TrainList             train_list{};
-  std::vector<Schedule> schedules{};
+  StationList           m_station_list{};
+  TrainList             m_train_list{};
+  std::vector<Schedule> m_schedules{};
 
   // private helpers
 
   void set_train_list(const TrainList& tl) {
-    this->train_list = tl;
-    this->schedules  = std::vector<Schedule>(
+    this->m_train_list = tl;
+    this->m_schedules  = std::vector<Schedule>(
         tl.size(), Schedule()); // this requires friendship
   }
 
@@ -462,10 +465,13 @@ private:
   void add_json_data(json& j, size_t i, const Network& network) const;
 
   void sort_stops_by_service_time() {
-    for (auto& schedule : schedules) {
+    for (auto& schedule : m_schedules) {
       schedule.sort_stops_by_service_time();
     }
   }
+
+  std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
+  check_consistency_helper() const;
 
 public:
   // Constructors
@@ -506,28 +512,30 @@ public:
   // Getter Methods
 
   [[nodiscard]] StationList const& get_station_list() const {
-    return station_list;
+    return m_station_list;
   };
-  [[nodiscard]] TrainList const& get_train_list() const { return train_list; };
+  [[nodiscard]] TrainList const& get_train_list() const {
+    return m_train_list;
+  };
 
   [[nodiscard]] Schedule const& get_schedule(size_t const train_index) const {
-    if (!train_list.has_train(train_index)) {
+    if (!m_train_list.has_train(train_index)) {
       throw exceptions::TrainNotExistentException(train_index);
     }
-    return schedules.at(train_index);
+    return m_schedules.at(train_index);
   };
   [[nodiscard]] Schedule const&
   get_schedule(std::string const& train_name) const {
-    return get_schedule(train_list.get_train_index(train_name));
+    return get_schedule(m_train_list.get_train_index(train_name));
   };
 
   [[nodiscard]] double latest_exit_time() const;
 
   [[nodiscard]] Train& editable_train(size_t const index) {
-    return train_list.editable_train(index);
+    return m_train_list.editable_train(index);
   };
   [[nodiscard]] Train& editable_train(std::string const& name) {
-    return train_list.editable_train(name);
+    return m_train_list.editable_train(name);
   };
 
   [[nodiscard]] std::vector<
@@ -535,15 +543,15 @@ public:
   get_stop_tracks(size_t const tr, std::string const& station_name,
                   Network const&             network,
                   cda_rail::index_set const& edges_to_consider) {
-    return station_list.get_stop_tracks(station_name,
-                                        train_list.get_train(tr).get_length(),
-                                        network, edges_to_consider);
+    return m_station_list.get_stop_tracks(
+        station_name, m_train_list.get_train(tr).get_length(), network,
+        edges_to_consider);
   };
 
   // Editing Methods
 
   void add_empty_station(std::string station_name) {
-    station_list.add_empty_station(std::move(station_name));
+    m_station_list.add_empty_station(std::move(station_name));
   };
 
   void insert_stop(size_t train_index, std::string const& station_name,
@@ -551,23 +559,23 @@ public:
   void insert_stop(std::string const& train_name,
                    std::string const& station_name, double const service_time,
                    double const service_duration) {
-    insert_stop(train_list.get_train_index(train_name), station_name,
+    insert_stop(m_train_list.get_train_index(train_name), station_name,
                 service_time, service_duration);
   };
 
   void add_track_to_station(std::string const& station_name,
                             size_t const track_id, Network const& network) {
-    station_list.add_track_to_station(station_name, track_id, network);
+    m_station_list.add_track_to_station(station_name, track_id, network);
   };
   void add_track_to_station(std::string const& station_name,
                             size_t const source, size_t const target,
                             Network const& network) {
-    station_list.add_track_to_station(station_name, source, target, network);
+    m_station_list.add_track_to_station(station_name, source, target, network);
   };
   void add_track_to_station(std::string const& station_name,
                             std::string const& source,
                             std::string const& target, Network const& network) {
-    station_list.add_track_to_station(station_name, source, target, network);
+    m_station_list.add_track_to_station(station_name, source, target, network);
   };
 
   /**
@@ -658,7 +666,7 @@ public:
 
   void update_after_discretization(
       std::vector<std::pair<size_t, cda_rail::index_set>> const& new_edges) {
-    station_list.update_after_discretization(new_edges);
+    m_station_list.update_after_discretization(new_edges);
   };
 
   [[nodiscard]] std::pair<size_t, size_t>
@@ -667,7 +675,7 @@ public:
   [[nodiscard]] std::pair<size_t, size_t>
   time_index_interval(std::string const& train_name, double const dt,
                       bool const tn_inclusive = true) const {
-    return time_index_interval(train_list.get_train_index(train_name), dt,
+    return time_index_interval(m_train_list.get_train_index(train_name), dt,
                                tn_inclusive);
   };
 };
