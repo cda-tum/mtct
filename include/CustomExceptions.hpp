@@ -1,7 +1,11 @@
 #pragma once
+#include <algorithm>
+#include <array>
+#include <cctype>
 #include <cstddef>
 #include <exception>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace cda_rail::exceptions {
@@ -203,5 +207,113 @@ static void throw_if_non_positive(double const value, const std::string& name) {
 static void throw_if_non_positive(int const value, const std::string& name) {
   throw_if_non_positive(static_cast<double>(value), 0.0, name);
 };
+
+/**
+ * @brief Validates that a folder name is conservatively portable across Linux,
+ Windows, and macOS.
+
+ * Checks whether a folder name is portable across Linux, Windows, and macOS.
+ *
+ * This method intentionally uses a conservative allowlist. A folder name is
+ * accepted only if all characters are in:
+ * - A-Z,
+ * - a-z,
+ * - 0-9,
+ * - underscore (_), hyphen (-), dot (.), or space ( ).
+ *
+ * In addition, the name is rejected if any of the following applies:
+ * - it is empty,
+ * - it is longer than 255 characters,
+ * - it contains any character outside the allowlist above,
+ * - it starts with a space,
+ * - it ends with a space or a dot,
+ *   ending with a dot also rejects "." and "..",
+ * - its Windows base name (part before first '.', or the whole name if there
+ *   is no dot) is a reserved device name
+ *   (case-insensitive): CON, PRN, AUX, NUL, COM1..COM9, LPT1..LPT9.
+ *
+ * These constraints are intentionally conservative so that every accepted name
+ * can be used as a directory name on all three operating systems.
+ *
+ * @param folderName The folder name to validate
+ *
+ * @throws InvalidInputException if the folder name is not valid
+ */
+static void throw_if_invalid_folder_name(std::string_view const folderName) {
+  if (folderName.empty()) {
+    throw InvalidInputException("Folder name must not be empty.");
+  }
+
+  if (folderName.size() > 255) {
+    throw InvalidInputException(
+        "Folder name must not be longer than 255 characters.");
+  }
+
+  const auto is_allowed_character = [](char const c) {
+    const bool is_uppercase_letter = (c >= 'A' && c <= 'Z');
+    const bool is_lowercase_letter = (c >= 'a' && c <= 'z');
+    const bool is_digit            = (c >= '0' && c <= '9');
+    const bool is_allowed_symbol =
+        (c == '_') || (c == '-') || (c == '.') || (c == ' ');
+
+    return is_uppercase_letter || is_lowercase_letter || is_digit ||
+           is_allowed_symbol;
+  };
+
+  if (!std::ranges::all_of(folderName, is_allowed_character)) {
+    throw InvalidInputException(
+        "Folder name contains unsupported characters. Allowed are A-Z, a-z, "
+        "0-9, '_', '-', '.', and space.");
+  }
+
+  if (folderName.front() == ' ') {
+    throw InvalidInputException("Folder name must not start with a space.");
+  }
+
+  if (folderName.back() == ' ' || folderName.back() == '.') {
+    throw InvalidInputException(
+        "Folder name must not end with a space or a dot.");
+  }
+
+  std::string_view windows_base_name =
+      folderName.substr(0, folderName.find('.'));
+
+  // Trim trailing spaces/dots: find last char that is neither ' ' nor '.'.
+  std::size_t const last_non_trim_character =
+      windows_base_name.find_last_not_of(" .");
+  windows_base_name =
+      (last_non_trim_character == std::string_view::npos)
+          ? std::string_view{}
+          : windows_base_name.substr(0, last_non_trim_character + 1);
+
+  const auto matches_reserved_name = [&windows_base_name](
+                                         std::string_view reserved_name) {
+    if (windows_base_name.size() != reserved_name.size()) {
+      return false;
+    }
+
+    // Safe here by design: input was validated against a conservative
+    // ASCII allowlist, so byte-wise ASCII case folding is sufficient.
+    return std::ranges::equal(
+        windows_base_name, reserved_name,
+        [](char const inputChar, char const reservedChar) {
+          return static_cast<char>(::toupper(
+                     static_cast<unsigned char>(inputChar))) == reservedChar;
+        });
+  };
+
+  static constexpr std::array<std::string_view, 22> RESERVED_NAMES = {
+      "CON",  "PRN",  "AUX",  "NUL",  "COM1", "COM2", "COM3", "COM4",
+      "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3",
+      "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"};
+
+  const bool is_reserved_name =
+      std::ranges::any_of(RESERVED_NAMES, matches_reserved_name);
+
+  if (is_reserved_name) {
+    throw InvalidInputException(
+        "Folder name must not be a Windows reserved device name.");
+  }
+}
 
 } // namespace cda_rail::exceptions
