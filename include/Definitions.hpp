@@ -1,9 +1,11 @@
 #pragma once
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <limits>
+#include <numeric>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Init.h>
@@ -11,6 +13,7 @@
 #include <plog/Severity.h>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <unordered_set>
 #include <utility>
@@ -65,6 +68,24 @@ enum class VelocityRefinementStrategy : std::uint8_t {
 };
 
 // Helper functions
+
+static std::string
+concatenate_string_views(std::initializer_list<std::string_view> parts) {
+  const std::size_t total_size = std::ranges::fold_left(
+      parts, std::size_t{0},
+      [](std::size_t const sum, std::string_view const part) {
+        return sum + part.size();
+      });
+
+  std::string result{};
+  result.reserve(total_size);
+
+  std::ranges::for_each(parts, [&result](std::string_view const part) {
+    result.append(part.data(), part.size());
+  });
+
+  return result;
+}
 
 static void round_towards_zero(double& val, double tol) {
   if (std::abs(val) < tol) {
