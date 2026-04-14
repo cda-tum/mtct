@@ -1,46 +1,47 @@
 add_library(
   ${PROJECT_NAME}
-  ${PROJECT_SOURCE_DIR}/include/EOMHelper.hpp
-  EOMHelper.cpp
+  # ${PROJECT_SOURCE_DIR}/include/EOMHelper.hpp
+  # EOMHelper.cpp
   ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
-  ${PROJECT_SOURCE_DIR}/include/VSSModel.hpp
+  # ${PROJECT_SOURCE_DIR}/include/VSSModel.hpp
   ${PROJECT_SOURCE_DIR}/include/CustomExceptions.hpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/RailwayNetwork.hpp
   datastructure/RailwayNetwork.cpp
-  ${PROJECT_SOURCE_DIR}/include/datastructure/Train.hpp
-  datastructure/Train.cpp
-  ${PROJECT_SOURCE_DIR}/include/datastructure/Timetable.hpp
-  datastructure/Timetable.cpp
-  ${PROJECT_SOURCE_DIR}/include/datastructure/Station.hpp
-  datastructure/Station.cpp
-  ${PROJECT_SOURCE_DIR}/include/datastructure/Route.hpp
-  datastructure/Route.cpp
-  ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralProblemInstance.hpp
-  ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralPerformanceOptimizationInstance.hpp
-  ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
-  probleminstances/VSSGenerationTimetable.cpp
-  probleminstances/SolVSSGenerationTimetable.cpp
-  probleminstances/GeneralPerformanceOptimizationInstance.cpp
-  ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
-  ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
-  ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp
-  ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GeneralMIPSolver.hpp
-  ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GenPOMovingBlockMIPSolver.hpp
-  solver/mip-based/VSSGenTimetableSolver_general.cpp
-  solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
-  solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
-  solver/mip-based/VSSGenTimetableSolver_helper.cpp
-  solver/mip-based/VSSGenTimetableSolver_MovingBlockInformation.cpp
-  solver/mip-based/GenPOMovingBlockMIPSolver.cpp
-  solver/mip-based/GenPOMovingBlockMIPSolver_SolutionExtraction.cpp
-  solver/mip-based/GenPOMovingBlockMIPSolver_Lazy.cpp
-  ${PROJECT_SOURCE_DIR}/include/simulator/GeneralSimulator.hpp
-  ${PROJECT_SOURCE_DIR}/include/simulator/GreedySimulator.hpp
-  simulator/GreedySimulator.cpp
-  ${PROJECT_SOURCE_DIR}/include/simulator/GreedyHeuristic.hpp
-  simulator/GreedyHeuristic.cpp
-  ${PROJECT_SOURCE_DIR}/include/solver/astar-based/GenPOMovingBlockAStarSolver.hpp
-  solver/astar-based/GenPOMovingBlockAStarSolver.cpp)
+  # ${PROJECT_SOURCE_DIR}/include/datastructure/Train.hpp
+  # datastructure/Train.cpp
+  # ${PROJECT_SOURCE_DIR}/include/datastructure/Timetable.hpp
+  # datastructure/Timetable.cpp
+  # ${PROJECT_SOURCE_DIR}/include/datastructure/Station.hpp
+  # datastructure/Station.cpp
+  # ${PROJECT_SOURCE_DIR}/include/datastructure/Route.hpp
+  # datastructure/Route.cpp
+  # ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralProblemInstance.hpp
+  # ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralPerformanceOptimizationInstance.hpp
+  # ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
+  # probleminstances/VSSGenerationTimetable.cpp
+  # probleminstances/SolVSSGenerationTimetable.cpp
+  # probleminstances/GeneralPerformanceOptimizationInstance.cpp
+  # ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
+  # ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
+  # ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp
+  # ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GeneralMIPSolver.hpp
+  # ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GenPOMovingBlockMIPSolver.hpp
+  # solver/mip-based/VSSGenTimetableSolver_general.cpp
+  # solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
+  # solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
+  # solver/mip-based/VSSGenTimetableSolver_helper.cpp
+  # solver/mip-based/VSSGenTimetableSolver_MovingBlockInformation.cpp
+  # solver/mip-based/GenPOMovingBlockMIPSolver.cpp
+  # solver/mip-based/GenPOMovingBlockMIPSolver_SolutionExtraction.cpp
+  # solver/mip-based/GenPOMovingBlockMIPSolver_Lazy.cpp
+  # ${PROJECT_SOURCE_DIR}/include/simulator/GeneralSimulator.hpp
+  # ${PROJECT_SOURCE_DIR}/include/simulator/GreedySimulator.hpp
+  # simulator/GreedySimulator.cpp
+  # ${PROJECT_SOURCE_DIR}/include/simulator/GreedyHeuristic.hpp
+  # simulator/GreedyHeuristic.cpp
+  # ${PROJECT_SOURCE_DIR}/include/solver/astar-based/GenPOMovingBlockAStarSolver.hpp
+  # solver/astar-based/GenPOMovingBlockAStarSolver.cpp
+)
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
