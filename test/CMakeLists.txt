@@ -13,6 +13,7 @@ package_add_test(
   ${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_custom_exceptions.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_general_helper.cpp
   # ${CMAKE_CURRENT_SOURCE_DIR}/test_railwaynetwork.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test_probleminstances.cpp
   # ${CMAKE_CURRENT_SOURCE_DIR}/test_multiarray.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi_vss_gen.cpp
   # ${CMAKE_CURRENT_SOURCE_DIR}/test_helper.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test_plog.cpp
