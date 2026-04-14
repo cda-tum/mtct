@@ -477,4 +477,4 @@ static void throw_if_invalid_folder_name(std::string_view const folderName) {
 
 } // namespace cda_rail::exceptions
 
-#include "GeneralHelper.hpp"
+#include "GeneralHelper.hpp" // concatenate_string_views, would cause circular include error if included at the beginning of the file
