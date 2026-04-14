@@ -2,6 +2,7 @@
 
 #include "Definitions.hpp"
 
+#include <concepts>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Init.h>
@@ -11,11 +12,14 @@
 namespace cda_rail {
 
 // Comparison Helper
-// Template type T
-template <typename T>
-static bool approx_equal(T const a, T const b, T const factor = 10) {
-  const auto eps = factor * std::numeric_limits<T>::epsilon();
-  return a - b < eps && b - a < eps;
+
+/**
+ * Returns true if a and b are approximately equal within factor * epsilon.
+ * Restricted to floating-point types, for which epsilon is meaningful.
+ */
+template <std::floating_point T>
+[[nodiscard]] bool approx_equal(T const a, T const b, T const factor = 10) {
+  return std::abs(a - b) < factor * std::numeric_limits<T>::epsilon();
 }
 
 // Rounding Functions
@@ -25,10 +29,10 @@ static void round_small_numbers_to_zero_inplace(double&      val,
   if (std::abs(val) < tol) {
     val = 0;
   }
-};
+}
 
-static double round_to_given_tolerance(double const value,
-                                       double const tolerance) {
+[[nodiscard]] static double round_to_given_tolerance(double const value,
+                                                     double const tolerance) {
   /**
    * Round value to the given the tolerance, e.g., 1e-5.
    * @param value Value to be rounded
@@ -37,7 +41,7 @@ static double round_to_given_tolerance(double const value,
    * @return Rounded value
    */
 
-  const auto factor = std::round(1 / tolerance);
+  const auto factor = std::round(1.0 / tolerance);
   return std::round(value * factor) / factor;
 }
 
@@ -53,13 +57,15 @@ static double round_to_given_tolerance(double const value,
  * @return Vector of all subsets of size k of the set {0, 1, ..., n-1} as
  * pairs of indices
  */
-std::vector<cda_rail::index_set> subsets_of_size_k_indices(size_t n, size_t k);
+[[nodiscard]] std::vector<cda_rail::index_vector>
+subsets_of_size_k_indices(size_t n, size_t k);
 
-std::vector<std::pair<size_t, size_t>> subsets_of_size_2_indices(size_t n);
+[[nodiscard]] std::vector<std::pair<size_t, size_t>>
+subsets_of_size_2_indices(size_t n);
 
 // String Helper
 
-std::string
+[[nodiscard]] std::string
 concatenate_string_views(std::initializer_list<std::string_view> parts);
 
 // Debugging / Output Helper
@@ -74,6 +80,6 @@ void initialize_plog(bool debug_input, bool overwrite_severity = false);
  *
  * @param p Path to the directory
  */
-bool is_directory_and_create(const std::filesystem::path& p);
+[[nodiscard]] bool is_directory_and_create(const std::filesystem::path& p);
 
 } // namespace cda_rail
