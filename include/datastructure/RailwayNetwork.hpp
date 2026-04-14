@@ -16,6 +16,7 @@
 #include <vector>
 
 namespace cda_rail {
+
 struct Vertex {
   /**
    * Vertex object
@@ -121,6 +122,11 @@ private:
                                  const std::optional<std::string>& headway,
                                  const std::optional<std::string>& pos_x,
                                  const std::optional<std::string>& pos_y);
+
+  static void extract_vertices_from_key_inplace(const std::string& key,
+                                                std::string&       source_name,
+                                                std::string&       target_name);
+
   void add_edges_from_graphml(
       const tinyxml2::XMLElement*       graphml_edge,
       const std::optional<std::string>& breakable,

@@ -1,5 +1,6 @@
 #pragma once
 #include "Definitions.hpp"
+#include "GeneralHelper.hpp"
 
 #include <algorithm>
 #include <array>

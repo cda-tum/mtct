@@ -2,6 +2,7 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "GeneralHelper.hpp"
 #include "VSSModel.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
@@ -260,7 +261,7 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
   for (const auto& [key, val] : data.items()) {
     std::string source_name;
     std::string target_name;
-    extract_vertices_from_key(key, source_name, target_name);
+    extract_vertices_from_key_inplace(key, source_name, target_name);
     auto const edge_id_in = get_edge_index(source_name, target_name);
     for (auto& tuple : val) {
       auto const edge_id_out = get_edge_index(tuple[0].get<std::string>(),
@@ -2370,4 +2371,16 @@ std::vector<cda_rail::index_vector> cda_rail::Network::all_paths_ending_at_ttd(
     }
   }
   return ret_val;
+}
+
+void cda_rail::Network::extract_vertices_from_key_inplace(
+    const std::string& key, std::string& source_name,
+    std::string& target_name) {
+  size_t const first_quote  = key.find_first_of('\'');
+  size_t const second_quote = key.find_first_of('\'', first_quote + 1);
+  source_name = key.substr(first_quote + 1, second_quote - first_quote - 1);
+
+  size_t const third_quote  = key.find_first_of('\'', second_quote + 1);
+  size_t const fourth_quote = key.find_first_of('\'', third_quote + 1);
+  target_name = key.substr(third_quote + 1, fourth_quote - third_quote - 1);
 }
