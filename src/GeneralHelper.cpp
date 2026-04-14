@@ -37,8 +37,8 @@ cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
   // indices always holds the current combination in ascending order.
   // It starts at {0, 1, ..., k-1} and is stepped through all C(n,k)
   // k-combinations of {0, ..., n-1} in lexicographic order.
-  std::vector<cda_rail::index_set> result;
-  std::vector<size_t>              indices(k);
+  std::vector<cda_rail::index_vector> result;
+  std::vector<size_t>                 indices(k);
   std::ranges::iota(indices, 0UZ); // first combination: {0, 1, ..., k-1}
 
   // Advance indices to the lexicographically next k-combination.
