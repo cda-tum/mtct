@@ -3,9 +3,6 @@
 #include "gtest/gtest.h"
 #include <string>
 
-#define EXPECT_APPROX_EQ(a, b)                                                 \
-  EXPECT_TRUE(std::abs((a) - (b)) < 1e-6) << (a) << " !=(approx.) " << (b)
-
 // NOLINTBEGIN(clang-diagnostic-unused-result)
 
 namespace {
