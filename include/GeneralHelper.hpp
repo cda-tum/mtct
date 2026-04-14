@@ -66,7 +66,7 @@ static void round_small_numbers_to_zero_inplace(double&      val,
 [[nodiscard]] static double round_to_given_tolerance(double const value,
                                                      double const tolerance) {
   cda_rail::exceptions::throw_if_non_positive(tolerance, "tolerance");
-  const auto factor = std::round(1.0 / tolerance);
+  const auto factor = 1.0 / tolerance;
   return std::round(value * factor) / factor;
 }
 
