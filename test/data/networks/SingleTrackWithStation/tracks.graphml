@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+<key id="d0" for="edge" attr.name="breakable" attr.type="boolean"/>
+<key id="d1" for="edge" attr.name="length" attr.type="double"/>
+<key id="d2" for="edge" attr.name="max_speed" attr.type="double"/>
+<key id="d3" for="edge" attr.name="min_block_length" attr.type="double"/>
+<key id="d4" for="edge" attr.name="type" attr.type="long"/>
+<graph edgedefault="directed">
+<node id="v0">
+<data key="d4">2</data>
+</node>
+<node id="v1">
+<data key="d4">2</data>
+</node>
+<node id="v2">
+<data key="d4">2</data>
+</node>
+<node id="v3">
+<data key="d4">2</data>
+</node>
+<edge source="v0" target="v1">
+<data key="d0">true</data>
+<data key="d1">3000</data>
+<data key="d2">55</data>
+<data key="d3">10</data>
+</edge>
+<edge source="v1" target="v2">
+<data key="d0">true</data>
+<data key="d1">200</data>
+<data key="d2">10</data>
+<data key="d3">5</data>
+</edge>
+<edge source="v2" target="v3">
+<data key="d0">true</data>
+<data key="d1">3000</data>
+<data key="d2">20</data>
+<data key="d3">10</data>
+</edge>
+</graph>
+</graphml>
