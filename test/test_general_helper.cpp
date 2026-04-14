@@ -4,7 +4,7 @@
 
 // NOLINTBEGIN(clang-diagnostic-unused-result)
 
-TEST(Functionality, Subsets2) {
+TEST(GeneralHelper, Subsets2) {
   auto subsets_of_size_2 = cda_rail::subsets_of_size_2_indices(5);
   // Expect 5 choose 2 number of elements
   EXPECT_EQ(subsets_of_size_2.size(), 10);
@@ -41,7 +41,7 @@ TEST(Functionality, Subsets2) {
               subsets_of_size_2.end());
 }
 
-TEST(Functionality, Subsets3) {
+TEST(GeneralHelper, Subsets3) {
   auto subsets_of_size_3 = cda_rail::subsets_of_size_k_indices(6, 3);
   // Expect 6 choose 2 number of elements
   EXPECT_EQ(subsets_of_size_3.size(), 20);
