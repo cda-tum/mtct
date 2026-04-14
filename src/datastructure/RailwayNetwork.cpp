@@ -28,12 +28,13 @@
 
 using json = nlohmann::json;
 
-void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
-                                 std::string& breakable, std::string& length,
-                                 std::string& max_speed,
-                                 std::string& min_block_length,
-                                 std::string& min_stop_block_length,
-                                 std::string& type, std::string& headway) {
+void cda_rail::Network::get_keys_inplace(
+    tinyxml2::XMLElement* graphml_body, std::optional<std::string>& breakable,
+    std::optional<std::string>& length, std::optional<std::string>& max_speed,
+    std::optional<std::string>& min_block_length,
+    std::optional<std::string>& min_stop_block_length,
+    std::optional<std::string>& type, std::optional<std::string>& headway,
+    std::optional<std::string>& pos_x, std::optional<std::string>& pos_y) {
   /**
    * Get keys from graphml file
    * @param graphml_body Body of graphml file
@@ -44,6 +45,8 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
    * @param min_stop_block_length Min stop block length key
    * @param type Type key
    * @param headway Headway key
+   * @param pos_x Vertex positions first element key
+   * @param pos_y Vertex positions second element key
    *
    * The variables are passed by reference and are modified in place.
    */
@@ -67,20 +70,29 @@ void cda_rail::Network::get_keys(tinyxml2::XMLElement* graphml_body,
       min_stop_block_length = graphml_key->Attribute("id");
     } else if (graphml_key->Attribute("attr.name") == std::string("headway")) {
       headway = graphml_key->Attribute("id");
+    } else if (graphml_key->Attribute("attr.name") == std::string("pos_x")) {
+      pos_x = graphml_key->Attribute("id");
+    } else if (graphml_key->Attribute("attr.name") == std::string("pos_y")) {
+      pos_y = graphml_key->Attribute("id");
     }
     graphml_key = graphml_key->NextSiblingElement("key");
   }
 }
 
 void cda_rail::Network::add_vertices_from_graphml(
-    const tinyxml2::XMLElement* graphml_node, const std::string& type,
-    const std::string& headway) {
+    const tinyxml2::XMLElement*       graphml_node,
+    const std::optional<std::string>& type,
+    const std::optional<std::string>& headway,
+    const std::optional<std::string>& pos_x,
+    const std::optional<std::string>& pos_y) {
   /**
    * Add vertices from graphml file
    * @param graphml_node Node of graphml file
    * @param network Network object
    * @param type Type key
    * @param headway Headway key
+   * @param pos_x The vertex positions first element key
+   * @param pos_y The vertex positions second element key
    *
    * The vertices are added to the network object in place.
    */
@@ -91,33 +103,43 @@ void cda_rail::Network::add_vertices_from_graphml(
     std::string const     name = graphml_node->Attribute("id");
     std::optional<int>    v_type;
     std::optional<double> headway_value;
+    std::optional<double> x_pos;
+    std::optional<double> y_pos;
+    std::optional<std::pair<double, double>> pos;
     while (graphml_data != nullptr) {
-      if (graphml_data->Attribute("key") == type) {
+      if (type.has_value() && graphml_data->Attribute("key") == type.value()) {
         v_type = std::stoi(graphml_data->GetText());
-      } else if (!headway.empty() &&
-                 graphml_data->Attribute("key") == headway) {
+      } else if (headway.has_value() &&
+                 graphml_data->Attribute("key") == headway.value()) {
         headway_value = std::stod(graphml_data->GetText());
+      } else if (pos_x.has_value() &&
+                 graphml_data->Attribute("key") == pos_x.value()) {
+        x_pos = std::stod(graphml_data->GetText());
+      } else if (pos_y.has_value() &&
+                 graphml_data->Attribute("key") == pos_y.value()) {
+        y_pos = std::stod(graphml_data->GetText());
       }
       graphml_data = graphml_data->NextSiblingElement("data");
     }
     if (!v_type.has_value()) {
       throw exceptions::ImportException("graphml");
     }
-    if (headway_value.has_value()) {
-      this->add_vertex(name, static_cast<VertexType>(v_type.value()),
-                       headway_value.value());
-    } else {
-      this->add_vertex(name, static_cast<VertexType>(v_type.value()));
+    if (x_pos.has_value() && y_pos.has_value()) {
+      pos = std::make_pair(x_pos.value(), y_pos.value());
     }
+    this->add_vertex(
+        {name, static_cast<VertexType>(v_type.value()), headway_value, pos});
     graphml_node = graphml_node->NextSiblingElement("node");
   }
 }
 
 void cda_rail::Network::add_edges_from_graphml(
-    const tinyxml2::XMLElement* graphml_edge, const std::string& breakable,
-    const std::string& length, const std::string& max_speed,
-    const std::string& min_block_length,
-    const std::string& min_stop_block_length) {
+    const tinyxml2::XMLElement*       graphml_edge,
+    const std::optional<std::string>& breakable,
+    const std::optional<std::string>& length,
+    const std::optional<std::string>& max_speed,
+    const std::optional<std::string>& min_block_length,
+    const std::optional<std::string>& min_stop_block_length) {
   /**
    * Add edges from graphml file
    * @param graphml_edge Edge of graphml file
@@ -141,25 +163,30 @@ void cda_rail::Network::add_edges_from_graphml(
     std::optional<double> e_min_block_length;
     std::optional<double> e_min_stop_block_length;
     while (graphml_data != nullptr) {
-      if (graphml_data->Attribute("key") == breakable) {
+      if (breakable.has_value() &&
+          graphml_data->Attribute("key") == breakable.value()) {
         std::string tmp = graphml_data->GetText();
         to_bool_optional(tmp, e_breakable);
-      } else if (graphml_data->Attribute("key") == min_block_length) {
+      } else if (min_block_length.has_value() &&
+                 graphml_data->Attribute("key") == min_block_length.value()) {
         e_min_block_length = std::stod(graphml_data->GetText());
-      } else if (graphml_data->Attribute("key") == max_speed) {
+      } else if (max_speed.has_value() &&
+                 graphml_data->Attribute("key") == max_speed.value()) {
         e_max_speed = std::stod(graphml_data->GetText());
-      } else if (graphml_data->Attribute("key") == length) {
+      } else if (length.has_value() &&
+                 graphml_data->Attribute("key") == length.value()) {
         e_length = std::stod(graphml_data->GetText());
-      } else if (!min_stop_block_length.empty() &&
-                 graphml_data->Attribute("key") == min_stop_block_length) {
+      } else if (min_stop_block_length.has_value() &&
+                 graphml_data->Attribute("key") ==
+                     min_stop_block_length.value()) {
         e_min_stop_block_length = std::stod(graphml_data->GetText());
       }
       graphml_data = graphml_data->NextSiblingElement("data");
     }
-    if (!e_length.has_value() || !e_max_speed.has_value() ||
-        !e_breakable.has_value() || !e_min_block_length.has_value()) {
+    if (!e_length.has_value() || !e_max_speed.has_value()) {
       throw exceptions::ImportException("graphml");
     }
+
     if (e_min_stop_block_length.has_value()) {
       this->add_edge(source_name, target_name, e_length.value(),
                      e_max_speed.value(), e_breakable.value(),
@@ -188,17 +215,20 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
 
   tinyxml2::XMLElement* graphml_body = graph_xml.FirstChildElement("graphml");
 
-  std::string breakable;
-  std::string length;
-  std::string max_speed;
-  std::string min_block_length;
-  std::string min_stop_block_length;
-  std::string type;
-  std::string headway;
-  Network::get_keys(graphml_body, breakable, length, max_speed,
-                    min_block_length, min_stop_block_length, type, headway);
-  if (breakable.empty() || length.empty() || max_speed.empty() ||
-      min_block_length.empty() || type.empty()) {
+  std::optional<std::string> breakable;
+  std::optional<std::string> length;
+  std::optional<std::string> max_speed;
+  std::optional<std::string> min_block_length;
+  std::optional<std::string> min_stop_block_length;
+  std::optional<std::string> type;
+  std::optional<std::string> headway;
+  std::optional<std::string> pos_x;
+  std::optional<std::string> pos_y;
+  Network::get_keys_inplace(graphml_body, breakable, length, max_speed,
+                            min_block_length, min_stop_block_length, type,
+                            headway, pos_x, pos_y);
+  if (!breakable.has_value() || !length.has_value() || !max_speed.has_value() ||
+      !min_block_length.has_value() || !type.has_value()) {
     throw exceptions::ImportException("graphml");
   }
 
@@ -210,7 +240,7 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
 
   const tinyxml2::XMLElement* graphml_node =
       graphml_graph->FirstChildElement("node");
-  this->add_vertices_from_graphml(graphml_node, type, headway);
+  this->add_vertices_from_graphml(graphml_node, type, headway, pos_x, pos_y);
 
   const tinyxml2::XMLElement* graphml_edge =
       graphml_graph->FirstChildElement("edge");
@@ -240,22 +270,35 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
   }
 }
 
-size_t cda_rail::Network::add_vertex(const std::string& name, VertexType type,
-                                     double headway) {
+size_t cda_rail::Network::add_vertex(Vertex vertex) {
   /**
    * Add vertex to network
-   * @param name Name of vertex
-   * @param type Type of vertex
-   * @param headway Headway of vertex
+   * @param vertex The vertex object
    *
    * @return Index of vertex
    */
-  if (has_vertex(name)) {
+  if (has_vertex(vertex.name)) {
     throw exceptions::InvalidInputException("Vertex already exists");
   }
-  vertices.emplace_back(name, type, headway);
-  vertex_name_to_index[name] = vertices.size() - 1;
-  return vertex_name_to_index[name];
+  m_vertices.emplace_back(std::move(vertex));
+  m_vertex_name_to_index[m_vertices.back().name] = m_vertices.size() - 1;
+  return m_vertices.size() - 1;
+}
+
+void cda_rail::Network::check_new_edge_requirements(size_t const source,
+                                                    size_t const target) const {
+  if (source == target) {
+    throw exceptions::InvalidInputException("Source and target are the same");
+  }
+  if (!has_vertex(source)) {
+    throw exceptions::VertexNotExistentException(source);
+  }
+  if (!has_vertex(target)) {
+    throw exceptions::VertexNotExistentException(target);
+  }
+  if (has_edge(source, target)) {
+    throw exceptions::InvalidInputException("Edge already exists");
+  }
 }
 
 size_t cda_rail::Network::add_edge(size_t source, size_t target, double length,
@@ -273,22 +316,26 @@ size_t cda_rail::Network::add_edge(size_t source, size_t target, double length,
    *
    * @return Index of edge
    */
-  if (source == target) {
-    throw exceptions::InvalidInputException("Source and target are the same");
-  }
-  if (!has_vertex(source)) {
-    throw exceptions::VertexNotExistentException(source);
-  }
-  if (!has_vertex(target)) {
-    throw exceptions::VertexNotExistentException(target);
-  }
-  if (has_edge(source, target)) {
-    throw exceptions::InvalidInputException("Edge already exists");
-  }
-  edges.emplace_back(source, target, length, max_speed, breakable,
-                     min_block_length, min_stop_block_length);
-  successors.emplace_back();
-  return edges.size() - 1;
+
+  check_new_edge_requirements(source, target);
+
+  m_edges.emplace_back(source, target, length, max_speed, breakable,
+                       min_block_length, min_stop_block_length);
+  m_successors.emplace_back();
+  return m_edges.size() - 1;
+}
+
+size_t cda_rail::Network::add_edge(
+    size_t source, size_t target, double length, double max_speed,
+    std::optional<bool> const&   breakable,
+    std::optional<double> const& min_block_length,
+    std::optional<double> const& min_stop_block_length) {
+  check_new_edge_requirements(source, target);
+
+  m_edges.emplace_back(source, target, length, max_speed, breakable,
+                       min_block_length, min_stop_block_length);
+  m_successors.emplace_back();
+  return m_edges.size() - 1;
 }
 
 void cda_rail::Network::add_successor(size_t edge_in, size_t edge_out) {
@@ -304,18 +351,18 @@ void cda_rail::Network::add_successor(size_t edge_in, size_t edge_out) {
   if (!has_edge(edge_out)) {
     throw exceptions::EdgeNotExistentException(edge_out);
   }
-  if (edges[edge_in].target != edges[edge_out].source) {
+  if (m_edges[edge_in].target != m_edges[edge_out].source) {
     throw exceptions::ConsistencyException("Edge " + std::to_string(edge_out) +
                                            " is not adjacent to " +
                                            std::to_string(edge_in));
   }
 
   // If successors[edges] already contains edge_out, do nothing
-  if (std::ranges::contains(successors.at(edge_in), edge_out)) {
+  if (std::ranges::contains(m_successors.at(edge_in), edge_out)) {
     return;
   }
 
-  successors[edge_in].insert(edge_out);
+  m_successors[edge_in].insert(edge_out);
 }
 
 const cda_rail::Vertex& cda_rail::Network::get_vertex(size_t index) const {
@@ -329,10 +376,10 @@ const cda_rail::Vertex& cda_rail::Network::get_vertex(size_t index) const {
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  return vertices[index];
+  return m_vertices[index];
 }
 
-size_t cda_rail::Network::get_vertex_index(const std::string& name) const {
+size_t cda_rail::Network::get_vertex_index(std::string_view const name) const {
   /**
    * Get vertex index by name
    *
@@ -343,7 +390,7 @@ size_t cda_rail::Network::get_vertex_index(const std::string& name) const {
   if (!has_vertex(name)) {
     throw exceptions::VertexNotExistentException(name);
   }
-  return vertex_name_to_index.at(name);
+  return m_vertex_name_to_index.at(std::string{name});
 }
 
 const cda_rail::Edge& cda_rail::Network::get_edge(size_t index) const {
@@ -357,7 +404,7 @@ const cda_rail::Edge& cda_rail::Network::get_edge(size_t index) const {
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  return edges[index];
+  return m_edges[index];
 }
 
 const cda_rail::Edge& cda_rail::Network::get_edge(size_t source_id,
@@ -376,7 +423,7 @@ const cda_rail::Edge& cda_rail::Network::get_edge(size_t source_id,
   if (!has_vertex(target_id)) {
     throw exceptions::VertexNotExistentException(target_id);
   }
-  for (const auto& edge : edges) {
+  for (const auto& edge : m_edges) {
     if (edge.source == source_id && edge.target == target_id) {
       return edge;
     }
@@ -400,8 +447,8 @@ size_t cda_rail::Network::get_edge_index(size_t source_id,
   if (!has_vertex(target_id)) {
     throw exceptions::VertexNotExistentException(target_id);
   }
-  for (size_t i = 0; i < edges.size(); i++) {
-    if (edges[i].source == source_id && edges[i].target == target_id) {
+  for (size_t i = 0; i < m_edges.size(); i++) {
+    if (m_edges[i].source == source_id && m_edges[i].target == target_id) {
       return i;
     }
   }
@@ -424,13 +471,13 @@ bool cda_rail::Network::has_edge(size_t source_id, size_t target_id) const {
   if (!has_vertex(target_id)) {
     throw exceptions::VertexNotExistentException(target_id);
   }
-  return std::ranges::any_of(edges, [source_id, target_id](const Edge& edge) {
+  return std::ranges::any_of(m_edges, [source_id, target_id](const Edge& edge) {
     return edge.source == source_id && edge.target == target_id;
   });
 }
 
-bool cda_rail::Network::has_edge(const std::string& source_name,
-                                 const std::string& target_name) const {
+bool cda_rail::Network::has_edge(std::string_view const source_name,
+                                 std::string_view const target_name) const {
   /**
    * Check if edge exists by source and target name
    *
@@ -448,8 +495,8 @@ bool cda_rail::Network::has_edge(const std::string& source_name,
   return has_edge(get_vertex_index(source_name), get_vertex_index(target_name));
 }
 
-void cda_rail::Network::change_vertex_name(size_t             index,
-                                           const std::string& new_name) {
+void cda_rail::Network::change_vertex_name(size_t                 index,
+                                           std::string_view const new_name) {
   /**
    * Change vertex name
    *
@@ -462,9 +509,9 @@ void cda_rail::Network::change_vertex_name(size_t             index,
   if (has_vertex(new_name)) {
     throw exceptions::InvalidInputException("Vertex already exists");
   }
-  vertex_name_to_index.erase(vertices[index].name);
-  vertices[index].name           = new_name;
-  vertex_name_to_index[new_name] = index;
+  m_vertex_name_to_index.erase(m_vertices.at(index).name);
+  m_vertices.at(index).name                            = new_name;
+  m_vertex_name_to_index.at(m_vertices.at(index).name) = index;
 }
 
 void cda_rail::Network::change_edge_length(size_t index, double new_length) {
@@ -477,7 +524,7 @@ void cda_rail::Network::change_edge_length(size_t index, double new_length) {
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  edges[index].length = new_length;
+  m_edges[index].length = new_length;
 }
 
 void cda_rail::Network::change_edge_max_speed(size_t index,
@@ -491,7 +538,7 @@ void cda_rail::Network::change_edge_max_speed(size_t index,
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  edges[index].max_speed = new_max_speed;
+  m_edges[index].max_speed = new_max_speed;
 }
 
 void cda_rail::Network::change_edge_min_block_length(
@@ -505,7 +552,7 @@ void cda_rail::Network::change_edge_min_block_length(
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  edges[index].min_block_length = new_min_block_length;
+  m_edges[index].min_block_length = new_min_block_length;
 }
 
 void cda_rail::Network::change_edge_min_stop_block_length(
@@ -519,7 +566,7 @@ void cda_rail::Network::change_edge_min_stop_block_length(
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  edges[index].min_stop_block_length = new_min_stop_block_length;
+  m_edges[index].min_stop_block_length = new_min_stop_block_length;
 }
 
 void cda_rail::Network::set_edge_breakable(size_t index) {
@@ -531,7 +578,7 @@ void cda_rail::Network::set_edge_breakable(size_t index) {
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  edges[index].breakable = true;
+  m_edges[index].breakable = true;
 }
 
 void cda_rail::Network::set_edge_unbreakable(size_t index) {
@@ -543,7 +590,7 @@ void cda_rail::Network::set_edge_unbreakable(size_t index) {
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  edges[index].breakable = false;
+  m_edges[index].breakable = false;
 }
 
 cda_rail::index_set cda_rail::Network::out_edges(size_t index) const {
@@ -558,8 +605,8 @@ cda_rail::index_set cda_rail::Network::out_edges(size_t index) const {
     throw exceptions::VertexNotExistentException(index);
   }
   cda_rail::index_set out_edges;
-  for (size_t i = 0; i < edges.size(); ++i) {
-    if (edges[i].source == index) {
+  for (size_t i = 0; i < m_edges.size(); ++i) {
+    if (m_edges[i].source == index) {
       out_edges.insert(i);
     }
   }
@@ -578,8 +625,8 @@ cda_rail::index_set cda_rail::Network::in_edges(size_t const index) const {
     throw exceptions::VertexNotExistentException(index);
   }
   cda_rail::index_set in_edges;
-  for (size_t i = 0; i < edges.size(); ++i) {
-    if (edges[i].target == index) {
+  for (size_t i = 0; i < m_edges.size(); ++i) {
+    if (m_edges[i].target == index) {
       in_edges.insert(i);
     }
   }
@@ -598,7 +645,7 @@ cda_rail::Network::get_successors(size_t index) const {
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  return successors[index];
+  return m_successors[index];
 }
 
 cda_rail::index_set cda_rail::Network::get_predecessors(size_t index) const {
@@ -630,7 +677,7 @@ void cda_rail::to_bool_optional(std::string& s, std::optional<bool>& b) {
    * @param s String to convert
    * @param b Optional bool to write to, used as return value
    */
-  std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+  std::ranges::transform(s, s.begin(), ::tolower);
   bool tmp = false;
   if (!!(std::istringstream(s) >> std::boolalpha >> tmp)) {
     b = tmp;
@@ -660,6 +707,8 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   std::string const min_stop_block_length = "d4";
   std::string const type                  = "d5";
   std::string const headway               = "d6";
+  std::string const pos_x                 = "d7";
+  std::string const pos_y                 = "d8";
   file << "<key id=\"" << breakable
        << R"(" for="edge" attr.name="breakable" attr.type="boolean"/>)" << '\n';
   file << "<key id=\"" << length
@@ -677,24 +726,32 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
        << R"(" for="vertex" attr.name="type" attr.type="long"/>)" << '\n';
   file << "<key id=\"" << headway
        << R"(" for="vertex" attr.name="headway" attr.type="double"/>)" << '\n';
+  file << "<key id=\"" << pos_x
+       << R"(" for="vertex" attr.name="pos_x" attr.type="double"/>)" << '\n';
+  file << "<key id=\"" << pos_y
+       << R"(" for="vertex" attr.name="pos_y" attr.type="double"/>)" << '\n';
 
   // Write the graph header
   file << "<graph edgedefault=\"directed\">" << '\n';
 
   // Write the vertices
-  for (const auto& vertex : vertices) {
+  for (const auto& vertex : m_vertices) {
     file << "<node id=\"" << vertex.name << "\">" << '\n';
     file << "<data key=\"" << type << "\">" << static_cast<int>(vertex.type)
          << "</data>" << '\n';
     file << "<data key=\"" << headway << "\">" << vertex.headway << "</data>"
          << '\n';
+    file << "<data key=\"" << pos_x << "\">" << vertex.pos.first << "</data>"
+         << '\n';
+    file << "<data key=\"" << pos_y << "\">" << vertex.pos.second << "</data>"
+         << '\n';
     file << "</node>" << '\n';
   }
 
   // Write the edges
-  for (const auto& edge : edges) {
-    file << "<edge source=\"" << vertices[edge.source].name << "\" target=\""
-         << vertices[edge.target].name << "\">" << '\n';
+  for (const auto& edge : m_edges) {
+    file << "<edge source=\"" << m_vertices.at(edge.source).name
+         << "\" target=\"" << m_vertices.at(edge.target).name << "\">" << '\n';
     file << "<data key=\"" << breakable << "\">" << std::boolalpha
          << edge.breakable << "</data>" << '\n';
     file << "<data key=\"" << length << "\">" << edge.length << "</data>"
@@ -728,13 +785,14 @@ void cda_rail::Network::export_successors_cpp(
   for (size_t i = 0; i < number_of_edges(); ++i) {
     const auto&                                      edge = get_edge(i);
     std::vector<std::pair<std::string, std::string>> successor_edges_export;
-    for (const auto& successor : successors[i]) {
+    for (const auto& successor : m_successors.at(i)) {
       const auto& successor_edge = get_edge(successor);
-      successor_edges_export.emplace_back(vertices[successor_edge.source].name,
-                                          vertices[successor_edge.target].name);
+      successor_edges_export.emplace_back(
+          m_vertices.at(successor_edge.source).name,
+          m_vertices.at(successor_edge.target).name);
     }
-    j["('" + vertices[edge.source].name + "', '" + vertices[edge.target].name +
-      "')"] = successor_edges_export;
+    j["('" + m_vertices.at(edge.source).name + "', '" +
+      m_vertices.at(edge.target).name + "')"] = successor_edges_export;
   }
 
   std::ofstream file(p / "successors_cpp.json");
@@ -761,8 +819,8 @@ void cda_rail::Network::export_successors_python(
       file << ", ";
     }
 
-    file << "('" << vertices[edge.source].name << "', '"
-         << vertices[edge.target].name << "'): ";
+    file << "('" << m_vertices[edge.source].name << "', '"
+         << m_vertices[edge.target].name << "'): ";
     write_successor_set_to_file(file, i);
   }
   file << "}" << '\n';
@@ -791,28 +849,32 @@ void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,
       }
 
       const auto& successor_edge = get_edge(successor);
-      file << "('" << vertices[successor_edge.source].name << "', '"
-           << vertices[successor_edge.target].name << "')";
+      file << "('" << m_vertices[successor_edge.source].name << "', '"
+           << m_vertices[successor_edge.target].name << "')";
     }
     file << "}";
   }
 }
 
-void cda_rail::Network::export_network(const std::filesystem::path& p) const {
+void cda_rail::Network::export_network(
+    const std::filesystem::path& working_directory) const {
   /** Export the network to a given directory. This includes the graphml and
-   * successors files.
-   * @param path: The path to the directory.
+   * successors files. The network is stored in the networks subfolder in a
+   * folder named after the network name.
+   *
+   * @param working_directory: The working directory of the program.
    */
 
-  if (!is_directory_and_create(p)) {
+  auto const path = working_directory / "networks" / m_network_name;
+  if (!is_directory_and_create(path)) {
     throw exceptions::ExportException("Could not create directory " +
-                                      p.string());
+                                      path.string());
   }
 
-  export_graphml(p);
+  export_graphml(path);
 
-  export_successors_cpp(p);
-  export_successors_python(p);
+  export_successors_cpp(path);
+  export_successors_python(path);
 }
 
 bool cda_rail::Network::is_valid_successor(size_t e0, size_t e1) const {
@@ -835,10 +897,10 @@ bool cda_rail::Network::is_valid_successor(size_t e0, size_t e1) const {
     throw exceptions::EdgeNotExistentException(e1);
   }
 
-  if (edges[e0].target != edges[e1].source) {
+  if (m_edges[e0].target != m_edges[e1].source) {
     return false;
   }
-  return (std::ranges::contains(successors.at(e0), e1));
+  return (std::ranges::contains(m_successors.at(e0), e1));
 }
 
 cda_rail::index_vector cda_rail::Network::neighbors(size_t index) const {
@@ -868,23 +930,30 @@ cda_rail::index_vector cda_rail::Network::neighbors(size_t index) const {
   return neighbors;
 }
 
-cda_rail::Network::Network(const std::filesystem::path& p) {
+cda_rail::Network::Network(const std::filesystem::path& working_directory,
+                           std::string_view const       networkName) {
   /**
    * Construct object and read network from path. This includes the graph and
-   * successors.
-   * @param p Path to network directory
+   * successors. The network is stored in the networks subfolder of the working
+   * directory. For this a folder with the networkName is created.
+   *
+   * @param working_directory The working directory of the program
+   * @param neworkName The network name
    * @return Network
    */
 
-  if (!std::filesystem::exists(p)) {
-    throw exceptions::ImportException("Path does not exist");
+  auto const path = working_directory / "networks" / networkName;
+  if (!std::filesystem::exists(path)) {
+    throw exceptions::ImportException("Path " + path.string() +
+                                      " does not exist");
   }
-  if (!std::filesystem::is_directory(p)) {
-    throw exceptions::ImportException("Path is not a directory");
+  if (!std::filesystem::is_directory(path)) {
+    throw exceptions::ImportException("Path " + path.string() +
+                                      " is not a directory");
   }
 
-  this->read_graphml(p);
-  this->read_successors(p);
+  this->read_graphml(path);
+  this->read_successors(path);
 }
 
 bool cda_rail::Network::is_adjustable(size_t vertex_id) const {
@@ -904,7 +973,7 @@ bool cda_rail::Network::is_adjustable(size_t vertex_id) const {
     throw exceptions::VertexNotExistentException(vertex_id);
   }
 
-  if (vertices[vertex_id].type != VertexType::NoBorder) {
+  if (m_vertices[vertex_id].type != VertexType::NoBorder) {
     return false;
   }
 
@@ -961,7 +1030,8 @@ cda_rail::Network::separate_edge_at(
     std::string const vertex_name = get_vertex(edge.source).name + "_" +
                                     get_vertex(edge.target).name + "_" +
                                     std::to_string(i);
-    new_vertices.emplace_back(add_vertex(vertex_name, VertexType::NoBorderVSS));
+    new_vertices.emplace_back(
+        add_vertex({vertex_name, VertexType::NoBorderVSS}));
   }
 
   std::pair<cda_rail::index_vector, cda_rail::index_vector> return_edges;
@@ -984,7 +1054,7 @@ cda_rail::Network::separate_edge_at(
   if (!new_edge_breakable) {
     set_edge_unbreakable(edge_index);
   }
-  edges[edge_index].source = new_vertices.back();
+  m_edges[edge_index].source = new_vertices.back();
   new_edges.emplace_back(edge_index);
 
   // Update successors, i.e.,
@@ -995,8 +1065,8 @@ cda_rail::Network::separate_edge_at(
   // - For the last new edge add the same successors as edge_index had (this has
   // already been done implicitly)
   for (const auto& incoming_edge_index : in_edges(edge.source)) {
-    successors[incoming_edge_index].erase(edge_index);
-    successors[incoming_edge_index].insert(new_edges.front());
+    m_successors[incoming_edge_index].erase(edge_index);
+    m_successors[incoming_edge_index].insert(new_edges.front());
   }
   for (size_t i = 0; i < new_edges.size() - 1; ++i) {
     add_successor(new_edges[i], new_edges[i + 1]);
@@ -1033,12 +1103,12 @@ cda_rail::Network::separate_edge_at(
     if (!new_edge_breakable) {
       set_edge_unbreakable(reverse_edge_index);
     }
-    edges[reverse_edge_index].source = new_vertices.front();
+    m_edges[reverse_edge_index].source = new_vertices.front();
     new_reverse_edges.emplace_back(reverse_edge_index);
 
     for (const auto& incoming_edge_index : in_edges(edge.target)) {
-      successors[incoming_edge_index].erase(reverse_edge_index);
-      successors[incoming_edge_index].insert(new_reverse_edges.front());
+      m_successors[incoming_edge_index].erase(reverse_edge_index);
+      m_successors[incoming_edge_index].insert(new_reverse_edges.front());
     }
     for (size_t i = 0; i < new_reverse_edges.size() - 1; ++i) {
       add_successor(new_reverse_edges[i], new_reverse_edges[i + 1]);
@@ -1361,7 +1431,7 @@ void cda_rail::Network::change_vertex_type(size_t index, VertexType new_type) {
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  vertices[index].type = new_type;
+  m_vertices[index].type = new_type;
 }
 
 std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
@@ -1439,8 +1509,8 @@ cda_rail::Network::get_vertices_by_type(VertexType type) const {
    */
 
   cda_rail::index_vector ret_val;
-  for (size_t i = 0; i < vertices.size(); ++i) {
-    if (vertices[i].type == type) {
+  for (size_t i = 0; i < m_vertices.size(); ++i) {
+    if (m_vertices[i].type == type) {
       ret_val.emplace_back(i);
     }
   }
@@ -1935,11 +2005,11 @@ cda_rail::Network::get_old_edge(size_t new_edge) const {
   }
   // If new_edge_to_old_edge_after_transform has no(!) key new_edge, return
   // (new_edge, 0)
-  if (new_edge_to_old_edge_after_transform.find(new_edge) ==
-      new_edge_to_old_edge_after_transform.end()) {
+  if (m_new_edge_to_old_edge_after_transform.find(new_edge) ==
+      m_new_edge_to_old_edge_after_transform.end()) {
     return {new_edge, 0};
   }
-  return new_edge_to_old_edge_after_transform.at(new_edge);
+  return m_new_edge_to_old_edge_after_transform.at(new_edge);
 }
 
 void cda_rail::Network::update_new_old_edge(size_t new_edge, size_t old_edge,
@@ -1948,14 +2018,14 @@ void cda_rail::Network::update_new_old_edge(size_t new_edge, size_t old_edge,
    * Updates the mapping accordingly
    */
   std::pair<size_t, double> old_edge_position = {old_edge, position};
-  if (new_edge_to_old_edge_after_transform.find(old_edge) !=
-      new_edge_to_old_edge_after_transform.end()) {
+  if (m_new_edge_to_old_edge_after_transform.find(old_edge) !=
+      m_new_edge_to_old_edge_after_transform.end()) {
     const auto& old_edge_position_before =
-        new_edge_to_old_edge_after_transform.at(old_edge);
+        m_new_edge_to_old_edge_after_transform.at(old_edge);
     old_edge_position = {old_edge_position_before.first,
                          old_edge_position_before.second + position};
   }
-  new_edge_to_old_edge_after_transform[new_edge] = old_edge_position;
+  m_new_edge_to_old_edge_after_transform[new_edge] = old_edge_position;
 }
 
 void cda_rail::Network::change_vertex_headway(size_t index,
@@ -1963,7 +2033,7 @@ void cda_rail::Network::change_vertex_headway(size_t index,
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  vertices[index].headway = new_headway;
+  m_vertices[index].headway = new_headway;
 }
 
 cda_rail::index_vector
