@@ -245,6 +245,8 @@ TEST(CustomExceptions, ThrowIfInvalidFolderNameRejectsReservedWindowsNames) {
   EXPECT_THROW(throw_if_invalid_folder_name("con"), InvalidInputException);
   EXPECT_THROW(throw_if_invalid_folder_name("COM1.txt"), InvalidInputException);
   EXPECT_THROW(throw_if_invalid_folder_name("Lpt9.log"), InvalidInputException);
+  EXPECT_THROW(throw_if_invalid_folder_name("Lpt9 .log"),
+               InvalidInputException);
 
   expect_exception_message<InvalidInputException>(
       []() { throw_if_invalid_folder_name("CON"); },
