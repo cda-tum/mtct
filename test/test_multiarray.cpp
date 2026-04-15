@@ -9,8 +9,6 @@
 
 using std::size_t;
 
-// TODO: FixedSizeVector tests
-
 TEST(FixedSizeVector, DefaultConstructionAndResize) {
   cda_rail::FixedSizeVector<size_t> vec;
   EXPECT_EQ(vec.size(), 0);
@@ -163,9 +161,6 @@ TEST(MultiArray, BasicFunctionality) {
   EXPECT_THROW(a1(0, 0, 3), std::out_of_range);
 }
 
-// TODO: MultiArray test with other data types
-
-// TODO: Additional MultiArray Tests
 TEST(MultiArray, AtProvidesBoundsSafeAccess) {
   cda_rail::MultiArray<size_t> matrix(2, 3);
 
