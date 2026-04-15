@@ -25,7 +25,6 @@ add_library(
   # probleminstances/GeneralPerformanceOptimizationInstance.cpp
   ${PROJECT_SOURCE_DIR}/include/FixedSizeVector.hpp
   ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
-  MultiArray.cpp
   # ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
   # ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp
   # ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GeneralMIPSolver.hpp
