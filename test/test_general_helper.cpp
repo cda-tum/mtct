@@ -243,26 +243,64 @@ TEST(GeneralHelper, IsDirectoryAndCreate) {
   std::filesystem::remove_all(test_root, ec);
 }
 
-TEST(GeneralHelper, BoolOptioan) {
+TEST(GeneralHelper, BoolOptionalChar) {
   std::optional<bool> opt_bool;
   EXPECT_FALSE(opt_bool.has_value());
 
-  cda_rail::to_bool_optional("test", opt_bool);
+  cda_rail::to_bool_optional_inplace("test", opt_bool);
   EXPECT_FALSE(opt_bool.has_value());
 
-  cda_rail::to_bool_optional("true", opt_bool);
+  cda_rail::to_bool_optional_inplace("true", opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
   EXPECT_TRUE(opt_bool.value());
 
-  cda_rail::to_bool_optional("false", opt_bool);
+  cda_rail::to_bool_optional_inplace("false", opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
   EXPECT_FALSE(opt_bool.value());
 
-  cda_rail::to_bool_optional("TRue", opt_bool);
+  cda_rail::to_bool_optional_inplace("test", opt_bool);
+  EXPECT_TRUE(opt_bool.has_value());
+  EXPECT_FALSE(opt_bool.value()); // unchanged
+
+  cda_rail::to_bool_optional_inplace("TRue", opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
   EXPECT_TRUE(opt_bool.value());
 
-  cda_rail::to_bool_optional("fALsE", opt_bool);
+  cda_rail::to_bool_optional_inplace("fALsE", opt_bool);
+  EXPECT_TRUE(opt_bool.has_value());
+  EXPECT_FALSE(opt_bool.value());
+}
+
+TEST(GeneralHelper, BoolOptionalString) {
+  std::optional<bool> opt_bool;
+  EXPECT_FALSE(opt_bool.has_value());
+
+  std::string const str_test              = "test";
+  std::string const str_true              = "true";
+  std::string const str_false             = "false";
+  std::string const str_true_capitalized  = "TRue";
+  std::string const str_false_capitalized = "fALsE";
+
+  cda_rail::to_bool_optional_inplace(str_test, opt_bool);
+  EXPECT_FALSE(opt_bool.has_value());
+
+  cda_rail::to_bool_optional_inplace(str_true, opt_bool);
+  EXPECT_TRUE(opt_bool.has_value());
+  EXPECT_TRUE(opt_bool.value());
+
+  cda_rail::to_bool_optional_inplace(str_false, opt_bool);
+  EXPECT_TRUE(opt_bool.has_value());
+  EXPECT_FALSE(opt_bool.value());
+
+  cda_rail::to_bool_optional_inplace(str_test, opt_bool);
+  EXPECT_TRUE(opt_bool.has_value());
+  EXPECT_FALSE(opt_bool.value()); // unchanged
+
+  cda_rail::to_bool_optional_inplace(str_true_capitalized, opt_bool);
+  EXPECT_TRUE(opt_bool.has_value());
+  EXPECT_TRUE(opt_bool.value());
+
+  cda_rail::to_bool_optional_inplace(str_false_capitalized, opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
   EXPECT_FALSE(opt_bool.value());
 }

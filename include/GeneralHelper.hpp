@@ -106,7 +106,16 @@ subsets_of_size_2_indices(size_t n);
 [[nodiscard]] std::string
 concatenate_string_views(std::initializer_list<std::string_view> parts);
 
-void to_bool_optional(std::string_view s_view, std::optional<bool>& b);
+// Helper for allocation-free, case-insensitive comparison
+inline bool case_insensitive_str_equal(std::string_view a, std::string_view b) {
+  return std::ranges::equal(a, b, [](char const c1, char const c2) {
+    // Cast to unsigned char to avoid UB with extended ASCII
+    return std::tolower(static_cast<unsigned char>(c1)) ==
+           std::tolower(static_cast<unsigned char>(c2));
+  });
+}
+
+void to_bool_optional_inplace(std::string_view s_view, std::optional<bool>& b);
 
 // Debugging / Output Helper
 

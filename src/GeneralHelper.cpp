@@ -24,18 +24,12 @@ std::string cda_rail::concatenate_string_views(
   return result;
 }
 
-void cda_rail::to_bool_optional(std::string_view const s_view,
-                                std::optional<bool>&   b) {
-  /**
-   * Converts a string to an optional bool
-   *
-   * @param s_view String to convert
-   * @param b Optional bool to write to, used as return value
-   */
-  std::string s{s_view};
-  std::ranges::transform(s, s.begin(), ::tolower);
-  if (bool tmp{}; !!(std::istringstream(s) >> std::boolalpha >> tmp)) {
-    b = tmp;
+void cda_rail::to_bool_optional_inplace(std::string_view const s_view,
+                                        std::optional<bool>&   b) {
+  if (case_insensitive_str_equal(s_view, "true")) {
+    b = true;
+  } else if (case_insensitive_str_equal(s_view, "false")) {
+    b = false;
   }
 }
 
