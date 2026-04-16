@@ -64,6 +64,19 @@ TEST(FixedSizeVector, CopyOperationsCreateDeepCopies) {
   EXPECT_EQ(assigned.size(), 3);
 }
 
+TEST(FixedSizeVector, AssigningToSelfWorks) {
+  cda_rail::FixedSizeVector<size_t> original(3);
+  original[0] = 1;
+  original[1] = 2;
+  original[2] = 3;
+
+  original = original;
+
+  EXPECT_EQ(original[0], 1);
+  EXPECT_EQ(original[1], 2);
+  EXPECT_EQ(original[2], 3);
+}
+
 TEST(FixedSizeVector, SupportsRangeForIteration) {
   cda_rail::FixedSizeVector<size_t> vec(5);
   for (size_t i = 0; i < vec.size(); ++i) {
