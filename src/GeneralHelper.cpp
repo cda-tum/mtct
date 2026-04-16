@@ -1,5 +1,6 @@
 #include "GeneralHelper.hpp"
 
+#include <numeric>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Init.h>
@@ -39,7 +40,9 @@ cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
   // k-combinations of {0, ..., n-1} in lexicographic order.
   std::vector<cda_rail::index_vector> result;
   std::vector<size_t>                 indices(k);
-  std::ranges::iota(indices, 0UZ); // first combination: {0, 1, ..., k-1}
+  // Do not use std::ranges::iota due to macOS incompatibility
+  std::iota(indices.begin(), indices.end(),
+            0UZ); // first combination: {0, 1, ..., k-1}
 
   // Advance indices to the lexicographically next k-combination.
   // Returns true if a next combination exists, false if all are exhausted.
@@ -55,7 +58,9 @@ cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
     }
     // Increment that position and reset everything to its right.
     ++indices.at(i);
-    std::ranges::iota(indices | std::views::drop(i + 1), indices.at(i) + 1);
+    // Do not use std::ranges::iota due to macOS incompatibility
+    std::iota(std::next(indices.begin(), i + 1), indices.end(),
+              indices.at(i) + 1);
     return true;
   };
 
