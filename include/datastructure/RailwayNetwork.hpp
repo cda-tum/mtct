@@ -23,28 +23,21 @@ struct Vertex {
    * @param name Name of the vertex
    * @param type Type of the vertex (NoBorder, VSS, TTD, NoBorderVSS)
    * @param headway Additional headway imposed on vertex, default 0.0
-   * @param pos Position of vertex; only needed for possible plotting if known,
-   * default (0.0,0.0)
    */
 
-  constexpr static double                    HEADWAY_DEFAULT{0.0};
-  constexpr static std::pair<double, double> POS_DEFAULT{0.0, 0.0};
+  constexpr static double HEADWAY_DEFAULT{0.0};
 
-  std::string               name;
-  VertexType                type;
-  double                    headway{HEADWAY_DEFAULT};
-  std::pair<double, double> pos{POS_DEFAULT};
+  std::string name;
+  VertexType  type;
+  double      headway{HEADWAY_DEFAULT};
 
   // Constructors
   Vertex(std::string_view const name, VertexType const type,
-         double const              headway = HEADWAY_DEFAULT,
-         std::pair<double, double> pos     = POS_DEFAULT)
-      : name(name), type(type), headway(headway), pos(std::move(pos)) {};
+         double const headway = HEADWAY_DEFAULT)
+      : name(name), type(type), headway(headway) {};
   Vertex(std::string_view const name, VertexType const type,
-         std::optional<double> const&                    headway,
-         std::optional<std::pair<double, double>> const& pos)
-      : name(name), type(type), headway(headway.value_or(HEADWAY_DEFAULT)),
-        pos(pos.value_or(POS_DEFAULT)) {};
+         std::optional<double> const& headway)
+      : name(name), type(type), headway(headway.value_or(HEADWAY_DEFAULT)) {};
 };
 
 struct Edge {
@@ -115,13 +108,10 @@ private:
       std::optional<std::string>& length, std::optional<std::string>& max_speed,
       std::optional<std::string>& min_block_length,
       std::optional<std::string>& min_stop_block_length,
-      std::optional<std::string>& type, std::optional<std::string>& headway,
-      std::optional<std::string>& pos_x, std::optional<std::string>& pos_y);
+      std::optional<std::string>& type, std::optional<std::string>& headway);
   void add_vertices_from_graphml(const tinyxml2::XMLElement*       graphml_node,
                                  const std::optional<std::string>& type,
-                                 const std::optional<std::string>& headway,
-                                 const std::optional<std::string>& pos_x,
-                                 const std::optional<std::string>& pos_y);
+                                 const std::optional<std::string>& headway);
 
   static void extract_vertices_from_key_inplace(const std::string& key,
                                                 std::string&       source_name,
@@ -196,11 +186,14 @@ public:
   // Constructors
   Network() = default;
 
-  explicit Network(const std::filesystem::path& working_directory,
+  explicit Network(std::filesystem::path const& working_directory,
                    std::string_view const       networkName = "UnnamedNetwork");
-  explicit Network(std::string_view const workingDirectory,
-                   std::string_view const networkName = "UnnamedNetwork")
-      : Network(std::filesystem::path(workingDirectory), networkName) {};
+  explicit Network(std::string const& working_directory,
+                   std::string_view   networkName = "UnnamedNetwork")
+      : Network(std::filesystem::path(working_directory), networkName) {};
+  explicit Network(char const* const working_directory,
+                   std::string_view  networkName = "UnnamedNetwork")
+      : Network(std::filesystem::path(working_directory), networkName) {};
 
   // Rule of 0 suffices
 
@@ -247,7 +240,10 @@ public:
     return get_old_edge(get_edge_index(source, target));
   };
 
-  size_t add_vertex(Vertex vertex);
+  size_t                             add_vertex(Vertex vertex);
+  template <typename... Args> size_t add_vertex(Args... args) {
+    return add_vertex(Vertex(std::forward<Args>(args)...));
+  };
   size_t
   add_edge(size_t source, size_t target, double length, double max_speed,
            bool   breakable             = Edge::BREAKABLE_DEFAULT,
@@ -536,19 +532,27 @@ public:
   };
 
   [[nodiscard]] static Network
-  import_network(std::string_view const workingDirectory,
-                 std::string_view const networkName = "UnnamedNetwork") {
-    return Network(workingDirectory, networkName);
-  };
-  [[nodiscard]] static Network
-  import_network(const std::filesystem::path& working_directory,
+  import_network(std::filesystem::path const& working_directory,
                  std::string_view const       networkName = "UnnamedNetwork") {
     return Network(working_directory, networkName);
   };
-  void export_network(std::string_view const workingDirectory) const {
-    export_network(std::filesystem::path(workingDirectory));
+  [[nodiscard]] static Network
+  import_network(std::string const& working_directory,
+                 std::string_view   networkName = "UnnamedNetwork") {
+    return Network(working_directory, networkName);
   };
-  void export_network(const std::filesystem::path& working_directory) const;
+  [[nodiscard]] static Network
+  import_network(char const* const working_directory,
+                 std::string_view  networkName = "UnnamedNetwork") {
+    return Network(working_directory, networkName);
+  };
+  void export_network(std::filesystem::path const& working_directory) const;
+  void export_network(std::string const& working_directory) const {
+    export_network(std::filesystem::path(working_directory));
+  };
+  void export_network(char const* const working_directory) const {
+    export_network(std::filesystem::path(working_directory));
+  };
 
   [[nodiscard]] bool is_valid_successor(size_t e0, size_t e1) const;
 
