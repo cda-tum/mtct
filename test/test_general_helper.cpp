@@ -243,4 +243,28 @@ TEST(GeneralHelper, IsDirectoryAndCreate) {
   std::filesystem::remove_all(test_root, ec);
 }
 
+TEST(GeneralHelper, BoolOptioan) {
+  std::optional<bool> opt_bool;
+  EXPECT_FALSE(opt_bool.has_value());
+
+  cda_rail::to_bool_optional("test", opt_bool);
+  EXPECT_FALSE(opt_bool.has_value());
+
+  cda_rail::to_bool_optional("true", opt_bool);
+  EXPECT_TRUE(opt_bool.has_value());
+  EXPECT_TRUE(opt_bool.value());
+
+  cda_rail::to_bool_optional("false", opt_bool);
+  EXPECT_TRUE(opt_bool.has_value());
+  EXPECT_FALSE(opt_bool.value());
+
+  cda_rail::to_bool_optional("TRue", opt_bool);
+  EXPECT_TRUE(opt_bool.has_value());
+  EXPECT_TRUE(opt_bool.value());
+
+  cda_rail::to_bool_optional("fALsE", opt_bool);
+  EXPECT_TRUE(opt_bool.has_value());
+  EXPECT_FALSE(opt_bool.value());
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)

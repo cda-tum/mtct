@@ -683,7 +683,4 @@ public:
 
   [[nodiscard]] double length_of_path(const cda_rail::index_vector& path) const;
 };
-
-// HELPER
-void to_bool_optional(std::string& s, std::optional<bool>& b);
 } // namespace cda_rail

@@ -647,20 +647,6 @@ cda_rail::index_set cda_rail::Network::get_predecessors(size_t index) const {
   return ret_val;
 }
 
-void cda_rail::to_bool_optional(std::string& s, std::optional<bool>& b) {
-  /**
-   * Converts a string to an optional bool
-   *
-   * @param s String to convert
-   * @param b Optional bool to write to, used as return value
-   */
-  std::ranges::transform(s, s.begin(), ::tolower);
-  bool tmp = false;
-  if (!!(std::istringstream(s) >> std::boolalpha >> tmp)) {
-    b = tmp;
-  }
-}
-
 void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   /**
    * Export the network to a GraphML file in the given path.

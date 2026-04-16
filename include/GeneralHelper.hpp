@@ -106,6 +106,8 @@ subsets_of_size_2_indices(size_t n);
 [[nodiscard]] std::string
 concatenate_string_views(std::initializer_list<std::string_view> parts);
 
+void to_bool_optional(std::string_view s_view, std::optional<bool>& b);
+
 // Debugging / Output Helper
 
 /**
