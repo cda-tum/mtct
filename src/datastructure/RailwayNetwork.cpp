@@ -34,8 +34,7 @@ void cda_rail::Network::get_keys_inplace(
     std::optional<std::string>& length, std::optional<std::string>& max_speed,
     std::optional<std::string>& min_block_length,
     std::optional<std::string>& min_stop_block_length,
-    std::optional<std::string>& type, std::optional<std::string>& headway,
-    std::optional<std::string>& pos_x, std::optional<std::string>& pos_y) {
+    std::optional<std::string>& type, std::optional<std::string>& headway) {
   /**
    * Get keys from graphml file
    * @param graphml_body Body of graphml file
@@ -46,8 +45,6 @@ void cda_rail::Network::get_keys_inplace(
    * @param min_stop_block_length Min stop block length key
    * @param type Type key
    * @param headway Headway key
-   * @param pos_x Vertex positions first element key
-   * @param pos_y Vertex positions second element key
    *
    * The variables are passed by reference and are modified in place.
    */
@@ -71,10 +68,6 @@ void cda_rail::Network::get_keys_inplace(
       min_stop_block_length = graphml_key->Attribute("id");
     } else if (graphml_key->Attribute("attr.name") == std::string("headway")) {
       headway = graphml_key->Attribute("id");
-    } else if (graphml_key->Attribute("attr.name") == std::string("pos_x")) {
-      pos_x = graphml_key->Attribute("id");
-    } else if (graphml_key->Attribute("attr.name") == std::string("pos_y")) {
-      pos_y = graphml_key->Attribute("id");
     }
     graphml_key = graphml_key->NextSiblingElement("key");
   }
@@ -83,17 +76,13 @@ void cda_rail::Network::get_keys_inplace(
 void cda_rail::Network::add_vertices_from_graphml(
     const tinyxml2::XMLElement*       graphml_node,
     const std::optional<std::string>& type,
-    const std::optional<std::string>& headway,
-    const std::optional<std::string>& pos_x,
-    const std::optional<std::string>& pos_y) {
+    const std::optional<std::string>& headway) {
   /**
    * Add vertices from graphml file
    * @param graphml_node Node of graphml file
    * @param network Network object
    * @param type Type key
    * @param headway Headway key
-   * @param pos_x The vertex positions first element key
-   * @param pos_y The vertex positions second element key
    *
    * The vertices are added to the network object in place.
    */
@@ -104,8 +93,6 @@ void cda_rail::Network::add_vertices_from_graphml(
     std::string const     name = graphml_node->Attribute("id");
     std::optional<int>    v_type;
     std::optional<double> headway_value;
-    std::optional<double> x_pos;
-    std::optional<double> y_pos;
     std::optional<std::pair<double, double>> pos;
     while (graphml_data != nullptr) {
       if (type.has_value() && graphml_data->Attribute("key") == type.value()) {
@@ -113,23 +100,14 @@ void cda_rail::Network::add_vertices_from_graphml(
       } else if (headway.has_value() &&
                  graphml_data->Attribute("key") == headway.value()) {
         headway_value = std::stod(graphml_data->GetText());
-      } else if (pos_x.has_value() &&
-                 graphml_data->Attribute("key") == pos_x.value()) {
-        x_pos = std::stod(graphml_data->GetText());
-      } else if (pos_y.has_value() &&
-                 graphml_data->Attribute("key") == pos_y.value()) {
-        y_pos = std::stod(graphml_data->GetText());
       }
       graphml_data = graphml_data->NextSiblingElement("data");
     }
     if (!v_type.has_value()) {
       throw exceptions::ImportException("graphml");
     }
-    if (x_pos.has_value() && y_pos.has_value()) {
-      pos = std::make_pair(x_pos.value(), y_pos.value());
-    }
     this->add_vertex(
-        {name, static_cast<VertexType>(v_type.value()), headway_value, pos});
+        {name, static_cast<VertexType>(v_type.value()), headway_value});
     graphml_node = graphml_node->NextSiblingElement("node");
   }
 }
@@ -223,11 +201,9 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   std::optional<std::string> min_stop_block_length;
   std::optional<std::string> type;
   std::optional<std::string> headway;
-  std::optional<std::string> pos_x;
-  std::optional<std::string> pos_y;
   Network::get_keys_inplace(graphml_body, breakable, length, max_speed,
                             min_block_length, min_stop_block_length, type,
-                            headway, pos_x, pos_y);
+                            headway);
   if (!breakable.has_value() || !length.has_value() || !max_speed.has_value() ||
       !min_block_length.has_value() || !type.has_value()) {
     throw exceptions::ImportException("graphml");
@@ -241,7 +217,7 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
 
   const tinyxml2::XMLElement* graphml_node =
       graphml_graph->FirstChildElement("node");
-  this->add_vertices_from_graphml(graphml_node, type, headway, pos_x, pos_y);
+  this->add_vertices_from_graphml(graphml_node, type, headway);
 
   const tinyxml2::XMLElement* graphml_edge =
       graphml_graph->FirstChildElement("edge");
@@ -708,8 +684,6 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   std::string const min_stop_block_length = "d4";
   std::string const type                  = "d5";
   std::string const headway               = "d6";
-  std::string const pos_x                 = "d7";
-  std::string const pos_y                 = "d8";
   file << "<key id=\"" << breakable
        << R"(" for="edge" attr.name="breakable" attr.type="boolean"/>)" << '\n';
   file << "<key id=\"" << length
@@ -727,10 +701,6 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
        << R"(" for="vertex" attr.name="type" attr.type="long"/>)" << '\n';
   file << "<key id=\"" << headway
        << R"(" for="vertex" attr.name="headway" attr.type="double"/>)" << '\n';
-  file << "<key id=\"" << pos_x
-       << R"(" for="vertex" attr.name="pos_x" attr.type="double"/>)" << '\n';
-  file << "<key id=\"" << pos_y
-       << R"(" for="vertex" attr.name="pos_y" attr.type="double"/>)" << '\n';
 
   // Write the graph header
   file << "<graph edgedefault=\"directed\">" << '\n';
@@ -741,10 +711,6 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
     file << "<data key=\"" << type << "\">" << static_cast<int>(vertex.type)
          << "</data>" << '\n';
     file << "<data key=\"" << headway << "\">" << vertex.headway << "</data>"
-         << '\n';
-    file << "<data key=\"" << pos_x << "\">" << vertex.pos.first << "</data>"
-         << '\n';
-    file << "<data key=\"" << pos_y << "\">" << vertex.pos.second << "</data>"
          << '\n';
     file << "</node>" << '\n';
   }
