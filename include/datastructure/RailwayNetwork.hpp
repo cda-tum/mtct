@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace cda_rail {
@@ -89,6 +90,45 @@ class Network {
    * Graph class
    *
    */
+public:
+  // Helper struct
+  struct EdgeInput {
+    friend class Network;
+
+    std::variant<size_t, std::pair<size_t, size_t>,
+                 std::pair<std::string_view, std::string_view>>
+        data;
+
+    // Implicit constructors: no explicit keyword on purpose
+    EdgeInput(size_t i) : data(i) {}
+    EdgeInput(std::pair<size_t, size_t> p) : data(p) {}
+    EdgeInput(size_t a, size_t b) : data(std::pair{a, b}) {}
+    EdgeInput(std::pair<std::string_view, std::string_view> p) : data(p) {}
+    EdgeInput(std::string_view a, std::string_view b) : data(std::pair{a, b}) {}
+
+  private:
+    // Resolve edge index
+    size_t resolve(Network const* const network) const {
+      if (const auto* idx = std::get_if<size_t>(&data)) {
+        return *idx;
+      }
+
+      if (const auto* int_pair =
+              std::get_if<std::pair<size_t, size_t>>(&data)) {
+        return network->get_edge_index(int_pair->first, int_pair->second);
+      }
+
+      if (const auto* str_pair =
+              std::get_if<std::pair<std::string_view, std::string_view>>(
+                  &data)) {
+        return network->get_edge_index(str_pair->first, str_pair->second);
+      }
+
+      // Should never be reached
+      throw std::runtime_error("Invalid EdgeInput variant");
+    };
+  };
+
 private:
   // the class ensures that m_network_name is a valid folder name on any
   // operating system as enforced by throw_if_invalid_folder_name
@@ -189,47 +229,50 @@ public:
 
   explicit Network(std::filesystem::path const& working_directory,
                    std::string_view const       networkName = "UnnamedNetwork");
-  explicit Network(std::string const& working_directory,
-                   std::string_view   networkName = "UnnamedNetwork")
+  explicit Network(std::string const&     working_directory,
+                   std::string_view const networkName = "UnnamedNetwork")
       : Network(std::filesystem::path(working_directory), networkName) {};
-  explicit Network(char const* const working_directory,
-                   std::string_view  networkName = "UnnamedNetwork")
+  explicit Network(char const* const      working_directory,
+                   std::string_view const networkName = "UnnamedNetwork")
       : Network(std::filesystem::path(working_directory), networkName) {};
 
   // Rule of 0 suffices
 
+  // -----------------------------
+  // GETTER
+  // -----------------------------
+
+  // Existence Helper
+  [[nodiscard]] bool has_vertex(size_t index) const {
+    return (index < m_vertices.size());
+  };
+  [[nodiscard]] bool has_vertex(std::string_view const name) const {
+    return m_vertex_name_to_index.contains(std::string{name});
+  };
+
+private:
+  [[nodiscard]] bool has_edge_helper(size_t const index) const {
+    return (index < m_edges.size());
+  };
+
+public:
+  [[nodiscard]] bool has_edge(EdgeInput const& edge_input) const {
+    return has_edge_helper(edge_input.resolve(this));
+  }
+
+  // Simple Getter
+
   [[nodiscard]] std::string const& get_network_name() const {
     return m_network_name;
   }
-  void set_network_name(std::string_view const networkName) {
-    exceptions::throw_if_invalid_folder_name(networkName);
-    m_network_name = networkName;
-  }
 
-  [[nodiscard]] const std::vector<Vertex>& get_vertices() const {
+  [[nodiscard]] std::vector<Vertex> const& get_vertices() const {
     return m_vertices;
   };
-  [[nodiscard]] const std::vector<Edge>& get_edges() const { return m_edges; };
-
-  [[nodiscard]] double
-  maximal_vertex_speed(size_t                     v,
-                       const cda_rail::index_set& edges_to_consider = {}) const;
-  [[nodiscard]] double maximal_vertex_speed(
-      const std::string&         v_name,
-      const cda_rail::index_set& edges_to_consider = {}) const {
-    return maximal_vertex_speed(get_vertex_index(v_name), edges_to_consider);
-  };
-  [[nodiscard]] double minimal_neighboring_edge_length(
-      size_t v, const cda_rail::index_set& edges_to_consider = {}) const;
-  [[nodiscard]] double minimal_neighboring_edge_length(
-      const std::string&         v_name,
-      const cda_rail::index_set& edges_to_consider = {}) const {
-    return minimal_neighboring_edge_length(get_vertex_index(v_name),
-                                           edges_to_consider);
-  };
-
   [[nodiscard]] cda_rail::index_vector
   get_vertices_by_type(VertexType type) const;
+
+  [[nodiscard]] const std::vector<Edge>& get_edges() const { return m_edges; };
 
   [[nodiscard]] std::pair<size_t, double> get_old_edge(size_t new_edge) const;
   [[nodiscard]] std::pair<size_t, double> get_old_edge(size_t source,
@@ -237,14 +280,163 @@ public:
     return get_old_edge(get_edge_index(source, target));
   };
   [[nodiscard]] std::pair<size_t, double>
-  get_old_edge(const std::string& source, const std::string& target) const {
+  get_old_edge(std::string_view const source,
+               std::string_view const target) const {
     return get_old_edge(get_edge_index(source, target));
   };
+
+  [[nodiscard]] size_t        get_vertex_index(std::string_view name) const;
+  [[nodiscard]] const Vertex& get_vertex(size_t index) const;
+  [[nodiscard]] const Vertex& get_vertex(std::string_view const name) const {
+    return m_vertices.at(get_vertex_index(name));
+  };
+
+  [[nodiscard]] size_t get_edge_index(size_t source_id, size_t target_id) const;
+  [[nodiscard]] size_t get_edge_index(const std::string_view sourceName,
+                                      const std::string_view targetName) const {
+    return get_edge_index(get_vertex_index(sourceName),
+                          get_vertex_index(targetName));
+  };
+  [[nodiscard]] const Edge& get_edge(size_t index) const;
+  [[nodiscard]] const Edge& get_edge(size_t source_id, size_t target_id) const;
+  [[nodiscard]] const Edge& get_edge(const std::string_view sourceName,
+                                     const std::string_view targetName) const {
+    return get_edge(get_vertex_index(sourceName), get_vertex_index(targetName));
+  };
+
+  [[nodiscard]] std::string get_edge_name(size_t const index) const {
+    const auto& edge_object = get_edge(index);
+    return get_edge_name(get_vertex(edge_object.source).name,
+                         get_vertex(edge_object.target).name);
+  }
+  [[nodiscard]] std::string get_edge_name(size_t v0, size_t v1,
+                                          bool check_existence = false) const {
+    return get_edge_name(get_vertex(v0).name, get_vertex(v1).name,
+                         check_existence);
+  }
+  [[nodiscard]] std::string get_edge_name(std::string_view v1,
+                                          std::string_view v2,
+                                          bool checkExistence = false) const;
+
+  // Other Getters
+
+  [[nodiscard]] cda_rail::index_set
+  vertices_used_by_edges(const cda_rail::index_set& edges_tmp) const;
+
+  [[nodiscard]] cda_rail::index_set out_edges(size_t index) const;
+  [[nodiscard]] cda_rail::index_set
+  out_edges(std::string_view const name) const {
+    return out_edges(get_vertex_index(name));
+  };
+  [[nodiscard]] cda_rail::index_set in_edges(size_t index) const;
+  [[nodiscard]] cda_rail::index_set
+  in_edges(std::string_view const name) const {
+    return in_edges(get_vertex_index(name));
+  };
+  [[nodiscard]] cda_rail::index_set neighboring_edges(size_t index) const;
+  [[nodiscard]] cda_rail::index_set
+  neighboring_edges(std::string_view const name) const {
+    return neighboring_edges(get_vertex_index(name));
+  };
+
+  // Simple Calculation Functions
+
+  [[nodiscard]] double
+  maximal_vertex_speed(size_t                     vertex_id,
+                       const cda_rail::index_set& edges_to_consider = {}) const;
+  [[nodiscard]] double maximal_vertex_speed(
+      std::string_view const     vertex_name,
+      const cda_rail::index_set& edges_to_consider = {}) const {
+    return maximal_vertex_speed(get_vertex_index(vertex_name),
+                                edges_to_consider);
+  };
+
+  [[nodiscard]] double minimal_neighboring_edge_length(
+      size_t v, const cda_rail::index_set& edges_to_consider = {}) const;
+  [[nodiscard]] double minimal_neighboring_edge_length(
+      std::string_view const     vertex_name,
+      const cda_rail::index_set& edges_to_consider = {}) const {
+    return minimal_neighboring_edge_length(get_vertex_index(vertex_name),
+                                           edges_to_consider);
+  };
+
+  // -----------------------------
+  // SETTER
+  // -----------------------------
+
+  // Simple Setter
+
+  void set_network_name(std::string_view const networkName) {
+    exceptions::throw_if_invalid_folder_name(networkName);
+    m_network_name = networkName;
+  }
+
+  void change_vertex_name(size_t index, std::string_view new_name);
+  void change_vertex_name(std::string_view const old_name,
+                          std::string_view const new_name) {
+    change_vertex_name(get_vertex_index(old_name), new_name);
+  };
+  void change_vertex_type(size_t index, VertexType new_type);
+  void change_vertex_type(std::string_view const name,
+                          VertexType const       new_type) {
+    change_vertex_type(get_vertex_index(name), new_type);
+  };
+  void change_vertex_headway(size_t index, double new_headway);
+  void change_vertex_headway(std::string_view const name,
+                             double const           new_headway) {
+    change_vertex_headway(get_vertex_index(name), new_headway);
+  };
+
+private:
+  void change_edge_length_helper(size_t index, double new_length);
+  void change_edge_max_speed_helper(size_t index, double new_max_speed);
+  void change_edge_min_block_length_helper(size_t index,
+                                           double new_min_block_length);
+  void
+  change_edge_min_stop_block_length_helper(size_t index,
+                                           double new_min_stop_block_length);
+  void set_edge_breakable_helper(size_t index);
+  void set_edge_unbreakable_helper(size_t index);
+
+public:
+  void change_edge_length(EdgeInput const& edge, double new_length) {
+    change_edge_length_helper(edge.resolve(this), new_length);
+  };
+  void change_edge_max_speed(EdgeInput const& edge, double new_max_speed) {
+    change_edge_max_speed_helper(edge.resolve(this), new_max_speed);
+  }
+  void change_edge_min_block_length(EdgeInput const& edge,
+                                    double           new_min_block_length) {
+    change_edge_min_block_length_helper(edge.resolve(this),
+                                        new_min_block_length);
+  }
+  void change_edge_min_stop_block_length(EdgeInput const& edge,
+                                         double new_min_stop_block_length) {
+    change_edge_min_stop_block_length_helper(edge.resolve(this),
+                                             new_min_stop_block_length);
+  }
+  void set_edge_breakable(EdgeInput const& edge) {
+    set_edge_breakable_helper(edge.resolve(this));
+  };
+  void set_edge_unbreakable(EdgeInput const& edge) {
+    set_edge_unbreakable_helper(edge.resolve(this));
+  };
+  void change_edge_breakable_status(EdgeInput const& edge,
+                                    bool const       breakable) {
+    if (breakable) {
+      set_edge_breakable(edge);
+    } else {
+      set_edge_unbreakable(edge);
+    }
+  };
+
+  // Simple Network Editing Functions
 
   size_t                             add_vertex(Vertex vertex);
   template <typename... Args> size_t add_vertex(Args... args) {
     return add_vertex(Vertex(std::forward<Args>(args)...));
   };
+
   size_t
   add_edge(size_t source, size_t target, double length, double max_speed,
            bool   breakable             = Edge::BREAKABLE_DEFAULT,
@@ -274,93 +466,18 @@ public:
                     min_stop_block_length);
   }
 
-  void add_successor(size_t edge_in, size_t edge_out);
-  void add_successor(const std::pair<size_t, size_t>& edge_in,
-                     const std::pair<size_t, size_t>& edge_out) {
-    add_successor(get_edge_index(edge_in.first, edge_in.second),
-                  get_edge_index(edge_out.first, edge_out.second));
-  };
-  void
-  add_successor(const std::pair<std::string_view, std::string_view>& edge_in,
-                const std::pair<std::string_view, std::string_view>& edge_out) {
-    add_successor(get_edge_index(edge_in.first, edge_in.second),
-                  get_edge_index(edge_out.first, edge_out.second));
-  };
-  void add_successor(size_t const                     edge_in,
-                     const std::pair<size_t, size_t>& edge_out) {
-    add_successor(edge_in, get_edge_index(edge_out.first, edge_out.second));
-  };
-  void
-  add_successor(size_t                                               edge_in,
-                const std::pair<std::string_view, std::string_view>& edge_out) {
-    add_successor(edge_in, get_edge_index(edge_out.first, edge_out.second));
-  };
-  void add_successor(const std::pair<size_t, size_t>& edge_in,
-                     size_t                           edge_out) {
-    add_successor(get_edge_index(edge_in.first, edge_in.second), edge_out);
-  };
-  void
-  add_successor(const std::pair<size_t, size_t>&                     edge_in,
-                const std::pair<std::string_view, std::string_view>& edge_out) {
-    add_successor(get_edge_index(edge_in.first, edge_in.second),
-                  get_edge_index(edge_out.first, edge_out.second));
-  };
-  void
-  add_successor(const std::pair<std::string_view, std::string_view>& edge_in,
-                size_t                                               edge_out) {
-    add_successor(get_edge_index(edge_in.first, edge_in.second), edge_out);
-  };
-  void
-  add_successor(const std::pair<std::string_view, std::string_view>& edge_in,
-                const std::pair<size_t, size_t>&                     edge_out) {
-    add_successor(get_edge_index(edge_in.first, edge_in.second),
-                  get_edge_index(edge_out.first, edge_out.second));
-  };
+private:
+  void add_successor_helper(size_t edge_in, size_t edge_out);
 
-  [[nodiscard]] const Vertex& get_vertex(size_t index) const;
-  [[nodiscard]] const Vertex& get_vertex(std::string_view const name) const {
-    return m_vertices.at(get_vertex_index(name));
-  };
-  [[nodiscard]] size_t      get_vertex_index(std::string_view name) const;
-  [[nodiscard]] const Edge& get_edge(size_t index) const;
-  [[nodiscard]] const Edge& get_edge(size_t source_id, size_t target_id) const;
-  [[nodiscard]] const Edge& get_edge(const std::string_view sourceName,
-                                     const std::string_view targetName) const {
-    return get_edge(get_vertex_index(sourceName), get_vertex_index(targetName));
-  };
-  [[nodiscard]] size_t get_edge_index(size_t source_id, size_t target_id) const;
-  [[nodiscard]] size_t get_edge_index(const std::string_view sourceName,
-                                      const std::string_view targetName) const {
-    return get_edge_index(get_vertex_index(sourceName),
-                          get_vertex_index(targetName));
-  };
-  [[nodiscard]] std::string get_edge_name(size_t const index) const {
-    const auto& edge_object = get_edge(index);
-    return get_edge_name(get_vertex(edge_object.source).name,
-                         get_vertex(edge_object.target).name);
-  }
-  [[nodiscard]] std::string get_edge_name(size_t v0, size_t v1,
-                                          bool check_existence = false) const {
-    return get_edge_name(get_vertex(v0).name, get_vertex(v1).name,
-                         check_existence);
-  }
-  [[nodiscard]] std::string
-  get_edge_name(const std::string_view v1, const std::string_view v2,
-                bool const checkExistance = false) const {
-    if (checkExistance && !has_vertex(v1)) {
-      throw exceptions::VertexNotExistentException(v1);
-    }
-    if (checkExistance && !has_vertex(v2)) {
-      throw exceptions::VertexNotExistentException(v2);
-    }
-    if (checkExistance && !has_edge(v1, v2)) {
-      throw exceptions::EdgeNotExistentException(v1, v2);
-    }
-    return std::string(v1).append("-").append(v2);
+public:
+  void add_successor(EdgeInput const& edge_in, EdgeInput const& edge_out) {
+    // Pass 'this' to the inputs so they can resolve themselves
+    add_successor_helper(edge_in.resolve(this), edge_out.resolve(this));
   }
 
-  [[nodiscard]] cda_rail::index_vector
-  vertices_used_by_edges(const cda_rail::index_vector& edges_tmp) const;
+  // ------------------------
+  // Path Finding Algorithms
+  // ------------------------
 
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_of_length_starting_in_vertex(
@@ -398,105 +515,7 @@ public:
       size_t e_0, const std::vector<cda_rail::index_vector>& ttd_sections,
       std::optional<size_t> exit_node) const;
 
-  [[nodiscard]] bool has_vertex(size_t index) const {
-    return (index < m_vertices.size());
-  };
-  [[nodiscard]] bool has_vertex(std::string_view const name) const {
-    return m_vertex_name_to_index.contains(std::string{name});
-  };
-  [[nodiscard]] bool has_edge(size_t index) const {
-    return (index < m_edges.size());
-  };
-  [[nodiscard]] bool has_edge(size_t source_id, size_t target_id) const;
-  [[nodiscard]] bool has_edge(std::string_view source_name,
-                              std::string_view target_name) const;
-
-  void change_vertex_name(size_t index, std::string_view new_name);
-  void change_vertex_name(std::string_view const old_name,
-                          std::string_view const new_name) {
-    change_vertex_name(get_vertex_index(old_name), new_name);
-  };
-  void change_vertex_type(size_t index, VertexType new_type);
-  void change_vertex_type(std::string_view const name,
-                          VertexType const       new_type) {
-    change_vertex_type(get_vertex_index(name), new_type);
-  };
-  void change_vertex_headway(size_t index, double new_headway);
-  void change_vertex_headway(std::string_view const name,
-                             double const           new_headway) {
-    change_vertex_headway(get_vertex_index(name), new_headway);
-  };
-
-  void change_edge_length(size_t index, double new_length);
-  void change_edge_max_speed(size_t index, double new_max_speed);
-  void change_edge_min_block_length(size_t index, double new_min_block_length);
-  void change_edge_min_stop_block_length(size_t index,
-                                         double new_min_stop_block_length);
-
-  void change_edge_length(size_t source_id, size_t target_id,
-                          double new_length) {
-    change_edge_length(get_edge_index(source_id, target_id), new_length);
-  };
-  void change_edge_length(std::string_view const source_name,
-                          std::string_view const target_name,
-                          double                 new_length) {
-    change_edge_length(get_edge_index(source_name, target_name), new_length);
-  };
-  void change_edge_max_speed(size_t source_id, size_t target_id,
-                             double new_max_speed) {
-    change_edge_max_speed(get_edge_index(source_id, target_id), new_max_speed);
-  }
-  void change_edge_max_speed(std::string_view const source_name,
-                             std::string_view const target_name,
-                             double                 new_max_speed) {
-    change_edge_max_speed(get_edge_index(source_name, target_name),
-                          new_max_speed);
-  }
-  void change_edge_min_block_length(size_t source_id, size_t target_id,
-                                    double new_min_block_length) {
-    change_edge_min_block_length(get_edge_index(source_id, target_id),
-                                 new_min_block_length);
-  }
-  void change_edge_min_block_length(std::string_view const source_name,
-                                    std::string_view const target_name,
-                                    double new_min_block_length) {
-    change_edge_min_block_length(get_edge_index(source_name, target_name),
-                                 new_min_block_length);
-  }
-
-  void set_edge_breakable(size_t index);
-  void set_edge_unbreakable(size_t index);
-
-  void set_edge_breakable(size_t source_id, size_t target_id) {
-    set_edge_breakable(get_edge_index(source_id, target_id));
-  };
-  void set_edge_breakable(std::string_view const source_name,
-                          std::string_view const target_name) {
-    set_edge_breakable(get_edge_index(source_name, target_name));
-  };
-  void set_edge_unbreakable(size_t source_id, size_t target_id) {
-    set_edge_unbreakable(get_edge_index(source_id, target_id));
-  };
-  void set_edge_unbreakable(std::string_view const source_name,
-                            std::string_view const target_name) {
-    set_edge_unbreakable(get_edge_index(source_name, target_name));
-  };
-
-  [[nodiscard]] cda_rail::index_set out_edges(size_t index) const;
-  [[nodiscard]] cda_rail::index_set
-  out_edges(std::string_view const name) const {
-    return out_edges(get_vertex_index(name));
-  };
-  [[nodiscard]] cda_rail::index_set in_edges(size_t index) const;
-  [[nodiscard]] cda_rail::index_set
-  in_edges(std::string_view const name) const {
-    return in_edges(get_vertex_index(name));
-  };
-  [[nodiscard]] cda_rail::index_set neighboring_edges(size_t index) const;
-  [[nodiscard]] cda_rail::index_set
-  neighboring_edges(std::string_view const name) const {
-    return neighboring_edges(get_vertex_index(name));
-  };
+  // TODO: Move functions to suitable position
 
   [[nodiscard]] static std::vector<std::pair<size_t, size_t>>
   get_intersecting_ttd(const cda_rail::index_vector&              edges,

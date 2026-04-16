@@ -29,6 +29,34 @@
 
 using json = nlohmann::json;
 
+// Constructor
+
+cda_rail::Network::Network(const std::filesystem::path& working_directory,
+                           std::string_view const       networkName) {
+  /**
+   * Construct object and read network from path. This includes the graph and
+   * successors. The network is stored in the networks subfolder of the working
+   * directory. For this a folder with the networkName is created.
+   *
+   * @param working_directory The working directory of the program
+   * @param neworkName The network name
+   * @return Network
+   */
+
+  auto const path = working_directory / "networks" / networkName;
+  if (!std::filesystem::exists(path)) {
+    throw exceptions::ImportException("Path " + path.string() +
+                                      " does not exist");
+  }
+  if (!std::filesystem::is_directory(path)) {
+    throw exceptions::ImportException("Path " + path.string() +
+                                      " is not a directory");
+  }
+
+  this->read_graphml(path);
+  this->read_successors(path);
+}
+
 size_t cda_rail::Network::add_vertex(Vertex vertex) {
   /**
    * Add vertex to network
@@ -81,7 +109,7 @@ size_t cda_rail::Network::add_edge(
   return m_edges.size() - 1;
 }
 
-void cda_rail::Network::add_successor(size_t edge_in, size_t edge_out) {
+void cda_rail::Network::add_successor_helper(size_t edge_in, size_t edge_out) {
   /**
    * Add successor to edge, but only if the edges are adjacent to each other
    *
@@ -199,45 +227,6 @@ size_t cda_rail::Network::get_edge_index(size_t source_id,
                                              get_vertex(target_id).name);
 }
 
-bool cda_rail::Network::has_edge(size_t source_id, size_t target_id) const {
-  /**
-   * Check if edge exists by source and target index
-   *
-   * @param source_id Index of source vertex
-   * @param target_id Index of target vertex
-   *
-   * @return True if edge exists, false otherwise
-   */
-  if (!has_vertex(source_id)) {
-    throw exceptions::VertexNotExistentException(source_id);
-  }
-  if (!has_vertex(target_id)) {
-    throw exceptions::VertexNotExistentException(target_id);
-  }
-  return std::ranges::any_of(m_edges, [source_id, target_id](const Edge& edge) {
-    return edge.source == source_id && edge.target == target_id;
-  });
-}
-
-bool cda_rail::Network::has_edge(std::string_view const source_name,
-                                 std::string_view const target_name) const {
-  /**
-   * Check if edge exists by source and target name
-   *
-   * @param source_name Name of source vertex
-   * @param target_name Name of target vertex
-   *
-   * @return True if edge exists, false otherwise
-   */
-  if (!has_vertex(source_name)) {
-    throw exceptions::VertexNotExistentException(source_name);
-  }
-  if (!has_vertex(target_name)) {
-    throw exceptions::VertexNotExistentException(target_name);
-  }
-  return has_edge(get_vertex_index(source_name), get_vertex_index(target_name));
-}
-
 void cda_rail::Network::change_vertex_name(size_t                 index,
                                            std::string_view const new_name) {
   /**
@@ -257,7 +246,8 @@ void cda_rail::Network::change_vertex_name(size_t                 index,
   m_vertex_name_to_index.at(m_vertices.at(index).name) = index;
 }
 
-void cda_rail::Network::change_edge_length(size_t index, double new_length) {
+void cda_rail::Network::change_edge_length_helper(size_t index,
+                                                  double new_length) {
   /**
    * Change edge length
    *
@@ -270,8 +260,8 @@ void cda_rail::Network::change_edge_length(size_t index, double new_length) {
   m_edges[index].length = new_length;
 }
 
-void cda_rail::Network::change_edge_max_speed(size_t index,
-                                              double new_max_speed) {
+void cda_rail::Network::change_edge_max_speed_helper(size_t index,
+                                                     double new_max_speed) {
   /**
    * Change edge max speed
    *
@@ -284,7 +274,7 @@ void cda_rail::Network::change_edge_max_speed(size_t index,
   m_edges[index].max_speed = new_max_speed;
 }
 
-void cda_rail::Network::change_edge_min_block_length(
+void cda_rail::Network::change_edge_min_block_length_helper(
     size_t index, double new_min_block_length) {
   /**
    * Change edge min block length
@@ -298,7 +288,7 @@ void cda_rail::Network::change_edge_min_block_length(
   m_edges[index].min_block_length = new_min_block_length;
 }
 
-void cda_rail::Network::change_edge_min_stop_block_length(
+void cda_rail::Network::change_edge_min_stop_block_length_helper(
     size_t index, double new_min_stop_block_length) {
   /**
    * Change edge min stop block length
@@ -312,7 +302,7 @@ void cda_rail::Network::change_edge_min_stop_block_length(
   m_edges[index].min_stop_block_length = new_min_stop_block_length;
 }
 
-void cda_rail::Network::set_edge_breakable(size_t index) {
+void cda_rail::Network::set_edge_breakable_helper(size_t index) {
   /**
    * Sets an edge to be breakable
    *
@@ -324,7 +314,7 @@ void cda_rail::Network::set_edge_breakable(size_t index) {
   m_edges[index].breakable = true;
 }
 
-void cda_rail::Network::set_edge_unbreakable(size_t index) {
+void cda_rail::Network::set_edge_unbreakable_helper(size_t index) {
   /**
    * Sets an edge to be unbreakable
    *
@@ -485,32 +475,6 @@ cda_rail::index_vector cda_rail::Network::neighbors(size_t index) const {
     }
   }
   return neighbors;
-}
-
-cda_rail::Network::Network(const std::filesystem::path& working_directory,
-                           std::string_view const       networkName) {
-  /**
-   * Construct object and read network from path. This includes the graph and
-   * successors. The network is stored in the networks subfolder of the working
-   * directory. For this a folder with the networkName is created.
-   *
-   * @param working_directory The working directory of the program
-   * @param neworkName The network name
-   * @return Network
-   */
-
-  auto const path = working_directory / "networks" / networkName;
-  if (!std::filesystem::exists(path)) {
-    throw exceptions::ImportException("Path " + path.string() +
-                                      " does not exist");
-  }
-  if (!std::filesystem::is_directory(path)) {
-    throw exceptions::ImportException("Path " + path.string() +
-                                      " is not a directory");
-  }
-
-  this->read_graphml(path);
-  this->read_successors(path);
 }
 
 bool cda_rail::Network::is_adjustable(size_t vertex_id) const {
@@ -1001,19 +965,19 @@ cda_rail::Network::separate_stop_edges(
   return ret_val;
 }
 
-cda_rail::index_vector cda_rail::Network::vertices_used_by_edges(
-    const cda_rail::index_vector& edges_tmp) const {
+cda_rail::index_set cda_rail::Network::vertices_used_by_edges(
+    const cda_rail::index_set& edges_tmp) const {
   std::unordered_set<size_t> used_vertices;
   for (const auto& edge : edges_tmp) {
     used_vertices.insert(get_edge(edge).source);
     used_vertices.insert(get_edge(edge).target);
   }
-  return {used_vertices.begin(), used_vertices.end()};
+  return used_vertices;
 }
 
 double cda_rail::Network::maximal_vertex_speed(
-    size_t v, const cda_rail::index_set& edges_to_consider) const {
-  const auto& n_edges_tmp = neighboring_edges(v);
+    size_t vertex_id, const cda_rail::index_set& edges_to_consider) const {
+  const auto& n_edges_tmp = neighboring_edges(vertex_id);
   auto        n_edges =
       edges_to_consider.empty() ? n_edges_tmp : cda_rail::index_set();
   for (const auto& e : n_edges_tmp) {
@@ -1026,7 +990,7 @@ double cda_rail::Network::maximal_vertex_speed(
     return 0;
   }
 
-  if (neighbors(v).size() == 1) {
+  if (neighbors(vertex_id).size() == 1) {
     return get_edge(*n_edges.cbegin()).max_speed;
   }
 
@@ -1038,11 +1002,12 @@ double cda_rail::Network::maximal_vertex_speed(
     if (edge.max_speed > max_speed) {
       second_max_speed             = max_speed;
       max_speed                    = edge.max_speed;
-      max_speed_neighboring_vertex = other_vertex(e, v);
+      max_speed_neighboring_vertex = other_vertex(e, vertex_id);
     } else if (edge.max_speed > second_max_speed &&
                max_speed_neighboring_vertex.has_value() &&
                // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-               other_vertex(e, v) != max_speed_neighboring_vertex.value()) {
+               other_vertex(e, vertex_id) !=
+                   max_speed_neighboring_vertex.value()) {
       second_max_speed = edge.max_speed;
     }
   }
@@ -1397,4 +1362,19 @@ std::vector<cda_rail::index_vector> cda_rail::Network::all_paths_ending_at_ttd(
     }
   }
   return ret_val;
+}
+
+std::string cda_rail::Network::get_edge_name(const std::string_view v1,
+                                             const std::string_view v2,
+                                             bool const checkExistence) const {
+  if (checkExistence && !has_vertex(v1)) {
+    throw exceptions::VertexNotExistentException(v1);
+  }
+  if (checkExistence && !has_vertex(v2)) {
+    throw exceptions::VertexNotExistentException(v2);
+  }
+  if (checkExistence && !has_edge(v1, v2)) {
+    throw exceptions::EdgeNotExistentException(v1, v2);
+  }
+  return std::string(v1).append("-").append(v2);
 }
