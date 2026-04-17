@@ -3,6 +3,7 @@
 #include "nlohmann/json_fwd.hpp"
 
 #include <stack>
+#include <variant>
 
 using json = nlohmann::json;
 
@@ -953,3 +954,40 @@ std::vector<cda_rail::index_vector> cda_rail::Network::all_paths_ending_at_ttd(
 
   return ret_val;
 }
+
+// ----------------
+// HELPER STRUCTS
+// ----------------
+
+size_t cda_rail::Network::VertexInput::resolve(
+    cda_rail::Network const* const network) const {
+  if (const auto* idx = std::get_if<size_t>(&m_data)) {
+    return *idx;
+  }
+
+  if (const auto* int_pair = std::get_if<std::string_view>(&m_data)) {
+    return network->get_vertex_index(*int_pair);
+  }
+
+  // Should never be reached
+  throw std::runtime_error("Invalid VertexInput variant");
+};
+
+size_t
+cda_rail::Network::EdgeInput::resolve(Network const* const network) const {
+  if (const auto* idx = std::get_if<size_t>(&m_data)) {
+    return *idx;
+  }
+
+  if (const auto* int_pair = std::get_if<std::pair<size_t, size_t>>(&m_data)) {
+    return network->get_edge_index(int_pair->first, int_pair->second);
+  }
+
+  if (const auto* str_pair =
+          std::get_if<std::pair<std::string_view, std::string_view>>(&m_data)) {
+    return network->get_edge_index(str_pair->first, str_pair->second);
+  }
+
+  // Should never be reached
+  throw std::runtime_error("Invalid EdgeInput variant");
+};

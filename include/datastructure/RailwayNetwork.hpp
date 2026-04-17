@@ -8,6 +8,7 @@
 #include <fstream>
 #include <numeric>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <tinyxml2.h>
 #include <unordered_map>
@@ -92,41 +93,45 @@ class Network {
    */
 public:
   // Helper struct
+  struct VertexInput {
+  private:
+    friend class Network;
+    std::variant<size_t, std::string_view> m_data;
+
+  public:
+    // Implicit constructors: no explicit keyword on purpose
+    // NOLINTBEGIN(google-explicit-constructor)
+    VertexInput(size_t i) : m_data(i) {}
+    VertexInput(std::string_view v_name) : m_data(v_name) {}
+    // NOLINTEND(google-explicit-constructor)
+
+  private:
+    // Resolve edge index
+    size_t resolve(Network const* const network) const;
+  };
+
   struct EdgeInput {
+  private:
     friend class Network;
 
     std::variant<size_t, std::pair<size_t, size_t>,
                  std::pair<std::string_view, std::string_view>>
-        data;
+        m_data;
 
+  public:
     // Implicit constructors: no explicit keyword on purpose
-    EdgeInput(size_t i) : data(i) {}
-    EdgeInput(std::pair<size_t, size_t> p) : data(p) {}
-    EdgeInput(size_t a, size_t b) : data(std::pair{a, b}) {}
-    EdgeInput(std::pair<std::string_view, std::string_view> p) : data(p) {}
-    EdgeInput(std::string_view a, std::string_view b) : data(std::pair{a, b}) {}
+    // NOLINTBEGIN(google-explicit-constructor)
+    EdgeInput(size_t i) : m_data(i) {}
+    EdgeInput(std::pair<size_t, size_t> p) : m_data(p) {}
+    EdgeInput(size_t a, size_t b) : m_data(std::pair{a, b}) {}
+    EdgeInput(std::pair<std::string_view, std::string_view> p) : m_data(p) {}
+    EdgeInput(std::string_view a, std::string_view b)
+        : m_data(std::pair{a, b}) {}
+    // NOLINTEND(google-explicit-constructor)
 
   private:
     // Resolve edge index
-    size_t resolve(Network const* const network) const {
-      if (const auto* idx = std::get_if<size_t>(&data)) {
-        return *idx;
-      }
-
-      if (const auto* int_pair =
-              std::get_if<std::pair<size_t, size_t>>(&data)) {
-        return network->get_edge_index(int_pair->first, int_pair->second);
-      }
-
-      if (const auto* str_pair =
-              std::get_if<std::pair<std::string_view, std::string_view>>(
-                  &data)) {
-        return network->get_edge_index(str_pair->first, str_pair->second);
-      }
-
-      // Should never be reached
-      throw std::runtime_error("Invalid EdgeInput variant");
-    };
+    size_t resolve(Network const* const network) const;
   };
 
 private:
@@ -143,88 +148,11 @@ private:
   std::unordered_map<std::size_t, std::pair<size_t, double>>
       m_new_edge_to_old_edge_after_transform; // needed if edges are discretized
 
-  // Import helper
-  void        read_graphml(const std::filesystem::path& p);
-  static void get_keys_inplace(
-      tinyxml2::XMLElement* graphml_body, std::optional<std::string>& breakable,
-      std::optional<std::string>& length, std::optional<std::string>& max_speed,
-      std::optional<std::string>& min_block_length,
-      std::optional<std::string>& min_stop_block_length,
-      std::optional<std::string>& type, std::optional<std::string>& headway);
-  void add_vertices_from_graphml(const tinyxml2::XMLElement*       graphml_node,
-                                 const std::optional<std::string>& type,
-                                 const std::optional<std::string>& headway);
-  static void extract_vertices_from_key_inplace(const std::string& key,
-                                                std::string&       source_name,
-                                                std::string&       target_name);
-  void        add_edges_from_graphml(
-      const tinyxml2::XMLElement*       graphml_edge,
-      const std::optional<std::string>& breakable,
-      const std::optional<std::string>& length,
-      const std::optional<std::string>& max_speed,
-      const std::optional<std::string>& min_block_length,
-      const std::optional<std::string>& min_stop_block_length);
-  void read_successors(const std::filesystem::path& p);
-
-  // Export helper
-  void export_graphml(const std::filesystem::path& p) const;
-  void export_successors_python(const std::filesystem::path& p) const;
-  void export_successors_cpp(const std::filesystem::path& p) const;
-  void write_successor_set_to_file(std::ofstream& file, size_t i) const;
-
-  // getter helper
-  [[nodiscard]] size_t other_vertex(size_t e, size_t v) const {
-    return get_edge(e).source == v ? get_edge(e).target : get_edge(e).source;
-  };
-
-  // edge separation/changing helper
-  std::pair<cda_rail::index_vector, cda_rail::index_vector>
-  separate_edge_private_helper(
-      size_t edge_index, double min_length,
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform,
-      bool                           new_edge_breakable = false);
-  std::pair<cda_rail::index_vector, cda_rail::index_vector>
-       separate_edge_at(size_t                     edge_index,
-                        const std::vector<double>& distances_from_source,
-                        bool                       new_edge_breakable = false);
-  void update_new_old_edge(size_t new_edge, size_t old_edge, double position);
-  std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
-  sort_edge_pairs(
-      std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
-          edge_pairs) const;
-
-  // validity helper
-  void check_new_edge_requirements(size_t source, size_t target) const;
-
-  // path finding algorithm helper
-  [[nodiscard]] static double delta_dist_helper(const Edge& successor_edge,
-                                                double      max_v,
-                                                bool        use_minimal_time);
-
-  // private path finding algorithms
-  void dfs_inplace(std::vector<cda_rail::index_vector>& ret_val,
-                   std::unordered_set<size_t>&          vertices_to_visit,
-                   const VertexType&                    section_type) const {
-    dfs_inplace(ret_val, vertices_to_visit, section_type, {});
-  };
-  void dfs_inplace(std::vector<cda_rail::index_vector>& ret_val,
-                   std::unordered_set<size_t>&          vertices_to_visit,
-                   const VertexType&                    section_type,
-                   const std::vector<VertexType>&       error_types) const;
-  [[nodiscard]] std::vector<cda_rail::index_vector>
-  all_routes_of_given_length(std::optional<size_t> v_0,
-                             std::optional<size_t> e_0, double desired_length,
-                             bool                  reverse_direction,
-                             std::optional<size_t> exit_node           = {},
-                             cda_rail::index_set   edges_used_by_train = {},
-                             bool return_successors_if_zero = false) const;
-  [[nodiscard]] std::vector<cda_rail::index_vector> all_paths_ending_at_ttd(
-      size_t e_0, const std::vector<cda_rail::index_vector>& ttd_sections,
-      std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
-      bool first_edge) const;
-
 public:
-  // Constructors
+  // -----------------------------
+  // CONSTRUCTORS
+  // -----------------------------
+
   Network() = default;
 
   explicit Network(std::filesystem::path const& working_directory,
@@ -239,6 +167,33 @@ public:
   // Rule of 0 suffices
 
   // -----------------------------
+  // IMPORT / EXPORT
+  // -----------------------------
+
+  [[nodiscard]] static Network
+  import_network(std::filesystem::path const& working_directory,
+                 std::string_view const       networkName = "UnnamedNetwork") {
+    return Network(working_directory, networkName);
+  };
+  [[nodiscard]] static Network
+  import_network(std::string const&     working_directory,
+                 std::string_view const networkName = "UnnamedNetwork") {
+    return Network(working_directory, networkName);
+  };
+  [[nodiscard]] static Network
+  import_network(char const* const      working_directory,
+                 std::string_view const networkName = "UnnamedNetwork") {
+    return Network(working_directory, networkName);
+  };
+  void export_network(std::filesystem::path const& working_directory) const;
+  void export_network(std::string const& working_directory) const {
+    export_network(std::filesystem::path(working_directory));
+  };
+  void export_network(char const* const workingDirectory) const {
+    export_network(std::filesystem::path(workingDirectory));
+  };
+
+  // -----------------------------
   // GETTER
   // -----------------------------
 
@@ -251,16 +206,43 @@ public:
   };
 
 private:
-  [[nodiscard]] bool has_edge_helper(size_t const index) const {
-    return (index < m_edges.size());
-  };
+  [[nodiscard]] bool has_edge_helper(size_t source_id, size_t target_id) const;
 
 public:
-  [[nodiscard]] bool has_edge(EdgeInput const& edge_input) const {
-    return has_edge_helper(edge_input.resolve(this));
+  [[nodiscard]] bool has_edge(size_t const index) const {
+    return (index < m_edges.size());
+  };
+  [[nodiscard]] bool has_edge(VertexInput const& source,
+                              VertexInput const& target) const {
+    return has_edge_helper(source.resolve(this), target.resolve(this));
   }
 
+  // Property Existence Helpers
+
+private:
+  [[nodiscard]] bool is_valid_successor_helper(size_t e0, size_t e1) const;
+
+public:
+  [[nodiscard]] bool is_valid_successor(EdgeInput const& edge_in,
+                                        EdgeInput const& edge_out) const {
+    return is_valid_successor_helper(edge_in.resolve(this),
+                                     edge_out.resolve(this));
+  };
+
+private:
+  [[nodiscard]] bool is_adjustable_helper(size_t vertex_id) const;
+
+public:
+  [[nodiscard]] bool is_adjustable(VertexInput const& vertex) const {
+    return is_adjustable_helper(vertex.resolve(this));
+  };
+
+  [[nodiscard]] bool is_consistent_for_transformation() const;
+
   // Simple Getter
+
+  [[nodiscard]] size_t number_of_vertices() const { return m_vertices.size(); };
+  [[nodiscard]] size_t number_of_edges() const { return m_edges.size(); };
 
   [[nodiscard]] std::string const& get_network_name() const {
     return m_network_name;
@@ -274,54 +256,62 @@ public:
 
   [[nodiscard]] const std::vector<Edge>& get_edges() const { return m_edges; };
 
-  [[nodiscard]] std::pair<size_t, double> get_old_edge(size_t new_edge) const;
-  [[nodiscard]] std::pair<size_t, double> get_old_edge(size_t source,
-                                                       size_t target) const {
-    return get_old_edge(get_edge_index(source, target));
-  };
+private:
   [[nodiscard]] std::pair<size_t, double>
-  get_old_edge(std::string_view const source,
-               std::string_view const target) const {
-    return get_old_edge(get_edge_index(source, target));
+  get_old_edge_helper(size_t new_edge) const;
+
+public:
+  [[nodiscard]] std::pair<size_t, double>
+  get_old_edge(EdgeInput const& edge) const {
+    return get_old_edge_helper(edge.resolve(this));
   };
 
-  [[nodiscard]] size_t        get_vertex_index(std::string_view name) const;
-  [[nodiscard]] const Vertex& get_vertex(size_t index) const;
-  [[nodiscard]] const Vertex& get_vertex(std::string_view const name) const {
-    return m_vertices.at(get_vertex_index(name));
-  };
+  [[nodiscard]] size_t get_vertex_index(std::string_view name) const;
 
-  [[nodiscard]] size_t get_edge_index(size_t source_id, size_t target_id) const;
-  [[nodiscard]] size_t get_edge_index(const std::string_view sourceName,
-                                      const std::string_view targetName) const {
-    return get_edge_index(get_vertex_index(sourceName),
-                          get_vertex_index(targetName));
-  };
-  [[nodiscard]] const Edge& get_edge(size_t index) const;
-  [[nodiscard]] const Edge& get_edge(size_t source_id, size_t target_id) const;
-  [[nodiscard]] const Edge& get_edge(const std::string_view sourceName,
-                                     const std::string_view targetName) const {
-    return get_edge(get_vertex_index(sourceName), get_vertex_index(targetName));
-  };
+private:
+  [[nodiscard]] const Vertex& get_vertex_helper(size_t index) const;
 
-  [[nodiscard]] std::string get_edge_name(size_t const index) const {
-    const auto& edge_object = get_edge(index);
-    return get_edge_name(get_vertex(edge_object.source).name,
-                         get_vertex(edge_object.target).name);
+public:
+  [[nodiscard]] const Vertex& get_vertex(VertexInput const& vertex) const {
+    return get_vertex_helper(vertex.resolve(this));
   }
-  [[nodiscard]] std::string get_edge_name(size_t v0, size_t v1,
-                                          bool check_existence = false) const {
-    return get_edge_name(get_vertex(v0).name, get_vertex(v1).name,
-                         check_existence);
+
+private:
+  [[nodiscard]] size_t get_edge_index_helper(size_t source_id,
+                                             size_t target_id) const;
+
+public:
+  [[nodiscard]] size_t get_edge_index(VertexInput const& source,
+                                      VertexInput const& target) const {
+    return get_edge_index_helper(source.resolve(this), target.resolve(this));
   }
-  [[nodiscard]] std::string get_edge_name(std::string_view v1,
-                                          std::string_view v2,
-                                          bool checkExistence = false) const;
 
-  // Other Getters
+private:
+  [[nodiscard]] const Edge& get_edge_helper(size_t index) const;
 
-  [[nodiscard]] cda_rail::index_set
-  vertices_used_by_edges(const cda_rail::index_set& edges_tmp) const;
+public:
+  [[nodiscard]] const Edge& get_edge(EdgeInput const& edge) const {
+    return get_edge_helper(edge.resolve(this));
+  }
+
+private:
+  [[nodiscard]] std::string get_edge_name_helper(std::string_view v1,
+                                                 std::string_view v2,
+                                                 bool checkExistence) const;
+  [[nodiscard]] std::string get_edge_name_helper(size_t v0, size_t v1,
+                                                 bool check_existence) const {
+    return get_edge_name_helper(get_vertex(v0).name, get_vertex(v1).name,
+                                check_existence);
+  }
+
+public:
+  [[nodiscard]] std::string get_edge_name(EdgeInput const& edge) const {
+    const auto& edge_object = get_edge(edge.resolve(this));
+    return get_edge_name_helper(get_vertex(edge_object.source).name,
+                                get_vertex(edge_object.target).name, false);
+  }
+
+  // Graph Neighbor Helper
 
   [[nodiscard]] cda_rail::index_set out_edges(size_t index) const;
   [[nodiscard]] cda_rail::index_set
@@ -338,6 +328,121 @@ public:
   neighboring_edges(std::string_view const name) const {
     return neighboring_edges(get_vertex_index(name));
   };
+
+private:
+  [[nodiscard]] cda_rail::index_set get_predecessors_helper(size_t index) const;
+  [[nodiscard]] const cda_rail::index_set&
+  get_successors_helper(size_t index) const;
+
+public:
+  [[nodiscard]] cda_rail::index_set
+  get_predecessors(EdgeInput const& edge) const {
+    return get_predecessors_helper(edge.resolve(this));
+  }
+  [[nodiscard]] cda_rail::index_set const&
+  get_successors(EdgeInput const& edge) const {
+    return get_successors_helper(edge.resolve(this));
+  }
+
+  [[nodiscard]] cda_rail::index_vector neighbors(size_t index) const;
+  [[nodiscard]] cda_rail::index_vector
+  neighbors(std::string_view const name) const {
+    return neighbors(get_vertex_index(name));
+  };
+
+  // Overlap Getters
+
+  [[nodiscard]] std::optional<size_t> common_vertex(
+      const std::pair<std::optional<size_t>, std::optional<size_t>>& pair1,
+      const std::pair<std::optional<size_t>, std::optional<size_t>>& pair2)
+      const;
+  [[nodiscard]] std::optional<size_t>
+  common_vertex(const std::pair<size_t, size_t>& pair1,
+                const std::pair<size_t, size_t>& pair2) const {
+    return common_vertex(std::make_pair(std::optional<size_t>(pair1.first),
+                                        std::optional<size_t>(pair1.second)),
+                         std::make_pair(std::optional<size_t>(pair2.first),
+                                        std::optional<size_t>(pair2.second)));
+  }
+
+  // Reverse Edge Getters
+
+private:
+  [[nodiscard]] std::optional<size_t>
+  get_reverse_edge_index_helper(size_t edge_index) const;
+
+public:
+  [[nodiscard]] std::optional<size_t>
+  get_reverse_edge_index(EdgeInput const& edge) const {
+    return get_reverse_edge_index_helper(edge.resolve(this));
+  };
+  [[nodiscard]] std::optional<size_t>
+  get_optional_reverse_edge_index(std::optional<size_t> const edgeIndex) const {
+    return edgeIndex.has_value()
+               ? get_reverse_edge_index_helper(edgeIndex.value())
+               : std::optional<size_t>();
+  }
+
+  [[nodiscard]] std::vector<
+      std::pair<std::optional<size_t>, std::optional<size_t>>>
+  combine_reverse_edges(const cda_rail::index_vector& edges_to_consider,
+                        bool                          sort = false) const;
+
+private:
+  [[nodiscard]] size_t get_track_index_helper(size_t edge_index) const;
+
+public:
+  [[nodiscard]] size_t get_track_index(EdgeInput const& edge) const {
+    return get_track_index_helper(edge.resolve(this));
+  };
+
+  // Special sets of edges
+
+  [[nodiscard]] cda_rail::index_vector breakable_edges() const;
+  [[nodiscard]] cda_rail::index_vector relevant_breakable_edges() const;
+  [[nodiscard]] std::vector<cda_rail::index_set> unbreakable_sections() const;
+  [[nodiscard]] std::vector<cda_rail::index_set> no_border_vss_sections() const;
+
+private:
+  [[nodiscard]] cda_rail::index_vector
+  get_unbreakable_section_containing_edge_helper(size_t e) const;
+  [[nodiscard]] bool is_on_same_unbreakable_section_helper(size_t e1,
+                                                           size_t e2) const;
+
+public:
+  [[nodiscard]] cda_rail::index_vector
+  get_unbreakable_section_containing_edge(EdgeInput const& edge) const {
+    return get_unbreakable_section_containing_edge_helper(edge.resolve(this));
+  };
+  [[nodiscard]] bool
+  is_on_same_unbreakable_section(EdgeInput const& edge1,
+                                 EdgeInput const& edge2) const {
+    return is_on_same_unbreakable_section_helper(edge1.resolve(this),
+                                                 edge2.resolve(this));
+  };
+
+  // Other Getters
+
+  [[nodiscard]] cda_rail::index_set
+  vertices_used_by_edges(const cda_rail::index_set& edges_tmp) const;
+
+  [[nodiscard]] static std::vector<std::pair<size_t, size_t>>
+  get_intersecting_ttd(const cda_rail::index_vector&           edges,
+                       const std::vector<cda_rail::index_set>& ttd);
+
+  [[nodiscard]] cda_rail::index_set
+  edge_set_complement(const cda_rail::index_set& edge_indices) const {
+    cda_rail::index_set edges_to_consider;
+    edges_to_consider.reserve(number_of_edges());
+
+    auto edges_view = std::views::iota(size_t{0}, number_of_edges());
+    edges_to_consider.insert(edges_view.begin(), edges_view.end());
+
+    return edge_set_complement(edge_indices, edges_to_consider);
+  }
+  [[nodiscard]] cda_rail::index_set
+  edge_set_complement(const cda_rail::index_set& edge_indices,
+                      const cda_rail::index_set& edges_to_consider) const;
 
   // Simple Calculation Functions
 
@@ -358,6 +463,11 @@ public:
       const cda_rail::index_set& edges_to_consider = {}) const {
     return minimal_neighboring_edge_length(get_vertex_index(vertex_name),
                                            edges_to_consider);
+  };
+
+  [[nodiscard]] size_t max_vss_on_edge_helper(size_t index) const;
+  [[nodiscard]] size_t max_vss_on_edge(EdgeInput const& edge) const {
+    return max_vss_on_edge_helper(edge.resolve(this));
   };
 
   // -----------------------------
@@ -475,6 +585,30 @@ public:
     add_successor_helper(edge_in.resolve(this), edge_out.resolve(this));
   }
 
+  // ----------------------
+  // Transformation Functions
+  // ----------------------
+
+  std::pair<cda_rail::index_vector, cda_rail::index_vector> separate_edge(
+      EdgeInput const&               edge,
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
+    auto const edge_index = edge.resolve(this);
+    return separate_edge_private_helper(
+        edge_index, get_edge(edge_index).min_block_length, sep_func);
+  };
+  std::pair<cda_rail::index_vector, cda_rail::index_vector>
+  separate_stop_edge(EdgeInput const& edge) {
+    auto const edge_index = edge.resolve(this);
+    return separate_edge_private_helper(
+        edge_index, get_edge(edge_index).min_stop_block_length,
+        &vss::functions::uniform, true);
+  };
+  std::vector<std::pair<size_t, cda_rail::index_vector>>
+  separate_stop_edges(const cda_rail::index_vector& stop_edges);
+
+  std::vector<std::pair<size_t, cda_rail::index_vector>> discretize(
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
+
   // ------------------------
   // Path Finding Algorithms
   // ------------------------
@@ -515,192 +649,224 @@ public:
       size_t e_0, const std::vector<cda_rail::index_vector>& ttd_sections,
       std::optional<size_t> exit_node) const;
 
-  // TODO: Move functions to suitable position
+  // Shortest Paths
 
-  [[nodiscard]] static std::vector<std::pair<size_t, size_t>>
-  get_intersecting_ttd(const cda_rail::index_vector&              edges,
-                       const std::vector<cda_rail::index_vector>& ttd);
-
-  [[nodiscard]] cda_rail::index_set        get_predecessors(size_t index) const;
-  [[nodiscard]] const cda_rail::index_set& get_successors(size_t index) const;
-  [[nodiscard]] const cda_rail::index_set&
-  get_successors(size_t source_id, size_t target_id) const {
-    return get_successors(get_edge_index(source_id, target_id));
-  };
-  [[nodiscard]] const cda_rail::index_set&
-  get_successors(std::string_view const source_name,
-                 std::string_view const target_name) const {
-    return get_successors(get_edge_index(source_name, target_name));
-  };
-
-  [[nodiscard]] cda_rail::index_vector neighbors(size_t index) const;
-  [[nodiscard]] cda_rail::index_vector
-  neighbors(std::string_view const name) const {
-    return neighbors(get_vertex_index(name));
-  };
-
-  [[nodiscard]] size_t number_of_vertices() const { return m_vertices.size(); };
-  [[nodiscard]] size_t number_of_edges() const { return m_edges.size(); };
-
-  [[nodiscard]] int max_vss_on_edge(size_t index) const;
-  [[nodiscard]] int max_vss_on_edge(size_t source, size_t target) const {
-    return max_vss_on_edge(get_edge_index(source, target));
-  };
-  [[nodiscard]] int max_vss_on_edge(std::string_view const source,
-                                    std::string_view const target) const {
-    return max_vss_on_edge(get_edge_index(source, target));
-  };
-
-  [[nodiscard]] static Network
-  import_network(std::filesystem::path const& working_directory,
-                 std::string_view const       networkName = "UnnamedNetwork") {
-    return Network(working_directory, networkName);
-  };
-  [[nodiscard]] static Network
-  import_network(std::string const& working_directory,
-                 std::string_view   networkName = "UnnamedNetwork") {
-    return Network(working_directory, networkName);
-  };
-  [[nodiscard]] static Network
-  import_network(char const* const working_directory,
-                 std::string_view  networkName = "UnnamedNetwork") {
-    return Network(working_directory, networkName);
-  };
-  void export_network(std::filesystem::path const& working_directory) const;
-  void export_network(std::string const& working_directory) const {
-    export_network(std::filesystem::path(working_directory));
-  };
-  void export_network(char const* const working_directory) const {
-    export_network(std::filesystem::path(working_directory));
-  };
-
-  [[nodiscard]] bool is_valid_successor(size_t e0, size_t e1) const;
-
-  [[nodiscard]] bool is_adjustable(size_t vertex_id) const;
-  [[nodiscard]] bool is_adjustable(std::string_view const vertex_name) const {
-    return is_adjustable(get_vertex_index(vertex_name));
-  };
-
-  [[nodiscard]] bool is_consistent_for_transformation() const;
-
-  // Get special edges
-  [[nodiscard]] cda_rail::index_vector breakable_edges() const;
-  [[nodiscard]] cda_rail::index_vector relevant_breakable_edges() const;
-  [[nodiscard]] std::vector<cda_rail::index_vector>
-  unbreakable_sections() const;
-  [[nodiscard]] std::vector<cda_rail::index_vector>
-  no_border_vss_sections() const;
-  [[nodiscard]] std::vector<
-      std::pair<std::optional<size_t>, std::optional<size_t>>>
-  combine_reverse_edges(const cda_rail::index_vector& edges_to_consider,
-                        bool                          sort = false) const;
-  [[nodiscard]] std::optional<size_t>
-  get_reverse_edge_index(size_t edge_index) const;
-  [[nodiscard]] std::optional<size_t>
-  get_reverse_edge_index(std::optional<size_t> edge_index) const {
-    return edge_index.has_value() ? get_reverse_edge_index(edge_index.value())
-                                  : std::optional<size_t>();
-  }
-  [[nodiscard]] size_t                get_track_index(size_t edge_index) const;
-  [[nodiscard]] std::optional<size_t> common_vertex(
-      const std::pair<std::optional<size_t>, std::optional<size_t>>& pair1,
-      const std::pair<std::optional<size_t>, std::optional<size_t>>& pair2)
-      const;
-  [[nodiscard]] std::optional<size_t>
-  common_vertex(const std::pair<size_t, size_t>& pair1,
-                const std::pair<size_t, size_t>& pair2) const {
-    return common_vertex(std::make_pair(std::optional<size_t>(pair1.first),
-                                        std::optional<size_t>(pair1.second)),
-                         std::make_pair(std::optional<size_t>(pair2.first),
-                                        std::optional<size_t>(pair2.second)));
-  }
-
-  [[nodiscard]] cda_rail::index_vector
-                     get_unbreakable_section_containing_edge(size_t e) const;
-  [[nodiscard]] bool is_on_same_unbreakable_section(size_t e1, size_t e2) const;
-
-  [[nodiscard]] cda_rail::index_vector
-  inverse_edges(const cda_rail::index_vector& edge_indices) const {
-    const auto&            edge_number = number_of_edges();
-    cda_rail::index_vector edges_to_consider(edge_number);
-    std::iota(edges_to_consider.begin(), edges_to_consider.end(), 0);
-    return inverse_edges(edge_indices, edges_to_consider);
-  };
-  [[nodiscard]] cda_rail::index_vector
-  inverse_edges(const cda_rail::index_vector& edge_indices,
-                const cda_rail::index_vector& edges_to_consider) const;
-
-  // Transformation functions
-  std::pair<cda_rail::index_vector, cda_rail::index_vector> separate_edge(
-      size_t const                   edgeIndex,
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
-    return separate_edge_private_helper(
-        edgeIndex, get_edge(edgeIndex).min_block_length, sep_func);
-  };
-  std::pair<cda_rail::index_vector, cda_rail::index_vector> separate_edge(
-      size_t const sourceId, size_t const targetId,
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
-    return separate_edge(get_edge_index(sourceId, targetId), sep_func);
-  };
-  std::pair<cda_rail::index_vector, cda_rail::index_vector> separate_edge(
-      std::string_view const sourceName, std::string_view const targetName,
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
-    return separate_edge(get_edge_index(sourceName, targetName), sep_func);
-  };
-
-  std::pair<cda_rail::index_vector, cda_rail::index_vector>
-  separate_stop_edge(size_t edge_index) {
-    return separate_edge_private_helper(
-        edge_index, get_edge(edge_index).min_stop_block_length,
-        &vss::functions::uniform, true);
-  };
-  std::vector<std::pair<size_t, cda_rail::index_vector>>
-  separate_stop_edges(const cda_rail::index_vector& stop_edges);
-
-  std::vector<std::pair<size_t, cda_rail::index_vector>> discretize(
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
+  [[nodiscard]] double length_of_path(const cda_rail::index_vector& path) const;
 
   [[nodiscard]] std::vector<std::vector<double>>
   all_edge_pairs_shortest_paths() const;
 
+private:
   [[nodiscard]] std::optional<double>
-  shortest_path(size_t source_edge_id, size_t target_id,
-                bool target_is_edge = false, bool include_first_edge = false,
-                bool use_minimal_time = false, double max_v = INF) const;
+  shortest_path_helper(size_t source_edge_id, size_t target_id,
+                       bool target_is_edge     = false,
+                       bool include_first_edge = false,
+                       bool use_minimal_time = false, double max_v = INF) const;
 
-  [[nodiscard]] std::optional<double> shortest_path_between_sets(
-      cda_rail::index_vector source_edge_ids, cda_rail::index_vector target_ids,
+public:
+  [[nodiscard]] std::optional<double> shortest_path_from_edge_to_edge(
+      EdgeInput const& source_edge, EdgeInput const& target_edge,
+      bool include_first_edge = false, bool use_minimal_time = false,
+      double max_v = INF) const {
+    return shortest_path_helper(source_edge.resolve(this),
+                                target_edge.resolve(this), true,
+                                include_first_edge, use_minimal_time, max_v);
+  };
+  [[nodiscard]] std::optional<double> shortest_path_from_edge_to_vertex(
+      EdgeInput const& source_edge, VertexInput const& target_vertex,
+      bool include_first_edge = false, bool use_minimal_time = false,
+      double max_v = INF) const {
+    return shortest_path_helper(source_edge.resolve(this),
+                                target_vertex.resolve(this), false,
+                                include_first_edge, use_minimal_time, max_v);
+  };
+
+private:
+  [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
+  shortest_path_using_edges_helper(size_t source_edge_id,
+                                   size_t target_vertex_id,
+                                   bool   only_use_valid_successors   = true,
+                                   cda_rail::index_set edges_to_use   = {},
+                                   bool                target_is_edge = false,
+                                   bool   include_first_edge          = false,
+                                   bool   use_minimal_time            = false,
+                                   double max_v = INF) const {
+    return shortest_path_between_sets_using_edges_helper(
+        cda_rail::index_set{source_edge_id},
+        cda_rail::index_set{target_vertex_id}, only_use_valid_successors,
+        std::move(edges_to_use), target_is_edge, include_first_edge,
+        use_minimal_time, max_v);
+  };
+  [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
+  shortest_path_between_sets_using_edges_helper(
+      cda_rail::index_set source_edge_ids, cda_rail::index_set target_ids,
+      bool                only_use_valid_successors = true,
+      cda_rail::index_set edges_to_use = {}, bool target_is_edge = false,
+      bool include_first_edge = false, bool use_minimal_time = false,
+      double max_v = INF) const;
+  [[nodiscard]] std::optional<double> shortest_path_length_between_sets_helper(
+      cda_rail::index_set source_edge_ids, cda_rail::index_set target_ids,
       bool target_is_edge = false, bool include_first_edge = false,
       bool use_minimal_time = false, double max_v = INF) const {
-    return shortest_path_between_sets_using_edges(
+    return shortest_path_between_sets_using_edges_helper(
                std::move(source_edge_ids), std::move(target_ids), true, {},
                target_is_edge, include_first_edge, use_minimal_time, max_v)
         .first;
   };
 
+public:
   [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
-  shortest_path_using_edges(size_t source_edge_id, size_t target_vertex_id,
-                            bool only_use_valid_successors            = true,
-                            cda_rail::index_vector edges_to_use       = {},
-                            bool                   target_is_edge     = false,
-                            bool                   include_first_edge = false,
-                            bool                   use_minimal_time   = false,
-                            double                 max_v = INF) const {
-    return shortest_path_between_sets_using_edges(
-        cda_rail::index_vector{source_edge_id},
-        cda_rail::index_vector{target_vertex_id}, only_use_valid_successors,
-        std::move(edges_to_use), target_is_edge, include_first_edge,
-        use_minimal_time, max_v);
+  shortest_edge_to_edge_path(EdgeInput const& source_edge,
+                             EdgeInput const& target_edge,
+                             bool             only_use_valid_successors = true,
+                             cda_rail::index_set edges_to_use           = {},
+                             bool                include_first_edge     = false,
+                             bool                use_minimal_time       = false,
+                             double              max_v = INF) const {
+    return shortest_path_using_edges_helper(
+        source_edge.resolve(this), target_edge.resolve(this),
+        only_use_valid_successors, std::move(edges_to_use), true,
+        include_first_edge, use_minimal_time, max_v);
+  };
+  [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
+  shortest_edge_to_vertex_path(EdgeInput const&   source_edge,
+                               VertexInput const& target_vertex,
+                               bool only_use_valid_successors         = true,
+                               cda_rail::index_set edges_to_use       = {},
+                               bool                include_first_edge = false,
+                               bool                use_minimal_time   = false,
+                               double              max_v = INF) const {
+    return shortest_path_using_edges_helper(
+        source_edge.resolve(this), target_vertex.resolve(this),
+        only_use_valid_successors, std::move(edges_to_use), false,
+        include_first_edge, use_minimal_time, max_v);
+  };
+  [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
+  shortest_path_between_edge_sets(cda_rail::index_set source_edge_ids,
+                                  cda_rail::index_set target_edge_ids,
+                                  bool only_use_valid_successors   = true,
+                                  cda_rail::index_set edges_to_use = {},
+                                  bool   include_first_edge        = false,
+                                  bool   use_minimal_time          = false,
+                                  double max_v = INF) const {
+    return shortest_path_between_sets_using_edges_helper(
+        std::move(source_edge_ids), std::move(target_edge_ids),
+        only_use_valid_successors, std::move(edges_to_use), true,
+        include_first_edge, use_minimal_time, max_v);
+  };
+  [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
+  shortest_path_between_edge_and_vertex_set(
+      cda_rail::index_set source_edge_ids,
+      cda_rail::index_set target_vertex_ids,
+      bool                only_use_valid_successors = true,
+      cda_rail::index_set edges_to_use = {}, bool include_first_edge = false,
+      bool use_minimal_time = false, double max_v = INF) const {
+    return shortest_path_between_sets_using_edges_helper(
+        std::move(source_edge_ids), std::move(target_vertex_ids),
+        only_use_valid_successors, std::move(edges_to_use), false,
+        include_first_edge, use_minimal_time, max_v);
+  };
+  [[nodiscard]] std::optional<double> shortest_path_length_between_edge_sets(
+      cda_rail::index_set source_edge_ids, cda_rail::index_set target_ids,
+      bool include_first_edge = false, bool use_minimal_time = false,
+      double max_v = INF) const {
+    return shortest_path_length_between_sets_helper(
+        std::move(source_edge_ids), std::move(target_ids), false,
+        include_first_edge, use_minimal_time, max_v);
+  };
+  [[nodiscard]] std::optional<double>
+  shortest_path_length_between_edge_and_vertex_set(
+      cda_rail::index_set source_edge_ids,
+      cda_rail::index_set target_vertex_ids, bool include_first_edge = false,
+      bool use_minimal_time = false, double max_v = INF) const {
+    return shortest_path_length_between_sets_helper(
+        std::move(source_edge_ids), std::move(target_vertex_ids), false,
+        include_first_edge, use_minimal_time, max_v);
   };
 
-  [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
-  shortest_path_between_sets_using_edges(
-      cda_rail::index_vector source_edge_ids, cda_rail::index_vector target_ids,
-      bool                   only_use_valid_successors = true,
-      cda_rail::index_vector edges_to_use = {}, bool target_is_edge = false,
-      bool include_first_edge = false, bool use_minimal_time = false,
-      double max_v = INF) const;
+private:
+  // ---------------------
+  // Private Helper
+  // ---------------------
 
-  [[nodiscard]] double length_of_path(const cda_rail::index_vector& path) const;
+  // Import helper
+  void        read_graphml(const std::filesystem::path& p);
+  static void get_keys_inplace(
+      tinyxml2::XMLElement* graphml_body, std::optional<std::string>& breakable,
+      std::optional<std::string>& length, std::optional<std::string>& max_speed,
+      std::optional<std::string>& min_block_length,
+      std::optional<std::string>& min_stop_block_length,
+      std::optional<std::string>& type, std::optional<std::string>& headway);
+  void add_vertices_from_graphml(const tinyxml2::XMLElement*       graphml_node,
+                                 const std::optional<std::string>& type,
+                                 const std::optional<std::string>& headway);
+  static void extract_vertices_from_key_inplace(const std::string& key,
+                                                std::string&       source_name,
+                                                std::string&       target_name);
+  void        add_edges_from_graphml(
+      const tinyxml2::XMLElement*       graphml_edge,
+      const std::optional<std::string>& breakable,
+      const std::optional<std::string>& length,
+      const std::optional<std::string>& max_speed,
+      const std::optional<std::string>& min_block_length,
+      const std::optional<std::string>& min_stop_block_length);
+  void read_successors(const std::filesystem::path& p);
+
+  // Export helper
+  void export_graphml(const std::filesystem::path& p) const;
+  void export_successors_python(const std::filesystem::path& p) const;
+  void export_successors_cpp(const std::filesystem::path& p) const;
+  void write_successor_set_to_file(std::ofstream& file, size_t i) const;
+
+  // getter helper
+  [[nodiscard]] size_t other_vertex(size_t e, size_t v) const {
+    return get_edge(e).source == v ? get_edge(e).target : get_edge(e).source;
+  };
+
+  // edge separation/changing helper
+  std::pair<cda_rail::index_vector, cda_rail::index_vector>
+  separate_edge_private_helper(
+      size_t edge_index, double min_length,
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform,
+      bool                           new_edge_breakable = false);
+  std::pair<cda_rail::index_vector, cda_rail::index_vector>
+       separate_edge_at(size_t                     edge_index,
+                        const std::vector<double>& distances_from_source,
+                        bool                       new_edge_breakable = false);
+  void update_new_old_edge(size_t new_edge, size_t old_edge, double position);
+  std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
+  sort_edge_pairs(
+      std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
+          edge_pairs) const;
+
+  // validity helper
+  void check_new_edge_requirements(size_t source, size_t target) const;
+
+  // path finding algorithm helper
+  [[nodiscard]] static double delta_dist_helper(const Edge& successor_edge,
+                                                double      max_v,
+                                                bool        use_minimal_time);
+
+  // private path finding algorithms
+  void dfs_inplace(std::vector<cda_rail::index_vector>& ret_val,
+                   std::unordered_set<size_t>&          vertices_to_visit,
+                   const VertexType&                    section_type) const {
+    dfs_inplace(ret_val, vertices_to_visit, section_type, {});
+  };
+  void dfs_inplace(std::vector<cda_rail::index_vector>& ret_val,
+                   std::unordered_set<size_t>&          vertices_to_visit,
+                   const VertexType&                    section_type,
+                   const std::vector<VertexType>&       error_types) const;
+  [[nodiscard]] std::vector<cda_rail::index_vector>
+  all_routes_of_given_length(std::optional<size_t> v_0,
+                             std::optional<size_t> e_0, double desired_length,
+                             bool                  reverse_direction,
+                             std::optional<size_t> exit_node           = {},
+                             cda_rail::index_set   edges_used_by_train = {},
+                             bool return_successors_if_zero = false) const;
+  [[nodiscard]] std::vector<cda_rail::index_vector> all_paths_ending_at_ttd(
+      size_t e_0, const std::vector<cda_rail::index_vector>& ttd_sections,
+      std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
+      bool first_edge) const;
 };
 } // namespace cda_rail
