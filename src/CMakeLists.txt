@@ -2,6 +2,8 @@ add_library(
   ${PROJECT_NAME}
   # ${PROJECT_SOURCE_DIR}/include/EOMHelper.hpp
   # EOMHelper.cpp
+  ${PROJECT_SOURCE_DIR}/include/StringHelper.hpp
+  StringHelper.cpp
   ${PROJECT_SOURCE_DIR}/include/GeneralHelper.hpp
   GeneralHelper.cpp
   ${PROJECT_SOURCE_DIR}/include/Definitions.hpp

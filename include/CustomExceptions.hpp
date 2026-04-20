@@ -1,5 +1,6 @@
 #pragma once
 #include "Definitions.hpp"
+#include "StringHelper.hpp"
 
 #include <algorithm>
 #include <array>
@@ -10,11 +11,6 @@
 #include <string>
 #include <string_view>
 #include <utility>
-
-namespace cda_rail {
-[[nodiscard]] std::string
-concatenate_string_views(std::initializer_list<std::string_view> parts);
-}
 
 namespace cda_rail::exceptions {
 /**
@@ -476,5 +472,3 @@ static void throw_if_invalid_folder_name(std::string_view const folderName) {
 }
 
 } // namespace cda_rail::exceptions
-
-#include "GeneralHelper.hpp" // concatenate_string_views, would cause circular include error if included at the beginning of the file
