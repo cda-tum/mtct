@@ -330,7 +330,7 @@ std::string cda_rail::Network::get_edge_name_helper(
   return std::string(v1).append("-").append(v2);
 }
 
-cda_rail::index_set cda_rail::Network::out_edges(size_t index) const {
+cda_rail::index_set cda_rail::Network::out_edges_helper(size_t index) const {
   /**
    * Gets all edges leaving a given vertex
    *
@@ -350,7 +350,8 @@ cda_rail::index_set cda_rail::Network::out_edges(size_t index) const {
   return out_edges;
 }
 
-cda_rail::index_set cda_rail::Network::in_edges(size_t const index) const {
+cda_rail::index_set
+cda_rail::Network::in_edges_helper(size_t const index) const {
   /**
    * Gets all edges entering a given vertex
    *
@@ -371,7 +372,7 @@ cda_rail::index_set cda_rail::Network::in_edges(size_t const index) const {
 }
 
 cda_rail::index_set
-cda_rail::Network::neighboring_edges(size_t const index) const {
+cda_rail::Network::neighboring_edges_helper(size_t const index) const {
   auto       ret_val      = in_edges(index);
   const auto edges_to_add = out_edges(index);
   ret_val.insert(edges_to_add.begin(), edges_to_add.end());
@@ -416,7 +417,7 @@ cda_rail::Network::get_successors_helper(size_t index) const {
   return m_successors[index];
 }
 
-cda_rail::index_set cda_rail::Network::neighbors(size_t index) const {
+cda_rail::index_set cda_rail::Network::neighbors_helper(size_t index) const {
   /**
    * Get all neighbors of a given vertex
    *

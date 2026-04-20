@@ -329,20 +329,22 @@ public:
 
   // Graph Neighbor Helper
 
-  [[nodiscard]] cda_rail::index_set out_edges(size_t index) const;
+private:
+  [[nodiscard]] cda_rail::index_set out_edges_helper(size_t index) const;
+  [[nodiscard]] cda_rail::index_set in_edges_helper(size_t index) const;
   [[nodiscard]] cda_rail::index_set
-  out_edges(std::string_view const name) const {
-    return out_edges(get_vertex_index(name));
+  neighboring_edges_helper(size_t index) const;
+
+public:
+  [[nodiscard]] cda_rail::index_set out_edges(VertexInput const& vertex) const {
+    return out_edges_helper(vertex.resolve(this));
   };
-  [[nodiscard]] cda_rail::index_set in_edges(size_t index) const;
-  [[nodiscard]] cda_rail::index_set
-  in_edges(std::string_view const name) const {
-    return in_edges(get_vertex_index(name));
+  [[nodiscard]] cda_rail::index_set in_edges(VertexInput const& vertex) const {
+    return in_edges_helper(vertex.resolve(this));
   };
-  [[nodiscard]] cda_rail::index_set neighboring_edges(size_t index) const;
   [[nodiscard]] cda_rail::index_set
-  neighboring_edges(std::string_view const name) const {
-    return neighboring_edges(get_vertex_index(name));
+  neighboring_edges(VertexInput const& vertex) const {
+    return neighboring_edges_helper(vertex.resolve(this));
   };
 
 private:
@@ -360,10 +362,12 @@ public:
     return get_successors_helper(edge.resolve(this));
   }
 
-  [[nodiscard]] cda_rail::index_set neighbors(size_t index) const;
-  [[nodiscard]] cda_rail::index_set
-  neighbors(std::string_view const name) const {
-    return neighbors(get_vertex_index(name));
+private:
+  [[nodiscard]] cda_rail::index_set neighbors_helper(size_t index) const;
+
+public:
+  [[nodiscard]] cda_rail::index_set neighbors(VertexInput const& vertex) const {
+    return neighbors_helper(vertex.resolve(this));
   };
 
   // Overlap Getters

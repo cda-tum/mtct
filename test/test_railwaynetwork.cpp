@@ -196,15 +196,15 @@ TEST(Functionality, NetworkFunctions) {
   const cda_rail::index_set expected_neighbors{0, 2};
   const auto                out_edges_1 = network.out_edges(1);
   EXPECT_EQ(out_edges_1, expected_out);
-  const auto out_edges_v1 = network.out_edges("v1");
+  const auto out_edges_v1 = network.out_edges({"v1"});
   EXPECT_EQ(out_edges_v1, expected_out);
   const auto in_edges_1 = network.in_edges(1);
   EXPECT_EQ(in_edges_1, expected_in);
-  const auto in_edges_v1 = network.in_edges("v1");
+  const auto in_edges_v1 = network.in_edges({"v1"});
   EXPECT_EQ(in_edges_v1, expected_in);
   const auto neighbors_1 = network.neighbors(1);
   EXPECT_EQ(neighbors_1, expected_neighbors);
-  const auto neighbors_v1 = network.neighbors("v1");
+  const auto neighbors_v1 = network.neighbors({"v1"});
   EXPECT_EQ(neighbors_v1, expected_neighbors);
 
   // successor tests
