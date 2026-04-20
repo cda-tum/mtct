@@ -897,10 +897,12 @@ TEST(Functionality, NetworkSections) {
                         no_border_vss_sections[0].end(),
                         v6_v5) != no_border_vss_sections[0].end());
 
-  const std::pair<size_t, size_t> pair1 = std::make_pair(v5_v6, v6_v5);
-  const std::pair<size_t, size_t> pair2 = std::make_pair(v6_v7, v7_v6);
-  EXPECT_TRUE(network.common_vertex(pair1, pair2) ==
-              network.get_vertex_index("v6"));
+  EXPECT_EQ(network.common_vertex(v5_v6, v6_v7),
+            network.get_vertex_index("v6"));
+  EXPECT_EQ(network.common_vertex({"v5", "v6"}, v6_v7),
+            network.get_vertex_index("v6"));
+  EXPECT_EQ(network.common_vertex({"v5", "v6"}, {"v6", "v7"}),
+            network.get_vertex_index("v6"));
 
   auto unbreakable_sections = network.unbreakable_sections();
 
