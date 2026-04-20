@@ -441,14 +441,17 @@ cda_rail::index_set cda_rail::Network::neighbors_helper(size_t v_index) const {
 
 std::optional<size_t>
 cda_rail::Network::common_vertex_helper(size_t e_idx_1, size_t e_idx_2) const {
-  auto const&                e1_obj = get_edge(e_idx_1);
-  auto const&                e2_obj = get_edge(e_idx_2);
-  std::unordered_set<size_t> vertices_1{e1_obj.source, e1_obj.target};
-  std::unordered_set<size_t> vertices_2{e2_obj.source, e2_obj.target};
+  auto const& e1_obj = get_edge(e_idx_1);
+  auto const& e2_obj = get_edge(e_idx_2);
+
   std::unordered_set<size_t> intersection;
-  std::ranges::set_intersection(
-      vertices_1, vertices_2,
-      std::inserter(intersection, intersection.begin()));
+  if (e1_obj.source == e2_obj.source || e1_obj.source == e2_obj.target) {
+    intersection.insert(e1_obj.source);
+  }
+  if (e1_obj.target == e2_obj.source || e1_obj.target == e2_obj.target) {
+    intersection.insert(e1_obj.target);
+  }
+
   if (intersection.empty()) {
     return {};
   }
