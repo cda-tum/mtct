@@ -43,10 +43,7 @@ private:
    */
   template <typename... Args>
   [[nodiscard]] static FixedSizeVector<size_t> make_index_vector(Args... args) {
-    FixedSizeVector<size_t> idx(sizeof...(args));
-    size_t                  i = 0;
-    ((idx[i++] = static_cast<size_t>(args)), ...);
-    return idx;
+    return FixedSizeVector<size_t>{static_cast<size_t>(args)...};
   }
 
   /**
