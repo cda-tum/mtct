@@ -505,8 +505,7 @@ private:
   void
   change_edge_min_stop_block_length_helper(size_t index,
                                            double new_min_stop_block_length);
-  void set_edge_breakable_helper(size_t index);
-  void set_edge_unbreakable_helper(size_t index);
+  void change_edge_breakable_helper(size_t index, bool value);
 
 public:
   void change_edge_length(EdgeInput const& edge, double new_length) {
@@ -526,18 +525,14 @@ public:
                                              new_min_stop_block_length);
   }
   void set_edge_breakable(EdgeInput const& edge) {
-    set_edge_breakable_helper(edge.resolve(this));
+    change_edge_breakable_status(edge, true);
   };
   void set_edge_unbreakable(EdgeInput const& edge) {
-    set_edge_unbreakable_helper(edge.resolve(this));
+    change_edge_breakable_status(edge, false);
   };
   void change_edge_breakable_status(EdgeInput const& edge,
                                     bool const       breakable) {
-    if (breakable) {
-      set_edge_breakable(edge);
-    } else {
-      set_edge_unbreakable(edge);
-    }
+    change_edge_breakable_helper(edge.resolve(this), breakable);
   };
 
   // Simple Network Editing Functions
