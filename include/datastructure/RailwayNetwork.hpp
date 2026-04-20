@@ -40,6 +40,11 @@ struct Vertex {
   Vertex(std::string_view const name, VertexType const type,
          std::optional<double> const& headway)
       : name(name), type(type), headway(headway.value_or(HEADWAY_DEFAULT)) {};
+
+  // Operators
+  bool operator==(Vertex const& other) const {
+    return name == other.name && type == other.type && headway == other.headway;
+  }
 };
 
 struct Edge {
@@ -84,6 +89,15 @@ struct Edge {
         min_block_length(min_block_length.value_or(MIN_BLOCK_LENGTH_DEFAULT)),
         min_stop_block_length(
             min_stop_block_length.value_or(MIN_STOP_BLOCK_LENGTH_DEFAULT)) {};
+
+  // Operators
+  bool operator==(const Edge& other) const {
+    return (source == other.source && target == other.target &&
+            length == other.length && max_speed == other.max_speed &&
+            breakable == other.breakable &&
+            min_block_length == other.min_block_length &&
+            min_stop_block_length == other.min_stop_block_length);
+  }
 };
 
 class Network {
@@ -96,13 +110,14 @@ public:
   struct VertexInput {
   private:
     friend class Network;
-    std::variant<size_t, std::string_view> m_data;
+    std::variant<size_t, std::string_view, Vertex> m_data;
 
   public:
     // Implicit constructors: no explicit keyword on purpose
     // NOLINTBEGIN(google-explicit-constructor)
     VertexInput(size_t i) : m_data(i) {}
     VertexInput(std::string_view v_name) : m_data(v_name) {}
+    VertexInput(Vertex vertex) : m_data(std::move(vertex)) {}
     // NOLINTEND(google-explicit-constructor)
 
   private:
@@ -115,7 +130,7 @@ public:
     friend class Network;
 
     std::variant<size_t, std::pair<size_t, size_t>,
-                 std::pair<std::string_view, std::string_view>>
+                 std::pair<std::string_view, std::string_view>, Edge>
         m_data;
 
   public:
@@ -127,6 +142,7 @@ public:
     EdgeInput(std::pair<std::string_view, std::string_view> p) : m_data(p) {}
     EdgeInput(std::string_view a, std::string_view b)
         : m_data(std::pair{a, b}) {}
+    EdgeInput(Edge edge) : m_data(std::move(edge)) {}
     // NOLINTEND(google-explicit-constructor)
 
   private:

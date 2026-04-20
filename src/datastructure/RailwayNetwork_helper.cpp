@@ -965,8 +965,18 @@ size_t cda_rail::Network::VertexInput::resolve(
     return *idx;
   }
 
-  if (const auto* int_pair = std::get_if<std::string_view>(&m_data)) {
-    return network->get_vertex_index(*int_pair);
+  if (const auto* str_name = std::get_if<std::string_view>(&m_data)) {
+    return network->get_vertex_index(*str_name);
+  }
+
+  if (const auto* vertex_obj = std::get_if<Vertex>(&m_data)) {
+    auto const idx = network->get_vertex_index(vertex_obj->name);
+    if (auto const& v_obj_from_network = network->get_vertex(idx);
+        v_obj_from_network != *vertex_obj) {
+      throw exceptions::ConsistencyException(
+          "Vertex objects with matching names have different properties.");
+    }
+    return idx;
   }
 
   // Should never be reached
@@ -986,6 +996,18 @@ cda_rail::Network::EdgeInput::resolve(Network const* const network) const {
   if (const auto* str_pair =
           std::get_if<std::pair<std::string_view, std::string_view>>(&m_data)) {
     return network->get_edge_index(str_pair->first, str_pair->second);
+  }
+
+  if (const auto* edge_obj = std::get_if<Edge>(&m_data)) {
+    auto const idx =
+        network->get_edge_index(edge_obj->source, edge_obj->target);
+    if (auto const& e_obj_from_network = network->get_edge(idx);
+        e_obj_from_network != *edge_obj) {
+      throw exceptions::ConsistencyException(
+          "Edge objects with matching source and target have different "
+          "properties.");
+    }
+    return idx;
   }
 
   // Should never be reached
