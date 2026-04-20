@@ -18,6 +18,7 @@
 #include <limits>
 #include <optional>
 #include <queue>
+#include <ranges>
 #include <sstream>
 #include <stack>
 #include <string>
@@ -417,7 +418,7 @@ cda_rail::Network::get_successors_helper(size_t index) const {
   return m_successors[index];
 }
 
-cda_rail::index_set cda_rail::Network::neighbors_helper(size_t index) const {
+cda_rail::index_set cda_rail::Network::neighbors_helper(size_t v_index) const {
   /**
    * Get all neighbors of a given vertex
    *
@@ -425,12 +426,16 @@ cda_rail::index_set cda_rail::Network::neighbors_helper(size_t index) const {
    *
    * @return Vector of vertex indices of neighbors
    */
-  if (!has_vertex(index)) {
-    throw exceptions::VertexNotExistentException(index);
+  if (!has_vertex(v_index)) {
+    throw exceptions::VertexNotExistentException(v_index);
   }
-  auto neighbors = out_edges(index);
-  auto e_in      = in_edges(index);
-  neighbors.insert(e_in.begin(), e_in.end());
+  cda_rail::index_set neighbors;
+
+  for (auto const  edges_to_consider = neighboring_edges(v_index);
+       const auto& e_idx : edges_to_consider) {
+    neighbors.insert(other_vertex(e_idx, v_index));
+  }
+
   return neighbors;
 }
 

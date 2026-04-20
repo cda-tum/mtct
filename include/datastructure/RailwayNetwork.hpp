@@ -363,7 +363,7 @@ public:
   }
 
 private:
-  [[nodiscard]] cda_rail::index_set neighbors_helper(size_t index) const;
+  [[nodiscard]] cda_rail::index_set neighbors_helper(size_t v_index) const;
 
 public:
   [[nodiscard]] cda_rail::index_set neighbors(VertexInput const& vertex) const {
