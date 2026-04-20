@@ -10,11 +10,6 @@ using json = nlohmann::json;
 // Import helper
 
 void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
-  /**
-   * Read network graph from XML file into the object
-   * @param path Path to XML file
-   */
-
   tinyxml2::XMLDocument graph_xml;
   graph_xml.LoadFile((p / "tracks.graphml").string().c_str());
   if (graph_xml.Error()) {
@@ -60,20 +55,6 @@ void cda_rail::Network::get_keys_inplace(
     std::optional<std::string>& min_block_length,
     std::optional<std::string>& min_stop_block_length,
     std::optional<std::string>& type, std::optional<std::string>& headway) {
-  /**
-   * Get keys from graphml file
-   * @param graphml_body Body of graphml file
-   * @param breakable Breakable key
-   * @param length Length key
-   * @param max_speed Max speed key
-   * @param min_block_length Min block length key
-   * @param min_stop_block_length Min stop block length key
-   * @param type Type key
-   * @param headway Headway key
-   *
-   * The variables are passed by reference and are modified in place.
-   */
-
   tinyxml2::XMLElement* graphml_key = graphml_body->FirstChildElement("key");
   while (graphml_key != nullptr) {
     if (graphml_key->Attribute("attr.name") == std::string("breakable")) {
@@ -102,16 +83,6 @@ void cda_rail::Network::add_vertices_from_graphml(
     const tinyxml2::XMLElement*       graphml_node,
     const std::optional<std::string>& type,
     const std::optional<std::string>& headway) {
-  /**
-   * Add vertices from graphml file
-   * @param graphml_node Node of graphml file
-   * @param network Network object
-   * @param type Type key
-   * @param headway Headway key
-   *
-   * The vertices are added to the network object in place.
-   */
-
   while (graphml_node != nullptr) {
     const tinyxml2::XMLElement* graphml_data =
         graphml_node->FirstChildElement("data");
@@ -156,18 +127,6 @@ void cda_rail::Network::add_edges_from_graphml(
     const std::optional<std::string>& max_speed,
     const std::optional<std::string>& min_block_length,
     const std::optional<std::string>& min_stop_block_length) {
-  /**
-   * Add edges from graphml file
-   * @param graphml_edge Edge of graphml file
-   * @param network Network object
-   * @param breakable Breakable key
-   * @param length Length key
-   * @param max_speed Max speed key
-   * @param min_block_length Min block length key
-   *
-   * The edges are added to the network object in place.
-   */
-
   while (graphml_edge != nullptr) {
     const tinyxml2::XMLElement* graphml_data =
         graphml_edge->FirstChildElement("data");
@@ -211,11 +170,6 @@ void cda_rail::Network::add_edges_from_graphml(
 }
 
 void cda_rail::Network::read_successors(const std::filesystem::path& p) {
-  /**
-   * Read successors from path
-   * @param path Path to successors file
-   */
-
   std::ifstream f((p / "successors_cpp.json"));
   json          data = json::parse(f);
 
@@ -235,11 +189,6 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
 // Export helper
 
 void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
-  /**
-   * Export the network to a GraphML file in the given path.
-   * @param path: The path to the directory.
-   */
-
   // Open file
   std::ofstream file(p / "tracks.graphml");
 
@@ -315,11 +264,6 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
 
 void cda_rail::Network::export_successors_python(
     const std::filesystem::path& p) const {
-  /**
-   * Export the successors to successors.txt for Python in the given directory.
-   * @param path: The path to the directory.
-   */
-
   std::ofstream file(p / "successors.txt");
 
   file << "{";
@@ -342,12 +286,6 @@ void cda_rail::Network::export_successors_python(
 
 void cda_rail::Network::export_successors_cpp(
     const std::filesystem::path& p) const {
-  /**
-   * Export the successors to successors_cpp.json for C++ in the given
-   * directory.
-   * @param path: The path to the directory.
-   */
-
   json j;
   for (size_t i = 0; i < number_of_edges(); ++i) {
     const auto&                                      edge = get_edge(i);
@@ -368,12 +306,6 @@ void cda_rail::Network::export_successors_cpp(
 
 void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,
                                                     size_t         i) const {
-  /**
-   * Write the successor set to the given file.
-   * @param file: The file to write to.
-   * @param i: The index of the edge.
-   */
-
   // If there are no successors, write set(), otherwise write all successors.
   if (get_successors(i).empty()) {
     file << "set()";
@@ -402,16 +334,6 @@ std::pair<cda_rail::index_vector, cda_rail::index_vector>
 cda_rail::Network::separate_edge_private_helper(
     size_t edge_index, double min_length,
     const vss::SeparationFunction& sep_func, bool new_edge_breakable) {
-  /**
-   * Separates an edge (and possibly its reverse edge) according to the given
-   * number of new vertices.
-   *
-   * @param edge_index Index of the edge to separate.
-   * @param separation_type Type of separation.
-   *
-   * @return Pair of vectors of indices of new edges and reverse edges.
-   */
-
   if (!is_consistent_for_transformation()) {
     throw exceptions::ConsistencyException();
   }
@@ -441,22 +363,6 @@ std::pair<cda_rail::index_vector, cda_rail::index_vector>
 cda_rail::Network::separate_edge_at(
     size_t edge_index, const std::vector<double>& distances_from_source,
     bool new_edge_breakable) {
-  /**
-   * This function separates an edge at given distances from the source vertex.
-   * If the reverse edge exists it is separated analogously. In particular the
-   * following is done:
-   * - New vertices are created at the given distances from the source vertex
-   * and edges in between them.
-   * - The successors are updated accordingly.
-   * - The previous edge(s) are removed (implicitly).
-   *
-   * @param edge_index: The index of the edge to separate.
-   * @param distances_from_source: The distances from the source vertex at which
-   * to separate the edge.
-   * @return: A pair of vectors containing the indices of the new edges and
-   * reverse edges, where the latter might have size 0.
-   */
-
   if (!has_edge(edge_index)) {
     throw exceptions::EdgeNotExistentException(edge_index);
   }
@@ -573,9 +479,6 @@ cda_rail::Network::separate_edge_at(
 
 void cda_rail::Network::update_new_old_edge(size_t new_edge, size_t old_edge,
                                             double position) {
-  /**
-   * Updates the mapping accordingly
-   */
   std::pair<size_t, double> old_edge_position = {old_edge, position};
   if (m_new_edge_to_old_edge_after_transform.contains(old_edge)) {
     const auto& old_edge_position_before =
@@ -590,14 +493,6 @@ std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
 cda_rail::Network::sort_edge_pairs(
     std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
         edge_pairs) const {
-  /**
-   * Sort a vector of edge pairs so that neighboring pairs are adjacent
-   *
-   * @param edges: Vector of edge pairs
-   *
-   * @return: Sorted vector of edge pairs
-   */
-
   if (!std::ranges::all_of(edge_pairs, [](const auto& edge_pair) {
         return edge_pair.first.has_value();
       })) {
@@ -715,18 +610,6 @@ void cda_rail::Network::dfs_inplace(
     std::unordered_set<size_t>&           vertices_to_visit,
     const VertexType&                     section_type,
     const std::unordered_set<VertexType>& error_types) const {
-  /**
-   * Performs DFS on the graph to find sections whose inner vertices are of the
-   * specified type.
-   *
-   * @param ret_val: Vector of vectors of edge indices. Each vector represents a
-   * section. Used as return value.
-   * @param vertices_to_visit: Set of vertices to visit.
-   * @param section_type: Type that defines sections, i.e., all inner vertices
-   * of a section are of this type.
-   * @param error_types: Types that are not allowed to be in a section.
-   */
-
   while (!vertices_to_visit.empty()) {
     ret_val.emplace_back();
 
@@ -792,20 +675,6 @@ cda_rail::Network::all_routes_of_given_length(
     bool reverse_direction, std::optional<size_t> exit_node,
     cda_rail::index_set edges_used_by_train,
     bool                return_successors_if_zero) const {
-  /**
-   * Finds all routes from a specified starting point in the specified
-   * direction. The routes are of a specified length, i.e., at least that long,
-   * however removing the last edge results in a route that is too short.
-   *
-   * @param v_0: The index of the starting vertex. If specified, e_0 should be
-   * empty.
-   * @param e_0: The index of the starting edge. If specified, v_0 should be
-   * empty.
-   * @param desired_length: The desired length of the routes.
-   * @param reverse_direction: If true, the routes are in the reverse direction.
-   * Default is false, i.e., in edge order.
-   */
-
   if (v_0.has_value() && e_0.has_value()) {
     throw exceptions::InvalidInputException("Both v_0 and e_0 are specified");
   }
@@ -904,10 +773,6 @@ std::vector<cda_rail::index_vector> cda_rail::Network::all_paths_ending_at_ttd(
     size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
     std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
     bool first_edge) const {
-  /**
-   * Finds all paths starting at edge e_0 and ending at a TTD section, which is
-   * not safe_ttd.
-   */
   std::vector<cda_rail::index_vector> ret_val;
 
   if (!has_edge(e_0)) {
