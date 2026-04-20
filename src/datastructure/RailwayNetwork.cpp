@@ -887,8 +887,8 @@ void cda_rail::Network::change_vertex_name_helper(
     throw exceptions::InvalidInputException("Vertex already exists");
   }
   m_vertex_name_to_index.erase(m_vertices.at(index).name);
-  m_vertices.at(index).name                            = new_name;
-  m_vertex_name_to_index.at(m_vertices.at(index).name) = index;
+  m_vertices.at(index).name = new_name;
+  m_vertex_name_to_index.emplace(new_name, index);
 }
 
 void cda_rail::Network::change_vertex_type_helper(size_t     index,
