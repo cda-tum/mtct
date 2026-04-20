@@ -48,6 +48,16 @@ public:
       : m_data(std::make_unique<T[]>(len)), m_len(len) {}
 
   /**
+   * @brief Constructs a fixed size vector with given values.
+   *
+   * @param init Values to store in a fixed vector
+   */
+  explicit FixedSizeVector(std::initializer_list<T> init)
+      : m_data(std::make_unique<T[]>(init.size())), m_len(init.size()) {
+    std::copy(init.begin(), init.end(), begin());
+  }
+
+  /**
    * @brief Copy constructor.  Performs a deep copy of all elements.
    *
    * @param other Source vector to copy from.

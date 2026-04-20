@@ -27,6 +27,15 @@ TEST(FixedSizeVector, DefaultConstructionAndResize) {
   EXPECT_EQ(vec[3], 13);
 }
 
+TEST(FixedSizeVector, ConstructorWithInitializerList) {
+  cda_rail::FixedSizeVector<size_t> vec{1, 2, 3, 4};
+  EXPECT_EQ(vec.size(), 4);
+  EXPECT_EQ(vec[0], 1);
+  EXPECT_EQ(vec[1], 2);
+  EXPECT_EQ(vec[2], 3);
+  EXPECT_EQ(vec[3], 4);
+}
+
 TEST(FixedSizeVector, AtChecksBoundsForConstAndNonConst) {
   cda_rail::FixedSizeVector<size_t> vec(3);
   vec[0] = 7;
