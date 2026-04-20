@@ -203,16 +203,9 @@ void cda_rail::Network::add_edges_from_graphml(
       throw exceptions::ImportException("graphml");
     }
 
-    if (e_min_stop_block_length.has_value()) {
-      this->add_edge(source_name, target_name, e_length.value(),
-                     e_max_speed.value(), e_breakable.value(),
-                     e_min_block_length.value(),
-                     e_min_stop_block_length.value());
-    } else {
-      this->add_edge(source_name, target_name, e_length.value(),
-                     e_max_speed.value(), e_breakable.value(),
-                     e_min_block_length.value());
-    }
+    this->add_edge({source_name}, {target_name}, e_length.value(),
+                   e_max_speed.value(), e_breakable, e_min_block_length,
+                   e_min_stop_block_length);
     graphml_edge = graphml_edge->NextSiblingElement("edge");
   }
 }
@@ -230,10 +223,10 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
     std::string source_name;
     std::string target_name;
     extract_vertices_from_key_inplace(key, source_name, target_name);
-    auto const edge_id_in = get_edge_index(source_name, target_name);
+    auto const edge_id_in = get_edge_index({source_name}, {target_name});
     for (auto& tuple : val) {
-      auto const edge_id_out = get_edge_index(tuple[0].get<std::string>(),
-                                              tuple[1].get<std::string>());
+      auto const edge_id_out = get_edge_index({tuple[0].get<std::string>()},
+                                              {tuple[1].get<std::string>()});
       add_successor(edge_id_in, edge_id_out);
     }
   }
@@ -718,10 +711,10 @@ double cda_rail::Network::delta_dist_helper(const Edge& successor_edge,
 }
 
 void cda_rail::Network::dfs_inplace(
-    std::vector<cda_rail::index_vector>& ret_val,
-    std::unordered_set<size_t>&          vertices_to_visit,
-    const VertexType&                    section_type,
-    const std::vector<VertexType>&       error_types) const {
+    std::vector<cda_rail::index_set>&     ret_val,
+    std::unordered_set<size_t>&           vertices_to_visit,
+    const VertexType&                     section_type,
+    const std::unordered_set<VertexType>& error_types) const {
   /**
    * Performs DFS on the graph to find sections whose inner vertices are of the
    * specified type.
@@ -737,23 +730,23 @@ void cda_rail::Network::dfs_inplace(
   while (!vertices_to_visit.empty()) {
     ret_val.emplace_back();
 
-    std::stack<int> stack;
+    std::stack<size_t> stack;
     stack.emplace(*vertices_to_visit.begin());
-    std::vector<int> visited_vertices;
+    std::unordered_set<size_t> visited_vertices;
 
     // DFS
     while (!stack.empty()) {
       int const current_vertex = stack.top();
       stack.pop();
-      visited_vertices.emplace_back(current_vertex);
-      if (vertices_to_visit.find(current_vertex) != vertices_to_visit.end()) {
+      visited_vertices.insert(current_vertex);
+      if (vertices_to_visit.contains(current_vertex)) {
         vertices_to_visit.erase(current_vertex);
       }
 
       const auto neighbor_vertices = neighbors(current_vertex);
       for (const auto& neighbor : neighbor_vertices) {
         if (get_vertex(neighbor).type == section_type &&
-            !std::ranges::contains(visited_vertices, neighbor)) {
+            !visited_vertices.contains(neighbor)) {
           stack.emplace(neighbor);
         }
         if (std::ranges::contains(error_types, get_vertex(neighbor).type)) {
@@ -771,7 +764,7 @@ void cda_rail::Network::dfs_inplace(
           }
 
           if (!std::ranges::contains(ret_val.back(), edge_index)) {
-            ret_val.back().emplace_back(edge_index);
+            ret_val.back().insert(edge_index);
           }
         }
 
@@ -785,7 +778,7 @@ void cda_rail::Network::dfs_inplace(
           }
 
           if (!std::ranges::contains(ret_val.back(), edge_index)) {
-            ret_val.back().emplace_back(edge_index);
+            ret_val.back().insert(edge_index);
           }
         }
       }
@@ -908,7 +901,7 @@ cda_rail::Network::all_routes_of_given_length(
 }
 
 std::vector<cda_rail::index_vector> cda_rail::Network::all_paths_ending_at_ttd(
-    size_t e_0, const std::vector<cda_rail::index_vector>& ttd_sections,
+    size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
     std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
     bool first_edge) const {
   /**

@@ -197,9 +197,9 @@ public:
     return Network(working_directory, networkName);
   };
   [[nodiscard]] static Network
-  import_network(char const* const      working_directory,
+  import_network(char const* const      workingDirectory,
                  std::string_view const networkName = "UnnamedNetwork") {
-    return Network(working_directory, networkName);
+    return Network(workingDirectory, networkName);
   };
   void export_network(std::filesystem::path const& working_directory) const;
   void export_network(std::string const& working_directory) const {
@@ -313,7 +313,7 @@ public:
 private:
   [[nodiscard]] std::string get_edge_name_helper(std::string_view v1,
                                                  std::string_view v2,
-                                                 bool checkExistence) const;
+                                                 bool check_existence) const;
   [[nodiscard]] std::string get_edge_name_helper(size_t v0, size_t v1,
                                                  bool check_existence) const {
     return get_edge_name_helper(get_vertex(v0).name, get_vertex(v1).name,
@@ -360,26 +360,22 @@ public:
     return get_successors_helper(edge.resolve(this));
   }
 
-  [[nodiscard]] cda_rail::index_vector neighbors(size_t index) const;
-  [[nodiscard]] cda_rail::index_vector
+  [[nodiscard]] cda_rail::index_set neighbors(size_t index) const;
+  [[nodiscard]] cda_rail::index_set
   neighbors(std::string_view const name) const {
     return neighbors(get_vertex_index(name));
   };
 
   // Overlap Getters
-
-  [[nodiscard]] std::optional<size_t> common_vertex(
-      const std::pair<std::optional<size_t>, std::optional<size_t>>& pair1,
-      const std::pair<std::optional<size_t>, std::optional<size_t>>& pair2)
-      const;
+private:
   [[nodiscard]] std::optional<size_t>
-  common_vertex(const std::pair<size_t, size_t>& pair1,
-                const std::pair<size_t, size_t>& pair2) const {
-    return common_vertex(std::make_pair(std::optional<size_t>(pair1.first),
-                                        std::optional<size_t>(pair1.second)),
-                         std::make_pair(std::optional<size_t>(pair2.first),
-                                        std::optional<size_t>(pair2.second)));
-  }
+  common_vertex_helper(size_t e_idx_1, size_t e_idx_2) const;
+
+public:
+  [[nodiscard]] std::optional<size_t>
+  common_vertex(EdgeInput const& edge1, EdgeInput const& edge2) const {
+    return common_vertex_helper(edge1.resolve(this), edge2.resolve(this));
+  };
 
   // Reverse Edge Getters
 
@@ -420,13 +416,13 @@ public:
   [[nodiscard]] std::vector<cda_rail::index_set> no_border_vss_sections() const;
 
 private:
-  [[nodiscard]] cda_rail::index_vector
+  [[nodiscard]] cda_rail::index_set
   get_unbreakable_section_containing_edge_helper(size_t e) const;
   [[nodiscard]] bool is_on_same_unbreakable_section_helper(size_t e1,
                                                            size_t e2) const;
 
 public:
-  [[nodiscard]] cda_rail::index_vector
+  [[nodiscard]] cda_rail::index_set
   get_unbreakable_section_containing_edge(EdgeInput const& edge) const {
     return get_unbreakable_section_containing_edge_helper(edge.resolve(this));
   };
@@ -447,41 +443,40 @@ public:
                        const std::vector<cda_rail::index_set>& ttd);
 
   [[nodiscard]] cda_rail::index_set
-  edge_set_complement(const cda_rail::index_set& edge_indices) const {
-    cda_rail::index_set edges_to_consider;
-    edges_to_consider.reserve(number_of_edges());
-
-    auto edges_view = std::views::iota(size_t{0}, number_of_edges());
-    edges_to_consider.insert(edges_view.begin(), edges_view.end());
-
-    return edge_set_complement(edge_indices, edges_to_consider);
-  }
+  edge_set_complement(const cda_rail::index_set& edge_indices) const;
   [[nodiscard]] cda_rail::index_set
   edge_set_complement(const cda_rail::index_set& edge_indices,
                       const cda_rail::index_set& edges_to_consider) const;
 
   // Simple Calculation Functions
 
-  [[nodiscard]] double
-  maximal_vertex_speed(size_t                     vertex_id,
-                       const cda_rail::index_set& edges_to_consider = {}) const;
+private:
+  [[nodiscard]] double maximal_vertex_speed_helper(
+      size_t vertex_id, const cda_rail::index_set& edges_to_consider) const;
+
+public:
   [[nodiscard]] double maximal_vertex_speed(
-      std::string_view const     vertex_name,
+      VertexInput const&         vertex,
       const cda_rail::index_set& edges_to_consider = {}) const {
-    return maximal_vertex_speed(get_vertex_index(vertex_name),
-                                edges_to_consider);
+    return maximal_vertex_speed_helper(vertex.resolve(this), edges_to_consider);
   };
 
+private:
+  [[nodiscard]] double minimal_neighboring_edge_length_helper(
+      size_t v, const cda_rail::index_set& edges_to_consider) const;
+
+public:
   [[nodiscard]] double minimal_neighboring_edge_length(
-      size_t v, const cda_rail::index_set& edges_to_consider = {}) const;
-  [[nodiscard]] double minimal_neighboring_edge_length(
-      std::string_view const     vertex_name,
+      VertexInput const&         vertex,
       const cda_rail::index_set& edges_to_consider = {}) const {
-    return minimal_neighboring_edge_length(get_vertex_index(vertex_name),
-                                           edges_to_consider);
+    return minimal_neighboring_edge_length_helper(vertex.resolve(this),
+                                                  edges_to_consider);
   };
 
+private:
   [[nodiscard]] size_t max_vss_on_edge_helper(size_t index) const;
+
+public:
   [[nodiscard]] size_t max_vss_on_edge(EdgeInput const& edge) const {
     return max_vss_on_edge_helper(edge.resolve(this));
   };
@@ -497,20 +492,23 @@ public:
     m_network_name = networkName;
   }
 
-  void change_vertex_name(size_t index, std::string_view new_name);
-  void change_vertex_name(std::string_view const old_name,
+private:
+  void change_vertex_name_helper(size_t index, std::string_view new_name);
+  void change_vertex_type_helper(size_t index, VertexType new_type);
+  void change_vertex_headway_helper(size_t index, double new_headway);
+
+public:
+  void change_vertex_name(VertexInput const&     vertex,
                           std::string_view const new_name) {
-    change_vertex_name(get_vertex_index(old_name), new_name);
+    change_vertex_name_helper(vertex.resolve(this), new_name);
   };
-  void change_vertex_type(size_t index, VertexType new_type);
-  void change_vertex_type(std::string_view const name,
-                          VertexType const       new_type) {
-    change_vertex_type(get_vertex_index(name), new_type);
+  void change_vertex_type(VertexInput const& vertex,
+                          VertexType const   new_type) {
+    change_vertex_type_helper(vertex.resolve(this), new_type);
   };
-  void change_vertex_headway(size_t index, double new_headway);
-  void change_vertex_headway(std::string_view const name,
-                             double const           new_headway) {
-    change_vertex_headway(get_vertex_index(name), new_headway);
+  void change_vertex_headway(VertexInput const& vertex,
+                             double const       new_headway) {
+    change_vertex_headway_helper(vertex.resolve(this), new_headway);
   };
 
 private:
@@ -558,33 +556,21 @@ public:
     return add_vertex(Vertex(std::forward<Args>(args)...));
   };
 
-  size_t
-  add_edge(size_t source, size_t target, double length, double max_speed,
-           bool   breakable             = Edge::BREAKABLE_DEFAULT,
-           double min_block_length      = Edge::MIN_BLOCK_LENGTH_DEFAULT,
-           double min_stop_block_length = Edge::MIN_STOP_BLOCK_LENGTH_DEFAULT);
-  size_t add_edge(size_t source, size_t target, double length, double max_speed,
-                  std::optional<bool> const&   breakable,
-                  std::optional<double> const& min_block_length,
-                  std::optional<double> const& min_stop_block_length);
-  size_t add_edge(
-      std::string_view const sourceName, std::string_view const targetName,
-      double const length, double const maxSpeed,
-      bool const   breakable          = Edge::BREAKABLE_DEFAULT,
-      double const minBlockLength     = Edge::MIN_BLOCK_LENGTH_DEFAULT,
-      double const minStopBlockLength = Edge::MIN_STOP_BLOCK_LENGTH_DEFAULT) {
-    return add_edge(get_vertex_index(sourceName), get_vertex_index(targetName),
-                    length, maxSpeed, breakable, minBlockLength,
-                    minStopBlockLength);
-  };
-  size_t add_edge(std::string_view const sourceName,
-                  std::string_view const targetName, double const length,
-                  double const maxSpeed, std::optional<bool> const& breakable,
-                  std::optional<double> const& min_block_length,
-                  std::optional<double> const& min_stop_block_length) {
-    return add_edge(get_vertex_index(sourceName), get_vertex_index(targetName),
-                    length, maxSpeed, breakable, min_block_length,
-                    min_stop_block_length);
+private:
+  size_t add_edge_helper(size_t source, size_t target, double length,
+                         double max_speed, std::optional<bool> const& breakable,
+                         std::optional<double> const& min_block_length,
+                         std::optional<double> const& min_stop_block_length);
+
+public:
+  size_t add_edge(VertexInput const& source, VertexInput const& target,
+                  double const length, double const maxSpeed,
+                  std::optional<bool> const&   breakable             = {},
+                  std::optional<double> const& min_block_length      = {},
+                  std::optional<double> const& min_stop_block_length = {}) {
+    return add_edge_helper(source.resolve(this), target.resolve(this), length,
+                           maxSpeed, breakable, min_block_length,
+                           min_stop_block_length);
   }
 
 private:
@@ -656,9 +642,10 @@ public:
                                       std::move(exit_node),
                                       std::move(edges_to_consider));
   }
-  [[nodiscard]] std::vector<cda_rail::index_vector> all_paths_ending_at_ttd(
-      size_t e_0, const std::vector<cda_rail::index_vector>& ttd_sections,
-      std::optional<size_t> exit_node) const;
+  [[nodiscard]] std::vector<cda_rail::index_vector>
+  all_paths_ending_at_ttd(size_t                                  e_0,
+                          const std::vector<cda_rail::index_set>& ttd_sections,
+                          std::optional<size_t> exit_node) const;
 
   // Shortest Paths
 
@@ -859,15 +846,11 @@ private:
                                                 bool        use_minimal_time);
 
   // private path finding algorithms
-  void dfs_inplace(std::vector<cda_rail::index_vector>& ret_val,
-                   std::unordered_set<size_t>&          vertices_to_visit,
-                   const VertexType&                    section_type) const {
-    dfs_inplace(ret_val, vertices_to_visit, section_type, {});
-  };
-  void dfs_inplace(std::vector<cda_rail::index_vector>& ret_val,
-                   std::unordered_set<size_t>&          vertices_to_visit,
-                   const VertexType&                    section_type,
-                   const std::vector<VertexType>&       error_types) const;
+  void
+  dfs_inplace(std::vector<cda_rail::index_set>&     ret_val,
+              std::unordered_set<size_t>&           vertices_to_visit,
+              const VertexType&                     section_type,
+              const std::unordered_set<VertexType>& error_types = {}) const;
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_routes_of_given_length(std::optional<size_t> v_0,
                              std::optional<size_t> e_0, double desired_length,
@@ -876,7 +859,7 @@ private:
                              cda_rail::index_set   edges_used_by_train = {},
                              bool return_successors_if_zero = false) const;
   [[nodiscard]] std::vector<cda_rail::index_vector> all_paths_ending_at_ttd(
-      size_t e_0, const std::vector<cda_rail::index_vector>& ttd_sections,
+      size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
       std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
       bool first_edge) const;
 };
