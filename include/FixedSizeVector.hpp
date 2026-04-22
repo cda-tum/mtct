@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cstddef>
+#include <initializer_list>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -24,10 +25,12 @@ using std::size_t;
  *
  * @invariant All indices in `[0, size())` refer to valid, initialised elements.
  */
+// NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays)
 template <typename T> class FixedSizeVector {
 private:
-  std::unique_ptr<T[]> m_data{std::make_unique<T[]>(0)};
-  size_t               m_len{0};
+  std::unique_ptr<T[]> m_data{
+      std::make_unique<T[]>(0)}; // NOLINT(cppcoreguidelines-avoid-c-arrays)
+  size_t m_len{0};
 
 public:
   /*
@@ -45,15 +48,19 @@ public:
    * @param len Number of elements to allocate.
    */
   explicit FixedSizeVector(size_t const len)
-      : m_data(std::make_unique<T[]>(len)), m_len(len) {}
+      : m_data(std::make_unique<T[]>(
+            len)), // NOLINT(cppcoreguidelines-avoid-c-arrays)
+        m_len(len) {}
 
   /**
    * @brief Constructs a fixed size vector with given values.
    *
    * @param init Values to store in a fixed vector
    */
-  explicit FixedSizeVector(std::initializer_list<T> init)
-      : m_data(std::make_unique<T[]>(init.size())), m_len(init.size()) {
+  FixedSizeVector(std::initializer_list<T> init)
+      : m_data(std::make_unique<T[]>(
+            init.size())), // NOLINT(cppcoreguidelines-avoid-c-arrays)
+        m_len(init.size()) {
     std::copy(init.begin(), init.end(), begin());
   }
 
@@ -63,7 +70,9 @@ public:
    * @param other Source vector to copy from.
    */
   FixedSizeVector(const FixedSizeVector& other)
-      : m_data(std::make_unique<T[]>(other.m_len)), m_len(other.m_len) {
+      : m_data(std::make_unique<T[]>(
+            other.m_len)), // NOLINT(cppcoreguidelines-avoid-c-arrays)
+        m_len(other.m_len) {
     std::copy(other.begin(), other.end(), begin());
   }
 
@@ -126,8 +135,9 @@ public:
    * @param len New number of elements.
    */
   void delete_and_resize(size_t const len) {
-    m_data = std::make_unique<T[]>(len);
-    m_len  = len;
+    m_data =
+        std::make_unique<T[]>(len); // NOLINT(cppcoreguidelines-avoid-c-arrays)
+    m_len = len;
   }
 
   /*
@@ -287,4 +297,5 @@ void swap(FixedSizeVector<T>& lhs, FixedSizeVector<T>& rhs) noexcept {
   lhs.swap(rhs);
 }
 
+// NOLINTEND(cppcoreguidelines-avoid-c-arrays)
 } // namespace cda_rail

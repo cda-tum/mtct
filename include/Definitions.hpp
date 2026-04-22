@@ -1,17 +1,7 @@
 #pragma once
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <limits>
-#include <numeric>
-#include <stdexcept>
-#include <string>
-#include <string_view>
-#include <system_error>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 namespace cda_rail {
@@ -30,6 +20,8 @@ constexpr double ABS_PWL_ERROR            = 10;
 constexpr double LINE_SPEED_ACCURACY      = 0.1;
 constexpr double LINE_SPEED_TIME_ACCURACY = 0.1;
 constexpr double MIN_NON_ZERO             = 1.0;
+
+// TODO: Sensible to move any of these
 
 enum class VertexType : std::uint8_t {
   NoBorder    = 0,

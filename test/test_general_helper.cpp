@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <plog/Logger.h>
+#include <plog/Severity.h>
 #include <ranges>
 #include <set>
 
@@ -15,9 +17,7 @@ namespace {
   if (k > n) {
     return 0;
   }
-  if (k > n - k) {
-    k = n - k;
-  }
+  k             = std::min(k, n - k);
   size_t result = 1;
   for (size_t i = 1; i <= k; ++i) {
     result = result * (n - k + i) / i;
@@ -30,8 +30,8 @@ namespace {
 TEST(GeneralHelper, ApproxEqual) {
   constexpr auto eps = std::numeric_limits<double>::epsilon();
   EXPECT_TRUE(cda_rail::approx_equal(1.0, 1.0));
-  EXPECT_TRUE(cda_rail::approx_equal(1.0, 1.0 + 5 * eps, 10.0));
-  EXPECT_FALSE(cda_rail::approx_equal(1.0, 1.0 + 10 * eps, 10.0));
+  EXPECT_TRUE(cda_rail::approx_equal(1.0, 1.0 + (5 * eps), 10.0));
+  EXPECT_FALSE(cda_rail::approx_equal(1.0, 1.0 + (10 * eps), 10.0));
   EXPECT_THROW((void)cda_rail::approx_equal(1.0, 1.0, -1.0),
                cda_rail::exceptions::InvalidInputException);
 }
@@ -98,11 +98,13 @@ TEST(GeneralHelper, SubsetsOfSizeKProperties) {
       std::ranges::all_of(subsets, [n, k](const auto& subset) {
         return subset.size() == k && std::ranges::is_sorted(subset) &&
                std::ranges::adjacent_find(subset) == subset.end() &&
-               std::ranges::all_of(subset, [n](size_t idx) { return idx < n; });
+               std::ranges::all_of(
+                   subset, [limit = n](size_t idx) { return idx < limit; });
       });
   EXPECT_TRUE(all_valid);
 
-  std::set<std::vector<size_t>> unique_subsets(subsets.begin(), subsets.end());
+  const std::set<std::vector<size_t>> unique_subsets(subsets.begin(),
+                                                     subsets.end());
   EXPECT_EQ(unique_subsets.size(), subsets.size());
 }
 
@@ -125,7 +127,7 @@ TEST(GeneralHelper, SubsetsOfSize2ContainsExactlyAllPairs) {
       expected.emplace(i, j);
     }
   }
-  std::set<std::pair<size_t, size_t>> actual(pairs.begin(), pairs.end());
+  const std::set<std::pair<size_t, size_t>> actual(pairs.begin(), pairs.end());
   EXPECT_EQ(actual, expected);
 
   const bool all_pairs_ordered = std::ranges::all_of(
@@ -143,7 +145,8 @@ TEST(GeneralHelper, SubsetsOfSizeK4) {
   const bool all_valid = std::ranges::all_of(subsets, [n](const auto& subset) {
     return subset.size() == 4 && std::ranges::is_sorted(subset) &&
            std::ranges::adjacent_find(subset) == subset.end() &&
-           std::ranges::all_of(subset, [n](size_t idx) { return idx < n; });
+           std::ranges::all_of(subset,
+                               [limit = n](size_t idx) { return idx < limit; });
   });
   EXPECT_TRUE(all_valid);
 

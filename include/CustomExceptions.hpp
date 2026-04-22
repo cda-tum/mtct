@@ -1,5 +1,4 @@
 #pragma once
-#include "Definitions.hpp"
 #include "StringHelper.hpp"
 
 #include <algorithm>
@@ -10,7 +9,6 @@
 #include <initializer_list>
 #include <string>
 #include <string_view>
-#include <utility>
 
 namespace cda_rail::exceptions {
 /**

@@ -1,14 +1,9 @@
 #pragma once
-#include "Definitions.hpp"
 #include "FixedSizeVector.hpp"
 
-#include <algorithm>
 #include <cstddef>
-#include <memory>
 #include <sstream>
 #include <stdexcept>
-#include <utility>
-#include <vector>
 
 namespace cda_rail {
 

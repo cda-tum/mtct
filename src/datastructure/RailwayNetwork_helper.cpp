@@ -781,7 +781,7 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
 // ----------------
 
 size_t cda_rail::Network::VertexInput::resolve(
-    cda_rail::Network const* const network) const {
+    cda_rail::Network const* network) const {
   if (const auto* idx = std::get_if<size_t>(&m_data)) {
     return *idx;
   }
@@ -799,8 +799,7 @@ size_t cda_rail::Network::VertexInput::resolve(
   throw std::runtime_error("Invalid VertexInput variant");
 }
 
-size_t
-cda_rail::Network::EdgeInput::resolve(Network const* const network) const {
+size_t cda_rail::Network::EdgeInput::resolve(Network const* network) const {
   if (const auto* idx = std::get_if<size_t>(&m_data)) {
     return *idx;
   }

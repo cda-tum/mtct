@@ -6,10 +6,9 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <numeric>
 #include <optional>
-#include <ranges>
 #include <string>
+#include <string_view>
 #include <tinyxml2.h>
 #include <unordered_map>
 #include <unordered_set>
@@ -179,7 +178,7 @@ public:
      * @throws cda_rail::exceptions::ConsistencyException If a Vertex object
      *         matches by name but has different attributes.
      */
-    size_t resolve(Network const* const network) const;
+    size_t resolve(Network const* network) const;
   };
 
   /**
@@ -206,7 +205,7 @@ public:
         : m_data(std::pair{a, b}) {}
     template <typename T1, typename T2>
     EdgeInput(const std::pair<T1, T2>& p) : EdgeInput(p.first, p.second) {}
-    EdgeInput(Edge edge) : m_data(std::move(edge)) {}
+    EdgeInput(Edge edge) : m_data(edge) {}
     // NOLINTEND(google-explicit-constructor)
 
   private:
@@ -219,7 +218,7 @@ public:
      * @throws cda_rail::exceptions::ConsistencyException If an Edge object
      *         matches by endpoints but has different attributes.
      */
-    size_t resolve(Network const* const network) const;
+    size_t resolve(Network const* network) const;
   };
 
 private:
@@ -227,15 +226,15 @@ private:
   // operating system as enforced by throw_if_invalid_folder_name
   std::string m_network_name{"UnnamedNetwork"};
 
-  std::vector<Vertex> m_vertices{};
-  std::vector<Edge>   m_edges{};
+  std::vector<Vertex> m_vertices;
+  std::vector<Edge>   m_edges;
   std::vector<cda_rail::index_set>
-      m_successors{}; // for every edge, set of possible successor edges
-  std::unordered_map<std::string, size_t> m_vertex_name_to_index{};
+      m_successors; // for every edge, set of possible successor edges
+  std::unordered_map<std::string, size_t> m_vertex_name_to_index;
 
   std::unordered_map<std::size_t, std::pair<size_t, double>>
-      m_new_edge_to_old_edge_after_transform{}; // needed if edges are
-                                                // discretized
+      m_new_edge_to_old_edge_after_transform; // needed if edges are
+                                              // discretized
 
 public:
   // -----------------------------
@@ -262,41 +261,40 @@ public:
    * (`successors_cpp.json`) are read from
    * `working_directory/networks/networkName/`.
    *
-  * @param networkName       Name of the network subfolder; defaults to
+   * @param networkName       Name of the network subfolder; defaults to
    *                          `"UnnamedNetwork"`.
-   * @param working_directory Root working directory.
-   ?
+   * @param workingDirectory Root working directory.
    * @throws cda_rail::exceptions::ImportException If the expected directory
    *         does not exist or the files cannot be parsed.
    */
   explicit Network(std::string_view const       networkName,
-                   std::filesystem::path const& working_directory);
+                   std::filesystem::path const& workingDirectory);
 
   /**
    * @brief Convenience overload accepting a `std::string` path.
    *
    * @param networkName       Name of the network subfolder.
-   * @param working_directory Root working directory as a string.
+   * @param workingDirectory Root working directory as a string.
    *
    * @throws cda_rail::exceptions::ImportException If the network cannot be
    *         loaded.
    */
   explicit Network(std::string_view const networkName,
-                   std::string const&     working_directory)
-      : Network(networkName, std::filesystem::path(working_directory)) {};
+                   std::string const&     workingDirectory)
+      : Network(networkName, std::filesystem::path(workingDirectory)) {};
 
   /**
    * @brief Convenience overload accepting a C-string path.
    *
    * @param networkName       Name of the network subfolder.
-   * @param working_directory Root working directory as a C-string.
+   * @param workingDirectory Root working directory as a C-string.
    *
    * @throws cda_rail::exceptions::ImportException If the network cannot be
    *         loaded.
    */
   explicit Network(std::string_view const networkName,
-                   char const* const      working_directory)
-      : Network(networkName, std::filesystem::path(working_directory)) {};
+                   char const* const      workingDirectory)
+      : Network(networkName, std::filesystem::path(workingDirectory)) {};
 
   // Rule of 0 suffices
 
@@ -1271,39 +1269,38 @@ public:
   /**
    * @brief Renames a vertex.
    * @param vertex   Vertex descriptor.
-   * @param new_name New name for the vertex.
+   * @param newName New name for the vertex.
    * @throws cda_rail::exceptions::VertexNotExistentException If the vertex
    *         does not exist.
    * @throws cda_rail::exceptions::InvalidInputException If a vertex with
-   *         @p new_name already exists.
+   *         @p newName already exists.
    */
   void change_vertex_name(VertexInput const&     vertex,
-                          std::string_view const new_name) {
-    change_vertex_name_helper(vertex.resolve(this), new_name);
+                          std::string_view const newName) {
+    change_vertex_name_helper(vertex.resolve(this), newName);
   };
 
   /**
    * @brief Changes the type of a vertex.
    * @param vertex   Vertex descriptor.
-   * @param new_type New vertex type.
+   * @param newType New vertex type.
    * @throws cda_rail::exceptions::VertexNotExistentException If the vertex
    *         does not exist.
    */
-  void change_vertex_type(VertexInput const& vertex,
-                          VertexType const   new_type) {
-    change_vertex_type_helper(vertex.resolve(this), new_type);
+  void change_vertex_type(VertexInput const& vertex, VertexType const newType) {
+    change_vertex_type_helper(vertex.resolve(this), newType);
   };
 
   /**
    * @brief Updates the additional headway imposed on a vertex.
    * @param vertex      Vertex descriptor.
-   * @param new_headway New headway value in seconds.
+   * @param newHeadway New headway value in seconds.
    * @throws cda_rail::exceptions::VertexNotExistentException If the vertex
    *         does not exist.
    */
   void change_vertex_headway(VertexInput const& vertex,
-                             double const       new_headway) {
-    change_vertex_headway_helper(vertex.resolve(this), new_headway);
+                             double const       newHeadway) {
+    change_vertex_headway_helper(vertex.resolve(this), newHeadway);
   };
 
 private:
@@ -1695,17 +1692,16 @@ public:
       std::optional<size_t> exit_node         = {},
       cda_rail::index_set   edges_to_consider = {}) const {
     return all_routes_of_given_length(std::nullopt, e, desiredLen, true,
-                                      std::move(exit_node),
-                                      std::move(edges_to_consider));
+                                      exit_node, std::move(edges_to_consider));
   }
 
 private:
   /**
-   * @brief Returns all paths starting immediately after edge @p e_0 and
+   * @brief Returns all paths starting immediately after edge @p edge and
    *        ending upon entering a TTD section or reaching the exit vertex if
    * specified.
    *
-   * @param e_0          Starting edge (paths begin with a valid successor of
+   * @param edge         Starting edge (paths begin with a valid successor of
    *                     this edge).
    * @param ttd_sections Vector of TTD sections (each a set of edge indices).
    * @param exit_node    Optional vertex at which paths may terminate.

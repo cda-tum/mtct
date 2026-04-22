@@ -3,12 +3,12 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 
+#include <cmath>
 #include <concepts>
-#include <plog/Appenders/ColorConsoleAppender.h>
-#include <plog/Formatters/TxtFormatter.h>
-#include <plog/Init.h>
-#include <plog/Logger.h>
-#include <plog/Severity.h>
+#include <filesystem>
+#include <limits>
+#include <utility>
+#include <vector>
 
 namespace cda_rail {
 

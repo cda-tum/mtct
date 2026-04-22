@@ -1,16 +1,19 @@
 #include "StringHelper.hpp"
 
-#include <algorithm>
+#include <cstddef>
+#include <initializer_list>
 #include <optional>
-#include <ranges>
+#include <string>
+#include <string_view>
 
 // String Helper
 
 std::string cda_rail::concatenate_string_views(
     std::initializer_list<std::string_view> parts) {
-  const auto total_size = std::ranges::fold_left(
-      parts | std::views::transform(&std::string_view::size), std::size_t{0},
-      std::plus{});
+  std::size_t total_size = 0;
+  for (std::string_view const part : parts) {
+    total_size += part.size();
+  }
 
   std::string result;
   result.reserve(total_size);
@@ -20,11 +23,11 @@ std::string cda_rail::concatenate_string_views(
   return result;
 }
 
-void cda_rail::to_bool_optional_inplace(std::string_view const s_view,
+void cda_rail::to_bool_optional_inplace(std::string_view const sView,
                                         std::optional<bool>&   b) {
-  if (case_insensitive_str_equal(s_view, "true")) {
+  if (case_insensitive_str_equal(sView, "true")) {
     b = true;
-  } else if (case_insensitive_str_equal(s_view, "false")) {
+  } else if (case_insensitive_str_equal(sView, "false")) {
     b = false;
   }
 }

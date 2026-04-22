@@ -1,12 +1,19 @@
 #include "GeneralHelper.hpp"
 
+#include "Definitions.hpp"
+
+#include <filesystem>
+#include <iterator>
 #include <numeric>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Init.h>
 #include <plog/Logger.h>
 #include <plog/Severity.h>
-#include <ranges>
+#include <stdexcept>
+#include <system_error>
+#include <utility>
+#include <vector>
 
 // Combinatorial Helper
 
@@ -25,6 +32,7 @@ cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
   std::vector<cda_rail::index_vector> result;
   std::vector<size_t>                 indices(k);
   // Do not use std::ranges::iota due to macOS incompatibility
+  // NOLINTNEXTLINE
   std::iota(indices.begin(), indices.end(),
             0UZ); // first combination: {0, 1, ..., k-1}
 
@@ -43,6 +51,7 @@ cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
     // Increment that position and reset everything to its right.
     ++indices.at(i);
     // Do not use std::ranges::iota due to macOS incompatibility
+    // NOLINTNEXTLINE
     std::iota(std::next(indices.begin(), i + 1), indices.end(),
               indices.at(i) + 1);
     return true;
