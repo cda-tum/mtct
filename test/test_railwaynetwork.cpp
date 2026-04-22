@@ -1116,7 +1116,7 @@ TEST(RailwayNetwork, NetworkConsistency) {
 
 TEST(RailwayNetwork, ReadNetwork) {
   const cda_rail::Network network =
-      cda_rail::Network::import_network("./example-networks/", "SimpleStation");
+      cda_rail::Network::import_network("./data/", "SimpleStation");
 
   // Check vertices properties
   std::vector<std::string> vertex_names = {
