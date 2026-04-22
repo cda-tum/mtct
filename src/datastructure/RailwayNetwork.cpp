@@ -783,21 +783,31 @@ void cda_rail::Network::add_successor_helper(size_t edge_in, size_t edge_out) {
 }
 
 std::vector<std::pair<size_t, cda_rail::index_vector>>
-cda_rail::Network::separate_stop_edges(
-    const cda_rail::index_vector& stop_edges) {
+cda_rail::Network::separate_stop_edges(const cda_rail::index_set& stop_edges) {
+  if (!is_consistent_for_transformation()) {
+    throw exceptions::ConsistencyException();
+  }
+
   std::vector<std::pair<size_t, cda_rail::index_vector>> ret_val;
   for (size_t const i : stop_edges) {
-    const auto edge_object = get_edge(i);
-    if (2 * edge_object.min_stop_block_length > edge_object.length) {
+    if (const auto edge_object = get_edge(i);
+        !edge_object.breakable ||
+        2 * edge_object.min_stop_block_length > edge_object.length) {
       continue;
     }
-    auto separated_edges = separate_stop_edge(i);
-    if (!separated_edges.first.empty()) {
-      ret_val.emplace_back(separated_edges.first.back(), separated_edges.first);
+    if (auto const reverse_edge_index = get_reverse_edge_index(i);
+        reverse_edge_index.has_value() && reverse_edge_index.value() < i &&
+        stop_edges.contains(reverse_edge_index.value())) {
+      continue;
     }
-    if (!separated_edges.second.empty()) {
-      ret_val.emplace_back(separated_edges.second.back(),
-                           separated_edges.second);
+
+    auto [separated_edge_fst, separated_edge_snd] = separate_stop_edge(i);
+    if (!separated_edge_fst.empty()) {
+      assert(separated_edge_fst.back() == i);
+      ret_val.emplace_back(separated_edge_fst.back(), separated_edge_fst);
+    }
+    if (!separated_edge_snd.empty()) {
+      ret_val.emplace_back(separated_edge_snd.back(), separated_edge_snd);
     }
   }
   return ret_val;
@@ -806,6 +816,10 @@ cda_rail::Network::separate_stop_edges(
 std::vector<std::pair<size_t, cda_rail::index_vector>>
 cda_rail::Network::discretize(const vss::SeparationFunction& sep_func) {
   std::vector<std::pair<size_t, cda_rail::index_vector>> ret_val;
+  if (!is_consistent_for_transformation()) {
+    throw exceptions::ConsistencyException();
+  }
+
   for (size_t const i : relevant_breakable_edges()) {
     auto separated_edges = separate_edge(i, sep_func);
     if (!separated_edges.first.empty()) {

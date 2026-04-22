@@ -334,9 +334,6 @@ std::pair<cda_rail::index_vector, cda_rail::index_vector>
 cda_rail::Network::separate_edge_private_helper(
     size_t edge_index, double min_length,
     const vss::SeparationFunction& sep_func, bool new_edge_breakable) {
-  if (!is_consistent_for_transformation()) {
-    throw exceptions::ConsistencyException();
-  }
   if (!get_edge(edge_index).breakable) {
     throw exceptions::ConsistencyException("Edge is not breakable");
   }
@@ -388,7 +385,7 @@ cda_rail::Network::separate_edge_at(
   cda_rail::index_vector new_vertices;
   for (size_t i = 0; i < distances_from_source.size(); ++i) {
     std::string const vertex_name = concatenate_string_views(
-        {get_vertex(edge.source).name, "_", get_vertex(edge.target).name, "_",
+        {get_vertex(edge.source).name, "-", get_vertex(edge.target).name, "_",
          std::to_string(i)});
     new_vertices.emplace_back(
         add_vertex({vertex_name, VertexType::NoBorderVSS}));

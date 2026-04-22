@@ -1596,7 +1596,7 @@ public:
    *         each separated direction; edges that are too short are skipped.
    */
   std::vector<std::pair<size_t, cda_rail::index_vector>>
-  separate_stop_edges(const cda_rail::index_vector& stop_edges);
+  separate_stop_edges(const cda_rail::index_set& stop_edges);
 
   /**
    * @brief Discretizes all relevant breakable edges, inserting new

@@ -466,6 +466,118 @@ TEST(RailwayNetwork, PathsEndingInTTD) {
                                     cda_rail::index_vector({e65, e54a, e43a})));
 }
 
+TEST(RailwayNetwork, SeparateStopEdges) {
+  cda_rail::Network network{};
+
+  auto const v0  = network.add_vertex("v0", cda_rail::VertexType::VSS);
+  auto const v1  = network.add_vertex("v1", cda_rail::VertexType::VSS);
+  auto const v2  = network.add_vertex("v2", cda_rail::VertexType::VSS);
+  auto const v3a = network.add_vertex("v3a", cda_rail::VertexType::VSS);
+  auto const v3b = network.add_vertex("v3b", cda_rail::VertexType::VSS);
+  auto const v4a = network.add_vertex("v4a", cda_rail::VertexType::VSS);
+  auto const v4b = network.add_vertex("v4b", cda_rail::VertexType::VSS);
+
+  auto const e01  = network.add_edge(v0, v1, 100, 20, false, 10, 50);
+  auto const e12  = network.add_edge(v1, v2, 200, 20, true, 10, 101);
+  auto const e23a = network.add_edge(v2, v3a, 50, 20, true, 5, 10);
+  auto const e23b = network.add_edge(v2, v3b, 200, 20, true, 10, 100);
+  auto const e34a = network.add_edge(v3a, v4a, 300, 20, true, 10, 100);
+  auto const e34b = network.add_edge(v3b, v4b, 600, 20, true, 10, 200);
+  auto const e43b = network.add_edge(v4b, v3b, 600, 20, true, 10, 200);
+  auto const e32b = network.add_edge(v3b, v2, 200, 20, true, 10, 100);
+  auto const e21  = network.add_edge(v2, v1, 200, 20, true, 10, 101);
+  auto const e10  = network.add_edge(v1, v0, 100, 20, false, 10, 100);
+
+  network.add_successor(e01, e12);
+  network.add_successor(e12, e23a);
+  network.add_successor(e12, e23b);
+  network.add_successor(e23a, e34a);
+  network.add_successor(e23b, e34b);
+  network.add_successor(e43b, e32b);
+  network.add_successor(e32b, e21);
+  network.add_successor(e21, e10);
+
+  network.separate_stop_edges({e01, e12, e23a, e43b, e34b});
+
+  // v0-v1 not breakable -> 2 edges
+  ASSERT_TRUE(network.has_edge({"v0"}, {"v1"}));
+  ASSERT_TRUE(network.has_edge({"v1"}, {"v0"}));
+
+  // v1-v2 too short to be broken -> 2 edges
+  ASSERT_TRUE(network.has_edge({"v1"}, {"v2"}));
+  ASSERT_TRUE(network.has_edge({"v2"}, {"v1"}));
+
+  // v2-v3a broken at 10-20-30-40 -> 5 edges
+  ASSERT_TRUE(network.has_vertex("v2-v3a_0"));
+  ASSERT_TRUE(network.has_vertex("v2-v3a_1"));
+  ASSERT_TRUE(network.has_vertex("v2-v3a_2"));
+  ASSERT_TRUE(network.has_vertex("v2-v3a_3"));
+  ASSERT_TRUE(network.has_edge({"v2"}, {"v2-v3a_0"}));
+  ASSERT_TRUE(network.has_edge({"v2-v3a_0"}, {"v2-v3a_1"}));
+  ASSERT_TRUE(network.has_edge({"v2-v3a_1"}, {"v2-v3a_2"}));
+  ASSERT_TRUE(network.has_edge({"v2-v3a_2"}, {"v2-v3a_3"}));
+  ASSERT_TRUE(network.has_edge({"v2-v3a_3"}, {"v3a"}));
+  EXPECT_EQ(network.get_edge({"v2", "v2-v3a_0"}).length, 10);
+  EXPECT_EQ(network.get_edge({"v2-v3a_0", "v2-v3a_1"}).length, 10);
+  EXPECT_EQ(network.get_edge({"v2-v3a_1", "v2-v3a_2"}).length, 10);
+  EXPECT_EQ(network.get_edge({"v2-v3a_2", "v2-v3a_3"}).length, 10);
+  EXPECT_EQ(network.get_edge({"v2-v3a_3", "v3a"}).length, 10);
+
+  // v2-v3b not broken -> 2 edges
+  ASSERT_TRUE(network.has_edge({"v2"}, {"v3b"}));
+  ASSERT_TRUE(network.has_edge({"v3b"}, {"v2"}));
+
+  // v3a-v4a not broken -> 1 edge
+  ASSERT_TRUE(network.has_edge({"v3a"}, {"v4a"}));
+
+  // v3b-v4b broken at 200-400 -> 6 edges
+  ASSERT_TRUE(network.has_vertex("v3b-v4b_0"));
+  ASSERT_TRUE(network.has_vertex("v3b-v4b_1"));
+  ASSERT_TRUE(network.has_edge({"v3b"}, {"v3b-v4b_0"}));
+  ASSERT_TRUE(network.has_edge({"v3b-v4b_0"}, {"v3b-v4b_1"}));
+  ASSERT_TRUE(network.has_edge({"v3b-v4b_1"}, {"v4b"}));
+  ASSERT_TRUE(network.has_edge({"v4b"}, {"v3b-v4b_1"}));
+  ASSERT_TRUE(network.has_edge({"v3b-v4b_1"}, {"v3b-v4b_0"}));
+  ASSERT_TRUE(network.has_edge({"v3b-v4b_0"}, {"v3b"}));
+  EXPECT_EQ(network.get_edge({"v3b", "v3b-v4b_0"}).length, 200);
+  EXPECT_EQ(network.get_edge({"v3b-v4b_0", "v3b-v4b_1"}).length, 200);
+  EXPECT_EQ(network.get_edge({"v3b-v4b_1", "v4b"}).length, 200);
+  EXPECT_EQ(network.get_edge({"v4b", "v3b-v4b_1"}).length, 200);
+  EXPECT_EQ(network.get_edge({"v3b-v4b_1", "v3b-v4b_0"}).length, 200);
+  EXPECT_EQ(network.get_edge({"v3b-v4b_0", "v3b"}).length, 200);
+
+  // Successors
+  EXPECT_TRUE(network.is_valid_successor({"v0", "v1"}, {"v1", "v2"}));
+
+  EXPECT_TRUE(network.is_valid_successor({"v1", "v2"}, {"v2", "v2-v3a_0"}));
+  EXPECT_TRUE(
+      network.is_valid_successor({"v2", "v2-v3a_0"}, {"v2-v3a_0", "v2-v3a_1"}));
+  EXPECT_TRUE(network.is_valid_successor({"v2-v3a_0", "v2-v3a_1"},
+                                         {"v2-v3a_1", "v2-v3a_2"}));
+  EXPECT_TRUE(network.is_valid_successor({"v2-v3a_1", "v2-v3a_2"},
+                                         {"v2-v3a_2", "v2-v3a_3"}));
+  EXPECT_TRUE(network.is_valid_successor({"v2-v3a_2", "v2-v3a_3"},
+                                         {"v2-v3a_3", "v3a"}));
+  EXPECT_TRUE(network.is_valid_successor({"v2-v3a_3", "v3a"}, {"v3a", "v4a"}));
+
+  EXPECT_TRUE(network.is_valid_successor({"v1", "v2"}, {"v2", "v3b"}));
+  EXPECT_TRUE(network.is_valid_successor({"v2", "v3b"}, {"v3b", "v3b-v4b_0"}));
+  EXPECT_TRUE(network.is_valid_successor({"v3b", "v3b-v4b_0"},
+                                         {"v3b-v4b_0", "v3b-v4b_1"}));
+  EXPECT_TRUE(network.is_valid_successor({"v3b-v4b_0", "v3b-v4b_1"},
+                                         {"v3b-v4b_1", "v4b"}));
+  EXPECT_TRUE(network.is_valid_successor({"v4b", "v3b-v4b_1"},
+                                         {"v3b-v4b_1", "v3b-v4b_0"}));
+  EXPECT_TRUE(network.is_valid_successor({"v3b-v4b_1", "v3b-v4b_0"},
+                                         {"v3b-v4b_0", "v3b"}));
+  EXPECT_TRUE(network.is_valid_successor({"v3b-v4b_0", "v3b"}, {"v3b", "v2"}));
+  EXPECT_TRUE(network.is_valid_successor({"v3b", "v2"}, {"v2", "v1"}));
+  EXPECT_TRUE(network.is_valid_successor({"v2", "v1"}, {"v1", "v0"}));
+
+  // Total edges: 2 + 2 + 5 + 2 + 1 + 6 = 18
+  EXPECT_EQ(network.number_of_edges(), 18);
+}
+
 /**
  * OLD NETWORK TESTS
  */
