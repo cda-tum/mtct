@@ -986,7 +986,7 @@ TEST(RailwayNetwork, NetworkForwardPathsFromVertex) {
          "node v5";
 
   EXPECT_THROW(
-      network.all_paths_of_length_starting_in_vertex(v_3, 0, v_5, {}, false),
+      (void)network.all_paths_of_length_starting_in_vertex(v_3, 0, v_5, {}, false),
       cda_rail::exceptions::InvalidInputException);
 
   const auto forward_paths_15 =
@@ -2086,18 +2086,18 @@ TEST(RailwayNetwork, NetworkEdgeSeparation) {
 TEST(RailwayNetwork, NetworkExceptions) {
   cda_rail::Network network;
   const auto        v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
-  EXPECT_THROW(network.add_vertex("v1", cda_rail::VertexType::TTD),
+  EXPECT_THROW((void)network.add_vertex("v1", cda_rail::VertexType::TTD),
                cda_rail::exceptions::InvalidInputException);
   const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
 
-  EXPECT_THROW(network.add_edge(v1, v1, 300, 50, true, 5),
+  EXPECT_THROW((void)network.add_edge(v1, v1, 300, 50, true, 5),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(network.add_edge(10, v2, 300, 50, true, 5),
+  EXPECT_THROW((void)network.add_edge(10, v2, 300, 50, true, 5),
                cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(network.add_edge(v1, 10, 300, 50, true, 5),
+  EXPECT_THROW((void)network.add_edge(v1, 10, 300, 50, true, 5),
                cda_rail::exceptions::VertexNotExistentException);
   const auto v1_v2 = network.add_edge(v1, v2, 300, 50, true, 5);
-  EXPECT_THROW(network.add_edge(v1, v2, 300, 50, true, 5),
+  EXPECT_THROW((void)network.add_edge(v1, v2, 300, 50, true, 5),
                cda_rail::exceptions::InvalidInputException);
 
   const auto v3    = network.add_vertex("v3", cda_rail::VertexType::TTD);
@@ -2105,48 +2105,48 @@ TEST(RailwayNetwork, NetworkExceptions) {
   const auto v2_v3 = network.add_edge({"v2"}, {"v3"}, 300, 50, true, 5);
   const auto v3_v4 = network.add_edge(v3, v4, 300, 50, true, 5);
 
-  EXPECT_THROW(network.add_successor(v1_v2, 10),
+  EXPECT_THROW((void)network.add_successor(v1_v2, 10),
                cda_rail::exceptions::EdgeNotExistentException);
-  EXPECT_THROW(network.add_successor(10, v2_v3),
+  EXPECT_THROW((void)network.add_successor(10, v2_v3),
                cda_rail::exceptions::EdgeNotExistentException);
-  EXPECT_THROW(network.add_successor(v1_v2, v3_v4),
+  EXPECT_THROW((void)network.add_successor(v1_v2, v3_v4),
                cda_rail::exceptions::ConsistencyException);
 
   network.add_successor(v1_v2, v2_v3);
   network.add_successor(v1_v2, v2_v3);
   network.add_successor(v2_v3, v3_v4);
 
-  EXPECT_THROW(network.get_vertex_index("v9"),
+  EXPECT_THROW((void)network.get_vertex_index("v9"),
                cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(network.get_vertex(10),
-               cda_rail::exceptions::VertexNotExistentException);
-
-  EXPECT_THROW(network.get_edge(10),
-               cda_rail::exceptions::EdgeNotExistentException);
-  EXPECT_THROW(network.get_edge({10, v2}),
-               cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(network.get_edge({v1, 10}),
-               cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(network.get_edge({v1, v3}),
-               cda_rail::exceptions::EdgeNotExistentException);
-  EXPECT_THROW(network.get_edge_index(10, v2),
-               cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(network.get_edge_index(v1, 10),
-               cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(network.get_edge_index(v1, v3),
-               cda_rail::exceptions::EdgeNotExistentException);
-  EXPECT_THROW(network.has_edge(10, v2),
-               cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(network.has_edge(v1, 10),
-               cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(network.has_edge({"v9"}, {"v2"}),
-               cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(network.has_edge({"v1"}, {"v9"}),
+  EXPECT_THROW((void)network.get_vertex(10),
                cda_rail::exceptions::VertexNotExistentException);
 
-  EXPECT_THROW(network.change_vertex_name(10, "v2"),
+  EXPECT_THROW((void)network.get_edge(10),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW((void)network.get_edge({10, v2}),
                cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(network.change_vertex_name(v1, "v2"),
+  EXPECT_THROW((void)network.get_edge({v1, 10}),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.get_edge({v1, v3}),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW((void)network.get_edge_index(10, v2),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.get_edge_index(v1, 10),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.get_edge_index(v1, v3),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW((void)network.has_edge(10, v2),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.has_edge(v1, 10),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.has_edge({"v9"}, {"v2"}),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.has_edge({"v1"}, {"v9"}),
+               cda_rail::exceptions::VertexNotExistentException);
+
+  EXPECT_THROW((void)network.change_vertex_name(10, "v2"),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.change_vertex_name(v1, "v2"),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW((void)network.change_edge_length(10, 100),
                cda_rail::exceptions::EdgeNotExistentException);
@@ -4073,17 +4073,17 @@ TEST(Functionality, TimetableExceptions) {
 
   const auto tr1 = timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, l0, 300,
                                        20, r0, network);
-  EXPECT_THROW(timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, l0, 300, 20,
+  EXPECT_THROW((void)timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, l0, 300, 20,
                                    r0, network),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(timetable.add_train("tr2", 100, 83.33, 2, 1, 0, 0, v_x, 300, 20,
+  EXPECT_THROW((void)timetable.add_train("tr2", 100, 83.33, 2, 1, 0, 0, v_x, 300, 20,
                                    r0, network),
                cda_rail::exceptions::VertexNotExistentException);
-  EXPECT_THROW(timetable.add_train("tr2", 100, 83.33, 2, 1, 0, 0, l0, 300, 20,
+  EXPECT_THROW((void)timetable.add_train("tr2", 100, 83.33, 2, 1, 0, 0, l0, 300, 20,
                                    v_x, network),
                cda_rail::exceptions::VertexNotExistentException);
 
-  EXPECT_THROW(timetable.get_schedule(10),
+  EXPECT_THROW((void)timetable.get_schedule(10),
                cda_rail::exceptions::TrainNotExistentException);
 
   timetable.add_station("Station1");
@@ -4095,26 +4095,26 @@ TEST(Functionality, TimetableExceptions) {
   timetable.add_track_to_station("Station1", "g11", "g10", network);
   timetable.add_track_to_station("Station2", "r1", "r0", network);
 
-  EXPECT_THROW(timetable.add_stop(tr1 + 10, "Station1", 0, 60),
+  EXPECT_THROW((void)timetable.add_stop(tr1 + 10, "Station1", 0, 60),
                cda_rail::exceptions::TrainNotExistentException);
-  EXPECT_THROW(timetable.add_stop(tr1, "Station3", 0, 60),
+  EXPECT_THROW((void)timetable.add_stop(tr1, "Station3", 0, 60),
                cda_rail::exceptions::StationNotExistentException);
-  EXPECT_THROW(timetable.add_stop(tr1, "Station1", -1, 60),
+  EXPECT_THROW((void)timetable.add_stop(tr1, "Station1", -1, 60),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(timetable.add_stop(tr1, "Station1", 0, -1),
+  EXPECT_THROW((void)timetable.add_stop(tr1, "Station1", 0, -1),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(timetable.add_stop(tr1, "Station1", 60, 0),
+  EXPECT_THROW((void)timetable.add_stop(tr1, "Station1", 60, 0),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(timetable.add_stop(tr1, "Station1", 60, 60),
+  EXPECT_THROW((void)timetable.add_stop(tr1, "Station1", 60, 60),
                cda_rail::exceptions::InvalidInputException);
 
   timetable.add_stop(tr1, "Station1", 0, 60);
-  EXPECT_THROW(timetable.add_stop(tr1, "Station1", 0, 60),
+  EXPECT_THROW((void)timetable.add_stop(tr1, "Station1", 0, 60),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(timetable.add_stop(tr1, "Station2", 30, 90),
+  EXPECT_THROW((void)timetable.add_stop(tr1, "Station2", 30, 90),
                cda_rail::exceptions::ConsistencyException);
 
-  EXPECT_THROW(timetable.time_index_interval(tr1 + 10, 15, true),
+  EXPECT_THROW((void)timetable.time_index_interval(tr1 + 10, 15, true),
                cda_rail::exceptions::TrainNotExistentException);
 }
 
@@ -4338,23 +4338,23 @@ TEST(Functionality, RouteMapHelper) {
 
   cda_rail::RouteMap route_map;
 
-  EXPECT_THROW(route_map.remove_first_edge("tr1"),
+  EXPECT_THROW((void)route_map.remove_first_edge("tr1"),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(route_map.remove_last_edge("tr1"),
+  EXPECT_THROW((void)route_map.remove_last_edge("tr1"),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(route_map.get_route("tr1"),
+  EXPECT_THROW((void)route_map.get_route("tr1"),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(route_map.push_back_edge("tr1", v1_v2, network),
+  EXPECT_THROW((void)route_map.push_back_edge("tr1", v1_v2, network),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(route_map.push_back_edge("tr1", v1, v2, network),
+  EXPECT_THROW((void)route_map.push_back_edge("tr1", v1, v2, network),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(route_map.push_back_edge("tr1", "v1", "v2", network),
+  EXPECT_THROW((void)route_map.push_back_edge("tr1", "v1", "v2", network),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(route_map.push_front_edge("tr1", v1_v2, network),
+  EXPECT_THROW((void)route_map.push_front_edge("tr1", v1_v2, network),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(route_map.push_front_edge("tr1", v1, v2, network),
+  EXPECT_THROW((void)route_map.push_front_edge("tr1", v1, v2, network),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(route_map.push_front_edge("tr1", "v1", "v2", network),
+  EXPECT_THROW((void)route_map.push_front_edge("tr1", "v1", "v2", network),
                cda_rail::exceptions::ConsistencyException);
 
   route_map.add_empty_route("tr1");
@@ -4362,7 +4362,7 @@ TEST(Functionality, RouteMapHelper) {
   route_map.push_back_edge("tr1", "v1", "v2", network);
   route_map.push_back_edge("tr1", "v2", "v3", network);
 
-  EXPECT_THROW(route_map.add_empty_route("tr1"),
+  EXPECT_THROW((void)route_map.add_empty_route("tr1"),
                cda_rail::exceptions::InvalidInputException);
 
   const auto& tr1_map    = route_map.get_route("tr1");
@@ -4383,7 +4383,7 @@ TEST(Functionality, RouteMapHelper) {
 
   EXPECT_EQ(tr1_map.length(network), 60);
 
-  EXPECT_THROW(route_map.remove_route("nonexistingtrain"),
+  EXPECT_THROW((void)route_map.remove_route("nonexistingtrain"),
                cda_rail::exceptions::ConsistencyException);
   EXPECT_TRUE(route_map.has_route("tr1"));
   route_map.remove_route("tr1");
@@ -4476,7 +4476,7 @@ TEST(Functionality, NetworkRouteLen) {
   EXPECT_EQ(network.length_of_path({e1}), 20);
   EXPECT_EQ(network.length_of_path({e0}), 10);
   EXPECT_EQ(network.length_of_path({}), 0);
-  EXPECT_THROW(network.length_of_path({e0, e1, 1000, e2}),
+  EXPECT_THROW((void)network.length_of_path({e0, e1, 1000, e2}),
                cda_rail::exceptions::EdgeNotExistentException);
 }
 
