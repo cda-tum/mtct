@@ -4,6 +4,7 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "nlohmann/json_fwd.hpp"
 
+#include "gmock/gmock-spec-builders.h"
 #include "gtest/gtest.h"
 #include <algorithm>
 #include <cstddef>
@@ -203,8 +204,14 @@ TEST(RailwayNetwork, SimpleGetterAndSetter) {
   EXPECT_EQ(network.get_edge_name(std::pair{"v2", "v3"}), "v2-v3");
 
   EXPECT_EQ(network.common_vertex(e01, e12), v1);
+  EXPECT_EQ(network.common_vertex(e12, e01), v1);
   EXPECT_EQ(network.common_vertex({v0, v1}, {"v1", "v2"}), v1);
   EXPECT_EQ(network.common_vertex(e01, e23), std::optional<size_t>{});
+  EXPECT_THROW((void)network.common_vertex(e01, e01),
+               cda_rail::exceptions::ConsistencyException);
+  auto const e10 = network.add_edge(v1, v0, 100, 10, false, 23, 25);
+  EXPECT_THROW((void)network.common_vertex(e10, e01),
+               cda_rail::exceptions::ConsistencyException);
 }
 
 TEST(RailwayNetwork, NeighborGetters) {
@@ -308,12 +315,155 @@ TEST(RailwayNetwork, ReverseEdge) {
 
   EXPECT_THROW((void)network.combine_reverse_edges({e01, e23, e12}, true),
                cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW((void)network.combine_reverse_edges(
+                   {e01, e01 + e12 + e23 + e21 + 1}, false),
+               cda_rail::exceptions::EdgeNotExistentException);
 
   EXPECT_EQ(network.get_track_index(e12), e21);
   EXPECT_EQ(network.get_track_index({v1, v2}), e21);
   EXPECT_EQ(network.get_track_index({"v1", "v2"}), e21);
   EXPECT_EQ(network.get_track_index(e21), e21);
   EXPECT_EQ(network.get_track_index(e01), e01);
+}
+
+TEST(RailwayNetwork, EdgeComplement) {
+  cda_rail::Network network{};
+
+  auto const v0  = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  auto const v1  = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  auto const v2a = network.add_vertex("v2a", cda_rail::VertexType::TTD);
+  auto const v2b = network.add_vertex("v2b", cda_rail::VertexType::TTD);
+
+  auto const e01  = network.add_edge(v0, v1, 100, 20);
+  auto const e12a = network.add_edge(v1, v2a, 50, 30);
+  auto const e12b = network.add_edge(v1, v2b, 50, 30);
+
+  EXPECT_EQ(network.edge_set_complement({e01, e12a}),
+            cda_rail::index_set({e12b}));
+  EXPECT_EQ(network.edge_set_complement({e01, e12a, e12b}),
+            cda_rail::index_set({}));
+  EXPECT_EQ(network.edge_set_complement({}),
+            cda_rail::index_set({e01, e12a, e12b}));
+  EXPECT_EQ(network.edge_set_complement({e01}),
+            cda_rail::index_set({e12a, e12b}));
+  EXPECT_THROW((void)network.edge_set_complement(
+                   {e01, e12a, e12b, e01 + e12a + e12b + 1}),
+               cda_rail::exceptions::EdgeNotExistentException);
+}
+
+TEST(RailwayNetwork, BreakableEdges) {
+  cda_rail::Network network{};
+
+  auto const v0 = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  auto const v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  auto const v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  auto const v3 = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  auto const v4 = network.add_vertex("v4", cda_rail::VertexType::TTD);
+
+  auto const e01 = network.add_edge(v0, v1, 100, 20, false);
+  auto const e12 = network.add_edge(v1, v2, 50, 30, true);
+  auto const e23 = network.add_edge(v2, v3, 100, 20, true);
+  auto const e34 = network.add_edge(v3, v4, 100, 20, false);
+  auto const e32 = network.add_edge(v3, v2, 100, 20, true);
+
+  auto const breakable_edges = network.breakable_edges();
+  ASSERT_EQ(breakable_edges.size(), 3);
+  EXPECT_EQ(breakable_edges.at(0), e12);
+  EXPECT_EQ(breakable_edges.at(1), e23);
+  EXPECT_EQ(breakable_edges.at(2), e32);
+
+  auto const relevant_breakable_edges = network.relevant_breakable_edges();
+  ASSERT_EQ(relevant_breakable_edges.size(), 2);
+  EXPECT_EQ(relevant_breakable_edges.at(0), e12);
+  EXPECT_EQ(relevant_breakable_edges.at(1), e23);
+}
+
+TEST(RailwayNetwork, PathsEndingInTTD) {
+  cda_rail::Network network{};
+  auto const v0  = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  auto const v1  = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  auto const v2  = network.add_vertex("v2", cda_rail::VertexType::NoBorder);
+  auto const v3a = network.add_vertex("v3a", cda_rail::VertexType::TTD);
+  auto const v3b = network.add_vertex("v3b", cda_rail::VertexType::TTD);
+  auto const v4a = network.add_vertex("v4a", cda_rail::VertexType::TTD);
+  auto const v4b = network.add_vertex("v4b", cda_rail::VertexType::TTD);
+  auto const v5  = network.add_vertex("v5", cda_rail::VertexType::NoBorder);
+  auto const v6  = network.add_vertex("v6", cda_rail::VertexType::TTD);
+  auto const v7  = network.add_vertex("v7", cda_rail::VertexType::NoBorder);
+
+  auto const e01  = network.add_edge(v0, v1, 100, 20, true);
+  auto const e12  = network.add_edge(v1, v2, 200, 20, false);
+  auto const e23a = network.add_edge(v2, v3a, 300, 20, false);
+  auto const e23b = network.add_edge(v2, v3b, 400, 20, false);
+  auto const e34a = network.add_edge(v3a, v4a, 500, 20, true);
+  auto const e34b = network.add_edge(v3b, v4b, 600, 20, true);
+  auto const e45a = network.add_edge(v4a, v5, 700, 20, false);
+  auto const e45b = network.add_edge(v4b, v5, 800, 20, false);
+  auto const e56  = network.add_edge(v5, v6, 900, 20, false);
+  auto const e67  = network.add_edge(v6, v7, 1000, 20, true);
+
+  auto const e76  = network.add_edge(v7, v6, 1000, 20, true);
+  auto const e65  = network.add_edge(v6, v5, 900, 20, false);
+  auto const e54a = network.add_edge(v5, v4a, 800, 20, false);
+  auto const e43a = network.add_edge(v4a, v3a, 600, 20, true);
+  auto const e32a = network.add_edge(v3a, v2, 300, 20, false);
+  auto const e21  = network.add_edge(v2, v1, 200, 20, false);
+  auto const e10  = network.add_edge(v1, v0, 100, 20, false);
+
+  network.add_successor(e01, e12);
+  network.add_successor(e12, e23a);
+  network.add_successor(e12, e23b);
+  network.add_successor(e23a, e34a);
+  network.add_successor(e23b, e34b);
+  network.add_successor(e34a, e45a);
+  network.add_successor(e34b, e45b);
+  network.add_successor(e45a, e56);
+  network.add_successor(e45b, e56);
+  network.add_successor(e56, e67);
+
+  network.add_successor(e76, e65);
+  network.add_successor(e65, e54a);
+  network.add_successor(e54a, e43a);
+  network.add_successor(e43a, e32a);
+  network.add_successor(e32a, e21);
+  network.add_successor(e21, e10);
+
+  std::vector<cda_rail::index_set> const ttd_sections{
+      {e12, e23a, e23b, e32a, e21}, {e45a, e45b, e56, e65, e54a}};
+
+  auto const paths_e01 = network.all_paths_ending_at_ttd(e01, ttd_sections);
+  EXPECT_EQ(paths_e01.size(), 2);
+  EXPECT_TRUE(std::ranges::contains(paths_e01,
+                                    cda_rail::index_vector({e12, e23a, e34a})));
+  EXPECT_TRUE(std::ranges::contains(paths_e01,
+                                    cda_rail::index_vector({e12, e23b, e34b})));
+
+  auto const paths_e01_v3b =
+      network.all_paths_ending_at_ttd(e01, ttd_sections, v3b);
+  EXPECT_EQ(paths_e01_v3b.size(), 2);
+  EXPECT_TRUE(std::ranges::contains(paths_e01_v3b,
+                                    cda_rail::index_vector({e12, e23a, e34a})));
+  EXPECT_TRUE(std::ranges::contains(paths_e01_v3b,
+                                    cda_rail::index_vector({e12, e23b})));
+
+  auto const paths_e23a = network.all_paths_ending_at_ttd(e23a, ttd_sections);
+  EXPECT_EQ(paths_e23a.size(), 1);
+  EXPECT_TRUE(
+      std::ranges::contains(paths_e23a, cda_rail::index_vector({e34a})));
+
+  auto const paths_e34a = network.all_paths_ending_at_ttd(e34a, ttd_sections);
+  EXPECT_EQ(paths_e34a.size(), 0);
+
+  auto const paths_e34a_v7 =
+      network.all_paths_ending_at_ttd(e34a, ttd_sections, v7);
+  EXPECT_EQ(paths_e34a_v7.size(), 1);
+  EXPECT_TRUE(std::ranges::contains(paths_e34a_v7,
+                                    cda_rail::index_vector({e45a, e56, e67})));
+
+  auto const paths_e76 = network.all_paths_ending_at_ttd(e76, ttd_sections);
+  EXPECT_EQ(paths_e76.size(), 1);
+  EXPECT_TRUE(std::ranges::contains(paths_e76,
+                                    cda_rail::index_vector({e65, e54a, e43a})));
 }
 
 /**

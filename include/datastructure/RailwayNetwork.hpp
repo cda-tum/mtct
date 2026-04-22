@@ -1699,9 +1699,11 @@ public:
                                       std::move(edges_to_consider));
   }
 
+private:
   /**
    * @brief Returns all paths starting immediately after edge @p e_0 and
-   *        ending upon entering a TTD section.
+   *        ending upon entering a TTD section or reaching the exit vertex if
+   * specified.
    *
    * @param e_0          Starting edge (paths begin with a valid successor of
    *                     this edge).
@@ -1710,9 +1712,29 @@ public:
    * @return Vector of edge-index vectors, each representing one such path.
    */
   [[nodiscard]] std::vector<cda_rail::index_vector>
-  all_paths_ending_at_ttd(size_t                                  e_0,
+  all_paths_ending_at_ttd_helper(
+      size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
+      std::optional<size_t> exit_node) const;
+
+public:
+  /**
+   * @brief Returns all paths starting immediately after edge @p e_0 and
+   *        ending upon entering a TTD section or reaching the exit vertex if
+   * specified.
+   *
+   * @param e_0          Starting edge (paths begin with a valid successor of
+   *                     this edge).
+   * @param ttd_sections Vector of TTD sections (each a set of edge indices).
+   * @param exit_node    Optional vertex at which paths may terminate.
+   * @return Vector of edge-index vectors, each representing one such path.
+   */
+  [[nodiscard]] std::vector<cda_rail::index_vector>
+  all_paths_ending_at_ttd(EdgeInput const&                        edge,
                           const std::vector<cda_rail::index_set>& ttd_sections,
-                          std::optional<size_t> exit_node) const;
+                          std::optional<size_t> exit_node = {}) const {
+    return all_paths_ending_at_ttd_helper(edge.resolve(this), ttd_sections,
+                                          exit_node);
+  };
 
   /**
    * @brief Computes the total length of a path given as an ordered sequence
@@ -2424,7 +2446,8 @@ private:
    * @throws cda_rail::exceptions::EdgeNotExistentException If @p e_0 does
    *         not exist.
    */
-  [[nodiscard]] std::vector<cda_rail::index_vector> all_paths_ending_at_ttd(
+  [[nodiscard]] std::vector<cda_rail::index_vector>
+  all_paths_ending_at_ttd_recursive_helper(
       size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
       std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
       bool first_edge) const;

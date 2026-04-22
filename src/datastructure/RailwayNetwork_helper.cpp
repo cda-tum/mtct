@@ -774,7 +774,8 @@ cda_rail::Network::all_routes_of_given_length(
   return ret_val;
 }
 
-std::vector<cda_rail::index_vector> cda_rail::Network::all_paths_ending_at_ttd(
+std::vector<cda_rail::index_vector>
+cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
     size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
     std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
     bool first_edge) const {
@@ -805,7 +806,7 @@ std::vector<cda_rail::index_vector> cda_rail::Network::all_paths_ending_at_ttd(
 
   const auto possible_successors = get_successors(e_0);
   for (const auto& successor : possible_successors) {
-    const auto successor_paths = all_paths_ending_at_ttd(
+    const auto successor_paths = all_paths_ending_at_ttd_recursive_helper(
         successor, ttd_sections, exit_node, safe_ttd, false);
     for (const auto& successor_path : successor_paths) {
       ret_val.emplace_back();

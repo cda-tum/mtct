@@ -399,7 +399,7 @@ cda_rail::index_vector cda_rail::Network::relevant_breakable_edges() const {
     // add edge only if reverse edge does not exist or has larger index
     if (edge.breakable) {
       if (auto const reverse_edge_index = get_reverse_edge_index(i);
-          reverse_edge_index.has_value() && reverse_edge_index.value() > i) {
+          !reverse_edge_index.has_value() || reverse_edge_index > i) {
         ret_val.emplace_back(i);
       }
     }
@@ -823,15 +823,16 @@ cda_rail::Network::discretize(const vss::SeparationFunction& sep_func) {
 // Path Finding Algorithms
 // ------------------------
 
-std::vector<cda_rail::index_vector> cda_rail::Network::all_paths_ending_at_ttd(
+std::vector<cda_rail::index_vector>
+cda_rail::Network::all_paths_ending_at_ttd_helper(
     size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
     std::optional<size_t> exit_node) const {
   std::vector<cda_rail::index_vector> ret_val;
 
   const auto possible_successors = get_successors(e_0);
   for (const auto& successor : possible_successors) {
-    const auto successor_paths =
-        all_paths_ending_at_ttd(successor, ttd_sections, exit_node, {}, true);
+    const auto successor_paths = all_paths_ending_at_ttd_recursive_helper(
+        successor, ttd_sections, exit_node, {}, true);
     for (const auto& successor_path : successor_paths) {
       ret_val.emplace_back();
       ret_val.back().insert(ret_val.back().end(), successor_path.begin(),
