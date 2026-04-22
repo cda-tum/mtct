@@ -985,9 +985,9 @@ TEST(RailwayNetwork, NetworkForwardPathsFromVertex) {
       << "e_4_5 is not in the forward paths from v_4 with length 50 and exit "
          "node v5";
 
-  EXPECT_THROW(
-      (void)network.all_paths_of_length_starting_in_vertex(v_3, 0, v_5, {}, false),
-      cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW((void)network.all_paths_of_length_starting_in_vertex(v_3, 0, v_5,
+                                                                    {}, false),
+               cda_rail::exceptions::InvalidInputException);
 
   const auto forward_paths_15 =
       network.all_paths_of_length_starting_in_vertex(v_3, 0, v_5, {}, true);
