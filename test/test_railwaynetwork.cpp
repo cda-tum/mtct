@@ -578,6 +578,68 @@ TEST(RailwayNetwork, SeparateStopEdges) {
   EXPECT_EQ(network.number_of_edges(), 18);
 }
 
+TEST(RailwayNetwork, Discretize) {
+  cda_rail::Network network{};
+
+  auto const v0 = network.add_vertex("v0", cda_rail::VertexType::VSS);
+  auto const v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
+  auto const v2 = network.add_vertex("v2", cda_rail::VertexType::VSS);
+  auto const v3 = network.add_vertex("v3", cda_rail::VertexType::VSS);
+  auto const v4 = network.add_vertex("v4", cda_rail::VertexType::VSS);
+
+  auto const e01 = network.add_edge(v0, v1, 100, 20, false, 10, 50);
+  auto const e12 = network.add_edge(v1, v2, 200, 20, true, 50, 100);
+  auto const e23 = network.add_edge(v2, v3, 50, 20, true, 25, 10);
+  auto const e34 = network.add_edge(v3, v4, 300, 20, false, 10, 100);
+
+  network.add_successor({v0, v1}, {v1, v2});
+  network.add_successor({v1, v2}, {v2, v3});
+  network.add_successor({v2, v3}, {v3, v4});
+
+  network.discretize();
+
+  // v0-v1 not split -> 1 edge
+  ASSERT_TRUE(network.has_edge({"v0"}, {"v1"}));
+
+  // v1-v2 split at 50-100-150 -> 4 edges
+  ASSERT_TRUE(network.has_vertex("v1-v2_0"));
+  ASSERT_TRUE(network.has_vertex("v1-v2_1"));
+  ASSERT_TRUE(network.has_vertex("v1-v2_2"));
+  ASSERT_TRUE(network.has_edge({"v1"}, {"v1-v2_0"}));
+  ASSERT_TRUE(network.has_edge({"v1-v2_0"}, {"v1-v2_1"}));
+  ASSERT_TRUE(network.has_edge({"v1-v2_1"}, {"v1-v2_2"}));
+  ASSERT_TRUE(network.has_edge({"v1-v2_2"}, {"v2"}));
+  EXPECT_EQ(network.get_edge({"v1", "v1-v2_0"}).length, 50);
+  EXPECT_EQ(network.get_edge({"v1-v2_0", "v1-v2_1"}).length, 50);
+  EXPECT_EQ(network.get_edge({"v1-v2_1", "v1-v2_2"}).length, 50);
+  EXPECT_EQ(network.get_edge({"v1-v2_2", "v2"}).length, 50);
+
+  // v2-v3 split at 25 -> 2 edges
+  ASSERT_TRUE(network.has_vertex("v2-v3_0"));
+  ASSERT_TRUE(network.has_edge({"v2"}, {"v2-v3_0"}));
+  ASSERT_TRUE(network.has_edge({"v2-v3_0"}, {"v3"}));
+  EXPECT_EQ(network.get_edge({"v2", "v2-v3_0"}).length, 25);
+  EXPECT_EQ(network.get_edge({"v2-v3_0", "v3"}).length, 25);
+
+  // v3-v4 not split -> 1 edge
+  ASSERT_TRUE(network.has_edge({"v3"}, {"v4"}));
+
+  // Successors
+  EXPECT_TRUE(network.is_valid_successor({"v0", "v1"}, {"v1", "v1-v2_0"}));
+  EXPECT_TRUE(
+      network.is_valid_successor({"v1", "v1-v2_0"}, {"v1-v2_0", "v1-v2_1"}));
+  EXPECT_TRUE(network.is_valid_successor({"v1-v2_0", "v1-v2_1"},
+                                         {"v1-v2_1", "v1-v2_2"}));
+  EXPECT_TRUE(
+      network.is_valid_successor({"v1-v2_1", "v1-v2_2"}, {"v1-v2_2", "v2"}));
+  EXPECT_TRUE(network.is_valid_successor({"v1-v2_2", "v2"}, {"v2", "v2-v3_0"}));
+  EXPECT_TRUE(network.is_valid_successor({"v2", "v2-v3_0"}, {"v2-v3_0", "v3"}));
+  EXPECT_TRUE(network.is_valid_successor({"v2-v3_0", "v3"}, {"v3", "v4"}));
+
+  // Total edges: 1 + 4 + 2 + 1 = 8
+  EXPECT_EQ(network.number_of_edges(), 8);
+}
+
 /**
  * OLD NETWORK TESTS
  */
