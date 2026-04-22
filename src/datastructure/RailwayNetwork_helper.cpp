@@ -53,7 +53,6 @@ void cda_rail::Network::get_keys_inplace(
     std::optional<std::string>& min_block_length,
     std::optional<std::string>& min_stop_block_length,
     std::optional<std::string>& type, std::optional<std::string>& headway) {
-  // Map from attribute name to the optional to populate
   const std::unordered_map<std::string, std::optional<std::string>*> key_map = {
       {"breakable", &breakable},
       {"min_block_length", &min_block_length},
@@ -77,12 +76,12 @@ void cda_rail::Network::add_vertices_from_graphml(
     const tinyxml2::XMLElement*       graphml_node,
     const std::optional<std::string>& type,
     const std::optional<std::string>& headway) {
-  for (auto const* current_node = graphml_node; current_node != nullptr;
-       current_node             = current_node->NextSiblingElement("node")) {
-    std::string const     name = current_node->Attribute("id");
+  for (auto const* node = graphml_node; node != nullptr;
+       node             = node->NextSiblingElement("node")) {
     std::optional<int>    v_type;
     std::optional<double> headway_value;
 
+    // Build a map from key-id → parser lambda for this node's data elements
     std::unordered_map<std::string, std::function<void(const char*)>> parsers;
     if (type.has_value()) {
       parsers.emplace(type.value(), [&v_type](const char* text) {
@@ -95,17 +94,17 @@ void cda_rail::Network::add_vertices_from_graphml(
       });
     }
 
-    for (auto* data = current_node->FirstChildElement("data"); data != nullptr;
+    for (auto* data = node->FirstChildElement("data"); data != nullptr;
          data       = data->NextSiblingElement("data")) {
-      const auto key_it = parsers.find(data->Attribute("key"));
-      if (key_it != parsers.end()) {
-        key_it->second(data->GetText());
+      if (auto it = parsers.find(data->Attribute("key")); it != parsers.end()) {
+        it->second(data->GetText());
       }
     }
     if (!v_type.has_value()) {
       throw exceptions::ImportException("graphml");
     }
-    add_vertex({name, static_cast<VertexType>(v_type.value()), headway_value});
+    add_vertex({node->Attribute("id"), static_cast<VertexType>(v_type.value()),
+                headway_value});
   }
 }
 
@@ -128,21 +127,30 @@ void cda_rail::Network::add_edges_from_graphml(
     const std::optional<std::string>& max_speed,
     const std::optional<std::string>& min_block_length,
     const std::optional<std::string>& min_stop_block_length) {
-  for (auto const* current_edge = graphml_edge; current_edge != nullptr;
-       current_edge             = current_edge->NextSiblingElement("edge")) {
-    const std::string     source_name = current_edge->Attribute("source");
-    const std::string     target_name = current_edge->Attribute("target");
+  for (auto const* cur = graphml_edge; cur != nullptr;
+       cur             = cur->NextSiblingElement("edge")) {
     std::optional<double> e_length;
     std::optional<double> e_max_speed;
     std::optional<bool>   e_breakable;
     std::optional<double> e_min_block_length;
     std::optional<double> e_min_stop_block_length;
 
+    // Map each key-id to a parser that fills the corresponding optional
     std::unordered_map<std::string, std::function<void(const char*)>> parsers;
     if (breakable.has_value()) {
       parsers.emplace(breakable.value(), [&e_breakable](const char* text) {
         std::string tmp = text;
         to_bool_optional_inplace(tmp, e_breakable);
+      });
+    }
+    if (length.has_value()) {
+      parsers.emplace(length.value(), [&e_length](const char* text) {
+        e_length = std::stod(text);
+      });
+    }
+    if (max_speed.has_value()) {
+      parsers.emplace(max_speed.value(), [&e_max_speed](const char* text) {
+        e_max_speed = std::stod(text);
       });
     }
     if (min_block_length.has_value()) {
@@ -151,16 +159,6 @@ void cda_rail::Network::add_edges_from_graphml(
                         e_min_block_length = std::stod(text);
                       });
     }
-    if (max_speed.has_value()) {
-      parsers.emplace(max_speed.value(), [&e_max_speed](const char* text) {
-        e_max_speed = std::stod(text);
-      });
-    }
-    if (length.has_value()) {
-      parsers.emplace(length.value(), [&e_length](const char* text) {
-        e_length = std::stod(text);
-      });
-    }
     if (min_stop_block_length.has_value()) {
       parsers.emplace(min_stop_block_length.value(),
                       [&e_min_stop_block_length](const char* text) {
@@ -168,19 +166,18 @@ void cda_rail::Network::add_edges_from_graphml(
                       });
     }
 
-    for (auto* data = current_edge->FirstChildElement("data"); data != nullptr;
+    for (auto* data = cur->FirstChildElement("data"); data != nullptr;
          data       = data->NextSiblingElement("data")) {
-      const auto key_it = parsers.find(data->Attribute("key"));
-      if (key_it != parsers.end()) {
-        key_it->second(data->GetText());
+      if (auto it = parsers.find(data->Attribute("key")); it != parsers.end()) {
+        it->second(data->GetText());
       }
     }
     if (!e_length.has_value() || !e_max_speed.has_value()) {
       throw exceptions::ImportException("graphml");
     }
-    add_edge({source_name}, {target_name}, e_length.value(),
-             e_max_speed.value(), e_breakable, e_min_block_length,
-             e_min_stop_block_length);
+    add_edge({cur->Attribute("source")}, {cur->Attribute("target")},
+             e_length.value(), e_max_speed.value(), e_breakable,
+             e_min_block_length, e_min_stop_block_length);
   }
 }
 
@@ -269,11 +266,11 @@ void cda_rail::Network::export_successors_python(
   file << "{";
   bool first = true;
   for (size_t i = 0; i < number_of_edges(); ++i) {
-    const auto& edge = get_edge(i);
     if (!first) {
       file << ", ";
     }
-    first = false;
+    first            = false;
+    const auto& edge = get_edge(i);
     file << "('" << m_vertices[edge.source].name << "', '"
          << m_vertices[edge.target].name << "'): ";
     write_successor_set_to_file(file, i);
@@ -406,13 +403,14 @@ cda_rail::Network::separate_edge_at(
   m_edges[edge_index].source = new_vertices.back();
   new_edges.emplace_back(edge_index);
 
-  // Update successors for the original edge source
+  // Update predecessor successors to point to the first new sub-edge
   for (const auto inc : in_edges(edge.source)) {
     if (m_successors[inc].contains(edge_index)) {
       m_successors[inc].erase(edge_index);
       m_successors[inc].insert(new_edges.front());
     }
   }
+  // Chain new sub-edges as successors
   for (size_t i = 0; i + 1 < new_edges.size(); ++i) {
     add_successor(new_edges[i], new_edges[i + 1]);
   }
@@ -488,19 +486,17 @@ std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
 cda_rail::Network::sort_edge_pairs(
     std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>&
         edge_pairs) const {
-  const auto& network = *this;
-
   if (!std::ranges::all_of(edge_pairs,
                            [](const auto& p) { return p.first.has_value(); })) {
     throw exceptions::InvalidInputException("Edge pair first entry is empty");
   }
-  if (!std::ranges::all_of(edge_pairs, [&network](const auto& p) {
-        return network.has_edge(p.first.value());
+  if (!std::ranges::all_of(edge_pairs, [this](const auto& p) {
+        return has_edge(p.first.value());
       })) {
     throw exceptions::EdgeNotExistentException();
   }
-  if (!std::ranges::all_of(edge_pairs, [&network](const auto& p) {
-        return network.get_reverse_edge_index(p.first.value()) == p.second;
+  if (!std::ranges::all_of(edge_pairs, [this](const auto& p) {
+        return get_reverse_edge_index(p.first.value()) == p.second;
       })) {
     throw exceptions::ConsistencyException(
         "Pairs are not reverse of each other");
@@ -514,15 +510,16 @@ cda_rail::Network::sort_edge_pairs(
     vertex_neighbors[e.target].emplace(i);
   }
 
-  // Find a degree-1 vertex to start from
-  size_t j = number_of_vertices();
-  for (size_t vertex_index = 0; vertex_index < number_of_vertices();
-       ++vertex_index) {
-    if (vertex_neighbors[vertex_index].size() == 1) {
-      j = vertex_index;
-      break;
-    }
-  }
+  // Find a degree-1 vertex to start from (end of path)
+  auto start_it =
+      std::ranges::find_if(std::views::iota(size_t{0}, number_of_vertices()),
+                           [&vertex_neighbors](size_t v) {
+                             return vertex_neighbors[v].size() == 1;
+                           });
+  size_t j =
+      (start_it != std::views::iota(size_t{0}, number_of_vertices()).end())
+          ? *start_it
+          : number_of_vertices();
 
   std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>> result;
   while (j < number_of_vertices()) {
@@ -553,11 +550,12 @@ cda_rail::Network::sort_edge_pairs(
     }
   }
 
-  for (size_t i = 0; i < number_of_vertices(); ++i) {
-    if (!vertex_neighbors[i].empty()) {
-      throw exceptions::ConsistencyException(
-          "Something went wrong, not everything was processed.");
-    }
+  if (std::ranges::any_of(std::views::iota(size_t{0}, number_of_vertices()),
+                          [&vertex_neighbors](size_t i) {
+                            return !vertex_neighbors[i].empty();
+                          })) {
+    throw exceptions::ConsistencyException(
+        "Something went wrong, not everything was processed.");
   }
 
   return result;
@@ -627,7 +625,7 @@ void cda_rail::Network::dfs_inplace(
         if (get_vertex(nb).type == section_type && !visited.contains(nb)) {
           stack.emplace(nb);
         }
-        // Collect incident edges (breakable check applies to both directions)
+        // Collect incident edges in both directions
         for (const auto [src, tgt] : {std::pair{v, nb}, std::pair{nb, v}}) {
           if (has_edge(src, tgt)) {
             const auto idx = get_edge_index(src, tgt);
@@ -636,7 +634,7 @@ void cda_rail::Network::dfs_inplace(
                   "This should never happen, but I found a breakable edge in "
                   "an unbreakable section");
             }
-            section.insert(idx); // set insert is idempotent
+            section.insert(idx);
           }
         }
       }
@@ -678,7 +676,7 @@ cda_rail::Network::all_routes_of_given_length(
         "Desired length is not strictly positive");
   }
 
-  // Collect starting edges
+  // Collect starting edges (filtered by edges_used_by_train if specified)
   cda_rail::index_set start_edges_raw =
       v_0.has_value() ? (reverse_direction ? in_edges(*v_0) : out_edges(*v_0))
                       : cda_rail::index_set{*e_0};
@@ -720,7 +718,7 @@ cda_rail::Network::all_routes_of_given_length(
           exit_node, edges_used_by_train);
 
       for (const auto& sub_path : sub_paths) {
-        // Check for cycle
+        // Cycle check
         const auto boundary_edges = reverse_direction
                                         ? in_edges(get_edge(e_idx).target)
                                         : out_edges(get_edge(e_idx).source);
@@ -748,7 +746,7 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
     throw exceptions::EdgeNotExistentException(e_0);
   }
 
-  // Check TTD membership
+  // Check TTD membership: stop if we enter a new TTD section
   for (size_t ttd_idx = 0; ttd_idx < ttd_sections.size(); ++ttd_idx) {
     if (safe_ttd.has_value() && ttd_idx == *safe_ttd) {
       continue;
