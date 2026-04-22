@@ -201,11 +201,11 @@ public:
     // Implicit constructors: no explicit keyword on purpose
     // NOLINTBEGIN(google-explicit-constructor)
     EdgeInput(size_t i) : m_data(i) {}
-    EdgeInput(std::pair<size_t, size_t> p) : m_data(p) {}
     EdgeInput(size_t a, size_t b) : m_data(std::pair{a, b}) {}
-    EdgeInput(std::pair<std::string_view, std::string_view> p) : m_data(p) {}
     EdgeInput(std::string_view a, std::string_view b)
         : m_data(std::pair{a, b}) {}
+    template <typename T1, typename T2>
+    EdgeInput(const std::pair<T1, T2>& p) : EdgeInput(p.first, p.second) {}
     EdgeInput(Edge edge) : m_data(std::move(edge)) {}
     // NOLINTEND(google-explicit-constructor)
 
@@ -940,8 +940,13 @@ public:
    *        eliminating duplicate pairs.
    *
    * Each bidirectional track produces exactly one pair `(e, rev_e)` where the
-   * smaller index comes first. Edges without a reverse are paired with
-   * `std::nullopt` as the second element.
+   * smaller index comes first. Edges without a reverse in edges_to_consider are
+   * paired with `std::nullopt` as the second element.
+   *
+   * If the output is sorted, it is ensured that the first element edges are
+   * successors of each other, hence, the inner-pair order might be off. In this
+   * case it is also required that edges_to_consider includes every possible
+   * reverse edge if existent.
    *
    * @param edges_to_consider Ordered vector of edge indices to process. All
    *                          indices must refer to existing edges.

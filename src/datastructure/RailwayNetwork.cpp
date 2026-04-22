@@ -360,7 +360,10 @@ cda_rail::Network::combine_reverse_edges(
   std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>> ret_val;
   for (const auto& edge_index : edges_to_consider) {
     const auto reverse_edge_index = get_reverse_edge_index(edge_index);
-    if (!reverse_edge_index.has_value() || reverse_edge_index > edge_index) {
+    if (!reverse_edge_index.has_value() ||
+        !std::ranges::contains(edges_to_consider, reverse_edge_index.value())) {
+      ret_val.emplace_back(edge_index, std::nullopt);
+    } else if (reverse_edge_index > edge_index) {
       ret_val.emplace_back(edge_index, reverse_edge_index);
     }
   }

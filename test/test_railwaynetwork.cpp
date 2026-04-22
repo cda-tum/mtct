@@ -29,6 +29,293 @@ struct EdgeTarget {
 
 // NOLINTBEGIN(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores,bugprone-unchecked-optional-access)
 
+TEST(RailwayNetwork, SimpleGetterAndSetter) {
+  cda_rail::Network network{"TestNetwork"};
+
+  EXPECT_EQ(network.get_network_name(), "TestNetwork");
+
+  auto const v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder, 7);
+  auto const v1 = network.add_vertex("v1", cda_rail::VertexType::TTD, 6);
+  auto const v2 = network.add_vertex("v2", cda_rail::VertexType::VSS, 42);
+  auto const v3 =
+      network.add_vertex("v3", cda_rail::VertexType::NoBorderVSS, 4);
+
+  auto const e01 = network.add_edge(v0, v1, 100, 10, false, 23, 25);
+  auto const e12 = network.add_edge(
+      {"v1"}, cda_rail::Vertex{"v2", cda_rail::VertexType::VSS, 42}, 150, 20,
+      true, 28, 37);
+  auto const e23 = network.add_edge(v2, {"v3"}, 200, 30, false, 5, 7);
+
+  network.add_successor(e01, e12);
+  network.add_successor({v1, v2}, {"v2", "v3"});
+
+  EXPECT_TRUE(network.has_vertex(v3));
+  EXPECT_TRUE(network.has_vertex("v3"));
+  EXPECT_FALSE(network.has_vertex(v0 + v1 + v2 + v3 + 1));
+  EXPECT_FALSE(network.has_vertex("NonExistingName"));
+
+  EXPECT_TRUE(network.has_edge(e01));
+  EXPECT_FALSE(network.has_edge(e01 + e12 + e23 + 1));
+  EXPECT_TRUE(network.has_edge(v1, {"v2"}));
+  EXPECT_FALSE(network.has_edge({"v0"}, v2));
+  EXPECT_THROW((void)network.has_edge({"NonExistingName"}, v2),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.has_edge({"v1"}, v0 + v1 + v2 + v3 + 1),
+               cda_rail::exceptions::VertexNotExistentException);
+
+  EXPECT_TRUE(network.is_valid_successor(e01, e12));
+  EXPECT_TRUE(network.is_valid_successor({v1, v2}, {"v2", "v3"}));
+  EXPECT_FALSE(network.is_valid_successor(e01, e23));
+  EXPECT_FALSE(network.is_valid_successor({"v2", "v3"}, {v1, v2}));
+  EXPECT_THROW((void)network.is_valid_successor(e01, {v0, v2}),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW((void)network.is_valid_successor(e01 + e12 + e23 + 1, e23),
+               cda_rail::exceptions::EdgeNotExistentException);
+
+  EXPECT_EQ(network.number_of_vertices(), 4);
+  EXPECT_EQ(network.number_of_edges(), 3);
+
+  EXPECT_EQ(network.get_network_name(), "TestNetwork");
+
+  auto const& vertices = network.get_vertices();
+  ASSERT_EQ(vertices.size(), 4);
+  EXPECT_EQ(vertices.at(v0).name, "v0");
+  EXPECT_EQ(vertices.at(v0).type, cda_rail::VertexType::NoBorder);
+  EXPECT_EQ(vertices.at(v0).headway, 7);
+  EXPECT_EQ(vertices.at(v1).name, "v1");
+  EXPECT_EQ(vertices.at(v1).type, cda_rail::VertexType::TTD);
+  EXPECT_EQ(vertices.at(v1).headway, 6);
+  EXPECT_EQ(vertices.at(v2).name, "v2");
+  EXPECT_EQ(vertices.at(v2).type, cda_rail::VertexType::VSS);
+  EXPECT_EQ(vertices.at(v2).headway, 42);
+  EXPECT_EQ(vertices.at(v3).name, "v3");
+  EXPECT_EQ(vertices.at(v3).type, cda_rail::VertexType::NoBorderVSS);
+  EXPECT_EQ(vertices.at(v3).headway, 4);
+
+  auto const ttd_vertices =
+      network.get_vertices_by_type(cda_rail::VertexType::TTD);
+  ASSERT_EQ(ttd_vertices.size(), 1);
+  EXPECT_EQ(ttd_vertices.at(0), v1);
+
+  auto const& edges = network.get_edges();
+  ASSERT_EQ(edges.size(), 3);
+  EXPECT_EQ(edges.at(e01).source, v0);
+  EXPECT_EQ(edges.at(e01).target, v1);
+  EXPECT_EQ(edges.at(e01).length, 100);
+  EXPECT_EQ(edges.at(e01).max_speed, 10);
+  EXPECT_FALSE(edges.at(e01).breakable);
+  EXPECT_EQ(edges.at(e01).min_block_length, 23);
+  EXPECT_EQ(edges.at(e01).min_stop_block_length, 25);
+  EXPECT_EQ(edges.at(e12).source, v1);
+  EXPECT_EQ(edges.at(e12).target, v2);
+  EXPECT_EQ(edges.at(e12).length, 150);
+  EXPECT_EQ(edges.at(e12).max_speed, 20);
+  EXPECT_TRUE(edges.at(e12).breakable);
+  EXPECT_EQ(edges.at(e12).min_block_length, 28);
+  EXPECT_EQ(edges.at(e12).min_stop_block_length, 37);
+  EXPECT_EQ(edges.at(e23).source, v2);
+  EXPECT_EQ(edges.at(e23).target, v3);
+  EXPECT_EQ(edges.at(e23).length, 200);
+  EXPECT_EQ(edges.at(e23).max_speed, 30);
+  EXPECT_FALSE(edges.at(e23).breakable);
+  EXPECT_EQ(edges.at(e23).min_block_length, 5);
+  EXPECT_EQ(edges.at(e23).min_stop_block_length, 7);
+
+  EXPECT_EQ(network.get_vertex_index("v1"), v1);
+  EXPECT_THROW((void)network.get_vertex_index("NonExistingName"),
+               cda_rail::exceptions::VertexNotExistentException);
+
+  cda_rail::Vertex v2_expected{"v2", cda_rail::VertexType::VSS, 42};
+  auto const       v2_network_1 = network.get_vertex(v2);
+  auto const       v2_network_2 = network.get_vertex({"v2"});
+  auto const       v2_network_3 = network.get_vertex(v2_expected);
+  EXPECT_EQ(v2_network_1, v2_expected);
+  EXPECT_EQ(v2_network_2, v2_expected);
+  EXPECT_EQ(v2_network_3, v2_expected);
+  EXPECT_THROW((void)network.get_vertex(v0 + v1 + v2 + v3 + 1),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.get_vertex({"NonExistingName"}),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.get_vertex(
+                   cda_rail::Vertex{"v3", cda_rail::VertexType::VSS, 42}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW((void)network.get_vertex(
+                   cda_rail::Vertex{"v2", cda_rail::VertexType::TTD, 42}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW((void)network.get_vertex(
+                   cda_rail::Vertex{"v2", cda_rail::VertexType::VSS, 41}),
+               cda_rail::exceptions::ConsistencyException);
+
+  EXPECT_EQ(network.get_edge_index(
+                v1, cda_rail::Vertex{"v2", cda_rail::VertexType::VSS, 42}),
+            e12);
+  EXPECT_EQ(network.get_edge_index({"v1"}, v2), e12);
+  EXPECT_THROW((void)network.get_edge_index({"NonExistingName"}, v2),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.get_edge_index(v1, v0 + v1 + v2 + v3 + 1),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.get_edge_index(v0, v2),
+               cda_rail::exceptions::EdgeNotExistentException);
+
+  cda_rail::Edge e12_expected{v1, v2, 150, 20, true, 28, 37};
+  auto const&    e12_network_1 = network.get_edge(e12);
+  auto const&    e12_network_2 = network.get_edge({"v1", "v2"});
+  auto const&    e12_network_3 = network.get_edge({v1, v2});
+  auto const&    e12_network_4 = network.get_edge(std::pair{v1, v2});
+  std::string    v2_str{"v2"};
+  auto const&    e12_network_5 = network.get_edge(std::pair{"v1", v2_str});
+  auto const&    e12_network_6 = network.get_edge(e12_expected);
+  EXPECT_EQ(e12_network_1, e12_expected);
+  EXPECT_EQ(e12_network_2, e12_expected);
+  EXPECT_EQ(e12_network_3, e12_expected);
+  EXPECT_EQ(e12_network_4, e12_expected);
+  EXPECT_EQ(e12_network_5, e12_expected);
+  EXPECT_EQ(e12_network_6, e12_expected);
+  EXPECT_THROW((void)network.get_edge(e01 + e12 + e23 + 1),
+               cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW((void)network.get_edge({"NonExistingName", "v2"}),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)network.get_edge({v1, v0 + v1 + v2 + v3 + 1}),
+               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW(
+      (void)network.get_edge(cda_rail::Edge{v1, v3, 150, 20, true, 28, 37}),
+      cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW(
+      (void)network.get_edge(cda_rail::Edge{v1, v2, 151, 20, true, 28, 37}),
+      cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(
+      (void)network.get_edge(cda_rail::Edge{v1, v2, 150, 19, true, 28, 37}),
+      cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(
+      (void)network.get_edge(cda_rail::Edge{v1, v2, 150, 20, false, 28, 37}),
+      cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(
+      (void)network.get_edge(cda_rail::Edge{v1, v2, 150, 20, true, 27, 37}),
+      cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(
+      (void)network.get_edge(cda_rail::Edge{v1, v2, 150, 20, true, 28, 38}),
+      cda_rail::exceptions::ConsistencyException);
+
+  EXPECT_EQ(network.get_edge_name(e23), "v2-v3");
+  EXPECT_EQ(network.get_edge_name({v2, v3}), "v2-v3");
+  EXPECT_EQ(network.get_edge_name({"v2", "v3"}), "v2-v3");
+  EXPECT_EQ(network.get_edge_name(std::pair{v2, v3}), "v2-v3");
+  EXPECT_EQ(network.get_edge_name(std::pair{"v2", "v3"}), "v2-v3");
+
+  EXPECT_EQ(network.common_vertex(e01, e12), v1);
+  EXPECT_EQ(network.common_vertex({v0, v1}, {"v1", "v2"}), v1);
+  EXPECT_EQ(network.common_vertex(e01, e23), std::optional<size_t>{});
+}
+
+TEST(RailwayNetwork, NeighborGetters) {
+  cda_rail::Network network;
+  auto const        v0  = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  auto const        v1  = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  auto const        v2a = network.add_vertex("v2a", cda_rail::VertexType::TTD);
+  auto const        v2b = network.add_vertex("v2b", cda_rail::VertexType::TTD);
+
+  auto const e01  = network.add_edge(v0, v1, 100, 20);
+  auto const e12a = network.add_edge(v1, v2a, 50, 30);
+  auto const e12b = network.add_edge(v1, v2b, 50, 30);
+
+  network.add_successor(e01, e12a);
+  network.add_successor(e01, e12b);
+
+  EXPECT_EQ(network.out_edges(v1), cda_rail::index_set({e12a, e12b}));
+  EXPECT_EQ(network.out_edges(v2a), cda_rail::index_set({}));
+  EXPECT_EQ(network.in_edges(v1), cda_rail::index_set({e01}));
+  EXPECT_EQ(network.in_edges(v0), cda_rail::index_set({}));
+  EXPECT_EQ(network.neighboring_edges(v1),
+            cda_rail::index_set({e01, e12a, e12b}));
+  EXPECT_EQ(network.neighboring_edges(v0), cda_rail::index_set({e01}));
+  EXPECT_EQ(network.neighboring_edges(v2a), cda_rail::index_set({e12a}));
+
+  EXPECT_EQ(network.out_edges({"v1"}), cda_rail::index_set({e12a, e12b}));
+  EXPECT_EQ(network.out_edges({"v2a"}), cda_rail::index_set({}));
+  EXPECT_EQ(network.in_edges({"v1"}), cda_rail::index_set({e01}));
+  EXPECT_EQ(network.in_edges({"v0"}), cda_rail::index_set({}));
+  EXPECT_EQ(network.neighboring_edges({"v1"}),
+            cda_rail::index_set({e01, e12a, e12b}));
+  EXPECT_EQ(network.neighboring_edges({"v0"}), cda_rail::index_set({e01}));
+  EXPECT_EQ(network.neighboring_edges({"v2a"}), cda_rail::index_set({e12a}));
+
+  EXPECT_EQ(network.get_successors({v0, v1}),
+            cda_rail::index_set({e12a, e12b}));
+  EXPECT_EQ(network.get_successors({"v0", "v1"}),
+            cda_rail::index_set({e12a, e12b}));
+  EXPECT_EQ(network.get_successors(e01), cda_rail::index_set({e12a, e12b}));
+  EXPECT_EQ(network.get_successors(e12a), cda_rail::index_set({}));
+
+  EXPECT_EQ(network.get_predecessors({v1, v2a}), cda_rail::index_set({e01}));
+  EXPECT_EQ(network.get_predecessors({"v1", "v2a"}),
+            cda_rail::index_set({e01}));
+  EXPECT_EQ(network.get_predecessors(e12a), cda_rail::index_set({e01}));
+  EXPECT_EQ(network.get_predecessors(e01), cda_rail::index_set({}));
+
+  EXPECT_EQ(network.neighbors(v1), cda_rail::index_set({v0, v2a, v2b}));
+  EXPECT_EQ(network.neighbors({"v0"}), cda_rail::index_set({v1}));
+  EXPECT_EQ(network.neighbors(v2a), cda_rail::index_set({v1}));
+}
+
+TEST(RailwayNetwork, ReverseEdge) {
+  cda_rail::Network network;
+
+  auto const v0 = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  auto const v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  auto const v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  auto const v3 = network.add_vertex("v3", cda_rail::VertexType::TTD);
+
+  auto const e01 = network.add_edge(v0, v1, 100, 20);
+  auto const e23 = network.add_edge(v2, v3, 100, 20);
+  auto const e21 = network.add_edge(v2, v1, 50, 30);
+  auto const e12 = network.add_edge(v1, v2, 50, 30);
+
+  EXPECT_EQ(network.get_reverse_edge_index(e01), std::optional<size_t>{});
+  EXPECT_EQ(network.get_reverse_edge_index({"v1", "v2"}), e21);
+  EXPECT_EQ(network.get_reverse_edge_index({v2, v1}), e12);
+  EXPECT_EQ(network.get_optional_reverse_edge_index({e12}), e21);
+  EXPECT_EQ(network.get_optional_reverse_edge_index({}),
+            std::optional<size_t>{});
+
+  auto const combined = network.combine_reverse_edges({e01, e23, e12}, false);
+  ASSERT_EQ(combined.size(), 3);
+  EXPECT_EQ(combined.at(0).first, e01);
+  EXPECT_EQ(combined.at(0).second, std::optional<size_t>{});
+  EXPECT_EQ(combined.at(1).first, e23);
+  EXPECT_EQ(combined.at(1).second, std::optional<size_t>{});
+  EXPECT_EQ(combined.at(2).first, e12);
+  EXPECT_EQ(combined.at(2).second, std::optional<size_t>{});
+
+  auto const combined2 =
+      network.combine_reverse_edges({e01, e23, e12, e21}, false);
+  ASSERT_EQ(combined2.size(), 3);
+  EXPECT_EQ(combined2.at(0).first, e01);
+  EXPECT_EQ(combined2.at(0).second, std::optional<size_t>{});
+  EXPECT_EQ(combined2.at(1).first, e23);
+  EXPECT_EQ(combined2.at(1).second, std::optional<size_t>{});
+  EXPECT_EQ(combined2.at(2).first, e21);
+  EXPECT_EQ(combined2.at(2).second, e12);
+
+  auto const combined2_sorted =
+      network.combine_reverse_edges({e01, e23, e12, e21}, true);
+  ASSERT_EQ(combined2_sorted.size(), 3);
+  EXPECT_EQ(combined2_sorted.at(0).first, e01);
+  EXPECT_EQ(combined2_sorted.at(0).second, std::optional<size_t>{});
+  EXPECT_EQ(combined2_sorted.at(2).first, e23);
+  EXPECT_EQ(combined2_sorted.at(2).second, std::optional<size_t>{});
+  EXPECT_EQ(combined2_sorted.at(1).first, e12);
+  EXPECT_EQ(combined2_sorted.at(1).second, e21);
+
+  EXPECT_THROW((void)network.combine_reverse_edges({e01, e23, e12}, true),
+               cda_rail::exceptions::ConsistencyException);
+
+  EXPECT_EQ(network.get_track_index(e12), e21);
+  EXPECT_EQ(network.get_track_index({v1, v2}), e21);
+  EXPECT_EQ(network.get_track_index({"v1", "v2"}), e21);
+  EXPECT_EQ(network.get_track_index(e21), e21);
+  EXPECT_EQ(network.get_track_index(e01), e01);
+}
+
 /**
  * OLD NETWORK TESTS
  */
