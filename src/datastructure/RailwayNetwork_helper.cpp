@@ -371,12 +371,13 @@ cda_rail::Network::separate_edge_at(
     throw exceptions::InvalidInputException("Distances are not specified");
   }
 
-  if (!std::is_sorted(distances_from_source.begin(),
-                      distances_from_source.end())) {
+  if (!std::ranges::is_sorted(distances_from_source)) {
     throw exceptions::ConsistencyException("Distances are not sorted");
   }
 
-  const auto edge = get_edge(edge_index);
+  const auto edge =
+      get_edge(edge_index); // cannot be reference because referenced edge is
+                            // changed in this function
 
   if (distances_from_source.front() <= 0 ||
       distances_from_source.back() >= edge.length) {
@@ -386,9 +387,9 @@ cda_rail::Network::separate_edge_at(
 
   cda_rail::index_vector new_vertices;
   for (size_t i = 0; i < distances_from_source.size(); ++i) {
-    std::string const vertex_name = get_vertex(edge.source).name + "_" +
-                                    get_vertex(edge.target).name + "_" +
-                                    std::to_string(i);
+    std::string const vertex_name = concatenate_string_views(
+        {get_vertex(edge.source).name, "_", get_vertex(edge.target).name, "_",
+         std::to_string(i)});
     new_vertices.emplace_back(
         add_vertex({vertex_name, VertexType::NoBorderVSS}));
   }
@@ -424,8 +425,10 @@ cda_rail::Network::separate_edge_at(
   // - For the last new edge add the same successors as edge_index had (this has
   // already been done implicitly)
   for (const auto& incoming_edge_index : in_edges(edge.source)) {
-    m_successors[incoming_edge_index].erase(edge_index);
-    m_successors[incoming_edge_index].insert(new_edges.front());
+    if (m_successors[incoming_edge_index].contains(edge_index)) {
+      m_successors[incoming_edge_index].erase(edge_index);
+      m_successors[incoming_edge_index].insert(new_edges.front());
+    }
   }
   for (size_t i = 0; i < new_edges.size() - 1; ++i) {
     add_successor(new_edges[i], new_edges[i + 1]);
@@ -466,8 +469,10 @@ cda_rail::Network::separate_edge_at(
     new_reverse_edges.emplace_back(reverse_edge_index);
 
     for (const auto& incoming_edge_index : in_edges(edge.target)) {
-      m_successors[incoming_edge_index].erase(reverse_edge_index);
-      m_successors[incoming_edge_index].insert(new_reverse_edges.front());
+      if (m_successors[incoming_edge_index].contains(reverse_edge_index)) {
+        m_successors[incoming_edge_index].erase(reverse_edge_index);
+        m_successors[incoming_edge_index].insert(new_reverse_edges.front());
+      }
     }
     for (size_t i = 0; i < new_reverse_edges.size() - 1; ++i) {
       add_successor(new_reverse_edges[i], new_reverse_edges[i + 1]);

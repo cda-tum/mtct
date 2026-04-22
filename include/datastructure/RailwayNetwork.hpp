@@ -2026,7 +2026,7 @@ public:
       bool include_first_edge = false, bool use_minimal_time = false,
       double max_v = INF) const {
     return shortest_path_length_between_sets_helper(
-        std::move(source_edge_ids), std::move(target_ids), false,
+        std::move(source_edge_ids), std::move(target_ids), true,
         include_first_edge, use_minimal_time, max_v);
   };
 

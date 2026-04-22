@@ -1583,9 +1583,9 @@ TEST(RailwayNetwork, NetworkEdgeSeparation) {
   // v00->v1 has one successor, namely v1->v1_v2_0
   const auto& successors_v00_v1 = network.get_successors({"v00", "v1"});
   EXPECT_EQ(successors_v00_v1.size(), 1);
-  EXPECT_TRUE(std::find(successors_v00_v1.begin(), successors_v00_v1.end(),
-                        network.get_edge_index({"v1"}, {"v1_v2_0"})) !=
-              successors_v00_v1.end());
+  EXPECT_TRUE(
+      successors_v00_v1.contains(network.get_edge_index({"v1"}, {"v1_v2_0"})));
+
   // v01->v1 has one successor, namely v1->v1_v2_0
   const auto& successors_v01_v1 = network.get_successors({"v01", "v1"});
   EXPECT_EQ(successors_v01_v1.size(), 1);
@@ -2415,29 +2415,16 @@ TEST(RailwayNetwork, InverseEdges) {
 
   // Check if the inverse edges are correct
 
-  // inverse of e12 and e23 is e34 and e32
-  cda_rail::index_set inv_1;
-  for (const auto edge : {e34, e32}) {
-    const auto reverse = network.get_reverse_edge_index(edge);
-    if (reverse.has_value() && (*reverse == e12 || *reverse == e23)) {
-      inv_1.insert(edge);
-    }
-  }
-  EXPECT_EQ(inv_1.size(), 2);
-  EXPECT_TRUE(std::find(inv_1.begin(), inv_1.end(), e34) != inv_1.end());
-  EXPECT_TRUE(std::find(inv_1.begin(), inv_1.end(), e32) != inv_1.end());
+  EXPECT_EQ(network.get_reverse_edge_index(e12), std::optional<size_t>());
+  EXPECT_EQ(network.get_reverse_edge_index(e23), e32);
+  EXPECT_EQ(network.get_reverse_edge_index({"v3", "v2"}), e23);
 
-  // inverse of e23 and e32 only considering e12, e23 and e34 is e12 and e34
-  cda_rail::index_set inv_2;
-  for (const auto edge : {e12, e34}) {
-    const auto reverse = network.get_reverse_edge_index(edge);
-    if (reverse.has_value() && (*reverse == e23 || *reverse == e32)) {
-      inv_2.insert(edge);
-    }
-  }
-  EXPECT_EQ(inv_2.size(), 2);
-  EXPECT_TRUE(std::find(inv_2.begin(), inv_2.end(), e12) != inv_2.end());
-  EXPECT_TRUE(std::find(inv_2.begin(), inv_2.end(), e34) != inv_2.end());
+  EXPECT_EQ(network.get_optional_reverse_edge_index({}),
+            std::optional<size_t>());
+  EXPECT_EQ(network.get_optional_reverse_edge_index(e12),
+            std::optional<size_t>());
+  EXPECT_EQ(network.get_optional_reverse_edge_index(e23),
+            std::optional<size_t>(e32));
 }
 
 TEST(RailwayNetwork, ShortestPaths) {
@@ -2990,12 +2977,12 @@ TEST(RailwayNetwork, ShortestPathsBetweenSets) {
 
   // Calculate shortest paths between sets
   const auto shortest_dist_1 =
-      network.shortest_path_from_edge_to_vertex(v4_v3, v6, false);
+      network.shortest_path_from_edge_to_vertex(v4_v3, v6);
   // 100 + 500 + 100 = 700
   EXPECT_TRUE(shortest_dist_1.has_value());
   EXPECT_EQ(shortest_dist_1.value(), 700);
   const auto shortest_dist_1_edge =
-      network.shortest_path_from_edge_to_vertex(v4_v3, v5_v6, true);
+      network.shortest_path_from_edge_to_edge(v4_v3, v5_v6);
   EXPECT_TRUE(shortest_dist_1_edge.has_value());
   EXPECT_EQ(shortest_dist_1_edge.value(), 700);
 
