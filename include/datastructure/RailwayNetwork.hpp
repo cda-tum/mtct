@@ -260,7 +260,7 @@ public:
    *         does not exist or the files cannot be parsed.
    */
   explicit Network(std::filesystem::path const& working_directory,
-                   std::string_view const       networkName = "UnnamedNetwork");
+                   std::string_view const       networkName);
 
   /**
    * @brief Convenience overload accepting a `std::string` path.
@@ -270,7 +270,7 @@ public:
    *         loaded.
    */
   explicit Network(std::string const&     working_directory,
-                   std::string_view const networkName = "UnnamedNetwork")
+                   std::string_view const networkName)
       : Network(std::filesystem::path(working_directory), networkName) {};
 
   /**
@@ -281,7 +281,7 @@ public:
    *         loaded.
    */
   explicit Network(char const* const      working_directory,
-                   std::string_view const networkName = "UnnamedNetwork")
+                   std::string_view const networkName)
       : Network(std::filesystem::path(working_directory), networkName) {};
 
   // Rule of 0 suffices
@@ -301,7 +301,7 @@ public:
    */
   [[nodiscard]] static Network
   import_network(std::filesystem::path const& working_directory,
-                 std::string_view const       networkName = "UnnamedNetwork") {
+                 std::string_view const       networkName) {
     return Network(working_directory, networkName);
   };
 
@@ -316,7 +316,7 @@ public:
    */
   [[nodiscard]] static Network
   import_network(std::string const&     working_directory,
-                 std::string_view const networkName = "UnnamedNetwork") {
+                 std::string_view const networkName) {
     return Network(working_directory, networkName);
   };
 
@@ -330,7 +330,7 @@ public:
    */
   [[nodiscard]] static Network
   import_network(char const* const      workingDirectory,
-                 std::string_view const networkName = "UnnamedNetwork") {
+                 std::string_view const networkName) {
     return Network(workingDirectory, networkName);
   };
 

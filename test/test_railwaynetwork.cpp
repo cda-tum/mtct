@@ -29,14 +29,18 @@ struct EdgeTarget {
 
 // NOLINTBEGIN(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores,bugprone-unchecked-optional-access)
 
-TEST(Functionality, NetworkTTDIntersection) {
+/**
+ * OLD NETWORK TESTS
+ */
+
+TEST(RailwayNetwork, NetworkTTDIntersection) {
   const std::vector<std::pair<size_t, size_t>> expected({{0, 1}, {2, 4}});
   const auto actual = cda_rail::Network::get_intersecting_ttd(
       {0, 1, 2, 3, 4}, {{1, 2, 5}, {6, 9, 10}, {11, 4, 10}});
   EXPECT_EQ(actual, expected);
 }
 
-TEST(Functionality, NetworkFunctions) {
+TEST(RailwayNetwork, NetworkFunctions) {
   cda_rail::Network network;
   const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
   const auto v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
@@ -222,7 +226,7 @@ TEST(Functionality, NetworkFunctions) {
   EXPECT_FALSE(network.is_valid_successor(0, 2));
 }
 
-TEST(Functionality, NetworkPredecessor) {
+TEST(RailwayNetwork, NetworkPredecessor) {
   // Create network
 
   cda_rail::Network network;
@@ -322,7 +326,7 @@ TEST(Functionality, NetworkPredecessor) {
       << "e_3_4 is not a predecessor of e_4_5";
 }
 
-TEST(Functionality, NetworkForwardPathsFromVertex) {
+TEST(RailwayNetwork, NetworkForwardPathsFromVertex) {
   // Create network
 
   cda_rail::Network network;
@@ -562,7 +566,7 @@ TEST(Functionality, NetworkForwardPathsFromVertex) {
       << "e_3_4 is not in the forward paths from v_3 with length 0";
 }
 
-TEST(Functionality, NetworkForwardPathsFromEdge) {
+TEST(RailwayNetwork, NetworkForwardPathsFromEdge) {
   // Create network
 
   cda_rail::Network network;
@@ -667,7 +671,7 @@ TEST(Functionality, NetworkForwardPathsFromEdge) {
          "200";
 }
 
-TEST(Functionality, NetworkBackwardPathsFromVertex) {
+TEST(RailwayNetwork, NetworkBackwardPathsFromVertex) {
   // Create network
 
   cda_rail::Network network;
@@ -748,7 +752,7 @@ TEST(Functionality, NetworkBackwardPathsFromVertex) {
   EXPECT_EQ(backward_paths_4.size(), 0);
 }
 
-TEST(Functionality, NetworkBackwardPathsFromEdge) {
+TEST(RailwayNetwork, NetworkBackwardPathsFromEdge) {
   // Create network
 
   cda_rail::Network network;
@@ -842,7 +846,7 @@ TEST(Functionality, NetworkBackwardPathsFromEdge) {
   EXPECT_EQ(backward_paths_5.size(), 0);
 }
 
-TEST(Functionality, NetworkSections) {
+TEST(RailwayNetwork, NetworkSections) {
   cda_rail::Network network;
 
   // Add vertices
@@ -1043,7 +1047,7 @@ TEST(Functionality, NetworkSections) {
                         v5_v4) != unbreakable_sections[s2_val].end());
 }
 
-TEST(Functionality, NetworkConsistency) {
+TEST(RailwayNetwork, NetworkConsistency) {
   cda_rail::Network network;
 
   // Add vertices
@@ -1110,12 +1114,9 @@ TEST(Functionality, NetworkConsistency) {
   EXPECT_FALSE(network.is_consistent_for_transformation());
 }
 
-#if 0 // Disabled: later sections depend on broader non-Network API changes
-      // outside RailwayNetwork.hpp scope.
-// TODO: Copy to other tests in future refactoring
-TEST(Functionality, ReadNetwork) {
-  const cda_rail::Network network = cda_rail::Network::import_network(
-      "./example-networks/SimpleStation/network/");
+TEST(RailwayNetwork, ReadNetwork) {
+  const cda_rail::Network network =
+      cda_rail::Network::import_network("./example-networks/", "SimpleStation");
 
   // Check vertices properties
   std::vector<std::string> vertex_names = {
@@ -1132,7 +1133,7 @@ TEST(Functionality, ReadNetwork) {
 
   for (size_t i = 0; i < vertex_names.size(); i++) {
     const std::string       v_name = vertex_names[i];
-    const cda_rail::Vertex& v      = network.get_vertex(v_name);
+    const cda_rail::Vertex& v      = network.get_vertex({v_name});
     EXPECT_EQ(v.name, v_name);
     EXPECT_EQ(v.type, type[i]);
     EXPECT_DOUBLE_EQ(v.headway, 0.0);
@@ -1295,8 +1296,10 @@ TEST(Functionality, ReadNetwork) {
   EXPECT_EQ(network.get_successors({"l1", "l0"}), successors_target);
 }
 
-TEST(Functionality, WriteNetwork) {
+TEST(RailwayNetwork, WriteNetwork) {
   cda_rail::Network network;
+  network.set_network_name("TestNetwork");
+
   network.add_vertex("v0", cda_rail::VertexType::NoBorder);
   network.add_vertex("v1", cda_rail::VertexType::VSS, 5);
   network.add_vertex("v2", cda_rail::VertexType::TTD);
@@ -1315,8 +1318,8 @@ TEST(Functionality, WriteNetwork) {
 
   network.export_network("./tmp/write_network_test");
 
-  auto network_read =
-      cda_rail::Network::import_network("./tmp/write_network_test");
+  auto network_read = cda_rail::Network::import_network(
+      "./tmp/write_network_test", "TestNetwork");
 
   // Delete created directory and everything in it
   std::filesystem::remove_all("./tmp");
@@ -1327,10 +1330,10 @@ TEST(Functionality, WriteNetwork) {
   EXPECT_EQ(network.number_of_vertices(), network_read.number_of_vertices());
   for (size_t i = 0; i < network.number_of_vertices(); ++i) {
     EXPECT_TRUE(network_read.has_vertex(network.get_vertex(i).name));
-    EXPECT_EQ(network_read.get_vertex(network.get_vertex(i).name).type,
+    EXPECT_EQ(network_read.get_vertex({network.get_vertex(i).name}).type,
               network.get_vertex(i).type);
     EXPECT_DOUBLE_EQ(
-        network_read.get_vertex(network.get_vertex(i).name).headway,
+        network_read.get_vertex({network.get_vertex(i).name}).headway,
         network.get_vertex(i).headway);
   }
 
@@ -1376,7 +1379,7 @@ TEST(Functionality, WriteNetwork) {
   }
 }
 
-TEST(Functionality, NetworkEdgeSeparation) {
+TEST(RailwayNetwork, NetworkEdgeSeparation) {
   cda_rail::Network network;
   // Add vertices
   const auto v00 = network.add_vertex("v00", cda_rail::VertexType::TTD);
@@ -1401,7 +1404,7 @@ TEST(Functionality, NetworkEdgeSeparation) {
 
   // Separate edge v1_v2 uniformly
   auto new_edges =
-      network.separate_edge("v1", "v2", &cda_rail::vss::functions::uniform);
+      network.separate_edge({"v1", "v2"}, &cda_rail::vss::functions::uniform);
 
   // There are 4 new forward edges and no new reverse edges
   EXPECT_EQ(new_edges.first.size(), 4);
@@ -1649,7 +1652,7 @@ TEST(Functionality, NetworkEdgeSeparation) {
   EXPECT_EQ(network.get_old_edge("v1_v2_2", "v2"), expected_pair);
 }
 
-TEST(Functionality, NetworkExceptions) {
+TEST(RailwayNetwork, NetworkExceptions) {
   cda_rail::Network network;
   const auto        v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
   EXPECT_THROW(network.add_vertex("v1", cda_rail::VertexType::TTD),
@@ -1746,7 +1749,7 @@ TEST(Functionality, NetworkExceptions) {
                cda_rail::exceptions::EdgeNotExistentException);
 }
 
-TEST(Functionality, NetworkVertexIsAdjustable) {
+TEST(RailwayNetwork, NetworkVertexIsAdjustable) {
   cda_rail::Network network;
 
   const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
@@ -1773,7 +1776,7 @@ TEST(Functionality, NetworkVertexIsAdjustable) {
                cda_rail::exceptions::VertexNotExistentException);
 }
 
-TEST(Functionality, SortPairs) {
+TEST(RailwayNetwork, SortPairs) {
   cda_rail::Network network;
   // Add vertices
   network.add_vertex("v0", cda_rail::VertexType::TTD);
@@ -1816,7 +1819,7 @@ TEST(Functionality, SortPairs) {
   }
 }
 
-TEST(Functionality, NetworkEdgeSeparationReverse) {
+TEST(RailwayNetwork, NetworkEdgeSeparationReverse) {
   cda_rail::Network network;
   // Add vertices
   network.add_vertex("v00", cda_rail::VertexType::TTD);
@@ -2255,7 +2258,7 @@ TEST(Functionality, NetworkEdgeSeparationReverse) {
   EXPECT_EQ(network.get_old_edge("v1_v2_0", "v1"), expected_pair);
 }
 
-TEST(Functionality, NetworkVerticesByType) {
+TEST(RailwayNetwork, NetworkVerticesByType) {
   cda_rail::Network network;
   // Add vertices of each type NoBorder (1x), TTD (2x), VSS (3x), NoBorderVSS
   // (4x)
@@ -2300,7 +2303,7 @@ TEST(Functionality, NetworkVerticesByType) {
               no_border_vss.end());
 }
 
-TEST(Functionality, NetworkVertexSpeed) {
+TEST(RailwayNetwork, NetworkVertexSpeed) {
   cda_rail::Network network;
 
   // Add vertices
@@ -2357,7 +2360,7 @@ TEST(Functionality, NetworkVertexSpeed) {
                    std::numeric_limits<double>::infinity());
 }
 
-TEST(Functionality, ReverseIndices) {
+TEST(RailwayNetwork, ReverseIndices) {
   cda_rail::Network network;
   network.add_vertex("v1", cda_rail::VertexType::TTD);
   network.add_vertex("v2", cda_rail::VertexType::TTD);
@@ -2399,7 +2402,7 @@ TEST(Functionality, ReverseIndices) {
       edges_combined.end());
 }
 
-TEST(Functionality, InverseEdges) {
+TEST(RailwayNetwork, InverseEdges) {
   cda_rail::Network network;
 
   network.add_vertex("v1", cda_rail::VertexType::TTD);
@@ -2427,7 +2430,7 @@ TEST(Functionality, InverseEdges) {
   EXPECT_TRUE(std::find(inv_2.begin(), inv_2.end(), e34) != inv_2.end());
 }
 
-TEST(Functionality, ShortestPaths) {
+TEST(RailwayNetwork, ShortestPaths) {
   // Initialize empty network
   cda_rail::Network network;
 
@@ -2806,7 +2809,7 @@ TEST(Functionality, ShortestPaths) {
   EXPECT_EQ(shortest_paths_4_path, std::vector<size_t>({v1_v2}));
 }
 
-TEST(Functionality, QuickestPaths) {
+TEST(RailwayNetwork, QuickestPaths) {
   cda_rail::Network network;
 
   // Add 5 vertices
@@ -2911,7 +2914,7 @@ TEST(Functionality, QuickestPaths) {
                cda_rail::exceptions::InvalidInputException);
 }
 
-TEST(Functionality, ShortestPathsBetweenSets) {
+TEST(RailwayNetwork, ShortestPathsBetweenSets) {
   cda_rail::Network network;
 
   // Add 6 vertices
@@ -3002,16 +3005,18 @@ TEST(Functionality, ShortestPathsBetweenSets) {
   EXPECT_TRUE(shortest_dist_4_edge.has_value());
   EXPECT_EQ(shortest_dist_4_edge.value(), 200);
 
-  EXPECT_THROW(network.shortest_path_length_between_edge_and_vertex_set({}, {0}),
-               cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(network.shortest_path_length_between_edge_and_vertex_set({0}, {}),
-               cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(network.shortest_path_length_between_edge_and_vertex_set({1000},
-                                                                        {v1}),
-               cda_rail::exceptions::EdgeNotExistentException);
-  EXPECT_THROW(network.shortest_path_length_between_edge_and_vertex_set({v2_v1},
-                                                                        {1000}),
-               cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW(
+      network.shortest_path_length_between_edge_and_vertex_set({}, {0}),
+      cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(
+      network.shortest_path_length_between_edge_and_vertex_set({0}, {}),
+      cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(
+      network.shortest_path_length_between_edge_and_vertex_set({1000}, {v1}),
+      cda_rail::exceptions::EdgeNotExistentException);
+  EXPECT_THROW(
+      network.shortest_path_length_between_edge_and_vertex_set({v2_v1}, {1000}),
+      cda_rail::exceptions::VertexNotExistentException);
   EXPECT_THROW(network.shortest_path_length_between_edge_sets({v2_v1}, {1000}),
                cda_rail::exceptions::EdgeNotExistentException);
 }
@@ -4182,8 +4187,6 @@ TEST(RouteMapFunctionality, EmptyConflicts) {
   EXPECT_TRUE(route_map.get_parallel_overlaps("tr1", "tr2", network).empty());
   EXPECT_TRUE(route_map.get_ttd_overlaps("tr1", "tr2", network).empty());
 }
-
-#endif
 
 #endif
 
