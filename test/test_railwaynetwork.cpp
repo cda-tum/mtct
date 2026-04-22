@@ -1116,7 +1116,7 @@ TEST(RailwayNetwork, NetworkConsistency) {
 
 TEST(RailwayNetwork, ReadNetwork) {
   const cda_rail::Network network =
-      cda_rail::Network::import_network("./data/", "SimpleStation");
+      cda_rail::Network::import_network("SimpleStation", "./data/");
 
   // Check vertices properties
   std::vector<std::string> vertex_names = {
@@ -1315,7 +1315,7 @@ TEST(RailwayNetwork, WriteNetwork) {
   network.export_network("./tmp/write_network_test");
 
   auto network_read = cda_rail::Network::import_network(
-      "./tmp/write_network_test", "TestNetwork");
+      "TestNetwork", "./tmp/write_network_test");
 
   // Delete created directory and everything in it
   std::filesystem::remove_all("./tmp");

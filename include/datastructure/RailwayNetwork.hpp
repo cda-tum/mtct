@@ -227,14 +227,15 @@ private:
   // operating system as enforced by throw_if_invalid_folder_name
   std::string m_network_name{"UnnamedNetwork"};
 
-  std::vector<Vertex> m_vertices;
-  std::vector<Edge>   m_edges;
+  std::vector<Vertex> m_vertices{};
+  std::vector<Edge>   m_edges{};
   std::vector<cda_rail::index_set>
-      m_successors; // for every edge, set of possible successor edges
-  std::unordered_map<std::string, size_t> m_vertex_name_to_index;
+      m_successors{}; // for every edge, set of possible successor edges
+  std::unordered_map<std::string, size_t> m_vertex_name_to_index{};
 
   std::unordered_map<std::size_t, std::pair<size_t, double>>
-      m_new_edge_to_old_edge_after_transform; // needed if edges are discretized
+      m_new_edge_to_old_edge_after_transform{}; // needed if edges are
+                                                // discretized
 
 public:
   // -----------------------------
@@ -243,8 +244,16 @@ public:
 
   /**
    * @brief Default-constructs an empty network.
+   *
+   * @param networkName Name of the network, used for export folder naming;
+   * defaults to `"UnnamedNetwork"`.
+   * @throws cda_rail::exceptions::InvalidInputException If `networkName` is not
+   * a valid folder name.
    */
-  Network() = default;
+  explicit Network(std::string_view const networkName = "UnnamedNetwork")
+      : m_network_name(networkName) {
+    exceptions::throw_if_invalid_folder_name(networkName);
+  };
 
   /**
    * @brief Reads a network from disk and constructs the object.
@@ -253,36 +262,41 @@ public:
    * (`successors_cpp.json`) are read from
    * `working_directory/networks/networkName/`.
    *
-   * @param working_directory Root working directory.
-   * @param networkName       Name of the network subfolder; defaults to
+  * @param networkName       Name of the network subfolder; defaults to
    *                          `"UnnamedNetwork"`.
+   * @param working_directory Root working directory.
+   ?
    * @throws cda_rail::exceptions::ImportException If the expected directory
    *         does not exist or the files cannot be parsed.
    */
-  explicit Network(std::filesystem::path const& working_directory,
-                   std::string_view const       networkName);
+  explicit Network(std::string_view const       networkName,
+                   std::filesystem::path const& working_directory);
 
   /**
    * @brief Convenience overload accepting a `std::string` path.
-   * @param working_directory Root working directory as a string.
+   *
    * @param networkName       Name of the network subfolder.
+   * @param working_directory Root working directory as a string.
+   *
    * @throws cda_rail::exceptions::ImportException If the network cannot be
    *         loaded.
    */
-  explicit Network(std::string const&     working_directory,
-                   std::string_view const networkName)
-      : Network(std::filesystem::path(working_directory), networkName) {};
+  explicit Network(std::string_view const networkName,
+                   std::string const&     working_directory)
+      : Network(networkName, std::filesystem::path(working_directory)) {};
 
   /**
    * @brief Convenience overload accepting a C-string path.
-   * @param working_directory Root working directory as a C-string.
+   *
    * @param networkName       Name of the network subfolder.
+   * @param working_directory Root working directory as a C-string.
+   *
    * @throws cda_rail::exceptions::ImportException If the network cannot be
    *         loaded.
    */
-  explicit Network(char const* const      working_directory,
-                   std::string_view const networkName)
-      : Network(std::filesystem::path(working_directory), networkName) {};
+  explicit Network(std::string_view const networkName,
+                   char const* const      working_directory)
+      : Network(networkName, std::filesystem::path(working_directory)) {};
 
   // Rule of 0 suffices
 
@@ -292,46 +306,52 @@ public:
 
   /**
    * @brief Loads a network from disk and returns it by value.
-   * @param working_directory Root working directory.
+   *
    * @param networkName       Name of the network subfolder; defaults to
    *                          `"UnnamedNetwork"`.
+   * @param working_directory Root working directory.
+   *
    * @return Newly constructed `Network` object.
    * @throws cda_rail::exceptions::ImportException If the network cannot be
    *         loaded.
    */
   [[nodiscard]] static Network
-  import_network(std::filesystem::path const& working_directory,
-                 std::string_view const       networkName) {
-    return Network(working_directory, networkName);
+  import_network(std::string_view const       networkName,
+                 std::filesystem::path const& working_directory) {
+    return Network(networkName, working_directory);
   };
 
   /**
    * @brief Convenience overload of `import_network` accepting a `std::string`
    *        path.
-   * @param working_directory Root working directory as a string.
+   *
    * @param networkName       Name of the network subfolder.
+   * @param working_directory Root working directory as a string.
+   *
    * @return Newly constructed `Network` object.
    * @throws cda_rail::exceptions::ImportException If the network cannot be
    *         loaded.
    */
   [[nodiscard]] static Network
-  import_network(std::string const&     working_directory,
-                 std::string_view const networkName) {
-    return Network(working_directory, networkName);
+  import_network(std::string_view const networkName,
+                 std::string const&     working_directory) {
+    return Network(networkName, working_directory);
   };
 
   /**
    * @brief Convenience overload of `import_network` accepting a C-string path.
-   * @param workingDirectory Root working directory as a C-string.
+   *
    * @param networkName      Name of the network subfolder.
+   * @param workingDirectory Root working directory as a C-string.
+   *
    * @return Newly constructed `Network` object.
    * @throws cda_rail::exceptions::ImportException If the network cannot be
    *         loaded.
    */
   [[nodiscard]] static Network
-  import_network(char const* const      workingDirectory,
-                 std::string_view const networkName) {
-    return Network(workingDirectory, networkName);
+  import_network(std::string_view const networkName,
+                 char const* const      workingDirectory) {
+    return Network(networkName, workingDirectory);
   };
 
   /**
