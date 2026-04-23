@@ -270,6 +270,16 @@ double max_travel_time_to_end(double v_1, double v_2, double v_m, double a,
 
 /**
  * @brief Returns maximal remaining time from @p x to end without stopping.
+ * @param v_1 Entry speed in m/s.
+ * @param v_2 Exit speed in m/s.
+ * @param v_m Lower speed bound in m/s.
+ * @param a Maximum acceleration in m/s^2.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Edge length in metres.
+ * @param x Distance from start in metres.
+ * @return Maximal finite remaining time in seconds.
+ * @pre Same consistency requirements as
+ *      `max_travel_time_from_start_no_stopping(...)`.
  * @throws cda_rail::exceptions::ConsistencyException If inputs are
  *         inconsistent or infeasible.
  */
@@ -280,7 +290,15 @@ double max_travel_time_to_end_no_stopping(double v_1, double v_2, double v_m,
 /**
  * @brief Returns maximal remaining time from @p x to end when stopping is
  *        allowed.
+ * @param v_1 Entry speed in m/s.
+ * @param v_2 Exit speed in m/s.
+ * @param a Maximum acceleration in m/s^2.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Edge length in metres.
+ * @param x Distance from start in metres.
  * @return Maximal remaining time in seconds; may be `infinity`.
+ * @pre Same consistency requirements as
+ *      `max_travel_time_from_start_stopping_allowed(...)`.
  * @throws cda_rail::exceptions::ConsistencyException If inputs are
  *         inconsistent or infeasible.
  */
@@ -509,6 +527,15 @@ double min_time_from_front_to_ma_point(double v_1, double v_2, double v_m,
  * Uses the same MA-point encoding via @p obd as
  * `min_time_from_front_to_ma_point(...)`.
  *
+ * @param v_1 Entry speed in m/s.
+ * @param v_2 Exit speed in m/s.
+ * @param v_m Lower speed bound in m/s if stopping is not allowed.
+ * @param a Maximum acceleration in m/s^2.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Edge length in metres.
+ * @param obd Overlap braking distance in metres (`obd >= 0`).
+ * @param stopping_allowed If `true`, a full stop may occur before reaching
+ *        the MA point.
  * @return Maximal time in seconds; may be `infinity` when stopping is allowed.
  * @throws cda_rail::exceptions::InvalidInputException If @p obd is negative.
  * @throws cda_rail::exceptions::ConsistencyException If EOM consistency fails.
@@ -519,7 +546,15 @@ double max_time_from_front_to_ma_point(double v_1, double v_2, double v_m,
 
 /**
  * @brief Maximal time from train front to MA point without full stop.
+ * @param v_1 Entry speed in m/s.
+ * @param v_2 Exit speed in m/s.
+ * @param v_m Lower speed bound in m/s.
+ * @param a Maximum acceleration in m/s^2.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Edge length in metres.
+ * @param obd Overlap braking distance in metres (`obd >= 0`).
  * @return Maximal finite time in seconds.
+ * @pre Same consistency requirements as `max_travel_time_no_stopping(...)`.
  * @throws cda_rail::exceptions::InvalidInputException If @p obd is negative.
  * @throws cda_rail::exceptions::ConsistencyException If EOM consistency fails.
  */
@@ -530,7 +565,15 @@ double max_time_from_front_to_ma_point_no_stopping(double v_1, double v_2,
 
 /**
  * @brief Maximal time from train front to MA point when stopping is allowed.
+ * @param v_1 Entry speed in m/s.
+ * @param v_2 Exit speed in m/s.
+ * @param a Maximum acceleration in m/s^2.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Edge length in metres.
+ * @param obd Overlap braking distance in metres (`obd >= 0`).
  * @return Maximal time in seconds; may be `infinity`.
+ * @pre Same consistency requirements as
+ *      `max_travel_time_stopping_allowed(...)`.
  * @throws cda_rail::exceptions::InvalidInputException If @p obd is negative.
  * @throws cda_rail::exceptions::ConsistencyException If EOM consistency fails.
  */
@@ -549,6 +592,14 @@ enum class MATimingStrategy : std::uint8_t { ExtremeProfiles = 0 };
  * For `ExtremeProfiles`, both extreme speed envelopes (using @p v_min and
  * @p v_max) are evaluated and the smaller resulting time is returned.
  *
+ * @param v_1 Entry speed in m/s.
+ * @param v_2 Exit speed in m/s.
+ * @param v_min Lower bound used for the extreme-profile evaluation in m/s.
+ * @param v_max Upper bound used for the extreme-profile evaluation in m/s.
+ * @param a Maximum acceleration in m/s^2.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Edge length in metres.
+ * @param obd Overlap braking distance in metres (`obd >= 0`).
  * @param strategy Strategy to combine profile times.
  * @return Minimal rear-to-MA time in seconds.
  * @throws cda_rail::exceptions::InvalidInputException If @p strategy is not
@@ -569,6 +620,14 @@ double min_time_from_rear_to_ma_point(
  * For `ExtremeProfiles`, both extreme speed envelopes (using @p v_min and
  * @p v_max) are evaluated and the larger resulting time is returned.
  *
+ * @param v_1 Entry speed in m/s.
+ * @param v_2 Exit speed in m/s.
+ * @param v_min Lower bound used for the extreme-profile evaluation in m/s.
+ * @param v_max Upper bound used for the extreme-profile evaluation in m/s.
+ * @param a Maximum acceleration in m/s^2.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Edge length in metres.
+ * @param obd Overlap braking distance in metres (`obd >= 0`).
  * @param strategy Strategy to combine profile times.
  * @return Maximal rear-to-MA time in seconds.
  * @throws cda_rail::exceptions::InvalidInputException If @p strategy is not
@@ -588,6 +647,17 @@ double max_time_from_rear_to_ma_point(
  *
  * Computed as:
  * `min_travel_time(...) - min_time_from_front_to_ma_point(...)`.
+ * @param v_1 Entry speed in m/s.
+ * @param v_2 Exit speed in m/s.
+ * @param v_m Upper speed bound in m/s.
+ * @param a Maximum acceleration in m/s^2.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Edge length in metres.
+ * @param obd Overlap braking distance in metres (`obd >= 0`).
+ * @return Time in seconds from train rear to MA point for this profile.
+ * @throws cda_rail::exceptions::InvalidInputException If @p obd is negative.
+ * @throws cda_rail::exceptions::ConsistencyException If delegated EOM checks
+ *         fail.
  */
 double min_time_profile_from_rear_to_ma_point(double v_1, double v_2,
                                               double v_m, double a, double d,
@@ -599,6 +669,17 @@ double min_time_profile_from_rear_to_ma_point(double v_1, double v_2,
  * Computed as:
  * `max_travel_time_no_stopping(...) -`
  * `max_time_from_front_to_ma_point_no_stopping(...)`.
+ * @param v_1 Entry speed in m/s.
+ * @param v_2 Exit speed in m/s.
+ * @param v_m Lower speed bound in m/s.
+ * @param a Maximum acceleration in m/s^2.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Edge length in metres.
+ * @param obd Overlap braking distance in metres (`obd >= 0`).
+ * @return Time in seconds from train rear to MA point for this profile.
+ * @throws cda_rail::exceptions::InvalidInputException If @p obd is negative.
+ * @throws cda_rail::exceptions::ConsistencyException If delegated EOM checks
+ *         fail.
  */
 double max_time_profile_from_rear_to_ma_point(double v_1, double v_2,
                                               double v_m, double a, double d,
