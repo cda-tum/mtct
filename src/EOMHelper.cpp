@@ -79,10 +79,7 @@ void normalize_ma_push_inputs(double& v_0, double& a, double& d, double& s) {
 [[nodiscard]] double normalize_obd(double obd) {
   // Refactoring helper: shared validation for overlap braking distance.
   round_with_eps(GRB_EPS, obd);
-  if (obd < 0) {
-    throw exceptions::InvalidInputException(
-        "obd must be greater than or equal 0.");
-  }
+  exceptions::throw_if_negative(obd, "obd");
   return obd;
 }
 
@@ -104,14 +101,12 @@ struct LineSpeedProfile {
                                                         double d, double s) {
   // Refactoring helper: compute common phase data once for time/pos/vel calls.
   round_with_eps(GRB_EPS, v_1, v_2, v_line, a, d, s);
-
-  if (v_1 < 0 || v_2 < 0 || v_line < GRB_EPS || a < GRB_EPS || d < GRB_EPS ||
-      s < 0) {
-    throw exceptions::InvalidInputException(
-        "All input values must be non-negative, and a, d, v_line must be "
-        "greater "
-        "than 0.");
-  }
+  exceptions::throw_if_negative(v_1, "v_1");
+  exceptions::throw_if_negative(v_2, "v_2");
+  exceptions::throw_if_non_positive(v_line, GRB_EPS, "v_line");
+  exceptions::throw_if_non_positive(a, GRB_EPS, "a");
+  exceptions::throw_if_non_positive(d, GRB_EPS, "d");
+  exceptions::throw_if_negative(s, "s");
 
   const double a_1 = v_line >= v_1 ? a : -d;
   const double s_1 = (square(v_line) - square(v_1)) / (2 * a_1);
@@ -168,12 +163,8 @@ struct LineSpeedProfile {
 // ---------------------------
 
 double cda_rail::braking_distance(double v, double d) {
-  if (v < 0) {
-    throw exceptions::InvalidInputException("Speed must be non-negative.");
-  }
-  if (d <= EPS) {
-    throw exceptions::InvalidInputException("Deceleration must be positive.");
-  }
+  exceptions::throw_if_negative(v, "Speed");
+  exceptions::throw_if_non_positive(d, EPS, "Deceleration");
 
   return braking_distance_unchecked(v, d);
 }
@@ -187,23 +178,14 @@ double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
     v_max = v_0;
   }
 
-  if (dt < 0) {
-    throw exceptions::InvalidInputException("Time must be non-negative.");
-  }
-  if (v_0 < 0) {
-    throw exceptions::InvalidInputException(
-        "Initial speed must be non-negative.");
-  }
+  exceptions::throw_if_less_than(static_cast<double>(dt), 0.0, "Time");
+  exceptions::throw_if_negative(v_0, "Initial speed");
   if (v_max < v_0) {
     throw exceptions::InvalidInputException(
         "Maximum speed must be greater than or equal to initial speed.");
   }
-  if (a <= 0) {
-    throw exceptions::InvalidInputException("Acceleration must be positive.");
-  }
-  if (d <= 0) {
-    throw exceptions::InvalidInputException("Deceleration must be positive.");
-  }
+  exceptions::throw_if_non_positive(a, "Acceleration");
+  exceptions::throw_if_non_positive(d, "Deceleration");
 
   const double reached_speed      = std::min(v_max, v_0 + a * dt);
   const double travelled_distance = (v_0 + reached_speed) * dt / 2;
@@ -491,11 +473,10 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
 
   normalize_ma_push_inputs(v_0, a, d, s);
 
-  // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
-  if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
-    throw exceptions::InvalidInputException(
-        "We need v_0 >= 0, a > 0, d > 0, s >= 0");
-  }
+  exceptions::throw_if_negative(v_0, "v_0");
+  exceptions::throw_if_negative(a, "a");
+  exceptions::throw_if_non_positive(d, "d");
+  exceptions::throw_if_negative(s, "s");
 
   // ma(t) = v_0*t + 0.5*a*t^2 + (v_0+a*t)^2/(2d) != s + v_0^2/(2d)
   // -> t = (...) = 2*d*s / (sqrt(2*(a+d)*a*d*s+(a+d)^2*v^2) + (a+d)*v)
@@ -513,11 +494,10 @@ double cda_rail::min_time_to_push_ma_backward(double v_0, double a, double d,
                                               double s) {
   normalize_ma_push_inputs(v_0, a, d, s);
 
-  // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
-  if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
-    throw exceptions::InvalidInputException(
-        "We need v_0 >= 0, a >= 0, d > 0, s >= 0");
-  }
+  exceptions::throw_if_negative(v_0, "v_0");
+  exceptions::throw_if_negative(a, "a");
+  exceptions::throw_if_non_positive(d, "d");
+  exceptions::throw_if_negative(s, "s");
 
   // Assert that s <= v_0^2/(2d)
   const double braking_distance = braking_distance_unchecked(v_0, d);
@@ -560,10 +540,9 @@ double cda_rail::min_time_to_push_ma_fully_backward(double v_0, double a,
 
   normalize_ma_push_inputs(v_0, a, d, v_0);
 
-  // Assert that v_0 >= 0, a >= 0, d > 0
-  if (v_0 < 0 || a < 0 || d <= 0) {
-    throw exceptions::InvalidInputException("We need v_0 >= 0, a >= 0, d > 0");
-  }
+  exceptions::throw_if_negative(v_0, "v_0");
+  exceptions::throw_if_negative(a, "a");
+  exceptions::throw_if_non_positive(d, "d");
 
   return v_0 / (a + d + std::sqrt(d * (a + d)));
 }
