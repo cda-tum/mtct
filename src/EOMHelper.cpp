@@ -2,6 +2,7 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "GeneralHelper.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -9,6 +10,66 @@
 #include <limits>
 #include <string>
 #include <utility>
+
+// ---------------------------
+// GENERAL MEASURES
+// ---------------------------
+
+double cda_rail::braking_distance(double v, double d) {
+  if (v < 0) {
+    throw exceptions::InvalidInputException("Speed must be non-negative.");
+  }
+  if (d <= EPS) {
+    throw exceptions::InvalidInputException("Deceleration must be positive.");
+  }
+
+  return (v * v) / (2 * d);
+}
+
+double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
+                                                          double v_max,
+                                                          double a, double d,
+                                                          int dt) {
+  round_small_numbers_to_zero_inplace(v_0);
+  round_small_numbers_to_zero_inplace(v_max);
+  round_small_numbers_to_zero_inplace(a);
+  round_small_numbers_to_zero_inplace(d);
+  if (std::abs(v_0 - v_max) < EPS) {
+    v_max = v_0;
+  }
+
+  if (dt < 0) {
+    throw exceptions::InvalidInputException("Time must be non-negative.");
+  }
+  if (v_0 < 0) {
+    throw exceptions::InvalidInputException(
+        "Initial speed must be non-negative.");
+  }
+  if (v_max < v_0) {
+    throw exceptions::InvalidInputException(
+        "Maximum speed must be greater than or equal to initial speed.");
+  }
+  if (a <= 0) {
+    throw exceptions::InvalidInputException("Acceleration must be positive.");
+  }
+  if (d <= 0) {
+    throw exceptions::InvalidInputException("Deceleration must be positive.");
+  }
+
+  const double v_1 = std::min(v_max, v_0 + a * dt);
+  const double x_1 = (v_0 + v_1) * dt / 2; // Distance travelled in dt seconds
+  const double bd  = braking_distance(v_1, d); // Braking distance at v_1
+  return x_1 + bd; // Maximum position of the braking point
+}
+
+// ---------------------------
+// MINIMAL TRAVEL TIMES
+// ---------------------------
+
+double cda_rail::min_travel_time(double v_1, double v_2, double v_m, double a,
+                                 double d, double s) {
+  return min_travel_time_from_start(v_1, v_2, v_m, a, d, s, s);
+}
 
 double cda_rail::min_travel_time_from_start(double v_1, double v_2, double v_m,
                                             double a, double d, double s,
@@ -51,15 +112,43 @@ double cda_rail::min_travel_time_from_start(double v_1, double v_2, double v_m,
   return t_1 + t_2 + t_3;
 }
 
-double cda_rail::min_travel_time(double v_1, double v_2, double v_m, double a,
-                                 double d, double s) {
-  return min_travel_time_from_start(v_1, v_2, v_m, a, d, s, s);
+double cda_rail::min_travel_time_to_end(double v_1, double v_2, double v_m,
+                                        double a, double d, double s,
+                                        double x) {
+  // Same as minimal travel time going the reverse direction with acceleration
+  // and deceleration swapped
+  // NOLINTNEXTLINE(readability-suspicious-call-argument)
+  return min_travel_time_from_start(v_2, v_1, v_m, d, a, s, s - x);
 }
 
-bool cda_rail::possible_by_eom(double v_1, double v_2, double a, double d,
-                               double s) {
-  return v_1 <= v_2 ? (v_2 + v_1) * (v_2 - v_1) <= 2 * a * s + GRB_EPS
-                    : (v_1 + v_2) * (v_1 - v_2) <= 2 * d * s + GRB_EPS;
+// ----------------------------
+// MAX TRAVEL TIMES
+// ----------------------------
+
+double cda_rail::max_travel_time(double v_1, double v_2, double v_m, double a,
+                                 double d, double s, bool stopping_allowed) {
+  return max_travel_time_from_start(v_1, v_2, v_m, a, d, s, s,
+                                    stopping_allowed);
+}
+
+double cda_rail::max_travel_time_no_stopping(double v_1, double v_2, double v_m,
+                                             double a, double d, double s) {
+  return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s);
+}
+
+double cda_rail::max_travel_time_stopping_allowed(double v_1, double v_2,
+                                                  double a, double d,
+                                                  double s) {
+  return max_travel_time_from_start_stopping_allowed(v_1, v_2, a, d, s, s);
+}
+
+double cda_rail::max_travel_time_from_start(double v_1, double v_2, double v_m,
+                                            double a, double d, double s,
+                                            double x, bool stopping_allowed) {
+  return stopping_allowed
+             ? max_travel_time_from_start_stopping_allowed(v_1, v_2, a, d, s, x)
+             : max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s,
+                                                      x);
 }
 
 double cda_rail::max_travel_time_from_start_no_stopping(double v_1, double v_2,
@@ -114,11 +203,6 @@ double cda_rail::max_travel_time_from_start_no_stopping(double v_1, double v_2,
   return t_1 + t_2 + t_3;
 }
 
-double cda_rail::max_travel_time_no_stopping(double v_1, double v_2, double v_m,
-                                             double a, double d, double s) {
-  return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s);
-}
-
 double cda_rail::max_travel_time_from_start_stopping_allowed(
     double v_1, double v_2, double a, double d, double s, double x) {
   check_consistency_of_eom_input(v_1, v_2, a, d, s, x);
@@ -140,63 +224,12 @@ double cda_rail::max_travel_time_from_start_stopping_allowed(
   return max_travel_time_from_start_no_stopping(v_1, v_2, 0, a, d, s, x);
 }
 
-double cda_rail::max_travel_time_stopping_allowed(double v_1, double v_2,
-                                                  double a, double d,
-                                                  double s) {
-  return max_travel_time_from_start_stopping_allowed(v_1, v_2, a, d, s, s);
-}
-
-double cda_rail::max_travel_time_from_start(double v_1, double v_2, double v_m,
-                                            double a, double d, double s,
-                                            double x, bool stopping_allowed) {
+double cda_rail::max_travel_time_to_end(double v_1, double v_2, double v_m,
+                                        double a, double d, double s, double x,
+                                        bool stopping_allowed) {
   return stopping_allowed
-             ? max_travel_time_from_start_stopping_allowed(v_1, v_2, a, d, s, x)
-             : max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s,
-                                                      x);
-}
-
-double cda_rail::max_travel_time(double v_1, double v_2, double v_m, double a,
-                                 double d, double s, bool stopping_allowed) {
-  return max_travel_time_from_start(v_1, v_2, v_m, a, d, s, s,
-                                    stopping_allowed);
-}
-
-void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
-                                              double& a, double& d, double& s,
-                                              double& x) {
-  round_towards_zero(v_1, GRB_EPS);
-  round_towards_zero(v_2, GRB_EPS);
-  round_towards_zero(a, GRB_EPS);
-  round_towards_zero(d, GRB_EPS);
-  round_towards_zero(s, GRB_EPS);
-  round_towards_zero(x, GRB_EPS);
-  if (v_1 < 0 || v_2 < 0 || a < 0 || d < 0 || s < 0 || x < 0) {
-    throw exceptions::ConsistencyException(
-        "All input values must be non-negative.");
-  }
-  if (a < GRB_EPS || d < GRB_EPS) {
-    throw exceptions::ConsistencyException(
-        "Both acceleration and deceleration must be strictly positive.");
-  }
-
-  if (x > s) {
-    throw exceptions::ConsistencyException(
-        "x must be less than or equal to s.");
-  }
-
-  if (!possible_by_eom(v_1, v_2, a, d, s)) {
-    throw exceptions::ConsistencyException(
-        "Entry and exit velocities not possible by equations of motion.");
-  }
-}
-
-double cda_rail::min_travel_time_to_end(double v_1, double v_2, double v_m,
-                                        double a, double d, double s,
-                                        double x) {
-  // Same as minimal travel time going the reverse direction with acceleration
-  // and deceleration swapped
-  // NOLINTNEXTLINE(readability-suspicious-call-argument)
-  return min_travel_time_from_start(v_2, v_1, v_m, d, a, s, s - x);
+             ? max_travel_time_to_end_stopping_allowed(v_1, v_2, a, d, s, x)
+             : max_travel_time_to_end_no_stopping(v_1, v_2, v_m, a, d, s, x);
 }
 
 double cda_rail::max_travel_time_to_end_no_stopping(double v_1, double v_2,
@@ -218,321 +251,72 @@ double cda_rail::max_travel_time_to_end_stopping_allowed(double v_1, double v_2,
   return max_travel_time_from_start_stopping_allowed(v_2, v_1, d, a, s, s - x);
 }
 
-double cda_rail::max_travel_time_to_end(double v_1, double v_2, double v_m,
-                                        double a, double d, double s, double x,
-                                        bool stopping_allowed) {
-  return stopping_allowed
-             ? max_travel_time_to_end_stopping_allowed(v_1, v_2, a, d, s, x)
-             : max_travel_time_to_end_no_stopping(v_1, v_2, v_m, a, d, s, x);
-}
+// ---------------------------
+// LINE SPEED CALCULATIONS
+// ---------------------------
 
-double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
-                                             double s) {
-  // How much time does a train need to move its moving authority forward by s
-  // given initial speed v_0 and acceleration a and deceleration d
+double cda_rail::minimal_line_speed(double v_1, double v_2, double v_min,
+                                    double a, double d, double s) {
+  const bool v_1_below_minimal_speed = v_1 < v_min;
 
-  round_towards_zero(v_0, GRB_EPS);
-  round_towards_zero(a, GRB_EPS);
-  if (d < 0 && d > -GRB_EPS) {
-    d = 0;
-  }
-  round_towards_zero(s, GRB_EPS);
+  const auto [s_1, s_2] =
+      get_max_travel_time_acceleration_change_points(v_1, v_2, v_min, a, d, s);
 
-  // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
-  if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
-    throw exceptions::InvalidInputException(
-        "We need v_0 >= 0, a > 0, d > 0, s >= 0");
-  }
+  (void)s_2; // unused
 
-  // ma(t) = v_0*t + 0.5*a*t^2 + (v_0+a*t)^2/(2d) != s + v_0^2/(2d)
-  // -> t = (...) = 2*d*s / (sqrt(2*(a+d)*a*d*s+(a+d)^2*v^2) + (a+d)*v)
-  return s == 0 ? 0
-                : 2 * d * s /
-                      (std::sqrt(2 * (a + d) * a * d * s +
-                                 (a + d) * (a + d) * v_0 * v_0) +
-                       (a + d) * v_0);
-}
-
-double cda_rail::min_time_to_push_ma_fully_backward(double v_0, double a,
-                                                    double d) {
-  // Simplified version if s is the full braking distance
-  // solve for t : (v-a*t)^2/(2*b) = v * t - 0.5 * a * t^2
-  // -> t = (v + (a v)/b - (sqrt(a + b) v)/sqrt(b))/(a + a^2/b)
-  // -> t = ((-sqrt(b) + sqrt(a + b)) v)/(a sqrt(a + b))
-  // -> t = v / (a + b + sqrt(b*(a+b)))
-  // Again b is replaced with the deceleration
-
-  round_towards_zero(v_0, GRB_EPS);
-  round_towards_zero(a, GRB_EPS);
-  if (d < 0 && d > -GRB_EPS) {
-    d = 0;
-  }
-
-  // Assert that v_0 >= 0, a >= 0, d > 0
-  if (v_0 < 0 || a < 0 || d <= 0) {
-    throw exceptions::InvalidInputException("We need v_0 >= 0, a >= 0, d > 0");
-  }
-
-  return v_0 / (a + d + std::sqrt(d * (a + d)));
-}
-
-double cda_rail::min_time_to_push_ma_backward(double v_0, double a, double d,
-                                              double s) {
-  round_towards_zero(v_0, GRB_EPS);
-  round_towards_zero(a, GRB_EPS);
-  if (d < 0 && d > -GRB_EPS) {
-    d = 0;
-  }
-  round_towards_zero(s, GRB_EPS);
-
-  // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
-  if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
-    throw exceptions::InvalidInputException(
-        "We need v_0 >= 0, a >= 0, d > 0, s >= 0");
-  }
-
-  // Assert that s <= v_0^2/(2d)
-  if (s > v_0 * v_0 / (2 * d) + GRB_EPS) {
-    throw exceptions::InvalidInputException(
-        "s must be less than or equal to v_0^2/(2d)");
-  }
-
-  if (std::abs(v_0 * v_0 / (2 * d) - s) < GRB_EPS) {
-    // More stable version in this special case
-    return min_time_to_push_ma_fully_backward(v_0, a, d);
-  }
-
-  // Solve (v_0-a*t)^2/(2d) + s = v_0*t - 0.5*a*t + v_0^2/(2d)
-  // WolframAlpha: solve for t: (v-a*t)^2/(2*b)+s=v*t-0.5*a*t^2+v^2/(2*b), v>0,
-  // t>0, a>0, b>0, s>0, s<v^2/(2*b), t<v/a
-  // -> t = v/a - sqrt((b v^2 + a (-2 b s + v^2))/(a^2 (a + b)))
-  // -> t = (v - sqrt(-(2 a b s)/(a + b) + v^2))/a
-  // Numerical stable version: t = 2*b*s/((a+b)*(v+sqrt(v^2-2*a*b*s/(a+b))))
-  // Return 0 if v=0 and s = 0
-  // using b=d in wolframalpha to prevent conversion to day
-
-  if (v_0 == 0 || s == 0) {
-    return 0;
-  }
-
-  return 2 * d * s /
-         ((a + d) * (v_0 + std::sqrt(v_0 * v_0 - 2 * a * d * s / (a + d))));
-}
-
-std::pair<double, double>
-cda_rail::get_min_travel_time_acceleration_change_points(double v_1, double v_2,
-                                                         double v_m, double a,
-                                                         double d, double s) {
-  check_consistency_of_eom_input(v_1, v_2, a, d, s, s);
-  if (v_m <= 0) {
-    throw exceptions::ConsistencyException("v_m must be greater than 0.");
-  }
-  if (v_1 > v_m || v_2 > v_m) {
-    throw exceptions::ConsistencyException(
-        "v_m must be greater than or equal to v_1 and v_2.");
-  }
-
-  const double s_1 =
-      (v_m + v_1) * (v_m - v_1) / (2 * a); // Distance to reach maximal speed
-
-  const double s_2 = s - ((v_m + v_2) * (v_m - v_2) / (2 * d));
-
-  if (s_2 >= s_1) {
-    return {s_1, s_2};
-  }
-
-  const double y = (2 * d * s + (v_2 + v_1) * (v_2 - v_1)) / (2 * (a + d));
-  return {y, y};
-}
-
-std::pair<double, double>
-cda_rail::get_max_travel_time_acceleration_change_points(double v_1, double v_2,
-                                                         double v_m, double a,
-                                                         double d, double s) {
-  // v_m is minimal speed in this case
-
-  check_consistency_of_eom_input(v_1, v_2, a, d, s, s);
-  if (v_m < 0) {
-    throw exceptions::ConsistencyException(
-        "v_m must be greater than or equal 0.");
-  }
-
-  const bool v_1_below_minimal_speed = v_1 < v_m;
-  const bool v_2_below_minimal_speed = v_2 < v_m;
-
-  const double s_1 =
-      (v_1 + v_m) * (v_1 - v_m) /
-      (2 *
-       (v_1_below_minimal_speed ? -a : d)); // Distance to reach minimal speed
-
-  const double s_2 = s - ((v_2 + v_m) * (v_2 - v_m) /
-                          (2 * (v_2_below_minimal_speed ? -d : a)));
-
-  if (s_2 >= s_1) {
-    return {s_1, s_2};
-  }
-
-  if (v_1_below_minimal_speed && v_2_below_minimal_speed) {
-    // Very short distance, train cannot reach minimal speed, hence same as
-    // minimal time
-    return get_min_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d,
-                                                          s);
-  }
-
-  assert((!v_1_below_minimal_speed && !v_2_below_minimal_speed));
-
-  const double y = (2 * a * s + (v_1 + v_2) * (v_1 - v_2)) /
-                   (2 * (a + d)); // Distance at which accelerating starts if
-  // minimal speed is not reached
-
-  return {y, y};
-}
-
-double cda_rail::min_time_from_front_to_ma_point(double v_1, double v_2,
-                                                 double v_m, double a, double d,
-                                                 double s, double obd) {
-  const auto s_points =
-      get_min_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d, s);
-  const auto& s_1 = s_points.first;
-  const auto& s_2 = s_points.second;
-
-  round_towards_zero(obd, GRB_EPS);
-  if (obd < 0) {
-    throw exceptions::InvalidInputException(
-        "obd must be greater than or equal 0.");
-  }
-  if (obd == 0) {
-    return min_travel_time(v_1, v_2, v_m, a, d, s);
-  }
-
-  const double bd_1  = v_1 * v_1 / (2 * d); // Distance to stop
-  const double bd_2  = v_2 * v_2 / (2 * d); // Distance to stop
-  const double ubd_1 = s + bd_2 - obd - bd_1;
-
-  if (ubd_1 < -GRB_EPS) {
-    throw exceptions::ConsistencyException(
-        "obd is too large for the given edge and speed profile.");
-  }
-
-  // Is the relevant point within the constant phase or acceleration (Note:
-  // deceleration does not change ma)
-  if (s_2 - s_1 >= obd) {
-    // Point is at s_2 - obd
-    return min_travel_time_from_start(v_1, v_2, v_m, a, d, s, s_2 - obd);
-  }
-  return min_time_to_push_ma_forward(v_1, a, d, ubd_1);
-}
-
-double cda_rail::min_time_profile_from_rear_to_ma_point(double v_1, double v_2,
-                                                        double v_m, double a,
-                                                        double d, double s,
-                                                        double obd) {
-  return min_travel_time(v_1, v_2, v_m, a, d, s) -
-         min_time_from_front_to_ma_point(v_1, v_2, v_m, a, d, s, obd);
-}
-
-double cda_rail::max_time_from_front_to_ma_point_no_stopping(
-    double v_1, double v_2, double v_m, double a, double d, double s,
-    double obd) {
-  const auto s_points =
-      get_max_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d, s);
-  const auto& s_1 = s_points.first;
-  const auto& s_2 = s_points.second;
-
-  round_towards_zero(obd, GRB_EPS);
-  if (obd < 0) {
-    throw exceptions::InvalidInputException(
-        "obd must be greater than or equal 0.");
-  }
-
-  const bool v1_below_minimal_speed = v_1 < v_m;
-
-  // Speed at changing point
   const double v_t_squared =
-      (v_1 * v_1) + (2 * (v1_below_minimal_speed ? a : -d) * s_1);
-  const double v_t = std::sqrt(v_t_squared);
+      (v_1 * v_1) + (2 * (v_1_below_minimal_speed ? a : -d) *
+                     s_1);       // Minimal velocity reached
+  return std::sqrt(v_t_squared); // = v_m if s_2 > s_1
+}
 
-  // Braking distances
-  const double bd_1 = v_1 * v_1 / (2 * d);
-  const double bd_2 = v_2 * v_2 / (2 * d);
-  const double bd_t = v_t_squared / (2 * d);
+double cda_rail::maximal_line_speed(double v_1, double v_2, double v_max,
+                                    double a, double d, double s) {
+  const auto [s_1, s_2] =
+      get_min_travel_time_acceleration_change_points(v_1, v_2, v_max, a, d, s);
 
-  const double ma_point = s + bd_2 - obd;
+  assert(s_2 >= s_1);
 
-  const double ubd_v1 = ma_point - bd_1;
-  const double ubd_s1 = ma_point - (s_1 + bd_t);
-  const double ubd_s2 = ma_point - (s_2 + bd_t);
+  // Terminal velocity
+  const double v_t_squared =
+      (v_1 * v_1) + (2 * a * s_1); // Maximal velocity reached
+  return std::sqrt(v_t_squared);   // = v_m if s_2 > s_1
+}
 
-  if (ubd_s2 > GRB_EPS) {
-    return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s_2) +
-           min_time_to_push_ma_forward(v_t, a, d, ubd_s2);
-  }
-  if (ubd_s1 > GRB_EPS) {
-    return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s,
-                                                  s_1 + ubd_s1);
-  }
-
-  if (!v1_below_minimal_speed && std::abs(ubd_s1) <= GRB_EPS) {
+double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
+                                double v_max, double a, double d, double s,
+                                double t) {
+  if (max_travel_time_no_stopping(v_1, v_2, v_min, a, d, s) < t - GRB_EPS) {
     return 0;
   }
-  assert(v1_below_minimal_speed);
 
-  return min_time_to_push_ma_forward(v_1, a, d, ubd_v1);
-}
+  double v_ub = maximal_line_speed(v_1, v_2, v_max, a, d, s);
+  double v_lb = minimal_line_speed(v_1, v_2, v_min, a, d, s);
 
-double cda_rail::max_time_profile_from_rear_to_ma_point(double v_1, double v_2,
-                                                        double v_m, double a,
-                                                        double d, double s,
-                                                        double obd) {
-  return max_travel_time_no_stopping(v_1, v_2, v_m, a, d, s) -
-         max_time_from_front_to_ma_point_no_stopping(v_1, v_2, v_m, a, d, s,
-                                                     obd);
-}
+  const double t_ub = time_on_edge(v_1, v_2, v_lb, a, d, s);
+  double       t_lb = time_on_edge(v_1, v_2, v_ub, a, d, s);
 
-double cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
-    double v_1, double v_2, double a, double d, double s, double obd) {
-  if (max_travel_time_stopping_allowed(v_1, v_2, a, d, s) >=
-      std::numeric_limits<double>::infinity()) {
-    return std::numeric_limits<double>::infinity();
+  if (std::abs(t_lb - t) < GRB_EPS) {
+    return v_ub;
   }
-  return max_time_from_front_to_ma_point_no_stopping(v_1, v_2, 0, a, d, s, obd);
-}
-
-double cda_rail::max_time_from_front_to_ma_point(double v_1, double v_2,
-                                                 double v_m, double a, double d,
-                                                 double s, double obd,
-                                                 bool stopping_allowed) {
-  return stopping_allowed
-             ? max_time_from_front_to_ma_point_stopping_allowed(v_1, v_2, a, d,
-                                                                s, obd)
-             : max_time_from_front_to_ma_point_no_stopping(v_1, v_2, v_m, a, d,
-                                                           s, obd);
-}
-
-double cda_rail::min_time_from_rear_to_ma_point(
-    double v_1, double v_2, double v_min, double v_max, double a, double d,
-    double s, double obd, cda_rail::MATimingStrategy strategy) {
-  if (strategy == MATimingStrategy::ExtremeProfiles) {
-    const double t1 =
-        max_time_profile_from_rear_to_ma_point(v_1, v_2, v_min, a, d, s, obd);
-    const double t2 =
-        min_time_profile_from_rear_to_ma_point(v_1, v_2, v_max, a, d, s, obd);
-    return std::min(t1, t2);
+  if (std::abs(t_ub - t) < GRB_EPS) {
+    return v_lb;
   }
-  throw exceptions::InvalidInputException("Invalid strategy.");
-}
 
-double cda_rail::max_time_from_rear_to_ma_point(
-    double v_1, double v_2, double v_min, double v_max, double a, double d,
-    double s, double obd, cda_rail::MATimingStrategy strategy) {
-  if (strategy == MATimingStrategy::ExtremeProfiles) {
-    const double t1 =
-        max_time_profile_from_rear_to_ma_point(v_1, v_2, v_min, a, d, s, obd);
-    const double t2 =
-        min_time_profile_from_rear_to_ma_point(v_1, v_2, v_max, a, d, s, obd);
-    return std::max(t1, t2);
+  assert(t_lb < t);
+  assert(t < t_ub);
+  while (v_ub - v_lb > LINE_SPEED_ACCURACY &&
+         t - t_lb > LINE_SPEED_TIME_ACCURACY) {
+    const double v = (v_ub + v_lb) / 2;
+    if (const double t_v = time_on_edge(v_1, v_2, v, a, d, s); t_v <= t) {
+      v_ub = v;
+      t_lb = t_v;
+    } else {
+      v_lb = v;
+    }
   }
-  throw exceptions::InvalidInputException("Invalid strategy.");
+
+  return v_ub;
 }
 
 double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
@@ -547,12 +331,12 @@ double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
    */
 
   // If any variable is within std::abs(GRB_EPS), set to 0
-  round_towards_zero(v_1, GRB_EPS);
-  round_towards_zero(v_2, GRB_EPS);
-  round_towards_zero(v_line, GRB_EPS);
-  round_towards_zero(a, GRB_EPS);
-  round_towards_zero(d, GRB_EPS);
-  round_towards_zero(s, GRB_EPS);
+  round_small_numbers_to_zero_inplace(v_1, GRB_EPS);
+  round_small_numbers_to_zero_inplace(v_2, GRB_EPS);
+  round_small_numbers_to_zero_inplace(v_line, GRB_EPS);
+  round_small_numbers_to_zero_inplace(a, GRB_EPS);
+  round_small_numbers_to_zero_inplace(d, GRB_EPS);
+  round_small_numbers_to_zero_inplace(s, GRB_EPS);
 
   // Assert that all variables are >= 0 and a, d, s, v_line are >= GRB_EPS
   if (v_1 < 0 || v_2 < 0 || v_line < GRB_EPS || a < GRB_EPS || d < GRB_EPS ||
@@ -590,70 +374,6 @@ double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
   }
 
   return t1 + t2 + ((s - s1 - s2) / v_line);
-}
-
-double cda_rail::maximal_line_speed(double v_1, double v_2, double v_max,
-                                    double a, double d, double s) {
-  const auto [s_1, s_2] =
-      get_min_travel_time_acceleration_change_points(v_1, v_2, v_max, a, d, s);
-
-  assert(s_2 >= s_1);
-
-  // Terminal velocity
-  const double v_t_squared =
-      (v_1 * v_1) + (2 * a * s_1); // Maximal velocity reached
-  return std::sqrt(v_t_squared);   // = v_m if s_2 > s_1
-}
-
-double cda_rail::minimal_line_speed(double v_1, double v_2, double v_min,
-                                    double a, double d, double s) {
-  const bool v_1_below_minimal_speed = v_1 < v_min;
-
-  const auto [s_1, s_2] =
-      get_max_travel_time_acceleration_change_points(v_1, v_2, v_min, a, d, s);
-
-  (void)s_2; // unused
-
-  const double v_t_squared =
-      (v_1 * v_1) + (2 * (v_1_below_minimal_speed ? a : -d) *
-                     s_1);       // Minimal velocity reached
-  return std::sqrt(v_t_squared); // = v_m if s_2 > s_1
-}
-
-double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
-                                double v_max, double a, double d, double s,
-                                double t) {
-  if (max_travel_time_no_stopping(v_1, v_2, v_min, a, d, s) < t - GRB_EPS) {
-    return 0;
-  }
-
-  double v_ub = maximal_line_speed(v_1, v_2, v_max, a, d, s);
-  double v_lb = minimal_line_speed(v_1, v_2, v_min, a, d, s);
-
-  const double t_ub = time_on_edge(v_1, v_2, v_lb, a, d, s);
-  double       t_lb = time_on_edge(v_1, v_2, v_ub, a, d, s);
-
-  if (std::abs(t_lb - t) < GRB_EPS) {
-    return v_ub;
-  }
-  if (std::abs(t_ub - t) < GRB_EPS) {
-    return v_lb;
-  }
-
-  assert(t_lb < t);
-  assert(t < t_ub);
-  while (v_ub - v_lb > LINE_SPEED_ACCURACY &&
-         t - t_lb > LINE_SPEED_TIME_ACCURACY) {
-    const double v = (v_ub + v_lb) / 2;
-    if (const double t_v = time_on_edge(v_1, v_2, v, a, d, s); t_v <= t) {
-      v_ub = v;
-      t_lb = t_v;
-    } else {
-      v_lb = v;
-    }
-  }
-
-  return v_ub;
 }
 
 double cda_rail::pos_on_edge_at_time(double v_1, double v_2, double v_line,
@@ -738,60 +458,354 @@ double cda_rail::vel_on_edge_at_time(double v_1, double v_2, double v_line,
   return v_2 - (a2 * (total_time - t));
 }
 
-double cda_rail::braking_distance(double v, double d) {
-  if (v < 0) {
-    throw exceptions::InvalidInputException("Speed must be non-negative.");
+// ---------------------------
+// MOVING AUTHORITY CALCULATIONS
+// ---------------------------
+
+double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
+                                             double s) {
+  // How much time does a train need to move its moving authority forward by s
+  // given initial speed v_0 and acceleration a and deceleration d
+
+  round_small_numbers_to_zero_inplace(v_0, GRB_EPS);
+  round_small_numbers_to_zero_inplace(a, GRB_EPS);
+  if (d < 0 && d > -GRB_EPS) {
+    d = 0;
   }
-  if (d <= EPS) {
-    throw exceptions::InvalidInputException("Deceleration must be positive.");
+  round_small_numbers_to_zero_inplace(s, GRB_EPS);
+
+  // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
+  if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
+    throw exceptions::InvalidInputException(
+        "We need v_0 >= 0, a > 0, d > 0, s >= 0");
   }
 
-  return (v * v) / (2 * d);
+  // ma(t) = v_0*t + 0.5*a*t^2 + (v_0+a*t)^2/(2d) != s + v_0^2/(2d)
+  // -> t = (...) = 2*d*s / (sqrt(2*(a+d)*a*d*s+(a+d)^2*v^2) + (a+d)*v)
+  return s == 0 ? 0
+                : 2 * d * s /
+                      (std::sqrt(2 * (a + d) * a * d * s +
+                                 (a + d) * (a + d) * v_0 * v_0) +
+                       (a + d) * v_0);
 }
 
-double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
-                                                          double v_max,
-                                                          double a, double d,
-                                                          int dt) {
-  /**
-   * Calculates the maximum position of the braking point after dt seconds.
-   * The movement within the dt seconds is linear, i.e., the acceleration is
-   * constant.
-   *
-   * @param v_0 Initial speed
-   * @param v_max Maximum speed
-   * @param a Acceleration
-   * @param d Deceleration
-   * @param dt Time in seconds
-   */
-  round_towards_zero(v_0);
-  round_towards_zero(v_max);
-  round_towards_zero(a);
-  round_towards_zero(d);
-  if (std::abs(v_0 - v_max) < EPS) {
-    v_max = v_0;
+double cda_rail::min_time_to_push_ma_backward(double v_0, double a, double d,
+                                              double s) {
+  round_small_numbers_to_zero_inplace(v_0, GRB_EPS);
+  round_small_numbers_to_zero_inplace(a, GRB_EPS);
+  if (d < 0 && d > -GRB_EPS) {
+    d = 0;
+  }
+  round_small_numbers_to_zero_inplace(s, GRB_EPS);
+
+  // Assert that v_0 >= 0, a >= 0, d > 0, s > 0
+  if (v_0 < 0 || a < 0 || d <= 0 || s < 0) {
+    throw exceptions::InvalidInputException(
+        "We need v_0 >= 0, a >= 0, d > 0, s >= 0");
   }
 
-  if (dt < 0) {
-    throw exceptions::InvalidInputException("Time must be non-negative.");
-  }
-  if (v_0 < 0) {
+  // Assert that s <= v_0^2/(2d)
+  if (s > v_0 * v_0 / (2 * d) + GRB_EPS) {
     throw exceptions::InvalidInputException(
-        "Initial speed must be non-negative.");
-  }
-  if (v_max < v_0) {
-    throw exceptions::InvalidInputException(
-        "Maximum speed must be greater than or equal to initial speed.");
-  }
-  if (a <= 0) {
-    throw exceptions::InvalidInputException("Acceleration must be positive.");
-  }
-  if (d <= 0) {
-    throw exceptions::InvalidInputException("Deceleration must be positive.");
+        "s must be less than or equal to v_0^2/(2d)");
   }
 
-  const double v_1 = std::min(v_max, v_0 + a * dt);
-  const double x_1 = (v_0 + v_1) * dt / 2; // Distance travelled in dt seconds
-  const double bd  = braking_distance(v_1, d); // Braking distance at v_1
-  return x_1 + bd; // Maximum position of the braking point
+  if (std::abs(v_0 * v_0 / (2 * d) - s) < GRB_EPS) {
+    // More stable version in this special case
+    return min_time_to_push_ma_fully_backward(v_0, a, d);
+  }
+
+  // Solve (v_0-a*t)^2/(2d) + s = v_0*t - 0.5*a*t + v_0^2/(2d)
+  // WolframAlpha: solve for t: (v-a*t)^2/(2*b)+s=v*t-0.5*a*t^2+v^2/(2*b), v>0,
+  // t>0, a>0, b>0, s>0, s<v^2/(2*b), t<v/a
+  // -> t = v/a - sqrt((b v^2 + a (-2 b s + v^2))/(a^2 (a + b)))
+  // -> t = (v - sqrt(-(2 a b s)/(a + b) + v^2))/a
+  // Numerical stable version: t = 2*b*s/((a+b)*(v+sqrt(v^2-2*a*b*s/(a+b))))
+  // Return 0 if v=0 and s = 0
+  // using b=d in wolframalpha to prevent conversion to day
+
+  if (v_0 == 0 || s == 0) {
+    return 0;
+  }
+
+  return 2 * d * s /
+         ((a + d) * (v_0 + std::sqrt(v_0 * v_0 - 2 * a * d * s / (a + d))));
+}
+
+double cda_rail::min_time_to_push_ma_fully_backward(double v_0, double a,
+                                                    double d) {
+  // Simplified version if s is the full braking distance
+  // solve for t : (v-a*t)^2/(2*b) = v * t - 0.5 * a * t^2
+  // -> t = (v + (a v)/b - (sqrt(a + b) v)/sqrt(b))/(a + a^2/b)
+  // -> t = ((-sqrt(b) + sqrt(a + b)) v)/(a sqrt(a + b))
+  // -> t = v / (a + b + sqrt(b*(a+b)))
+  // Again b is replaced with the deceleration
+
+  round_small_numbers_to_zero_inplace(v_0, GRB_EPS);
+  round_small_numbers_to_zero_inplace(a, GRB_EPS);
+  if (d < 0 && d > -GRB_EPS) {
+    d = 0;
+  }
+
+  // Assert that v_0 >= 0, a >= 0, d > 0
+  if (v_0 < 0 || a < 0 || d <= 0) {
+    throw exceptions::InvalidInputException("We need v_0 >= 0, a >= 0, d > 0");
+  }
+
+  return v_0 / (a + d + std::sqrt(d * (a + d)));
+}
+
+double cda_rail::min_time_from_front_to_ma_point(double v_1, double v_2,
+                                                 double v_m, double a, double d,
+                                                 double s, double obd) {
+  const auto s_points =
+      get_min_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d, s);
+  const auto& s_1 = s_points.first;
+  const auto& s_2 = s_points.second;
+
+  round_small_numbers_to_zero_inplace(obd, GRB_EPS);
+  if (obd < 0) {
+    throw exceptions::InvalidInputException(
+        "obd must be greater than or equal 0.");
+  }
+  if (obd == 0) {
+    return min_travel_time(v_1, v_2, v_m, a, d, s);
+  }
+
+  const double bd_1  = v_1 * v_1 / (2 * d); // Distance to stop
+  const double bd_2  = v_2 * v_2 / (2 * d); // Distance to stop
+  const double ubd_1 = s + bd_2 - obd - bd_1;
+
+  if (ubd_1 < -GRB_EPS) {
+    throw exceptions::ConsistencyException(
+        "obd is too large for the given edge and speed profile.");
+  }
+
+  // Is the relevant point within the constant phase or acceleration (Note:
+  // deceleration does not change ma)
+  if (s_2 - s_1 >= obd) {
+    // Point is at s_2 - obd
+    return min_travel_time_from_start(v_1, v_2, v_m, a, d, s, s_2 - obd);
+  }
+  return min_time_to_push_ma_forward(v_1, a, d, ubd_1);
+}
+
+double cda_rail::max_time_from_front_to_ma_point(double v_1, double v_2,
+                                                 double v_m, double a, double d,
+                                                 double s, double obd,
+                                                 bool stopping_allowed) {
+  return stopping_allowed
+             ? max_time_from_front_to_ma_point_stopping_allowed(v_1, v_2, a, d,
+                                                                s, obd)
+             : max_time_from_front_to_ma_point_no_stopping(v_1, v_2, v_m, a, d,
+                                                           s, obd);
+}
+
+double cda_rail::max_time_from_front_to_ma_point_no_stopping(
+    double v_1, double v_2, double v_m, double a, double d, double s,
+    double obd) {
+  const auto s_points =
+      get_max_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d, s);
+  const auto& s_1 = s_points.first;
+  const auto& s_2 = s_points.second;
+
+  round_small_numbers_to_zero_inplace(obd, GRB_EPS);
+  if (obd < 0) {
+    throw exceptions::InvalidInputException(
+        "obd must be greater than or equal 0.");
+  }
+
+  const bool v1_below_minimal_speed = v_1 < v_m;
+
+  // Speed at changing point
+  const double v_t_squared =
+      (v_1 * v_1) + (2 * (v1_below_minimal_speed ? a : -d) * s_1);
+  const double v_t = std::sqrt(v_t_squared);
+
+  // Braking distances
+  const double bd_1 = v_1 * v_1 / (2 * d);
+  const double bd_2 = v_2 * v_2 / (2 * d);
+  const double bd_t = v_t_squared / (2 * d);
+
+  const double ma_point = s + bd_2 - obd;
+
+  const double ubd_v1 = ma_point - bd_1;
+  const double ubd_s1 = ma_point - (s_1 + bd_t);
+  const double ubd_s2 = ma_point - (s_2 + bd_t);
+
+  if (ubd_s2 > GRB_EPS) {
+    return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s_2) +
+           min_time_to_push_ma_forward(v_t, a, d, ubd_s2);
+  }
+  if (ubd_s1 > GRB_EPS) {
+    return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s,
+                                                  s_1 + ubd_s1);
+  }
+
+  if (!v1_below_minimal_speed && std::abs(ubd_s1) <= GRB_EPS) {
+    return 0;
+  }
+  assert(v1_below_minimal_speed);
+
+  return min_time_to_push_ma_forward(v_1, a, d, ubd_v1);
+}
+
+double cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
+    double v_1, double v_2, double a, double d, double s, double obd) {
+  if (max_travel_time_stopping_allowed(v_1, v_2, a, d, s) >=
+      std::numeric_limits<double>::infinity()) {
+    return std::numeric_limits<double>::infinity();
+  }
+  return max_time_from_front_to_ma_point_no_stopping(v_1, v_2, 0, a, d, s, obd);
+}
+
+double cda_rail::min_time_from_rear_to_ma_point(
+    double v_1, double v_2, double v_min, double v_max, double a, double d,
+    double s, double obd, cda_rail::MATimingStrategy strategy) {
+  if (strategy == MATimingStrategy::ExtremeProfiles) {
+    const double t1 =
+        max_time_profile_from_rear_to_ma_point(v_1, v_2, v_min, a, d, s, obd);
+    const double t2 =
+        min_time_profile_from_rear_to_ma_point(v_1, v_2, v_max, a, d, s, obd);
+    return std::min(t1, t2);
+  }
+  throw exceptions::InvalidInputException("Invalid strategy.");
+}
+
+double cda_rail::max_time_from_rear_to_ma_point(
+    double v_1, double v_2, double v_min, double v_max, double a, double d,
+    double s, double obd, cda_rail::MATimingStrategy strategy) {
+  if (strategy == MATimingStrategy::ExtremeProfiles) {
+    const double t1 =
+        max_time_profile_from_rear_to_ma_point(v_1, v_2, v_min, a, d, s, obd);
+    const double t2 =
+        min_time_profile_from_rear_to_ma_point(v_1, v_2, v_max, a, d, s, obd);
+    return std::max(t1, t2);
+  }
+  throw exceptions::InvalidInputException("Invalid strategy.");
+}
+
+double cda_rail::min_time_profile_from_rear_to_ma_point(double v_1, double v_2,
+                                                        double v_m, double a,
+                                                        double d, double s,
+                                                        double obd) {
+  return min_travel_time(v_1, v_2, v_m, a, d, s) -
+         min_time_from_front_to_ma_point(v_1, v_2, v_m, a, d, s, obd);
+}
+
+double cda_rail::max_time_profile_from_rear_to_ma_point(double v_1, double v_2,
+                                                        double v_m, double a,
+                                                        double d, double s,
+                                                        double obd) {
+  return max_travel_time_no_stopping(v_1, v_2, v_m, a, d, s) -
+         max_time_from_front_to_ma_point_no_stopping(v_1, v_2, v_m, a, d, s,
+                                                     obd);
+}
+
+// ---------------------------
+// HELPER
+// ---------------------------
+
+void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
+                                              double& a, double& d, double& s,
+                                              double& x) {
+  round_small_numbers_to_zero_inplace(v_1, GRB_EPS);
+  round_small_numbers_to_zero_inplace(v_2, GRB_EPS);
+  round_small_numbers_to_zero_inplace(a, GRB_EPS);
+  round_small_numbers_to_zero_inplace(d, GRB_EPS);
+  round_small_numbers_to_zero_inplace(s, GRB_EPS);
+  round_small_numbers_to_zero_inplace(x, GRB_EPS);
+  if (v_1 < 0 || v_2 < 0 || a < 0 || d < 0 || s < 0 || x < 0) {
+    throw exceptions::ConsistencyException(
+        "All input values must be non-negative.");
+  }
+  if (a < GRB_EPS || d < GRB_EPS) {
+    throw exceptions::ConsistencyException(
+        "Both acceleration and deceleration must be strictly positive.");
+  }
+
+  if (x > s) {
+    throw exceptions::ConsistencyException(
+        "x must be less than or equal to s.");
+  }
+
+  if (!possible_by_eom(v_1, v_2, a, d, s)) {
+    throw exceptions::ConsistencyException(
+        "Entry and exit velocities not possible by equations of motion.");
+  }
+}
+
+bool cda_rail::possible_by_eom(double v_1, double v_2, double a, double d,
+                               double s) {
+  return v_1 <= v_2 ? (v_2 + v_1) * (v_2 - v_1) <= 2 * a * s + GRB_EPS
+                    : (v_1 + v_2) * (v_1 - v_2) <= 2 * d * s + GRB_EPS;
+}
+
+std::pair<double, double>
+cda_rail::get_min_travel_time_acceleration_change_points(double v_1, double v_2,
+                                                         double v_m, double a,
+                                                         double d, double s) {
+  check_consistency_of_eom_input(v_1, v_2, a, d, s, s);
+  if (v_m <= 0) {
+    throw exceptions::ConsistencyException("v_m must be greater than 0.");
+  }
+  if (v_1 > v_m || v_2 > v_m) {
+    throw exceptions::ConsistencyException(
+        "v_m must be greater than or equal to v_1 and v_2.");
+  }
+
+  const double s_1 =
+      (v_m + v_1) * (v_m - v_1) / (2 * a); // Distance to reach maximal speed
+
+  const double s_2 = s - ((v_m + v_2) * (v_m - v_2) / (2 * d));
+
+  if (s_2 >= s_1) {
+    return {s_1, s_2};
+  }
+
+  const double y = (2 * d * s + (v_2 + v_1) * (v_2 - v_1)) / (2 * (a + d));
+  return {y, y};
+}
+
+std::pair<double, double>
+cda_rail::get_max_travel_time_acceleration_change_points(double v_1, double v_2,
+                                                         double v_m, double a,
+                                                         double d, double s) {
+  // v_m is minimal speed in this case
+
+  check_consistency_of_eom_input(v_1, v_2, a, d, s, s);
+  if (v_m < 0) {
+    throw exceptions::ConsistencyException(
+        "v_m must be greater than or equal 0.");
+  }
+
+  const bool v_1_below_minimal_speed = v_1 < v_m;
+  const bool v_2_below_minimal_speed = v_2 < v_m;
+
+  const double s_1 =
+      (v_1 + v_m) * (v_1 - v_m) /
+      (2 *
+       (v_1_below_minimal_speed ? -a : d)); // Distance to reach minimal speed
+
+  const double s_2 = s - ((v_2 + v_m) * (v_2 - v_m) /
+                          (2 * (v_2_below_minimal_speed ? -d : a)));
+
+  if (s_2 >= s_1) {
+    return {s_1, s_2};
+  }
+
+  if (v_1_below_minimal_speed && v_2_below_minimal_speed) {
+    // Very short distance, train cannot reach minimal speed, hence same as
+    // minimal time
+    return get_min_travel_time_acceleration_change_points(v_1, v_2, v_m, a, d,
+                                                          s);
+  }
+
+  assert((!v_1_below_minimal_speed && !v_2_below_minimal_speed));
+
+  const double y = (2 * a * s + (v_1 + v_2) * (v_1 - v_2)) /
+                   (2 * (a + d)); // Distance at which accelerating starts if
+  // minimal speed is not reached
+
+  return {y, y};
 }
