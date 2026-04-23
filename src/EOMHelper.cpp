@@ -48,7 +48,7 @@ template <typename... Args> void round_with_eps(double eps, Args&... args) {
   }
 
   const double radicand =
-      std::max(0.0, square(initial_speed) + 2 * acceleration * distance);
+      std::max(0.0, square(initial_speed) + (2 * acceleration * distance));
   return stable_ratio_with_sqrt(2 * distance, 1.0, radicand, initial_speed);
 }
 
@@ -62,9 +62,9 @@ struct DistancePhases {
 split_distance_by_change_points(double x, double s_1, double s_2, double s) {
   // Refactoring helper: split traveled distance into the 3 profile phases.
   return {
-      std::min(x, s_1),
-      std::clamp(x - s_1, 0.0, s_2 - s_1),
-      std::clamp(x - s_2, 0.0, s - s_2),
+      .first  = std::min(x, s_1),
+      .second = std::clamp(x - s_1, 0.0, s_2 - s_1),
+      .third  = std::clamp(x - s_2, 0.0, s - s_2),
   };
 }
 
@@ -127,9 +127,16 @@ struct LineSpeedProfile {
       std::abs(s - s_1 - s_2) < GRB_EPS ? 0 : (s - s_1 - s_2) / v_line;
   const double total_time = t_1 + t_2_change + cruise_time;
 
-  return {
-      v_1, v_2, v_line, s, total_time, a_1, a_2, t_1, total_time - t_2_change,
-      s_1};
+  return {.v_1        = v_1,
+          .v_2        = v_2,
+          .v_line     = v_line,
+          .s          = s,
+          .total_time = total_time,
+          .a_1        = a_1,
+          .a_2        = a_2,
+          .t_1        = t_1,
+          .t_2        = total_time - t_2_change,
+          .s_1        = s_1};
 }
 
 [[nodiscard]] bool time_is_after_profile_end(double v_1, double v_2,
@@ -187,7 +194,7 @@ double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
   exceptions::throw_if_non_positive(a, "Acceleration");
   exceptions::throw_if_non_positive(d, "Deceleration");
 
-  const double reached_speed      = std::min(v_max, v_0 + a * dt);
+  const double reached_speed      = std::min(v_max, v_0 + (a * dt));
   const double travelled_distance = (v_0 + reached_speed) * dt / 2;
   return travelled_distance + braking_distance(reached_speed, d);
 }
@@ -213,7 +220,7 @@ double cda_rail::min_travel_time_from_start(double v_1, double v_2, double v_m,
 
   const auto [x_1, x_2, x_3] = split_distance_by_change_points(x, s_1, s_2, s);
 
-  const double v_t_squared = square(v_1) + 2 * a * s_1;
+  const double v_t_squared = square(v_1) + (2 * a * s_1);
   const double v_t         = std::sqrt(v_t_squared);
 
   return stable_phase_time(x_1, v_1, a) + (x_2 == 0 ? 0 : x_2 / v_t) +
@@ -276,7 +283,7 @@ double cda_rail::max_travel_time_from_start_no_stopping(double v_1, double v_2,
 
   const double a_1         = v_1_below_minimal_speed ? a : -d;
   const double a_3         = v_2_below_minimal_speed ? -d : a;
-  const double v_t_squared = square(v_1) + 2 * a_1 * s_1;
+  const double v_t_squared = square(v_1) + (2 * a_1 * s_1);
   const double v_t         = std::sqrt(v_t_squared);
 
   return stable_phase_time(x_1, v_1, a_1) + (x_2 == 0 ? 0 : x_2 / v_t) +
@@ -341,7 +348,7 @@ double cda_rail::minimal_line_speed(double v_1, double v_2, double v_min,
   (void)s_2; // unused
 
   const double a_1 = v_1_below_minimal_speed ? a : -d;
-  return std::sqrt(square(v_1) + 2 * a_1 * s_1);
+  return std::sqrt(square(v_1) + (2 * a_1 * s_1));
 }
 
 double cda_rail::maximal_line_speed(double v_1, double v_2, double v_max,
@@ -351,7 +358,7 @@ double cda_rail::maximal_line_speed(double v_1, double v_2, double v_max,
 
   assert(s_2 >= s_1);
 
-  return std::sqrt(square(v_1) + 2 * a * s_1);
+  return std::sqrt(square(v_1) + (2 * a * s_1));
 }
 
 double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
@@ -486,7 +493,7 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
 
   const double a_plus_d = a + d;
   return stable_ratio_with_sqrt(
-      2 * d * s, 1.0, 2 * a_plus_d * a * d * s + square(a_plus_d * v_0),
+      2 * d * s, 1.0, (2 * a_plus_d * a * d * s) + square(a_plus_d * v_0),
       a_plus_d * v_0);
 }
 
@@ -526,7 +533,7 @@ double cda_rail::min_time_to_push_ma_backward(double v_0, double a, double d,
 
   const double a_plus_d = a + d;
   return stable_ratio_with_sqrt(2 * d * s, a_plus_d,
-                                square(v_0) - 2 * a * d * s / a_plus_d, v_0);
+                                square(v_0) - (2 * a * d * s / a_plus_d), v_0);
 }
 
 double cda_rail::min_time_to_push_ma_fully_backward(double v_0, double a,
@@ -607,14 +614,11 @@ double cda_rail::max_time_from_front_to_ma_point_no_stopping(
 
   const double ma_point = s + bd_2 - obd;
 
-  const double ubd_v1 = ma_point - bd_1;
-  const double ubd_s1 = ma_point - (s_1 + bd_t);
-  const double ubd_s2 = ma_point - (s_2 + bd_t);
-
-  if (ubd_s2 > GRB_EPS) {
+  if (const double ubd_s2 = ma_point - (s_2 + bd_t); ubd_s2 > GRB_EPS) {
     return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s_2) +
            min_time_to_push_ma_forward(v_t, a, d, ubd_s2);
   }
+  const double ubd_s1 = ma_point - (s_1 + bd_t);
   if (ubd_s1 > GRB_EPS) {
     return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s,
                                                   s_1 + ubd_s1);
@@ -625,7 +629,7 @@ double cda_rail::max_time_from_front_to_ma_point_no_stopping(
   }
   assert(v1_below_minimal_speed);
 
-  return min_time_to_push_ma_forward(v_1, a, d, ubd_v1);
+  return min_time_to_push_ma_forward(v_1, a, d, ma_point - bd_1);
 }
 
 double cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
@@ -712,8 +716,8 @@ void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
 
 bool cda_rail::possible_by_eom(double v_1, double v_2, double a, double d,
                                double s) {
-  return v_1 <= v_2 ? square(v_2) - square(v_1) <= 2 * a * s + GRB_EPS
-                    : square(v_1) - square(v_2) <= 2 * d * s + GRB_EPS;
+  return v_1 <= v_2 ? square(v_2) - square(v_1) <= (2 * a * s) + GRB_EPS
+                    : square(v_1) - square(v_2) <= (2 * d * s) + GRB_EPS;
 }
 
 std::pair<double, double>
@@ -730,13 +734,13 @@ cda_rail::get_min_travel_time_acceleration_change_points(double v_1, double v_2,
   }
 
   const double s_1 = (square(v_m) - square(v_1)) / (2 * a);
-  const double s_2 = s - (square(v_m) - square(v_2)) / (2 * d);
+  const double s_2 = s - ((square(v_m) - square(v_2)) / (2 * d));
 
   if (s_2 >= s_1) {
     return {s_1, s_2};
   }
 
-  const double y = (2 * d * s + square(v_2) - square(v_1)) / (2 * (a + d));
+  const double y = ((2 * d * s) + square(v_2) - square(v_1)) / (2 * (a + d));
   return {y, y};
 }
 
@@ -759,9 +763,9 @@ cda_rail::get_max_travel_time_acceleration_change_points(double v_1, double v_2,
   const double a_2 = v_2_below_minimal_speed ? -d : a;
 
   const double s_1 = (square(v_m) - square(v_1)) / (2 * a_1);
-  const double s_2 = s - (square(v_2) - square(v_m)) / (2 * a_2);
 
-  if (s_2 >= s_1) {
+  if (const double s_2 = s - ((square(v_2) - square(v_m)) / (2 * a_2));
+      s_2 >= s_1) {
     return {s_1, s_2};
   }
 
@@ -774,7 +778,7 @@ cda_rail::get_max_travel_time_acceleration_change_points(double v_1, double v_2,
 
   assert((!v_1_below_minimal_speed && !v_2_below_minimal_speed));
 
-  const double y = (2 * a * s + square(v_1) - square(v_2)) /
+  const double y = ((2 * a * s) + square(v_1) - square(v_2)) /
                    (2 * (a + d)); // Distance at which accelerating starts if
   // minimal speed is not reached
 
