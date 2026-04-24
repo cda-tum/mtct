@@ -188,6 +188,7 @@ public:
    */
   void add_track_to_station(const std::string& name, size_t track);
 
+private:
   /**
    * @brief Adds a track index to a station after validating it in the network.
    *
@@ -198,13 +199,15 @@ public:
    * `network`.
    * @throws exceptions::StationNotExistentException If `name` is unknown.
    */
-  void add_track_to_station(const std::string& name, size_t const track,
-                            const Network& network) {
+  void add_track_to_station_helper(const std::string& name, size_t const track,
+                                   const Network& network) {
     if (!network.has_edge(track)) {
       throw exceptions::EdgeNotExistentException(track);
     }
     add_track_to_station(name, track);
   };
+
+public:
   /**
    * @brief Adds a track specified by source and target vertex indices.
    *
@@ -213,25 +216,10 @@ public:
    * @param target Target vertex index.
    * @param network Network used to resolve the edge index.
    */
-  void add_track_to_station(const std::string& name, size_t const source,
-                            size_t const target, const Network& network) {
-    add_track_to_station(name, network.get_edge_index(source, target), network);
-  };
-
-  /**
-   * @brief Adds a track specified by source and target vertex names.
-   *
-   * @param name Station name.
-   * @param source Source vertex name.
-   * @param target Target vertex name.
-   * @param network Network used to resolve the edge index.
-   */
-  void add_track_to_station(const std::string& name, const std::string& source,
-                            const std::string& target, const Network& network) {
-    add_track_to_station(name,
-                         network.get_edge_index(std::string_view(source),
-                                                std::string_view(target)),
-                         network);
+  void add_track_to_station(const std::string&                  name,
+                            cda_rail::Network::EdgeInput const& edge,
+                            const Network&                      network) {
+    add_track_to_station_helper(name, edge.resolve(&network), network);
   };
 
   /*

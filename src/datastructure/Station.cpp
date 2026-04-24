@@ -77,8 +77,9 @@ cda_rail::StationList::StationList(std::filesystem::path const& p,
        const auto& [name, edges] : data.items()) {
     this->add_empty_station(name);
     for (const auto& edge : edges) {
-      this->add_track_to_station(name, edge.at(0).get<std::string>(),
-                                 edge.at(1).get<std::string>(), network);
+      this->add_track_to_station(
+          name, {edge.at(0).get<std::string>(), edge.at(1).get<std::string>()},
+          network);
     }
   }
 }

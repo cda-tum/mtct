@@ -31,10 +31,10 @@ TEST(Functionality, WriteStations) {
 
   const auto& l0_l1 = network.get_edge_index({"l0"}, {"l1"});
 
-  stations.add_track_to_station("S1", "l0", "l1", network);
-  stations.add_track_to_station("S1", "l0", "l1", network);
-  stations.add_track_to_station("S2", "l0", "l1", network);
-  stations.add_track_to_station("S2", "l1", "l2", network);
+  stations.add_track_to_station("S1", {"l0", "l1"}, network);
+  stations.add_track_to_station("S1", {"l0", "l1"}, network);
+  stations.add_track_to_station("S2", {"l0", "l1"}, network);
+  stations.add_track_to_station("S2", {"l1", "l2"}, network);
 
   EXPECT_THROW((void)stations.get_station("S3"),
                cda_rail::exceptions::StationNotExistentException);
