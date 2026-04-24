@@ -102,7 +102,7 @@ void cda_rail::TrainList::export_trains(std::filesystem::path const& p) const {
     j[train.get_name()] = {{"length", train.get_length()},
                            {"max_speed", train.get_max_speed()},
                            {"acceleration", train.get_acceleration()},
-                           {"deceleration", train.get_acceleration()},
+                           {"deceleration", train.get_deceleration()},
                            {"tim", train.has_tim()}};
   }
 
