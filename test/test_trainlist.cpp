@@ -44,8 +44,8 @@ TEST(Functionality, WriteTrains) {
   // Create a train list
   auto       trains    = cda_rail::TrainList();
   const auto tr1_index = trains.add_train("tr1", 100, 83.33, 2, 1);
-  const auto tr2_index = trains.add_train("tr2", 100, 27.78, 2, 1);
-  const auto tr3_index = trains.add_train("tr3", 250, 20, 2, 1);
+  const auto tr2_index = trains.add_train("tr2", 100, 27.78, 4, 7);
+  const auto tr3_index = trains.add_train("tr3", 250, 20, 6, 3);
 
   // check the train indices
   EXPECT_EQ(trains.get_train_index("tr1"), tr1_index);
@@ -82,8 +82,8 @@ TEST(Functionality, WriteTrains) {
   EXPECT_EQ(tr2.get_name(), "tr2");
   EXPECT_EQ(tr2.get_length(), 100);
   EXPECT_EQ(tr2.get_max_speed(), 27.78);
-  EXPECT_EQ(tr2.get_acceleration(), 2);
-  EXPECT_EQ(tr2.get_deceleration(), 1);
+  EXPECT_EQ(tr2.get_acceleration(), 4);
+  EXPECT_EQ(tr2.get_deceleration(), 7);
   EXPECT_TRUE(tr2.has_tim());
 
   // Check if the train tr3 is imported correctly
@@ -91,8 +91,8 @@ TEST(Functionality, WriteTrains) {
   EXPECT_EQ(tr3.get_name(), "tr3");
   EXPECT_EQ(tr3.get_length(), 250);
   EXPECT_EQ(tr3.get_max_speed(), 20);
-  EXPECT_EQ(tr3.get_acceleration(), 2);
-  EXPECT_EQ(tr3.get_deceleration(), 1);
+  EXPECT_EQ(tr3.get_acceleration(), 6);
+  EXPECT_EQ(tr3.get_deceleration(), 3);
   EXPECT_TRUE(tr3.has_tim());
 }
 
