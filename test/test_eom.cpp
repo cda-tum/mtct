@@ -1525,3 +1525,28 @@ TEST(EoM, EoMBraking) {
   EXPECT_EQ(cda_rail::braking_distance(2, 2), 1);
   EXPECT_EQ(cda_rail::braking_distance(3, 2), 9.0 / 4.0);
 }
+
+TEST(EoM, EoMMaxBrakingPosAfterDtLinearMovement) {
+  EXPECT_THROW(
+      cda_rail::max_braking_pos_after_dt_linear_movement(1, 2, 1, 1, -1),
+      cda_rail::exceptions::InvalidInputException);
+
+  // Speed does not reach v_max within dt.
+  EXPECT_APPROX_EQ(
+      cda_rail::max_braking_pos_after_dt_linear_movement(2, 10, 2, 2, 3), 31);
+
+  // Speed reaches v_max before dt ends.
+  EXPECT_APPROX_EQ(
+      cda_rail::max_braking_pos_after_dt_linear_movement(2, 5, 2, 2, 3), 16.75);
+}
+
+TEST(EoM, EoMMinimalTravelTimeEdgeCases) {
+  // Only acceleration (no cruising and no deceleration phase).
+  EXPECT_APPROX_EQ(cda_rail::min_travel_time(2, 4, 10, 1, 2, 6), 2);
+
+  // Only deceleration (no cruising and no acceleration phase).
+  EXPECT_APPROX_EQ(cda_rail::min_travel_time(4, 2, 10, 1, 1, 6), 2);
+
+  // Accelerate and immediately decelerate (no cruising phase).
+  EXPECT_APPROX_EQ(cda_rail::min_travel_time(2, 2, 10, 1, 1, 5), 2);
+}
