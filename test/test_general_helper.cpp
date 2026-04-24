@@ -308,4 +308,28 @@ TEST(GeneralHelper, BoolOptionalString) {
   EXPECT_FALSE(opt_bool.value());
 }
 
+TEST(Functionality, IsDirectory) {
+  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory"));
+  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory"));
+  std::filesystem::remove_all("./tmp");
+  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory/"));
+  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory/"));
+  std::filesystem::remove_all("./tmp");
+  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/"));
+  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/"));
+  std::filesystem::remove_all("./tmp");
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory\)"));
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory\)"));
+  std::filesystem::remove_all("./tmp");
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory)"));
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory)"));
+  std::filesystem::remove_all("./tmp");
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\)"));
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\)"));
+  std::filesystem::remove_all("./tmp");
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp)"));
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp)"));
+  std::filesystem::remove_all("./tmp");
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
