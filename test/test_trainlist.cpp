@@ -14,30 +14,30 @@ TEST(Functionality, ReadTrains) {
 
   // Check if the train tr1 is imported correctly
   auto tr1 = trains.get_train("tr1");
-  EXPECT_EQ(tr1.name, "tr1");
-  EXPECT_EQ(tr1.length, 100);
-  EXPECT_EQ(tr1.max_speed, 83.33);
-  EXPECT_EQ(tr1.acceleration, 2);
-  EXPECT_EQ(tr1.deceleration, 1);
-  EXPECT_TRUE(tr1.tim);
+  EXPECT_EQ(tr1.get_name(), "tr1");
+  EXPECT_EQ(tr1.get_length(), 100);
+  EXPECT_EQ(tr1.get_max_speed(), 83.33);
+  EXPECT_EQ(tr1.get_acceleration(), 2);
+  EXPECT_EQ(tr1.get_deceleration(), 1);
+  EXPECT_TRUE(tr1.has_tim());
 
   // Check if the train tr2 is imported correctly
   auto tr2 = trains.get_train("tr2");
-  EXPECT_EQ(tr2.name, "tr2");
-  EXPECT_EQ(tr2.length, 100);
-  EXPECT_EQ(tr2.max_speed, 27.78);
-  EXPECT_EQ(tr2.acceleration, 2);
-  EXPECT_EQ(tr2.deceleration, 1);
-  EXPECT_TRUE(tr2.tim);
+  EXPECT_EQ(tr2.get_name(), "tr2");
+  EXPECT_EQ(tr2.get_length(), 100);
+  EXPECT_EQ(tr2.get_max_speed(), 27.78);
+  EXPECT_EQ(tr2.get_acceleration(), 2);
+  EXPECT_EQ(tr2.get_deceleration(), 1);
+  EXPECT_TRUE(tr2.has_tim());
 
   // Check if the train tr3 is imported correctly
   auto tr3 = trains.get_train("tr3");
-  EXPECT_EQ(tr3.name, "tr3");
-  EXPECT_EQ(tr3.length, 250);
-  EXPECT_EQ(tr3.max_speed, 20);
-  EXPECT_EQ(tr3.acceleration, 2);
-  EXPECT_EQ(tr3.deceleration, 1);
-  EXPECT_TRUE(tr3.tim);
+  EXPECT_EQ(tr3.get_name(), "tr3");
+  EXPECT_EQ(tr3.get_length(), 250);
+  EXPECT_EQ(tr3.get_max_speed(), 20);
+  EXPECT_EQ(tr3.get_acceleration(), 2);
+  EXPECT_EQ(tr3.get_deceleration(), 1);
+  EXPECT_TRUE(tr3.has_tim());
 }
 
 TEST(Functionality, WriteTrains) {
@@ -70,30 +70,30 @@ TEST(Functionality, WriteTrains) {
 
   // Check if the train tr1 is imported correctly
   auto tr1 = trains_read.get_train("tr1");
-  EXPECT_EQ(tr1.name, "tr1");
-  EXPECT_EQ(tr1.length, 100);
-  EXPECT_EQ(tr1.max_speed, 83.33);
-  EXPECT_EQ(tr1.acceleration, 2);
-  EXPECT_EQ(tr1.deceleration, 1);
-  EXPECT_TRUE(tr1.tim);
+  EXPECT_EQ(tr1.get_name(), "tr1");
+  EXPECT_EQ(tr1.get_length(), 100);
+  EXPECT_EQ(tr1.get_max_speed(), 83.33);
+  EXPECT_EQ(tr1.get_acceleration(), 2);
+  EXPECT_EQ(tr1.get_deceleration(), 1);
+  EXPECT_TRUE(tr1.has_tim());
 
   // Check if the train tr2 is imported correctly
   auto tr2 = trains_read.get_train("tr2");
-  EXPECT_EQ(tr2.name, "tr2");
-  EXPECT_EQ(tr2.length, 100);
-  EXPECT_EQ(tr2.max_speed, 27.78);
-  EXPECT_EQ(tr2.acceleration, 2);
-  EXPECT_EQ(tr2.deceleration, 1);
-  EXPECT_TRUE(tr2.tim);
+  EXPECT_EQ(tr2.get_name(), "tr2");
+  EXPECT_EQ(tr2.get_length(), 100);
+  EXPECT_EQ(tr2.get_max_speed(), 27.78);
+  EXPECT_EQ(tr2.get_acceleration(), 2);
+  EXPECT_EQ(tr2.get_deceleration(), 1);
+  EXPECT_TRUE(tr2.has_tim());
 
   // Check if the train tr3 is imported correctly
   auto tr3 = trains_read.get_train("tr3");
-  EXPECT_EQ(tr3.name, "tr3");
-  EXPECT_EQ(tr3.length, 250);
-  EXPECT_EQ(tr3.max_speed, 20);
-  EXPECT_EQ(tr3.acceleration, 2);
-  EXPECT_EQ(tr3.deceleration, 1);
-  EXPECT_TRUE(tr3.tim);
+  EXPECT_EQ(tr3.get_name(), "tr3");
+  EXPECT_EQ(tr3.get_length(), 250);
+  EXPECT_EQ(tr3.get_max_speed(), 20);
+  EXPECT_EQ(tr3.get_acceleration(), 2);
+  EXPECT_EQ(tr3.get_deceleration(), 1);
+  EXPECT_TRUE(tr3.has_tim());
 }
 
 TEST(Functionality, EditTrains) {
@@ -101,23 +101,23 @@ TEST(Functionality, EditTrains) {
   auto       trains    = cda_rail::TrainList();
   const auto tr1_index = trains.add_train("tr1", 100, 83.33, 2, 1, false);
 
-  EXPECT_EQ(trains.get_train("tr1").length, 100);
-  EXPECT_EQ(trains.get_train(tr1_index).max_speed, 83.33);
-  EXPECT_EQ(trains.get_train("tr1").acceleration, 2);
-  EXPECT_EQ(trains.get_train(tr1_index).deceleration, 1);
-  EXPECT_FALSE(trains.get_train("tr1").tim);
+  EXPECT_EQ(trains.get_train("tr1").get_length(), 100);
+  EXPECT_EQ(trains.get_train(tr1_index).get_max_speed(), 83.33);
+  EXPECT_EQ(trains.get_train("tr1").get_acceleration(), 2);
+  EXPECT_EQ(trains.get_train(tr1_index).get_deceleration(), 1);
+  EXPECT_FALSE(trains.get_train("tr1").has_tim());
 
-  trains.editable_train("tr1").length           = 200;
-  trains.editable_train(tr1_index).max_speed    = 50;
-  trains.editable_train("tr1").acceleration     = 3;
-  trains.editable_train(tr1_index).deceleration = 2;
-  trains.editable_train("tr1").tim              = true;
+  trains.editable_train("tr1").set_length(200);
+  trains.editable_train(tr1_index).set_max_speed(50);
+  trains.editable_train("tr1").set_acceleration(3);
+  trains.editable_train(tr1_index).set_deceleration(2);
+  trains.editable_train("tr1").set_tim();
 
-  EXPECT_EQ(trains.get_train("tr1").length, 200);
-  EXPECT_EQ(trains.get_train(tr1_index).max_speed, 50);
-  EXPECT_EQ(trains.get_train("tr1").acceleration, 3);
-  EXPECT_EQ(trains.get_train(tr1_index).deceleration, 2);
-  EXPECT_TRUE(trains.get_train("tr1").tim);
+  EXPECT_EQ(trains.get_train("tr1").get_length(), 200);
+  EXPECT_EQ(trains.get_train(tr1_index).get_max_speed(), 50);
+  EXPECT_EQ(trains.get_train("tr1").get_acceleration(), 3);
+  EXPECT_EQ(trains.get_train(tr1_index).get_deceleration(), 2);
+  EXPECT_TRUE(trains.get_train("tr1").has_tim());
 }
 
 TEST(Functionality, TrainExceptions) {
