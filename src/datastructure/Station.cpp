@@ -2,6 +2,7 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "GeneralHelper.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
@@ -147,7 +148,7 @@ void cda_rail::StationList::export_stations(const std::filesystem::path& p,
       edges.emplace_back(network.get_vertex(edge.source).name,
                          network.get_vertex(edge.target).name);
     }
-    j.at(station->name) = edges;
+    j[station->name] = edges;
   }
 
   std::ofstream file(p / "stations.json");

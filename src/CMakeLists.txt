@@ -16,8 +16,8 @@ add_library(
   datastructure/Train.cpp
   # ${PROJECT_SOURCE_DIR}/include/datastructure/Timetable.hpp
   # datastructure/Timetable.cpp
-  # ${PROJECT_SOURCE_DIR}/include/datastructure/Station.hpp
-  # datastructure/Station.cpp
+  ${PROJECT_SOURCE_DIR}/include/datastructure/Station.hpp
+  datastructure/Station.cpp
   # ${PROJECT_SOURCE_DIR}/include/datastructure/Route.hpp
   # datastructure/Route.cpp
   # ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralProblemInstance.hpp

@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -227,7 +228,10 @@ public:
    */
   void add_track_to_station(const std::string& name, const std::string& source,
                             const std::string& target, const Network& network) {
-    add_track_to_station(name, network.get_edge_index(source, target), network);
+    add_track_to_station(name,
+                         network.get_edge_index(std::string_view(source),
+                                                std::string_view(target)),
+                         network);
   };
 
   /*
