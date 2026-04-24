@@ -117,9 +117,9 @@ public:
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
-  [[nodiscard]] constexpr auto cbegin() const { return stations.cbegin(); };
-  [[nodiscard]] constexpr auto cend() const { return stations.cend(); };
-  [[nodiscard]] size_t         size() const { return stations.size(); };
+  [[nodiscard]] auto   cbegin() const { return stations.cbegin(); };
+  [[nodiscard]] auto   cend() const { return stations.cend(); };
+  [[nodiscard]] size_t size() const { return stations.size(); };
 
   /*
    * GETTER
