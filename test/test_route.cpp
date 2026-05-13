@@ -115,8 +115,7 @@ TEST(RouteFunctionality, ContainsEdgeSupportsInputAndOptionalOverloads) {
   cda_rail::Route route;
   route.push_back_edge(e0, network);
 
-  EXPECT_TRUE(
-      route.contains_edge(cda_rail::Network::EdgeInput{"v0", "v1"}, network));
+  EXPECT_TRUE(route.contains_edge({"v0", "v1"}, network));
   EXPECT_TRUE(route.contains_edge(std::optional<size_t>{e0}));
   EXPECT_FALSE(route.contains_edge(std::optional<size_t>{e1}));
   EXPECT_FALSE(route.contains_edge(std::optional<size_t>{}));
