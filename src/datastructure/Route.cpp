@@ -35,13 +35,6 @@ using std::size_t;
 // Getter
 
 double cda_rail::Route::length(const Network& network) const {
-  /***
-   * Returns the length of the route, i.e., the sum of the lengths of all edges.
-   * Throws an error if an edge does not exist in the network.
-   *
-   * @param network The network to which the route belongs.
-   * @return The length of the route.
-   */
   const auto edge_lengths =
       m_edges | std::views::transform([&network](size_t edge) {
         return network.get_edge(edge).length;
@@ -52,15 +45,6 @@ double cda_rail::Route::length(const Network& network) const {
 cda_rail::Route::EdgePosition
 cda_rail::Route::edge_pos_on_route(Network::EdgeInput const& edge,
                                    const Network&            network) const {
-  /**
-   * Returns the position of the given edge in the route, i.e., the distance
-   * from the route start to the source and target respectively.
-   *
-   * @param edge The edge to get the position of.
-   * @param network The network to which the edge belongs.
-   * @return The position of the edge in the route.
-   */
-
   auto const edge_id = edge.resolve(&network);
 
   if (!network.has_edge(edge_id)) {
@@ -88,17 +72,6 @@ cda_rail::Route::edge_pos_on_route(Network::EdgeInput const& edge,
 cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
     const cda_rail::index_vector& edges_to_consider,
     const Network&                network) const {
-  /**
-   * Returns the minimal start and maximal end position of the given
-   * edges_to_consider in the route. Throws an error only if none of the
-   * edges_to_consider exists in the route.
-   *
-   * @param edges_to_consider The edges to consider.
-   * @param network The network to which the edges belong.
-   *
-   * @return Start and end location of edge within the route.
-   */
-
   const std::unordered_set<size_t> considered_edges(edges_to_consider.begin(),
                                                     edges_to_consider.end());
 
@@ -126,29 +99,11 @@ cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
 
 std::optional<double> cda_rail::Route::get_first_pos_on_edges(
     const cda_rail::index_vector& edge_indices, const Network& network) const {
-  /**
-   * This functions returns the position at the beginning of the first route
-   * edge that is part of edge_indices.
-   *
-   * @param edge_indices The edge indices to consider.
-   * @param network The network to which the route belongs.
-   * @return The position at the beginning of the first route edge that is part
-   * of edge_indices
-   */
   return get_pos_on_edges_impl(edge_indices, network, true);
 }
 
 std::optional<double> cda_rail::Route::get_last_pos_on_edges(
     const cda_rail::index_vector& edge_indices, const Network& network) const {
-  /**
-   * This functions returns the position at the end of the last route edge that
-   * is part of edge_indices.
-   *
-   * @param edge_indices The edge indices to consider.
-   * @param network The network to which the route belongs.
-   * @return The position at the end of the last route edge that is part of
-   * edge_indices.
-   */
   return get_pos_on_edges_impl(edge_indices, network, false);
 }
 
@@ -175,27 +130,12 @@ cda_rail::Route::get_edge_id_at_pos(double                   pos,
 }
 
 size_t cda_rail::Route::get_edge_id(size_t route_index) const {
-  /**
-   * Returns the edge at the given index.
-   * Throws an error if the index is out of range.
-   *
-   * @param route_index The index of the edge to return.
-   * @return The edge index at the given index.
-   */
   ensure_route_index(route_index);
   return m_edges.at(route_index);
 }
 
 const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
                                                 const Network& network) const {
-  /**
-   * Returns the edge at the given index.
-   * Throws an error if the index is out of range.
-   *
-   * @param route_index The index of the edge to return.
-   * @param network The network to which the edge belongs.
-   * @return The edge at the given index.
-   */
   ensure_route_index(route_index);
   return network.get_edge(m_edges.at(route_index));
 }
@@ -204,15 +144,6 @@ const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
 
 void cda_rail::Route::push_back_edge(Network::EdgeInput const& new_edge,
                                      const Network&            network) {
-  /**
-   * Adds the edge to the end of the route.
-   * Throws an error if the edge does not exist in the network or is not a valid
-   * successor of the last edge.
-   *
-   * @param new_edge The new edge to append
-   * @param network The network to which the edge belongs.
-   */
-
   auto const edge_index = new_edge.resolve(&network);
   if (!m_edges.empty() &&
       !network.is_valid_successor(m_edges.back(), edge_index)) {
@@ -223,15 +154,6 @@ void cda_rail::Route::push_back_edge(Network::EdgeInput const& new_edge,
 
 void cda_rail::Route::push_front_edge(Network::EdgeInput const& new_edge,
                                       const Network&            network) {
-  /**
-   * Adds the edge to the beginning of the route.
-   * Throws an error if the edge does not exist in the network or is not a valid
-   * predecessor of the first edge.
-   *
-   * @param edge_index The index of the edge to add.
-   * @param network The network to which the edge belongs.
-   */
-
   auto const edge_index = new_edge.resolve(&network);
 
   if (!m_edges.empty() &&
@@ -242,10 +164,6 @@ void cda_rail::Route::push_front_edge(Network::EdgeInput const& new_edge,
 }
 
 void cda_rail::Route::remove_first_edge() {
-  /**
-   * Removes the first edge from the route.
-   * Throws an error if the route is empty.
-   */
   if (!has_edges()) {
     throw exceptions::ConsistencyException("Route is empty.");
   }
@@ -253,10 +171,6 @@ void cda_rail::Route::remove_first_edge() {
 }
 
 void cda_rail::Route::remove_last_edge() {
-  /**
-   * Removes the last edge from the route.
-   * Throws an error if the route is empty.
-   */
   if (!has_edges()) {
     throw exceptions::ConsistencyException("Route is empty.");
   }
@@ -266,16 +180,6 @@ void cda_rail::Route::remove_last_edge() {
 // HELPER
 
 bool cda_rail::Route::check_consistency(const Network& network) const {
-  /**
-   * Asserts if the route is valid for the given network.
-   * A route is valid if all edges exist in the network and if all edges are
-   * valid successors of the previous edge. An empty route is valid. Returns
-   * true if the route is valid, false otherwise. Throws an error if an edge
-   * does not exist in the network.
-   *
-   * @param network The network to which the route belongs.
-   * @return True if the route is valid, false otherwise.
-   */
   return std::ranges::adjacent_find(
              m_edges, [&network](size_t edge, size_t successor) {
                return !network.is_valid_successor(edge, successor);
@@ -284,14 +188,6 @@ bool cda_rail::Route::check_consistency(const Network& network) const {
 
 void cda_rail::Route::update_after_discretization(
     const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
-  /**
-   * This method updates the route after the discretization of the network
-   * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
-   * ..., v_n.
-   *
-   * @param new_edges The new edges of the network.
-   */
-
   std::unordered_map<size_t, const cda_rail::index_vector*> replacement_map;
   replacement_map.reserve(new_edges.size());
   for (const auto& [old_edge, replacement_edges] : new_edges) {
