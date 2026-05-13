@@ -187,7 +187,7 @@ TEST(StationList, GetStopTracksForwardsToStationAndThrowsForUnknownStation) {
 
 // Old tests
 
-TEST(Functionality, ReadStation) {
+TEST(StationFunctionality, ReadStation) {
   auto network  = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto stations = cda_rail::StationList::import_stations(
       "./example-networks/SimpleStation/timetable/", network);
@@ -207,7 +207,7 @@ TEST(Functionality, ReadStation) {
   EXPECT_EQ(station.tracks, track_ids);
 }
 
-TEST(Functionality, WriteStations) {
+TEST(StationFunctionality, WriteStations) {
   auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   cda_rail::StationList stations;
 
@@ -250,4 +250,20 @@ TEST(Functionality, WriteStations) {
   cda_rail::index_set s2_tracks_target{network.get_edge_index({"l0"}, {"l1"}),
                                        network.get_edge_index({"l1"}, {"l2"})};
   EXPECT_EQ(s2.tracks, s2_tracks_target);
+}
+
+TEST(StationFunctionality, IsFullyInStation) {
+  cda_rail::StationList stations;
+
+  stations.add_empty_station("Station1");
+
+  stations.add_track_to_station("Station1", 0);
+  stations.add_track_to_station("Station1", 1);
+  stations.add_track_to_station("Station1", 3);
+
+  EXPECT_TRUE(stations.is_fully_in_station("Station1", {0}));
+  EXPECT_TRUE(stations.is_fully_in_station("Station1", {1}));
+  EXPECT_TRUE(stations.is_fully_in_station("Station1", {0, 1}));
+  EXPECT_TRUE(stations.is_fully_in_station("Station1", {0, 1, 3}));
+  EXPECT_FALSE(stations.is_fully_in_station("Station1", {0, 2}));
 }

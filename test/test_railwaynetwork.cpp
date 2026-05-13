@@ -3660,6 +3660,125 @@ TEST(RailwayNetwork, ShortestPathsBetweenSets) {
       cda_rail::exceptions::EdgeNotExistentException);
 }
 
+TEST(RailwayNetwork, NetworkRouteLenHelper) {
+  cda_rail::Network network;
+
+  network.add_vertex("v0", cda_rail::VertexType::TTD);
+  network.add_vertex("v1", cda_rail::VertexType::TTD);
+  network.add_vertex("v2", cda_rail::VertexType::TTD);
+  network.add_vertex("v3", cda_rail::VertexType::TTD);
+
+  const auto e1 = network.add_edge({"v1"}, {"v2"}, 20, 5, false);
+  const auto e2 = network.add_edge({"v2"}, {"v3"}, 30, 5, false);
+  const auto e0 = network.add_edge({"v0"}, {"v1"}, 10, 5, false);
+
+  EXPECT_EQ(network.length_of_path({e0, e1, e2}), 60);
+  EXPECT_EQ(network.length_of_path({e1, e2}), 50);
+  EXPECT_EQ(network.length_of_path({e0, e1}), 30);
+  EXPECT_EQ(network.length_of_path({e2}), 30);
+  EXPECT_EQ(network.length_of_path({e1}), 20);
+  EXPECT_EQ(network.length_of_path({e0}), 10);
+  EXPECT_EQ(network.length_of_path({}), 0);
+  EXPECT_THROW((void)network.length_of_path({e0, e1, 1000, e2}),
+               cda_rail::exceptions::EdgeNotExistentException);
+}
+
+TEST(RailwayNetwork, NetworkNextTTD) {
+  cda_rail::Network network;
+  const auto        v0 = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto        v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2  = network.add_vertex("v2", cda_rail::VertexType::NoBorder);
+  const auto v3a = network.add_vertex("v3a", cda_rail::VertexType::TTD);
+  const auto v3b = network.add_vertex("v3b", cda_rail::VertexType::TTD);
+  const auto v4a = network.add_vertex("v4a", cda_rail::VertexType::TTD);
+  const auto v4b = network.add_vertex("v4b", cda_rail::VertexType::TTD);
+  const auto v5  = network.add_vertex("v5", cda_rail::VertexType::NoBorder);
+  const auto v6  = network.add_vertex("v6", cda_rail::VertexType::TTD);
+  const auto v7  = network.add_vertex("v7", cda_rail::VertexType::NoBorder);
+  const auto v8a = network.add_vertex("v8a", cda_rail::VertexType::TTD);
+  const auto v8b = network.add_vertex("v8b", cda_rail::VertexType::TTD);
+  const auto v9a = network.add_vertex("v9a", cda_rail::VertexType::TTD);
+  const auto v9b = network.add_vertex("v9b", cda_rail::VertexType::TTD);
+
+  const auto v0_v1   = network.add_edge(v0, v1, 100, 20, true);
+  const auto v1_v2   = network.add_edge(v1, v2, 10, 20, false);
+  const auto v2_v3a  = network.add_edge(v2, v3a, 10, 20, false);
+  const auto v2_v3b  = network.add_edge(v2, v3b, 10, 20, false);
+  const auto v3a_v4a = network.add_edge(v3a, v4a, 100, 20, true);
+  const auto v3b_v4b = network.add_edge(v3b, v4b, 100, 20, true);
+  const auto v4a_v5  = network.add_edge(v4a, v5, 10, 20, false);
+  const auto v4b_v5  = network.add_edge(v4b, v5, 10, 20, false);
+  const auto v5_v6   = network.add_edge(v5, v6, 10, 20, false);
+  const auto v6_v7   = network.add_edge(v6, v7, 10, 20, false);
+  const auto v7_v8a  = network.add_edge(v7, v8a, 10, 20, false);
+  const auto v7_v8b  = network.add_edge(v7, v8b, 10, 20, false);
+  const auto v8a_v9a = network.add_edge(v8a, v9a, 100, 20, true);
+  const auto v8b_v9b = network.add_edge(v8b, v9b, 100, 20, true);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3a);
+  network.add_successor(v1_v2, v2_v3b);
+  network.add_successor(v2_v3a, v3a_v4a);
+  network.add_successor(v2_v3b, v3b_v4b);
+  network.add_successor(v3a_v4a, v4a_v5);
+  network.add_successor(v3b_v4b, v4b_v5);
+  network.add_successor(v4a_v5, v5_v6);
+  network.add_successor(v4b_v5, v5_v6);
+  network.add_successor(v5_v6, v6_v7);
+  network.add_successor(v6_v7, v7_v8a);
+  network.add_successor(v6_v7, v7_v8b);
+  network.add_successor(v7_v8a, v8a_v9a);
+  network.add_successor(v7_v8b, v8b_v9b);
+
+  const auto& ttd_sections = network.unbreakable_sections();
+  EXPECT_EQ(ttd_sections.size(), 3);
+
+  const auto routing1 =
+      network.all_paths_ending_at_ttd(v0_v1, ttd_sections, v9a);
+  // (v1_v2, v2_v3a, v3a_v3b) and (v1_v2, v2_v3b, v3b_c4b) are two different
+  // paths
+  EXPECT_EQ(routing1.size(), 2);
+  EXPECT_TRUE(std::find(routing1.begin(), routing1.end(),
+                        std::vector<size_t>{v1_v2, v2_v3a, v3a_v4a}) !=
+              routing1.end());
+  EXPECT_TRUE(std::find(routing1.begin(), routing1.end(),
+                        std::vector<size_t>{v1_v2, v2_v3b, v3b_v4b}) !=
+              routing1.end());
+
+  const auto routing2 =
+      network.all_paths_ending_at_ttd(v2_v3a, ttd_sections, v9a);
+  // Expect only (v3a_v4a) as the only path
+  ASSERT_EQ(routing2.size(), 1);
+  EXPECT_EQ(routing2.at(0), std::vector<size_t>({v3a_v4a}));
+
+  const auto routing3 =
+      network.all_paths_ending_at_ttd(v3a_v4a, ttd_sections, v9b);
+  // Expect only (v4a_v5, v5_v6)
+  ASSERT_EQ(routing3.size(), 1);
+  EXPECT_EQ(routing3.at(0), std::vector<size_t>({v4a_v5, v5_v6}));
+
+  const auto routing4 =
+      network.all_paths_ending_at_ttd(v5_v6, ttd_sections, v9b);
+  // Expect only (v6_v7, v7_v8b, v8b_v9b)
+  ASSERT_EQ(routing4.size(), 1);
+  EXPECT_EQ(routing4.at(0), std::vector<size_t>({v6_v7, v7_v8b, v8b_v9b}));
+}
+
+TEST(RailwayNetwork, TrackIndex) {
+  cda_rail::Network network;
+  const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
+  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+
+  const auto e0 = network.add_edge({"v0"}, {"v1"}, 1, 2, false, 0);
+  const auto e1 = network.add_edge({"v1"}, {"v2"}, 3, 4, true, 1.5);
+  const auto e2 = network.add_edge({"v1"}, {"v0"}, 1, 2, false, 0);
+
+  EXPECT_EQ(network.get_track_index(e1), e1);
+  EXPECT_EQ(network.get_track_index(e0), std::min(e0, e2));
+  EXPECT_EQ(network.get_track_index(e2), std::min(e0, e2));
+}
+
 #if 0 // TODO: The following tests are disabled because they use classes which
       // are currently out of scope
 
@@ -4382,197 +4501,7 @@ TEST(Functionality, Iterators) {
   //}
 }
 
-TEST(Functionality, IsFullyInStation) {
-  cda_rail::StationList stations;
 
-  stations.add_empty_station("Station1");
-
-  stations.add_track_to_station("Station1", 0);
-  stations.add_track_to_station("Station1", 1);
-  stations.add_track_to_station("Station1", 3);
-
-  EXPECT_TRUE(stations.is_fully_in_station("Station1", {0}));
-  EXPECT_TRUE(stations.is_fully_in_station("Station1", {1}));
-  EXPECT_TRUE(stations.is_fully_in_station("Station1", {0, 1}));
-  EXPECT_TRUE(stations.is_fully_in_station("Station1", {0, 1, 3}));
-  EXPECT_FALSE(stations.is_fully_in_station("Station1", {0, 2}));
-}
-
-TEST(Functionality, NetworkRouteLen) {
-  cda_rail::Network network;
-
-  network.add_vertex("v0", cda_rail::VertexType::TTD);
-  network.add_vertex("v1", cda_rail::VertexType::TTD);
-  network.add_vertex("v2", cda_rail::VertexType::TTD);
-  network.add_vertex("v3", cda_rail::VertexType::TTD);
-
-  const auto e1 = network.add_edge({"v1"}, {"v2"}, 20, 5, false);
-  const auto e2 = network.add_edge({"v2"}, {"v3"}, 30, 5, false);
-  const auto e0 = network.add_edge({"v0"}, {"v1"}, 10, 5, false);
-
-  EXPECT_EQ(network.length_of_path({e0, e1, e2}), 60);
-  EXPECT_EQ(network.length_of_path({e1, e2}), 50);
-  EXPECT_EQ(network.length_of_path({e0, e1}), 30);
-  EXPECT_EQ(network.length_of_path({e2}), 30);
-  EXPECT_EQ(network.length_of_path({e1}), 20);
-  EXPECT_EQ(network.length_of_path({e0}), 10);
-  EXPECT_EQ(network.length_of_path({}), 0);
-  EXPECT_THROW((void)network.length_of_path({e0, e1, 1000, e2}),
-               cda_rail::exceptions::EdgeNotExistentException);
-}
-
-TEST(Functionality, NetworkNextTTD) {
-  cda_rail::Network network;
-  const auto        v0 = network.add_vertex("v0", cda_rail::VertexType::TTD);
-  const auto        v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
-  const auto v2  = network.add_vertex("v2", cda_rail::VertexType::NoBorder);
-  const auto v3a = network.add_vertex("v3a", cda_rail::VertexType::TTD);
-  const auto v3b = network.add_vertex("v3b", cda_rail::VertexType::TTD);
-  const auto v4a = network.add_vertex("v4a", cda_rail::VertexType::TTD);
-  const auto v4b = network.add_vertex("v4b", cda_rail::VertexType::TTD);
-  const auto v5  = network.add_vertex("v5", cda_rail::VertexType::NoBorder);
-  const auto v6  = network.add_vertex("v6", cda_rail::VertexType::TTD);
-  const auto v7  = network.add_vertex("v7", cda_rail::VertexType::NoBorder);
-  const auto v8a = network.add_vertex("v8a", cda_rail::VertexType::TTD);
-  const auto v8b = network.add_vertex("v8b", cda_rail::VertexType::TTD);
-  const auto v9a = network.add_vertex("v9a", cda_rail::VertexType::TTD);
-  const auto v9b = network.add_vertex("v9b", cda_rail::VertexType::TTD);
-
-  const auto v0_v1   = network.add_edge(v0, v1, 100, 20, true);
-  const auto v1_v2   = network.add_edge(v1, v2, 10, 20, false);
-  const auto v2_v3a  = network.add_edge(v2, v3a, 10, 20, false);
-  const auto v2_v3b  = network.add_edge(v2, v3b, 10, 20, false);
-  const auto v3a_v4a = network.add_edge(v3a, v4a, 100, 20, true);
-  const auto v3b_v4b = network.add_edge(v3b, v4b, 100, 20, true);
-  const auto v4a_v5  = network.add_edge(v4a, v5, 10, 20, false);
-  const auto v4b_v5  = network.add_edge(v4b, v5, 10, 20, false);
-  const auto v5_v6   = network.add_edge(v5, v6, 10, 20, false);
-  const auto v6_v7   = network.add_edge(v6, v7, 10, 20, false);
-  const auto v7_v8a  = network.add_edge(v7, v8a, 10, 20, false);
-  const auto v7_v8b  = network.add_edge(v7, v8b, 10, 20, false);
-  const auto v8a_v9a = network.add_edge(v8a, v9a, 100, 20, true);
-  const auto v8b_v9b = network.add_edge(v8b, v9b, 100, 20, true);
-
-  network.add_successor(v0_v1, v1_v2);
-  network.add_successor(v1_v2, v2_v3a);
-  network.add_successor(v1_v2, v2_v3b);
-  network.add_successor(v2_v3a, v3a_v4a);
-  network.add_successor(v2_v3b, v3b_v4b);
-  network.add_successor(v3a_v4a, v4a_v5);
-  network.add_successor(v3b_v4b, v4b_v5);
-  network.add_successor(v4a_v5, v5_v6);
-  network.add_successor(v4b_v5, v5_v6);
-  network.add_successor(v5_v6, v6_v7);
-  network.add_successor(v6_v7, v7_v8a);
-  network.add_successor(v6_v7, v7_v8b);
-  network.add_successor(v7_v8a, v8a_v9a);
-  network.add_successor(v7_v8b, v8b_v9b);
-
-  const auto& ttd_sections = network.unbreakable_sections();
-  EXPECT_EQ(ttd_sections.size(), 3);
-
-  const auto routing1 =
-      network.all_paths_ending_at_ttd(v0_v1, ttd_sections, v9a);
-  // (v1_v2, v2_v3a, v3a_v3b) and (v1_v2, v2_v3b, v3b_c4b) are two different
-  // paths
-  EXPECT_EQ(routing1.size(), 2);
-  EXPECT_TRUE(std::find(routing1.begin(), routing1.end(),
-                        std::vector<size_t>{v1_v2, v2_v3a, v3a_v4a}) !=
-              routing1.end());
-  EXPECT_TRUE(std::find(routing1.begin(), routing1.end(),
-                        std::vector<size_t>{v1_v2, v2_v3b, v3b_v4b}) !=
-              routing1.end());
-
-  const auto routing2 =
-      network.all_paths_ending_at_ttd(v2_v3a, ttd_sections, v9a);
-  // Expect only (v3a_v4a) as the only path
-  ASSERT_EQ(routing2.size(), 1);
-  EXPECT_EQ(routing2.at(0), std::vector<size_t>({v3a_v4a}));
-
-  const auto routing3 =
-      network.all_paths_ending_at_ttd(v3a_v4a, ttd_sections, v9b);
-  // Expect only (v4a_v5, v5_v6)
-  ASSERT_EQ(routing3.size(), 1);
-  EXPECT_EQ(routing3.at(0), std::vector<size_t>({v4a_v5, v5_v6}));
-
-  const auto routing4 =
-      network.all_paths_ending_at_ttd(v5_v6, ttd_sections, v9b);
-  // Expect only (v6_v7, v7_v8b, v8b_v9b)
-  ASSERT_EQ(routing4.size(), 1);
-  EXPECT_EQ(routing4.at(0), std::vector<size_t>({v6_v7, v7_v8b, v8b_v9b}));
-}
-
-TEST(NetworkFunctionality, TrackIndex) {
-  cda_rail::Network network;
-  const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
-  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
-  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
-
-  const auto e0 = network.add_edge({"v0"}, {"v1"}, 1, 2, false, 0);
-  const auto e1 = network.add_edge({"v1"}, {"v2"}, 3, 4, true, 1.5);
-  const auto e2 = network.add_edge({"v1"}, {"v0"}, 1, 2, false, 0);
-
-  EXPECT_EQ(network.get_track_index(e1), e1);
-  EXPECT_EQ(network.get_track_index(e0), std::min(e0, e2));
-  EXPECT_EQ(network.get_track_index(e2), std::min(e0, e2));
-}
-
-TEST(RouteFunctionality, FirstPosOnEdge) {
-  cda_rail::Network network;
-  const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
-  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
-  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
-
-  const auto e0 = network.add_edge({"v0"}, {"v1"}, 1, 2, false, 0);
-  const auto e1 = network.add_edge({"v1"}, {"v2"}, 3, 4, true, 1.5);
-  const auto e2 = network.add_edge({"v1"}, {"v0"}, 1, 2, false, 0);
-
-  network.add_successor(e0, e1);
-
-  cda_rail::Route route;
-  route.push_back_edge(e0, network);
-  route.push_back_edge(e1, network);
-
-  const auto p1 = route.get_first_pos_on_edges({e0, e1, e2}, network);
-  const auto p2 = route.get_first_pos_on_edges({e1}, network);
-  const auto p3 = route.get_first_pos_on_edges({e2}, network);
-
-  EXPECT_TRUE(p1.has_value());
-  EXPECT_TRUE(p2.has_value());
-  EXPECT_FALSE(p3.has_value());
-  EXPECT_EQ(p1.value_or(-1), 0);
-  EXPECT_EQ(p2.value_or(-1), 1);
-}
-
-TEST(RouteFunctionality, LastPosOnEdge) {
-  cda_rail::Network network;
-  const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
-  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
-  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
-
-  const auto e0 = network.add_edge({"v0"}, {"v1"}, 1, 2, false, 0);
-  const auto e1 = network.add_edge({"v1"}, {"v2"}, 3, 4, true, 1.5);
-  const auto e2 = network.add_edge({"v1"}, {"v0"}, 1, 2, false, 0);
-
-  network.add_successor(e0, e1);
-
-  cda_rail::Route route;
-  route.push_back_edge(e0, network);
-  route.push_back_edge(e1, network);
-
-  const auto p1 = route.get_last_pos_on_edges({e0, e1, e2}, network);
-  const auto p2 = route.get_last_pos_on_edges({e1}, network);
-  const auto p3 = route.get_last_pos_on_edges({e2}, network);
-  const auto p4 = route.get_last_pos_on_edges({e0}, network);
-
-  EXPECT_TRUE(p1.has_value());
-  EXPECT_TRUE(p2.has_value());
-  EXPECT_FALSE(p3.has_value());
-  EXPECT_TRUE(p4.has_value());
-  EXPECT_EQ(p1.value_or(-1), 4);
-  EXPECT_EQ(p2.value_or(-1), 4);
-  EXPECT_EQ(p4.value_or(-1), 1);
-}
 
 TEST(RouteMapFunctionality, EmptyConflicts) {
   auto network = cda_rail::Network::import_network(
