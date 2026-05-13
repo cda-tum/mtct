@@ -28,7 +28,13 @@ class Route {
   };
 
 private:
-  cda_rail::index_vector m_edges{};
+  cda_rail::index_vector m_edges;
+
+  [[nodiscard]] std::optional<double>
+       get_pos_on_edges_impl(const cda_rail::index_vector& edge_indices,
+                             const Network& network, bool first_match) const;
+  void ensure_route_index(size_t route_index) const;
+  [[nodiscard]] bool has_edges() const;
 
 public:
   // -----------------------------

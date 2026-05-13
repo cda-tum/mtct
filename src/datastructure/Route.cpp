@@ -14,9 +14,12 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iterator>
+#include <limits>
 #include <numeric>
 #include <optional>
+#include <ranges>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -39,11 +42,11 @@ double cda_rail::Route::length(const Network& network) const {
    * @param network The network to which the route belongs.
    * @return The length of the route.
    */
-
-  return std::accumulate(m_edges.begin(), m_edges.end(), 0.0,
-                         [&network](double sum, size_t edge) {
-                           return sum + network.get_edge(edge).length;
-                         });
+  const auto edge_lengths =
+      m_edges | std::views::transform([&network](size_t edge) {
+        return network.get_edge(edge).length;
+      });
+  return std::ranges::fold_left(edge_lengths, 0.0, std::plus{});
 }
 
 cda_rail::Route::EdgePosition
@@ -64,22 +67,22 @@ cda_rail::Route::edge_pos_on_route(Network::EdgeInput const& edge,
     throw exceptions::EdgeNotExistentException(edge_id);
   }
 
-  EdgePosition return_pos = {.source = 0, .target = 0};
-  bool         edge_found = false;
-  for (const auto i : m_edges) {
-    return_pos.target += network.get_edge(i).length;
-    if (i == edge_id) {
-      edge_found = true;
-      break;
-    }
-    return_pos.source += network.get_edge(i).length;
-  }
-
-  if (!edge_found) {
+  const auto edge_it = std::ranges::find(m_edges, edge_id);
+  if (edge_it == m_edges.end()) {
     throw exceptions::ConsistencyException("Edge does not exist in route.");
   }
 
-  return return_pos;
+  const auto prefix_edges =
+      std::ranges::subrange(m_edges.begin(), edge_it) |
+      std::views::transform([&network](size_t route_edge) {
+        return network.get_edge(route_edge).length;
+      });
+
+  const double source_pos =
+      std::ranges::fold_left(prefix_edges, 0.0, std::plus{});
+
+  return {.source = source_pos,
+          .target = source_pos + network.get_edge(*edge_it).length};
 }
 
 cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
@@ -96,15 +99,21 @@ cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
    * @return Start and end location of edge within the route.
    */
 
-  EdgePosition return_pos = {.source = length(network) + 1, .target = -1};
+  const std::unordered_set<size_t> considered_edges(edges_to_consider.begin(),
+                                                    edges_to_consider.end());
 
-  for (const auto& edge : edges_to_consider) {
-    if (!contains_edge(edge)) {
-      continue;
+  EdgePosition return_pos{.source = std::numeric_limits<double>::infinity(),
+                          .target = -1.0};
+  double       current_pos = 0.0;
+
+  for (const size_t route_edge : m_edges) {
+    const double edge_length = network.get_edge(route_edge).length;
+    if (considered_edges.contains(route_edge)) {
+      return_pos.source = std::min(return_pos.source, current_pos);
+      return_pos.target =
+          std::max(return_pos.target, current_pos + edge_length);
     }
-    const auto [source_pos, target_pos] = edge_pos_on_route(edge, network);
-    return_pos.source = std::min(return_pos.source, source_pos);
-    return_pos.target = std::max(return_pos.target, target_pos);
+    current_pos += edge_length;
   }
 
   if (return_pos.source > return_pos.target) {
@@ -115,9 +124,8 @@ cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
   return return_pos;
 }
 
-std::optional<double>
-cda_rail::Route::get_first_pos_on_edges(const std::vector<size_t>& edge_indices,
-                                        const Network& network) const {
+std::optional<double> cda_rail::Route::get_first_pos_on_edges(
+    const cda_rail::index_vector& edge_indices, const Network& network) const {
   /**
    * This functions returns the position at the beginning of the first route
    * edge that is part of edge_indices.
@@ -127,20 +135,11 @@ cda_rail::Route::get_first_pos_on_edges(const std::vector<size_t>& edge_indices,
    * @return The position at the beginning of the first route edge that is part
    * of edge_indices
    */
-
-  double position = 0.0;
-  for (const auto& edge : m_edges) {
-    if (std::ranges::contains(edge_indices, edge)) {
-      return position;
-    }
-    position += network.get_edge(edge).length;
-  }
-  return {};
+  return get_pos_on_edges_impl(edge_indices, network, true);
 }
 
-std::optional<double>
-cda_rail::Route::get_last_pos_on_edges(const std::vector<size_t>& edge_indices,
-                                       const Network& network) const {
+std::optional<double> cda_rail::Route::get_last_pos_on_edges(
+    const cda_rail::index_vector& edge_indices, const Network& network) const {
   /**
    * This functions returns the position at the end of the last route edge that
    * is part of edge_indices.
@@ -150,16 +149,7 @@ cda_rail::Route::get_last_pos_on_edges(const std::vector<size_t>& edge_indices,
    * @return The position at the end of the last route edge that is part of
    * edge_indices.
    */
-
-  double                position = 0.0;
-  std::optional<double> return_position;
-  for (const auto& edge : m_edges) {
-    position += network.get_edge(edge).length;
-    if (std::ranges::contains(edge_indices, edge)) {
-      return_position = position;
-    }
-  }
-  return return_position;
+  return get_pos_on_edges_impl(edge_indices, network, false);
 }
 
 size_t
@@ -192,11 +182,8 @@ size_t cda_rail::Route::get_edge_id(size_t route_index) const {
    * @param route_index The index of the edge to return.
    * @return The edge index at the given index.
    */
-
-  if (route_index >= m_edges.size()) {
-    throw exceptions::InvalidInputException("Index out of range.");
-  }
-  return m_edges[route_index];
+  ensure_route_index(route_index);
+  return m_edges.at(route_index);
 }
 
 const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
@@ -209,11 +196,8 @@ const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
    * @param network The network to which the edge belongs.
    * @return The edge at the given index.
    */
-
-  if (route_index >= m_edges.size()) {
-    throw exceptions::InvalidInputException("Index out of range.");
-  }
-  return network.get_edge(m_edges[route_index]);
+  ensure_route_index(route_index);
+  return network.get_edge(m_edges.at(route_index));
 }
 
 // EDITING FUNCTIONS
@@ -262,8 +246,7 @@ void cda_rail::Route::remove_first_edge() {
    * Removes the first edge from the route.
    * Throws an error if the route is empty.
    */
-
-  if (m_edges.empty()) {
+  if (!has_edges()) {
     throw exceptions::ConsistencyException("Route is empty.");
   }
   m_edges.erase(m_edges.begin());
@@ -274,8 +257,7 @@ void cda_rail::Route::remove_last_edge() {
    * Removes the last edge from the route.
    * Throws an error if the route is empty.
    */
-
-  if (m_edges.empty()) {
+  if (!has_edges()) {
     throw exceptions::ConsistencyException("Route is empty.");
   }
   m_edges.pop_back();
@@ -294,16 +276,10 @@ bool cda_rail::Route::check_consistency(const Network& network) const {
    * @param network The network to which the route belongs.
    * @return True if the route is valid, false otherwise.
    */
-
-  if (m_edges.empty()) {
-    return true;
-  }
-  for (size_t i = 0; i < m_edges.size() - 1; i++) {
-    if (!network.is_valid_successor(m_edges[i], m_edges[i + 1])) {
-      return false;
-    }
-  }
-  return true;
+  return std::ranges::adjacent_find(
+             m_edges, [&network](size_t edge, size_t successor) {
+               return !network.is_valid_successor(edge, successor);
+             }) == m_edges.end();
 }
 
 void cda_rail::Route::update_after_discretization(
@@ -316,24 +292,57 @@ void cda_rail::Route::update_after_discretization(
    * @param new_edges The new edges of the network.
    */
 
+  std::unordered_map<size_t, const cda_rail::index_vector*> replacement_map;
+  replacement_map.reserve(new_edges.size());
+  for (const auto& [old_edge, replacement_edges] : new_edges) {
+    replacement_map[old_edge] = &replacement_edges;
+  }
+
   cda_rail::index_vector edges_updated;
-  for (const auto& old_edge : m_edges) {
-    bool replaced = false;
-    for (const auto& [track, new_tracks] : new_edges) {
-      if (old_edge == track) {
-        edges_updated.insert(edges_updated.end(), new_tracks.begin(),
-                             new_tracks.end());
-        replaced = true;
-        break;
-      }
+  for (const size_t old_edge : m_edges) {
+    if (const auto replacement_it = replacement_map.find(old_edge);
+        replacement_it != replacement_map.end()) {
+      const auto& replacement_edges = *replacement_it->second;
+      edges_updated.insert(edges_updated.end(), replacement_edges.begin(),
+                           replacement_edges.end());
+      continue;
     }
-    if (!replaced) {
-      edges_updated.emplace_back(old_edge);
-    }
+    edges_updated.emplace_back(old_edge);
   }
 
   m_edges = std::move(edges_updated);
 }
+
+std::optional<double> cda_rail::Route::get_pos_on_edges_impl(
+    const cda_rail::index_vector& edge_indices, const Network& network,
+    bool first_match) const {
+  const std::unordered_set<size_t> edge_set(edge_indices.begin(),
+                                            edge_indices.end());
+
+  double                position = 0.0;
+  std::optional<double> last_position;
+
+  for (const size_t edge : m_edges) {
+    const double edge_length = network.get_edge(edge).length;
+    if (edge_set.contains(edge)) {
+      if (first_match) {
+        return position;
+      }
+      last_position = position + edge_length;
+    }
+    position += edge_length;
+  }
+
+  return last_position;
+}
+
+void cda_rail::Route::ensure_route_index(size_t route_index) const {
+  if (route_index >= m_edges.size()) {
+    throw exceptions::InvalidInputException("Index out of range.");
+  }
+}
+
+bool cda_rail::Route::has_edges() const { return !m_edges.empty(); }
 
 #if 0
 // TODO: comment in
