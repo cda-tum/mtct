@@ -22,80 +22,85 @@ struct ConflictPair {
 };
 
 class Route {
+  struct EdgePosition {
+    double source{};
+    double target{};
+  };
+
 private:
-  cda_rail::index_vector edges;
+  cda_rail::index_vector m_edges{};
 
 public:
-  void push_back_edge(size_t edge_index, const Network& network);
-  void push_back_edge(size_t source, size_t target, const Network& network) {
-    push_back_edge(network.get_edge_index(source, target), network);
-  };
-  void push_back_edge(const std::string& source, const std::string& target,
-                      const Network& network) {
-    push_back_edge(network.get_edge_index(source, target), network);
-  };
+  // -----------------------------
+  // CONSTRUCTORS
+  // -----------------------------
+  // Only default constructors (empty)
 
-  void push_front_edge(size_t edge_index, const Network& network);
-  void push_front_edge(size_t source, size_t target, const Network& network) {
-    push_front_edge(network.get_edge_index(source, target), network);
-  };
-  void push_front_edge(const std::string& source, const std::string& target,
-                       const Network& network) {
-    push_front_edge(network.get_edge_index(source, target), network);
-  };
-
-  void remove_first_edge();
-  void remove_last_edge();
-
+  // -----------------------------
+  // GETTER
+  // -----------------------------
+  [[nodiscard]] size_t size() const { return m_edges.size(); };
   [[nodiscard]] double length(const Network& network) const;
-  [[nodiscard]] std::pair<double, double>
-  edge_pos(size_t edge, const Network& network) const;
-  [[nodiscard]] std::pair<double, double>
-  edge_pos(size_t source, size_t target, const Network& network) const {
-    return edge_pos(network.get_edge_index(source, target), network);
-  };
-  [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::string& source, const std::string& target,
-           const Network& network) const {
-    return edge_pos(network.get_edge_index(source, target), network);
-  };
+  [[nodiscard]] bool   empty() const { return m_edges.empty(); };
 
-  [[nodiscard]] std::pair<double, double>
-  edge_pos(const cda_rail::index_vector& edges_to_consider,
-           const Network&                network) const;
-
-  [[nodiscard]] size_t get_edge_at_pos(double         pos,
-                                       const Network& network) const;
-
-  [[nodiscard]] size_t      get_edge(size_t route_index) const;
-  [[nodiscard]] const Edge& get_edge(size_t         route_index,
-                                     const Network& network) const;
-  [[nodiscard]] size_t      size() const { return edges.size(); };
-  [[nodiscard]] bool        empty() const { return edges.empty(); };
   [[nodiscard]] const cda_rail::index_vector& get_edges() const {
-    return edges;
+    return m_edges;
   };
 
-  [[nodiscard]] bool contains_edge(size_t edge_index) const {
-    return std::ranges::contains(edges, edge_index);
-  };
-  [[nodiscard]] bool contains_edge(std::optional<size_t> edge_index) const {
-    return edge_index.has_value() && contains_edge(edge_index.value());
-  }
-
-  [[nodiscard]] bool check_consistency(const Network& network) const;
+  [[nodiscard]] EdgePosition edge_pos_on_route(Network::EdgeInput const& edge,
+                                               const Network& network) const;
+  [[nodiscard]] EdgePosition
+  edge_set_pos_on_route(const cda_rail::index_vector& edges_to_consider,
+                        const Network&                network) const;
 
   [[nodiscard]] std::optional<double>
   get_first_pos_on_edges(const cda_rail::index_vector& edge_indices,
                          const Network&                network) const;
-
   [[nodiscard]] std::optional<double>
   get_last_pos_on_edges(const cda_rail::index_vector& edge_indices,
                         const Network&                network) const;
 
-  void update_after_discretization(
+  [[nodiscard]] size_t get_edge_id_at_pos(double         pos,
+                                          const Network& network) const;
+
+  [[nodiscard]] size_t      get_edge_id(size_t route_index) const;
+  [[nodiscard]] const Edge& get_edge(size_t         route_index,
+                                     const Network& network) const;
+
+  [[nodiscard]] bool contains_edge(size_t const edgeIndex) const {
+    return std::ranges::contains(m_edges, edgeIndex);
+  };
+  [[nodiscard]] bool contains_edge(Network::EdgeInput const& edge_input,
+                                   const Network&            network) const {
+    return contains_edge(edge_input.resolve(&network));
+  };
+  [[nodiscard]] bool
+  contains_edge(std::optional<size_t> const edgeIndex) const {
+    return edgeIndex.has_value() && contains_edge(edgeIndex.value());
+  }
+
+  // -----------------------------
+  // EDITING FUNCTIONS
+  // -----------------------------
+
+  void push_back_edge(Network::EdgeInput const& new_edge,
+                      const Network&            network);
+  void push_front_edge(Network::EdgeInput const& new_edge,
+                       const Network&            network);
+
+  void remove_first_edge();
+  void remove_last_edge();
+
+  // -----------------------------
+  // HELPER
+  // -----------------------------
+  [[nodiscard]] bool check_consistency(const Network& network) const;
+  void               update_after_discretization(
       const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
 };
+
+#if 0
+// TODO: For testing purposes
 
 class RouteMap {
 private:
@@ -217,4 +222,7 @@ public:
   void update_after_discretization(
       const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
 };
+
+#endif
+
 } // namespace cda_rail

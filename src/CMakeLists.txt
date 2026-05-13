@@ -18,8 +18,8 @@ add_library(
   # datastructure/Timetable.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Station.hpp
   datastructure/Station.cpp
-  # ${PROJECT_SOURCE_DIR}/include/datastructure/Route.hpp
-  # datastructure/Route.cpp
+  ${PROJECT_SOURCE_DIR}/include/datastructure/Route.hpp
+  datastructure/Route.cpp
   # ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralProblemInstance.hpp
   # ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralPerformanceOptimizationInstance.hpp
   # ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp

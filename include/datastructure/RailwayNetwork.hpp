@@ -192,6 +192,7 @@ public:
   private:
     friend class Network;
     friend class StationList;
+    friend class Route;
 
     std::variant<size_t, std::pair<size_t, size_t>,
                  std::pair<std::string_view, std::string_view>, Edge>

@@ -2,6 +2,7 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "GeneralHelper.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Train.hpp"
 #include "nlohmann/json.hpp"
@@ -24,72 +25,166 @@
 using json = nlohmann::json;
 using std::size_t;
 
-void cda_rail::Route::push_back_edge(size_t         edge_index,
-                                     const Network& network) {
-  /**
-   * Adds the edge to the end of the route.
-   * Throws an error if the edge does not exist in the network or is not a valid
-   * successor of the last edge.
+// -----------------------------
+// ROUTE
+// -----------------------------
+
+// Getter
+
+double cda_rail::Route::length(const Network& network) const {
+  /***
+   * Returns the length of the route, i.e., the sum of the lengths of all edges.
+   * Throws an error if an edge does not exist in the network.
    *
-   * @param edge_index The index of the edge to add.
-   * @param network The network to which the edge belongs.
+   * @param network The network to which the route belongs.
+   * @return The length of the route.
    */
 
-  if (!network.has_edge(edge_index)) {
-    throw exceptions::EdgeNotExistentException(edge_index);
-  }
-  if (!edges.empty() && !network.is_valid_successor(edges.back(), edge_index)) {
-    throw exceptions::ConsistencyException("Edge is not a valid successor.");
-  }
-  edges.emplace_back(edge_index);
+  return std::accumulate(m_edges.begin(), m_edges.end(), 0.0,
+                         [&network](double sum, size_t edge) {
+                           return sum + network.get_edge(edge).length;
+                         });
 }
 
-void cda_rail::Route::push_front_edge(size_t         edge_index,
-                                      const Network& network) {
+cda_rail::Route::EdgePosition
+cda_rail::Route::edge_pos_on_route(Network::EdgeInput const& edge,
+                                   const Network&            network) const {
   /**
-   * Adds the edge to the beginning of the route.
-   * Throws an error if the edge does not exist in the network or is not a valid
-   * predecessor of the first edge.
+   * Returns the position of the given edge in the route, i.e., the distance
+   * from the route start to the source and target respectively.
    *
-   * @param edge_index The index of the edge to add.
+   * @param edge The edge to get the position of.
    * @param network The network to which the edge belongs.
+   * @return The position of the edge in the route.
    */
 
-  if (!network.has_edge(edge_index)) {
-    throw exceptions::EdgeNotExistentException(edge_index);
+  auto const edge_id = edge.resolve(&network);
+
+  if (!network.has_edge(edge_id)) {
+    throw exceptions::EdgeNotExistentException(edge_id);
   }
-  if (!edges.empty() &&
-      !network.is_valid_successor(edge_index, edges.front())) {
-    throw exceptions::ConsistencyException("Edge is not a valid predecessor.");
+
+  EdgePosition return_pos = {.source = 0, .target = 0};
+  bool         edge_found = false;
+  for (const auto i : m_edges) {
+    return_pos.target += network.get_edge(i).length;
+    if (i == edge_id) {
+      edge_found = true;
+      break;
+    }
+    return_pos.source += network.get_edge(i).length;
   }
-  edges.insert(edges.begin(), edge_index);
+
+  if (!edge_found) {
+    throw exceptions::ConsistencyException("Edge does not exist in route.");
+  }
+
+  return return_pos;
 }
 
-void cda_rail::Route::remove_first_edge() {
+cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
+    const cda_rail::index_vector& edges_to_consider,
+    const Network&                network) const {
   /**
-   * Removes the first edge from the route.
-   * Throws an error if the route is empty.
+   * Returns the minimal start and maximal end position of the given
+   * edges_to_consider in the route. Throws an error only if none of the
+   * edges_to_consider exists in the route.
+   *
+   * @param edges_to_consider The edges to consider.
+   * @param network The network to which the edges belong.
+   *
+   * @return Start and end location of edge within the route.
    */
 
-  if (edges.empty()) {
-    throw exceptions::ConsistencyException("Route is empty.");
+  EdgePosition return_pos = {.source = length(network) + 1, .target = -1};
+
+  for (const auto& edge : edges_to_consider) {
+    if (!contains_edge(edge)) {
+      continue;
+    }
+    const auto [source_pos, target_pos] = edge_pos_on_route(edge, network);
+    return_pos.source = std::min(return_pos.source, source_pos);
+    return_pos.target = std::max(return_pos.target, target_pos);
   }
-  edges.erase(edges.begin());
+
+  if (return_pos.source > return_pos.target) {
+    throw exceptions::ConsistencyException(
+        "None of the edges_to_consider exists in the route.");
+  }
+
+  return return_pos;
 }
 
-void cda_rail::Route::remove_last_edge() {
+std::optional<double>
+cda_rail::Route::get_first_pos_on_edges(const std::vector<size_t>& edge_indices,
+                                        const Network& network) const {
   /**
-   * Removes the last edge from the route.
-   * Throws an error if the route is empty.
+   * This functions returns the position at the beginning of the first route
+   * edge that is part of edge_indices.
+   *
+   * @param edge_indices The edge indices to consider.
+   * @param network The network to which the route belongs.
+   * @return The position at the beginning of the first route edge that is part
+   * of edge_indices
    */
 
-  if (edges.empty()) {
-    throw exceptions::ConsistencyException("Route is empty.");
+  double position = 0.0;
+  for (const auto& edge : m_edges) {
+    if (std::ranges::contains(edge_indices, edge)) {
+      return position;
+    }
+    position += network.get_edge(edge).length;
   }
-  edges.pop_back();
+  return {};
 }
 
-size_t cda_rail::Route::get_edge(size_t route_index) const {
+std::optional<double>
+cda_rail::Route::get_last_pos_on_edges(const std::vector<size_t>& edge_indices,
+                                       const Network& network) const {
+  /**
+   * This functions returns the position at the end of the last route edge that
+   * is part of edge_indices.
+   *
+   * @param edge_indices The edge indices to consider.
+   * @param network The network to which the route belongs.
+   * @return The position at the end of the last route edge that is part of
+   * edge_indices.
+   */
+
+  double                position = 0.0;
+  std::optional<double> return_position;
+  for (const auto& edge : m_edges) {
+    position += network.get_edge(edge).length;
+    if (std::ranges::contains(edge_indices, edge)) {
+      return_position = position;
+    }
+  }
+  return return_position;
+}
+
+size_t
+cda_rail::Route::get_edge_id_at_pos(double                   pos,
+                                    const cda_rail::Network& network) const {
+  round_small_numbers_to_zero_inplace(pos, GRB_EPS);
+  if (pos < 0) {
+    throw exceptions::InvalidInputException("Position must be non-negative.");
+  }
+
+  double current_pos = 0;
+  for (const auto& edge : m_edges) {
+    const auto edge_length = network.get_edge(edge).length;
+    if (current_pos + edge_length > pos) {
+      return edge;
+    }
+    current_pos += edge_length;
+  }
+  if (std::abs(current_pos - pos) < GRB_EPS) {
+    return m_edges.back();
+  }
+  throw exceptions::ConsistencyException("Position is not on the route.");
+}
+
+size_t cda_rail::Route::get_edge_id(size_t route_index) const {
   /**
    * Returns the edge at the given index.
    * Throws an error if the index is out of range.
@@ -98,10 +193,10 @@ size_t cda_rail::Route::get_edge(size_t route_index) const {
    * @return The edge index at the given index.
    */
 
-  if (route_index >= edges.size()) {
+  if (route_index >= m_edges.size()) {
     throw exceptions::InvalidInputException("Index out of range.");
   }
-  return edges[route_index];
+  return m_edges[route_index];
 }
 
 const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
@@ -115,11 +210,78 @@ const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
    * @return The edge at the given index.
    */
 
-  if (route_index >= edges.size()) {
+  if (route_index >= m_edges.size()) {
     throw exceptions::InvalidInputException("Index out of range.");
   }
-  return network.get_edge(edges[route_index]);
+  return network.get_edge(m_edges[route_index]);
 }
+
+// EDITING FUNCTIONS
+
+void cda_rail::Route::push_back_edge(Network::EdgeInput const& new_edge,
+                                     const Network&            network) {
+  /**
+   * Adds the edge to the end of the route.
+   * Throws an error if the edge does not exist in the network or is not a valid
+   * successor of the last edge.
+   *
+   * @param new_edge The new edge to append
+   * @param network The network to which the edge belongs.
+   */
+
+  auto const edge_index = new_edge.resolve(&network);
+  if (!m_edges.empty() &&
+      !network.is_valid_successor(m_edges.back(), edge_index)) {
+    throw exceptions::ConsistencyException("Edge is not a valid successor.");
+  }
+  m_edges.emplace_back(edge_index);
+}
+
+void cda_rail::Route::push_front_edge(Network::EdgeInput const& new_edge,
+                                      const Network&            network) {
+  /**
+   * Adds the edge to the beginning of the route.
+   * Throws an error if the edge does not exist in the network or is not a valid
+   * predecessor of the first edge.
+   *
+   * @param edge_index The index of the edge to add.
+   * @param network The network to which the edge belongs.
+   */
+
+  auto const edge_index = new_edge.resolve(&network);
+
+  if (!m_edges.empty() &&
+      !network.is_valid_successor(edge_index, m_edges.front())) {
+    throw exceptions::ConsistencyException("Edge is not a valid predecessor.");
+  }
+  m_edges.insert(m_edges.begin(), edge_index);
+}
+
+void cda_rail::Route::remove_first_edge() {
+  /**
+   * Removes the first edge from the route.
+   * Throws an error if the route is empty.
+   */
+
+  if (m_edges.empty()) {
+    throw exceptions::ConsistencyException("Route is empty.");
+  }
+  m_edges.erase(m_edges.begin());
+}
+
+void cda_rail::Route::remove_last_edge() {
+  /**
+   * Removes the last edge from the route.
+   * Throws an error if the route is empty.
+   */
+
+  if (m_edges.empty()) {
+    throw exceptions::ConsistencyException("Route is empty.");
+  }
+  m_edges.pop_back();
+}
+
+// HELPER
 
 bool cda_rail::Route::check_consistency(const Network& network) const {
   /**
@@ -133,30 +295,15 @@ bool cda_rail::Route::check_consistency(const Network& network) const {
    * @return True if the route is valid, false otherwise.
    */
 
-  if (edges.empty()) {
+  if (m_edges.empty()) {
     return true;
   }
-  for (size_t i = 0; i < edges.size() - 1; i++) {
-    if (!network.is_valid_successor(edges[i], edges[i + 1])) {
+  for (size_t i = 0; i < m_edges.size() - 1; i++) {
+    if (!network.is_valid_successor(m_edges[i], m_edges[i + 1])) {
       return false;
     }
   }
   return true;
-}
-
-double cda_rail::Route::length(const Network& network) const {
-  /***
-   * Returns the length of the route, i.e., the sum of the lengths of all edges.
-   * Throws an error if an edge does not exist in the network.
-   *
-   * @param network The network to which the route belongs.
-   * @return The length of the route.
-   */
-
-  return std::accumulate(edges.begin(), edges.end(), 0.0,
-                         [&network](double sum, size_t edge) {
-                           return sum + network.get_edge(edge).length;
-                         });
 }
 
 void cda_rail::Route::update_after_discretization(
@@ -170,7 +317,7 @@ void cda_rail::Route::update_after_discretization(
    */
 
   cda_rail::index_vector edges_updated;
-  for (const auto& old_edge : edges) {
+  for (const auto& old_edge : m_edges) {
     bool replaced = false;
     for (const auto& [track, new_tracks] : new_edges) {
       if (old_edge == track) {
@@ -185,96 +332,15 @@ void cda_rail::Route::update_after_discretization(
     }
   }
 
-  edges = std::move(edges_updated);
+  m_edges = std::move(edges_updated);
 }
 
-std::pair<double, double>
-cda_rail::Route::edge_pos(size_t edge, const Network& network) const {
-  /**
-   * Returns the position of the given edge in the route, i.e., the distance
-   * from the route start to the source and target respectively.
-   *
-   * @param edge The edge to get the position of.
-   * @param network The network to which the edge belongs.
-   * @return The position of the edge in the route.
-   */
+#if 0
+// TODO: comment in
 
-  if (!network.has_edge(edge)) {
-    throw exceptions::EdgeNotExistentException(edge);
-  }
-
-  std::pair<double, double> return_pos = {0, 0};
-  bool                      edge_found = false;
-  for (const auto i : edges) {
-    return_pos.second += network.get_edge(i).length;
-    if (i == edge) {
-      edge_found = true;
-      break;
-    }
-    return_pos.first += network.get_edge(i).length;
-  }
-
-  if (!edge_found) {
-    throw exceptions::ConsistencyException("Edge does not exist in route.");
-  }
-
-  return return_pos;
-}
-
-std::pair<double, double>
-cda_rail::Route::edge_pos(const cda_rail::index_vector& edges_to_consider,
-                          const Network&                network) const {
-  /**
-   * Returns the minimal start and maximal end position of the given
-   * edges_to_consider in the route. Throws an error only if none of the
-   * edges_to_consider exists in the route.
-   *
-   * @param edges_to_consider The edges to consider.
-   * @param network The network to which the edges belong.
-   *
-   * @return Start and end location of edge within the route.
-   */
-
-  std::pair<double, double> return_pos = {length(network) + 1, -1};
-
-  for (const auto& edge : edges_to_consider) {
-    if (!contains_edge(edge)) {
-      continue;
-    }
-    const auto [start_pos, end_pos] = edge_pos(edge, network);
-    return_pos.first                = std::min(return_pos.first, start_pos);
-    return_pos.second               = std::max(return_pos.second, end_pos);
-  }
-
-  if (return_pos.first > return_pos.second) {
-    throw exceptions::ConsistencyException(
-        "None of the edges_to_consider exists in the route.");
-  }
-
-  return return_pos;
-}
-
-size_t
-cda_rail::Route::get_edge_at_pos(double                   pos,
-                                 const cda_rail::Network& network) const {
-  round_towards_zero(pos, GRB_EPS);
-  if (pos < 0) {
-    throw exceptions::InvalidInputException("Position must be non-negative.");
-  }
-
-  double current_pos = 0;
-  for (const auto& edge : edges) {
-    const auto edge_length = network.get_edge(edge).length;
-    if (current_pos + edge_length > pos) {
-      return edge;
-    }
-    current_pos += edge_length;
-  }
-  if (std::abs(current_pos - pos) < GRB_EPS) {
-    return edges.back();
-  }
-  throw exceptions::ConsistencyException("Position is not on the route.");
-}
+// -----------------------------
+// ROUTE MAP
+// -----------------------------
 
 void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
   /**
@@ -591,53 +657,6 @@ void cda_rail::RouteMap::remove_route(const std::string& train_name) {
   routes.erase(train_name);
 }
 
-std::optional<double>
-cda_rail::Route::get_first_pos_on_edges(const std::vector<size_t>& edge_indices,
-                                        const Network& network) const {
-  /**
-   * This functions returns the position at the beginning of the first route
-   * edge that is part of edge_indices.
-   *
-   * @param edge_indices The edge indices to consider.
-   * @param network The network to which the route belongs.
-   * @return The position at the beginning of the first route edge that is part
-   * of edge_indices
-   */
-
-  double position = 0.0;
-  for (const auto& edge : edges) {
-    if (std::ranges::contains(edge_indices, edge)) {
-      return position;
-    }
-    position += network.get_edge(edge).length;
-  }
-  return {};
-}
-
-std::optional<double>
-cda_rail::Route::get_last_pos_on_edges(const std::vector<size_t>& edge_indices,
-                                       const Network& network) const {
-  /**
-   * This functions returns the position at the end of the last route edge that
-   * is part of edge_indices.
-   *
-   * @param edge_indices The edge indices to consider.
-   * @param network The network to which the route belongs.
-   * @return The position at the end of the last route edge that is part of
-   * edge_indices.
-   */
-
-  double                position = 0.0;
-  std::optional<double> return_position;
-  for (const auto& edge : edges) {
-    position += network.get_edge(edge).length;
-    if (std::ranges::contains(edge_indices, edge)) {
-      return_position = position;
-    }
-  }
-  return return_position;
-}
-
 std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
                                           const std::string& train2,
@@ -915,3 +934,5 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
 
   return result;
 }
+
+#endif
