@@ -1,4 +1,9 @@
 #include "GeneralHelper.hpp"
+#include "datastructure/RailwayNetwork.hpp"
+#include "datastructure/Route.hpp"
+#include "datastructure/Station.hpp"
+#include "datastructure/Timetable.hpp"
+#include "datastructure/Train.hpp"
 
 #include "gtest/gtest.h"
 #include <algorithm>
@@ -331,5 +336,56 @@ TEST(Functionality, IsDirectory) {
   EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp)"));
   std::filesystem::remove_all("./tmp");
 }
+#if 0
+TEST(Functionality, Iterators) {
+  // Create a train list
+  auto trains = cda_rail::TrainList();
+  trains.add_train("tr1", 100, 83.33, 2, 1);
+  trains.add_train("tr2", 100, 27.78, 2, 1);
+  trains.add_train("tr3", 250, 20, 2, 1);
+
+  // Check range based for loop
+  int i = 0;
+  for (const auto& train : trains) {
+    EXPECT_EQ(&train, &trains.get_train(i));
+    i++;
+  }
+
+  // Create route map
+  auto route_map = cda_rail::RouteMap();
+
+  route_map.add_empty_route("tr1");
+  route_map.add_empty_route("tr2");
+
+  // Check range based for loop
+  for (const auto& [name, route] : route_map) {
+    EXPECT_EQ(&route, &route_map.get_route(name));
+  }
+
+  // Create stations
+  cda_rail::StationList stations;
+  stations.add_empty_station("S1");
+  stations.add_empty_station("S2");
+
+  // Check range based for loop
+  for (const auto& [name, station] : stations) {
+    EXPECT_EQ(&station, &stations.get_station(name));
+  }
+
+  // Create timetable
+  auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
+  cda_rail::Timetable timetable;
+
+  timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, "l0", 300, 20, "r0",
+                      network);
+  timetable.add_train("tr2", 100, 27.78, 2, 1, 0, 0, "r0", 300, 20, "l0",
+                      network);
+
+  // Check range based for loop
+  for (const auto& [name, schedule] : timetable) {
+    EXPECT_EQ(&schedule, &timetable.get_schedule(name));
+  }
+}
+#endif
 
 // NOLINTEND(clang-diagnostic-unused-result)
