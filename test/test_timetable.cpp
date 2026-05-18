@@ -23,7 +23,7 @@ TEST(TimetableFunctionality, ReadTimetable) {
       network.get_edge_index({"g10"}, {"g11"}),
       network.get_edge_index({"g01"}, {"g00"}),
       network.get_edge_index({"g11"}, {"g10"})};
-  auto track_ids = station.tracks;
+  std::vector<size_t> track_ids(station.tracks.begin(), station.tracks.end());
   std::sort(track_ids.begin(), track_ids.end());
   std::sort(track_ids_target.begin(), track_ids_target.end());
   EXPECT_EQ(track_ids, track_ids_target);
@@ -37,76 +37,75 @@ TEST(TimetableFunctionality, ReadTimetable) {
   EXPECT_TRUE(trains.has_train("tr3"));
   // Check if the train tr1 is imported correctly
   auto tr1 = trains.get_train("tr1");
-  EXPECT_EQ(tr1.name, "tr1");
-  EXPECT_EQ(tr1.length, 100);
-  EXPECT_EQ(tr1.max_speed, 83.33);
-  EXPECT_EQ(tr1.acceleration, 2);
-  EXPECT_EQ(tr1.deceleration, 1);
+  EXPECT_EQ(tr1.get_name(), "tr1");
+  EXPECT_EQ(tr1.get_length(), 100);
+  EXPECT_EQ(tr1.get_max_speed(), 83.33);
+  EXPECT_EQ(tr1.get_acceleration(), 2);
+  EXPECT_EQ(tr1.get_deceleration(), 1);
   // Check if the train tr2 is imported correctly
   auto tr2 = trains.get_train("tr2");
-  EXPECT_EQ(tr2.name, "tr2");
-  EXPECT_EQ(tr2.length, 100);
-  EXPECT_EQ(tr2.max_speed, 27.78);
-  EXPECT_EQ(tr2.acceleration, 2);
-  EXPECT_EQ(tr2.deceleration, 1);
+  EXPECT_EQ(tr2.get_name(), "tr2");
+  EXPECT_EQ(tr2.get_length(), 100);
+  EXPECT_EQ(tr2.get_max_speed(), 27.78);
+  EXPECT_EQ(tr2.get_acceleration(), 2);
+  EXPECT_EQ(tr2.get_deceleration(), 1);
   // Check if the train tr3 is imported correctly
   auto tr3 = trains.get_train("tr3");
-  EXPECT_EQ(tr3.name, "tr3");
-  EXPECT_EQ(tr3.length, 250);
-  EXPECT_EQ(tr3.max_speed, 20);
-  EXPECT_EQ(tr3.acceleration, 2);
-  EXPECT_EQ(tr3.deceleration, 1);
+  EXPECT_EQ(tr3.get_name(), "tr3");
+  EXPECT_EQ(tr3.get_length(), 250);
+  EXPECT_EQ(tr3.get_max_speed(), 20);
+  EXPECT_EQ(tr3.get_acceleration(), 2);
+  EXPECT_EQ(tr3.get_deceleration(), 1);
 
   // Check the schedule of tr1
   const auto& tr1_schedule = timetable.get_schedule("tr1");
-  EXPECT_EQ(tr1_schedule.get_t_0(), 120);
-  EXPECT_EQ(tr1_schedule.get_v_0(), 0);
-  EXPECT_EQ(tr1_schedule.get_t_n(), 645);
-  EXPECT_EQ(tr1_schedule.get_v_n(), 16.67);
-  EXPECT_EQ(network.get_vertex(tr1_schedule.get_entry()).name, "l0");
-  EXPECT_EQ(network.get_vertex(tr1_schedule.get_exit()).name, "r0");
+  EXPECT_EQ(tr1_schedule.get_entry_time(), 120);
+  EXPECT_EQ(tr1_schedule.get_initial_velocity(), 0);
+  EXPECT_EQ(tr1_schedule.get_exit_time(), 645);
+  EXPECT_EQ(tr1_schedule.get_exit_velocity(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr1_schedule.get_entry_vertex()).name, "l0");
+  EXPECT_EQ(network.get_vertex(tr1_schedule.get_exit_vertex()).name, "r0");
   EXPECT_EQ(tr1_schedule.get_stops().size(), 1);
   const auto& stop = tr1_schedule.get_stops()[0];
-  EXPECT_EQ(stop.arrival(), 240);
-  EXPECT_EQ(stop.departure(), 300);
-  EXPECT_EQ(stations.get_station(stop.get_station_name()).name, "Central");
+  EXPECT_EQ(stop.get_service_time(), 240);
+  EXPECT_EQ(stop.get_earliest_departure(), 300);
+  EXPECT_EQ(stations.get_station(stop.get_station().name).name, "Central");
 
   // Check the schedule of tr2
   const auto& tr2_schedule = timetable.get_schedule("tr2");
-  EXPECT_EQ(tr2_schedule.get_t_0(), 0);
-  EXPECT_EQ(tr2_schedule.get_v_0(), 0);
-  EXPECT_EQ(tr2_schedule.get_t_n(), 420);
-  EXPECT_EQ(tr2_schedule.get_v_n(), 16.67);
-  EXPECT_EQ(network.get_vertex(tr2_schedule.get_entry()).name, "l0");
-  EXPECT_EQ(network.get_vertex(tr2_schedule.get_exit()).name, "r0");
+  EXPECT_EQ(tr2_schedule.get_entry_time(), 0);
+  EXPECT_EQ(tr2_schedule.get_initial_velocity(), 0);
+  EXPECT_EQ(tr2_schedule.get_exit_time(), 420);
+  EXPECT_EQ(tr2_schedule.get_exit_velocity(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr2_schedule.get_entry_vertex()).name, "l0");
+  EXPECT_EQ(network.get_vertex(tr2_schedule.get_exit_vertex()).name, "r0");
   EXPECT_EQ(tr2_schedule.get_stops().size(), 1);
   const auto& stop2 = tr2_schedule.get_stops()[0];
-  EXPECT_EQ(stop2.arrival(), 120);
-  EXPECT_EQ(stop2.departure(), 300);
-  EXPECT_EQ(stations.get_station(stop2.get_station_name()).name, "Central");
+  EXPECT_EQ(stop2.get_service_time(), 120);
+  EXPECT_EQ(stop2.get_earliest_departure(), 300);
+  EXPECT_EQ(stations.get_station(stop2.get_station().name).name, "Central");
 
   // Check the schedule of tr3
   const auto& tr3_schedule = timetable.get_schedule("tr3");
-  EXPECT_EQ(tr3_schedule.get_t_0(), 0);
-  EXPECT_EQ(tr3_schedule.get_v_0(), 0);
-  EXPECT_EQ(tr3_schedule.get_t_n(), 420);
-  EXPECT_EQ(tr3_schedule.get_v_n(), 16.67);
-  EXPECT_EQ(network.get_vertex(tr3_schedule.get_entry()).name, "r0");
-  EXPECT_EQ(network.get_vertex(tr3_schedule.get_exit()).name, "l0");
+  EXPECT_EQ(tr3_schedule.get_entry_time(), 0);
+  EXPECT_EQ(tr3_schedule.get_initial_velocity(), 0);
+  EXPECT_EQ(tr3_schedule.get_exit_time(), 420);
+  EXPECT_EQ(tr3_schedule.get_exit_velocity(), 16.67);
+  EXPECT_EQ(network.get_vertex(tr3_schedule.get_entry_vertex()).name, "r0");
+  EXPECT_EQ(network.get_vertex(tr3_schedule.get_exit_vertex()).name, "l0");
   EXPECT_EQ(tr3_schedule.get_stops().size(), 1);
   const auto& stop3 = tr3_schedule.get_stops()[0];
-  EXPECT_EQ(stop3.arrival(), 180);
-  EXPECT_EQ(stop3.departure(), 300);
-  EXPECT_EQ(stations.get_station(stop3.get_station_name()).name, "Central");
+  EXPECT_EQ(stop3.get_service_time(), 180);
+  EXPECT_EQ(stop3.get_earliest_departure(), 300);
+  EXPECT_EQ(stations.get_station(stop3.get_station().name).name, "Central");
 
-  EXPECT_EQ(timetable.max_t(), 645);
+  EXPECT_EQ(timetable.latest_exit_time(), 645);
 
   EXPECT_TRUE(timetable.check_consistency(network));
 }
 
 TEST(TimetableFunctionality, WriteTimetable) {
-  auto network = cda_rail::Network::import_network(
-      "./example-networks/SimpleStation/network/");
+  auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   cda_rail::Timetable timetable;
 
   timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, "l0", 300, 20, "r0",
@@ -116,21 +115,29 @@ TEST(TimetableFunctionality, WriteTimetable) {
 
   const std::pair<int, int> time_interval_expected{0, 300};
 
-  EXPECT_EQ(timetable.time_interval("tr1"), time_interval_expected);
-  EXPECT_EQ(timetable.time_interval("tr2"), time_interval_expected);
+  EXPECT_EQ(
+      (std::pair<int, int>{
+          static_cast<int>(timetable.get_schedule("tr1").get_entry_time()),
+          static_cast<int>(timetable.get_schedule("tr1").get_exit_time())}),
+      time_interval_expected);
+  EXPECT_EQ(
+      (std::pair<int, int>{
+          static_cast<int>(timetable.get_schedule("tr2").get_entry_time()),
+          static_cast<int>(timetable.get_schedule("tr2").get_exit_time())}),
+      time_interval_expected);
 
-  timetable.add_station("Station1");
-  timetable.add_station("Station2");
+  timetable.add_empty_station("Station1");
+  timetable.add_empty_station("Station2");
 
-  timetable.add_track_to_station("Station1", "g00", "g01", network);
-  timetable.add_track_to_station("Station1", "g10", "g11", network);
-  timetable.add_track_to_station("Station1", "g01", "g00", network);
-  timetable.add_track_to_station("Station1", "g11", "g10", network);
-  timetable.add_track_to_station("Station2", "r1", "r0", network);
+  timetable.add_track_to_station("Station1", {"g00", "g01"}, network);
+  timetable.add_track_to_station("Station1", {"g10", "g11"}, network);
+  timetable.add_track_to_station("Station1", {"g01", "g00"}, network);
+  timetable.add_track_to_station("Station1", {"g11", "g10"}, network);
+  timetable.add_track_to_station("Station2", {"r1", "r0"}, network);
 
-  timetable.add_stop("tr1", "Station1", 100, 160);
-  timetable.add_stop("tr1", "Station2", 200, 260);
-  timetable.add_stop("tr2", "Station1", 160, 220);
+  timetable.insert_stop("tr1", "Station1", 100, 160);
+  timetable.insert_stop("tr1", "Station2", 200, 260);
+  timetable.insert_stop("tr2", "Station1", 160, 220);
 
   // Check if the timetable is as expected
   // Check if the timetable has the correct stations
@@ -148,7 +155,7 @@ TEST(TimetableFunctionality, WriteTimetable) {
       network.get_edge_index({"g10"}, {"g11"}),
       network.get_edge_index({"g01"}, {"g00"}),
       network.get_edge_index({"g11"}, {"g10"})};
-  auto st1_tracks = st1.tracks;
+  std::vector<size_t> st1_tracks(st1.tracks.begin(), st1.tracks.end());
   std::sort(st1_tracks.begin(), st1_tracks.end());
   std::sort(s1_expected_tracks.begin(), s1_expected_tracks.end());
   EXPECT_EQ(st1_tracks, s1_expected_tracks);
@@ -157,7 +164,8 @@ TEST(TimetableFunctionality, WriteTimetable) {
   EXPECT_EQ(st2.tracks.size(), 1);
   const std::vector<size_t> s2_expected_tracks = {
       network.get_edge_index({"r1"}, {"r0"})};
-  EXPECT_EQ(st2.tracks, s2_expected_tracks);
+  EXPECT_EQ((std::vector<size_t>(st2.tracks.begin(), st2.tracks.end())),
+            s2_expected_tracks);
 
   // Check if the timetable has the correct trains
   const auto& trains = timetable.get_train_list();
@@ -167,50 +175,50 @@ TEST(TimetableFunctionality, WriteTimetable) {
 
   // Check if the train tr1 is saved correctly
   auto tr1 = trains.get_train("tr1");
-  EXPECT_EQ(tr1.name, "tr1");
-  EXPECT_EQ(tr1.length, 100);
-  EXPECT_EQ(tr1.max_speed, 83.33);
-  EXPECT_EQ(tr1.acceleration, 2);
-  EXPECT_EQ(tr1.deceleration, 1);
+  EXPECT_EQ(tr1.get_name(), "tr1");
+  EXPECT_EQ(tr1.get_length(), 100);
+  EXPECT_EQ(tr1.get_max_speed(), 83.33);
+  EXPECT_EQ(tr1.get_acceleration(), 2);
+  EXPECT_EQ(tr1.get_deceleration(), 1);
   // Check if the train tr2 is saved correctly
   auto tr2 = trains.get_train("tr2");
-  EXPECT_EQ(tr2.name, "tr2");
-  EXPECT_EQ(tr2.length, 100);
-  EXPECT_EQ(tr2.max_speed, 27.78);
-  EXPECT_EQ(tr2.acceleration, 2);
-  EXPECT_EQ(tr2.deceleration, 1);
+  EXPECT_EQ(tr2.get_name(), "tr2");
+  EXPECT_EQ(tr2.get_length(), 100);
+  EXPECT_EQ(tr2.get_max_speed(), 27.78);
+  EXPECT_EQ(tr2.get_acceleration(), 2);
+  EXPECT_EQ(tr2.get_deceleration(), 1);
 
   // Check if the schedule of tr1 is saved correctly
   const auto& tr1_schedule = timetable.get_schedule("tr1");
-  EXPECT_EQ(tr1_schedule.get_t_0(), 0);
-  EXPECT_EQ(tr1_schedule.get_v_0(), 0);
-  EXPECT_EQ(tr1_schedule.get_t_n(), 300);
-  EXPECT_EQ(tr1_schedule.get_v_n(), 20);
-  EXPECT_EQ(network.get_vertex(tr1_schedule.get_entry()).name, "l0");
-  EXPECT_EQ(network.get_vertex(tr1_schedule.get_exit()).name, "r0");
+  EXPECT_EQ(tr1_schedule.get_entry_time(), 0);
+  EXPECT_EQ(tr1_schedule.get_initial_velocity(), 0);
+  EXPECT_EQ(tr1_schedule.get_exit_time(), 300);
+  EXPECT_EQ(tr1_schedule.get_exit_velocity(), 20);
+  EXPECT_EQ(network.get_vertex(tr1_schedule.get_entry_vertex()).name, "l0");
+  EXPECT_EQ(network.get_vertex(tr1_schedule.get_exit_vertex()).name, "r0");
   EXPECT_EQ(tr1_schedule.get_stops().size(), 2);
   const auto& stop1 = tr1_schedule.get_stops()[0];
-  EXPECT_EQ(stop1.arrival(), 100);
-  EXPECT_EQ(stop1.departure(), 160);
-  EXPECT_EQ(stations.get_station(stop1.get_station_name()).name, "Station1");
+  EXPECT_EQ(stop1.get_service_time(), 100);
+  EXPECT_EQ(stop1.get_earliest_departure(), 160);
+  EXPECT_EQ(stations.get_station(stop1.get_station().name).name, "Station1");
   const auto& stop2 = tr1_schedule.get_stops()[1];
-  EXPECT_EQ(stop2.arrival(), 200);
-  EXPECT_EQ(stop2.departure(), 260);
-  EXPECT_EQ(stations.get_station(stop2.get_station_name()).name, "Station2");
+  EXPECT_EQ(stop2.get_service_time(), 200);
+  EXPECT_EQ(stop2.get_earliest_departure(), 260);
+  EXPECT_EQ(stations.get_station(stop2.get_station().name).name, "Station2");
 
   // Check if the schedule of tr2 is saved correctly
   const auto& tr2_schedule = timetable.get_schedule("tr2");
-  EXPECT_EQ(tr2_schedule.get_t_0(), 0);
-  EXPECT_EQ(tr2_schedule.get_v_0(), 0);
-  EXPECT_EQ(tr2_schedule.get_t_n(), 300);
-  EXPECT_EQ(tr2_schedule.get_v_n(), 20);
-  EXPECT_EQ(network.get_vertex(tr2_schedule.get_entry()).name, "r0");
-  EXPECT_EQ(network.get_vertex(tr2_schedule.get_exit()).name, "l0");
+  EXPECT_EQ(tr2_schedule.get_entry_time(), 0);
+  EXPECT_EQ(tr2_schedule.get_initial_velocity(), 0);
+  EXPECT_EQ(tr2_schedule.get_exit_time(), 300);
+  EXPECT_EQ(tr2_schedule.get_exit_velocity(), 20);
+  EXPECT_EQ(network.get_vertex(tr2_schedule.get_entry_vertex()).name, "r0");
+  EXPECT_EQ(network.get_vertex(tr2_schedule.get_exit_vertex()).name, "l0");
   EXPECT_EQ(tr2_schedule.get_stops().size(), 1);
   const auto& stop3 = tr2_schedule.get_stops()[0];
-  EXPECT_EQ(stop3.arrival(), 160);
-  EXPECT_EQ(stop3.departure(), 220);
-  EXPECT_EQ(stations.get_station(stop3.get_station_name()).name, "Station1");
+  EXPECT_EQ(stop3.get_service_time(), 160);
+  EXPECT_EQ(stop3.get_earliest_departure(), 220);
+  EXPECT_EQ(stations.get_station(stop3.get_station().name).name, "Station1");
 
   // Write timetable to directory
   timetable.export_timetable("./tmp/test-timetable/", network);
@@ -233,13 +241,15 @@ TEST(TimetableFunctionality, WriteTimetable) {
   const auto& st1_read = stations_read.get_station("Station1");
   EXPECT_EQ(st1_read.name, "Station1");
   EXPECT_EQ(st1_read.tracks.size(), 4);
-  auto st1_read_tracks = st1_read.tracks;
+  std::vector<size_t> st1_read_tracks(st1_read.tracks.begin(),
+                                      st1_read.tracks.end());
   std::sort(st1_read_tracks.begin(), st1_read_tracks.end());
   EXPECT_EQ(st1_read_tracks, s1_expected_tracks);
   const auto& st2_read = stations_read.get_station("Station2");
   EXPECT_EQ(st2_read.name, "Station2");
   EXPECT_EQ(st2_read.tracks.size(), 1);
-  auto st2_read_tracks = st2_read.tracks;
+  std::vector<size_t> st2_read_tracks(st2_read.tracks.begin(),
+                                      st2_read.tracks.end());
   std::sort(st2_read_tracks.begin(), st2_read_tracks.end());
   EXPECT_EQ(st2_read_tracks, s2_expected_tracks);
 
@@ -251,64 +261,63 @@ TEST(TimetableFunctionality, WriteTimetable) {
 
   // Check if the train tr1 is saved correctly
   auto tr1_read = trains_read.get_train("tr1");
-  EXPECT_EQ(tr1_read.name, "tr1");
-  EXPECT_EQ(tr1_read.length, 100);
-  EXPECT_EQ(tr1_read.max_speed, 83.33);
-  EXPECT_EQ(tr1_read.acceleration, 2);
-  EXPECT_EQ(tr1_read.deceleration, 1);
+  EXPECT_EQ(tr1_read.get_name(), "tr1");
+  EXPECT_EQ(tr1_read.get_length(), 100);
+  EXPECT_EQ(tr1_read.get_max_speed(), 83.33);
+  EXPECT_EQ(tr1_read.get_acceleration(), 2);
+  EXPECT_EQ(tr1_read.get_deceleration(), 1);
   // Check if the train tr2 is saved correctly
   auto tr2_read = trains_read.get_train("tr2");
-  EXPECT_EQ(tr2_read.name, "tr2");
-  EXPECT_EQ(tr2_read.length, 100);
-  EXPECT_EQ(tr2_read.max_speed, 27.78);
-  EXPECT_EQ(tr2_read.acceleration, 2);
-  EXPECT_EQ(tr2_read.deceleration, 1);
+  EXPECT_EQ(tr2_read.get_name(), "tr2");
+  EXPECT_EQ(tr2_read.get_length(), 100);
+  EXPECT_EQ(tr2_read.get_max_speed(), 27.78);
+  EXPECT_EQ(tr2_read.get_acceleration(), 2);
+  EXPECT_EQ(tr2_read.get_deceleration(), 1);
 
   // Check if the schedule of tr1 is saved correctly
   const auto& tr1_schedule_read = timetable_read.get_schedule("tr1");
-  EXPECT_EQ(tr1_schedule_read.get_t_0(), 0);
-  EXPECT_EQ(tr1_schedule_read.get_v_0(), 0);
-  EXPECT_EQ(tr1_schedule_read.get_t_n(), 300);
-  EXPECT_EQ(tr1_schedule_read.get_v_n(), 20);
-  EXPECT_EQ(network.get_vertex(tr1_schedule_read.get_entry()).name, "l0");
-  EXPECT_EQ(network.get_vertex(tr1_schedule_read.get_exit()).name, "r0");
+  EXPECT_EQ(tr1_schedule_read.get_entry_time(), 0);
+  EXPECT_EQ(tr1_schedule_read.get_initial_velocity(), 0);
+  EXPECT_EQ(tr1_schedule_read.get_exit_time(), 300);
+  EXPECT_EQ(tr1_schedule_read.get_exit_velocity(), 20);
+  EXPECT_EQ(network.get_vertex(tr1_schedule_read.get_entry_vertex()).name,
+            "l0");
+  EXPECT_EQ(network.get_vertex(tr1_schedule_read.get_exit_vertex()).name, "r0");
   EXPECT_EQ(tr1_schedule_read.get_stops().size(), 2);
   const auto& stop1_read = tr1_schedule_read.get_stops()[0];
-  EXPECT_EQ(stop1_read.arrival(), 100);
-  EXPECT_EQ(stop1_read.departure(), 160);
-  EXPECT_EQ(stations_read.get_station(stop1_read.get_station_name()).name,
+  EXPECT_EQ(stop1_read.get_service_time(), 100);
+  EXPECT_EQ(stop1_read.get_earliest_departure(), 160);
+  EXPECT_EQ(stations_read.get_station(stop1_read.get_station().name).name,
             "Station1");
   const auto& stop2_read = tr1_schedule_read.get_stops()[1];
-  EXPECT_EQ(stop2_read.arrival(), 200);
-  EXPECT_EQ(stop2_read.departure(), 260);
-  EXPECT_EQ(stations_read.get_station(stop2_read.get_station_name()).name,
+  EXPECT_EQ(stop2_read.get_service_time(), 200);
+  EXPECT_EQ(stop2_read.get_earliest_departure(), 260);
+  EXPECT_EQ(stations_read.get_station(stop2_read.get_station().name).name,
             "Station2");
 
   // Check if the schedule of tr2 is saved correctly
   const auto& tr2_schedule_read = timetable_read.get_schedule("tr2");
-  EXPECT_EQ(tr2_schedule_read.get_t_0(), 0);
-  EXPECT_EQ(tr2_schedule_read.get_v_0(), 0);
-  EXPECT_EQ(tr2_schedule_read.get_t_n(), 300);
-  EXPECT_EQ(tr2_schedule_read.get_v_n(), 20);
-  EXPECT_EQ(network.get_vertex(tr2_schedule_read.get_entry()).name, "r0");
-  EXPECT_EQ(network.get_vertex(tr2_schedule_read.get_exit()).name, "l0");
+  EXPECT_EQ(tr2_schedule_read.get_entry_time(), 0);
+  EXPECT_EQ(tr2_schedule_read.get_initial_velocity(), 0);
+  EXPECT_EQ(tr2_schedule_read.get_exit_time(), 300);
+  EXPECT_EQ(tr2_schedule_read.get_exit_velocity(), 20);
+  EXPECT_EQ(network.get_vertex(tr2_schedule_read.get_entry_vertex()).name,
+            "r0");
+  EXPECT_EQ(network.get_vertex(tr2_schedule_read.get_exit_vertex()).name, "l0");
   EXPECT_EQ(tr2_schedule_read.get_stops().size(), 1);
   const auto& stop3_read = tr2_schedule_read.get_stops()[0];
-  EXPECT_EQ(stop3_read.arrival(), 160);
-  EXPECT_EQ(stop3_read.departure(), 220);
-  EXPECT_EQ(stations_read.get_station(stop3_read.get_station_name()).name,
+  EXPECT_EQ(stop3_read.get_service_time(), 160);
+  EXPECT_EQ(stop3_read.get_earliest_departure(), 220);
+  EXPECT_EQ(stations_read.get_station(stop3_read.get_station().name).name,
             "Station1");
 }
 
 TEST(TimetableFunctionality, TimetableConsistency) {
-  auto network = cda_rail::Network::import_network(
-      "./example-networks/SimpleStation/network/");
-  auto network1 = cda_rail::Network::import_network(
-      "./example-networks/SimpleStation/network/");
-  network1.add_edge("l0", "r1", 100, 10, false);
-  auto network2 = cda_rail::Network::import_network(
-      "./example-networks/SimpleStation/network/");
-  network2.add_edge("r0", "l1", 100, 10, false);
+  auto network  = cda_rail::Network::import_network("SimpleStation", "./data/");
+  auto network1 = cda_rail::Network::import_network("SimpleStation", "./data/");
+  network1.add_edge({"l0"}, {"r1"}, 100, 10, false);
+  auto network2 = cda_rail::Network::import_network("SimpleStation", "./data/");
+  network2.add_edge({"r0"}, {"l1"}, 100, 10, false);
   // NOLINTNEXTLINE(misc-const-correctness)
   cda_rail::Network network3;
   cda_rail::Network network4;
@@ -326,15 +335,15 @@ TEST(TimetableFunctionality, TimetableConsistency) {
   network4.add_vertex("g11", cda_rail::VertexType::TTD);
   cda_rail::Timetable timetable;
 
-  timetable.add_station("Station1");
-  timetable.add_track_to_station("Station1", "g00", "g01", network);
+  timetable.add_empty_station("Station1");
+  timetable.add_track_to_station("Station1", {"g00", "g01"}, network);
 
   const auto l0 = network.get_vertex_index("l0");
   const auto r0 = network.get_vertex_index("r0");
 
   const auto tr1 = timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, l0, 300,
                                        20, r0, network);
-  timetable.add_stop(tr1, "Station1", 0, 60);
+  timetable.insert_stop(tr1, "Station1", 0, 60);
 
   EXPECT_TRUE(timetable.check_consistency(network));
   EXPECT_FALSE(timetable.check_consistency(network1));
@@ -344,8 +353,7 @@ TEST(TimetableFunctionality, TimetableConsistency) {
 }
 
 TEST(TimetableFunctionality, TimetableExceptions) {
-  auto network = cda_rail::Network::import_network(
-      "./example-networks/SimpleStation/network/");
+  auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   cda_rail::Timetable timetable;
 
   const auto l0 = network.get_vertex_index("l0");
@@ -368,32 +376,32 @@ TEST(TimetableFunctionality, TimetableExceptions) {
   EXPECT_THROW((void)timetable.get_schedule(10),
                cda_rail::exceptions::TrainNotExistentException);
 
-  timetable.add_station("Station1");
-  timetable.add_station("Station2");
+  timetable.add_empty_station("Station1");
+  timetable.add_empty_station("Station2");
 
-  timetable.add_track_to_station("Station1", "g00", "g01", network);
-  timetable.add_track_to_station("Station1", "g10", "g11", network);
-  timetable.add_track_to_station("Station1", "g01", "g00", network);
-  timetable.add_track_to_station("Station1", "g11", "g10", network);
-  timetable.add_track_to_station("Station2", "r1", "r0", network);
+  timetable.add_track_to_station("Station1", {"g00", "g01"}, network);
+  timetable.add_track_to_station("Station1", {"g10", "g11"}, network);
+  timetable.add_track_to_station("Station1", {"g01", "g00"}, network);
+  timetable.add_track_to_station("Station1", {"g11", "g10"}, network);
+  timetable.add_track_to_station("Station2", {"r1", "r0"}, network);
 
-  EXPECT_THROW((void)timetable.add_stop(tr1 + 10, "Station1", 0, 60),
+  EXPECT_THROW((void)timetable.insert_stop(tr1 + 10, "Station1", 0, 60),
                cda_rail::exceptions::TrainNotExistentException);
-  EXPECT_THROW((void)timetable.add_stop(tr1, "Station3", 0, 60),
+  EXPECT_THROW((void)timetable.insert_stop(tr1, "Station3", 0, 60),
                cda_rail::exceptions::StationNotExistentException);
-  EXPECT_THROW((void)timetable.add_stop(tr1, "Station1", -1, 60),
+  EXPECT_THROW((void)timetable.insert_stop(tr1, "Station1", -1, 60),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW((void)timetable.add_stop(tr1, "Station1", 0, -1),
+  EXPECT_THROW((void)timetable.insert_stop(tr1, "Station1", 0, -1),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW((void)timetable.add_stop(tr1, "Station1", 60, 0),
+  EXPECT_THROW((void)timetable.insert_stop(tr1, "Station1", 60, 0),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW((void)timetable.add_stop(tr1, "Station1", 60, 60),
+  EXPECT_THROW((void)timetable.insert_stop(tr1, "Station1", 60, 60),
                cda_rail::exceptions::InvalidInputException);
 
-  timetable.add_stop(tr1, "Station1", 0, 60);
-  EXPECT_THROW((void)timetable.add_stop(tr1, "Station1", 0, 60),
+  timetable.insert_stop(tr1, "Station1", 0, 60);
+  EXPECT_THROW((void)timetable.insert_stop(tr1, "Station1", 0, 60),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW((void)timetable.add_stop(tr1, "Station2", 30, 90),
+  EXPECT_THROW((void)timetable.insert_stop(tr1, "Station2", 30, 90),
                cda_rail::exceptions::ConsistencyException);
 
   EXPECT_THROW((void)timetable.time_index_interval(tr1 + 10, 15, true),
