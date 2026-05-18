@@ -250,32 +250,12 @@ bool cda_rail::Route::has_edges() const { return !m_edges.empty(); }
 // Getter
 const cda_rail::Route&
 cda_rail::RouteMap::get_route(const std::string& train_name) const {
-  /**
-   * Returns the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   *
-   * @return The route of the given train.
-   */
-
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
+  throw_if_train_has_no_route(train_name);
   return routes.at(train_name);
 }
 
 double cda_rail::RouteMap::route_length(const std::string& train_name,
                                         const Network&     network) const {
-  /**
-   * Returns the length of the route of the given train.
-   *
-   * @param train_name The name of the train.
-   * @param network The network to which the routes belong.
-   *
-   * @return The length of the route of the given train.
-   */
-
   return get_route(train_name).length(network);
 }
 
@@ -285,27 +265,10 @@ std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
                                           const std::string& train2,
                                           const Network&     network) const {
-  /**
-   * This functions returns all parallel overlaps between the routes of train1
-   * and train2. An overlap is an interval in which both trains are on the same
-   * tracks. The return information returns the start and end positions of the
-   * overlap ob both routes (in m). E.g., if train1 travels on e1, e2, e3, e4
-   * and train2 travels on e0, e2, e3, e5; then the overlap is on e2 and e3,
-   * i.e., the return value is {(length(e1), length(e1)+length(e2)+length(e3)),
-   * (length(e0), length(e0)+length(e2)+length(e3))}.
-   *
-   * @param train1 The name of the first train.
-   * @param train2 The name of the second train.
-   * @param network The network to which the routes belong.
-   * @return A vector of ConflictPairs representing the overlaps.
-   */
-
   std::vector<ConflictPair> result;
 
-  // Get both routes
   const auto& route1 = get_route(train1);
   const auto& route2 = get_route(train2);
-
   const auto& edges1 = route1.get_edges();
   const auto& edges2 = route2.get_edges();
 
@@ -313,27 +276,22 @@ cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
     return result;
   }
 
-  // Find all consecutive overlaps
   size_t i1   = 0;
   double pos1 = 0.0;
   while (i1 < edges1.size()) {
-    // Check if current edge in route1 exists in route2
     const size_t edge1 = edges1.at(i1);
-    if (const auto edge2_index = std::ranges::find(edges2, edge1);
-        edge2_index != edges2.end()) {
-      // Found an overlapping edge, now find the full overlap
-      size_t i2 = std::distance(edges2.begin(), edge2_index);
+    if (const auto edge2_it = std::ranges::find(edges2, edge1);
+        edge2_it != edges2.end()) {
+      size_t                     i2 = std::distance(edges2.begin(), edge2_it);
       std::unordered_set<size_t> edges_in_overlap;
 
       assert(i1 < edges1.size() && i2 < edges2.size() &&
              edges1.at(i1) == edges2.at(i2));
 
-      // Calculate start position
       double       pos2       = route2.edge_pos_on_route(edge1, network).source;
       const double start_pos1 = pos1;
       const double start_pos2 = pos2;
 
-      // Extend the overlap as long as edges match
       while (i1 < edges1.size() && i2 < edges2.size() &&
              edges1.at(i1) == edges2.at(i2)) {
         edges_in_overlap.insert(network.get_track_index(edges1.at(i1)));
@@ -343,12 +301,10 @@ cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
         ++i2;
       }
 
-      // Store the found overlap
-      result.emplace_back(ConflictPair{std::make_pair(start_pos1, pos1),
-                                       std::make_pair(start_pos2, pos2),
-                                       edges_in_overlap});
+      result.emplace_back(ConflictPair{.pos1  = {start_pos1, pos1},
+                                       .pos2  = {start_pos2, pos2},
+                                       .edges = edges_in_overlap});
     } else {
-      // No overlap, move to the next edge in route1
       pos1 += network.get_edge(edge1).length;
       ++i1;
     }
@@ -361,52 +317,43 @@ std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_ttd_overlaps(const std::string& train1,
                                      const std::string& train2,
                                      const Network&     network) const {
-  /**
-   * This functions returns all ttd overlaps between the routes of train1
-   * and train2. An overlap is an interval in which both trains are on the same
-   * TTD section. The return information returns the start and end positions of
-   * the overlap ob both routes (in m), similarly to parallel overlaps.
-   *
-   * @param train1 The name of the first train.
-   * @param train2 The name of the second train.
-   * @param network The network to which the routes belong.
-   * @return A vector of ConflictPairs representing the overlaps.
-   */
-
   std::vector<ConflictPair> result;
 
-  // Get both routes
   const auto& route1 = get_route(train1);
   const auto& route2 = get_route(train2);
   const auto& edges1 = route1.get_edges();
 
-  std::unordered_set<size_t> blacklist;
+  std::unordered_set<size_t> visited_edges;
   for (const auto& edge1 : edges1) {
-    if (blacklist.contains(edge1)) {
+    if (visited_edges.contains(edge1)) {
+      continue;
+    }
+    if (network.get_edge(edge1).breakable) {
       continue;
     }
 
-    if (const auto& e1_obj = network.get_edge(edge1); e1_obj.breakable) {
-      continue;
-    }
     const auto& ttd_sec =
         network.get_unbreakable_section_containing_edge(edge1);
     assert(!ttd_sec.empty());
+
     std::unordered_set<size_t> ttd_tracks;
-    for (const auto& ttd_sec_edge : ttd_sec) {
+    for (const auto ttd_sec_edge : ttd_sec) {
       ttd_tracks.insert(network.get_track_index(ttd_sec_edge));
-      blacklist.insert(ttd_sec_edge);
+      visited_edges.insert(ttd_sec_edge);
     }
+
     const auto start_pos2 = route2.get_first_pos_on_edges(ttd_sec, network);
     const auto end_pos2   = route2.get_last_pos_on_edges(ttd_sec, network);
     assert(start_pos2.has_value() == end_pos2.has_value());
+
     if (start_pos2.has_value() && end_pos2.has_value()) {
       const auto start_pos1 = route1.get_first_pos_on_edges(ttd_sec, network);
       const auto end_pos1   = route1.get_last_pos_on_edges(ttd_sec, network);
       assert(start_pos1.has_value() && end_pos1.has_value());
-      result.emplace_back(ConflictPair{
-          std::make_pair(start_pos1.value(), end_pos1.value()),
-          std::make_pair(start_pos2.value(), end_pos2.value()), ttd_tracks});
+      result.emplace_back(
+          ConflictPair{.pos1  = {start_pos1.value(), end_pos1.value()},
+                       .pos2  = {start_pos2.value(), end_pos2.value()},
+                       .edges = ttd_tracks});
     }
   }
 
@@ -417,28 +364,10 @@ std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
                                          const std::string& train2,
                                          const Network&     network) const {
-  /**
-   * This functions returns all reverse overlaps between the routes of train1
-   * and train2, i.e., parts where both trains travel on the same track but in
-   * different direction. The return information returns the start and end
-   * positions of the overlap ob both routes (in m). E.g., if train1 travels on
-   * e1, e2, e3, e4 and train2 travels on e5, e3', e2', e0; (e3' and e2' being
-   * the reverse indices of e3 and r2), then the overlap is on e2 and e3, i.e.,
-   * the return value is {(length(e1), length(e1)+length(e2)+length(e3)),
-   * (length(e5), length(e5)+length(e2')+length(e3'))}.
-   *
-   * @param train1 The name of the first train.
-   * @param train2 The name of the second train.
-   * @param network The network to which the routes belong.
-   * @return A vector of ConflictPairs representing the overlaps.
-   */
-
   std::vector<ConflictPair> result;
 
-  // Get both routes
   const auto& route1 = get_route(train1);
   const auto& route2 = get_route(train2);
-
   const auto& edges1 = route1.get_edges();
   const auto& edges2 = route2.get_edges();
 
@@ -446,35 +375,30 @@ cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
     return result;
   }
 
-  // Find all consecutive overlaps
   size_t i1   = 0;
   double pos1 = 0.0;
   while (i1 < edges1.size()) {
-    // Check if current edge in route1 exists in route2
-    const size_t edge1 = edges1.at(i1);
-    if (const auto edge1_reverse = network.get_reverse_edge_index(edge1);
-        (edge1_reverse.has_value() &&
-         std::ranges::contains(edges2, edge1_reverse.value()))) {
-      const auto edge2_index = std::ranges::find(edges2, edge1_reverse.value());
-      // Found an overlapping edge, now find the full overlap
-      size_t i2 = std::distance(edges2.begin(), edge2_index);
+    const size_t edge1         = edges1.at(i1);
+    const auto   edge1_reverse = network.get_reverse_edge_index(edge1);
+
+    if (edge1_reverse.has_value() &&
+        std::ranges::contains(edges2, edge1_reverse.value())) {
+      const auto edge2_it = std::ranges::find(edges2, edge1_reverse.value());
+      size_t     i2       = std::distance(edges2.begin(), edge2_it);
       std::unordered_set<size_t> edges_in_overlap;
 
       assert(i1 < edges1.size() && i2 < edges2.size() &&
              edges2.at(i2) == edge1_reverse.value());
 
-      // Calculate start position
       double pos2 =
           route2.edge_pos_on_route(edge1_reverse.value(), network).target;
       const double start_pos1 = pos1;
       const double end_pos2   = pos2;
 
-      // Extend the overlap as long as edges match
       bool i2_at_end = false;
-
       while (!i2_at_end && i1 < edges1.size()) {
-        if (const auto rev = network.get_reverse_edge_index(edges1.at(i1));
-            !rev.has_value() || rev.value() != edges2.at(i2)) {
+        const auto rev = network.get_reverse_edge_index(edges1.at(i1));
+        if (!rev.has_value() || rev.value() != edges2.at(i2)) {
           break;
         }
         assert(network.get_track_index(edges1.at(i1)) ==
@@ -489,12 +413,10 @@ cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
         }
       }
 
-      // Store the found overlap
-      result.emplace_back(ConflictPair{std::make_pair(start_pos1, pos1),
-                                       std::make_pair(pos2, end_pos2),
-                                       edges_in_overlap});
+      result.emplace_back(ConflictPair{.pos1  = {start_pos1, pos1},
+                                       .pos2  = {pos2, end_pos2},
+                                       .edges = edges_in_overlap});
     } else {
-      // No overlap, move to the next edge in route1
       pos1 += network.get_edge(edge1).length;
       ++i1;
     }
@@ -507,33 +429,19 @@ std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
                                           const std::string& train2,
                                           const Network&     network) const {
-  /**
-   * combine ttd and reverse conflicts
-   */
-  const auto ttd_conflicts     = get_ttd_overlaps(train1, train2, network);
+  auto       conflicts         = get_ttd_overlaps(train1, train2, network);
   const auto reverse_conflicts = get_reverse_overlaps(train1, train2, network);
-
-  // concatenate conflicts and order by train 1 start
-  std::vector<ConflictPair> conflicts;
-  conflicts.reserve(ttd_conflicts.size() + reverse_conflicts.size());
-  conflicts.insert(conflicts.end(), ttd_conflicts.begin(), ttd_conflicts.end());
   conflicts.insert(conflicts.end(), reverse_conflicts.begin(),
                    reverse_conflicts.end());
-  std::ranges::sort(conflicts,
-                    [](const ConflictPair& a, const ConflictPair& b) {
-                      return a.pos1.first < b.pos1.first;
-                    });
+  std::ranges::sort(conflicts, {},
+                    [](const ConflictPair& c) { return c.pos1.first; });
 
-  // for any two conflicts, unite them if they are directly next to each other
-  // or overlap, i.e., if train1_end of prev >= train1_start of succ AND if
-  // train2_end of succ >= train_2 start of prev Then unite them into one
-  // conflict
   std::vector<ConflictPair> result;
   if (conflicts.empty()) {
     return result;
   }
 
-  result.emplace_back(conflicts.at(0));
+  result.emplace_back(conflicts.front());
   for (size_t i = 1; i < conflicts.size(); ++i) {
     auto&       prev = result.back();
     const auto& succ = conflicts.at(i);
@@ -541,19 +449,12 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
     if (prev.pos1.second >= succ.pos1.first &&
         prev.pos2.second >= succ.pos2.first &&
         succ.pos2.second >= prev.pos2.first) {
-      // Because conflicts are sorted succ.pos1.first >= prev.pos1.first is
-      // guaranteed
       prev.pos1.second = std::max(prev.pos1.second, succ.pos1.second);
       prev.pos2.first  = std::min(prev.pos2.first, succ.pos2.first);
-      prev.pos2.second = std::max(
-          prev.pos2.second,
-          succ.pos2
-              .second); // usually this should not do anything by the problem
-                        // structure but better safe than sorry because it is
-                        // not 100% guaranteed that this can never happen
+      prev.pos2.second = std::max(prev.pos2.second, succ.pos2.second);
       prev.edges.insert(succ.edges.begin(), succ.edges.end());
     } else {
-      result.emplace_back(conflicts.at(i));
+      result.emplace_back(succ);
     }
   }
 
@@ -563,30 +464,13 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
 // Editing functions
 
 void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
-  /**
-   * Adds an empty route for the given train.
-   * Throws an error if the train already has a route.
-   *
-   * @param train_name The name of the train.
-   */
-
-  if (routes.find(train_name) != routes.end()) {
+  if (!routes.try_emplace(train_name).second) {
     throw exceptions::InvalidInputException("Train already has a route.");
   }
-  routes[train_name] = Route();
 }
 
 void cda_rail::RouteMap::add_empty_route(const std::string& train_name,
                                          const TrainList&   trains) {
-  /**
-   * Adds an empty route for the given train.
-   * Throws an error if the train already has a route.
-   * Throws an error if the train does not exist.
-   *
-   * @param train_name The name of the train.
-   * @param trains The list of trains.
-   */
-
   if (!trains.has_train(train_name)) {
     throw exceptions::TrainNotExistentException(train_name);
   }
@@ -596,71 +480,29 @@ void cda_rail::RouteMap::add_empty_route(const std::string& train_name,
 void cda_rail::RouteMap::push_back_edge(const std::string&        train_name,
                                         Network::EdgeInput const& new_edge,
                                         const Network&            network) {
-  /**
-   * Adds the edge to the end of the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   * @param new_edge New edge to append.
-   * @param network The network to which the routes belong.
-   */
-
-  if (!routes.contains(train_name)) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].push_back_edge(new_edge, network);
+  throw_if_train_has_no_route(train_name);
+  routes.at(train_name).push_back_edge(new_edge, network);
 }
 
 void cda_rail::RouteMap::push_front_edge(const std::string&        train_name,
                                          Network::EdgeInput const& new_edge,
                                          const Network&            network) {
-  /**
-   * Adds the edge to the front of the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   * @param new_edge New edge to prepend
-   * @param network The network to which the routes belong.
-   */
-
-  if (!routes.contains(train_name)) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].push_front_edge(new_edge, network);
+  throw_if_train_has_no_route(train_name);
+  routes.at(train_name).push_front_edge(new_edge, network);
 }
 
 void cda_rail::RouteMap::remove_first_edge(const std::string& train_name) {
-  /**
-   * Removes the first edge from the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   */
-
-  if (!routes.contains(train_name)) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].remove_first_edge();
+  throw_if_train_has_no_route(train_name);
+  routes.at(train_name).remove_first_edge();
 }
 
 void cda_rail::RouteMap::remove_last_edge(const std::string& train_name) {
-  /**
-   * Removes the last edge from the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   */
-
-  if (!routes.contains(train_name)) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].remove_last_edge();
+  throw_if_train_has_no_route(train_name);
+  routes.at(train_name).remove_last_edge();
 }
 
 void cda_rail::RouteMap::remove_route(const std::string& train_name) {
-  if (!routes.contains(train_name)) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
+  throw_if_train_has_no_route(train_name);
   routes.erase(train_name);
 }
 
@@ -668,16 +510,6 @@ void cda_rail::RouteMap::remove_route(const std::string& train_name) {
 
 void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
                                        const Network& network) const {
-  /**
-   * Exports the routes to a routes.json file within the given path.
-   * The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]} where the edge names
-   * are used.
-   *
-   * @param p The path to the directory in which the routes.json file should be
-   * created.
-   * @param network The network to which the routes belong.
-   */
-
   if (!is_directory_and_create(p)) {
     throw exceptions::ExportException("Could not create directory " +
                                       p.string());
@@ -685,13 +517,13 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
 
   json j;
   for (const auto& [name, route] : routes) {
-    std::vector<std::pair<std::string, std::string>> route_edges;
-    for (int i = 0; i < route.size(); i++) {
-      const auto& edge = route.get_edge(i, network);
-      route_edges.emplace_back(network.get_vertex(edge.source).name,
-                               network.get_vertex(edge.target).name);
-    }
-    j[name] = route_edges;
+    const auto edge_pairs =
+        route.get_edges() | std::views::transform([&network](size_t edge_id) {
+          const auto& edge = network.get_edge(edge_id);
+          return std::pair{network.get_vertex(edge.source).name,
+                           network.get_vertex(edge.target).name};
+        });
+    j[name] = std::vector(edge_pairs.begin(), edge_pairs.end());
   }
 
   std::ofstream file(p / "routes.json");
@@ -700,16 +532,6 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
 
 cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
                              const Network&               network) {
-  /**
-   * Constructs the object and imports the routes from a routes.json file within
-   * the given path. The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]}
-   * where the edge names are used.
-   *
-   * @param p The path to the directory in which the routes.json file should be
-   * created.
-   * @param network The network to which the routes belong.
-   */
-
   if (!std::filesystem::exists(p)) {
     throw exceptions::ImportException("Path does not exist.");
   }
@@ -718,12 +540,12 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
   }
 
   std::ifstream file(p / "routes.json");
-  json          data = json::parse(file);
+  const json    data = json::parse(file);
 
   for (const auto& [name, route] : data.items()) {
-    this->add_empty_route(name);
-    for (auto& edge : route) {
-      this->push_back_edge(
+    add_empty_route(name);
+    for (const auto& edge : route) {
+      push_back_edge(
           name, {edge.at(0).get<std::string>(), edge.at(1).get<std::string>()},
           network);
     }
@@ -735,19 +557,6 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
 bool cda_rail::RouteMap::check_consistency(
     const TrainList& trains, const Network& network,
     bool every_train_must_have_route) const {
-  /**
-   * Asserts if the route map is valid for the given trains and network.
-   * A route map is valid if all routes are valid for the given network and if
-   * all trains with routes exist. If every_train_must_have_route is true, then
-   * the route map is only valid if all trains have routes.
-   *
-   * @param trains The list of trains.
-   * @param network The network to which the routes belong.
-   * @param every_train_must_have_route If true, then the route map is only
-   * valid if all trains have routes.
-   * @return True if the route map is valid, false otherwise.
-   */
-
   if (every_train_must_have_route && routes.size() != trains.size()) {
     return false;
   }
@@ -760,14 +569,6 @@ bool cda_rail::RouteMap::check_consistency(
 
 void cda_rail::RouteMap::update_after_discretization(
     const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
-  /**
-   * This method updates the routes after the discretization of the network
-   * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
-   * ..., v_n.
-   *
-   * @param new_edges The new edges of the network.
-   */
-
   for (auto& [train_name, route] : routes) {
     route.update_after_discretization(new_edges);
   }
