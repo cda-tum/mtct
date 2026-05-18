@@ -61,7 +61,7 @@ private:
    *         contains an edge that does not exist in @p network.
    */
   [[nodiscard]] std::optional<double>
-  get_pos_on_edges_impl(const cda_rail::index_vector& edge_indices,
+  get_pos_on_edges_impl(const cda_rail::index_set& edge_indices,
                         const Network& network, bool first_match) const;
 
   /**
@@ -162,8 +162,8 @@ public:
    *         contains an edge that does not exist in @p network.
    */
   [[nodiscard]] std::optional<double>
-  get_first_pos_on_edges(const cda_rail::index_vector& edge_indices,
-                         const Network&                network) const;
+  get_first_pos_on_edges(const cda_rail::index_set& edge_indices,
+                         const Network&             network) const;
 
   /**
    * @brief Returns where the last matching edge ends.
@@ -176,8 +176,8 @@ public:
    *         contains an edge that does not exist in @p network.
    */
   [[nodiscard]] std::optional<double>
-  get_last_pos_on_edges(const cda_rail::index_vector& edge_indices,
-                        const Network&                network) const;
+  get_last_pos_on_edges(const cda_rail::index_set& edge_indices,
+                        const Network&             network) const;
 
   /**
    * @brief Returns the edge that contains a given position on the route.
@@ -336,9 +336,6 @@ public:
       const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
 };
 
-#if 0
-// TODO: For testing purposes
-
 class RouteMap {
 private:
   std::unordered_map<std::string, Route> routes;
@@ -361,59 +358,22 @@ public:
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
-  [[nodiscard]] auto begin() const { return routes.begin(); };
-  [[nodiscard]] auto end() const { return routes.end(); };
+  [[nodiscard]] constexpr auto cbegin() const { return routes.cbegin(); };
+  [[nodiscard]] constexpr auto cend() const { return routes.cend(); };
 
-  void add_empty_route(const std::string& train_name);
-  void add_empty_route(const std::string& train_name, const TrainList& trains);
+  // ----------------
+  // GETTER
+  // ----------------
 
-  void push_back_edge(const std::string& train_name, size_t edge_index,
-                      const Network& network);
-  void push_back_edge(const std::string& train_name, size_t source,
-                      size_t target, const Network& network);
-  void push_back_edge(const std::string& train_name, const std::string& source,
-                      const std::string& target, const Network& network);
+  // Simple Getter
 
-  void push_front_edge(const std::string& train_name, size_t edge_index,
-                       const Network& network);
-  void push_front_edge(const std::string& train_name, size_t source,
-                       size_t target, const Network& network);
-  void push_front_edge(const std::string& train_name, const std::string& source,
-                       const std::string& target, const Network& network);
-
-  void remove_first_edge(const std::string& train_name);
-  void remove_last_edge(const std::string& train_name);
-
-  void remove_route(const std::string& train_name);
-
-  [[nodiscard]] bool has_route(const std::string& train_name) const {
-    return routes.contains(train_name);
-  };
   [[nodiscard]] size_t       size() const { return routes.size(); };
   [[nodiscard]] bool         empty() const { return routes.empty(); };
   [[nodiscard]] const Route& get_route(const std::string& train_name) const;
-
-  [[nodiscard]] double length(const std::string& train_name,
-                              const Network&     network) const;
-  [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::string& train_name, size_t edge,
-           const Network& network) const {
-    return get_route(train_name).edge_pos(edge, network);
-  };
-  [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::string& train_name, size_t source, size_t target,
-           const Network& network) const {
-    return get_route(train_name).edge_pos(source, target, network);
-  };
-  [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::string& train_name, const std::string& source,
-           const std::string& target, const Network& network) const {
-    return get_route(train_name).edge_pos(source, target, network);
-  };
-  [[nodiscard]] std::pair<double, double>
-  edge_pos(const std::string& train_name, const cda_rail::index_vector& edges,
-           const Network& network) const {
-    return get_route(train_name).edge_pos(edges, network);
+  [[nodiscard]] double       route_length(const std::string& train_name,
+                                          const Network&     network) const;
+  [[nodiscard]] bool         has_route(const std::string& train_name) const {
+    return routes.contains(train_name);
   };
 
   // Overlap functions
@@ -430,9 +390,27 @@ public:
   get_crossing_overlaps(const std::string& train1, const std::string& train2,
                         const Network& network) const;
 
-  [[nodiscard]] bool
-  check_consistency(const TrainList& trains, const Network& network,
-                    bool every_train_must_have_route = true) const;
+  // ------------------
+  // EDITING FUNCTIONS
+  // ------------------
+
+  void add_empty_route(const std::string& train_name);
+  void add_empty_route(const std::string& train_name, const TrainList& trains);
+
+  void push_back_edge(const std::string&        train_name,
+                      Network::EdgeInput const& new_edge,
+                      const Network&            network);
+  void push_front_edge(const std::string&        train_name,
+                       Network::EdgeInput const& new_edge,
+                       const Network&            network);
+
+  void remove_first_edge(const std::string& train_name);
+  void remove_last_edge(const std::string& train_name);
+  void remove_route(const std::string& train_name);
+
+  // ------------------
+  // IMPORT / EXPORT
+  // ------------------
 
   void export_routes(const std::filesystem::path& p,
                      const Network&               network) const;
@@ -456,10 +434,19 @@ public:
     return {path, network};
   };
 
+  // -----------------
+  // HELPER
+  // -----------------
+
+  [[nodiscard]] bool
+  check_consistency(const TrainList& trains, const Network& network,
+                    bool every_train_must_have_route = true) const;
+
   void update_after_discretization(
       const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
-};
 
-#endif
+private:
+  void throw_if_train_has_no_route(std::string const& train_name) const;
+};
 
 } // namespace cda_rail

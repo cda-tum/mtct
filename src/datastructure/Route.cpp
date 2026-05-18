@@ -97,13 +97,15 @@ cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
   return return_pos;
 }
 
-std::optional<double> cda_rail::Route::get_first_pos_on_edges(
-    const cda_rail::index_vector& edge_indices, const Network& network) const {
+std::optional<double>
+cda_rail::Route::get_first_pos_on_edges(const cda_rail::index_set& edge_indices,
+                                        const Network& network) const {
   return get_pos_on_edges_impl(edge_indices, network, true);
 }
 
-std::optional<double> cda_rail::Route::get_last_pos_on_edges(
-    const cda_rail::index_vector& edge_indices, const Network& network) const {
+std::optional<double>
+cda_rail::Route::get_last_pos_on_edges(const cda_rail::index_set& edge_indices,
+                                       const Network& network) const {
   return get_pos_on_edges_impl(edge_indices, network, false);
 }
 
@@ -209,9 +211,10 @@ void cda_rail::Route::update_after_discretization(
   m_edges = std::move(edges_updated);
 }
 
-std::optional<double> cda_rail::Route::get_pos_on_edges_impl(
-    const cda_rail::index_vector& edge_indices, const Network& network,
-    bool first_match) const {
+std::optional<double>
+cda_rail::Route::get_pos_on_edges_impl(const cda_rail::index_set& edge_indices,
+                                       const Network&             network,
+                                       bool first_match) const {
   const std::unordered_set<size_t> edge_set(edge_indices.begin(),
                                             edge_indices.end());
 
@@ -240,72 +243,11 @@ void cda_rail::Route::is_route_index_valid(size_t route_index) const {
 
 bool cda_rail::Route::has_edges() const { return !m_edges.empty(); }
 
-#if 0
-// TODO: comment in
-
 // -----------------------------
 // ROUTE MAP
 // -----------------------------
 
-void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
-  /**
-   * Adds an empty route for the given train.
-   * Throws an error if the train already has a route.
-   *
-   * @param train_name The name of the train.
-   */
-
-  if (routes.find(train_name) != routes.end()) {
-    throw exceptions::InvalidInputException("Train already has a route.");
-  }
-  routes[train_name] = Route();
-}
-
-void cda_rail::RouteMap::add_empty_route(const std::string& train_name,
-                                         const TrainList&   trains) {
-  /**
-   * Adds an empty route for the given train.
-   * Throws an error if the train already has a route.
-   * Throws an error if the train does not exist.
-   *
-   * @param train_name The name of the train.
-   * @param trains The list of trains.
-   */
-
-  if (!trains.has_train(train_name)) {
-    throw exceptions::TrainNotExistentException(train_name);
-  }
-  add_empty_route(train_name);
-}
-
-void cda_rail::RouteMap::remove_first_edge(const std::string& train_name) {
-  /**
-   * Removes the first edge from the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   */
-
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].remove_first_edge();
-}
-
-void cda_rail::RouteMap::remove_last_edge(const std::string& train_name) {
-  /**
-   * Removes the last edge from the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   */
-
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].remove_last_edge();
-}
-
+// Getter
 const cda_rail::Route&
 cda_rail::RouteMap::get_route(const std::string& train_name) const {
   /**
@@ -323,211 +265,8 @@ cda_rail::RouteMap::get_route(const std::string& train_name) const {
   return routes.at(train_name);
 }
 
-bool cda_rail::RouteMap::check_consistency(
-    const TrainList& trains, const Network& network,
-    bool every_train_must_have_route) const {
-  /**
-   * Asserts if the route map is valid for the given trains and network.
-   * A route map is valid if all routes are valid for the given network and if
-   * all trains with routes exist. If every_train_must_have_route is true, then
-   * the route map is only valid if all trains have routes.
-   *
-   * @param trains The list of trains.
-   * @param network The network to which the routes belong.
-   * @param every_train_must_have_route If true, then the route map is only
-   * valid if all trains have routes.
-   * @return True if the route map is valid, false otherwise.
-   */
-
-  if (every_train_must_have_route && routes.size() != trains.size()) {
-    return false;
-  }
-
-  return std::ranges::all_of(routes, [&trains, &network](const auto& route) {
-    return trains.has_train(route.first) &&
-           route.second.check_consistency(network);
-  });
-}
-
-void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
-                                       const Network& network) const {
-  /**
-   * Exports the routes to a routes.json file within the given path.
-   * The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]} where the edge names
-   * are used.
-   *
-   * @param p The path to the directory in which the routes.json file should be
-   * created.
-   * @param network The network to which the routes belong.
-   */
-
-  if (!is_directory_and_create(p)) {
-    throw exceptions::ExportException("Could not create directory " +
-                                      p.string());
-  }
-
-  json j;
-  for (const auto& [name, route] : routes) {
-    std::vector<std::pair<std::string, std::string>> route_edges;
-    for (int i = 0; i < route.size(); i++) {
-      const auto& edge = route.get_edge(i, network);
-      route_edges.emplace_back(network.get_vertex(edge.source).name,
-                               network.get_vertex(edge.target).name);
-    }
-    j[name] = route_edges;
-  }
-
-  std::ofstream file(p / "routes.json");
-  file << j << '\n';
-}
-
-void cda_rail::RouteMap::push_back_edge(const std::string& train_name,
-                                        size_t             edge_index,
-                                        const Network&     network) {
-  /**
-   * Adds the edge to the end of the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   * @param edge_index The index of the edge in the network.
-   * @param network The network to which the routes belong.
-   */
-
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].push_back_edge(edge_index, network);
-}
-
-void cda_rail::RouteMap::push_back_edge(const std::string& train_name,
-                                        size_t source, size_t target,
-                                        const Network& network) {
-  /**
-   * Adds the edge to the end of the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   * @param source The index of the source station in the network.
-   * @param target The index of the target station in the network.
-   * @param network The network to which the routes belong.
-   */
-
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].push_back_edge(source, target, network);
-}
-
-void cda_rail::RouteMap::push_back_edge(const std::string& train_name,
-                                        const std::string& source,
-                                        const std::string& target,
-                                        const Network&     network) {
-  /**
-   * Adds the edge to the end of the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   * @param source The name of the source station.
-   * @param target The name of the target station.
-   * @param network The network to which the routes belong.
-   */
-
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].push_back_edge(source, target, network);
-}
-
-void cda_rail::RouteMap::push_front_edge(const std::string& train_name,
-                                         size_t             edge_index,
-                                         const Network&     network) {
-  /**
-   * Adds the edge to the front of the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   * @param edge_index The index of the edge in the network.
-   * @param network The network to which the routes belong.
-   */
-
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].push_front_edge(edge_index, network);
-}
-
-void cda_rail::RouteMap::push_front_edge(const std::string& train_name,
-                                         size_t source, size_t target,
-                                         const Network& network) {
-  /**
-   * Adds the edge to the front of the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   * @param source The index of the source station in the network.
-   * @param target The index of the target station in the network.
-   * @param network The network to which the routes belong.
-   */
-
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].push_front_edge(source, target, network);
-}
-
-void cda_rail::RouteMap::push_front_edge(const std::string& train_name,
-                                         const std::string& source,
-                                         const std::string& target,
-                                         const Network&     network) {
-  /**
-   * Adds the edge to the front of the route of the given train.
-   * Throws an error if the train does not have a route.
-   *
-   * @param train_name The name of the train.
-   * @param source The name of the source station.
-   * @param target The name of the target station.
-   * @param network The network to which the routes belong.
-   */
-
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes[train_name].push_front_edge(source, target, network);
-}
-
-cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
-                             const Network&               network) {
-  /**
-   * Constructs the object and imports the routes from a routes.json file within
-   * the given path. The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]}
-   * where the edge names are used.
-   *
-   * @param p The path to the directory in which the routes.json file should be
-   * created.
-   * @param network The network to which the routes belong.
-   */
-
-  if (!std::filesystem::exists(p)) {
-    throw exceptions::ImportException("Path does not exist.");
-  }
-  if (!std::filesystem::is_directory(p)) {
-    throw exceptions::ImportException("Path is not a directory.");
-  }
-
-  std::ifstream file(p / "routes.json");
-  json          data = json::parse(file);
-
-  for (const auto& [name, route] : data.items()) {
-    this->add_empty_route(name);
-    for (auto& edge : route) {
-      this->push_back_edge(name, edge[0].get<std::string>(),
-                           edge[1].get<std::string>(), network);
-    }
-  }
-}
-
-double cda_rail::RouteMap::length(const std::string& train_name,
-                                  const Network&     network) const {
+double cda_rail::RouteMap::route_length(const std::string& train_name,
+                                        const Network&     network) const {
   /**
    * Returns the length of the route of the given train.
    *
@@ -540,27 +279,7 @@ double cda_rail::RouteMap::length(const std::string& train_name,
   return get_route(train_name).length(network);
 }
 
-void cda_rail::RouteMap::update_after_discretization(
-    const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
-  /**
-   * This method updates the routes after the discretization of the network
-   * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
-   * ..., v_n.
-   *
-   * @param new_edges The new edges of the network.
-   */
-
-  for (auto& [train_name, route] : routes) {
-    route.update_after_discretization(new_edges);
-  }
-}
-
-void cda_rail::RouteMap::remove_route(const std::string& train_name) {
-  if (routes.find(train_name) == routes.end()) {
-    throw exceptions::ConsistencyException("Train does not have a route.");
-  }
-  routes.erase(train_name);
-}
+// Overlap functions
 
 std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
@@ -610,7 +329,7 @@ cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
              edges1.at(i1) == edges2.at(i2));
 
       // Calculate start position
-      double       pos2       = route2.edge_pos(edge1, network).first;
+      double       pos2       = route2.edge_pos_on_route(edge1, network).source;
       const double start_pos1 = pos1;
       const double start_pos2 = pos2;
 
@@ -745,7 +464,8 @@ cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
              edges2.at(i2) == edge1_reverse.value());
 
       // Calculate start position
-      double pos2 = route2.edge_pos(edge1_reverse.value(), network).second;
+      double pos2 =
+          route2.edge_pos_on_route(edge1_reverse.value(), network).target;
       const double start_pos1 = pos1;
       const double end_pos2   = pos2;
 
@@ -840,4 +560,226 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
   return result;
 }
 
-#endif
+// Editing functions
+
+void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
+  /**
+   * Adds an empty route for the given train.
+   * Throws an error if the train already has a route.
+   *
+   * @param train_name The name of the train.
+   */
+
+  if (routes.find(train_name) != routes.end()) {
+    throw exceptions::InvalidInputException("Train already has a route.");
+  }
+  routes[train_name] = Route();
+}
+
+void cda_rail::RouteMap::add_empty_route(const std::string& train_name,
+                                         const TrainList&   trains) {
+  /**
+   * Adds an empty route for the given train.
+   * Throws an error if the train already has a route.
+   * Throws an error if the train does not exist.
+   *
+   * @param train_name The name of the train.
+   * @param trains The list of trains.
+   */
+
+  if (!trains.has_train(train_name)) {
+    throw exceptions::TrainNotExistentException(train_name);
+  }
+  add_empty_route(train_name);
+}
+
+void cda_rail::RouteMap::push_back_edge(const std::string&        train_name,
+                                        Network::EdgeInput const& new_edge,
+                                        const Network&            network) {
+  /**
+   * Adds the edge to the end of the route of the given train.
+   * Throws an error if the train does not have a route.
+   *
+   * @param train_name The name of the train.
+   * @param new_edge New edge to append.
+   * @param network The network to which the routes belong.
+   */
+
+  if (!routes.contains(train_name)) {
+    throw exceptions::ConsistencyException("Train does not have a route.");
+  }
+  routes[train_name].push_back_edge(new_edge, network);
+}
+
+void cda_rail::RouteMap::push_front_edge(const std::string&        train_name,
+                                         Network::EdgeInput const& new_edge,
+                                         const Network&            network) {
+  /**
+   * Adds the edge to the front of the route of the given train.
+   * Throws an error if the train does not have a route.
+   *
+   * @param train_name The name of the train.
+   * @param new_edge New edge to prepend
+   * @param network The network to which the routes belong.
+   */
+
+  if (!routes.contains(train_name)) {
+    throw exceptions::ConsistencyException("Train does not have a route.");
+  }
+  routes[train_name].push_front_edge(new_edge, network);
+}
+
+void cda_rail::RouteMap::remove_first_edge(const std::string& train_name) {
+  /**
+   * Removes the first edge from the route of the given train.
+   * Throws an error if the train does not have a route.
+   *
+   * @param train_name The name of the train.
+   */
+
+  if (!routes.contains(train_name)) {
+    throw exceptions::ConsistencyException("Train does not have a route.");
+  }
+  routes[train_name].remove_first_edge();
+}
+
+void cda_rail::RouteMap::remove_last_edge(const std::string& train_name) {
+  /**
+   * Removes the last edge from the route of the given train.
+   * Throws an error if the train does not have a route.
+   *
+   * @param train_name The name of the train.
+   */
+
+  if (!routes.contains(train_name)) {
+    throw exceptions::ConsistencyException("Train does not have a route.");
+  }
+  routes[train_name].remove_last_edge();
+}
+
+void cda_rail::RouteMap::remove_route(const std::string& train_name) {
+  if (!routes.contains(train_name)) {
+    throw exceptions::ConsistencyException("Train does not have a route.");
+  }
+  routes.erase(train_name);
+}
+
+// Import and export
+
+void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
+                                       const Network& network) const {
+  /**
+   * Exports the routes to a routes.json file within the given path.
+   * The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]} where the edge names
+   * are used.
+   *
+   * @param p The path to the directory in which the routes.json file should be
+   * created.
+   * @param network The network to which the routes belong.
+   */
+
+  if (!is_directory_and_create(p)) {
+    throw exceptions::ExportException("Could not create directory " +
+                                      p.string());
+  }
+
+  json j;
+  for (const auto& [name, route] : routes) {
+    std::vector<std::pair<std::string, std::string>> route_edges;
+    for (int i = 0; i < route.size(); i++) {
+      const auto& edge = route.get_edge(i, network);
+      route_edges.emplace_back(network.get_vertex(edge.source).name,
+                               network.get_vertex(edge.target).name);
+    }
+    j[name] = route_edges;
+  }
+
+  std::ofstream file(p / "routes.json");
+  file << j << '\n';
+}
+
+cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
+                             const Network&               network) {
+  /**
+   * Constructs the object and imports the routes from a routes.json file within
+   * the given path. The form is {train: [[e1_0, e1_1], [e2_0, e2_1], ...]}
+   * where the edge names are used.
+   *
+   * @param p The path to the directory in which the routes.json file should be
+   * created.
+   * @param network The network to which the routes belong.
+   */
+
+  if (!std::filesystem::exists(p)) {
+    throw exceptions::ImportException("Path does not exist.");
+  }
+  if (!std::filesystem::is_directory(p)) {
+    throw exceptions::ImportException("Path is not a directory.");
+  }
+
+  std::ifstream file(p / "routes.json");
+  json          data = json::parse(file);
+
+  for (const auto& [name, route] : data.items()) {
+    this->add_empty_route(name);
+    for (auto& edge : route) {
+      this->push_back_edge(
+          name, {edge.at(0).get<std::string>(), edge.at(1).get<std::string>()},
+          network);
+    }
+  }
+}
+
+// Helper
+
+bool cda_rail::RouteMap::check_consistency(
+    const TrainList& trains, const Network& network,
+    bool every_train_must_have_route) const {
+  /**
+   * Asserts if the route map is valid for the given trains and network.
+   * A route map is valid if all routes are valid for the given network and if
+   * all trains with routes exist. If every_train_must_have_route is true, then
+   * the route map is only valid if all trains have routes.
+   *
+   * @param trains The list of trains.
+   * @param network The network to which the routes belong.
+   * @param every_train_must_have_route If true, then the route map is only
+   * valid if all trains have routes.
+   * @return True if the route map is valid, false otherwise.
+   */
+
+  if (every_train_must_have_route && routes.size() != trains.size()) {
+    return false;
+  }
+
+  return std::ranges::all_of(routes, [&trains, &network](const auto& route) {
+    return trains.has_train(route.first) &&
+           route.second.check_consistency(network);
+  });
+}
+
+void cda_rail::RouteMap::update_after_discretization(
+    const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
+  /**
+   * This method updates the routes after the discretization of the network
+   * accordingly. For every pair (v, {v_1, ..., v_n}), v is replaced by v_1,
+   * ..., v_n.
+   *
+   * @param new_edges The new edges of the network.
+   */
+
+  for (auto& [train_name, route] : routes) {
+    route.update_after_discretization(new_edges);
+  }
+}
+
+// error handling
+
+void cda_rail::RouteMap::throw_if_train_has_no_route(
+    std::string const& train_name) const {
+  if (!routes.contains(train_name)) {
+    auto const error_message = concatenate_string_views(
+        {"Train ", train_name, " does not have a route."});
+    throw exceptions::ConsistencyException(error_message);
+  }
+}
