@@ -18,15 +18,12 @@ TEST(TimetableFunctionality, ReadTimetable) {
   const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
-  std::vector<size_t> track_ids_target{
+  const cda_rail::index_set track_ids_target{
       network.get_edge_index({"g00"}, {"g01"}),
       network.get_edge_index({"g10"}, {"g11"}),
       network.get_edge_index({"g01"}, {"g00"}),
       network.get_edge_index({"g11"}, {"g10"})};
-  std::vector<size_t> track_ids(station.tracks.begin(), station.tracks.end());
-  std::sort(track_ids.begin(), track_ids.end());
-  std::sort(track_ids_target.begin(), track_ids_target.end());
-  EXPECT_EQ(track_ids, track_ids_target);
+  EXPECT_EQ(station.tracks, track_ids_target);
 
   // Check if the timetable has the correct trains
   const auto& trains = timetable.get_train_list();
@@ -113,18 +110,10 @@ TEST(TimetableFunctionality, WriteTimetable) {
   timetable.add_train("tr2", 100, 27.78, 2, 1, 0, 0, "r0", 300, 20, "l0",
                       network);
 
-  const std::pair<int, int> time_interval_expected{0, 300};
-
-  EXPECT_EQ(
-      (std::pair<int, int>{
-          static_cast<int>(timetable.get_schedule("tr1").get_entry_time()),
-          static_cast<int>(timetable.get_schedule("tr1").get_exit_time())}),
-      time_interval_expected);
-  EXPECT_EQ(
-      (std::pair<int, int>{
-          static_cast<int>(timetable.get_schedule("tr2").get_entry_time()),
-          static_cast<int>(timetable.get_schedule("tr2").get_exit_time())}),
-      time_interval_expected);
+  EXPECT_EQ(timetable.get_schedule("tr1").get_entry_time(), 0);
+  EXPECT_EQ(timetable.get_schedule("tr1").get_exit_time(), 300);
+  EXPECT_EQ(timetable.get_schedule("tr2").get_entry_time(), 0);
+  EXPECT_EQ(timetable.get_schedule("tr2").get_exit_time(), 300);
 
   timetable.add_empty_station("Station1");
   timetable.add_empty_station("Station2");
@@ -150,22 +139,18 @@ TEST(TimetableFunctionality, WriteTimetable) {
   const auto& st1 = stations.get_station("Station1");
   EXPECT_EQ(st1.name, "Station1");
   EXPECT_EQ(st1.tracks.size(), 4);
-  std::vector<size_t> s1_expected_tracks = {
+  const cda_rail::index_set s1_expected_tracks{
       network.get_edge_index({"g00"}, {"g01"}),
       network.get_edge_index({"g10"}, {"g11"}),
       network.get_edge_index({"g01"}, {"g00"}),
       network.get_edge_index({"g11"}, {"g10"})};
-  std::vector<size_t> st1_tracks(st1.tracks.begin(), st1.tracks.end());
-  std::sort(st1_tracks.begin(), st1_tracks.end());
-  std::sort(s1_expected_tracks.begin(), s1_expected_tracks.end());
-  EXPECT_EQ(st1_tracks, s1_expected_tracks);
+  EXPECT_EQ(st1.tracks, s1_expected_tracks);
   const auto& st2 = stations.get_station("Station2");
   EXPECT_EQ(st2.name, "Station2");
   EXPECT_EQ(st2.tracks.size(), 1);
-  const std::vector<size_t> s2_expected_tracks = {
+  const cda_rail::index_set s2_expected_tracks{
       network.get_edge_index({"r1"}, {"r0"})};
-  EXPECT_EQ((std::vector<size_t>(st2.tracks.begin(), st2.tracks.end())),
-            s2_expected_tracks);
+  EXPECT_EQ(st2.tracks, s2_expected_tracks);
 
   // Check if the timetable has the correct trains
   const auto& trains = timetable.get_train_list();
@@ -241,17 +226,11 @@ TEST(TimetableFunctionality, WriteTimetable) {
   const auto& st1_read = stations_read.get_station("Station1");
   EXPECT_EQ(st1_read.name, "Station1");
   EXPECT_EQ(st1_read.tracks.size(), 4);
-  std::vector<size_t> st1_read_tracks(st1_read.tracks.begin(),
-                                      st1_read.tracks.end());
-  std::sort(st1_read_tracks.begin(), st1_read_tracks.end());
-  EXPECT_EQ(st1_read_tracks, s1_expected_tracks);
+  EXPECT_EQ(st1_read.tracks, s1_expected_tracks);
   const auto& st2_read = stations_read.get_station("Station2");
   EXPECT_EQ(st2_read.name, "Station2");
   EXPECT_EQ(st2_read.tracks.size(), 1);
-  std::vector<size_t> st2_read_tracks(st2_read.tracks.begin(),
-                                      st2_read.tracks.end());
-  std::sort(st2_read_tracks.begin(), st2_read_tracks.end());
-  EXPECT_EQ(st2_read_tracks, s2_expected_tracks);
+  EXPECT_EQ(st2_read.tracks, s2_expected_tracks);
 
   // Check if the timetable has the correct trains
   const auto& trains_read = timetable_read.get_train_list();
