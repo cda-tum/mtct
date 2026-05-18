@@ -373,8 +373,7 @@ TEST(RouteFunctionality, UpdateAfterDiscretizationReplacesMappedEdgesInOrder) {
 // Route Map
 
 TEST(Functionality, RouteMap) {
-  auto network = cda_rail::Network::import_network(
-      "./example-networks/SimpleStation/network/");
+  auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto train_list = cda_rail::TrainList();
 
   train_list.add_train("tr1", 100, 83.33, 2, 1);
@@ -385,13 +384,13 @@ TEST(Functionality, RouteMap) {
   EXPECT_ANY_THROW(route_map.add_empty_route("tr3", train_list));
 
   route_map.add_empty_route("tr1", train_list);
-  route_map.push_back_edge("tr1", "l1", "l2", network);
-  EXPECT_ANY_THROW(route_map.push_back_edge("tr1", "l0", "l2", network));
-  EXPECT_ANY_THROW(route_map.push_back_edge("tr1", "l0", "l1", network));
-  route_map.push_back_edge("tr1", "l2", "l3", network);
-  EXPECT_ANY_THROW(route_map.push_front_edge("tr1", "l0", "l2", network));
-  EXPECT_ANY_THROW(route_map.push_front_edge("tr1", "l3", "g00", network));
-  route_map.push_front_edge("tr1", "l0", "l1", network);
+  route_map.push_back_edge("tr1", {"l1", "l2"}, network);
+  EXPECT_ANY_THROW(route_map.push_back_edge("tr1", {"l0", "l2"}, network));
+  EXPECT_ANY_THROW(route_map.push_back_edge("tr1", {"l0", "l1"}, network));
+  route_map.push_back_edge("tr1", {"l2", "l3"}, network);
+  EXPECT_ANY_THROW(route_map.push_front_edge("tr1", {"l0", "l2"}, network));
+  EXPECT_ANY_THROW(route_map.push_front_edge("tr1", {"l3", "g00"}, network));
+  route_map.push_front_edge("tr1", {"l0", "l1"}, network);
 
   // Check if route consists of three edges passing vertices l0-l1-l2-l3 in this
   // order.
@@ -412,8 +411,8 @@ TEST(Functionality, RouteMap) {
   EXPECT_FALSE(route_map.check_consistency(train_list, network));
 
   route_map.add_empty_route("tr2");
-  route_map.push_back_edge("tr2", "r0", "r1", network);
-  route_map.push_back_edge("tr2", "r1", "r2", network);
+  route_map.push_back_edge("tr2", {"r0", "r1"}, network);
+  route_map.push_back_edge("tr2", {"r1", "r2"}, network);
 
   // Check if route consists of two edges passing vertices r0-r1-r2 in this
   // order.
@@ -427,8 +426,8 @@ TEST(Functionality, RouteMap) {
   EXPECT_EQ(route2.length(network), 505);
 
   // Check route map length
-  EXPECT_EQ(route_map.length("tr1", network), 1005);
-  EXPECT_EQ(route_map.length("tr2", network), 505);
+  EXPECT_EQ(route_map.route_length("tr1", network), 1005);
+  EXPECT_EQ(route_map.route_length("tr2", network), 505);
 
   // Check if the consistency checking works as expected
   EXPECT_TRUE(route_map.check_consistency(train_list, network, false));
@@ -437,8 +436,7 @@ TEST(Functionality, RouteMap) {
 }
 
 TEST(Functionality, ImportRouteMap) {
-  auto network = cda_rail::Network::import_network(
-      "./example-networks/SimpleStation/network/");
+  auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto train_list = cda_rail::TrainList::import_trains(
       "./example-networks/SimpleStation/timetable/");
   auto route_map = cda_rail::RouteMap::import_routes(
@@ -521,19 +519,18 @@ TEST(Functionality, ImportRouteMap) {
 }
 
 TEST(Functionality, ExportRouteMap) {
-  auto network = cda_rail::Network::import_network(
-      "./example-networks/SimpleStation/network/");
+  auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto train_list = cda_rail::TrainList();
   train_list.add_train("tr1", 100, 83.33, 2, 1);
   train_list.add_train("tr2", 100, 27.78, 2, 1);
   auto route_map = cda_rail::RouteMap();
   route_map.add_empty_route("tr1", train_list);
-  route_map.push_back_edge("tr1", "l1", "l2", network);
-  route_map.push_back_edge("tr1", "l2", "l3", network);
-  route_map.push_front_edge("tr1", "l0", "l1", network);
+  route_map.push_back_edge("tr1", {"l1", "l2"}, network);
+  route_map.push_back_edge("tr1", {"l2", "l3"}, network);
+  route_map.push_front_edge("tr1", {"l0", "l1"}, network);
   route_map.add_empty_route("tr2");
-  route_map.push_back_edge("tr2", "r0", "r1", network);
-  route_map.push_back_edge("tr2", "r1", "r2", network);
+  route_map.push_back_edge("tr2", {"r0", "r1"}, network);
+  route_map.push_back_edge("tr2", {"r1", "r2"}, network);
 
   // Export and import route map
   route_map.export_routes("./tmp/write_route_map_test", network);
@@ -600,40 +597,44 @@ TEST(Functionality, RouteMapHelper) {
                cda_rail::exceptions::ConsistencyException);
   EXPECT_THROW((void)route_map.push_back_edge("tr1", v1_v2, network),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW((void)route_map.push_back_edge("tr1", v1, v2, network),
+  EXPECT_THROW((void)route_map.push_back_edge("tr1", {v1, v2}, network),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW((void)route_map.push_back_edge("tr1", "v1", "v2", network),
+  EXPECT_THROW((void)route_map.push_back_edge("tr1", {"v1", "v2"}, network),
                cda_rail::exceptions::ConsistencyException);
   EXPECT_THROW((void)route_map.push_front_edge("tr1", v1_v2, network),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW((void)route_map.push_front_edge("tr1", v1, v2, network),
+  EXPECT_THROW((void)route_map.push_front_edge("tr1", {v1, v2}, network),
                cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW((void)route_map.push_front_edge("tr1", "v1", "v2", network),
+  EXPECT_THROW((void)route_map.push_front_edge("tr1", {"v1", "v2"}, network),
                cda_rail::exceptions::ConsistencyException);
 
   route_map.add_empty_route("tr1");
-  route_map.push_back_edge("tr1", "v0", "v1", network);
-  route_map.push_back_edge("tr1", "v1", "v2", network);
-  route_map.push_back_edge("tr1", "v2", "v3", network);
+  route_map.push_back_edge("tr1", {"v0", "v1"}, network);
+  route_map.push_back_edge("tr1", {"v1", "v2"}, network);
+  route_map.push_back_edge("tr1", {"v2", "v3"}, network);
 
   EXPECT_THROW((void)route_map.add_empty_route("tr1"),
                cda_rail::exceptions::InvalidInputException);
 
   const auto& tr1_map    = route_map.get_route("tr1");
-  const auto  tr1_e1_pos = tr1_map.edge_pos("v0", "v1", network);
+  const auto  tr1_e1_pos = tr1_map.edge_pos_on_route({"v0", "v1"}, network);
   const std::pair<double, double> expected_tr1_e1_pos = {0, 10};
-  EXPECT_EQ(tr1_e1_pos, expected_tr1_e1_pos);
-  const auto tr1_e2_pos = tr1_map.edge_pos(v1, v2, network);
+  EXPECT_EQ(tr1_e1_pos.source, expected_tr1_e1_pos.first);
+  EXPECT_EQ(tr1_e1_pos.target, expected_tr1_e1_pos.second);
+  const auto tr1_e2_pos = tr1_map.edge_pos_on_route({v1, v2}, network);
   const std::pair<double, double> expected_tr1_e2_pos = {10, 30};
-  EXPECT_EQ(tr1_e2_pos, expected_tr1_e2_pos);
-  const auto                      tr1_e3_pos = tr1_map.edge_pos(v2_v3, network);
+  EXPECT_EQ(tr1_e2_pos.source, expected_tr1_e2_pos.first);
+  EXPECT_EQ(tr1_e2_pos.target, expected_tr1_e2_pos.second);
+  const auto tr1_e3_pos = tr1_map.edge_pos_on_route(v2_v3, network);
   const std::pair<double, double> expected_tr1_e3_pos = {30, 60};
-  EXPECT_EQ(tr1_e3_pos, expected_tr1_e3_pos);
+  EXPECT_EQ(tr1_e3_pos.source, expected_tr1_e3_pos.first);
+  EXPECT_EQ(tr1_e3_pos.target, expected_tr1_e3_pos.second);
 
   const auto station_pos =
-      tr1_map.edge_pos({v1_v2, v2_v1, v2_v3, v3_v2}, network);
+      tr1_map.edge_set_pos_on_route({v1_v2, v2_v1, v2_v3, v3_v2}, network);
   const std::pair<double, double> expected_station_pos = {10, 60};
-  EXPECT_EQ(station_pos, expected_station_pos);
+  EXPECT_EQ(station_pos.source, expected_station_pos.first);
+  EXPECT_EQ(station_pos.target, expected_station_pos.second);
 
   EXPECT_EQ(tr1_map.length(network), 60);
 
@@ -645,8 +646,7 @@ TEST(Functionality, RouteMapHelper) {
 }
 
 TEST(RouteMapFunctionality, EmptyConflicts) {
-  auto network = cda_rail::Network::import_network(
-      "./example-networks/SimpleStation/network/");
+  auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto train_list = cda_rail::TrainList();
 
   train_list.add_train("tr1", 100, 83.33, 2, 1);
