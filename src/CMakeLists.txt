@@ -14,8 +14,8 @@ add_library(
   datastructure/RailwayNetwork.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Train.hpp
   datastructure/Train.cpp
-  # ${PROJECT_SOURCE_DIR}/include/datastructure/Timetable.hpp
-  # datastructure/Timetable.cpp
+  ${PROJECT_SOURCE_DIR}/include/datastructure/Timetable.hpp
+  datastructure/Timetable.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Station.hpp
   datastructure/Station.cpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/Route.hpp

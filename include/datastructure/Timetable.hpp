@@ -563,19 +563,10 @@ public:
                 service_time, service_duration);
   };
 
-  void add_track_to_station(std::string const& station_name,
-                            size_t const track_id, Network const& network) {
-    m_station_list.add_track_to_station(station_name, track_id, network);
-  };
-  void add_track_to_station(std::string const& station_name,
-                            size_t const source, size_t const target,
-                            Network const& network) {
-    m_station_list.add_track_to_station(station_name, source, target, network);
-  };
-  void add_track_to_station(std::string const& station_name,
-                            std::string const& source,
-                            std::string const& target, Network const& network) {
-    m_station_list.add_track_to_station(station_name, source, target, network);
+  void add_track_to_station(std::string const&        station_name,
+                            Network::EdgeInput const& new_edge,
+                            Network const&            network) {
+    m_station_list.add_track_to_station(station_name, new_edge, network);
   };
 
   /**
