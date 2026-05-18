@@ -372,7 +372,7 @@ TEST(RouteFunctionality, UpdateAfterDiscretizationReplacesMappedEdgesInOrder) {
 
 // Route Map
 
-TEST(Functionality, RouteMap) {
+TEST(RouteMapFunctionality, RouteMap) {
   auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto train_list = cda_rail::TrainList();
 
@@ -435,7 +435,7 @@ TEST(Functionality, RouteMap) {
   EXPECT_TRUE(route_map.check_consistency(train_list, network));
 }
 
-TEST(Functionality, ImportRouteMap) {
+TEST(RouteMapFunctionality, ImportRouteMap) {
   auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto train_list = cda_rail::TrainList::import_trains(
       "./example-networks/SimpleStation/timetable/");
@@ -518,7 +518,7 @@ TEST(Functionality, ImportRouteMap) {
   EXPECT_TRUE(route_map.check_consistency(train_list, network));
 }
 
-TEST(Functionality, ExportRouteMap) {
+TEST(RouteMapFunctionality, ExportRouteMap) {
   auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto train_list = cda_rail::TrainList();
   train_list.add_train("tr1", 100, 83.33, 2, 1);
@@ -570,7 +570,7 @@ TEST(Functionality, ExportRouteMap) {
   EXPECT_TRUE(route_map_read.check_consistency(train_list, network));
 }
 
-TEST(Functionality, RouteMapHelper) {
+TEST(RouteMapFunctionality, RouteMapHelper) {
   cda_rail::Network network;
   network.add_vertex("v0", cda_rail::VertexType::TTD);
   const auto v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
