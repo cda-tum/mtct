@@ -71,7 +71,7 @@ private:
    * @throws cda_rail::exceptions::InvalidInputException If @p route_index is
    *         out of range.
    */
-  void ensure_route_index(size_t route_index) const;
+  void is_route_index_valid(size_t route_index) const;
 
   /**
    * @brief Returns whether the route has at least one edge.

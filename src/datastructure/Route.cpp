@@ -130,13 +130,13 @@ cda_rail::Route::get_edge_id_at_pos(double                   pos,
 }
 
 size_t cda_rail::Route::get_edge_id(size_t route_index) const {
-  ensure_route_index(route_index);
+  is_route_index_valid(route_index);
   return m_edges.at(route_index);
 }
 
 const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
                                                 const Network& network) const {
-  ensure_route_index(route_index);
+  is_route_index_valid(route_index);
   return network.get_edge(m_edges.at(route_index));
 }
 
@@ -232,7 +232,7 @@ std::optional<double> cda_rail::Route::get_pos_on_edges_impl(
   return last_position;
 }
 
-void cda_rail::Route::ensure_route_index(size_t route_index) const {
+void cda_rail::Route::is_route_index_valid(size_t route_index) const {
   if (route_index >= m_edges.size()) {
     throw exceptions::InvalidInputException("Index out of range.");
   }
