@@ -251,7 +251,7 @@ bool cda_rail::Route::has_edges() const { return !m_edges.empty(); }
 const cda_rail::Route&
 cda_rail::RouteMap::get_route(const std::string& train_name) const {
   throw_if_train_has_no_route(train_name);
-  return routes.at(train_name);
+  return m_routes.at(train_name);
 }
 
 double cda_rail::RouteMap::route_length(const std::string& train_name,
@@ -464,7 +464,7 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
 // Editing functions
 
 void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
-  if (!routes.try_emplace(train_name).second) {
+  if (!m_routes.try_emplace(train_name).second) {
     throw exceptions::InvalidInputException("Train already has a route.");
   }
 }
@@ -481,29 +481,29 @@ void cda_rail::RouteMap::push_back_edge(const std::string&        train_name,
                                         Network::EdgeInput const& new_edge,
                                         const Network&            network) {
   throw_if_train_has_no_route(train_name);
-  routes.at(train_name).push_back_edge(new_edge, network);
+  m_routes.at(train_name).push_back_edge(new_edge, network);
 }
 
 void cda_rail::RouteMap::push_front_edge(const std::string&        train_name,
                                          Network::EdgeInput const& new_edge,
                                          const Network&            network) {
   throw_if_train_has_no_route(train_name);
-  routes.at(train_name).push_front_edge(new_edge, network);
+  m_routes.at(train_name).push_front_edge(new_edge, network);
 }
 
 void cda_rail::RouteMap::remove_first_edge(const std::string& train_name) {
   throw_if_train_has_no_route(train_name);
-  routes.at(train_name).remove_first_edge();
+  m_routes.at(train_name).remove_first_edge();
 }
 
 void cda_rail::RouteMap::remove_last_edge(const std::string& train_name) {
   throw_if_train_has_no_route(train_name);
-  routes.at(train_name).remove_last_edge();
+  m_routes.at(train_name).remove_last_edge();
 }
 
 void cda_rail::RouteMap::remove_route(const std::string& train_name) {
   throw_if_train_has_no_route(train_name);
-  routes.erase(train_name);
+  m_routes.erase(train_name);
 }
 
 // Import and export
@@ -516,7 +516,7 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
   }
 
   json j;
-  for (const auto& [name, route] : routes) {
+  for (const auto& [name, route] : m_routes) {
     const auto edge_pairs =
         route.get_edges() | std::views::transform([&network](size_t edge_id) {
           const auto& edge = network.get_edge(edge_id);
@@ -557,11 +557,11 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
 bool cda_rail::RouteMap::check_consistency(
     const TrainList& trains, const Network& network,
     bool every_train_must_have_route) const {
-  if (every_train_must_have_route && routes.size() != trains.size()) {
+  if (every_train_must_have_route && m_routes.size() != trains.size()) {
     return false;
   }
 
-  return std::ranges::all_of(routes, [&trains, &network](const auto& route) {
+  return std::ranges::all_of(m_routes, [&trains, &network](const auto& route) {
     return trains.has_train(route.first) &&
            route.second.check_consistency(network);
   });
@@ -569,7 +569,7 @@ bool cda_rail::RouteMap::check_consistency(
 
 void cda_rail::RouteMap::update_after_discretization(
     const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
-  for (auto& [train_name, route] : routes) {
+  for (auto& [train_name, route] : m_routes) {
     route.update_after_discretization(new_edges);
   }
 }
@@ -578,7 +578,7 @@ void cda_rail::RouteMap::update_after_discretization(
 
 void cda_rail::RouteMap::throw_if_train_has_no_route(
     std::string const& train_name) const {
-  if (!routes.contains(train_name)) {
+  if (!m_routes.contains(train_name)) {
     auto const error_message = concatenate_string_views(
         {"Train ", train_name, " does not have a route."});
     throw exceptions::ConsistencyException(error_message);

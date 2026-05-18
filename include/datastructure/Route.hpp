@@ -346,7 +346,7 @@ public:
  */
 class RouteMap {
 private:
-  std::unordered_map<std::string, Route> routes;
+  std::unordered_map<std::string, Route> m_routes;
 
 public:
   // ----------------
@@ -412,13 +412,13 @@ public:
    * Enables range-based `for` loops over all stored routes without allowing
    * modification of the underlying data.
    */
-  [[nodiscard]] constexpr auto cbegin() const { return routes.cbegin(); };
+  [[nodiscard]] constexpr auto cbegin() const { return m_routes.cbegin(); };
 
   /**
    * @brief Returns the past-the-end read-only iterator.
    * @see cbegin()
    */
-  [[nodiscard]] constexpr auto cend() const { return routes.cend(); };
+  [[nodiscard]] constexpr auto cend() const { return m_routes.cend(); };
 
   // ----------------
   // GETTER
@@ -428,13 +428,13 @@ public:
    * @brief Returns the number of train routes stored in this map.
    * @return Number of entries (one per train name).
    */
-  [[nodiscard]] size_t size() const { return routes.size(); };
+  [[nodiscard]] size_t size() const { return m_routes.size(); };
 
   /**
    * @brief Returns whether the map contains no routes at all.
    * @return `true` if `size() == 0`, otherwise `false`.
    */
-  [[nodiscard]] bool empty() const { return routes.empty(); };
+  [[nodiscard]] bool empty() const { return m_routes.empty(); };
 
   /**
    * @brief Returns the route assigned to the given train.
@@ -466,7 +466,7 @@ public:
    * @return `true` if a route for @p train_name exists, otherwise `false`.
    */
   [[nodiscard]] bool has_route(const std::string& train_name) const {
-    return routes.contains(train_name);
+    return m_routes.contains(train_name);
   };
 
   // ----------------
