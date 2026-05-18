@@ -336,16 +336,61 @@ public:
       const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
 };
 
+/**
+ * @brief Collection of named train routes built on top of a railway network.
+ *
+ * A `RouteMap` maps each train (identified by its name string) to its `Route`.
+ * It supports building routes edge by edge, querying pairwise track conflicts
+ * between two trains, and serialising the whole collection to or from a JSON
+ * file on disk.
+ */
 class RouteMap {
 private:
   std::unordered_map<std::string, Route> routes;
 
 public:
-  // Constructors
+  // ----------------
+  // CONSTRUCTORS
+  // ----------------
+
+  /**
+   * @brief Creates an empty route map with no routes.
+   */
   RouteMap() = default;
+
+  /**
+   * @brief Loads all routes from a `routes.json` file inside directory @p p.
+   *
+   * Every route entry in the file is validated against @p network as edges are
+   * added: successor constraints are enforced and referenced vertices must
+   * exist.
+   *
+   * @param p       Path to the directory that contains `routes.json`.
+   * @param network Network used to resolve and validate each edge.
+   * @throws cda_rail::exceptions::ImportException If @p p does not exist or is
+   *         not a directory.
+   * @throws cda_rail::exceptions::EdgeNotExistentException If the file
+   *         references a vertex name that does not exist in @p network.
+   * @throws cda_rail::exceptions::ConsistencyException If any loaded edge is
+   *         not a valid successor of the previous edge on that route.
+   */
   RouteMap(const std::filesystem::path& p, const Network& network);
+
+  /**
+   * @brief Convenience overload accepting a `std::string` path.
+   * @param path    Path string pointing to the directory with `routes.json`.
+   * @param network Network used to validate the loaded routes.
+   * @see RouteMap(const std::filesystem::path&, const Network&)
+   */
   RouteMap(const std::string& path, const Network& network)
       : RouteMap(std::filesystem::path(path), network) {};
+
+  /**
+   * @brief Convenience overload accepting a C-string path.
+   * @param path    Null-terminated path string.
+   * @param network Network used to validate the loaded routes.
+   * @see RouteMap(const std::filesystem::path&, const Network&)
+   */
   RouteMap(const char* path, const Network& network)
       : RouteMap(std::filesystem::path(path), network) {};
 
@@ -356,36 +401,169 @@ public:
   RouteMap& operator=(RouteMap&& other)      = default;
   ~RouteMap()                                = default;
 
-  // Iterators (for range-based for loops) that do not allow modification of the
-  // underlying data
+  // ----------------
+  // ITERATORS
+  // ----------------
+
+  /**
+   * @brief Returns a read-only iterator to the first `(train_name, route)`
+   *        entry.
+   *
+   * Enables range-based `for` loops over all stored routes without allowing
+   * modification of the underlying data.
+   */
   [[nodiscard]] constexpr auto cbegin() const { return routes.cbegin(); };
+
+  /**
+   * @brief Returns the past-the-end read-only iterator.
+   * @see cbegin()
+   */
   [[nodiscard]] constexpr auto cend() const { return routes.cend(); };
 
   // ----------------
   // GETTER
   // ----------------
 
-  // Simple Getter
+  /**
+   * @brief Returns the number of train routes stored in this map.
+   * @return Number of entries (one per train name).
+   */
+  [[nodiscard]] size_t size() const { return routes.size(); };
 
-  [[nodiscard]] size_t       size() const { return routes.size(); };
-  [[nodiscard]] bool         empty() const { return routes.empty(); };
+  /**
+   * @brief Returns whether the map contains no routes at all.
+   * @return `true` if `size() == 0`, otherwise `false`.
+   */
+  [[nodiscard]] bool empty() const { return routes.empty(); };
+
+  /**
+   * @brief Returns the route assigned to the given train.
+   * @param train_name Name of the train whose route is requested.
+   * @return Const reference to the train's `Route`.
+   * @pre A route for @p train_name must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If no route for
+   *         @p train_name has been registered.
+   */
   [[nodiscard]] const Route& get_route(const std::string& train_name) const;
-  [[nodiscard]] double       route_length(const std::string& train_name,
-                                          const Network&     network) const;
-  [[nodiscard]] bool         has_route(const std::string& train_name) const {
+
+  /**
+   * @brief Returns the total length of the route assigned to the given train.
+   * @param train_name Name of the train.
+   * @param network    Network used to read edge lengths.
+   * @return Sum of all route edge lengths in metres.
+   * @pre A route for @p train_name must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If no route for
+   *         @p train_name has been registered.
+   * @throws cda_rail::exceptions::EdgeNotExistentException If the route
+   *         references an edge that does not exist in @p network.
+   */
+  [[nodiscard]] double route_length(const std::string& train_name,
+                                    const Network&     network) const;
+
+  /**
+   * @brief Checks whether a route for the given train is stored in this map.
+   * @param train_name Name of the train to look up.
+   * @return `true` if a route for @p train_name exists, otherwise `false`.
+   */
+  [[nodiscard]] bool has_route(const std::string& train_name) const {
     return routes.contains(train_name);
   };
 
-  // Overlap functions
+  // ----------------
+  // OVERLAP FUNCTIONS
+  // ----------------
+
+  /**
+   * @brief Finds segments where both trains travel in the same direction over
+   *        the same track section.
+   *
+   * Two trains are in a *parallel overlap* whenever consecutive edges on their
+   * respective routes are identical (same edge ids in the same order). Each
+   * returned `ConflictPair` represents one maximal such shared segment and
+   * gives the start/end positions (in metres from each route's beginning) and
+   * the set of underlying track ids.
+   *
+   * @param train1  Name of the first train.
+   * @param train2  Name of the second train.
+   * @param network Network used to look up edge lengths and track ids.
+   * @return List of parallel conflict segments; empty if the routes do not
+   *         share any edges in the same direction.
+   * @pre Routes for both trains must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If either train has no
+   *         registered route.
+   */
   [[nodiscard]] std::vector<ConflictPair>
   get_parallel_overlaps(const std::string& train1, const std::string& train2,
                         const Network& network) const;
+
+  /**
+   * @brief Finds segments where both trains share an unbreakable (TTD) track
+   *        section.
+   *
+   * A *TTD overlap* occurs when both routes use at least one edge that belongs
+   * to the same unbreakable section (a section where no VSS border may be
+   * placed). Each returned `ConflictPair` covers the full extent of that
+   * section on both routes and includes the involved track ids.
+   * Only non-breakable edges on `train1`'s route trigger a check.
+   *
+   * @param train1  Name of the first train.
+   * @param train2  Name of the second train.
+   * @param network Network used to identify unbreakable sections and edge
+   *                lengths.
+   * @return List of TTD conflict segments; empty if no unbreakable section is
+   *         shared by both routes.
+   * @pre Routes for both trains must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If either train has no
+   *         registered route.
+   */
   [[nodiscard]] std::vector<ConflictPair>
   get_ttd_overlaps(const std::string& train1, const std::string& train2,
                    const Network& network) const;
+
+  /**
+   * @brief Finds segments where the two trains travel in opposite directions
+   *        over the same physical track.
+   *
+   * A *reverse overlap* occurs when an edge on `train1`'s route has a reverse
+   * counterpart (same physical track, opposite direction) on `train2`'s route.
+   * Each returned `ConflictPair` covers the maximal consecutive stretch where
+   * this head-on situation persists. Positions are measured from each route's
+   * own start; note that for `train2` the interval is traversed in reverse, so
+   * `pos2.first < pos2.second` still holds but the edges are visited in
+   * decreasing order.
+   *
+   * @param train1  Name of the first train.
+   * @param train2  Name of the second train.
+   * @param network Network used to find reverse edge pairs and read edge
+   *                lengths.
+   * @return List of reverse conflict segments; empty if no head-on overlap
+   *         exists.
+   * @pre Routes for both trains must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If either train has no
+   *         registered route.
+   */
   [[nodiscard]] std::vector<ConflictPair>
   get_reverse_overlaps(const std::string& train1, const std::string& train2,
                        const Network& network) const;
+
+  /**
+   * @brief Finds all segments where the two trains could potentially block each
+   *        other, regardless of travel direction.
+   *
+   * Combines the results of `get_ttd_overlaps` and `get_reverse_overlaps`,
+   * sorts the merged list by start position on `train1`'s route, and then
+   * merges consecutive intervals that overlap on both routes into a single
+   * `ConflictPair`. Use this function when you need a complete conflict picture
+   * for scheduling or safety checks.
+   *
+   * @param train1  Name of the first train.
+   * @param train2  Name of the second train.
+   * @param network Network used for all sub-queries.
+   * @return Sorted, de-duplicated list of conflict segments.
+   * @pre Routes for both trains must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If either train has no
+   *         registered route.
+   */
   [[nodiscard]] std::vector<ConflictPair>
   get_crossing_overlaps(const std::string& train1, const std::string& train2,
                         const Network& network) const;
@@ -394,41 +572,159 @@ public:
   // EDITING FUNCTIONS
   // ------------------
 
+  /**
+   * @brief Registers an empty route for the given train name.
+   *
+   * The route is initially empty (no edges). Edges can be added afterwards
+   * with `push_back_edge` or `push_front_edge`.
+   *
+   * @param train_name Name to associate the new route with.
+   * @throws cda_rail::exceptions::InvalidInputException If a route for
+   *         @p train_name is already registered.
+   */
   void add_empty_route(const std::string& train_name);
+
+  /**
+   * @brief Registers an empty route for a train, verifying it exists in the
+   *        train list first.
+   *
+   * @param train_name Name of the train.
+   * @param trains     Train list that @p train_name must be part of.
+   * @throws cda_rail::exceptions::TrainNotExistentException If @p train_name
+   *         is not present in @p trains.
+   * @throws cda_rail::exceptions::InvalidInputException If a route for
+   *         @p train_name is already registered.
+   */
   void add_empty_route(const std::string& train_name, const TrainList& trains);
 
+  /**
+   * @brief Appends an edge at the end of the given train's route.
+   * @param train_name Name of the train whose route is extended.
+   * @param new_edge   Edge to append.
+   * @param network    Network used to resolve and validate @p new_edge.
+   * @pre A route for @p train_name must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If no route for
+   *         @p train_name has been registered or if @p new_edge is not a valid
+   *         successor of the current last edge.
+   * @throws cda_rail::exceptions::EdgeNotExistentException If @p new_edge does
+   *         not exist in @p network.
+   */
   void push_back_edge(const std::string&        train_name,
                       Network::EdgeInput const& new_edge,
                       const Network&            network);
+
+  /**
+   * @brief Prepends an edge at the beginning of the given train's route.
+   * @param train_name Name of the train whose route is extended.
+   * @param new_edge   Edge to prepend.
+   * @param network    Network used to resolve and validate @p new_edge.
+   * @pre A route for @p train_name must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If no route for
+   *         @p train_name has been registered or if @p new_edge is not a valid
+   *         predecessor of the current first edge.
+   * @throws cda_rail::exceptions::EdgeNotExistentException If @p new_edge does
+   *         not exist in @p network.
+   */
   void push_front_edge(const std::string&        train_name,
                        Network::EdgeInput const& new_edge,
                        const Network&            network);
 
+  /**
+   * @brief Removes the first edge from the given train's route.
+   * @param train_name Name of the train whose route is shortened.
+   * @pre A non-empty route for @p train_name must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If no route for
+   *         @p train_name has been registered or if the route is empty.
+   */
   void remove_first_edge(const std::string& train_name);
+
+  /**
+   * @brief Removes the last edge from the given train's route.
+   * @param train_name Name of the train whose route is shortened.
+   * @pre A non-empty route for @p train_name must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If no route for
+   *         @p train_name has been registered or if the route is empty.
+   */
   void remove_last_edge(const std::string& train_name);
+
+  /**
+   * @brief Removes the entire route for the given train from the map.
+   * @param train_name Name of the train whose route should be deleted.
+   * @pre A route for @p train_name must exist in this map.
+   * @throws cda_rail::exceptions::ConsistencyException If no route for
+   *         @p train_name has been registered.
+   */
   void remove_route(const std::string& train_name);
 
   // ------------------
   // IMPORT / EXPORT
   // ------------------
 
+  /**
+   * @brief Writes all routes to a `routes.json` file inside directory @p p.
+   *
+   * Each route is stored as an ordered list of `[source_vertex_name,
+   * target_vertex_name]` pairs. The directory is created if it does not yet
+   * exist.
+   *
+   * @param p       Destination directory for the output file.
+   * @param network Network used to look up vertex names for each edge.
+   * @throws cda_rail::exceptions::ExportException If the directory cannot be
+   *         created.
+   */
   void export_routes(const std::filesystem::path& p,
                      const Network&               network) const;
+
+  /**
+   * @brief Convenience overload accepting a `std::string` path.
+   * @param path    Destination directory as a string.
+   * @param network Network used to look up vertex names.
+   * @see export_routes(const std::filesystem::path&, const Network&)
+   */
   void export_routes(const std::string& path, const Network& network) const {
     export_routes(std::filesystem::path(path), network);
   };
+
+  /**
+   * @brief Convenience overload accepting a C-string path.
+   * @param path    Null-terminated destination directory path.
+   * @param network Network used to look up vertex names.
+   * @see export_routes(const std::filesystem::path&, const Network&)
+   */
   void export_routes(const char* path, const Network& network) const {
     export_routes(std::filesystem::path(path), network);
   };
 
+  /**
+   * @brief Static factory: loads a `RouteMap` from a directory.
+   * @param p       Directory containing `routes.json`.
+   * @param network Network used to validate the loaded routes.
+   * @return A fully populated `RouteMap`.
+   * @see RouteMap(const std::filesystem::path&, const Network&)
+   */
   [[nodiscard]] static RouteMap import_routes(const std::filesystem::path& p,
                                               const Network& network) {
     return {p, network};
   };
+
+  /**
+   * @brief Static factory: convenience overload accepting a `std::string`
+   *        path.
+   * @param path    Directory path as a string.
+   * @param network Network used to validate the loaded routes.
+   * @see RouteMap(const std::string&, const Network&)
+   */
   [[nodiscard]] static RouteMap import_routes(const std::string& path,
                                               const Network&     network) {
     return {path, network};
   };
+
+  /**
+   * @brief Static factory: convenience overload accepting a C-string path.
+   * @param path    Null-terminated directory path.
+   * @param network Network used to validate the loaded routes.
+   * @see RouteMap(const char*, const Network&)
+   */
   [[nodiscard]] static RouteMap import_routes(const char*    path,
                                               const Network& network) {
     return {path, network};
@@ -438,14 +734,49 @@ public:
   // HELPER
   // -----------------
 
+  /**
+   * @brief Checks whether all stored routes are valid with respect to the
+   *        given train list and network.
+   *
+   * A `RouteMap` is considered consistent when:
+   * - (if @p every_train_must_have_route is `true`) every train in @p trains
+   *   has a registered route, and
+   * - every registered route belongs to a known train and is internally
+   *   connected (each consecutive edge pair satisfies the successor relation).
+   *
+   * @param trains                      List of all known trains.
+   * @param network                     Network used for successor checks.
+   * @param every_train_must_have_route If `true` (the default), returns
+   *                                    `false` whenever the number of stored
+   *                                    routes differs from the number of trains
+   *                                    in @p trains.
+   * @return `true` if all consistency conditions are met, otherwise `false`.
+   */
   [[nodiscard]] bool
   check_consistency(const TrainList& trains, const Network& network,
                     bool every_train_must_have_route = true) const;
 
+  /**
+   * @brief Updates all routes after a network discretization step.
+   *
+   * For each `(old_edge, replacement_edges)` pair in @p new_edges, every
+   * occurrence of `old_edge` in every stored route is replaced by the
+   * corresponding sequence of replacement edges, preserving travel order.
+   * Routes that do not contain any edge from @p new_edges are unchanged.
+   *
+   * @param new_edges Mapping from each replaced edge id to the ordered list of
+   *                  edges that take its place.
+   */
   void update_after_discretization(
       const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
 
 private:
+  /**
+   * @brief Throws if no route for @p train_name is registered in this map.
+   * @param train_name Train name to look up.
+   * @throws cda_rail::exceptions::ConsistencyException If the train has no
+   *         route.
+   */
   void throw_if_train_has_no_route(std::string const& train_name) const;
 };
 
