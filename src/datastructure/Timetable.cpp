@@ -1,6 +1,7 @@
 #include "datastructure/Timetable.hpp"
 
 #include "CustomExceptions.hpp"
+#include "GeneralHelper.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 
@@ -147,11 +148,11 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
     this->m_schedules.at(i).set_initial_velocity(
         static_cast<double>(schedule_data["v_0"]));
     this->m_schedules.at(i).set_entry_vertex(
-        network.get_vertex_index(schedule_data["entry"]));
+        network.get_vertex_index(schedule_data["entry"].get<std::string>()));
     this->m_schedules.at(i).set_exit_velocity(
         static_cast<double>(schedule_data["v_n"]));
     this->m_schedules.at(i).set_exit_vertex(
-        network.get_vertex_index(schedule_data["exit"]));
+        network.get_vertex_index(schedule_data["exit"].get<std::string>()));
 
     parse_schedule_data(schedule_data, i);
   }
