@@ -460,7 +460,7 @@ private:
         tl.size(), Schedule()); // this requires friendship
   }
 
-  void parse_schedule_data(const json& schedule_data, int i);
+  void parse_schedule_data(const json& schedule_data, size_t i);
 
   void add_json_data(json& j, size_t i, const Network& network) const;
 

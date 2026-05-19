@@ -146,13 +146,13 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
     const auto& schedule_data = data.at(tr.get_name());
 
     this->m_schedules.at(i).set_initial_velocity(
-        static_cast<double>(schedule_data["v_0"]));
+        schedule_data.at("v_0").get<double>());
     this->m_schedules.at(i).set_entry_vertex(
-        network.get_vertex_index(schedule_data["entry"].get<std::string>()));
+        network.get_vertex_index(schedule_data.at("entry").get<std::string>()));
     this->m_schedules.at(i).set_exit_velocity(
-        static_cast<double>(schedule_data["v_n"]));
+        schedule_data.at("v_n").get<double>());
     this->m_schedules.at(i).set_exit_vertex(
-        network.get_vertex_index(schedule_data["exit"].get<std::string>()));
+        network.get_vertex_index(schedule_data.at("exit").get<std::string>()));
 
     parse_schedule_data(schedule_data, i);
   }
@@ -174,17 +174,14 @@ cda_rail::Timetable::Timetable(StationList station_list, TrainList train_list,
   }
 }
 
-// Private helpers
-void cda_rail::Timetable::parse_schedule_data(json const& schedule_data,
-                                              int const   i) {
-  this->m_schedules.at(i).set_entry_time(
-      static_cast<double>(schedule_data["t_0"]));
-  this->m_schedules.at(i).set_exit_time(
-      static_cast<double>(schedule_data["t_n"]));
-  for (const auto& stop_data : schedule_data["stops"]) {
-    this->insert_stop(i, stop_data["station"].get<std::string>(),
-                      stop_data["begin"].get<double>(),
-                      stop_data["duration"].get<double>());
+void cda_rail::Timetable::parse_schedule_data(json const&  schedule_data,
+                                              size_t const i) {
+  this->m_schedules.at(i).set_entry_time(schedule_data.at("t_0").get<double>());
+  this->m_schedules.at(i).set_exit_time(schedule_data.at("t_n").get<double>());
+  for (const auto& stop_data : schedule_data.at("stops")) {
+    this->insert_stop(i, stop_data.at("station").get<std::string>(),
+                      stop_data.at("begin").get<double>(),
+                      stop_data.at("duration").get<double>());
   }
 }
 
@@ -198,7 +195,7 @@ void cda_rail::Timetable::add_json_data(json& j, const size_t i,
                      {"duration", stop.get_service_duration()},
                      {"station", stop.get_station().name}});
   }
-  j.at(m_train_list.get_train(i).get_name()) = {
+  j[m_train_list.get_train(i).get_name()] = {
       {"t_0", schedule.get_entry_time()},
       {"v_0", schedule.get_initial_velocity()},
       {"entry", network.get_vertex(schedule.get_entry_vertex()).name},
@@ -221,8 +218,8 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
    * cda_rail::StationList::export_stations
    * - schedules.json of the following format:
    *  {"tr1": {"t_0": t_0, "v_0": v_0, "entry": v_name, "t_n": t_n, "v_n":
-   * v_n, "exit": v_name, "stops": [{"begin": t_b, "end": t_e, "station":
-   * s_name},
+   * v_n, "exit": v_name, "stops": [{"begin": t_b, "duration": dt,
+   * "station": s_name},
    * ...]}, ...}
    *
    *  @param p The path to the directory where the files should be created.
@@ -236,7 +233,7 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
   m_train_list.export_trains(p);
   m_station_list.export_stations(p, network);
 
-  json j;
+  json j = json::object();
   for (size_t i = 0; i < m_schedules.size(); ++i) {
     add_json_data(j, i, network);
   }
