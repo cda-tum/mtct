@@ -190,7 +190,7 @@ TEST(StationList, GetStopTracksForwardsToStationAndThrowsForUnknownStation) {
 TEST(StationFunctionality, ReadStation) {
   auto network  = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto stations = cda_rail::StationList::import_stations(
-      "./example-networks/SimpleStation/timetable/", network);
+      "./data/instances/atmos2023/SimpleStation/timetable/", network);
 
   // Check if the station is imported correctly
   EXPECT_EQ(stations.size(), 1);

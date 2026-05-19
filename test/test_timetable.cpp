@@ -7,7 +7,7 @@
 TEST(TimetableFunctionality, ReadTimetable) {
   auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto timetable = cda_rail::Timetable::import_timetable(
-      "./example-networks/SimpleStation/timetable/", network);
+      "./data/instances/atmos2023/SimpleStation/timetable/", network);
 
   // Check if the timetable has the correct stations
   const auto& stations = timetable.get_station_list();

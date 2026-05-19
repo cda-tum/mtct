@@ -359,7 +359,7 @@ TEST(TrainList, AddTrainFromAttributesDefaultsTimToTrue) {
 
 TEST(TrainList, ReadTrains) {
   auto trains = cda_rail::TrainList::import_trains(
-      "./example-networks/SimpleStation/timetable/");
+      "./data/instances/atmos2023/SimpleStation/timetable/");
 
   // Check if the all trains are imported
   EXPECT_EQ(trains.size(), 3);

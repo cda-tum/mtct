@@ -438,9 +438,9 @@ TEST(RouteMapFunctionality, RouteMap) {
 TEST(RouteMapFunctionality, ImportRouteMap) {
   auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   auto train_list = cda_rail::TrainList::import_trains(
-      "./example-networks/SimpleStation/timetable/");
+      "./data/instances/atmos2023/SimpleStation/timetable/");
   auto route_map = cda_rail::RouteMap::import_routes(
-      "./example-networks/SimpleStation/routes/", network);
+      "./data/instances/atmos2023/SimpleStation/routes/", network);
 
   // Check if the route consists of three trains with names "tr1", "tr2" and
   // "tr3"
