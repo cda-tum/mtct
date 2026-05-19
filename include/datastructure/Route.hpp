@@ -405,20 +405,14 @@ public:
   // ITERATORS
   // ----------------
 
-  /**
-   * @brief Returns a read-only iterator to the first `(train_name, route)`
-   *        entry.
-   *
-   * Enables range-based `for` loops over all stored routes without allowing
-   * modification of the underlying data.
-   */
-  [[nodiscard]] constexpr auto cbegin() const { return m_routes.cbegin(); };
-
-  /**
-   * @brief Returns the past-the-end read-only iterator.
-   * @see cbegin()
-   */
-  [[nodiscard]] constexpr auto cend() const { return m_routes.cend(); };
+  /** @brief Read-only iterator to the first route entry. */
+  [[nodiscard]] auto begin() const { return m_routes.cbegin(); };
+  /** @brief Read-only iterator past the last route entry. */
+  [[nodiscard]] auto end() const { return m_routes.cend(); };
+  /** @brief Read-only iterator to the first route entry (explicit const). */
+  [[nodiscard]] auto cbegin() const { return m_routes.cbegin(); };
+  /** @brief Read-only iterator past the last route entry (explicit const). */
+  [[nodiscard]] auto cend() const { return m_routes.cend(); };
 
   // ----------------
   // GETTER

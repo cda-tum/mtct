@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -117,7 +118,13 @@ public:
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
-  [[nodiscard]] auto   cbegin() const { return stations.cbegin(); };
+  /** @brief Read-only iterator to the first station entry. */
+  [[nodiscard]] auto begin() const { return stations.cbegin(); };
+  /** @brief Read-only iterator past the last station entry. */
+  [[nodiscard]] auto end() const { return stations.cend(); };
+  /** @brief Read-only iterator to the first station entry (explicit const). */
+  [[nodiscard]] auto cbegin() const { return stations.cbegin(); };
+  /** @brief Read-only iterator past the last station entry (explicit const). */
   [[nodiscard]] auto   cend() const { return stations.cend(); };
   [[nodiscard]] size_t size() const { return stations.size(); };
 

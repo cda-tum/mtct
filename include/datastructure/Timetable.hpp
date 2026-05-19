@@ -486,6 +486,21 @@ public:
 
   // Rule of 0 suffices
 
+  /** @brief Read-only iterator to the first schedule. */
+  [[nodiscard]] constexpr auto begin() const { return m_schedules.cbegin(); };
+  /** @brief Read-only iterator past the last schedule. */
+  [[nodiscard]] constexpr auto end() const { return m_schedules.cend(); };
+  /** @brief Read-only iterator to the first schedule (explicit const). */
+  [[nodiscard]] constexpr auto cbegin() const { return m_schedules.cbegin(); };
+  /** @brief Read-only iterator past the last schedule (explicit const). */
+  [[nodiscard]] constexpr auto cend() const { return m_schedules.cend(); };
+  /** @brief Read-only reverse iterator to the last schedule. */
+  [[nodiscard]] constexpr auto crbegin() const {
+    return m_schedules.crbegin();
+  };
+  /** @brief Read-only reverse iterator before the first schedule. */
+  [[nodiscard]] constexpr auto crend() const { return m_schedules.crend(); };
+
   // Export / Import
   void export_timetable(const std::filesystem::path& p,
                         const Network&               network) const;

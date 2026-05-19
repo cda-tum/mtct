@@ -244,32 +244,17 @@ public:
    * underlying data
    */
 
-  /**
-   * @brief Returns a const iterator to the first train.
-   *
-   * @return Const iterator to the first element.
-   */
+  /** @brief Read-only iterator to the first train. */
+  [[nodiscard]] constexpr auto begin() const { return trains.cbegin(); };
+  /** @brief Read-only iterator past the last train. */
+  [[nodiscard]] constexpr auto end() const { return trains.cend(); };
+  /** @brief Read-only iterator to the first train (explicit const). */
   [[nodiscard]] constexpr auto cbegin() const { return trains.cbegin(); };
-
-  /**
-   * @brief Returns a const iterator to one-past-the-last train.
-   *
-   * @return Const iterator to the end sentinel.
-   */
+  /** @brief Read-only iterator past the last train (explicit const). */
   [[nodiscard]] constexpr auto cend() const { return trains.cend(); };
-
-  /**
-   * @brief Returns a const reverse iterator to the last train.
-   *
-   * @return Const reverse iterator to the first reverse element.
-   */
+  /** @brief Read-only reverse iterator to the last train. */
   [[nodiscard]] constexpr auto crbegin() const { return trains.crbegin(); };
-
-  /**
-   * @brief Returns a const reverse iterator to one-before-the-first train.
-   *
-   * @return Const reverse iterator to the reverse end sentinel.
-   */
+  /** @brief Read-only reverse iterator before the first train. */
   [[nodiscard]] constexpr auto crend() const { return trains.crend(); };
 
   /**
