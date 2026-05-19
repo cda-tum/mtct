@@ -2,7 +2,13 @@
   "tr1": {
     "entry": "v1",
     "exit": "v11",
-    "stops": [{ "begin": 270, "end": 330, "station": "Station" }],
+    "stops": [
+      {
+        "begin": 270,
+        "duration": 60,
+        "station": "Station"
+      }
+    ],
     "t_0": 0,
     "t_n": 585,
     "v_0": 25.0,

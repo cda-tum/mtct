@@ -6,7 +6,13 @@
     "t_n": 645,
     "v_n": 16.67,
     "exit": "r0",
-    "stops": [{ "begin": 240, "end": 300, "station": "Central" }]
+    "stops": [
+      {
+        "begin": 240,
+        "duration": 60,
+        "station": "Central"
+      }
+    ]
   },
   "tr2": {
     "t_0": 0,
@@ -15,7 +21,13 @@
     "t_n": 420,
     "v_n": 16.67,
     "exit": "r0",
-    "stops": [{ "begin": 120, "end": 300, "station": "Central" }]
+    "stops": [
+      {
+        "begin": 120,
+        "duration": 180,
+        "station": "Central"
+      }
+    ]
   },
   "tr3": {
     "t_0": 0,
@@ -24,6 +36,12 @@
     "t_n": 420,
     "v_n": 16.67,
     "exit": "l0",
-    "stops": [{ "begin": 180, "end": 300, "station": "Central" }]
+    "stops": [
+      {
+        "begin": 180,
+        "duration": 120,
+        "station": "Central"
+      }
+    ]
   }
 }

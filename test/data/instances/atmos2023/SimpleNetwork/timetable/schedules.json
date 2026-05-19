@@ -21,8 +21,16 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      { "begin": 30, "end": 90, "station": "StationLeft" },
-      { "begin": 900, "end": 960, "station": "StationRight" }
+      {
+        "begin": 30,
+        "duration": 60,
+        "station": "StationLeft"
+      },
+      {
+        "begin": 900,
+        "duration": 60,
+        "station": "StationRight"
+      }
     ],
     "t_0": 0,
     "t_n": 990,
@@ -33,8 +41,16 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 30, "end": 90, "station": "StationRight" },
-      { "begin": 900, "end": 960, "station": "StationLeft" }
+      {
+        "begin": 30,
+        "duration": 60,
+        "station": "StationRight"
+      },
+      {
+        "begin": 900,
+        "duration": 60,
+        "station": "StationLeft"
+      }
     ],
     "t_0": 0,
     "t_n": 990,

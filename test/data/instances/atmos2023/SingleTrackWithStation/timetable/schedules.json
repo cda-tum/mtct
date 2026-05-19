@@ -2,7 +2,13 @@
   "tr1": {
     "entry": "v0",
     "exit": "v3",
-    "stops": [{ "begin": 120, "end": 180, "station": "Main Station" }],
+    "stops": [
+      {
+        "begin": 120,
+        "duration": 60,
+        "station": "Main Station"
+      }
+    ],
     "t_0": 0,
     "t_n": 390,
     "v_0": 55.0,
@@ -11,7 +17,13 @@
   "tr2": {
     "entry": "v0",
     "exit": "v3",
-    "stops": [{ "begin": 240, "end": 270, "station": "Main Station" }],
+    "stops": [
+      {
+        "begin": 240,
+        "duration": 30,
+        "station": "Main Station"
+      }
+    ],
     "t_0": 90,
     "t_n": 480,
     "v_0": 55.0,
