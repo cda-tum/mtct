@@ -336,7 +336,7 @@ TEST(Functionality, IsDirectory) {
   EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp)"));
   std::filesystem::remove_all("./tmp");
 }
-#if 0
+
 TEST(Functionality, Iterators) {
   // Create a train list
   auto trains = cda_rail::TrainList();
@@ -369,7 +369,8 @@ TEST(Functionality, Iterators) {
 
   // Check range based for loop
   for (const auto& [name, station] : stations) {
-    EXPECT_EQ(&station, &stations.get_station(name));
+    ASSERT_NE(station, nullptr);
+    EXPECT_EQ(station.get(), &stations.get_station(name));
   }
 
   // Create timetable
@@ -382,10 +383,13 @@ TEST(Functionality, Iterators) {
                       network);
 
   // Check range based for loop
-  for (const auto& [name, schedule] : timetable) {
+  size_t schedule_idx = 0;
+  for (const auto& schedule : timetable) {
+    const auto& name =
+        timetable.get_train_list().get_train(schedule_idx).get_name();
     EXPECT_EQ(&schedule, &timetable.get_schedule(name));
+    ++schedule_idx;
   }
 }
-#endif
 
 // NOLINTEND(clang-diagnostic-unused-result)
