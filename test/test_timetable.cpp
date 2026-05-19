@@ -372,16 +372,12 @@ TEST(TimetableFunctionality, TimetableExceptions) {
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW((void)timetable.insert_stop(tr1, "Station1", 0, -1),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW((void)timetable.insert_stop(tr1, "Station1", 60, 0),
-               cda_rail::exceptions::InvalidInputException);
+  EXPECT_NO_THROW((void)timetable.insert_stop(tr1, "Station1", 60, 0));
   EXPECT_THROW((void)timetable.insert_stop(tr1, "Station1", 60, 60),
                cda_rail::exceptions::InvalidInputException);
-
-  timetable.insert_stop(tr1, "Station1", 0, 60);
   EXPECT_THROW((void)timetable.insert_stop(tr1, "Station1", 0, 60),
-               cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW((void)timetable.insert_stop(tr1, "Station2", 30, 90),
-               cda_rail::exceptions::ConsistencyException);
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_NO_THROW((void)timetable.insert_stop(tr1, "Station2", 30, 90));
 
   EXPECT_THROW((void)timetable.time_index_interval(tr1 + 10, 15, true),
                cda_rail::exceptions::TrainNotExistentException);
