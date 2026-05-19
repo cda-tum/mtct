@@ -4,20 +4,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [30, 480],
-        "end": [75, 525],
-        "min_stopping_time": 45,
+        "begin": 30,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [800, 1850],
-        "end": [845, 1895],
-        "min_stopping_time": 45,
+        "begin": 800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [0, 450],
-    "t_n": [900, 1950],
+    "t_0": 0,
+    "t_n": 900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -26,20 +24,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [30, 480],
-        "end": [75, 525],
-        "min_stopping_time": 45,
+        "begin": 30,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [800, 1850],
-        "end": [845, 1895],
-        "min_stopping_time": 45,
+        "begin": 800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [0, 450],
-    "t_n": [900, 1950],
+    "t_0": 0,
+    "t_n": 900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -47,8 +43,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [0, 450],
-    "t_n": [900, 1950],
+    "t_0": 0,
+    "t_n": 900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -57,20 +53,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [30, 480],
-        "end": [75, 525],
-        "min_stopping_time": 45,
+        "begin": 30,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [800, 1850],
-        "end": [845, 1895],
-        "min_stopping_time": 45,
+        "begin": 800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [0, 450],
-    "t_n": [900, 1950],
+    "t_0": 0,
+    "t_n": 900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -79,20 +73,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [30, 480],
-        "end": [75, 525],
-        "min_stopping_time": 45,
+        "begin": 30,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [800, 1850],
-        "end": [845, 1895],
-        "min_stopping_time": 45,
+        "begin": 800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [0, 450],
-    "t_n": [900, 1950],
+    "t_0": 0,
+    "t_n": 900,
     "v_0": 25.0,
     "v_n": 25.0
   }

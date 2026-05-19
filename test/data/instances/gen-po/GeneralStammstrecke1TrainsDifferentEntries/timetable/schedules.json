@@ -4,14 +4,13 @@
     "exit": "DonnersbergerExit",
     "stops": [
       {
-        "begin": [300, 660],
-        "end": [390, 750],
-        "min_stopping_time": 90,
+        "begin": 300,
+        "duration": 90,
         "station": "Hbf"
       }
     ],
-    "t_0": [0, 60],
-    "t_n": [690, 22500],
+    "t_0": 0,
+    "t_n": 690,
     "v_0": 0.0,
     "v_n": 0.0
   }

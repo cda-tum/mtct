@@ -3,8 +3,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [0, 450],
-    "t_n": [900, 1950],
+    "t_0": 0,
+    "t_n": 900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -13,20 +13,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [30, 480],
-        "end": [75, 525],
-        "min_stopping_time": 45,
+        "begin": 30,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [800, 1850],
-        "end": [845, 1895],
-        "min_stopping_time": 45,
+        "begin": 800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [0, 450],
-    "t_n": [900, 1950],
+    "t_0": 0,
+    "t_n": 900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -34,8 +32,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": [0, 450],
-    "t_n": [900, 1950],
+    "t_0": 0,
+    "t_n": 900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -43,8 +41,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [0, 450],
-    "t_n": [900, 1950],
+    "t_0": 0,
+    "t_n": 900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -53,20 +51,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [30, 480],
-        "end": [75, 525],
-        "min_stopping_time": 45,
+        "begin": 30,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [800, 1850],
-        "end": [845, 1895],
-        "min_stopping_time": 45,
+        "begin": 800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [0, 450],
-    "t_n": [900, 1950],
+    "t_0": 0,
+    "t_n": 900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -74,8 +70,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [1000, 1950],
-    "t_n": [1900, 3450],
+    "t_0": 1000,
+    "t_n": 1900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -84,20 +80,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [1030, 1980],
-        "end": [1075, 2025],
-        "min_stopping_time": 45,
+        "begin": 1030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [1800, 3350],
-        "end": [1845, 3395],
-        "min_stopping_time": 45,
+        "begin": 1800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [1000, 1950],
-    "t_n": [1900, 3450],
+    "t_0": 1000,
+    "t_n": 1900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -106,20 +100,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [1030, 1980],
-        "end": [1075, 2025],
-        "min_stopping_time": 45,
+        "begin": 1030,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [1800, 3350],
-        "end": [1845, 3395],
-        "min_stopping_time": 45,
+        "begin": 1800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [1000, 1950],
-    "t_n": [1900, 3450],
+    "t_0": 1000,
+    "t_n": 1900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -127,8 +119,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [1000, 1950],
-    "t_n": [1900, 3450],
+    "t_0": 1000,
+    "t_n": 1900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -137,20 +129,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [1030, 1980],
-        "end": [1075, 2025],
-        "min_stopping_time": 45,
+        "begin": 1030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [1800, 3350],
-        "end": [1845, 3395],
-        "min_stopping_time": 45,
+        "begin": 1800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [1000, 1950],
-    "t_n": [1900, 3450],
+    "t_0": 1000,
+    "t_n": 1900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -159,20 +149,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [2030, 3480],
-        "end": [2075, 3525],
-        "min_stopping_time": 45,
+        "begin": 2030,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [2800, 4850],
-        "end": [2845, 4895],
-        "min_stopping_time": 45,
+        "begin": 2800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [2000, 3450],
-    "t_n": [2900, 4950],
+    "t_0": 2000,
+    "t_n": 2900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -181,20 +169,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [2030, 3480],
-        "end": [2075, 3525],
-        "min_stopping_time": 45,
+        "begin": 2030,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [2800, 4850],
-        "end": [2845, 4895],
-        "min_stopping_time": 45,
+        "begin": 2800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [2000, 3450],
-    "t_n": [2900, 4950],
+    "t_0": 2000,
+    "t_n": 2900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -202,8 +188,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": [2000, 3450],
-    "t_n": [2900, 4950],
+    "t_0": 2000,
+    "t_n": 2900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -212,20 +198,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [2030, 3480],
-        "end": [2075, 3525],
-        "min_stopping_time": 45,
+        "begin": 2030,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [2800, 4850],
-        "end": [2845, 4895],
-        "min_stopping_time": 45,
+        "begin": 2800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [2000, 3450],
-    "t_n": [2900, 4950],
+    "t_0": 2000,
+    "t_n": 2900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -233,8 +217,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [2000, 3450],
-    "t_n": [2900, 4950],
+    "t_0": 2000,
+    "t_n": 2900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -243,20 +227,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [3030, 4980],
-        "end": [3075, 5025],
-        "min_stopping_time": 45,
+        "begin": 3030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [3800, 6350],
-        "end": [3845, 6395],
-        "min_stopping_time": 45,
+        "begin": 3800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [3000, 4950],
-    "t_n": [3900, 6450],
+    "t_0": 3000,
+    "t_n": 3900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -265,20 +247,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [3030, 4980],
-        "end": [3075, 5025],
-        "min_stopping_time": 45,
+        "begin": 3030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [3800, 6350],
-        "end": [3845, 6395],
-        "min_stopping_time": 45,
+        "begin": 3800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [3000, 4950],
-    "t_n": [3900, 6450],
+    "t_0": 3000,
+    "t_n": 3900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -287,20 +267,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [3030, 4980],
-        "end": [3075, 5025],
-        "min_stopping_time": 45,
+        "begin": 3030,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [3800, 6350],
-        "end": [3845, 6395],
-        "min_stopping_time": 45,
+        "begin": 3800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [3000, 4950],
-    "t_n": [3900, 6450],
+    "t_0": 3000,
+    "t_n": 3900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -308,8 +286,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": [3000, 4950],
-    "t_n": [3900, 6450],
+    "t_0": 3000,
+    "t_n": 3900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -318,20 +296,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [3030, 4980],
-        "end": [3075, 5025],
-        "min_stopping_time": 45,
+        "begin": 3030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [3800, 6350],
-        "end": [3845, 6395],
-        "min_stopping_time": 45,
+        "begin": 3800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [3000, 4950],
-    "t_n": [3900, 6450],
+    "t_0": 3000,
+    "t_n": 3900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -340,20 +316,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [4030, 6480],
-        "end": [4075, 6525],
-        "min_stopping_time": 45,
+        "begin": 4030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [4800, 7850],
-        "end": [4845, 7895],
-        "min_stopping_time": 45,
+        "begin": 4800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [4000, 6450],
-    "t_n": [4900, 7950],
+    "t_0": 4000,
+    "t_n": 4900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -362,20 +336,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [4030, 6480],
-        "end": [4075, 6525],
-        "min_stopping_time": 45,
+        "begin": 4030,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [4800, 7850],
-        "end": [4845, 7895],
-        "min_stopping_time": 45,
+        "begin": 4800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [4000, 6450],
-    "t_n": [4900, 7950],
+    "t_0": 4000,
+    "t_n": 4900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -383,8 +355,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": [4000, 6450],
-    "t_n": [4900, 7950],
+    "t_0": 4000,
+    "t_n": 4900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -393,20 +365,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [4030, 6480],
-        "end": [4075, 6525],
-        "min_stopping_time": 45,
+        "begin": 4030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [4800, 7850],
-        "end": [4845, 7895],
-        "min_stopping_time": 45,
+        "begin": 4800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [4000, 6450],
-    "t_n": [4900, 7950],
+    "t_0": 4000,
+    "t_n": 4900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -414,8 +384,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [4000, 6450],
-    "t_n": [4900, 7950],
+    "t_0": 4000,
+    "t_n": 4900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -424,20 +394,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [5030, 7980],
-        "end": [5075, 8025],
-        "min_stopping_time": 45,
+        "begin": 5030,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [5800, 9350],
-        "end": [5845, 9395],
-        "min_stopping_time": 45,
+        "begin": 5800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [5000, 7950],
-    "t_n": [5900, 9450],
+    "t_0": 5000,
+    "t_n": 5900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -445,8 +413,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": [5000, 7950],
-    "t_n": [5900, 9450],
+    "t_0": 5000,
+    "t_n": 5900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -454,8 +422,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": [5000, 7950],
-    "t_n": [5900, 9450],
+    "t_0": 5000,
+    "t_n": 5900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -463,8 +431,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [5000, 7950],
-    "t_n": [5900, 9450],
+    "t_0": 5000,
+    "t_n": 5900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -473,20 +441,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [5030, 7980],
-        "end": [5075, 8025],
-        "min_stopping_time": 45,
+        "begin": 5030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [5800, 9350],
-        "end": [5845, 9395],
-        "min_stopping_time": 45,
+        "begin": 5800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [5000, 7950],
-    "t_n": [5900, 9450],
+    "t_0": 5000,
+    "t_n": 5900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -495,20 +461,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [6030, 9480],
-        "end": [6075, 9525],
-        "min_stopping_time": 45,
+        "begin": 6030,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [6800, 10850],
-        "end": [6845, 10895],
-        "min_stopping_time": 45,
+        "begin": 6800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [6000, 9450],
-    "t_n": [6900, 10950],
+    "t_0": 6000,
+    "t_n": 6900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -517,20 +481,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [6030, 9480],
-        "end": [6075, 9525],
-        "min_stopping_time": 45,
+        "begin": 6030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [6800, 10850],
-        "end": [6845, 10895],
-        "min_stopping_time": 45,
+        "begin": 6800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [6000, 9450],
-    "t_n": [6900, 10950],
+    "t_0": 6000,
+    "t_n": 6900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -538,8 +500,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [6000, 9450],
-    "t_n": [6900, 10950],
+    "t_0": 6000,
+    "t_n": 6900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -547,8 +509,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": [6000, 9450],
-    "t_n": [6900, 10950],
+    "t_0": 6000,
+    "t_n": 6900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -557,20 +519,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [6030, 9480],
-        "end": [6075, 9525],
-        "min_stopping_time": 45,
+        "begin": 6030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [6800, 10850],
-        "end": [6845, 10895],
-        "min_stopping_time": 45,
+        "begin": 6800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [6000, 9450],
-    "t_n": [6900, 10950],
+    "t_0": 6000,
+    "t_n": 6900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -578,8 +538,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [7000, 10950],
-    "t_n": [7900, 12450],
+    "t_0": 7000,
+    "t_n": 7900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -587,8 +547,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": [7000, 10950],
-    "t_n": [7900, 12450],
+    "t_0": 7000,
+    "t_n": 7900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -597,20 +557,18 @@
     "exit": "v14c",
     "stops": [
       {
-        "begin": [7030, 10980],
-        "end": [7075, 11025],
-        "min_stopping_time": 45,
+        "begin": 7030,
+        "duration": 45,
         "station": "StationLeft"
       },
       {
-        "begin": [7800, 12350],
-        "end": [7845, 12395],
-        "min_stopping_time": 45,
+        "begin": 7800,
+        "duration": 45,
         "station": "StationRight"
       }
     ],
-    "t_0": [7000, 10950],
-    "t_n": [7900, 12450],
+    "t_0": 7000,
+    "t_n": 7900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -618,8 +576,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [7000, 10950],
-    "t_n": [7900, 12450],
+    "t_0": 7000,
+    "t_n": 7900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -628,20 +586,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [7030, 10980],
-        "end": [7075, 11025],
-        "min_stopping_time": 45,
+        "begin": 7030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [7800, 12350],
-        "end": [7845, 12395],
-        "min_stopping_time": 45,
+        "begin": 7800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [7000, 10950],
-    "t_n": [7900, 12450],
+    "t_0": 7000,
+    "t_n": 7900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -650,20 +606,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [8030, 12480],
-        "end": [8075, 12525],
-        "min_stopping_time": 45,
+        "begin": 8030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [8800, 13850],
-        "end": [8845, 13895],
-        "min_stopping_time": 45,
+        "begin": 8800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [8000, 12450],
-    "t_n": [8900, 13950],
+    "t_0": 8000,
+    "t_n": 8900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -672,20 +626,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [8030, 12480],
-        "end": [8075, 12525],
-        "min_stopping_time": 45,
+        "begin": 8030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [8800, 13850],
-        "end": [8845, 13895],
-        "min_stopping_time": 45,
+        "begin": 8800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [8000, 12450],
-    "t_n": [8900, 13950],
+    "t_0": 8000,
+    "t_n": 8900,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -693,8 +645,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": [8000, 12450],
-    "t_n": [8900, 13950],
+    "t_0": 8000,
+    "t_n": 8900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -702,8 +654,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": [8000, 12450],
-    "t_n": [8900, 13950],
+    "t_0": 8000,
+    "t_n": 8900,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -712,20 +664,18 @@
     "exit": "v1a",
     "stops": [
       {
-        "begin": [8030, 12480],
-        "end": [8075, 12525],
-        "min_stopping_time": 45,
+        "begin": 8030,
+        "duration": 45,
         "station": "StationRight"
       },
       {
-        "begin": [8800, 13850],
-        "end": [8845, 13895],
-        "min_stopping_time": 45,
+        "begin": 8800,
+        "duration": 45,
         "station": "StationLeft"
       }
     ],
-    "t_0": [8000, 12450],
-    "t_n": [8900, 13950],
+    "t_0": 8000,
+    "t_n": 8900,
     "v_0": 25.0,
     "v_n": 25.0
   }
