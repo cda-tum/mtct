@@ -124,9 +124,9 @@ TEST(TimetableFunctionality, WriteTimetable) {
   timetable.add_track_to_station("Station1", {"g11", "g10"}, network);
   timetable.add_track_to_station("Station2", {"r1", "r0"}, network);
 
-  timetable.insert_stop("tr1", "Station1", 100, 160);
-  timetable.insert_stop("tr1", "Station2", 200, 260);
-  timetable.insert_stop("tr2", "Station1", 160, 220);
+  timetable.insert_stop("tr1", "Station1", 100, 60);
+  timetable.insert_stop("tr1", "Station2", 200, 60);
+  timetable.insert_stop("tr2", "Station1", 160, 60);
 
   // Check if the timetable is as expected
   // Check if the timetable has the correct stations
