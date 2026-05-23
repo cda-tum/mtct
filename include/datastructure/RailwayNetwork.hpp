@@ -158,6 +158,8 @@ public:
   struct VertexInput {
   private:
     friend class Network;
+    friend class Timetable;
+
     std::variant<size_t, std::string_view, Vertex> m_data;
 
   public:

@@ -40,6 +40,7 @@ class Route {
    * Both values are in metres from the route start: @p source is where the edge
    * begins and @p target is where it ends.
    */
+public:
   struct EdgePosition {
     double source{};
     double target{};

@@ -300,19 +300,12 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
 
 // EDITING
 
-size_t cda_rail::Timetable::add_train(
+size_t cda_rail::Timetable::add_train_private_helper(
     std::string const& train_name, double const length, double const max_speed,
     double const acceleration, double const deceleration, bool const tim,
     double const entry_time, double const initial_velocity,
     size_t const entry_vertex, double const exit_time,
-    double const exit_velocity, size_t const exit_vertex,
-    Network const& network) {
-  if (!network.has_vertex(entry_vertex)) {
-    throw exceptions::VertexNotExistentException(entry_vertex);
-  }
-  if (!network.has_vertex(exit_vertex)) {
-    throw exceptions::VertexNotExistentException(exit_vertex);
-  }
+    double const exit_velocity, size_t const exit_vertex) {
   if (m_train_list.has_train(train_name)) {
     throw exceptions::ConsistencyException("Train " + train_name +
                                            " already exists.");

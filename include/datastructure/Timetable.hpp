@@ -557,7 +557,7 @@ public:
       std::pair<size_t, std::vector<cda_rail::index_vector>>>
   get_stop_tracks(size_t const tr, std::string const& station_name,
                   Network const&             network,
-                  cda_rail::index_set const& edges_to_consider) {
+                  cda_rail::index_set const& edges_to_consider) const {
     return m_station_list.get_stop_tracks(
         station_name, m_train_list.get_train(tr).get_length(), network,
         edges_to_consider);
@@ -584,6 +584,7 @@ public:
     m_station_list.add_track_to_station(station_name, new_edge, network);
   };
 
+private:
   /**
    * TODO: FIX DOCSTRING TO NEW VARIABLES
    * This method adds a train to the timetable. The train is specified by its
@@ -604,48 +605,35 @@ public:
    *
    * @return The index of the train in the train list.
    */
+  [[nodiscard]] size_t add_train_private_helper(
+      std::string const& train_name, double length, double max_speed,
+      double acceleration, double deceleration, bool tim, double entry_time,
+      double initial_velocity, size_t entry_vertex, double exit_time,
+      double exit_velocity, size_t exit_vertex);
+
+public:
   [[nodiscard]] size_t add_train(std::string const& train_name, double length,
                                  double max_speed, double acceleration,
                                  double deceleration, bool tim,
                                  double entry_time, double initial_velocity,
-                                 size_t entry_vertex, double exit_time,
-                                 double exit_velocity, size_t exit_vertex,
-                                 Network const& network);
-  [[nodiscard]] size_t
-  add_train(std::string const& train_name, double const length,
-            double const max_speed, double const acceleration,
-            double const deceleration, bool const tim, double const entry_time,
-            double const initial_velocity, std::string const& entry_vertex,
-            double const exit_time, double const exit_velocity,
-            std::string const& exit_vertex, Network const& network) {
-    return add_train(train_name, length, max_speed, acceleration, deceleration,
-                     tim, entry_time, initial_velocity,
-                     network.get_vertex_index(entry_vertex), exit_time,
-                     exit_velocity, network.get_vertex_index(exit_vertex),
-                     network);
-  };
-  [[nodiscard]] size_t add_train(std::string const& train_name, double length,
-                                 double max_speed, double acceleration,
-                                 double deceleration, double entry_time,
-                                 double initial_velocity, size_t entry_vertex,
+                                 Network::VertexInput const& entry_vertex,
                                  double exit_time, double exit_velocity,
-                                 size_t exit_vertex, Network const& network) {
+                                 Network::VertexInput const& exit_vertex,
+                                 Network const&              network) {
+    return add_train_private_helper(
+        train_name, length, max_speed, acceleration, deceleration, tim,
+        entry_time, initial_velocity, entry_vertex.resolve(&network), exit_time,
+        exit_velocity, exit_vertex.resolve(&network));
+  };
+  [[nodiscard]] size_t
+  add_train(std::string const& train_name, double length, double max_speed,
+            double acceleration, double deceleration, double entry_time,
+            double initial_velocity, Network::VertexInput const& entry_vertex,
+            double exit_time, double exit_velocity,
+            Network::VertexInput const& exit_vertex, Network const& network) {
     return add_train(train_name, length, max_speed, acceleration, deceleration,
                      true, entry_time, initial_velocity, entry_vertex,
                      exit_time, exit_velocity, exit_vertex, network);
-  };
-  [[nodiscard]] size_t
-  add_train(std::string const& train_name, double const length,
-            double const max_speed, double const acceleration,
-            double const deceleration, double const entry_time,
-            double const initial_velocity, std::string const& entry_vertex,
-            double const exit_time, double const exit_velocity,
-            std::string const& exit_vertex, Network const& network) {
-    return add_train(train_name, length, max_speed, acceleration, deceleration,
-                     true, entry_time, initial_velocity,
-                     network.get_vertex_index(entry_vertex), exit_time,
-                     exit_velocity, network.get_vertex_index(exit_vertex),
-                     network);
   };
 
   // No stop removal for now
