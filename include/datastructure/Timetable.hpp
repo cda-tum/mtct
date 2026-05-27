@@ -656,7 +656,7 @@ public:
    * @return True if the timetable is consistent with the network, false
    * otherwise.
    */
-  [[nodiscard]] bool check_consistency(Network const& network);
+  [[nodiscard]] bool check_consistency(Network const& network) const;
 
   void update_after_discretization(
       std::vector<std::pair<size_t, cda_rail::index_set>> const& new_edges) {

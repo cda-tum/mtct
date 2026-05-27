@@ -218,6 +218,12 @@ public:
    */
   [[nodiscard]] const Edge& get_edge(size_t         route_index,
                                      const Network& network) const;
+  [[nodiscard]] const Edge& get_first_edge(const Network& network) const {
+    return get_edge(0, network);
+  }
+  [[nodiscard]] const Edge& get_last_edge(const Network& network) const {
+    return get_edge(size() - 1, network);
+  }
 
   /**
    * @brief Checks whether an edge id appears in this route.

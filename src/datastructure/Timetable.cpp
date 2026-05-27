@@ -387,7 +387,7 @@ cda_rail::Timetable::check_consistency_helper() const {
   return {true, {}};
 }
 
-bool cda_rail::Timetable::check_consistency(Network const& network) {
+bool cda_rail::Timetable::check_consistency(Network const& network) const {
   if (auto const [result, exception] = check_consistency_helper(); !result) {
     return false;
   }
