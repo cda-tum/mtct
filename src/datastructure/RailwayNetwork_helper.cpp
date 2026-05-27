@@ -783,6 +783,9 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
 size_t cda_rail::Network::VertexInput::resolve(
     cda_rail::Network const* network) const {
   if (const auto* idx = std::get_if<size_t>(&m_data)) {
+    if (!network->has_vertex(*idx)) {
+      throw exceptions::VertexNotExistentException(*idx);
+    }
     return *idx;
   }
   if (const auto* name = std::get_if<std::string_view>(&m_data)) {
@@ -801,6 +804,9 @@ size_t cda_rail::Network::VertexInput::resolve(
 
 size_t cda_rail::Network::EdgeInput::resolve(Network const* network) const {
   if (const auto* idx = std::get_if<size_t>(&m_data)) {
+    if (!network->has_edge(*idx)) {
+      throw exceptions::EdgeNotExistentException(*idx);
+    }
     return *idx;
   }
   if (const auto* pair = std::get_if<std::pair<size_t, size_t>>(&m_data)) {

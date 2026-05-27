@@ -4,23 +4,15 @@
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
-#include "datastructure/Station.hpp"
 #include "datastructure/Timetable.hpp"
 #include "datastructure/Train.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
-#include "plog/Util.h"
 
 #include <algorithm>
-#include <cstddef>
 #include <filesystem>
-#include <fstream>
-#include <numeric>
 #include <optional>
-#include <stdexcept>
 #include <string>
-#include <type_traits>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
