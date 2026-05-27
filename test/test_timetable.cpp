@@ -105,9 +105,9 @@ TEST(TimetableFunctionality, WriteTimetable) {
   auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   cda_rail::Timetable timetable;
 
-  timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, "l0", 300, 20, "r0",
+  timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, {"l0"}, 300, 20, {"r0"},
                       network);
-  timetable.add_train("tr2", 100, 27.78, 2, 1, 0, 0, "r0", 300, 20, "l0",
+  timetable.add_train("tr2", 100, 27.78, 2, 1, 0, 0, {"r0"}, 300, 20, {"l0"},
                       network);
 
   EXPECT_EQ(timetable.get_schedule("tr1").get_entry_time(), 0);
