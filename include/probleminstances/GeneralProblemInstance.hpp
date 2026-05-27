@@ -363,93 +363,53 @@ public:
   check_consistency(bool every_train_must_have_route) const;
 };
 
-template <typename T> class SolGeneralProblemInstance {
-  static_assert(std::is_base_of_v<GeneralProblemInstance, T>,
-                "T must be a child of GeneralProblemInstance");
-
+class SolGeneralProblemInstance {
 protected:
-  T              instance;
-  SolutionStatus status  = SolutionStatus::Unknown;
-  double         obj     = -1;
-  bool           has_sol = false;
+  std::unique_ptr<GeneralProblemInstance> m_instance;
+  SolutionStatus                          m_status  = SolutionStatus::Unknown;
+  double                                  m_obj     = -1;
+  bool                                    m_has_sol = false;
 
-  SolGeneralProblemInstance() = default;
-  explicit SolGeneralProblemInstance(const T& instance) : instance(instance) {};
-  SolGeneralProblemInstance(const T& instance, SolutionStatus status,
-                            double obj, bool has_sol)
-      : instance(instance), status(status), obj(obj), has_sol(has_sol) {};
+  explicit SolGeneralProblemInstance(
+      std::unique_ptr<GeneralProblemInstance> instance_ptr)
+      : m_instance(std::move(instance_ptr)) {};
+  SolGeneralProblemInstance(
+      std::unique_ptr<GeneralProblemInstance> instance_ptr,
+      SolutionStatus status, double obj, bool has_sol)
+      : m_instance(std::move(instance_ptr)), m_status(status), m_obj(obj),
+        m_has_sol(has_sol) {};
 
-  void export_general_solution_data(const std::filesystem::path& p,
-                                    bool export_instance,
-                                    bool export_data) const {
-    if (!is_directory_and_create(p / "solution")) {
-      throw exceptions::ExportException("Could not create directory " +
-                                        p.string());
-    }
+  [[nodiscard]] json get_general_solution_data() const;
+  void               set_general_solution_data(const json& data);
+  [[nodiscard]] bool check_general_solution_data_consistency() const;
 
-    if (export_instance) {
-      instance.export_instance(p / "instance");
-    }
-
-    if (export_data) {
-      json data;
-      data["status"]       = static_cast<int>(status);
-      data["obj"]          = obj;
-      data["has_solution"] = has_sol;
-      std::ofstream data_file(p / "solution" / "data.json");
-      data_file << data << '\n';
-      data_file.close();
-    }
-  };
-
-  [[nodiscard]] json get_general_solution_data() const {
-    json data;
-    data["status"]       = static_cast<int>(status);
-    data["obj"]          = obj;
-    data["has_solution"] = has_sol;
-    return data;
-  };
-
-  void set_general_solution_data(const json& data) {
-    this->status  = static_cast<SolutionStatus>(data["status"].get<int>());
-    this->obj     = data["obj"].get<double>();
-    this->has_sol = data["has_solution"].get<bool>();
-  };
-
-  [[nodiscard]] bool check_general_solution_data_consistency() const {
-    if (status == SolutionStatus::Unknown) {
-      return false;
-    }
-    if (status == SolutionStatus::Infeasible ||
-        status == SolutionStatus::Timeout) {
-      return true;
-    }
-    return obj + EPS >= 0;
-  }
+  [[nodiscard]] std::filesystem::path export_general_solution_data(
+      const std::filesystem::path& workingDirectory,
+      std::string_view const       solutionSubdirectory) const;
 
 public:
-  [[nodiscard]] const T&       get_instance() const { return instance; };
-  [[nodiscard]] SolutionStatus get_status() const { return status; };
-  [[nodiscard]] double         get_obj() const { return obj; };
-  [[nodiscard]] bool           has_solution() const { return has_sol; };
-  void set_status(SolutionStatus new_status) { status = new_status; };
-  void set_obj(double new_obj) { obj = new_obj; };
-  void set_solution_found() { has_sol = true; };
-  void set_solution_not_found() { has_sol = false; };
-
-  virtual void export_solution(const std::filesystem::path& p,
-                               bool export_instance) const = 0;
-
-  void export_solution(const std::filesystem::path& p) const {
-    export_solution(p, true);
+  [[nodiscard]] virtual GeneralProblemInstance const* get_instance() const {
+    return m_instance.get();
   };
+  [[nodiscard]] SolutionStatus get_status() const { return m_status; };
+  [[nodiscard]] double         get_obj() const { return m_obj; };
+  [[nodiscard]] bool           has_solution() const { return m_has_sol; };
+  void set_status(SolutionStatus new_status) { m_status = new_status; };
+  void set_obj(double new_obj) { m_obj = new_obj; };
+  void set_solution_found() { m_has_sol = true; };
+  void set_solution_not_found() { m_has_sol = false; };
 
-  void export_solution(const std::string& path,
-                       bool               export_instance = true) const {
-    export_solution(std::filesystem::path(path), export_instance);
+  virtual void
+  export_solution(const std::filesystem::path& workingDirectory,
+                  std::string_view const       solutionSubdirectory) const = 0;
+
+  void export_solution(const std::string&     path,
+                       std::string_view const solutionSubdirectory) const {
+    export_solution(std::filesystem::path(path), solutionSubdirectory);
   };
-  void export_solution(const char* path, bool export_instance = true) const {
-    export_solution(std::filesystem::path(path), export_instance);
+  void export_solution(const char*            path,
+                       std::string_view const solutionSubdirectory) const {
+    export_solution(std::filesystem::path(path), solutionSubdirectory);
   };
 
   [[nodiscard]] virtual bool check_consistency() const = 0;
@@ -457,84 +417,67 @@ public:
   virtual ~SolGeneralProblemInstance() = default;
 };
 
-template <typename T>
 class SolGeneralProblemInstanceWithScheduleAndRoutes
-    : public SolGeneralProblemInstance<T> {
-  static_assert(std::is_base_of_v<GeneralProblemInstance, T>,
-                "T must be a child of GeneralProblemInstance");
+    : public SolGeneralProblemInstance {
+  RouteMap m_solution_routes{};
 
 protected:
-  void export_general_solution_data_with_routes(const std::filesystem::path& p,
-                                                bool export_instance,
-                                                bool export_data) const {
-    if (!is_directory_and_create(p / "solution")) {
-      throw exceptions::ExportException("Could not create directory " +
-                                        p.string());
-    }
+  explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
+      std::unique_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr)
+      : SolGeneralProblemInstance(std::move(instance_ptr)),
+        m_solution_routes(get_instance()->get_const_routes()) {}
+  SolGeneralProblemInstanceWithScheduleAndRoutes(
+      std::unique_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr,
+      SolutionStatus status, double obj, bool has_sol)
+      : SolGeneralProblemInstance(std::move(instance_ptr), status, obj,
+                                  has_sol),
+        m_solution_routes(get_instance()->get_const_routes()) {};
 
-    if (!export_instance) {
-      this->get_instance().const_routes().export_routes(
-          p / "instance" / "routes", this->get_instance().get_const_network());
-    }
-
-    SolGeneralProblemInstance<T>::export_general_solution_data(
-        p, export_instance, export_data);
-  }
+  [[nodiscard]] std::filesystem::path export_general_solution_data_with_routes(
+      const std::filesystem::path& workingDirectory,
+      std::string_view const       solutionSubdirectory) const;
 
 public:
-  SolGeneralProblemInstanceWithScheduleAndRoutes() = default;
-  explicit SolGeneralProblemInstanceWithScheduleAndRoutes(const T& instance)
-      : SolGeneralProblemInstance<T>(instance) {};
-  SolGeneralProblemInstanceWithScheduleAndRoutes(const T&       instance,
-                                                 SolutionStatus status,
-                                                 double obj, bool has_sol)
-      : SolGeneralProblemInstance<T>(instance, status, obj, has_sol) {};
+  explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
+      GeneralProblemInstanceWithScheduleAndRoutes const& instance)
+      : SolGeneralProblemInstanceWithScheduleAndRoutes(
+            std::make_unique<GeneralProblemInstanceWithScheduleAndRoutes>(
+                instance)) {};
+  SolGeneralProblemInstanceWithScheduleAndRoutes(
+      GeneralProblemInstanceWithScheduleAndRoutes const& instance,
+      SolutionStatus status, double obj, bool has_sol)
+      : SolGeneralProblemInstanceWithScheduleAndRoutes(
+            std::make_unique<GeneralProblemInstanceWithScheduleAndRoutes>(
+                instance),
+            status, obj, has_sol) {};
+
+  // Additional Getter
+  [[nodiscard]] GeneralProblemInstanceWithScheduleAndRoutes const*
+  get_instance() const override {
+    return dynamic_cast<GeneralProblemInstanceWithScheduleAndRoutes const*>(
+        SolGeneralProblemInstance::get_instance());
+  }
 
   // RouteMap functions
-  void reset_routes() {
-    for (const auto& tr : this->instance.get_train_list()) {
-      if (this->instance.has_route(tr.name)) {
-        this->instance.routes.remove_route(tr.name);
-      }
-    }
+  void reset_routes();
+  void add_empty_route(const std::string& train_name);
+
+  void push_back_edge_to_route(const std::string&        train_name,
+                               Network::EdgeInput const& edge_input) {
+    m_solution_routes.push_back_edge(train_name, edge_input,
+                                     get_instance()->get_const_network());
   }
-  void add_empty_route(const std::string& train_name) {
-    this->instance.add_empty_route(train_name);
-  };
-
-  void push_back_edge_to_route(const std::string& train_name,
-                               size_t             edge_index) {
-    this->instance.push_back_edge_to_route(train_name, edge_index);
-  };
-  void push_back_edge_to_route(const std::string& train_name, size_t source,
-                               size_t target) {
-    this->instance.push_back_edge_to_route(train_name, source, target);
-  };
-  void push_back_edge_to_route(const std::string& train_name,
-                               const std::string& source,
-                               const std::string& target) {
-    this->instance.push_back_edge_to_route(train_name, source, target);
-  };
-
-  void push_front_edge_to_route(const std::string& train_name,
-                                size_t             edge_index) {
-    this->instance.push_front_edge_to_route(train_name, edge_index);
-  };
-  void push_front_edge_to_route(const std::string& train_name, size_t source,
-                                size_t target) {
-    this->instance.push_front_edge_to_route(train_name, source, target);
-  };
-  void push_front_edge_to_route(const std::string& train_name,
-                                const std::string& source,
-                                const std::string& target) {
-    this->instance.push_front_edge_to_route(train_name, source, target);
-  };
+  void push_front_edge_to_route(const std::string&        train_name,
+                                Network::EdgeInput const& edge_input) {
+    m_solution_routes.push_front_edge(train_name, edge_input,
+                                      get_instance()->get_const_network());
+  }
 
   void remove_first_edge_from_route(const std::string& train_name) {
-    this->instance.remove_first_edge_from_route(train_name);
-  };
+    m_solution_routes.remove_first_edge(train_name);
+  }
   void remove_last_edge_from_route(const std::string& train_name) {
-    this->instance.remove_last_edge_from_route(train_name);
-  };
+    m_solution_routes.remove_last_edge(train_name);
+  }
 };
 } // namespace cda_rail::instances

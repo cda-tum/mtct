@@ -458,5 +458,14 @@ public:
   [[nodiscard]] static TrainList import_trains(std::filesystem::path const& p) {
     return TrainList(p);
   };
+
+  /**
+   * @brief throws an error if a train does not exist
+   */
+  void throw_if_train_not_exist(std::string const& train_name) const {
+    if (!has_train(train_name)) {
+      throw exceptions::TrainNotExistentException(train_name);
+    }
+  }
 };
 } // namespace cda_rail

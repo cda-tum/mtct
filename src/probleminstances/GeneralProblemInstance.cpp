@@ -1,6 +1,7 @@
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include "CustomExceptions.hpp"
+#include "GeneralHelper.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 
@@ -310,4 +311,91 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     }
   }
   return true;
+}
+
+// -------------------
+// Solution Objects
+// -------------------
+
+// general problem instance
+
+cda_rail::json
+cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
+    const {
+  json data;
+  data["status"]       = static_cast<int>(m_status);
+  data["obj"]          = m_obj;
+  data["has_solution"] = m_has_sol;
+  return data;
+}
+
+void cda_rail::instances::SolGeneralProblemInstance::set_general_solution_data(
+    const json& data) {
+  this->m_status  = static_cast<SolutionStatus>(data.at("status").get<int>());
+  this->m_obj     = data.at("obj").get<double>();
+  this->m_has_sol = data.at("has_solution").get<bool>();
+}
+
+bool cda_rail::instances::SolGeneralProblemInstance::
+    check_general_solution_data_consistency() const {
+  if (m_status == SolutionStatus::Unknown) {
+    return false;
+  }
+  if (m_status == SolutionStatus::Infeasible ||
+      m_status == SolutionStatus::Timeout) {
+    return true;
+  }
+  return m_obj + EPS >= 0;
+}
+
+std::filesystem::path
+cda_rail::instances::SolGeneralProblemInstance::export_general_solution_data(
+    const std::filesystem::path& workingDirectory,
+    std::string_view const       solutionSubdirectory) const {
+  std::filesystem::path const p{workingDirectory / "solutions" /
+                                solutionSubdirectory /
+                                get_instance()->get_instance_subdirectory() /
+                                get_instance()->get_instance_name()};
+  if (!is_directory_and_create(p)) {
+    throw exceptions::ExportException("Could not create directory " +
+                                      p.string());
+  }
+
+  json const    data = get_general_solution_data();
+  std::ofstream data_file(p / "data.json");
+  data_file << data << '\n';
+  data_file.close();
+
+  return p;
+}
+
+// with schedules and routes
+
+std::filesystem::path
+cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
+    export_general_solution_data_with_routes(
+        const std::filesystem::path& workingDirectory,
+        std::string_view const       solutionSubdirectory) const {
+  std::filesystem::path const p =
+      SolGeneralProblemInstance::export_general_solution_data(
+          workingDirectory, solutionSubdirectory);
+
+  m_solution_routes.export_routes(p, this->get_instance()->get_const_network());
+
+  return p;
+}
+
+void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
+    reset_routes() {
+  for (const auto& tr : get_instance()->get_const_train_list()) {
+    if (m_solution_routes.has_route(tr.get_name())) {
+      m_solution_routes.remove_route(tr.get_name());
+    }
+  }
+}
+
+void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
+    add_empty_route(const std::string& train_name) {
+  get_instance()->get_const_train_list().throw_if_train_not_exist(train_name);
+  m_solution_routes.add_empty_route(train_name);
 }
