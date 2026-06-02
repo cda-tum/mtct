@@ -152,7 +152,7 @@ TEST(StationList,
                cda_rail::exceptions::StationNotExistentException);
 }
 
-TEST(StationList, UpdateAfterDiscretizationReplacesMappedTracks) {
+TEST(StationList, UpdateAfterDiscretizationReplacesMappedTracksSet) {
   const auto            network = build_linear_test_network();
   const auto            e01     = network.get_edge_index({"v0"}, {"v1"});
   const auto            e12     = network.get_edge_index({"v1"}, {"v2"});
@@ -162,7 +162,25 @@ TEST(StationList, UpdateAfterDiscretizationReplacesMappedTracks) {
   stations.add_track_to_station("S", e01);
   stations.add_track_to_station("S", e12);
 
-  stations.update_after_discretization({{e01, {e23}}});
+  stations.update_after_discretization({{e01, cda_rail::index_set{e23}}});
+
+  const auto& tracks = stations.get_station("S").tracks;
+  EXPECT_FALSE(tracks.contains(e01));
+  EXPECT_TRUE(tracks.contains(e12));
+  EXPECT_TRUE(tracks.contains(e23));
+}
+
+TEST(StationList, UpdateAfterDiscretizationReplacesMappedTracksVector) {
+  const auto            network = build_linear_test_network();
+  const auto            e01     = network.get_edge_index({"v0"}, {"v1"});
+  const auto            e12     = network.get_edge_index({"v1"}, {"v2"});
+  const auto            e23     = network.get_edge_index({"v2"}, {"v3"});
+  cda_rail::StationList stations;
+  stations.add_empty_station("S");
+  stations.add_track_to_station("S", e01);
+  stations.add_track_to_station("S", e12);
+
+  stations.update_after_discretization({{e01, cda_rail::index_vector{e23}}});
 
   const auto& tracks = stations.get_station("S").tracks;
   EXPECT_FALSE(tracks.contains(e01));
