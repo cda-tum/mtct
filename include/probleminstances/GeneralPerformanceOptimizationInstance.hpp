@@ -9,7 +9,6 @@
 #include "datastructure/Timetable.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
-#include "plog/Util.h"
 
 #include <algorithm>
 #include <cassert>
@@ -26,6 +25,9 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+// for some reason only works if imported after cstdarg
+#include "plog/Util.h"
 
 using json = nlohmann::json;
 
