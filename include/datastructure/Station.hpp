@@ -319,6 +319,18 @@ public:
       const std::vector<std::pair<size_t, cda_rail::index_set>>& new_edges);
 
   /**
+   * @brief Updates station tracks after network discretization.
+   *
+   * For each pair `(old_edge, replacement_edges)`, every occurrence of
+   * `old_edge` in a station is replaced by all edges in `replacement_edges`.
+   *
+   * @param new_edges Mapping from original edge index to replacement edge
+   * vector.
+   */
+  void update_after_discretization(
+      const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
+
+  /**
    * @brief Computes possible stop tracks for a named station.
    *
    * This forwards to `Station::get_stop_tracks` of the resolved station.

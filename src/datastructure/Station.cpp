@@ -158,17 +158,31 @@ void cda_rail::StationList::export_stations(const std::filesystem::path& p,
 
 // HELPER
 
-void cda_rail::StationList::update_after_discretization(
-    const std::vector<std::pair<size_t, cda_rail::index_set>>& new_edges) {
+namespace {
+// refactoring in anonymous namespace to prevent duplication in code
+template <typename StationContainer, typename ReplacementContainer>
+void update_after_discretization_impl(
+    StationContainer&                                           stations,
+    const std::vector<std::pair<size_t, ReplacementContainer>>& new_edges) {
   for (auto& station : stations | std::views::values) {
-    auto& tracks = station->tracks;
     for (const auto& [track, new_tracks] : new_edges) {
-      if (tracks.contains(track)) {
-        tracks.erase(track);
-        tracks.insert(new_tracks.begin(), new_tracks.end());
+      if (station->tracks.contains(track)) {
+        station->tracks.erase(track);
+        station->tracks.insert(new_tracks.begin(), new_tracks.end());
       }
     }
   }
+}
+} // namespace
+
+void cda_rail::StationList::update_after_discretization(
+    const std::vector<std::pair<size_t, cda_rail::index_set>>& new_edges) {
+  update_after_discretization_impl(stations, new_edges);
+}
+
+void cda_rail::StationList::update_after_discretization(
+    const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
+  update_after_discretization_impl(stations, new_edges);
 }
 
 bool cda_rail::StationList::is_fully_in_station(

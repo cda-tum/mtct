@@ -22,11 +22,11 @@ add_library(
   datastructure/Route.cpp
   ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralProblemInstance.hpp
   probleminstances/GeneralProblemInstance.cpp
-  # ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralPerformanceOptimizationInstance.hpp
+  ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralPerformanceOptimizationInstance.hpp
+  probleminstances/GeneralPerformanceOptimizationInstance.cpp
   # ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
   # probleminstances/VSSGenerationTimetable.cpp
   # probleminstances/SolVSSGenerationTimetable.cpp
-  # probleminstances/GeneralPerformanceOptimizationInstance.cpp
   ${PROJECT_SOURCE_DIR}/include/FixedSizeVector.hpp
   ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
   # ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp

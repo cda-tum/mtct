@@ -661,7 +661,11 @@ public:
   void update_after_discretization(
       std::vector<std::pair<size_t, cda_rail::index_set>> const& new_edges) {
     m_station_list.update_after_discretization(new_edges);
-  };
+  }
+  void update_after_discretization(
+      std::vector<std::pair<size_t, cda_rail::index_vector>> const& new_edges) {
+    m_station_list.update_after_discretization(new_edges);
+  }
 
   [[nodiscard]] std::pair<size_t, size_t>
   time_index_interval(size_t train_index, double dt,

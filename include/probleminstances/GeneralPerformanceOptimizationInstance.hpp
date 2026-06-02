@@ -4,15 +4,16 @@
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "GeneralProblemInstance.hpp"
-#include "VSSGenerationTimetable.hpp"
-#include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
+#include "datastructure/Timetable.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
+#include "plog/Util.h"
 
 #include <algorithm>
 #include <cassert>
+#include <cstdarg>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -31,148 +32,135 @@ using json = nlohmann::json;
 namespace cda_rail::instances {
 
 class GeneralPerformanceOptimizationInstance
-    : public GeneralProblemInstanceWithScheduleAndRoutes<
-          GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>> {
-  template <typename S> friend class SolGeneralPerformanceOptimizationInstance;
-  template <typename S>
-  friend class SolVSSGeneralPerformanceOptimizationInstance;
+    : public GeneralProblemInstanceWithScheduleAndRoutes {
+  friend class SolGeneralPerformanceOptimizationInstance;
+  // friend class SolVSSGeneralPerformanceOptimizationInstance;
 
-  void initialize_vectors() {
-    train_weights =
-        std::vector<double>(this->get_timetable().get_train_list().size(), 1);
-    train_optional =
-        std::vector<bool>(this->get_timetable().get_train_list().size(), false);
-  }
-
-  std::vector<double> train_weights;
-  std::vector<bool>   train_optional;
-  double lambda = 1; // Minutes of delay (of a weight one train) that are
-                     // "equal" to scheduling another weight one train
+  std::vector<double> m_train_weights{};
+  std::vector<bool>   m_train_optional{};
+  double m_station_delay_weight{1}; // add (average) station delays with given
+                                    // weight to objective function
+  double m_lambda{1}; // Minutes of delay (of a weight one train) that are
+  // "equal" to scheduling another weight one train
 
 public:
+  // -------------------
+  // CONSTRUCTOR
+  // -------------------
+
   GeneralPerformanceOptimizationInstance() = default;
-  explicit GeneralPerformanceOptimizationInstance(const Network& network)
-      : GeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>(network) {
+  explicit GeneralPerformanceOptimizationInstance(Network network)
+      : GeneralProblemInstanceWithScheduleAndRoutes(std::move(network)) {
     initialize_vectors();
-  };
-  explicit GeneralPerformanceOptimizationInstance(
-      const Network&                                                 network,
-      const GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>& timetable,
-      const RouteMap&                                                routes)
-      : GeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>(
-            network, timetable, routes) {
-    initialize_vectors();
-  };
-  explicit GeneralPerformanceOptimizationInstance(
-      const std::filesystem::path& path)
-      : GeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>(path) {
-    initialize_vectors();
-
-    std::ifstream file(path / "problem_data.json");
-    json          j = json::parse(file);
-    for (const auto& [train_name, weight] : j["train_weights"].items()) {
-      set_train_weight(train_name, static_cast<double>(weight));
-    }
-    for (const auto& [train_name, optional] : j["train_optional"].items()) {
-      set_train_optionality_value(train_name, static_cast<bool>(optional));
-    }
-    lambda = static_cast<double>(j["lambda"]);
-  };
-
-  static GeneralPerformanceOptimizationInstance
-  cast_from_vss_generation(const VSSGenerationTimetable& vss_gen);
-  [[nodiscard]] VSSGenerationTimetable
-  cast_to_vss_generation(bool throw_error = true) const;
-
-  using T = GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>;
-
-  template <typename TrainN = std::string, typename EntryN = std::string,
-            typename ExitN = std::string>
-  size_t add_train(const TrainN& name, int length, double max_speed,
-                   double acceleration, double deceleration,
-                   decltype(T::time_type()) t_0, double v_0,
-                   const EntryN& entry, decltype(T::time_type()) t_n,
-                   double v_n, const ExitN& exit, double tr_weight = 1,
-                   bool tr_optional = false) {
-    train_weights.push_back(tr_weight);
-    train_optional.push_back(tr_optional);
-    return GeneralProblemInstanceWithScheduleAndRoutes<T>::add_train(
-        name, length, max_speed, acceleration, deceleration, t_0, v_0, entry,
-        t_n, v_n, exit);
   }
+  GeneralPerformanceOptimizationInstance(Network network, Timetable timetable,
+                                         RouteMap routes)
+      : GeneralProblemInstanceWithScheduleAndRoutes(
+            std::move(network), std::move(timetable), std::move(routes)) {
+    initialize_vectors();
+  }
+  GeneralPerformanceOptimizationInstance(
+      std::string_view const       instanceName,
+      std::string_view const       instanceSubdirectory,
+      std::filesystem::path const& workingDirectory);
+  GeneralPerformanceOptimizationInstance(
+      std::string_view const instanceName,
+      std::string_view const instanceSubdirectory,
+      std::string const&     workingDirectory)
+      : GeneralPerformanceOptimizationInstance(
+            instanceName, instanceSubdirectory,
+            std::filesystem::path(workingDirectory)) {}
+  GeneralPerformanceOptimizationInstance(
+      std::string_view const instanceName,
+      std::string_view const instanceSubdirectory,
+      char const* const      workingDirectory)
+      : GeneralPerformanceOptimizationInstance(
+            instanceName, instanceSubdirectory,
+            std::filesystem::path(workingDirectory)) {}
 
-  [[nodiscard]] const auto& get_train_weights() const { return train_weights; };
+  // ------------------
+  // GETTER
+  // ------------------
+
+  [[nodiscard]] const auto& get_train_weights() const {
+    return m_train_weights;
+  };
   [[nodiscard]] const auto& get_train_optional() const {
-    return train_optional;
+    return m_train_optional;
+  }
+  [[nodiscard]] double get_station_delay_weight() const {
+    return m_station_delay_weight;
+  }
+  [[nodiscard]] double get_lambda() const { return m_lambda; };
+
+  [[nodiscard]] double get_train_weight(size_t train_index) const {
+    get_const_timetable().get_train_list().throw_if_train_not_exist(
+        train_index);
+    return m_train_weights.at(train_index);
+  }
+  [[nodiscard]] double get_train_weight(const std::string& train_name) const {
+    return get_train_weight(
+        get_const_timetable().get_train_list().get_train_index(train_name));
+  }
+  [[nodiscard]] double get_train_weight(const char* train_name) const {
+    return get_train_weight(
+        get_const_timetable().get_train_list().get_train_index(train_name));
+  }
+
+  [[nodiscard]] bool get_train_optional(size_t train_index) const {
+    get_const_timetable().get_train_list().throw_if_train_not_exist(
+        train_index);
+    return m_train_optional.at(train_index);
+  }
+  [[nodiscard]] bool get_train_optional(const std::string& train_name) const {
+    return get_train_optional(
+        get_const_timetable().get_train_list().get_train_index(train_name));
+  }
+  [[nodiscard]] bool get_train_optional(const char* train_name) const {
+    return get_train_optional(
+        get_const_timetable().get_train_list().get_train_index(train_name));
+  }
+
+  // -------------------
+  // EDITING
+  // -------------------
+
+  // Setter
+
+  void set_station_delay_weight(double new_weight) {
+    m_station_delay_weight = new_weight;
   };
-  [[nodiscard]] double get_lambda() const { return lambda; };
-
-  [[nodiscard]] double get_train_weight(size_t train_index) {
-    if (!this->get_timetable().get_train_list().has_train(train_index)) {
-      throw std::invalid_argument("Train index out of bounds");
-    }
-    return train_weights.at(train_index);
-  }
-  [[nodiscard]] double get_train_weight(const std::string& train_name) {
-    return get_train_weight(
-        this->get_timetable().get_train_list().get_train_index(train_name));
-  }
-  [[nodiscard]] double get_train_weight(const char* train_name) {
-    return get_train_weight(
-        this->get_timetable().get_train_list().get_train_index(train_name));
-  }
-
-  [[nodiscard]] bool get_train_optional(size_t train_index) {
-    if (!this->get_timetable().get_train_list().has_train(train_index)) {
-      throw std::invalid_argument("Train index out of bounds");
-    }
-    return train_optional.at(train_index);
-  }
-  [[nodiscard]] bool get_train_optional(const std::string& train_name) {
-    return get_train_optional(
-        this->get_timetable().get_train_list().get_train_index(train_name));
-  }
-  [[nodiscard]] bool get_train_optional(const char* train_name) {
-    return get_train_optional(
-        this->get_timetable().get_train_list().get_train_index(train_name));
-  }
-
-  void set_lambda(double new_lambda) { lambda = new_lambda; };
+  void set_lambda(double new_lambda) { m_lambda = new_lambda; };
 
   void set_train_weight(size_t train_index, double weight) {
-    if (!this->get_timetable().get_train_list().has_train(train_index)) {
-      throw std::invalid_argument("Train index out of bounds");
-    }
-    train_weights[train_index] = weight;
+    get_const_timetable().get_train_list().throw_if_train_not_exist(
+        train_index);
+    m_train_weights.at(train_index) = weight;
   };
   void set_train_weight(const std::string& train_name, double weight) {
     set_train_weight(
-        this->get_timetable().get_train_list().get_train_index(train_name),
+        get_const_timetable().get_train_list().get_train_index(train_name),
         weight);
   };
   void set_train_weight(const char* train_name, double weight) {
     set_train_weight(
-        this->get_timetable().get_train_list().get_train_index(train_name),
+        get_const_timetable().get_train_list().get_train_index(train_name),
         weight);
   };
 
   void set_train_optionality_value(size_t train_index, bool val) {
-    if (!this->get_timetable().get_train_list().has_train(train_index)) {
-      throw std::invalid_argument("Train index out of bounds");
-    }
-    train_optional[train_index] = val;
+    get_const_timetable().get_train_list().throw_if_train_not_exist(
+        train_index);
+    m_train_optional.at(train_index) = val;
   };
   void set_train_optionality_value(const std::string& train_name, bool val) {
     set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
+        get_const_timetable().get_train_list().get_train_index(train_name),
         val);
   };
   void set_train_optionality_value(const char* train_name, bool val) {
     set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
+        get_const_timetable().get_train_list().get_train_index(train_name),
         val);
   };
   void set_train_optional(size_t train_index) {
@@ -180,12 +168,12 @@ public:
   };
   void set_train_optional(const std::string& train_name) {
     set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
+        get_const_timetable().get_train_list().get_train_index(train_name),
         true);
   };
   void set_train_optional(const char* train_name) {
     set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
+        get_const_timetable().get_train_list().get_train_index(train_name),
         true);
   };
   void set_train_mandatory(size_t train_index) {
@@ -193,57 +181,71 @@ public:
   };
   void set_train_mandatory(const std::string& train_name) {
     set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
+        get_const_timetable().get_train_list().get_train_index(train_name),
         false);
   };
   void set_train_mandatory(const char* train_name) {
     set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
+        get_const_timetable().get_train_list().get_train_index(train_name),
         false);
   };
 
-  // Transformation functions
-  void discretize_stops();
+  // Instance addition
+
+  size_t add_train(std::string const& train_name, double length,
+                   double max_speed, double acceleration, double deceleration,
+                   bool tim, double entry_time, double initial_velocity,
+                   Network::VertexInput const& entry_vertex, double exit_time,
+                   double                      exit_velocity,
+                   Network::VertexInput const& exit_vertex,
+                   double tr_weight = 1, bool tr_optional = false) {
+    m_train_weights.emplace_back(tr_weight);
+    m_train_optional.emplace_back(tr_optional);
+    return GeneralProblemInstanceWithScheduleAndRoutes::add_train(
+        train_name, length, max_speed, acceleration, deceleration, tim,
+        entry_time, initial_velocity, entry_vertex, exit_time, exit_velocity,
+        exit_vertex);
+  }
+  size_t add_train(std::string const& train_name, double length,
+                   double max_speed, double acceleration, double deceleration,
+                   double entry_time, double initial_velocity,
+                   Network::VertexInput const& entry_vertex, double exit_time,
+                   double                      exit_velocity,
+                   Network::VertexInput const& exit_vertex,
+                   double tr_weight = 1, bool tr_optional = false) {
+    return add_train(train_name, length, max_speed, acceleration, deceleration,
+                     true, entry_time, initial_velocity, entry_vertex,
+                     exit_time, exit_velocity, exit_vertex, tr_weight,
+                     tr_optional);
+  }
+
+  // ---------------------
+  // EXPORT
+  // ---------------------
 
   using GeneralProblemInstance::export_instance;
 
-  void export_instance(const std::filesystem::path& path) const override {
-    GeneralProblemInstanceWithScheduleAndRoutes<GeneralTimetable<
-        GeneralSchedule<GeneralScheduledStop>>>::export_instance(path);
+  void
+  export_instance(const std::filesystem::path& workingDirectory) const override;
+  ;
 
-    json j;
-    for (size_t i = 0; i < train_weights.size(); ++i) {
-      j["train_weights"]
-       [this->get_timetable().get_train_list().get_train(i).name] =
-           train_weights[i];
-      j["train_optional"]
-       [this->get_timetable().get_train_list().get_train(i).name] =
-           train_optional[i];
-    }
-    j["lambda"] = lambda;
+  // ---------------------
+  // TRANSFORMATION
+  // ---------------------
 
-    std::ofstream file(path / "problem_data.json");
-    file << j << '\n';
-  };
+  // Transformation functions
+  void discretize_stops();
 
   [[nodiscard]] bool check_consistency() const override {
     return check_consistency(true);
   }
 
   [[nodiscard]] bool
-  check_consistency(bool every_train_must_have_route) const override {
-    if (!GeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>::
-            check_consistency(every_train_must_have_route)) {
-      return false;
-    }
-    const auto num_tr = this->get_timetable().get_train_list().size();
-    if (train_weights.size() != num_tr || train_optional.size() != num_tr) {
-      return false;
-    }
-    return (lambda >= 0 && std::ranges::all_of(
-                               train_weights, [](double w) { return w >= 0; }));
-  };
+  check_consistency(bool every_train_must_have_route) const override;
+
+  // -----------------
+  // HELPER
+  // -----------------
 
   [[nodiscard]] double get_approximate_leaving_time(size_t train) const;
   [[nodiscard]] double get_maximal_leaving_time(size_t train, double v) const;
@@ -251,19 +253,32 @@ public:
   [[nodiscard]] double
   get_approximate_leaving_time(const std::string& tr_name) const {
     return get_approximate_leaving_time(
-        this->get_timetable().get_train_list().get_train_index(tr_name));
+        this->get_const_timetable().get_train_list().get_train_index(tr_name));
   };
   [[nodiscard]] double get_maximal_leaving_time(const std::string& tr_name,
                                                 double             v) const {
     return get_maximal_leaving_time(
-        this->get_timetable().get_train_list().get_train_index(tr_name), v);
+        this->get_const_timetable().get_train_list().get_train_index(tr_name),
+        v);
   };
   [[nodiscard]] double get_minimal_leaving_time(const std::string& tr_name,
                                                 double             v) const {
     return get_minimal_leaving_time(
-        this->get_timetable().get_train_list().get_train_index(tr_name), v);
+        this->get_const_timetable().get_train_list().get_train_index(tr_name),
+        v);
   };
+
+private:
+  void initialize_vectors() {
+    m_train_weights.resize(
+        this->get_const_timetable().get_train_list().get_number_of_trains(), 1);
+    m_train_optional.resize(
+        this->get_const_timetable().get_train_list().get_number_of_trains(),
+        false);
+  }
 };
+
+#if 0
 
 template <typename T>
 class SolGeneralPerformanceOptimizationInstance
@@ -295,7 +310,7 @@ public:
   SolGeneralPerformanceOptimizationInstance(const T&       instance,
                                             SolutionStatus status, double obj,
                                             bool has_sol)
-      : SolGeneralProblemInstanceWithScheduleAndRoutes<T>(instance, status, obj,
+      : SolGeneralProblemimizationInstanceWithScheduleAndRoutes<T>(instance, status, obj,
                                                           has_sol) {
     this->initialize_vectors();
   };
@@ -982,5 +997,7 @@ public:
     return import_solution(std::filesystem::path(path), instance);
   };
 };
+
+#endif
 
 } // namespace cda_rail::instances

@@ -467,5 +467,10 @@ public:
       throw exceptions::TrainNotExistentException(train_name);
     }
   }
+  void throw_if_train_not_exist(size_t const train_index) const {
+    if (!has_train(train_index)) {
+      throw exceptions::TrainNotExistentException(train_index);
+    }
+  }
 };
 } // namespace cda_rail
