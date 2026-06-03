@@ -225,7 +225,7 @@ public:
   // EXPORT
   // ---------------------
 
-  using GeneralProblemInstance::export_instance;
+  using GeneralProblemInstanceWithScheduleAndRoutes::export_instance;
 
   void
   export_instance(const std::filesystem::path& workingDirectory) const override;
@@ -289,6 +289,9 @@ private:
   void initialize_vectors();
 
 public:
+  using SolGeneralProblemInstanceWithScheduleAndRoutes::export_solution;
+  using SolGeneralProblemInstanceWithScheduleAndRoutes::load_solution;
+
   // Constructor
   explicit SolGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance)
@@ -407,6 +410,9 @@ class SolVSSGeneralPerformanceOptimizationInstance
   void initialize_vss_vector();
 
 public:
+  using SolGeneralPerformanceOptimizationInstance::export_solution;
+  using SolGeneralPerformanceOptimizationInstance::load_solution;
+
   explicit SolVSSGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance)
       : SolGeneralPerformanceOptimizationInstance(instance) {

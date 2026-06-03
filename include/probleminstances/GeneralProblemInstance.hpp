@@ -106,6 +106,8 @@ protected:
   [[nodiscard]] auto& get_editable_routes() { return m_routes; };
 
 public:
+  using GeneralProblemInstance::export_instance;
+
   // --------------------
   // EXPORT
   // --------------------
@@ -456,6 +458,9 @@ protected:
         m_solution_routes(get_instance()->get_const_routes()) {};
 
 public:
+  using SolGeneralProblemInstance::export_solution;
+  using SolGeneralProblemInstance::load_solution;
+
   explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
       GeneralProblemInstanceWithScheduleAndRoutes const& instance)
       : SolGeneralProblemInstanceWithScheduleAndRoutes(
