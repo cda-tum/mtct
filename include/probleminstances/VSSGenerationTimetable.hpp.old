@@ -109,18 +109,18 @@ public:
 
   // Getter
   [[nodiscard]] const std::vector<double>& get_vss_pos(size_t edge_id) const {
-    if (!instance.const_n().has_edge(edge_id)) {
+    if (!instance.get_const_network().has_edge(edge_id)) {
       throw cda_rail::exceptions::EdgeNotExistentException(edge_id);
     }
     return vss_pos.at(edge_id);
   };
   [[nodiscard]] const std::vector<double>& get_vss_pos(size_t source,
                                                        size_t target) const {
-    return get_vss_pos(instance.const_n().get_edge_index(source, target));
+    return get_vss_pos(instance.get_const_network().get_edge_index(source, target));
   };
   [[nodiscard]] const std::vector<double>&
   get_vss_pos(const std::string& source, const std::string& target) const {
-    return get_vss_pos(instance.const_n().get_edge_index(source, target));
+    return get_vss_pos(instance.get_const_network().get_edge_index(source, target));
   };
 
   [[nodiscard]] double get_train_pos(size_t train_id, int time) const;
@@ -156,32 +156,32 @@ public:
   void add_vss_pos(size_t edge_id, double pos, bool reverse_edge = true);
   void add_vss_pos(size_t source, size_t target, double pos,
                    bool reverse_edge = true) {
-    add_vss_pos(instance.const_n().get_edge_index(source, target), pos,
+    add_vss_pos(instance.get_const_network().get_edge_index(source, target), pos,
                 reverse_edge);
   };
   void add_vss_pos(const std::string& source, const std::string& target,
                    double pos, bool reverse_edge = true) {
-    add_vss_pos(instance.const_n().get_edge_index(source, target), pos,
+    add_vss_pos(instance.get_const_network().get_edge_index(source, target), pos,
                 reverse_edge);
   };
 
   void set_vss_pos(size_t edge_id, std::vector<double> pos);
   void set_vss_pos(size_t source, size_t target, std::vector<double> pos) {
-    set_vss_pos(instance.const_n().get_edge_index(source, target),
+    set_vss_pos(instance.get_const_network().get_edge_index(source, target),
                 std::move(pos));
   };
   void set_vss_pos(const std::string& source, const std::string& target,
                    std::vector<double> pos) {
-    set_vss_pos(instance.const_n().get_edge_index(source, target),
+    set_vss_pos(instance.get_const_network().get_edge_index(source, target),
                 std::move(pos));
   };
 
   void reset_vss_pos(size_t edge_id);
   void reset_vss_pos(size_t source, size_t target) {
-    reset_vss_pos(instance.const_n().get_edge_index(source, target));
+    reset_vss_pos(instance.get_const_network().get_edge_index(source, target));
   };
   void reset_vss_pos(const std::string& source, const std::string& target) {
-    reset_vss_pos(instance.const_n().get_edge_index(source, target));
+    reset_vss_pos(instance.get_const_network().get_edge_index(source, target));
   };
 
   void add_train_pos(size_t train_id, int time, double pos);

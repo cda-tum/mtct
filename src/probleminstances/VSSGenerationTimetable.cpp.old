@@ -19,7 +19,7 @@ void cda_rail::instances::VSSGenerationTimetable::discretize(
    * @param separation_type the type of separation to be used
    */
 
-  const auto new_edges = this->n().discretize(sep_func);
+  const auto new_edges = this->get_editable_network().discretize(sep_func);
   this->editable_timetable().update_after_discretization(new_edges);
   this->editable_routes().update_after_discretization(new_edges);
 }

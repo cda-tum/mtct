@@ -113,11 +113,11 @@ double cda_rail::instances::SolVSSGenerationTimetable::get_train_speed(
 
 void cda_rail::instances::SolVSSGenerationTimetable::add_vss_pos(
     size_t edge_id, double pos, bool reverse_edge) {
-  if (!instance.const_n().has_edge(edge_id)) {
+  if (!instance.get_const_network().has_edge(edge_id)) {
     throw exceptions::EdgeNotExistentException(edge_id);
   }
 
-  const auto& edge = instance.const_n().get_edge(edge_id);
+  const auto& edge = instance.get_const_network().get_edge(edge_id);
 
   if (pos <= EPS || pos + EPS >= edge.length) {
     throw exceptions::ConsistencyException(
@@ -130,7 +130,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::add_vss_pos(
 
   if (reverse_edge) {
     const auto reverse_edge_index =
-        instance.const_n().get_reverse_edge_index(edge_id);
+        instance.get_const_network().get_reverse_edge_index(edge_id);
     if (reverse_edge_index.has_value()) {
       vss_pos.at(reverse_edge_index.value()).emplace_back(edge.length - pos);
       std::sort(vss_pos.at(reverse_edge_index.value()).begin(),
@@ -141,11 +141,11 @@ void cda_rail::instances::SolVSSGenerationTimetable::add_vss_pos(
 
 void cda_rail::instances::SolVSSGenerationTimetable::set_vss_pos(
     size_t edge_id, std::vector<double> pos) {
-  if (!instance.const_n().has_edge(edge_id)) {
+  if (!instance.get_const_network().has_edge(edge_id)) {
     throw exceptions::EdgeNotExistentException(edge_id);
   }
 
-  const auto& edge = instance.const_n().get_edge(edge_id);
+  const auto& edge = instance.get_const_network().get_edge(edge_id);
 
   for (const auto& p : pos) {
     if (p <= EPS || p + EPS >= edge.length) {
@@ -160,7 +160,7 @@ void cda_rail::instances::SolVSSGenerationTimetable::set_vss_pos(
 
 void cda_rail::instances::SolVSSGenerationTimetable::reset_vss_pos(
     size_t edge_id) {
-  if (!instance.const_n().has_edge(edge_id)) {
+  if (!instance.get_const_network().has_edge(edge_id)) {
     throw exceptions::EdgeNotExistentException(edge_id);
   }
 
@@ -267,7 +267,7 @@ bool cda_rail::instances::SolVSSGenerationTimetable::check_consistency() const {
     }
   }
   for (size_t edge_id = 0; edge_id < vss_pos.size(); ++edge_id) {
-    const auto& edge = instance.const_n().get_edge(edge_id);
+    const auto& edge = instance.get_const_network().get_edge(edge_id);
     for (const auto& pos : vss_pos.at(edge_id)) {
       if (pos + EPS < 0 || pos > edge.length + EPS) {
         return false;
@@ -320,11 +320,11 @@ void cda_rail::instances::SolVSSGenerationTimetable::export_solution(
   data_file.close();
 
   json vss_pos_json;
-  for (size_t edge_id = 0; edge_id < instance.const_n().number_of_edges();
+  for (size_t edge_id = 0; edge_id < instance.get_const_network().number_of_edges();
        ++edge_id) {
-    const auto& edge = instance.const_n().get_edge(edge_id);
-    const auto& v0   = instance.const_n().get_vertex(edge.source).name;
-    const auto& v1   = instance.const_n().get_vertex(edge.target).name;
+    const auto& edge = instance.get_const_network().get_edge(edge_id);
+    const auto& v0   = instance.get_const_network().get_vertex(edge.source).name;
+    const auto& v1   = instance.get_const_network().get_vertex(edge.target).name;
     vss_pos_json["('" + v0 + "', '" + v1 + "')"] = vss_pos.at(edge_id);
   }
 
@@ -376,7 +376,7 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
 
   if (import_routes) {
     this->instance.editable_routes() =
-        RouteMap(p / "instance" / "routes", this->instance.const_n());
+        RouteMap(p / "instance" / "routes", this->instance.get_const_network());
   }
 
   if (!this->instance.check_consistency(true)) {
@@ -427,7 +427,7 @@ cda_rail::instances::SolVSSGenerationTimetable::SolVSSGenerationTimetable(
 
 void cda_rail::instances::SolVSSGenerationTimetable::initialize_vectors() {
   vss_pos = std::vector<std::vector<double>>(
-      this->instance.const_n().number_of_edges());
+      this->instance.get_const_network().number_of_edges());
   train_pos.reserve(this->instance.get_train_list().size());
   train_speed.reserve(this->instance.get_train_list().size());
 
@@ -449,9 +449,9 @@ cda_rail::instances::SolVSSGenerationTimetable::get_valid_border_stops(
   std::vector<double> valid_border_stops;
   valid_border_stops.emplace_back(0);
   for (const auto& e : tr_route_edges) {
-    const auto& edge            = instance.const_n().get_edge(e);
-    const auto& e_target        = instance.const_n().get_vertex(edge.target);
-    const auto [e_start, e_end] = tr_route.edge_pos(e, instance.const_n());
+    const auto& edge            = instance.get_const_network().get_edge(e);
+    const auto& e_target        = instance.get_const_network().get_vertex(edge.target);
+    const auto [e_start, e_end] = tr_route.edge_pos(e, instance.get_const_network());
 
     const auto& vss_on_e = get_vss_pos(e);
     for (const auto& vss : vss_on_e) {
@@ -523,10 +523,10 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
 
   for (size_t r_e_index = 0; r_e_index < relevant_edges.size(); ++r_e_index) {
     const auto  e_index      = relevant_edges.at(r_e_index);
-    const auto  vss_number_e = instance.const_n().max_vss_on_edge(e_index);
-    const auto& e            = instance.const_n().get_edge(e_index);
+    const auto  vss_number_e = instance.get_const_network().max_vss_on_edge(e_index);
+    const auto& e            = instance.get_const_network().get_edge(e_index);
     const auto  reverse_edge_index =
-        instance.const_n().get_reverse_edge_index(e_index);
+        instance.get_const_network().get_reverse_edge_index(e_index);
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       bool b_used = false;
 
@@ -560,8 +560,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
 
       if (postprocess && b_used) {
         IF_PLOG(plog::debug) {
-          const auto& source = instance.const_n().get_vertex(e.source).name;
-          const auto& target = instance.const_n().get_vertex(e.target).name;
+          const auto& source = instance.get_const_network().get_vertex(e.source).name;
+          const auto& target = instance.get_const_network().get_vertex(e.target).name;
           PLOGD << "Postprocessing on " << source << " to " << target;
         }
         b_used = false;
@@ -623,8 +623,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
                        .get(GRB_DoubleAttr_X),
                    ROUNDING_PRECISION);
       IF_PLOG(plog::debug) {
-        const auto& source = instance.const_n().get_vertex(e.source).name;
-        const auto& target = instance.const_n().get_vertex(e.target).name;
+        const auto& source = instance.get_const_network().get_vertex(e.source).name;
+        const auto& target = instance.get_const_network().get_vertex(e.target).name;
         PLOGD << "Add VSS at " << b_pos_val << " on " << source << " to "
               << target;
       }
@@ -658,9 +658,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         while (!edge_list.empty()) {
           bool edge_added = false;
           for (const auto& e : edge_list) {
-            if (instance.const_n().get_edge(e).source == current_vertex) {
+            if (instance.get_const_network().get_edge(e).source == current_vertex) {
               sol_obj.push_back_edge_to_route(train.name, e);
-              current_vertex = instance.const_n().get_edge(e).target;
+              current_vertex = instance.get_const_network().get_edge(e).target;
               edge_list.erase(e);
               edge_added = true;
               break;
