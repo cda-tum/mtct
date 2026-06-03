@@ -825,5 +825,12 @@ size_t cda_rail::Network::EdgeInput::resolve(Network const* network) const {
     }
     return idx;
   }
+  if (const auto* edge_name = std::get_if<std::string_view>(&m_data)) {
+    std::string source{};
+    std::string target{};
+    network->extract_vertices_from_key_inplace(std::string{*edge_name}, source,
+                                               target);
+    return network->get_edge_index({source}, {target});
+  }
   throw std::runtime_error("Invalid EdgeInput variant");
 }

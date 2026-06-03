@@ -197,7 +197,8 @@ public:
     friend class Route;
 
     std::variant<size_t, std::pair<size_t, size_t>,
-                 std::pair<std::string_view, std::string_view>, Edge>
+                 std::pair<std::string_view, std::string_view>, Edge,
+                 std::string_view>
         m_data;
 
   public:
@@ -210,6 +211,7 @@ public:
     template <typename T1, typename T2>
     EdgeInput(const std::pair<T1, T2>& p) : EdgeInput(p.first, p.second) {}
     EdgeInput(Edge edge) : m_data(edge) {}
+    EdgeInput(std::string_view e_name) : m_data(e_name) {}
     // NOLINTEND(google-explicit-constructor)
 
   private:
@@ -657,6 +659,10 @@ public:
   [[nodiscard]] size_t get_edge_index(VertexInput const& source,
                                       VertexInput const& target) const {
     return get_edge_index_helper(source.resolve(this), target.resolve(this));
+  }
+
+  [[nodiscard]] size_t get_edge_index(EdgeInput const& edge_input) const {
+    return edge_input.resolve(this);
   }
 
 private:

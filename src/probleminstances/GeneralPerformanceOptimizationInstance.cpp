@@ -634,7 +634,7 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
       return false;
     }
 
-    for (const auto& [t, pos] : m_train_pos.at(tr_id)) {
+    for (const auto& t : m_train_pos.at(tr_id) | std::views::keys) {
       if (m_train_speed.at(tr_id).count(t) != 1) {
         return false;
       }
@@ -642,7 +642,7 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 
   for (const auto& train_pos_vec : m_train_pos) {
-    for (const auto& [t, pos] : train_pos_vec) {
+    for (const auto& pos : train_pos_vec | std::views::values) {
       if (pos + EPS < 0) {
         return false;
       }
@@ -651,11 +651,146 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   for (size_t tr_id = 0; tr_id < m_train_speed.size(); ++tr_id) {
     const auto& train =
         this->get_instance()->get_const_train_list().get_train(tr_id);
-    for (const auto& [t, v] : m_train_speed.at(tr_id)) {
+    for (const auto& v : m_train_speed.at(tr_id) | std::views::values) {
       if (v + EPS < 0 || v > train.get_max_speed() + EPS) {
         return false;
       }
     }
   }
   return true;
+}
+
+// --------------------
+// SolVSSGeneralPerformanceOptimizationInstance
+// --------------------
+
+void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    initialize_vss_vector() {
+  m_vss_pos = std::vector<std::vector<double>>(
+      this->get_instance()->get_const_network().number_of_edges());
+}
+
+void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    add_vss_pos(cda_rail::Network::EdgeInput const& edge_input, double pos,
+                bool reverse_edge) {
+  // Add VSS position on edge. Also on reverse edge if true.
+
+  auto const edge_id =
+      this->get_instance()->get_const_network().get_edge_index(edge_input);
+  auto const& edge =
+      this->get_instance()->get_const_network().get_edge(edge_id);
+
+  if (pos <= EPS || pos + EPS >= edge.length) {
+    throw exceptions::ConsistencyException(
+        "VSS position " + std::to_string(pos) + " is not on edge " +
+        std::to_string(edge_id));
+  }
+
+  m_vss_pos.at(edge_id).emplace_back(pos);
+  std::ranges::sort(m_vss_pos.at(edge_id));
+
+  if (reverse_edge) {
+    const auto reverse_edge_index =
+        this->get_instance()->get_const_network().get_reverse_edge_index(
+            edge_id);
+    if (reverse_edge_index.has_value()) {
+      m_vss_pos.at(reverse_edge_index.value()).emplace_back(edge.length - pos);
+      std::ranges::sort(m_vss_pos.at(reverse_edge_index.value()));
+    }
+  }
+}
+
+void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    set_vss_pos(cda_rail::Network::EdgeInput const& edge_input,
+                std::vector<double>                 pos) {
+  auto const edge_id =
+      this->get_instance()->get_const_network().get_edge_index(edge_input);
+  auto const& edge =
+      this->get_instance()->get_const_network().get_edge(edge_id);
+
+  for (const auto& p : pos) {
+    if (p <= EPS || p + EPS >= edge.length) {
+      throw exceptions::ConsistencyException(
+          "VSS position " + std::to_string(p) + " is not on edge " +
+          std::to_string(edge_id));
+    }
+  }
+
+  std::ranges::sort(pos);
+  m_vss_pos.at(edge_id) = std::move(pos);
+}
+
+void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    reset_vss_pos(cda_rail::Network::EdgeInput const& edge_input) {
+  auto const edge_id =
+      this->get_instance()->get_const_network().get_edge_index(edge_input);
+  m_vss_pos.at(edge_id).clear();
+}
+
+void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    export_solution(const std::filesystem::path& workingDirectory,
+                    std::string_view const       solutionSubdirectory,
+                    bool                         export_instance) const {
+  SolGeneralPerformanceOptimizationInstance::export_solution(
+      workingDirectory, solutionSubdirectory, export_instance);
+
+  // NOLINTNEXTLINE(misc-const-correctness)
+  json vss_pos_json;
+
+  auto const& const_network = this->get_instance()->get_const_network();
+  for (size_t edge_id = 0; edge_id < const_network.number_of_edges();
+       ++edge_id) {
+    const auto& edge = const_network.get_edge(edge_id);
+    const auto& v0   = const_network.get_vertex(edge.source).name;
+    const auto& v1   = const_network.get_vertex(edge.target).name;
+    vss_pos_json[const_network.get_edge_name(edge_id)] = m_vss_pos.at(edge_id);
+  }
+
+  std::filesystem::path const p =
+      get_export_path(workingDirectory, solutionSubdirectory);
+  std::ofstream vss_pos_file(p / "vss_pos.json");
+  vss_pos_file << vss_pos_json << '\n';
+  vss_pos_file.close();
+}
+
+bool cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    check_consistency() const {
+  if (!SolGeneralPerformanceOptimizationInstance::check_consistency()) {
+    return false;
+  }
+
+  auto const& const_network = this->get_instance()->get_const_network();
+  for (size_t edge_id = 0; edge_id < m_vss_pos.size(); ++edge_id) {
+    const auto& edge = const_network.get_edge(edge_id);
+    if (!edge.breakable && !m_vss_pos.at(edge_id).empty()) {
+      return false;
+    }
+    for (const auto& pos : m_vss_pos.at(edge_id)) {
+      if (pos + EPS < 0 || pos > edge.length + EPS) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    load_solution(const std::filesystem::path& workingDirectory,
+                  std::string_view const       solutionSubdirectory) {
+  SolGeneralPerformanceOptimizationInstance::load_solution(
+      workingDirectory, solutionSubdirectory);
+
+  std::filesystem::path const p =
+      this->get_export_path(workingDirectory, solutionSubdirectory);
+  std::ifstream vss_pos_file(p / "vss_pos.json");
+  json          vss_pos_json = json::parse(vss_pos_file);
+  vss_pos_file.close();
+
+  auto const& const_network = this->get_instance()->get_const_network();
+  for (const auto& [edge_str, pos_vec_json] : vss_pos_json.items()) {
+    const auto          edge_id = const_network.get_edge_index({edge_str});
+    std::vector<double> pos_vec = pos_vec_json.get<std::vector<double>>();
+    std::ranges::sort(pos_vec);
+    m_vss_pos.at(edge_id) = std::move(pos_vec);
+  }
 }

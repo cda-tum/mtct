@@ -317,9 +317,9 @@ public:
     export_solution(workingDirectory, solutionSubdirectory, false);
   }
 
-  void export_solution(const std::filesystem::path& workingDirectory,
-                       std::string_view const       solutionSubdirectory,
-                       bool                         export_instance) const;
+  virtual void export_solution(const std::filesystem::path& workingDirectory,
+                               std::string_view const solutionSubdirectory,
+                               bool                   export_instance) const;
 
   // Additional Getter
   [[nodiscard]] GeneralPerformanceOptimizationInstance const*
@@ -400,180 +400,42 @@ public:
   [[nodiscard]] bool check_consistency() const override;
 };
 
-#if 0
-
-template <typename T>
 class SolVSSGeneralPerformanceOptimizationInstance
-    : public SolGeneralPerformanceOptimizationInstance<T> {
-  static_assert(
-      std::is_base_of_v<GeneralPerformanceOptimizationInstance, T>,
-      "T must be derived from GeneralPerformanceOptimizationInstance");
+    : public SolGeneralPerformanceOptimizationInstance {
+  std::vector<std::vector<double>> m_vss_pos;
 
-  std::vector<std::vector<double>> vss_pos;
+  void initialize_vss_vector();
 
 public:
-  SolVSSGeneralPerformanceOptimizationInstance() = default;
   explicit SolVSSGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance)
-      : SolGeneralPerformanceOptimizationInstance<T>(instance) {
-    vss_pos = std::vector<std::vector<double>>(
-        this->instance.const_n().number_of_edges());
-  };
+      : SolGeneralPerformanceOptimizationInstance(instance) {
+    this->initialize_vss_vector();
+  }
   SolVSSGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance,
       SolutionStatus status, double obj, bool has_sol)
-      : SolGeneralPerformanceOptimizationInstance<T>(instance, status, obj,
-                                                     has_sol) {
-    vss_pos = std::vector<std::vector<double>>(
-        this->instance.const_n().number_of_edges());
-  };
-  explicit SolVSSGeneralPerformanceOptimizationInstance(
-      const std::filesystem::path& p,
-      const std::optional<T>&      instance = std::optional<T>())
-      : SolGeneralPerformanceOptimizationInstance<T>(p, instance) {
-    vss_pos = std::vector<std::vector<double>>(
-        this->instance.const_n().number_of_edges());
-  };
+      : SolGeneralPerformanceOptimizationInstance(instance, status, obj,
+                                                  has_sol) {
+    this->initialize_vss_vector();
+  }
 
-  void add_vss_pos(size_t edge_id, double pos, bool reverse_edge = true) {
-    // Add VSS position on edge. Also on reverse edge if true.
+  void add_vss_pos(cda_rail::Network::EdgeInput const& edge_input, double pos,
+                   bool reverse_edge = true);
 
-    if (!this->instance.const_n().has_edge(edge_id)) {
-      throw exceptions::EdgeNotExistentException(edge_id);
-    }
+  void set_vss_pos(cda_rail::Network::EdgeInput const& edge_input,
+                   std::vector<double>                 pos);
 
-    const auto& edge = this->instance.const_n().get_edge(edge_id);
+  void reset_vss_pos(cda_rail::Network::EdgeInput const& edge_input);
 
-    if (pos <= EPS || pos + EPS >= edge.length) {
-      throw exceptions::ConsistencyException(
-          "VSS position " + std::to_string(pos) + " is not on edge " +
-          std::to_string(edge_id));
-    }
+  void export_solution(const std::filesystem::path& workingDirectory,
+                       std::string_view const       solutionSubdirectory,
+                       bool export_instance) const override;
 
-    vss_pos.at(edge_id).emplace_back(pos);
-    std::sort(vss_pos.at(edge_id).begin(), vss_pos.at(edge_id).end());
+  [[nodiscard]] bool check_consistency() const override;
 
-    if (reverse_edge) {
-      const auto reverse_edge_index =
-          this->instance.const_n().get_reverse_edge_index(edge_id);
-      if (reverse_edge_index.has_value()) {
-        vss_pos.at(reverse_edge_index.value()).emplace_back(edge.length - pos);
-        std::sort(vss_pos.at(reverse_edge_index.value()).begin(),
-                  vss_pos.at(reverse_edge_index.value()).end());
-      }
-    }
-  };
-  void add_vss_pos(size_t source, size_t target, double pos,
-                   bool reverse_edge = true) {
-    add_vss_pos(this->instance.const_n().get_edge_index(source, target), pos,
-                reverse_edge);
-  };
-  void add_vss_pos(const std::string& source, const std::string& target,
-                   double pos, bool reverse_edge = true) {
-    add_vss_pos(this->instance.const_n().get_edge_index(source, target), pos,
-                reverse_edge);
-  };
-
-  void set_vss_pos(size_t edge_id, std::vector<double> pos) {
-    if (!this->instance.const_n().has_edge(edge_id)) {
-      throw exceptions::EdgeNotExistentException(edge_id);
-    }
-
-    const auto& edge = this->instance.const_n().get_edge(edge_id);
-
-    for (const auto& p : pos) {
-      if (p <= EPS || p + EPS >= edge.length) {
-        throw exceptions::ConsistencyException(
-            "VSS position " + std::to_string(p) + " is not on edge " +
-            std::to_string(edge_id));
-      }
-    }
-
-    vss_pos.at(edge_id) = std::move(pos);
-  };
-  void set_vss_pos(size_t source, size_t target, std::vector<double> pos) {
-    set_vss_pos(this->instance.const_n().get_edge_index(source, target),
-                std::move(pos));
-  };
-  void set_vss_pos(const std::string& source, const std::string& target,
-                   std::vector<double> pos) {
-    set_vss_pos(this->instance.const_n().get_edge_index(source, target),
-                std::move(pos));
-  };
-
-  void reset_vss_pos(size_t edge_id) {
-    if (!this->instance.const_n().has_edge(edge_id)) {
-      throw exceptions::EdgeNotExistentException(edge_id);
-    }
-
-    vss_pos.at(edge_id).clear();
-  };
-  void reset_vss_pos(size_t source, size_t target) {
-    reset_vss_pos(this->instance.const_n().get_edge_index(source, target));
-  };
-  void reset_vss_pos(const std::string& source, const std::string& target) {
-    reset_vss_pos(this->const_n().get_edge_index(source, target));
-  };
-
-  void export_solution(const std::filesystem::path& p,
-                       bool export_instance) const override {
-    SolGeneralPerformanceOptimizationInstance<T>::export_solution(
-        p, export_instance);
-
-    // NOLINTNEXTLINE(misc-const-correctness)
-    json vss_pos_json;
-    for (size_t edge_id = 0;
-         edge_id < this->instance.const_n().number_of_edges(); ++edge_id) {
-      const auto& edge = this->instance.const_n().get_edge(edge_id);
-      const auto& v0   = this->instance.const_n().get_vertex(edge.source).name;
-      const auto& v1   = this->instance.const_n().get_vertex(edge.target).name;
-      vss_pos_json["('" + v0 + "', '" + v1 + "')"] = vss_pos.at(edge_id);
-    }
-
-    std::ofstream vss_pos_file(p / "solution" / "vss_pos.json");
-    vss_pos_file << vss_pos_json << '\n';
-    vss_pos_file.close();
-  };
-  [[nodiscard]] bool check_consistency() const override {
-    if (!SolGeneralPerformanceOptimizationInstance<T>::check_consistency()) {
-      return false;
-    }
-    for (size_t edge_id = 0; edge_id < vss_pos.size(); ++edge_id) {
-      const auto& edge = this->instance.const_n().get_edge(edge_id);
-      if (!edge.breakable && !vss_pos.at(edge_id).empty()) {
-        return false;
-      }
-      for (const auto& pos : vss_pos.at(edge_id)) {
-        if (pos + EPS < 0 || pos > edge.length + EPS) {
-          return false;
-        }
-      }
-    }
-    return true;
-  };
-
-  [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
-  import_solution(const std::filesystem::path& p,
-                  const std::optional<T>&      instance = std::optional<T>()) {
-    auto sol = SolVSSGeneralPerformanceOptimizationInstance(p, instance);
-    if (!sol.check_consistency()) {
-      throw exceptions::ConsistencyException(
-          "Imported solution object is not consistent");
-    }
-    return sol;
-  };
-  [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
-  import_solution(const std::string&      path,
-                  const std::optional<T>& instance = std::optional<T>()) {
-    return import_solution(std::filesystem::path(path), instance);
-  };
-  [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
-  import_solution(const char*             path,
-                  const std::optional<T>& instance = std::optional<T>()) {
-    return import_solution(std::filesystem::path(path), instance);
-  };
+  void load_solution(const std::filesystem::path& workingDirectory,
+                     std::string_view const solutionSubdirectory) override;
 };
-
-#endif
 
 } // namespace cda_rail::instances
