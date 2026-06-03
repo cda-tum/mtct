@@ -229,9 +229,23 @@ public:
   [[nodiscard]] cda_rail::index_set
   trains_on_edge(size_t edge_id, bool fixed_routes,
                  const cda_rail::index_set& trains_to_consider,
+                 bool                       error_if_not_route = true) const {
+    return trains_on_edge(this->get_const_routes(), edge_id, fixed_routes,
+                          trains_to_consider, error_if_not_route);
+  }
+  [[nodiscard]] cda_rail::index_set
+  trains_on_edge(RouteMap const& route_map, size_t edge_id, bool fixed_routes,
+                 const cda_rail::index_set& trains_to_consider,
                  bool                       error_if_not_route = true) const;
   [[nodiscard]] cda_rail::index_set
   all_trains_on_edge(size_t edge_id, bool fixed_routes = true,
+                     bool error_if_not_route = true) const {
+    return all_trains_on_edge(this->get_const_routes(), edge_id, fixed_routes,
+                              error_if_not_route);
+  }
+  [[nodiscard]] cda_rail::index_set
+  all_trains_on_edge(RouteMap const& route_map, size_t edge_id,
+                     bool fixed_routes       = true,
                      bool error_if_not_route = true) const;
 
   // --------------------
@@ -356,12 +370,13 @@ public:
 };
 
 class SolGeneralProblemInstance {
-protected:
+private:
   std::unique_ptr<GeneralProblemInstance> m_instance;
-  SolutionStatus                          m_status  = SolutionStatus::Unknown;
-  double                                  m_obj     = -1;
-  bool                                    m_has_sol = false;
+  SolutionStatus                          m_status{SolutionStatus::Unknown};
+  double                                  m_obj{-1};
+  bool                                    m_has_sol{false};
 
+protected:
   explicit SolGeneralProblemInstance(
       std::unique_ptr<GeneralProblemInstance> instance_ptr)
       : m_instance(std::move(instance_ptr)) {};
@@ -373,11 +388,14 @@ protected:
 
   [[nodiscard]] json get_general_solution_data() const;
   void               set_general_solution_data(const json& data);
-  [[nodiscard]] bool check_general_solution_data_consistency() const;
 
-  [[nodiscard]] std::filesystem::path export_general_solution_data(
-      const std::filesystem::path& workingDirectory,
-      std::string_view const       solutionSubdirectory) const;
+  std::filesystem::path
+  get_export_path(const std::filesystem::path& workingDirectory,
+                  std::string_view const       solutionSubdirectory) const {
+    return {workingDirectory / "solutions" / solutionSubdirectory /
+            get_instance()->get_instance_subdirectory() /
+            get_instance()->get_instance_name()};
+  }
 
 public:
   [[nodiscard]] virtual GeneralProblemInstance const* get_instance() const {
@@ -391,9 +409,21 @@ public:
   void set_solution_found() { m_has_sol = true; };
   void set_solution_not_found() { m_has_sol = false; };
 
+  virtual void load_solution(const std::filesystem::path& workingDirectory,
+                             std::string_view const       solutionSubdirectory);
+
+  void load_solution(const std::string&     path,
+                     std::string_view const solutionSubdirectory) {
+    load_solution(std::filesystem::path(path), solutionSubdirectory);
+  };
+  void load_solution(const char*            path,
+                     std::string_view const solutionSubdirectory) {
+    load_solution(std::filesystem::path(path), solutionSubdirectory);
+  };
+
   virtual void
   export_solution(const std::filesystem::path& workingDirectory,
-                  std::string_view const       solutionSubdirectory) const = 0;
+                  std::string_view const       solutionSubdirectory) const;
 
   void export_solution(const std::string&     path,
                        std::string_view const solutionSubdirectory) const {
@@ -404,7 +434,7 @@ public:
     export_solution(std::filesystem::path(path), solutionSubdirectory);
   };
 
-  [[nodiscard]] virtual bool check_consistency() const = 0;
+  [[nodiscard]] virtual bool check_consistency() const;
 
   virtual ~SolGeneralProblemInstance() = default;
 };
@@ -425,10 +455,6 @@ protected:
                                   has_sol),
         m_solution_routes(get_instance()->get_const_routes()) {};
 
-  [[nodiscard]] std::filesystem::path export_general_solution_data_with_routes(
-      const std::filesystem::path& workingDirectory,
-      std::string_view const       solutionSubdirectory) const;
-
 public:
   explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
       GeneralProblemInstanceWithScheduleAndRoutes const& instance)
@@ -443,11 +469,19 @@ public:
                 instance),
             status, obj, has_sol) {};
 
+  void load_solution(const std::filesystem::path& workingDirectory,
+                     std::string_view const solutionSubdirectory) override;
+
   // Additional Getter
   [[nodiscard]] GeneralProblemInstanceWithScheduleAndRoutes const*
   get_instance() const override {
     return dynamic_cast<GeneralProblemInstanceWithScheduleAndRoutes const*>(
         SolGeneralProblemInstance::get_instance());
+  }
+
+  // Problem Specific Getters
+  [[nodiscard]] RouteMap const& get_const_solution_routes() const {
+    return m_solution_routes;
   }
 
   // RouteMap functions
@@ -471,5 +505,12 @@ public:
   void remove_last_edge_from_route(const std::string& train_name) {
     m_solution_routes.remove_last_edge(train_name);
   }
+
+  // Export
+  void
+  export_solution(const std::filesystem::path& workingDirectory,
+                  std::string_view const solutionSubdirectory) const override;
+
+  [[nodiscard]] bool check_consistency() const override;
 };
 } // namespace cda_rail::instances
