@@ -101,10 +101,6 @@ protected:
             instanceName, instanceSubdirectory,
             std::filesystem::path(workingDirectory)) {};
 
-  [[nodiscard]] auto& get_editable_network() { return m_network; };
-  [[nodiscard]] auto& get_editable_timetable() { return m_timetable; };
-  [[nodiscard]] auto& get_editable_routes() { return m_routes; };
-
 public:
   using GeneralProblemInstance::export_instance;
 
@@ -129,6 +125,13 @@ public:
   [[nodiscard]] const auto& get_const_timetable() const { return m_timetable; };
   [[nodiscard]] const auto& get_const_routes() const { return m_routes; };
 
+  [[nodiscard]] auto& get_editable_network() { return m_network; };
+
+protected:
+  [[nodiscard]] auto& get_editable_timetable() { return m_timetable; };
+  [[nodiscard]] auto& get_editable_routes() { return m_routes; };
+
+public:
   Train& editable_train(size_t const index) {
     return m_timetable.editable_train(index);
   }
