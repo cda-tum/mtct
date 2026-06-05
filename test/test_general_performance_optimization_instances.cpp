@@ -162,6 +162,12 @@ TEST(GeneralPerformanceOptimizationInstances,
       "instance-tmp", "general-performance-optimization", "./tmp");
   std::filesystem::remove_all("./tmp");
 
+  EXPECT_EQ(instance_read.get_instance_name(), "instance-tmp");
+  EXPECT_EQ(instance_read.get_instance_subdirectory(),
+            "general-performance-optimization");
+  EXPECT_EQ(instance_read.get_const_network().get_network_name(),
+            "SimpleStation");
+
   // Check if imported instance is the same as the original
 
   EXPECT_TRUE(instance_read.check_consistency());

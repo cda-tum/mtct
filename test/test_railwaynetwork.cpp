@@ -1729,6 +1729,8 @@ TEST(RailwayNetwork, ReadNetwork) {
   const cda_rail::Network network =
       cda_rail::Network::import_network("SimpleStation", "./data/");
 
+  EXPECT_EQ(network.get_network_name(), "SimpleStation");
+
   // Check vertices properties
   std::vector<std::string> vertex_names = {
       "l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
@@ -1930,6 +1932,8 @@ TEST(RailwayNetwork, WriteNetwork) {
 
   // Delete created directory and everything in it
   std::filesystem::remove_all("./tmp");
+
+  EXPECT_EQ(network_read.get_network_name(), network.get_network_name());
 
   // check if both networks are equivalent
 
