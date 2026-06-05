@@ -36,7 +36,8 @@ using json = nlohmann::json;
 // -----------------------------
 
 cda_rail::Network::Network(std::string_view const       networkName,
-                           const std::filesystem::path& working_directory) {
+                           const std::filesystem::path& working_directory)
+    : Network(networkName) {
   auto const path = working_directory / "networks" / networkName;
   if (!std::filesystem::exists(path)) {
     throw exceptions::ImportException("Path " + path.string() +
