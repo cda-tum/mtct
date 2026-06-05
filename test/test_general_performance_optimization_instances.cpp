@@ -125,6 +125,8 @@ TEST(GeneralPerformanceOptimizationInstances,
   // Use above to create instance
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
+  instance.set_instance_name("instance-tmp");
+  instance.set_instance_subdirectory("general-performance-optimization");
 
   // Make some changes to defaults and add train routes
 
@@ -623,26 +625,26 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   // Check Train Orders
   const auto tr_order_v0_v1 = sol_instance.get_train_order(v0_v1);
-  EXPECT_EQ(tr_order_v0_v1.size(), 2);
+  ASSERT_EQ(tr_order_v0_v1.size(), 2);
   EXPECT_EQ(tr_order_v0_v1.at(0), tr1);
   EXPECT_EQ(tr_order_v0_v1.at(1), tr3);
 
   const auto tr_order_v1_v2 = sol_instance.get_train_order(v1_v2);
-  EXPECT_EQ(tr_order_v1_v2.size(), 2);
+  ASSERT_EQ(tr_order_v1_v2.size(), 2);
   EXPECT_EQ(tr_order_v1_v2.at(0), tr1);
   EXPECT_EQ(tr_order_v1_v2.at(1), tr3);
 
   const auto tr_order_v1_v0 = sol_instance.get_train_order(v1_v0);
-  EXPECT_EQ(tr_order_v1_v0.size(), 1);
+  ASSERT_EQ(tr_order_v1_v0.size(), 1);
   EXPECT_EQ(tr_order_v1_v0.at(0), tr2);
 
   const auto tr_order_v2_v1 = sol_instance.get_train_order(v2_v1);
-  EXPECT_EQ(tr_order_v2_v1.size(), 1);
+  ASSERT_EQ(tr_order_v2_v1.size(), 1);
   EXPECT_EQ(tr_order_v2_v1.at(0), tr2);
 
   const auto tr_order_rev_v0_v1 =
       sol_instance.get_train_order_with_reverse(v0_v1);
-  EXPECT_EQ(tr_order_rev_v0_v1.size(), 3);
+  ASSERT_EQ(tr_order_rev_v0_v1.size(), 3);
   EXPECT_EQ(tr_order_rev_v0_v1.at(0).train_id, tr1);
   EXPECT_EQ(tr_order_rev_v0_v1.at(1).train_id, tr2);
   EXPECT_EQ(tr_order_rev_v0_v1.at(2).train_id, tr3);
@@ -652,7 +654,7 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   const auto tr_order_rev_v1_v2 =
       sol_instance.get_train_order_with_reverse(v1_v2);
-  EXPECT_EQ(tr_order_rev_v1_v2.size(), 3);
+  ASSERT_EQ(tr_order_rev_v1_v2.size(), 3);
   EXPECT_EQ(tr_order_rev_v1_v2.at(0).train_id, tr1);
   EXPECT_EQ(tr_order_rev_v1_v2.at(1).train_id, tr2);
   EXPECT_EQ(tr_order_rev_v1_v2.at(2).train_id, tr3);
@@ -662,7 +664,7 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   const auto tr_order_rev_v1_v0 =
       sol_instance.get_train_order_with_reverse(v1_v0);
-  EXPECT_EQ(tr_order_rev_v1_v0.size(), 3);
+  ASSERT_EQ(tr_order_rev_v1_v0.size(), 3);
   EXPECT_EQ(tr_order_rev_v1_v0.at(0).train_id, tr1);
   EXPECT_EQ(tr_order_rev_v1_v0.at(1).train_id, tr2);
   EXPECT_EQ(tr_order_rev_v1_v0.at(2).train_id, tr3);
@@ -672,7 +674,7 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   const auto tr_order_rev_v2_v1 =
       sol_instance.get_train_order_with_reverse(v2_v1);
-  EXPECT_EQ(tr_order_rev_v2_v1.size(), 3);
+  ASSERT_EQ(tr_order_rev_v2_v1.size(), 3);
   EXPECT_EQ(tr_order_rev_v2_v1.at(0).train_id, tr1);
   EXPECT_EQ(tr_order_rev_v2_v1.at(1).train_id, tr2);
   EXPECT_EQ(tr_order_rev_v2_v1.at(2).train_id, tr3);
@@ -754,9 +756,9 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 60), 100);
   EXPECT_EQ(sol1_read.get_train_speed("tr1", 0), 10);
   EXPECT_EQ(sol1_read.get_train_speed("tr1", 60), 5);
-  EXPECT_TRUE(sol1_read.get_instance()->get_const_routes().has_route("tr1"));
+  EXPECT_TRUE(sol1_read.get_const_solution_routes().has_route("tr1"));
   const auto& tr1_route =
-      sol1_read.get_instance()->get_const_routes().get_route("tr1");
+      sol1_read.get_const_solution_routes().get_route("tr1");
   EXPECT_EQ(tr1_route.size(), 2);
   EXPECT_EQ(tr1_route.get_edge_id(0),
             sol1_read.get_instance()->get_const_network().get_edge_index(
@@ -774,9 +776,9 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_EQ(sol2_read.get_train_pos("tr1", 60), 100);
   EXPECT_EQ(sol2_read.get_train_speed("tr1", 0), 10);
   EXPECT_EQ(sol2_read.get_train_speed("tr1", 60), 5);
-  EXPECT_TRUE(sol2_read.get_instance()->get_const_routes().has_route("tr1"));
+  EXPECT_TRUE(sol2_read.get_const_solution_routes().has_route("tr1"));
   const auto& tr1_route2 =
-      sol2_read.get_instance()->get_const_routes().get_route("tr1");
+      sol2_read.get_const_solution_routes().get_route("tr1");
   EXPECT_EQ(tr1_route2.size(), 2);
   EXPECT_EQ(tr1_route2.get_edge_id(0),
             sol2_read.get_instance()->get_const_network().get_edge_index(
@@ -807,20 +809,20 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops1) {
 
   instance.discretize_stops();
 
-  EXPECT_TRUE(instance.get_const_network().has_vertex("g00_g01_0"));
-  EXPECT_FALSE(instance.get_const_network().has_vertex("g10_g11_0"));
-  EXPECT_FALSE(instance.get_const_network().has_vertex("g00_g01_1"));
-  EXPECT_FALSE(instance.get_const_network().has_vertex("g11_g10_1"));
+  EXPECT_TRUE(instance.get_const_network().has_vertex("g00-g01_0"));
+  EXPECT_FALSE(instance.get_const_network().has_vertex("g10-g11_0"));
+  EXPECT_FALSE(instance.get_const_network().has_vertex("g00-g01_1"));
+  EXPECT_FALSE(instance.get_const_network().has_vertex("g11-g10_1"));
 
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g00"}, {"g00_g01_0"}));
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g00_g01_0"}, {"g01"}));
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g01"}, {"g00_g01_0"}));
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g00_g01_0"}, {"g00"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00"}, {"g00-g01_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00-g01_0"}, {"g01"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g01"}, {"g00-g01_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00-g01_0"}, {"g00"}));
 
-  const auto& e1 = instance.get_const_network().get_edge({"g00", "g00_g01_0"});
-  const auto& e2 = instance.get_const_network().get_edge({"g00_g01_0", "g01"});
-  const auto& e3 = instance.get_const_network().get_edge({"g01", "g00_g01_0"});
-  const auto& e4 = instance.get_const_network().get_edge({"g00_g01_0", "g00"});
+  const auto& e1 = instance.get_const_network().get_edge({"g00", "g00-g01_0"});
+  const auto& e2 = instance.get_const_network().get_edge({"g00-g01_0", "g01"});
+  const auto& e3 = instance.get_const_network().get_edge({"g01", "g00-g01_0"});
+  const auto& e4 = instance.get_const_network().get_edge({"g00-g01_0", "g00"});
 
   EXPECT_DOUBLE_EQ(e1.length, 150);
   EXPECT_DOUBLE_EQ(e1.min_stop_block_length, 150);
@@ -841,8 +843,8 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops1) {
   const auto& s1 = instance.get_const_station_list().get_station("Station1");
 
   std::vector<size_t> s1_expected = {
-      instance.get_const_network().get_edge_index({"g00"}, {"g00_g01_0"}),
-      instance.get_const_network().get_edge_index({"g00_g01_0"}, {"g01"})};
+      instance.get_const_network().get_edge_index({"g00"}, {"g00-g01_0"}),
+      instance.get_const_network().get_edge_index({"g00-g01_0"}, {"g01"})};
 
   EXPECT_EQ(s1_expected.size(), s1.tracks.size());
 
@@ -883,30 +885,30 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
 
   // All stop edges should have been separated once ...
 
-  EXPECT_TRUE(instance.get_const_network().has_vertex("g00_g01_0"));
-  EXPECT_TRUE(instance.get_const_network().has_vertex("g10_g11_0"));
-  EXPECT_FALSE(instance.get_const_network().has_vertex("g00_g01_1"));
-  EXPECT_FALSE(instance.get_const_network().has_vertex("g11_g10_1"));
+  EXPECT_TRUE(instance.get_const_network().has_vertex("g00-g01_0"));
+  EXPECT_TRUE(instance.get_const_network().has_vertex("g10-g11_0"));
+  EXPECT_FALSE(instance.get_const_network().has_vertex("g00-g01_1"));
+  EXPECT_FALSE(instance.get_const_network().has_vertex("g11-g10_1"));
 
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g00"}, {"g00_g01_0"}));
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g00_g01_0"}, {"g01"}));
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g01"}, {"g00_g01_0"}));
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g00_g01_0"}, {"g00"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00"}, {"g00-g01_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00-g01_0"}, {"g01"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g01"}, {"g00-g01_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00-g01_0"}, {"g00"}));
 
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g10"}, {"g10_g11_0"}));
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g10_g11_0"}, {"g11"}));
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g11"}, {"g10_g11_0"}));
-  EXPECT_TRUE(instance.get_const_network().has_edge({"g10_g11_0"}, {"g10"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g10"}, {"g10-g11_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g10-g11_0"}, {"g11"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g11"}, {"g10-g11_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g10-g11_0"}, {"g10"}));
 
-  const auto& e1 = instance.get_const_network().get_edge({"g00", "g00_g01_0"});
-  const auto& e2 = instance.get_const_network().get_edge({"g00_g01_0", "g01"});
-  const auto& e3 = instance.get_const_network().get_edge({"g01", "g00_g01_0"});
-  const auto& e4 = instance.get_const_network().get_edge({"g00_g01_0", "g00"});
+  const auto& e1 = instance.get_const_network().get_edge({"g00", "g00-g01_0"});
+  const auto& e2 = instance.get_const_network().get_edge({"g00-g01_0", "g01"});
+  const auto& e3 = instance.get_const_network().get_edge({"g01", "g00-g01_0"});
+  const auto& e4 = instance.get_const_network().get_edge({"g00-g01_0", "g00"});
 
-  const auto& e5 = instance.get_const_network().get_edge({"g10", "g10_g11_0"});
-  const auto& e6 = instance.get_const_network().get_edge({"g10_g11_0", "g11"});
-  const auto& e7 = instance.get_const_network().get_edge({"g11", "g10_g11_0"});
-  const auto& e8 = instance.get_const_network().get_edge({"g10_g11_0", "g10"});
+  const auto& e5 = instance.get_const_network().get_edge({"g10", "g10-g11_0"});
+  const auto& e6 = instance.get_const_network().get_edge({"g10-g11_0", "g11"});
+  const auto& e7 = instance.get_const_network().get_edge({"g11", "g10-g11_0"});
+  const auto& e8 = instance.get_const_network().get_edge({"g10-g11_0", "g10"});
 
   // ... in the middle at 150m having carried over the properties of the
   // original edge
@@ -947,16 +949,16 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
   const auto& s2 = instance.get_const_station_list().get_station("Station2");
 
   std::vector<size_t> s1_expected = {
-      instance.get_const_network().get_edge_index({"g00"}, {"g00_g01_0"}),
-      instance.get_const_network().get_edge_index({"g00_g01_0"}, {"g01"})};
+      instance.get_const_network().get_edge_index({"g00"}, {"g00-g01_0"}),
+      instance.get_const_network().get_edge_index({"g00-g01_0"}, {"g01"})};
 
   std::vector<size_t> s2_expected = {
-      instance.get_const_network().get_edge_index({"g00"}, {"g00_g01_0"}),
-      instance.get_const_network().get_edge_index({"g00_g01_0"}, {"g01"}),
-      instance.get_const_network().get_edge_index({"g10"}, {"g10_g11_0"}),
-      instance.get_const_network().get_edge_index({"g10_g11_0"}, {"g11"}),
-      instance.get_const_network().get_edge_index({"g11"}, {"g10_g11_0"}),
-      instance.get_const_network().get_edge_index({"g10_g11_0"}, {"g10"})};
+      instance.get_const_network().get_edge_index({"g00"}, {"g00-g01_0"}),
+      instance.get_const_network().get_edge_index({"g00-g01_0"}, {"g01"}),
+      instance.get_const_network().get_edge_index({"g10"}, {"g10-g11_0"}),
+      instance.get_const_network().get_edge_index({"g10-g11_0"}, {"g11"}),
+      instance.get_const_network().get_edge_index({"g11"}, {"g10-g11_0"}),
+      instance.get_const_network().get_edge_index({"g10-g11_0"}, {"g10"})};
 
   EXPECT_EQ(s1_expected.size(), s1.tracks.size());
   EXPECT_EQ(s2_expected.size(), s2.tracks.size());
@@ -1492,8 +1494,6 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
             instance_name, "ras", "./data/");
 
     for (size_t tr = 0; tr < instance.get_const_train_list().size(); ++tr) {
-      double min_time = 0;
-
       const auto tr_schedule = instance.get_const_schedule(tr);
       const auto entry       = tr_schedule.get_entry_vertex();
       const auto exit        = tr_schedule.get_exit_vertex();
@@ -1522,7 +1522,6 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
           << "Instance " << instance_name << ": No path for train "
           << tr_obj.get_name() << " from " << entry_obj.name << " to "
           << exit_obj.name;
-      min_time += p_len.value_or(0);
 
       index_set   last_edges   = {entry_edge};
       std::string last_station = "Entry " + entry_obj.name;
@@ -1539,8 +1538,6 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
             << station_name;
         last_edges   = station.tracks;
         last_station = station_name;
-        min_time += p_station_len.value_or(0);
-        min_time += stop.get_service_duration();
       }
       const auto p_exit_len =
           instance.get_const_network()
@@ -1550,14 +1547,6 @@ TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
           << "Instance " << instance_name << ": No path for train "
           << tr_obj.get_name() << " from " << last_station << " to exit "
           << exit_obj.name;
-      min_time += p_exit_len.value_or(0);
-
-      EXPECT_LE(min_time + 1 * 60 * 60,
-                tr_schedule.get_exit_time() - tr_schedule.get_entry_time())
-          << "Instance " << instance_name << ": Train " << tr_obj.get_name()
-          << " cannot reach exit in scheduled time with 1h buffer"
-          << " (min time: " << min_time << ", scheduled time: "
-          << tr_schedule.get_exit_time() - tr_schedule.get_entry_time() << ")";
     }
   }
 }

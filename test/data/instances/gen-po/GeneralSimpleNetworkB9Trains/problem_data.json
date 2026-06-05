@@ -1,16 +1,6 @@
 {
   "lambda": 1.0,
-  "train_optional": {
-    "Train0_0": false,
-    "Train0_1": false,
-    "Train0_2": false,
-    "Train1_0": false,
-    "Train1_1": false,
-    "Train1_2": false,
-    "Train2_0": false,
-    "Train2_1": false,
-    "Train2_2": false
-  },
+  "station_delay_weight": 1,
   "train_weights": {
     "Train0_0": 6.7,
     "Train0_1": 3.9,
@@ -21,5 +11,16 @@
     "Train2_0": 7.7,
     "Train2_1": 7.7,
     "Train2_2": 9.8
+  },
+  "train_optional": {
+    "Train0_0": false,
+    "Train0_1": false,
+    "Train0_2": false,
+    "Train1_0": false,
+    "Train1_1": false,
+    "Train1_2": false,
+    "Train2_0": false,
+    "Train2_1": false,
+    "Train2_2": false
   }
 }

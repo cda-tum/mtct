@@ -63,6 +63,16 @@ public:
   [[nodiscard]] const std::string& get_instance_subdirectory() const {
     return m_instance_subdirectory;
   }
+
+  // Setter
+  void set_instance_name(std::string_view const instance_name) {
+    exceptions::throw_if_invalid_folder_name(instance_name);
+    m_instance_name = instance_name;
+  }
+  void set_instance_subdirectory(std::string_view const instance_subdirectory) {
+    exceptions::throw_if_invalid_folder_name(instance_subdirectory);
+    m_instance_subdirectory = instance_subdirectory;
+  }
 };
 
 class GeneralProblemInstanceWithScheduleAndRoutes

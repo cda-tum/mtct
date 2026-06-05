@@ -227,8 +227,8 @@ public:
 
   using GeneralProblemInstanceWithScheduleAndRoutes::export_instance;
 
-  void
-  export_instance(const std::filesystem::path& workingDirectory) const override;
+  void export_instance(const std::filesystem::path& workingDirectory,
+                       bool const                   saveNetwork) const override;
 
   // ---------------------
   // TRANSFORMATION

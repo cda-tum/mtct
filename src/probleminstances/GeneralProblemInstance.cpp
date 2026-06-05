@@ -302,10 +302,10 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
       size_t const exit  = get_const_schedule(tr_index).get_exit_vertex();
 
       auto const& tr_route = get_const_routes().get_route(tr_name);
-      if (tr_route.get_last_edge(this->get_const_network()).source != entry) {
+      if (tr_route.get_last_edge(this->get_const_network()).target != exit) {
         return false;
       }
-      if (tr_route.get_first_edge(this->get_const_network()).target != exit) {
+      if (tr_route.get_first_edge(this->get_const_network()).source != entry) {
         return false;
       }
     }

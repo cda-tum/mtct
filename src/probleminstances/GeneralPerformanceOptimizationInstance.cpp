@@ -14,28 +14,29 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::
     GeneralPerformanceOptimizationInstance(
         std::string_view const       instanceName,
         std::string_view const       instanceSubdirectory,
-        std::filesystem::path const& workingDirectory) {
-  {
-    initialize_vectors();
+        std::filesystem::path const& workingDirectory)
+    : GeneralProblemInstanceWithScheduleAndRoutes(
+          instanceName, instanceSubdirectory, workingDirectory) {
+  initialize_vectors();
 
-    std::ifstream file(workingDirectory / "instances" / instanceSubdirectory /
-                       instanceName / "problem_data.json");
-    json          j = json::parse(file);
-    for (const auto& [train_name, weight] : j["train_weights"].items()) {
-      set_train_weight(train_name, static_cast<double>(weight));
-    }
-    for (const auto& [train_name, optional] : j["train_optional"].items()) {
-      set_train_optionality_value(train_name, static_cast<bool>(optional));
-    }
-    m_station_delay_weight = static_cast<double>(j["station_delay_weight"]);
-    m_lambda               = static_cast<double>(j["lambda"]);
+  std::ifstream file(workingDirectory / "instances" / instanceSubdirectory /
+                     instanceName / "problem_data.json");
+  json          j = json::parse(file);
+  for (const auto& [train_name, weight] : j["train_weights"].items()) {
+    set_train_weight(train_name, static_cast<double>(weight));
   }
+  for (const auto& [train_name, optional] : j["train_optional"].items()) {
+    set_train_optionality_value(train_name, static_cast<bool>(optional));
+  }
+  m_station_delay_weight = static_cast<double>(j["station_delay_weight"]);
+  m_lambda               = static_cast<double>(j["lambda"]);
 }
 
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
-    export_instance(const std::filesystem::path& workingDirectory) const {
-  GeneralProblemInstanceWithScheduleAndRoutes::export_instance(
-      workingDirectory);
+    export_instance(const std::filesystem::path& workingDirectory,
+                    bool const                   saveNetwork) const {
+  GeneralProblemInstanceWithScheduleAndRoutes::export_instance(workingDirectory,
+                                                               saveNetwork);
 
   json j;
   for (size_t i = 0; i < m_train_weights.size(); ++i) {
@@ -480,7 +481,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_order(
 
   // Create a vector of tr_on_edge (set) ordered by tr_times
   cda_rail::index_vector tr_on_edge_vec(tr_on_edge.size());
-  std::iota(tr_on_edge_vec.begin(), tr_on_edge_vec.end(), 0);
+  std::ranges::move(tr_on_edge, tr_on_edge_vec.begin());
   std::ranges::sort(tr_on_edge_vec, [&tr_times](size_t tr1, size_t tr2) {
     return tr_times.at(tr1) < tr_times.at(tr2);
   });

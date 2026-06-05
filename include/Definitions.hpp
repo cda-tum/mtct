@@ -19,7 +19,7 @@ constexpr double STOP_TOLERANCE           = 10;
 constexpr double ABS_PWL_ERROR            = 10;
 constexpr double LINE_SPEED_ACCURACY      = 0.1;
 constexpr double LINE_SPEED_TIME_ACCURACY = 0.1;
-constexpr double MIN_NON_ZERO             = 1.0;
+constexpr double MIN_NON_ZERO             = 0.1;
 
 // TODO: Sensible to move any of these
 
