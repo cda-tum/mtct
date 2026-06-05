@@ -339,6 +339,20 @@ void cda_rail::Timetable::insert_stop(size_t const       train_index,
                     m_station_list.get_station_ptr(station_name)});
 }
 
+void cda_rail::Timetable::remove_stop(size_t             train_index,
+                                      std::string const& station_name,
+                                      bool throw_exception_if_not_existent) {
+  if (!m_train_list.has_train(train_index)) {
+    throw exceptions::TrainNotExistentException(train_index);
+  }
+  if (!m_station_list.has_station(station_name)) {
+    throw exceptions::StationNotExistentException(station_name);
+  }
+
+  m_schedules.at(train_index)
+      .remove_stop(station_name, throw_exception_if_not_existent);
+}
+
 // HELPER
 
 std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
@@ -392,27 +406,23 @@ bool cda_rail::Timetable::check_consistency(Network const& network) const {
     return false;
   }
 
+  for (const auto& station : m_station_list | std::views::values) {
+    if (!std::ranges::all_of(station->tracks, [&network](auto track) {
+          return network.has_edge(track);
+        })) {
+      return false;
+    }
+  }
+
   // Helper: Checks if a terminal vertex exists and has exactly one neighbor
   auto is_valid_terminal = [&network](auto vertex) {
     return network.has_vertex(vertex) && network.neighbors(vertex).size() == 1;
   };
 
-  // Helper: Validates that all tracks in a given station exist in the network
-  auto are_station_tracks_valid = [&network](ScheduledStop const& stop) {
-    return std::ranges::all_of(
-        stop.get_station().tracks,
-        [&network](auto track) { return network.has_edge(track); });
-  };
-
-  // Helper: Validates a single schedule (combines the 1st and 3rd loops)
-  auto is_schedule_consistent = [&is_valid_terminal, &are_station_tracks_valid](
-                                    Schedule const& schedule) {
+  // Helper: Validates a single schedule
+  auto is_schedule_consistent = [&is_valid_terminal](Schedule const& schedule) {
     if (!is_valid_terminal(schedule.get_entry_vertex()) ||
         !is_valid_terminal(schedule.get_exit_vertex())) {
-      return false;
-    }
-
-    if (!std::ranges::all_of(schedule.get_stops(), are_station_tracks_valid)) {
       return false;
     }
 

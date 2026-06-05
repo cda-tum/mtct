@@ -382,3 +382,55 @@ TEST(TimetableFunctionality, TimetableExceptions) {
   EXPECT_THROW((void)timetable.time_index_interval(tr1 + 10, 15, true),
                cda_rail::exceptions::TrainNotExistentException);
 }
+
+TEST(TimetableFunctionality, TimetableConsistency2) {
+  cda_rail::Network network1;
+  cda_rail::Network network2;
+
+  network1.add_vertex("v0", cda_rail::VertexType::TTD);
+  network1.add_vertex("v1", cda_rail::VertexType::TTD);
+  network2.add_vertex("v0", cda_rail::VertexType::TTD);
+  network2.add_vertex("v1", cda_rail::VertexType::TTD);
+  network2.add_vertex("v2", cda_rail::VertexType::TTD);
+
+  const int e11 = network1.add_edge({"v0"}, {"v1"}, 100, 10, true, 10);
+  const int e12 = network2.add_edge({"v0"}, {"v1"}, 100, 10, true, 10);
+  const int e22 = network2.add_edge({"v1"}, {"v2"}, 100, 10, true, 10);
+
+  EXPECT_EQ(e11, e12);
+
+  cda_rail::Timetable timetable;
+  timetable.add_empty_station("TestStation");
+  timetable.add_track_to_station("TestStation", e12, network2);
+
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_TRUE(timetable.check_consistency(network1));
+
+  timetable.add_track_to_station("TestStation", e22, network2);
+
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_FALSE(timetable.check_consistency(network1));
+
+  (void)timetable.add_train("TestTrain", 100, 10, 1, 1, 10, 0, {"v0"}, 60, 0,
+                            {"v2"}, network2);
+  timetable.insert_stop("TestTrain", "TestStation", 20, 30);
+
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 1);
+  EXPECT_TRUE(timetable.check_consistency(network2));
+
+  timetable.remove_stop("TestTrain", "TestStation");
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 0);
+
+  timetable.insert_stop("TestTrain", "TestStation", 0, 20);
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 1);
+  EXPECT_FALSE(timetable.check_consistency(network2));
+
+  timetable.remove_stop("TestTrain", "TestStation");
+  EXPECT_TRUE(timetable.check_consistency(network2));
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 0);
+
+  timetable.insert_stop("TestTrain", "TestStation", 50, 70);
+  EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 1);
+  EXPECT_FALSE(timetable.check_consistency(network2));
+}

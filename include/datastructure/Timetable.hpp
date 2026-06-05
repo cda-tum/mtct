@@ -576,7 +576,16 @@ public:
                    double const service_duration) {
     insert_stop(m_train_list.get_train_index(train_name), station_name,
                 service_time, service_duration);
-  };
+  }
+
+  void remove_stop(size_t train_index, std::string const& station_name,
+                   bool throw_exception_if_not_existent = true);
+  void remove_stop(std::string const& train_name,
+                   std::string const& station_name,
+                   bool               throw_exception_if_not_existent = true) {
+    remove_stop(m_train_list.get_train_index(train_name), station_name,
+                throw_exception_if_not_existent);
+  }
 
   void add_track_to_station(std::string const&        station_name,
                             Network::EdgeInput const& new_edge,
