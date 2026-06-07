@@ -1,12 +1,13 @@
 #include "simulator/GeneralSimulator.hpp"
 
+#include <utility>
+
 cda_rail::simulator::GeneralSimulator::GeneralSimulator(
-    instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
-    std::vector<cda_rail::index_vector>                     ttd_sections)
-    : m_instance(std::make_shared<
-                 const instances::GeneralProblemInstanceWithScheduleAndRoutes>(
-          instance)),
-      m_ttd_sections(std::move(ttd_sections)) {
+    std::shared_ptr<
+        const cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes>
+                                        instance,
+    std::vector<cda_rail::index_vector> ttd_sections)
+    : m_instance(std::move(instance)), m_ttd_sections(std::move(ttd_sections)) {
   check_ttd_sections(m_ttd_sections);
 
   m_train_edges.resize(m_instance->get_const_train_list().size());
@@ -16,16 +17,15 @@ cda_rail::simulator::GeneralSimulator::GeneralSimulator(
 }
 
 cda_rail::simulator::GeneralSimulator::GeneralSimulator(
-    instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
-    std::vector<cda_rail::index_vector>                     ttd_sections,
-    std::vector<cda_rail::index_vector>                     train_edges,
-    std::vector<cda_rail::index_vector>                     ttd_orders,
-    std::vector<cda_rail::index_vector>                     vertex_orders,
-    std::vector<std::vector<double>>                        stop_positions)
-    : m_instance(std::make_shared<
-                 const instances::GeneralProblemInstanceWithScheduleAndRoutes>(
-          instance)),
-      m_ttd_sections(std::move(ttd_sections)),
+    std::shared_ptr<
+        const cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes>
+                                        instance,
+    std::vector<cda_rail::index_vector> ttd_sections,
+    std::vector<cda_rail::index_vector> train_edges,
+    std::vector<cda_rail::index_vector> ttd_orders,
+    std::vector<cda_rail::index_vector> vertex_orders,
+    std::vector<std::vector<double>>    stop_positions)
+    : m_instance(std::move(instance)), m_ttd_sections(std::move(ttd_sections)),
       m_train_edges(std::move(train_edges)),
       m_ttd_orders(std::move(ttd_orders)),
       m_vertex_orders(std::move(vertex_orders)),
@@ -36,6 +36,30 @@ cda_rail::simulator::GeneralSimulator::GeneralSimulator(
   check_vertex_orders(m_vertex_orders);
   check_stop_positions(m_stop_positions);
 }
+
+cda_rail::simulator::GeneralSimulator::GeneralSimulator(
+    instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
+    std::vector<cda_rail::index_vector>                     ttd_sections)
+    : GeneralSimulator(
+          std::make_shared<const cda_rail::instances::
+                               GeneralProblemInstanceWithScheduleAndRoutes>(
+              instance),
+          std::move(ttd_sections)) {}
+
+cda_rail::simulator::GeneralSimulator::GeneralSimulator(
+    instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
+    std::vector<cda_rail::index_vector>                     ttd_sections,
+    std::vector<cda_rail::index_vector>                     train_edges,
+    std::vector<cda_rail::index_vector>                     ttd_orders,
+    std::vector<cda_rail::index_vector>                     vertex_orders,
+    std::vector<std::vector<double>>                        stop_positions)
+    : GeneralSimulator(
+          std::make_shared<const cda_rail::instances::
+                               GeneralProblemInstanceWithScheduleAndRoutes>(
+              instance),
+          std::move(ttd_sections), std::move(train_edges),
+          std::move(ttd_orders), std::move(vertex_orders),
+          std::move(stop_positions)) {}
 
 const cda_rail::index_vector&
 cda_rail::simulator::GeneralSimulator::get_train_edges_of_tr(

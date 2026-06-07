@@ -63,10 +63,26 @@ private:
   std::vector<cda_rail::index_vector> m_vertex_orders;
   std::vector<std::vector<double>>    m_stop_positions;
 
-public:
   // ----------------------
   // Constructor
   // ----------------------
+protected:
+  GeneralSimulator(
+      std::shared_ptr<const cda_rail::instances::
+                          GeneralProblemInstanceWithScheduleAndRoutes>
+                                          instance,
+      std::vector<cda_rail::index_vector> ttd_sections);
+  GeneralSimulator(
+      std::shared_ptr<const cda_rail::instances::
+                          GeneralProblemInstanceWithScheduleAndRoutes>
+                                          instance,
+      std::vector<cda_rail::index_vector> ttd_sections,
+      std::vector<cda_rail::index_vector> train_edges,
+      std::vector<cda_rail::index_vector> ttd_orders,
+      std::vector<cda_rail::index_vector> vertex_orders,
+      std::vector<std::vector<double>>    stop_positions);
+
+public:
   GeneralSimulator(
       instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
       std::vector<cda_rail::index_vector>                     ttd_sections);
@@ -77,6 +93,7 @@ public:
       std::vector<cda_rail::index_vector>                     ttd_orders,
       std::vector<cda_rail::index_vector>                     vertex_orders,
       std::vector<std::vector<double>>                        stop_positions);
+
   virtual ~GeneralSimulator() = default;
 
   // Rule of 5 (due to virtual deconstructor)
