@@ -609,6 +609,10 @@ public:
    */
   [[nodiscard]] size_t get_vertex_index(std::string_view name) const;
 
+  [[nodiscard]] size_t resolve_vertex_index(VertexInput const& vertex) const {
+    return vertex.resolve(this);
+  }
+
 private:
   /**
    * @brief Implementation backing `get_vertex`.
@@ -2457,5 +2461,17 @@ private:
       size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
       std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
       bool first_edge) const;
+
+public:
+  // exception helper
+  void throw_if_not_valid_successor(EdgeInput const& edge_in,
+                                    EdgeInput const& edge_out) const {
+    if (!is_valid_successor(edge_in, edge_out)) {
+      throw cda_rail::exceptions::InvalidInputException(
+          concatenate_string_views({get_edge_name(edge_in),
+                                    " is not a valid successor of ",
+                                    get_edge_name(edge_out), "."}));
+    }
+  }
 };
 } // namespace cda_rail

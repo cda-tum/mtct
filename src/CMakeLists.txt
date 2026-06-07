@@ -24,9 +24,6 @@ add_library(
   probleminstances/GeneralProblemInstance.cpp
   ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralPerformanceOptimizationInstance.hpp
   probleminstances/GeneralPerformanceOptimizationInstance.cpp
-  # ${PROJECT_SOURCE_DIR}/include/probleminstances/VSSGenerationTimetable.hpp
-  # probleminstances/VSSGenerationTimetable.cpp
-  # probleminstances/SolVSSGenerationTimetable.cpp
   ${PROJECT_SOURCE_DIR}/include/FixedSizeVector.hpp
   ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
   # ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
@@ -41,7 +38,8 @@ add_library(
   # solver/mip-based/GenPOMovingBlockMIPSolver.cpp
   # solver/mip-based/GenPOMovingBlockMIPSolver_SolutionExtraction.cpp
   # solver/mip-based/GenPOMovingBlockMIPSolver_Lazy.cpp
-  # ${PROJECT_SOURCE_DIR}/include/simulator/GeneralSimulator.hpp
+  ${PROJECT_SOURCE_DIR}/include/simulator/GeneralSimulator.hpp
+  simulator/GeneralSimulator.cpp
   # ${PROJECT_SOURCE_DIR}/include/simulator/GreedySimulator.hpp
   # simulator/GreedySimulator.cpp
   # ${PROJECT_SOURCE_DIR}/include/simulator/GreedyHeuristic.hpp
