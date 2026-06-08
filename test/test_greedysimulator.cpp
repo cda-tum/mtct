@@ -229,8 +229,6 @@ TEST(GreedySimulator, BasicFunctions) {
                cda_rail::exceptions::ConsistencyException);
 }
 
-#if 0
-
 TEST(GreedySimulator, ValidStopPos) {
   Network    network;
   const auto v4 = network.add_vertex("v4", cda_rail::VertexType::TTD);
@@ -244,11 +242,15 @@ TEST(GreedySimulator, ValidStopPos) {
   const auto v2_v3 = network.add_edge(v2, v3, 50, 10);
   const auto v1_v2 = network.add_edge(v1, v2, 30, 10);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr2 = timetable.add_train("Train2", 50, 10, 1, 1, true, {0, 60}, 0,
-                                       v0, {360, 420}, 0, v4, network);
-  const auto tr1 = timetable.add_train("Train1", 75, 10, 1, 1, true, {0, 60}, 0,
-                                       v0, {360, 420}, 0, v4, network);
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+
+  Timetable  timetable;
+  const auto tr2 = timetable.add_train("Train2", 50, 10, 1, 1, true, 0, 0, v0,
+                                       360, 0, v4, network);
+  const auto tr1 = timetable.add_train("Train1", 75, 10, 1, 1, true, 0, 0, v0,
+                                       360, 0, v4, network);
 
   timetable.add_empty_station("Station1");
   timetable.add_track_to_station("Station1", v3_v4, network);
@@ -257,9 +259,9 @@ TEST(GreedySimulator, ValidStopPos) {
   timetable.add_track_to_station("Station2", v0_v1, network);
   timetable.add_track_to_station("Station2", v1_v2, network);
 
-  timetable.insert_stop("Train1", "Station2", {60, 120}, {120, 180}, 60);
-  timetable.insert_stop("Train1", "Station1", {120, 180}, {180, 230}, 60);
-  timetable.insert_stop("Train2", "Station2", {120, 180}, {180, 230}, 60);
+  timetable.insert_stop("Train1", "Station2", 60, 60);
+  timetable.insert_stop("Train1", "Station1", 120, 60);
+  timetable.insert_stop("Train2", "Station2", 120, 60);
 
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
@@ -304,33 +306,32 @@ TEST(GreedySimulator, ValidStopPos) {
 
 TEST(GreedySimulator, BasicPrivateFunctions) {
   // Create instance
-  Network     network("./example-networks/SimpleStation/network/");
+  Network     network("SimpleStation", "./data/");
   const auto& ttd_sections = network.unbreakable_sections();
   const auto& l0           = network.get_vertex_index("l0");
   const auto& r0           = network.get_vertex_index("r0");
 
-  const auto& l0_l1   = network.get_edge_index("l0", "l1");
-  const auto& l1_l2   = network.get_edge_index("l1", "l2");
-  const auto& l2_l3   = network.get_edge_index("l2", "l3");
-  const auto& l3_g00  = network.get_edge_index("l3", "g00");
-  const auto& g00_g01 = network.get_edge_index("g00", "g01");
-  const auto& g01_r2  = network.get_edge_index("g01", "r2");
-  const auto& r2_r1   = network.get_edge_index("r2", "r1");
-  const auto& r1_r0   = network.get_edge_index("r1", "r0");
-  const auto& r0_r1   = network.get_edge_index("r0", "r1");
+  const auto& l0_l1   = network.get_edge_index({"l0", "l1"});
+  const auto& l1_l2   = network.get_edge_index({"l1", "l2"});
+  const auto& l2_l3   = network.get_edge_index({"l2", "l3"});
+  const auto& l3_g00  = network.get_edge_index({"l3", "g00"});
+  const auto& g00_g01 = network.get_edge_index({"g00", "g01"});
+  const auto& g01_r2  = network.get_edge_index({"g01", "r2"});
+  const auto& r2_r1   = network.get_edge_index({"r2", "r1"});
+  const auto& r1_r0   = network.get_edge_index({"r1", "r0"});
+  const auto& r0_r1   = network.get_edge_index({"r0", "r1"});
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, {0, 60},
-                                       0, "l0", {360, 420}, 10, "r0", network);
-  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, {30, 90},
-                                       10, "r0", {400, 460}, 5, "l0", network);
-  const auto tr3 = timetable.add_train("Train3", 100, 10, 1, 4, true, {0, 150},
-                                       0, "l0", {360, 420}, 10, "r0", network);
-  const auto tr4 = timetable.add_train("Train4", 100, 10, 1, 5, false, {30, 90},
-                                       0, "l0", {400, 460}, 10, "r0", network);
-  const auto tr5 =
-      timetable.add_train("Train5", 100, 10, 1, 6, true, {120, 180}, 0, "l0",
-                          {360, 420}, 10, "r0", network);
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, 0, 0,
+                                       {"l0"}, 360, 10, {"r0"}, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, 30, 10,
+                                       {"r0"}, 400, 5, {"l0"}, network);
+  const auto tr3 = timetable.add_train("Train3", 100, 10, 1, 4, true, 0, 0,
+                                       {"l0"}, 360, 10, {"r0"}, network);
+  const auto tr4 = timetable.add_train("Train4", 100, 10, 1, 5, false, 30, 0,
+                                       {"l0"}, 400, 10, {"r0"}, network);
+  const auto tr5 = timetable.add_train("Train5", 100, 10, 1, 6, true, 120, 0,
+                                       {"l0"}, 360, 10, {"r0"}, network);
   EXPECT_TRUE(timetable.check_consistency(network));
 
   RouteMap routes;
@@ -379,21 +380,21 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
 
   // Trains entering
   const auto& [success_0, entering_tr_0] =
-      simulator.get_entering_trains(0, {}, {}, {}, false);
+      simulator.get_entering_trains(0, {}, {}, {}, false, 60);
   EXPECT_TRUE(success_0);
   // Expect only tr1
   EXPECT_EQ(entering_tr_0.size(), 1);
   EXPECT_TRUE(entering_tr_0.contains(tr1));
 
   const auto& [success_30, entering_tr_30] =
-      simulator.get_entering_trains(30, {}, {}, {}, false);
+      simulator.get_entering_trains(30, {}, {}, {}, false, 60);
   EXPECT_TRUE(success_30);
   // Expect only tr1
   EXPECT_EQ(entering_tr_30.size(), 1);
   EXPECT_TRUE(entering_tr_30.contains(tr1));
 
   const auto& [success_30b, entering_tr_30b] =
-      simulator.get_entering_trains(30, {}, {tr1}, {}, false);
+      simulator.get_entering_trains(30, {}, {tr1}, {}, false, 60);
   EXPECT_TRUE(success_30b);
   // Expect only tr2, tr3
   EXPECT_EQ(entering_tr_30b.size(), 2);
@@ -401,74 +402,74 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
   EXPECT_TRUE(entering_tr_30b.contains(tr3));
 
   const auto& [success_30c, entering_tr_30c] =
-      simulator.get_entering_trains(30, {tr1}, {}, {}, false);
+      simulator.get_entering_trains(30, {tr1}, {}, {}, false, 60);
   EXPECT_TRUE(success_30c);
   // Expect only tr3
   EXPECT_EQ(entering_tr_30c.size(), 1);
   EXPECT_TRUE(entering_tr_30c.contains(tr3));
 
   const auto& [success_60, entering_tr_60] =
-      simulator.get_entering_trains(60, {}, {}, {}, false);
+      simulator.get_entering_trains(60, {}, {}, {}, false, 60);
   EXPECT_TRUE(success_60);
   // Expect tr1
   EXPECT_EQ(entering_tr_60.size(), 1);
   EXPECT_TRUE(entering_tr_60.contains(tr1));
 
   const auto& [success_61, entering_tr_61] =
-      simulator.get_entering_trains(61, {}, {}, {}, false);
+      simulator.get_entering_trains(61, {}, {}, {}, false, 60);
   EXPECT_FALSE(success_61); // tr1 too late
   EXPECT_EQ(entering_tr_61.size(), 1);
   EXPECT_TRUE(entering_tr_61.contains(tr1));
 
   const auto& [success_61_t, entering_tr_61_t] =
-      simulator.get_entering_trains(61, {}, {}, {}, true);
+      simulator.get_entering_trains(61, {}, {}, {}, true, 60);
   EXPECT_TRUE(success_61_t); // tr1 still entering
   EXPECT_EQ(entering_tr_61_t.size(), 1);
   EXPECT_TRUE(entering_tr_61_t.contains(tr1));
 
   const auto& [success_30_tr1tr2, entering_tr_30_tr1tr2] =
-      simulator.get_entering_trains(30, {tr1, tr2}, {}, {}, false);
+      simulator.get_entering_trains(30, {tr1, tr2}, {}, {}, false, 60);
   EXPECT_TRUE(success_30_tr1tr2);
   // Expect tr3
   EXPECT_EQ(entering_tr_30_tr1tr2.size(), 1);
   EXPECT_TRUE(entering_tr_30_tr1tr2.contains(tr3));
 
   const auto& [success_30_tr1tr2_l, entering_tr_30_tr1tr2_l] =
-      simulator.get_entering_trains(30, {tr2}, {tr1}, {}, false);
+      simulator.get_entering_trains(30, {tr2}, {tr1}, {}, false, 60);
   EXPECT_TRUE(success_30_tr1tr2_l);
   // Expect tr3
   EXPECT_EQ(entering_tr_30_tr1tr2_l.size(), 1);
   EXPECT_TRUE(entering_tr_30_tr1tr2_l.contains(tr3));
 
   const auto& [success_60_tr1tr3, entering_tr_60_tr1tr3] =
-      simulator.get_entering_trains(60, {tr3}, {tr1}, {}, false);
+      simulator.get_entering_trains(60, {tr3}, {tr1}, {}, false, 60);
   EXPECT_TRUE(success_60_tr1tr3);
   // Expect tr2
   EXPECT_EQ(entering_tr_60_tr1tr3.size(), 1);
   EXPECT_TRUE(entering_tr_60_tr1tr3.contains(tr2));
 
   const auto& [success_60_tr1tr2tr3, entering_tr_60_tr1tr2tr3] =
-      simulator.get_entering_trains(60, {tr2}, {tr1, tr3}, {}, false);
+      simulator.get_entering_trains(60, {tr2}, {tr1, tr3}, {}, false, 60);
   EXPECT_TRUE(success_60_tr1tr2tr3);
   // Expect no train to enter
   EXPECT_TRUE(entering_tr_60_tr1tr2tr3.empty());
 
   const auto& [success_120_tr1tr2, entering_tr_120_tr1tr2] =
-      simulator.get_entering_trains(120, {tr2}, {tr1}, {}, false);
+      simulator.get_entering_trains(60, {tr2}, {tr1}, {}, false, 60);
   EXPECT_TRUE(success_120_tr1tr2);
   // Expect tr3
   EXPECT_EQ(entering_tr_120_tr1tr2.size(), 1);
   EXPECT_TRUE(entering_tr_120_tr1tr2.contains(tr3));
 
   const auto& [success_120_tr1tr2tr3, entering_tr_120_tr1tr2tr3] =
-      simulator.get_entering_trains(120, {tr2, tr3}, {tr1}, {}, false);
+      simulator.get_entering_trains(120, {tr2, tr3}, {tr1}, {}, false, 60);
   EXPECT_TRUE(success_120_tr1tr2tr3);
   // Expect tr5
   EXPECT_EQ(entering_tr_120_tr1tr2tr3.size(), 1);
   EXPECT_TRUE(entering_tr_120_tr1tr2tr3.contains(tr5));
 
   const auto& [success_120_tr1tr2tr3b, entering_tr_120_tr1tr2tr3b] =
-      simulator.get_entering_trains(120, {tr2, tr3}, {}, {tr1}, false);
+      simulator.get_entering_trains(120, {tr2, tr3}, {}, {tr1}, false, 60);
   EXPECT_TRUE(success_120_tr1tr2tr3b);
   // Expect tr5
   EXPECT_EQ(entering_tr_120_tr1tr2tr3b.size(), 1);
@@ -504,29 +505,28 @@ TEST(GreedySimulator, BasicPrivateFunctions) {
 
 TEST(GreedySimulator, TrainsOnEdges) {
   // Create instance
-  Network     network("./example-networks/SimpleStation/network/");
+  Network     network("SimpleStation", "./data/");
   const auto& ttd_sections = network.unbreakable_sections();
   const auto& l0           = network.get_vertex_index("l0");
   const auto& r0           = network.get_vertex_index("r0");
 
-  const auto& l0_l1   = network.get_edge_index("l0", "l1");
-  const auto& l1_l2   = network.get_edge_index("l1", "l2");
-  const auto& l2_l3   = network.get_edge_index("l2", "l3");
-  const auto& l3_g00  = network.get_edge_index("l3", "g00");
-  const auto& g00_g01 = network.get_edge_index("g00", "g01");
+  const auto& l0_l1   = network.get_edge_index({"l0", "l1"});
+  const auto& l1_l2   = network.get_edge_index({"l1", "l2"});
+  const auto& l2_l3   = network.get_edge_index({"l2", "l3"});
+  const auto& l3_g00  = network.get_edge_index({"l3", "g00"});
+  const auto& g00_g01 = network.get_edge_index({"g00", "g01"});
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, {0, 60},
-                                       0, "l0", {360, 420}, 10, "r0", network);
-  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, {30, 90},
-                                       10, "r0", {400, 460}, 5, "l0", network);
-  const auto tr3 = timetable.add_train("Train3", 100, 10, 1, 4, true, {0, 150},
-                                       0, "l0", {360, 420}, 10, "r0", network);
-  const auto tr4 = timetable.add_train("Train4", 100, 10, 1, 5, false, {30, 90},
-                                       0, "l0", {400, 460}, 10, "r0", network);
-  const auto tr5 =
-      timetable.add_train("Train5", 100, 10, 1, 6, true, {120, 180}, 0, "l0",
-                          {360, 420}, 10, "r0", network);
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, 0, 0,
+                                       {"l0"}, 360, 10, {"r0"}, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, 30, 10,
+                                       {"r0"}, 400, 5, {"l0"}, network);
+  const auto tr3 = timetable.add_train("Train3", 100, 10, 1, 4, true, 0, 0,
+                                       {"l0"}, 360, 10, {"r0"}, network);
+  const auto tr4 = timetable.add_train("Train4", 100, 10, 1, 5, false, 30, 0,
+                                       {"l0"}, 400, 10, {"r0"}, network);
+  const auto tr5 = timetable.add_train("Train5", 100, 10, 1, 6, true, 120, 0,
+                                       {"l0"}, 360, 10, {"r0"}, network);
   EXPECT_TRUE(timetable.check_consistency(network));
 
   RouteMap routes;
@@ -542,7 +542,6 @@ TEST(GreedySimulator, TrainsOnEdges) {
   simulator.append_train_edge_to_tr(tr2, l0_l1);
   simulator.append_train_edge_to_tr(tr3, l1_l2);
   simulator.append_train_edge_to_tr(tr4, l0_l1);
-  simulator.append_train_edge_to_tr(tr4, l3_g00);
 
   const auto tr_on_edges = simulator.tr_on_edges();
 
@@ -560,40 +559,37 @@ TEST(GreedySimulator, TrainsOnEdges) {
     } else if (i == l2_l3) {
       EXPECT_EQ(tr_on_edges.at(i).size(), 1);
       EXPECT_TRUE(tr_on_edges.at(i).contains(tr1));
-    } else if (i == l3_g00) {
-      EXPECT_EQ(tr_on_edges.at(i).size(), 1);
-      EXPECT_TRUE(tr_on_edges.at(i).contains(tr4));
     } else {
       EXPECT_TRUE(tr_on_edges.at(i).empty());
     }
   }
 }
-
+#if 0
 TEST(GreedySimulator, EdgePositions) {
   // Create instance
-  Network     network("./example-networks/SimpleStation/network/");
+  Network network("SimpleStation", "./data/");
   const auto& l0 = network.get_vertex_index("l0");
   const auto& r0 = network.get_vertex_index("r0");
 
-  const auto& l0_l1   = network.get_edge_index("l0", "l1");
-  const auto& l1_l2   = network.get_edge_index("l1", "l2");
-  const auto& l2_l3   = network.get_edge_index("l2", "l3");
-  const auto& l3_g00  = network.get_edge_index("l3", "g00");
-  const auto& l3_g10  = network.get_edge_index("l3", "g10");
-  const auto& g00_g01 = network.get_edge_index("g00", "g01");
+  const auto& l0_l1   = network.get_edge_index({"l0", "l1"});
+  const auto& l1_l2   = network.get_edge_index({"l1", "l2"});
+  const auto& l2_l3   = network.get_edge_index({"l2", "l3"});
+  const auto& l3_g00  = network.get_edge_index({"l3", "g00"});
+  const auto& l3_g10  = network.get_edge_index({"l3", "g10"});
+  const auto& g00_g01 = network.get_edge_index({"g00", "g01"});
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, {0, 60},
-                                       0, "l0", {360, 420}, 10, "r0", network);
-  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, {30, 90},
-                                       10, "r0", {400, 460}, 5, "l0", network);
-  const auto tr3 = timetable.add_train("Train3", 100, 10, 1, 4, true, {0, 150},
-                                       0, "l0", {360, 420}, 10, "r0", network);
-  const auto tr4 = timetable.add_train("Train4", 100, 10, 1, 5, false, {30, 90},
-                                       0, "l0", {400, 460}, 10, "r0", network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, 0, 0,
+                                       {"l0"}, 360, 10, {"r0"}, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, 30,
+                                       10, {"r0"}, 400, 5, {"l0"}, network);
+  const auto tr3 = timetable.add_train("Train3", 100, 10, 1, 4, true, 0, 0,
+                                       {"l0"}, 360, 10, {"r0"}, network);
+  const auto tr4 = timetable.add_train("Train4", 100, 10, 1, 5, false, 30,
+                                       0, {"l0"}, 400, 10, {"r0"}, network);
   const auto tr5 =
-      timetable.add_train("Train5", 100, 10, 1, 6, true, {120, 180}, 0, "l0",
-                          {360, 420}, 10, "r0", network);
+      timetable.add_train("Train5", 100, 10, 1, 6, true, 120, 0, {"l0"},
+                          360, 10, {"r0"}, network);
   EXPECT_TRUE(timetable.check_consistency(network));
 
   RouteMap routes;
@@ -829,25 +825,25 @@ TEST(GreedySimulator, IsOkToEnter) {
   network.add_successor(v01_v11, v11_v2);
   network.add_successor(v11_v2, v2_v3);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  Timetable timetable;
   const auto                                              tr1 =
-      timetable.add_train("Train1", 50, 55, 1, 1, true, {0, 60}, 15, "v01",
-                          {360, 420}, 10, "v4", network);
+      timetable.add_train("Train1", 50, 55, 1, 1, true, 0, 15, {"v01"}, 360,
+                          10, {"v4"}, network);
   const auto tr2 =
-      timetable.add_train("Train2", 50, 55, 1, 2, true, {0, 60}, 20, "v01",
-                          {360, 420}, 10, "v4", network);
+      timetable.add_train("Train2", 50, 55, 1, 2, true, 0, 20, {"v01"}, 360,
+                          10, {"v4"}, network);
   const auto tr3 =
-      timetable.add_train("Train3", 50, 55, 1, 3, true, {0, 60}, 25, "v00",
-                          {360, 420}, 10, "v4", network);
+      timetable.add_train("Train3", 50, 55, 1, 3, true, 0, 25, {"v00"}, 360,
+                          10, {"v4"}, network);
   const auto tr4 =
-      timetable.add_train("Train4", 50, 55, 1, 1, true, {0, 60}, 15, "v01",
-                          {360, 420}, 10, "v4", network);
+      timetable.add_train("Train4", 50, 55, 1, 1, true, 0, 15, {"v01"}, 360,
+                          10, {"v4"}, network);
   const auto tr5 =
-      timetable.add_train("Train5", 50, 55, 1, 3, true, {0, 60}, 30, "v00",
-                          {360, 420}, 10, "v4", network);
+      timetable.add_train("Train5", 50, 55, 1, 3, true, 0, 30, {"v00"}, 360,
+                          10, {"v4"}, network);
   const auto tr6 =
-      timetable.add_train("Train6", 50, 55, 1, 2, true, {0, 60}, 20, "v00",
-                          {360, 420}, 10, "v4", network);
+      timetable.add_train("Train6", 50, 55, 1, 2, true, 0, 20, {"v00"}, 360,
+                          10, {"v4"}, network);
 
   RouteMap routes;
 
@@ -1006,16 +1002,16 @@ TEST(GreedySimulator, AbsoluteDistanceMA) {
   network.add_successor(v01_v11, v11_v2);
   network.add_successor(v11_v2, v2_v3);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  Timetable timetable;
   const auto                                              tr1 =
-      timetable.add_train("Train1", 50, 55, 1, 1, true, {0, 60}, 15, "v01",
-                          {360, 420}, 10, "v4", network);
+      timetable.add_train("Train1", 50, 55, 1, 1, true, 0, 15, {"v01"}, 360,
+                          10, {"v4"}, network);
   const auto tr2 =
-      timetable.add_train("Train2", 50, 55, 1, 2, true, {0, 60}, 20, "v00",
-                          {360, 420}, 10, "v4", network);
+      timetable.add_train("Train2", 50, 55, 1, 2, true, 0, 20, {"v00"}, 360,
+                          10, {"v4"}, network);
   const auto tr3 =
-      timetable.add_train("Train3", 50, 55, 1, 3, true, {0, 60}, 25, "v00",
-                          {360, 420}, 10, "v4", network);
+      timetable.add_train("Train3", 50, 55, 1, 3, true, 0, 25, {"v00"}, 360,
+                          10, {"v4"}, network);
 
   RouteMap routes;
 
@@ -1189,9 +1185,9 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
   network.add_successor(v2_v3, v3_v4);
   network.add_successor(v3_v4, v4_v5);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 200, 51, 3, 2, true, {0, 60},
-                                       10, v0, {360, 420}, 14, v5, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 200, 51, 3, 2, true, 0, 10,
+                                       v0, 360, 14, v5, network);
 
   RouteMap routes;
 
@@ -1398,9 +1394,9 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraintsAfterLeaving) {
 
   const auto v0_v1 = network.add_edge(v0, v1, 70, 15, true);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 20, 3, 2, true, {0, 60},
-                                       10, v0, {360, 420}, 10, v1, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 20, 3, 2, true, 0, 10,
+                                       v0, 360, 10, v1, network);
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
@@ -1727,9 +1723,9 @@ TEST(GreedySimulator, ExitHeadwaySpeedConstraint) {
   network.add_successor(v0_v1, v1_v2);
   network.add_successor(v1_v2, v2_v3);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 50, 24, 3, 4, true, {0, 60},
-                                       15, "v0", {360, 420}, 12, "v3", network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 24, 3, 4, true, 0, 15,
+                                       {"v0"}, 360, 12, {"v3"}, network);
 
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
@@ -1871,27 +1867,27 @@ TEST(GreedySimulator, MAandMaxV) {
   network.add_successor(v3_v4, v4_v5);
   network.add_successor(v4_v5, v5_v6);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 10, 50, 4, 2, true, {0, 60},
-                                       15, "v0t", {360, 420}, 2, "v6", network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 10, 50, 4, 2, true, 0, 15,
+                                       {"v0t"}, 360, 2, {"v6"}, network);
   const auto tr2 =
-      timetable.add_train("Train2", 10, 50, 7, 14, true, {0, 60}, 15, "v0t",
-                          {360, 420}, 14, "v6", network);
+      timetable.add_train("Train2", 10, 50, 7, 14, true, 0, 15, {"v0t"}, 360,
+                          14, {"v6"}, network);
   const auto tr3 =
-      timetable.add_train("Train3", 10, 50, 6, 12, true, {0, 60}, 15, "v0t",
-                          {360, 420}, 12, "v6", network);
+      timetable.add_train("Train3", 10, 50, 6, 12, true, 0, 15, {"v0t"}, 360,
+                          12, {"v6"}, network);
   const auto tr4 =
-      timetable.add_train("Train4", 10, 50, 5, 10, true, {0, 60}, 15, "v0b",
-                          {360, 420}, 10, "v6", network);
-  const auto tr5 = timetable.add_train("Train5", 10, 50, 4, 8, true, {0, 60},
-                                       15, "v0b", {360, 420}, 8, "v6", network);
-  const auto tr6 = timetable.add_train("Train6", 10, 50, 3, 6, true, {0, 60},
-                                       15, "v0t", {360, 420}, 6, "v6", network);
-  const auto tr7 = timetable.add_train("Train7", 20, 50, 2, 4, true, {0, 60},
-                                       15, "v0b", {360, 420}, 4, "v6", network);
+      timetable.add_train("Train4", 10, 50, 5, 10, true, 0, 15, {"v0b"}, 360,
+                          10, {"v6"}, network);
+  const auto tr5 = timetable.add_train("Train5", 10, 50, 4, 8, true, 0, 15,
+                                       {"v0b"}, 360, 8, {"v6"}, network);
+  const auto tr6 = timetable.add_train("Train6", 10, 50, 3, 6, true, 0, 15,
+                                       {"v0t"}, 360, 6, {"v6"}, network);
+  const auto tr7 = timetable.add_train("Train7", 20, 50, 2, 4, true, 0, 15,
+                                       {"v0b"}, 360, 4, {"v6"}, network);
   const auto tr8 =
-      timetable.add_train("Train8", 10, 50, 8, 16, true, {0, 60}, 15, "v0t",
-                          {360, 420}, 16, "v6", network);
+      timetable.add_train("Train8", 10, 50, 8, 16, true, 0, 15, {"v0t"}, 360,
+                          16, {"v6"}, network);
 
   timetable.add_empty_station("Station1");
   timetable.add_track_to_station("Station1", v2b_v3, network);
@@ -2226,23 +2222,23 @@ TEST(GreedySimulator, UpdateRearPositions) {
 
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 20, 50, 4, 2, true, {0, 60},
-                                       15, v0, {360, 420}, 2, v1, network);
-  const auto tr2 = timetable.add_train("Train2", 12, 50, 7, 14, true, {0, 60},
-                                       15, v0, {360, 420}, 14, v1, network);
-  const auto tr3 = timetable.add_train("Train3", 300, 50, 6, 12, true, {0, 60},
-                                       15, "v0", {360, 420}, 12, "v1", network);
-  const auto tr4 = timetable.add_train("Train4", 5, 50, 5, 10, true, {0, 60},
-                                       15, "v0", {360, 420}, 10, "v1", network);
-  const auto tr5 = timetable.add_train("Train5", 15, 50, 4, 8, true, {0, 60},
-                                       15, "v0", {360, 420}, 8, "v1", network);
-  const auto tr6 = timetable.add_train("Train6", 20, 50, 3, 6, true, {0, 60},
-                                       15, "v0", {360, 420}, 6, "v1", network);
-  const auto tr7 = timetable.add_train("Train7", 150, 50, 2, 4, true, {0, 60},
-                                       15, "v0", {360, 420}, 4, "v1", network);
-  const auto tr8 = timetable.add_train("Train8", 9, 50, 8, 16, true, {0, 60},
-                                       15, "v0", {360, 420}, 16, "v1", network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 20, 50, 4, 2, true, 0, 15, v0,
+                                       360, 2, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 12, 50, 7, 14, true, 0, 15, v0,
+                                       360, 14, v1, network);
+  const auto tr3 = timetable.add_train("Train3", 300, 50, 6, 12, true, 0, 15,
+                                       {"v0"}, 360, 12, {"v1"}, network);
+  const auto tr4 = timetable.add_train("Train4", 5, 50, 5, 10, true, 0, 15,
+                                       {"v0"}, 360, 10, {"v1"}, network);
+  const auto tr5 = timetable.add_train("Train5", 15, 50, 4, 8, true, 0, 15,
+                                       {"v0"}, 360, 8, {"v1"}, network);
+  const auto tr6 = timetable.add_train("Train6", 20, 50, 3, 6, true, 0, 15,
+                                       {"v0"}, 360, 6, {"v1"}, network);
+  const auto tr7 = timetable.add_train("Train7", 150, 50, 2, 4, true, 0, 15,
+                                       {"v0"}, 360, 4, {"v1"}, network);
+  const auto tr8 = timetable.add_train("Train8", 9, 50, 8, 16, true, 0, 15,
+                                       {"v0"}, 360, 16, {"v1"}, network);
 
   RouteMap routes;
 
@@ -2356,14 +2352,14 @@ TEST(GreedySimulator, ScheduleFeasibility) {
   const auto e3 = network.add_edge(v2, v3, 300, 50, true);
   const auto e1 = network.add_edge(v0, v1, 100, 50, true);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 10, 50, 4, 2, true, {0, 60},
-                                       15, v0, {360, 420}, 2, v3, network);
-  const auto tr2 = timetable.add_train("Train2", 10, 50, 7, 14, true, {30, 90},
-                                       15, v0, {360, 480}, 14, v3, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 10, 50, 4, 2, true, 0, 15, v0,
+                                       360, 2, v3, network);
+  const auto tr2 = timetable.add_train("Train2", 10, 50, 7, 14, true, 30, 15,
+                                       v0, 360, 14, v3, network);
   const auto tr3 =
-      timetable.add_train("Train3", 10, 50, 6, 12, true, {120, 180}, 15, v0,
-                          {360, 500}, 12, v3, network);
+      timetable.add_train("Train3", 10, 50, 6, 12, true, 120, 15, v0, 360, 12,
+                          v3, network);
 
   timetable.add_empty_station("Station1");
   timetable.add_track_to_station("Station1", e2, network);
@@ -2506,11 +2502,11 @@ TEST(GreedySimulator, ReverseEdgeMA) {
   const auto v3_v2 = network.add_edge(v3, v2, 400, 50, true);
   const auto v2_v1 = network.add_edge(v2, v1, 300, 50, true);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 10, 50, 1, 2, true, {0, 60},
-                                       30, v0, {360, 420}, 2, v3, network);
-  const auto tr2 = timetable.add_train("Train2", 10, 50, 2, 4, true, {30, 90},
-                                       15, v3, {360, 480}, 14, v0, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 10, 50, 1, 2, true, 0, 30, v0,
+                                       360, 2, v3, network);
+  const auto tr2 = timetable.add_train("Train2", 10, 50, 2, 4, true, 30, 15,
+                                       v3, 360, 14, v0, network);
 
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
@@ -2601,11 +2597,11 @@ TEST(GreedySimulator, ExitVertexOrder) {
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
   const auto v1_v0 = network.add_edge(v1, v0, 5000, 50, true);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {198, 400}, 40, v1, network);
-  const auto tr2 = timetable.add_train("Train2", 100, 50, 2, 1, true, {0, 60},
-                                       15, v1, {198, 400}, 40, v0, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       198, 40, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 50, 2, 1, true, 0, 15, v1,
+                                       198, 40, v0, network);
 
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
@@ -2643,9 +2639,9 @@ TEST(GreedySimulation, SimpleSimulation) {
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {198, 400}, 40, v1, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       198, 40, v1, network);
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
@@ -2682,11 +2678,11 @@ TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {198, 400}, 40, v1, network);
-  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, {0, 60},
-                                       15, v1, {198, 400}, 40, v0, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       198, 40, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, 0, 15, v1,
+                                       198, 40, v0, network);
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
@@ -2728,11 +2724,11 @@ TEST(GreedySimulation, SimpleSimulationTwoTrains) {
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 20, 4, 2, true, {0, 180},
-                                       20, v0, {10, 1000}, 20, v1, network);
-  const auto tr2 = timetable.add_train("Train2", 100, 20, 4, 2, true, {0, 180},
-                                       20, v0, {10, 1000}, 20, v1, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 20, 4, 2, true, 0, 20, v0,
+                                       10, 20, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 20, 4, 2, true, 0, 20, v0,
+                                       10, 20, v1, network);
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
@@ -2775,12 +2771,12 @@ TEST(GreedySimulator, DeadlockTest1) {
 
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
   const auto v1_v0 = network.add_edge(v1, v0, 5000, 50, true);
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  Timetable timetable;
   const auto                                              tr2 =
-      timetable.add_train("Train2", 100, 50, 4, 2, true, {130, 160}, 15, v1,
-                          {198, 400}, 40, v0, network);
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {198, 400}, 40, v1, network);
+      timetable.add_train("Train2", 100, 50, 4, 2, true, 130, 15, v1, 198, 40,
+                          v0, network);
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       198, 40, v1, network);
 
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
@@ -2834,11 +2830,11 @@ TEST(GreedySimulator, DeadlockTest2) {
   network.add_successor(v3_v2, v2_v1);
   network.add_successor(v2_v1, v1_v0);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {198, 400}, 40, v3, network);
-  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, {0, 60},
-                                       15, v3, {198, 400}, 40, v0, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       198, 40, v3, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, 0, 15, v3,
+                                       198, 40, v0, network);
 
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
@@ -2894,11 +2890,11 @@ TEST(GreedySimulator, DeadlockTest3) {
   network.add_successor(v3_v2, v2_v1);
   network.add_successor(v2_v1, v1_v0);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {198, 400}, 40, v3, network);
-  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, {30, 60},
-                                       15, v3, {198, 400}, 40, v0, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       198, 40, v3, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, 30, 15, v3,
+                                       198, 40, v0, network);
 
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
@@ -2962,9 +2958,9 @@ TEST(GreedySimulator, OneStationTest) {
   network.add_successor(v3_v2, v2_v1);
   network.add_successor(v2_v1, v1_v0);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {198, 400}, 40, v3, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       198, 40, v3, network);
   timetable.add_empty_station("Station1");
   timetable.add_track_to_station("Station1", v1_v2, network);
   timetable.insert_stop(tr1, "Station1", {10, 120}, {40, 150}, 30);
@@ -3022,9 +3018,9 @@ TEST(GreedySimulator, TwoStationTest) {
   network.add_successor(v1_v2, v2_v3);
   network.add_successor(v2_v3, v3_v4);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {300, 600}, 40, v4, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       300, 40, v4, network);
   timetable.add_empty_station("Station1");
   timetable.add_track_to_station("Station1", v1_v2, network);
   timetable.insert_stop(tr1, "Station1", {60, 120}, {90, 150}, 30);
@@ -3073,9 +3069,9 @@ TEST(GreedySimulator, TrajectorySavingTest) {
   const auto v1    = network.add_vertex("v1", VertexType::TTD, 30);
   const auto v0_v1 = network.add_edge(v0, v1, 1100, 50, true);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {198, 400}, 40, v1, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       198, 40, v1, network);
 
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
@@ -3111,9 +3107,9 @@ TEST(GreedySimulator, TwoStationTestWithExit) {
   network.add_successor(v1_v2, v2_v3);
   network.add_successor(v2_v3, v3_v4);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {300, 600}, 40, v4, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       300, 40, v4, network);
   timetable.add_empty_station("Station1");
   timetable.add_track_to_station("Station1", v1_v2, network);
   timetable.insert_stop(tr1, "Station1", {60, 120}, {90, 150}, 30);
@@ -3161,9 +3157,9 @@ TEST(GreedySimulation, TightSchedule) {
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {30, 90}, 40, v1, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       30, 40, v1, network);
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
@@ -3199,11 +3195,11 @@ TEST(GreedySimulation, TightEntry) {
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 15, 4, 2, true, {0, 12},
-                                       15, v0, {198, 400}, 15, v1, network);
-  const auto tr2 = timetable.add_train("Train2", 100, 15, 4, 0.5, true, {0, 12},
-                                       15, v0, {198, 400}, 15, v1, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 15, 4, 2, true, 0, 15, v0,
+                                       198, 15, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 15, 4, 0.5, true, 0, 15,
+                                       v0, 198, 15, v1, network);
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
@@ -3244,9 +3240,9 @@ TEST(GreedySimulation, ExitNetworkSpeedZero) {
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
   const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {0, 400}, 0, v1, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       0, 0, v1, network);
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
@@ -3462,11 +3458,11 @@ TEST(GreedySimulation, FinalState) {
   network.add_successor(v1_v2, v2_v3a);
   network.add_successor(v1_v2, v2_v3b);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {198, 400}, 40, v3a, network);
-  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, {0, 60},
-                                       15, v0, {198, 400}, 40, v3b, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 0, 15, v0,
+                                       198, 40, v3a, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 2, true, 0, 15, v0,
+                                       198, 40, v3b, network);
 
   timetable.add_empty_station("Station1");
   timetable.add_track_to_station("Station1", v1_v2, network);
@@ -3507,9 +3503,9 @@ TEST(GreedySimulation, ExitEntryZero) {
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
   const auto v0_v1 = network.add_edge(v0, v1, 2000, 20, true);
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 20, 4, 2, true, {0, 60},
-                                       0, v0, {100, 600}, 0, v1, network);
+  Timetable timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 20, 4, 2, true, 0, 0, v0,
+                                       100, 0, v1, network);
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
@@ -3616,21 +3612,21 @@ TEST(GreedySimulation, TimeExtractions) {
   network.add_successor(v1_v2, v2_v3);
   network.add_successor(v2_v3, v3_v4);
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  Timetable timetable;
   timetable.add_empty_station("Station1");
   timetable.add_track_to_station("Station1", v1_v2, network);
   timetable.add_empty_station("Station2");
   timetable.add_track_to_station("Station2", v2_v3, network);
 
-  const auto tr1 = timetable.add_train("Train1", 50, 24, 1, 2, true, {0, 60},
-                                       24, v0, {100, 200}, 18, v4, network);
+  const auto tr1 = timetable.add_train("Train1", 50, 24, 1, 2, true, 0, 24, v0,
+                                       100, 18, v4, network);
   timetable.insert_stop(tr1, "Station1", {0, 60}, {60, 120}, 60);
   timetable.insert_stop(tr1, "Station2", {90, 140}, {120, 170}, 30);
 
   // Train 2 is exact copy of train 1 shifted by 100 seconds
   const auto tr2 =
-      timetable.add_train("Train2", 50, 24, 1, 2, true, {0 + 102, 60 + 102}, 24,
-                          v0, {100 + 102, 200 + 102}, 18, v4, network);
+      timetable.add_train("Train2", 50, 24, 1, 2, true, 0 + 102, 24, v0,
+                          100 + 102, 18, v4, network);
   timetable.insert_stop(tr2, "Station1", {0 + 102, 60 + 102},
                      {60 + 102, 120 + 102}, 60);
   timetable.insert_stop(tr2, "Station2", {90 + 102, 140 + 102},

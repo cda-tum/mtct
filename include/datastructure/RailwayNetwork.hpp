@@ -2468,9 +2468,9 @@ public:
                                     EdgeInput const& edge_out) const {
     if (!is_valid_successor(edge_in, edge_out)) {
       throw cda_rail::exceptions::InvalidInputException(
-          concatenate_string_views({get_edge_name(edge_in),
+          concatenate_string_views({get_edge_name(edge_out),
                                     " is not a valid successor of ",
-                                    get_edge_name(edge_out), "."}));
+                                    get_edge_name(edge_in), "."}));
     }
   }
 };
