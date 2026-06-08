@@ -70,7 +70,7 @@ double braking_distance(double v, double d);
  *         violated.
  */
 double max_braking_pos_after_dt_linear_movement(double v_0, double v_max,
-                                                double a, double d, int dt);
+                                                double a, double d, double dt);
 
 // ---------------------------
 // MINIMAL TRAVEL TIMES

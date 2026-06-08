@@ -179,13 +179,13 @@ double cda_rail::braking_distance(double v, double d) {
 double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
                                                           double v_max,
                                                           double a, double d,
-                                                          int dt) {
+                                                          double dt) {
   round_with_default_eps(v_0, v_max, a, d);
   if (std::abs(v_0 - v_max) < EPS) {
     v_max = v_0;
   }
 
-  exceptions::throw_if_less_than(static_cast<double>(dt), 0.0, "Time");
+  exceptions::throw_if_less_than(dt, 0.0, "Time");
   exceptions::throw_if_negative(v_0, "Initial speed");
   if (v_max < v_0) {
     throw exceptions::InvalidInputException(
