@@ -85,10 +85,10 @@ public:
   // ----------------
   explicit GreedySimulator(
       cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
-      std::vector<cda_rail::index_vector> ttd_sections);
+      std::vector<cda_rail::index_set> ttd_sections);
   explicit GreedySimulator(
       cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
-      std::vector<cda_rail::index_vector>                          ttd_sections,
+      std::vector<cda_rail::index_set>                             ttd_sections,
       std::vector<cda_rail::index_vector>                          train_edges,
       std::vector<cda_rail::index_vector>                          ttd_orders,
       std::vector<cda_rail::index_vector> vertex_orders,

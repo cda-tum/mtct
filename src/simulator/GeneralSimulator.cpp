@@ -5,8 +5,8 @@
 cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     std::shared_ptr<
         const cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes>
-                                        instance,
-    std::vector<cda_rail::index_vector> ttd_sections)
+                                     instance,
+    std::vector<cda_rail::index_set> ttd_sections)
     : m_instance(std::move(instance)), m_ttd_sections(std::move(ttd_sections)) {
   check_ttd_sections(m_ttd_sections);
 
@@ -20,7 +20,7 @@ cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     std::shared_ptr<
         const cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes>
                                         instance,
-    std::vector<cda_rail::index_vector> ttd_sections,
+    std::vector<cda_rail::index_set>    ttd_sections,
     std::vector<cda_rail::index_vector> train_edges,
     std::vector<cda_rail::index_vector> ttd_orders,
     std::vector<cda_rail::index_vector> vertex_orders,
@@ -39,7 +39,7 @@ cda_rail::simulator::GeneralSimulator::GeneralSimulator(
 
 cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
-    std::vector<cda_rail::index_vector>                     ttd_sections)
+    std::vector<cda_rail::index_set>                        ttd_sections)
     : GeneralSimulator(
           std::make_shared<const cda_rail::instances::
                                GeneralProblemInstanceWithScheduleAndRoutes>(
@@ -48,7 +48,7 @@ cda_rail::simulator::GeneralSimulator::GeneralSimulator(
 
 cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
-    std::vector<cda_rail::index_vector>                     ttd_sections,
+    std::vector<cda_rail::index_set>                        ttd_sections,
     std::vector<cda_rail::index_vector>                     train_edges,
     std::vector<cda_rail::index_vector>                     ttd_orders,
     std::vector<cda_rail::index_vector>                     vertex_orders,
@@ -224,13 +224,11 @@ void cda_rail::simulator::GeneralSimulator::set_vertex_orders(
 }
 
 void cda_rail::simulator::GeneralSimulator::set_vertex_orders_of_vertex(
-    size_t vertex_id, cda_rail::index_vector orders) {
-  if (vertex_id >= m_vertex_orders.size()) {
-    throw cda_rail::exceptions::InvalidInputException(
-        "Vertex index out of bounds.");
-  }
+    cda_rail::Network::VertexInput const& vertex,
+    cda_rail::index_vector                orders) {
   check_if_all_tr_valid(orders);
-  m_vertex_orders.at(vertex_id) = std::move(orders);
+  m_vertex_orders.at(m_instance->get_const_network().resolve_vertex_index(
+      vertex)) = std::move(orders);
 }
 
 void cda_rail::simulator::GeneralSimulator::set_stop_positions(
@@ -405,7 +403,7 @@ cda_rail::simulator::GeneralSimulator::tr_on_edges() const {
 }
 
 void cda_rail::simulator::GeneralSimulator::check_ttd_sections(
-    std::vector<cda_rail::index_vector> const& ttd_sections) const {
+    std::vector<cda_rail::index_set> const& ttd_sections) const {
   for (auto const& section : ttd_sections) {
     for (auto const& edge : section) {
       if (!m_instance->get_const_network().has_edge(edge)) {

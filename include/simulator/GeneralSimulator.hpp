@@ -55,8 +55,8 @@ class GeneralSimulator {
 private:
   std::shared_ptr<
       const cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes>
-                                      m_instance;
-  std::vector<cda_rail::index_vector> m_ttd_sections;
+                                   m_instance;
+  std::vector<cda_rail::index_set> m_ttd_sections;
 
   std::vector<cda_rail::index_vector> m_train_edges;
   std::vector<cda_rail::index_vector> m_ttd_orders;
@@ -70,13 +70,13 @@ protected:
   GeneralSimulator(
       std::shared_ptr<const cda_rail::instances::
                           GeneralProblemInstanceWithScheduleAndRoutes>
-                                          instance,
-      std::vector<cda_rail::index_vector> ttd_sections);
+                                       instance,
+      std::vector<cda_rail::index_set> ttd_sections);
   GeneralSimulator(
       std::shared_ptr<const cda_rail::instances::
                           GeneralProblemInstanceWithScheduleAndRoutes>
                                           instance,
-      std::vector<cda_rail::index_vector> ttd_sections,
+      std::vector<cda_rail::index_set>    ttd_sections,
       std::vector<cda_rail::index_vector> train_edges,
       std::vector<cda_rail::index_vector> ttd_orders,
       std::vector<cda_rail::index_vector> vertex_orders,
@@ -85,10 +85,10 @@ protected:
 public:
   GeneralSimulator(
       instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
-      std::vector<cda_rail::index_vector>                     ttd_sections);
+      std::vector<cda_rail::index_set>                        ttd_sections);
   GeneralSimulator(
       instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
-      std::vector<cda_rail::index_vector>                     ttd_sections,
+      std::vector<cda_rail::index_set>                        ttd_sections,
       std::vector<cda_rail::index_vector>                     train_edges,
       std::vector<cda_rail::index_vector>                     ttd_orders,
       std::vector<cda_rail::index_vector>                     vertex_orders,
@@ -111,7 +111,7 @@ public:
     return m_instance.get();
   }
 
-  [[nodiscard]] const std::vector<cda_rail::index_vector>&
+  [[nodiscard]] const std::vector<cda_rail::index_set>&
   get_ttd_sections() const {
     return m_ttd_sections;
   }
@@ -182,7 +182,7 @@ public:
   void set_ttd_orders_of_ttd(size_t ttd_index, cda_rail::index_vector orders);
 
   void set_vertex_orders(std::vector<cda_rail::index_vector> orders);
-  void set_vertex_orders_of_vertex(size_t                 vertex_id,
+  void set_vertex_orders_of_vertex(cda_rail::Network::VertexInput const& vertex,
                                    cda_rail::index_vector orders);
 
   void set_stop_positions(std::vector<std::vector<double>> positions);
@@ -231,7 +231,7 @@ private:
   // EXCEPTION HELPER
   // -----------------------
   void check_ttd_sections(
-      std::vector<cda_rail::index_vector> const& ttd_sections) const;
+      std::vector<cda_rail::index_set> const& ttd_sections) const;
 
   void check_train_edges_for_tr(size_t                        tr,
                                 cda_rail::index_vector const& edges) const;

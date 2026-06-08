@@ -29,7 +29,7 @@
 
 cda_rail::simulator::GreedySimulator::GreedySimulator(
     cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
-    std::vector<cda_rail::index_vector>                          ttd_sections)
+    std::vector<cda_rail::index_set>                             ttd_sections)
     : GeneralSimulator(
           std::make_shared<
               const instances::GeneralPerformanceOptimizationInstance>(
@@ -38,7 +38,7 @@ cda_rail::simulator::GreedySimulator::GreedySimulator(
 
 cda_rail::simulator::GreedySimulator::GreedySimulator(
     cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
-    std::vector<cda_rail::index_vector>                          ttd_sections,
+    std::vector<cda_rail::index_set>                             ttd_sections,
     std::vector<cda_rail::index_vector>                          train_edges,
     std::vector<cda_rail::index_vector>                          ttd_orders,
     std::vector<cda_rail::index_vector>                          vertex_orders,
