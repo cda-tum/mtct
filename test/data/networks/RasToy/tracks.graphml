@@ -10,7 +10,7 @@
 <graph edgedefault="directed">
 <node id="v_1">
 <data key="d5">2</data>
-<data key="d6">0</data>
+<data key="d6">60</data>
 </node>
 <node id="v_2">
 <data key="d5">2</data>
@@ -22,7 +22,7 @@
 </node>
 <node id="v_4">
 <data key="d5">2</data>
-<data key="d6">0</data>
+<data key="d6">60</data>
 </node>
 <node id="v_5">
 <data key="d5">2</data>
@@ -30,7 +30,7 @@
 </node>
 <node id="v_6">
 <data key="d5">2</data>
-<data key="d6">0</data>
+<data key="d6">60</data>
 </node>
 <node id="v_7">
 <data key="d5">2</data>
@@ -78,7 +78,7 @@
 </node>
 <node id="v_18">
 <data key="d5">2</data>
-<data key="d6">0</data>
+<data key="d6">60</data>
 </node>
 <node id="v_19">
 <data key="d5">2</data>
@@ -186,7 +186,7 @@
 </node>
 <node id="v_45">
 <data key="d5">2</data>
-<data key="d6">0</data>
+<data key="d6">60</data>
 </node>
 <node id="v_46">
 <data key="d5">2</data>
@@ -218,7 +218,7 @@
 </node>
 <node id="v_53">
 <data key="d5">2</data>
-<data key="d6">0</data>
+<data key="d6">60</data>
 </node>
 <node id="v_54">
 <data key="d5">2</data>
@@ -226,7 +226,7 @@
 </node>
 <node id="v_55">
 <data key="d5">2</data>
-<data key="d6">0</data>
+<data key="d6">60</data>
 </node>
 <node id="v_56">
 <data key="d5">2</data>
@@ -238,7 +238,7 @@
 </node>
 <node id="v_58">
 <data key="d5">2</data>
-<data key="d6">0</data>
+<data key="d6">60</data>
 </node>
 <edge source="v_1" target="v_2">
 <data key="d0">true</data>
