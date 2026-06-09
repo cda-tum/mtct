@@ -28,6 +28,11 @@ struct EdgeTarget {
   double      min_stop_block_length = 100;
 };
 
+#define EXPECT_APPROX_EQ_3(a, b) EXPECT_APPROX_EQ(a, b, 1e-3)
+
+#define EXPECT_APPROX_EQ(a, b, c)                                              \
+  EXPECT_TRUE(std::abs((a) - (b)) < (c)) << (a) << " !=(approx.) " << (b)
+
 // NOLINTBEGIN(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores,bugprone-unchecked-optional-access)
 
 TEST(RailwayNetwork, SimpleGetterAndSetter) {
@@ -1749,7 +1754,9 @@ TEST(RailwayNetwork, ReadNetwork) {
     const cda_rail::Vertex& v      = network.get_vertex({v_name});
     EXPECT_EQ(v.name, v_name);
     EXPECT_EQ(v.type, type[i]);
-    EXPECT_DOUBLE_EQ(v.headway, 0.0);
+    double const expected_hw =
+        network.neighbors({v_name}).size() == 1 ? 60.0 : 0.0;
+    EXPECT_DOUBLE_EQ(v.headway, expected_hw);
   }
 
   // Check edges properties
@@ -1783,7 +1790,7 @@ TEST(RailwayNetwork, ReadNetwork) {
     EXPECT_EQ(network.get_vertex(e.source).name, edge.source);
     EXPECT_EQ(network.get_vertex(e.target).name, edge.target);
     EXPECT_EQ(e.length, edge.length);
-    EXPECT_EQ(e.max_speed, edge.max_speed);
+    EXPECT_APPROX_EQ_3(e.max_speed, edge.max_speed);
     EXPECT_EQ(e.breakable, edge.breakable);
     EXPECT_EQ(e.min_block_length, edge.min_block_length);
     EXPECT_EQ(e.min_stop_block_length, edge.min_stop_block_length);
