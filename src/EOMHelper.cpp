@@ -180,7 +180,7 @@ double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
                                                           double v_max,
                                                           double a, double d,
                                                           double dt) {
-  round_with_default_eps(v_0, v_max, a, d);
+  round_with_default_eps(v_0, v_max, a, d, dt);
   if (std::abs(v_0 - v_max) < EPS) {
     v_max = v_0;
   }

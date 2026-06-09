@@ -978,9 +978,9 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
                                           "Maximum displacement");
   cda_rail::exceptions::throw_if_negative(dt, "Time step");
 
-  PosVel retval = {.pos = std::min(train.get_max_speed(),
-                                   v_0 + (train.get_acceleration() * dt)),
-                   .vel = max_displacement};
+  PosVel retval = {.pos = max_displacement,
+                   .vel = std::min(train.get_max_speed(),
+                                   v_0 + (train.get_acceleration() * dt))};
 
   const auto milestones = edge_milestones(tr);
   for (size_t i = 0; i < get_train_edges_of_tr(tr).size() &&
@@ -998,13 +998,17 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     [[maybe_unused]] const auto [occ, det_pos] = get_position_on_route_edge(
         tr, {.rear = pos - train.get_length(), .front = pos}, i, milestones);
 
-    if (blocked_vertices.contains(edge.target)) {
+    if ((!occ.tr_on_edge || occ.front_on_edge) &&
+        blocked_vertices.contains(edge.target)) {
       // Cannot leave edge
       retval.pos = std::min(retval.pos, milestones.at(i + 1) - pos);
     }
 
-    if (occ.front_on_edge || (!also_limit_by_leaving_edges && occ.tr_on_edge)) {
-      retval.vel = std::min(retval.vel, edge.max_speed); // Train is on the edge
+    if (occ.tr_on_edge) {
+      // Train is on the edge.
+      // If also_limit_by_leaving_edges=false, this must be the front, because
+      // otherwise we would already have continued the loop.
+      retval.vel = std::min(retval.vel, edge.max_speed);
     } else {
       retval = speed_restriction_helper(retval.pos, retval.vel, pos,
                                         milestones.at(i), v_0, edge.max_speed,
