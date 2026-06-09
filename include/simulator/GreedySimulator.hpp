@@ -19,6 +19,8 @@
 #include <utility>
 #include <vector>
 
+#define CYCLE_LIMIT 1000
+
 // If TEST_FRIENDS has value true, the corresponding test is friended to test
 // complex private functions
 // This is not good practice, however after consideration, it was decided that
@@ -44,7 +46,6 @@ class GreedySimulator_MAandMaxV_Test;
 class GreedySimulator_MAtoV_Test;
 class GreedySimulator_MoveTrain_Test;
 class GreedySimulator_UpdateRearPositions_Test;
-class GreedySimulator_ScheduleFeasibility_Test;
 class GreedySimulator_ReverseEdgeMA_Test;
 class GreedySimulator_ExitVertexOrder_Test;
 class GreedySimulator_FutureSpeedRestrictionConstraintsAfterLeaving_Test;
@@ -73,7 +74,6 @@ private:
   FRIEND_TEST(::GreedySimulator, MAtoV);
   FRIEND_TEST(::GreedySimulator, MoveTrain);
   FRIEND_TEST(::GreedySimulator, UpdateRearPositions);
-  FRIEND_TEST(::GreedySimulator, ScheduleFeasibility);
   FRIEND_TEST(::GreedySimulator, ReverseEdgeMA);
   FRIEND_TEST(::GreedySimulator, ExitVertexOrder);
   FRIEND_TEST(::GreedySimulator, FutureSpeedRestrictionConstraintsAfterLeaving);

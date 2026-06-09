@@ -154,8 +154,8 @@ cda_rail::simulator::GreedySimulator::simulate(
     }
   }
 
-  bool abort = false;
-  while (!abort) {
+  double cycles_without_movement = 0;
+  while (cycles_without_movement < CYCLE_LIMIT) {
     PLOGV << "----------------------------";
     PLOGV << "Current time: " << t;
 
@@ -181,8 +181,18 @@ cda_rail::simulator::GreedySimulator::simulate(
 
       // Calculate MA
 
+      auto blocked_vertices_tr = blocked_vertices;
+
+      if (t < get_instance()->get_const_schedule(tr).get_exit_time()) {
+        PLOGV << train_object.get_name()
+              << "'s exit vertex is blocked by earliest exit.";
+        const auto tr_exit_vertex =
+            get_instance()->get_const_schedule(tr).get_exit_vertex();
+        blocked_vertices_tr.insert(tr_exit_vertex);
+      }
+
       const auto tr_ma_data = get_ma_and_maxv(
-          tr, train_velocities, tr_next_stop_id.at(tr), dt, blocked_vertices,
+          tr, train_velocities, tr_next_stop_id.at(tr), dt, blocked_vertices_tr,
           train_positions, trains_in_network, trains_left, trains_on_edges,
           limit_speed_by_leaving_edges);
       PLOGV << train_object.get_name() << " positioned at "
@@ -387,6 +397,9 @@ cda_rail::simulator::GreedySimulator::simulate(
       return build_results(true);
     }
 
+    cycles_without_movement =
+        movement_detected ? 0 : cycles_without_movement + 1;
+
     // Check if there might be a deadlock situation
     if (!movement_detected) {
       // There might be a deadlock situation if none of the constraints depend
@@ -429,15 +442,17 @@ cda_rail::simulator::GreedySimulator::simulate(
           }
         }
       }
-      abort = !reason_found;
+      if (!reason_found) {
+        PLOGV << "Trains are in a deadlock situation.";
+        return build_results(false);
+      }
     }
 
     // Update time
     t += dt;
   }
 
-  PLOGV << "Trains are in a deadlock situation.";
-  return build_results(false);
+  throw std::runtime_error("Simulation failed: Cycle limit reached.");
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
