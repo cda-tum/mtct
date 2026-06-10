@@ -2,6 +2,7 @@
 
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
+#include "GeneralHelper.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -30,6 +31,47 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::
   }
   m_station_delay_weight = static_cast<double>(j["station_delay_weight"]);
   m_lambda               = static_cast<double>(j["lambda"]);
+}
+
+double
+cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
+    const std::vector<double>&              tr_exit_times,
+    const std::vector<std::vector<double>>& stop_times,
+    const bool throw_error_if_not_all_stops_specified) const {
+  double obj = 0.0;
+  for (size_t tr = 0; tr < get_const_train_list().size(); ++tr) {
+    auto const& tr_schedule = get_const_schedule(tr);
+
+    obj += get_train_weight(tr) * tr_exit_times.at(tr);
+
+    auto const& tr_stop_times   = stop_times.at(tr);
+    auto const& scheduled_stops = tr_schedule.get_stops();
+    if (scheduled_stops.size() < tr_stop_times.size()) {
+      throw exceptions::InvalidInputException(concatenate_string_views(
+          {"Number of stop times provided for train ",
+           get_const_train_list().get_train(tr).get_name(),
+           " is greater than the number of scheduled stops (",
+           std::to_string(tr_stop_times.size()), " vs. ",
+           std::to_string(scheduled_stops.size()), ")."}));
+    }
+    if (throw_error_if_not_all_stops_specified &&
+        scheduled_stops.size() != tr_stop_times.size()) {
+      throw exceptions::InvalidInputException(concatenate_string_views(
+          {"Number of stop times provided for train ",
+           get_const_train_list().get_train(tr).get_name(),
+           " is not equal to the number of scheduled stops (",
+           std::to_string(tr_stop_times.size()), " vs. ",
+           std::to_string(scheduled_stops.size()), ")."}));
+    }
+    double delay_sum = 0.0;
+    for (size_t stop_idx = 0; stop_idx < tr_stop_times.size(); ++stop_idx) {
+      delay_sum += relu(tr_stop_times.at(stop_idx) -
+                        scheduled_stops.at(stop_idx).get_service_time());
+    }
+    obj += get_station_delay_weight() * get_train_weight(tr) * delay_sum /
+           static_cast<double>(scheduled_stops.size());
+  }
+  return obj;
 }
 
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::

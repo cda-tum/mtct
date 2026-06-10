@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CustomExceptions.hpp"
+#include "GeneralHelper.hpp"
 #include "GeneralSimulator.hpp"
 #include "GreedySimulator.hpp"
 
@@ -13,7 +14,22 @@ namespace cda_rail::simulator {
 enum class BrakingTimeHeuristicType : std::uint8_t { Simple = 0 };
 enum class RemainingTimeHeuristicType : std::uint8_t { Zero = 0, Simple = 1 };
 
-// Braking time heuristics for A*
+// --------------------------
+// Objective Value
+// --------------------------
+
+[[nodiscard]] inline double
+objective_val(const GreedySimulator&                  simulator,
+              const std::vector<double>&              tr_exit_times,
+              const std::vector<std::vector<double>>& stop_times) {
+  return simulator.get_instance()->get_objective_val(tr_exit_times, stop_times,
+                                                     false);
+}
+
+// --------------------------
+// Braking Time Heuristic
+// --------------------------
+
 [[nodiscard]] double
 simple_braking_time_heuristic(size_t tr, const GreedySimulator& simulator,
                               double tr_exit_time, double braking_time,
@@ -33,92 +49,60 @@ braking_time_heuristic(BrakingTimeHeuristicType type, size_t tr,
       "This code should not have been reachable...");
 };
 
-// Remaining time heuristics for A*
-[[nodiscard]] std::pair<bool, double> simple_remaining_time_heuristic(
-    size_t tr, const GreedySimulator& simulator, double tr_exit_time,
-    double braking_time_heuristic, bool late_stop_possible,
-    bool late_exit_possible, bool consider_earliest_exit);
+// ----------------------------
+// Remaining Time Heuristic
+// ----------------------------
 
-[[nodiscard]] inline std::pair<bool, double>
+struct RemainingTimeHeuristicResult {
+  bool   feasible;
+  double remaining_exit_time;
+  double average_remaining_stop_delay;
+};
+// Remaining time heuristics for A*
+[[nodiscard]] RemainingTimeHeuristicResult simple_remaining_time_heuristic(
+    size_t tr, const GreedySimulator& simulator, double tr_exit_time,
+    double braking_time_heuristic, bool consider_earliest_exit);
+
+[[nodiscard]] inline RemainingTimeHeuristicResult
 remaining_time_heuristic(RemainingTimeHeuristicType type, size_t tr,
                          const GreedySimulator& simulator, double tr_exit_time,
-                         double braking_time_heuristic, bool late_stop_possible,
-                         bool late_exit_possible, bool consider_earliest_exit) {
+                         double braking_time_heuristic,
+                         bool   consider_earliest_exit) {
   switch (type) {
   case RemainingTimeHeuristicType::Zero:
-    return {true, 0.0};
+    return {.feasible                     = true,
+            .remaining_exit_time          = 0.0,
+            .average_remaining_stop_delay = 0.0};
   case RemainingTimeHeuristicType::Simple:
-    return simple_remaining_time_heuristic(
-        tr, simulator, tr_exit_time, braking_time_heuristic, late_stop_possible,
-        late_exit_possible, consider_earliest_exit);
+    return simple_remaining_time_heuristic(tr, simulator, tr_exit_time,
+                                           braking_time_heuristic,
+                                           consider_earliest_exit);
   }
   // This should never be reached
   throw cda_rail::exceptions::ConsistencyException(
       "This code should not have been reachable...");
-};
+}
 
-[[nodiscard]] inline std::pair<bool, double>
+// --------------------------
+// Full Heuristic
+// --------------------------
+
+struct HeuristicResult {
+  bool   feasible;
+  double objective_value_difference;
+};
+[[nodiscard]] HeuristicResult
 greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
                  RemainingTimeHeuristicType remaining_time_heuristic_type,
                  size_t tr, const GreedySimulator& simulator,
                  double tr_exit_time, double braking_time,
-                 double braking_distance, bool late_stop_possible,
-                 bool late_exit_possible, bool consider_earliest_exit) {
-  const double bt_val =
-      braking_time_heuristic(braking_time_heuristic_type, tr, simulator,
-                             tr_exit_time, braking_time, braking_distance);
-  const auto [feas, obj] = remaining_time_heuristic(
-      remaining_time_heuristic_type, tr, simulator, tr_exit_time, bt_val,
-      late_stop_possible, late_exit_possible, consider_earliest_exit);
-  return {feas, bt_val + obj};
-}
+                 double braking_distance, bool consider_earliest_exit);
 
-[[nodiscard]] inline std::pair<bool, double>
+[[nodiscard]] HeuristicResult
 full_greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
                       RemainingTimeHeuristicType remaining_time_heuristic_type,
                       const GreedySimulator&     simulator,
                       const SimulatorResults&    sim_results,
-                      bool late_stop_possible, bool late_exit_possible,
-                      bool consider_earliest_exit) {
-  const auto train_count =
-      simulator.get_instance()->get_timetable().get_train_list().size();
-  if (sim_results.exit_times.size() != train_count ||
-      sim_results.braking_times.size() != train_count ||
-      sim_results.braking_distances.size() != train_count) {
-    throw cda_rail::exceptions::ConsistencyException(
-        "SimulatorResults size does not match simulator train count.");
-  }
-  if (!sim_results.success) {
-    // this should never be reached
-    throw cda_rail::exceptions::InvalidInputException(
-        "SimulatorResults indicate unsuccessful simulation, heuristic cannot "
-        "be calculated.");
-  }
-  bool   feas = true;
-  double obj  = 0.0;
-  for (size_t tr = 0; tr < train_count; ++tr) {
-    const auto [feas_tr, obj_tr] = greedy_heuristic(
-        braking_time_heuristic_type, remaining_time_heuristic_type, tr,
-        simulator, sim_results.exit_times.at(tr),
-        sim_results.braking_times.at(tr), sim_results.braking_distances.at(tr),
-        late_stop_possible, late_exit_possible, consider_earliest_exit);
-    feas = feas && feas_tr;
-    obj += simulator.get_instance()->get_train_weights().at(tr) * obj_tr;
-  }
-  return {feas, obj};
-};
-
-[[nodiscard]] inline double
-objective_val(const GreedySimulator&     simulator,
-              const std::vector<double>& tr_exit_times) {
-  double obj = 0.0;
-  for (size_t tr = 0;
-       tr < simulator.get_instance()->get_timetable().get_train_list().size();
-       ++tr) {
-    obj += simulator.get_instance()->get_train_weights().at(tr) *
-           tr_exit_times.at(tr);
-  }
-  return obj;
-};
+                      bool                       consider_earliest_exit);
 
 } // namespace cda_rail::simulator

@@ -123,6 +123,13 @@ public:
         get_const_timetable().get_train_list().get_train_index(train_name));
   }
 
+  // Objective
+
+  [[nodiscard]] double
+  get_objective_val(const std::vector<double>&              tr_exit_times,
+                    const std::vector<std::vector<double>>& stop_times,
+                    bool throw_error_if_not_all_stops_specified = true) const;
+
   // -------------------
   // EDITING
   // -------------------

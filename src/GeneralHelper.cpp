@@ -110,3 +110,5 @@ bool cda_rail::is_directory_and_create(const std::filesystem::path& p) {
   }
   return std::filesystem::is_directory(p);
 }
+
+double cda_rail::relu(double const val) { return std::max(0.0, val); }
