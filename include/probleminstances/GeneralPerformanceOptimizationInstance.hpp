@@ -39,11 +39,8 @@ class GeneralPerformanceOptimizationInstance
   // friend class SolVSSGeneralPerformanceOptimizationInstance;
 
   std::vector<double> m_train_weights{};
-  std::vector<bool>   m_train_optional{};
   double m_station_delay_weight{1}; // add (average) station delays with given
                                     // weight to objective function
-  double m_lambda{1}; // Minutes of delay (of a weight one train) that are
-  // "equal" to scheduling another weight one train
 
 public:
   // -------------------
@@ -86,14 +83,10 @@ public:
 
   [[nodiscard]] const auto& get_train_weights() const {
     return m_train_weights;
-  };
-  [[nodiscard]] const auto& get_train_optional() const {
-    return m_train_optional;
   }
   [[nodiscard]] double get_station_delay_weight() const {
     return m_station_delay_weight;
   }
-  [[nodiscard]] double get_lambda() const { return m_lambda; };
 
   [[nodiscard]] double get_train_weight(size_t train_index) const {
     get_const_timetable().get_train_list().throw_if_train_not_exist(
@@ -106,20 +99,6 @@ public:
   }
   [[nodiscard]] double get_train_weight(const char* train_name) const {
     return get_train_weight(
-        get_const_timetable().get_train_list().get_train_index(train_name));
-  }
-
-  [[nodiscard]] bool get_train_optional(size_t train_index) const {
-    get_const_timetable().get_train_list().throw_if_train_not_exist(
-        train_index);
-    return m_train_optional.at(train_index);
-  }
-  [[nodiscard]] bool get_train_optional(const std::string& train_name) const {
-    return get_train_optional(
-        get_const_timetable().get_train_list().get_train_index(train_name));
-  }
-  [[nodiscard]] bool get_train_optional(const char* train_name) const {
-    return get_train_optional(
         get_const_timetable().get_train_list().get_train_index(train_name));
   }
 
@@ -138,66 +117,23 @@ public:
 
   void set_station_delay_weight(double new_weight) {
     m_station_delay_weight = new_weight;
-  };
-  void set_lambda(double new_lambda) { m_lambda = new_lambda; };
+  }
 
   void set_train_weight(size_t train_index, double weight) {
     get_const_timetable().get_train_list().throw_if_train_not_exist(
         train_index);
     m_train_weights.at(train_index) = weight;
-  };
+  }
   void set_train_weight(const std::string& train_name, double weight) {
     set_train_weight(
         get_const_timetable().get_train_list().get_train_index(train_name),
         weight);
-  };
+  }
   void set_train_weight(const char* train_name, double weight) {
     set_train_weight(
         get_const_timetable().get_train_list().get_train_index(train_name),
         weight);
-  };
-
-  void set_train_optionality_value(size_t train_index, bool val) {
-    get_const_timetable().get_train_list().throw_if_train_not_exist(
-        train_index);
-    m_train_optional.at(train_index) = val;
-  };
-  void set_train_optionality_value(const std::string& train_name, bool val) {
-    set_train_optionality_value(
-        get_const_timetable().get_train_list().get_train_index(train_name),
-        val);
-  };
-  void set_train_optionality_value(const char* train_name, bool val) {
-    set_train_optionality_value(
-        get_const_timetable().get_train_list().get_train_index(train_name),
-        val);
-  };
-  void set_train_optional(size_t train_index) {
-    set_train_optionality_value(train_index, true);
-  };
-  void set_train_optional(const std::string& train_name) {
-    set_train_optionality_value(
-        get_const_timetable().get_train_list().get_train_index(train_name),
-        true);
-  };
-  void set_train_optional(const char* train_name) {
-    set_train_optionality_value(
-        get_const_timetable().get_train_list().get_train_index(train_name),
-        true);
-  };
-  void set_train_mandatory(size_t train_index) {
-    set_train_optionality_value(train_index, false);
-  };
-  void set_train_mandatory(const std::string& train_name) {
-    set_train_optionality_value(
-        get_const_timetable().get_train_list().get_train_index(train_name),
-        false);
-  };
-  void set_train_mandatory(const char* train_name) {
-    set_train_optionality_value(
-        get_const_timetable().get_train_list().get_train_index(train_name),
-        false);
-  };
+  }
 
   // Instance addition
 
@@ -207,9 +143,8 @@ public:
                    Network::VertexInput const& entry_vertex, double exit_time,
                    double                      exit_velocity,
                    Network::VertexInput const& exit_vertex,
-                   double tr_weight = 1, bool tr_optional = false) {
+                   double                      tr_weight = 1) {
     m_train_weights.emplace_back(tr_weight);
-    m_train_optional.emplace_back(tr_optional);
     return GeneralProblemInstanceWithScheduleAndRoutes::add_train(
         train_name, length, max_speed, acceleration, deceleration, tim,
         entry_time, initial_velocity, entry_vertex, exit_time, exit_velocity,
@@ -221,11 +156,10 @@ public:
                    Network::VertexInput const& entry_vertex, double exit_time,
                    double                      exit_velocity,
                    Network::VertexInput const& exit_vertex,
-                   double tr_weight = 1, bool tr_optional = false) {
+                   double                      tr_weight = 1) {
     return add_train(train_name, length, max_speed, acceleration, deceleration,
                      true, entry_time, initial_velocity, entry_vertex,
-                     exit_time, exit_velocity, exit_vertex, tr_weight,
-                     tr_optional);
+                     exit_time, exit_velocity, exit_vertex, tr_weight);
   }
 
   // ---------------------
@@ -280,9 +214,6 @@ private:
   void initialize_vectors() {
     m_train_weights.resize(
         this->get_const_timetable().get_train_list().get_number_of_trains(), 1);
-    m_train_optional.resize(
-        this->get_const_timetable().get_train_list().get_number_of_trains(),
-        false);
   }
 };
 
@@ -291,7 +222,6 @@ class SolGeneralPerformanceOptimizationInstance
 private:
   std::vector<std::map<double, double>> m_train_pos;
   std::vector<std::map<double, double>> m_train_speed;
-  std::vector<bool>                     m_train_routed;
 
   void initialize_vectors();
 
@@ -376,8 +306,6 @@ public:
   [[nodiscard]] double get_train_speed(const std::string& tr_name,
                                        double             t) const;
 
-  [[nodiscard]] bool get_train_routed(const std::string& tr_name) const;
-
   [[nodiscard]] std::vector<double>
   get_train_times(const std::string& tr_name) const;
 
@@ -397,13 +325,6 @@ public:
 
   void add_train_pos(const std::string& tr_name, double t, double pos);
   void add_train_speed(const std::string& tr_name, double t, double speed);
-  void set_train_routed(const std::string& tr_name) {
-    set_train_routed_value(tr_name, true);
-  }
-  void set_train_not_routed(const std::string& tr_name) {
-    set_train_routed_value(tr_name, false);
-  }
-  void set_train_routed_value(const std::string& tr_name, bool val);
 
   // Check solution consistency
 

@@ -51,20 +51,8 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(instance.check_consistency());
 
   instance.set_train_weight("Train2", 2);
-  instance.set_train_optional("Train1");
 
   EXPECT_EQ(instance.get_train_weight("Train2"), 2);
-  EXPECT_EQ(instance.get_train_optional("Train1"), true);
-
-  instance.set_train_mandatory("Train1");
-
-  EXPECT_EQ(instance.get_train_optional("Train1"), false);
-
-  EXPECT_EQ(instance.get_lambda(), 1);
-
-  instance.set_lambda(2);
-
-  EXPECT_EQ(instance.get_lambda(), 2);
 
   instance.add_empty_route("Train1");
 
@@ -131,8 +119,6 @@ TEST(GeneralPerformanceOptimizationInstances,
   // Make some changes to defaults and add train routes
 
   instance.set_train_weight("Train2", 2);
-  instance.set_train_optional("Train1");
-  instance.set_lambda(2);
 
   instance.add_empty_route("Train1");
   instance.push_back_edge_to_route("Train1", {"l0", "l1"});
@@ -190,10 +176,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(tr2.has_tim());
 
   EXPECT_EQ(instance_read.get_train_weight("Train1"), 1);
-  EXPECT_EQ(instance_read.get_train_optional("Train1"), true);
   EXPECT_EQ(instance_read.get_train_weight("Train2"), 2);
-  EXPECT_EQ(instance_read.get_train_optional("Train2"), false);
-  EXPECT_EQ(instance_read.get_lambda(), 2);
 
   const auto& tr1_schedule = instance_read.get_const_schedule("Train1");
   const auto& tr2_schedule = instance_read.get_const_schedule("Train2");
@@ -302,7 +285,7 @@ TEST(GeneralPerformanceOptimizationInstances,
       instance.add_train("tr1", 50, 10, 2, 2, 0, 10, v0, 120, 6, v2);
   const auto tr2 =
       instance.add_train("tr2", 50, 20, 2, 2, 120, 0, Network::VertexInput{v2},
-                         210, 0, Network::VertexInput{v0}, 2, true);
+                         210, 0, Network::VertexInput{v0}, 2);
 
   // Check the consistency of the instance
   EXPECT_TRUE(instance.check_consistency(false));
@@ -323,10 +306,6 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   EXPECT_FALSE(sol_instance.check_consistency());
 
-  sol_instance.set_train_routed("tr1");
-
-  EXPECT_FALSE(sol_instance.check_consistency());
-
   sol_instance.add_train_pos("tr1", 0, 0);
 
   EXPECT_FALSE(sol_instance.check_consistency());
@@ -341,15 +320,7 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   sol_instance.add_train_speed("tr1", 10, 10);
 
-  EXPECT_TRUE(sol_instance.check_consistency());
-
-  sol_instance.set_train_not_routed("tr1");
-
   EXPECT_FALSE(sol_instance.check_consistency());
-
-  sol_instance.set_train_routed("tr1");
-
-  EXPECT_TRUE(sol_instance.check_consistency());
 
   sol_instance.add_train_pos("tr1", 20, 200);
   sol_instance.add_train_speed("tr1", 20, 10);
@@ -363,7 +334,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   sol_instance.add_train_pos("tr1", 36, 300);
   sol_instance.add_train_speed("tr1", 36, 6);
 
-  EXPECT_TRUE(sol_instance.check_consistency());
+  EXPECT_FALSE(sol_instance.check_consistency());
 
   EXPECT_APPROX_EQ(sol_instance.get_train_pos("tr1", 0), 0);
   EXPECT_APPROX_EQ(sol_instance.get_train_pos("tr1", 10), 100);
@@ -474,7 +445,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(sol_instance.check_consistency());
   sol_instance.set_obj(0);
 
-  EXPECT_TRUE(sol_instance.check_consistency());
+  EXPECT_FALSE(sol_instance.check_consistency());
 
   // Test tr_order
   sol_instance.add_empty_route("tr2");
@@ -580,7 +551,7 @@ TEST(GeneralPerformanceOptimizationInstances,
       instance.add_train("tr1", 50, 10, 2, 2, 0, 10, v0, 30, 6, v2);
   const auto tr2 =
       instance.add_train("tr2", 50, 20, 2, 2, 0, 0, Network::VertexInput{v2},
-                         30, 0, Network::VertexInput{v0}, 2, true);
+                         30, 0, Network::VertexInput{v0}, 2);
   const auto tr3 =
       instance.add_train("tr3", 50, 10, 2, 2, 0, 10, v0, 30, 6, v2);
 
@@ -717,7 +688,7 @@ TEST(GeneralPerformanceOptimizationInstances,
       instance.add_train("tr1", 50, 10, 2, 2, 0, 0, v0, 120, 5, v2);
   const auto tr2 =
       instance.add_train("tr2", 50, 10, 2, 2, 120, 0, Network::VertexInput{v2},
-                         210, 0, Network::VertexInput{v0}, 2, true);
+                         210, 0, Network::VertexInput{v0}, 2);
 
   // Check the consistency of the instance
   EXPECT_TRUE(instance.check_consistency(false));
@@ -730,8 +701,6 @@ TEST(GeneralPerformanceOptimizationInstances,
   sol_instance.add_empty_route("tr1");
   sol_instance.push_back_edge_to_route("tr1", {"v0", "v1"});
   sol_instance.push_back_edge_to_route("tr1", {v1, v2});
-
-  sol_instance.set_train_routed("tr1");
 
   sol_instance.add_train_pos("tr1", 0, 0);
   sol_instance.add_train_pos("tr1", 60, 100);
@@ -757,7 +726,6 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   EXPECT_EQ(sol1_read.get_obj(), 0.5);
   EXPECT_EQ(sol1_read.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_TRUE(sol1_read.get_train_routed("tr1"));
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 0), 0);
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 60), 100);
   EXPECT_EQ(sol1_read.get_train_speed("tr1", 0), 10);
@@ -772,12 +740,10 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_EQ(tr1_route.get_edge_id(1),
             sol1_read.get_instance()->get_const_network().get_edge_index(
                 {"v1"}, {"v2"}));
-  EXPECT_FALSE(sol1_read.get_train_routed("tr2"));
   EXPECT_FALSE(sol1_read.get_instance()->get_const_routes().has_route("tr2"));
 
   EXPECT_EQ(sol2_read.get_obj(), 0.5);
   EXPECT_EQ(sol2_read.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_TRUE(sol2_read.get_train_routed("tr1"));
   EXPECT_EQ(sol2_read.get_train_pos("tr1", 0), 0);
   EXPECT_EQ(sol2_read.get_train_pos("tr1", 60), 100);
   EXPECT_EQ(sol2_read.get_train_speed("tr1", 0), 10);
@@ -792,7 +758,6 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_EQ(tr1_route2.get_edge_id(1),
             sol2_read.get_instance()->get_const_network().get_edge_index(
                 {"v1"}, {"v2"}));
-  EXPECT_FALSE(sol2_read.get_train_routed("tr2"));
   EXPECT_FALSE(sol2_read.get_instance()->get_const_routes().has_route("tr2"));
 }
 

@@ -26,11 +26,7 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::
   for (const auto& [train_name, weight] : j["train_weights"].items()) {
     set_train_weight(train_name, static_cast<double>(weight));
   }
-  for (const auto& [train_name, optional] : j["train_optional"].items()) {
-    set_train_optionality_value(train_name, static_cast<bool>(optional));
-  }
   m_station_delay_weight = static_cast<double>(j["station_delay_weight"]);
-  m_lambda               = static_cast<double>(j["lambda"]);
 }
 
 double
@@ -84,11 +80,8 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
   for (size_t i = 0; i < m_train_weights.size(); ++i) {
     j["train_weights"][this->get_const_train_list().get_train(i).get_name()] =
         m_train_weights.at(i);
-    j["train_optional"][this->get_const_train_list().get_train(i).get_name()] =
-        m_train_optional.at(i);
   }
   j["station_delay_weight"] = m_station_delay_weight;
-  j["lambda"]               = m_lambda;
 
   std::ofstream file(workingDirectory / "instances" /
                      get_instance_subdirectory() / get_instance_name() /
@@ -121,11 +114,10 @@ bool cda_rail::instances::GeneralPerformanceOptimizationInstance::
     return false;
   }
   const auto num_tr = this->get_const_timetable().get_train_list().size();
-  if (get_train_weights().size() != num_tr ||
-      get_train_optional().size() != num_tr) {
+  if (get_train_weights().size() != num_tr) {
     return false;
   }
-  return (get_lambda() >= 0 && get_station_delay_weight() >= 0 &&
+  return (get_station_delay_weight() >= 0 &&
           std::ranges::all_of(get_train_weights(),
                               [](double w) { return w >= 0; }));
 }
@@ -174,7 +166,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   auto const& train_list = this->get_instance()->get_const_train_list();
   m_train_pos.reserve(train_list.size());
   m_train_speed.reserve(train_list.size());
-  m_train_routed = std::vector<bool>(train_list.size(), false);
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     m_train_pos.emplace_back();
     m_train_speed.emplace_back();
@@ -208,13 +199,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
       this->add_train_speed(tr_name, t, speed);
     }
   }
-
-  // Read train_routed
-  std::ifstream train_routed_file(p / "train_routed.json");
-  json          train_routed_json = json::parse(train_routed_file);
-  for (const auto& [tr_name, routed] : train_routed_json.items()) {
-    this->set_train_routed_value(tr_name, routed.get<bool>());
-  }
 }
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
@@ -247,14 +231,12 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   // NOLINTBEGIN(misc-const-correctness)
   json train_pos_json;
   json train_speed_json;
-  json train_routed_json;
   // NOLINTEND(misc-const-correctness)
   auto const& train_list = this->get_instance()->get_const_train_list();
   for (size_t tr_id = 0; tr_id < train_list.size(); ++tr_id) {
-    const auto& train                   = train_list.get_train(tr_id);
-    train_pos_json[train.get_name()]    = m_train_pos.at(tr_id);
-    train_speed_json[train.get_name()]  = m_train_speed.at(tr_id);
-    train_routed_json[train.get_name()] = m_train_routed.at(tr_id);
+    const auto& train                  = train_list.get_train(tr_id);
+    train_pos_json[train.get_name()]   = m_train_pos.at(tr_id);
+    train_speed_json[train.get_name()] = m_train_speed.at(tr_id);
   }
 
   std::ofstream train_pos_file(p / "train_pos.json");
@@ -264,10 +246,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   std::ofstream train_speed_file(p / "train_speed.json");
   train_speed_file << train_speed_json << '\n';
   train_speed_file.close();
-
-  std::ofstream train_routed_file(p / "train_routed.json");
-  train_routed_file << train_routed_json << '\n';
-  train_routed_file.close();
 }
 
 double
@@ -469,16 +447,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_speed(
                                          " at time " + std::to_string(t));
 }
 
-bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
-    get_train_routed(const std::string& tr_name) const {
-  auto const& train_list = this->get_instance()->get_const_train_list();
-
-  if (!train_list.has_train(tr_name)) {
-    throw exceptions::TrainNotExistentException(tr_name);
-  }
-  return m_train_routed.at(train_list.get_train_index(tr_name));
-}
-
 std::vector<double>
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_times(
     const std::string& tr_name) const {
@@ -635,16 +603,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 }
 
-void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
-    set_train_routed_value(const std::string& tr_name, bool val) {
-  auto const& train_list = this->get_instance()->get_const_train_list();
-
-  if (!train_list.has_train(tr_name)) {
-    throw exceptions::TrainNotExistentException(tr_name);
-  }
-  m_train_routed.at(train_list.get_train_index(tr_name)) = val;
-}
-
 bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     check_consistency() const {
   if (!SolGeneralProblemInstanceWithScheduleAndRoutes::check_consistency()) {
@@ -655,20 +613,13 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     return true;
   }
 
-  for (auto tr_id = 0; tr_id < m_train_routed.size(); tr_id++) {
-    const auto& tr_name = this->get_instance()
-                              ->get_const_train_list()
-                              .get_train(tr_id)
-                              .get_name();
-    if (m_train_routed.at(tr_id) &&
-        !get_const_solution_routes().has_route(tr_name)) {
+  auto const& train_list = this->get_instance()->get_const_train_list();
+  for (auto tr_id = 0; tr_id < train_list.size(); tr_id++) {
+    const auto& tr_name = train_list.get_train(tr_id).get_name();
+    if (!get_const_solution_routes().has_route(tr_name)) {
       return false;
     }
-    if (!m_train_routed.at(tr_id) &&
-        !this->get_instance()->get_train_optional().at(tr_id)) {
-      return false;
-    }
-    if (m_train_routed.at(tr_id) && m_train_pos.at(tr_id).size() < 2) {
+    if (m_train_pos.at(tr_id).size() < 2) {
       // At least two points of information are needed to recover the timing
       return false;
     }
