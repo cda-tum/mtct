@@ -399,16 +399,16 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   EXPECT_FALSE(feas_tr5_a);
   EXPECT_APPROX_EQ_6(obj_tr5_a, cda_rail::INF);
 }
-#if 0
+
 TEST(GreedyHeuristic, FullGreedyHeuristicRejectsMismatchedResultSizes) {
   Network    network;
   const auto v0    = network.add_vertex("v0", VertexType::TTD);
   const auto v1    = network.add_vertex("v1", VertexType::TTD);
   const auto v0_v1 = network.add_edge(v0, v1, 100, 10);
 
-  Timetable timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 1, true, 0,
-                                       0, v0, 120, 0, v1, network);
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 1, true, 0, 0, v0,
+                                       120, 0, v1, network);
 
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
@@ -430,7 +430,7 @@ TEST(GreedyHeuristic, FullGreedyHeuristicRejectsMismatchedResultSizes) {
   EXPECT_THROW((void)cda_rail::simulator::full_greedy_heuristic(
                    cda_rail::simulator::BrakingTimeHeuristicType::Simple,
                    cda_rail::simulator::RemainingTimeHeuristicType::Simple,
-                   simulator, bad_exit_times, false, false, false),
+                   simulator, bad_exit_times, false),
                cda_rail::exceptions::ConsistencyException);
 
   auto bad_braking_times = sim_results;
@@ -438,7 +438,7 @@ TEST(GreedyHeuristic, FullGreedyHeuristicRejectsMismatchedResultSizes) {
   EXPECT_THROW((void)cda_rail::simulator::full_greedy_heuristic(
                    cda_rail::simulator::BrakingTimeHeuristicType::Simple,
                    cda_rail::simulator::RemainingTimeHeuristicType::Simple,
-                   simulator, bad_braking_times, false, false, false),
+                   simulator, bad_braking_times, false),
                cda_rail::exceptions::ConsistencyException);
 
   auto bad_braking_distances = sim_results;
@@ -446,7 +446,7 @@ TEST(GreedyHeuristic, FullGreedyHeuristicRejectsMismatchedResultSizes) {
   EXPECT_THROW((void)cda_rail::simulator::full_greedy_heuristic(
                    cda_rail::simulator::BrakingTimeHeuristicType::Simple,
                    cda_rail::simulator::RemainingTimeHeuristicType::Simple,
-                   simulator, bad_braking_distances, false, false, false),
+                   simulator, bad_braking_distances, false),
                cda_rail::exceptions::ConsistencyException);
 }
 
@@ -460,9 +460,9 @@ TEST(GreedyHeuristic, FinalStateHeuristic) {
   const auto v1_v2 = network.add_edge(v1, v2, 100, 10);
   network.add_successor(v0_v1, v1_v2);
 
-  Timetable timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 10, 4, 2, true, 0,
-                                       10, v0, 10, 10, v2, network);
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 4, 2, true, 0, 10, v0,
+                                       10, 10, v2, network);
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
@@ -470,12 +470,13 @@ TEST(GreedyHeuristic, FinalStateHeuristic) {
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2});
 
-  const auto [heur_feas, heur_val] =
-      cda_rail::simulator::simple_remaining_time_heuristic(
-          tr1, simulator, 30, 0, false, false, true);
+  const auto [heur_feas, heur_val, stops_val] =
+      cda_rail::simulator::simple_remaining_time_heuristic(tr1, simulator, 30,
+                                                           0, true);
   EXPECT_TRUE(heur_feas);
-  EXPECT_EQ(heur_val, 0); // already at exit
+  EXPECT_EQ(heur_val, 0);  // already at exit
+  EXPECT_EQ(stops_val, 0); // already at exit
 }
-#endif
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
