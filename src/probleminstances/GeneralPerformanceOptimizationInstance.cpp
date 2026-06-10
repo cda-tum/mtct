@@ -59,13 +59,16 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
            std::to_string(tr_stop_times.size()), " vs. ",
            std::to_string(scheduled_stops.size()), ")."}));
     }
-    double delay_sum = 0.0;
-    for (size_t stop_idx = 0; stop_idx < tr_stop_times.size(); ++stop_idx) {
-      delay_sum += relu(tr_stop_times.at(stop_idx) -
-                        scheduled_stops.at(stop_idx).get_service_time());
+
+    if (tr_stop_times.size() >= 1) {
+      double delay_sum = 0.0;
+      for (size_t stop_idx = 0; stop_idx < tr_stop_times.size(); ++stop_idx) {
+        delay_sum += relu(tr_stop_times.at(stop_idx) -
+                          scheduled_stops.at(stop_idx).get_service_time());
+      }
+      obj += get_station_delay_weight() * get_train_weight(tr) * delay_sum /
+             static_cast<double>(scheduled_stops.size());
     }
-    obj += get_station_delay_weight() * get_train_weight(tr) * delay_sum /
-           static_cast<double>(scheduled_stops.size());
   }
   return obj;
 }
