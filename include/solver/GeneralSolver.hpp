@@ -10,6 +10,7 @@
 #include <plog/Severity.h>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 namespace cda_rail::solver {
 enum class GeneralExportOption : std::uint8_t {
@@ -29,7 +30,7 @@ template <typename T, typename S> class GeneralSolver {
       std::is_base_of_v<cda_rail::instances::GeneralProblemInstance, T>,
       "T must be a child of GeneralProblemInstance");
   static_assert(
-      std::is_base_of_v<cda_rail::instances::SolGeneralProblemInstance<T>, S>,
+      std::is_base_of_v<cda_rail::instances::SolGeneralProblemInstance, S>,
       "S must be a child of SolGeneralProblemInstance<T>");
 
 protected:
@@ -50,10 +51,10 @@ protected:
   }
 
   GeneralSolver() = default;
-  explicit GeneralSolver(const T& instance) : m_instance(instance) {};
-  explicit GeneralSolver(std::string_view const instanceName,
-                         std::string_view const instanceSubdirectory)
-      : m_instance(instanceName, instanceSubdirectory) {};
+  explicit GeneralSolver(const T& instance) : m_instance(instance) {}
+  template <typename... Args>
+  explicit GeneralSolver(Args&&... args)
+      : m_instance(std::forward<Args>(args)...) {}
 
 public:
   [[nodiscard]] const T& get_instance() const { return m_instance; }

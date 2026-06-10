@@ -9,12 +9,14 @@
 
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "gtest/gtest_prod.h"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <numeric>
 #include <queue>
+#include <ranges>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -46,8 +48,6 @@ enum class NextStateStrategy : std::uint8_t {
 struct ModelDetail {
   int  dt                           = 6; // DB simulation default is 6 seconds
   bool late_entry_possible          = false;
-  bool late_exit_possible           = false;
-  bool late_stop_possible           = false;
   bool limit_speed_by_leaving_edges = true;
 };
 
@@ -66,92 +66,85 @@ struct GreedySimulatorState {
   std::vector<cda_rail::index_vector> vertex_orders;
   std::vector<std::vector<double>>    stop_positions;
 
-  bool operator==(const GreedySimulatorState& other) const {
-    return train_edges == other.train_edges && ttd_orders == other.ttd_orders &&
-           vertex_orders == other.vertex_orders &&
-           stop_positions == other.stop_positions;
-  }
+  bool operator==(const GreedySimulatorState& other) const;
 
-  bool operator>(const GreedySimulatorState& other) const {
-    const double this_obj = std::accumulate(
-        train_edges.begin(), train_edges.end(), 0.0,
-        [](double sum, const auto& tr_edge) { return sum + tr_edge.size(); });
-    const double other_obj = std::accumulate(
-        other.train_edges.begin(), other.train_edges.end(), 0.0,
-        [](double sum, const auto& tr_edge) { return sum + tr_edge.size(); });
-    return this_obj > other_obj;
-  }
+  bool operator>(const GreedySimulatorState& other) const;
 };
 } // namespace cda_rail::solver::astar_based
 
-namespace std {
-template <> struct hash<cda_rail::solver::astar_based::GreedySimulatorState> {
-  size_t operator()(
-      const cda_rail::solver::astar_based::GreedySimulatorState& state) const {
-    // Based on boost::hash_combine implementation
-
-    size_t seed         = 0;
-    auto   hash_combine = [&seed](size_t h) {
-      seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    };
-
-    hash_combine(std::hash<size_t>{}(state.train_edges.size()));
-    for (const auto& vec : state.train_edges) {
-      hash_combine(std::hash<size_t>{}(vec.size()));
-      for (const size_t v : vec) {
-        hash_combine(std::hash<size_t>{}(v));
-      }
-    }
-    hash_combine(std::hash<size_t>{}(state.ttd_orders.size()));
-    for (const auto& vec : state.ttd_orders) {
-      hash_combine(std::hash<size_t>{}(vec.size()));
-      for (const size_t v : vec) {
-        hash_combine(std::hash<size_t>{}(v));
-      }
-    }
-    hash_combine(std::hash<size_t>{}(state.vertex_orders.size()));
-    for (const auto& vec : state.vertex_orders) {
-      hash_combine(std::hash<size_t>{}(vec.size()));
-      for (const size_t v : vec) {
-        hash_combine(std::hash<size_t>{}(v));
-      }
-    }
-    hash_combine(std::hash<size_t>{}(state.stop_positions.size()));
-    for (const auto& vec : state.stop_positions) {
-      hash_combine(std::hash<size_t>{}(vec.size()));
-      for (const double v : vec) {
-        hash_combine(std::hash<double>{}(v));
-      }
-    }
-
-    return seed;
-  }
-};
-} // namespace std
+template <>
+struct std::hash<cda_rail::solver::astar_based::GreedySimulatorState> {
+  size_t operator()(const cda_rail::solver::astar_based::GreedySimulatorState&
+                        state) const noexcept;
+}; // namespace std
 
 namespace cda_rail::solver::astar_based {
 class GenPOMovingBlockAStarSolver
     : public GeneralSolver<
           instances::GeneralPerformanceOptimizationInstance,
-          instances::SolGeneralPerformanceOptimizationInstance<
-              instances::GeneralPerformanceOptimizationInstance>> {
+          instances::SolGeneralPerformanceOptimizationInstance> {
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStatesTTD);
 #endif
 
-  using StateObjectivePair =
-      std::pair<std::pair<double, bool>, GreedySimulatorState>;
+public:
+  // ------------------------
+  // CONSTRUCTOR
+  // -----------------------
+
+  GenPOMovingBlockAStarSolver() = default;
+  explicit GenPOMovingBlockAStarSolver(
+      const instances::GeneralPerformanceOptimizationInstance& instance)
+      : GeneralSolver(instance) {};
+  GenPOMovingBlockAStarSolver(std::string_view const       instanceName,
+                              std::string_view const       instanceSubdirectory,
+                              std::filesystem::path const& workingDirectory)
+      : GeneralSolver(instanceName, instanceSubdirectory, workingDirectory) {}
+
+  ~GenPOMovingBlockAStarSolver() override = default;
+
+  // Rule of 5 (due to virtual deconstructor)
+  GenPOMovingBlockAStarSolver(const GenPOMovingBlockAStarSolver&) = default;
+  GenPOMovingBlockAStarSolver(GenPOMovingBlockAStarSolver&&)      = default;
+  GenPOMovingBlockAStarSolver&
+  operator=(const GenPOMovingBlockAStarSolver&) = default;
+  GenPOMovingBlockAStarSolver&
+  operator=(GenPOMovingBlockAStarSolver&&) = default;
+
+  // ----------------------------
+  // SOLVE
+  // ----------------------------
+
+  using GeneralSolver::solve;
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
+  solve(int time_limit, bool debug_input, bool overwrite_severity) override {
+    return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
+  };
+
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
+  solve(const ModelDetail&             model_detail_input,
+        const SolverStrategyMBAStar&   solver_strategy_input,
+        const GeneralSolutionSettings& solution_settings_input,
+        int time_limit = -1, bool debug_input = false,
+        bool overwrite_severity = true);
+
+private:
+  struct StateObjectivePair {
+    double               objective;
+    bool                 is_final_state;
+    GreedySimulatorState state;
+  };
 
   struct CompareByObjective {
     bool operator()(const StateObjectivePair& a,
                     const StateObjectivePair& b) const {
-      return (a.first.first > b.first.first) ||
-             (a.first.first == b.first.first && !a.first.second &&
-              b.first.second) ||
-             (a.first.first == b.first.first && !a.first.second &&
-              !b.first.second && b.second > a.second);
+      return (a.objective > b.objective) ||
+             (a.objective == b.objective && !a.is_final_state &&
+              b.is_final_state) ||
+             (a.objective == b.objective && !a.is_final_state &&
+              !b.is_final_state && b.state > a.state);
     }
   };
 
@@ -182,51 +175,6 @@ private:
       throw cda_rail::exceptions::ConsistencyException(
           "Unknown next state strategy.");
     }
-  };
-
-public:
-  GenPOMovingBlockAStarSolver() = default;
-
-  explicit GenPOMovingBlockAStarSolver(
-      const instances::GeneralPerformanceOptimizationInstance& instance)
-      : GeneralSolver<instances::GeneralPerformanceOptimizationInstance,
-                      instances::SolGeneralPerformanceOptimizationInstance<
-                          instances::GeneralPerformanceOptimizationInstance>>(
-            instance) {};
-
-  explicit GenPOMovingBlockAStarSolver(const std::filesystem::path& p)
-      : GeneralSolver<instances::GeneralPerformanceOptimizationInstance,
-                      instances::SolGeneralPerformanceOptimizationInstance<
-                          instances::GeneralPerformanceOptimizationInstance>>(
-            p) {};
-
-  explicit GenPOMovingBlockAStarSolver(const std::string& path)
-      : GeneralSolver<instances::GeneralPerformanceOptimizationInstance,
-                      instances::SolGeneralPerformanceOptimizationInstance<
-                          instances::GeneralPerformanceOptimizationInstance>>(
-            path) {};
-
-  explicit GenPOMovingBlockAStarSolver(const char* path)
-      : GeneralSolver<instances::GeneralPerformanceOptimizationInstance,
-                      instances::SolGeneralPerformanceOptimizationInstance<
-                          instances::GeneralPerformanceOptimizationInstance>>(
-            path) {};
-
-  ~GenPOMovingBlockAStarSolver() override = default;
-
-  using GeneralSolver::solve;
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
-  solve(int time_limit, bool debug_input, bool overwrite_severity) override {
-    return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
-  };
-
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
-  solve(const ModelDetail&             model_detail_input,
-        const SolverStrategyMBAStar&   solver_strategy_input,
-        const GeneralSolutionSettings& solution_settings_input,
-        int time_limit = -1, bool debug_input = false,
-        bool overwrite_severity = true);
+  }
 };
 } // namespace cda_rail::solver::astar_based
