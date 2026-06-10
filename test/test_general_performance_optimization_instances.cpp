@@ -11,9 +11,10 @@
 
 using namespace cda_rail;
 
-#define EXPECT_APPROX_EQ(a, b) EXPECT_APPROX_EQ_2(a, b, 1e-6)
+#define EXPECT_APPROX_EQ_6(a, b) EXPECT_APPROX_EQ(a, b, 1e-6)
+#define EXPECT_APPROX_EQ_2(a, b) EXPECT_APPROX_EQ(a, b, 1e-2)
 
-#define EXPECT_APPROX_EQ_2(a, b, c)                                            \
+#define EXPECT_APPROX_EQ(a, b, c)                                              \
   EXPECT_TRUE(std::abs((a) - (b)) < (c)) << (a) << " !=(approx.) " << (b)
 
 // NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
@@ -336,102 +337,102 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   EXPECT_FALSE(sol_instance.check_consistency());
 
-  EXPECT_APPROX_EQ(sol_instance.get_train_pos("tr1", 0), 0);
-  EXPECT_APPROX_EQ(sol_instance.get_train_pos("tr1", 10), 100);
-  EXPECT_APPROX_EQ(sol_instance.get_train_pos("tr1", 20), 200);
-  EXPECT_APPROX_EQ(sol_instance.get_train_pos("tr1", 36), 300);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_pos("tr1", 0), 0);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_pos("tr1", 10), 100);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_pos("tr1", 20), 200);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_pos("tr1", 36), 300);
 
-  EXPECT_APPROX_EQ(sol_instance.get_train_speed("tr1", 0), 10);
-  EXPECT_APPROX_EQ(sol_instance.get_train_speed("tr1", 10), 10);
-  EXPECT_APPROX_EQ(sol_instance.get_train_speed("tr1", 20), 10);
-  EXPECT_APPROX_EQ(sol_instance.get_train_speed("tr1", 36), 6);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_speed("tr1", 0), 10);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_speed("tr1", 10), 10);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_speed("tr1", 20), 10);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_speed("tr1", 36), 6);
 
   // Time 0 with speed 10 at position 0
   const auto posvel1 = sol_instance.get_approximate_train_pos_and_vel("tr1", 0);
   EXPECT_TRUE(posvel1.has_value());
   const auto [pos1, vel1] = posvel1.value();
-  EXPECT_APPROX_EQ(pos1, 0);
-  EXPECT_APPROX_EQ(vel1, 10);
+  EXPECT_APPROX_EQ_6(pos1, 0);
+  EXPECT_APPROX_EQ_6(vel1, 10);
 
   const auto [pos1_bounds, vel1_bounds] =
       sol_instance.get_exact_pos_and_vel_bounds("tr1", 0);
-  EXPECT_APPROX_EQ(pos1_bounds.lb, 0);
-  EXPECT_APPROX_EQ(pos1_bounds.ub, 0);
-  EXPECT_APPROX_EQ(vel1_bounds.lb, 10);
-  EXPECT_APPROX_EQ(vel1_bounds.ub, 10);
+  EXPECT_APPROX_EQ_6(pos1_bounds.lb, 0);
+  EXPECT_APPROX_EQ_6(pos1_bounds.ub, 0);
+  EXPECT_APPROX_EQ_6(vel1_bounds.lb, 10);
+  EXPECT_APPROX_EQ_6(vel1_bounds.ub, 10);
 
   // Time 5 with speed 10 at position 50
   const auto posvel2 = sol_instance.get_approximate_train_pos_and_vel("tr1", 5);
   EXPECT_TRUE(posvel2.has_value());
   const auto [pos2, vel2] = posvel2.value();
-  EXPECT_APPROX_EQ(pos2, 50);
-  EXPECT_APPROX_EQ(vel2, 10);
+  EXPECT_APPROX_EQ_6(pos2, 50);
+  EXPECT_APPROX_EQ_6(vel2, 10);
 
   const auto [pos2_bounds, vel2_bounds] =
       sol_instance.get_exact_pos_and_vel_bounds("tr1", 5);
-  EXPECT_APPROX_EQ(
+  EXPECT_APPROX_EQ_6(
       min_travel_time_from_start(10, 10, 10, 2, 2, 100, pos2_bounds.ub), 5);
-  EXPECT_APPROX_EQ(max_travel_time_from_start_no_stopping(10, 10, V_MIN, 2, 2,
-                                                          100, pos2_bounds.lb),
-                   5);
-  EXPECT_APPROX_EQ(vel2_bounds.lb, V_MIN);
-  EXPECT_APPROX_EQ(vel2_bounds.ub, 10);
+  EXPECT_APPROX_EQ_6(max_travel_time_from_start_no_stopping(
+                         10, 10, V_MIN, 2, 2, 100, pos2_bounds.lb),
+                     5);
+  EXPECT_APPROX_EQ_6(vel2_bounds.lb, V_MIN);
+  EXPECT_APPROX_EQ_6(vel2_bounds.ub, 10);
 
   // Time 10 with speed 10 at position 100
   const auto posvel3 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 10);
   EXPECT_TRUE(posvel3.has_value());
   const auto [pos3, vel3] = posvel3.value();
-  EXPECT_APPROX_EQ(pos3, 100);
-  EXPECT_APPROX_EQ(vel3, 10);
+  EXPECT_APPROX_EQ_6(pos3, 100);
+  EXPECT_APPROX_EQ_6(vel3, 10);
 
   // Time 15 with speed 10 at position 150
   const auto posvel4 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 15);
   EXPECT_TRUE(posvel4.has_value());
   const auto [pos4, vel4] = posvel4.value();
-  EXPECT_APPROX_EQ(pos4, 150);
-  EXPECT_APPROX_EQ(vel4, 10);
+  EXPECT_APPROX_EQ_6(pos4, 150);
+  EXPECT_APPROX_EQ_6(vel4, 10);
 
   // Time 20 with speed 10 at position 200
   const auto posvel5 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 20);
   EXPECT_TRUE(posvel5.has_value());
   const auto [pos5, vel5] = posvel5.value();
-  EXPECT_APPROX_EQ(pos5, 200);
-  EXPECT_APPROX_EQ(vel5, 10);
+  EXPECT_APPROX_EQ_6(pos5, 200);
+  EXPECT_APPROX_EQ_6(vel5, 10);
 
   // Time 21 with speed 8 at position 209
   const auto posvel6 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 21);
   EXPECT_TRUE(posvel6.has_value());
   const auto [pos6, vel6] = posvel6.value();
-  EXPECT_APPROX_EQ_2(pos6, 209, 10 * cda_rail::LINE_SPEED_ACCURACY);
-  EXPECT_APPROX_EQ_2(vel6, 8, 2 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(pos6, 209, 10 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(vel6, 8, 2 * cda_rail::LINE_SPEED_ACCURACY);
 
   // Time 22 with speed 6 at position 216
   const auto posvel7 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 22);
   EXPECT_TRUE(posvel7.has_value());
   const auto [pos7, vel7] = posvel7.value();
-  EXPECT_APPROX_EQ_2(pos7, 216, 10 * cda_rail::LINE_SPEED_ACCURACY);
-  EXPECT_APPROX_EQ_2(vel7, 6, 2 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(pos7, 216, 10 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(vel7, 6, 2 * cda_rail::LINE_SPEED_ACCURACY);
 
   // Time 25 with speed 6 at position 216+3*6 = 234
   const auto posvel8 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 25);
   EXPECT_TRUE(posvel8.has_value());
   const auto [pos8, vel8] = posvel8.value();
-  EXPECT_APPROX_EQ_2(pos8, 234, 10 * cda_rail::LINE_SPEED_ACCURACY);
-  EXPECT_APPROX_EQ_2(vel8, 6, 2 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(pos8, 234, 10 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(vel8, 6, 2 * cda_rail::LINE_SPEED_ACCURACY);
 
   // Time 36 with speed 6 at position 300
   const auto posvel9 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 36);
   EXPECT_TRUE(posvel9.has_value());
   const auto [pos9, vel9] = posvel9.value();
-  EXPECT_APPROX_EQ(pos9, 300);
-  EXPECT_APPROX_EQ(vel9, 6);
+  EXPECT_APPROX_EQ_6(pos9, 300);
+  EXPECT_APPROX_EQ_6(vel9, 6);
 
   sol_instance.set_status(cda_rail::SolutionStatus::Infeasible);
   sol_instance.set_solution_not_found();
@@ -461,57 +462,57 @@ TEST(GeneralPerformanceOptimizationInstances,
       sol_instance.get_approximate_train_pos_and_vel("tr2", 0);
   EXPECT_TRUE(tr2_pos_vel_0.has_value());
   const auto [tr2_pos_0, tr2_vel_0] = tr2_pos_vel_0.value();
-  EXPECT_APPROX_EQ(tr2_pos_0, 0);
-  EXPECT_APPROX_EQ(tr2_vel_0, 0);
+  EXPECT_APPROX_EQ_6(tr2_pos_0, 0);
+  EXPECT_APPROX_EQ_6(tr2_vel_0, 0);
 
   const auto tr2_pos_vel_2 =
       sol_instance.get_approximate_train_pos_and_vel("tr2", 2);
   EXPECT_TRUE(tr2_pos_vel_2.has_value());
   const auto [tr2_pos_2, tr2_vel_2] = tr2_pos_vel_2.value();
-  EXPECT_APPROX_EQ(tr2_pos_2, 0);
-  EXPECT_APPROX_EQ(tr2_vel_2, 0);
+  EXPECT_APPROX_EQ_6(tr2_pos_2, 0);
+  EXPECT_APPROX_EQ_6(tr2_vel_2, 0);
 
   const auto tr2_pos_vel_5 =
       sol_instance.get_approximate_train_pos_and_vel("tr2", 5);
   EXPECT_TRUE(tr2_pos_vel_5.has_value());
   const auto [tr2_pos_5, tr2_vel_5] = tr2_pos_vel_5.value();
-  EXPECT_APPROX_EQ(tr2_pos_5, 0);
-  EXPECT_APPROX_EQ(tr2_vel_5, 0);
+  EXPECT_APPROX_EQ_6(tr2_pos_5, 0);
+  EXPECT_APPROX_EQ_6(tr2_vel_5, 0);
 
   const auto tr2_pos_vel_15 =
       sol_instance.get_approximate_train_pos_and_vel("tr2", 15);
   EXPECT_TRUE(tr2_pos_vel_15.has_value());
   const auto [tr2_pos_15, tr2_vel_15] = tr2_pos_vel_15.value();
-  EXPECT_APPROX_EQ(tr2_pos_15, 100);
-  EXPECT_APPROX_EQ(tr2_vel_15, 20);
+  EXPECT_APPROX_EQ_6(tr2_pos_15, 100);
+  EXPECT_APPROX_EQ_6(tr2_vel_15, 20);
 
   const auto tr2_pos_vel_20 =
       sol_instance.get_approximate_train_pos_and_vel("tr2", 20);
   EXPECT_TRUE(tr2_pos_vel_20.has_value());
   const auto [tr2_pos_20, tr2_vel_20] = tr2_pos_vel_20.value();
-  EXPECT_APPROX_EQ(tr2_pos_20, 200);
-  EXPECT_APPROX_EQ(tr2_vel_20, 20);
+  EXPECT_APPROX_EQ_6(tr2_pos_20, 200);
+  EXPECT_APPROX_EQ_6(tr2_vel_20, 20);
 
   const auto [pos_bounds_0, vel_bounds_0] =
       sol_instance.get_exact_pos_and_vel_bounds("tr2", 0);
-  EXPECT_APPROX_EQ(pos_bounds_0.lb, 0);
-  EXPECT_APPROX_EQ(pos_bounds_0.ub, 0);
-  EXPECT_APPROX_EQ(vel_bounds_0.lb, 0);
-  EXPECT_APPROX_EQ(vel_bounds_0.ub, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_0.lb, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_0.ub, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_0.lb, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_0.ub, 0);
 
   const auto [pos_bounds_2, vel_bounds_1] =
       sol_instance.get_exact_pos_and_vel_bounds("tr2", 2);
-  EXPECT_APPROX_EQ(pos_bounds_2.lb, 0);
-  EXPECT_APPROX_EQ(pos_bounds_2.ub, 0);
-  EXPECT_APPROX_EQ(vel_bounds_1.lb, 0);
-  EXPECT_APPROX_EQ(vel_bounds_1.ub, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_2.lb, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_2.ub, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_1.lb, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_1.ub, 0);
 
   const auto [pos_bounds_5, vel_bounds_2] =
       sol_instance.get_exact_pos_and_vel_bounds("tr2", 5);
-  EXPECT_APPROX_EQ(pos_bounds_5.lb, 0);
-  EXPECT_APPROX_EQ(pos_bounds_5.ub, 0);
-  EXPECT_APPROX_EQ(vel_bounds_2.lb, 0);
-  EXPECT_APPROX_EQ(vel_bounds_2.ub, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_5.lb, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_5.ub, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_2.lb, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_2.ub, 0);
 
   const auto tr_order = sol_instance.get_train_order(v0_v1);
   EXPECT_EQ(tr_order.size(), 1);
@@ -1433,27 +1434,27 @@ TEST(GeneralPerformanceOptimizationInstances, LeavingTimes) {
 
   // Leaving times of Train1
   EXPECT_EQ(instance.get_approximate_leaving_time(tr1), 7);
-  EXPECT_APPROX_EQ(instance.get_maximal_leaving_time(tr1, 10),
-                   cda_rail::max_travel_time_no_stopping(10, 8, cda_rail::V_MIN,
-                                                         1.5, 2, 56));
+  EXPECT_APPROX_EQ_6(instance.get_maximal_leaving_time(tr1, 10),
+                     cda_rail::max_travel_time_no_stopping(
+                         10, 8, cda_rail::V_MIN, 1.5, 2, 56));
 
   // Leaving times of Train2
-  EXPECT_APPROX_EQ(
+  EXPECT_APPROX_EQ_6(
       instance.get_maximal_leaving_time(tr2, 8),
       cda_rail::max_travel_time_no_stopping(8, 0, cda_rail::V_MIN, 1, 2, 64));
-  EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr2, 0), 14);
+  EXPECT_APPROX_EQ_6(instance.get_minimal_leaving_time(tr2, 0), 14);
 
   // Leaving times for Train3
-  EXPECT_APPROX_EQ(
+  EXPECT_APPROX_EQ_6(
       instance.get_maximal_leaving_time(tr3, 10),
       cda_rail::max_travel_time_no_stopping(10, 0, cda_rail::V_MIN, 2, 4, 190));
-  EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr3, 0), 17);
+  EXPECT_APPROX_EQ_6(instance.get_minimal_leaving_time(tr3, 0), 17);
 
   // Leaving times for Train4
-  EXPECT_APPROX_EQ(
+  EXPECT_APPROX_EQ_6(
       instance.get_maximal_leaving_time(tr4, 5),
       cda_rail::max_travel_time_no_stopping(5, 10, cda_rail::V_MIN, 1, 2, 60));
-  EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr4, 5), 7.25);
+  EXPECT_APPROX_EQ_6(instance.get_minimal_leaving_time(tr4, 5), 7.25);
 }
 
 TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
@@ -1707,6 +1708,46 @@ TEST(GeneralPerformanceOptimizationInstances, CrossingOverlapNoUnion) {
   EXPECT_EQ(tr12_crossing_1.pos2.first, 0);
   EXPECT_EQ(tr12_crossing_1.pos2.second, 30);
   EXPECT_EQ(tr12_crossing_1.edges, (cda_rail::index_set{e34}));
+}
+
+TEST(GeneralPerformanceOptimizationInstances, ObjectiveValue) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 1000, 20);
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 10, {"v0"}, 100, 10, {"v1"}, 1.5);
+  instance.add_train("tr2", 100, 20, 2, 2, 0, 10, {"v1"}, 100, 10, {"v0"}, 2);
+
+  instance.set_station_delay_weight(3.5);
+
+  instance.add_empty_station("Station1");
+  instance.add_empty_station("Station2");
+  instance.add_empty_station("Station3");
+
+  instance.insert_stop("tr2", "Station1", 9.5, 5);
+  instance.insert_stop("tr2", "Station2", 25, 5);
+  instance.insert_stop("tr2", "Station3", 44.3, 5);
+
+  auto const obj1 =
+      instance.get_objective_val({110, 120.5}, {{}, {9.5, 25, 44.3}});
+  EXPECT_APPROX_EQ_6(obj1, 1.5 * 110 + 2 * 120.5);
+
+  auto const obj2 =
+      instance.get_objective_val({110, 120.5}, {{}, {11, 27, 44.2}});
+  EXPECT_APPROX_EQ_6(obj2, 1.5 * 110 + 2 * 120.5 + 3.5 * 2 * (1.5 + 2 + 0) / 3);
+
+  auto const obj3 =
+      instance.get_objective_val({110, 120.5}, {{}, {11, 28}}, false);
+  EXPECT_APPROX_EQ_6(obj3, 1.5 * 110 + 2 * 120.5 + 3.5 * 2 * (1.5 + 3 + 0) / 3);
+
+  EXPECT_THROW((void)instance.get_objective_val({110, 120.5}, {{}, {11, 28}}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW((void)instance.get_objective_val({110, 120.5},
+                                                {{5}, {11, 27, 44.2}}, false),
+               cda_rail::exceptions::InvalidInputException);
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
