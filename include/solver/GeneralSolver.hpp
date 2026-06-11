@@ -20,9 +20,10 @@ enum class GeneralExportOption : std::uint8_t {
 };
 
 struct GeneralSolutionSettings {
-  GeneralExportOption export_option = GeneralExportOption::NoExport;
-  std::string         name          = "model";
-  std::string         path;
+  GeneralExportOption        export_option{GeneralExportOption::NoExport};
+  std::string                working_directory{};
+  std::string                solution_subdirectory{"unnamed-experiment"};
+  std::optional<std::string> parameter_identifier{};
 };
 
 template <typename T, typename S> class GeneralSolver {

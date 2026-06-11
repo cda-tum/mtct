@@ -46,9 +46,9 @@ enum class NextStateStrategy : std::uint8_t {
 };
 
 struct ModelDetail {
-  int  dt                           = 6; // DB simulation default is 6 seconds
-  bool late_entry_possible          = false;
-  bool limit_speed_by_leaving_edges = true;
+  double dt                  = 6.0; // DB simulation default is 6 seconds
+  bool   late_entry_possible = false;
+  bool   limit_speed_by_leaving_edges = true;
 };
 
 struct SolverStrategyMBAStar {
@@ -58,6 +58,8 @@ struct SolverStrategyMBAStar {
       simulator::RemainingTimeHeuristicType::Simple;
   NextStateStrategy next_state_strategy    = NextStateStrategy::SingleEdge;
   bool              consider_earliest_exit = true;
+  bool              time_aware_state_transitions = true;
+  double            a_star_weight                = 1.0;
 };
 
 struct GreedySimulatorState {
@@ -131,10 +133,45 @@ public:
         bool overwrite_severity = true);
 
 private:
+  // ---------------------------
+  // STATE TRANSITION HELPER
+  // ---------------------------
+
+  // Helper
+  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
+  next_states_single_edge(const simulator::GreedySimulator& simulator);
+  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
+              next_states_next_ttd(const simulator::GreedySimulator& simulator);
+  static void next_state_ttd_helper(size_t tr, GreedySimulatorState& state,
+                                    const simulator::GreedySimulator& simulator,
+                                    const cda_rail::index_vector& new_edges);
+  static void
+  next_state_exit_vertex_helper(size_t tr, GreedySimulatorState& state,
+                                const simulator::GreedySimulator& simulator);
+
+  // Overall Function
+  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
+  next_states(const simulator::GreedySimulator& simulator,
+              const NextStateStrategy&          next_state_strategy_input) {
+    switch (next_state_strategy_input) {
+    case NextStateStrategy::SingleEdge:
+      return next_states_single_edge(simulator);
+    case NextStateStrategy::NextTTD:
+      return next_states_next_ttd(simulator);
+    default:
+      throw cda_rail::exceptions::ConsistencyException(
+          "Unknown next state strategy.");
+    }
+  }
+
+  // ----------------------
+  // DATA STRUCTURE
+  // ----------------------
+
   struct StateObjectivePair {
-    double               objective;
-    bool                 is_final_state;
-    GreedySimulatorState state;
+    double               objective{};
+    bool                 is_final_state{};
+    GreedySimulatorState state{};
   };
 
   struct CompareByObjective {
@@ -151,30 +188,5 @@ private:
   using MinPriorityQueue =
       std::priority_queue<StateObjectivePair, std::vector<StateObjectivePair>,
                           CompareByObjective>;
-
-  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
-  next_states_single_edge(const simulator::GreedySimulator& simulator);
-  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
-  next_states_next_ttd(const simulator::GreedySimulator& simulator);
-
-  static void next_state_ttd_helper(size_t tr, GreedySimulatorState& state,
-                                    const simulator::GreedySimulator& simulator,
-                                    const cda_rail::index_vector& new_edges);
-  static void
-  next_state_exit_vertex_helper(size_t tr, GreedySimulatorState& state,
-                                const simulator::GreedySimulator& simulator);
-  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
-  next_states(const simulator::GreedySimulator& simulator,
-              const NextStateStrategy&          next_state_strategy_input) {
-    switch (next_state_strategy_input) {
-    case NextStateStrategy::SingleEdge:
-      return next_states_single_edge(simulator);
-    case NextStateStrategy::NextTTD:
-      return next_states_next_ttd(simulator);
-    default:
-      throw cda_rail::exceptions::ConsistencyException(
-          "Unknown next state strategy.");
-    }
-  }
 };
 } // namespace cda_rail::solver::astar_based

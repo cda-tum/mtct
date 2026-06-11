@@ -19,8 +19,7 @@
 // --------------------
 
 // NOLINTBEGIN (cppcoreguidelines-pro-type-reinterpret-cast)
-cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
-    cda_rail::instances::GeneralPerformanceOptimizationInstance>
+cda_rail::instances::SolGeneralPerformanceOptimizationInstance
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     const cda_rail::solver::astar_based::ModelDetail& model_detail_input,
     const cda_rail::solver::astar_based::SolverStrategyMBAStar&
@@ -29,19 +28,22 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     int time_limit, bool debug_input, bool overwrite_severity) {
   this->solve_init_general(time_limit, debug_input, overwrite_severity);
 
-  const auto ttd_section = instance.const_n().unbreakable_sections();
-  simulator::GreedySimulator simulator(instance, ttd_section);
+  cda_rail::exceptions::throw_if_less_than(solver_strategy_input.a_star_weight,
+                                           1.0, "A* weight");
+
+  const auto ttd_section =
+      get_instance().get_const_network().unbreakable_sections();
+  simulator::GreedySimulator simulator(get_instance(), ttd_section);
 
   std::unordered_set<GreedySimulatorState> explored_states;
   MinPriorityQueue                         pq;
 
-  cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
-      cda_rail::instances::GeneralPerformanceOptimizationInstance>
-      sol_object(instance);
+  cda_rail::instances::SolGeneralPerformanceOptimizationInstance sol_object(
+      get_instance());
 
   sol_object.reset_routes();
 
-  model_created =
+  m_model_created =
       std::chrono::high_resolution_clock::now(); // Start model creation timer
 
   PLOGI << "Starting A* search";
@@ -49,18 +51,15 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   // const auto [init_feas, init_exit_times, init_braking, init_headways] =
   const auto init_simulator_result = simulator.simulate(
       model_detail_input.dt, model_detail_input.late_entry_possible,
-      model_detail_input.late_exit_possible,
-      model_detail_input.late_stop_possible,
-      model_detail_input.limit_speed_by_leaving_edges);
+      model_detail_input.limit_speed_by_leaving_edges, false);
   const auto init_obj =
-      simulator::objective_val(simulator, init_simulator_result.exit_times);
+      simulator::objective_val(simulator, init_simulator_result.exit_times,
+                               init_simulator_result.stop_times);
   const auto [init_heuristic_feas, init_heuristic_val] =
       simulator::full_greedy_heuristic(
           solver_strategy_input.braking_time_heuristic_type,
           solver_strategy_input.remaining_time_heuristic_type, simulator,
-          init_simulator_result, model_detail_input.late_stop_possible,
-          model_detail_input.late_exit_possible,
-          solver_strategy_input.consider_earliest_exit);
+          init_simulator_result, solver_strategy_input.consider_earliest_exit);
 
   PLOGD << "Initial state: final = "
         << (simulator.is_final_state() ? "yes" : "no")
@@ -76,8 +75,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         .ttd_orders     = simulator.get_ttd_orders(),
         .vertex_orders  = simulator.get_vertex_orders(),
         .stop_positions = simulator.get_stop_positions()};
-    pq.push({{init_obj + init_heuristic_val, simulator.is_final_state()},
-             init_state});
+    pq.push(
+        {init_obj + solver_strategy_input.a_star_weight * init_heuristic_val,
+         simulator.is_final_state(), init_state});
     explored_states.insert(init_state);
   }
 
@@ -91,7 +91,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     if (time_limit > 0) {
       const auto now = std::chrono::high_resolution_clock::now();
       const auto elapsed =
-          std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+          std::chrono::duration_cast<std::chrono::seconds>(now - m_start)
+              .count();
       if (elapsed >= time_limit) {
         PLOGD << "Timeout reached after " << elapsed
               << " seconds, stopping search.";
@@ -104,40 +105,45 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
     iteration++;
 
-    const auto [current_obj, current_state] = pq.top();
+    const auto current_state_objective_pair = pq.top();
     pq.pop();
 
     if (iteration % DEBUG_LOGGING_RATE == 0) {
       PLOGD << "----------------------------";
       PLOGD << "Iteration " << iteration << ", queue size: " << pq.size();
       PLOGD << "Best objective so far: " << best_obj;
-      PLOGD << "Current lower bound: " << current_obj.first;
+      PLOGD << "Current lower bound: "
+            << current_state_objective_pair.objective;
     } else {
       PLOGV << "----------------------------";
       PLOGV << "Iteration " << iteration << ", queue size: " << pq.size();
       PLOGV << "Best objective so far: " << best_obj;
-      PLOGV << "Current lower bound: " << current_obj.first;
+      PLOGV << "Current lower bound: "
+            << current_state_objective_pair.objective;
     }
 
-    if (current_obj.second) {
-      PLOGD << "Optimal solution found, obj = " << current_obj.first
-            << ", after " << iteration << " iterations, "
+    if (current_state_objective_pair.is_final_state) {
+      PLOGD << "Optimal solution found, obj = "
+            << current_state_objective_pair.objective << ", after " << iteration
+            << " iterations, "
             << std::chrono::duration_cast<std::chrono::seconds>(
-                   std::chrono::high_resolution_clock::now() - start)
+                   std::chrono::high_resolution_clock::now() - m_start)
                    .count()
             << " seconds.";
-      best_obj   = current_obj.first;
-      best_state = current_state;
+      best_obj   = current_state_objective_pair.objective;
+      best_state = current_state_objective_pair.state;
       sol_object.set_obj(best_obj);
       sol_object.set_solution_found();
       sol_object.set_status(cda_rail::SolutionStatus::Optimal);
       break;
     }
 
-    simulator.set_train_edges(current_state.train_edges);
-    simulator.set_ttd_orders(current_state.ttd_orders);
-    simulator.set_vertex_orders(current_state.vertex_orders);
-    simulator.set_stop_positions(current_state.stop_positions);
+    simulator.set_train_edges(current_state_objective_pair.state.train_edges);
+    simulator.set_ttd_orders(current_state_objective_pair.state.ttd_orders);
+    simulator.set_vertex_orders(
+        current_state_objective_pair.state.vertex_orders);
+    simulator.set_stop_positions(
+        current_state_objective_pair.state.stop_positions);
 
     const auto next_states_set =
         next_states(simulator, solver_strategy_input.next_state_strategy);
@@ -157,23 +163,21 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
       const auto sim_res = simulator.simulate(
           model_detail_input.dt, model_detail_input.late_entry_possible,
-          model_detail_input.late_exit_possible,
-          model_detail_input.late_stop_possible,
-          model_detail_input.limit_speed_by_leaving_edges);
+          model_detail_input.limit_speed_by_leaving_edges, false);
       if (!sim_res.success) {
         PLOGV << "State is infeasible, skipping.";
         continue;
       }
-      const auto obj = simulator::objective_val(simulator, sim_res.exit_times);
+      const auto obj = simulator::objective_val(simulator, sim_res.exit_times,
+                                                sim_res.stop_times);
       const auto [heuristic_feas, heuristic_val] =
           simulator::full_greedy_heuristic(
               solver_strategy_input.braking_time_heuristic_type,
               solver_strategy_input.remaining_time_heuristic_type, simulator,
-              sim_res, model_detail_input.late_stop_possible,
-              model_detail_input.late_exit_possible,
-              solver_strategy_input.consider_earliest_exit);
-      const auto new_obj = obj + heuristic_val;
-      const auto final   = simulator.is_final_state();
+              sim_res, solver_strategy_input.consider_earliest_exit);
+      const auto new_obj =
+          obj + solver_strategy_input.a_star_weight * heuristic_val;
+      const auto final = simulator.is_final_state();
       PLOGV << "Objective = " << obj << ", heuristic = " << heuristic_val
             << ", total = " << new_obj << ", feasibility = "
             << (heuristic_feas ? "feasible" : "infeasible")
@@ -182,7 +186,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         PLOGD << "Explored new best final state with objective = " << new_obj
               << " after " << iteration << " iterations, "
               << std::chrono::duration_cast<std::chrono::seconds>(
-                     std::chrono::high_resolution_clock::now() - start)
+                     std::chrono::high_resolution_clock::now() - m_start)
                      .count()
               << " seconds.";
         best_obj   = new_obj;
@@ -192,19 +196,19 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         sol_object.set_status(cda_rail::SolutionStatus::Feasible);
       }
       if (heuristic_feas) {
-        pq.push({{new_obj, final}, s});
+        pq.push({new_obj, final, s});
         explored_states.insert(s);
         PLOGV << "State added to priority queue.";
       }
     }
   }
 
-  model_solved =
+  m_model_solved =
       std::chrono::high_resolution_clock::now(); // Finished model solving
 
   PLOGD << "Terminated after " << iteration << " iterations, "
-        << (std::chrono::duration_cast<std::chrono::milliseconds>(model_solved -
-                                                                  start)
+        << (std::chrono::duration_cast<std::chrono::milliseconds>(
+                m_model_solved - m_start)
                 .count() /
             1000.0)
         << " seconds.";
@@ -222,8 +226,6 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     // Determine trajectories
     const auto final_simulation_result = simulator.simulate(
         model_detail_input.dt, model_detail_input.late_entry_possible,
-        model_detail_input.late_exit_possible,
-        model_detail_input.late_stop_possible,
         model_detail_input.limit_speed_by_leaving_edges, true);
     if (!final_simulation_result.success) {
       throw cda_rail::exceptions::ConsistencyException(
@@ -231,19 +233,22 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
           "state.");
     }
 
-    for (size_t tr = 0; tr < instance.get_timetable().get_train_list().size();
+    for (size_t tr = 0; tr < get_instance().get_const_train_list().size();
          ++tr) {
-      const auto& tr_name =
-          sol_object.get_instance().get_train_list().get_train(tr).name;
+      const auto& tr_name = sol_object.get_instance()
+                                ->get_const_train_list()
+                                .get_train(tr)
+                                .get_name();
       const auto& tr_trajectory =
           final_simulation_result.train_trajectories.at(tr);
       const auto& tr_edges = best_state.train_edges.at(tr);
-      sol_object.set_train_routed_value(tr_name, !tr_edges.empty());
-      if (!tr_edges.empty()) {
-        sol_object.add_empty_route(tr_name);
-        for (const auto& e : tr_edges) {
-          sol_object.push_back_edge_to_route(tr_name, e);
-        }
+
+      if (tr_edges.empty()) {
+        throw std::runtime_error("Empty train edge list for train " + tr_name);
+      }
+      sol_object.add_empty_route(tr_name);
+      for (const auto& e : tr_edges) {
+        sol_object.push_back_edge_to_route(tr_name, e);
       }
       for (const auto& [time, posvel] : tr_trajectory) {
         sol_object.add_train_pos(tr_name, time, posvel.pos);
@@ -284,9 +289,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         (solution_settings_input.export_option ==
          GeneralExportOption::ExportSolutionWithInstance);
     PLOGI << "Saving solution";
-    std::filesystem::path path = solution_settings_input.path;
-    path /= solution_settings_input.name;
-    sol_object.export_solution(path, export_instance);
+    sol_object.export_solution(solution_settings_input.working_directory,
+                               solution_settings_input.solution_subdirectory,
+                               export_instance,
+                               solution_settings_input.parameter_identifier);
   }
 
   return sol_object;
@@ -313,23 +319,22 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
   std::unordered_set<GreedySimulatorState> next_states;
 
   for (size_t tr = 0;
-       tr < simulator.get_instance()->get_timetable().get_train_list().size();
-       ++tr) {
+       tr < simulator.get_instance()->get_const_train_list().size(); ++tr) {
     const auto& train_edges = simulator.get_train_edges_of_tr(tr);
     if (train_edges.empty()) {
       // Train can enter the network
       const auto& tr_schedule =
-          simulator.get_instance()->get_timetable().get_schedule(tr);
+          simulator.get_instance()->get_const_schedule(tr);
       const auto& tr_obj =
-          simulator.get_instance()->get_train_list().get_train(tr);
+          simulator.get_instance()->get_const_train_list().get_train(tr);
       const auto entry_paths =
           simulator.get_instance()
-              ->const_n()
+              ->get_const_network()
               .all_paths_of_length_starting_in_vertex(
-                  tr_schedule.get_entry(),
-                  cda_rail::braking_distance(tr_schedule.get_v_0(),
-                                             tr_obj.deceleration),
-                  tr_schedule.get_exit(), {}, true);
+                  tr_schedule.get_entry_vertex(),
+                  cda_rail::braking_distance(tr_schedule.get_initial_velocity(),
+                                             tr_obj.get_deceleration()),
+                  tr_schedule.get_exit_vertex(), {}, true);
       for (const auto& path : entry_paths) {
         GreedySimulatorState new_state{
             .train_edges    = simulator.get_train_edges(),
@@ -337,7 +342,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
             .vertex_orders  = simulator.get_vertex_orders(),
             .stop_positions = simulator.get_stop_positions()};
         new_state.train_edges.at(tr) = path;
-        new_state.vertex_orders.at(tr_schedule.get_entry()).emplace_back(tr);
+        new_state.vertex_orders.at(tr_schedule.get_entry_vertex())
+            .emplace_back(tr);
         next_state_ttd_helper(tr, new_state, simulator, path);
         next_state_exit_vertex_helper(tr, new_state, simulator);
         next_states.insert(new_state);
@@ -356,7 +362,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
         next_states.insert(new_state);
       }
       const auto next_edges =
-          simulator.get_instance()->const_n().get_successors(
+          simulator.get_instance()->get_const_network().get_successors(
               simulator.get_train_edges_of_tr(tr).back());
       for (const auto& next_edge : next_edges) {
         GreedySimulatorState new_state{
@@ -388,23 +394,21 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
 
   std::unordered_set<GreedySimulatorState> next_states;
   for (size_t tr = 0;
-       tr < simulator.get_instance()->get_timetable().get_train_list().size();
-       ++tr) {
+       tr < simulator.get_instance()->get_const_train_list().size(); ++tr) {
     const auto& train_edges = simulator.get_train_edges_of_tr(tr);
-    const auto& tr_schedule =
-        simulator.get_instance()->get_timetable().get_schedule(tr);
+    const auto& tr_schedule = simulator.get_instance()->get_const_schedule(tr);
     if (train_edges.empty()) {
       // Train can enter the network
       const auto& tr_obj =
-          simulator.get_instance()->get_train_list().get_train(tr);
+          simulator.get_instance()->get_const_train_list().get_train(tr);
       const auto entry_paths =
           simulator.get_instance()
-              ->const_n()
+              ->get_const_network()
               .all_paths_of_length_starting_in_vertex(
-                  tr_schedule.get_entry(),
-                  cda_rail::braking_distance(tr_schedule.get_v_0(),
-                                             tr_obj.deceleration),
-                  tr_schedule.get_exit(), {}, true);
+                  tr_schedule.get_entry_vertex(),
+                  cda_rail::braking_distance(tr_schedule.get_initial_velocity(),
+                                             tr_obj.get_deceleration()),
+                  tr_schedule.get_exit_vertex(), {}, true);
       for (const auto& path : entry_paths) {
         GreedySimulatorState new_state{
             .train_edges    = simulator.get_train_edges(),
@@ -412,7 +416,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
             .vertex_orders  = simulator.get_vertex_orders(),
             .stop_positions = simulator.get_stop_positions()};
         new_state.train_edges.at(tr) = path;
-        new_state.vertex_orders.at(tr_schedule.get_entry()).emplace_back(tr);
+        new_state.vertex_orders.at(tr_schedule.get_entry_vertex())
+            .emplace_back(tr);
         next_state_ttd_helper(tr, new_state, simulator, path);
         next_state_exit_vertex_helper(tr, new_state, simulator);
         next_states.insert(new_state);
@@ -420,16 +425,17 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
         if (simulator.is_route_end_valid_stop_pos(tr, path)) {
           // Train can stop at the current edge
           new_state.stop_positions.at(tr).emplace_back(
-              simulator.get_instance()->const_n().length_of_path(path));
+              simulator.get_instance()->get_const_network().length_of_path(
+                  path));
           next_states.insert(new_state);
         }
       }
     } else {
       // Move all the way to the next TTD section
       const auto paths_to_next_ttd =
-          simulator.get_instance()->const_n().all_paths_ending_at_ttd(
+          simulator.get_instance()->get_const_network().all_paths_ending_at_ttd(
               train_edges.back(), simulator.get_ttd_sections(),
-              tr_schedule.get_exit());
+              tr_schedule.get_exit_vertex());
       for (const auto& path : paths_to_next_ttd) {
         GreedySimulatorState new_state{
             .train_edges    = simulator.get_train_edges(),
@@ -443,7 +449,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                   tr, new_state.train_edges.at(tr))) {
             GreedySimulatorState new_state_stop = new_state;
             new_state_stop.stop_positions.at(tr).emplace_back(
-                simulator.get_instance()->const_n().length_of_path(
+                simulator.get_instance()->get_const_network().length_of_path(
                     new_state_stop.train_edges.at(tr)));
             next_state_ttd_helper(
                 tr, new_state_stop, simulator,
@@ -495,10 +501,9 @@ void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
         const cda_rail::simulator::GreedySimulator& simulator) {
   const auto& last_edge_id = state.train_edges.at(tr).back();
   const auto& last_edge =
-      simulator.get_instance()->const_n().get_edge(last_edge_id);
-  const auto& tr_schedule =
-      simulator.get_instance()->get_timetable().get_schedule(tr);
-  if ((tr_schedule.get_exit() == last_edge.target) &&
+      simulator.get_instance()->get_const_network().get_edge(last_edge_id);
+  const auto& tr_schedule = simulator.get_instance()->get_const_schedule(tr);
+  if ((tr_schedule.get_exit_vertex() == last_edge.target) &&
       (state.stop_positions.at(tr).size() == tr_schedule.get_stops().size())) {
     if (!std::ranges::contains(state.vertex_orders.at(last_edge.target), tr)) {
       // Train has reached the exit vertex, add it to the vertex orders

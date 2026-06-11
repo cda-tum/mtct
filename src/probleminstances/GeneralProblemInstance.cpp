@@ -349,10 +349,11 @@ bool cda_rail::instances::SolGeneralProblemInstance::check_consistency() const {
 }
 
 void cda_rail::instances::SolGeneralProblemInstance::load_solution(
-    const std::filesystem::path& workingDirectory,
-    std::string_view const       solutionSubdirectory) {
-  std::filesystem::path const p =
-      get_export_path(workingDirectory, solutionSubdirectory);
+    const std::filesystem::path&      workingDirectory,
+    std::string_view const            solutionSubdirectory,
+    std::optional<std::string> const& parameter_identifier) {
+  std::filesystem::path const p = get_export_path(
+      workingDirectory, solutionSubdirectory, parameter_identifier);
 
   std::ifstream data_file(p / "solution_data.json");
   if (!data_file.is_open()) {
@@ -366,10 +367,11 @@ void cda_rail::instances::SolGeneralProblemInstance::load_solution(
 }
 
 void cda_rail::instances::SolGeneralProblemInstance::export_solution(
-    const std::filesystem::path& workingDirectory,
-    std::string_view const       solutionSubdirectory) const {
-  std::filesystem::path const p =
-      get_export_path(workingDirectory, solutionSubdirectory);
+    const std::filesystem::path&      workingDirectory,
+    std::string_view const            solutionSubdirectory,
+    std::optional<std::string> const& parameter_identifier) const {
+  std::filesystem::path const p = get_export_path(
+      workingDirectory, solutionSubdirectory, parameter_identifier);
 
   if (!is_directory_and_create(p)) {
     throw exceptions::ExportException("Could not create directory " +
@@ -400,24 +402,27 @@ void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
 }
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
-    load_solution(const std::filesystem::path& workingDirectory,
-                  std::string_view const       solutionSubdirectory) {
-  SolGeneralProblemInstance::load_solution(workingDirectory,
-                                           solutionSubdirectory);
+    load_solution(const std::filesystem::path&      workingDirectory,
+                  std::string_view const            solutionSubdirectory,
+                  std::optional<std::string> const& parameter_identifier) {
+  SolGeneralProblemInstance::load_solution(
+      workingDirectory, solutionSubdirectory, parameter_identifier);
 
-  std::filesystem::path const p =
-      get_export_path(workingDirectory, solutionSubdirectory);
+  std::filesystem::path const p = get_export_path(
+      workingDirectory, solutionSubdirectory, parameter_identifier);
   m_solution_routes = RouteMap(p, get_instance()->get_const_network());
 }
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
-    export_solution(const std::filesystem::path& workingDirectory,
-                    std::string_view const       solutionSubdirectory) const {
-  SolGeneralProblemInstance::export_solution(workingDirectory,
-                                             solutionSubdirectory);
+    export_solution(
+        const std::filesystem::path&      workingDirectory,
+        std::string_view const            solutionSubdirectory,
+        std::optional<std::string> const& parameter_identifier) const {
+  SolGeneralProblemInstance::export_solution(
+      workingDirectory, solutionSubdirectory, parameter_identifier);
 
-  std::filesystem::path const p =
-      get_export_path(workingDirectory, solutionSubdirectory);
+  std::filesystem::path const p = get_export_path(
+      workingDirectory, solutionSubdirectory, parameter_identifier);
   m_solution_routes.export_routes(p, this->get_instance()->get_const_network());
 }
 

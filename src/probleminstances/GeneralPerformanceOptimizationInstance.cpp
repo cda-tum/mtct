@@ -176,12 +176,14 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 }
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
-    load_solution(const std::filesystem::path& workingDirectory,
-                  std::string_view const       solutionSubdirectory) {
+    load_solution(const std::filesystem::path&      workingDirectory,
+                  std::string_view const            solutionSubdirectory,
+                  std::optional<std::string> const& parameter_identifier) {
   SolGeneralProblemInstanceWithScheduleAndRoutes::load_solution(
-      workingDirectory, solutionSubdirectory);
+      workingDirectory, solutionSubdirectory, parameter_identifier);
 
-  const auto p = get_export_path(workingDirectory, solutionSubdirectory);
+  const auto p = get_export_path(workingDirectory, solutionSubdirectory,
+                                 parameter_identifier);
   // Read train_pos
   std::ifstream train_pos_file(p / "train_pos.json");
   json          train_pos_json = json::parse(train_pos_file);
@@ -205,9 +207,10 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 }
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
-    export_solution(const std::filesystem::path& workingDirectory,
-                    std::string_view const       solutionSubdirectory,
-                    bool                         export_instance) const {
+    export_solution(
+        const std::filesystem::path& workingDirectory,
+        std::string_view const solutionSubdirectory, bool export_instance,
+        std::optional<std::string> const& parameter_identifier) const {
   /**
    * This method exports the solution object to a specific path. This includes
    * the following:
@@ -226,10 +229,10 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 
   SolGeneralProblemInstanceWithScheduleAndRoutes::export_solution(
-      workingDirectory, solutionSubdirectory);
+      workingDirectory, solutionSubdirectory, parameter_identifier);
 
-  std::filesystem::path const p =
-      get_export_path(workingDirectory, solutionSubdirectory);
+  std::filesystem::path const p = get_export_path(
+      workingDirectory, solutionSubdirectory, parameter_identifier);
 
   // NOLINTBEGIN(misc-const-correctness)
   json train_pos_json;
@@ -725,11 +728,13 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
 }
 
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
-    export_solution(const std::filesystem::path& workingDirectory,
-                    std::string_view const       solutionSubdirectory,
-                    bool                         export_instance) const {
+    export_solution(
+        const std::filesystem::path& workingDirectory,
+        std::string_view const solutionSubdirectory, bool export_instance,
+        std::optional<std::string> const& parameter_identifier) const {
   SolGeneralPerformanceOptimizationInstance::export_solution(
-      workingDirectory, solutionSubdirectory, export_instance);
+      workingDirectory, solutionSubdirectory, export_instance,
+      parameter_identifier);
 
   // NOLINTNEXTLINE(misc-const-correctness)
   json vss_pos_json;
@@ -743,8 +748,8 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     vss_pos_json[const_network.get_edge_name(edge_id)] = m_vss_pos.at(edge_id);
   }
 
-  std::filesystem::path const p =
-      get_export_path(workingDirectory, solutionSubdirectory);
+  std::filesystem::path const p = get_export_path(
+      workingDirectory, solutionSubdirectory, parameter_identifier);
   std::ofstream vss_pos_file(p / "vss_pos.json");
   vss_pos_file << vss_pos_json << '\n';
   vss_pos_file.close();
@@ -772,13 +777,14 @@ bool cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
 }
 
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
-    load_solution(const std::filesystem::path& workingDirectory,
-                  std::string_view const       solutionSubdirectory) {
+    load_solution(const std::filesystem::path&      workingDirectory,
+                  std::string_view const            solutionSubdirectory,
+                  std::optional<std::string> const& parameter_identifier) {
   SolGeneralPerformanceOptimizationInstance::load_solution(
-      workingDirectory, solutionSubdirectory);
+      workingDirectory, solutionSubdirectory, parameter_identifier);
 
-  std::filesystem::path const p =
-      this->get_export_path(workingDirectory, solutionSubdirectory);
+  std::filesystem::path const p = this->get_export_path(
+      workingDirectory, solutionSubdirectory, parameter_identifier);
   std::ifstream vss_pos_file(p / "vss_pos.json");
   json          vss_pos_json = json::parse(vss_pos_file);
   vss_pos_file.close();

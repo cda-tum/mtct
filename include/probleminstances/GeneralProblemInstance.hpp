@@ -112,6 +112,17 @@ protected:
             std::filesystem::path(workingDirectory)) {};
 
 public:
+  // Rule of 5
+  GeneralProblemInstanceWithScheduleAndRoutes(
+      const GeneralProblemInstanceWithScheduleAndRoutes&) = default;
+  GeneralProblemInstanceWithScheduleAndRoutes&
+  operator=(const GeneralProblemInstanceWithScheduleAndRoutes&) = default;
+  GeneralProblemInstanceWithScheduleAndRoutes(
+      GeneralProblemInstanceWithScheduleAndRoutes&&) noexcept = default;
+  GeneralProblemInstanceWithScheduleAndRoutes&
+  operator=(GeneralProblemInstanceWithScheduleAndRoutes&&) noexcept = default;
+  ~GeneralProblemInstanceWithScheduleAndRoutes() override           = default;
+
   using GeneralProblemInstance::export_instance;
 
   // --------------------
@@ -386,17 +397,17 @@ public:
 
 class SolGeneralProblemInstance {
 private:
-  std::unique_ptr<GeneralProblemInstance> m_instance;
+  std::shared_ptr<GeneralProblemInstance> m_instance;
   SolutionStatus                          m_status{SolutionStatus::Unknown};
   double                                  m_obj{-1};
   bool                                    m_has_sol{false};
 
 protected:
   explicit SolGeneralProblemInstance(
-      std::unique_ptr<GeneralProblemInstance> instance_ptr)
+      std::shared_ptr<GeneralProblemInstance> instance_ptr)
       : m_instance(std::move(instance_ptr)) {};
   SolGeneralProblemInstance(
-      std::unique_ptr<GeneralProblemInstance> instance_ptr,
+      std::shared_ptr<GeneralProblemInstance> instance_ptr,
       SolutionStatus status, double obj, bool has_sol)
       : m_instance(std::move(instance_ptr)), m_status(status), m_obj(obj),
         m_has_sol(has_sol) {};
@@ -404,12 +415,17 @@ protected:
   [[nodiscard]] json get_general_solution_data() const;
   void               set_general_solution_data(const json& data);
 
-  std::filesystem::path
-  get_export_path(const std::filesystem::path& workingDirectory,
-                  std::string_view const       solutionSubdirectory) const {
+  [[nodiscard]] std::filesystem::path get_export_path(
+      const std::filesystem::path&      workingDirectory,
+      std::string_view const            solutionSubdirectory,
+      std::optional<std::string> const& parameter_identifier) const {
+    auto const adjusted_name =
+        parameter_identifier.has_value()
+            ? concatenate_string_views({get_instance()->get_instance_name(),
+                                        "-", parameter_identifier.value()})
+            : get_instance()->get_instance_name();
     return {workingDirectory / "solutions" / solutionSubdirectory /
-            get_instance()->get_instance_subdirectory() /
-            get_instance()->get_instance_name()};
+            get_instance()->get_instance_subdirectory() / adjusted_name};
   }
 
 public:
@@ -424,34 +440,54 @@ public:
   void set_solution_found() { m_has_sol = true; };
   void set_solution_not_found() { m_has_sol = false; };
 
-  virtual void load_solution(const std::filesystem::path& workingDirectory,
-                             std::string_view const       solutionSubdirectory);
-
-  void load_solution(const std::string&     path,
-                     std::string_view const solutionSubdirectory) {
-    load_solution(std::filesystem::path(path), solutionSubdirectory);
-  };
-  void load_solution(const char*            path,
-                     std::string_view const solutionSubdirectory) {
-    load_solution(std::filesystem::path(path), solutionSubdirectory);
-  };
-
   virtual void
-  export_solution(const std::filesystem::path& workingDirectory,
-                  std::string_view const       solutionSubdirectory) const;
+  load_solution(const std::filesystem::path&      workingDirectory,
+                std::string_view const            solutionSubdirectory,
+                std::optional<std::string> const& parameter_identifier = {});
 
-  void export_solution(const std::string&     path,
-                       std::string_view const solutionSubdirectory) const {
-    export_solution(std::filesystem::path(path), solutionSubdirectory);
+  void
+  load_solution(const std::string&                path,
+                std::string_view const            solutionSubdirectory,
+                std::optional<std::string> const& parameter_identifier = {}) {
+    load_solution(std::filesystem::path(path), solutionSubdirectory,
+                  parameter_identifier);
+  }
+  void
+  load_solution(const char* path, std::string_view const solutionSubdirectory,
+                std::optional<std::string> const& parameter_identifier = {}) {
+    load_solution(std::filesystem::path(path), solutionSubdirectory,
+                  parameter_identifier);
+  }
+
+  virtual void export_solution(
+      const std::filesystem::path&      workingDirectory,
+      std::string_view const            solutionSubdirectory,
+      std::optional<std::string> const& parameter_identifier = {}) const;
+
+  void export_solution(
+      const std::string& path, std::string_view const solutionSubdirectory,
+      std::optional<std::string> const& parameter_identifier = {}) const {
+    export_solution(std::filesystem::path(path), solutionSubdirectory,
+                    parameter_identifier);
   };
-  void export_solution(const char*            path,
-                       std::string_view const solutionSubdirectory) const {
-    export_solution(std::filesystem::path(path), solutionSubdirectory);
+  void export_solution(
+      const char* path, std::string_view const solutionSubdirectory,
+      std::optional<std::string> const& parameter_identifier = {}) const {
+    export_solution(std::filesystem::path(path), solutionSubdirectory,
+                    parameter_identifier);
   };
 
   [[nodiscard]] virtual bool check_consistency() const;
 
   virtual ~SolGeneralProblemInstance() = default;
+
+  // Rule of 5 due to virtual deconstructor
+  SolGeneralProblemInstance(SolGeneralProblemInstance const&) = default;
+  SolGeneralProblemInstance&
+  operator=(SolGeneralProblemInstance const&)                     = default;
+  SolGeneralProblemInstance(SolGeneralProblemInstance&&) noexcept = default;
+  SolGeneralProblemInstance&
+  operator=(SolGeneralProblemInstance&&) noexcept = default;
 };
 
 class SolGeneralProblemInstanceWithScheduleAndRoutes
@@ -460,11 +496,11 @@ class SolGeneralProblemInstanceWithScheduleAndRoutes
 
 protected:
   explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
-      std::unique_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr)
+      std::shared_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr)
       : SolGeneralProblemInstance(std::move(instance_ptr)),
         m_solution_routes(get_instance()->get_const_routes()) {}
   SolGeneralProblemInstanceWithScheduleAndRoutes(
-      std::unique_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr,
+      std::shared_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr,
       SolutionStatus status, double obj, bool has_sol)
       : SolGeneralProblemInstance(std::move(instance_ptr), status, obj,
                                   has_sol),
@@ -477,18 +513,31 @@ public:
   explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
       GeneralProblemInstanceWithScheduleAndRoutes const& instance)
       : SolGeneralProblemInstanceWithScheduleAndRoutes(
-            std::make_unique<GeneralProblemInstanceWithScheduleAndRoutes>(
+            std::make_shared<GeneralProblemInstanceWithScheduleAndRoutes>(
                 instance)) {};
   SolGeneralProblemInstanceWithScheduleAndRoutes(
       GeneralProblemInstanceWithScheduleAndRoutes const& instance,
       SolutionStatus status, double obj, bool has_sol)
       : SolGeneralProblemInstanceWithScheduleAndRoutes(
-            std::make_unique<GeneralProblemInstanceWithScheduleAndRoutes>(
+            std::make_shared<GeneralProblemInstanceWithScheduleAndRoutes>(
                 instance),
             status, obj, has_sol) {};
 
-  void load_solution(const std::filesystem::path& workingDirectory,
-                     std::string_view const solutionSubdirectory) override;
+  // Rule of 5
+  SolGeneralProblemInstanceWithScheduleAndRoutes(
+      const SolGeneralProblemInstanceWithScheduleAndRoutes&) = default;
+  SolGeneralProblemInstanceWithScheduleAndRoutes&
+  operator=(const SolGeneralProblemInstanceWithScheduleAndRoutes&) = default;
+  SolGeneralProblemInstanceWithScheduleAndRoutes(
+      SolGeneralProblemInstanceWithScheduleAndRoutes&&) noexcept = default;
+  SolGeneralProblemInstanceWithScheduleAndRoutes& operator=(
+      SolGeneralProblemInstanceWithScheduleAndRoutes&&) noexcept = default;
+  ~SolGeneralProblemInstanceWithScheduleAndRoutes() override     = default;
+
+  void load_solution(
+      const std::filesystem::path&      workingDirectory,
+      std::string_view const            solutionSubdirectory,
+      std::optional<std::string> const& parameter_identifier = {}) override;
 
   // Additional Getter
   [[nodiscard]] GeneralProblemInstanceWithScheduleAndRoutes const*
@@ -525,9 +574,10 @@ public:
   }
 
   // Export
-  void
-  export_solution(const std::filesystem::path& workingDirectory,
-                  std::string_view const solutionSubdirectory) const override;
+  void export_solution(const std::filesystem::path&      workingDirectory,
+                       std::string_view const            solutionSubdirectory,
+                       std::optional<std::string> const& parameter_identifier =
+                           {}) const override;
 
   [[nodiscard]] bool check_consistency() const override;
 };

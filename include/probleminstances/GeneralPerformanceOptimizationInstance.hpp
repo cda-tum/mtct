@@ -233,7 +233,7 @@ public:
   explicit SolGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance)
       : SolGeneralProblemInstanceWithScheduleAndRoutes(
-            std::make_unique<GeneralPerformanceOptimizationInstance>(
+            std::make_shared<GeneralPerformanceOptimizationInstance>(
                 instance)) {
     this->initialize_vectors();
   }
@@ -241,25 +241,41 @@ public:
       const GeneralPerformanceOptimizationInstance& instance,
       SolutionStatus status, double obj, bool has_sol)
       : SolGeneralProblemInstanceWithScheduleAndRoutes(
-            std::make_unique<GeneralPerformanceOptimizationInstance>(instance),
+            std::make_shared<GeneralPerformanceOptimizationInstance>(instance),
             status, obj, has_sol) {
     this->initialize_vectors();
   }
 
+  // Rule of 5
+  SolGeneralPerformanceOptimizationInstance(
+      SolGeneralPerformanceOptimizationInstance const&) = default;
+  SolGeneralPerformanceOptimizationInstance&
+  operator=(SolGeneralPerformanceOptimizationInstance const&) = default;
+  SolGeneralPerformanceOptimizationInstance(
+      SolGeneralPerformanceOptimizationInstance&&) noexcept = default;
+  SolGeneralPerformanceOptimizationInstance&
+  operator=(SolGeneralPerformanceOptimizationInstance&&) noexcept = default;
+  ~SolGeneralPerformanceOptimizationInstance() override           = default;
+
   // Import / Export
 
-  void load_solution(const std::filesystem::path& workingDirectory,
-                     std::string_view const solutionSubdirectory) override;
+  void load_solution(
+      const std::filesystem::path&      workingDirectory,
+      std::string_view const            solutionSubdirectory,
+      std::optional<std::string> const& parameter_identifier = {}) override;
 
-  void
-  export_solution(const std::filesystem::path& workingDirectory,
-                  std::string_view const solutionSubdirectory) const override {
-    export_solution(workingDirectory, solutionSubdirectory, false);
+  void export_solution(
+      const std::filesystem::path&      workingDirectory,
+      std::string_view const            solutionSubdirectory,
+      std::optional<std::string> const& parameter_identifier) const override {
+    export_solution(workingDirectory, solutionSubdirectory, false,
+                    parameter_identifier);
   }
 
-  virtual void export_solution(const std::filesystem::path& workingDirectory,
-                               std::string_view const solutionSubdirectory,
-                               bool                   export_instance) const;
+  virtual void export_solution(
+      const std::filesystem::path& workingDirectory,
+      std::string_view const solutionSubdirectory, bool export_instance,
+      std::optional<std::string> const& parameter_identifier = {}) const;
 
   // Additional Getter
   [[nodiscard]] GeneralPerformanceOptimizationInstance const*
@@ -362,14 +378,18 @@ public:
 
   void reset_vss_pos(cda_rail::Network::EdgeInput const& edge_input);
 
-  void export_solution(const std::filesystem::path& workingDirectory,
-                       std::string_view const       solutionSubdirectory,
-                       bool export_instance) const override;
+  void export_solution(const std::filesystem::path&      workingDirectory,
+                       std::string_view const            solutionSubdirectory,
+                       bool                              export_instance,
+                       std::optional<std::string> const& parameter_identifier =
+                           {}) const override;
 
   [[nodiscard]] bool check_consistency() const override;
 
-  void load_solution(const std::filesystem::path& workingDirectory,
-                     std::string_view const solutionSubdirectory) override;
+  void load_solution(
+      const std::filesystem::path&      workingDirectory,
+      std::string_view const            solutionSubdirectory,
+      std::optional<std::string> const& parameter_identifier = {}) override;
 };
 
 } // namespace cda_rail::instances
