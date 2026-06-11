@@ -209,7 +209,7 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     export_solution(
         const std::filesystem::path& workingDirectory,
-        std::string_view const solutionSubdirectory, bool export_instance,
+        std::string_view const solutionSubdirectory, bool save_instance,
         std::optional<std::string> const& parameter_identifier) const {
   /**
    * This method exports the solution object to a specific path. This includes
@@ -229,7 +229,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 
   SolGeneralProblemInstanceWithScheduleAndRoutes::export_solution(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      workingDirectory, solutionSubdirectory, save_instance,
+      parameter_identifier);
 
   std::filesystem::path const p = get_export_path(
       workingDirectory, solutionSubdirectory, parameter_identifier);

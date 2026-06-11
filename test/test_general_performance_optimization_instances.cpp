@@ -710,8 +710,8 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   EXPECT_TRUE(sol_instance.check_consistency());
 
-  sol_instance.export_solution("./tmp", "test-sol-instance-1", true);
-  sol_instance.export_solution("./tmp", "test-sol-instance-2", false);
+  sol_instance.export_solution("./tmp", "test-sol-instance-1", true, {});
+  sol_instance.export_solution("./tmp", "test-sol-instance-2", false, {});
 
   auto sol1_read =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);

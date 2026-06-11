@@ -415,8 +415,8 @@ void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
     export_solution(
-        const std::filesystem::path&      workingDirectory,
-        std::string_view const            solutionSubdirectory,
+        const std::filesystem::path& workingDirectory,
+        std::string_view const solutionSubdirectory, bool save_instance,
         std::optional<std::string> const& parameter_identifier) const {
   SolGeneralProblemInstance::export_solution(
       workingDirectory, solutionSubdirectory, parameter_identifier);
@@ -424,6 +424,10 @@ void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
   std::filesystem::path const p = get_export_path(
       workingDirectory, solutionSubdirectory, parameter_identifier);
   m_solution_routes.export_routes(p, this->get_instance()->get_const_network());
+
+  if (save_instance) {
+    get_instance()->export_instance(workingDirectory, true);
+  }
 }
 
 bool cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::

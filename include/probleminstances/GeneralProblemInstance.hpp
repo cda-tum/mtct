@@ -577,7 +577,15 @@ public:
   void export_solution(const std::filesystem::path&      workingDirectory,
                        std::string_view const            solutionSubdirectory,
                        std::optional<std::string> const& parameter_identifier =
-                           {}) const override;
+                           {}) const override {
+    export_solution(workingDirectory, solutionSubdirectory, false,
+                    parameter_identifier);
+  }
+  virtual void
+  export_solution(const std::filesystem::path&      workingDirectory,
+                  std::string_view const            solutionSubdirectory,
+                  bool                              save_instance,
+                  std::optional<std::string> const& parameter_identifier) const;
 
   [[nodiscard]] bool check_consistency() const override;
 };

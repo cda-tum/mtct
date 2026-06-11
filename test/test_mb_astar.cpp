@@ -527,19 +527,24 @@ TEST(GenPOMovingBlockAStarSolver, Timeout) {
   EXPECT_FALSE(sol_obj.has_solution());
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Timeout);
 }
-#if 0
+
 TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExport) {
-  Network    network;
+  Network network;
+  network.set_network_name("testnetwork");
+
   const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
 
   const auto v0_v1 = network.add_edge(v0, v1, 500, 20, true);
-  Timetable timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 50, 2, 1, true, 10,
-                                       0, v0, 10, 20, v1, network);
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 50, 2, 1, true, 10, 0, v0,
+                                       10, 20, v1, network);
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
+
+  instance.set_instance_name("testinstance");
+  instance.set_instance_subdirectory("instancesubdirectory");
 
   std::filesystem::remove_all("tmp1folder");
   std::filesystem::remove_all("tmp2folder");
@@ -548,41 +553,45 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExport) {
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(
       {.dt = 5}, {},
-      {.export_option = cda_rail::solver::GeneralExportOption::NoExport,
-       .name          = "tmp1file",
-       .path          = "tmp1folder"},
+      {.export_option         = cda_rail::solver::GeneralExportOption::NoExport,
+       .working_directory     = "tmp1folder",
+       .solution_subdirectory = "tmp1subdirectory",
+       .parameter_identifier  = "tmp1id"},
       -1, false);
   EXPECT_FALSE(std::filesystem::exists("tmp1folder"));
 
   const auto sol_obj_2 = solver.solve(
       {.dt = 5}, {},
       {.export_option = cda_rail::solver::GeneralExportOption::ExportSolution,
-       .name          = "tmp2file",
-       .path          = "tmp2folder"},
+       .working_directory     = "tmp2folder",
+       .solution_subdirectory = "tmp2subdirectory",
+       .parameter_identifier  = "tmp2id"},
       -1, false);
 
-  // Check that tmp2folder and tmp2folder/tmp2file exist
+  // Check folder structure
   EXPECT_TRUE(std::filesystem::exists("tmp2folder"));
-  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file"));
-  // Expect that .../instance and .../solution exist
-  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file/instance"));
-  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file/solution"));
-  // Expect that .../instance/routes exists
-  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file/instance/routes"));
-  // Expect that .../instance/routes/routes.json exists and is not empty
+  EXPECT_TRUE(std::filesystem::exists("tmp2folder/solutions"));
+  EXPECT_TRUE(std::filesystem::exists("tmp2folder/solutions/tmp2subdirectory"));
   EXPECT_TRUE(std::filesystem::exists(
-      "tmp2folder/tmp2file/instance/routes/routes.json"));
-  // Within .../solution expect data.json, train_pos.json, train_speed.json
+      "tmp2folder/solutions/tmp2subdirectory/instancesubdirectory"));
   EXPECT_TRUE(
-      std::filesystem::exists("tmp2folder/tmp2file/solution/data.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp2folder/tmp2file/solution/train_pos.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp2folder/tmp2file/solution/train_speed.json"));
-  // Expect folders .../instance/network and .../instance/timetable to not exist
-  EXPECT_FALSE(std::filesystem::exists("tmp2folder/tmp2file/instance/network"));
-  EXPECT_FALSE(
-      std::filesystem::exists("tmp2folder/tmp2file/instance/timetable"));
+      std::filesystem::exists("tmp2folder/solutions/tmp2subdirectory/"
+                              "instancesubdirectory/testinstance-tmp2id"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp2folder/solutions/tmp2subdirectory/instancesubdirectory/"
+      "testinstance-tmp2id/solution_data.json"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp2folder/solutions/tmp2subdirectory/instancesubdirectory/"
+      "testinstance-tmp2id/routes.json"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp2folder/solutions/tmp2subdirectory/instancesubdirectory/"
+      "testinstance-tmp2id/train_pos.json"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp2folder/solutions/tmp2subdirectory/instancesubdirectory/"
+      "testinstance-tmp2id/train_speed.json"));
+
+  EXPECT_FALSE(std::filesystem::exists("tmp2folder/instances"));
+  EXPECT_FALSE(std::filesystem::exists("tmp2folder/networks"));
 
   // Remove tmp2folder and its contents
   std::filesystem::remove_all("tmp2folder");
@@ -591,46 +600,44 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExport) {
       {.dt = 5}, {},
       {.export_option =
            cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance,
-       .name = "tmp3file",
-       .path = "tmp3folder"},
+       .working_directory     = "tmp3folder",
+       .solution_subdirectory = "tmp3subdirectory",
+       .parameter_identifier  = "tmp3id"},
       -1, false);
 
-  // Check that corresponding folders exist
+  // Check folder structure
   EXPECT_TRUE(std::filesystem::exists("tmp3folder"));
-  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file"));
-  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/instance"));
-  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/solution"));
-  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/instance/routes"));
-  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/instance/network"));
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/solutions"));
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/solutions/tmp3subdirectory"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/solutions/tmp3subdirectory/instancesubdirectory"));
   EXPECT_TRUE(
-      std::filesystem::exists("tmp3folder/tmp3file/instance/timetable"));
-  // Expect relevant files to exist and be not empty
+      std::filesystem::exists("tmp3folder/solutions/tmp3subdirectory/"
+                              "instancesubdirectory/testinstance-tmp3id"));
   EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/routes/routes.json"));
+      "tmp3folder/solutions/tmp3subdirectory/instancesubdirectory/"
+      "testinstance-tmp3id/solution_data.json"));
   EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/network/successors.txt"));
+      "tmp3folder/solutions/tmp3subdirectory/instancesubdirectory/"
+      "testinstance-tmp3id/routes.json"));
   EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/network/successors_cpp.json"));
+      "tmp3folder/solutions/tmp3subdirectory/instancesubdirectory/"
+      "testinstance-tmp3id/train_pos.json"));
   EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/network/tracks.graphml"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/timetable/schedules.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/timetable/stations.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/timetable/trains.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/problem_data.json"));
+      "tmp3folder/solutions/tmp3subdirectory/instancesubdirectory/"
+      "testinstance-tmp3id/train_speed.json"));
+
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/instances"));
   EXPECT_TRUE(
-      std::filesystem::exists("tmp3folder/tmp3file/solution/data.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp3folder/tmp3file/solution/train_pos.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp3folder/tmp3file/solution/train_speed.json"));
+      std::filesystem::exists("tmp3folder/instances/instancesubdirectory"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/instances/instancesubdirectory/testinstance"));
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/networks"));
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/networks/testnetwork"));
 
   // Remove tmp3folder and its contents
   std::filesystem::remove_all("tmp3folder");
 }
-#endif
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

@@ -274,8 +274,8 @@ public:
 
   virtual void export_solution(
       const std::filesystem::path& workingDirectory,
-      std::string_view const solutionSubdirectory, bool export_instance,
-      std::optional<std::string> const& parameter_identifier = {}) const;
+      std::string_view const solutionSubdirectory, bool save_instance,
+      std::optional<std::string> const& parameter_identifier) const override;
 
   // Additional Getter
   [[nodiscard]] GeneralPerformanceOptimizationInstance const*
