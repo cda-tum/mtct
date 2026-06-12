@@ -26,7 +26,7 @@ void check_last_train_pos(
     const auto t_n       = instance_before_parse.get_schedule(tr).get_t_n();
     const auto route_len = sol.get_instance()
                                .get_route(tr_object.name)
-                               .length(instance_before_parse.const_n());
+                               .length(instance_before_parse.get_const_network());
 
     const auto tr_times = sol.get_train_times(tr_object.name);
 

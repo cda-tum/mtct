@@ -255,11 +255,11 @@ void cda_rail::solver::mip_based::
   // For this b_front and b_rear are set equal where applicable
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
     const auto& e            = breakable_edges[i];
-    const auto  vss_number_e = instance.const_n().max_vss_on_edge(e);
-    const auto& edge         = instance.const_n().get_edge(e);
+    const auto  vss_number_e = instance.get_const_network().max_vss_on_edge(e);
+    const auto& edge         = instance.get_const_network().get_edge(e);
     const auto& edge_name =
-        "[" + instance.const_n().get_vertex(edge.source).name + "," +
-        instance.const_n().get_vertex(edge.target).name + "]";
+        "[" + instance.get_const_network().get_vertex(edge.source).name + "," +
+        instance.get_const_network().get_vertex(edge.target).name + "]";
     const auto tr_order_on_e = moving_block_solution.get_train_order(e);
     for (size_t tr_i = 1; tr_i < tr_order_on_e.size(); tr_i++) {
       const auto& tr_object =
@@ -289,14 +289,14 @@ void cda_rail::solver::mip_based::
 
   // Additional fix order by constraints on x variables on every edge
   for (size_t e = 0; e < num_edges; ++e) {
-    const auto& edge_obj = instance.const_n().get_edge(e);
+    const auto& edge_obj = instance.get_const_network().get_edge(e);
     const auto& edge_name =
-        "[" + instance.const_n().get_vertex(edge_obj.source).name + "," +
-        instance.const_n().get_vertex(edge_obj.target).name + "]";
+        "[" + instance.get_const_network().get_vertex(edge_obj.source).name + "," +
+        instance.get_const_network().get_vertex(edge_obj.target).name + "]";
     const auto tr_order_on_e =
         moving_block_solution.get_train_order_with_reverse(e);
     const std::optional<size_t> rev_e =
-        instance.const_n().get_reverse_edge_index(e);
+        instance.get_const_network().get_reverse_edge_index(e);
     for (size_t tr_i = 1; tr_i < tr_order_on_e.size(); tr_i++) {
       // Fix order on edge e
       const auto& [tr_following, tr_following_direction] =
