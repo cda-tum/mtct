@@ -66,9 +66,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC tinyxml2::tinyxml2)
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/json extern/json)
 target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
 
-# add gsl
-add_subdirectory(${PROJECT_SOURCE_DIR}/extern/gsl extern/gsl)
-target_link_libraries(${PROJECT_NAME} PUBLIC Microsoft.GSL::GSL)
+# add cli11
+add_subdirectory(${PROJECT_SOURCE_DIR}/extern/cli11 extern/cli11)
+target_link_libraries(${PROJECT_NAME} PUBLIC CLI11::CLI11)
 
 # add plog
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/plog extern/plog)
