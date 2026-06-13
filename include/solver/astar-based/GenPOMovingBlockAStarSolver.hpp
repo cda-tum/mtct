@@ -58,7 +58,7 @@ struct SolverStrategyMBAStar {
       simulator::RemainingTimeHeuristicType::Simple;
   NextStateStrategy next_state_strategy    = NextStateStrategy::SingleEdge;
   bool              consider_earliest_exit = true;
-  bool              time_aware_state_transitions = true;
+  bool              time_aware_state_transitions = false;
   double            a_star_weight                = 1.0;
 };
 
