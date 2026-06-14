@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     return std::string{"UNKNOWN"};
   };
 
-  app.add_option("-h,--dt,--timestep", dt,
+  app.add_option("-c,--dt,--timestep", dt,
                  "Time step (dt) used in the simulation")
       ->check(CLI::PositiveNumber)
       ->capture_default_str()
