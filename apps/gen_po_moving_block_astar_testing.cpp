@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
 
   auto* export_sol_flag =
       app.add_flag(
-             "--export-solution",
+             "-o,--export-solution",
              [&export_option](int) {
                export_option =
                    cda_rail::solver::GeneralExportOption::ExportSolution;
@@ -177,7 +177,7 @@ int main(int argc, char** argv) {
           ->group("Export Options");
   auto* export_sol_inst_flag =
       app.add_flag(
-             "--export-solution-and-instance",
+             "-i,--export-solution-and-instance",
              [&export_option](int) {
                export_option = cda_rail::solver::GeneralExportOption::
                    ExportSolutionWithInstance;
