@@ -7,10 +7,12 @@
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
 #include <cstdlib>
+#include <iomanip>
 #include <map>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Log.h>
+#include <sstream>
 #include <string>
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
@@ -185,12 +187,17 @@ int main(int argc, char** argv) {
              "Export the solution and the instance.")
           ->group("Export Options");
 
-  app.add_option("-e,--solution-export-subdirectory", solution_subdirectory,
-                 "Subdirectory to export the solution to. Will be created in "
-                 "working_directory/solutions/solution_subdirectory/"
-                 "instance_name-parameters.")
-      ->required()
-      ->group("Export Options");
+  auto* solution_subdir_opt =
+      app.add_option(
+             "-e,--solution-export-subdirectory", solution_subdirectory,
+             "Subdirectory to export the solution to. Will be created in "
+             "working_directory/solutions/solution_subdirectory/"
+             "instance_name-parameters.")
+          ->group("Export Options");
+
+  export_sol_flag->needs(solution_subdir_opt);
+  export_sol_inst_flag->needs(solution_subdir_opt);
+
   auto* parameter_identifier_option =
       app.add_option(
              "-p,--parameter-identifier", parameter_identifier,
@@ -219,30 +226,31 @@ int main(int argc, char** argv) {
   // ----------------------
 
   if (generate_identifier) {
-    // concatenate all settings (without names, in order)
+    auto format_double = [](double d) {
+      std::stringstream ss;
+      ss << std::fixed << std::setprecision(6) << d;
+      std::string s = ss.str();
+      s.erase(s.find_last_not_of('0') + 1, std::string::npos);
+      if (s.back() == '.') {
+        s.pop_back();
+      }
+      return s;
+    };
+    auto bool_to_str = [](bool b) { return b ? "t" : "f"; };
+
     parameter_identifier = cda_rail::concatenate_string_views(
-        {std::to_string(dt),
-         "_",
-         (late_entry_possible ? "t" : "f"),
-         "_",
-         (limit_speed_by_leaving_edges ? "t" : "f"),
-         "_",
-         (consider_earliest_exit ? "t" : "f"),
-         "_",
-         (time_aware_state_transitions ? "t" : "f"),
-         "_",
-         std::to_string(a_star_weight),
-         "_",
-         get_key_by_value(next_state_strategy_map, next_state_strategy),
-         "_",
+        {format_double(dt), "_", bool_to_str(late_entry_possible), "_",
+         bool_to_str(limit_speed_by_leaving_edges), "_",
+         bool_to_str(consider_earliest_exit), "_",
+         bool_to_str(time_aware_state_transitions), "_",
+         format_double(a_star_weight), "_",
+         get_key_by_value(next_state_strategy_map, next_state_strategy), "_",
          get_key_by_value(braking_time_heuristic_type_map,
                           braking_time_heuristic_type),
          "_",
          get_key_by_value(remaining_time_heuristic_type_map,
                           remaining_time_heuristic_type),
-         "_",
-         std::to_string(time_limit),
-         "_"});
+         "_", std::to_string(time_limit)});
   }
 
   PLOGD << "The following parameters were passed:";
