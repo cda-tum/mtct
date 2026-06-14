@@ -1,5 +1,4 @@
 {
-  "lambda": 1.0,
   "station_delay_weight": 1,
   "train_weights": {
     "tr_1": 1.0,
@@ -28,33 +27,5 @@
     "tr_7": 1.0,
     "tr_8": 1.0,
     "tr_9": 1.0
-  },
-  "train_optional": {
-    "tr_1": false,
-    "tr_10": false,
-    "tr_11": false,
-    "tr_12": false,
-    "tr_13": false,
-    "tr_14": false,
-    "tr_15": false,
-    "tr_16": false,
-    "tr_17": false,
-    "tr_18": false,
-    "tr_19": false,
-    "tr_2": false,
-    "tr_20": false,
-    "tr_21": false,
-    "tr_22": false,
-    "tr_23": false,
-    "tr_24": false,
-    "tr_25": false,
-    "tr_26": false,
-    "tr_3": false,
-    "tr_4": false,
-    "tr_5": false,
-    "tr_6": false,
-    "tr_7": false,
-    "tr_8": false,
-    "tr_9": false
   }
 }
