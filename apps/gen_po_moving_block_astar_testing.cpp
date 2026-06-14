@@ -95,7 +95,8 @@ int main(int argc, char** argv) {
     return std::string{"UNKNOWN"};
   };
 
-  app.add_option("--dt,--timestep", dt, "Time step (dt) used in the simulation")
+  app.add_option("-h,--dt,--timestep", dt,
+                 "Time step (dt) used in the simulation")
       ->check(CLI::PositiveNumber)
       ->capture_default_str()
       ->group("Model Parameters");
@@ -103,7 +104,7 @@ int main(int argc, char** argv) {
                "Allow late entry (delays) in the solution (default without "
                "flag is false)")
       ->group("Model Parameters");
-  app.add_flag("!--speed-limit-only-on-train-front",
+  app.add_flag("-f,!--speed-limit-only-on-train-front",
                limit_speed_by_leaving_edges,
                "If this flag is set, trains only respect the limit of their "
                "front position. Otherwise (by default) any edge's speed limit "
@@ -113,7 +114,8 @@ int main(int argc, char** argv) {
                "Allow to leave stations and the network early. By defaults "
                "trains cannot leave before the scheduled time.")
       ->group("Model Parameters");
-  app.add_flag("!--time-aware-state-transitions", time_aware_state_transitions,
+  app.add_flag("-a,!--time-aware-state-transitions",
+               time_aware_state_transitions,
                "If this flag is set, use time aware state transitions to avoid "
                "unnecessary state exploration.")
       ->group("Solver Parameters");
@@ -123,14 +125,14 @@ int main(int argc, char** argv) {
       ->check(CLI::Range(1.0, std::numeric_limits<double>::max()))
       ->capture_default_str()
       ->group("Solver Parameters");
-  app.add_option("--next-state-strategy", next_state_strategy,
+  app.add_option("-x,--next-state-strategy", next_state_strategy,
                  "Next state strategy to use in the A* search. Currently "
                  "supports 'SingleEdge' and 'NextTTD'.")
       ->transform(
           CLI::CheckedTransformer(next_state_strategy_map, CLI::ignore_case))
       ->capture_default_str()
       ->group("Solver Parameters");
-  app.add_option("--braking-time-heuristic-strategy",
+  app.add_option("-b,--braking-time-heuristic-strategy",
                  braking_time_heuristic_type,
                  "Braking time heuristic strategy to use in the simulation. "
                  "Currently only supports 'Simple'")
@@ -138,7 +140,7 @@ int main(int argc, char** argv) {
                                           CLI::ignore_case))
       ->capture_default_str()
       ->group("Solver Parameters");
-  app.add_option("--remaining-time-heuristic-strategy",
+  app.add_option("-r,--remaining-time-heuristic-strategy",
                  remaining_time_heuristic_type,
                  "Remaining time heuristic strategy to use in the simulation. "
                  "Currently supports 'Zero' and 'Simple'")
