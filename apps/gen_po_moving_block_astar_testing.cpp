@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
   bool   time_aware_state_transitions{false};
   double a_star_weight{1.0};
 
-  double time_limit{-1};
-  bool   debug_output{false};
+  int  time_limit{-1};
+  bool debug_output{false};
 
   cda_rail::solver::astar_based::NextStateStrategy next_state_strategy{
       cda_rail::solver::astar_based::NextStateStrategy::SingleEdge};
@@ -76,13 +76,24 @@ int main(int argc, char** argv) {
            cda_rail::solver::astar_based::NextStateStrategy::SingleEdge},
           {"NextTTD",
            cda_rail::solver::astar_based::NextStateStrategy::NextTTD}};
+
   std::map<std::string, cda_rail::simulator::BrakingTimeHeuristicType> const
       braking_time_heuristic_type_map{
           {"Simple", cda_rail::simulator::BrakingTimeHeuristicType::Simple}};
+
   std::map<std::string, cda_rail::simulator::RemainingTimeHeuristicType> const
       remaining_time_heuristic_type_map{
           {"Zero", cda_rail::simulator::RemainingTimeHeuristicType::Zero},
           {"Simple", cda_rail::simulator::RemainingTimeHeuristicType::Simple}};
+
+  auto get_key_by_value = [](const auto& map, const auto& value) {
+    for (const auto& [k, v] : map) {
+      if (v == value) {
+        return k;
+      }
+    }
+    return std::string{"UNKNOWN"};
+  };
 
   app.add_option("--dt,--timestep", dt, "Time step (dt) used in the simulation")
       ->check(CLI::PositiveNumber)
@@ -201,79 +212,101 @@ int main(int argc, char** argv) {
 
   CLI11_PARSE(app, argc, argv);
 
-#if 0
-  if (argc != 11) {
-    PLOGE << "Expected 10 arguments, got " << argc - 1;
-    std::exit(-1);
+  // ----------------------
+  // PRINT SETTINGS
+  // ----------------------
+
+  if (generate_identifier) {
   }
 
-  auto              args          = gsl::span<char*>(argv, argc);
-  const std::string model_name    = args[1];
-  const std::string instance_path = args[2];
-  const bool        cast_instance = std::stoi(args[3]) != 0;
-  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver =
-      cast_instance
-          ? cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver(
-                cda_rail::instances::GeneralPerformanceOptimizationInstance::
-                    cast_from_vss_generation(
-                        cda_rail::instances::VSSGenerationTimetable(
-                            instance_path)))
-          : cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver(
-                instance_path);
-
-  const int  dt                           = std::stoi(args[4]);
-  const bool allow_delays                 = std::stoi(args[5]) != 0;
-  const bool limit_speed_by_leaving_edges = std::stoi(args[6]) != 0;
-  const int  next_state_strategy_int      = std::stoi(args[7]);
-  const auto next_state_strategy =
-      static_cast<cda_rail::solver::astar_based::NextStateStrategy>(
-          next_state_strategy_int);
-  const int  remaining_time_heuristic_int = std::stoi(args[8]);
-  const auto remaining_time_heuristic =
-      static_cast<cda_rail::simulator::RemainingTimeHeuristicType>(
-          remaining_time_heuristic_int);
-  const bool consider_earliest_exit = std::stoi(args[9]) != 0;
-
-  const int timeout = std::stoi(args[10]);
-
-  PLOGI << "The following parameters were passed:";
-  PLOGI << "Model name: " << model_name;
-  PLOGI << "Instance path: " << instance_path;
-  PLOGI << "Time step (dt): " << dt;
-  PLOGI << "Allow delays: " << (allow_delays ? "yes" : "no");
-  PLOGI << "Limit speed by leaving edges: "
+  PLOGD << "The following parameters were passed:";
+  PLOGD << "Instance Settings";
+  PLOGD << "  Instance name: " << instance_name;
+  PLOGD << "  Instance subdirectory: " << instance_subdirectory;
+  PLOGD << "  Working directory: " << working_directory;
+  PLOGD << "Solver Settings";
+  PLOGD << "  Time step (dt): " << dt;
+  PLOGD << "  Allow late entry: " << (late_entry_possible ? "yes" : "no");
+  PLOGD << "  Limit speed by leaving edges: "
         << (limit_speed_by_leaving_edges ? "yes" : "no");
-  switch (next_state_strategy) {
-  case cda_rail::solver::astar_based::NextStateStrategy::SingleEdge:
-    PLOGI << "Next state strategy: SingleEdge";
-    break;
-  case cda_rail::solver::astar_based::NextStateStrategy::NextTTD:
-    PLOGI << "Next state strategy: NextTTD";
-    break;
-  }
-  switch (remaining_time_heuristic) {
-  case cda_rail::simulator::RemainingTimeHeuristicType::Zero:
-    PLOGI << "Remaining time heuristic: Zero";
-    break;
-  case cda_rail::simulator::RemainingTimeHeuristicType::Simple:
-    PLOGI << "Remaining time heuristic: Simple";
-    break;
-  }
-  PLOGI << "Consider earliest exit: "
+  PLOGD << "  Consider earliest exit: "
         << (consider_earliest_exit ? "yes" : "no");
-  PLOGI << "Timeout: " << timeout;
+  PLOGD << "  Time aware state transitions: "
+        << (time_aware_state_transitions ? "yes" : "no");
+  PLOGD << "  Heuristic weight (w): " << a_star_weight;
+  PLOGD << "  Next state strategy: "
+        << get_key_by_value(next_state_strategy_map, next_state_strategy);
+  PLOGD << "  Braking time heuristic strategy: "
+        << get_key_by_value(braking_time_heuristic_type_map,
+                            braking_time_heuristic_type);
+  PLOGD << "  Remaining time heuristic strategy: "
+        << get_key_by_value(remaining_time_heuristic_type_map,
+                            remaining_time_heuristic_type);
+  PLOGD << "Additional Solving Parameters";
+  PLOGD << "  Time limit: " << time_limit << " seconds";
+  PLOGD << "  Debug output: " << (debug_output ? "yes" : "no");
+  PLOGD << "Export Settings";
+  switch (export_option) {
+  case cda_rail::solver::GeneralExportOption::NoExport:
+    PLOGD << "  Export option: No export";
+    break;
+  case cda_rail::solver::GeneralExportOption::ExportSolution:
+    PLOGD << "  Export option: Export solution";
+    break;
+  case cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance:
+    PLOGD << "  Export option: Export solution with instance";
+    break;
+  }
+  PLOGD << "  Solution export subdirectory: " << solution_subdirectory;
+  PLOGD << "  Parameter identifier: " << parameter_identifier.value_or("-")
+        << (generate_identifier ? " (generated)" : "");
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(
+      instance_name, instance_subdirectory, working_directory);
+
+  // --------------
+  // SOLVE
+  // --------------
+
+  PLOGI << "Solving...";
 
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
-  solver.solve({.dt                           = dt,
-                .late_entry_possible          = allow_delays,
-                .late_exit_possible           = allow_delays,
-                .late_stop_possible           = allow_delays,
-                .limit_speed_by_leaving_edges = limit_speed_by_leaving_edges},
-               {.remaining_time_heuristic_type = remaining_time_heuristic,
-                .next_state_strategy           = next_state_strategy,
-                .consider_earliest_exit        = consider_earliest_exit},
-               {.name = model_name}, timeout, true, true);
-#endif
+  auto const solution = solver.solve(
+      {.dt                           = dt,
+       .late_entry_possible          = late_entry_possible,
+       .limit_speed_by_leaving_edges = limit_speed_by_leaving_edges},
+      {.braking_time_heuristic_type   = braking_time_heuristic_type,
+       .remaining_time_heuristic_type = remaining_time_heuristic_type,
+       .next_state_strategy           = next_state_strategy,
+       .consider_earliest_exit        = consider_earliest_exit,
+       .time_aware_state_transitions  = time_aware_state_transitions,
+       .a_star_weight                 = a_star_weight},
+      {.export_option         = export_option,
+       .working_directory     = working_directory,
+       .solution_subdirectory = solution_subdirectory,
+       .parameter_identifier  = parameter_identifier},
+      time_limit, debug_output, true);
+
+  std::string sol_status{"ERROR"};
+  switch (solution.get_status()) {
+  case cda_rail::SolutionStatus::Optimal:
+    sol_status = "Optimal";
+    break;
+  case cda_rail::SolutionStatus::Feasible:
+    sol_status = "Feasible";
+    break;
+  case cda_rail::SolutionStatus::Infeasible:
+    sol_status = "Infeasible";
+    break;
+  case cda_rail::SolutionStatus::Timeout:
+    sol_status = "Timeout";
+    break;
+  case cda_rail::SolutionStatus::Unknown:
+    sol_status = "Unknown";
+    break;
+  }
+  PLOGI << "Solution status: " << sol_status;
+  PLOGI << "Solution objective: " << solution.get_obj();
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
