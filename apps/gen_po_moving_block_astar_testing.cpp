@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
       ->check(CLI::PositiveNumber)
       ->capture_default_str()
       ->group("Model Parameters");
-  app.add_flag("--allow-late-entry", late_entry_possible,
+  app.add_flag("-l,--allow-late-entry", late_entry_possible,
                "Allow late entry (delays) in the solution (default without "
                "flag is false)")
       ->group("Model Parameters");
@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
                "front position. Otherwise (by default) any edge's speed limit "
                "any part of the train is on applies.")
       ->group("Model Parameters");
-  app.add_flag("!--allow-early-exit", consider_earliest_exit,
+  app.add_flag("-y,!--allow-early-exit", consider_earliest_exit,
                "Allow to leave stations and the network early. By defaults "
                "trains cannot leave before the scheduled time.")
       ->group("Model Parameters");
@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
       ->group("Export Options");
   auto* parameter_identifier_option =
       app.add_option(
-             "--parameter-identifier", parameter_identifier,
+             "-p,--parameter-identifier", parameter_identifier,
              "Optional identifier to distinguish different parameterizations "
              "of the same instance. Will be appended to the instance name in "
              "the export path as instance_name-parameter_identifier. If empty, "
@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
           ->capture_default_str()
           ->group("Export Options");
   auto* generate_identifier_flag =
-      app.add_flag("--generate-parameter-identifier", generate_identifier,
+      app.add_flag("-g,--generate-parameter-identifier", generate_identifier,
                    "Whether to automatically generate a parameter identifier "
                    "based on the parameter settings. If set, the parameter "
                    "identifier will be generated as a concatenation of the "
