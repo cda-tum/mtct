@@ -1,0 +1,21 @@
+{
+  "station_delay_weight": 1,
+  "train_weights": {
+    "S1Freising": 1,
+    "S1Leuchtenbergring": 1,
+    "S2Dachau": 1,
+    "S2Erding": 1,
+    "S2Ost": 1,
+    "S2Petershausen": 1,
+    "S3Deisenhofen": 1,
+    "S3Mammendorf": 1,
+    "S4Geltendorf": 1,
+    "S4Grafing": 1,
+    "S6Ebersberg": 1,
+    "S6Tutzing": 1,
+    "S7Aying": 1,
+    "S7Wolfratshausen": 1,
+    "S8Airport": 1,
+    "S8Germering": 1
+  }
+}
