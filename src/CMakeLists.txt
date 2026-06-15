@@ -7,7 +7,7 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/GeneralHelper.hpp
   GeneralHelper.cpp
   ${PROJECT_SOURCE_DIR}/include/Definitions.hpp
-  # ${PROJECT_SOURCE_DIR}/include/VSSModel.hpp
+  ${PROJECT_SOURCE_DIR}/include/VSSModel.hpp
   ${PROJECT_SOURCE_DIR}/include/CustomExceptions.hpp
   ${PROJECT_SOURCE_DIR}/include/datastructure/RailwayNetwork.hpp
   datastructure/RailwayNetwork_helper.cpp
