@@ -78,17 +78,14 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
                     bool const                   saveNetwork) const {
   GeneralProblemInstanceWithScheduleAndRoutes::export_instance(
       working_directory, saveNetwork);
-
+  // NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
   json j;
   for (size_t i = 0; i < m_train_weights.size(); ++i) {
-    j["train_weights"]
-     [this->get_const_train_list()
-          .get_train(i)
-          .get_name()] = // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+    j["train_weights"][this->get_const_train_list().get_train(i).get_name()] =
         m_train_weights.at(i);
   }
-  j["station_delay_weight"] =
-      m_station_delay_weight; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+  j["station_delay_weight"] = m_station_delay_weight;
+  // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
 
   std::ofstream file(working_directory / "instances" /
                      get_instance_subdirectory() / get_instance_name() /
@@ -244,11 +241,11 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   // NOLINTEND(misc-const-correctness)
   auto const& train_list = this->get_instance()->get_const_train_list();
   for (size_t tr_id = 0; tr_id < train_list.size(); ++tr_id) {
-    const auto& train                = train_list.get_train(tr_id);
-    train_pos_json[train.get_name()] = m_train_pos.at(
-        tr_id); // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
-    train_speed_json[train.get_name()] = m_train_speed.at(
-        tr_id); // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+    const auto& train = train_list.get_train(tr_id);
+    // NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
+    train_pos_json[train.get_name()]   = m_train_pos.at(tr_id);
+    train_speed_json[train.get_name()] = m_train_speed.at(tr_id);
+    // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
   }
 
   std::ofstream train_pos_file(p / "train_pos.json");

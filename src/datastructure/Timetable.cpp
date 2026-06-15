@@ -193,8 +193,8 @@ void cda_rail::Timetable::add_json_data(json& j, const size_t i,
                      {"duration", stop.get_service_duration()},
                      {"station", stop.get_station().name}});
   }
+  // NOLINTNEXTLINE(*-pro-bounds-avoid-unchecked-container-access)
   j[m_train_list.get_train(i).get_name()] = {
-      // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
       {"t_0", schedule.get_entry_time()},
       {"v_0", schedule.get_initial_velocity()},
       {"entry", network.get_vertex(schedule.get_entry_vertex()).name},

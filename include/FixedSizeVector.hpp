@@ -28,9 +28,9 @@ using std::size_t;
 // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays)
 template <typename T> class FixedSizeVector {
 private:
-  std::unique_ptr<T[]> m_data{
-      // NOLINT(*-avoid-c-arrays)
-      std::make_unique<T[]>(0)}; // NOLINT(*-avoid-c-arrays)
+  // NOLINTBEGIN(*-avoid-c-arrays)
+  std::unique_ptr<T[]> m_data{std::make_unique<T[]>(0)};
+  // NOLINTEND(*-avoid-c-arrays)
   size_t m_len{0};
 
 public:
@@ -49,9 +49,8 @@ public:
    * @param len Number of elements to allocate.
    */
   explicit FixedSizeVector(size_t const len)
-      : m_data(std::make_unique<T[]>( // NOLINT(*-avoid-c-arrays)
-            len)), // NOLINT(cppcoreguidelines-avoid-c-arrays)
-        m_len(len) {}
+      // NOLINTNEXTLINE(*-avoid-c-arrays)
+      : m_data(std::make_unique<T[]>(len)), m_len(len) {}
 
   /**
    * @brief Constructs a fixed size vector with given values.
@@ -59,9 +58,8 @@ public:
    * @param init Values to store in a fixed vector
    */
   FixedSizeVector(std::initializer_list<T> init)
-      : m_data(std::make_unique<T[]>( // NOLINT(*-avoid-c-arrays)
-            init.size())), // NOLINT(cppcoreguidelines-avoid-c-arrays)
-        m_len(init.size()) {
+      // NOLINTNEXTLINE(*-avoid-c-arrays)
+      : m_data(std::make_unique<T[]>(init.size())), m_len(init.size()) {
     std::copy(init.begin(), init.end(), begin());
   }
 
@@ -71,9 +69,8 @@ public:
    * @param other Source vector to copy from.
    */
   FixedSizeVector(const FixedSizeVector& other)
-      : m_data(std::make_unique<T[]>( // NOLINT(*-avoid-c-arrays)
-            other.m_len)), // NOLINT(cppcoreguidelines-avoid-c-arrays)
-        m_len(other.m_len) {
+      // NOLINTNEXTLINE(*-avoid-c-arrays)
+      : m_data(std::make_unique<T[]>(other.m_len)), m_len(other.m_len) {
     std::copy(other.begin(), other.end(), begin());
   }
 
@@ -136,7 +133,8 @@ public:
    * @param len New number of elements.
    */
   void delete_and_resize(size_t const len) {
-    m_data = std::make_unique<T[]>(len); // NOLINT(*-avoid-c-arrays)
+    // NOLINTNEXTLINE(*-avoid-c-arrays)
+    m_data = std::make_unique<T[]>(len);
     m_len  = len;
   }
 

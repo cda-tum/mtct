@@ -532,9 +532,8 @@ cda_rail::Network::sort_edge_pairs(
     }
 
     const auto  pair_idx = *vertex_neighbors[j].begin();
-    const auto& ep       = edge_pairs
-        [pair_idx]; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
-    const auto& e = get_edge(ep.first.value()); // NOLINT
+    const auto& ep       = edge_pairs.at(pair_idx);
+    const auto& e        = get_edge(ep.first.value());
 
     vertex_neighbors[e.source].erase(pair_idx);
     vertex_neighbors[e.target].erase(pair_idx);
@@ -678,13 +677,11 @@ cda_rail::Network::all_routes_of_given_length(
   }
 
   // Collect starting edges (filtered by edges_used_by_train if specified)
+  // NOLINTBEGIN(*-avoid-nested-conditional-operator)
   cda_rail::index_set start_edges_raw =
-      v_0.has_value()
-          ? (reverse_direction
-                 ? in_edges(*v_0)
-                 : out_edges(
-                       *v_0)) // NOLINT(*-avoid-nested-conditional-operator)
-          : cda_rail::index_set{*e_0};
+      v_0.has_value() ? (reverse_direction ? in_edges(*v_0) : out_edges(*v_0))
+                      : cda_rail::index_set{*e_0};
+  // NOLINTEND(*-avoid-nested-conditional-operator)
 
   cda_rail::index_set start_edges;
   if (edges_used_by_train.empty()) {

@@ -524,10 +524,8 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
           return std::pair{network.get_vertex(edge.source).name,
                            network.get_vertex(edge.target).name};
         });
-    j[name] = std::vector(
-        edge_pairs.begin(),
-        edge_pairs
-            .end()); // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+    // NOLINTNEXTLINE(*-pro-bounds-avoid-unchecked-container-access)
+    j[name] = std::vector(edge_pairs.begin(), edge_pairs.end());
   }
 
   std::ofstream file(p / "routes.json");
