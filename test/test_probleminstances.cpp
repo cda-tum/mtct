@@ -1780,6 +1780,7 @@ TEST(Example, Stammstrecke) {
   EXPECT_EQ(ost2_donnersberger, donnersberger_expected);
   EXPECT_EQ(ost3_donnersberger, donnersberger_expected);
 }
+
 #if 0
 TEST(Functionality, HelperFunctions) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
@@ -1793,17 +1794,17 @@ TEST(Functionality, HelperFunctions) {
 
   // Add edges
   const auto v0_v1 =
-      instance.get_editable_network().add_edge("v0", "v1", 100, 100, false);
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 100, false);
   const auto v1_v2 =
-      instance.get_editable_network().add_edge("v1", "v2", 100, 100, false);
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 100, false);
   const auto v2_v3 =
-      instance.get_editable_network().add_edge("v2", "v3", 100, 100, false);
+      instance.get_editable_network().add_edge({"v2"}, {"v3"}, 100, 100, false);
   const auto v3_v4 =
-      instance.get_editable_network().add_edge("v3", "v4", 100, 100, false);
+      instance.get_editable_network().add_edge({"v3"}, {"v4"}, 100, 100, false);
   const auto v1_v4 =
-      instance.get_editable_network().add_edge("v1", "v4", 100, 100, false);
+      instance.get_editable_network().add_edge({"v1"}, {"v4"}, 100, 100, false);
   const auto v2_v4 =
-      instance.get_editable_network().add_edge("v2", "v4", 100, 100, false);
+      instance.get_editable_network().add_edge({"v2"}, {"v4"}, 100, 100, false);
 
   // Add successors
   instance.get_editable_network().add_successor(v0_v1, v1_v2);
@@ -1826,21 +1827,21 @@ TEST(Functionality, HelperFunctions) {
 
   EXPECT_FALSE(instance.has_route_for_every_train());
 
-  instance.push_back_edge_to_route("tr1", "v0", "v1");
-  instance.push_back_edge_to_route("tr1", "v1", "v2");
-  instance.push_back_edge_to_route("tr1", "v2", "v3");
-  instance.push_back_edge_to_route("tr1", "v3", "v4");
+  instance.push_back_edge_to_route("tr1", {"v0", "v1"});
+  instance.push_back_edge_to_route("tr1", {"v1", "v2"});
+  instance.push_back_edge_to_route("tr1", {"v2", "v3"});
+  instance.push_back_edge_to_route("tr1", {"v3", "v4"});
 
   EXPECT_FALSE(instance.has_route_for_every_train());
 
-  instance.push_back_edge_to_route("tr2", "v0", "v1");
-  instance.push_back_edge_to_route("tr2", "v1", "v4");
+  instance.push_back_edge_to_route("tr2", {"v0", "v1"});
+  instance.push_back_edge_to_route("tr2", {"v1", "v4"});
 
   EXPECT_FALSE(instance.has_route_for_every_train());
 
-  instance.push_back_edge_to_route("tr3", "v0", "v1");
-  instance.push_back_edge_to_route("tr3", "v1", "v2");
-  instance.push_back_edge_to_route("tr3", "v2", "v4");
+  instance.push_back_edge_to_route("tr3", {"v0", "v1"});
+  instance.push_back_edge_to_route("tr3", {"v1", "v2"});
+  instance.push_back_edge_to_route("tr3", {"v2", "v4"});
 
   EXPECT_TRUE(instance.has_route_for_every_train());
 
