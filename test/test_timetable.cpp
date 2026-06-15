@@ -63,7 +63,7 @@ TEST(TimetableFunctionality, ReadTimetable) {
   EXPECT_EQ(network.get_vertex(tr1_schedule.get_entry_vertex()).name, "l0");
   EXPECT_EQ(network.get_vertex(tr1_schedule.get_exit_vertex()).name, "r0");
   EXPECT_EQ(tr1_schedule.get_stops().size(), 1);
-  const auto& stop = tr1_schedule.get_stops()[0];
+  const auto& stop = tr1_schedule.get_stops().at(0);
   EXPECT_EQ(stop.get_service_time(), 240);
   EXPECT_EQ(stop.get_earliest_departure(), 300);
   EXPECT_EQ(stations.get_station(stop.get_station().name).name, "Central");
@@ -77,7 +77,7 @@ TEST(TimetableFunctionality, ReadTimetable) {
   EXPECT_EQ(network.get_vertex(tr2_schedule.get_entry_vertex()).name, "l0");
   EXPECT_EQ(network.get_vertex(tr2_schedule.get_exit_vertex()).name, "r0");
   EXPECT_EQ(tr2_schedule.get_stops().size(), 1);
-  const auto& stop2 = tr2_schedule.get_stops()[0];
+  const auto& stop2 = tr2_schedule.get_stops().at(0);
   EXPECT_EQ(stop2.get_service_time(), 120);
   EXPECT_EQ(stop2.get_earliest_departure(), 300);
   EXPECT_EQ(stations.get_station(stop2.get_station().name).name, "Central");
@@ -91,7 +91,7 @@ TEST(TimetableFunctionality, ReadTimetable) {
   EXPECT_EQ(network.get_vertex(tr3_schedule.get_entry_vertex()).name, "r0");
   EXPECT_EQ(network.get_vertex(tr3_schedule.get_exit_vertex()).name, "l0");
   EXPECT_EQ(tr3_schedule.get_stops().size(), 1);
-  const auto& stop3 = tr3_schedule.get_stops()[0];
+  const auto& stop3 = tr3_schedule.get_stops().at(0);
   EXPECT_EQ(stop3.get_service_time(), 180);
   EXPECT_EQ(stop3.get_earliest_departure(), 300);
   EXPECT_EQ(stations.get_station(stop3.get_station().name).name, "Central");
@@ -182,11 +182,11 @@ TEST(TimetableFunctionality, WriteTimetable) {
   EXPECT_EQ(network.get_vertex(tr1_schedule.get_entry_vertex()).name, "l0");
   EXPECT_EQ(network.get_vertex(tr1_schedule.get_exit_vertex()).name, "r0");
   EXPECT_EQ(tr1_schedule.get_stops().size(), 2);
-  const auto& stop1 = tr1_schedule.get_stops()[0];
+  const auto& stop1 = tr1_schedule.get_stops().at(0);
   EXPECT_EQ(stop1.get_service_time(), 100);
   EXPECT_EQ(stop1.get_earliest_departure(), 160);
   EXPECT_EQ(stations.get_station(stop1.get_station().name).name, "Station1");
-  const auto& stop2 = tr1_schedule.get_stops()[1];
+  const auto& stop2 = tr1_schedule.get_stops().at(1);
   EXPECT_EQ(stop2.get_service_time(), 200);
   EXPECT_EQ(stop2.get_earliest_departure(), 260);
   EXPECT_EQ(stations.get_station(stop2.get_station().name).name, "Station2");
@@ -200,7 +200,7 @@ TEST(TimetableFunctionality, WriteTimetable) {
   EXPECT_EQ(network.get_vertex(tr2_schedule.get_entry_vertex()).name, "r0");
   EXPECT_EQ(network.get_vertex(tr2_schedule.get_exit_vertex()).name, "l0");
   EXPECT_EQ(tr2_schedule.get_stops().size(), 1);
-  const auto& stop3 = tr2_schedule.get_stops()[0];
+  const auto& stop3 = tr2_schedule.get_stops().at(0);
   EXPECT_EQ(stop3.get_service_time(), 160);
   EXPECT_EQ(stop3.get_earliest_departure(), 220);
   EXPECT_EQ(stations.get_station(stop3.get_station().name).name, "Station1");
@@ -263,12 +263,12 @@ TEST(TimetableFunctionality, WriteTimetable) {
             "l0");
   EXPECT_EQ(network.get_vertex(tr1_schedule_read.get_exit_vertex()).name, "r0");
   EXPECT_EQ(tr1_schedule_read.get_stops().size(), 2);
-  const auto& stop1_read = tr1_schedule_read.get_stops()[0];
+  const auto& stop1_read = tr1_schedule_read.get_stops().at(0);
   EXPECT_EQ(stop1_read.get_service_time(), 100);
   EXPECT_EQ(stop1_read.get_earliest_departure(), 160);
   EXPECT_EQ(stations_read.get_station(stop1_read.get_station().name).name,
             "Station1");
-  const auto& stop2_read = tr1_schedule_read.get_stops()[1];
+  const auto& stop2_read = tr1_schedule_read.get_stops().at(1);
   EXPECT_EQ(stop2_read.get_service_time(), 200);
   EXPECT_EQ(stop2_read.get_earliest_departure(), 260);
   EXPECT_EQ(stations_read.get_station(stop2_read.get_station().name).name,
@@ -284,7 +284,7 @@ TEST(TimetableFunctionality, WriteTimetable) {
             "r0");
   EXPECT_EQ(network.get_vertex(tr2_schedule_read.get_exit_vertex()).name, "l0");
   EXPECT_EQ(tr2_schedule_read.get_stops().size(), 1);
-  const auto& stop3_read = tr2_schedule_read.get_stops()[0];
+  const auto& stop3_read = tr2_schedule_read.get_stops().at(0);
   EXPECT_EQ(stop3_read.get_service_time(), 160);
   EXPECT_EQ(stop3_read.get_earliest_departure(), 220);
   EXPECT_EQ(stations_read.get_station(stop3_read.get_station().name).name,

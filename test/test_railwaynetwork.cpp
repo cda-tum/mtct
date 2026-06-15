@@ -1499,11 +1499,11 @@ TEST(RailwayNetwork, NetworkSections) {
   // There should be 1 section
   EXPECT_EQ(no_border_vss_sections.size(), 1);
   // The section should contain 4 edges, namely v5 -> v6 -> v7 and the reverse
-  EXPECT_EQ(no_border_vss_sections[0].size(), 4);
-  EXPECT_TRUE(no_border_vss_sections[0].contains(v5_v6));
-  EXPECT_TRUE(no_border_vss_sections[0].contains(v6_v7));
-  EXPECT_TRUE(no_border_vss_sections[0].contains(v7_v6));
-  EXPECT_TRUE(no_border_vss_sections[0].contains(v6_v5));
+  EXPECT_EQ(no_border_vss_sections.at(0).size(), 4);
+  EXPECT_TRUE(no_border_vss_sections.at(0).contains(v5_v6));
+  EXPECT_TRUE(no_border_vss_sections.at(0).contains(v6_v7));
+  EXPECT_TRUE(no_border_vss_sections.at(0).contains(v7_v6));
+  EXPECT_TRUE(no_border_vss_sections.at(0).contains(v6_v5));
 
   EXPECT_EQ(network.common_vertex(v5_v6, v6_v7),
             network.get_vertex_index("v6"));
@@ -1524,17 +1524,17 @@ TEST(RailwayNetwork, NetworkSections) {
   std::optional<size_t> s1;
   std::optional<size_t> s2;
   for (size_t i = 0; i < unbreakable_sections.size(); i++) {
-    if (unbreakable_sections[i].contains(v0_v1)) {
+    if (unbreakable_sections.at(i).contains(v0_v1)) {
       s0 = i;
     }
-    if (unbreakable_sections[i].contains(v20_v30)) {
+    if (unbreakable_sections.at(i).contains(v20_v30)) {
       s1 = i;
     }
-    if (unbreakable_sections[i].contains(v4_v5)) {
+    if (unbreakable_sections.at(i).contains(v4_v5)) {
       s2 = i;
     }
   }
-  // s0, s1 and s2 should be all different and within [0, 2]
+  // s0, s1 and s2 should be all different and within.at(0, 2)
   EXPECT_TRUE(s0.has_value());
   EXPECT_TRUE(s1.has_value());
   EXPECT_TRUE(s2.has_value());
@@ -1576,17 +1576,17 @@ TEST(RailwayNetwork, NetworkSections) {
   EXPECT_TRUE(network.is_on_same_unbreakable_section(v0_v1, v1_v0));
   EXPECT_FALSE(network.is_on_same_unbreakable_section(v0_v1, v30_v4));
 
-  EXPECT_EQ(unbreakable_sections[s0_val].size(), 5);
-  EXPECT_TRUE(unbreakable_sections[s0_val].contains(v0_v1));
-  EXPECT_TRUE(unbreakable_sections[s0_val].contains(v1_v20));
-  EXPECT_TRUE(unbreakable_sections[s0_val].contains(v31_v21));
-  EXPECT_TRUE(unbreakable_sections[s0_val].contains(v21_v1));
-  EXPECT_TRUE(unbreakable_sections[s0_val].contains(v1_v0));
+  EXPECT_EQ(unbreakable_sections.at(s0_val).size(), 5);
+  EXPECT_TRUE(unbreakable_sections.at(s0_val).contains(v0_v1));
+  EXPECT_TRUE(unbreakable_sections.at(s0_val).contains(v1_v20));
+  EXPECT_TRUE(unbreakable_sections.at(s0_val).contains(v31_v21));
+  EXPECT_TRUE(unbreakable_sections.at(s0_val).contains(v21_v1));
+  EXPECT_TRUE(unbreakable_sections.at(s0_val).contains(v1_v0));
 
   // Section s1 should contain 2 edges, namely v20 -> v30 -> v4
-  EXPECT_EQ(unbreakable_sections[s1_val].size(), 2);
-  EXPECT_TRUE(unbreakable_sections[s1_val].contains(v20_v30));
-  EXPECT_TRUE(unbreakable_sections[s1_val].contains(v30_v4));
+  EXPECT_EQ(unbreakable_sections.at(s1_val).size(), 2);
+  EXPECT_TRUE(unbreakable_sections.at(s1_val).contains(v20_v30));
+  EXPECT_TRUE(unbreakable_sections.at(s1_val).contains(v30_v4));
 
   // Section s2 should contain 2 edges, namely v4 -> v5 and the reverse
   const auto& unbreakable_v4_v5 =
@@ -1598,16 +1598,16 @@ TEST(RailwayNetwork, NetworkSections) {
   EXPECT_TRUE(network.is_on_same_unbreakable_section(v5_v4, v4_v5));
   EXPECT_FALSE(network.is_on_same_unbreakable_section(v4_v5, v0_v1));
 
-  EXPECT_EQ(unbreakable_sections[s0_val].size(), 5);
-  EXPECT_TRUE(unbreakable_sections[s0_val].contains(v0_v1));
-  EXPECT_TRUE(unbreakable_sections[s0_val].contains(v1_v20));
-  EXPECT_TRUE(unbreakable_sections[s0_val].contains(v31_v21));
-  EXPECT_TRUE(unbreakable_sections[s0_val].contains(v21_v1));
-  EXPECT_TRUE(unbreakable_sections[s0_val].contains(v1_v0));
+  EXPECT_EQ(unbreakable_sections.at(s0_val).size(), 5);
+  EXPECT_TRUE(unbreakable_sections.at(s0_val).contains(v0_v1));
+  EXPECT_TRUE(unbreakable_sections.at(s0_val).contains(v1_v20));
+  EXPECT_TRUE(unbreakable_sections.at(s0_val).contains(v31_v21));
+  EXPECT_TRUE(unbreakable_sections.at(s0_val).contains(v21_v1));
+  EXPECT_TRUE(unbreakable_sections.at(s0_val).contains(v1_v0));
 
-  EXPECT_EQ(unbreakable_sections[s2_val].size(), 2);
-  EXPECT_TRUE(unbreakable_sections[s2_val].contains(v4_v5));
-  EXPECT_TRUE(unbreakable_sections[s2_val].contains(v5_v4));
+  EXPECT_EQ(unbreakable_sections.at(s2_val).size(), 2);
+  EXPECT_TRUE(unbreakable_sections.at(s2_val).contains(v4_v5));
+  EXPECT_TRUE(unbreakable_sections.at(s2_val).contains(v5_v4));
 }
 
 TEST(RailwayNetwork, NetworkConsistency) {
@@ -1697,10 +1697,10 @@ TEST(RailwayNetwork, ReadNetwork) {
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
   for (size_t i = 0; i < vertex_names.size(); i++) {
-    const std::string&      v_name = vertex_names[i];
+    const std::string&      v_name = vertex_names.at(i);
     const cda_rail::Vertex& v      = network.get_vertex({v_name});
     EXPECT_EQ(v.name, v_name);
-    EXPECT_EQ(v.type, type[i]);
+    EXPECT_EQ(v.type, type.at(i));
     double const expected_hw =
         network.neighbors({v_name}).size() == 1 ? 60.0 : 0.0;
     EXPECT_DOUBLE_EQ(v.headway, expected_hw);
@@ -2153,12 +2153,12 @@ TEST(RailwayNetwork, NetworkEdgeSeparation) {
   EXPECT_FALSE(network.has_edge({"v1"}, {"v2"}));
 
   // The new edges are v1 -> v1_v2_0 -> v1_v2_1 -> v1_v2_2 -> v2 in this order
-  EXPECT_EQ(network.get_edge_index({"v1"}, {"v1-v2_0"}), new_edges.first[0]);
+  EXPECT_EQ(network.get_edge_index({"v1"}, {"v1-v2_0"}), new_edges.first.at(0));
   EXPECT_EQ(network.get_edge_index({"v1-v2_0"}, {"v1-v2_1"}),
-            new_edges.first[1]);
+            new_edges.first.at(1));
   EXPECT_EQ(network.get_edge_index({"v1-v2_1"}, {"v1-v2_2"}),
-            new_edges.first[2]);
-  EXPECT_EQ(network.get_edge_index({"v1-v2_2"}, {"v2"}), new_edges.first[3]);
+            new_edges.first.at(2));
+  EXPECT_EQ(network.get_edge_index({"v1-v2_2"}, {"v2"}), new_edges.first.at(3));
 
   // The last index of the new edges is identical to the old index of v1->v2
   EXPECT_EQ(new_edges.first.back(), v1_v2);
@@ -2451,12 +2451,12 @@ TEST(RailwayNetwork, SortPairs) {
   EXPECT_EQ(combined_edges.size(), expected_combined_edges.size());
   size_t expected_index = 0;
   size_t expected_incr  = 1;
-  if (combined_edges[0] != expected_combined_edges[0]) {
+  if (combined_edges.at(0) != expected_combined_edges.at(0)) {
     expected_index = combined_edges.size() - 1;
     expected_incr  = -1;
   }
   for (const auto& combined_edge : combined_edges) {
-    EXPECT_EQ(combined_edge, expected_combined_edges[expected_index]);
+    EXPECT_EQ(combined_edge, expected_combined_edges.at(expected_index));
     expected_index += expected_incr;
   }
 }
@@ -2571,12 +2571,12 @@ TEST(RailwayNetwork, NetworkEdgeSeparationReverse) {
   EXPECT_FALSE(network.has_edge({"v1"}, {"v2"}));
 
   // The new edges are v1 -> v1_v2_0 -> v1_v2_1 -> v1_v2_2 -> v2 in this order
-  EXPECT_EQ(network.get_edge_index({"v1"}, {"v1-v2_0"}), new_edges.first[0]);
+  EXPECT_EQ(network.get_edge_index({"v1"}, {"v1-v2_0"}), new_edges.first.at(0));
   EXPECT_EQ(network.get_edge_index({"v1-v2_0"}, {"v1-v2_1"}),
-            new_edges.first[1]);
+            new_edges.first.at(1));
   EXPECT_EQ(network.get_edge_index({"v1-v2_1"}, {"v1-v2_2"}),
-            new_edges.first[2]);
-  EXPECT_EQ(network.get_edge_index({"v1-v2_2"}, {"v2"}), new_edges.first[3]);
+            new_edges.first.at(2));
+  EXPECT_EQ(network.get_edge_index({"v1-v2_2"}, {"v2"}), new_edges.first.at(3));
 
   // The last index of the new edges is identical to the old index of v1->v2
   EXPECT_EQ(new_edges.first.back(), v1_v2);
@@ -2622,12 +2622,14 @@ TEST(RailwayNetwork, NetworkEdgeSeparationReverse) {
   EXPECT_FALSE(network.has_edge({"v2"}, {"v1"}));
 
   // The new edges are v2 -> v1_v2_2 -> v1_v2_1 -> v1_v2_0 -> v1 in this order
-  EXPECT_EQ(network.get_edge_index({"v2"}, {"v1-v2_2"}), new_edges.second[0]);
+  EXPECT_EQ(network.get_edge_index({"v2"}, {"v1-v2_2"}),
+            new_edges.second.at(0));
   EXPECT_EQ(network.get_edge_index({"v1-v2_2"}, {"v1-v2_1"}),
-            new_edges.second[1]);
+            new_edges.second.at(1));
   EXPECT_EQ(network.get_edge_index({"v1-v2_1"}, {"v1-v2_0"}),
-            new_edges.second[2]);
-  EXPECT_EQ(network.get_edge_index({"v1-v2_0"}, {"v1"}), new_edges.second[3]);
+            new_edges.second.at(2));
+  EXPECT_EQ(network.get_edge_index({"v1-v2_0"}, {"v1"}),
+            new_edges.second.at(3));
 
   // The last index of the new edges is identical to the old index of v2->v1
   EXPECT_EQ(new_edges.second.back(), v2_v1);
@@ -3060,17 +3062,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // v5_v6 in 1700
   // v4_v1 in 1000
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v1_v2][v1_v2], 0);
-  EXPECT_EQ(shortest_paths[v1_v2][v2_v3], 200);
-  EXPECT_EQ(shortest_paths[v1_v2][v3_v4], 500);
-  EXPECT_EQ(shortest_paths[v1_v2][v3_v5], 700);
-  EXPECT_EQ(shortest_paths[v1_v2][v4_v5], 900);
-  EXPECT_EQ(shortest_paths[v1_v2][v5_v6], 1700);
-  EXPECT_EQ(shortest_paths[v1_v2][v4_v1], 1000);
-  EXPECT_EQ(shortest_paths[v1_v2][v3_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v1_v2][v4_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v1_v2][v5_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v1_v2][v6_v5], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v1_v2), 0);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v2_v3), 200);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v3_v4), 500);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v3_v5), 700);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v4_v5), 900);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v5_v6), 1700);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v4_v1), 1000);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v3_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v4_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v5_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v1_v2).at(v6_v5), cda_rail::INF);
 
   EXPECT_EQ(network.shortest_path_from_edge_to_vertex(v1_v2, v2), 0);
   EXPECT_EQ(network.shortest_path_from_edge_to_vertex(v1_v2, v3), 200);
@@ -3088,17 +3090,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // v4_v1 in 800
   // v1_v2 in 900
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v2_v3][v2_v3], 0);
-  EXPECT_EQ(shortest_paths[v2_v3][v3_v4], 300);
-  EXPECT_EQ(shortest_paths[v2_v3][v3_v5], 500);
-  EXPECT_EQ(shortest_paths[v2_v3][v4_v5], 700);
-  EXPECT_EQ(shortest_paths[v2_v3][v5_v6], 1500);
-  EXPECT_EQ(shortest_paths[v2_v3][v4_v1], 800);
-  EXPECT_EQ(shortest_paths[v2_v3][v1_v2], 900);
-  EXPECT_EQ(shortest_paths[v2_v3][v3_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v2_v3][v4_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v2_v3][v5_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v2_v3][v6_v5], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v2_v3), 0);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v3_v4), 300);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v3_v5), 500);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v4_v5), 700);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v5_v6), 1500);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v4_v1), 800);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v1_v2), 900);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v3_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v4_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v5_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v2_v3).at(v6_v5), cda_rail::INF);
 
   EXPECT_EQ(network.shortest_path_from_edge_to_vertex(v2_v3, v1), 800);
   EXPECT_EQ(network.shortest_path_from_edge_to_vertex(v2_v3, v2), 900);
@@ -3116,17 +3118,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // v2_v3 in 800
   // v3_v5 in 1300
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v3_v4][v3_v4], 0);
-  EXPECT_EQ(shortest_paths[v3_v4][v4_v5], 400);
-  EXPECT_EQ(shortest_paths[v3_v4][v5_v6], 1400);
-  EXPECT_EQ(shortest_paths[v3_v4][v4_v1], 500);
-  EXPECT_EQ(shortest_paths[v3_v4][v1_v2], 600);
-  EXPECT_EQ(shortest_paths[v3_v4][v2_v3], 800);
-  EXPECT_EQ(shortest_paths[v3_v4][v3_v5], 1300);
-  EXPECT_EQ(shortest_paths[v3_v4][v3_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v4][v4_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v4][v5_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v4][v6_v5], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v3_v4), 0);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v4_v5), 400);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v5_v6), 1400);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v4_v1), 500);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v1_v2), 600);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v2_v3), 800);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v3_v5), 1300);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v3_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v4_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v5_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v4).at(v6_v5), cda_rail::INF);
 
   EXPECT_EQ(network.shortest_path_from_edge_to_vertex(v3_v4, v1), 500);
   EXPECT_EQ(network.shortest_path_from_edge_to_vertex(v3_v4, v2), 600);
@@ -3139,17 +3141,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // v3_v5 in 0
   // v5_v6 in 1000
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v3_v5][v3_v5], 0);
-  EXPECT_EQ(shortest_paths[v3_v5][v5_v6], 1000);
-  EXPECT_EQ(shortest_paths[v3_v5][v3_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v5][v4_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v5][v4_v1], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v5][v1_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v5][v2_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v5][v4_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v5][v5_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v5][v6_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v5][v3_v2], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v3_v5), 0);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v5_v6), 1000);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v3_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v4_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v4_v1), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v1_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v2_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v4_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v5_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v6_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v5).at(v3_v2), cda_rail::INF);
 
   EXPECT_FALSE(
       network.shortest_path_from_edge_to_vertex(v3_v5, v1).has_value());
@@ -3166,17 +3168,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // v4_v5 in 0
   // v5_v6 in 1000
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v4_v5][v4_v5], 0);
-  EXPECT_EQ(shortest_paths[v4_v5][v5_v6], 1000);
-  EXPECT_EQ(shortest_paths[v4_v5][v3_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v5][v3_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v5][v4_v1], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v5][v1_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v5][v2_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v5][v4_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v5][v5_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v5][v6_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v5][v3_v2], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v4_v5), 0);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v5_v6), 1000);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v3_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v3_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v4_v1), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v1_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v2_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v4_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v5_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v6_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v5).at(v3_v2), cda_rail::INF);
 
   EXPECT_FALSE(
       network.shortest_path_from_edge_to_vertex(v4_v5, v1).has_value());
@@ -3192,17 +3194,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // Starting from v5_v6, we reach
   // v5_v6 in 0
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v5_v6][v5_v6], 0);
-  EXPECT_EQ(shortest_paths[v5_v6][v3_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v6][v3_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v6][v4_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v6][v4_v1], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v6][v1_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v6][v2_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v6][v4_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v6][v5_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v6][v6_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v6][v3_v2], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v5_v6), 0);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v3_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v3_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v4_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v4_v1), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v1_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v2_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v4_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v5_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v6_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v6).at(v3_v2), cda_rail::INF);
 
   EXPECT_FALSE(
       network.shortest_path_from_edge_to_vertex(v5_v6, v1).has_value());
@@ -3225,17 +3227,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // v3_v5 in 800
   // v5_v6 in 1800
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v4_v1][v4_v1], 0);
-  EXPECT_EQ(shortest_paths[v4_v1][v1_v2], 100);
-  EXPECT_EQ(shortest_paths[v4_v1][v2_v3], 300);
-  EXPECT_EQ(shortest_paths[v4_v1][v3_v4], 600);
-  EXPECT_EQ(shortest_paths[v4_v1][v4_v5], 1000);
-  EXPECT_EQ(shortest_paths[v4_v1][v3_v5], 800);
-  EXPECT_EQ(shortest_paths[v4_v1][v5_v6], 1800);
-  EXPECT_EQ(shortest_paths[v4_v1][v3_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v1][v4_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v1][v5_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v1][v6_v5], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v4_v1), 0);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v1_v2), 100);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v2_v3), 300);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v3_v4), 600);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v4_v5), 1000);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v3_v5), 800);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v5_v6), 1800);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v3_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v4_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v5_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v1).at(v6_v5), cda_rail::INF);
 
   EXPECT_EQ(network.shortest_path_from_edge_to_vertex(v4_v1, v1), 0);
   EXPECT_EQ(network.shortest_path_from_edge_to_vertex(v4_v1, v2), 100);
@@ -3250,17 +3252,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // v4_v3 in 700
   // v3_v2 in 900
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v6_v5][v6_v5], 0);
-  EXPECT_EQ(shortest_paths[v6_v5][v5_v4], 400);
-  EXPECT_EQ(shortest_paths[v6_v5][v4_v3], 700);
-  EXPECT_EQ(shortest_paths[v6_v5][v3_v2], 900);
-  EXPECT_EQ(shortest_paths[v6_v5][v3_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v6_v5][v3_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v6_v5][v4_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v6_v5][v4_v1], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v6_v5][v1_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v6_v5][v2_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v6_v5][v5_v6], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v6_v5), 0);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v5_v4), 400);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v4_v3), 700);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v3_v2), 900);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v3_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v3_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v4_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v4_v1), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v1_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v2_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v6_v5).at(v5_v6), cda_rail::INF);
 
   EXPECT_FALSE(
       network.shortest_path_from_edge_to_vertex(v6_v5, v1).has_value());
@@ -3276,17 +3278,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // v4_v3 in 300
   // v3_v2 in 500
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v5_v4][v5_v4], 0);
-  EXPECT_EQ(shortest_paths[v5_v4][v4_v3], 300);
-  EXPECT_EQ(shortest_paths[v5_v4][v3_v2], 500);
-  EXPECT_EQ(shortest_paths[v5_v4][v3_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v4][v3_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v4][v4_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v4][v4_v1], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v4][v1_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v4][v2_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v4][v5_v6], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v5_v4][v6_v5], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v5_v4), 0);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v4_v3), 300);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v3_v2), 500);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v3_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v3_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v4_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v4_v1), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v1_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v2_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v5_v6), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v5_v4).at(v6_v5), cda_rail::INF);
 
   EXPECT_FALSE(
       network.shortest_path_from_edge_to_vertex(v5_v4, v1).has_value());
@@ -3302,17 +3304,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // v4_v3 in 0
   // v3_v2 in 200
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v4_v3][v4_v3], 0);
-  EXPECT_EQ(shortest_paths[v4_v3][v3_v2], 200);
-  EXPECT_EQ(shortest_paths[v4_v3][v3_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v3][v3_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v3][v4_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v3][v4_v1], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v3][v1_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v3][v2_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v3][v5_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v3][v5_v6], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v4_v3][v6_v5], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v4_v3), 0);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v3_v2), 200);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v3_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v3_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v4_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v4_v1), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v1_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v2_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v5_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v5_v6), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v4_v3).at(v6_v5), cda_rail::INF);
 
   EXPECT_FALSE(
       network.shortest_path_from_edge_to_vertex(v4_v3, v1).has_value());
@@ -3328,17 +3330,17 @@ TEST(RailwayNetwork, ShortestPaths) {
   // Starting from v3_v2, we reach
   // v3_v2 in 0
   // all other edges are not reachable
-  EXPECT_EQ(shortest_paths[v3_v2][v3_v2], 0);
-  EXPECT_EQ(shortest_paths[v3_v2][v3_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v2][v3_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v2][v4_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v2][v4_v5], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v2][v4_v1], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v2][v1_v2], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v2][v2_v3], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v2][v5_v4], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v2][v5_v6], cda_rail::INF);
-  EXPECT_EQ(shortest_paths[v3_v2][v6_v5], cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v3_v2), 0);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v3_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v3_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v4_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v4_v5), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v4_v1), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v1_v2), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v2_v3), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v5_v4), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v5_v6), cda_rail::INF);
+  EXPECT_EQ(shortest_paths.at(v3_v2).at(v6_v5), cda_rail::INF);
 
   EXPECT_FALSE(
       network.shortest_path_from_edge_to_vertex(v3_v2, v1).has_value());
