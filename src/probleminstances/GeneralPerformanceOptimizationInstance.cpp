@@ -664,7 +664,7 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 // --------------------
 // SolVSSGeneralPerformanceOptimizationInstance
 // --------------------
-
+#if 0
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     initialize_vss_vector() {
   m_vss_pos = std::vector<std::vector<double>>(
@@ -798,3 +798,4 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     m_vss_pos.at(edge_id) = std::move(pos_vec);
   }
 }
+#endif

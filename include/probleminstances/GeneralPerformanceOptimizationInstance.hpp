@@ -346,7 +346,7 @@ public:
 
   [[nodiscard]] bool check_consistency() const override;
 };
-
+#if 0
 class SolVSSGeneralPerformanceOptimizationInstance
     : public SolGeneralPerformanceOptimizationInstance {
   std::vector<std::vector<double>> m_vss_pos;
@@ -391,5 +391,5 @@ public:
       std::string_view const            solutionSubdirectory,
       std::optional<std::string> const& parameter_identifier = {}) override;
 };
-
+#endif
 } // namespace cda_rail::instances
