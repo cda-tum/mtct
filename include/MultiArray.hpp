@@ -177,9 +177,9 @@ void MultiArray<T>::check_args(const FixedSizeVector<size_t>& args) const {
         "Number of dimensions and number of arguments do not coincide.");
   }
   for (size_t i = 0; i < args.size(); ++i) {
-    if (args[i] >= m_shape[i]) {
+    if (args.at(i) >= m_shape.at(i)) {
       std::stringstream ss;
-      ss << "Index " << args[i] << " is too large for dimension " << i;
+      ss << "Index " << args.at(i) << " is too large for dimension " << i;
       throw std::out_of_range(ss.str());
     }
   }
@@ -191,8 +191,8 @@ size_t MultiArray<T>::flat_index(const FixedSizeVector<size_t>& args) const {
   size_t index      = 0;
   size_t multiplier = 1;
   for (size_t i = 0; i < args.size(); ++i) {
-    index += args[i] * multiplier;
-    multiplier *= m_shape[i];
+    index += args.at(i) * multiplier;
+    multiplier *= m_shape.at(i);
   }
   return index;
 }

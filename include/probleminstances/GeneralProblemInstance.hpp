@@ -36,10 +36,10 @@ protected:
 
 public:
   virtual void
-  export_instance(const std::filesystem::path& workingDirectory) const = 0;
+  export_instance(const std::filesystem::path& working_directory) const = 0;
 
-  virtual void export_instance(const std::string& workingDirectory) const {
-    export_instance(std::filesystem::path(workingDirectory));
+  virtual void export_instance(const std::string& working_directory) const {
+    export_instance(std::filesystem::path(working_directory));
   };
   virtual void export_instance(char const* const workingDirectory) const {
     export_instance(std::filesystem::path(workingDirectory));
@@ -65,13 +65,13 @@ public:
   }
 
   // Setter
-  void set_instance_name(std::string_view const instance_name) {
-    exceptions::throw_if_invalid_folder_name(instance_name);
-    m_instance_name = instance_name;
+  void set_instance_name(std::string_view const instanceName) {
+    exceptions::throw_if_invalid_folder_name(instanceName);
+    m_instance_name = instanceName;
   }
-  void set_instance_subdirectory(std::string_view const instance_subdirectory) {
-    exceptions::throw_if_invalid_folder_name(instance_subdirectory);
-    m_instance_subdirectory = instance_subdirectory;
+  void set_instance_subdirectory(std::string_view const instanceSubdirectory) {
+    exceptions::throw_if_invalid_folder_name(instanceSubdirectory);
+    m_instance_subdirectory = instanceSubdirectory;
   }
 };
 
@@ -93,16 +93,15 @@ protected:
       : m_network(std::move(network)), m_timetable(std::move(timetable)),
         m_routes(std::move(routes)) {};
   GeneralProblemInstanceWithScheduleAndRoutes(
-      std::string_view const       instanceName,
-      std::string_view const       instanceSubdirectory,
-      std::filesystem::path const& workingDirectory);
+      std::string_view instance_name, std::string_view instance_subdirectory,
+      std::filesystem::path const& working_directory);
   GeneralProblemInstanceWithScheduleAndRoutes(
       std::string_view const instanceName,
       std::string_view const instanceSubdirectory,
-      std::string const&     workingDirectory)
+      std::string const&     working_directory)
       : GeneralProblemInstanceWithScheduleAndRoutes(
             instanceName, instanceSubdirectory,
-            std::filesystem::path(workingDirectory)) {};
+            std::filesystem::path(working_directory)) {};
   GeneralProblemInstanceWithScheduleAndRoutes(
       std::string_view const instanceName,
       std::string_view const instanceSubdirectory,
@@ -129,11 +128,11 @@ public:
   // EXPORT
   // --------------------
 
-  virtual void export_instance(std::filesystem::path const& workingDirectory,
-                               bool const                   saveNetwork) const;
+  virtual void export_instance(std::filesystem::path const& working_directory,
+                               bool                         save_network) const;
   void         export_instance(
-      std::filesystem::path const& workingDirectory) const override {
-    export_instance(workingDirectory, false);
+      std::filesystem::path const& working_directory) const override {
+    export_instance(working_directory, false);
   }
 
   // ---------------------
@@ -416,7 +415,7 @@ protected:
   void               set_general_solution_data(const json& data);
 
   [[nodiscard]] std::filesystem::path get_export_path(
-      const std::filesystem::path&      workingDirectory,
+      const std::filesystem::path&      working_directory,
       std::string_view const            solutionSubdirectory,
       std::optional<std::string> const& parameter_identifier) const {
     auto const adjusted_name =
@@ -424,7 +423,7 @@ protected:
             ? concatenate_string_views({get_instance()->get_instance_name(),
                                         "-", parameter_identifier.value()})
             : get_instance()->get_instance_name();
-    return {workingDirectory / "solutions" / solutionSubdirectory /
+    return {working_directory / "solutions" / solutionSubdirectory /
             get_instance()->get_instance_subdirectory() / adjusted_name};
   }
 
@@ -441,9 +440,14 @@ public:
   void set_solution_not_found() { m_has_sol = false; };
 
   virtual void
-  load_solution(const std::filesystem::path&      workingDirectory,
-                std::string_view const            solutionSubdirectory,
-                std::optional<std::string> const& parameter_identifier = {});
+  load_solution(const std::filesystem::path&      working_directory,
+                std::string_view                  solution_subdirectory,
+                std::optional<std::string> const& parameter_identifier);
+
+  virtual void load_solution(const std::filesystem::path& working_directory,
+                             std::string_view solution_subdirectory) {
+    load_solution(working_directory, solution_subdirectory, {});
+  }
 
   void
   load_solution(const std::string&                path,
@@ -459,10 +463,15 @@ public:
                   parameter_identifier);
   }
 
-  virtual void export_solution(
-      const std::filesystem::path&      workingDirectory,
-      std::string_view const            solutionSubdirectory,
-      std::optional<std::string> const& parameter_identifier = {}) const;
+  virtual void
+  export_solution(const std::filesystem::path&      working_directory,
+                  std::string_view                  solution_subdirectory,
+                  std::optional<std::string> const& parameter_identifier) const;
+
+  virtual void export_solution(const std::filesystem::path& working_directory,
+                               std::string_view solution_subdirectory) const {
+    export_solution(working_directory, solution_subdirectory, {});
+  }
 
   void export_solution(
       const std::string& path, std::string_view const solutionSubdirectory,
@@ -498,13 +507,17 @@ protected:
   explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
       std::shared_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr)
       : SolGeneralProblemInstance(std::move(instance_ptr)),
-        m_solution_routes(get_instance()->get_const_routes()) {}
+        m_solution_routes(
+            SolGeneralProblemInstanceWithScheduleAndRoutes::get_instance()
+                ->get_const_routes()) {}
   SolGeneralProblemInstanceWithScheduleAndRoutes(
       std::shared_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr,
       SolutionStatus status, double obj, bool has_sol)
       : SolGeneralProblemInstance(std::move(instance_ptr), status, obj,
                                   has_sol),
-        m_solution_routes(get_instance()->get_const_routes()) {};
+        m_solution_routes(
+            SolGeneralProblemInstanceWithScheduleAndRoutes::get_instance()
+                ->get_const_routes()) {};
 
 public:
   using SolGeneralProblemInstance::export_solution;
@@ -535,9 +548,14 @@ public:
   ~SolGeneralProblemInstanceWithScheduleAndRoutes() override     = default;
 
   void load_solution(
-      const std::filesystem::path&      workingDirectory,
-      std::string_view const            solutionSubdirectory,
-      std::optional<std::string> const& parameter_identifier = {}) override;
+      const std::filesystem::path&      working_directory,
+      std::string_view                  solution_subdirectory,
+      std::optional<std::string> const& parameter_identifier) override;
+
+  void load_solution(const std::filesystem::path& working_directory,
+                     std::string_view const solutionSubdirectory) override {
+    load_solution(working_directory, solutionSubdirectory, {});
+  }
 
   // Additional Getter
   [[nodiscard]] GeneralProblemInstanceWithScheduleAndRoutes const*
@@ -574,17 +592,22 @@ public:
   }
 
   // Export
-  void export_solution(const std::filesystem::path&      workingDirectory,
-                       std::string_view const            solutionSubdirectory,
-                       std::optional<std::string> const& parameter_identifier =
-                           {}) const override {
-    export_solution(workingDirectory, solutionSubdirectory, false,
+  void export_solution(
+      const std::filesystem::path&      working_directory,
+      std::string_view const            solutionSubdirectory,
+      std::optional<std::string> const& parameter_identifier) const override {
+    export_solution(working_directory, solutionSubdirectory, false,
                     parameter_identifier);
   }
+  void
+  export_solution(const std::filesystem::path& working_directory,
+                  std::string_view const solutionSubdirectory) const override {
+    export_solution(working_directory, solutionSubdirectory, false, {});
+  }
+
   virtual void
-  export_solution(const std::filesystem::path&      workingDirectory,
-                  std::string_view const            solutionSubdirectory,
-                  bool                              save_instance,
+  export_solution(const std::filesystem::path& working_directory,
+                  std::string_view solution_subdirectory, bool save_instance,
                   std::optional<std::string> const& parameter_identifier) const;
 
   [[nodiscard]] bool check_consistency() const override;

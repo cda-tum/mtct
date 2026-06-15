@@ -219,8 +219,7 @@ public:
    * @brief Adds a track specified by source and target vertex indices.
    *
    * @param name Station name.
-   * @param source Source vertex index.
-   * @param target Target vertex index.
+   * @param edge Edge to add
    * @param network Network used to resolve the edge index.
    */
   void add_track_to_station(const std::string&                  name,

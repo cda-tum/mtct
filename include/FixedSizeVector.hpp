@@ -21,15 +21,16 @@ using std::size_t;
  * overhead of `std::vector`.
  *
  * @tparam T Element type.  Must be default-constructible because the underlying
- *           array is zero-initialised on construction.
+ *           array is zero-initialized on construction.
  *
- * @invariant All indices in `[0, size())` refer to valid, initialised elements.
+ * @invariant All indices in `[0, size())` refer to valid, initialized elements.
  */
 // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays)
 template <typename T> class FixedSizeVector {
 private:
   std::unique_ptr<T[]> m_data{
-      std::make_unique<T[]>(0)}; // NOLINT(cppcoreguidelines-avoid-c-arrays)
+      // NOLINT(*-avoid-c-arrays)
+      std::make_unique<T[]>(0)}; // NOLINT(*-avoid-c-arrays)
   size_t m_len{0};
 
 public:
@@ -43,12 +44,12 @@ public:
   FixedSizeVector() = default;
 
   /**
-   * @brief Constructs a vector with @p len default-initialised elements.
+   * @brief Constructs a vector with @p len default-initialized elements.
    *
    * @param len Number of elements to allocate.
    */
   explicit FixedSizeVector(size_t const len)
-      : m_data(std::make_unique<T[]>(
+      : m_data(std::make_unique<T[]>( // NOLINT(*-avoid-c-arrays)
             len)), // NOLINT(cppcoreguidelines-avoid-c-arrays)
         m_len(len) {}
 
@@ -58,7 +59,7 @@ public:
    * @param init Values to store in a fixed vector
    */
   FixedSizeVector(std::initializer_list<T> init)
-      : m_data(std::make_unique<T[]>(
+      : m_data(std::make_unique<T[]>( // NOLINT(*-avoid-c-arrays)
             init.size())), // NOLINT(cppcoreguidelines-avoid-c-arrays)
         m_len(init.size()) {
     std::copy(init.begin(), init.end(), begin());
@@ -70,7 +71,7 @@ public:
    * @param other Source vector to copy from.
    */
   FixedSizeVector(const FixedSizeVector& other)
-      : m_data(std::make_unique<T[]>(
+      : m_data(std::make_unique<T[]>( // NOLINT(*-avoid-c-arrays)
             other.m_len)), // NOLINT(cppcoreguidelines-avoid-c-arrays)
         m_len(other.m_len) {
     std::copy(other.begin(), other.end(), begin());
@@ -130,14 +131,13 @@ public:
    * @brief Replaces the storage with a new allocation of @p len elements.
    *
    * All existing elements are discarded and the new elements are
-   * default-initialised.
+   * default-initialized.
    *
    * @param len New number of elements.
    */
   void delete_and_resize(size_t const len) {
-    m_data =
-        std::make_unique<T[]>(len); // NOLINT(cppcoreguidelines-avoid-c-arrays)
-    m_len = len;
+    m_data = std::make_unique<T[]>(len); // NOLINT(*-avoid-c-arrays)
+    m_len  = len;
   }
 
   /*
@@ -149,7 +149,7 @@ public:
    *
    * @param i Zero-based index of the element.
    * @return Reference to the element at position @p i.
-   * @pre `i < size()`.  Behaviour is undefined if the precondition is violated.
+   * @pre `i < size()`.  Behavior is undefined if the precondition is violated.
    */
   [[nodiscard]] T& operator[](size_t const i) { return m_data[i]; }
 
@@ -158,7 +158,7 @@ public:
    *
    * @param i Zero-based index of the element.
    * @return Const reference to the element at position @p i.
-   * @pre `i < size()`.  Behaviour is undefined if the precondition is violated.
+   * @pre `i < size()`.  Behavior is undefined if the precondition is violated.
    */
   [[nodiscard]] const T& operator[](size_t const i) const { return m_data[i]; }
 

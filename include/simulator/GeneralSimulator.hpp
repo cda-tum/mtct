@@ -121,14 +121,14 @@ public:
     return m_train_edges;
   }
   [[nodiscard]] const cda_rail::index_vector&
-  get_train_edges_of_tr(size_t const trainId) const;
+  get_train_edges_of_tr(size_t train_id) const;
 
   [[nodiscard]] const std::vector<cda_rail::index_vector>&
   get_ttd_orders() const {
     return m_ttd_orders;
   }
   [[nodiscard]] const cda_rail::index_vector&
-  get_ttd_orders_of_ttd(size_t const ttdIndex) const;
+  get_ttd_orders_of_ttd(size_t ttd_index) const;
   [[nodiscard]] std::optional<size_t>
   get_ttd(Network::EdgeInput const& edge) const;
 
@@ -144,12 +144,12 @@ public:
     return m_stop_positions;
   }
   [[nodiscard]] const std::vector<double>&
-  get_stop_positions_of_tr(size_t const trainId) const;
+  get_stop_positions_of_tr(size_t train_id) const;
 
   // -------------------
   // HELPFUL VALUES
   // -------------------
-  [[nodiscard]] double train_edge_length(size_t const tr) const;
+  [[nodiscard]] double train_edge_length(size_t tr) const;
   [[nodiscard]] double get_edge_position(size_t train_id, size_t edge_id) const;
   [[nodiscard]] size_t get_edge_at_position(size_t train_id,
                                             double position) const;

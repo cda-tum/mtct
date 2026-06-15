@@ -1,6 +1,7 @@
 #include "datastructure/Train.hpp"
 
 #include "gtest/gtest.h"
+#include <ranges>
 #include <string>
 #include <vector>
 
@@ -288,7 +289,8 @@ TEST(TrainList, ConstIteratorsTraverseTrainsInInsertionOrder) {
   trains.add_train("tr2", 150.0, 50.0, 3.0, 2.0, false);
 
   std::vector<std::string> names;
-  for (auto it = trains.cbegin(); it != trains.cend(); ++it) {
+  for (auto it = trains.cbegin(); it != trains.cend();
+       ++it) { // NOLINT(*-loop-convert)
     names.push_back(it->get_name());
   }
 
@@ -301,8 +303,35 @@ TEST(TrainList, ConstReverseIteratorsTraverseTrainsInReverseOrder) {
   trains.add_train("tr2", 150.0, 50.0, 3.0, 2.0, false);
 
   std::vector<std::string> names;
-  for (auto it = trains.crbegin(); it != trains.crend(); ++it) {
+  for (auto it = trains.crbegin(); it != trains.crend();
+       ++it) { // NOLINT(*-loop-convert)
     names.push_back(it->get_name());
+  }
+
+  EXPECT_EQ(names, (std::vector<std::string>{"tr2", "tr1"}));
+}
+
+TEST(TrainList, ConstIteratorsTraverseTrainsInInsertionOrderRangeBased) {
+  cda_rail::TrainList trains;
+  trains.add_train("tr1", 100.0, 40.0, 2.0, 1.0);
+  trains.add_train("tr2", 150.0, 50.0, 3.0, 2.0, false);
+
+  std::vector<std::string> names;
+  for (const auto& train : trains) {
+    names.push_back(train.get_name());
+  }
+
+  EXPECT_EQ(names, (std::vector<std::string>{"tr1", "tr2"}));
+}
+
+TEST(TrainList, ConstReverseIteratorsTraverseTrainsInReverseOrderRangeBased) {
+  cda_rail::TrainList trains;
+  trains.add_train("tr1", 100.0, 40.0, 2.0, 1.0);
+  trains.add_train("tr2", 150.0, 50.0, 3.0, 2.0, false);
+
+  std::vector<std::string> names;
+  for (const auto& train : std::views::reverse(trains)) {
+    names.push_back(train.get_name());
   }
 
   EXPECT_EQ(names, (std::vector<std::string>{"tr2", "tr1"}));

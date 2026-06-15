@@ -26,7 +26,7 @@ cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
     return {}; // would not work with std::unordered_set instead of std::vector
   }
 
-  // indices always holds the current combination in ascending order.
+  // indices always hold the current combination in ascending order.
   // It starts at {0, 1, ..., k-1} and is stepped through all C(n,k)
   // k-combinations of {0, ..., n-1} in lexicographic order.
   std::vector<cda_rail::index_vector> result;
@@ -37,7 +37,7 @@ cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
             0UZ); // first combination: {0, 1, ..., k-1}
 
   // Advance indices to the lexicographically next k-combination.
-  // Returns true if a next combination exists, false if all are exhausted.
+  // Returns true if the next combination exists, false if all are exhausted.
   const auto advance_to_next_combination = [&indices, n, k]() -> bool {
     // Find the rightmost position whose index can still be incremented.
     // Position i is at its maximum when indices[i] == n - k + i.

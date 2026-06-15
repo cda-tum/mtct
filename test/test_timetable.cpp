@@ -105,10 +105,10 @@ TEST(TimetableFunctionality, WriteTimetable) {
   auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
   cda_rail::Timetable timetable;
 
-  timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, {"l0"}, 300, 20, {"r0"},
-                      network);
-  timetable.add_train("tr2", 100, 27.78, 2, 1, 0, 0, {"r0"}, 300, 20, {"l0"},
-                      network);
+  (void)timetable.add_train("tr1", 100, 83.33, 2, 1, 0, 0, {"l0"}, 300, 20,
+                            {"r0"}, network);
+  (void)timetable.add_train("tr2", 100, 27.78, 2, 1, 0, 0, {"r0"}, 300, 20,
+                            {"l0"}, network);
 
   EXPECT_EQ(timetable.get_schedule("tr1").get_entry_time(), 0);
   EXPECT_EQ(timetable.get_schedule("tr1").get_exit_time(), 300);
@@ -393,9 +393,9 @@ TEST(TimetableFunctionality, TimetableConsistency2) {
   network2.add_vertex("v1", cda_rail::VertexType::TTD);
   network2.add_vertex("v2", cda_rail::VertexType::TTD);
 
-  const int e11 = network1.add_edge({"v0"}, {"v1"}, 100, 10, true, 10);
-  const int e12 = network2.add_edge({"v0"}, {"v1"}, 100, 10, true, 10);
-  const int e22 = network2.add_edge({"v1"}, {"v2"}, 100, 10, true, 10);
+  const auto e11 = network1.add_edge({"v0"}, {"v1"}, 100, 10, true, 10);
+  const auto e12 = network2.add_edge({"v0"}, {"v1"}, 100, 10, true, 10);
+  const auto e22 = network2.add_edge({"v1"}, {"v2"}, 100, 10, true, 10);
 
   EXPECT_EQ(e11, e12);
 

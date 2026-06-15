@@ -124,14 +124,14 @@ public:
    * @brief Sets the maximum speed of the train.
    *
    * @pre max_speed >= MIN_NON_ZERO.
-   * @param max_speed New maximum speed in m/s.
+   * @param maxSpeed New maximum speed in m/s.
    * @throws cda_rail::exceptions::InvalidInputException If `max_speed` is less
    * than MIN_NON_ZERO.
    */
-  void set_max_speed(double const max_speed) {
-    cda_rail::exceptions::throw_if_less_than(max_speed, MIN_NON_ZERO,
+  void set_max_speed(double const maxSpeed) {
+    cda_rail::exceptions::throw_if_less_than(maxSpeed, MIN_NON_ZERO,
                                              "Train max speed");
-    m_max_speed = max_speed;
+    m_max_speed = maxSpeed;
   };
 
   /**
@@ -365,7 +365,7 @@ public:
    *
    * @param name Train name.
    * @param length Train length in meters.
-   * @param max_speed Maximum speed in m/s.
+   * @param maxSpeed Maximum speed in m/s.
    * @param acceleration Maximum acceleration in m/s^2.
    * @param deceleration Maximum deceleration in m/s^2.
    * @param tim Train integrity monitoring flag.
@@ -376,10 +376,9 @@ public:
    * invalid.
    */
   size_t add_train(std::string const& name, double const length,
-                   double const max_speed, double const acceleration,
+                   double const maxSpeed, double const acceleration,
                    double const deceleration, bool const tim = true) {
-    return add_train(
-        {name, length, max_speed, acceleration, deceleration, tim});
+    return add_train({name, length, maxSpeed, acceleration, deceleration, tim});
   };
 
   /**
@@ -467,9 +466,9 @@ public:
       throw exceptions::TrainNotExistentException(train_name);
     }
   }
-  void throw_if_train_not_exist(size_t const train_index) const {
-    if (!has_train(train_index)) {
-      throw exceptions::TrainNotExistentException(train_index);
+  void throw_if_train_not_exist(size_t const trainIndex) const {
+    if (!has_train(trainIndex)) {
+      throw exceptions::TrainNotExistentException(trainIndex);
     }
   }
 };

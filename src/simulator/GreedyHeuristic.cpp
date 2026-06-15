@@ -162,7 +162,7 @@ cda_rail::simulator::simple_remaining_time_heuristic(
     include_first_edge = false;
   }
 
-  if (tr_stops.size() > 0) {
+  if (!tr_stops.empty()) {
     average_stop_delay /= static_cast<double>(
         tr_stops.size()); // Use known station number, since this is used as
                           // objective difference

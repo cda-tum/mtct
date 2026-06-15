@@ -15,25 +15,25 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::
     GeneralPerformanceOptimizationInstance(
         std::string_view const       instanceName,
         std::string_view const       instanceSubdirectory,
-        std::filesystem::path const& workingDirectory)
+        std::filesystem::path const& working_directory)
     : GeneralProblemInstanceWithScheduleAndRoutes(
-          instanceName, instanceSubdirectory, workingDirectory) {
+          instanceName, instanceSubdirectory, working_directory) {
   initialize_vectors();
 
-  std::ifstream file(workingDirectory / "instances" / instanceSubdirectory /
+  std::ifstream file(working_directory / "instances" / instanceSubdirectory /
                      instanceName / "problem_data.json");
   json          j = json::parse(file);
-  for (const auto& [train_name, weight] : j["train_weights"].items()) {
+  for (const auto& [train_name, weight] : j.at("train_weights").items()) {
     set_train_weight(train_name, static_cast<double>(weight));
   }
-  m_station_delay_weight = static_cast<double>(j["station_delay_weight"]);
+  m_station_delay_weight = static_cast<double>(j.at("station_delay_weight"));
 }
 
 double
 cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
     const std::vector<double>&              tr_exit_times,
     const std::vector<std::vector<double>>& stop_times,
-    const bool throw_error_if_not_all_stops_specified) const {
+    const bool throwErrorIfNotAllStopsSpecified) const {
   double obj = 0.0;
   for (size_t tr = 0; tr < get_const_train_list().size(); ++tr) {
     auto const& tr_schedule = get_const_schedule(tr);
@@ -50,7 +50,7 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
            std::to_string(tr_stop_times.size()), " vs. ",
            std::to_string(scheduled_stops.size()), ")."}));
     }
-    if (throw_error_if_not_all_stops_specified &&
+    if (throwErrorIfNotAllStopsSpecified &&
         scheduled_stops.size() != tr_stop_times.size()) {
       throw exceptions::InvalidInputException(concatenate_string_views(
           {"Number of stop times provided for train ",
@@ -60,7 +60,7 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
            std::to_string(scheduled_stops.size()), ")."}));
     }
 
-    if (tr_stop_times.size() >= 1) {
+    if (!tr_stop_times.empty()) {
       double delay_sum = 0.0;
       for (size_t stop_idx = 0; stop_idx < tr_stop_times.size(); ++stop_idx) {
         delay_sum += relu(tr_stop_times.at(stop_idx) -
@@ -74,19 +74,23 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
 }
 
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
-    export_instance(const std::filesystem::path& workingDirectory,
+    export_instance(const std::filesystem::path& working_directory,
                     bool const                   saveNetwork) const {
-  GeneralProblemInstanceWithScheduleAndRoutes::export_instance(workingDirectory,
-                                                               saveNetwork);
+  GeneralProblemInstanceWithScheduleAndRoutes::export_instance(
+      working_directory, saveNetwork);
 
   json j;
   for (size_t i = 0; i < m_train_weights.size(); ++i) {
-    j["train_weights"][this->get_const_train_list().get_train(i).get_name()] =
+    j["train_weights"]
+     [this->get_const_train_list()
+          .get_train(i)
+          .get_name()] = // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
         m_train_weights.at(i);
   }
-  j["station_delay_weight"] = m_station_delay_weight;
+  j["station_delay_weight"] =
+      m_station_delay_weight; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
 
-  std::ofstream file(workingDirectory / "instances" /
+  std::ofstream file(working_directory / "instances" /
                      get_instance_subdirectory() / get_instance_name() /
                      "problem_data.json");
   file << j << '\n';
@@ -176,20 +180,20 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 }
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
-    load_solution(const std::filesystem::path&      workingDirectory,
+    load_solution(const std::filesystem::path&      working_directory,
                   std::string_view const            solutionSubdirectory,
                   std::optional<std::string> const& parameter_identifier) {
   SolGeneralProblemInstanceWithScheduleAndRoutes::load_solution(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
 
-  const auto p = get_export_path(workingDirectory, solutionSubdirectory,
+  const auto p = get_export_path(working_directory, solutionSubdirectory,
                                  parameter_identifier);
   // Read train_pos
   std::ifstream train_pos_file(p / "train_pos.json");
   json          train_pos_json = json::parse(train_pos_file);
   for (const auto& [tr_name, tr_pos_json] : train_pos_json.items()) {
     for (const auto& [idx, pos_pair] : tr_pos_json.items()) {
-      const auto [t, pos] = pos_pair.template get<std::pair<double, double>>();
+      const auto [t, pos] = pos_pair.get<std::pair<double, double>>();
       this->add_train_pos(tr_name, t, pos);
     }
   }
@@ -199,8 +203,7 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   json          train_speed_json = json::parse(train_speed_file);
   for (const auto& [tr_name, tr_speed_json] : train_speed_json.items()) {
     for (const auto& [idx, speed_pair] : tr_speed_json.items()) {
-      const auto [t, speed] =
-          speed_pair.template get<std::pair<double, double>>();
+      const auto [t, speed] = speed_pair.get<std::pair<double, double>>();
       this->add_train_speed(tr_name, t, speed);
     }
   }
@@ -208,7 +211,7 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     export_solution(
-        const std::filesystem::path& workingDirectory,
+        const std::filesystem::path& working_directory,
         std::string_view const solutionSubdirectory, bool save_instance,
         std::optional<std::string> const& parameter_identifier) const {
   /**
@@ -229,11 +232,11 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 
   SolGeneralProblemInstanceWithScheduleAndRoutes::export_solution(
-      workingDirectory, solutionSubdirectory, save_instance,
+      working_directory, solutionSubdirectory, save_instance,
       parameter_identifier);
 
   std::filesystem::path const p = get_export_path(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
 
   // NOLINTBEGIN(misc-const-correctness)
   json train_pos_json;
@@ -241,9 +244,11 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   // NOLINTEND(misc-const-correctness)
   auto const& train_list = this->get_instance()->get_const_train_list();
   for (size_t tr_id = 0; tr_id < train_list.size(); ++tr_id) {
-    const auto& train                  = train_list.get_train(tr_id);
-    train_pos_json[train.get_name()]   = m_train_pos.at(tr_id);
-    train_speed_json[train.get_name()] = m_train_speed.at(tr_id);
+    const auto& train                = train_list.get_train(tr_id);
+    train_pos_json[train.get_name()] = m_train_pos.at(
+        tr_id); // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+    train_speed_json[train.get_name()] = m_train_speed.at(
+        tr_id); // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   }
 
   std::ofstream train_pos_file(p / "train_pos.json");
@@ -283,7 +288,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
   double t0 = -1;
   double t1 = -1;
-  for (const auto& [time, pos] : tr_pos) {
+  for (const auto& time : tr_pos | std::views::keys) {
     if (std::abs(time - t) < GRB_EPS) {
       t0 = time;
       t1 = time;
@@ -311,10 +316,12 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   const Network& n = this->get_instance()->get_const_network();
   const auto     r_len =
       this->get_const_solution_routes().get_route(tr_name).length(n);
-  return {
-      this->get_const_solution_routes().get_route(tr_name).get_edge_id_at_pos(
-          std::min(pos0 + GRB_EPS, r_len), n),
-      t0, t1};
+  return {.edge_id =
+              this->get_const_solution_routes()
+                  .get_route(tr_name)
+                  .get_edge_id_at_pos(std::min(pos0 + GRB_EPS, r_len), n),
+          .previous_time_step = t0,
+          .next_time_step     = t1};
 }
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::PosVelBound
@@ -335,8 +342,8 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   const bool tr_leaving_route = pos2 >= r_len + GRB_EPS;
 
   if (std::abs(pos2 - pos1) < GRB_EPS) {
-    return {std::min(pos1, pos2), std::max(pos1, pos2), std::min(v1, v2),
-            std::max(v1, v2)};
+    return {.pos = {.lb = std::min(pos1, pos2), .ub = std::max(pos1, pos2)},
+            .vel = {.lb = std::min(v1, v2), .ub = std::max(v1, v2)}};
   }
 
   const auto& edge_obj =
@@ -362,8 +369,8 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   if (max_t >= std::numeric_limits<double>::infinity()) {
     const auto t_to_stop = v1 / tr_obj.get_deceleration();
     const auto rel_t     = std::min(t_to_stop, t - t1);
-    lb += v1 * rel_t - 0.5 * tr_obj.get_deceleration() * rel_t * rel_t;
-    v_lb = v1 - tr_obj.get_deceleration() * rel_t;
+    lb += (v1 * rel_t) - (0.5 * tr_obj.get_deceleration() * rel_t * rel_t);
+    v_lb = v1 - (tr_obj.get_deceleration() * rel_t);
   } else {
     const auto min_speed =
         minimal_line_speed(v1, v2, V_MIN, tr_obj.get_acceleration(),
@@ -386,7 +393,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
         vel_on_edge_at_time(v1, v2, max_line_speed, tr_obj.get_acceleration(),
                             tr_obj.get_deceleration(), pos2 - pos1, t - t1);
   }
-  return {{lb, ub}, {v_lb, v_ub}};
+  return {.pos = {.lb = lb, .ub = ub}, .vel = {.lb = v_lb, .ub = v_ub}};
 }
 
 std::optional<
@@ -402,7 +409,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   const auto v1    = get_train_speed(tr_name, t1);
 
   if (t1 == t2) {
-    return {{pos_1, v1}};
+    return {{.pos = pos_1, .vel = v1}};
   }
 
   const auto pos_2 = get_train_pos(tr_name, t2);
@@ -417,7 +424,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
   if (std::abs(dist_travelled) < GRB_EPS) {
     // Train stopped
-    return {{pos_1, 0}};
+    return {{.pos = pos_1, .vel = 0}};
   }
 
   const auto v_line =
@@ -435,7 +442,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
       vel_on_edge_at_time(v1, v2, v_line, tr_obj.get_acceleration(),
                           tr_obj.get_deceleration(), dist_travelled, t - t1);
 
-  return {{tr_pos, tr_vel}};
+  return {{.pos = tr_pos, .vel = tr_vel}};
 }
 
 double
@@ -466,11 +473,11 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_times(
   const auto& tr_speed_map = m_train_speed.at(tr_id);
   // Return keys of the map
   std::vector<double> times;
-  for (const auto& [t, _] : tr_speed_map) {
+  for (const auto& t : tr_speed_map | std::views::keys) {
     times.push_back(t);
   }
   // Sort
-  std::sort(times.begin(), times.end());
+  std::ranges::sort(times);
   return times;
 }
 
@@ -509,8 +516,9 @@ std::vector<cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
                 TrainDirection>
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     get_train_order_with_reverse(size_t edge_index) const {
-  cda_rail::index_set tr_on_edge = this->get_instance()->all_trains_on_edge(
-      get_const_solution_routes(), edge_index);
+  cda_rail::index_set const tr_on_edge =
+      this->get_instance()->all_trains_on_edge(get_const_solution_routes(),
+                                               edge_index);
   const std::optional<size_t> rev_e =
       this->get_instance()->get_const_network().get_reverse_edge_index(
           edge_index);
@@ -522,7 +530,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
   std::vector<TrainDirection> ret_vec;
   std::map<size_t, double>    tr_times;
-  for (size_t i = 0; i < (rev_e.has_value() ? 2 : 1); ++i) {
+  for (size_t i = 0; i < (rev_e.has_value() ? 2U : 1U); ++i) {
     const bool  direction   = i == 0;
     const auto& rel_e       = direction ? edge_index : rev_e.value();
     const auto& rel_tr_on_e = direction ? tr_on_edge : tr_on_rev_edge;
@@ -664,6 +672,7 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 // --------------------
 // SolVSSGeneralPerformanceOptimizationInstance
 // --------------------
+// NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if)
 #if 0
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     initialize_vss_vector() {
@@ -674,7 +683,7 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     add_vss_pos(cda_rail::Network::EdgeInput const& edge_input, double pos,
                 bool reverse_edge) {
-  // Add VSS position on edge. Also on reverse edge if true.
+  // Add VSS position on edge. Also on the reverse edge if true.
 
   auto const edge_id =
       this->get_instance()->get_const_network().get_edge_index(edge_input);

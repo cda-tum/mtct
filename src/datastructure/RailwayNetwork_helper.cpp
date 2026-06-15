@@ -94,8 +94,8 @@ void cda_rail::Network::add_vertices_from_graphml(
       });
     }
 
-    for (auto* data = node->FirstChildElement("data"); data != nullptr;
-         data       = data->NextSiblingElement("data")) {
+    for (const auto* data = node->FirstChildElement("data"); data != nullptr;
+         data             = data->NextSiblingElement("data")) {
       if (auto it = parsers.find(data->Attribute("key")); it != parsers.end()) {
         it->second(data->GetText());
       }
@@ -139,7 +139,7 @@ void cda_rail::Network::add_edges_from_graphml(
     std::unordered_map<std::string, std::function<void(const char*)>> parsers;
     if (breakable.has_value()) {
       parsers.emplace(breakable.value(), [&e_breakable](const char* text) {
-        std::string tmp = text;
+        std::string const tmp = text;
         to_bool_optional_inplace(tmp, e_breakable);
       });
     }
@@ -166,8 +166,8 @@ void cda_rail::Network::add_edges_from_graphml(
                       });
     }
 
-    for (auto* data = cur->FirstChildElement("data"); data != nullptr;
-         data       = data->NextSiblingElement("data")) {
+    for (const auto* data = cur->FirstChildElement("data"); data != nullptr;
+         data             = data->NextSiblingElement("data")) {
       if (auto it = parsers.find(data->Attribute("key")); it != parsers.end()) {
         it->second(data->GetText());
       }
@@ -444,7 +444,7 @@ cda_rail::Network::separate_edge_at(
                           rev_edge.length - distances_from_source[i]);
     }
 
-    // Reuse original reverse edge index for the last reverse sub-edge
+    // Reuse original reverse-edge index for the last reverse sub-edge
     change_edge_length(rev_idx, distances_from_source.front());
     update_new_old_edge(rev_idx, rev_idx,
                         rev_edge.length - distances_from_source.front());
@@ -532,8 +532,9 @@ cda_rail::Network::sort_edge_pairs(
     }
 
     const auto  pair_idx = *vertex_neighbors[j].begin();
-    const auto& ep       = edge_pairs[pair_idx];
-    const auto& e        = get_edge(ep.first.value()); // NOLINT
+    const auto& ep       = edge_pairs
+        [pair_idx]; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+    const auto& e = get_edge(ep.first.value()); // NOLINT
 
     vertex_neighbors[e.source].erase(pair_idx);
     vertex_neighbors[e.target].erase(pair_idx);
@@ -646,8 +647,8 @@ std::vector<cda_rail::index_vector>
 cda_rail::Network::all_routes_of_given_length(
     std::optional<size_t> v_0, std::optional<size_t> e_0, double desired_length,
     bool reverse_direction, std::optional<size_t> exit_node,
-    cda_rail::index_set edges_used_by_train,
-    bool                return_successors_if_zero) const {
+    const cda_rail::index_set& edges_used_by_train,
+    bool                       return_successors_if_zero) const {
   if (v_0.has_value() == e_0.has_value()) {
     throw exceptions::InvalidInputException(
         v_0.has_value() ? "Both v_0 and e_0 are specified"
@@ -678,8 +679,12 @@ cda_rail::Network::all_routes_of_given_length(
 
   // Collect starting edges (filtered by edges_used_by_train if specified)
   cda_rail::index_set start_edges_raw =
-      v_0.has_value() ? (reverse_direction ? in_edges(*v_0) : out_edges(*v_0))
-                      : cda_rail::index_set{*e_0};
+      v_0.has_value()
+          ? (reverse_direction
+                 ? in_edges(*v_0)
+                 : out_edges(
+                       *v_0)) // NOLINT(*-avoid-nested-conditional-operator)
+          : cda_rail::index_set{*e_0};
 
   cda_rail::index_set start_edges;
   if (edges_used_by_train.empty()) {
@@ -828,8 +833,8 @@ size_t cda_rail::Network::EdgeInput::resolve(Network const* network) const {
   if (const auto* edge_name = std::get_if<std::string_view>(&m_data)) {
     std::string source{};
     std::string target{};
-    network->extract_vertices_from_key_inplace(std::string{*edge_name}, source,
-                                               target);
+    cda_rail::Network::extract_vertices_from_key_inplace(
+        std::string{*edge_name}, source, target);
     return network->get_edge_index({source}, {target});
   }
   throw std::runtime_error("Invalid EdgeInput variant");

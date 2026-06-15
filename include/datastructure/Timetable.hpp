@@ -533,11 +533,11 @@ public:
     return m_train_list;
   };
 
-  [[nodiscard]] Schedule const& get_schedule(size_t const train_index) const {
-    if (!m_train_list.has_train(train_index)) {
-      throw exceptions::TrainNotExistentException(train_index);
+  [[nodiscard]] Schedule const& get_schedule(size_t const trainIndex) const {
+    if (!m_train_list.has_train(trainIndex)) {
+      throw exceptions::TrainNotExistentException(trainIndex);
     }
-    return m_schedules.at(train_index);
+    return m_schedules.at(trainIndex);
   };
   [[nodiscard]] Schedule const&
   get_schedule(std::string const& train_name) const {
@@ -565,17 +565,17 @@ public:
 
   // Editing Methods
 
-  void add_empty_station(std::string station_name) {
-    m_station_list.add_empty_station(std::move(station_name));
+  void add_empty_station(const std::string& station_name) {
+    m_station_list.add_empty_station(station_name);
   };
 
   void insert_stop(size_t train_index, std::string const& station_name,
                    double service_time, double service_duration);
   void insert_stop(std::string const& train_name,
-                   std::string const& station_name, double const service_time,
-                   double const service_duration) {
+                   std::string const& station_name, double const serviceTime,
+                   double const serviceDuration) {
     insert_stop(m_train_list.get_train_index(train_name), station_name,
-                service_time, service_duration);
+                serviceTime, serviceDuration);
   }
 
   void remove_stop(size_t train_index, std::string const& station_name,
@@ -599,18 +599,21 @@ private:
    * This method adds a train to the timetable. The train is specified by its
    * parameters.
    *
-   * @param name The name of the train.
+   * @param train_name The name of the train.
    * @param length The length of the train in m.
    * @param max_speed The maximum speed of the train in m/s.
    * @param acceleration The acceleration of the train in m/s^2.
    * @param deceleration The deceleration of the train in m/s^2.
-   * @param t_0 The time at which the train enters the network in s.
-   * @param v_0 The speed at which the train enters the network in m/s.
-   * @param entry The index of the entry vertex in the network.
-   * @param t_n The time at which the train leaves the network in s.
-   * @param v_n The speed at which the train leaves the network in m/s.
-   * @param exit The index of the exit vertex in the network.
-   * @param network The network to which the timetable belongs.
+   * @param tim Whether train is equipped with a train integrity
+   * monitoring system.
+   * @param entry_time The time at which the train enters the network in s.
+   * @param initial_velocity The speed at which the train enters the network in
+   * m/s.
+   * @param entry_vertex The index of the entry vertex in the network.
+   * @param exit_time The time at which the train leaves the network in s.
+   * @param exit_velocity The speed at which the train leaves the network in
+   * m/s.
+   * @param exit_vertex The index of the exit vertex in the network.
    *
    * @return The index of the train in the train list.
    */
@@ -681,9 +684,9 @@ public:
                       bool tn_inclusive = true) const;
   [[nodiscard]] std::pair<size_t, size_t>
   time_index_interval(std::string const& train_name, double const dt,
-                      bool const tn_inclusive = true) const {
+                      bool const tnInclusive = true) const {
     return time_index_interval(m_train_list.get_train_index(train_name), dt,
-                               tn_inclusive);
+                               tnInclusive);
   };
 };
 } // namespace cda_rail

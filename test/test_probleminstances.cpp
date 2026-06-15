@@ -1,12 +1,11 @@
-#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Timetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
 #include "gtest/gtest.h"
-#include <algorithm>
 #include <cstddef>
+#include <cstdlib>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -51,36 +50,150 @@ void check_instance_import(
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
   for (size_t i = 0; i < vertex_names.size(); i++) {
-    const std::string       v_name = vertex_names[i];
+    const std::string&      v_name = vertex_names.at(i);
     const cda_rail::Vertex& v      = network.get_vertex({v_name});
     EXPECT_EQ(v.name, v_name);
-    EXPECT_EQ(v.type, type[i]);
+    EXPECT_EQ(v.type, type.at(i));
   }
 
   // Check edges properties
   std::vector<EdgeTarget> edge_targets;
-  edge_targets.push_back({"l0", "l1", 500, 27.7778, true, 10});
-  edge_targets.push_back({"l1", "l2", 500, 27.7778, true, 10});
-  edge_targets.push_back({"l2", "l3", 5, 27.7778, false, 0});
-  edge_targets.push_back({"l3", "g00", 5, 27.7778, false, 0});
-  edge_targets.push_back({"l3", "g10", 5, 27.7778, false, 0});
-  edge_targets.push_back({"g00", "g01", 300, 27.7778, true, 10, 150});
-  edge_targets.push_back({"g10", "g11", 300, 27.7778, true, 10, 150});
-  edge_targets.push_back({"g01", "r2", 5, 27.7778, false, 0});
-  edge_targets.push_back({"g11", "r2", 5, 27.7778, false, 0});
-  edge_targets.push_back({"r2", "r1", 5, 27.7778, false, 0});
-  edge_targets.push_back({"r1", "r0", 500, 27.7778, true, 10});
-  edge_targets.push_back({"r0", "r1", 500, 27.7778, true, 10});
-  edge_targets.push_back({"r1", "r2", 5, 27.7778, false, 0});
-  edge_targets.push_back({"r2", "g01", 5, 27.7778, false, 0});
-  edge_targets.push_back({"r2", "g11", 5, 27.7778, false, 0});
-  edge_targets.push_back({"g01", "g00", 300, 27.7778, true, 10, 150});
-  edge_targets.push_back({"g11", "g10", 300, 27.7778, true, 10, 150});
-  edge_targets.push_back({"g00", "l3", 5, 27.7778, false, 0});
-  edge_targets.push_back({"g10", "l3", 5, 27.7778, false, 0});
-  edge_targets.push_back({"l3", "l2", 5, 27.7778, false, 0});
-  edge_targets.push_back({"l2", "l1", 500, 27.7778, true, 10});
-  edge_targets.push_back({"l1", "l0", 500, 27.7778, true, 10});
+  edge_targets.push_back({.source           = "l0",
+                          .target           = "l1",
+                          .length           = 500,
+                          .max_speed        = 27.7778,
+                          .breakable        = true,
+                          .min_block_length = 10});
+  edge_targets.push_back({.source           = "l1",
+                          .target           = "l2",
+                          .length           = 500,
+                          .max_speed        = 27.7778,
+                          .breakable        = true,
+                          .min_block_length = 10});
+  edge_targets.push_back({.source           = "l2",
+                          .target           = "l3",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source           = "l3",
+                          .target           = "g00",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source           = "l3",
+                          .target           = "g10",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source                = "g00",
+                          .target                = "g01",
+                          .length                = 300,
+                          .max_speed             = 27.7778,
+                          .breakable             = true,
+                          .min_block_length      = 10,
+                          .min_stop_block_length = 150});
+  edge_targets.push_back({.source                = "g10",
+                          .target                = "g11",
+                          .length                = 300,
+                          .max_speed             = 27.7778,
+                          .breakable             = true,
+                          .min_block_length      = 10,
+                          .min_stop_block_length = 150});
+  edge_targets.push_back({.source           = "g01",
+                          .target           = "r2",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source           = "g11",
+                          .target           = "r2",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source           = "r2",
+                          .target           = "r1",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source           = "r1",
+                          .target           = "r0",
+                          .length           = 500,
+                          .max_speed        = 27.7778,
+                          .breakable        = true,
+                          .min_block_length = 10});
+  edge_targets.push_back({.source           = "r0",
+                          .target           = "r1",
+                          .length           = 500,
+                          .max_speed        = 27.7778,
+                          .breakable        = true,
+                          .min_block_length = 10});
+  edge_targets.push_back({.source           = "r1",
+                          .target           = "r2",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source           = "r2",
+                          .target           = "g01",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source           = "r2",
+                          .target           = "g11",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source                = "g01",
+                          .target                = "g00",
+                          .length                = 300,
+                          .max_speed             = 27.7778,
+                          .breakable             = true,
+                          .min_block_length      = 10,
+                          .min_stop_block_length = 150});
+  edge_targets.push_back({.source                = "g11",
+                          .target                = "g10",
+                          .length                = 300,
+                          .max_speed             = 27.7778,
+                          .breakable             = true,
+                          .min_block_length      = 10,
+                          .min_stop_block_length = 150});
+  edge_targets.push_back({.source           = "g00",
+                          .target           = "l3",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source           = "g10",
+                          .target           = "l3",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source           = "l3",
+                          .target           = "l2",
+                          .length           = 5,
+                          .max_speed        = 27.7778,
+                          .breakable        = false,
+                          .min_block_length = 0});
+  edge_targets.push_back({.source           = "l2",
+                          .target           = "l1",
+                          .length           = 500,
+                          .max_speed        = 27.7778,
+                          .breakable        = true,
+                          .min_block_length = 10});
+  edge_targets.push_back({.source           = "l1",
+                          .target           = "l0",
+                          .length           = 500,
+                          .max_speed        = 27.7778,
+                          .breakable        = true,
+                          .min_block_length = 10});
 
   EXPECT_EQ(network.number_of_edges(), edge_targets.size());
   for (const auto& edge : edge_targets) {
@@ -218,11 +331,11 @@ void check_instance_import(
   const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
-  cda_rail::index_set track_ids{network.get_edge_index({"g00"}, {"g01"}),
-                                network.get_edge_index({"g10"}, {"g11"}),
-                                network.get_edge_index({"g01"}, {"g00"}),
-                                network.get_edge_index({"g11"}, {"g10"})};
-  auto                tracks_read = station.tracks;
+  cda_rail::index_set const track_ids{network.get_edge_index({"g00"}, {"g01"}),
+                                      network.get_edge_index({"g10"}, {"g11"}),
+                                      network.get_edge_index({"g01"}, {"g00"}),
+                                      network.get_edge_index({"g11"}, {"g10"})};
+  auto                      tracks_read = station.tracks;
   EXPECT_EQ(tracks_read, track_ids);
 
   const auto& trains = instance.get_const_train_list();
@@ -262,7 +375,7 @@ void check_instance_import(
   EXPECT_EQ(network.get_vertex(tr1_schedule.get_entry_vertex()).name, "l0");
   EXPECT_EQ(network.get_vertex(tr1_schedule.get_exit_vertex()).name, "r0");
   EXPECT_EQ(tr1_schedule.get_stops().size(), 1);
-  const auto& stop = tr1_schedule.get_stops()[0];
+  const auto& stop = tr1_schedule.get_stops().at(0);
   EXPECT_EQ(stop.get_service_time(), 240);
   EXPECT_EQ(stop.get_earliest_departure(), 300);
   EXPECT_EQ(stations.get_station(stop.get_station().name).name, "Central");
@@ -289,7 +402,7 @@ void check_instance_import(
   EXPECT_EQ(network.get_vertex(tr2_schedule.get_entry_vertex()).name, "l0");
   EXPECT_EQ(network.get_vertex(tr2_schedule.get_exit_vertex()).name, "r0");
   EXPECT_EQ(tr2_schedule.get_stops().size(), 1);
-  const auto& stop2 = tr2_schedule.get_stops()[0];
+  const auto& stop2 = tr2_schedule.get_stops().at(0);
   EXPECT_EQ(stop2.get_service_time(), 120);
   EXPECT_EQ(stop2.get_earliest_departure(), 300);
   EXPECT_EQ(stations.get_station(stop2.get_station().name).name, "Central");
@@ -316,7 +429,7 @@ void check_instance_import(
   EXPECT_EQ(network.get_vertex(tr3_schedule.get_entry_vertex()).name, "r0");
   EXPECT_EQ(network.get_vertex(tr3_schedule.get_exit_vertex()).name, "l0");
   EXPECT_EQ(tr3_schedule.get_stops().size(), 1);
-  const auto& stop3 = tr3_schedule.get_stops()[0];
+  const auto& stop3 = tr3_schedule.get_stops().at(0);
   EXPECT_EQ(stop3.get_service_time(), 180);
   EXPECT_EQ(stop3.get_earliest_departure(), 300);
   EXPECT_EQ(stations.get_station(stop3.get_station().name).name, "Central");
@@ -552,12 +665,12 @@ TEST(GenPOInstance, GenPOTimetableExport) {
             "v0");
   EXPECT_EQ(network.get_vertex(tr1_schedule_read.get_exit_vertex()).name, "v2");
   EXPECT_EQ(tr1_schedule_read.get_stops().size(), 2);
-  const auto& stop1_read = tr1_schedule_read.get_stops()[0];
+  const auto& stop1_read = tr1_schedule_read.get_stops().at(0);
   EXPECT_EQ(stop1_read.get_service_time(), 60);
   EXPECT_EQ(stop1_read.get_earliest_departure(), 120);
   EXPECT_EQ(stations_read.get_station(stop1_read.get_station().name).name,
             "s0");
-  const auto& stop2_read = tr1_schedule_read.get_stops()[1];
+  const auto& stop2_read = tr1_schedule_read.get_stops().at(1);
   EXPECT_EQ(stop2_read.get_service_time(), 200);
   EXPECT_EQ(stop2_read.get_earliest_departure(), 260);
   EXPECT_EQ(stations_read.get_station(stop2_read.get_station().name).name,
@@ -1723,46 +1836,46 @@ TEST(GenPOInstance, Stammstrecke) {
 
   auto pairs = instance.get_editable_network().all_edge_pairs_shortest_paths();
 
-  auto pasing_ost4 = pairs[e1lr][e27lr_4] +
+  auto pasing_ost4 = pairs.at(e1lr).at(e27lr_4) +
                      instance.get_editable_network().get_edge(e1lr).length;
-  auto pasing_ost5 = pairs[e1lr][e26lr_5] +
+  auto pasing_ost5 = pairs.at(e1lr).at(e26lr_5) +
                      instance.get_editable_network().get_edge(e1lr).length;
-  auto laim_ost4 = pairs[e4lr_entry][e27lr_4] +
+  auto laim_ost4 = pairs.at(e4lr_entry).at(e27lr_4) +
                    instance.get_editable_network().get_edge(e4lr_entry).length;
-  auto laim_ost5 = pairs[e4lr_entry][e26lr_5] +
+  auto laim_ost5 = pairs.at(e4lr_entry).at(e26lr_5) +
                    instance.get_editable_network().get_edge(e4lr_entry).length;
   auto donnersberger_ost4 =
-      pairs[e9lr_entry][e27lr_4] +
+      pairs.at(e9lr_entry).at(e27lr_4) +
       instance.get_editable_network().get_edge(e9lr_entry).length;
   auto donnersberger_ost5 =
-      pairs[e9lr_entry][e26lr_5] +
+      pairs.at(e9lr_entry).at(e26lr_5) +
       instance.get_editable_network().get_edge(e9lr_entry).length;
-  auto ost1_pasing = pairs[e26rl_1][e1rl] +
+  auto ost1_pasing = pairs.at(e26rl_1).at(e1rl) +
                      instance.get_editable_network().get_edge(e26rl_1).length;
-  auto ost2_pasing = pairs[e27rl_2][e1rl] +
+  auto ost2_pasing = pairs.at(e27rl_2).at(e1rl) +
                      instance.get_editable_network().get_edge(e27rl_2).length;
-  auto ost3_pasing = pairs[e28rl_3][e1rl] +
+  auto ost3_pasing = pairs.at(e28rl_3).at(e1rl) +
                      instance.get_editable_network().get_edge(e28rl_3).length;
-  auto ost1_laim   = pairs[e26rl_1][e2rl_exit] +
+  auto ost1_laim   = pairs.at(e26rl_1).at(e2rl_exit) +
                      instance.get_editable_network().get_edge(e26rl_1).length;
-  auto ost2_laim   = pairs[e27rl_2][e2rl_exit] +
+  auto ost2_laim   = pairs.at(e27rl_2).at(e2rl_exit) +
                      instance.get_editable_network().get_edge(e27rl_2).length;
-  auto ost3_laim   = pairs[e28rl_3][e2rl_exit] +
+  auto ost3_laim   = pairs.at(e28rl_3).at(e2rl_exit) +
                      instance.get_editable_network().get_edge(e28rl_3).length;
   auto ost1_donnersberger =
-      pairs[e26rl_1][e9rl_a] +
+      pairs.at(e26rl_1).at(e9rl_a) +
       instance.get_editable_network().get_edge(e26rl_1).length;
   auto ost2_donnersberger =
-      pairs[e27rl_2][e9rl_a] +
+      pairs.at(e27rl_2).at(e9rl_a) +
       instance.get_editable_network().get_edge(e27rl_2).length;
   auto ost3_donnersberger =
-      pairs[e28rl_3][e9rl_a] +
+      pairs.at(e28rl_3).at(e9rl_a) +
       instance.get_editable_network().get_edge(e28rl_3).length;
 
-  const int full_expected          = 11090;
-  const int laim_expected_lr       = 7788;
-  const int laim_expected_rl       = laim_expected_lr + 210 + 370 + 30;
-  const int donnersberger_expected = 5391;
+  constexpr int full_expected          = 11090;
+  constexpr int laim_expected_lr       = 7788;
+  constexpr int laim_expected_rl       = laim_expected_lr + 210 + 370 + 30;
+  constexpr int donnersberger_expected = 5391;
 
   EXPECT_EQ(pasing_ost4, full_expected);
   EXPECT_EQ(pasing_ost5, full_expected);
@@ -1809,8 +1922,8 @@ TEST(ProblemInstanceWithSchedulesAndRoutes, Helper) {
                                                              500, 100, true);
   auto const e45a = instance.get_editable_network().add_edge({"v4a"}, {"v5a"},
                                                              500, 100, true);
-  auto const e45b = instance.get_editable_network().add_edge({"v4b"}, {"v5b"},
-                                                             500, 100, true);
+  [[maybe_unused]] auto const e45b = instance.get_editable_network().add_edge(
+      {"v4b"}, {"v5b"}, 500, 100, true);
 
   instance.get_editable_network().add_successor({{"v0"}, {"v1"}},
                                                 {{"v1"}, {"v2"}});
@@ -1908,6 +2021,7 @@ TEST(ProblemInstanceWithSchedulesAndRoutes, Helper) {
   EXPECT_EQ(tr_on_edges3, cda_rail::index_set({tr2}));
 }
 
+// NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if)
 #if 0
 TEST(Functionality, HelperFunctions) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
@@ -2314,7 +2428,7 @@ TEST(Functionality, Discretization) {
   EXPECT_EQ(r1.size(), expected_route.size() - 1);
   for (size_t i = 0; i < r1.size(); ++i) {
     EXPECT_EQ(r1.get_edge(i), instance.get_editable_network().get_edge_index(
-                                   {expected_route[i]}, {expected_route[i + 1]}));
+                                   {expected_route.at(i)}, {expected_route.at(i + 1)}));
   }
 
   // Check stations
@@ -2325,7 +2439,7 @@ TEST(Functionality, Discretization) {
   EXPECT_EQ(s0.tracks.size(), expected_s0.size() - 1);
   for (size_t i = 0; i < s0.tracks.size(); ++i) {
     const auto edge_id = instance.get_editable_network().get_edge_index(
-        {expected_s0[i]}, {expected_s0[i + 1]});
+        {expected_s0.at(i)}, {expected_s0.at(i + 1)});
     EXPECT_TRUE(std::find(s0.tracks.begin(), s0.tracks.end(), edge_id) !=
                 s0.tracks.end());
   }
@@ -2335,7 +2449,7 @@ TEST(Functionality, Discretization) {
   EXPECT_EQ(s1.tracks.size(), expected_s1.size() - 1);
   for (size_t i = 0; i < s1.tracks.size(); ++i) {
     const auto edge_id = instance.get_editable_network().get_edge_index(
-        {expected_s1[i]}, {expected_s1[i + 1]});
+        {expected_s1.at(i)}, {expected_s1.at(i + 1)});
     EXPECT_TRUE(std::find(s1.tracks.begin(), s1.tracks.end(), edge_id) !=
                 s1.tracks.end());
   }

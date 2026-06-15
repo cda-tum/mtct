@@ -29,8 +29,6 @@
 #include <utility>
 #include <vector>
 
-using json = nlohmann::json;
-
 // -----------------------------
 // CONSTRUCTORS
 // -----------------------------
@@ -91,7 +89,7 @@ bool cda_rail::Network::is_valid_successor_helper(size_t e0, size_t e1) const {
   if (!has_edge(e1)) {
     throw exceptions::EdgeNotExistentException(e1);
   }
-  return m_edges[e0].target == m_edges[e1].source &&
+  return m_edges.at(e0).target == m_edges.at(e1).source &&
          m_successors.at(e0).contains(e1);
 }
 
@@ -99,7 +97,7 @@ bool cda_rail::Network::is_adjustable_helper(size_t vertex_id) const {
   if (!has_vertex(vertex_id)) {
     throw exceptions::VertexNotExistentException(vertex_id);
   }
-  return m_vertices[vertex_id].type == VertexType::NoBorder &&
+  return m_vertices.at(vertex_id).type == VertexType::NoBorder &&
          neighbors(vertex_id).size() == 2;
 }
 
@@ -145,7 +143,7 @@ cda_rail::index_vector
 cda_rail::Network::get_vertices_by_type(VertexType type) const {
   auto indices = std::views::iota(size_t{0}, m_vertices.size()) |
                  std::views::filter([this, type](size_t i) {
-                   return m_vertices[i].type == type;
+                   return m_vertices.at(i).type == type;
                  });
   return {indices.begin(), indices.end()};
 }
@@ -173,7 +171,7 @@ cda_rail::Network::get_vertex_helper(size_t index) const {
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  return m_vertices[index];
+  return m_vertices.at(index);
 }
 
 size_t cda_rail::Network::get_edge_index_helper(size_t source_id,
@@ -185,7 +183,8 @@ size_t cda_rail::Network::get_edge_index_helper(size_t source_id,
     throw exceptions::VertexNotExistentException(target_id);
   }
   for (size_t i = 0; i < m_edges.size(); ++i) {
-    if (m_edges[i].source == source_id && m_edges[i].target == target_id) {
+    if (m_edges.at(i).source == source_id &&
+        m_edges.at(i).target == target_id) {
       return i;
     }
   }
@@ -197,7 +196,7 @@ const cda_rail::Edge& cda_rail::Network::get_edge_helper(size_t index) const {
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  return m_edges[index];
+  return m_edges.at(index);
 }
 
 std::string cda_rail::Network::get_edge_name_helper(
@@ -220,7 +219,7 @@ cda_rail::index_set cda_rail::Network::out_edges_helper(size_t index) const {
   }
   cda_rail::index_set result;
   for (size_t i = 0; i < m_edges.size(); ++i) {
-    if (m_edges[i].source == index) {
+    if (m_edges.at(i).source == index) {
       result.insert(i);
     }
   }
@@ -234,7 +233,7 @@ cda_rail::Network::in_edges_helper(size_t const index) const {
   }
   cda_rail::index_set result;
   for (size_t i = 0; i < m_edges.size(); ++i) {
-    if (m_edges[i].target == index) {
+    if (m_edges.at(i).target == index) {
       result.insert(i);
     }
   }
@@ -268,7 +267,7 @@ cda_rail::Network::get_successors_helper(size_t index) const {
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  return m_successors[index];
+  return m_successors.at(index);
 }
 
 cda_rail::index_set cda_rail::Network::neighbors_helper(size_t v_index) const {
@@ -489,7 +488,7 @@ std::vector<std::pair<size_t, size_t>> cda_rail::Network::get_intersecting_ttd(
   for (size_t ttd_idx = 0; ttd_idx < ttd.size(); ++ttd_idx) {
     // Find the first edge in edges_to_consider that belongs to this TTD section
     for (size_t edge_idx = 0; edge_idx < edges_to_consider.size(); ++edge_idx) {
-      if (ttd[ttd_idx].contains(edges_to_consider[edge_idx])) {
+      if (ttd.at(ttd_idx).contains(edges_to_consider.at(edge_idx))) {
         result.emplace_back(ttd_idx, edge_idx);
         break;
       }
@@ -607,16 +606,16 @@ size_t cda_rail::Network::max_vss_on_edge_helper(size_t index) const {
 // -----------------------------
 
 void cda_rail::Network::change_vertex_name_helper(
-    size_t index, std::string_view const new_name) {
+    size_t index, std::string_view const newName) {
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  if (has_vertex(new_name)) {
+  if (has_vertex(newName)) {
     throw exceptions::InvalidInputException("Vertex already exists");
   }
   m_vertex_name_to_index.erase(m_vertices.at(index).name);
-  m_vertices.at(index).name = new_name;
-  m_vertex_name_to_index.emplace(new_name, index);
+  m_vertices.at(index).name = newName;
+  m_vertex_name_to_index.emplace(newName, index);
 }
 
 void cda_rail::Network::change_vertex_type_helper(size_t     index,
@@ -624,7 +623,7 @@ void cda_rail::Network::change_vertex_type_helper(size_t     index,
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  m_vertices[index].type = new_type;
+  m_vertices.at(index).type = new_type;
 }
 
 void cda_rail::Network::change_vertex_headway_helper(size_t index,
@@ -632,7 +631,7 @@ void cda_rail::Network::change_vertex_headway_helper(size_t index,
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  m_vertices[index].headway = new_headway;
+  m_vertices.at(index).headway = new_headway;
 }
 
 void cda_rail::Network::change_edge_length_helper(size_t index,
@@ -640,7 +639,7 @@ void cda_rail::Network::change_edge_length_helper(size_t index,
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  m_edges[index].length = new_length;
+  m_edges.at(index).length = new_length;
 }
 
 void cda_rail::Network::change_edge_max_speed_helper(size_t index,
@@ -648,7 +647,7 @@ void cda_rail::Network::change_edge_max_speed_helper(size_t index,
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  m_edges[index].max_speed = new_max_speed;
+  m_edges.at(index).max_speed = new_max_speed;
 }
 
 void cda_rail::Network::change_edge_min_block_length_helper(
@@ -656,7 +655,7 @@ void cda_rail::Network::change_edge_min_block_length_helper(
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  m_edges[index].min_block_length = new_min_block_length;
+  m_edges.at(index).min_block_length = new_min_block_length;
 }
 
 void cda_rail::Network::change_edge_min_stop_block_length_helper(
@@ -664,7 +663,7 @@ void cda_rail::Network::change_edge_min_stop_block_length_helper(
   if (!has_edge(index)) {
     throw exceptions::EdgeNotExistentException(index);
   }
-  m_edges[index].min_stop_block_length = new_min_stop_block_length;
+  m_edges.at(index).min_stop_block_length = new_min_stop_block_length;
 }
 
 void cda_rail::Network::change_edge_breakable_helper(size_t const index,
@@ -703,12 +702,12 @@ void cda_rail::Network::add_successor_helper(size_t edge_in, size_t edge_out) {
   if (!has_edge(edge_out)) {
     throw exceptions::EdgeNotExistentException(edge_out);
   }
-  if (m_edges[edge_in].target != m_edges[edge_out].source) {
+  if (m_edges.at(edge_in).target != m_edges.at(edge_out).source) {
     throw exceptions::ConsistencyException("Edge " + std::to_string(edge_out) +
                                            " is not adjacent to " +
                                            std::to_string(edge_in));
   }
-  m_successors[edge_in].insert(edge_out);
+  m_successors.at(edge_in).insert(edge_out);
 }
 
 std::vector<std::pair<size_t, cda_rail::index_vector>>
@@ -790,22 +789,21 @@ cda_rail::Network::all_edge_pairs_shortest_paths() const {
   std::vector<std::vector<double>> dist(n, std::vector<double>(n, INF));
 
   for (size_t u = 0; u < n; ++u) {
-    dist[u][u] = 0;
+    dist.at(u).at(u) = 0;
     for (const auto v : get_successors(u)) {
-      dist[u][v] = get_edge(v).length;
+      dist.at(u).at(v) = get_edge(v).length;
     }
   }
 
   // Floyd-Warshall
   for (size_t k = 0; k < n; ++k) {
     for (size_t i = 0; i < n; ++i) {
-      if (dist[i][k] == INF) {
+      if (dist.at(i).at(k) == INF) {
         continue;
       } // minor optimization
       for (size_t j = 0; j < n; ++j) {
-        if (const double via = dist[i][k] + dist[k][j]; via < dist[i][j]) {
-          dist[i][j] = via;
-        }
+        dist.at(i).at(j) =
+            std::min(dist.at(i).at(k) + dist.at(k).at(j), dist.at(i).at(j));
       }
     }
   }
@@ -823,10 +821,10 @@ std::optional<double> cda_rail::Network::shortest_path_helper(
 
 std::pair<std::optional<double>, cda_rail::index_vector>
 cda_rail::Network::shortest_path_between_sets_using_edges_helper(
-    cda_rail::index_set source_edge_ids, cda_rail::index_set target_ids,
-    bool only_use_valid_successors, cda_rail::index_set edges_to_use,
-    bool target_is_edge, bool include_first_edge, bool use_minimal_time,
-    double max_v) const {
+    const cda_rail::index_set& source_edge_ids,
+    const cda_rail::index_set& target_ids, bool only_use_valid_successors,
+    const cda_rail::index_set& edges_to_use, bool target_is_edge,
+    bool include_first_edge, bool use_minimal_time, double max_v) const {
   // Validate input
   if (source_edge_ids.empty()) {
     throw exceptions::InvalidInputException(
@@ -882,8 +880,8 @@ cda_rail::Network::shortest_path_between_sets_using_edges_helper(
         include_first_edge
             ? delta_dist_helper(get_edge(src), max_v, use_minimal_time)
             : 0.0;
-    if (d < distances[src]) {
-      distances[src] = d;
+    if (d < distances.at(src)) {
+      distances.at(src) = d;
       pq.emplace(d, src);
     }
   }
@@ -892,10 +890,10 @@ cda_rail::Network::shortest_path_between_sets_using_edges_helper(
     auto [dist, edge_id] = pq.top();
     pq.pop();
 
-    if (visited[edge_id]) {
+    if (visited.at(edge_id)) {
       continue;
     }
-    visited[edge_id] = true;
+    visited.at(edge_id) = true;
 
     const auto& edge = get_edge(edge_id);
 
@@ -904,8 +902,9 @@ cda_rail::Network::shortest_path_between_sets_using_edges_helper(
       // Reconstruct path by walking predecessor chain
       cda_rail::index_vector path{edge_id};
       while (!source_edge_ids.contains(path.back()) &&
-             predecessors[path.back()] != std::numeric_limits<size_t>::max()) {
-        const size_t pred = predecessors[path.back()];
+             predecessors.at(path.back()) !=
+                 std::numeric_limits<size_t>::max()) {
+        const size_t pred = predecessors.at(path.back());
         if (std::ranges::contains(path, pred)) {
           throw exceptions::ConsistencyException("Cycle in path");
         }
@@ -930,9 +929,9 @@ cda_rail::Network::shortest_path_between_sets_using_edges_helper(
       }
       const double new_dist =
           dist + delta_dist_helper(succ_edge, max_v, use_minimal_time);
-      if (new_dist < distances[succ]) {
-        distances[succ]    = new_dist;
-        predecessors[succ] = edge_id;
+      if (new_dist < distances.at(succ)) {
+        distances.at(succ)    = new_dist;
+        predecessors.at(succ) = edge_id;
         pq.emplace(new_dist, succ);
       }
     }

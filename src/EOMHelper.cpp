@@ -40,7 +40,7 @@ template <typename... Args> void round_with_eps(double eps, Args&... args) {
 [[nodiscard]] double stable_phase_time(double distance, double initial_speed,
                                        double acceleration) {
   // Returns the time to cover `distance` from `initial_speed` at constant
-  // `acceleration`. Original: t = (sqrt(v0^2 + 2*a*s) - v0) / a Stable:   t =
+  // `acceleration`. Original: t = (sqrt(v0^2 + 2*a*s) - v0) / a Stable: t =
   // 2*s / (sqrt(v0^2 + 2*a*s) + v0) Both are algebraically equivalent; the
   // stable form avoids cancellation.
   if (distance == 0) {
@@ -476,7 +476,7 @@ double cda_rail::vel_on_edge_at_time(double v_1, double v_2, double v_line,
 double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
                                              double s) {
   // How much time does a train need to move its moving authority forward by s
-  // given initial speed v_0 and acceleration a and deceleration d
+  // given initial speed v_0 and acceleration a and deceleration d?
 
   normalize_ma_push_inputs(v_0, a, d, s);
 

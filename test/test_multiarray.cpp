@@ -12,84 +12,84 @@ using std::size_t;
 TEST(FixedSizeVector, DefaultConstructionAndResize) {
   cda_rail::FixedSizeVector<size_t> vec;
   EXPECT_EQ(vec.size(), 0);
-  EXPECT_THROW(vec.at(0), std::out_of_range);
+  EXPECT_THROW((void)vec.at(0), std::out_of_range);
 
   vec.delete_and_resize(4);
   EXPECT_EQ(vec.size(), 4);
 
   for (size_t i = 0; i < vec.size(); ++i) {
-    vec[i] = 10 + i;
+    vec.at(i) = 10 + i;
   }
 
-  EXPECT_EQ(vec[0], 10);
-  EXPECT_EQ(vec[1], 11);
-  EXPECT_EQ(vec[2], 12);
-  EXPECT_EQ(vec[3], 13);
+  EXPECT_EQ(vec.at(0), 10);
+  EXPECT_EQ(vec.at(1), 11);
+  EXPECT_EQ(vec.at(2), 12);
+  EXPECT_EQ(vec.at(3), 13);
 }
 
 TEST(FixedSizeVector, ConstructorWithInitializerList) {
   cda_rail::FixedSizeVector<size_t> vec{1, 2, 3, 4};
   EXPECT_EQ(vec.size(), 4);
-  EXPECT_EQ(vec[0], 1);
-  EXPECT_EQ(vec[1], 2);
-  EXPECT_EQ(vec[2], 3);
-  EXPECT_EQ(vec[3], 4);
+  EXPECT_EQ(vec.at(0), 1);
+  EXPECT_EQ(vec.at(1), 2);
+  EXPECT_EQ(vec.at(2), 3);
+  EXPECT_EQ(vec.at(3), 4);
 }
 
 TEST(FixedSizeVector, AtChecksBoundsForConstAndNonConst) {
   cda_rail::FixedSizeVector<size_t> vec(3);
-  vec[0] = 7;
-  vec[1] = 8;
-  vec[2] = 9;
+  vec.at(0) = 7;
+  vec.at(1) = 8;
+  vec.at(2) = 9;
 
   EXPECT_EQ(vec.at(0), 7);
   EXPECT_EQ(vec.at(2), 9);
-  EXPECT_THROW(vec.at(3), std::out_of_range);
+  EXPECT_THROW((void)vec.at(3), std::out_of_range);
 
   const auto& cvec = vec;
   EXPECT_EQ(cvec.at(1), 8);
-  EXPECT_THROW(cvec.at(3), std::out_of_range);
+  EXPECT_THROW((void)cvec.at(3), std::out_of_range);
 }
 
 TEST(FixedSizeVector, CopyOperationsCreateDeepCopies) {
   cda_rail::FixedSizeVector<size_t> original(3);
-  original[0] = 1;
-  original[1] = 2;
-  original[2] = 3;
+  original.at(0) = 1;
+  original.at(1) = 2;
+  original.at(2) = 3;
 
   cda_rail::FixedSizeVector<size_t> copied(original);
-  copied[1] = 99;
+  copied.at(1) = 99;
 
-  EXPECT_EQ(original[1], 2);
-  EXPECT_EQ(copied[1], 99);
+  EXPECT_EQ(original.at(1), 2);
+  EXPECT_EQ(copied.at(1), 99);
 
   cda_rail::FixedSizeVector<size_t> assigned(1);
-  assigned[0] = 42;
-  assigned    = original;
-  assigned[2] = 88;
+  assigned.at(0) = 42;
+  assigned       = original;
+  assigned.at(2) = 88;
 
-  EXPECT_EQ(original[2], 3);
-  EXPECT_EQ(assigned[2], 88);
+  EXPECT_EQ(original.at(2), 3);
+  EXPECT_EQ(assigned.at(2), 88);
   EXPECT_EQ(assigned.size(), 3);
 }
 
 TEST(FixedSizeVector, AssigningToSelfWorks) {
   cda_rail::FixedSizeVector<size_t> original(3);
-  original[0] = 1;
-  original[1] = 2;
-  original[2] = 3;
+  original.at(0) = 1;
+  original.at(1) = 2;
+  original.at(2) = 3;
 
   original = original;
 
-  EXPECT_EQ(original[0], 1);
-  EXPECT_EQ(original[1], 2);
-  EXPECT_EQ(original[2], 3);
+  EXPECT_EQ(original.at(0), 1);
+  EXPECT_EQ(original.at(1), 2);
+  EXPECT_EQ(original.at(2), 3);
 }
 
 TEST(FixedSizeVector, SupportsRangeForIteration) {
   cda_rail::FixedSizeVector<size_t> vec(5);
   for (size_t i = 0; i < vec.size(); ++i) {
-    vec[i] = i + 1;
+    vec.at(i) = i + 1;
   }
 
   size_t sum = 0;
@@ -108,12 +108,12 @@ TEST(FixedSizeVector, SupportsRangeForIteration) {
 
 TEST(FixedSizeVector, SupportsStringDataType) {
   cda_rail::FixedSizeVector<std::string> words(3);
-  words[0]    = "rail";
-  words[1]    = "signal";
+  words.at(0) = "rail";
+  words.at(1) = "signal";
   words.at(2) = "block";
 
   EXPECT_EQ(words.size(), 3);
-  EXPECT_EQ(words[0], "rail");
+  EXPECT_EQ(words.at(0), "rail");
   EXPECT_EQ(words.at(1), "signal");
   EXPECT_EQ(words.at(2), "block");
 
@@ -126,21 +126,21 @@ TEST(FixedSizeVector, SupportsStringDataType) {
 
 TEST(FixedSizeVector, MoveConstructionAndMoveAssignmentKeepElements) {
   cda_rail::FixedSizeVector<std::string> source(2);
-  source[0] = "A";
-  source[1] = "B";
+  source.at(0) = "A";
+  source.at(1) = "B";
 
   cda_rail::FixedSizeVector<std::string> moved_constructed(std::move(source));
   EXPECT_EQ(moved_constructed.size(), 2);
-  EXPECT_EQ(moved_constructed[0], "A");
-  EXPECT_EQ(moved_constructed[1], "B");
+  EXPECT_EQ(moved_constructed.at(0), "A");
+  EXPECT_EQ(moved_constructed.at(1), "B");
 
   cda_rail::FixedSizeVector<std::string> other(1);
-  other[0] = "X";
-  other    = std::move(moved_constructed);
+  other.at(0) = "X";
+  other       = std::move(moved_constructed);
 
   EXPECT_EQ(other.size(), 2);
-  EXPECT_EQ(other[0], "A");
-  EXPECT_EQ(other[1], "B");
+  EXPECT_EQ(other.at(0), "A");
+  EXPECT_EQ(other.at(1), "B");
 }
 
 TEST(MultiArray, BasicFunctionality) {
@@ -159,7 +159,7 @@ TEST(MultiArray, BasicFunctionality) {
   for (size_t i = 0; i < 1; ++i) {
     for (size_t j = 0; j < 2; ++j) {
       for (size_t k = 0; k < 3; ++k) {
-        EXPECT_EQ(a1(i, j, k), (6 * i) + (3 * j + k));
+        EXPECT_EQ(a1(i, j, k), (6 * i) + ((3 * j) + k));
       }
     }
   }
@@ -168,9 +168,9 @@ TEST(MultiArray, BasicFunctionality) {
   EXPECT_EQ(a1.dimensions(), 3);
   auto const& shape = a1.get_shape();
   EXPECT_EQ(shape.size(), 3);
-  EXPECT_EQ(shape[0], 1);
-  EXPECT_EQ(shape[1], 2);
-  EXPECT_EQ(shape[2], 3);
+  EXPECT_EQ(shape.at(0), 1);
+  EXPECT_EQ(shape.at(1), 2);
+  EXPECT_EQ(shape.at(2), 3);
 
   // Calling with wrong number of arguments should throw std::invalid_argument
   EXPECT_THROW(a1(0), std::invalid_argument);
@@ -199,10 +199,10 @@ TEST(MultiArray, AtProvidesBoundsSafeAccess) {
   const auto& cmatrix = matrix;
   EXPECT_EQ(cmatrix.at(0, 2), 2);
 
-  EXPECT_THROW(matrix.at(2, 0), std::out_of_range);
-  EXPECT_THROW(matrix.at(0, 3), std::out_of_range);
-  EXPECT_THROW(matrix.at(0), std::invalid_argument);
-  EXPECT_THROW(matrix.at(0, 0, 0), std::invalid_argument);
+  EXPECT_THROW((void)matrix.at(2, 0), std::out_of_range);
+  EXPECT_THROW((void)matrix.at(0, 3), std::out_of_range);
+  EXPECT_THROW((void)matrix.at(0), std::invalid_argument);
+  EXPECT_THROW((void)matrix.at(0, 0, 0), std::invalid_argument);
 }
 
 TEST(MultiArray, ZeroDimensionalArrayBehavesLikeScalar) {
@@ -220,7 +220,7 @@ TEST(MultiArray, ZeroDimensionalArrayBehavesLikeScalar) {
   EXPECT_EQ(cscalar.at(), 123);
 
   EXPECT_THROW(scalar(0), std::invalid_argument);
-  EXPECT_THROW(scalar.at(0), std::invalid_argument);
+  EXPECT_THROW((void)scalar.at(0), std::invalid_argument);
 }
 
 TEST(MultiArray, OneDimensionalArrayIndexingAndShape) {
@@ -233,7 +233,7 @@ TEST(MultiArray, OneDimensionalArrayIndexingAndShape) {
   EXPECT_EQ(arr.size(), 4);
   EXPECT_EQ(arr.dimensions(), 1);
   EXPECT_EQ(arr.get_shape().size(), 1);
-  EXPECT_EQ(arr.get_shape()[0], 4);
+  EXPECT_EQ(arr.get_shape().at(0), 4);
 
   EXPECT_EQ(arr(0), 0);
   EXPECT_EQ(arr(1), 1);
@@ -241,7 +241,7 @@ TEST(MultiArray, OneDimensionalArrayIndexingAndShape) {
   EXPECT_EQ(arr(3), 9);
 
   EXPECT_THROW(arr(4), std::out_of_range);
-  EXPECT_THROW(arr.at(4), std::out_of_range);
+  EXPECT_THROW((void)arr.at(4), std::out_of_range);
 }
 
 TEST(MultiArray, FourDimensionalIndexingWorksConsistently) {
@@ -251,7 +251,7 @@ TEST(MultiArray, FourDimensionalIndexingWorksConsistently) {
     for (size_t j = 0; j < 2; ++j) {
       for (size_t k = 0; k < 2; ++k) {
         for (size_t l = 0; l < 2; ++l) {
-          hyper(i, j, k, l) = (((i * 2) + j) * 2 + k) * 2 + l;
+          hyper(i, j, k, l) = (((((i * 2) + j) * 2) + k) * 2) + l;
         }
       }
     }
@@ -266,7 +266,7 @@ TEST(MultiArray, FourDimensionalIndexingWorksConsistently) {
 }
 
 TEST(MultiArray, ShapeIsIterableAndMatchesConstructorArguments) {
-  cda_rail::MultiArray<size_t> array(3, 1, 4);
+  cda_rail::MultiArray<size_t> const array(3, 1, 4);
 
   std::vector<size_t> shape_values;
   for (const auto dim : array.get_shape()) {
@@ -274,9 +274,9 @@ TEST(MultiArray, ShapeIsIterableAndMatchesConstructorArguments) {
   }
 
   EXPECT_EQ(shape_values.size(), 3);
-  EXPECT_EQ(shape_values[0], 3);
-  EXPECT_EQ(shape_values[1], 1);
-  EXPECT_EQ(shape_values[2], 4);
+  EXPECT_EQ(shape_values.at(0), 3);
+  EXPECT_EQ(shape_values.at(1), 1);
+  EXPECT_EQ(shape_values.at(2), 4);
 }
 
 TEST(MultiArray, SupportsStringDataType) {
@@ -304,8 +304,8 @@ TEST(MultiArray, StringTypeThrowsOnInvalidIndices) {
   values(0, 0) = "left";
   values(1, 0) = "right";
 
-  EXPECT_THROW(values.at(2, 0), std::out_of_range);
-  EXPECT_THROW(values.at(0, 1), std::out_of_range);
-  EXPECT_THROW(values.at(0), std::invalid_argument);
-  EXPECT_THROW(values.at(0, 0, 0), std::invalid_argument);
+  EXPECT_THROW((void)values.at(2, 0), std::out_of_range);
+  EXPECT_THROW((void)values.at(0, 1), std::out_of_range);
+  EXPECT_THROW((void)values.at(0), std::invalid_argument);
+  EXPECT_THROW((void)values.at(0, 0, 0), std::invalid_argument);
 }

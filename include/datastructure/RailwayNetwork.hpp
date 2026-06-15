@@ -267,27 +267,27 @@ public:
    * (`successors_cpp.json`) are read from
    * `working_directory/networks/networkName/`.
    *
-   * @param networkName       Name of the network subfolder; defaults to
+   * @param network_name       Name of the network subfolder; defaults to
    *                          `"UnnamedNetwork"`.
-   * @param workingDirectory Root working directory.
+   * @param working_directory Root working directory.
    * @throws cda_rail::exceptions::ImportException If the expected directory
    *         does not exist or the files cannot be parsed.
    */
-  explicit Network(std::string_view const       networkName,
-                   std::filesystem::path const& workingDirectory);
+  explicit Network(std::string_view             network_name,
+                   std::filesystem::path const& working_directory);
 
   /**
    * @brief Convenience overload accepting a `std::string` path.
    *
    * @param networkName       Name of the network subfolder.
-   * @param workingDirectory Root working directory as a string.
+   * @param working_directory Root working directory as a string.
    *
    * @throws cda_rail::exceptions::ImportException If the network cannot be
    *         loaded.
    */
   explicit Network(std::string_view const networkName,
-                   std::string const&     workingDirectory)
-      : Network(networkName, std::filesystem::path(workingDirectory)) {};
+                   std::string const&     working_directory)
+      : Network(networkName, std::filesystem::path(working_directory)) {};
 
   /**
    * @brief Convenience overload accepting a C-string path.
@@ -1715,7 +1715,7 @@ private:
    *        ending upon entering a TTD section or reaching the exit vertex if
    * specified.
    *
-   * @param edge         Starting edge (paths begin with a valid successor of
+   * @param e_0         Starting edge (paths begin with a valid successor of
    *                     this edge).
    * @param ttd_sections Vector of TTD sections (each a set of edge indices).
    * @param exit_node    Optional vertex at which paths may terminate.
@@ -1732,7 +1732,7 @@ public:
    *        ending upon entering a TTD section or reaching the exit vertex if
    * specified.
    *
-   * @param e_0          Starting edge (paths begin with a valid successor of
+   * @param edge          Starting edge (paths begin with a valid successor of
    *                     this edge).
    * @param ttd_sections Vector of TTD sections (each a set of edge indices).
    * @param exit_node    Optional vertex at which paths may terminate.
@@ -1914,9 +1914,10 @@ private:
    */
   [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
   shortest_path_between_sets_using_edges_helper(
-      cda_rail::index_set source_edge_ids, cda_rail::index_set target_ids,
-      bool                only_use_valid_successors = true,
-      cda_rail::index_set edges_to_use = {}, bool target_is_edge = false,
+      const cda_rail::index_set& source_edge_ids,
+      const cda_rail::index_set& target_ids,
+      bool                       only_use_valid_successors = true,
+      const cda_rail::index_set& edges_to_use = {}, bool target_is_edge = false,
       bool include_first_edge = false, bool use_minimal_time = false,
       double max_v = INF) const;
 
@@ -2429,13 +2430,12 @@ private:
    *         @p v_0 / @p e_0 are set, or @p desired_length is not strictly
    *         positive (unless `return_successors_if_zero` applies).
    */
-  [[nodiscard]] std::vector<cda_rail::index_vector>
-  all_routes_of_given_length(std::optional<size_t> v_0,
-                             std::optional<size_t> e_0, double desired_length,
-                             bool                  reverse_direction,
-                             std::optional<size_t> exit_node           = {},
-                             cda_rail::index_set   edges_used_by_train = {},
-                             bool return_successors_if_zero = false) const;
+  [[nodiscard]] std::vector<cda_rail::index_vector> all_routes_of_given_length(
+      std::optional<size_t> v_0, std::optional<size_t> e_0,
+      double desired_length, bool reverse_direction,
+      std::optional<size_t>      exit_node                 = {},
+      const cda_rail::index_set& edges_used_by_train       = {},
+      bool                       return_successors_if_zero = false) const;
 
   /**
    * @brief Recursive implementation underlying the public

@@ -5,8 +5,6 @@
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 
-using json = nlohmann::json;
-
 // --------------------
 // CONSTRUCTOR / IMPORT
 // --------------------
@@ -15,26 +13,26 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     GeneralProblemInstanceWithScheduleAndRoutes(
         std::string_view const       instanceName,
         std::string_view const       instanceSubdirectory,
-        std::filesystem::path const& workingDirectory)
+        std::filesystem::path const& working_directory)
     : GeneralProblemInstance(instanceName, instanceSubdirectory) {
   // read workingDirectory / instances / instanceSubdirectory / instanceName /
   // network.json
-  std::ifstream network_file(workingDirectory / "instances" /
+  std::ifstream network_file(working_directory / "instances" /
                              instanceSubdirectory / instanceName /
                              "network.json");
   json          network_json = json::parse(network_file);
   network_file.close();
   m_network =
-      Network(network_json.at("network").get<std::string>(), workingDirectory);
+      Network(network_json.at("network").get<std::string>(), working_directory);
 
   // read workingDirectory / instances / instanceSubdirectory / instanceName /
   // timetable and / routes
-  m_timetable = Timetable(workingDirectory / "instances" /
+  m_timetable = Timetable(working_directory / "instances" /
                               instanceSubdirectory / instanceName / "timetable",
                           m_network);
-  m_routes    = RouteMap(workingDirectory / "instances" / instanceSubdirectory /
-                             instanceName / "routes",
-                         m_network);
+  m_routes = RouteMap(working_directory / "instances" / instanceSubdirectory /
+                          instanceName / "routes",
+                      m_network);
 }
 
 // --------------------
@@ -42,23 +40,25 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 // --------------------
 
 void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
-    export_instance(std::filesystem::path const& workingDirectory,
+    export_instance(std::filesystem::path const& working_directory,
                     bool const                   saveNetwork) const {
   if (saveNetwork) {
-    m_network.export_network(workingDirectory);
+    m_network.export_network(working_directory);
   }
-  m_timetable.export_timetable(workingDirectory / "instances" /
+  m_timetable.export_timetable(working_directory / "instances" /
                                    get_instance_subdirectory() /
                                    get_instance_name() / "timetable",
                                get_const_network());
-  m_routes.export_routes(workingDirectory / "instances" /
+  m_routes.export_routes(working_directory / "instances" /
                              get_instance_subdirectory() / get_instance_name() /
                              "routes",
                          get_const_network());
 
   json network_json{};
-  network_json["network"] = get_const_network().get_network_name();
-  std::ofstream network_file(workingDirectory / "instances" /
+  network_json["network"] =
+      get_const_network()
+          .get_network_name(); // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+  std::ofstream network_file(working_directory / "instances" /
                              get_instance_subdirectory() / get_instance_name() /
                              "network.json");
   network_file << network_json << '\n';
@@ -93,7 +93,7 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
   const auto  stop_tracks_tmp = get_stop_tracks(
       tr_id, station_name, {route_edges.begin(), route_edges.end()});
   cda_rail::index_set stop_tracks;
-  for (const auto& [idx, paths] : stop_tracks_tmp) {
+  for (const auto& paths : stop_tracks_tmp | std::views::values) {
     for (const auto& path : paths) {
       stop_tracks.insert(path.begin(), path.end());
     }
@@ -323,9 +323,11 @@ cda_rail::json
 cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
     const {
   json data;
-  data["status"]       = static_cast<int>(m_status);
-  data["obj"]          = m_obj;
-  data["has_solution"] = m_has_sol;
+  data["status"] = static_cast<int>(
+      m_status);       // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+  data["obj"] = m_obj; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+  data["has_solution"] =
+      m_has_sol; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   return data;
 }
 
@@ -349,11 +351,11 @@ bool cda_rail::instances::SolGeneralProblemInstance::check_consistency() const {
 }
 
 void cda_rail::instances::SolGeneralProblemInstance::load_solution(
-    const std::filesystem::path&      workingDirectory,
+    const std::filesystem::path&      working_directory,
     std::string_view const            solutionSubdirectory,
     std::optional<std::string> const& parameter_identifier) {
   std::filesystem::path const p = get_export_path(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
 
   std::ifstream data_file(p / "solution_data.json");
   if (!data_file.is_open()) {
@@ -367,11 +369,11 @@ void cda_rail::instances::SolGeneralProblemInstance::load_solution(
 }
 
 void cda_rail::instances::SolGeneralProblemInstance::export_solution(
-    const std::filesystem::path&      workingDirectory,
+    const std::filesystem::path&      working_directory,
     std::string_view const            solutionSubdirectory,
     std::optional<std::string> const& parameter_identifier) const {
   std::filesystem::path const p = get_export_path(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
 
   if (!is_directory_and_create(p)) {
     throw exceptions::ExportException("Could not create directory " +
@@ -402,31 +404,31 @@ void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
 }
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
-    load_solution(const std::filesystem::path&      workingDirectory,
+    load_solution(const std::filesystem::path&      working_directory,
                   std::string_view const            solutionSubdirectory,
                   std::optional<std::string> const& parameter_identifier) {
   SolGeneralProblemInstance::load_solution(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
 
   std::filesystem::path const p = get_export_path(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
   m_solution_routes = RouteMap(p, get_instance()->get_const_network());
 }
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
     export_solution(
-        const std::filesystem::path& workingDirectory,
+        const std::filesystem::path& working_directory,
         std::string_view const solutionSubdirectory, bool save_instance,
         std::optional<std::string> const& parameter_identifier) const {
   SolGeneralProblemInstance::export_solution(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
 
   std::filesystem::path const p = get_export_path(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
   m_solution_routes.export_routes(p, this->get_instance()->get_const_network());
 
   if (save_instance) {
-    get_instance()->export_instance(workingDirectory, true);
+    get_instance()->export_instance(working_directory, true);
   }
 }
 

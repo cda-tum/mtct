@@ -28,10 +28,10 @@ TEST(GeneralPerformanceOptimizationInstances,
   const auto l0 = network.get_vertex_index("l0");
   const auto r0 = network.get_vertex_index("r0");
 
-  timetable.add_train("Train1", 100, 10, 1, 1, true, 0, 0, {"l0"}, 360, 0,
-                      {"r0"}, network);
-  timetable.add_train("Train2", 100, 10, 1, 1, false, 0, 10, l0, 400, 5, r0,
-                      network);
+  (void)timetable.add_train("Train1", 100, 10, 1, 1, true, 0, 0, {"l0"}, 360, 0,
+                            {"r0"}, network);
+  (void)timetable.add_train("Train2", 100, 10, 1, 1, false, 0, 10, l0, 400, 5,
+                            r0, network);
 
   timetable.add_empty_station("Station1");
   timetable.add_track_to_station("Station1", {"g00", "g01"}, network);
@@ -97,10 +97,10 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   Timetable timetable;
 
-  timetable.add_train("Train1", 100, 10, 1, 1, true, 0, 0, {"l0"}, 360, 0,
-                      {"r0"}, network);
-  timetable.add_train("Train2", 100, 10, 1, 1, false, 0, 10, {"l0"}, 400, 5,
-                      {"r0"}, network);
+  (void)timetable.add_train("Train1", 100, 10, 1, 1, true, 0, 0, {"l0"}, 360, 0,
+                            {"r0"}, network);
+  (void)timetable.add_train("Train2", 100, 10, 1, 1, false, 0, 10, {"l0"}, 400,
+                            5, {"r0"}, network);
 
   timetable.add_empty_station("Station1");
   timetable.add_track_to_station("Station1", {"g00", "g01"}, network);

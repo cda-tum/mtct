@@ -17,9 +17,9 @@ using json = nlohmann::json;
  * TRAIN
  */
 cda_rail::Train::Train(std::string name, double const length,
-                       double const max_speed, double const acceleration,
+                       double const maxSpeed, double const acceleration,
                        double const deceleration, bool const tim)
-    : m_name(std::move(name)), m_length(length), m_max_speed(max_speed),
+    : m_name(std::move(name)), m_length(length), m_max_speed(maxSpeed),
       m_acceleration(acceleration), m_deceleration(deceleration), m_tim(tim) {
   cda_rail::exceptions::throw_if_negative(m_length, "Train length");
   cda_rail::exceptions::throw_if_less_than(m_max_speed, MIN_NON_ZERO,
@@ -53,9 +53,9 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
 
   for (const auto& [name, train] : data.items()) {
     const bool tim =
-        train.contains("tim") ? static_cast<bool>(train["tim"]) : true;
-    this->add_train(name, train["length"], train["max_speed"],
-                    train["acceleration"], train["deceleration"], tim);
+        train.contains("tim") ? static_cast<bool>(train.at("tim")) : true;
+    this->add_train(name, train.at("length"), train.at("max_speed"),
+                    train.at("acceleration"), train.at("deceleration"), tim);
   }
 }
 
@@ -99,11 +99,14 @@ void cda_rail::TrainList::export_trains(std::filesystem::path const& p) const {
 
   json j;
   for (const auto& train : trains) {
-    j[train.get_name()] = {{"length", train.get_length()},
-                           {"max_speed", train.get_max_speed()},
-                           {"acceleration", train.get_acceleration()},
-                           {"deceleration", train.get_deceleration()},
-                           {"tim", train.has_tim()}};
+    j[train.get_name()] = {
+        {"length",
+         train
+             .get_length()}, // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+        {"max_speed", train.get_max_speed()},
+        {"acceleration", train.get_acceleration()},
+        {"deceleration", train.get_deceleration()},
+        {"tim", train.has_tim()}};
   }
 
   std::ofstream file(p / "trains.json");

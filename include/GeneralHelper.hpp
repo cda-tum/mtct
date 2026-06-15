@@ -23,7 +23,7 @@ namespace cda_rail {
  * @param factor Scaling factor applied to `std::numeric_limits<T>::epsilon()`.
  * @return `true` if `|a - b| < factor * epsilon`, otherwise `false`.
  * @pre `factor >= 0` for a meaningful tolerance interpretation.
- * @throws cda_rail::exceptions::InvalidInputException If @p factor is
+ * @throws cda_rail::exceptions::InvalidInputException If @p the factor is
  * negative.
  */
 template <std::floating_point T>
@@ -55,7 +55,7 @@ static void round_small_numbers_to_zero_inplace(double&      val,
 /**
  * @brief Rounds a value to the nearest multiple of a given tolerance.
  * @param value Value to round.
- * @param tolerance Positive rounding step, for example `1e-5`.
+ * @param tolerance Positive rounding step, for example, `1e-5`.
  * @return Rounded value.
  * @pre `tolerance > 0`.
  * @throws cda_rail::exceptions::InvalidInputException If @p tolerance is not

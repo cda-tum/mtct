@@ -16,15 +16,14 @@
  * SCHEDULE
  */
 
-cda_rail::Schedule::Schedule(double const entry_time,
-                             double const initial_velocity,
-                             size_t const entry_vertex, double const exit_time,
-                             double const               exit_velocity,
-                             size_t const               exit_vertex,
+cda_rail::Schedule::Schedule(double const entryTime,
+                             double const initialVelocity,
+                             size_t const entryVertex, double const exitTime,
+                             double const exitVelocity, size_t const exitVertex,
                              std::vector<ScheduledStop> stops)
-    : m_entry_time(entry_time), m_exit_time(exit_time),
-      m_initial_velocity(initial_velocity), m_exit_velocity(exit_velocity),
-      m_entry_vertex(entry_vertex), m_exit_vertex(exit_vertex),
+    : m_entry_time(entryTime), m_exit_time(exitTime),
+      m_initial_velocity(initialVelocity), m_exit_velocity(exitVelocity),
+      m_entry_vertex(entryVertex), m_exit_vertex(exitVertex),
       m_stops(std::move(stops)) {
   cda_rail::exceptions::throw_if_negative(m_entry_time, "Entry time");
   cda_rail::exceptions::throw_if_less_than(m_exit_time, m_entry_time,
@@ -85,15 +84,14 @@ void cda_rail::Schedule::insert_stop(ScheduledStop new_stop) {
   m_stops.insert(insert_pos, std::move(new_stop));
 }
 
-void cda_rail::Schedule::remove_stop(
-    std::string const& station_name,
-    bool const         throw_exception_if_not_existent) {
+void cda_rail::Schedule::remove_stop(std::string const& station_name,
+                                     bool const throwExceptionIfNotExistent) {
   auto const stop_it =
       std::ranges::find(m_stops, station_name, [](auto const& stop) {
         return stop.get_station().name;
       });
   if (stop_it == m_stops.end()) {
-    if (throw_exception_if_not_existent) {
+    if (throwExceptionIfNotExistent) {
       throw cda_rail::exceptions::InvalidInputException(
           station_name + " does not appear in the scheduled stops.");
     }
@@ -196,6 +194,7 @@ void cda_rail::Timetable::add_json_data(json& j, const size_t i,
                      {"station", stop.get_station().name}});
   }
   j[m_train_list.get_train(i).get_name()] = {
+      // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
       {"t_0", schedule.get_entry_time()},
       {"v_0", schedule.get_initial_velocity()},
       {"entry", network.get_vertex(schedule.get_entry_vertex()).name},
@@ -253,7 +252,7 @@ double cda_rail::Timetable::latest_exit_time() const {
 }
 
 std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
-    size_t const train_index, double const dt, bool const tn_inclusive) const {
+    size_t const trainIndex, double const dt, bool const tnInclusive) const {
   /**
    * This method returns the time interval of a train schedule as indices given
    * a time step length dt.
@@ -265,12 +264,12 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
    * leaves the network.
    */
 
-  if (!m_train_list.has_train(train_index)) {
-    throw exceptions::TrainNotExistentException(train_index);
+  if (!m_train_list.has_train(trainIndex)) {
+    throw exceptions::TrainNotExistentException(trainIndex);
   }
   cda_rail::exceptions::throw_if_non_positive(dt, "Time step length");
 
-  const auto& schedule = m_schedules.at(train_index);
+  const auto& schedule = m_schedules.at(trainIndex);
   const auto& t_0      = schedule.get_entry_time();
   const auto& t_n      = schedule.get_exit_time();
 
@@ -281,18 +280,18 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
     throw exceptions::ConsistencyException("Time cannot be negative.");
   }
 
-  size_t const t_0_index = static_cast<size_t>(std::floor(t_0 / dt));
+  auto const t_0_index = static_cast<size_t>(std::floor(t_0 / dt));
   // if t_n is divisible by dt (approx)
   if (std::abs(std::fmod(t_n, dt)) < EPS) {
     // if tn_inclusive, we want to include the time step at t_n, which is t_n /
     // dt if tn_inclusive is false, we want to exclude the time step at t_n,
     // which is (t_n / dt) - 1
     return {t_0_index,
-            static_cast<size_t>(tn_inclusive ? (t_n / dt) : (t_n / dt) - 1)};
+            static_cast<size_t>(tnInclusive ? (t_n / dt) : (t_n / dt) - 1)};
   }
 
   size_t const t_n_index = static_cast<size_t>(std::round(t_n / dt)) +
-                           (tn_inclusive ? 1 : 0) +
+                           (tnInclusive ? 1 : 0) +
                            (std::abs(std::fmod(t_n, dt)) < EPS ? -1 : 0);
 
   return {t_0_index, t_n_index};
@@ -301,19 +300,19 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
 // EDITING
 
 size_t cda_rail::Timetable::add_train_private_helper(
-    std::string const& train_name, double const length, double const max_speed,
+    std::string const& train_name, double const length, double const maxSpeed,
     double const acceleration, double const deceleration, bool const tim,
-    double const entry_time, double const initial_velocity,
-    size_t const entry_vertex, double const exit_time,
-    double const exit_velocity, size_t const exit_vertex) {
+    double const entryTime, double const initialVelocity,
+    size_t const entryVertex, double const exitTime, double const exitVelocity,
+    size_t const exitVertex) {
   if (m_train_list.has_train(train_name)) {
     throw exceptions::ConsistencyException("Train " + train_name +
                                            " already exists.");
   }
-  auto const index = m_train_list.add_train(train_name, length, max_speed,
+  auto const index = m_train_list.add_train(train_name, length, maxSpeed,
                                             acceleration, deceleration, tim);
-  m_schedules.emplace_back(entry_time, initial_velocity, entry_vertex,
-                           exit_time, exit_velocity, exit_vertex);
+  m_schedules.emplace_back(entryTime, initialVelocity, entryVertex, exitTime,
+                           exitVelocity, exitVertex);
   if (m_schedules.size() != m_train_list.size()) {
     throw exceptions::ConsistencyException(
         "Schedule size (" + std::to_string(m_schedules.size()) +
@@ -323,19 +322,19 @@ size_t cda_rail::Timetable::add_train_private_helper(
   return index;
 }
 
-void cda_rail::Timetable::insert_stop(size_t const       train_index,
+void cda_rail::Timetable::insert_stop(size_t const       trainIndex,
                                       std::string const& station_name,
-                                      double const       service_time,
-                                      double const       service_duration) {
-  if (!m_train_list.has_train(train_index)) {
-    throw exceptions::TrainNotExistentException(train_index);
+                                      double const       serviceTime,
+                                      double const       serviceDuration) {
+  if (!m_train_list.has_train(trainIndex)) {
+    throw exceptions::TrainNotExistentException(trainIndex);
   }
   if (!m_station_list.has_station(station_name)) {
     throw exceptions::StationNotExistentException(station_name);
   }
 
-  m_schedules.at(train_index)
-      .insert_stop({service_time, service_duration,
+  m_schedules.at(trainIndex)
+      .insert_stop({serviceTime, serviceDuration,
                     m_station_list.get_station_ptr(station_name)});
 }
 

@@ -3,6 +3,7 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "GeneralHelper.hpp"
+#include "StringHelper.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Train.hpp"
 #include "nlohmann/json.hpp"
@@ -17,9 +18,9 @@
 #include <functional>
 #include <iterator>
 #include <limits>
-#include <numeric>
 #include <optional>
 #include <ranges>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -523,7 +524,10 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
           return std::pair{network.get_vertex(edge.source).name,
                            network.get_vertex(edge.target).name};
         });
-    j[name] = std::vector(edge_pairs.begin(), edge_pairs.end());
+    j[name] = std::vector(
+        edge_pairs.begin(),
+        edge_pairs
+            .end()); // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   }
 
   std::ofstream file(p / "routes.json");
@@ -569,7 +573,7 @@ bool cda_rail::RouteMap::check_consistency(
 
 void cda_rail::RouteMap::update_after_discretization(
     const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
-  for (auto& [train_name, route] : m_routes) {
+  for (auto& route : m_routes | std::views::values) {
     route.update_after_discretization(new_edges);
   }
 }

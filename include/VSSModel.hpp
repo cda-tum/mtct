@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <numbers>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -34,8 +35,8 @@ namespace functions {
 
   const auto       n_points = static_cast<double>(n) - 1;
   const auto       k        = n_points - static_cast<double>(i);
-  constexpr double pi       = 3.14159265358979323846;
-  return 0.5 + (0.5 * std::cos((2 * k - 1) * pi / (2 * n_points)));
+  constexpr double pi       = std::numbers::pi;
+  return 0.5 + (0.5 * std::cos(((2 * k) - 1) * pi / (2 * n_points)));
 }
 
 [[nodiscard]] static size_t max_n_blocks(const SeparationFunction& sep_func,
@@ -46,7 +47,7 @@ namespace functions {
     throw std::invalid_argument("min_frac must be in (0, 1].");
   }
 
-  for (size_t n = 2; static_cast<double>(n) <= 1 / min_frac + eps; ++n) {
+  for (size_t n = 2; static_cast<double>(n) <= (1 / min_frac) + eps; ++n) {
     if (sep_func(0, n) + eps < min_frac ||
         1 - sep_func(n - 2, n) + eps < min_frac) {
       return n - 1;
@@ -79,9 +80,8 @@ public:
   explicit Model(ModelType                       model_type_input,
                  std::vector<SeparationFunction> separation_functions_input,
                  bool                            only_stop_at_vss_input)
-      : model_type(model_type_input),
-        separation_functions(std::move(separation_functions_input)),
-        only_stop_at_vss(only_stop_at_vss_input) {}
+      : model_type(model_type_input), only_stop_at_vss(only_stop_at_vss_input),
+        separation_functions(std::move(separation_functions_input)) {}
 
   // Getters
   [[nodiscard]] const ModelType& get_model_type() const { return model_type; }

@@ -59,16 +59,15 @@ public:
     initialize_vectors();
   }
   GeneralPerformanceOptimizationInstance(
-      std::string_view const       instanceName,
-      std::string_view const       instanceSubdirectory,
-      std::filesystem::path const& workingDirectory);
+      std::string_view instance_name, std::string_view instance_subdirectory,
+      std::filesystem::path const& working_directory);
   GeneralPerformanceOptimizationInstance(
       std::string_view const instanceName,
       std::string_view const instanceSubdirectory,
-      std::string const&     workingDirectory)
+      std::string const&     working_directory)
       : GeneralPerformanceOptimizationInstance(
             instanceName, instanceSubdirectory,
-            std::filesystem::path(workingDirectory)) {}
+            std::filesystem::path(working_directory)) {}
   GeneralPerformanceOptimizationInstance(
       std::string_view const instanceName,
       std::string_view const instanceSubdirectory,
@@ -168,8 +167,8 @@ public:
 
   using GeneralProblemInstanceWithScheduleAndRoutes::export_instance;
 
-  void export_instance(const std::filesystem::path& workingDirectory,
-                       bool const                   saveNetwork) const override;
+  void export_instance(const std::filesystem::path& working_directory,
+                       bool save_network) const override;
 
   // ---------------------
   // TRANSFORMATION
@@ -260,21 +259,21 @@ public:
   // Import / Export
 
   void load_solution(
-      const std::filesystem::path&      workingDirectory,
-      std::string_view const            solutionSubdirectory,
-      std::optional<std::string> const& parameter_identifier = {}) override;
+      const std::filesystem::path&      working_directory,
+      std::string_view                  solution_subdirectory,
+      std::optional<std::string> const& parameter_identifier) override;
 
   void export_solution(
-      const std::filesystem::path&      workingDirectory,
+      const std::filesystem::path&      working_directory,
       std::string_view const            solutionSubdirectory,
       std::optional<std::string> const& parameter_identifier) const override {
-    export_solution(workingDirectory, solutionSubdirectory, false,
+    export_solution(working_directory, solutionSubdirectory, false,
                     parameter_identifier);
   }
 
-  virtual void export_solution(
-      const std::filesystem::path& workingDirectory,
-      std::string_view const solutionSubdirectory, bool save_instance,
+  void export_solution(
+      const std::filesystem::path& working_directory,
+      std::string_view solution_subdirectory, bool save_instance,
       std::optional<std::string> const& parameter_identifier) const override;
 
   // Additional Getter
@@ -346,6 +345,8 @@ public:
 
   [[nodiscard]] bool check_consistency() const override;
 };
+
+// NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if)
 #if 0
 class SolVSSGeneralPerformanceOptimizationInstance
     : public SolGeneralPerformanceOptimizationInstance {

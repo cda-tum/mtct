@@ -27,10 +27,10 @@ cda_rail::Network build_linear_test_network() {
 // Station class
 
 TEST(Station, EqualityDependsOnNameAndTracks) {
-  const cda_rail::Station s1{"Central", {1, 2}};
-  const cda_rail::Station s2{"Central", {2, 1}};
-  const cda_rail::Station s3{"West", {1, 2}};
-  const cda_rail::Station s4{"Central", {1, 3}};
+  const cda_rail::Station s1{.name = "Central", .tracks = {1, 2}};
+  const cda_rail::Station s2{.name = "Central", .tracks = {2, 1}};
+  const cda_rail::Station s3{.name = "West", .tracks = {1, 2}};
+  const cda_rail::Station s4{.name = "Central", .tracks = {1, 3}};
 
   EXPECT_EQ(s1, s2);
   EXPECT_NE(s1, s3);
@@ -38,7 +38,7 @@ TEST(Station, EqualityDependsOnNameAndTracks) {
 }
 
 TEST(Station, IsFullyInStationChecksSubsetSemantics) {
-  const cda_rail::Station station{"S", {1, 2, 3}};
+  const cda_rail::Station station{.name = "S", .tracks = {1, 2, 3}};
 
   EXPECT_TRUE(station.is_fully_in_station({}));
   EXPECT_TRUE(station.is_fully_in_station({1, 3}));
@@ -47,7 +47,7 @@ TEST(Station, IsFullyInStationChecksSubsetSemantics) {
 
 TEST(Station, GetStopTracksReturnsEmptyWhenStationHasNoTracks) {
   const auto              network = build_linear_test_network();
-  const cda_rail::Station station{"S", {}};
+  const cda_rail::Station station{.name = "S", .tracks = {}};
 
   EXPECT_TRUE(station.get_stop_tracks(1.0, network).empty());
 }
@@ -56,7 +56,7 @@ TEST(Station, GetStopTracksRespectsEdgesToConsider) {
   const auto              network = build_linear_test_network();
   const auto              e01     = network.get_edge_index({"v0"}, {"v1"});
   const auto              e12     = network.get_edge_index({"v1"}, {"v2"});
-  const cda_rail::Station station{"S", {e01, e12}};
+  const cda_rail::Station station{.name = "S", .tracks = {e01, e12}};
 
   const auto stop_tracks = station.get_stop_tracks(1.0, network, {e12});
 
@@ -218,10 +218,10 @@ TEST(StationFunctionality, ReadStation) {
   const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
-  cda_rail::index_set track_ids{network.get_edge_index({"g00"}, {"g01"}),
-                                network.get_edge_index({"g10"}, {"g11"}),
-                                network.get_edge_index({"g01"}, {"g00"}),
-                                network.get_edge_index({"g11"}, {"g10"})};
+  cda_rail::index_set const track_ids{network.get_edge_index({"g00"}, {"g01"}),
+                                      network.get_edge_index({"g10"}, {"g11"}),
+                                      network.get_edge_index({"g01"}, {"g00"}),
+                                      network.get_edge_index({"g11"}, {"g10"})};
   EXPECT_EQ(station.tracks, track_ids);
 }
 
@@ -265,8 +265,9 @@ TEST(StationFunctionality, WriteStations) {
   const auto& s2 = stations_read.get_station("S2");
   EXPECT_EQ(s2.name, "S2");
   EXPECT_EQ(s2.tracks.size(), 2);
-  cda_rail::index_set s2_tracks_target{network.get_edge_index({"l0"}, {"l1"}),
-                                       network.get_edge_index({"l1"}, {"l2"})};
+  cda_rail::index_set const s2_tracks_target{
+      network.get_edge_index({"l0"}, {"l1"}),
+      network.get_edge_index({"l1"}, {"l2"})};
   EXPECT_EQ(s2.tracks, s2_tracks_target);
 }
 

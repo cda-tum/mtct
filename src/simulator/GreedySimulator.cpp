@@ -145,7 +145,8 @@ cda_rail::simulator::GreedySimulator::simulate(
 
   double t = min_t;
 
-  PLOGV << "Starting simulation from time " << min_t;
+  PLOGV << "Starting simulation from time "
+        << min_t; // NOLINT(*-inconsistent-ifelse-braces)
 
   // Detect trains that are not scheduled to enter the network
   for (size_t tr = 0; tr < number_of_trains; ++tr) {
@@ -156,8 +157,9 @@ cda_rail::simulator::GreedySimulator::simulate(
 
   double cycles_without_movement = 0;
   while (cycles_without_movement < CYCLE_LIMIT) {
-    PLOGV << "----------------------------";
-    PLOGV << "Current time: " << t;
+    PLOGV
+        << "----------------------------"; // NOLINT(*-inconsistent-ifelse-braces)
+    PLOGV << "Current time: " << t; // NOLINT(*-inconsistent-ifelse-braces)
 
     bool movement_detected = false;
 
@@ -175,7 +177,8 @@ cda_rail::simulator::GreedySimulator::simulate(
 
       if (trains_finished_simulating.contains(tr) ||
           t < tr_stop_until.at(tr) + dt) {
-        PLOGV << train_object.get_name() << " skipped.";
+        PLOGV << train_object.get_name()
+              << " skipped."; // NOLINT(*-inconsistent-ifelse-braces)
         continue;
       }
 
@@ -184,7 +187,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       auto blocked_vertices_tr = blocked_vertices;
 
       if (t < get_instance()->get_const_schedule(tr).get_exit_time()) {
-        PLOGV << train_object.get_name()
+        PLOGV << train_object.get_name() // NOLINT(*-inconsistent-ifelse-braces)
               << "'s exit vertex is blocked by earliest exit.";
         const auto tr_exit_vertex =
             get_instance()->get_const_schedule(tr).get_exit_vertex();
@@ -195,7 +198,8 @@ cda_rail::simulator::GreedySimulator::simulate(
           tr, train_velocities, tr_next_stop_id.at(tr), dt, blocked_vertices_tr,
           train_positions, trains_in_network, trains_left, trains_on_edges,
           limit_speed_by_leaving_edges);
-      PLOGV << train_object.get_name() << " positioned at "
+      PLOGV << train_object.get_name()
+            << " positioned at " // NOLINT(*-inconsistent-ifelse-braces)
             << train_positions.at(tr).front
             << " has MA: " << train_positions.at(tr).front + tr_ma_data.ma
             << " (without route end this would be: "
@@ -222,13 +226,14 @@ cda_rail::simulator::GreedySimulator::simulate(
         tr_new_speed_without_route_end = 0.0;
       }
 
-      PLOGV << "tr_new_speed = " << tr_new_speed
+      PLOGV << "tr_new_speed = "
+            << tr_new_speed // NOLINT(*-inconsistent-ifelse-braces)
             << " (without route end this would be: "
             << tr_new_speed_without_route_end << ")";
 
       if ((braking_distances.at(tr) < 0) &&
           (tr_new_speed < tr_new_speed_without_route_end)) {
-        PLOGV << train_object.get_name()
+        PLOGV << train_object.get_name() // NOLINT(*-inconsistent-ifelse-braces)
               << " starts braking due to end of route constraint.";
         braking_times.at(tr)     = t - dt;
         braking_distances.at(tr) = tr_edge_len - train_positions.at(tr).front;
@@ -240,7 +245,8 @@ cda_rail::simulator::GreedySimulator::simulate(
         movement_detected = true;
       }
       train_velocities.at(tr) = tr_new_speed;
-      PLOGV << "At time " << t << ", " << train_object.get_name()
+      PLOGV << "At time " << t << ", "
+            << train_object.get_name() // NOLINT(*-inconsistent-ifelse-braces)
             << " moved to " << train_positions.at(tr).front << " with speed "
             << tr_new_speed << " and MA "
             << train_positions.at(tr).front +
@@ -273,12 +279,16 @@ cda_rail::simulator::GreedySimulator::simulate(
         const auto& exit_vertex =
             get_instance()->get_const_network().get_vertex(exit_vertex_idx);
         vertex_headways.at(exit_vertex_idx) = t + exit_vertex.headway;
-        PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
+        PLOGV << "At time " << t << ", "
+              << train_list.get_train(tr)
+                     .get_name() // NOLINT(*-inconsistent-ifelse-braces)
               << " left the network.";
       } else if (tr_status == DestinationType::Edge) {
         trains_finished_simulating.insert(tr);
         exit_times.at(tr) = t;
-        PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
+        PLOGV << "At time " << t << ", "
+              << train_list.get_train(tr)
+                     .get_name() // NOLINT(*-inconsistent-ifelse-braces)
               << " reached the end of its route on an edge within the network.";
       } else if (tr_status == DestinationType::Station) {
         assert(tr_next_stop_id.at(tr).has_value());
@@ -295,7 +305,9 @@ cda_rail::simulator::GreedySimulator::simulate(
         // to continue
         braking_times.at(tr)     = exit_times.at(tr);
         braking_distances.at(tr) = 0;
-        PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
+        PLOGV << "At time " << t << ", "
+              << train_list.get_train(tr)
+                     .get_name() // NOLINT(*-inconsistent-ifelse-braces)
               << " reached the end of its route at station "
               << last_stop.get_station().name << ", stopping until "
               << exit_times.at(tr);
@@ -315,7 +327,8 @@ cda_rail::simulator::GreedySimulator::simulate(
             tr_stop_until.at(tr) =
                 std::max(t + stop_info.get_service_duration(),
                          stop_info.get_earliest_departure());
-            PLOGV << "At time " << t << ", "
+            PLOGV << "At time " << t
+                  << ", " // NOLINT(*-inconsistent-ifelse-braces)
                   << train_list.get_train(tr).get_name()
                   << " reached its next stop at "
                   << stop_info.get_station().name << ", stopping until "
@@ -325,14 +338,15 @@ cda_rail::simulator::GreedySimulator::simulate(
                 get_stop_positions_of_tr(tr).size()) {
               // Update next stop ID
               tr_next_stop_id.at(tr) = tr_next_stop_id.at(tr).value() + 1;
-              PLOGV << "Next stop: "
+              PLOGV << "Next stop: " // NOLINT(*-inconsistent-ifelse-braces)
                     << tr_stops.at(tr_next_stop_id.at(tr).value())
                            .get_station()
                            .name;
             } else {
               // No more stops scheduled
               tr_next_stop_id.at(tr) = std::nullopt;
-              PLOGV << "No more stops scheduled";
+              PLOGV
+                  << "No more stops scheduled"; // NOLINT(*-inconsistent-ifelse-braces)
             }
           }
         }
@@ -349,7 +363,7 @@ cda_rail::simulator::GreedySimulator::simulate(
         t, trains_in_network, trains_left, trains_finished_simulating,
         late_entry_possible, dt);
     if (!tr_to_enter_success) {
-      PLOGV
+      PLOGV // NOLINT(*-inconsistent-ifelse-braces)
           << "Simulation failed: Not all trains can enter the network at time "
           << t;
       return build_results(false);
@@ -359,13 +373,17 @@ cda_rail::simulator::GreedySimulator::simulate(
       const auto& entry_vertex = get_instance()->get_const_network().get_vertex(
           train_schedule.get_entry_vertex());
       if (vertex_headways.at(train_schedule.get_entry_vertex()) > t) {
-        PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
+        PLOGV << "At time " << t << ", "
+              << train_list.get_train(tr)
+                     .get_name() // NOLINT(*-inconsistent-ifelse-braces)
               << " cannot enter the network at " << entry_vertex.name
               << " due to vertex headway constraints until time "
               << vertex_headways.at(train_schedule.get_entry_vertex());
       } else if (!is_ok_to_enter(tr, train_positions, train_velocities,
                                  trains_in_network, trains_on_edges)) {
-        PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
+        PLOGV << "At time " << t << ", "
+              << train_list.get_train(tr)
+                     .get_name() // NOLINT(*-inconsistent-ifelse-braces)
               << " cannot enter the network at " << entry_vertex.name
               << " due to moving authority constraints constraints.";
       } else {
@@ -380,10 +398,13 @@ cda_rail::simulator::GreedySimulator::simulate(
           tr_next_stop_id.at(tr) = 0;
         }
         movement_detected = true;
-        PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
+        PLOGV << "At time " << t << ", "
+              << train_list.get_train(tr)
+                     .get_name() // NOLINT(*-inconsistent-ifelse-braces)
               << " entered the network at " << entry_vertex.name;
-        PLOGV << "New entry blocked until time "
-              << vertex_headways.at(train_schedule.get_entry_vertex());
+        PLOGV
+            << "New entry blocked until time " // NOLINT(*-inconsistent-ifelse-braces)
+            << vertex_headways.at(train_schedule.get_entry_vertex());
         if (save_trajectories) {
           train_trajectories.at(tr)[t] = {.pos = train_positions.at(tr).front,
                                           .vel = train_velocities.at(tr)};
@@ -393,7 +414,8 @@ cda_rail::simulator::GreedySimulator::simulate(
 
     // Check if all trains have reached their destination
     if (trains_finished_simulating.size() == number_of_trains) {
-      PLOGV << "All trains have reached their destination at time " << t;
+      PLOGV << "All trains have reached their destination at time "
+            << t; // NOLINT(*-inconsistent-ifelse-braces)
       return build_results(true);
     }
 
@@ -404,17 +426,20 @@ cda_rail::simulator::GreedySimulator::simulate(
     if (!movement_detected) {
       // There might be a deadlock situation if none of the constraints depend
       // on time
-      PLOGV << "No movement detected at time " << t;
+      PLOGV << "No movement detected at time "
+            << t; // NOLINT(*-inconsistent-ifelse-braces)
       bool reason_found = false;
       if (std::ranges::any_of(vertex_headways, [t](int vertex_headway) {
             return vertex_headway > t;
           })) {
-        PLOGV << "Vertex headway constraint prevents movement.";
+        PLOGV
+            << "Vertex headway constraint prevents movement."; // NOLINT(*-inconsistent-ifelse-braces)
         reason_found = true;
       } else if (std::ranges::any_of(tr_stop_until, [t, dt](int stop_time) {
                    return stop_time + dt > t;
                  })) {
-        PLOGV << "Train stop constraint prevents movement.";
+        PLOGV
+            << "Train stop constraint prevents movement."; // NOLINT(*-inconsistent-ifelse-braces)
         reason_found = true;
       } else {
         for (size_t tr = 0; tr < train_velocities.size(); ++tr) {
@@ -426,14 +451,16 @@ cda_rail::simulator::GreedySimulator::simulate(
                        .target ==
                    get_instance()->get_const_schedule(tr).get_exit_vertex()) &&
                   get_instance()->get_const_schedule(tr).get_exit_time() > t) {
-                PLOGV << train_list.get_train(tr).get_name()
+                PLOGV << train_list.get_train(tr)
+                             .get_name() // NOLINT(*-inconsistent-ifelse-braces)
                       << " is blocked by earliest exit.";
                 reason_found = true;
                 break;
               }
             } else {
               if (get_instance()->get_const_schedule(tr).get_entry_time() > t) {
-                PLOGV << train_list.get_train(tr).get_name()
+                PLOGV << train_list.get_train(tr)
+                             .get_name() // NOLINT(*-inconsistent-ifelse-braces)
                       << " is blocked by earliest entry.";
                 reason_found = true;
                 break;
@@ -443,7 +470,8 @@ cda_rail::simulator::GreedySimulator::simulate(
         }
       }
       if (!reason_found) {
-        PLOGV << "Trains are in a deadlock situation.";
+        PLOGV
+            << "Trains are in a deadlock situation."; // NOLINT(*-inconsistent-ifelse-braces)
         return build_results(false);
       }
     }

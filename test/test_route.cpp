@@ -4,10 +4,13 @@
 #include "gtest/gtest.h"
 
 TEST(RouteFunctionality, FirstPosOnEdge) {
-  cda_rail::Network network;
-  const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
-  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
-  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  cda_rail::Network           network;
+  [[maybe_unused]] const auto v0 =
+      network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  [[maybe_unused]] const auto v1 =
+      network.add_vertex("v1", cda_rail::VertexType::VSS);
+  [[maybe_unused]] const auto v2 =
+      network.add_vertex("v2", cda_rail::VertexType::TTD);
 
   const auto e0 = network.add_edge({"v0"}, {"v1"}, 1, 2, false, 0);
   const auto e1 = network.add_edge({"v1"}, {"v2"}, 3, 4, true, 1.5);
@@ -31,10 +34,13 @@ TEST(RouteFunctionality, FirstPosOnEdge) {
 }
 
 TEST(RouteFunctionality, LastPosOnEdge) {
-  cda_rail::Network network;
-  const auto v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
-  const auto v1 = network.add_vertex("v1", cda_rail::VertexType::VSS);
-  const auto v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  cda_rail::Network           network;
+  [[maybe_unused]] const auto v0 =
+      network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  [[maybe_unused]] const auto v1 =
+      network.add_vertex("v1", cda_rail::VertexType::VSS);
+  [[maybe_unused]] const auto v2 =
+      network.add_vertex("v2", cda_rail::VertexType::TTD);
 
   const auto e0 = network.add_edge({"v0"}, {"v1"}, 1, 2, false, 0);
   const auto e1 = network.add_edge({"v1"}, {"v2"}, 3, 4, true, 1.5);
@@ -85,13 +91,17 @@ RouteTestNetwork make_route_test_network() {
   network.add_successor(e0, e1);
   network.add_successor(e1, e2);
 
-  return RouteTestNetwork{std::move(network), e0, e1, e2, e_alt};
+  return RouteTestNetwork{.network = std::move(network),
+                          .e0      = e0,
+                          .e1      = e1,
+                          .e2      = e2,
+                          .e_alt   = e_alt};
 }
 
 } // namespace
 
 TEST(RouteFunctionality, EmptyRouteHasSizeZeroAndNoEdges) {
-  cda_rail::Route route;
+  cda_rail::Route const route;
 
   EXPECT_TRUE(route.empty());
   EXPECT_EQ(route.size(), 0);
@@ -200,10 +210,10 @@ TEST(RouteFunctionality, EdgePosOnRouteReturnsStartAndEndPositions) {
   route.push_back_edge(e1, network);
   route.push_back_edge(e2, network);
 
-  const auto [start_pos, end_pos] = route.edge_pos_on_route(e1, network);
+  const auto [source_pos, target_pos] = route.edge_pos_on_route(e1, network);
 
-  EXPECT_DOUBLE_EQ(start_pos, 1.0);
-  EXPECT_DOUBLE_EQ(end_pos, 3.0);
+  EXPECT_DOUBLE_EQ(source_pos, 1.0);
+  EXPECT_DOUBLE_EQ(target_pos, 3.0);
 }
 
 TEST(RouteFunctionality, EdgePosOnRouteThrowsWhenEdgeIsNotOnRoute) {
@@ -224,11 +234,11 @@ TEST(RouteFunctionality, EdgeSetPosOnRouteReturnsCoveredInterval) {
   route.push_back_edge(e1, network);
   route.push_back_edge(e2, network);
 
-  const auto [start_pos, end_pos] =
+  const auto [source_pos, target_pos] =
       route.edge_set_pos_on_route({e2, e0}, network);
 
-  EXPECT_DOUBLE_EQ(start_pos, 0.0);
-  EXPECT_DOUBLE_EQ(end_pos, 6.0);
+  EXPECT_DOUBLE_EQ(source_pos, 0.0);
+  EXPECT_DOUBLE_EQ(target_pos, 6.0);
 }
 
 TEST(RouteFunctionality, EdgeSetPosOnRouteThrowsWhenNoGivenEdgeIsOnRoute) {
@@ -268,7 +278,7 @@ TEST(RouteFunctionality, GetLastPosOnEdgesReturnsEndOfLastMatchingEdge) {
 
 TEST(RouteFunctionality, GetFirstAndLastPosOnEdgesReturnNoValueForEmptyRoute) {
   auto [network, e0, e1, e2, e_alt] = make_route_test_network();
-  cda_rail::Route route;
+  cda_rail::Route const route;
 
   EXPECT_FALSE(route.get_first_pos_on_edges({e0}, network).has_value());
   EXPECT_FALSE(route.get_last_pos_on_edges({e0}, network).has_value());
@@ -618,21 +628,21 @@ TEST(RouteMapFunctionality, RouteMapHelper) {
 
   const auto& tr1_map    = route_map.get_route("tr1");
   const auto  tr1_e1_pos = tr1_map.edge_pos_on_route({"v0", "v1"}, network);
-  const std::pair<double, double> expected_tr1_e1_pos = {0, 10};
+  constexpr std::pair<double, double> expected_tr1_e1_pos = {0, 10};
   EXPECT_EQ(tr1_e1_pos.source, expected_tr1_e1_pos.first);
   EXPECT_EQ(tr1_e1_pos.target, expected_tr1_e1_pos.second);
   const auto tr1_e2_pos = tr1_map.edge_pos_on_route({v1, v2}, network);
-  const std::pair<double, double> expected_tr1_e2_pos = {10, 30};
+  constexpr std::pair<double, double> expected_tr1_e2_pos = {10, 30};
   EXPECT_EQ(tr1_e2_pos.source, expected_tr1_e2_pos.first);
   EXPECT_EQ(tr1_e2_pos.target, expected_tr1_e2_pos.second);
   const auto tr1_e3_pos = tr1_map.edge_pos_on_route(v2_v3, network);
-  const std::pair<double, double> expected_tr1_e3_pos = {30, 60};
+  constexpr std::pair<double, double> expected_tr1_e3_pos = {30, 60};
   EXPECT_EQ(tr1_e3_pos.source, expected_tr1_e3_pos.first);
   EXPECT_EQ(tr1_e3_pos.target, expected_tr1_e3_pos.second);
 
   const auto station_pos =
       tr1_map.edge_set_pos_on_route({v1_v2, v2_v1, v2_v3, v3_v2}, network);
-  const std::pair<double, double> expected_station_pos = {10, 60};
+  constexpr std::pair<double, double> expected_station_pos = {10, 60};
   EXPECT_EQ(station_pos.source, expected_station_pos.first);
   EXPECT_EQ(station_pos.target, expected_station_pos.second);
 

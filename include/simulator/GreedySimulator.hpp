@@ -22,8 +22,8 @@
 #define CYCLE_LIMIT 1000
 
 // If TEST_FRIENDS has value true, the corresponding test is friended to test
-// complex private functions
-// This is not good practice, however after consideration, it was decided that
+// complex private functions.
+// This is not good practice. However, after consideration, it was decided that
 // - it is not reasonable to make the functions public
 // - they have a complexity that should be tested
 // - by only testing the overall solution, there is too much code tested at once
