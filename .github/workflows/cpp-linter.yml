@@ -54,9 +54,10 @@ jobs:
           $CC --version
           $CXX --version
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-      - name: Run cpp-linter
+      - name: Run cpp-linter (changed files)
         uses: cpp-linter/cpp-linter-action@v2
         id: linter
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -67,6 +68,24 @@ jobs:
           thread-comments: true
           step-summary: true
           database: "build"
+          files-changed-only: "true"
+      - name: Run cpp-linter (all files)
+        if: steps.linter.outcome == 'failure'
+        uses: cpp-linter/cpp-linter-action@v2
+        id: linter-all
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          style: ""
+          tidy-checks: ""
+          version: ${{ env.clang-version }}
+          ignore: "build | test/data | test/old-and-temporary-data | gurobi* | cmake-build-debug"
+          thread-comments: true
+          step-summary: true
+          database: "build"
+          files-changed-only: "false"
       - name: Fail if linter found errors
-        if: steps.linter.outputs.checks-failed > 0
+        if: |
+          (steps.linter.outcome == 'success' && steps.linter.outputs.checks-failed > 0) ||
+          (steps.linter-all.conclusion == 'success' && steps.linter-all.outputs.checks-failed > 0)
         run: echo "Linter found errors" && exit 1
