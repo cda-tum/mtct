@@ -63,7 +63,7 @@ jobs:
           style: ""
           tidy-checks: ""
           version: ${{ env.clang-version }}
-          ignore: "build | test/example-networks | test/example-networks-gen-po | gurobi*"
+          ignore: "build | test/data | test/old-and-temporary-data | gurobi* | cmake-build-debug"
           thread-comments: true
           step-summary: true
           database: "build"
