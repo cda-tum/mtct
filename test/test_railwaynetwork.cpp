@@ -2,8 +2,6 @@
 #include "Definitions.hpp"
 #include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
-#include "nlohmann/json_fwd.hpp"
-
 #include "gmock/gmock-spec-builders.h"
 #include "gtest/gtest.h"
 #include <algorithm>
