@@ -63,6 +63,8 @@ namespace functions {
 }
 } // namespace functions
 
+// NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if)
+#if 0
 class Model {
 private:
   ModelType                       model_type       = ModelType::Continuous;
@@ -117,4 +119,5 @@ public:
     return false;
   }
 };
+#endif
 } // namespace cda_rail::vss
