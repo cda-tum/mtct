@@ -1,11 +1,10 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
-#include "datastructure/GeneralTimetable.hpp"
+#include "datastructure/Timetable.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
-#include "probleminstances/VSSGenerationTimetable.hpp"
 
 #include "gtest/gtest.h"
 #include <algorithm>
