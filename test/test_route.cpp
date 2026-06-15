@@ -1,6 +1,5 @@
 #include "datastructure/Route.hpp"
 
-#include "gmock/gmock-spec-builders.h"
 #include "gtest/gtest.h"
 
 TEST(RouteFunctionality, FirstPosOnEdge) {

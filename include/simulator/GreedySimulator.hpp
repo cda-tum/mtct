@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/Train.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
@@ -8,15 +7,12 @@
 
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "gtest/gtest_prod.h"
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <optional>
-#include <string>
 #include <tuple>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 #define CYCLE_LIMIT 1000

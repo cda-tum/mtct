@@ -1,7 +1,6 @@
 #pragma once
 #include "FixedSizeVector.hpp"
 
-#include <cstddef>
 #include <sstream>
 #include <stdexcept>
 

@@ -191,8 +191,8 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
     extract_vertices_from_key_inplace(key, source_name, target_name);
     const auto edge_in = get_edge_index({source_name}, {target_name});
     for (const auto& tuple : val) {
-      add_successor(edge_in, get_edge_index({tuple[0].get<std::string>()},
-                                            {tuple[1].get<std::string>()}));
+      add_successor(edge_in, get_edge_index({tuple.at(0).get<std::string>()},
+                                            {tuple.at(1).get<std::string>()}));
     }
   }
 }
@@ -243,8 +243,8 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   }
 
   for (const auto& edge : m_edges) {
-    file << "<edge source=\"" << m_vertices[edge.source].name << "\" target=\""
-         << m_vertices[edge.target].name << "\">\n"
+    file << "<edge source=\"" << m_vertices.at(edge.source).name
+         << "\" target=\"" << m_vertices.at(edge.target).name << "\">\n"
          << "<data key=\"" << breakable_key << "\">" << std::boolalpha
          << edge.breakable << "</data>\n"
          << "<data key=\"" << length_key << "\">" << edge.length << "</data>\n"
@@ -271,8 +271,8 @@ void cda_rail::Network::export_successors_python(
     }
     first            = false;
     const auto& edge = get_edge(i);
-    file << "('" << m_vertices[edge.source].name << "', '"
-         << m_vertices[edge.target].name << "'): ";
+    file << "('" << m_vertices.at(edge.source).name << "', '"
+         << m_vertices.at(edge.target).name << "'): ";
     write_successor_set_to_file(file, i);
   }
   file << "}\n";
@@ -284,13 +284,15 @@ void cda_rail::Network::export_successors_cpp(
   for (size_t i = 0; i < number_of_edges(); ++i) {
     const auto&                                      edge = get_edge(i);
     std::vector<std::pair<std::string, std::string>> succ_list;
-    for (const auto succ : m_successors[i]) {
+    for (const auto succ : m_successors.at(i)) {
       const auto& se = get_edge(succ);
-      succ_list.emplace_back(m_vertices[se.source].name,
-                             m_vertices[se.target].name);
+      succ_list.emplace_back(m_vertices.at(se.source).name,
+                             m_vertices.at(se.target).name);
     }
-    j["('" + m_vertices[edge.source].name + "', '" +
-      m_vertices[edge.target].name + "')"] = succ_list;
+    // NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
+    j["('" + m_vertices.at(edge.source).name + "', '" +
+      m_vertices.at(edge.target).name + "')"] = succ_list;
+    // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
   }
   std::ofstream file(p / "successors_cpp.json");
   file << j << '\n';
@@ -311,8 +313,8 @@ void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,
     }
     first          = false;
     const auto& se = get_edge(succ);
-    file << "('" << m_vertices[se.source].name << "', '"
-         << m_vertices[se.target].name << "')";
+    file << "('" << m_vertices.at(se.source).name << "', '"
+         << m_vertices.at(se.target).name << "')";
   }
   file << "}";
 }
@@ -386,12 +388,13 @@ cda_rail::Network::separate_edge_at(
 
   // Intermediate sub-edges
   for (size_t i = 1; i < distances_from_source.size(); ++i) {
-    new_edges.emplace_back(add_edge(
-        new_vertices[i - 1], new_vertices[i],
-        distances_from_source[i] - distances_from_source[i - 1], edge.max_speed,
-        new_edge_breakable, edge.min_block_length, edge.min_stop_block_length));
+    new_edges.emplace_back(
+        add_edge(new_vertices.at(i - 1), new_vertices.at(i),
+                 distances_from_source.at(i) - distances_from_source.at(i - 1),
+                 edge.max_speed, new_edge_breakable, edge.min_block_length,
+                 edge.min_stop_block_length));
     update_new_old_edge(new_edges.back(), edge_index,
-                        distances_from_source[i - 1]);
+                        distances_from_source.at(i - 1));
   }
 
   // Reuse original edge index for the last sub-edge
@@ -400,19 +403,19 @@ cda_rail::Network::separate_edge_at(
   if (!new_edge_breakable) {
     set_edge_unbreakable(edge_index);
   }
-  m_edges[edge_index].source = new_vertices.back();
+  m_edges.at(edge_index).source = new_vertices.back();
   new_edges.emplace_back(edge_index);
 
   // Update predecessor successors to point to the first new sub-edge
   for (const auto inc : in_edges(edge.source)) {
-    if (m_successors[inc].contains(edge_index)) {
-      m_successors[inc].erase(edge_index);
-      m_successors[inc].insert(new_edges.front());
+    if (m_successors.at(inc).contains(edge_index)) {
+      m_successors.at(inc).erase(edge_index);
+      m_successors.at(inc).insert(new_edges.front());
     }
   }
   // Chain new sub-edges as successors
   for (size_t i = 0; i + 1 < new_edges.size(); ++i) {
-    add_successor(new_edges[i], new_edges[i + 1]);
+    add_successor(new_edges.at(i), new_edges.at(i + 1));
   }
 
   // Handle reverse edge if it exists
@@ -435,13 +438,13 @@ cda_rail::Network::separate_edge_at(
 
     // Intermediate reverse sub-edges (in reverse order)
     for (size_t i = distances_from_source.size() - 1; i > 0; --i) {
-      new_reverse_edges.emplace_back(
-          add_edge(new_vertices[i], new_vertices[i - 1],
-                   distances_from_source[i] - distances_from_source[i - 1],
-                   rev_edge.max_speed, new_edge_breakable,
-                   rev_edge.min_block_length, rev_edge.min_stop_block_length));
+      new_reverse_edges.emplace_back(add_edge(
+          new_vertices.at(i), new_vertices.at(i - 1),
+          distances_from_source.at(i) - distances_from_source.at(i - 1),
+          rev_edge.max_speed, new_edge_breakable, rev_edge.min_block_length,
+          rev_edge.min_stop_block_length));
       update_new_old_edge(new_reverse_edges.back(), rev_idx,
-                          rev_edge.length - distances_from_source[i]);
+                          rev_edge.length - distances_from_source.at(i));
     }
 
     // Reuse original reverse-edge index for the last reverse sub-edge
@@ -451,17 +454,17 @@ cda_rail::Network::separate_edge_at(
     if (!new_edge_breakable) {
       set_edge_unbreakable(rev_idx);
     }
-    m_edges[rev_idx].source = new_vertices.front();
+    m_edges.at(rev_idx).source = new_vertices.front();
     new_reverse_edges.emplace_back(rev_idx);
 
     for (const auto inc : in_edges(edge.target)) {
-      if (m_successors[inc].contains(rev_idx)) {
-        m_successors[inc].erase(rev_idx);
-        m_successors[inc].insert(new_reverse_edges.front());
+      if (m_successors.at(inc).contains(rev_idx)) {
+        m_successors.at(inc).erase(rev_idx);
+        m_successors.at(inc).insert(new_reverse_edges.front());
       }
     }
     for (size_t i = 0; i + 1 < new_reverse_edges.size(); ++i) {
-      add_successor(new_reverse_edges[i], new_reverse_edges[i + 1]);
+      add_successor(new_reverse_edges.at(i), new_reverse_edges.at(i + 1));
     }
   }
 
@@ -505,7 +508,7 @@ cda_rail::Network::sort_edge_pairs(
   // Build vertex → edge-pair-index adjacency
   std::unordered_map<size_t, std::unordered_set<size_t>> vertex_neighbors;
   for (size_t i = 0; i < edge_pairs.size(); ++i) {
-    const auto& e = get_edge(edge_pairs[i].first.value()); // NOLINT
+    const auto& e = get_edge(edge_pairs.at(i).first.value()); // NOLINT
     vertex_neighbors[e.source].emplace(i);
     vertex_neighbors[e.target].emplace(i);
   }
@@ -753,7 +756,7 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
     if (safe_ttd.has_value() && ttd_idx == *safe_ttd) {
       continue;
     }
-    if (ttd_sections[ttd_idx].contains(e_0)) {
+    if (ttd_sections.at(ttd_idx).contains(e_0)) {
       if (!first_edge) {
         return {{}};
       }
