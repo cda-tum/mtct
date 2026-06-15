@@ -10,6 +10,7 @@
 #include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
+#include <bits/ranges_algo.h>
 #include <cassert>
 #include <cmath>
 #include <cstddef>

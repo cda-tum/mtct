@@ -1,10 +1,28 @@
+#include "CustomExceptions.hpp"
+#include "Definitions.hpp"
+#include "StringHelper.hpp"
+#include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
+#include "tinyxml2.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <filesystem>
+#include <fstream>
 #include <functional>
+#include <ios>
+#include <optional>
+#include <ranges>
 #include <stack>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <variant>
+#include <vector>
 
 using json = nlohmann::json;
 

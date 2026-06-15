@@ -6,6 +6,7 @@
 #include "simulator/GreedySimulator.hpp"
 
 #include "gtest/gtest.h"
+#include <cstdlib>
 
 using namespace cda_rail;
 

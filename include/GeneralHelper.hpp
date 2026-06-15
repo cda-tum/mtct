@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <concepts>
+#include <cstddef>
 #include <filesystem>
 #include <limits>
 #include <utility>

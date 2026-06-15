@@ -1,6 +1,18 @@
 #include "simulator/GeneralSimulator.hpp"
 
+#include "CustomExceptions.hpp"
+#include "Definitions.hpp"
+#include "StringHelper.hpp"
+#include "probleminstances/GeneralProblemInstance.hpp"
+
+#include <algorithm>
+#include <cstddef>
+#include <memory>
+#include <optional>
+#include <string>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     std::shared_ptr<

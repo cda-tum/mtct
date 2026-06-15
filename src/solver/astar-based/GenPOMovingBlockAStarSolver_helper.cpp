@@ -1,5 +1,10 @@
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
+#include <algorithm>
+#include <bits/ranges_algo.h>
+#include <cstddef>
+#include <functional>
+
 bool cda_rail::solver::astar_based::GreedySimulatorState::operator==(
     const GreedySimulatorState& other) const {
   return train_edges == other.train_edges && ttd_orders == other.ttd_orders &&

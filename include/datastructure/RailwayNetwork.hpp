@@ -1,6 +1,7 @@
 #pragma once
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "StringHelper.hpp"
 #include "VSSModel.hpp"
 
 #include <cstddef>

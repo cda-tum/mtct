@@ -1,6 +1,13 @@
+#include "CustomExceptions.hpp"
+#include "Definitions.hpp"
+#include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 
 #include "gtest/gtest.h"
+#include <cstddef>
+#include <filesystem>
+#include <optional>
+#include <utility>
 
 TEST(RouteFunctionality, FirstPosOnEdge) {
   cda_rail::Network           network;

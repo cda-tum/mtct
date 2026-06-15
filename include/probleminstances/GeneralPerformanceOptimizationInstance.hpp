@@ -1,33 +1,25 @@
 #pragma once
 
-#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
-#include "EOMHelper.hpp"
 #include "GeneralProblemInstance.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
-#include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <cstdarg>
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
-#include <limits>
 #include <map>
+#include <memory>
 #include <optional>
-#include <stdexcept>
 #include <string>
-#include <tuple>
-#include <type_traits>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 // for some reason only works if imported after cstdarg
-#include "plog/Util.h"
 
 using json = nlohmann::json;
 

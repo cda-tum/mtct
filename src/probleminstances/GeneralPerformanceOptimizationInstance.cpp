@@ -1,11 +1,25 @@
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "GeneralHelper.hpp"
+#include "StringHelper.hpp"
+#include "datastructure/Timetable.hpp"
+#include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <limits>
+#include <map>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
 
 // ---------------------
 // INSTANCE
@@ -285,7 +299,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
   double t0 = -1;
   double t1 = -1;
-  for (const auto& time : tr_pos | std::views::keys) {
+  for (const auto& time : tr_pos | std::ranges::views::keys) {
     if (std::abs(time - t) < GRB_EPS) {
       t0 = time;
       t1 = time;
@@ -470,7 +484,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_times(
   const auto& tr_speed_map = m_train_speed.at(tr_id);
   // Return keys of the map
   std::vector<double> times;
-  for (const auto& t : tr_speed_map | std::views::keys) {
+  for (const auto& t : tr_speed_map | std::ranges::views::keys) {
     times.push_back(t);
   }
   // Sort
@@ -640,7 +654,7 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
       return false;
     }
 
-    for (const auto& t : m_train_pos.at(tr_id) | std::views::keys) {
+    for (const auto& t : m_train_pos.at(tr_id) | std::ranges::views::keys) {
       if (m_train_speed.at(tr_id).count(t) != 1) {
         return false;
       }
@@ -648,7 +662,7 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 
   for (const auto& train_pos_vec : m_train_pos) {
-    for (const auto& pos : train_pos_vec | std::views::values) {
+    for (const auto& pos : train_pos_vec | std::ranges::views::values) {
       if (pos + EPS < 0) {
         return false;
       }
@@ -657,7 +671,7 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   for (size_t tr_id = 0; tr_id < m_train_speed.size(); ++tr_id) {
     const auto& train =
         this->get_instance()->get_const_train_list().get_train(tr_id);
-    for (const auto& v : m_train_speed.at(tr_id) | std::views::values) {
+    for (const auto& v : m_train_speed.at(tr_id) | std::ranges::views::values) {
       if (v + EPS < 0 || v > train.get_max_speed() + EPS) {
         return false;
       }

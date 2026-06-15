@@ -1,6 +1,8 @@
 #include "simulator/GreedyHeuristic.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedySimulator.hpp"
 
 #include <algorithm>
@@ -125,7 +127,7 @@ cda_rail::simulator::simple_remaining_time_heuristic(
     const auto&         stop_tracks =
         simulator.get_instance()->get_stop_tracks(tr, next_station.name);
     next_station_tracks.reserve(stop_tracks.size());
-    for (const auto& track : stop_tracks | std::views::keys) {
+    for (const auto& track : stop_tracks | std::ranges::views::keys) {
       next_station_tracks.insert(track);
     }
 

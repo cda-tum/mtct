@@ -1,3 +1,5 @@
+#include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Timetable.hpp"
 

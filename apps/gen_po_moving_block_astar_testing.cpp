@@ -1,14 +1,20 @@
 #include "CLI/CLI.hpp"
+#include "Definitions.hpp"
+#include "StringHelper.hpp"
 #include "plog/Init.h"
 #include "plog/Logger.h"
 #include "plog/Severity.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GreedyHeuristic.hpp"
+#include "solver/GeneralSolver.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
 #include <cstdlib>
 #include <iomanip>
+#include <ios>
+#include <limits>
 #include <map>
+#include <optional>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Log.h>

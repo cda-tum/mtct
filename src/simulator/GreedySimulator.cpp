@@ -4,7 +4,9 @@
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "GeneralHelper.hpp"
+#include "StringHelper.hpp"
 #include "plog/Log.h"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GeneralSimulator.hpp"
 
 #include <algorithm>
@@ -12,11 +14,13 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <iterator>
 #include <limits>
 #include <map>
+#include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
-#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>

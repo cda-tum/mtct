@@ -2,6 +2,8 @@
 
 #include "Definitions.hpp"
 
+#include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <iterator>
 #include <numeric>

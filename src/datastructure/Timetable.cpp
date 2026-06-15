@@ -1,14 +1,26 @@
 #include "datastructure/Timetable.hpp"
 
 #include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "GeneralHelper.hpp"
+#include "datastructure/RailwayNetwork.hpp"
+#include "datastructure/Train.hpp"
 #include "nlohmann/json.hpp"
-#include "nlohmann/json_fwd.hpp"
 
+#include <algorithm>
+#include <bits/ranges_algo.h>
+#include <cmath>
 #include <cstddef>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <memory>
+#include <optional>
+#include <ranges>
 #include <string>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 // using directives from header
 

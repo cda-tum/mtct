@@ -1,16 +1,17 @@
 #pragma once
+#include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Station.hpp"
 #include "datastructure/Train.hpp"
-#include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <filesystem>
 #include <memory>
-#include <stdexcept>
+#include <optional>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 

@@ -1,16 +1,14 @@
 #pragma once
 
 #include "Definitions.hpp"
-#include "EOMHelper.hpp"
+#include "datastructure/RailwayNetwork.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <cstddef>
 #include <map>
 #include <memory>
 #include <optional>
-#include <type_traits>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 namespace cda_rail::simulator {

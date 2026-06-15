@@ -1,13 +1,11 @@
 #pragma once
 
 #include "CustomExceptions.hpp"
-#include "GeneralHelper.hpp"
 #include "GeneralSimulator.hpp"
 #include "GreedySimulator.hpp"
 
 #include <cstddef>
 #include <cstdint>
-#include <utility>
 #include <vector>
 
 namespace cda_rail::simulator {

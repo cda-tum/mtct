@@ -1,6 +1,9 @@
+#include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "datastructure/Train.hpp"
 
 #include "gtest/gtest.h"
+#include <filesystem>
 #include <ranges>
 #include <string>
 #include <vector>

@@ -9,17 +9,13 @@
 
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "gtest/gtest_prod.h"
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
-#include <numeric>
 #include <queue>
-#include <ranges>
-#include <string>
+#include <string_view>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 // If TEST_FRIENDS has value true, the corresponding test is friended to test

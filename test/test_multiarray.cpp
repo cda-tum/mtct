@@ -1,3 +1,4 @@
+#include "FixedSizeVector.hpp"
 #include "MultiArray.hpp"
 
 #include "gtest/gtest.h"

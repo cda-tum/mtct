@@ -1,11 +1,10 @@
 #pragma once
 
-#include "Definitions.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <chrono>
 #include <cstdint>
-#include <filesystem>
+#include <optional>
 #include <plog/Logger.h>
 #include <plog/Severity.h>
 #include <string>

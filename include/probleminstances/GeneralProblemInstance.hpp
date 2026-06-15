@@ -2,14 +2,18 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "StringHelper.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 #include "datastructure/Train.hpp"
 
+#include <cstddef>
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 

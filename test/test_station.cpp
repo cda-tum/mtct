@@ -1,6 +1,10 @@
+#include "CustomExceptions.hpp"
+#include "Definitions.hpp"
+#include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Station.hpp"
 
 #include "gtest/gtest.h"
+#include <filesystem>
 
 namespace {
 

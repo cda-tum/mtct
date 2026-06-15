@@ -1,4 +1,7 @@
+#include "CustomExceptions.hpp"
+#include "Definitions.hpp"
 #include "GeneralHelper.hpp"
+#include "StringHelper.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Station.hpp"
@@ -8,11 +11,20 @@
 #include "gtest/gtest.h"
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
+#include <filesystem>
 #include <fstream>
+#include <limits>
+#include <optional>
 #include <plog/Logger.h>
 #include <plog/Severity.h>
 #include <ranges>
 #include <set>
+#include <stdexcept>
+#include <string>
+#include <system_error>
+#include <utility>
+#include <vector>
 
 // NOLINTBEGIN(clang-diagnostic-unused-result)
 
