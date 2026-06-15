@@ -399,14 +399,14 @@ void check_instance_import(
 }
 } // namespace
 
-TEST(Functionality, GenPOInstanceImport1) {
+TEST(GenPOInstance, GenPOInstanceImport1) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance const instance(
       "SimpleStation", "atmos2023", "./data");
 
   check_instance_import(instance);
 }
 
-TEST(Functionality, GenPOTimetableExport) {
+TEST(GenPOInstance, GenPOTimetableExport) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
   instance.set_instance_name("VSSGenerationTimetableExportTest");
   instance.set_instance_subdirectory("tmp_subdirectory");
@@ -585,7 +585,7 @@ TEST(Functionality, GenPOTimetableExport) {
   EXPECT_EQ(instance_read.route_length("tr1"), 300);
 }
 
-TEST(Example, Stammstrecke) {
+TEST(GenPOInstance, Stammstrecke) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 
   // Pasing -> Laim
@@ -1779,6 +1779,133 @@ TEST(Example, Stammstrecke) {
   EXPECT_EQ(ost1_donnersberger, donnersberger_expected);
   EXPECT_EQ(ost2_donnersberger, donnersberger_expected);
   EXPECT_EQ(ost3_donnersberger, donnersberger_expected);
+}
+
+TEST(ProblemInstanceWithSchedulesAndRoutes, Helper) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v3a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v5a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v5b", cda_rail::VertexType::TTD);
+
+  auto const e01 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 100, true);
+  auto const e12 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 50, 100, false);
+  auto const e23a =
+      instance.get_editable_network().add_edge({"v2"}, {"v3a"}, 50, 100, false);
+  auto const e23b =
+      instance.get_editable_network().add_edge({"v2"}, {"v3b"}, 50, 100, false);
+  auto const e34a = instance.get_editable_network().add_edge({"v3a"}, {"v4a"},
+                                                             500, 100, true);
+  auto const e34b = instance.get_editable_network().add_edge({"v3b"}, {"v4b"},
+                                                             500, 100, true);
+  auto const e45a = instance.get_editable_network().add_edge({"v4a"}, {"v5a"},
+                                                             500, 100, true);
+  auto const e45b = instance.get_editable_network().add_edge({"v4b"}, {"v5b"},
+                                                             500, 100, true);
+
+  instance.get_editable_network().add_successor({{"v0"}, {"v1"}},
+                                                {{"v1"}, {"v2"}});
+  instance.get_editable_network().add_successor({{"v1"}, {"v2"}},
+                                                {{"v2"}, {"v3a"}});
+  instance.get_editable_network().add_successor({{"v1"}, {"v2"}},
+                                                {{"v2"}, {"v3b"}});
+  instance.get_editable_network().add_successor({{"v2"}, {"v3a"}},
+                                                {{"v3a"}, {"v4a"}});
+  instance.get_editable_network().add_successor({{"v2"}, {"v3b"}},
+                                                {{"v3b"}, {"v4b"}});
+  instance.get_editable_network().add_successor({{"v3a"}, {"v4a"}},
+                                                {{"v4a"}, {"v5a"}});
+  instance.get_editable_network().add_successor({{"v3b"}, {"v4b"}},
+                                                {{"v4b"}, {"v5b"}});
+
+  auto const tr1 = instance.add_train("tr1", 100, 100, 2, 2, 0, 10, {"v0"}, 200,
+                                      10, {"v5a"});
+  auto const tr2 = instance.add_train("tr2", 100, 100, 2, 2, 0, 10, {"v0"}, 200,
+                                      10, {"v5b"});
+
+  instance.add_empty_station("Station");
+  instance.add_track_to_station("Station", {"v3a", "v4a"});
+  instance.add_track_to_station("Station", {"v3b", "v4b"});
+  instance.add_track_to_station("Station", {"v4a", "v5a"});
+  instance.add_track_to_station("Station", {"v4b", "v5b"});
+
+  EXPECT_FALSE(instance.has_route_for_every_train());
+
+  EXPECT_ANY_THROW((void)instance.edges_used_by_train("tr1", true, true));
+  auto const tr1_edges = instance.edges_used_by_train("tr1", true, false);
+  EXPECT_EQ(tr1_edges.size(), instance.get_const_network().number_of_edges());
+  for (size_t e_idx = 0; e_idx < instance.get_const_network().number_of_edges();
+       ++e_idx) {
+    EXPECT_TRUE(tr1_edges.contains(e_idx))
+        << "Edge " << e_idx << " ("
+        << instance.get_const_network().get_edge_name(e_idx)
+        << ") not found in tr_edges";
+  }
+
+  instance.add_empty_route("tr1");
+  instance.push_back_edge_to_route("tr1", {"v0", "v1"});
+  instance.push_back_edge_to_route("tr1", {"v1", "v2"});
+  instance.push_back_edge_to_route("tr1", {"v2", "v3a"});
+  instance.push_back_edge_to_route("tr1", {"v3a", "v4a"});
+  instance.push_back_edge_to_route("tr1", {"v4a", "v5a"});
+
+  EXPECT_FALSE(instance.has_route_for_every_train());
+
+  auto const tr1_edges_2 = instance.edges_used_by_train("tr1", true, true);
+  cda_rail::index_set const expected_tr1_edges_2{e01, e12, e23a, e34a, e45a};
+  EXPECT_EQ(tr1_edges_2, expected_tr1_edges_2);
+
+  auto const tr1_edges_2b = instance.edges_used_by_train("tr1", false);
+  EXPECT_EQ(tr1_edges_2b.size(),
+            instance.get_const_network().number_of_edges());
+  for (size_t e_idx = 0; e_idx < instance.get_const_network().number_of_edges();
+       ++e_idx) {
+    EXPECT_TRUE(tr1_edges_2b.contains(e_idx))
+        << "Edge " << e_idx << " ("
+        << instance.get_const_network().get_edge_name(e_idx)
+        << ") not found in tr_edges";
+  }
+
+  auto const tr1_sections_2 = instance.sections_used_by_train(
+      "tr1", {{e12, e23a, e23b}, {e34b}}, true, true);
+  cda_rail::index_set const expected_tr1_sections_2{0};
+  EXPECT_EQ(tr1_sections_2, expected_tr1_sections_2);
+
+  EXPECT_ANY_THROW(
+      (void)instance.trains_in_section({e12, e23a, e23b}, true, true));
+  auto const tr_in_section_2 =
+      instance.trains_in_section({e12, e23a, e23b}, true, false);
+  cda_rail::index_set const expected_tr_in_section_2{tr1, tr2};
+
+  instance.add_empty_route("tr2");
+  instance.push_back_edge_to_route("tr2", {"v0", "v1"});
+  instance.push_back_edge_to_route("tr2", {"v1", "v2"});
+  instance.push_back_edge_to_route("tr2", {"v2", "v3b"});
+  instance.push_back_edge_to_route("tr2", {"v3b", "v4b"});
+  instance.push_back_edge_to_route("tr2", {"v4b", "v5b"});
+
+  EXPECT_TRUE(instance.has_route_for_every_train());
+
+  auto const tr_on_sec1 = instance.trains_in_section({e23a, e23b}, true, true);
+  auto const tr_on_sec2 = instance.trains_in_section({e34b}, true, true);
+  EXPECT_EQ(tr_on_sec1, cda_rail::index_set({tr1, tr2}));
+  EXPECT_EQ(tr_on_sec2, cda_rail::index_set({tr2}));
+
+  auto const tr_on_edges1 = instance.all_trains_on_edge(e12, true);
+  auto const tr_on_edges2 = instance.all_trains_on_edge(e23a, true);
+  auto const tr_on_edges3 = instance.all_trains_on_edge(e23b, true);
+  EXPECT_EQ(tr_on_edges1, cda_rail::index_set({tr1, tr2}));
+  EXPECT_EQ(tr_on_edges2, cda_rail::index_set({tr1}));
+  EXPECT_EQ(tr_on_edges3, cda_rail::index_set({tr2}));
 }
 
 #if 0
