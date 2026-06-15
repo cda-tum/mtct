@@ -1646,10 +1646,10 @@ public:
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_of_length_starting_in_vertex(
       size_t v, double desired_len, std::optional<size_t> exit_node = {},
-      cda_rail::index_set edges_to_consider         = {},
-      bool                return_successors_if_zero = false) const {
+      const cda_rail::index_set& edges_to_consider         = {},
+      bool                       return_successors_if_zero = false) const {
     return all_routes_of_given_length(v, std::nullopt, desired_len, false,
-                                      exit_node, std::move(edges_to_consider),
+                                      exit_node, edges_to_consider,
                                       return_successors_if_zero);
   };
 
@@ -1667,9 +1667,9 @@ public:
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_of_length_starting_in_edge(
       size_t e, double desired_len, std::optional<size_t> exit_node = {},
-      cda_rail::index_set edges_to_consider = {}) const {
+      const cda_rail::index_set& edges_to_consider = {}) const {
     return all_routes_of_given_length(std::nullopt, e, desired_len, false,
-                                      exit_node, std::move(edges_to_consider));
+                                      exit_node, edges_to_consider);
   };
 
   /**
@@ -1685,9 +1685,9 @@ public:
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_of_length_ending_in_vertex(
       size_t v, double desired_len, std::optional<size_t> exit_node = {},
-      cda_rail::index_set edges_to_consider = {}) const {
+      const cda_rail::index_set& edges_to_consider = {}) const {
     return all_routes_of_given_length(v, std::nullopt, desired_len, true,
-                                      exit_node, std::move(edges_to_consider));
+                                      exit_node, edges_to_consider);
   };
 
   /**
@@ -1703,10 +1703,10 @@ public:
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_of_length_ending_in_edge(
       size_t const e, double const desiredLen,
-      std::optional<size_t> exit_node         = {},
-      cda_rail::index_set   edges_to_consider = {}) const {
+      std::optional<size_t>      exit_node         = {},
+      const cda_rail::index_set& edges_to_consider = {}) const {
     return all_routes_of_given_length(std::nullopt, e, desiredLen, true,
-                                      exit_node, std::move(edges_to_consider));
+                                      exit_node, edges_to_consider);
   }
 
 private:
@@ -1873,17 +1873,17 @@ private:
   [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
   shortest_path_using_edges_helper(size_t source_edge_id,
                                    size_t target_vertex_id,
-                                   bool   only_use_valid_successors   = true,
-                                   cda_rail::index_set edges_to_use   = {},
-                                   bool                target_is_edge = false,
-                                   bool   include_first_edge          = false,
-                                   bool   use_minimal_time            = false,
-                                   double max_v = INF) const {
+                                   bool   only_use_valid_successors = true,
+                                   const cda_rail::index_set& edges_to_use = {},
+                                   bool   target_is_edge     = false,
+                                   bool   include_first_edge = false,
+                                   bool   use_minimal_time   = false,
+                                   double max_v              = INF) const {
     return shortest_path_between_sets_using_edges_helper(
         cda_rail::index_set{source_edge_id},
         cda_rail::index_set{target_vertex_id}, only_use_valid_successors,
-        std::move(edges_to_use), target_is_edge, include_first_edge,
-        use_minimal_time, max_v);
+        edges_to_use, target_is_edge, include_first_edge, use_minimal_time,
+        max_v);
   };
   /**
    * @brief Multi-source, multi-target Dijkstra returning the shortest
@@ -1935,12 +1935,13 @@ private:
    * @return Shortest distance, or `std::nullopt` if unreachable.
    */
   [[nodiscard]] std::optional<double> shortest_path_length_between_sets_helper(
-      cda_rail::index_set source_edge_ids, cda_rail::index_set target_ids,
-      bool target_is_edge = false, bool include_first_edge = false,
-      bool use_minimal_time = false, double max_v = INF) const {
+      const cda_rail::index_set& source_edge_ids,
+      const cda_rail::index_set& target_ids, bool target_is_edge = false,
+      bool include_first_edge = false, bool use_minimal_time = false,
+      double max_v = INF) const {
     return shortest_path_between_sets_using_edges_helper(
-               std::move(source_edge_ids), std::move(target_ids), true, {},
-               target_is_edge, include_first_edge, use_minimal_time, max_v)
+               source_edge_ids, target_ids, true, {}, target_is_edge,
+               include_first_edge, use_minimal_time, max_v)
         .first;
   };
 
@@ -1965,14 +1966,14 @@ public:
   shortest_edge_to_edge_path(EdgeInput const& source_edge,
                              EdgeInput const& target_edge,
                              bool             only_use_valid_successors = true,
-                             cda_rail::index_set edges_to_use           = {},
-                             bool                include_first_edge     = false,
-                             bool                use_minimal_time       = false,
-                             double              max_v = INF) const {
+                             const cda_rail::index_set& edges_to_use    = {},
+                             bool   include_first_edge                  = false,
+                             bool   use_minimal_time                    = false,
+                             double max_v = INF) const {
     return shortest_path_using_edges_helper(
         source_edge.resolve(this), target_edge.resolve(this),
-        only_use_valid_successors, std::move(edges_to_use), true,
-        include_first_edge, use_minimal_time, max_v);
+        only_use_valid_successors, edges_to_use, true, include_first_edge,
+        use_minimal_time, max_v);
   };
 
   /**
@@ -1996,15 +1997,15 @@ public:
   [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
   shortest_edge_to_vertex_path(EdgeInput const&   source_edge,
                                VertexInput const& target_vertex,
-                               bool only_use_valid_successors         = true,
-                               cda_rail::index_set edges_to_use       = {},
-                               bool                include_first_edge = false,
-                               bool                use_minimal_time   = false,
-                               double              max_v = INF) const {
+                               bool only_use_valid_successors          = true,
+                               const cda_rail::index_set& edges_to_use = {},
+                               bool   include_first_edge               = false,
+                               bool   use_minimal_time                 = false,
+                               double max_v = INF) const {
     return shortest_path_using_edges_helper(
         source_edge.resolve(this), target_vertex.resolve(this),
-        only_use_valid_successors, std::move(edges_to_use), false,
-        include_first_edge, use_minimal_time, max_v);
+        only_use_valid_successors, edges_to_use, false, include_first_edge,
+        use_minimal_time, max_v);
   };
 
   /**
@@ -2024,17 +2025,16 @@ public:
    *         does not exist.
    */
   [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
-  shortest_path_between_edge_sets(cda_rail::index_set source_edge_ids,
-                                  cda_rail::index_set target_edge_ids,
-                                  bool only_use_valid_successors   = true,
-                                  cda_rail::index_set edges_to_use = {},
-                                  bool   include_first_edge        = false,
-                                  bool   use_minimal_time          = false,
-                                  double max_v = INF) const {
+  shortest_path_between_edge_sets(const cda_rail::index_set& source_edge_ids,
+                                  const cda_rail::index_set& target_edge_ids,
+                                  bool only_use_valid_successors = true,
+                                  const cda_rail::index_set& edges_to_use = {},
+                                  bool   include_first_edge = false,
+                                  bool   use_minimal_time   = false,
+                                  double max_v              = INF) const {
     return shortest_path_between_sets_using_edges_helper(
-        std::move(source_edge_ids), std::move(target_edge_ids),
-        only_use_valid_successors, std::move(edges_to_use), true,
-        include_first_edge, use_minimal_time, max_v);
+        source_edge_ids, target_edge_ids, only_use_valid_successors,
+        edges_to_use, true, include_first_edge, use_minimal_time, max_v);
   };
 
   /**
@@ -2057,15 +2057,15 @@ public:
    */
   [[nodiscard]] std::pair<std::optional<double>, cda_rail::index_vector>
   shortest_path_between_edge_and_vertex_set(
-      cda_rail::index_set source_edge_ids,
-      cda_rail::index_set target_vertex_ids,
-      bool                only_use_valid_successors = true,
-      cda_rail::index_set edges_to_use = {}, bool include_first_edge = false,
-      bool use_minimal_time = false, double max_v = INF) const {
+      const cda_rail::index_set& source_edge_ids,
+      const cda_rail::index_set& target_vertex_ids,
+      bool                       only_use_valid_successors = true,
+      const cda_rail::index_set& edges_to_use              = {},
+      bool include_first_edge = false, bool use_minimal_time = false,
+      double max_v = INF) const {
     return shortest_path_between_sets_using_edges_helper(
-        std::move(source_edge_ids), std::move(target_vertex_ids),
-        only_use_valid_successors, std::move(edges_to_use), false,
-        include_first_edge, use_minimal_time, max_v);
+        source_edge_ids, target_vertex_ids, only_use_valid_successors,
+        edges_to_use, false, include_first_edge, use_minimal_time, max_v);
   };
 
   /**
@@ -2080,12 +2080,12 @@ public:
    * @return Shortest distance, or `std::nullopt` if unreachable.
    */
   [[nodiscard]] std::optional<double> shortest_path_length_between_edge_sets(
-      cda_rail::index_set source_edge_ids, cda_rail::index_set target_ids,
-      bool include_first_edge = false, bool use_minimal_time = false,
-      double max_v = INF) const {
-    return shortest_path_length_between_sets_helper(
-        std::move(source_edge_ids), std::move(target_ids), true,
-        include_first_edge, use_minimal_time, max_v);
+      const cda_rail::index_set& source_edge_ids,
+      const cda_rail::index_set& target_ids, bool include_first_edge = false,
+      bool use_minimal_time = false, double max_v = INF) const {
+    return shortest_path_length_between_sets_helper(source_edge_ids, target_ids,
+                                                    true, include_first_edge,
+                                                    use_minimal_time, max_v);
   };
 
   /**
@@ -2101,12 +2101,13 @@ public:
    */
   [[nodiscard]] std::optional<double>
   shortest_path_length_between_edge_and_vertex_set(
-      cda_rail::index_set source_edge_ids,
-      cda_rail::index_set target_vertex_ids, bool include_first_edge = false,
-      bool use_minimal_time = false, double max_v = INF) const {
+      const cda_rail::index_set& source_edge_ids,
+      const cda_rail::index_set& target_vertex_ids,
+      bool include_first_edge = false, bool use_minimal_time = false,
+      double max_v = INF) const {
     return shortest_path_length_between_sets_helper(
-        std::move(source_edge_ids), std::move(target_vertex_ids), false,
-        include_first_edge, use_minimal_time, max_v);
+        source_edge_ids, target_vertex_ids, false, include_first_edge,
+        use_minimal_time, max_v);
   };
 
 private:
