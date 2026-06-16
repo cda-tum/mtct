@@ -18,7 +18,11 @@ namespace cda_rail {
 [[nodiscard]] std::string
 concatenate_string_views(std::initializer_list<std::string_view> parts);
 
-// Helper for allocation-free, case-insensitive comparison
+/**
+ * @brief Compares two strings for equality, ignoring case.
+ *
+ * @return `true` if the strings are equal when compared case-insensitively, `false` otherwise.
+ */
 inline bool case_insensitive_str_equal(std::string_view a, std::string_view b) {
   return std::ranges::equal(a, b, [](char const c1, char const c2) {
     // Cast to unsigned char to avoid UB with extended ASCII

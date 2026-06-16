@@ -14,7 +14,11 @@ enum class RemainingTimeHeuristicType : std::uint8_t { Zero = 0, Simple = 1 };
 
 // --------------------------
 // Objective Value
-// --------------------------
+/**
+ * @brief Computes the objective value based on train exit times and stop times.
+ *
+ * @return double The computed objective value.
+ */
 
 [[nodiscard]] inline double
 objective_val(const GreedySimulator&                  simulator,
@@ -33,6 +37,12 @@ simple_braking_time_heuristic(size_t tr, const GreedySimulator& simulator,
                               double tr_exit_time, double braking_time,
                               double braking_distance);
 
+/**
+ * @brief Executes the selected braking-time heuristic.
+ *
+ * @param type The braking-time heuristic implementation to use.
+ * @return double Computed braking-time estimate.
+ */
 [[nodiscard]] inline double
 braking_time_heuristic(BrakingTimeHeuristicType type, size_t tr,
                        const GreedySimulator& simulator, double tr_exit_time,
@@ -61,6 +71,22 @@ struct RemainingTimeHeuristicResult {
     size_t tr, const GreedySimulator& simulator, double tr_exit_time,
     double braking_time_heuristic, bool consider_earliest_exit);
 
+/**
+ * @brief Computes a remaining-time heuristic estimate using the selected strategy.
+ *
+ * Dispatches to the appropriate remaining-time heuristic implementation based on the specified type.
+ * The `Zero` strategy returns a trivial feasible result with zero remaining time and delay.
+ * The `Simple` strategy delegates to the simple remaining-time heuristic.
+ *
+ * @param type The remaining-time heuristic strategy to apply.
+ * @param tr Train index.
+ * @param simulator Reference to the greedy simulator.
+ * @param tr_exit_time The train's exit time.
+ * @param braking_time_heuristic The estimated braking time.
+ * @param consider_earliest_exit Whether to consider the train's earliest exit time.
+ *
+ * @return A `RemainingTimeHeuristicResult` containing feasibility status, remaining exit time, and average remaining stop delay.
+ */
 [[nodiscard]] inline RemainingTimeHeuristicResult
 remaining_time_heuristic(RemainingTimeHeuristicType type, size_t tr,
                          const GreedySimulator& simulator, double tr_exit_time,

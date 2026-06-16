@@ -34,7 +34,11 @@ using std::size_t;
 // ROUTE
 // -----------------------------
 
-// Getter
+/**
+ * @brief Calculates the total length of the route.
+ *
+ * @return double The sum of lengths of all edges in the route.
+ */
 
 double cda_rail::Route::length(const Network& network) const {
   const auto edge_lengths =
@@ -45,6 +49,16 @@ double cda_rail::Route::length(const Network& network) const {
                          std::plus{});
 }
 
+/**
+ * @brief Determines the position of an edge within the route.
+ *
+ * @param edge The edge to locate.
+ * @return An `EdgePosition` where `source` is the distance from the route's start to the edge's start,
+ *         and `target` is the distance to the edge's end.
+ *
+ * @throws EdgeNotExistentException if the edge does not exist in the network.
+ * @throws ConsistencyException if the edge is not part of this route.
+ */
 cda_rail::Route::EdgePosition
 cda_rail::Route::edge_pos_on_route(Network::EdgeInput const& edge,
                                    const Network&            network) const {
@@ -72,6 +86,13 @@ cda_rail::Route::edge_pos_on_route(Network::EdgeInput const& edge,
           .target = source_pos + network.get_edge(*edge_it).length};
 }
 
+/**
+ * @brief Determines the position span on the route that covers a set of edges.
+ *
+ * @param edges_to_consider Edge IDs to locate on the route.
+ * @return EdgePosition spanning from the start position of the first considered edge to the end position of the last considered edge on the route.
+ * @throws exceptions::ConsistencyException if none of the provided edges exist on the route.
+ */
 cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
     const cda_rail::index_vector& edges_to_consider,
     const Network&                network) const {
@@ -100,18 +121,39 @@ cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
   return return_pos;
 }
 
+/**
+ * @brief Determines the starting position of the first edge from a set that appears on the route.
+ *
+ * @param edge_indices Set of edge identifiers to search for.
+ * @param network The network providing edge metadata.
+ *
+ * @return The starting position of the first matching edge, or `std::nullopt` if no edges from the set are found on the route.
+ */
 std::optional<double>
 cda_rail::Route::get_first_pos_on_edges(const cda_rail::index_set& edge_indices,
                                         const Network& network) const {
   return get_pos_on_edges_impl(edge_indices, network, true);
 }
 
+/**
+ * @brief Determines the end position of the last matching edge on the route.
+ *
+ * @return The position where the last edge from `edge_indices` ends, or empty if no matching edges exist.
+ */
 std::optional<double>
 cda_rail::Route::get_last_pos_on_edges(const cda_rail::index_set& edge_indices,
                                        const Network& network) const {
   return get_pos_on_edges_impl(edge_indices, network, false);
 }
 
+/**
+ * @brief Finds the edge at the given position along the route.
+ *
+ * @return size_t The id of the edge at that position.
+ * 
+ * @throws ConsistencyException If the route is empty or the position does not fall on any edge.
+ * @throws InvalidInputException If pos is negative.
+ */
 size_t
 cda_rail::Route::get_edge_id_at_pos(double                   pos,
                                     const cda_rail::Network& network) const {
@@ -137,18 +179,41 @@ cda_rail::Route::get_edge_id_at_pos(double                   pos,
   throw exceptions::ConsistencyException("Position is not on the route.");
 }
 
+/**
+ * @brief Retrieves the edge id at a position along the route.
+ *
+ * @param route_index The position along the route.
+ * @return size_t The edge id at the given position.
+ * @throws InvalidInputException if the index is out of range.
+ */
 size_t cda_rail::Route::get_edge_id(size_t route_index) const {
   is_route_index_valid(route_index);
   return m_edges.at(route_index);
 }
 
+/**
+ * @brief Retrieves the edge at a position in the route.
+ *
+ * @param route_index Position of the edge within the route.
+ * @return const Edge& Const reference to the edge at the specified position.
+ * @throws InvalidInputException if route_index is out of range.
+ */
 const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
                                                 const Network& network) const {
   is_route_index_valid(route_index);
   return network.get_edge(m_edges.at(route_index));
 }
 
-// EDITING FUNCTIONS
+/**
+ * @brief Appends an edge to the end of the route.
+ *
+ * If the route is non-empty, validates that the new edge is a valid successor
+ * of the last edge.
+ *
+ * @param new_edge The edge to append.
+ * @throws ConsistencyException if the route is non-empty and the edge is not a
+ * valid successor of the last edge.
+ */
 
 void cda_rail::Route::push_back_edge(Network::EdgeInput const& new_edge,
                                      const Network&            network) {
@@ -160,6 +225,13 @@ void cda_rail::Route::push_back_edge(Network::EdgeInput const& new_edge,
   m_edges.emplace_back(edge_index);
 }
 
+/**
+ * @brief Adds an edge to the beginning of the route.
+ *
+ * @param new_edge The edge to prepend.
+ *
+ * @throws ConsistencyException if the new edge is not a valid predecessor of the first edge in the route.
+ */
 void cda_rail::Route::push_front_edge(Network::EdgeInput const& new_edge,
                                       const Network&            network) {
   auto const edge_index = new_edge.resolve(&network);
@@ -171,6 +243,10 @@ void cda_rail::Route::push_front_edge(Network::EdgeInput const& new_edge,
   m_edges.insert(m_edges.begin(), edge_index);
 }
 
+/**
+ * @brief Removes the first edge from the route.
+ * @throws ConsistencyException if the route is empty.
+ */
 void cda_rail::Route::remove_first_edge() {
   if (!has_edges()) {
     throw exceptions::ConsistencyException("Route is empty.");
@@ -178,6 +254,11 @@ void cda_rail::Route::remove_first_edge() {
   m_edges.erase(m_edges.begin());
 }
 
+/**
+ * @brief Removes the last edge from the route.
+ *
+ * @throws exceptions::ConsistencyException If the route is empty.
+ */
 void cda_rail::Route::remove_last_edge() {
   if (!has_edges()) {
     throw exceptions::ConsistencyException("Route is empty.");
@@ -185,7 +266,18 @@ void cda_rail::Route::remove_last_edge() {
   m_edges.pop_back();
 }
 
-// HELPER
+/**
+ * @brief Validates that all route edges exist in the network and form valid consecutive connections.
+ *
+ * Verifies that each edge in the route exists in the network and that all consecutive edge pairs
+ * form valid successor pairs according to the network's connectivity rules.
+ *
+ * @param network The network to validate edges against.
+ *
+ * @return `true` if all consecutive edge pairs are valid successors, `false` otherwise.
+ *
+ * @throws EdgeNotExistentException if any edge in the route does not exist in the network.
+ */
 
 bool cda_rail::Route::check_consistency(const Network& network) const {
   for (const auto edge : m_edges) {
@@ -199,6 +291,11 @@ bool cda_rail::Route::check_consistency(const Network& network) const {
              }) == m_edges.end();
 }
 
+/**
+ * @brief Updates the route's edges by replacing each edge with its discretized subdivision.
+ *
+ * @param new_edges Maps old edge ids to their replacement edge sequences.
+ */
 void cda_rail::Route::update_after_discretization(
     const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
   std::unordered_map<size_t, const cda_rail::index_vector*> replacement_map;
@@ -222,6 +319,14 @@ void cda_rail::Route::update_after_discretization(
   m_edges = std::move(edges_updated);
 }
 
+/**
+ * @brief Finds the position of edges from a given set on the route.
+ *
+ * @param edge_indices The set of edge ids to locate.
+ * @param network The network providing edge lengths.
+ * @param first_match If true, returns the position of the first matching edge; if false, returns the position of the last.
+ * @return The start position of the first matching edge if `first_match` is true; the end position of the last matching edge if `first_match` is false. Returns empty if no edges from the set are found on the route.
+ */
 std::optional<double>
 cda_rail::Route::get_pos_on_edges_impl(const cda_rail::index_set& edge_indices,
                                        const Network&             network,
@@ -246,31 +351,62 @@ cda_rail::Route::get_pos_on_edges_impl(const cda_rail::index_set& edge_indices,
   return last_position;
 }
 
+/**
+ * @brief Validates that an index is within the route's valid range.
+ * @throws InvalidInputException if the index is out of range.
+ */
 void cda_rail::Route::is_route_index_valid(size_t route_index) const {
   if (route_index >= m_edges.size()) {
     throw exceptions::InvalidInputException("Index out of range.");
   }
 }
 
+/**
+ * @brief Determines whether the route contains any edges.
+ *
+ * @return bool `true` if the route contains at least one edge, `false` otherwise.
+ */
 bool cda_rail::Route::has_edges() const { return !m_edges.empty(); }
 
 // -----------------------------
 // ROUTE MAP
 // -----------------------------
 
-// Getter
+/**
+ * @brief Retrieves the route for a train.
+ *
+ * @return const cda_rail::Route& The route for the specified train.
+ *
+ * @throws cda_rail::exceptions::ConsistencyException if the train does not have a route.
+ */
 const cda_rail::Route&
 cda_rail::RouteMap::get_route(const std::string& train_name) const {
   throw_if_train_has_no_route(train_name);
   return m_routes.at(train_name);
 }
 
+/**
+ * @brief Computes the total length of a train's route.
+ *
+ * @param train_name The name of the train.
+ * @param network The network containing edge information.
+ * @return The sum of lengths of all edges in the train's route.
+ *
+ * @throw ConsistencyException If the train has no route.
+ */
 double cda_rail::RouteMap::route_length(const std::string& train_name,
                                         const Network&     network) const {
   return get_route(train_name).length(network);
 }
 
-// Overlap functions
+/**
+ * @brief Identifies overlapping segments where two routes traverse the same sequence of edges in the same order.
+ *
+ * @param train1 Name of the first train.
+ * @param train2 Name of the second train.
+ * @param network The network containing edge and track information.
+ * @return A vector of conflict pairs, each representing a contiguous segment where both routes share the same edges in sequence. Each pair specifies position ranges on both routes and the set of track indices involved.
+ */
 
 std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
@@ -324,6 +460,18 @@ cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
   return result;
 }
 
+/**
+ * @brief Identifies overlaps where two train routes share unbreakable track sections.
+ *
+ * For each unbreakable section traversed by the first train's route, determines
+ * whether the second train's route also traverses the same section. Returns all
+ * shared unbreakable sections as conflict pairs.
+ *
+ * @param train1 Name of the first train.
+ * @param train2 Name of the second train.
+ * @return A vector of conflict pairs, each recording the position intervals on
+ *         both routes and the track indices of the shared unbreakable section.
+ */
 std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_ttd_overlaps(const std::string& train1,
                                      const std::string& train2,
@@ -371,6 +519,15 @@ cda_rail::RouteMap::get_ttd_overlaps(const std::string& train1,
   return result;
 }
 
+/**
+ * @brief Finds overlapping route sections where trains travel in opposite directions.
+ *
+ * Identifies all segments where an edge in one train's route has a reverse-direction
+ * counterpart in the other's route, tracking position intervals and tracks involved.
+ *
+ * @return Vector of conflict pairs, each containing position intervals on both routes
+ *         and the tracks traversed in the overlap.
+ */
 std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
                                          const std::string& train2,
@@ -436,6 +593,19 @@ cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
   return result;
 }
 
+/**
+ * @brief Identifies crossing overlaps between two trains by merging time-table and reverse-direction overlaps.
+ *
+ * Computes all time-table-dependent and reverse-direction conflicts between the two routes,
+ * then consolidates overlapping regions along train1's route into single intervals.
+ *
+ * @param train1 Identifier of the first train.
+ * @param train2 Identifier of the second train.
+ * @param network The rail network.
+ *
+ * @return A vector of merged conflict pairs, where overlapping regions are consolidated
+ *         into single intervals sorted by position along train1's route.
+ */
 std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
                                           const std::string& train2,
@@ -472,7 +642,11 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
   return result;
 }
 
-// Editing functions
+/**
+ * @brief Registers an empty route for a train.
+ *
+ * @throws InvalidInputException if the train already has a route.
+ */
 
 void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
   if (!m_routes.try_emplace(train_name).second) {
@@ -480,6 +654,11 @@ void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
   }
 }
 
+/**
+ * @brief Adds an empty route for a train, validating it exists in the train list.
+ *
+ * @throws TrainNotExistentException if the train does not exist in trains.
+ */
 void cda_rail::RouteMap::add_empty_route(const std::string& train_name,
                                          const TrainList&   trains) {
   if (!trains.has_train(train_name)) {
@@ -488,6 +667,16 @@ void cda_rail::RouteMap::add_empty_route(const std::string& train_name,
   add_empty_route(train_name);
 }
 
+/**
+ * @brief Appends an edge to the end of a train's route.
+ *
+ * @param train_name Name of the train whose route to extend.
+ * @param new_edge The edge to append.
+ * @param network The network to resolve and validate the edge.
+ *
+ * @throws ConsistencyException if the train has no route.
+ * @throws ConsistencyException if the new edge is not a valid successor of the current last edge.
+ */
 void cda_rail::RouteMap::push_back_edge(const std::string&        train_name,
                                         Network::EdgeInput const& new_edge,
                                         const Network&            network) {
@@ -495,6 +684,13 @@ void cda_rail::RouteMap::push_back_edge(const std::string&        train_name,
   m_routes.at(train_name).push_back_edge(new_edge, network);
 }
 
+/**
+ * @brief Adds an edge to the front of a train's route.
+ *
+ * @param train_name Name of the train whose route is to be modified.
+ * @param new_edge The edge to prepend, specified by source and target vertex names.
+ * @param network The network in which the edge and train route exist.
+ */
 void cda_rail::RouteMap::push_front_edge(const std::string&        train_name,
                                          Network::EdgeInput const& new_edge,
                                          const Network&            network) {
@@ -502,22 +698,47 @@ void cda_rail::RouteMap::push_front_edge(const std::string&        train_name,
   m_routes.at(train_name).push_front_edge(new_edge, network);
 }
 
+/**
+ * @brief Removes the first edge from a train's route.
+ */
+```
 void cda_rail::RouteMap::remove_first_edge(const std::string& train_name) {
   throw_if_train_has_no_route(train_name);
   m_routes.at(train_name).remove_first_edge();
 }
 
+/**
+ * @brief Removes the last edge from a train's route.
+ *
+ * @param train_name The name of the train.
+ *
+ * @throws ConsistencyException if the train has no route or the route is empty.
+ */
 void cda_rail::RouteMap::remove_last_edge(const std::string& train_name) {
   throw_if_train_has_no_route(train_name);
   m_routes.at(train_name).remove_last_edge();
 }
 
+/**
+ * @brief Removes the route for a train.
+ *
+ * @param train_name The name of the train.
+ *
+ * @throws ConsistencyException if the train does not have a route.
+ */
 void cda_rail::RouteMap::remove_route(const std::string& train_name) {
   throw_if_train_has_no_route(train_name);
   m_routes.erase(train_name);
 }
 
-// Import and export
+/**
+ * @brief Exports all routes to a JSON file in the specified directory.
+ *
+ * Writes `routes.json` with each train name mapped to an array of edge endpoints
+ * (source and target vertex names).
+ *
+ * @throws ExportException if the directory cannot be created.
+ */
 
 void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
                                        const Network& network) const {
@@ -542,6 +763,18 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
   file << j << '\n';
 }
 
+/**
+ * @brief Loads routes from a JSON file in the specified directory.
+ *
+ * Reads "routes.json" from the given path and constructs routes for each
+ * train in the file. Each route is defined as an ordered sequence of edges
+ * specified by pairs of vertex names.
+ *
+ * @param p Directory path containing "routes.json".
+ * @param network Network used to resolve and validate edge endpoints.
+ *
+ * @throws ImportException If the path does not exist or is not a directory.
+ */
 cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
                              const Network&               network) {
   if (!std::filesystem::exists(p)) {
@@ -564,7 +797,12 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
   }
 }
 
-// Helper
+/**
+ * @brief Verifies that routes are consistent with the trains and network.
+ *
+ * @param every_train_must_have_route If `true`, every train must have a route.
+ * @return `true` if all routes are valid and consistent, `false` otherwise.
+ */
 
 bool cda_rail::RouteMap::check_consistency(
     const TrainList& trains, const Network& network,
@@ -579,6 +817,11 @@ bool cda_rail::RouteMap::check_consistency(
   });
 }
 
+/**
+ * @brief Applies edge discretization to all routes.
+ *
+ * @param new_edges Mapping from original edge id to replacement edges after discretization.
+ */
 void cda_rail::RouteMap::update_after_discretization(
     const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {
   for (auto& route : m_routes | std::views::values) {
@@ -586,7 +829,11 @@ void cda_rail::RouteMap::update_after_discretization(
   }
 }
 
-// error handling
+/**
+ * @brief Validates that a train has a route.
+ *
+ * @throws ConsistencyException if the train does not have a route.
+ */
 
 void cda_rail::RouteMap::throw_if_train_has_no_route(
     std::string const& train_name) const {

@@ -30,8 +30,8 @@ protected:
 
 public:
   /**
-   * @brief Returns the explanatory string.
-   * @return Null-terminated error message.
+   * @brief Provides the error message stored in this exception.
+   * @return Null-terminated C string containing the error message.
    */
   [[nodiscard]] const char* what() const noexcept override {
     return m_error_message.c_str();
@@ -65,9 +65,9 @@ public:
    */
   ExportException() : CustomException("Export failed.") {}
   /**
-   * @brief Constructs with a custom export error message.
-   * @param message Custom error message.
-   */
+       * @brief Creates an exception with a custom export error message.
+       * @param message Error message to store.
+       */
   explicit ExportException(std::string_view const message)
       : CustomException(message) {}
 };
@@ -99,9 +99,9 @@ public:
    */
   InvalidInputException() : CustomException("Invalid input.") {}
   /**
-   * @brief Constructs with a custom invalid-input error message.
-   * @param message Custom error message.
-   */
+       * @brief Constructs an InvalidInputException with a custom error message.
+       * @param message Custom error message.
+       */
   explicit InvalidInputException(std::string_view const message)
       : CustomException(message) {}
 };
@@ -116,9 +116,9 @@ public:
    */
   ImportException() : CustomException("Import failed.") {}
   /**
-   * @brief Constructs an error for a specific import target.
-   * @param importName Name of the entity that could not be imported.
-   */
+             * @brief Creates an ImportException with a formatted message that names the failed import.
+             * @param importName The name of the entity that could not be imported.
+             */
   explicit ImportException(std::string_view const importName)
       : CustomException(
             concatenate_string_views({"Import of ", importName, " failed."})) {}
@@ -130,14 +130,14 @@ public:
 class VertexNotExistentException : public CustomException {
 public:
   /**
-   * @brief Constructs with a generic vertex-not-found message.
-   */
+       * @brief Creates an exception indicating a vertex does not exist.
+       */
   VertexNotExistentException()
       : CustomException("Some vertex specified does not exist.") {}
   /**
-   * @brief Constructs for a missing vertex identified by name.
-   * @param vertexName Vertex name that was not found.
-   */
+             * @brief Exception indicating a vertex with the specified name does not exist.
+             */
+            ```
   explicit VertexNotExistentException(std::string_view const vertexName)
       : CustomException(concatenate_string_views(
             {"Vertex ", vertexName, " does not exist"})) {}
@@ -162,34 +162,31 @@ public:
   EdgeNotExistentException()
       : CustomException("Some edge specified does not exist.") {}
   /**
-   * @brief Constructs for a missing edge identified by name.
-   * @param edgeName Edge name that was not found.
+   * @brief Raised when an edge with the specified name does not exist.
+   * @param edgeName The name of the edge that was not found.
    */
   explicit EdgeNotExistentException(std::string_view const edgeName)
       : CustomException(
             concatenate_string_views({"Edge ", edgeName, " does not exist."})) {
   }
   /**
-   * @brief Constructs for a missing edge identified by ID.
-   * @param edgeId Edge ID that was not found.
-   */
+             * @brief Creates an exception for an edge that does not exist, identified by its ID.
+             */
   explicit EdgeNotExistentException(size_t const edgeId)
       : CustomException(concatenate_string_views(
             {"Edge with ID ", std::to_string(edgeId), " does not exist."})) {}
   /**
-   * @brief Constructs for a missing edge identified by source/target IDs.
-   * @param source Source vertex ID.
-   * @param target Target vertex ID.
-   */
+              * @brief Exception for a missing edge between two vertices.
+              * @param source Source vertex ID.
+              * @param target Target vertex ID.
+              */
   explicit EdgeNotExistentException(size_t const source, size_t const target)
       : CustomException(concatenate_string_views(
             {"Edge connecting vertices with IDs ", std::to_string(source), "->",
              std::to_string(target), " does not exist."})) {}
   /**
-   * @brief Constructs for a missing edge identified by source/target names.
-   * @param source Source vertex name.
-   * @param target Target vertex name.
-   */
+             * @brief Creates an exception for a missing edge between two named vertices.
+             */
   explicit EdgeNotExistentException(const std::string_view source,
                                     const std::string_view target)
       : CustomException(concatenate_string_views(
@@ -207,16 +204,15 @@ public:
   TrainNotExistentException()
       : CustomException("Some train specified does not exist.") {}
   /**
-   * @brief Constructs for a missing train identified by name.
-   * @param trainName Train name that was not found.
-   */
+             * @brief Creates an exception for a missing train identified by name.
+             */
+            ```
   explicit TrainNotExistentException(std::string_view const trainName)
       : CustomException(concatenate_string_views(
             {"Train ", trainName, " does not exist."})) {}
   /**
-   * @brief Constructs for a missing train identified by ID.
-   * @param trainId Train ID that was not found.
-   */
+             * @brief Creates an exception for a train not found by ID.
+             */
   explicit TrainNotExistentException(size_t const trainId)
       : CustomException(concatenate_string_views(
             {"Train with ID ", std::to_string(trainId), " does not exist."})) {}
@@ -228,14 +224,13 @@ public:
 class StationNotExistentException : public CustomException {
 public:
   /**
-   * @brief Constructs with a generic station-not-found message.
-   */
+       * @brief Initializes the exception with a default message indicating no station was found.
+       */
   StationNotExistentException()
       : CustomException("Some station specified does not exist.") {}
   /**
-   * @brief Constructs for a missing station identified by name.
-   * @param stationName Station name that was not found.
-   */
+             * @brief Constructs an exception for a station that does not exist, identified by name.
+             */
   explicit StationNotExistentException(std::string_view const stationName)
       : CustomException(concatenate_string_views(
             {"Station ", stationName, " does not exist."})) {}
@@ -247,21 +242,21 @@ public:
 class ScheduleNotExistentException : public CustomException {
 public:
   /**
-   * @brief Constructs with a generic schedule-not-found message.
-   */
+       * @brief Constructs the exception with a default message indicating a schedule does not exist.
+       */
   ScheduleNotExistentException()
       : CustomException("Some schedule specified does not exist.") {}
   /**
-   * @brief Constructs for a missing schedule identified by name.
-   * @param scheduleName Schedule name that was not found.
-   */
+             * @brief Constructs an exception for a schedule that does not exist.
+             * @param scheduleName Name of the schedule that was not found.
+             */
   explicit ScheduleNotExistentException(std::string_view const scheduleName)
       : CustomException(concatenate_string_views(
             {"Schedule ", scheduleName, " does not exist."})) {}
   /**
-   * @brief Constructs for a missing schedule identified by ID.
-   * @param scheduleId Schedule ID that was not found.
-   */
+                                                   * @brief Constructs an exception for a missing schedule identified by ID.
+                                                   * @param scheduleId The ID of the schedule.
+                                                   */
   explicit ScheduleNotExistentException(size_t const scheduleId)
       : CustomException(concatenate_string_views({"Schedule with ID ",
                                                   std::to_string(scheduleId),
@@ -269,13 +264,13 @@ public:
 };
 
 /**
- * @brief Throws if a value is below or equal to a threshold, depending on
- *        inclusiveness.
+ * @brief Validates that a value meets a minimum threshold constraint.
+ *
  * @param value Value to validate.
  * @param threshold Lower bound to enforce.
- * @param name Human-readable parameter name used in the error message.
- * @param inclusive If true, enforces @p value > @p threshold; otherwise
- *                  enforces @p value >= @p threshold.
+ * @param name Human-readable parameter name for the error message.
+ * @param inclusive If `true`, requires `value > threshold`; if `false`, requires `value >= threshold`.
+ *
  * @throws InvalidInputException If the constraint is violated.
  */
 inline void throw_if_less(double const value, double const threshold,
@@ -307,11 +302,13 @@ inline void throw_if_less_than(double const value, double const threshold,
   throw_if_less(value, threshold, name, false);
 };
 /**
- * @brief Throws if a value is less than or equal to a threshold.
+ * @brief Validates that a value is greater than a threshold.
+ *
  * @param value Value to validate.
- * @param threshold Strict lower bound.
- * @param name Human-readable parameter name used in the error message.
- * @throws InvalidInputException If @p value <= @p threshold.
+ * @param threshold Strict lower bound (exclusive).
+ * @param name Parameter name for the error message.
+ *
+ * @throws InvalidInputException If @p value is less than or equal to @p threshold.
  */
 inline void throw_if_less_than_or_equal(double const           value,
                                         double const           threshold,
@@ -320,17 +317,17 @@ inline void throw_if_less_than_or_equal(double const           value,
 };
 
 /**
- * @brief Throws if a value is negative.
- * @param value Value to validate.
+ * @brief Validates that a value is non-negative.
+ *
  * @param name Human-readable parameter name used in the error message.
- * @throws InvalidInputException If @p value < 0.
+ * @throws InvalidInputException If the value is negative.
  */
 inline void throw_if_negative(double const value, std::string_view const name) {
   throw_if_less_than(value, 0, name);
 };
 
 /**
- * @brief Throws if a value is not strictly greater than a tolerance.
+ * @brief Ensures a value is strictly greater than a tolerance.
  * @param value Value to validate.
  * @param tolerance Strict lower bound.
  * @param name Human-readable parameter name used in the error message.
@@ -341,10 +338,11 @@ inline void throw_if_non_positive(double const value, double tolerance,
   throw_if_less_than_or_equal(value, tolerance, name);
 };
 /**
- * @brief Throws if a value is not strictly positive.
+ * @brief Validates that a value is strictly positive.
+ *
  * @param value Value to validate.
- * @param name Human-readable parameter name used in the error message.
- * @throws InvalidInputException If @p value <= 0.
+ * @param name Parameter name used in the error message.
+ * @throws InvalidInputException If value is less than or equal to zero.
  */
 inline void throw_if_non_positive(double const           value,
                                   std::string_view const name) {
@@ -362,35 +360,21 @@ inline void throw_if_non_positive(int const              value,
 };
 
 /**
- * @brief Validates that a folder name is conservatively portable across Linux,
- Windows, and macOS.
+ * @brief Validates that a folder name is portable across Linux, Windows, and macOS.
  *
- * Checks whether a folder name is portable across Linux, Windows, and macOS.
+ * This function uses a conservative allowlist to ensure portability. A folder name is
+ * accepted only if:
+ * - All characters are in: A-Z, a-z, 0-9, underscore (_), hyphen (-), dot (.), or space ( ).
+ * - It is not empty.
+ * - It is at most 255 characters.
+ * - It does not start with a space.
+ * - It does not end with a space or dot.
+ * - Its Windows base name (the part before the first dot, or the whole name if no dot exists)
+ *   is not a reserved device name (case-insensitive): CON, PRN, AUX, NUL, COM1–COM9, LPT1–LPT9.
  *
- * This method intentionally uses a conservative allowlist. A folder name is
- * accepted only if all characters are in:
- * - A-Z,
- * - a-z,
- * - 0-9,
- * - underscore (_), hyphen (-), dot (.), or space ( ).
+ * @param folderName The folder name to validate.
  *
- * In addition, the name is rejected if any of the following applies:
- * - it is empty,
- * - it is longer than 255 characters,
- * - it contains any character outside the allowlist above,
- * - it starts with a space,
- * - it ends with a space or a dot,
- *   ending with a dot also rejects "." and "..",
- * - its Windows base name (part before first '.', or the whole name if there
- *   is no dot) is a reserved device name
- *   (case-insensitive): CON, PRN, AUX, NUL, COM1..COM9, LPT1..LPT9.
- *
- * These constraints are intentionally conservative so that every accepted name
- * can be used as a directory name on all three operating systems.
- *
- * @param folderName The folder name to validate
- *
- * @throws InvalidInputException if the folder name is not valid
+ * @throws InvalidInputException if the folder name violates any of the above constraints.
  */
 static void throw_if_invalid_folder_name(std::string_view const folderName) {
   if (folderName.empty()) {

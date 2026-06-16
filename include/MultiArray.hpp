@@ -37,6 +37,12 @@ private:
    *         in the order they were supplied.
    */
   template <typename... Args>
+  /**
+   * @brief Converts variadic integral arguments to a size vector.
+   *
+   * @return FixedSizeVector<size_t> A vector containing the converted arguments.
+   * @throws std::invalid_argument If any argument is negative.
+   */
   [[nodiscard]] static FixedSizeVector<size_t> make_index_vector(Args... args) {
     auto to_size_t_checked = []<typename T0>(T0 v) -> size_t {
       using V = T0;
@@ -97,7 +103,14 @@ public:
    * @tparam Args Integral types convertible to `size_t`.
    * @param args Extents of each dimension, in order.
    */
-  template <typename... Args> explicit MultiArray(Args... args) {
+  template <typename... Args> /**
+   * @brief Creates a multi-dimensional array with the specified extents.
+   *
+   * @param args Dimension extents for each axis. Passing no arguments creates a scalar.
+   *
+   * @throws std::invalid_argument If any argument is a negative signed value.
+   */
+  explicit MultiArray(Args... args) {
     init(make_index_vector(args...));
   }
 
@@ -118,7 +131,16 @@ public:
    *         `dimensions()`.
    * @throws std::out_of_range If any index exceeds its dimension's extent.
    */
-  template <typename... Args> T& operator()(Args... args) {
+  template <typename... Args> /**
+   * @brief Accesses an element by multidimensional indices.
+   *
+   * @param args Integral indices for each dimension in order.
+   * @return Reference to the element at the specified indices.
+   *
+   * @throws std::invalid_argument If any index argument is negative (for signed types) or if the number of indices does not match the array's dimensions.
+   * @throws std::out_of_range If any index exceeds the bounds of its corresponding dimension.
+   */
+  T& operator()(Args... args) {
     return m_data[flat_index(make_index_vector(args...))];
   }
 
@@ -132,7 +154,23 @@ public:
    *         `dimensions()`.
    * @throws std::out_of_range If any index exceeds its dimension's extent.
    */
-  template <typename... Args> [[nodiscard]] T& at(Args... args) {
+  template <typename... Args> /**
+   * @brief Accesses an element at the specified indices with bounds checking.
+   *
+   * Computes the flat index from the provided indices and returns a mutable 
+   * reference to the element at that location. Index bounds are validated 
+   * against the array shape.
+   *
+   * @tparam Args Integral types for each dimension index.
+   * @param args Index values, one per dimension.
+   * @return T& Reference to the element at the specified indices.
+   *
+   * @throws std::invalid_argument If the number of indices does not match 
+   *         the array's dimensionality, or if a signed index argument is negative.
+   * @throws std::out_of_range If any index is greater than or equal to the 
+   *         corresponding dimension extent.
+   */
+  [[nodiscard]] T& at(Args... args) {
     return m_data.at(flat_index(make_index_vector(args...)));
   }
 
@@ -146,7 +184,14 @@ public:
    *         `dimensions()`.
    * @throws std::out_of_range If any index exceeds its dimension's extent.
    */
-  template <typename... Args> [[nodiscard]] const T& at(Args... args) const {
+  template <typename... Args> /**
+   * @brief Accesses an element at the specified indices with bounds checking.
+   *
+   * @return const T& Const reference to the element at the specified indices.
+   * @throws std::invalid_argument If the number of indices does not match the number of dimensions, or if any signed index is negative.
+   * @throws std::out_of_range If any index exceeds its corresponding dimension extent.
+   */
+  [[nodiscard]] const T& at(Args... args) const {
     return m_data.at(flat_index(make_index_vector(args...)));
   }
 
@@ -155,32 +200,39 @@ public:
    */
 
   /**
-   * @brief Returns the shape of the array.
+   * @brief Provides the shape of the array.
    *
-   * @return Const reference to the `FixedSizeVector` holding each dimension's
-   *         extent.  The vector's size equals `dimensions()`.
+   * @return Const reference to the array's dimension extents.
    */
   [[nodiscard]] const FixedSizeVector<size_t>& get_shape() const {
     return m_shape;
   }
 
   /**
-   * @brief Returns the total number of elements.
-   *
-   * @return Product of all dimension extents (1 for a zero-dimensional array).
-   */
+ * @brief Computes the total number of elements in the array.
+ *
+ * @return The product of all dimension extents (1 for a zero-dimensional array).
+ */
   [[nodiscard]] size_t size() const { return m_data.size(); }
 
   /**
-   * @brief Returns the number of dimensions.
-   *
-   * @return Number of dimensions (0 for a scalar, 1 for a vector, 2 for a
-   *         matrix, etc.).
-   */
+ * @brief Gets the number of dimensions.
+ *
+ * @return Number of dimensions (0 for a scalar, 1 for a vector, 2 for a
+ *         matrix, etc.).
+ */
   [[nodiscard]] size_t dimensions() const { return m_shape.size(); }
 };
 
 template <typename T>
+/**
+ * @brief Validates that indices match the array dimensions and are within bounds.
+ *
+ * @param args The indices to validate.
+ *
+ * @throws std::invalid_argument If the number of indices does not match the number of dimensions.
+ * @throws std::out_of_range If any index is greater than or equal to its corresponding dimension extent.
+ */
 void MultiArray<T>::check_args(const FixedSizeVector<size_t>& args) const {
   if (m_shape.size() != args.size()) {
     throw std::invalid_argument(
@@ -196,6 +248,14 @@ void MultiArray<T>::check_args(const FixedSizeVector<size_t>& args) const {
 }
 
 template <typename T>
+/**
+ * @brief Computes the row-major flat index for given multi-dimensional indices.
+ *
+ * @param args The multi-dimensional indices.
+ * @return size_t The flat index.
+ * @throw std::invalid_argument If the number of indices does not match the array dimensions.
+ * @throw std::out_of_range If any index is out of bounds for its dimension.
+ */
 size_t MultiArray<T>::flat_index(const FixedSizeVector<size_t>& args) const {
   check_args(args);
   size_t index      = 0;
@@ -208,6 +268,12 @@ size_t MultiArray<T>::flat_index(const FixedSizeVector<size_t>& args) const {
 }
 
 template <typename T>
+/**
+ * @brief Initializes the array's shape and allocates storage.
+ *
+ * Establishes the array's shape and allocates flat storage for all elements.
+ * An empty dimension vector creates a scalar with capacity for one element.
+ */
 void MultiArray<T>::init(const FixedSizeVector<size_t>& dims) {
   m_shape    = dims;
   size_t cap = 1;

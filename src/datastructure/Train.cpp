@@ -14,8 +14,13 @@
 
 using json = nlohmann::json;
 
-/*
- * TRAIN
+/**
+ * @brief Constructs a Train with the specified properties.
+ *
+ * Initializes a new Train and validates its parameters: length must be non-negative;
+ * maximum speed, acceleration, and deceleration must each be at least MIN_NON_ZERO.
+ *
+ * @throws If any parameter validation constraint is violated.
  */
 cda_rail::Train::Train(std::string name, double const length,
                        double const maxSpeed, double const acceleration,
@@ -35,7 +40,17 @@ cda_rail::Train::Train(std::string name, double const length,
  * TRAIN LIST
  */
 
-// CONSTRUCTOR
+/**
+ * @brief Initializes the train list by loading train data from a JSON file.
+ *
+ * Reads train definitions from `trains.json` located in the specified directory.
+ * Each train entry must contain `length`, `max_speed`, `acceleration`, and `deceleration` fields.
+ * The optional `tim` field defaults to `true` if not specified.
+ *
+ * @param p Path to a directory containing `trains.json`.
+ *
+ * @throws ImportException if the path does not exist or is not a directory.
+ */
 
 cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
   /**
@@ -60,7 +75,13 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
   }
 }
 
-// GETTER
+/**
+ * @brief Retrieves the index of a train by its name.
+ *
+ * @param name The name of the train to look up.
+ * @return size_t The index of the train with the given name.
+ * @throws exceptions::TrainNotExistentException if no train with the given name exists.
+ */
 
 size_t cda_rail::TrainList::get_train_index(std::string const& name) const {
   if (!has_train(name)) {
@@ -69,6 +90,13 @@ size_t cda_rail::TrainList::get_train_index(std::string const& name) const {
   return train_name_to_index.at(name);
 }
 
+/**
+ * @brief Retrieves a train by its index.
+ *
+ * @param index The zero-based index of the train to retrieve.
+ * @return const cda_rail::Train& A const reference to the Train at the specified index.
+ * @throws exceptions::TrainNotExistentException if no train exists at the given index.
+ */
 const cda_rail::Train&
 cda_rail::TrainList::get_train(size_t const index) const {
   if (!has_train(index)) {
@@ -77,7 +105,13 @@ cda_rail::TrainList::get_train(size_t const index) const {
   return trains.at(index);
 }
 
-// SETTER
+/**
+ * @brief Adds a train to the list.
+ *
+ * @param train The train to add.
+ * @return size_t The index assigned to the newly added train.
+ * @throws exceptions::ConsistencyException if a train with the same name already exists.
+ */
 
 size_t cda_rail::TrainList::add_train(Train train) {
   if (has_train(train.get_name())) {
@@ -90,7 +124,16 @@ size_t cda_rail::TrainList::add_train(Train train) {
   return idx;
 }
 
-// EXPORT
+/**
+ * @brief Writes all trains to a JSON file.
+ *
+ * Serializes all trains in the list to `p / "trains.json"`, with each train
+ * represented by its name and properties (length, max_speed, acceleration,
+ * deceleration, and tim status).
+ *
+ * @param p Output directory path. Created if it does not exist.
+ * @throws exceptions::ExportException if the directory cannot be created.
+ */
 
 void cda_rail::TrainList::export_trains(std::filesystem::path const& p) const {
   if (!is_directory_and_create(p)) {

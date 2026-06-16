@@ -26,6 +26,16 @@ namespace functions {
   return ret_val;
 }
 
+/**
+ * @brief Computes a Chebyshev separation value for node positioning.
+ *
+ * Calculates the normalized position of a node using Chebyshev polynomial spacing,
+ * which provides non-uniform distribution with density clustering near boundaries.
+ *
+ * @param i Node index.
+ * @param n Total number of nodes.
+ * @return double Normalized position in [0, 1].
+ */
 [[nodiscard]] static double chebyshev(size_t i, size_t n) {
   if (i >= n - 1) {
     return 1;
@@ -37,6 +47,16 @@ namespace functions {
   return 0.5 + (0.5 * std::cos(((2 * k) - 1) * pi / (2 * n_points)));
 }
 
+/**
+ * @brief Finds the maximum number of blocks with a given minimum separation constraint.
+ *
+ * @param sep_func Separation function that computes positions for a given block index and total count.
+ * @param min_frac Minimum required separation, in the range (0, 1].
+ *
+ * @return Maximum number of blocks where all separation margins meet the minimum requirement.
+ *
+ * @throws std::invalid_argument if min_frac is not in (0, 1].
+ */
 [[nodiscard]] static size_t max_n_blocks(const SeparationFunction& sep_func,
                                          double                    min_frac) {
   constexpr auto eps = 10 * std::numeric_limits<double>::epsilon();
@@ -83,7 +103,11 @@ public:
       : model_type(model_type_input), only_stop_at_vss(only_stop_at_vss_input),
         separation_functions(std::move(separation_functions_input)) {}
 
-  // Getters
+  /**
+ * @brief Retrieves the model type.
+ *
+ * @return const ModelType& A constant reference to the model type.
+ */
   [[nodiscard]] const ModelType& get_model_type() const { return model_type; }
   [[nodiscard]] bool get_only_stop_at_vss() const { return only_stop_at_vss; }
   [[nodiscard]] const std::vector<SeparationFunction>&
@@ -94,7 +118,17 @@ public:
     return separation_functions;
   }
 
-  // Helper
+  /**
+   * @brief Validates that the model type and separation functions are consistently configured.
+   *
+   * Checks that the model_type and separation_functions match one of these valid configurations:
+   * - `Discrete` with exactly 1 separation function
+   * - `Continuous` with 0 separation functions
+   * - `Inferred` with at least 1 separation function
+   * - `InferredAlt` with at least 1 separation function
+   *
+   * @return `true` if the configuration is valid, `false` otherwise.
+   */
   [[nodiscard]] bool check_consistency() const {
     // The following must hold
     // Discrete -> 1 separation function

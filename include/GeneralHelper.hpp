@@ -28,6 +28,16 @@ namespace cda_rail {
  * negative.
  */
 template <std::floating_point T>
+/**
+ * @brief Determines if two floating-point values are approximately equal.
+ *
+ * @tparam T Floating-point type.
+ * @param a First value to compare.
+ * @param b Second value to compare.
+ * @param factor Scaling factor for the epsilon tolerance. Default is 10.
+ * @return `true` if the values are approximately equal, `false` otherwise.
+ * @throws cda_rail::exceptions::InvalidInputException if `factor` is negative.
+ */
 [[nodiscard]] bool approx_equal(T const a, T const b, T const factor = 10) {
   cda_rail::exceptions::throw_if_negative(factor, "factor");
   return std::abs(a - b) < factor * std::numeric_limits<T>::epsilon();
@@ -36,14 +46,14 @@ template <std::floating_point T>
 // Rounding Functions
 
 /**
- * @brief Replaces a small-magnitude value with zero by modifying the input
- *        reference in place.
- * @param val Value to normalize in place.
- * @param tol Absolute tolerance below which @p val is set to zero.
- * @pre `tol >= 0` for a meaningful threshold.
+ * @brief Sets a value to zero if its absolute magnitude is less than a tolerance threshold.
+ *
+ * If the absolute value of @p val is less than @p tol, @p val is set to zero;
+ * otherwise, @p val remains unchanged.
+ *
+ * @param val Reference to the value to normalize.
+ * @param tol Absolute tolerance threshold.
  * @throws cda_rail::exceptions::InvalidInputException If @p tol is negative.
- * If `std::abs(val) < tol`, this function overwrites @p val with `0`;
- * otherwise, it leaves @p val unchanged.
  */
 static void round_small_numbers_to_zero_inplace(double&      val,
                                                 double const tol = EPS) {
@@ -55,14 +65,11 @@ static void round_small_numbers_to_zero_inplace(double&      val,
 
 /**
  * @brief Rounds a value to the nearest multiple of a given tolerance.
+ *
  * @param value Value to round.
- * @param tolerance Positive rounding step, for example, `1e-5`.
- * @return Rounded value.
- * @pre `tolerance > 0`.
- * @throws cda_rail::exceptions::InvalidInputException If @p tolerance is not
- * strictly positive.
- * The returned value is a multiple of @p tolerance up to floating-point
- * round-off.
+ * @param tolerance Positive rounding step.
+ * @return Value rounded to the nearest multiple of @p tolerance, up to floating-point round-off.
+ * @throws cda_rail::exceptions::InvalidInputException If @p tolerance is not strictly positive.
  */
 [[nodiscard]] static double round_to_given_tolerance(double const value,
                                                      double const tolerance) {

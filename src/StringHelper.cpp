@@ -6,7 +6,15 @@
 #include <string>
 #include <string_view>
 
-// String Helper
+/**
+ * @brief Concatenates multiple string views into a single string.
+ *
+ * @return std::string The concatenated result of all input string views.
+ *
+ * @example
+ * std::string result = concatenate_string_views({"hello", " ", "world"});
+ * // result is "hello world"
+ */
 
 std::string cda_rail::concatenate_string_views(
     std::initializer_list<std::string_view> parts) {
@@ -23,6 +31,16 @@ std::string cda_rail::concatenate_string_views(
   return result;
 }
 
+/**
+ * @brief Parses a string view as a boolean and updates an optional if recognized.
+ *
+ * Compares @p sView against "true" and "false" in a case-insensitive manner. Sets @p b to `true` if
+ * @p sView matches "true", or to `false` if @p sView matches "false". If @p sView matches neither,
+ * @p b remains unchanged.
+ *
+ * @param sView The string to parse.
+ * @param b Reference to the optional boolean to update.
+ */
 void cda_rail::to_bool_optional_inplace(std::string_view const sView,
                                         std::optional<bool>&   b) {
   if (case_insensitive_str_equal(sView, "true")) {
