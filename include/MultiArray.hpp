@@ -114,7 +114,7 @@ public:
                                * @throws std::invalid_argument If any argument
                                * is a negative signed value.
                                */
-                              explicit MultiArray(Args... args) {
+  explicit MultiArray(Args... args) {
     init(make_index_vector(args...));
   }
 
@@ -151,7 +151,7 @@ public:
                                * @throws std::out_of_range If any index exceeds
                                * the bounds of its corresponding dimension.
                                */
-                              T& operator()(Args... args) {
+  T& operator()(Args... args) {
     return m_data[flat_index(make_index_vector(args...))];
   }
 
@@ -186,7 +186,7 @@ public:
                          * @throws std::out_of_range If any index is greater
                          * than or equal to the corresponding dimension extent.
                          */
-                        [[nodiscard]] T& at(Args... args) {
+  [[nodiscard]] T& at(Args... args) {
     return m_data.at(flat_index(make_index_vector(args...)));
   }
 
@@ -212,7 +212,7 @@ public:
                                * @throws std::out_of_range If any index exceeds
                                * its corresponding dimension extent.
                                */
-                              [[nodiscard]] const T& at(Args... args) const {
+  [[nodiscard]] const T& at(Args... args) const {
     return m_data.at(flat_index(make_index_vector(args...)));
   }
 

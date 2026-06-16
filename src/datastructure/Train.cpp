@@ -32,9 +32,7 @@ cda_rail::Train::Train(std::string name, double const length,
  * TRAIN LIST
  */
 
-
 cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
-
   if (!std::filesystem::exists(p)) {
     throw exceptions::ImportException("Path does not exist.");
   }
@@ -56,7 +54,6 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
   }
 }
 
-
 size_t cda_rail::TrainList::get_train_index(std::string const& name) const {
   if (!has_train(name)) {
     throw exceptions::TrainNotExistentException(name);
@@ -72,7 +69,6 @@ cda_rail::TrainList::get_train(size_t const index) const {
   return trains.at(index);
 }
 
-
 size_t cda_rail::TrainList::add_train(Train train) {
   if (has_train(train.get_name())) {
     throw exceptions::ConsistencyException("Train " + train.get_name() +
@@ -83,7 +79,6 @@ size_t cda_rail::TrainList::add_train(Train train) {
   train_name_to_index[trains.back().get_name()] = idx;
   return idx;
 }
-
 
 void cda_rail::TrainList::export_trains(std::filesystem::path const& p) const {
   if (!is_directory_and_create(p)) {

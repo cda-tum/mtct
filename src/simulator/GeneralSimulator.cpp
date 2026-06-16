@@ -384,7 +384,6 @@ bool cda_rail::simulator::GeneralSimulator::is_on_route(size_t tr,
 
 std::vector<std::unordered_set<size_t>>
 cda_rail::simulator::GeneralSimulator::tr_on_edges() const {
-
   std::vector<std::unordered_set<size_t>> trains_on_edges(
       m_instance->get_const_network().number_of_edges());
 

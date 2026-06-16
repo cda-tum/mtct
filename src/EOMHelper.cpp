@@ -395,7 +395,6 @@ double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
 
 double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
                               double d, double s) {
-
   return build_line_speed_profile(v_1, v_2, v_line, a, d, s).total_time;
 }
 

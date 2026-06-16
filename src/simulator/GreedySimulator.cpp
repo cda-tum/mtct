@@ -61,7 +61,6 @@ cda_rail::simulator::SimulatorResults
 cda_rail::simulator::GreedySimulator::simulate(
     double dt, bool late_entry_possible, bool limit_speed_by_leaving_edges,
     bool save_trajectories) const {
-
   // NOLINTBEGIN(*-inconsistent-ifelse-braces)
 
   exceptions::throw_if_non_positive(dt, "Time step length dt");
@@ -444,7 +443,6 @@ cda_rail::simulator::GreedySimulator::simulate(
 // PRIVATE HELPER FUNCTIONS
 // ----------------------------
 
-
 cda_rail::simulator::GreedySimulator::PosOnEdgeReturn
 cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
     size_t tr, const TrainPosition& pos, size_t edge_number,
@@ -555,13 +553,11 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(
   return potentially_behind; // Train is not on the TTD section
 }
 
-
 bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
     size_t tr, const std::vector<TrainPosition>& train_positions,
     const std::vector<double>&                     train_velocities,
     const std::unordered_set<size_t>&              trains_in_network,
     const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
-
   const auto v0 = get_instance()->get_const_schedule(tr).get_initial_velocity();
   const auto bd = tr_braking_distance(tr, v0);
   const auto milestones = edge_milestones(tr);
@@ -636,7 +632,6 @@ cda_rail::simulator::GreedySimulator::get_entering_trains(
     const std::unordered_set<size_t>& tr_left,
     const std::unordered_set<size_t>& tr_finished_simulating,
     bool late_entry_possible, double buffer_time) const {
-
   exceptions::throw_if_negative(buffer_time, "Buffer time for late entry");
 
   std::unordered_set<size_t> entering_trains;
@@ -825,7 +820,6 @@ cda_rail::simulator::PosVel
 cda_rail::simulator::GreedySimulator::speed_restriction_helper(
     double ma, double max_v, double pos, double vertex_pos, double v_0,
     double v_m, double d, double dt) {
-
   // Can the train reach the next edge within one time step?
   const auto max_dist = (v_0 + v_m) * dt / 2.0;
   if (pos + max_dist >= vertex_pos) {
@@ -848,7 +842,6 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     double max_displacement, double dt,
     cda_rail::index_set const& blocked_vertices,
     bool                       also_limit_by_leaving_edges) const {
-
   round_small_numbers_to_zero_inplace(pos);
   round_small_numbers_to_zero_inplace(v_0);
   round_small_numbers_to_zero_inplace(max_displacement);
@@ -939,7 +932,6 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
     size_t tr, double pos, double max_displacement,
     const std::unordered_set<size_t>& trains_in_network,
     const std::unordered_set<size_t>& trains_left) const {
-
   if (get_train_edges_of_tr(tr).empty()) {
     return max_displacement; // No edges, no moving authority
   }
@@ -996,11 +988,9 @@ cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
       blocked_vertices, also_limit_speed_by_leaving_edges);
 }
 
-
 double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
                                                             double ma, double d,
                                                             double dt) {
-
   // Assume that a train accelerates linearly during the time step from v_0
   // (given) to v_1 (to be calculated). x_1 = (v_0 + v_1) * dt/2 bd = v_1 * v_1
   // / (2 * d) x_1 + bd = ma Wolframalpha: v_1 = 0.5 *
@@ -1032,11 +1022,9 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
   return 2.0 * b / (a + std::sqrt((a * a) + (4.0 * b)));
 }
 
-
 bool cda_rail::simulator::GreedySimulator::move_train(
     size_t tr, double v_0, double v_1, double ma, double dt,
     std::vector<TrainPosition>& train_positions) {
-
   if (tr >= train_positions.size()) {
     throw cda_rail::exceptions::TrainNotExistentException(tr);
   }
@@ -1055,7 +1043,6 @@ bool cda_rail::simulator::GreedySimulator::move_train(
 
 void cda_rail::simulator::GreedySimulator::update_rear_positions(
     std::vector<TrainPosition>& train_positions) const {
-
   for (size_t tr = 0; tr < train_positions.size(); ++tr) {
     const auto& train = get_instance()->get_const_train_list().get_train(tr);
     train_positions.at(tr).rear = train_positions.at(tr).front -
@@ -1063,11 +1050,9 @@ void cda_rail::simulator::GreedySimulator::update_rear_positions(
   }
 }
 
-
 cda_rail::simulator::GreedySimulator::DestinationType
 cda_rail::simulator::GreedySimulator::tr_reached_end(
     size_t tr, const std::vector<TrainPosition>& train_pos) const {
-
   const auto  route_len = train_edge_length(tr);
   const auto& pos       = train_pos.at(tr).front;
   if (pos < route_len) {

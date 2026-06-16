@@ -6,7 +6,6 @@
 #include <string>
 #include <string_view>
 
-
 std::string cda_rail::concatenate_string_views(
     std::initializer_list<std::string_view> parts) {
   std::size_t total_size = 0;

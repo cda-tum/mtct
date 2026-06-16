@@ -117,7 +117,6 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
 
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     discretize_stops() {
-
   for (const auto& station_name :
        this->get_const_station_list().get_station_names()) {
     const auto& station_tracks =
@@ -239,7 +238,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
         const std::filesystem::path& working_directory,
         std::string_view const solutionSubdirectory, bool save_instance,
         std::optional<std::string> const& parameter_identifier) const {
-
   if (!check_consistency()) {
     throw exceptions::ConsistencyException();
   }

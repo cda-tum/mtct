@@ -34,7 +34,6 @@ using std::size_t;
 // ROUTE
 // -----------------------------
 
-
 double cda_rail::Route::length(const Network& network) const {
   const auto edge_lengths =
       m_edges | std::views::transform([&network](size_t edge) {
@@ -147,7 +146,6 @@ const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
   return network.get_edge(m_edges.at(route_index));
 }
 
-
 void cda_rail::Route::push_back_edge(Network::EdgeInput const& new_edge,
                                      const Network&            network) {
   auto const edge_index = new_edge.resolve(&network);
@@ -182,7 +180,6 @@ void cda_rail::Route::remove_last_edge() {
   }
   m_edges.pop_back();
 }
-
 
 bool cda_rail::Route::check_consistency(const Network& network) const {
   for (const auto edge : m_edges) {
@@ -265,7 +262,6 @@ double cda_rail::RouteMap::route_length(const std::string& train_name,
                                         const Network&     network) const {
   return get_route(train_name).length(network);
 }
-
 
 std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
@@ -467,7 +463,6 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
   return result;
 }
 
-
 void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
   if (!m_routes.try_emplace(train_name).second) {
     throw exceptions::InvalidInputException("Train already has a route.");
@@ -510,7 +505,6 @@ void cda_rail::RouteMap::remove_route(const std::string& train_name) {
   throw_if_train_has_no_route(train_name);
   m_routes.erase(train_name);
 }
-
 
 void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
                                        const Network& network) const {
@@ -557,7 +551,6 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
   }
 }
 
-
 bool cda_rail::RouteMap::check_consistency(
     const TrainList& trains, const Network& network,
     bool every_train_must_have_route) const {
@@ -577,7 +570,6 @@ void cda_rail::RouteMap::update_after_discretization(
     route.update_after_discretization(new_edges);
   }
 }
-
 
 void cda_rail::RouteMap::throw_if_train_has_no_route(
     std::string const& train_name) const {

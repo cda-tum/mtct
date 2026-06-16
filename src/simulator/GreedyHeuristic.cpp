@@ -17,7 +17,6 @@
 double cda_rail::simulator::simple_braking_time_heuristic(
     size_t tr, const cda_rail::simulator::GreedySimulator& simulator,
     double tr_exit_time, double braking_time, double braking_distance) {
-
   if (braking_time < 0 && braking_distance < 0) {
     return 0.0; // No braking time, no heuristic value
   }
@@ -48,7 +47,6 @@ cda_rail::simulator::simple_remaining_time_heuristic(
     size_t tr, const cda_rail::simulator::GreedySimulator& simulator,
     double tr_exit_time, double braking_time_heuristic,
     bool consider_earliest_exit) {
-
   const double rel_exit_time =
       std::max(tr_exit_time + braking_time_heuristic, 0.0);
   double heuristic_exit_time = rel_exit_time;

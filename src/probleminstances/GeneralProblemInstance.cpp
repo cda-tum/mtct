@@ -81,7 +81,6 @@ void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 
 bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     has_route_for_every_train() const {
-
   return std::ranges::all_of(get_const_train_list(), [this](const auto& tr) {
     return get_const_routes().has_route(tr.get_name()) &&
            !get_const_routes().get_route(tr.get_name()).empty();
@@ -110,7 +109,6 @@ std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>
 cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     possible_stop_vertices(size_t tr, const std::string& station_name,
                            const cda_rail::index_set& edges_to_consider) const {
-
   auto stop_tracks = get_stop_tracks(tr, station_name, edges_to_consider);
   std::unordered_map<size_t, std::vector<cda_rail::index_vector>> combined;
 
@@ -133,7 +131,6 @@ cda_rail::index_set
 cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     edges_used_by_train(const std::string& train_name, bool fixed_routes,
                         bool error_if_no_route) const {
-
   get_const_train_list().throw_if_train_not_exist(train_name);
   if (!fixed_routes ||
       (!error_if_no_route && !get_const_routes().has_route(train_name))) {
@@ -212,7 +209,6 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     trains_on_edge(RouteMap const& route_map, size_t edge_id, bool fixed_routes,
                    const cda_rail::index_set& trains_to_consider,
                    bool                       error_if_not_route) const {
-
   if (!this->get_const_network().has_edge(edge_id)) {
     throw exceptions::EdgeNotExistentException(edge_id);
   }
@@ -282,7 +278,6 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 // Solution Objects
 // -------------------
 
-
 cda_rail::json
 cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
     const {
@@ -349,7 +344,6 @@ void cda_rail::instances::SolGeneralProblemInstance::export_solution(
   data_file << data << '\n';
   data_file.close();
 }
-
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
     reset_routes() {
