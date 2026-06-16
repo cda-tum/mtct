@@ -54,6 +54,9 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
 
   const tinyxml2::XMLElement* graphml_graph =
       graphml_body->FirstChildElement("graph");
+  if (graphml_graph == nullptr) {
+    throw exceptions::ImportException("graphml");
+  }
   if (graphml_graph->Attribute("edgedefault") != std::string("directed")) {
     throw exceptions::InvalidInputException("Graph is not directed");
   }
@@ -114,8 +117,12 @@ void cda_rail::Network::add_vertices_from_graphml(
 
     for (const auto* data = node->FirstChildElement("data"); data != nullptr;
          data             = data->NextSiblingElement("data")) {
-      if (auto it = parsers.find(data->Attribute("key")); it != parsers.end()) {
-        it->second(data->GetText());
+      const char* key_attr = data->Attribute("key");
+      const char* text_val = data->GetText();
+      if (key_attr != nullptr && text_val != nullptr) {
+        if (auto it = parsers.find(key_attr); it != parsers.end()) {
+          it->second(text_val);
+        }
       }
     }
     if (!v_type.has_value()) {
@@ -190,8 +197,12 @@ void cda_rail::Network::add_edges_from_graphml(
 
     for (const auto* data = cur->FirstChildElement("data"); data != nullptr;
          data             = data->NextSiblingElement("data")) {
-      if (auto it = parsers.find(data->Attribute("key")); it != parsers.end()) {
-        it->second(data->GetText());
+      const char* key_attr = data->Attribute("key");
+      const char* text_val = data->GetText();
+      if (key_attr != nullptr && text_val != nullptr) {
+        if (auto it = parsers.find(key_attr); it != parsers.end()) {
+          it->second(text_val);
+        }
       }
     }
     if (!e_length.has_value() || !e_max_speed.has_value()) {
