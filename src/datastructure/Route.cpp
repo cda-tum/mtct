@@ -116,6 +116,9 @@ size_t
 cda_rail::Route::get_edge_id_at_pos(double                   pos,
                                     const cda_rail::Network& network) const {
   round_small_numbers_to_zero_inplace(pos, GRB_EPS);
+  if (m_edges.empty()) {
+    throw exceptions::ConsistencyException("Route is empty.");
+  }
   if (pos < 0) {
     throw exceptions::InvalidInputException("Position must be non-negative.");
   }
@@ -185,6 +188,11 @@ void cda_rail::Route::remove_last_edge() {
 // HELPER
 
 bool cda_rail::Route::check_consistency(const Network& network) const {
+  for (const auto edge : m_edges) {
+    if (!network.has_edge(edge)) {
+      throw exceptions::EdgeNotExistentException(edge);
+    }
+  }
   return std::ranges::adjacent_find(
              m_edges, [&network](size_t edge, size_t successor) {
                return !network.is_valid_successor(edge, successor);

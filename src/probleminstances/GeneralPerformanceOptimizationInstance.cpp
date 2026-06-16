@@ -51,8 +51,14 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
     const std::vector<double>&              tr_exit_times,
     const std::vector<std::vector<double>>& stop_times,
     const bool throwErrorIfNotAllStopsSpecified) const {
+  const auto train_count = get_const_train_list().size();
+  if (tr_exit_times.size() != train_count || stop_times.size() != train_count) {
+    throw exceptions::InvalidInputException(
+        "Objective input vector sizes must match the number of trains.");
+  }
+
   double obj = 0.0;
-  for (size_t tr = 0; tr < get_const_train_list().size(); ++tr) {
+  for (size_t tr = 0; tr < train_count; ++tr) {
     auto const& tr_schedule = get_const_schedule(tr);
 
     obj += get_train_weight(tr) * tr_exit_times.at(tr);
@@ -657,8 +663,16 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
       return false;
     }
 
+    if (m_train_pos.at(tr_id).size() != m_train_speed.at(tr_id).size()) {
+      return false;
+    }
     for (const auto& t : m_train_pos.at(tr_id) | std::ranges::views::keys) {
       if (m_train_speed.at(tr_id).count(t) != 1) {
+        return false;
+      }
+    }
+    for (const auto& t : m_train_speed.at(tr_id) | std::ranges::views::keys) {
+      if (m_train_pos.at(tr_id).count(t) != 1) {
         return false;
       }
     }

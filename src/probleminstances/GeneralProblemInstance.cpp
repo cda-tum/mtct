@@ -372,7 +372,7 @@ void cda_rail::instances::SolGeneralProblemInstance::load_solution(
 
   std::ifstream data_file(p / "solution_data.json");
   if (!data_file.is_open()) {
-    throw exceptions::ExportException("Could not open file " + p.string());
+    throw exceptions::ImportException("Could not open file " + p.string());
   }
   json data;
   data_file >> data;

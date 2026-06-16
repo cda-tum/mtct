@@ -42,11 +42,11 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
    * Construct object and read trains from file
    */
 
-  if (!std::filesystem::is_directory(p)) {
-    throw exceptions::ImportException("Path is not a directory.");
-  }
   if (!std::filesystem::exists(p)) {
     throw exceptions::ImportException("Path does not exist.");
+  }
+  if (!std::filesystem::is_directory(p)) {
+    throw exceptions::ImportException("Path is not a directory.");
   }
 
   std::ifstream f((p / "trains.json"));

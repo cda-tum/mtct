@@ -522,7 +522,7 @@ TEST(GreedySimulator, TrainsOnEdges) {
   const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, 0, 0,
                                        {"l0"}, 360, 10, {"r0"}, network);
   const auto tr2 = timetable.add_train("Train2", 100, 10, 1, 3, false, 30, 10,
-                                       {"r0"}, 400, 5, {"l0"}, network);
+                                       {"l0"}, 400, 5, {"r0"}, network);
   const auto tr3 = timetable.add_train("Train3", 100, 10, 1, 4, true, 0, 0,
                                        {"l0"}, 360, 10, {"r0"}, network);
   const auto tr4 = timetable.add_train("Train4", 100, 10, 1, 5, false, 30, 0,
@@ -541,7 +541,10 @@ TEST(GreedySimulator, TrainsOnEdges) {
   simulator.append_train_edge_to_tr(tr1, l0_l1);
   simulator.append_train_edge_to_tr(tr1, l1_l2);
   simulator.append_train_edge_to_tr(tr1, l2_l3);
+  EXPECT_THROW(simulator.append_train_edge_to_tr(tr2, l1_l2),
+               cda_rail::exceptions::ConsistencyException);
   simulator.append_train_edge_to_tr(tr2, l0_l1);
+  simulator.append_train_edge_to_tr(tr3, l0_l1);
   simulator.append_train_edge_to_tr(tr3, l1_l2);
   simulator.append_train_edge_to_tr(tr4, l0_l1);
 
@@ -553,6 +556,7 @@ TEST(GreedySimulator, TrainsOnEdges) {
       EXPECT_EQ(tr_on_edges.at(i).size(), 3);
       EXPECT_TRUE(tr_on_edges.at(i).contains(tr1));
       EXPECT_TRUE(tr_on_edges.at(i).contains(tr2));
+      EXPECT_TRUE(tr_on_edges.at(i).contains(tr3));
       EXPECT_TRUE(tr_on_edges.at(i).contains(tr4));
     } else if (i == l1_l2) {
       EXPECT_EQ(tr_on_edges.at(i).size(), 2);
