@@ -36,8 +36,22 @@ private:
    *         in the order they were supplied.
    */
   template <typename... Args>
-  [[nodiscard]] static FixedSizeVector<size_t> make_index_vector(Args... args) {
-    return FixedSizeVector<size_t>{static_cast<size_t>(args)...};
+`#include ` <type_traits>
+
+      template <typename... Args>
+      [[nodiscard]] static FixedSizeVector<size_t>
+      make_index_vector(Args... args) {
+    auto to_size_t_checked = [](auto v) -> size_t {
+      using V = decltype(v);
+      static_assert(std::is_integral_v<V>, "Indices/extents must be integral");
+      if constexpr (std::is_signed_v<V>) {
+        if (v < 0) {
+          throw std::invalid_argument("Negative index/extent is not allowed.");
+        }
+      }
+      return static_cast<size_t>(v);
+    };
+    return FixedSizeVector<size_t>{to_size_t_checked(args)...};
   }
 
   /**
