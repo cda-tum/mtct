@@ -343,15 +343,6 @@ bool cda_rail::simulator::GeneralSimulator::is_final_state() const {
 double
 cda_rail::simulator::GeneralSimulator::tr_braking_distance(size_t tr,
                                                            double v) const {
-  /**
-   * Calculates the braking distance for a train with id `tr` at velocity `v`.
-   *
-   * @param tr: The id of the train for which the braking distance is
-   * calculated.
-   * @param v: The velocity at which the braking distance is calculated.
-   *
-   * @return: The braking distance for the train at the given velocity.
-   */
   m_instance->get_const_train_list().throw_if_train_not_exist(tr);
   cda_rail::exceptions::throw_if_less_than(v, -EPS, "Velocity");
 
@@ -364,15 +355,6 @@ cda_rail::simulator::GeneralSimulator::tr_braking_distance(size_t tr,
 
 std::vector<double>
 cda_rail::simulator::GeneralSimulator::edge_milestones(size_t tr) const {
-  /**
-   * This function returns the individual milestones, i.e., the distance on
-   * the individual route to each edges starting point. The last value is the
-   * distance to the exit node.
-   *
-   * @param tr: The id of the train for which the milestones are calculated.
-   * @return: A vector of doubles with the milestones for each edge of the
-   * train.
-   */
   m_instance->get_const_train_list().throw_if_train_not_exist(tr);
 
   const auto& edges = m_train_edges.at(tr);
@@ -402,10 +384,6 @@ bool cda_rail::simulator::GeneralSimulator::is_on_route(size_t tr,
 
 std::vector<std::unordered_set<size_t>>
 cda_rail::simulator::GeneralSimulator::tr_on_edges() const {
-  /**
-   * This function returns a vector of unordered sets, where each set
-   * contains the indices of trains that are routed on a specific edge.
-   */
 
   std::vector<std::unordered_set<size_t>> trains_on_edges(
       m_instance->get_const_network().number_of_edges());

@@ -21,9 +21,6 @@
 
 using json = nlohmann::json;
 
-/*
- * STATION
- */
 
 std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>
 cda_rail::Station::get_stop_tracks(
@@ -63,7 +60,6 @@ bool cda_rail::Station::is_fully_in_station(
  * STATION LIST
  */
 
-// CONSTRUCTOR
 
 cda_rail::StationList::StationList(std::filesystem::path const& p,
                                    Network const&               network) {
@@ -90,7 +86,6 @@ cda_rail::StationList::StationList(std::filesystem::path const& p,
   }
 }
 
-// GETTER
 
 std::shared_ptr<cda_rail::Station>
 cda_rail::StationList::get_station_ptr(const std::string& name) {
@@ -118,7 +113,6 @@ cda_rail::StationList::get_station_names() const {
   return names;
 }
 
-// EDITING
 
 void cda_rail::StationList::add_empty_station(std::string const& name) {
   if (has_station(name)) {
@@ -138,7 +132,6 @@ void cda_rail::StationList::add_track_to_station(const std::string& name,
   stations.at(name)->tracks.insert(track);
 }
 
-// EXPORT
 
 void cda_rail::StationList::export_stations(const std::filesystem::path& p,
                                             const Network& network) const {

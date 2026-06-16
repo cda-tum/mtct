@@ -89,6 +89,12 @@ public:
       std::vector<cda_rail::index_vector>                     vertex_orders,
       std::vector<std::vector<double>>                        stop_positions);
 
+  /**
+   * @brief Virtual destructor.
+   *
+   * Ensures proper cleanup when derived class instances are deleted through
+   * base class pointers.
+   */
   virtual ~GeneralSimulator() = default;
 
   // Rule of 5 (due to virtual deconstructor)
@@ -99,18 +105,32 @@ public:
 
   // ---------------------
   // SIMPLE GETTER
-  // ---------------------
+  /**
+   * @brief Provides access to the problem instance for this simulator.
+   * @return Const pointer to the problem instance.
+   */
   [[nodiscard]] virtual instances::
       GeneralProblemInstanceWithScheduleAndRoutes const*
       get_instance() const {
     return m_instance.get();
   }
 
+  /**
+   * @brief Retrieves the TTD sections considered by the simulator.
+   *
+   * @return const std::vector<cda_rail::index_set>& Vector of TTD section
+   * identifier sets.
+   */
   [[nodiscard]] const std::vector<cda_rail::index_set>&
   get_ttd_sections() const {
     return m_ttd_sections;
   }
 
+  /**
+   * @brief Accesses the edge sequences for all trains.
+   *
+   * @return The per-train edge sequences.
+   */
   [[nodiscard]] const std::vector<cda_rail::index_vector>&
   get_train_edges() const {
     return m_train_edges;
@@ -118,6 +138,10 @@ public:
   [[nodiscard]] const cda_rail::index_vector&
   get_train_edges_of_tr(size_t train_id) const;
 
+  /**
+   * @brief Retrieves the ordering vectors for all TTD sections.
+   * @return const std::vector<index_vector>& The per-TTD ordering vectors.
+   */
   [[nodiscard]] const std::vector<cda_rail::index_vector>&
   get_ttd_orders() const {
     return m_ttd_orders;
@@ -127,6 +151,12 @@ public:
   [[nodiscard]] std::optional<size_t>
   get_ttd(Network::EdgeInput const& edge) const;
 
+  /**
+   * @brief Accesses the train ordering for each vertex.
+   *
+   * @return const std::vector<cda_rail::index_vector>& The ordering vectors per
+   * vertex.
+   */
   [[nodiscard]] const std::vector<cda_rail::index_vector>&
   get_vertex_orders() const {
     return m_vertex_orders;
@@ -134,6 +164,12 @@ public:
   [[nodiscard]] const cda_rail::index_vector&
   get_vertex_orders_of_vertex(Network::VertexInput const& vertex) const;
 
+  /**
+   * @brief Accesses all trains' scheduled stop positions.
+   *
+   * @return Const reference to a vector where each element is a vector of stop
+   * positions for the corresponding train.
+   */
   [[nodiscard]] const std::vector<std::vector<double>>&
   get_stop_positions() const {
     return m_stop_positions;
@@ -152,6 +188,13 @@ public:
   [[nodiscard]] bool
   is_route_end_valid_stop_pos(size_t                        tr,
                               const cda_rail::index_vector& edges) const;
+  /**
+   * @brief Checks whether the train's current last edge is a valid stop
+   * position.
+   *
+   * @param tr Train ID.
+   * @return `true` if the position is valid for stopping, `false` otherwise.
+   */
   [[nodiscard]] bool is_current_pos_valid_stop_position(size_t tr) const {
     /**
      * This function checks if the current last edge can be used as a stop for a
@@ -201,6 +244,14 @@ public:
   simulate(bool late_entry_possible, bool limit_speed_by_leaving_edges,
            bool save_trajectories) const = 0;
 
+  /**
+   * @brief Simulates train movements given the current routing, ordering, and
+   * stopping configuration.
+   *
+   * @return SimulatorResults containing the simulation outcome, including train
+   * exit times, stop timestamps, braking information, vertex headways, and—when
+   * enabled—train trajectories over time.
+   */
   [[nodiscard]] SimulatorResults
   simulate(bool late_entry_possible = false,
            bool limit_speed_by_leaving_edges =

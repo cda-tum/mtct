@@ -34,7 +34,6 @@ using std::size_t;
 // ROUTE
 // -----------------------------
 
-// Getter
 
 double cda_rail::Route::length(const Network& network) const {
   const auto edge_lengths =
@@ -148,7 +147,6 @@ const cda_rail::Edge& cda_rail::Route::get_edge(size_t         route_index,
   return network.get_edge(m_edges.at(route_index));
 }
 
-// EDITING FUNCTIONS
 
 void cda_rail::Route::push_back_edge(Network::EdgeInput const& new_edge,
                                      const Network&            network) {
@@ -185,7 +183,6 @@ void cda_rail::Route::remove_last_edge() {
   m_edges.pop_back();
 }
 
-// HELPER
 
 bool cda_rail::Route::check_consistency(const Network& network) const {
   for (const auto edge : m_edges) {
@@ -258,7 +255,6 @@ bool cda_rail::Route::has_edges() const { return !m_edges.empty(); }
 // ROUTE MAP
 // -----------------------------
 
-// Getter
 const cda_rail::Route&
 cda_rail::RouteMap::get_route(const std::string& train_name) const {
   throw_if_train_has_no_route(train_name);
@@ -270,7 +266,6 @@ double cda_rail::RouteMap::route_length(const std::string& train_name,
   return get_route(train_name).length(network);
 }
 
-// Overlap functions
 
 std::vector<cda_rail::ConflictPair>
 cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
@@ -472,7 +467,6 @@ cda_rail::RouteMap::get_crossing_overlaps(const std::string& train1,
   return result;
 }
 
-// Editing functions
 
 void cda_rail::RouteMap::add_empty_route(const std::string& train_name) {
   if (!m_routes.try_emplace(train_name).second) {
@@ -517,7 +511,6 @@ void cda_rail::RouteMap::remove_route(const std::string& train_name) {
   m_routes.erase(train_name);
 }
 
-// Import and export
 
 void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
                                        const Network& network) const {
@@ -564,7 +557,6 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
   }
 }
 
-// Helper
 
 bool cda_rail::RouteMap::check_consistency(
     const TrainList& trains, const Network& network,
@@ -586,7 +578,6 @@ void cda_rail::RouteMap::update_after_discretization(
   }
 }
 
-// error handling
 
 void cda_rail::RouteMap::throw_if_train_has_no_route(
     std::string const& train_name) const {

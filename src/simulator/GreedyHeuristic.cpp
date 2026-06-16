@@ -17,20 +17,6 @@
 double cda_rail::simulator::simple_braking_time_heuristic(
     size_t tr, const cda_rail::simulator::GreedySimulator& simulator,
     double tr_exit_time, double braking_time, double braking_distance) {
-  /**
-   * This heuristic how much time was lost due to braking, i.e., the minimal
-   * traveling time from the braking point minus the actual time spent. The
-   * result will usually be negative.
-   *
-   * @param tr The train for which the heuristic is calculated.
-   * @param simulator The simulator instance containing the train and its edges.
-   * @param tr_exit_time The time at which the train exits the network.
-   * @param braking_time time at which the train starts braking
-   * @param braking_distance distance over which the train brakes
-   *
-   * @return The heuristic value, which is the difference between the time spent
-   * braking and the minimal traveling time from the braking point.
-   */
 
   if (braking_time < 0 && braking_distance < 0) {
     return 0.0; // No braking time, no heuristic value
@@ -62,27 +48,6 @@ cda_rail::simulator::simple_remaining_time_heuristic(
     size_t tr, const cda_rail::simulator::GreedySimulator& simulator,
     double tr_exit_time, double braking_time_heuristic,
     bool consider_earliest_exit) {
-  /**
-   * This heuristic calculates the remaining time for a train to exit the
-   * network. It is assumed that the train will travel at its maximum speed.
-   * Acceleration and deceleration are not considered in this heuristic.
-   *
-   * @param tr The train for which the heuristic is calculated.
-   * @param simulator The simulator instance containing the train and its edges.
-   * @param tr_exit_time The time at which the train exits the network.
-   * @param braking_time_heuristic The heuristic value for braking time, usually
-   * negative
-   * @param late_stop_possible Indicates if the train can stop later than
-   * planned.
-   * @param late_exit_possible Indicates if the train can exit later than
-   * planned.
-   * @param consider_earliest_exit If true, the heuristic will consider the
-   * earliest exit time of each station and exit point.
-   *
-   * @return A pair containing:
-   * - bool: indicates if a valid timetable can still be achieved
-   * - double: the estimated remaining time for the train to exit the network
-   */
 
   const double rel_exit_time =
       std::max(tr_exit_time + braking_time_heuristic, 0.0);

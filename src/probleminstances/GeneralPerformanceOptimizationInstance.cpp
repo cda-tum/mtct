@@ -26,7 +26,6 @@
 
 // ---------------------
 // INSTANCE
-// ---------------------
 
 cda_rail::instances::GeneralPerformanceOptimizationInstance::
     GeneralPerformanceOptimizationInstance(
@@ -118,10 +117,6 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
 
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     discretize_stops() {
-  /**
-   * This method discretizes the network within the stations. It updates the
-   * timetable and the routes accordingly.
-   */
 
   for (const auto& station_name :
        this->get_const_station_list().get_station_names()) {
@@ -190,7 +185,6 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
 
 // -----------------
 // SOLUTION
-// -----------------
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     initialize_vectors() {
@@ -245,18 +239,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
         const std::filesystem::path& working_directory,
         std::string_view const solutionSubdirectory, bool save_instance,
         std::optional<std::string> const& parameter_identifier) const {
-  /**
-   * This method exports the solution object to a specific path. This includes
-   * the following:
-   * - If export_instance is true, the instance is exported
-   * - dt, status, obj, and postprocessed are exported to p / solution /
-   * data.json
-   * - train_pos and train_speed are exported
-   *
-   * The method throws a
-   * ConsistencyException if the solution is not consistent.
-   *
-   */
 
   if (!check_consistency()) {
     throw exceptions::ConsistencyException();

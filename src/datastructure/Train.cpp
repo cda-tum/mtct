@@ -14,9 +14,6 @@
 
 using json = nlohmann::json;
 
-/*
- * TRAIN
- */
 cda_rail::Train::Train(std::string name, double const length,
                        double const maxSpeed, double const acceleration,
                        double const deceleration, bool const tim)
@@ -35,12 +32,8 @@ cda_rail::Train::Train(std::string name, double const length,
  * TRAIN LIST
  */
 
-// CONSTRUCTOR
 
 cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
-  /**
-   * Construct object and read trains from file
-   */
 
   if (!std::filesystem::exists(p)) {
     throw exceptions::ImportException("Path does not exist.");
@@ -63,7 +56,6 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
   }
 }
 
-// GETTER
 
 size_t cda_rail::TrainList::get_train_index(std::string const& name) const {
   if (!has_train(name)) {
@@ -80,7 +72,6 @@ cda_rail::TrainList::get_train(size_t const index) const {
   return trains.at(index);
 }
 
-// SETTER
 
 size_t cda_rail::TrainList::add_train(Train train) {
   if (has_train(train.get_name())) {
@@ -93,7 +84,6 @@ size_t cda_rail::TrainList::add_train(Train train) {
   return idx;
 }
 
-// EXPORT
 
 void cda_rail::TrainList::export_trains(std::filesystem::path const& p) const {
   if (!is_directory_and_create(p)) {

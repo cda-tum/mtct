@@ -90,12 +90,26 @@ private:
 public:
   // ------------------------
   // CONSTRUCTOR
-  // -----------------------
+  /**
+   * @brief Constructs a default solver instance.
+   */
 
   GenPOMovingBlockAStarSolver() = default;
+  /**
+   * @brief Constructs the solver from a performance optimization instance.
+   *
+   * @param instance The performance optimization problem instance to solve.
+   */
   explicit GenPOMovingBlockAStarSolver(
       const instances::GeneralPerformanceOptimizationInstance& instance)
       : GeneralSolver(instance) {};
+  /**
+   * @brief Constructs a solver instance from file-based configuration.
+   *
+   * @param instanceName The name of the instance.
+   * @param instanceSubdirectory The subdirectory containing instance files.
+   * @param working_directory The root working directory path.
+   */
   GenPOMovingBlockAStarSolver(std::string_view const       instanceName,
                               std::string_view const       instanceSubdirectory,
                               std::filesystem::path const& working_directory)
@@ -116,6 +130,14 @@ public:
   // ----------------------------
 
   using GeneralSolver::solve;
+  /**
+   * @brief Solves the problem with default model and strategy configurations.
+   *
+   * @param time_limit Time limit in seconds (-1 for no limit).
+   * @param debug_input If true, enables debug mode.
+   * @param overwrite_severity If true, overwrites solution severity.
+   * @return Solution to the general performance optimization problem.
+   */
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(int time_limit, bool debug_input, bool overwrite_severity) override {
     return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
@@ -145,7 +167,16 @@ private:
   next_state_exit_vertex_helper(size_t tr, GreedySimulatorState& state,
                                 const simulator::GreedySimulator& simulator);
 
-  // Overall Function
+  /**
+   * @brief Generates the next reachable states using the specified transition
+   * strategy.
+   *
+   * @param simulator The greedy simulator providing the current state.
+   * @param next_state_strategy_input The strategy to use for state transitions.
+   * @return An unordered set of next possible states.
+   * @throws cda_rail::exceptions::ConsistencyException If the transition
+   * strategy is unknown.
+   */
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states(const simulator::GreedySimulator& simulator,
               const NextStateStrategy&          next_state_strategy_input) {
@@ -171,6 +202,17 @@ private:
   };
 
   struct CompareByObjective {
+    /**
+     * @brief Defines priority ordering for the A* search queue.
+     *
+     * Lower objectives have higher priority; final states are prioritized over
+     * non-final states when objectives are equal; remaining ties use state
+     * comparison.
+     *
+     * @param a First state-objective pair.
+     * @param b Second state-objective pair.
+     * @return `true` if `a` should be dequeued after `b`, `false` otherwise.
+     */
     bool operator()(const StateObjectivePair& a,
                     const StateObjectivePair& b) const {
       return (a.objective > b.objective) ||

@@ -26,8 +26,6 @@
 
 using json = nlohmann::json;
 
-// Import helper
-
 void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   tinyxml2::XMLDocument graph_xml;
   graph_xml.LoadFile((p / "tracks.graphml").string().c_str());
@@ -237,8 +235,6 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
   }
 }
 
-// Export helper
-
 void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   std::ofstream file(p / "tracks.graphml");
   if (!file) {
@@ -362,8 +358,6 @@ void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,
   }
   file << "}";
 }
-
-// edge separation/changing helper
 
 std::pair<cda_rail::index_vector, cda_rail::index_vector>
 cda_rail::Network::separate_edge_private_helper(
@@ -610,8 +604,6 @@ cda_rail::Network::sort_edge_pairs(
   return result;
 }
 
-// validity helper
-
 void cda_rail::Network::check_new_edge_requirements(size_t source,
                                                     size_t target) const {
   if (source == target) {
@@ -627,8 +619,6 @@ void cda_rail::Network::check_new_edge_requirements(size_t source,
     throw exceptions::InvalidInputException("Edge already exists");
   }
 }
-
-// path finding algorithm helper
 
 double cda_rail::Network::delta_dist_helper(const Edge& edge, double max_v,
                                             bool use_minimal_time) {
@@ -829,7 +819,6 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
 
 // ----------------
 // HELPER STRUCTS
-// ----------------
 
 size_t cda_rail::Network::VertexInput::resolve(
     cda_rail::Network const* network) const {

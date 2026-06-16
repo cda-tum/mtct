@@ -59,6 +59,12 @@ struct Station {
   [[nodiscard]] bool
   is_fully_in_station(cda_rail::index_set const& edges) const;
 
+  /**
+   * @brief Compares two stations for equality.
+   *
+   * @return bool `true` if the stations have the same name and tracks, `false`
+   * otherwise.
+   */
   bool operator==(const Station& other) const {
     return name == other.name && tracks == other.tracks;
   }
@@ -97,10 +103,15 @@ public:
   StationList(std::filesystem::path const& p, Network const& network);
 
   /**
-   * @brief Convenience overload forwarding to the filesystem path constructor.
+   * @brief Constructs a station list from a string path.
+   *
+   * Loads stations from `stations.json` located in the given directory.
    *
    * @param path Directory containing `stations.json`.
    * @param network Network used to resolve edge endpoints.
+   *
+   * @throws exceptions::ImportException If `path` does not exist or is not a
+   * directory.
    */
   StationList(std::string const& path, Network const& network)
       : StationList(std::filesystem::path(path), network) {};
@@ -122,10 +133,19 @@ public:
   [[nodiscard]] auto begin() const { return stations.cbegin(); };
   /** @brief Read-only iterator past the last station entry. */
   [[nodiscard]] auto end() const { return stations.cend(); };
-  /** @brief Read-only iterator to the first station entry (explicit const). */
+  /**
+   * @brief Obtains a const iterator to the first station.
+   *
+   * @return A const iterator to the beginning of the stations collection.
+   */
   [[nodiscard]] auto cbegin() const { return stations.cbegin(); };
   /** @brief Read-only iterator past the last station entry (explicit const). */
-  [[nodiscard]] auto   cend() const { return stations.cend(); };
+  [[nodiscard]] auto cend() const { return stations.cend(); };
+  /**
+   * @brief Retrieves the number of stations.
+   *
+   * @return size_t The number of stations.
+   */
   [[nodiscard]] size_t size() const { return stations.size(); };
 
   /*
@@ -216,11 +236,16 @@ private:
 
 public:
   /**
-   * @brief Adds a track specified by source and target vertex indices.
+   * @brief Adds a track to a station by resolving an edge specification.
    *
    * @param name Station name.
-   * @param edge Edge to add
-   * @param network Network used to resolve the edge index.
+   * @param edge Edge specification to resolve and add.
+   * @param network Network used to resolve the edge specification.
+   *
+   * @throws exceptions::StationNotExistentException if the station does not
+   * exist.
+   * @throws exceptions::EdgeNotExistentException if the resolved edge does not
+   * exist in the network.
    */
   void add_track_to_station(const std::string&                  name,
                             cda_rail::Network::EdgeInput const& edge,
@@ -257,10 +282,11 @@ public:
   };
 
   /**
-   * @brief Convenience overload forwarding to the filesystem path export.
+   * @brief Writes all stations to the specified directory.
    *
-   * @param path Target directory.
+   * @param path A C-string representing the target directory.
    * @param network Network used to resolve edge endpoint names.
+   * @throws exceptions::ExportException If the directory cannot be created.
    */
   void export_stations(char const* const path, const Network& network) const {
     export_stations(std::filesystem::path(path), network);
@@ -271,7 +297,7 @@ public:
    *
    * @param path Directory containing `stations.json`.
    * @param network Network used to resolve edge endpoints.
-   * @return Imported station list.
+   * @return A `StationList` containing the imported stations.
    */
   [[nodiscard]] static StationList import_stations(const std::string& path,
                                                    const Network&     network) {
@@ -283,7 +309,10 @@ public:
    *
    * @param path Directory containing `stations.json`.
    * @param network Network used to resolve edge endpoints.
-   * @return Imported station list.
+   * @return StationList loaded from the specified directory.
+   *
+   * @throws exceptions::ImportException if `path` does not exist or is not a
+   * directory.
    */
   [[nodiscard]] static StationList import_stations(const char*    path,
                                                    const Network& network) {
@@ -296,6 +325,8 @@ public:
    * @param p Directory containing `stations.json`.
    * @param network Network used to resolve edge endpoints.
    * @return Imported station list.
+   * @throws exceptions::ImportException If the directory does not exist or is
+   * not a directory.
    */
   [[nodiscard]] static StationList
   import_stations(const std::filesystem::path& p, const Network& network) {
@@ -332,15 +363,13 @@ public:
   /**
    * @brief Computes possible stop tracks for a named station.
    *
-   * This forwards to `Station::get_stop_tracks` of the resolved station.
-   *
    * @param name Station name.
    * @param tr_len Train length.
    * @param network Network containing the station edges.
-   * @param edges_to_consider Optional candidate edges. If empty, all station
-   * edges are considered.
-   * @return Vector of pairs `(stop_edge, stop_paths)` as returned by
-   * `Station::get_stop_tracks`.
+   * @param edges_to_consider Optional candidate edges to filter the result. If
+   * empty, all station edges are considered.
+   * @return Vector of pairs, where each pair contains a stop edge index and the
+   * set of valid in-station paths ending on that edge.
    * @throws exceptions::StationNotExistentException If `name` is unknown.
    */
   [[nodiscard]] std::vector<

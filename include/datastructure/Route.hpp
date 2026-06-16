@@ -91,8 +91,8 @@ public:
   // -----------------------------
 
   /**
-   * @brief Returns the number of edges stored in the route.
-   * @return Route length in number of edges.
+   * @brief Gets the number of edges in the route.
+   * @return The number of edges stored in the route.
    */
   [[nodiscard]] size_t size() const { return m_edges.size(); };
 
@@ -106,14 +106,14 @@ public:
   [[nodiscard]] double length(const Network& network) const;
 
   /**
-   * @brief Returns whether the route contains no edges.
-   * @return `true` if `size() == 0`, otherwise `false`.
+   * @brief Checks whether the route is empty.
+   * @return `true` if the route has no edges, `false` otherwise.
    */
   [[nodiscard]] bool empty() const { return m_edges.empty(); };
 
   /**
-   * @brief Returns the route as edge ids in travel order.
-   * @return Const reference to the internal edge-index vector.
+   * @brief Provides the edges forming the route in travel order.
+   * @return A const reference to the route's edge indices.
    */
   [[nodiscard]] const cda_rail::index_vector& get_edges() const {
     return m_edges;
@@ -218,17 +218,35 @@ public:
    */
   [[nodiscard]] const Edge& get_edge(size_t         route_index,
                                      const Network& network) const;
+  /**
+   * @brief Returns the first edge in the route.
+   *
+   * @param network The network containing edge information.
+   * @return const Edge& A reference to the first edge.
+   *
+   * @throws InvalidInputException If the route is empty.
+   * @throws EdgeNotExistentException If the first edge's id does not exist in
+   * the network.
+   */
   [[nodiscard]] const Edge& get_first_edge(const Network& network) const {
     return get_edge(0, network);
   }
+  /**
+   * @brief Returns the last edge in the route.
+   *
+   * @return const Edge& The last edge in the route.
+   *
+   * @throw InvalidInputException If the route is empty.
+   * @throw EdgeNotExistentException If the last edge id is not in the network.
+   */
   [[nodiscard]] const Edge& get_last_edge(const Network& network) const {
     return get_edge(size() - 1, network);
   }
 
   /**
    * @brief Checks whether an edge id appears in this route.
-   * @param edgeIndex Edge id to search.
-   * @return `true` if @p edgeIndex is part of this route.
+   * @param edgeIndex The edge id to search for.
+   * @return `true` if the edge is part of this route, `false` otherwise.
    */
   [[nodiscard]] bool contains_edge(size_t const edgeIndex) const {
     return std::ranges::contains(m_edges, edgeIndex);
@@ -250,10 +268,10 @@ public:
   };
 
   /**
-   * @brief Checks whether an optional edge id is present in this route.
-   * @param edgeIndex Optional edge id.
-   * @return `false` if @p edgeIndex is empty; otherwise equivalent to
-   *         `contains_edge(edgeIndex.value())`.
+   * @brief Determines if an optional edge id is present in this route.
+   *
+   * @return `true` if edgeIndex holds a value and that edge id is in the route,
+   *         `false` otherwise.
    */
   [[nodiscard]] bool
   contains_edge(std::optional<size_t> const edgeIndex) const {
@@ -405,8 +423,14 @@ public:
   RouteMap(const RouteMap& other)            = default;
   RouteMap(RouteMap&& other)                 = default;
   RouteMap& operator=(const RouteMap& other) = default;
-  RouteMap& operator=(RouteMap&& other)      = default;
-  ~RouteMap()                                = default;
+  /**
+   * @brief Move-assigns another RouteMap to this one.
+   *
+   * @param other The RouteMap to move from.
+   * @return Reference to this RouteMap.
+   */
+  RouteMap& operator=(RouteMap&& other) = default;
+  ~RouteMap()                           = default;
 
   // ----------------
   // ITERATORS
@@ -416,7 +440,9 @@ public:
   [[nodiscard]] auto begin() const { return m_routes.cbegin(); };
   /** @brief Read-only iterator past the last route entry. */
   [[nodiscard]] auto end() const { return m_routes.cend(); };
-  /** @brief Read-only iterator to the first route entry (explicit const). */
+  /**
+   * @brief Returns a const iterator to the beginning of the routes.
+   */
   [[nodiscard]] auto cbegin() const { return m_routes.cbegin(); };
   /** @brief Read-only iterator past the last route entry (explicit const). */
   [[nodiscard]] auto cend() const { return m_routes.cend(); };
@@ -426,14 +452,14 @@ public:
   // ----------------
 
   /**
-   * @brief Returns the number of train routes stored in this map.
-   * @return Number of entries (one per train name).
+   * @brief Counts the number of stored train routes.
+   * @return size_t The number of stored train routes.
    */
   [[nodiscard]] size_t size() const { return m_routes.size(); };
 
   /**
-   * @brief Returns whether the map contains no routes at all.
-   * @return `true` if `size() == 0`, otherwise `false`.
+   * @brief Determines whether the map contains no routes.
+   * @return `true` if no routes are stored, `false` otherwise.
    */
   [[nodiscard]] bool empty() const { return m_routes.empty(); };
 
@@ -677,30 +703,29 @@ public:
                      const Network&               network) const;
 
   /**
-   * @brief Convenience overload accepting a `std::string` path.
+   * @brief Writes all routes to routes.json in the specified directory.
    * @param path    Destination directory as a string.
    * @param network Network used to look up vertex names.
-   * @see export_routes(const std::filesystem::path&, const Network&)
    */
   void export_routes(const std::string& path, const Network& network) const {
     export_routes(std::filesystem::path(path), network);
   };
 
   /**
-   * @brief Convenience overload accepting a C-string path.
+   * @brief Exports routes to a directory specified by a C-string path.
+   *
    * @param path    Null-terminated destination directory path.
    * @param network Network used to look up vertex names.
-   * @see export_routes(const std::filesystem::path&, const Network&)
    */
   void export_routes(const char* path, const Network& network) const {
     export_routes(std::filesystem::path(path), network);
   };
 
   /**
-   * @brief Static factory: loads a `RouteMap` from a directory.
+   * @brief Loads routes from a directory into a new `RouteMap`.
    * @param p       Directory containing `routes.json`.
    * @param network Network used to validate the loaded routes.
-   * @return A fully populated `RouteMap`.
+   * @return RouteMap containing all routes loaded from the file.
    * @see RouteMap(const std::filesystem::path&, const Network&)
    */
   [[nodiscard]] static RouteMap import_routes(const std::filesystem::path& p,
@@ -721,10 +746,18 @@ public:
   };
 
   /**
-   * @brief Static factory: convenience overload accepting a C-string path.
-   * @param path    Null-terminated directory path.
-   * @param network Network used to validate the loaded routes.
-   * @see RouteMap(const char*, const Network&)
+   * @brief Loads train routes from a file at the given directory path.
+   *
+   * @param path    Directory path containing routes.json.
+   * @param network Network used to validate referenced edges during loading.
+   * @return RouteMap containing the loaded routes.
+   *
+   * @throws ImportException if the directory does not exist or is not a
+   * directory.
+   * @throws EdgeNotExistentException if the routes file references an unknown
+   * vertex or edge.
+   * @throws ConsistencyException if any route contains invalid successor
+   * relations between consecutive edges.
    */
   [[nodiscard]] static RouteMap import_routes(const char*    path,
                                               const Network& network) {

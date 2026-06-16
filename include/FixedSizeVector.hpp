@@ -64,7 +64,7 @@ public:
   }
 
   /**
-   * @brief Copy constructor.  Performs a deep copy of all elements.
+   * @brief Creates a deep copy of another vector's elements.
    *
    * @param other Source vector to copy from.
    */
@@ -75,10 +75,10 @@ public:
   }
 
   /**
-   * @brief Copy-assignment operator.  Performs a deep copy via copy-and-swap.
+   * @brief Assigns a copy of another vector to this vector.
    *
    * @param other Source vector to copy from.
-   * @return Reference to this object after assignment.
+   * @return Reference to this vector.
    */
   FixedSizeVector& operator=(const FixedSizeVector& other) {
     if (this == &other) {
@@ -90,7 +90,7 @@ public:
   }
 
   /**
-   * @brief Move constructor.  Transfers ownership from @p other in O(1).
+   * @brief Transfers ownership of the managed array from another vector.
    *
    * After the move, @p other is in a valid but unspecified state.
    */
@@ -100,11 +100,10 @@ public:
   }
 
   /**
-   * @brief Move-assignment operator.  Transfers ownership from @p other in
-   * O(1).
+   * @brief Move-assigns from another FixedSizeVector.
    *
-   * After the move, @p other is in a valid but unspecified state.
-   * @return Reference to this object after assignment.
+   * After the move, the source object is in a valid but unspecified state.
+   * @return Reference to this object.
    */
   FixedSizeVector& operator=(FixedSizeVector&& other) noexcept {
     if (this != &other) {
@@ -162,16 +161,15 @@ public:
   [[nodiscard]] T& operator[](size_t const i) { return m_data[i]; }
 
   /**
-   * @brief Unchecked element access (const).
+   * @brief Accesses an element at a specific index without bounds checking.
    *
-   * @param i Zero-based index of the element.
-   * @return Const reference to the element at position @p i.
-   * @pre `i < size()`.  Behavior is undefined if the precondition is violated.
+   * @return Const reference to the element at position `i`.
+   * @pre `i < size()`. Behavior is undefined if the precondition is violated.
    */
   [[nodiscard]] const T& operator[](size_t const i) const { return m_data[i]; }
 
   /**
-   * @brief Bounds-checked element access (non-const).
+   * @brief Accesses an element at a given index with bounds checking.
    *
    * @param i Zero-based index of the element.
    * @return Reference to the element at position @p i.
@@ -203,44 +201,45 @@ public:
    */
 
   /**
-   * @brief Returns a pointer to the first element (non-const iterator).
+   * @brief Accesses the first element of the underlying array.
    *
-   * @return Pointer to the first element, or `end()` if the vector is empty.
+   * @return Pointer to the first element.
    */
   [[nodiscard]] T* begin() { return m_data.get(); }
 
   /**
-   * @brief Returns a pointer one past the last element (non-const sentinel).
+   * @brief Provides a pointer to the position past the last element.
    *
-   * @return Pointer one past the last element.
+   * @return Pointer to one past the last element.
    */
   [[nodiscard]] T* end() { return m_data.get() + m_len; }
 
   /**
-   * @brief Returns a const pointer to the first element.
+   * @brief Obtains a const pointer to the first element.
    *
-   * @return Const pointer to the first element, or `cend()` if empty.
+   * @return Const pointer to the first element, or a pointer equal to `cend()`
+   * if empty.
    */
   [[nodiscard]] const T* begin() const { return m_data.get(); }
 
   /**
-   * @brief Returns a const pointer one past the last element.
+   * @brief Obtains a const pointer to one past the last element.
    *
-   * @return Const pointer one past the last element.
+   * @return A const pointer one past the last element.
    */
   [[nodiscard]] const T* end() const { return m_data.get() + m_len; }
 
   /**
-   * @brief Returns a const pointer to the first element.
+   * @brief Obtains a const pointer to the first element.
    *
-   * @return Const pointer to the first element, or `cend()` if empty.
+   * @return Const pointer to the first element.
    */
   [[nodiscard]] const T* cbegin() const { return begin(); }
 
   /**
-   * @brief Returns a const pointer one past the last element.
+   * @brief Provides a const pointer to one past the last element.
    *
-   * @return Const pointer one past the last element.
+   * @return const T* A const pointer to one past the last element.
    */
   [[nodiscard]] const T* cend() const { return end(); }
 
@@ -249,10 +248,10 @@ public:
    */
 
   /**
-   * @brief Returns the number of elements.
+   * @brief Queries the number of elements.
    *
-   * @return Number of elements in the vector (fixed after construction until
-   *         `delete_and_resize` is called).
+   * @return The number of elements in the vector (fixed after construction
+   * until `delete_and_resize` is called).
    */
   [[nodiscard]] size_t size() const { return m_len; }
 };
@@ -267,6 +266,11 @@ public:
  *         at every index, otherwise `false`.
  */
 template <typename T>
+/**
+ * @brief Compares a FixedSizeVector with a std::vector for equality.
+ *
+ * @return `true` if the containers are equal, `false` otherwise.
+ */
 bool operator==(const FixedSizeVector<T>& lhs, const std::vector<T>& rhs) {
   if (lhs.size() != rhs.size()) {
     return false;
@@ -289,6 +293,15 @@ bool operator==(const FixedSizeVector<T>& lhs, const std::vector<T>& rhs) {
  *         at every index, otherwise `false`.
  */
 template <typename T>
+/**
+ * @brief Determines whether a std::vector and FixedSizeVector are equal.
+ *
+ * @tparam T Element type.
+ * @param lhs The std::vector to compare.
+ * @param rhs The FixedSizeVector to compare.
+ * @return `true` if the vector and FixedSizeVector have equal size and
+ * identical elements, `false` otherwise.
+ */
 bool operator==(const std::vector<T>& lhs, const FixedSizeVector<T>& rhs) {
   return rhs == lhs;
 }
@@ -301,6 +314,9 @@ bool operator==(const std::vector<T>& lhs, const FixedSizeVector<T>& rhs) {
  * @param rhs Second vector.
  */
 template <typename T>
+/**
+ * @brief Exchanges the contents of two FixedSizeVector objects.
+ */
 void swap(FixedSizeVector<T>& lhs, FixedSizeVector<T>& rhs) noexcept {
   lhs.swap(rhs);
 }

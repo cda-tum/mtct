@@ -17,7 +17,6 @@
 #include <utility>
 #include <vector>
 
-// Combinatorial Helper
 
 std::vector<cda_rail::index_vector>
 cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
@@ -85,7 +84,6 @@ cda_rail::subsets_of_size_2_indices(size_t const n) {
   return result;
 }
 
-// Output Helper
 
 void cda_rail::initialize_plog(bool const debugInput,
                                bool const overwriteSeverity) {

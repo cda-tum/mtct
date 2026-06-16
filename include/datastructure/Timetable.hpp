@@ -85,24 +85,23 @@ public:
    * GETTER
    */
   /**
-   * @brief Returns the earliest service start time.
+   * @brief Retrieves the earliest service start time.
    *
-   * @return Earliest service start time (guaranteed >= 0).
+   * @return The service start time, guaranteed to be non-negative.
    */
   [[nodiscard]] double get_service_time() const { return m_service_time; }
 
   /**
-   * @brief Returns the earliest possible departure time from this stop.
+   * @brief Computes the earliest departure time from this stop.
    *
-   * @return Earliest departure time, computed as service time plus service
-   * duration (guaranteed >= 0).
+   * @return The earliest departure time.
    */
   [[nodiscard]] double get_earliest_departure() const {
     return m_service_time + m_service_duration;
   }
 
   /**
-   * @brief Returns the minimum required service duration.
+   * @brief Accesses the minimum service duration.
    *
    * @return Minimum service duration (guaranteed >= 0).
    */
@@ -111,7 +110,7 @@ public:
   }
 
   /**
-   * @brief Returns the station referenced by this stop.
+   * @brief Accesses the station associated with this stop.
    *
    * @return Constant reference to the associated station (guaranteed non-null).
    */
@@ -136,10 +135,9 @@ public:
   /**
    * @brief Sets the minimum service duration.
    *
-   * @pre new_service_duration >= 0 (non-negative).
    * @param new_service_duration New minimum service duration.
    * @throws cda_rail::exceptions::InvalidInputException If
-   * `new_service_duration` is negative.
+   * the duration is negative.
    */
   void set_service_duration(double new_service_duration) {
     cda_rail::exceptions::throw_if_negative(new_service_duration,
@@ -202,7 +200,13 @@ private:
   static std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
   check_stops_validity_helper(std::vector<ScheduledStop> const& stops);
 
-  // private constructor to be used with care (invalid substate)
+  /**
+   * @brief Constructs a Schedule with uninitialized members.
+   *
+   * Private constructor that creates a Schedule in an uninitialized state.
+   * Intended for use by `Timetable` to initialize vectors prior to proper
+   * assignment of entry/exit constraints and stops.
+   */
   Schedule() = default;
   friend class Timetable;
 
@@ -237,53 +241,54 @@ public:
    */
 
   /**
-   * @brief Returns the entry time.
+   * @brief Provides the entry time.
    *
-   * @return Entry time.
+   * @return The entry time.
    */
   [[nodiscard]] double get_entry_time() const { return m_entry_time; }
 
   /**
-   * @brief Returns the exit time.
+   * @brief Gets the scheduled exit time.
    *
-   * @return Exit time.
+   * @return The exit time constraint.
    */
   [[nodiscard]] double get_exit_time() const { return m_exit_time; }
 
   /**
-   * @brief Returns the initial velocity.
+   * @brief Obtains the initial velocity.
    *
-   * @return Initial velocity.
+   * @return The initial velocity of the train at entry.
    */
   [[nodiscard]] double get_initial_velocity() const {
     return m_initial_velocity;
   }
 
   /**
-   * @brief Returns the desired exit velocity.
+   * @brief Obtains the exit velocity.
    *
-   * @return Exit velocity.
+   * @return The exit velocity.
    */
   [[nodiscard]] double get_exit_velocity() const { return m_exit_velocity; }
 
   /**
-   * @brief Returns the entry vertex id.
+   * @brief Determines the network vertex where the train enters.
    *
-   * @return Entry vertex id.
+   * @return The entry vertex ID.
    */
   [[nodiscard]] size_t get_entry_vertex() const { return m_entry_vertex; }
 
   /**
-   * @brief Returns the exit vertex id.
+   * @brief Gets the exit vertex of the schedule.
    *
-   * @return Exit vertex id.
+   * @return The exit vertex ID.
    */
   [[nodiscard]] size_t get_exit_vertex() const { return m_exit_vertex; }
 
   /**
-   * @brief Returns all scheduled stops.
+   * @brief Retrieves the scheduled stops for this train.
    *
-   * @return Constant reference to the list of scheduled stops.
+   * @return Const reference to the vector of scheduled stops, ordered by
+   * service time.
    */
   [[nodiscard]] std::vector<ScheduledStop> const& get_stops() const {
     return m_stops;
@@ -296,7 +301,6 @@ public:
   /**
    * @brief Sets the entry time.
    *
-   * @pre newEntryTime >= 0.
    * @param newEntryTime New entry time.
    * @throws cda_rail::exceptions::InvalidInputException If `newEntryTime` is
    * negative.
@@ -321,12 +325,11 @@ public:
   }
 
   /**
-   * @brief Sets the initial velocity.
+   * @brief Updates the initial velocity.
    *
-   * @pre newInitialVelocity >= 0.
-   * @param newInitialVelocity New initial velocity.
-   * @throws cda_rail::exceptions::InvalidInputException If
-   * `newInitialVelocity` is negative.
+   * @param newInitialVelocity The new initial velocity.
+   * @throws cda_rail::exceptions::InvalidInputException If the value is
+   * negative.
    */
   void set_initial_velocity(double const newInitialVelocity) {
     cda_rail::exceptions::throw_if_negative(newInitialVelocity,
@@ -337,9 +340,7 @@ public:
   /**
    * @brief Sets the exit velocity.
    *
-   * @pre newExitVelocity >= 0.
-   * @param newExitVelocity New exit velocity.
-   * @throws cda_rail::exceptions::InvalidInputException If `newExitVelocity`
+   * @throws cda_rail::exceptions::InvalidInputException If the exit velocity
    * is negative.
    */
   void set_exit_velocity(double const newExitVelocity) {
@@ -348,9 +349,7 @@ public:
   }
 
   /**
-   * @brief Sets the entry vertex id.
-   *
-   * @param newEntryVertex New entry vertex id.
+   * @brief Sets the entry vertex.
    */
   void set_entry_vertex(size_t const newEntryVertex) {
     m_entry_vertex = newEntryVertex;
@@ -373,8 +372,6 @@ public:
 
   /**
    * @brief Sets the exit vertex id.
-   *
-   * @param newExitVertex New exit vertex id.
    */
   void set_exit_vertex(size_t const newExitVertex) {
     m_exit_vertex = newExitVertex;
@@ -396,13 +393,11 @@ public:
   }
 
   /**
-   * @brief Replaces the complete stop list.
+   * @brief Replaces the stop list for this schedule.
    *
-   * @pre `new_stops` is sorted by service time.
-   * @pre `new_stops` contains each station at most once.
-   * @param new_stops New stop list for this schedule.
-   * @throws cda_rail::exceptions::InvalidInputException If `new_stops`
-   * violates stop-list consistency rules.
+   * @param new_stops New stop list to replace the current one.
+   * @throws cda_rail::exceptions::InvalidInputException If the stop list
+   * is not sorted by service time or contains duplicate stations.
    */
   void set_stops(std::vector<ScheduledStop> new_stops) {
     check_stops_validity(new_stops);
@@ -435,8 +430,8 @@ public:
   void remove_stop(std::string const& station_name,
                    bool               throw_exception_if_not_existent = true);
 
-  /*
-   * HELPER
+  /**
+   * @brief Sorts the scheduled stops by service time.
    */
 
   void sort_stops_by_service_time() {
@@ -453,7 +448,15 @@ private:
   TrainList             m_train_list{};
   std::vector<Schedule> m_schedules{};
 
-  // private helpers
+  /**
+   * @brief Sets the train list and reinitializes all schedules.
+   *
+   * Copies the provided train list and creates a default-initialized schedule
+   * for each train. The schedules vector is resized to match the number of
+   * trains in the list.
+   *
+   * @param tl The train list to set.
+   */
 
   void set_train_list(const TrainList& tl) {
     this->m_train_list = tl;
@@ -465,6 +468,9 @@ private:
 
   void add_json_data(json& j, size_t i, const Network& network) const;
 
+  /**
+   * @brief Sorts the stops within each train schedule by service time.
+   */
   void sort_stops_by_service_time() {
     for (auto& schedule : m_schedules) {
       schedule.sort_stops_by_service_time();
@@ -475,27 +481,54 @@ private:
   check_consistency_helper() const;
 
 public:
-  // Constructors
+  /**
+   * @brief Creates an empty timetable.
+   */
   Timetable() = default;
   Timetable(StationList station_list, TrainList train_list,
             const std::vector<Schedule>& schedules);
   Timetable(const std::filesystem::path& p, const Network& network);
+  /**
+   * @brief Constructs a timetable from a file path specified as a string.
+   *
+   * @param path Path to the timetable data.
+   */
   Timetable(const std::string& path, const Network& network)
       : Timetable(std::filesystem::path(path), network) {};
+  /**
+   * @brief Constructs a timetable from a C-string path.
+   *
+   * @param path C-string path to the timetable file.
+   * @param network Network used for vertex validation.
+   */
   Timetable(char const* const path, Network const& network)
       : Timetable(std::filesystem::path(path), network) {};
 
   // Rule of 0 suffices
 
-  /** @brief Read-only iterator to the first schedule. */
+  /**
+   * @brief Provides a read-only iterator to the first schedule.
+   * @return Const iterator to the beginning of the schedule list.
+   */
   [[nodiscard]] constexpr auto begin() const { return m_schedules.cbegin(); };
-  /** @brief Read-only iterator past the last schedule. */
+  /**
+   * @brief Provides the end iterator for iterating over schedules.
+   * @return A const iterator to the position past the last schedule.
+   */
   [[nodiscard]] constexpr auto end() const { return m_schedules.cend(); };
   /** @brief Read-only iterator to the first schedule (explicit const). */
   [[nodiscard]] constexpr auto cbegin() const { return m_schedules.cbegin(); };
-  /** @brief Read-only iterator past the last schedule (explicit const). */
+  /**
+   * @brief Returns a const iterator to one past the last schedule.
+   *
+   * @return A const iterator to the position following the last schedule.
+   */
   [[nodiscard]] constexpr auto cend() const { return m_schedules.cend(); };
-  /** @brief Read-only reverse iterator to the last schedule. */
+  /**
+   * @brief Const reverse iterator to the last schedule.
+   * @return auto Const reverse iterator to the beginning of the reversed
+   * schedule sequence.
+   */
   [[nodiscard]] constexpr auto crbegin() const {
     return m_schedules.crbegin();
   };
@@ -505,41 +538,94 @@ public:
   // Export / Import
   void export_timetable(const std::filesystem::path& p,
                         const Network&               network) const;
+  /**
+   * @brief Writes the timetable to a file.
+   *
+   * @param path File path where the timetable should be written.
+   * @param network Network context used for the export.
+   */
   void export_timetable(const std::string& path, const Network& network) const {
     export_timetable(std::filesystem::path(path), network);
   };
+  /**
+   * @brief Exports the timetable to a file.
+   */
   void export_timetable(char const* const path, Network const& network) const {
     export_timetable(std::filesystem::path(path), network);
   };
 
+  /**
+   * @brief Imports a timetable from a file.
+   *
+   * @param path Path to the timetable file.
+   * @param network Network used for validation and context.
+   * @return Timetable The imported timetable.
+   */
   [[nodiscard]] static Timetable import_timetable(const std::string& path,
                                                   const Network&     network) {
     return {path, network};
   };
+  /**
+   * @brief Imports a timetable from a file.
+   *
+   * @param p Path to the timetable file.
+   * @param network Network context for validating timetable data.
+   * @return A Timetable loaded from the specified file.
+   */
   [[nodiscard]] static Timetable
   import_timetable(const std::filesystem::path& p, const Network& network) {
     return {p, network};
   };
+  /**
+   * @brief Loads a timetable from a file.
+   *
+   * @param path File path as a C-string.
+   * @param network Network used for validation.
+   * @return Timetable loaded from the file.
+   */
   [[nodiscard]] static Timetable import_timetable(char const* const path,
                                                   const Network&    network) {
     return {path, network};
   };
 
-  // Getter Methods
+  /**
+   * @brief Provides access to the station list.
+   *
+   * @return const StationList& Const reference to the station list.
+   */
 
   [[nodiscard]] StationList const& get_station_list() const {
     return m_station_list;
   };
+  /**
+   * @brief Provides access to the train list.
+   *
+   * @return const reference to the TrainList managed by this timetable.
+   */
   [[nodiscard]] TrainList const& get_train_list() const {
     return m_train_list;
   };
 
+  /**
+   * @brief Retrieves the schedule for a given train.
+   *
+   * @param trainIndex The index of the train.
+   * @return const Schedule& The schedule for the specified train.
+   * @throws exceptions::TrainNotExistentException if the train does not exist.
+   */
   [[nodiscard]] Schedule const& get_schedule(size_t const trainIndex) const {
     if (!m_train_list.has_train(trainIndex)) {
       throw exceptions::TrainNotExistentException(trainIndex);
     }
     return m_schedules.at(trainIndex);
   };
+  /**
+   * @brief Retrieves the schedule for a train by name.
+   *
+   * @param train_name Name of the train.
+   * @return The `Schedule` for the specified train.
+   * @throws exceptions::TrainNotExistentException if the train does not exist.
+   */
   [[nodiscard]] Schedule const&
   get_schedule(std::string const& train_name) const {
     return get_schedule(m_train_list.get_train_index(train_name));
@@ -547,13 +633,34 @@ public:
 
   [[nodiscard]] double latest_exit_time() const;
 
+  /**
+   * @brief Provides mutable access to a train by index.
+   * @return A mutable reference to the train at the given index.
+   */
   [[nodiscard]] Train& editable_train(size_t const index) {
     return m_train_list.editable_train(index);
   };
+  /**
+   * @brief Obtains a mutable reference to a train by name.
+   *
+   * @param name The name of the train.
+   * @return Train& A mutable reference to the Train with the given name.
+   */
   [[nodiscard]] Train& editable_train(std::string const& name) {
     return m_train_list.editable_train(name);
   };
 
+  /**
+   * @brief Retrieves available track segments for a train at a station.
+   *
+   * @param tr Train index.
+   * @param station_name Name of the station.
+   * @param network The network containing track and vertex information.
+   * @param edges_to_consider Network edges to filter available tracks.
+   * @return Vector of pairs, each pairing a track identifier with index vectors
+   *         indicating valid positioning ranges on that track for the specified
+   *         train.
+   */
   [[nodiscard]] std::vector<
       std::pair<size_t, std::vector<cda_rail::index_vector>>>
   get_stop_tracks(size_t const tr, std::string const& station_name,
@@ -564,7 +671,11 @@ public:
         edges_to_consider);
   };
 
-  // Editing Methods
+  /**
+   * @brief Adds a new station to the timetable with no scheduled stops.
+   *
+   * @param station_name Name of the station to add.
+   */
 
   void add_empty_station(const std::string& station_name) {
     m_station_list.add_empty_station(station_name);
@@ -572,6 +683,17 @@ public:
 
   void insert_stop(size_t train_index, std::string const& station_name,
                    double service_time, double service_duration);
+  /**
+   * @brief Inserts a scheduled stop for a train identified by name.
+   *
+   * @param train_name Name of the train.
+   * @param station_name Name of the station.
+   * @param serviceTime Earliest service start time.
+   * @param serviceDuration Minimum service duration.
+   *
+   * @throws cda_rail::exceptions::InvalidInputException if the station already
+   * exists in the train's schedule.
+   */
   void insert_stop(std::string const& train_name,
                    std::string const& station_name, double const serviceTime,
                    double const serviceDuration) {
@@ -581,6 +703,18 @@ public:
 
   void remove_stop(size_t train_index, std::string const& station_name,
                    bool throw_exception_if_not_existent = true);
+  /**
+   * @brief Removes a stop from a train's schedule by station name.
+   *
+   * @param train_name Name of the train.
+   * @param station_name Name of the station to remove.
+   * @param throw_exception_if_not_existent If `true`, throws an exception if
+   * the station is not found in the schedule.
+   *
+   * @throws cda_rail::exceptions::InvalidInputException If
+   * `throw_exception_if_not_existent` is `true` and the station is not in the
+   * train's schedule.
+   */
   void remove_stop(std::string const& train_name,
                    std::string const& station_name,
                    bool               throw_exception_if_not_existent = true) {
@@ -588,6 +722,13 @@ public:
                 throw_exception_if_not_existent);
   }
 
+  /**
+   * @brief Adds a new track to the specified station.
+   *
+   * @param station_name Name of the station.
+   * @param new_edge Edge input describing the new track.
+   * @param network Network context for validation and resolution.
+   */
   void add_track_to_station(std::string const&        station_name,
                             Network::EdgeInput const& new_edge,
                             Network const&            network) {
@@ -625,6 +766,23 @@ private:
       double exit_velocity, size_t exit_vertex);
 
 public:
+  /**
+   * @brief Adds a train to the timetable with specified entry/exit constraints.
+   *
+   * @param train_name The name identifier for the train.
+   * @param length The train's length.
+   * @param max_speed The train's maximum speed.
+   * @param acceleration The train's acceleration rate.
+   * @param deceleration The train's deceleration rate.
+   * @param tim Whether the train operates in time-independent movement mode.
+   * @param entry_time The service start time at the entry vertex.
+   * @param initial_velocity The velocity at entry.
+   * @param entry_vertex The entry vertex specification.
+   * @param exit_time The service end time at the exit vertex.
+   * @param exit_velocity The velocity at exit.
+   * @param exit_vertex The exit vertex specification.
+   * @return size_t The index of the newly added train.
+   */
   [[nodiscard]] size_t add_train(std::string const& train_name, double length,
                                  double max_speed, double acceleration,
                                  double deceleration, bool tim,
@@ -638,6 +796,23 @@ public:
         entry_time, initial_velocity, entry_vertex.resolve(&network), exit_time,
         exit_velocity, exit_vertex.resolve(&network));
   };
+  /**
+   * @brief Adds a new train to the timetable.
+   *
+   * @param train_name Name of the train.
+   * @param length Train length.
+   * @param max_speed Maximum speed.
+   * @param acceleration Acceleration rate.
+   * @param deceleration Deceleration rate.
+   * @param entry_time Scheduled entry time.
+   * @param initial_velocity Velocity at entry.
+   * @param entry_vertex Entry vertex; resolved against the network.
+   * @param exit_time Scheduled exit time.
+   * @param exit_velocity Velocity at exit.
+   * @param exit_vertex Exit vertex; resolved against the network.
+   * @param network Network to resolve vertex inputs against.
+   * @return Index of the newly added train.
+   */
   [[nodiscard]] size_t
   add_train(std::string const& train_name, double length, double max_speed,
             double acceleration, double deceleration, double entry_time,
@@ -671,10 +846,22 @@ public:
    */
   [[nodiscard]] bool check_consistency(Network const& network) const;
 
+  /**
+   * @brief Updates the timetable after network discretization.
+   *
+   * @param new_edges Pairs of vertex IDs and their associated edge indices
+   * after discretization.
+   */
   void update_after_discretization(
       std::vector<std::pair<size_t, cda_rail::index_set>> const& new_edges) {
     m_station_list.update_after_discretization(new_edges);
   }
+  /**
+   * @brief Updates the timetable after discretization.
+   *
+   * @param new_edges Vector of pairs mapping edge identifiers to their
+   * discretized indices.
+   */
   void update_after_discretization(
       std::vector<std::pair<size_t, cda_rail::index_vector>> const& new_edges) {
     m_station_list.update_after_discretization(new_edges);
@@ -683,6 +870,17 @@ public:
   [[nodiscard]] std::pair<size_t, size_t>
   time_index_interval(size_t train_index, double dt,
                       bool tn_inclusive = true) const;
+  /**
+   * @brief Computes the time index interval for a train, identified by name.
+   *
+   * @param train_name The name of the train.
+   * @param dt The time discretization step.
+   * @param tnInclusive Whether to include the final time index. Defaults to
+   * `true`.
+   *
+   * @return A pair `(start_index, end_index)` of discretized time indices for
+   * the train.
+   */
   [[nodiscard]] std::pair<size_t, size_t>
   time_index_interval(std::string const& train_name, double const dt,
                       bool const tnInclusive = true) const {

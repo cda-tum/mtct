@@ -23,10 +23,6 @@
 
 // using directives from header
 
-/*
- * SCHEDULE
- */
-
 cda_rail::Schedule::Schedule(double const entryTime,
                              double const initialVelocity,
                              size_t const entryVertex, double const exitTime,
@@ -118,24 +114,8 @@ void cda_rail::Schedule::remove_stop(std::string const& station_name,
  * TIMETABLE
  */
 
-// Constructors
-
 cda_rail::Timetable::Timetable(const std::filesystem::path& p,
                                const Network&               network) {
-  /**
-   * This method constructs the object and imports a timetable from a
-   * directory. In particular the following files are read:
-   * - trains.json according to the function defined in
-   * cda_rail::TrainList::import_trains
-   * - stations.json according to the function defined in
-   * cda_rail::StationList::import_stations
-   * - schedules.json of the format described in the respective
-   * export_timetable
-   *
-   * @param p The path to the directory where the files should be read from.
-   * @param network The network to which the timetable belongs.
-   */
-
   if (!std::filesystem::exists(p)) {
     throw exceptions::ImportException("Path does not exist.");
   }
@@ -218,26 +198,8 @@ void cda_rail::Timetable::add_json_data(json& j, const size_t i,
       {"stops", stops}};
 }
 
-// EXPORT
-
 void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
                                            const Network& network) const {
-  /**
-   * This method exports the general timetable to a directory. In particular
-   * the following files are created:
-   * - trains.json according to the function defined in
-   * cda_rail::TrainList::export_trains
-   * - stations.json according to the function defined in
-   * cda_rail::StationList::export_stations
-   * - schedules.json of the following format:
-   *  {"tr1": {"t_0": t_0, "v_0": v_0, "entry": v_name, "t_n": t_n, "v_n":
-   * v_n, "exit": v_name, "stops": [{"begin": t_b, "duration": dt,
-   * "station": s_name},
-   * ...]}, ...}
-   *
-   *  @param p The path to the directory where the files should be created.
-   */
-
   if (!is_directory_and_create(p)) {
     throw exceptions::ExportException("Could not create directory " +
                                       p.string());
@@ -255,8 +217,6 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
   file << j << '\n';
 }
 
-// GETTER
-
 double cda_rail::Timetable::latest_exit_time() const {
   if (m_schedules.empty()) {
     return NAN;
@@ -267,17 +227,6 @@ double cda_rail::Timetable::latest_exit_time() const {
 
 std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
     size_t const trainIndex, double const dt, bool const tnInclusive) const {
-  /**
-   * This method returns the time interval of a train schedule as indices given
-   * a time step length dt.
-   *
-   * @param train_index The index of the train in the train list.
-   * @param dt The time step length.
-   * @return A pair of integers (t_0, t_n) where t_0 is the time index at which
-   * the train enters the network and t_n is the time index at which the train
-   * leaves the network.
-   */
-
   if (!m_train_list.has_train(trainIndex)) {
     throw exceptions::TrainNotExistentException(trainIndex);
   }
@@ -309,8 +258,6 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
 
   return {t_0_index, t_n_index};
 }
-
-// EDITING
 
 size_t cda_rail::Timetable::add_train_private_helper(
     std::string const& train_name, double const length, double const maxSpeed,
@@ -364,8 +311,6 @@ void cda_rail::Timetable::remove_stop(size_t             train_index,
   m_schedules.at(train_index)
       .remove_stop(station_name, throw_exception_if_not_existent);
 }
-
-// HELPER
 
 std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
 cda_rail::Timetable::check_consistency_helper() const {

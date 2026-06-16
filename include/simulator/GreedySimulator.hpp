@@ -98,7 +98,12 @@ public:
   GreedySimulator& operator=(GreedySimulator&&)      = default;
   ~GreedySimulator() override                        = default;
 
-  // Overwritten Getter
+  /**
+   * @brief Retrieves the typed performance optimization instance.
+   *
+   * @return Const pointer to the `GeneralPerformanceOptimizationInstance` for
+   * this simulator.
+   */
   [[nodiscard]] instances::GeneralPerformanceOptimizationInstance const*
   get_instance() const override {
     return dynamic_cast<
@@ -114,6 +119,11 @@ public:
            bool limit_speed_by_leaving_edges = true,
            bool save_trajectories            = false) const;
 
+  /**
+   * @brief Runs the simulation using a fixed time step of 6.0 seconds.
+   *
+   * @return SimulatorResults containing the simulation outcome.
+   */
   [[nodiscard]] SimulatorResults
   simulate(bool late_entry_possible, bool limit_speed_by_leaving_edges,
            bool save_trajectories) const override {
@@ -159,11 +169,24 @@ private:
                                TTDOccupationType occupation_type =
                                    TTDOccupationType::OnlyOccupied) const;
 
+  /**
+   * @brief Determines if a train is at or behind a time-table/track-section
+   * location.
+   * @return `true` if the train is at or behind the TTD, `false` otherwise.
+   */
   [[nodiscard]] bool is_on_or_behind_ttd(size_t tr, size_t ttd,
                                          const TrainPosition& pos) const {
     return is_on_ttd(tr, ttd, pos, TTDOccupationType::OccupiedOrBehind);
   }
 
+  /**
+   * @brief Determines if a train is behind a given time-table/track-section.
+   *
+   * @param tr Index of the train.
+   * @param ttd Index of the time-table/track-section.
+   * @param pos Current position of the train.
+   * @return `true` if the train is behind the TTD, `false` otherwise.
+   */
   [[nodiscard]] bool is_behind_ttd(size_t tr, size_t ttd,
                                    const TrainPosition& pos) const {
     return is_on_ttd(tr, ttd, pos, TTDOccupationType::OnlyBehind);

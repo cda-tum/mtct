@@ -20,7 +20,6 @@
 
 // --------------------
 // CONSTRUCTOR / IMPORT
-// --------------------
 
 cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     GeneralProblemInstanceWithScheduleAndRoutes(
@@ -50,7 +49,6 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 
 // --------------------
 // EXPORT
-// --------------------
 
 void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     export_instance(std::filesystem::path const& working_directory,
@@ -80,15 +78,9 @@ void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 
 // ---------------------
 // GETTER
-// ---------------------
 
 bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     has_route_for_every_train() const {
-  /**
-   * Checks if every train has a route.
-   *
-   * @return true if every train has a route, false otherwise
-   */
 
   return std::ranges::all_of(get_const_train_list(), [this](const auto& tr) {
     return get_const_routes().has_route(tr.get_name()) &&
@@ -118,21 +110,6 @@ std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>
 cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     possible_stop_vertices(size_t tr, const std::string& station_name,
                            const cda_rail::index_set& edges_to_consider) const {
-  /**
-   * This method returns the possible stop vertices for a train at a station
-   * together with the respective stop edges
-   *
-   * @param tr The index of the train
-   * @param station_name The name of the station
-   * @param edges_to_consider The edges to consider. Default: {}, then all
-   * edges
-   *
-   * @return A vector of pairs:
-   * - The first element of the pair is the index of a possible stop vertex
-   * - The second element lists all possible stop paths ending in that vertex
-   * Note: The train has to use one of the stop paths if it stops at the
-   * vertex
-   */
 
   auto stop_tracks = get_stop_tracks(tr, station_name, edges_to_consider);
   std::unordered_map<size_t, std::vector<cda_rail::index_vector>> combined;
@@ -156,15 +133,6 @@ cda_rail::index_set
 cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     edges_used_by_train(const std::string& train_name, bool fixed_routes,
                         bool error_if_no_route) const {
-  /**
-   * Returns edges potentially used by a specific train.
-   *
-   * @param train_name the name of the train
-   * @param fixed_routes specifies if the routes are fixed, if not returns all
-   * edges
-   *
-   * @return edges potentially used by a specific train
-   */
 
   get_const_train_list().throw_if_train_not_exist(train_name);
   if (!fixed_routes ||
@@ -244,18 +212,6 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     trains_on_edge(RouteMap const& route_map, size_t edge_id, bool fixed_routes,
                    const cda_rail::index_set& trains_to_consider,
                    bool                       error_if_not_route) const {
-  /**
-   * Returns all trains that are present on a specific edge, but only consider
-   * a subset of trains.
-   *
-   * @param edge_id the id of the edge
-   * @param fixed_routes specifies if the routes are fixed, if not returns all
-   * trains
-   * @param trains_to_consider the trains to consider
-   *
-   * @return all trains that are present on a specific edge, but only consider
-   * a subset of trains
-   */
 
   if (!this->get_const_network().has_edge(edge_id)) {
     throw exceptions::EdgeNotExistentException(edge_id);
@@ -292,7 +248,6 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 
 // ---------------
 // Consistency
-// ---------------
 
 bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     check_consistency(bool every_train_must_have_route) const {
@@ -327,7 +282,6 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 // Solution Objects
 // -------------------
 
-// general problem instance
 
 cda_rail::json
 cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
@@ -396,7 +350,6 @@ void cda_rail::instances::SolGeneralProblemInstance::export_solution(
   data_file.close();
 }
 
-// with schedules and routes
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
     reset_routes() {

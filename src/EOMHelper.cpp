@@ -167,7 +167,6 @@ struct LineSpeedProfile {
 
 // ---------------------------
 // GENERAL MEASURES
-// ---------------------------
 
 double cda_rail::braking_distance(double v, double d) {
   exceptions::throw_if_negative(v, "Speed");
@@ -201,7 +200,6 @@ double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
 
 // ---------------------------
 // MINIMAL TRAVEL TIMES
-// ---------------------------
 
 double cda_rail::min_travel_time(double v_1, double v_2, double v_m, double a,
                                  double d, double s) {
@@ -238,7 +236,6 @@ double cda_rail::min_travel_time_to_end(double v_1, double v_2, double v_m,
 
 // ----------------------------
 // MAX TRAVEL TIMES
-// ----------------------------
 
 double cda_rail::max_travel_time(double v_1, double v_2, double v_m, double a,
                                  double d, double s, bool stopping_allowed) {
@@ -336,7 +333,6 @@ double cda_rail::max_travel_time_to_end_stopping_allowed(double v_1, double v_2,
 
 // ---------------------------
 // LINE SPEED CALCULATIONS
-// ---------------------------
 
 double cda_rail::minimal_line_speed(double v_1, double v_2, double v_min,
                                     double a, double d, double s) {
@@ -399,14 +395,6 @@ double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
 
 double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
                               double d, double s) {
-  /**
-   * This function calculates the time a train needs to travel distance s with
-   * - initial speed v_1
-   * - final speed v_2
-   * - line speed v_line
-   * - acceleration a
-   * - deceleration d
-   */
 
   return build_line_speed_profile(v_1, v_2, v_line, a, d, s).total_time;
 }
@@ -473,7 +461,6 @@ double cda_rail::vel_on_edge_at_time(double v_1, double v_2, double v_line,
 
 // ---------------------------
 // MOVING AUTHORITY CALCULATIONS
-// ---------------------------
 
 double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
                                              double s) {
@@ -690,7 +677,6 @@ double cda_rail::max_time_profile_from_rear_to_ma_point(double v_1, double v_2,
 
 // ---------------------------
 // HELPER
-// ---------------------------
 
 void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
                                               double& a, double& d, double& s,
