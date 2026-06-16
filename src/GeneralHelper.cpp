@@ -17,15 +17,6 @@
 #include <utility>
 #include <vector>
 
-/**
- * @brief Generates all k-sized index combinations from [0, n) in lexicographic
- * order.
- *
- * @param n Upper bound (exclusive) for indices.
- * @param k Number of indices in each combination.
- * @return A vector of all k-combinations of [0, n).
- * @throws std::invalid_argument if k > n.
- */
 
 std::vector<cda_rail::index_vector>
 cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
@@ -76,13 +67,6 @@ cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
   return result;
 }
 
-/**
- * @brief Generates all unordered pairs (i, j) with 0 ≤ i < j < n.
- *
- * @param n Upper bound (exclusive) for indices.
- * @return Vector containing all pairs (i, j) where 0 ≤ i < j < n.
- * @throws std::invalid_argument if n < 2.
- */
 std::vector<std::pair<size_t, size_t>>
 cda_rail::subsets_of_size_2_indices(size_t const n) {
   if (n < 2) {
@@ -100,15 +84,6 @@ cda_rail::subsets_of_size_2_indices(size_t const n) {
   return result;
 }
 
-/**
- * @brief Initializes plog logging and configures the maximum severity
- * threshold.
- *
- * @param debugInput If `true`, sets the maximum severity to debug; if `false`,
- * sets it to info.
- * @param overwriteSeverity If `true`, always updates the severity threshold. If
- * `false`, updates only if the current severity level is at or below info.
- */
 
 void cda_rail::initialize_plog(bool const debugInput,
                                bool const overwriteSeverity) {
@@ -121,13 +96,6 @@ void cda_rail::initialize_plog(bool const debugInput,
   }
 }
 
-/**
- * @brief Creates the directory at the given path if it does not exist.
- *
- * @param p Path to the directory.
- * @return `true` if the path is a directory or is empty, `false` if creation
- * failed or the path exists but is not a directory.
- */
 bool cda_rail::is_directory_and_create(const std::filesystem::path& p) {
   // If p is empty, treat as current directory — always valid.
   if (p.empty()) {
@@ -143,10 +111,4 @@ bool cda_rail::is_directory_and_create(const std::filesystem::path& p) {
   return std::filesystem::is_directory(p);
 }
 
-/**
- * @brief Computes the ReLU activation.
- *
- * @param val The input value.
- * @return double The input value clamped to a minimum of zero.
- */
 double cda_rail::relu(double const val) { return std::max(0.0, val); }

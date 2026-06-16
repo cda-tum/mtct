@@ -33,6 +33,18 @@ objective_val(const GreedySimulator&                  simulator,
 // --------------------------
 
 [[nodiscard]] double
+/**
+ * @brief Computes the braking-time heuristic for a train.
+ *
+ * @param tr The train identifier.
+ * @param simulator The simulator providing train and network data.
+ * @param tr_exit_time The time at which the train exits the network.
+ * @param braking_time The time at which braking begins.
+ * @param braking_distance The distance over which the train brakes.
+ *
+ * @return The braking-time heuristic value, typically representing time lost to
+ * braking constraints.
+ */
 simple_braking_time_heuristic(size_t tr, const GreedySimulator& simulator,
                               double tr_exit_time, double braking_time,
                               double braking_distance);
@@ -120,6 +132,23 @@ struct HeuristicResult {
   double objective_value_difference;
 };
 [[nodiscard]] HeuristicResult
+/**
+ * @brief Combines braking-time and remaining-time heuristics into a single
+ * objective-value difference for a train.
+ *
+ * Computes the objective-value difference as remaining-exit-time plus the
+ * station-delay weight multiplied by average-remaining-stop-delay.
+ *
+ * @param braking_time_heuristic_type Type of braking-time heuristic variant to
+ * use.
+ * @param remaining_time_heuristic_type Type of remaining-time heuristic variant
+ * to use.
+ * @param consider_earliest_exit Whether to enforce earliest departure and exit
+ * constraints.
+ *
+ * @return `HeuristicResult` containing feasibility status and the computed
+ * objective-value difference.
+ */
 greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
                  RemainingTimeHeuristicType remaining_time_heuristic_type,
                  size_t tr, const GreedySimulator& simulator,
@@ -127,6 +156,23 @@ greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
                  double braking_distance, bool consider_earliest_exit);
 
 [[nodiscard]] HeuristicResult
+/**
+ * @brief Computes a weighted-sum objective-value difference for all trains.
+ *
+ * @param braking_time_heuristic_type Braking-time heuristic type.
+ * @param remaining_time_heuristic_type Remaining-time heuristic type.
+ * @param simulator The greedy simulator.
+ * @param sim_results Simulation results with exit times and braking parameters.
+ * @param consider_earliest_exit Whether to enforce earliest departure and exit
+ * times.
+ *
+ * @return HeuristicResult with feasibility flag (true if all trains feasible)
+ * and objective difference (weighted sum across all trains).
+ *
+ * @throws cda_rail::exceptions::ConsistencyException If result sizes do not
+ * match train count.
+ * @throws cda_rail::exceptions::InvalidInputException If the simulation failed.
+ */
 full_greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
                       RemainingTimeHeuristicType remaining_time_heuristic_type,
                       const GreedySimulator&     simulator,

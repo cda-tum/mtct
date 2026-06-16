@@ -26,14 +26,6 @@
 
 // ---------------------
 // INSTANCE
-/**
- * @brief Initializes the instance with train weights and station delay weight
- * loaded from a configuration file.
- *
- * @param instanceName Name of the instance to load.
- * @param instanceSubdirectory Subdirectory containing the instance.
- * @param working_directory Root working directory.
- */
 
 cda_rail::instances::GeneralPerformanceOptimizationInstance::
     GeneralPerformanceOptimizationInstance(
@@ -53,24 +45,6 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::
   m_station_delay_weight = static_cast<double>(j.at("station_delay_weight"));
 }
 
-/**
- * @brief Computes a weighted objective combining train exit times and station
- * delays.
- *
- * The objective sums (train weight × exit time) for each train and adds a
- * weighted penalty for positive deviations between provided and scheduled stop
- * times. Each train's delay penalty is (station_delay_weight × train_weight ×
- * average_delay) / scheduled_stop_count.
- *
- * @param tr_exit_times Exit times for each train.
- * @param stop_times Arrival times at scheduled stops; one vector per train. May
- * be partial.
- * @param throwErrorIfNotAllStopsSpecified If true, requires all scheduled stops
- * to be specified.
- * @return double The computed objective value.
- * @throws InvalidInputException if input sizes don't match the train count, or
- * stop-time counts are invalid.
- */
 double
 cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
     const std::vector<double>&              tr_exit_times,
@@ -121,15 +95,6 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
   return obj;
 }
 
-/**
- * @brief Persists instance configuration to disk.
- *
- * Writes train weights and station delay weight, and delegates to the base
- * class to export the schedule and routes.
- *
- * @param working_directory Base output directory for the instance files.
- * @param saveNetwork       If true, also exports the network.
- */
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     export_instance(const std::filesystem::path& working_directory,
                     bool const                   saveNetwork) const {
@@ -152,10 +117,6 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
 
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     discretize_stops() {
-  /**
-   * This method discretizes the network within the stations. It updates the
-   * timetable and the routes accordingly.
-   */
 
   for (const auto& station_name :
        this->get_const_station_list().get_station_names()) {
@@ -168,17 +129,6 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
   }
 }
 
-/**
- * @brief Validates the consistency of the performance optimization instance.
- *
- * Verifies that the train weight vector size matches the timetable train count,
- * the station delay weight is non-negative, and all individual train weights
- * are non-negative. Also delegates to the base class consistency check.
- *
- * @param every_train_must_have_route Whether each train must have an assigned
- * route.
- * @return `true` if all consistency checks pass, `false` otherwise.
- */
 bool cda_rail::instances::GeneralPerformanceOptimizationInstance::
     check_consistency(bool every_train_must_have_route) const {
   if (!GeneralProblemInstanceWithScheduleAndRoutes::check_consistency(
@@ -194,12 +144,6 @@ bool cda_rail::instances::GeneralPerformanceOptimizationInstance::
                               [](double w) { return w >= 0; }));
 }
 
-/**
- * @brief Computes the approximate time for a train to exit.
- *
- * @param train Train index.
- * @return Approximate exit time.
- */
 double cda_rail::instances::GeneralPerformanceOptimizationInstance::
     get_approximate_leaving_time(size_t train) const {
   const auto& tr_object = this->get_const_train_list().get_train(train);
@@ -207,12 +151,6 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
   return tr_object.get_length() / timetable.get_exit_velocity();
 }
 
-/**
- * @brief Calculates the maximum time required for a train to exit.
- *
- * @param v Requested speed for the exit.
- * @return Maximum time for the train to exit.
- */
 double cda_rail::instances::GeneralPerformanceOptimizationInstance::
     get_maximal_leaving_time(size_t train, double v) const {
   const auto& tr_object = this->get_const_train_list().get_train(train);
@@ -222,14 +160,6 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
       tr_object.get_deceleration(), tr_object.get_length());
 }
 
-/**
- * @brief Computes the minimum time required for a train to exit the network
- * given a target velocity.
- *
- * @param train Train index.
- * @param v Target velocity.
- * @return Minimum travel time in seconds for the train to reach the exit node.
- */
 double cda_rail::instances::GeneralPerformanceOptimizationInstance::
     get_minimal_leaving_time(size_t train, double v) const {
   const auto& tr_object = this->get_const_train_list().get_train(train);
@@ -251,12 +181,6 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
 
 // -----------------
 // SOLUTION
-/**
- * @brief Initializes per-train storage containers for position and speed data.
- *
- * Reserves capacity and creates an empty container for each train to store
- * position and speed values.
- */
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     initialize_vectors() {
@@ -269,19 +193,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 }
 
-/**
- * @brief Loads a solution from disk, including train position and speed
- * trajectories.
- *
- * Reads `train_pos.json` and `train_speed.json` from the solution's export
- * directory, parsing time-indexed (time, value) pairs for each train and
- * populating the solution's internal position and speed maps.
- *
- * @param working_directory Root directory containing the solution export.
- * @param solutionSubdirectory Subdirectory name within the solutions folder.
- * @param parameter_identifier Optional identifier to distinguish solution
- * variants.
- */
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     load_solution(const std::filesystem::path&      working_directory,
                   std::string_view const            solutionSubdirectory,
@@ -312,33 +223,11 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 }
 
-/**
- * @brief Exports the solution's train trajectories (position and speed over
- * time) to JSON files.
- *
- * Validates solution consistency before exporting. Delegates to the base class
- * for instance and solution metadata export, then writes `train_pos.json` and
- * `train_speed.json` containing per-train trajectory data.
- *
- * @throws ConsistencyException if the solution is not consistent.
- */
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     export_solution(
         const std::filesystem::path& working_directory,
         std::string_view const solutionSubdirectory, bool save_instance,
         std::optional<std::string> const& parameter_identifier) const {
-  /**
-   * This method exports the solution object to a specific path. This includes
-   * the following:
-   * - If export_instance is true, the instance is exported
-   * - dt, status, obj, and postprocessed are exported to p / solution /
-   * data.json
-   * - train_pos and train_speed are exported
-   *
-   * The method throws a
-   * ConsistencyException if the solution is not consistent.
-   *
-   */
 
   if (!check_consistency()) {
     throw exceptions::ConsistencyException();
@@ -373,17 +262,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   train_speed_file.close();
 }
 
-/**
- * @brief Retrieves the position of a train at a given time.
- *
- * @param tr_name Train name.
- * @param t Time at which to query position.
- * @return double The train's position at time `t`.
- *
- * @throws exceptions::TrainNotExistentException if the train does not exist.
- * @throws exceptions::ConsistencyException if no position data is available at
- * the specified time.
- */
 double
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_pos(
     const std::string& tr_name, double t) const {
@@ -400,18 +278,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_pos(
                                          " at time " + std::to_string(t));
 }
 
-/**
- * @brief Determines the edge and surrounding time steps for a train at a given
- * time.
- *
- * @param tr_name The name of the train.
- * @param t The time at which to query the train's edge.
- * @return EdgeTimeBound with the edge ID at the train's position and the
- * bracketing time steps.
- *
- * @throws TrainNotExistentException if the train does not exist.
- * @throws ConsistencyException if no recorded position covers the given time.
- */
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::EdgeTimeBound
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     get_edge_and_time_bounds(const std::string& tr_name, double t) const {
@@ -460,14 +326,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
           .next_time_step     = t1};
 }
 
-/**
- * @brief Computes position and velocity bounds for a train at a specified time.
- *
- * @param tr_name The train identifier.
- * @param t The time at which to compute bounds.
- * @return A `PosVelBound` struct with lower and upper bounds for position and
- * velocity.
- */
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::PosVelBound
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const {
@@ -540,19 +398,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   return {.pos = {.lb = lb, .ub = ub}, .vel = {.lb = v_lb, .ub = v_ub}};
 }
 
-/**
- * @brief Approximates the train's position and velocity at a given time.
- *
- * Interpolates position and velocity between the two nearest recorded time
- * points surrounding the requested time. If the train did not move during the
- * interval, returns the stationary position with zero velocity.
- *
- * @return A struct containing `pos` and `vel`, or `std::nullopt` if the
- * computed motion profile is infeasible.
- *
- * @throws exceptions::TrainNotExistentException If the train does not exist.
- * @throws exceptions::ConsistencyException If required time points are missing.
- */
 std::optional<
     cda_rail::instances::SolGeneralPerformanceOptimizationInstance::PosVel>
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
@@ -602,17 +447,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   return {{.pos = tr_pos, .vel = tr_vel}};
 }
 
-/**
- * @brief Retrieves the speed of a train at a given time.
- *
- * @param tr_name Name of the train.
- * @param t Time at which to retrieve the speed.
- * @return double The train's speed at time t.
- *
- * @throws TrainNotExistentException if the train does not exist.
- * @throws ConsistencyException if no speed data is available for the train at
- * time t.
- */
 double
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_speed(
     const std::string& tr_name, double t) const {
@@ -629,13 +463,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_speed(
                                          " at time " + std::to_string(t));
 }
 
-/**
- * @brief Retrieves all recorded times for a train's speed data.
- *
- * @return std::vector<double> Times in ascending order at which speed data was
- * recorded for the train.
- * @throws exceptions::TrainNotExistentException if the train does not exist.
- */
 std::vector<double>
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_times(
     const std::string& tr_name) const {
@@ -656,13 +483,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_times(
   return times;
 }
 
-/**
- * @brief Orders trains present on an edge by the time they reached its source.
- *
- * @param edge_index The index of the network edge.
- * @return Vector of train indices sorted by the time each train reached the
- * source position of the edge.
- */
 cda_rail::index_vector
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_order(
     size_t edge_index) const {
@@ -694,14 +514,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_order(
   return tr_on_edge_vec;
 }
 
-/**
- * @brief Orders trains traversing an edge or its reverse edge by arrival time.
- *
- * @param edge_index The edge index to query.
- * @return A vector of TrainDirection entries sorted by the time each train
- * reaches the edge's source position. The direction flag indicates forward
- * traversal on the edge (true) or traversal via its reverse edge (false).
- */
 std::vector<cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
                 TrainDirection>
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
@@ -748,17 +560,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   return ret_vec;
 }
 
-/**
- * @brief Finds the time at which a train reaches a specified position.
- *
- * @param tr_name The name of the train.
- * @param pos The position along the route.
- * @return double The time at which the train is at the given position.
- *
- * @throws exceptions::TrainNotExistentException if the train does not exist.
- * @throws exceptions::ConsistencyException if no recorded time has the train at
- * the given position.
- */
 double
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_time_at_pos(
     const std::string& tr_name, double pos) const {
@@ -775,19 +576,6 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_time_at_pos(
                                          " at position " + std::to_string(pos));
 }
 
-/**
- * @brief Records the position of a train at a given time.
- *
- * If a position already exists for the given time, it is overwritten;
- * otherwise, a new entry is inserted.
- *
- * @param tr_name The train name.
- * @param t The time point.
- * @param pos The position on the route.
- *
- * @throws TrainNotExistentException If the train does not exist.
- * @throws ConsistencyException If the position or time is negative.
- */
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     add_train_pos(const std::string& tr_name, double t, double pos) {
   auto const& train_list = this->get_instance()->get_const_train_list();
@@ -810,19 +598,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 }
 
-/**
- * @brief Records or updates the speed of a train at a specific time.
- *
- * If an entry for time @p t already exists, its speed is overwritten; otherwise
- * a new entry is created.
- *
- * @param tr_name Name of the train.
- * @param t Time at which to record the speed. Must be non-negative.
- * @param speed The speed value. Must be non-negative.
- *
- * @throws TrainNotExistentException If the train does not exist.
- * @throws ConsistencyException If speed or time is negative.
- */
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     add_train_speed(const std::string& tr_name, double t, double speed) {
   auto const& train_list = this->get_instance()->get_const_train_list();
@@ -845,18 +620,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 }
 
-/**
- * @brief Verifies the internal consistency of the solution data.
- *
- * Validates that all constraints are satisfied, including:
- * - Base class consistency.
- * - For each train with solution data: the train route is present, at least two
- * time points are recorded (required to recover timing information), position
- * and speed time keys are aligned, and all position and speed values are
- * non-negative and within valid bounds.
- *
- * @return `true` if all consistency checks pass, `false` otherwise.
- */
 bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     check_consistency() const {
   if (!SolGeneralProblemInstanceWithScheduleAndRoutes::check_consistency()) {
@@ -921,24 +684,12 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 // --------------------
 // NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if)
 #if 0
-/**
- * @brief Initializes per-edge storage for Variable Speed Section positions.
- */
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     initialize_vss_vector() {
   m_vss_pos = std::vector<std::vector<double>>(
       this->get_instance()->get_const_network().number_of_edges());
 }
 
-/**
- * @brief Adds a VSS position on an edge, optionally also on its reverse edge.
- *
- * @param edge_input The edge specification.
- * @param pos Position on the edge; must be strictly between 0 and the edge length.
- * @param reverse_edge If `true`, also adds the position on the reverse edge.
- *
- * @throws ConsistencyException if `pos` is not strictly between 0 and the edge length.
- */
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     add_vss_pos(cda_rail::Network::EdgeInput const& edge_input, double pos,
                 bool reverse_edge) {
@@ -969,16 +720,6 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   }
 }
 
-/**
- * @brief Sets the VSS positions for an edge.
- *
- * @param edge_input Identifies the edge.
- * @param pos Vector of positions to store on the edge.
- *
- * @throws ConsistencyException If any position is less than or equal to zero
- *         (within tolerance) or greater than or equal to the edge length
- *         (within tolerance).
- */
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     set_vss_pos(cda_rail::Network::EdgeInput const& edge_input,
                 std::vector<double>                 pos) {
@@ -999,11 +740,6 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   m_vss_pos.at(edge_id) = std::move(pos);
 }
 
-/**
- * @brief Clears VSS position data for the specified edge.
- *
- * @param edge_input Identifies the edge whose VSS position data should be cleared.
- */
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     reset_vss_pos(cda_rail::Network::EdgeInput const& edge_input) {
   auto const edge_id =
@@ -1011,12 +747,6 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   m_vss_pos.at(edge_id).clear();
 }
 
-/**
- * @brief Exports the solution including variable speed section positions.
- *
- * Writes solution files and VSS position data for each network edge to
- * vss_pos.json in the export directory.
- */
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     export_solution(
         const std::filesystem::path& workingDirectory,
@@ -1045,14 +775,6 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   vss_pos_file.close();
 }
 
-/**
- * @brief Validates that VSS position data is consistent with network edge properties.
- *
- * Checks that parent class consistency holds, VSS positions exist only on breakable edges,
- * and all stored positions fall within their respective edge bounds.
- *
- * @return `true` if all consistency checks pass, `false` otherwise.
- */
 bool cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     check_consistency() const {
   if (!SolGeneralPerformanceOptimizationInstance::check_consistency()) {
@@ -1074,14 +796,6 @@ bool cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   return true;
 }
 
-/**
- * @brief Loads VSS position data from a JSON file into the solution.
- *
- * Delegates to the base class to load the primary solution data, then reads
- * `vss_pos.json` from the export directory. For each edge identified by name,
- * extracts and sorts the corresponding position vector, storing it in
- * `m_vss_pos` indexed by edge ID.
- */
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     load_solution(const std::filesystem::path&      workingDirectory,
                   std::string_view const            solutionSubdirectory,

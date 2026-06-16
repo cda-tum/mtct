@@ -29,13 +29,6 @@
 
 // ----------------
 // CONSTRUCTOR
-/**
- * @brief Creates a GreedySimulator configured with a performance optimization
- * instance and TTD sections.
- * @param instance The performance optimization instance for the simulation.
- * @param ttd_sections Time-division-domain sections for coordinating train
- * movements.
- */
 
 cda_rail::simulator::GreedySimulator::GreedySimulator(
     cda_rail::instances::GeneralPerformanceOptimizationInstance const& instance,
@@ -46,14 +39,6 @@ cda_rail::simulator::GreedySimulator::GreedySimulator(
               instance),
           std::move(ttd_sections)) {}
 
-/**
- * @brief Initializes a GreedySimulator using precomputed routing and ordering
- * data.
- *
- * This constructor variant accepts precomputed train edges, TTD orders, vertex
- * orders, and stop positions, delegating to GeneralSimulator for
- * initialization.
- */
 cda_rail::simulator::GreedySimulator::GreedySimulator(
     cda_rail::instances::GeneralPerformanceOptimizationInstance const& instance,
     std::vector<cda_rail::index_set>    ttd_sections,
@@ -71,64 +56,11 @@ cda_rail::simulator::GreedySimulator::GreedySimulator(
 
 // ---------------
 // SIMULATE
-/**
- * @brief Simulates train movements through the network subject to headway,
- * moving authority, stop, and route constraints.
- *
- * Runs a time-stepped simulation where trains enter according to schedule, move
- * with authority constraints and stop requirements, and exit the network or
- * terminate at stations. Detects deadlock conditions and records exit times,
- * stop times, braking data, and vertex headways.
- *
- * @param dt Time step duration in seconds. Must be positive.
- * @param late_entry_possible If true, trains may enter the network after their
- * scheduled entry time; otherwise, a delayed entry causes simulation failure.
- * @param limit_speed_by_leaving_edges If true, speed is capped when a train
- * approaches or is about to leave the network.
- * @param save_trajectories If true, records position and velocity for each
- * train at every time step; otherwise, only final state is preserved.
- *
- * @return SimulatorResults containing:
- *         - success: `true` if all trains reached their destination without
- * deadlock, `false` otherwise.
- *         - exit_times: departure/exit time for each train.
- *         - stop_times: vector of intermediate stop times for each train.
- *         - braking_times and braking_distances: timing and distance of
- * route-end braking for each train.
- *         - vertex_headways: final headway constraint for each network vertex.
- *         - train_trajectories: map of time to position/velocity for each train
- * (empty if save_trajectories is false).
- *
- * @throws std::runtime_error if the cycle limit is exhausted without completing
- * the simulation.
- */
 
 cda_rail::simulator::SimulatorResults
 cda_rail::simulator::GreedySimulator::simulate(
     double dt, bool late_entry_possible, bool limit_speed_by_leaving_edges,
     bool save_trajectories) const {
-  /**
-   * This function simulates train movements as specified by the member
-   * variables. It returns a vector of doubles denoting the travel times of each
-   * of the trains The (possibly weighted) sum of these values is usually the
-   * current objective value.
-   *
-   * @param dt: The time step for the simulation. This is the time in seconds.
-   * Default: 6s
-   * @param late_entry_possible: If true, trains can enter the network later
-   * than scheduled, otherwise the settings are infeasible. Default: false
-   * @param late_exit_possible: If true, trains can exit the network later than
-   * scheduled, otherwise the settings are infeasible. Default: false
-   * @param late_stop_possible: If true, trains can stop later than scheduled,
-   * otherwise the settings are infeasible. Default: false
-   *
-   * @return: A tuple containing
-   *  - a boolean indicating whether the simulation was successful,
-   *  - a vector of doubles with the exit times of each train,
-   *  - a vector with the braking times and distances due to route ending for
-   * every train,
-   *  - a vector of doubles with the final vertex headways
-   */
 
   // NOLINTBEGIN(*-inconsistent-ifelse-braces)
 
@@ -512,40 +444,11 @@ cda_rail::simulator::GreedySimulator::simulate(
 // PRIVATE HELPER FUNCTIONS
 // ----------------------------
 
-/**
- * @brief Determines a train's occupancy and position on a route edge.
- *
- * @param milestones Route cumulative distances. If empty, automatically
- * computed.
- *
- * @return Occupancy flags (whether the train, rear, and front occupy the edge)
- * and the train's rear and front distances from the edge's start.
- *
- * @throws ConsistencyException if milestone count does not match edges + 1.
- * @throws InvalidInputException if edge number is out of bounds.
- */
 
 cda_rail::simulator::GreedySimulator::PosOnEdgeReturn
 cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
     size_t tr, const TrainPosition& pos, size_t edge_number,
     std::vector<double> milestones) const {
-  /**
-   * This function returns the position of a train on a specific edge of its
-   * route.
-   *
-   * @param tr: The id of the train for which the position is calculated.
-   * @param pos: The position of the train on its route.
-   * @param edge_number: The index of the edge in the train's route.
-   * @param milestones: A vector of doubles representing the possibly
-   * precomputed milestones.
-   *
-   * @return: A tuple containing:
-   * - a boolean indicating whether the train is on the edge,
-   * - a pair of booleans indicating whether the trains rear and/or front is on
-   * the edge,
-   * - a pair of doubles with the rear and front positions of the train on the
-   * edge.
-   */
   get_instance()->get_const_train_list().throw_if_train_not_exist(tr);
 
   if (milestones.empty()) {
@@ -584,19 +487,6 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
                                 pos.front - milestone_pair.first)}};
 }
 
-/**
- * @brief Computes the train's position on a specific edge of its route.
- *
- * @param edge_id Network edge identifier. Must exist on the train's route.
- * @param milestones Distance milestones along the route. If empty, computed
- * automatically.
- * @return Occupancy flags and distances indicating the train's location on the
- * edge.
- *
- * @throw EdgeNotExistentException if the edge does not exist in the network.
- * @throw ConsistencyException if the edge is not on the train's route.
- * @throw TrainNotExistentException if the train does not exist.
- */
 cda_rail::simulator::GreedySimulator::PosOnEdgeReturn
 cda_rail::simulator::GreedySimulator::get_position_on_edge(
     size_t tr, const TrainPosition& pos, size_t edge_id,
@@ -620,44 +510,9 @@ cda_rail::simulator::GreedySimulator::get_position_on_edge(
   return get_position_on_route_edge(tr, pos, edge_index, std::move(milestones));
 }
 
-/**
- * @brief Determines whether a train occupies, is behind, or relates to a TTD
- * section according to the specified occupation model.
- *
- * Examines the train's position relative to all edges comprising the TTD
- * section. The return value is determined by `occupation_type`:
- * - `OnlyOccupied`: Returns `true` if the train physically occupies any edge in
- * the section.
- * - `OnlyBehind`: Returns `true` if the train has fully cleared the section
- * (rear beyond all edges); immediately returns `false` if overlapping any edge.
- * - `OccupiedOrBehind`: Returns `true` if the train occupies or has cleared the
- * entire section.
- *
- * @param occupation_type The occupation check mode, determining how the train's
- * position is evaluated.
- *
- * @return `true` if the train satisfies the condition specified by
- * `occupation_type`; `false` otherwise.
- *
- * @throws InvalidInputException if `ttd` is out of bounds.
- */
 bool cda_rail::simulator::GreedySimulator::is_on_ttd(
     size_t tr, size_t ttd, const TrainPosition& pos,
     TTDOccupationType occupation_type) const {
-  /**
-   * This function checks if a train is on a TTD section at a given position.
-   *
-   * @param tr: The id of the train to check.
-   * @param ttd: The index of the TTD section to check.
-   * @param pos: The position of the train on its route.
-   * @param occupation_type: The type of occupation to check for. It can be one
-   * of the following:
-   * - OnlyOccupied: The train must be on the TTD section.
-   * - OnlyBehind: The train must be behind the TTD section.
-   * - OccupiedOrBehind: The train can be either on or behind the TTD section.
-   *
-   * @return: A boolean indicating whether the train is on the TTD section.
-   */
   if (ttd >= get_ttd_sections().size()) {
     throw cda_rail::exceptions::InvalidInputException(concatenate_string_views(
         {"TTD index out of bounds: ", std::to_string(ttd),
@@ -700,35 +555,12 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(
   return potentially_behind; // Train is not on the TTD section
 }
 
-/**
- * @brief Determines if a train can safely enter the network at its scheduled
- * entry point.
- *
- * Verifies that no blocking conditions prevent entry, including occupancy
- * within the train's initial braking distance and TTD ordering constraints.
- *
- * @param tr The train identifier.
- * @param train_positions Current positions of each train.
- * @param tr_on_edges Per-edge train occupancy information.
- *
- * @return `true` if entry is feasible, `false` otherwise.
- */
 
 bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
     size_t tr, const std::vector<TrainPosition>& train_positions,
     const std::vector<double>&                     train_velocities,
     const std::unordered_set<size_t>&              trains_in_network,
     const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
-  /**
-   * This function checks if it is ok for a train to enter the network, i.e., if
-   * all of its initial braking distance is cleared.
-   *
-   * @param tr: The id of the train to check.
-   * @param train_positions: A vector of pairs containing the rear and front
-   * positions of each train in the network.
-   * @param trains_in_network: A set of train ids that are currently in the
-   * network.
-   */
 
   const auto v0 = get_instance()->get_const_schedule(tr).get_initial_velocity();
   const auto bd = tr_braking_distance(tr, v0);
@@ -798,43 +630,12 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
   return true;
 }
 
-/**
- * @brief Determines which trains can enter the network at the current
- * simulation time.
- *
- * Validates that each entering train has reached its scheduled entry time,
- * appears in its entry vertex's ordering, and (if not first in order) has its
- * immediate predecessor already in the network or departed. Rejects late entry
- * if `late_entry_possible` is false and `t - entry_time > buffer_time`.
- *
- * @param buffer_time Grace period after scheduled entry time (only enforced
- * when `late_entry_possible` is false).
- *
- * @return A pair: `true` if feasible trains exist, `false` if late-entry
- * window has closed; the set of entering trains, or a singleton containing
- * the rejected train on failure.
- */
 std::pair<bool, std::unordered_set<size_t>>
 cda_rail::simulator::GreedySimulator::get_entering_trains(
     double t, const std::unordered_set<size_t>& tr_present,
     const std::unordered_set<size_t>& tr_left,
     const std::unordered_set<size_t>& tr_finished_simulating,
     bool late_entry_possible, double buffer_time) const {
-  /**
-   * This function checks which trains are scheduled to enter the network at
-   * time `t` or later, and returns a vector of their indices.
-   *
-   * @param t: The time at which to check for entering trains.
-   * @param tr_present: A set of train indices that are currently present in the
-   * network.
-   * @param tr_left: A set of train indices that have left the network.
-   * @param late_entry_possible: If true, trains can enter the network later
-   * than scheduled.
-   *
-   * @return: A pair containing a boolean indicating whether the operation was
-   * successful, and a set of train indices that are scheduled to enter the
-   * network at time `t` or later.
-   */
 
   exceptions::throw_if_negative(buffer_time, "Buffer time for late entry");
 
@@ -889,58 +690,13 @@ cda_rail::simulator::GreedySimulator::get_entering_trains(
   return {true, entering_trains};
 }
 
-/**
- * @brief Determines the maximum displacement a train can achieve in a time
- * step.
- *
- * @param train The train providing acceleration, deceleration, and max speed
- * constraints.
- * @param v_0 Initial velocity in m/s.
- * @param dt Time step duration in seconds.
- *
- * @return Maximum displacement in meters.
- */
 double cda_rail::simulator::GreedySimulator::max_displacement(
     const cda_rail::Train& train, double v_0, double dt) {
-  /**
-   * Calculate the maximum displacement of a train in a given time step.
-   *
-   * @param train: The train for which the maximum displacement is calculated.
-   * @param v_0: The initial velocity of the train in m/s.
-   * @param dt: The time step in seconds.
-   *
-   * @return: The maximum displacement of the train in the given time step.
-   */
   return cda_rail::max_braking_pos_after_dt_linear_movement(
       v_0, train.get_max_speed(), train.get_acceleration(),
       train.get_deceleration(), dt);
 }
 
-/**
- * @brief Determines the maximum distance a train can travel before colliding
- * with another train or violating TTD ordering constraints.
- *
- * Scans ahead along the train's route edges to identify blocking conditions:
- * TTD section ordering conflicts, reverse-direction train occupancy, or
- * same-direction trains already on upcoming edges. Returns the distance to the
- * nearest obstruction, capped by the search horizon.
- *
- * @param tr The train for which the maximum safe distance is computed.
- * @param max_displacement The search horizon; results will not exceed this
- * distance.
- * @param train_positions Positions of all trains.
- * @param train_velocities Velocities of all trains; used to compute braking
- * distances for collision detection.
- * @param trains_in_network Set of trains currently in the network.
- * @param trains_left Set of trains that have exited the network.
- * @param tr_on_edges For each edge, the set of trains with route edges on that
- * edge.
- *
- * @return The maximum distance train `tr` can safely travel, not exceeding
- * `max_displacement`.
- *
- * @throws ConsistencyException if `tr` is not in `trains_in_network`.
- */
 double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
     size_t tr, double max_displacement,
     const std::vector<TrainPosition>&              train_positions,
@@ -948,25 +704,6 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
     const std::unordered_set<size_t>&              trains_in_network,
     const std::unordered_set<size_t>&              trains_left,
     const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
-  /**
-   * Calculate the shortest distance of tr to the following train.
-   *
-   * @param tr: The id of the train for which the distance is calculated.
-   * @param max_displacement: The maximum displacement of the train (no search
-   * after this distance).
-   * @param train_positions: A vector of pairs containing the rear and front
-   * positions of each train in the network.
-   * @param train_velocities: A vector containing the velocities of each train.
-   * This is needed to check for collisions with trains traveling in the
-   * opposite direction.
-   * @param trains_in_network: A set of train ids that are currently in the
-   * network.
-   * @param tr_on_edges: A vector of unordered sets, where each set contains the
-   * indices of trains that are routed on a specific edge.
-   *
-   * @return: The absolute distance of the train to the next train in the
-   * network.
-   */
   if (!trains_in_network.contains(tr)) {
     throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
         {"Train ",
@@ -1084,36 +821,10 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
                            // range
 }
 
-/**
- * @brief Constrains moving authority and maximum velocity based on reachability
- * to an upcoming vertex.
- *
- * If the train can reach the vertex within the timestep at initial velocity
- * `v_0`, caps the maximum velocity to the constraint `v_m`. Otherwise, reduces
- * moving authority to ensure the train can brake and arrive at the vertex at or
- * below `v_m`.
- *
- * @param ma Current moving authority.
- * @param max_v Current maximum velocity.
- * @param pos Current position.
- * @param vertex_pos Position of the constraining vertex.
- * @param v_0 Initial velocity.
- * @param v_m Maximum speed permitted at or after the vertex.
- * @param d Deceleration used for braking calculations.
- * @param dt Timestep duration.
- * @return Adjusted moving authority and maximum velocity.
- */
 cda_rail::simulator::PosVel
 cda_rail::simulator::GreedySimulator::speed_restriction_helper(
     double ma, double max_v, double pos, double vertex_pos, double v_0,
     double v_m, double d, double dt) {
-  /**
-   * This function serves as a helper function for the simulator at a certain
-   * position. If the train can reach the next edge within one time step, it
-   * limits the speed directly. Otherwise, it calculates the moving authority to
-   * ensure that the train can brake well in advance to arrive only at the
-   * limited speed when entering the edge.
-   */
 
   // Can the train reach the next edge within one time step?
   const auto max_dist = (v_0 + v_m) * dt / 2.0;
@@ -1131,65 +842,12 @@ cda_rail::simulator::GreedySimulator::speed_restriction_helper(
   return {.pos = ma, .vel = max_v};
 }
 
-/**
- * @brief Computes moving authority and maximum speed constraints for a train,
- * accounting for edge reachability, headway restrictions, and route-end
- * effects.
- *
- * For edges the train currently occupies, applies their maximum speed directly.
- * For future edges within the displacement horizon, models speed constraints by
- * reducing moving authority to ensure the train can brake to the required
- * speed. Accounts for blocked vertices (headway constraints) that prevent the
- * train from leaving certain edges. Also computes route-end constraints (exit
- * velocity when leaving the network).
- *
- * Returns both full constraints and variants excluding route-end effects, to
- * support detection of route-ending braking.
- *
- * @param tr Train identifier.
- * @param train Train properties (max speed, acceleration, deceleration,
- * length).
- * @param pos Current position of the train along its route.
- * @param v_0 Current velocity in m/s.
- * @param max_displacement Maximum displacement in the next timestep.
- * @param dt Timestep duration in seconds.
- * @param blocked_vertices Vertices currently subject to headway constraints.
- * @param also_limit_by_leaving_edges If `true`, limits by edges the train's
- * rear is leaving; if `false`, only by edges the train's front has left.
- *
- * @return Structure containing moving authority, maximum speed, and their
- * route-end-excluded variants.
- */
 cda_rail::simulator::GreedySimulator::MaAndMaxVResult
 cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     size_t tr, const cda_rail::Train& train, double pos, double v_0,
     double max_displacement, double dt,
     cda_rail::index_set const& blocked_vertices,
     bool                       also_limit_by_leaving_edges) const {
-  /**
-   * This function calculates the future maximum speed constraints for a train.
-   * If an edge is reachable, the trains speed is restricted directly.
-   * Otherwise, future speed restrictions are modeled through restrictions on
-   * the trains moving authority to ensure braking well in advance.
-   * OBS: The speed restriction can also be induced by the exit velocity of the
-   * train.
-   *
-   * @param tr: The id of the train for which the constraints are calculated.
-   * @param train: The train object containing the train's properties.
-   * @param pos: The current position of the train on its route.
-   * @param v_0: The initial velocity of the train in m/s.
-   * @param max_displacement: The maximum displacement of the train in the next
-   * time step.
-   * @param dt: The time step in seconds.
-   * @param blocked_vertices: Vertices that are currently blocked due to headway
-   * constraints
-   * @param also_limit_by_leaving_edges: If true, the speed is limited by the
-   * edges the train is leaving, otherwise only by the front of the train.
-   *
-   * @return: A pair of doubles representing the:
-   * - maximum moving authority from the trains current position and
-   * - the maximum speed allowed for the next speed
-   */
 
   round_small_numbers_to_zero_inplace(pos);
   round_small_numbers_to_zero_inplace(v_0);
@@ -1268,11 +926,6 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
           .max_v_without_route_end = retval_without_route_end.vel};
 }
 
-/**
- * @brief Applies the next-stop constraint to moving authority.
- *
- * @return double The constrained moving authority distance.
- */
 double cda_rail::simulator::GreedySimulator::get_next_stop_ma(
     double max_displacement, double pos, double next_stop_pos) {
   /*
@@ -1282,38 +935,10 @@ double cda_rail::simulator::GreedySimulator::get_next_stop_ma(
   return std::min(max_displacement, next_stop_pos - pos);
 }
 
-/**
- * @brief Limits moving authority based on exit vertex ordering constraints.
- *
- * If this train must leave via its scheduled exit vertex and is not first in
- * the exit order, returns reduced authority to keep the train from overtaking a
- * predecessor still at the exit vertex. Otherwise returns the full maximum
- * displacement.
- *
- * @param trains_left Trains that have already left the network.
- *
- * @return Moving authority accounting for exit vertex ordering constraints.
- */
 double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
     size_t tr, double pos, double max_displacement,
     const std::unordered_set<size_t>& trains_in_network,
     const std::unordered_set<size_t>& trains_left) const {
-  /**
-   * This function limits the moving authority if the train cannot leave the
-   * network due to the exit vertex order.
-   *
-   * @param tr: The id of the train for which the moving authority is
-   * calculated.
-   * @param pos: The current position of the train on its route.
-   * @param max_displacement: The maximum displacement of the train in the next
-   * time step.
-   * @param trains_in_network: A unordered_set containing the ids of trains that
-   * are currently in the network.
-   * @param trains_left: A unordered_set containing the ids of trains that have
-   * not yet left the network.
-   *
-   * @return: The maximum moving authority to the exit vertex order.
-   */
 
   if (get_train_edges_of_tr(tr).empty()) {
     return max_displacement; // No edges, no moving authority
@@ -1346,23 +971,6 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
   return std::min(max_displacement, train_edge_length(tr) - pos);
 }
 
-/**
- * @brief Determines the maximum moving authority and velocity for a train
- * during a simulation timestep.
- *
- * Computes feasible motion bounds by accounting for the next scheduled stop,
- * exit vertex ordering, other train occupancy, blocked vertices, and
- * route-ending constraints.
- *
- * @param tr Train index.
- * @param blocked_vertices Network vertices where motion is restricted at the
- * current time.
- * @param also_limit_speed_by_leaving_edges If `true`, applies additional speed
- * constraints when a train exits network edges.
- *
- * @return `MaAndMaxVResult` containing maximum moving authority and velocity,
- * with variants that exclude route-end constraints.
- */
 cda_rail::simulator::GreedySimulator::MaAndMaxVResult
 cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
     size_t tr, const std::vector<double>& train_velocities,
@@ -1388,31 +996,10 @@ cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
       blocked_vertices, also_limit_speed_by_leaving_edges);
 }
 
-/**
- * @brief Computes the maximum end-of-step velocity subject to moving authority
- * constraint.
- *
- * @param v_0 Initial velocity in m/s.
- * @param ma Moving authority (maximum displacement) in m.
- * @param d Deceleration in m/s².
- * @param dt Time step in seconds.
- * @return Maximum velocity at the end of the time step in m/s.
- */
 
 double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
                                                             double ma, double d,
                                                             double dt) {
-  /**
-   * This function calculates the maximum velocity at the end of a time step
-   * without exceeding the moving authority.
-   *
-   * @param v_0: The initial velocity of the train in m/s.
-   * @param ma: The moving authority in m.
-   * @param d: The deceleration of the train in m/s^2.
-   * @param dt: The time step in seconds.
-   *
-   * @return: The maximum velocity at the end of the time step in m/s.
-   */
 
   // Assume that a train accelerates linearly during the time step from v_0
   // (given) to v_1 (to be calculated). x_1 = (v_0 + v_1) * dt/2 bd = v_1 * v_1
@@ -1445,37 +1032,10 @@ double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
   return 2.0 * b / (a + std::sqrt((a * a) + (4.0 * b)));
 }
 
-/**
- * @brief Advances a train's front position by the distance it travels in the
- * timestep, limited by moving authority.
- *
- * @param tr The train ID.
- * @param v_0 Initial velocity in m/s.
- * @param v_1 Final velocity in m/s.
- * @param ma Moving authority in m.
- * @param dt Time step in seconds.
- * @param train_positions The train position data, modified in place.
- *
- * @return `true` if the train moved forward, `false` otherwise.
- */
 
 bool cda_rail::simulator::GreedySimulator::move_train(
     size_t tr, double v_0, double v_1, double ma, double dt,
     std::vector<TrainPosition>& train_positions) {
-  /**
-   * Move the trains front position based on the given parameters assuming
-   * linear movement. This function changes the train_position passed by
-   * reference.
-   *
-   * @param tr: The id of the train to move.
-   * @param v_0: The initial velocity of the train in m/s.
-   * @param v_1: The velocity of the train at the end of the time step in m/s.
-   * @param ma: The moving authority in m.
-   * @param dt: The time step in seconds.
-   * @param train_positions: A vector of pairs containing the rear and front
-   *
-   * @return : A boolean indicating whether the train moved forward.
-   */
 
   if (tr >= train_positions.size()) {
     throw cda_rail::exceptions::TrainNotExistentException(tr);
@@ -1493,19 +1053,8 @@ bool cda_rail::simulator::GreedySimulator::move_train(
   return move_distance > 0;
 }
 
-/**
- * @brief Sets each train's rear position based on its front position and
- * length.
- */
 void cda_rail::simulator::GreedySimulator::update_rear_positions(
     std::vector<TrainPosition>& train_positions) const {
-  /**
-   * Update the rear positions of all trains based on their front positions and
-   * train lengths. Tis function changes the train_positions passed by
-   * reference.
-   *
-   * @param train_positions: A vector of pairs containing the rear and front
-   */
 
   for (size_t tr = 0; tr < train_positions.size(); ++tr) {
     const auto& train = get_instance()->get_const_train_list().get_train(tr);
@@ -1514,25 +1063,10 @@ void cda_rail::simulator::GreedySimulator::update_rear_positions(
   }
 }
 
-/**
- * @brief Classifies the endpoint condition a train has reached.
- *
- * @return `DestinationType::None` if the train front has not reached the route
- * end. `DestinationType::Network` if the train is exiting the network (front
- * has fully cleared). `DestinationType::Station` if there is a scheduled stop
- * at the route end. `DestinationType::Edge` if the train reaches the route end
- * without exiting or stopping.
- */
 
 cda_rail::simulator::GreedySimulator::DestinationType
 cda_rail::simulator::GreedySimulator::tr_reached_end(
     size_t tr, const std::vector<TrainPosition>& train_pos) const {
-  /**
-   * This function checks if a train has reached the end of its route.
-   * If yes, it determines if this is due to the train leaving the network or
-   * stopping at the end of its route. In the latter case, it is checked if the
-   * route end is a station stop.
-   */
 
   const auto  route_len = train_edge_length(tr);
   const auto& pos       = train_pos.at(tr).front;

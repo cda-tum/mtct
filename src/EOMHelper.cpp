@@ -14,66 +14,22 @@
 namespace cda_rail {
 namespace { // anonymous namespace for internal linkage
 
-template <typename... Args> /**
-                             * @brief Rounds all arguments to zero below default
-                             * tolerance.
-                             *
-                             * Modifies each argument in-place, treating values
-                             * smaller than the default tolerance threshold as
-                             * zero.
-                             */
-                            void round_with_default_eps(Args&... args) {
+template <typename... Args> void round_with_default_eps(Args&... args) {
   // Refactoring helper: normalize multiple values with default tolerance.
   (round_small_numbers_to_zero_inplace(args), ...);
 }
 
-template <typename... Args> /**
-                             * @brief Rounds all provided values to zero if they
-                             * fall within a specified tolerance.
-                             *
-                             * @param eps Tolerance threshold for rounding.
-                             * @param args Values to round in-place.
-                             */
-                            void round_with_eps(double eps, Args&... args) {
+template <typename... Args> void round_with_eps(double eps, Args&... args) {
   // Refactoring helper: normalize multiple values with an explicit tolerance.
   (round_small_numbers_to_zero_inplace(args, eps), ...);
 }
 
-/**
- * @brief Computes the square of a number.
- *
- * @return double The square of the input value.
- */
 [[nodiscard]] double square(double value) { return value * value; }
 
-/**
- * @brief Computes braking distance for a given velocity and deceleration.
- *
- * Calculates the distance required to decelerate from velocity v to rest using
- * constant deceleration d. No input validation is performed; use the public
- * `braking_distance` function for validated computation.
- *
- * @param v Initial velocity.
- * @param d Constant deceleration rate.
- * @return The braking distance.
- */
 [[nodiscard]] double braking_distance_unchecked(double v, double d) {
   return square(v) / (2 * d);
 }
 
-/**
- * @brief Computes a numerically stable form of a ratio.
- *
- * Returns `numerator / (scale * (sqrt(radicand) + denominator_offset))`.
- * This algebraic arrangement avoids cancellation errors in numerical
- * computation.
- *
- * @param numerator Dividend.
- * @param scale Scaling factor for the denominator.
- * @param radicand Value under the square root.
- * @param denominator_offset Added to the square root in the denominator.
- * @return The stable ratio.
- */
 [[nodiscard]] double stable_ratio_with_sqrt(double numerator, double scale,
                                             double radicand,
                                             double denominator_offset) {
@@ -81,12 +37,6 @@ template <typename... Args> /**
   return numerator / (scale * (std::sqrt(radicand) + denominator_offset));
 }
 
-/**
- * @brief Computes the time to cover a distance under constant acceleration
- * using a numerically stable form.
- *
- * @return Time to traverse the distance; `0` if distance is zero.
- */
 [[nodiscard]] double stable_phase_time(double distance, double initial_speed,
                                        double acceleration) {
   // Returns the time to cover `distance` from `initial_speed` at constant
@@ -108,17 +58,6 @@ struct DistancePhases {
   double third;
 };
 
-/**
- * @brief Partitions traveled distance into three segments based on phase
- * boundaries.
- *
- * @param x Traveled distance.
- * @param s_1 Distance at end of first phase.
- * @param s_2 Distance at end of second phase.
- * @param s Total profile distance.
- * @return DistancePhases with `first`, `second`, `third` fields containing
- *         distance traveled in each phase.
- */
 [[nodiscard]] DistancePhases
 split_distance_by_change_points(double x, double s_1, double s_2, double s) {
   // Refactoring helper: split traveled distance into the 3 profile phases.
@@ -129,12 +68,6 @@ split_distance_by_change_points(double x, double s_1, double s_2, double s) {
   };
 }
 
-/**
- * @brief Normalizes moving authority push inputs.
- *
- * Rounds `v_0`, `a`, and `s` to zero if below tolerance.
- * Rounds `d` to zero if slightly negative.
- */
 void normalize_ma_push_inputs(double& v_0, double& a, double& d, double& s) {
   // Refactoring helper: centralize MA-input rounding and near-zero handling.
   round_with_eps(GRB_EPS, v_0, a, s);
@@ -143,15 +76,6 @@ void normalize_ma_push_inputs(double& v_0, double& a, double& d, double& s) {
   }
 }
 
-/**
- * @brief Validates and normalizes an overlap braking distance.
- *
- * Rounds the input to zero if it falls within tolerance and validates
- * that the value is non-negative.
- *
- * @param obd Overlap braking distance.
- * @return The normalized overlap braking distance.
- */
 [[nodiscard]] double normalize_obd(double obd) {
   // Refactoring helper: shared validation for overlap braking distance.
   round_with_eps(GRB_EPS, obd);
@@ -172,18 +96,6 @@ struct LineSpeedProfile {
   double s_1;
 };
 
-/**
- * @brief Computes parameters for a three-phase motion profile.
- *
- * Determines phase accelerations, times, and distances for acceleration,
- * cruise, and deceleration phases. Validates feasibility within the given
- * distance.
- *
- * @return Profile structure containing all computed phase parameters.
- *
- * @throws ConsistencyException if the motion is infeasible within the available
- * distance.
- */
 [[nodiscard]] LineSpeedProfile build_line_speed_profile(double v_1, double v_2,
                                                         double v_line, double a,
                                                         double d, double s) {
@@ -227,17 +139,6 @@ struct LineSpeedProfile {
           .s_1        = s_1};
 }
 
-/**
- * @brief Determines if a time query is beyond the speed profile endpoint with
- * numeric tolerance.
- *
- * @param total_time Nominal profile end time.
- * @param function_name Name of the calling function for error reporting.
- * @return true if time is treated as after the profile end within tolerance,
- * false if within tolerance of end.
- * @throws InvalidInputException if time exceeds the adjusted profile boundary
- * accounting for line speed precision.
- */
 [[nodiscard]] bool time_is_after_profile_end(double v_1, double v_2,
                                              double v_line, double a, double d,
                                              double s, double t,
@@ -266,14 +167,6 @@ struct LineSpeedProfile {
 
 // ---------------------------
 // GENERAL MEASURES
-/**
- * @brief Computes the braking distance from a given speed under constant
- * deceleration.
- *
- * @param v Speed.
- * @param d Deceleration rate.
- * @return double The braking distance required to stop.
- */
 
 double cda_rail::braking_distance(double v, double d) {
   exceptions::throw_if_negative(v, "Speed");
@@ -282,20 +175,6 @@ double cda_rail::braking_distance(double v, double d) {
   return braking_distance_unchecked(v, d);
 }
 
-/**
- * @brief Computes the distance traveled when accelerating for a given time and
- * then braking to a complete stop.
- *
- * Accelerates from the initial speed for the specified duration, capped at the
- * maximum speed constraint, then adds the braking distance from the reached
- * speed.
- *
- * @return double The total distance traveled during acceleration and braking
- * phases.
- *
- * @throws exceptions::InvalidInputException If time is negative, maximum speed
- * is below initial speed, or acceleration or deceleration are non-positive.
- */
 double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
                                                           double v_max,
                                                           double a, double d,
@@ -321,39 +200,12 @@ double cda_rail::max_braking_pos_after_dt_linear_movement(double v_0,
 
 // ---------------------------
 // MINIMAL TRAVEL TIMES
-/**
- * @brief Computes the minimum time to travel the full distance.
- *
- * @param v_1 Initial speed.
- * @param v_2 Final speed.
- * @param v_m Maximum line speed.
- * @param a Acceleration.
- * @param d Deceleration.
- * @param s Distance to travel.
- * @return double The minimum travel time.
- */
 
 double cda_rail::min_travel_time(double v_1, double v_2, double v_m, double a,
                                  double d, double s) {
   return min_travel_time_from_start(v_1, v_2, v_m, a, d, s, s);
 }
 
-/**
- * @brief Computes the minimal time to travel a given distance on a segment.
- *
- * Calculates the minimum time required to travel distance @p x on a segment of
- * length @p s, starting at velocity @p v_1 and ending at velocity @p v_2,
- * under acceleration @p a and deceleration @p d constraints. The motion profile
- * consists of three phases: acceleration to maximum velocity @p v_m, cruise,
- * and deceleration to @p v_2.
- *
- * @param s Total segment length.
- * @param x Distance traveled from the start of the segment.
- * @return Minimal time to travel distance @p x.
- *
- * @throws ConsistencyException If inputs are inconsistent with the equations of
- * motion.
- */
 double cda_rail::min_travel_time_from_start(double v_1, double v_2, double v_m,
                                             double a, double d, double s,
                                             double x) {
@@ -373,23 +225,6 @@ double cda_rail::min_travel_time_from_start(double v_1, double v_2, double v_m,
          stable_phase_time(x_3, v_t, -d);
 }
 
-/**
- * @brief Computes the minimal travel time from a position to the end of a
- * segment.
- *
- * Calculates the minimum time required to travel from position x to the end of
- * the segment (position s), starting with speed v_1 and arriving with speed
- * v_2, considering acceleration, deceleration, and a nominal speed v_m.
- *
- * @param v_1 Speed at position x.
- * @param v_2 Speed at position s.
- * @param v_m Nominal speed target.
- * @param a Maximum acceleration.
- * @param d Maximum deceleration.
- * @param s Total segment length.
- * @param x Current position.
- * @return Minimal travel time from position x to position s.
- */
 double cda_rail::min_travel_time_to_end(double v_1, double v_2, double v_m,
                                         double a, double d, double s,
                                         double x) {
@@ -401,18 +236,6 @@ double cda_rail::min_travel_time_to_end(double v_1, double v_2, double v_m,
 
 // ----------------------------
 // MAX TRAVEL TIMES
-/**
- * @brief Computes the maximum time to traverse the full segment distance.
- *
- * @param v_1 Initial speed.
- * @param v_2 Final speed.
- * @param v_m Minimal speed constraint.
- * @param a Acceleration.
- * @param d Deceleration.
- * @param s Segment distance.
- * @param stopping_allowed Whether the train may stop along the segment.
- * @return Maximum travel time over the full segment distance.
- */
 
 double cda_rail::max_travel_time(double v_1, double v_2, double v_m, double a,
                                  double d, double s, bool stopping_allowed) {
@@ -420,35 +243,17 @@ double cda_rail::max_travel_time(double v_1, double v_2, double v_m, double a,
                                     stopping_allowed);
 }
 
-/**
- * @brief Computes the maximum travel time from the segment's start to its end
- * without stopping.
- *
- * @return The maximum travel time.
- */
 double cda_rail::max_travel_time_no_stopping(double v_1, double v_2, double v_m,
                                              double a, double d, double s) {
   return max_travel_time_from_start_no_stopping(v_1, v_2, v_m, a, d, s, s);
 }
 
-/**
- * @brief Calculates the maximum time to traverse a full distance when stopping
- * is allowed.
- *
- * @return Maximum travel time over the complete segment, or infinity if
- * stopping is feasible.
- */
 double cda_rail::max_travel_time_stopping_allowed(double v_1, double v_2,
                                                   double a, double d,
                                                   double s) {
   return max_travel_time_from_start_stopping_allowed(v_1, v_2, a, d, s, s);
 }
 
-/**
- * @brief Computes the maximum time to reach distance x from the start.
- *
- * @return Maximum travel time from the start.
- */
 double cda_rail::max_travel_time_from_start(double v_1, double v_2, double v_m,
                                             double a, double d, double s,
                                             double x, bool stopping_allowed) {
@@ -458,19 +263,6 @@ double cda_rail::max_travel_time_from_start(double v_1, double v_2, double v_m,
                                                       x);
 }
 
-/**
- * @brief Computes the maximum time to travel from the segment start to a given
- * position without stopping.
- *
- * @param v_1 Initial velocity.
- * @param v_2 Final velocity.
- * @param v_m Minimal speed constraint.
- * @param a Acceleration magnitude.
- * @param d Deceleration magnitude.
- * @param s Segment length.
- * @param x Position within the segment.
- * @return Maximum feasible travel time to position @p x.
- */
 double cda_rail::max_travel_time_from_start_no_stopping(double v_1, double v_2,
                                                         double v_m, double a,
                                                         double d, double s,
@@ -495,23 +287,6 @@ double cda_rail::max_travel_time_from_start_no_stopping(double v_1, double v_2,
          stable_phase_time(x_3, v_t, a_3);
 }
 
-/**
- * @brief Computes the maximum time to reach a position from the front when
- * stopping is allowed.
- *
- * Returns infinity if the train can stop within the acceleration phase and the
- * query position is at or beyond that point, making the time constraint
- * unbounded. Otherwise delegates to the no-stopping calculation.
- *
- * @param v_1 Starting speed.
- * @param v_2 Ending speed.
- * @param a Acceleration.
- * @param d Deceleration.
- * @param s Edge length.
- * @param x Query position from the front.
- * @return Maximum time to reach position x, or infinity if stopping permits
- * unbounded transit time.
- */
 double cda_rail::max_travel_time_from_start_stopping_allowed(
     double v_1, double v_2, double a, double d, double s, double x) {
   check_consistency_of_eom_input(v_1, v_2, a, d, s, x);
@@ -529,12 +304,6 @@ double cda_rail::max_travel_time_from_start_stopping_allowed(
   return max_travel_time_from_start_no_stopping(v_1, v_2, 0, a, d, s, x);
 }
 
-/**
- * @brief Computes the maximum time to reach the segment end from a given
- * position, with optional stopping.
- *
- * @return Maximum travel time from position x to the segment end.
- */
 double cda_rail::max_travel_time_to_end(double v_1, double v_2, double v_m,
                                         double a, double d, double s, double x,
                                         bool stopping_allowed) {
@@ -543,12 +312,6 @@ double cda_rail::max_travel_time_to_end(double v_1, double v_2, double v_m,
              : max_travel_time_to_end_no_stopping(v_1, v_2, v_m, a, d, s, x);
 }
 
-/**
- * @brief Computes the maximum time to reach a position from the rear without
- * stopping.
- *
- * @return Maximum time to reach the position at distance @c x from the front.
- */
 double cda_rail::max_travel_time_to_end_no_stopping(double v_1, double v_2,
                                                     double v_m, double a,
                                                     double d, double s,
@@ -559,18 +322,6 @@ double cda_rail::max_travel_time_to_end_no_stopping(double v_1, double v_2,
   return max_travel_time_from_start_no_stopping(v_2, v_1, v_m, d, a, s, s - x);
 }
 
-/**
- * @brief Determines the maximum travel time from a given position to the end of
- * a segment when stopping is allowed.
- *
- * @param v_1 Initial speed at position x.
- * @param v_2 Final speed at segment end.
- * @param a Acceleration magnitude.
- * @param d Deceleration magnitude.
- * @param s Segment length.
- * @param x Position from start of segment.
- * @return Maximum travel time from position x to segment end.
- */
 double cda_rail::max_travel_time_to_end_stopping_allowed(double v_1, double v_2,
                                                          double a, double d,
                                                          double s, double x) {
@@ -582,15 +333,6 @@ double cda_rail::max_travel_time_to_end_stopping_allowed(double v_1, double v_2,
 
 // ---------------------------
 // LINE SPEED CALCULATIONS
-/**
- * @brief Determines the minimal speed necessary for maximal-time travel.
- *
- * Computes the minimum speed the train must achieve to complete a journey
- * from v_1 to v_2 over distance s in maximum time, subject to minimum
- * speed constraint v_min.
- *
- * @return Minimum required intermediate speed.
- */
 
 double cda_rail::minimal_line_speed(double v_1, double v_2, double v_min,
                                     double a, double d, double s) {
@@ -605,18 +347,6 @@ double cda_rail::minimal_line_speed(double v_1, double v_2, double v_min,
   return std::sqrt(square(v_1) + (2 * a_1 * s_1));
 }
 
-/**
- * @brief Computes the maximal line speed achievable for a minimal-time journey
- * profile.
- *
- * @param v_1 Initial speed.
- * @param v_2 Final speed.
- * @param v_max Target line speed.
- * @param a Acceleration.
- * @param d Deceleration.
- * @param s Segment distance.
- * @return The maximal line speed.
- */
 double cda_rail::maximal_line_speed(double v_1, double v_2, double v_max,
                                     double a, double d, double s) {
   const auto [s_1, s_2] =
@@ -627,20 +357,6 @@ double cda_rail::maximal_line_speed(double v_1, double v_2, double v_max,
   return std::sqrt(square(v_1) + (2 * a * s_1));
 }
 
-/**
- * @brief Determines the line speed required to achieve a target travel time.
- *
- * @param v_1 Initial speed.
- * @param v_2 Final speed.
- * @param v_min Minimum line speed.
- * @param v_max Maximum line speed.
- * @param a Acceleration.
- * @param d Deceleration.
- * @param s Edge length.
- * @param t Target travel time.
- * @return The line speed that achieves the target travel time, or 0 if the
- *         time exceeds the maximum feasible duration.
- */
 double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
                                 double v_max, double a, double d, double s,
                                 double t) {
@@ -677,45 +393,12 @@ double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
   return v_ub;
 }
 
-/**
- * @brief Time for a train to traverse a distance with specified speed
- * constraints and kinematics.
- *
- * @return The total travel time.
- */
 double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
                               double d, double s) {
-  /**
-   * This function calculates the time a train needs to travel distance s with
-   * - initial speed v_1
-   * - final speed v_2
-   * - line speed v_line
-   * - acceleration a
-   * - deceleration d
-   */
 
   return build_line_speed_profile(v_1, v_2, v_line, a, d, s).total_time;
 }
 
-/**
- * @brief Computes position at a given time on an edge.
- *
- * Evaluates position along a constant-acceleration motion profile with initial
- * speed @p v_1, final speed @p v_2, and optional cruise at @p v_line.
- *
- * @param v_1 Initial speed.
- * @param v_2 Final speed.
- * @param v_line Cruise speed.
- * @param a Acceleration magnitude.
- * @param d Deceleration magnitude.
- * @param s Total segment distance.
- * @param t Query time.
- *
- * @return Position at time @p t. Returns total distance if @p t is at or beyond
- * the profile's end.
- *
- * @throw InvalidInputException if total travel time is negative.
- */
 double cda_rail::pos_on_edge_at_time(double v_1, double v_2, double v_line,
                                      double a, double d, double s, double t) {
   const auto profile    = build_line_speed_profile(v_1, v_2, v_line, a, d, s);
@@ -746,18 +429,6 @@ double cda_rail::pos_on_edge_at_time(double v_1, double v_2, double v_line,
          (profile.v_2 * remaining_time);
 }
 
-/**
- * @brief Computes the instantaneous velocity at a specified time along an edge
- * profile.
- *
- * Determines velocity during three-phase motion (acceleration to line speed,
- * cruising, deceleration) at time t. Returns the final velocity if t exceeds
- * the profile duration.
- *
- * @return The velocity at time t along the profile.
- *
- * @throws InvalidInputException if total travel time is negative.
- */
 double cda_rail::vel_on_edge_at_time(double v_1, double v_2, double v_line,
                                      double a, double d, double s, double t) {
   const auto profile    = build_line_speed_profile(v_1, v_2, v_line, a, d, s);
@@ -788,12 +459,6 @@ double cda_rail::vel_on_edge_at_time(double v_1, double v_2, double v_line,
 
 // ---------------------------
 // MOVING AUTHORITY CALCULATIONS
-/**
- * @brief Computes the time to move a moving authority forward by a specified
- * distance.
- *
- * @return Time required to advance the moving authority by distance s.
- */
 
 double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
                                              double s) {
@@ -819,17 +484,6 @@ double cda_rail::min_time_to_push_ma_forward(double v_0, double a, double d,
       a_plus_d * v_0);
 }
 
-/**
- * @brief Computes the minimum time to push a moving authority backward by a
- * given distance.
- *
- * @param v_0 Initial velocity.
- * @param a Acceleration.
- * @param d Deceleration.
- * @param s Distance to push the MA backward. Must not exceed v_0²/(2d).
- * @return Minimum time to push the MA backward by distance s.
- * @throws InvalidInputException if s exceeds v_0²/(2d).
- */
 double cda_rail::min_time_to_push_ma_backward(double v_0, double a, double d,
                                               double s) {
   normalize_ma_push_inputs(v_0, a, d, s);
@@ -869,14 +523,6 @@ double cda_rail::min_time_to_push_ma_backward(double v_0, double a, double d,
                                 square(v_0) - (2 * a * d * s / a_plus_d), v_0);
 }
 
-/**
- * @brief Computes the minimum time to push the moving authority fully backward.
- *
- * @return Minimum time.
- *
- * @throws InvalidInputException if `v_0` is negative, `a` is negative, or `d`
- * is non-positive.
- */
 double cda_rail::min_time_to_push_ma_fully_backward(double v_0, double a,
                                                     double d) {
   // Simplified version if s is the full braking distance
@@ -895,12 +541,6 @@ double cda_rail::min_time_to_push_ma_fully_backward(double v_0, double a,
   return v_0 / (a + d + std::sqrt(d * (a + d)));
 }
 
-/**
- * @brief Computes the minimum time from the train front to reach a moving
- * authority point.
- *
- * @return Minimum time to reach the MA point.
- */
 double cda_rail::min_time_from_front_to_ma_point(double v_1, double v_2,
                                                  double v_m, double a, double d,
                                                  double s, double obd) {
@@ -930,16 +570,6 @@ double cda_rail::min_time_from_front_to_ma_point(double v_1, double v_2,
   return min_time_to_push_ma_forward(v_1, a, d, ubd_1);
 }
 
-/**
- * @brief Computes the maximum time from the train's front to a moving authority
- * point.
- *
- * @param s Edge length.
- * @param obd On-board distance offset to the moving authority point.
- * @param stopping_allowed If `true`, stopping is permitted; otherwise the train
- * must continue moving.
- * @return Maximum time to reach the moving authority point.
- */
 double cda_rail::max_time_from_front_to_ma_point(double v_1, double v_2,
                                                  double v_m, double a, double d,
                                                  double s, double obd,
@@ -951,25 +581,6 @@ double cda_rail::max_time_from_front_to_ma_point(double v_1, double v_2,
                                                            s, obd);
 }
 
-/**
- * @brief Computes the maximum time to reach a moving authority point from the
- * front without stopping.
- *
- * Determines the maximal time required to travel from the front of the section
- * to a specified moving authority point given the kinematic constraints,
- * ensuring the train does not come to a complete stop.
- *
- * @param v_1 Initial speed at the front.
- * @param v_2 Target speed at the rear.
- * @param v_m Minimal speed constraint for the maximal-time scenario.
- * @param a Acceleration rate.
- * @param d Deceleration rate.
- * @param s Section distance.
- * @param obd On-board device distance defining the moving authority point
- * location.
- *
- * @return Maximum time to reach the moving authority point without stopping.
- */
 double cda_rail::max_time_from_front_to_ma_point_no_stopping(
     double v_1, double v_2, double v_m, double a, double d, double s,
     double obd) {
@@ -1008,13 +619,6 @@ double cda_rail::max_time_from_front_to_ma_point_no_stopping(
   return min_time_to_push_ma_forward(v_1, a, d, ma_point - bd_1);
 }
 
-/**
- * @brief Computes the maximum time from the train front to a moving authority
- * point when stopping is allowed.
- *
- * @return The maximum time to reach the MA point, or infinity if stopping at
- * the MA point is feasible.
- */
 double cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
     double v_1, double v_2, double a, double d, double s, double obd) {
   if (max_travel_time_stopping_allowed(v_1, v_2, a, d, s) >=
@@ -1024,16 +628,6 @@ double cda_rail::max_time_from_front_to_ma_point_stopping_allowed(
   return max_time_from_front_to_ma_point_no_stopping(v_1, v_2, 0, a, d, s, obd);
 }
 
-/**
- * @brief Computes the minimum time from the rear of a train to reach a moving
- * authority point.
- *
- * @param obd On-board distance from the train front to the moving authority
- * point.
- * @param strategy Timing strategy; must be `ExtremeProfiles`.
- * @return Time in seconds.
- * @throws InvalidInputException if `strategy` is not `ExtremeProfiles`.
- */
 double cda_rail::min_time_from_rear_to_ma_point(
     double v_1, double v_2, double v_min, double v_max, double a, double d,
     double s, double obd, cda_rail::MATimingStrategy strategy) {
@@ -1048,15 +642,6 @@ double cda_rail::min_time_from_rear_to_ma_point(
   return std::min(t1, t2);
 }
 
-/**
- * @brief Computes the maximum time from the train's rear to reach a moving
- * authority point.
- *
- * Enforces that `strategy` must be `MATimingStrategy::ExtremeProfiles`;
- * otherwise throws `InvalidInputException`.
- *
- * @return Maximum time from the extreme profile-based computations.
- */
 double cda_rail::max_time_from_rear_to_ma_point(
     double v_1, double v_2, double v_min, double v_max, double a, double d,
     double s, double obd, cda_rail::MATimingStrategy strategy) {
@@ -1071,13 +656,6 @@ double cda_rail::max_time_from_rear_to_ma_point(
   return std::max(t1, t2);
 }
 
-/**
- * @brief Calculates the minimal time for the rear of the train to advance from
- * the moving authority point to the segment end.
- *
- * @param obd On-board distance (train length).
- * @return Minimal time for the rear to reach the segment end from the MA point.
- */
 double cda_rail::min_time_profile_from_rear_to_ma_point(double v_1, double v_2,
                                                         double v_m, double a,
                                                         double d, double s,
@@ -1086,14 +664,6 @@ double cda_rail::min_time_profile_from_rear_to_ma_point(double v_1, double v_2,
          min_time_from_front_to_ma_point(v_1, v_2, v_m, a, d, s, obd);
 }
 
-/**
- * @brief Computes the maximum time for the rear to reach a Moving Authority
- * point.
- *
- * @param v_m Minimal speed constraint.
- * @param obd Offset backward distance to the Moving Authority point.
- * @return double Maximum time for the rear to reach the MA point.
- */
 double cda_rail::max_time_profile_from_rear_to_ma_point(double v_1, double v_2,
                                                         double v_m, double a,
                                                         double d, double s,
@@ -1105,17 +675,6 @@ double cda_rail::max_time_profile_from_rear_to_ma_point(double v_1, double v_2,
 
 // ---------------------------
 // HELPER
-/**
- * @brief Validates and normalizes kinematic input parameters for motion
- * equations.
- *
- * Rounds small values toward zero using GRB_EPS tolerance. Validates that all
- * parameters meet kinematic constraints: non-negativity, strictly positive
- * acceleration/deceleration, position ≤ distance, and feasibility per equations
- * of motion. All parameters are modified in-place (rounded).
- *
- * @throws ConsistencyException if any constraint is violated.
- */
 
 void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
                                               double& a, double& d, double& s,
@@ -1141,36 +700,12 @@ void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
   }
 }
 
-/**
- * @brief Determines if a velocity transition is feasible by equations of
- * motion.
- *
- * @return `true` if the train can transition from @p v_1 to @p v_2 over
- * distance @p s using the available acceleration @p a or deceleration @p d,
- *         `false` otherwise.
- */
 bool cda_rail::possible_by_eom(double v_1, double v_2, double a, double d,
                                double s) {
   return v_1 <= v_2 ? square(v_2) - square(v_1) <= (2 * a * s) + GRB_EPS
                     : square(v_1) - square(v_2) <= (2 * d * s) + GRB_EPS;
 }
 
-/**
- * @brief Computes distances marking acceleration changes in a minimal-time
- * profile.
- *
- * Determines where the train transitions between acceleration, constant speed,
- * and deceleration phases when traveling from v_1 to v_2 at line speed v_m
- * over the given distance.
- *
- * @param v_m Target cruise speed; must be positive and at least v_1 and v_2.
- *
- * @return A pair {s_1, s_2} of distances where acceleration changes.
- *         Returns two equal values if the cruise phase is infeasible.
- *
- * @throws ConsistencyException if v_m is non-positive, if v_m is less than v_1
- * or v_2, or if the input profile is inconsistent.
- */
 std::pair<double, double>
 cda_rail::get_min_travel_time_acceleration_change_points(double v_1, double v_2,
                                                          double v_m, double a,
@@ -1195,28 +730,6 @@ cda_rail::get_min_travel_time_acceleration_change_points(double v_1, double v_2,
   return {y, y};
 }
 
-/**
- * @brief Computes acceleration change-point distances for maximal travel time
- * with a minimal-speed constraint.
- *
- * Determines the distance points where the acceleration profile changes when
- * traveling from v_1 to v_2 over distance s, maximizing travel time while
- * respecting a minimum speed v_m.
- *
- * @param v_1 Initial velocity.
- * @param v_2 Final velocity.
- * @param v_m Minimum speed; must be non-negative.
- * @param a Acceleration magnitude.
- * @param d Deceleration magnitude.
- * @param s Total distance.
- * @return Pair of change-point distances {s_1, s_2}. If the profile reaches the
- * minimum speed, s_1 marks the transition to minimum speed and s_2 marks the
- * start of deceleration to v_2. If minimal speed is unattainable, both values
- * are equal, representing a single transition point.
- *
- * @throws ConsistencyException if inputs violate consistency or feasibility
- * constraints.
- */
 std::pair<double, double>
 cda_rail::get_max_travel_time_acceleration_change_points(double v_1, double v_2,
                                                          double v_m, double a,
