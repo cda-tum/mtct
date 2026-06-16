@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GeneralHelper.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <chrono>

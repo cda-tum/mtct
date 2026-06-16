@@ -2,6 +2,7 @@
 #define TEST_FRIENDS true
 
 #include "CustomExceptions.hpp"
+#include "EOMHelper.hpp"
 #include "datastructure/Timetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GreedySimulator.hpp"

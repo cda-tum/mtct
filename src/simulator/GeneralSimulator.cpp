@@ -2,6 +2,7 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "EOMHelper.hpp"
 #include "StringHelper.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 

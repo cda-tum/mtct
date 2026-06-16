@@ -2,6 +2,7 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "GeneralHelper.hpp"
 #include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedySimulator.hpp"
 

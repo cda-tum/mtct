@@ -8,7 +8,6 @@
 #include "nlohmann/json.hpp"
 
 #include <algorithm>
-#include <bits/ranges_algo.h>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
