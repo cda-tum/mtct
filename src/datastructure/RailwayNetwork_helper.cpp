@@ -131,10 +131,14 @@ void cda_rail::Network::extract_vertices_from_key_inplace(
     std::string& target_name) {
   const size_t q1 = key.find_first_of('\'');
   const size_t q2 = key.find_first_of('\'', q1 + 1);
-  source_name     = key.substr(q1 + 1, q2 - q1 - 1);
-
   const size_t q3 = key.find_first_of('\'', q2 + 1);
   const size_t q4 = key.find_first_of('\'', q3 + 1);
+  if (q1 == std::string::npos || q2 == std::string::npos ||
+      q3 == std::string::npos || q4 == std::string::npos) {
+    throw exceptions::InvalidInputException(
+        "Malformed edge key string: " + key);
+  }
+  source_name     = key.substr(q1 + 1, q2 - q1 - 1);
   target_name     = key.substr(q3 + 1, q4 - q3 - 1);
 }
 
