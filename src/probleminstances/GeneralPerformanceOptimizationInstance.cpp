@@ -212,6 +212,13 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
   const auto p = get_export_path(working_directory, solutionSubdirectory,
                                  parameter_identifier);
+  for (auto& train_pos : m_train_pos) {
+    train_pos.clear();
+  }
+  for (auto& train_speed : m_train_speed) {
+    train_speed.clear();
+  }
+
   // Read train_pos
   std::ifstream train_pos_file(p / "train_pos.json");
   json          train_pos_json = json::parse(train_pos_file);

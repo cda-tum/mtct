@@ -711,11 +711,26 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_TRUE(sol_instance.check_consistency());
 
   sol_instance.export_solution("./tmp", "test-sol-instance-1", true, {});
-  sol_instance.export_solution("./tmp", "test-sol-instance-2", false, {});
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance_2(instance);
+  sol_instance_2.set_obj(0.5);
+  sol_instance_2.set_status(cda_rail::SolutionStatus::Optimal);
+
+  sol_instance_2.add_empty_route("tr1");
+  sol_instance_2.push_back_edge_to_route("tr1", {"v0", "v1"});
+  sol_instance_2.push_back_edge_to_route("tr1", {v1, v2});
+
+  sol_instance_2.add_train_pos("tr1", 0, 0);
+  sol_instance_2.add_train_pos("tr1", 30, 50);
+  sol_instance_2.add_train_speed("tr1", 0, 10);
+  sol_instance_2.add_train_speed("tr1", 30, 5);
+
+  sol_instance_2.export_solution("./tmp", "test-sol-instance-2", false, {});
 
   auto sol1_read =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
   sol1_read.load_solution("./tmp", "test-sol-instance-1");
+  sol1_read.load_solution("./tmp", "test-sol-instance-2");
 
   auto sol2_read =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
@@ -728,9 +743,13 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_EQ(sol1_read.get_obj(), 0.5);
   EXPECT_EQ(sol1_read.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 0), 0);
-  EXPECT_EQ(sol1_read.get_train_pos("tr1", 60), 100);
+  EXPECT_EQ(sol1_read.get_train_pos("tr1", 30), 50);
+  EXPECT_THROW((void)sol1_read.get_train_pos("tr1", 60),
+               cda_rail::exceptions::ConsistencyException);
   EXPECT_EQ(sol1_read.get_train_speed("tr1", 0), 10);
-  EXPECT_EQ(sol1_read.get_train_speed("tr1", 60), 5);
+  EXPECT_EQ(sol1_read.get_train_speed("tr1", 30), 5);
+  EXPECT_THROW((void)sol1_read.get_train_speed("tr1", 60),
+               cda_rail::exceptions::ConsistencyException);
   EXPECT_TRUE(sol1_read.get_const_solution_routes().has_route("tr1"));
   const auto& tr1_route =
       sol1_read.get_const_solution_routes().get_route("tr1");
@@ -746,9 +765,9 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_EQ(sol2_read.get_obj(), 0.5);
   EXPECT_EQ(sol2_read.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol2_read.get_train_pos("tr1", 0), 0);
-  EXPECT_EQ(sol2_read.get_train_pos("tr1", 60), 100);
+  EXPECT_EQ(sol2_read.get_train_pos("tr1", 30), 50);
   EXPECT_EQ(sol2_read.get_train_speed("tr1", 0), 10);
-  EXPECT_EQ(sol2_read.get_train_speed("tr1", 60), 5);
+  EXPECT_EQ(sol2_read.get_train_speed("tr1", 30), 5);
   EXPECT_TRUE(sol2_read.get_const_solution_routes().has_route("tr1"));
   const auto& tr1_route2 =
       sol2_read.get_const_solution_routes().get_route("tr1");

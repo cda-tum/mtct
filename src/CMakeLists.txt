@@ -68,7 +68,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
 
 # add cli11
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/cli11 extern/cli11)
-target_link_libraries(${PROJECT_NAME} PUBLIC CLI11::CLI11)
 
 # add plog
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/plog extern/plog)

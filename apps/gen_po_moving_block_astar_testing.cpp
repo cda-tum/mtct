@@ -231,6 +231,12 @@ int main(int argc, char** argv) {
   generate_identifier_flag->excludes(parameter_identifier_option);
 
   CLI11_PARSE(app, argc, argv);
+  if (solution_subdir_opt->count() > 0 && export_sol_flag->count() == 0 &&
+      export_sol_inst_flag->count() == 0) {
+    return app.exit(CLI::ValidationError(solution_subdir_opt->get_name(),
+                                         "requires either --export-solution or "
+                                         "--export-solution-and-instance"));
+  }
 
   // ----------------------
   // PRINT SETTINGS
