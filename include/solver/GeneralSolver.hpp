@@ -46,8 +46,9 @@ protected:
    * @brief Initializes logging and conditionally records solver start time.
    *
    * Initializes the plog logging framework according to the settings provided.
-   * Records the current high-resolution clock time as the solver's start timestamp
-   * if either debug logging is enabled or a positive time limit is specified.
+   * Records the current high-resolution clock time as the solver's start
+   * timestamp if either debug logging is enabled or a positive time limit is
+   * specified.
    *
    * @param time_limit If positive, triggers start time recording.
    * @param debug_input If true, enables debug-level logging.
@@ -63,46 +64,48 @@ protected:
   }
 
   /**
- * @brief Constructs a solver with a default-initialized problem instance.
- */
-GeneralSolver() = default;
+   * @brief Constructs a solver with a default-initialized problem instance.
+   */
+  GeneralSolver() = default;
   /**
- * @brief Constructs a solver from a problem instance.
- *
- * @param instance The problem instance to store.
- */
-explicit GeneralSolver(const T& instance) : m_instance(instance) {}
+   * @brief Constructs a solver from a problem instance.
+   *
+   * @param instance The problem instance to store.
+   */
+  explicit GeneralSolver(const T& instance) : m_instance(instance) {}
   template <typename... Args>
   /**
-       * @brief Constructs a GeneralSolver with arguments for the problem instance constructor.
-       *
-       * @param args Arguments passed to construct the problem instance.
-       */
-      explicit GeneralSolver(Args&&... args)
+   * @brief Constructs a GeneralSolver with arguments for the problem instance
+   * constructor.
+   *
+   * @param args Arguments passed to construct the problem instance.
+   */
+  explicit GeneralSolver(Args&&... args)
       : m_instance(std::forward<Args>(args)...) {}
 
 public:
   /**
- * @brief Accesses the problem instance stored in this solver.
- * @return const T& Const reference to the stored problem instance.
- */
-[[nodiscard]] const T& get_instance() const { return m_instance; }
+   * @brief Accesses the problem instance stored in this solver.
+   * @return const T& Const reference to the stored problem instance.
+   */
+  [[nodiscard]] const T& get_instance() const { return m_instance; }
   /**
- * @brief Provides mutable access to the problem instance.
- * @return T& Reference to the problem instance.
- */
-[[nodiscard]] T&       editable_instance() { return m_instance; }
+   * @brief Provides mutable access to the problem instance.
+   * @return T& Reference to the problem instance.
+   */
+  [[nodiscard]] T& editable_instance() { return m_instance; }
 
   /**
- * @brief Solves the problem instance using default configuration.
- *
- * @return S The solution.
- */
-[[nodiscard]] S solve() { return solve(-1, false); };
+   * @brief Solves the problem instance using default configuration.
+   *
+   * @return S The solution.
+   */
+  [[nodiscard]] S solve() { return solve(-1, false); };
   /**
    * @brief Solves the problem instance.
    *
-   * @param time_limit Maximum time allowed for solving. Zero or negative values disable the limit.
+   * @param time_limit Maximum time allowed for solving. Zero or negative values
+   * disable the limit.
    * @param debug_input Whether to enable debug input mode.
    * @return S The computed solution.
    */

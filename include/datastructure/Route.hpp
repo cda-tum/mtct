@@ -91,9 +91,9 @@ public:
   // -----------------------------
 
   /**
- * @brief Gets the number of edges in the route.
- * @return The number of edges stored in the route.
- */
+   * @brief Gets the number of edges in the route.
+   * @return The number of edges stored in the route.
+   */
   [[nodiscard]] size_t size() const { return m_edges.size(); };
 
   /**
@@ -106,11 +106,10 @@ public:
   [[nodiscard]] double length(const Network& network) const;
 
   /**
- * @brief Checks whether the route is empty.
- * @return `true` if the route has no edges, `false` otherwise.
- */
-```
-  [[nodiscard]] bool empty() const { return m_edges.empty(); };
+   * @brief Checks whether the route is empty.
+   * @return `true` if the route has no edges, `false` otherwise.
+   */
+  ``` [[nodiscard]] bool empty() const { return m_edges.empty(); };
 
   /**
    * @brief Provides the edges forming the route in travel order.
@@ -226,7 +225,8 @@ public:
    * @return const Edge& A reference to the first edge.
    *
    * @throws InvalidInputException If the route is empty.
-   * @throws EdgeNotExistentException If the first edge's id does not exist in the network.
+   * @throws EdgeNotExistentException If the first edge's id does not exist in
+   * the network.
    */
   [[nodiscard]] const Edge& get_first_edge(const Network& network) const {
     return get_edge(0, network);
@@ -424,13 +424,13 @@ public:
   RouteMap(RouteMap&& other)                 = default;
   RouteMap& operator=(const RouteMap& other) = default;
   /**
- * @brief Move-assigns another RouteMap to this one.
- *
- * @param other The RouteMap to move from.
- * @return Reference to this RouteMap.
- */
-RouteMap& operator=(RouteMap&& other)      = default;
-  ~RouteMap()                                = default;
+   * @brief Move-assigns another RouteMap to this one.
+   *
+   * @param other The RouteMap to move from.
+   * @return Reference to this RouteMap.
+   */
+  RouteMap& operator=(RouteMap&& other) = default;
+  ~RouteMap()                           = default;
 
   // ----------------
   // ITERATORS
@@ -441,8 +441,8 @@ RouteMap& operator=(RouteMap&& other)      = default;
   /** @brief Read-only iterator past the last route entry. */
   [[nodiscard]] auto end() const { return m_routes.cend(); };
   /**
- * @brief Returns a const iterator to the beginning of the routes.
- */
+   * @brief Returns a const iterator to the beginning of the routes.
+   */
   [[nodiscard]] auto cbegin() const { return m_routes.cbegin(); };
   /** @brief Read-only iterator past the last route entry (explicit const). */
   [[nodiscard]] auto cend() const { return m_routes.cend(); };
@@ -452,15 +452,15 @@ RouteMap& operator=(RouteMap&& other)      = default;
   // ----------------
 
   /**
- * @brief Counts the number of stored train routes.
- * @return size_t The number of stored train routes.
- */
+   * @brief Counts the number of stored train routes.
+   * @return size_t The number of stored train routes.
+   */
   [[nodiscard]] size_t size() const { return m_routes.size(); };
 
   /**
- * @brief Determines whether the map contains no routes.
- * @return `true` if no routes are stored, `false` otherwise.
- */
+   * @brief Determines whether the map contains no routes.
+   * @return `true` if no routes are stored, `false` otherwise.
+   */
   [[nodiscard]] bool empty() const { return m_routes.empty(); };
 
   /**
@@ -752,9 +752,12 @@ RouteMap& operator=(RouteMap&& other)      = default;
    * @param network Network used to validate referenced edges during loading.
    * @return RouteMap containing the loaded routes.
    *
-   * @throws ImportException if the directory does not exist or is not a directory.
-   * @throws EdgeNotExistentException if the routes file references an unknown vertex or edge.
-   * @throws ConsistencyException if any route contains invalid successor relations between consecutive edges.
+   * @throws ImportException if the directory does not exist or is not a
+   * directory.
+   * @throws EdgeNotExistentException if the routes file references an unknown
+   * vertex or edge.
+   * @throws ConsistencyException if any route contains invalid successor
+   * relations between consecutive edges.
    */
   [[nodiscard]] static RouteMap import_routes(const char*    path,
                                               const Network& network) {

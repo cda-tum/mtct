@@ -101,7 +101,8 @@ public:
   /**
    * @brief Retrieves the typed performance optimization instance.
    *
-   * @return Const pointer to the `GeneralPerformanceOptimizationInstance` for this simulator.
+   * @return Const pointer to the `GeneralPerformanceOptimizationInstance` for
+   * this simulator.
    */
   [[nodiscard]] instances::GeneralPerformanceOptimizationInstance const*
   get_instance() const override {
@@ -169,7 +170,8 @@ private:
                                    TTDOccupationType::OnlyOccupied) const;
 
   /**
-   * @brief Determines if a train is at or behind a time-table/track-section location.
+   * @brief Determines if a train is at or behind a time-table/track-section
+   * location.
    * @return `true` if the train is at or behind the TTD, `false` otherwise.
    */
   [[nodiscard]] bool is_on_or_behind_ttd(size_t tr, size_t ttd,

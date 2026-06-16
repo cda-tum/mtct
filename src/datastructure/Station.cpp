@@ -62,7 +62,8 @@ cda_rail::Station::get_stop_tracks(
  * @brief Determines if all provided edges are tracks of this station.
  *
  * @param edges The edges to verify.
- * @return `true` if all edges are contained in this station's tracks, `false` otherwise.
+ * @return `true` if all edges are contained in this station's tracks, `false`
+ * otherwise.
  */
 bool cda_rail::Station::is_fully_in_station(
     cda_rail::index_set const& edges) const {
@@ -79,11 +80,14 @@ bool cda_rail::Station::is_fully_in_station(
  */
 
 /**
- * @brief Initializes the station list by loading stations and tracks from a JSON file.
+ * @brief Initializes the station list by loading stations and tracks from a
+ * JSON file.
  *
  * @param p Directory path containing `stations.json`.
- * @param network Network instance to resolve vertex names in the JSON to track edges.
- * @throw exceptions::ImportException if the path does not exist or is not a directory.
+ * @param network Network instance to resolve vertex names in the JSON to track
+ * edges.
+ * @throw exceptions::ImportException if the path does not exist or is not a
+ * directory.
  */
 
 cda_rail::StationList::StationList(std::filesystem::path const& p,
@@ -111,8 +115,10 @@ cda_rail::StationList::StationList(std::filesystem::path const& p,
 /**
  * @brief Obtains a mutable shared pointer to a station by name.
  *
- * @return std::shared_ptr<cda_rail::Station> A shared pointer to the Station with the given name.
- * @throws exceptions::StationNotExistentException if the station does not exist.
+ * @return std::shared_ptr<cda_rail::Station> A shared pointer to the Station
+ * with the given name.
+ * @throws exceptions::StationNotExistentException if the station does not
+ * exist.
  */
 
 std::shared_ptr<cda_rail::Station>
@@ -128,7 +134,8 @@ cda_rail::StationList::get_station_ptr(const std::string& name) {
  *
  * @param name The name of the station to retrieve.
  * @return const cda_rail::Station& A const reference to the station.
- * @throws exceptions::StationNotExistentException If no station with the given name exists.
+ * @throws exceptions::StationNotExistentException If no station with the given
+ * name exists.
  */
 const cda_rail::Station&
 cda_rail::StationList::get_station(const std::string& name) const {
@@ -141,7 +148,8 @@ cda_rail::StationList::get_station(const std::string& name) const {
 /**
  * @brief Retrieves all station names in the station list.
  *
- * @return std::unordered_set<std::string> An unordered set containing all station names.
+ * @return std::unordered_set<std::string> An unordered set containing all
+ * station names.
  */
 std::unordered_set<std::string>
 cda_rail::StationList::get_station_names() const {
@@ -172,7 +180,8 @@ void cda_rail::StationList::add_empty_station(std::string const& name) {
 /**
  * @brief Adds a track to a station.
  *
- * @throws exceptions::StationNotExistentException if the station does not exist.
+ * @throws exceptions::StationNotExistentException if the station does not
+ * exist.
  */
 void cda_rail::StationList::add_track_to_station(const std::string& name,
                                                  size_t const       track) {
@@ -186,13 +195,13 @@ void cda_rail::StationList::add_track_to_station(const std::string& name,
 
 /**
  * @brief Serializes stations to a JSON file.
- * 
- * Writes each station's tracks to a JSON object as pairs of vertex names representing edges.
- * The JSON is written to `p / "stations.json"`.
- * 
+ *
+ * Writes each station's tracks to a JSON object as pairs of vertex names
+ * representing edges. The JSON is written to `p / "stations.json"`.
+ *
  * @param p Directory path where the stations.json file will be created.
  * @param network Network used to resolve track indices to vertex names.
- * 
+ *
  * @throws exceptions::ExportException if the directory cannot be created.
  */
 
@@ -226,11 +235,13 @@ template <typename StationContainer, typename ReplacementContainer>
 /**
  * @brief Updates tracks in all stations to reflect edge discretization.
  *
- * For each station, replaces any tracks that appear in @p new_edges with their corresponding replacement tracks.
- * Tracks not affected by discretization remain unchanged.
+ * For each station, replaces any tracks that appear in @p new_edges with their
+ * corresponding replacement tracks. Tracks not affected by discretization
+ * remain unchanged.
  *
  * @param stations Container of station shared pointers.
- * @param new_edges Vector of track index replacements, where each pair maps an old track to its replacement tracks.
+ * @param new_edges Vector of track index replacements, where each pair maps an
+ * old track to its replacement tracks.
  */
 void update_after_discretization_impl(
     StationContainer&                                           stations,
@@ -244,15 +255,7 @@ void update_after_discretization_impl(
     }
   }
 }
-} /**
- * @brief Updates all stations' tracks after edge discretization.
- *
- * For each edge replacement in `new_edges`, removes the original edge from any station's
- * tracks and inserts all replacement edges.
- *
- * @param new_edges Edge replacements, where each pair maps an original edge index to
- *                  the set of edges that replaced it.
- */
+} // namespace
 
 void cda_rail::StationList::update_after_discretization(
     const std::vector<std::pair<size_t, cda_rail::index_set>>& new_edges) {
@@ -262,9 +265,11 @@ void cda_rail::StationList::update_after_discretization(
 /**
  * @brief Updates each station's tracks after discretization.
  *
- * For each station, removes tracks that have been replaced during discretization and inserts their replacement tracks.
+ * For each station, removes tracks that have been replaced during
+ * discretization and inserts their replacement tracks.
  *
- * @param new_edges Mapping from old track indices to their new replacement tracks.
+ * @param new_edges Mapping from old track indices to their new replacement
+ * tracks.
  */
 void cda_rail::StationList::update_after_discretization(
     const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges) {

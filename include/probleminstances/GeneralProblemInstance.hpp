@@ -25,14 +25,15 @@ class GeneralProblemInstance {
 
 protected:
   /**
- * @brief Initializes the instance with empty name and subdirectory.
- */
-GeneralProblemInstance() = default;
+   * @brief Initializes the instance with empty name and subdirectory.
+   */
+  GeneralProblemInstance() = default;
   /**
    * @brief Initializes the instance with a name and subdirectory.
    *
    * @param instanceName The name of the instance; must be a valid folder name.
-   * @param instanceSubdirectory The subdirectory path; must be a valid folder name.
+   * @param instanceSubdirectory The subdirectory path; must be a valid folder
+   * name.
    *
    * @throws If either parameter is not a valid folder name.
    */
@@ -51,7 +52,8 @@ public:
   /**
    * @brief Exports the instance to the specified working directory.
    *
-   * @param working_directory Path to the directory where the instance is exported.
+   * @param working_directory Path to the directory where the instance is
+   * exported.
    */
   virtual void export_instance(const std::string& working_directory) const {
     export_instance(std::filesystem::path(working_directory));
@@ -105,7 +107,8 @@ public:
    *
    * @param instanceSubdirectory The new subdirectory name.
    *
-   * @throws std::invalid_argument If the subdirectory is not a valid folder name.
+   * @throws std::invalid_argument If the subdirectory is not a valid folder
+   * name.
    */
   void set_instance_subdirectory(std::string_view const instanceSubdirectory) {
     exceptions::throw_if_invalid_folder_name(instanceSubdirectory);
@@ -124,16 +127,16 @@ class GeneralProblemInstanceWithScheduleAndRoutes
 protected:
   GeneralProblemInstanceWithScheduleAndRoutes() = default;
   /**
-       * @brief Initializes the instance with a network.
-       *
-       * @param network The network for this instance.
-       */
-      explicit GeneralProblemInstanceWithScheduleAndRoutes(Network network)
+   * @brief Initializes the instance with a network.
+   *
+   * @param network The network for this instance.
+   */
+  explicit GeneralProblemInstanceWithScheduleAndRoutes(Network network)
       : m_network(std::move(network)) {};
   /**
-         * @brief Initializes the instance with a network, timetable, and routes.
-         */
-        explicit GeneralProblemInstanceWithScheduleAndRoutes(Network   network,
+   * @brief Initializes the instance with a network, timetable, and routes.
+   */
+  explicit GeneralProblemInstanceWithScheduleAndRoutes(Network   network,
                                                        Timetable timetable,
                                                        RouteMap  routes)
       : m_network(std::move(network)), m_timetable(std::move(timetable)),
@@ -142,13 +145,14 @@ protected:
       std::string_view instance_name, std::string_view instance_subdirectory,
       std::filesystem::path const& working_directory);
   /**
-             * @brief Constructs a problem instance by loading from a working directory.
-             *
-             * @param instanceName The name of the problem instance.
-             * @param instanceSubdirectory The subdirectory within the working directory containing instance data.
-             * @param working_directory The root working directory path.
-             */
-            GeneralProblemInstanceWithScheduleAndRoutes(
+   * @brief Constructs a problem instance by loading from a working directory.
+   *
+   * @param instanceName The name of the problem instance.
+   * @param instanceSubdirectory The subdirectory within the working directory
+   * containing instance data.
+   * @param working_directory The root working directory path.
+   */
+  GeneralProblemInstanceWithScheduleAndRoutes(
       std::string_view const instanceName,
       std::string_view const instanceSubdirectory,
       std::string const&     working_directory)
@@ -156,13 +160,14 @@ protected:
             instanceName, instanceSubdirectory,
             std::filesystem::path(working_directory)) {};
   /**
-             * @brief Constructs an instance by loading data from the working directory.
-             *
-             * @param instanceName Name of the instance.
-             * @param instanceSubdirectory Subdirectory within the working directory containing instance data.
-             * @param workingDirectory Base directory path.
-             */
-            GeneralProblemInstanceWithScheduleAndRoutes(
+   * @brief Constructs an instance by loading data from the working directory.
+   *
+   * @param instanceName Name of the instance.
+   * @param instanceSubdirectory Subdirectory within the working directory
+   * containing instance data.
+   * @param workingDirectory Base directory path.
+   */
+  GeneralProblemInstanceWithScheduleAndRoutes(
       std::string_view const instanceName,
       std::string_view const instanceSubdirectory,
       char const* const      workingDirectory)
@@ -177,9 +182,9 @@ public:
   GeneralProblemInstanceWithScheduleAndRoutes&
   operator=(const GeneralProblemInstanceWithScheduleAndRoutes&) = default;
   /**
-       * @brief Move constructor.
-       */
-      GeneralProblemInstanceWithScheduleAndRoutes(
+   * @brief Move constructor.
+   */
+  GeneralProblemInstanceWithScheduleAndRoutes(
       GeneralProblemInstanceWithScheduleAndRoutes&&) noexcept = default;
   GeneralProblemInstanceWithScheduleAndRoutes&
   operator=(GeneralProblemInstanceWithScheduleAndRoutes&&) noexcept = default;
@@ -194,11 +199,12 @@ public:
   virtual void export_instance(std::filesystem::path const& working_directory,
                                bool                         save_network) const;
   /**
-   * @brief Exports the instance to the specified working directory without saving the network.
+   * @brief Exports the instance to the specified working directory without
+   * saving the network.
    *
    * @param working_directory The target directory for the export.
    */
-  void         export_instance(
+  void export_instance(
       std::filesystem::path const& working_directory) const override {
     export_instance(working_directory, false);
   }
@@ -208,42 +214,42 @@ public:
   // ---------------------
 
   /**
- * @brief Provides read-only access to the network.
- *
- * @return const Network& A const reference to the network.
- */
+   * @brief Provides read-only access to the network.
+   *
+   * @return const Network& A const reference to the network.
+   */
 
   [[nodiscard]] const auto& get_const_network() const { return m_network; };
   /**
- * @brief Accesses the timetable.
- * @return Const reference to the timetable.
- */
-[[nodiscard]] const auto& get_const_timetable() const { return m_timetable; };
+   * @brief Accesses the timetable.
+   * @return Const reference to the timetable.
+   */
+  [[nodiscard]] const auto& get_const_timetable() const { return m_timetable; };
   /**
- * @brief Provides read-only access to the routes.
- *
- * @return A const reference to the RouteMap.
- */
-[[nodiscard]] const auto& get_const_routes() const { return m_routes; };
+   * @brief Provides read-only access to the routes.
+   *
+   * @return A const reference to the RouteMap.
+   */
+  [[nodiscard]] const auto& get_const_routes() const { return m_routes; };
 
   /**
- * @brief Provides editable access to the underlying network.
- * @return Network& A reference to the underlying network.
- */
-[[nodiscard]] auto& get_editable_network() { return m_network; };
+   * @brief Provides editable access to the underlying network.
+   * @return Network& A reference to the underlying network.
+   */
+  [[nodiscard]] auto& get_editable_network() { return m_network; };
 
 protected:
   /**
- * @brief Provides editable access to the timetable.
- * @return Reference to the timetable.
- */
-[[nodiscard]] auto& get_editable_timetable() { return m_timetable; };
+   * @brief Provides editable access to the timetable.
+   * @return Reference to the timetable.
+   */
+  [[nodiscard]] auto& get_editable_timetable() { return m_timetable; };
   /**
- * @brief Provides editable access to the route map.
- *
- * @return RouteMap& Reference to the route map.
- */
-[[nodiscard]] auto& get_editable_routes() { return m_routes; };
+   * @brief Provides editable access to the route map.
+   *
+   * @return RouteMap& Reference to the route map.
+   */
+  [[nodiscard]] auto& get_editable_routes() { return m_routes; };
 
 public:
   /**
@@ -316,8 +322,10 @@ public:
    *
    * @param tr Train index.
    * @param station_name Name of the station.
-   * @param edges_to_consider Optional set of edge IDs to filter the results. If empty, all edges are considered.
-   * @return A vector of pairs, each containing a track ID and its corresponding stop edge sequences.
+   * @param edges_to_consider Optional set of edge IDs to filter the results. If
+   * empty, all edges are considered.
+   * @return A vector of pairs, each containing a track ID and its corresponding
+   * stop edge sequences.
    */
 
   [[nodiscard]] std::vector<
@@ -339,7 +347,7 @@ public:
       const cda_rail::index_set& edges_to_consider = {}) const;
   /**
    * @brief Finds possible vertices where a train can stop at a station.
-   * 
+   *
    * @param train_name The name of the train.
    * @param station_name The name of the station.
    * @param edges_to_consider Optional set of edges to consider.
@@ -365,7 +373,8 @@ public:
    *
    * @param train_id Index of the train.
    * @param fixed_routes Whether to use fixed routes.
-   * @param error_if_no_route If true, throws when the train has no assigned route.
+   * @param error_if_no_route If true, throws when the train has no assigned
+   * route.
    * @return An index set of edges used by the train.
    */
   [[nodiscard]] cda_rail::index_set
@@ -384,7 +393,8 @@ public:
    *
    * @param tr_id Train index.
    * @param fixed_routes Whether to consider only fixed routes.
-   * @param error_if_no_route If `true`, throw if the train has no route; otherwise, return an empty set.
+   * @param error_if_no_route If `true`, throw if the train has no route;
+   * otherwise, return an empty set.
    * @return Set of vertex indices used by the train.
    */
   [[nodiscard]] cda_rail::index_set
@@ -404,8 +414,10 @@ public:
    * @brief Retrieves sections used by a train specified by index.
    *
    * @param sections Sections to consider when determining usage.
-   * @param fixed_routes If `true`, uses the fixed route; if `false`, includes all possible routes.
-   * @param error_if_no_route If `true`, throws if the train has no route; if `false`, returns an empty set.
+   * @param fixed_routes If `true`, uses the fixed route; if `false`, includes
+   * all possible routes.
+   * @param error_if_no_route If `true`, throws if the train has no route; if
+   * `false`, returns an empty set.
    * @return Sections used by the train.
    */
   [[nodiscard]] cda_rail::index_set sections_used_by_train(
@@ -425,7 +437,8 @@ public:
    *
    * @param fixed_routes Whether to consider fixed routes.
    * @param trains_to_consider The set of trains to examine.
-   * @param error_if_not_route If `true`, raises an error for trains without a route; if `false`, skips them.
+   * @param error_if_not_route If `true`, raises an error for trains without a
+   * route; if `false`, skips them.
    * @return Index set of trains from `trains_to_consider` that use the edge.
    */
   [[nodiscard]] cda_rail::index_set
@@ -443,8 +456,10 @@ public:
    * @brief Returns the indices of all trains using a given edge.
    *
    * @param edge_id The edge to query.
-   * @param fixed_routes If `true`, queries fixed routes; otherwise queries solution routes.
-   * @param error_if_not_route If `true`, throws an error if the edge is not in any train's route.
+   * @param fixed_routes If `true`, queries fixed routes; otherwise queries
+   * solution routes.
+   * @param error_if_not_route If `true`, throws an error if the edge is not in
+   * any train's route.
    * @return An index set of train indices using the edge.
    */
   [[nodiscard]] cda_rail::index_set
@@ -631,7 +646,8 @@ public:
    *
    * @param train1 Name of the first train.
    * @param train2 Name of the second train.
-   * @return A vector of conflict pairs representing the parallel overlaps between the trains.
+   * @return A vector of conflict pairs representing the parallel overlaps
+   * between the trains.
    */
 
   [[nodiscard]] std::vector<ConflictPair>
@@ -643,7 +659,8 @@ public:
   /**
    * @brief Identifies time-to-distance overlaps between two trains.
    *
-   * @return std::vector<ConflictPair> Conflicts where the trains overlap in time and distance.
+   * @return std::vector<ConflictPair> Conflicts where the trains overlap in
+   * time and distance.
    */
   [[nodiscard]] std::vector<ConflictPair>
   get_ttd_overlaps(const std::string& train1, const std::string& train2) const {
@@ -653,7 +670,8 @@ public:
   /**
    * @brief Identifies sections where two trains travel in opposite directions.
    *
-   * @return A vector of conflict pairs representing sections where the trains traverse the same edges in opposite directions.
+   * @return A vector of conflict pairs representing sections where the trains
+   * traverse the same edges in opposite directions.
    */
   [[nodiscard]] std::vector<ConflictPair>
   get_reverse_overlaps(const std::string& train1,
@@ -664,7 +682,8 @@ public:
   /**
    * @brief Identifies crossing conflicts between two trains' routes.
    *
-   * @return std::vector<ConflictPair> containing all crossing conflicts between the two trains' routes.
+   * @return std::vector<ConflictPair> containing all crossing conflicts between
+   * the two trains' routes.
    */
   [[nodiscard]] std::vector<ConflictPair>
   get_crossing_overlaps(const std::string& train1,
@@ -676,8 +695,9 @@ public:
   // ---------------
   // Consistency
   /**
-   * @brief Checks that the instance is internally consistent, requiring all trains to have routes.
-   * 
+   * @brief Checks that the instance is internally consistent, requiring all
+   * trains to have routes.
+   *
    * @return `true` if the instance is consistent, `false` otherwise.
    */
 
@@ -698,20 +718,21 @@ private:
 
 protected:
   /**
-       * @brief Creates a solution wrapper around the given problem instance.
-       */
-      explicit SolGeneralProblemInstance(
+   * @brief Creates a solution wrapper around the given problem instance.
+   */
+  explicit SolGeneralProblemInstance(
       std::shared_ptr<GeneralProblemInstance> instance_ptr)
       : m_instance(std::move(instance_ptr)) {};
   /**
-         * @brief Constructs a solution instance with problem instance and solution metadata.
-         * 
-         * @param instance_ptr Problem instance.
-         * @param status Solution status.
-         * @param obj Objective value.
-         * @param has_sol Whether a solution exists.
-         */
-        SolGeneralProblemInstance(
+   * @brief Constructs a solution instance with problem instance and solution
+   * metadata.
+   *
+   * @param instance_ptr Problem instance.
+   * @param status Solution status.
+   * @param obj Objective value.
+   * @param has_sol Whether a solution exists.
+   */
+  SolGeneralProblemInstance(
       std::shared_ptr<GeneralProblemInstance> instance_ptr,
       SolutionStatus status, double obj, bool has_sol)
       : m_instance(std::move(instance_ptr)), m_status(status), m_obj(obj),
@@ -723,9 +744,12 @@ protected:
   /**
    * @brief Computes the file path for exporting a solution.
    *
-   * Constructs a path of the form `working_directory/solutions/<solutionSubdirectory>/<instance_subdirectory>/<instance_name>`, with `-<parameter_identifier>` appended to the instance name if provided.
+   * Constructs a path of the form
+   * `working_directory/solutions/<solutionSubdirectory>/<instance_subdirectory>/<instance_name>`,
+   * with `-<parameter_identifier>` appended to the instance name if provided.
    *
-   * @param parameter_identifier Optional identifier appended to the instance name.
+   * @param parameter_identifier Optional identifier appended to the instance
+   * name.
    * @return The constructed solution export path.
    */
   [[nodiscard]] std::filesystem::path get_export_path(
@@ -754,47 +778,49 @@ protected:
 public:
   /**
    * @brief Provides access to the problem instance.
-   * @return GeneralProblemInstance const* A const pointer to the underlying problem instance.
+   * @return GeneralProblemInstance const* A const pointer to the underlying
+   * problem instance.
    */
   [[nodiscard]] virtual GeneralProblemInstance const* get_instance() const {
     return m_instance.get();
   };
   /**
- * @brief Retrieves the current solution status.
- *
- * @return SolutionStatus The solution state.
- */
-[[nodiscard]] SolutionStatus get_status() const { return m_status; };
+   * @brief Retrieves the current solution status.
+   *
+   * @return SolutionStatus The solution state.
+   */
+  [[nodiscard]] SolutionStatus get_status() const { return m_status; };
   /**
- * @brief Gets the objective value of the solution.
- *
- * @return double The objective value. -1 indicates no objective value has been set.
- */
-[[nodiscard]] double         get_obj() const { return m_obj; };
+   * @brief Gets the objective value of the solution.
+   *
+   * @return double The objective value. -1 indicates no objective value has
+   * been set.
+   */
+  [[nodiscard]] double get_obj() const { return m_obj; };
   /**
- * @brief Indicates whether a solution has been found.
- *
- * @return bool `true` if a solution has been found, `false` otherwise.
- */
-[[nodiscard]] bool           has_solution() const { return m_has_sol; };
+   * @brief Indicates whether a solution has been found.
+   *
+   * @return bool `true` if a solution has been found, `false` otherwise.
+   */
+  [[nodiscard]] bool has_solution() const { return m_has_sol; };
   /**
- * @brief Sets the solution status.
- */
-void set_status(SolutionStatus new_status) { m_status = new_status; };
+   * @brief Sets the solution status.
+   */
+  void set_status(SolutionStatus new_status) { m_status = new_status; };
   /**
- * @brief Sets the objective value of the solution.
- *
- * @param new_obj The new objective value.
- */
-void set_obj(double new_obj) { m_obj = new_obj; };
+   * @brief Sets the objective value of the solution.
+   *
+   * @param new_obj The new objective value.
+   */
+  void set_obj(double new_obj) { m_obj = new_obj; };
   /**
- * @brief Marks the solution as found.
- */
-void set_solution_found() { m_has_sol = true; };
+   * @brief Marks the solution as found.
+   */
+  void set_solution_found() { m_has_sol = true; };
   /**
- * @brief Marks that no solution has been found.
- */
-void set_solution_not_found() { m_has_sol = false; };
+   * @brief Marks that no solution has been found.
+   */
+  void set_solution_not_found() { m_has_sol = false; };
 
   virtual void
   load_solution(const std::filesystem::path&      working_directory,
@@ -802,7 +828,8 @@ void set_solution_not_found() { m_has_sol = false; };
                 std::optional<std::string> const& parameter_identifier);
 
   /**
-   * @brief Loads a solution from the specified working directory and solution subdirectory.
+   * @brief Loads a solution from the specified working directory and solution
+   * subdirectory.
    *
    * @param working_directory The base working directory path.
    * @param solution_subdirectory The subdirectory containing the solution.
@@ -817,7 +844,8 @@ void set_solution_not_found() { m_has_sol = false; };
    *
    * @param path Working directory path.
    * @param solutionSubdirectory Subdirectory containing solution files.
-   * @param parameter_identifier Optional identifier appended to the instance name when locating solution files.
+   * @param parameter_identifier Optional identifier appended to the instance
+   * name when locating solution files.
    */
   void
   load_solution(const std::string&                path,
@@ -831,7 +859,8 @@ void set_solution_not_found() { m_has_sol = false; };
    *
    * @param path Working directory path.
    * @param solutionSubdirectory Subdirectory containing solutions.
-   * @param parameter_identifier Optional identifier to append to the instance name when constructing the solution path.
+   * @param parameter_identifier Optional identifier to append to the instance
+   * name when constructing the solution path.
    */
   void
   load_solution(const char* path, std::string_view const solutionSubdirectory,
@@ -849,7 +878,8 @@ void set_solution_not_found() { m_has_sol = false; };
    * @brief Exports the solution without a parameter identifier.
    *
    * @param working_directory The root directory for solution exports.
-   * @param solution_subdirectory The subdirectory path for organizing solutions.
+   * @param solution_subdirectory The subdirectory path for organizing
+   * solutions.
    */
   virtual void export_solution(const std::filesystem::path& working_directory,
                                std::string_view solution_subdirectory) const {
@@ -861,7 +891,8 @@ void set_solution_not_found() { m_has_sol = false; };
    *
    * @param path Directory path where the solution will be exported.
    * @param solutionSubdirectory Solution subdirectory name.
-   * @param parameter_identifier Optional parameter identifier appended to the export path.
+   * @param parameter_identifier Optional parameter identifier appended to the
+   * export path.
    */
   void export_solution(
       const std::string& path, std::string_view const solutionSubdirectory,
@@ -874,7 +905,8 @@ void set_solution_not_found() { m_has_sol = false; };
    *
    * @param path Directory path where the solution will be exported.
    * @param solutionSubdirectory Subdirectory name for organizing solutions.
-   * @param parameter_identifier Optional identifier appended to the solution name.
+   * @param parameter_identifier Optional identifier appended to the solution
+   * name.
    */
   void export_solution(
       const char* path, std::string_view const solutionSubdirectory,
@@ -902,7 +934,8 @@ class SolGeneralProblemInstanceWithScheduleAndRoutes
 
   /**
    * @brief Accesses the underlying instance with its specific type.
-   * @return Const pointer to the underlying instance as `GeneralProblemInstanceWithScheduleAndRoutes const*`.
+   * @return Const pointer to the underlying instance as
+   * `GeneralProblemInstanceWithScheduleAndRoutes const*`.
    */
   [[nodiscard]] GeneralProblemInstanceWithScheduleAndRoutes const*
   cast_instance() const {
@@ -912,18 +945,20 @@ class SolGeneralProblemInstanceWithScheduleAndRoutes
 
 protected:
   /**
-         * @brief Initializes a solution wrapper for a schedule-and-routes problem instance.
-         *
-         * @param instance_ptr The problem instance to wrap.
-         */
-        explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
+   * @brief Initializes a solution wrapper for a schedule-and-routes problem
+   * instance.
+   *
+   * @param instance_ptr The problem instance to wrap.
+   */
+  explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
       std::shared_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr)
       : SolGeneralProblemInstance(std::move(instance_ptr)),
         m_solution_routes(cast_instance()->get_const_routes()) {}
   /**
-         * @brief Initializes a solution instance with an existing problem instance and solution metadata.
-         */
-        SolGeneralProblemInstanceWithScheduleAndRoutes(
+   * @brief Initializes a solution instance with an existing problem instance
+   * and solution metadata.
+   */
+  SolGeneralProblemInstanceWithScheduleAndRoutes(
       std::shared_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr,
       SolutionStatus status, double obj, bool has_sol)
       : SolGeneralProblemInstance(std::move(instance_ptr), status, obj,
@@ -935,23 +970,23 @@ public:
   using SolGeneralProblemInstance::load_solution;
 
   /**
-                 * @brief Creates a solution wrapper from a problem instance.
-                 */
-                ```
-                explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
+   * @brief Creates a solution wrapper from a problem instance.
+   */
+  ``` explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
       GeneralProblemInstanceWithScheduleAndRoutes const& instance)
       : SolGeneralProblemInstanceWithScheduleAndRoutes(
             std::make_shared<GeneralProblemInstanceWithScheduleAndRoutes>(
-                instance)) {};
+                instance)){};
   /**
-             * @brief Initializes a solution wrapper around a copy of the provided instance.
-             *
-             * @param instance Problem instance to wrap.
-             * @param status Solution status.
-             * @param obj Objective value of the solution.
-             * @param has_sol Whether a solution exists.
-             */
-            SolGeneralProblemInstanceWithScheduleAndRoutes(
+   * @brief Initializes a solution wrapper around a copy of the provided
+   * instance.
+   *
+   * @param instance Problem instance to wrap.
+   * @param status Solution status.
+   * @param obj Objective value of the solution.
+   * @param has_sol Whether a solution exists.
+   */
+  SolGeneralProblemInstanceWithScheduleAndRoutes(
       GeneralProblemInstanceWithScheduleAndRoutes const& instance,
       SolutionStatus status, double obj, bool has_sol)
       : SolGeneralProblemInstanceWithScheduleAndRoutes(
@@ -976,10 +1011,12 @@ public:
       std::optional<std::string> const& parameter_identifier) override;
 
   /**
-   * @brief Loads a solution from the specified working directory and solution subdirectory.
+   * @brief Loads a solution from the specified working directory and solution
+   * subdirectory.
    *
    * @param working_directory The root directory containing solutions.
-   * @param solutionSubdirectory The solution subdirectory within the working directory.
+   * @param solutionSubdirectory The solution subdirectory within the working
+   * directory.
    */
   void load_solution(const std::filesystem::path& working_directory,
                      std::string_view const solutionSubdirectory) override {
@@ -989,7 +1026,8 @@ public:
   /**
    * @brief Accesses the underlying schedule-and-routes problem instance.
    *
-   * @return GeneralProblemInstanceWithScheduleAndRoutes const* Const pointer to the underlying instance.
+   * @return GeneralProblemInstanceWithScheduleAndRoutes const* Const pointer to
+   * the underlying instance.
    */
   [[nodiscard]] GeneralProblemInstanceWithScheduleAndRoutes const*
   get_instance() const override {
@@ -1054,7 +1092,8 @@ public:
    *
    * @param working_directory The base directory for solution exports.
    * @param solutionSubdirectory The subdirectory for this solution.
-   * @param parameter_identifier Optional identifier to include in the export path.
+   * @param parameter_identifier Optional identifier to include in the export
+   * path.
    */
   void export_solution(
       const std::filesystem::path&      working_directory,
@@ -1066,11 +1105,12 @@ public:
   /**
    * @brief Exports the solution without saving the problem instance.
    *
-   * Exports only the solution data (routes) to the specified directory without 
+   * Exports only the solution data (routes) to the specified directory without
    * exporting the underlying problem instance.
    *
    * @param working_directory Root working directory for the solution export.
-   * @param solutionSubdirectory Subdirectory within the solutions folder for this solution.
+   * @param solutionSubdirectory Subdirectory within the solutions folder for
+   * this solution.
    */
   void
   export_solution(const std::filesystem::path& working_directory,

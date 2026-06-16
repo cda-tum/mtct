@@ -24,20 +24,21 @@
 // using directives from header
 
 /**
- * @brief Initializes a schedule with entry and exit times, velocities, vertices, and stops.
+ * @brief Initializes a schedule with entry and exit times, velocities,
+ * vertices, and stops.
  *
- * Validates that entry time is non-negative, exit time is at least the entry 
- * time, velocities are non-negative, and stops are ordered by service time 
+ * Validates that entry time is non-negative, exit time is at least the entry
+ * time, velocities are non-negative, and stops are ordered by service time
  * with unique station names.
  *
  * @param entryVertex Index of the starting vertex in the network.
  * @param exitVertex Index of the ending vertex in the network.
  * @param stops List of scheduled stops; moved into the schedule.
  *
- * @throws InvalidInputException if entry time is negative, exit time is less 
- *         than entry time, any velocity is negative, or stops are not ordered 
+ * @throws InvalidInputException if entry time is negative, exit time is less
+ *         than entry time, any velocity is negative, or stops are not ordered
  *         by service time or contain duplicate station names.
- * @throws ConsistencyException if stop validation unexpectedly fails without 
+ * @throws ConsistencyException if stop validation unexpectedly fails without
  *         providing an exception object.
  */
 
@@ -60,9 +61,13 @@ cda_rail::Schedule::Schedule(double const entryTime,
 }
 
 /**
- * @brief Validates that stops are ordered by service time and have unique station names.
+ * @brief Validates that stops are ordered by service time and have unique
+ * station names.
  *
- * @return A pair where the first element is `true` if validation passes, `false` otherwise. When `false`, the second element contains an InvalidInputException describing the failure; when `true`, the second element is an empty optional.
+ * @return A pair where the first element is `true` if validation passes,
+ * `false` otherwise. When `false`, the second element contains an
+ * InvalidInputException describing the failure; when `true`, the second element
+ * is an empty optional.
  */
 std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
 cda_rail::Schedule::check_stops_validity_helper(
@@ -111,12 +116,15 @@ void cda_rail::Schedule::check_stops_validity(
 }
 
 /**
- * @brief Inserts a scheduled stop into the schedule in sorted order by service time.
+ * @brief Inserts a scheduled stop into the schedule in sorted order by service
+ * time.
  *
- * If multiple stops have the same service time, the new stop is appended after existing ones.
+ * If multiple stops have the same service time, the new stop is appended after
+ * existing ones.
  *
  * @param new_stop The stop to insert.
- * @throws cda_rail::exceptions::InvalidInputException if a stop with the same station name already exists in the schedule.
+ * @throws cda_rail::exceptions::InvalidInputException if a stop with the same
+ * station name already exists in the schedule.
  */
 void cda_rail::Schedule::insert_stop(ScheduledStop new_stop) {
   auto const& stop_name = new_stop.get_station().name;
@@ -142,11 +150,12 @@ void cda_rail::Schedule::insert_stop(ScheduledStop new_stop) {
  * @brief Removes a scheduled stop for the given station.
  *
  * @param station_name Name of the station whose stop should be removed.
- * @param throwExceptionIfNotExistent If `true`, throws when the stop does not exist;
- *                                    if `false`, does nothing if the stop is not found.
+ * @param throwExceptionIfNotExistent If `true`, throws when the stop does not
+ * exist; if `false`, does nothing if the stop is not found.
  *
  * @throws InvalidInputException If @p throwExceptionIfNotExistent is `true` and
- *                               the station name does not appear in scheduled stops.
+ *                               the station name does not appear in scheduled
+ * stops.
  */
 void cda_rail::Schedule::remove_stop(std::string const& station_name,
                                      bool const throwExceptionIfNotExistent) {
@@ -169,7 +178,8 @@ void cda_rail::Schedule::remove_stop(std::string const& station_name,
  */
 
 /**
- * @brief Initializes a timetable by importing trains, stations, and schedules from a directory.
+ * @brief Initializes a timetable by importing trains, stations, and schedules
+ * from a directory.
  *
  * @param p The directory containing the timetable files.
  * @param network The network associated with the timetable.
@@ -237,8 +247,10 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
  * @param train_list Train list to move into the timetable.
  * @param schedules Schedules to copy into the timetable.
  *
- * @throw ConsistencyException if train and schedule counts do not match, or if scheduled stops reference invalid stations.
- * @throw InvalidInputException if any schedule has improperly ordered stops or duplicate stations.
+ * @throw ConsistencyException if train and schedule counts do not match, or if
+ * scheduled stops reference invalid stations.
+ * @throw InvalidInputException if any schedule has improperly ordered stops or
+ * duplicate stations.
  */
 cda_rail::Timetable::Timetable(StationList station_list, TrainList train_list,
                                const std::vector<Schedule>& schedules)
@@ -257,8 +269,8 @@ cda_rail::Timetable::Timetable(StationList station_list, TrainList train_list,
 /**
  * @brief Populates a schedule's entry/exit times and stops from JSON data.
  *
- * Reads schedule times and stop entries from the provided JSON object and applies
- * them to the schedule at index `i`.
+ * Reads schedule times and stop entries from the provided JSON object and
+ * applies them to the schedule at index `i`.
  *
  * @param schedule_data JSON object with entry/exit times and stop definitions.
  * @param i             Schedule index.
@@ -307,15 +319,20 @@ void cda_rail::Timetable::add_json_data(json& j, const size_t i,
 }
 
 /**
- * @brief Exports the timetable to a directory with trains, stations, and schedules data.
+ * @brief Exports the timetable to a directory with trains, stations, and
+ * schedules data.
  *
  * Creates three JSON files in the specified directory:
  * - `trains.json`: Train definitions.
  * - `stations.json`: Station definitions and network references.
- * - `schedules.json`: Schedule data keyed by train name, containing entry/exit times and velocities, entry/exit station names, and an array of stops with service time, duration, and station name.
+ * - `schedules.json`: Schedule data keyed by train name, containing entry/exit
+ * times and velocities, entry/exit station names, and an array of stops with
+ * service time, duration, and station name.
  *
- * @param p Directory path where the files will be created. Created if it does not exist.
- * @param network The network used to resolve vertex names for entry and exit stations.
+ * @param p Directory path where the files will be created. Created if it does
+ * not exist.
+ * @param network The network used to resolve vertex names for entry and exit
+ * stations.
  *
  * @throws ExportException if the directory cannot be created.
  */
@@ -358,7 +375,8 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
 /**
  * @brief Finds the latest exit time among all schedules.
  *
- * @return double The maximum exit time across all schedules, or NAN if no schedules exist.
+ * @return double The maximum exit time across all schedules, or NAN if no
+ * schedules exist.
  */
 
 double cda_rail::Timetable::latest_exit_time() const {
@@ -373,11 +391,12 @@ double cda_rail::Timetable::latest_exit_time() const {
  * @brief Computes the discretized time index interval for a train schedule.
  *
  * @param dt Time step length for discretization.
- * @param tnInclusive If true, the exit time index is inclusive; if false, exclusive.
- * @return A pair where the first element is the time index at the train's entry and the second is the time index at the train's exit.
+ * @param tnInclusive If true, the exit time index is inclusive; if false,
+ * exclusive.
+ * @return A pair where the first element is the time index at the train's entry
+ * and the second is the time index at the train's exit.
  */
-</code>
-std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
+</ code> std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
     size_t const trainIndex, double const dt, bool const tnInclusive) const {
   /**
    * This method returns the time interval of a train schedule as indices given
@@ -426,7 +445,8 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
  * @return size_t Index of the newly added train.
  *
  * @throws ConsistencyException if a train with the given name already exists.
- * @throws ConsistencyException if the schedule count does not match the train list size after adding.
+ * @throws ConsistencyException if the schedule count does not match the train
+ * list size after adding.
  */
 
 size_t cda_rail::Timetable::add_train_private_helper(
@@ -484,11 +504,13 @@ void cda_rail::Timetable::insert_stop(size_t const       trainIndex,
  *
  * @param train_index Index of the train in the timetable.
  * @param station_name Name of the station to remove from the schedule.
- * @param throw_exception_if_not_existent If true, throws an exception when the stop is not found; otherwise no action is taken.
+ * @param throw_exception_if_not_existent If true, throws an exception when the
+ * stop is not found; otherwise no action is taken.
  *
  * @throws TrainNotExistentException if the train does not exist.
  * @throws StationNotExistentException if the station does not exist.
- * @throws InvalidInputException if `throw_exception_if_not_existent` is true and the stop is not found in the schedule.
+ * @throws InvalidInputException if `throw_exception_if_not_existent` is true
+ * and the stop is not found in the schedule.
  */
 void cda_rail::Timetable::remove_stop(size_t             train_index,
                                       std::string const& station_name,
@@ -507,9 +529,14 @@ void cda_rail::Timetable::remove_stop(size_t             train_index,
 /**
  * @brief Validates internal consistency of the timetable.
  *
- * Checks that the schedule list size matches the train list size, each schedule's stops are properly ordered and unique by station, and all scheduled stops reference stations that exist and match those in the station list (both by value and by identity).
+ * Checks that the schedule list size matches the train list size, each
+ * schedule's stops are properly ordered and unique by station, and all
+ * scheduled stops reference stations that exist and match those in the station
+ * list (both by value and by identity).
  *
- * @return `{true, {}}` if all consistency checks pass; `{false, <exception>}` with a `ConsistencyException` describing the first detected inconsistency otherwise.
+ * @return `{true, {}}` if all consistency checks pass; `{false, <exception>}`
+ * with a `ConsistencyException` describing the first detected inconsistency
+ * otherwise.
  */
 
 std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>

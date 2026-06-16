@@ -56,38 +56,38 @@ public:
    * GETTER
    */
   /**
- * @brief Accesses the train's name.
- *
- * @return A const reference to the train's name.
- */
+   * @brief Accesses the train's name.
+   *
+   * @return A const reference to the train's name.
+   */
   [[nodiscard]] std::string const& get_name() const { return m_name; };
 
   /**
- * @brief Retrieves the train's length.
- *
- * @return Train length in meters (guaranteed >= 0).
- */
+   * @brief Retrieves the train's length.
+   *
+   * @return Train length in meters (guaranteed >= 0).
+   */
   [[nodiscard]] double get_length() const { return m_length; };
 
   /**
- * @brief Accesses the train's maximum speed.
- *
- * @return Maximum speed in m/s (guaranteed >= MIN_NON_ZERO).
- */
+   * @brief Accesses the train's maximum speed.
+   *
+   * @return Maximum speed in m/s (guaranteed >= MIN_NON_ZERO).
+   */
   [[nodiscard]] double get_max_speed() const { return m_max_speed; };
 
   /**
- * @brief Retrieves the train's acceleration.
- *
- * @return The train's acceleration in m/s².
- */
+   * @brief Retrieves the train's acceleration.
+   *
+   * @return The train's acceleration in m/s².
+   */
   [[nodiscard]] double get_acceleration() const { return m_acceleration; };
 
   /**
- * @brief Retrieves the train's maximum deceleration.
- *
- * @return Maximum deceleration in m/s² (guaranteed >= MIN_NON_ZERO).
- */
+   * @brief Retrieves the train's maximum deceleration.
+   *
+   * @return Maximum deceleration in m/s² (guaranteed >= MIN_NON_ZERO).
+   */
   [[nodiscard]] double get_deceleration() const { return m_deceleration; };
 
   /**
@@ -124,7 +124,8 @@ public:
    * @brief Sets the maximum speed of the train.
    *
    * @param maxSpeed New maximum speed in m/s. Must be at least MIN_NON_ZERO.
-   * @throws cda_rail::exceptions::InvalidInputException If maxSpeed is less than MIN_NON_ZERO.
+   * @throws cda_rail::exceptions::InvalidInputException If maxSpeed is less
+   * than MIN_NON_ZERO.
    */
   void set_max_speed(double const maxSpeed) {
     cda_rail::exceptions::throw_if_less_than(maxSpeed, MIN_NON_ZERO,
@@ -228,13 +229,16 @@ public:
       : TrainList(std::filesystem::path(path)) {};
 
   /**
-       * @brief Constructs a train list from a C-string path.
-       *
-       * @param path Path to the directory containing `trains.json`.
-       * @throws cda_rail::exceptions::ImportException if the path is not an existing directory.
-       * @throws cda_rail::exceptions::ConsistencyException if imported train names are duplicated.
-       * @throws cda_rail::exceptions::InvalidInputException if imported train attributes violate train constraints.
-       */
+   * @brief Constructs a train list from a C-string path.
+   *
+   * @param path Path to the directory containing `trains.json`.
+   * @throws cda_rail::exceptions::ImportException if the path is not an
+   * existing directory.
+   * @throws cda_rail::exceptions::ConsistencyException if imported train names
+   * are duplicated.
+   * @throws cda_rail::exceptions::InvalidInputException if imported train
+   * attributes violate train constraints.
+   */
   explicit TrainList(char const* const path)
       : TrainList(std::filesystem::path(path)) {};
 
@@ -250,14 +254,14 @@ public:
   /** @brief Read-only iterator past the last train. */
   [[nodiscard]] constexpr auto end() const { return trains.cend(); };
   /**
- * @brief Const iterator to the first train.
- * @return Const iterator to the beginning of the train collection.
- */
+   * @brief Const iterator to the first train.
+   * @return Const iterator to the beginning of the train collection.
+   */
   [[nodiscard]] constexpr auto cbegin() const { return trains.cbegin(); };
   /**
- * @brief Gets a const iterator past the end of the train list.
- * @return A const iterator past the end of the train list.
- */
+   * @brief Gets a const iterator past the end of the train list.
+   * @return A const iterator past the end of the train list.
+   */
   [[nodiscard]] constexpr auto cend() const { return trains.cend(); };
   /** @brief Read-only reverse iterator to the last train. */
   [[nodiscard]] constexpr auto crbegin() const { return trains.crbegin(); };
@@ -265,10 +269,10 @@ public:
   [[nodiscard]] constexpr auto crend() const { return trains.crend(); };
 
   /**
- * @brief Retrieves the number of trains in the list.
- *
- * @return The total count of trains.
- */
+   * @brief Retrieves the number of trains in the list.
+   *
+   * @return The total count of trains.
+   */
   [[nodiscard]] size_t size() const { return get_number_of_trains(); };
 
   /*
@@ -300,7 +304,8 @@ public:
    *
    * @param name Train name.
    * @return Constant reference to the train.
-   * @throws cda_rail::exceptions::TrainNotExistentException If no train with the specified name exists.
+   * @throws cda_rail::exceptions::TrainNotExistentException If no train with
+   * the specified name exists.
    */
   [[nodiscard]] Train const& get_train(std::string const& name) const {
     return get_train(get_train_index(name));
@@ -311,7 +316,8 @@ public:
    *
    * @param index Index of the train.
    * @return Reference to the train at the given index.
-   * @throws cda_rail::exceptions::TrainNotExistentException If `index` is out of range.
+   * @throws cda_rail::exceptions::TrainNotExistentException If `index` is out
+   * of range.
    */
   [[nodiscard]] Train& editable_train(size_t index) {
     if (!has_train(index)) {
@@ -325,17 +331,18 @@ public:
    *
    * @param name The name of the train to retrieve.
    * @return A mutable reference to the requested train.
-   * @throws cda_rail::exceptions::TrainNotExistentException If no train with the given name exists.
+   * @throws cda_rail::exceptions::TrainNotExistentException If no train with
+   * the given name exists.
    */
   [[nodiscard]] Train& editable_train(std::string const& name) {
     return editable_train(get_train_index(name));
   }
 
   /**
- * @brief Queries the number of trains in the list.
- *
- * @return The number of trains.
- */
+   * @brief Queries the number of trains in the list.
+   *
+   * @return The number of trains.
+   */
   [[nodiscard]] size_t get_number_of_trains() const { return trains.size(); };
 
   /**
@@ -447,9 +454,12 @@ public:
    *
    * @param path Path to the directory containing `trains.json`.
    * @return The imported train list.
-   * @throws cda_rail::exceptions::ImportException if `path` is not an existing directory.
-   * @throws cda_rail::exceptions::ConsistencyException if the imported data contains duplicate train names.
-   * @throws cda_rail::exceptions::InvalidInputException if any imported train attributes violate train constraints.
+   * @throws cda_rail::exceptions::ImportException if `path` is not an existing
+   * directory.
+   * @throws cda_rail::exceptions::ConsistencyException if the imported data
+   * contains duplicate train names.
+   * @throws cda_rail::exceptions::InvalidInputException if any imported train
+   * attributes violate train constraints.
    */
   [[nodiscard]] static TrainList import_trains(char const* const path) {
     return TrainList(path);

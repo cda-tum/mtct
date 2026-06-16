@@ -18,7 +18,8 @@
 #include <vector>
 
 /**
- * @brief Generates all k-sized index combinations from [0, n) in lexicographic order.
+ * @brief Generates all k-sized index combinations from [0, n) in lexicographic
+ * order.
  *
  * @param n Upper bound (exclusive) for indices.
  * @param k Number of indices in each combination.
@@ -100,11 +101,13 @@ cda_rail::subsets_of_size_2_indices(size_t const n) {
 }
 
 /**
- * @brief Initializes plog logging and configures the maximum severity threshold.
+ * @brief Initializes plog logging and configures the maximum severity
+ * threshold.
  *
- * @param debugInput If `true`, sets the maximum severity to debug; if `false`, sets it to info.
- * @param overwriteSeverity If `true`, always updates the severity threshold. If `false`, updates
- *                           only if the current severity level is at or below info.
+ * @param debugInput If `true`, sets the maximum severity to debug; if `false`,
+ * sets it to info.
+ * @param overwriteSeverity If `true`, always updates the severity threshold. If
+ * `false`, updates only if the current severity level is at or below info.
  */
 
 void cda_rail::initialize_plog(bool const debugInput,
@@ -122,8 +125,8 @@ void cda_rail::initialize_plog(bool const debugInput,
  * @brief Creates the directory at the given path if it does not exist.
  *
  * @param p Path to the directory.
- * @return `true` if the path is a directory or is empty, `false` if creation failed
- *         or the path exists but is not a directory.
+ * @return `true` if the path is a directory or is empty, `false` if creation
+ * failed or the path exists but is not a directory.
  */
 bool cda_rail::is_directory_and_create(const std::filesystem::path& p) {
   // If p is empty, treat as current directory — always valid.

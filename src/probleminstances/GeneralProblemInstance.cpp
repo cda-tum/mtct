@@ -21,10 +21,12 @@
 // --------------------
 // CONSTRUCTOR / IMPORT
 /**
- * @brief Initializes an instance with schedule and routes loaded from the working directory.
+ * @brief Initializes an instance with schedule and routes loaded from the
+ * working directory.
  *
- * Loads the network definition from the instance's `network.json` file, then constructs
- * the timetable and routes from the corresponding directories within the instance folder.
+ * Loads the network definition from the instance's `network.json` file, then
+ * constructs the timetable and routes from the corresponding directories within
+ * the instance folder.
  */
 
 cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
@@ -58,11 +60,11 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 /**
  * @brief Exports the instance data.
  *
- * Writes the timetable and routes to disk. Always creates a network reference 
+ * Writes the timetable and routes to disk. Always creates a network reference
  * file. If saveNetwork is true, also exports the network structure.
  *
  * @param working_directory Root directory for instance exports.
- * @param saveNetwork If true, exports the network structure to the working 
+ * @param saveNetwork If true, exports the network structure to the working
  *                    directory.
  */
 
@@ -115,11 +117,14 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 }
 
 /**
- * @brief Retrieves the position of the last stop for a train at a specified station along its route.
+ * @brief Retrieves the position of the last stop for a train at a specified
+ * station along its route.
  *
  * @param tr_id The identifier of the train.
  * @param station_name The name of the station.
- * @return The position on the train's route where it makes its last stop at the specified station, or `std::nullopt` if the train does not stop at that station.
+ * @return The position on the train's route where it makes its last stop at the
+ * specified station, or `std::nullopt` if the train does not stop at that
+ * station.
  */
 std::optional<double>
 cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
@@ -187,11 +192,16 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 /**
  * @brief Gets edges used by a train based on route configuration.
  *
- * When @p fixed_routes is false, returns all edges in the network. When @p fixed_routes is true, returns edges from the train's assigned route; if the train lacks a route and @p error_if_no_route is false, returns all edges instead.
+ * When @p fixed_routes is false, returns all edges in the network. When @p
+ * fixed_routes is true, returns edges from the train's assigned route; if the
+ * train lacks a route and @p error_if_no_route is false, returns all edges
+ * instead.
  *
  * @param train_name Name of the train.
- * @param fixed_routes If false, returns all edges; if true, returns only the train's route edges.
- * @param error_if_no_route If false and the train has no route, returns all edges; otherwise, the route must exist.
+ * @param fixed_routes If false, returns all edges; if true, returns only the
+ * train's route edges.
+ * @param error_if_no_route If false and the train has no route, returns all
+ * edges; otherwise, the route must exist.
  * @return Set of edge IDs used by the train.
  */
 cda_rail::index_set
@@ -227,8 +237,10 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
  * @brief Collects the vertices used by a train.
  *
  * @param tr_name The name of the train.
- * @param fixed_routes If true, consider only vertices in the train's route; if false, consider all network vertices.
- * @param error_if_no_route If true, throw an exception if the train has no assigned route; if false, include all vertices if no route exists.
+ * @param fixed_routes If true, consider only vertices in the train's route; if
+ * false, consider all network vertices.
+ * @param error_if_no_route If true, throw an exception if the train has no
+ * assigned route; if false, include all vertices if no route exists.
  * @return The set of vertex indices used by the train.
  */
 cda_rail::index_set
@@ -250,10 +262,14 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
  * @brief Determines which sections contain edges used by a train.
  *
  * @param tr_name Train name.
- * @param sections A vector where each element is a set of edge IDs forming a section.
- * @param fixed_routes If true, uses only the train's assigned route; if false, considers all edges.
- * @param error_if_no_route If true and fixed_routes is true, throws when the train has no route; if false, uses all edges.
- * @return A set of section indices containing at least one edge used by the train.
+ * @param sections A vector where each element is a set of edge IDs forming a
+ * section.
+ * @param fixed_routes If true, uses only the train's assigned route; if false,
+ * considers all edges.
+ * @param error_if_no_route If true and fixed_routes is true, throws when the
+ * train has no route; if false, uses all edges.
+ * @return A set of section indices containing at least one edge used by the
+ * train.
  */
 cda_rail::index_set
 cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
@@ -283,8 +299,10 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
  * @brief Identifies trains that use at least one edge from a section.
  *
  * @param section Set of edge IDs representing the section.
- * @param fix_routes If true, only considers trains' assigned routes; if false, considers all edges.
- * @param error_if_no_route If true, throws an exception for trains without routes; if false, includes them.
+ * @param fix_routes If true, only considers trains' assigned routes; if false,
+ * considers all edges.
+ * @param error_if_no_route If true, throws an exception for trains without
+ * routes; if false, includes them.
  * @return Indices of trains using at least one edge in the section.
  */
 cda_rail::index_set
@@ -308,12 +326,14 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 /**
  * @brief Filters trains based on whether their routes contain a specific edge.
  *
- * When routes are not fixed, returns all trains. When routes are fixed, includes trains
- * whose routes contain the edge, plus trains without a route (if `error_if_not_route` is false).
+ * When routes are not fixed, returns all trains. When routes are fixed,
+ * includes trains whose routes contain the edge, plus trains without a route
+ * (if `error_if_not_route` is false).
  *
  * @param route_map The route assignments for trains.
  *
- * @return Subset of `trains_to_consider` containing trains matching the criteria.
+ * @return Subset of `trains_to_consider` containing trains matching the
+ * criteria.
  *
  * @throws EdgeNotExistentException if the edge does not exist.
  */
@@ -362,11 +382,14 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
  *
  * @param route_map The route map to consult.
  * @param edge_id The edge identifier.
- * @param fixed_routes If true, filters trains by whether their routes contain the edge.
- * @param error_if_not_route If false, trains without a route are included when `fixed_routes` is true.
+ * @param fixed_routes If true, filters trains by whether their routes contain
+ * the edge.
+ * @param error_if_not_route If false, trains without a route are included when
+ * `fixed_routes` is true.
  * @return Set of indices of all trains that use the edge.
  *
- * @throws exceptions::EdgeNotExistentException if the edge does not exist in the network.
+ * @throws exceptions::EdgeNotExistentException if the edge does not exist in
+ * the network.
  */
 cda_rail::index_set
 cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
@@ -382,14 +405,17 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 // ---------------
 // Consistency
 /**
- * @brief Verifies consistency of the timetable, routes, and schedule entry/exit vertices.
+ * @brief Verifies consistency of the timetable, routes, and schedule entry/exit
+ * vertices.
  *
- * Checks that the timetable is consistent with the network, routes are consistent with the
- * train list and network, and for each train with a route, the schedule's entry and exit
- * vertices match the route's first and last edge endpoints.
+ * Checks that the timetable is consistent with the network, routes are
+ * consistent with the train list and network, and for each train with a route,
+ * the schedule's entry and exit vertices match the route's first and last edge
+ * endpoints.
  *
- * @param every_train_must_have_route If `true`, the route consistency check enforces that
- * every train has a route. If `false`, trains without routes are permitted.
+ * @param every_train_must_have_route If `true`, the route consistency check
+ * enforces that every train has a route. If `false`, trains without routes are
+ * permitted.
  *
  * @return `true` if all consistency checks pass, `false` otherwise.
  */
@@ -430,7 +456,8 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 /**
  * @brief Constructs a JSON representation of the general solution data.
  *
- * @return A JSON object containing the solution status, objective value, and feasibility flag.
+ * @return A JSON object containing the solution status, objective value, and
+ * feasibility flag.
  */
 
 cda_rail::json
@@ -448,7 +475,8 @@ cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
 /**
  * @brief Sets solution metadata from a JSON object.
  *
- * @param data JSON object containing `"status"`, `"obj"`, and `"has_solution"` fields.
+ * @param data JSON object containing `"status"`, `"obj"`, and `"has_solution"`
+ * fields.
  */
 void cda_rail::instances::SolGeneralProblemInstance::set_general_solution_data(
     const json& data) {
@@ -460,7 +488,8 @@ void cda_rail::instances::SolGeneralProblemInstance::set_general_solution_data(
 /**
  * @brief Validates the consistency of the solution status and objective value.
  *
- * @return `true` if the status is defined and the objective is non-negative for non-infeasible/non-timeout solutions, `false` otherwise.
+ * @return `true` if the status is defined and the objective is non-negative for
+ * non-infeasible/non-timeout solutions, `false` otherwise.
  */
 bool cda_rail::instances::SolGeneralProblemInstance::check_consistency() const {
   if (m_status == SolutionStatus::Unknown) {
@@ -484,7 +513,8 @@ bool cda_rail::instances::SolGeneralProblemInstance::check_consistency() const {
  * @param solutionSubdirectory Subdirectory name where the solution is stored.
  * @param parameter_identifier Optional identifier for the parameter set.
  *
- * @throws exceptions::ImportException If the solution data file cannot be opened.
+ * @throws exceptions::ImportException If the solution data file cannot be
+ * opened.
  */
 void cda_rail::instances::SolGeneralProblemInstance::load_solution(
     const std::filesystem::path&      working_directory,
@@ -514,7 +544,8 @@ void cda_rail::instances::SolGeneralProblemInstance::load_solution(
  * @param solutionSubdirectory The subdirectory name for the solution.
  * @param parameter_identifier Optional identifier for the solution parameters.
  *
- * @throws exceptions::ExportException If the export directory cannot be created.
+ * @throws exceptions::ExportException If the export directory cannot be
+ * created.
  */
 void cda_rail::instances::SolGeneralProblemInstance::export_solution(
     const std::filesystem::path&      working_directory,
@@ -562,15 +593,16 @@ void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
 /**
  * @brief Loads solution data and routes from disk.
  *
- * Restores the complete solution state by loading general solution data 
- * (status, objective, feasibility) and then loading route information 
+ * Restores the complete solution state by loading general solution data
+ * (status, objective, feasibility) and then loading route information
  * from the corresponding export location.
  *
  * @param working_directory Base directory containing solutions.
  * @param solutionSubdirectory Solution subdirectory name.
  * @param parameter_identifier Optional parameter identifier for the solution.
  *
- * @throws exceptions::ImportException if solution data cannot be read from disk.
+ * @throws exceptions::ImportException if solution data cannot be read from
+ * disk.
  */
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
     load_solution(const std::filesystem::path&      working_directory,
@@ -585,10 +617,12 @@ void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
 }
 
 /**
- * @brief Exports the solution to the specified directory, with optional instance export.
+ * @brief Exports the solution to the specified directory, with optional
+ * instance export.
  *
  * @param working_directory The base directory for export.
- * @param solutionSubdirectory The subdirectory where the solution will be saved.
+ * @param solutionSubdirectory The subdirectory where the solution will be
+ * saved.
  * @param save_instance If true, also exports the problem instance.
  * @param parameter_identifier Optional identifier for the solution export path.
  */
@@ -612,7 +646,8 @@ void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
 /**
  * @brief Validates the consistency of the solution and its underlying instance.
  *
- * @return bool `true` if the solution and instance are both consistent, `false` otherwise.
+ * @return bool `true` if the solution and instance are both consistent, `false`
+ * otherwise.
  */
 bool cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
     check_consistency() const {

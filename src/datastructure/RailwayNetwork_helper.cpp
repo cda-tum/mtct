@@ -35,7 +35,8 @@ using json = nlohmann::json;
  *
  * @param p Directory path containing `tracks.graphml`.
  *
- * @throws ImportException("graphml") if the file cannot be loaded or required attributes are missing.
+ * @throws ImportException("graphml") if the file cannot be loaded or required
+ * attributes are missing.
  * @throws InvalidInputException if the graph is not directed.
  */
 
@@ -80,21 +81,30 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
 }
 
 /**
- * @brief Populates optional parameters with the IDs of GraphML key elements matching standard attribute names.
+ * @brief Populates optional parameters with the IDs of GraphML key elements
+ * matching standard attribute names.
  *
- * Searches for `<key>` child elements within the provided GraphML element. For each key whose
- * `attr.name` attribute matches one of the expected attribute names (breakable, length, max_speed,
- * min_block_length, min_stop_block_length, type, headway), extracts the key's `id` attribute and
- * stores it in the corresponding parameter.
+ * Searches for `<key>` child elements within the provided GraphML element. For
+ * each key whose `attr.name` attribute matches one of the expected attribute
+ * names (breakable, length, max_speed, min_block_length, min_stop_block_length,
+ * type, headway), extracts the key's `id` attribute and stores it in the
+ * corresponding parameter.
  *
  * @param graphml_body The XML element containing key declarations.
- * @param breakable Optional reference populated with the ID of the breakable key, if present.
- * @param length Optional reference populated with the ID of the length key, if present.
- * @param max_speed Optional reference populated with the ID of the max_speed key, if present.
- * @param min_block_length Optional reference populated with the ID of the min_block_length key, if present.
- * @param min_stop_block_length Optional reference populated with the ID of the min_stop_block_length key, if present.
- * @param type Optional reference populated with the ID of the type key, if present.
- * @param headway Optional reference populated with the ID of the headway key, if present.
+ * @param breakable Optional reference populated with the ID of the breakable
+ * key, if present.
+ * @param length Optional reference populated with the ID of the length key, if
+ * present.
+ * @param max_speed Optional reference populated with the ID of the max_speed
+ * key, if present.
+ * @param min_block_length Optional reference populated with the ID of the
+ * min_block_length key, if present.
+ * @param min_stop_block_length Optional reference populated with the ID of the
+ * min_stop_block_length key, if present.
+ * @param type Optional reference populated with the ID of the type key, if
+ * present.
+ * @param headway Optional reference populated with the ID of the headway key,
+ * if present.
  */
 void cda_rail::Network::get_keys_inplace(
     tinyxml2::XMLElement* graphml_body, std::optional<std::string>& breakable,
@@ -122,17 +132,22 @@ void cda_rail::Network::get_keys_inplace(
 }
 
 /**
- * @brief Parses vertex definitions from GraphML node elements and creates vertices.
+ * @brief Parses vertex definitions from GraphML node elements and creates
+ * vertices.
  *
- * Iterates through node elements and extracts the vertex type (required) and headway (optional)
- * using the provided key identifiers. Creates each vertex by calling add_vertex with the
- * parsed attributes.
+ * Iterates through node elements and extracts the vertex type (required) and
+ * headway (optional) using the provided key identifiers. Creates each vertex by
+ * calling add_vertex with the parsed attributes.
  *
- * @param graphml_node Pointer to the first <node> element in the GraphML document.
- * @param type Key ID for the vertex type attribute in the GraphML data elements.
- * @param headway Key ID for the vertex headway attribute in the GraphML data elements.
+ * @param graphml_node Pointer to the first <node> element in the GraphML
+ * document.
+ * @param type Key ID for the vertex type attribute in the GraphML data
+ * elements.
+ * @param headway Key ID for the vertex headway attribute in the GraphML data
+ * elements.
  *
- * @throws exceptions::ImportException("graphml") if vertex type is not found or cannot be parsed.
+ * @throws exceptions::ImportException("graphml") if vertex type is not found or
+ * cannot be parsed.
  */
 void cda_rail::Network::add_vertices_from_graphml(
     const tinyxml2::XMLElement*       graphml_node,
@@ -177,11 +192,13 @@ void cda_rail::Network::add_vertices_from_graphml(
 /**
  * @brief Extracts source and target vertex names from a formatted key string.
  *
- * @param key The key string containing two quoted vertex names, typically formatted as `('source', 'target')`.
+ * @param key The key string containing two quoted vertex names, typically
+ * formatted as `('source', 'target')`.
  * @param source_name Set to the vertex name between the first pair of quotes.
  * @param target_name Set to the vertex name between the second pair of quotes.
  *
- * @throws InvalidInputException if the key does not contain exactly four single quotes.
+ * @throws InvalidInputException if the key does not contain exactly four single
+ * quotes.
  */
 void cda_rail::Network::extract_vertices_from_key_inplace(
     const std::string& key, std::string& source_name,
@@ -200,20 +217,25 @@ void cda_rail::Network::extract_vertices_from_key_inplace(
 }
 
 /**
- * @brief Parses edge data from GraphML `<edge>` elements and adds them to the network.
+ * @brief Parses edge data from GraphML `<edge>` elements and adds them to the
+ * network.
  *
- * Iterates through `<edge>` elements, extracting optional attributes (breakable, length, max_speed,
- * min_block_length, min_stop_block_length) from `<data>` child elements using the provided key IDs.
- * Requires `length` and `max_speed` to be present in the data.
+ * Iterates through `<edge>` elements, extracting optional attributes
+ * (breakable, length, max_speed, min_block_length, min_stop_block_length) from
+ * `<data>` child elements using the provided key IDs. Requires `length` and
+ * `max_speed` to be present in the data.
  *
  * @param graphml_edge Pointer to the first `<edge>` element to process.
  * @param breakable GraphML key ID for the edge breakability attribute.
  * @param length GraphML key ID for the edge length attribute.
  * @param max_speed GraphML key ID for the edge maximum speed attribute.
- * @param min_block_length GraphML key ID for the minimum block length attribute.
- * @param min_stop_block_length GraphML key ID for the minimum stop block length attribute.
+ * @param min_block_length GraphML key ID for the minimum block length
+ * attribute.
+ * @param min_stop_block_length GraphML key ID for the minimum stop block length
+ * attribute.
  *
- * @throws exceptions::ImportException If `length` or `max_speed` data is missing or invalid.
+ * @throws exceptions::ImportException If `length` or `max_speed` data is
+ * missing or invalid.
  */
 void cda_rail::Network::add_edges_from_graphml(
     const tinyxml2::XMLElement*       graphml_edge,
@@ -310,8 +332,8 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
 /**
  * @brief Exports the network to a GraphML file.
  *
- * Writes the network structure (vertices and edges with their attributes) to `tracks.graphml`
- * in GraphML format.
+ * Writes the network structure (vertices and edges with their attributes) to
+ * `tracks.graphml` in GraphML format.
  *
  * @param p Directory path where `tracks.graphml` will be created.
  */
@@ -405,9 +427,8 @@ void cda_rail::Network::export_successors_python(
  * Serializes each edge (identified by its source and target vertex names) and
  * its successors as a JSON object, written to `successors_cpp.json`.
  */
-</parameter>
-void cda_rail::Network::export_successors_cpp(
-    const std::filesystem::path& p) const {
+</ parameter> void
+cda_rail::Network::export_successors_cpp(const std::filesystem::path& p) const {
   json j;
   for (size_t i = 0; i < number_of_edges(); ++i) {
     const auto&                                      edge = get_edge(i);
@@ -457,12 +478,17 @@ void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,
 }
 
 /**
- * @brief Divides a breakable edge into multiple sub-edges using a separation function.
+ * @brief Divides a breakable edge into multiple sub-edges using a separation
+ * function.
  *
- * @param min_length Minimum length threshold for determining the number of blocks.
- * @param sep_func Function computing the normalized position of each split point.
- * @param new_edge_breakable Whether newly created sub-edges should be breakable.
- * @return A pair of vectors: indices of new forward-direction sub-edges and reverse-direction sub-edges.
+ * @param min_length Minimum length threshold for determining the number of
+ * blocks.
+ * @param sep_func Function computing the normalized position of each split
+ * point.
+ * @param new_edge_breakable Whether newly created sub-edges should be
+ * breakable.
+ * @return A pair of vectors: indices of new forward-direction sub-edges and
+ * reverse-direction sub-edges.
  * @throws exceptions::ConsistencyException if the edge is not breakable.
  */
 
@@ -491,28 +517,28 @@ cda_rail::Network::separate_edge_private_helper(
  * @brief Splits an edge at specified distances into multiple sub-edges.
  *
  * Creates intermediate vertices of type `NoBorderVSS` at each split point and
- * replaces the original edge with a chain of sub-edges. Rewires predecessor-successor
- * relationships so that incoming edges now point to the first sub-edge, and
- * sub-edges are chained sequentially. If a reverse edge exists, mirrors the split
- * symmetrically while enforcing length consistency.
+ * replaces the original edge with a chain of sub-edges. Rewires
+ * predecessor-successor relationships so that incoming edges now point to the
+ * first sub-edge, and sub-edges are chained sequentially. If a reverse edge
+ * exists, mirrors the split symmetrically while enforcing length consistency.
  *
  * @param edge_index Index of the edge to split.
- * @param distances_from_source Distances from the source vertex where splits occur.
- *                              Must be non-empty, sorted, and strictly between 0
- *                              and the edge's length.
- * @param new_edge_breakable Whether newly created sub-edges should be breakable.
+ * @param distances_from_source Distances from the source vertex where splits
+ * occur. Must be non-empty, sorted, and strictly between 0 and the edge's
+ * length.
+ * @param new_edge_breakable Whether newly created sub-edges should be
+ * breakable.
  *
- * @return Pair of vectors containing indices of new forward and reverse sub-edges.
- *         The forward vector always contains sub-edges; the reverse vector is empty
- *         if no reverse edge existed.
+ * @return Pair of vectors containing indices of new forward and reverse
+ * sub-edges. The forward vector always contains sub-edges; the reverse vector
+ * is empty if no reverse edge existed.
  *
  * @throws exceptions::EdgeNotExistentException if the edge does not exist.
  * @throws exceptions::InvalidInputException if distances are empty.
- * @throws exceptions::ConsistencyException if distances are not sorted, not strictly
- *         within bounds, or if a reverse edge has different length.
+ * @throws exceptions::ConsistencyException if distances are not sorted, not
+ * strictly within bounds, or if a reverse edge has different length.
  */
-</parameter>
-std::pair<cda_rail::index_vector, cda_rail::index_vector>
+</ parameter> std::pair<cda_rail::index_vector, cda_rail::index_vector>
 cda_rail::Network::separate_edge_at(
     size_t edge_index, const std::vector<double>& distances_from_source,
     bool new_edge_breakable) {
@@ -642,10 +668,12 @@ cda_rail::Network::separate_edge_at(
 }
 
 /**
- * @brief Stores the mapping from a new edge to its original edge, chaining transformations if necessary.
+ * @brief Stores the mapping from a new edge to its original edge, chaining
+ * transformations if necessary.
  *
- * If the old edge itself resulted from a prior transformation, updates the 
- * mapping to reference the ultimate original edge and accumulates the position offset.
+ * If the old edge itself resulted from a prior transformation, updates the
+ * mapping to reference the ultimate original edge and accumulates the position
+ * offset.
  *
  * @param position Distance from the original edge's source.
  */
@@ -666,14 +694,17 @@ void cda_rail::Network::update_new_old_edge(size_t new_edge, size_t old_edge,
 /**
  * @brief Sorts edge pairs into a contiguous path sequence.
  *
- * Validates that the provided pairs form valid reverse-edge relationships and 
+ * Validates that the provided pairs form valid reverse-edge relationships and
  * form a connected path, then orders them accordingly.
  *
- * @param edge_pairs Pairs of edge indices where the second is the reverse of the first.
+ * @param edge_pairs Pairs of edge indices where the second is the reverse of
+ * the first.
  * @return Ordered edge pairs arranged in path sequence.
  * @throws InvalidInputException If any pair's first entry has no value.
- * @throws EdgeNotExistentException If any first entry does not refer to an existing edge.
- * @throws ConsistencyException If pairs are not valid reverses of each other or do not form a contiguous path.
+ * @throws EdgeNotExistentException If any first entry does not refer to an
+ * existing edge.
+ * @throws ConsistencyException If pairs are not valid reverses of each other or
+ * do not form a contiguous path.
  */
 std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
 cda_rail::Network::sort_edge_pairs(
@@ -759,8 +790,10 @@ cda_rail::Network::sort_edge_pairs(
 /**
  * @brief Validates that a new edge can be safely created between two vertices.
  *
- * @throws exceptions::InvalidInputException if source equals target or if an edge already exists between them.
- * @throws exceptions::VertexNotExistentException if either vertex does not exist.
+ * @throws exceptions::InvalidInputException if source equals target or if an
+ * edge already exists between them.
+ * @throws exceptions::VertexNotExistentException if either vertex does not
+ * exist.
  */
 
 void cda_rail::Network::check_new_edge_requirements(size_t source,
@@ -780,13 +813,17 @@ void cda_rail::Network::check_new_edge_requirements(size_t source,
 }
 
 /**
- * @brief Computes path-finding distance as either physical length or travel time.
+ * @brief Computes path-finding distance as either physical length or travel
+ * time.
  *
  * Returns the edge's physical length if minimal time is not used.
- * Otherwise returns travel time distance (length divided by effective velocity, which is the minimum of `max_v` and the edge's maximum speed).
+ * Otherwise returns travel time distance (length divided by effective velocity,
+ * which is the minimum of `max_v` and the edge's maximum speed).
  *
- * @return double Physical length if `use_minimal_time` is false, otherwise travel time distance.
- * @throws exceptions::InvalidInputException if using minimal time and effective velocity is non-positive.
+ * @return double Physical length if `use_minimal_time` is false, otherwise
+ * travel time distance.
+ * @throws exceptions::InvalidInputException if using minimal time and effective
+ * velocity is non-positive.
  */
 
 double cda_rail::Network::delta_dist_helper(const Edge& edge, double max_v,
@@ -804,19 +841,23 @@ double cda_rail::Network::delta_dist_helper(const Edge& edge, double max_v,
 }
 
 /**
- * @brief Partitions vertices into connected components and collects incident edges.
+ * @brief Partitions vertices into connected components and collects incident
+ * edges.
  *
- * Groups vertices from `vertices_to_visit` that match `section_type` into connected
- * components, collecting all edges within each component. Each component's edges
- * are appended to `ret_val`. Vertices are removed from `vertices_to_visit` as processed.
+ * Groups vertices from `vertices_to_visit` that match `section_type` into
+ * connected components, collecting all edges within each component. Each
+ * component's edges are appended to `ret_val`. Vertices are removed from
+ * `vertices_to_visit` as processed.
  *
  * @param ret_val Container to accumulate edge sets, one per component.
- * @param vertices_to_visit Set of vertices to partition; modified in-place as vertices are visited.
+ * @param vertices_to_visit Set of vertices to partition; modified in-place as
+ * vertices are visited.
  * @param section_type Vertex type defining component membership.
- * @param error_types Vertex types that must not be encountered during traversal.
+ * @param error_types Vertex types that must not be encountered during
+ * traversal.
  *
- * @throws exceptions::ConsistencyException if a vertex of `error_types` is found
- *         or if any edge within a component is breakable.
+ * @throws exceptions::ConsistencyException if a vertex of `error_types` is
+ * found or if any edge within a component is breakable.
  */
 void cda_rail::Network::dfs_inplace(
     std::vector<cda_rail::index_set>&     ret_val,
@@ -866,19 +907,26 @@ void cda_rail::Network::dfs_inplace(
 }
 
 /**
- * @brief Generates all edge-sequence routes that accumulate at least a desired distance.
+ * @brief Generates all edge-sequence routes that accumulate at least a desired
+ * distance.
  *
  * @param v_0 Starting vertex. Exactly one of v_0 or e_0 must be provided.
  * @param e_0 Starting edge. Exactly one of v_0 or e_0 must be provided.
  * @param desired_length Minimum accumulated distance each route must reach.
- * @param reverse_direction If true, traverses predecessors; otherwise, successors.
- * @param exit_node Optional vertex that terminates a route immediately upon reaching it (forward direction only).
+ * @param reverse_direction If true, traverses predecessors; otherwise,
+ * successors.
+ * @param exit_node Optional vertex that terminates a route immediately upon
+ * reaching it (forward direction only).
  * @param edges_used_by_train If non-empty, filters starting edges to this set.
- * @param return_successors_if_zero If true and desired_length is zero with v_0, returns adjacent edges as single-edge routes.
+ * @param return_successors_if_zero If true and desired_length is zero with v_0,
+ * returns adjacent edges as single-edge routes.
  * @return Vector of edge-index sequences.
- * @throws exceptions::InvalidInputException If neither or both of v_0 and e_0 are specified; if desired_length ≤ 0.
- * @throws exceptions::VertexNotExistentException If v_0 is specified but does not exist.
- * @throws exceptions::EdgeNotExistentException If e_0 is specified but does not exist.
+ * @throws exceptions::InvalidInputException If neither or both of v_0 and e_0
+ * are specified; if desired_length ≤ 0.
+ * @throws exceptions::VertexNotExistentException If v_0 is specified but does
+ * not exist.
+ * @throws exceptions::EdgeNotExistentException If e_0 is specified but does not
+ * exist.
  */
 std::vector<cda_rail::index_vector>
 cda_rail::Network::all_routes_of_given_length(
@@ -978,23 +1026,31 @@ cda_rail::Network::all_routes_of_given_length(
 }
 
 /**
- * @brief Recursively enumerates edge paths from a starting edge that end upon reaching an exit node or entering a TTD section boundary.
+ * @brief Recursively enumerates edge paths from a starting edge that end upon
+ * reaching an exit node or entering a TTD section boundary.
  *
  * Generates all edge sequences beginning at `e_0` that terminate when:
  * - The edge reaches the optional exit node as its target, or
  * - The path enters a TTD (track-to-track distance) section not marked as safe.
  *
- * The first edge is permitted to reside in a TTD section (which becomes safe); subsequent edges may traverse within that section but entering a different section stops exploration.
+ * The first edge is permitted to reside in a TTD section (which becomes safe);
+ * subsequent edges may traverse within that section but entering a different
+ * section stops exploration.
  *
  * @param e_0 Starting edge index.
  * @param ttd_sections Vector of edge sets, each representing a TTD section.
- * @param exit_node Optional vertex whose incoming edges terminate path exploration.
- * @param safe_ttd Optional TTD section index allowing traversal without termination (set internally during recursion).
- * @param first_edge Indicates whether `e_0` is the initial edge (controls TTD section entry rules).
+ * @param exit_node Optional vertex whose incoming edges terminate path
+ * exploration.
+ * @param safe_ttd Optional TTD section index allowing traversal without
+ * termination (set internally during recursion).
+ * @param first_edge Indicates whether `e_0` is the initial edge (controls TTD
+ * section entry rules).
  *
- * @return Vector of edge paths; each path is a vector of edge indices from `e_0` to a termination condition.
+ * @return Vector of edge paths; each path is a vector of edge indices from
+ * `e_0` to a termination condition.
  *
- * @throws exceptions::EdgeNotExistentException if `e_0` does not refer to an existing edge.
+ * @throws exceptions::EdgeNotExistentException if `e_0` does not refer to an
+ * existing edge.
  */
 std::vector<cda_rail::index_vector>
 cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
@@ -1040,14 +1096,18 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
 /**
  * @brief Resolves the vertex input into a concrete vertex index.
  *
- * Converts the stored vertex representation (index, name, or object) into a vertex index using the provided network.
- * Validates consistency depending on the representation type.
+ * Converts the stored vertex representation (index, name, or object) into a
+ * vertex index using the provided network. Validates consistency depending on
+ * the representation type.
  *
  * @param network The network to resolve the vertex in.
  * @return The resolved vertex index.
- * @throws exceptions::VertexNotExistentException If the vertex index is direct but does not exist in the network.
- * @throws exceptions::ConsistencyException If the vertex is specified as an object and its properties do not match the vertex found by name.
- * @throws std::runtime_error If the stored variant contains an unsupported type.
+ * @throws exceptions::VertexNotExistentException If the vertex index is direct
+ * but does not exist in the network.
+ * @throws exceptions::ConsistencyException If the vertex is specified as an
+ * object and its properties do not match the vertex found by name.
+ * @throws std::runtime_error If the stored variant contains an unsupported
+ * type.
  */
 
 size_t cda_rail::Network::VertexInput::resolve(
@@ -1075,13 +1135,15 @@ size_t cda_rail::Network::VertexInput::resolve(
 /**
  * @brief Resolves this edge representation to a concrete edge index.
  *
- * Converts the stored edge representation (direct index, vertex pair, edge object, or
- * edge key string) into a concrete edge index in the network.
+ * Converts the stored edge representation (direct index, vertex pair, edge
+ * object, or edge key string) into a concrete edge index in the network.
  *
  * @return The edge index corresponding to this edge input.
  *
- * @throws exceptions::EdgeNotExistentException If a direct edge index is stored but does not exist.
- * @throws exceptions::ConsistencyException If an Edge object is stored but its properties do not match the network's edge.
+ * @throws exceptions::EdgeNotExistentException If a direct edge index is stored
+ * but does not exist.
+ * @throws exceptions::ConsistencyException If an Edge object is stored but its
+ * properties do not match the network's edge.
  * @throws std::runtime_error If the variant contains an unsupported type.
  */
 size_t cda_rail::Network::EdgeInput::resolve(Network const* network) const {

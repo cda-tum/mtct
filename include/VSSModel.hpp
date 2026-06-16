@@ -29,8 +29,9 @@ namespace functions {
 /**
  * @brief Computes a Chebyshev separation value for node positioning.
  *
- * Calculates the normalized position of a node using Chebyshev polynomial spacing,
- * which provides non-uniform distribution with density clustering near boundaries.
+ * Calculates the normalized position of a node using Chebyshev polynomial
+ * spacing, which provides non-uniform distribution with density clustering near
+ * boundaries.
  *
  * @param i Node index.
  * @param n Total number of nodes.
@@ -48,12 +49,15 @@ namespace functions {
 }
 
 /**
- * @brief Finds the maximum number of blocks with a given minimum separation constraint.
+ * @brief Finds the maximum number of blocks with a given minimum separation
+ * constraint.
  *
- * @param sep_func Separation function that computes positions for a given block index and total count.
+ * @param sep_func Separation function that computes positions for a given block
+ * index and total count.
  * @param min_frac Minimum required separation, in the range (0, 1].
  *
- * @return Maximum number of blocks where all separation margins meet the minimum requirement.
+ * @return Maximum number of blocks where all separation margins meet the
+ * minimum requirement.
  *
  * @throws std::invalid_argument if min_frac is not in (0, 1].
  */

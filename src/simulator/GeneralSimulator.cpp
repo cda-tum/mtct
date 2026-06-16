@@ -16,15 +16,19 @@
 #include <vector>
 
 /**
- * @brief Constructs a GeneralSimulator with a problem instance and TTD sections.
+ * @brief Constructs a GeneralSimulator with a problem instance and TTD
+ * sections.
  *
- * Validates that all edges referenced in the TTD sections exist in the instance's network,
- * and initializes internal containers for train routes, orderings, and stop positions.
+ * Validates that all edges referenced in the TTD sections exist in the
+ * instance's network, and initializes internal containers for train routes,
+ * orderings, and stop positions.
  *
- * @param instance Problem instance containing the network, trains, and schedule.
+ * @param instance Problem instance containing the network, trains, and
+ * schedule.
  * @param ttd_sections TTD sections, each containing sets of edge indices.
  *
- * @throws EdgeNotExistentException if any edge in a TTD section does not exist in the network.
+ * @throws EdgeNotExistentException if any edge in a TTD section does not exist
+ * in the network.
  */
 cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     std::shared_ptr<
@@ -41,13 +45,17 @@ cda_rail::simulator::GeneralSimulator::GeneralSimulator(
 }
 
 /**
- * @brief Initializes a GeneralSimulator with routes, orderings, and stop positions.
+ * @brief Initializes a GeneralSimulator with routes, orderings, and stop
+ * positions.
  *
  * All inputs are validated against the problem instance before storage.
  *
- * @throws EdgeNotExistentException If TTD sections or train edges reference non-existent edges.
- * @throws InvalidInputException If data sizes or contents are inconsistent with the instance.
- * @throws ConsistencyException If stop positions do not align with scheduled stops or routes.
+ * @throws EdgeNotExistentException If TTD sections or train edges reference
+ * non-existent edges.
+ * @throws InvalidInputException If data sizes or contents are inconsistent with
+ * the instance.
+ * @throws ConsistencyException If stop positions do not align with scheduled
+ * stops or routes.
  */
 cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     std::shared_ptr<
@@ -71,12 +79,13 @@ cda_rail::simulator::GeneralSimulator::GeneralSimulator(
 }
 
 /**
-           * @brief Initializes the simulator with a problem instance and time-distance-diagram sections.
-           *
-           * @param instance Problem instance with schedule and routes.
-           * @param ttd_sections Edge sets defining time-distance-diagram sections.
-           */
-          cda_rail::simulator::GeneralSimulator::GeneralSimulator(
+ * @brief Initializes the simulator with a problem instance and
+ * time-distance-diagram sections.
+ *
+ * @param instance Problem instance with schedule and routes.
+ * @param ttd_sections Edge sets defining time-distance-diagram sections.
+ */
+cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
     std::vector<cda_rail::index_set>                        ttd_sections)
     : GeneralSimulator(
@@ -86,19 +95,21 @@ cda_rail::simulator::GeneralSimulator::GeneralSimulator(
           std::move(ttd_sections)) {}
 
 /**
-           * @brief Initializes a simulator with the given problem instance, TTD sections, train routes, orderings, and stop positions.
-           *
-           * Wraps the provided instance reference in a shared pointer and delegates initialization to the main constructor,
-           * which validates all inputs and initializes internal state.
-           *
-           * @param instance The problem instance (by reference).
-           * @param ttd_sections Train-timing-dependent sections, specified as edge sets.
-           * @param train_edges Ordered edge sequences for each train.
-           * @param ttd_orders Train orderings for each TTD section.
-           * @param vertex_orders Train orderings for each vertex.
-           * @param stop_positions Stop positions (distances along route) for each train.
-           */
-          cda_rail::simulator::GeneralSimulator::GeneralSimulator(
+ * @brief Initializes a simulator with the given problem instance, TTD sections,
+ * train routes, orderings, and stop positions.
+ *
+ * Wraps the provided instance reference in a shared pointer and delegates
+ * initialization to the main constructor, which validates all inputs and
+ * initializes internal state.
+ *
+ * @param instance The problem instance (by reference).
+ * @param ttd_sections Train-timing-dependent sections, specified as edge sets.
+ * @param train_edges Ordered edge sequences for each train.
+ * @param ttd_orders Train orderings for each TTD section.
+ * @param vertex_orders Train orderings for each vertex.
+ * @param stop_positions Stop positions (distances along route) for each train.
+ */
+cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
     std::vector<cda_rail::index_set>                        ttd_sections,
     std::vector<cda_rail::index_vector>                     train_edges,
@@ -131,8 +142,10 @@ cda_rail::simulator::GeneralSimulator::get_train_edges_of_tr(
  * @brief Retrieves the train ordering for a specified TTD section.
  *
  * @param ttdIndex Index of the TTD section.
- * @return const cda_rail::index_vector& Ordered train indices for the TTD section.
- * @throws cda_rail::exceptions::InvalidInputException if ttdIndex is out of bounds.
+ * @return const cda_rail::index_vector& Ordered train indices for the TTD
+ * section.
+ * @throws cda_rail::exceptions::InvalidInputException if ttdIndex is out of
+ * bounds.
  */
 const cda_rail::index_vector&
 cda_rail::simulator::GeneralSimulator::get_ttd_orders_of_ttd(
@@ -148,7 +161,8 @@ cda_rail::simulator::GeneralSimulator::get_ttd_orders_of_ttd(
  * @brief Identifies which TTD section an edge belongs to.
  *
  * @param edge The edge to query.
- * @return The index of the TTD section containing the edge, or empty if the edge is not part of any TTD section.
+ * @return The index of the TTD section containing the edge, or empty if the
+ * edge is not part of any TTD section.
  */
 std::optional<size_t> cda_rail::simulator::GeneralSimulator::get_ttd(
     Network::EdgeInput const& edge) const {
@@ -165,7 +179,8 @@ std::optional<size_t> cda_rail::simulator::GeneralSimulator::get_ttd(
 /**
  * @brief Retrieves the train ordering for a vertex.
  *
- * @return const cda_rail::index_vector& The vector of train indices ordered at the given vertex.
+ * @return const cda_rail::index_vector& The vector of train indices ordered at
+ * the given vertex.
  */
 const cda_rail::index_vector&
 cda_rail::simulator::GeneralSimulator::get_vertex_orders_of_vertex(
@@ -178,7 +193,8 @@ cda_rail::simulator::GeneralSimulator::get_vertex_orders_of_vertex(
  * @brief Retrieves the stop positions of a train.
  *
  * @param trainId The train identifier.
- * @return const std::vector<double>& A const reference to the train's stop positions.
+ * @return const std::vector<double>& A const reference to the train's stop
+ * positions.
  */
 const std::vector<double>&
 cda_rail::simulator::GeneralSimulator::get_stop_positions_of_tr(
@@ -206,7 +222,8 @@ double cda_rail::simulator::GeneralSimulator::train_edge_length(
  *
  * @param train_id Identifier of the train.
  * @param edge_id Identifier of the edge.
- * @return double The cumulative distance from the route start to the end of the specified edge.
+ * @return double The cumulative distance from the route start to the end of the
+ * specified edge.
  *
  * @throws EdgeNotExistentException if the edge does not exist in the network.
  * @throws ConsistencyException if the edge is not found in the train's route.
@@ -236,7 +253,8 @@ cda_rail::simulator::GeneralSimulator::get_edge_position(size_t train_id,
  * @param train_id The train identifier.
  * @param position Distance along the route.
  * @return size_t The edge index at the given position.
- * @throws ConsistencyException if the train has no edges or the position exceeds the route length.
+ * @throws ConsistencyException if the train has no edges or the position
+ * exceeds the route length.
  */
 size_t cda_rail::simulator::GeneralSimulator::get_edge_at_position(
     size_t train_id, double position) const {
@@ -298,7 +316,8 @@ bool cda_rail::simulator::GeneralSimulator::is_route_end_valid_stop_pos(
  *
  * @param tr_edges Edge sequences for each train, indexed by train ID.
  *
- * @throws InvalidInputException if the number of routes does not match the number of trains.
+ * @throws InvalidInputException if the number of routes does not match the
+ * number of trains.
  * @throws ConsistencyException if any route does not form a valid path.
  * @throws EdgeNotExistentException if any edge does not exist in the network.
  */
@@ -358,7 +377,8 @@ void cda_rail::simulator::GeneralSimulator::set_ttd_orders(
  * @param ttd_index The index of the TTD section.
  * @param orders Vector of train IDs in the desired order for this TTD section.
  *
- * @throws InvalidInputException if ttd_index is out of bounds, if any train ID in orders does not exist, or if orders contains duplicate train IDs.
+ * @throws InvalidInputException if ttd_index is out of bounds, if any train ID
+ * in orders does not exist, or if orders contains duplicate train IDs.
  */
 void cda_rail::simulator::GeneralSimulator::set_ttd_orders_of_ttd(
     size_t ttd_index, cda_rail::index_vector orders) {
@@ -374,7 +394,8 @@ void cda_rail::simulator::GeneralSimulator::set_ttd_orders_of_ttd(
 /**
  * @brief Replaces the vertex orderings for all network vertices.
  *
- * @param orders Vertex orderings indexed by vertex, each containing an ordered list of train IDs.
+ * @param orders Vertex orderings indexed by vertex, each containing an ordered
+ * list of train IDs.
  */
 void cda_rail::simulator::GeneralSimulator::set_vertex_orders(
     std::vector<cda_rail::index_vector> orders) {
@@ -386,9 +407,11 @@ void cda_rail::simulator::GeneralSimulator::set_vertex_orders(
  * @brief Sets the train order for a given vertex.
  *
  * @param vertex The vertex for which to set the train order.
- * @param orders The ordered sequence of train IDs. All trains must exist and be unique.
+ * @param orders The ordered sequence of train IDs. All trains must exist and be
+ * unique.
  *
- * @throws InvalidInputException if any train ID does not exist or if there are duplicates.
+ * @throws InvalidInputException if any train ID does not exist or if there are
+ * duplicates.
  */
 void cda_rail::simulator::GeneralSimulator::set_vertex_orders_of_vertex(
     cda_rail::Network::VertexInput const& vertex,
@@ -402,8 +425,9 @@ void cda_rail::simulator::GeneralSimulator::set_vertex_orders_of_vertex(
 /**
  * @brief Sets stop positions for all trains.
  *
- * @param positions A vector of stop position sequences, one per train. Each inner vector contains
- * cumulative distances along the train's route where stops occur.
+ * @param positions A vector of stop position sequences, one per train. Each
+ * inner vector contains cumulative distances along the train's route where
+ * stops occur.
  */
 void cda_rail::simulator::GeneralSimulator::set_stop_positions(
     std::vector<std::vector<double>> positions) {
@@ -423,13 +447,13 @@ void cda_rail::simulator::GeneralSimulator::set_stop_positions_of_tr(
 /**
  * @brief Appends a stop position for a train along its route.
  *
- * Adds a position at which the train will stop. The position must be non-negative,
- * must be non-decreasing relative to previously added stops, and the total stops
- * cannot exceed the train's scheduled stop count.
+ * Adds a position at which the train will stop. The position must be
+ * non-negative, must be non-decreasing relative to previously added stops, and
+ * the total stops cannot exceed the train's scheduled stop count.
  *
  * @param position The cumulative distance along the train's route.
  *
- * @throws ConsistencyException if all scheduled stops are already set or if 
+ * @throws ConsistencyException if all scheduled stops are already set or if
  *         position is less than the last recorded stop position.
  */
 void cda_rail::simulator::GeneralSimulator::append_stop_position_to_tr(
@@ -514,7 +538,9 @@ void cda_rail::simulator::GeneralSimulator::append_current_stop_position_of_tr(
 /**
  * @brief Determines whether the simulation has reached a terminal state.
  *
- * @return `true` if all trains have non-empty routes, all scheduled stops are assigned, and each train's route ends at its scheduled exit vertex; `false` otherwise.
+ * @return `true` if all trains have non-empty routes, all scheduled stops are
+ * assigned, and each train's route ends at its scheduled exit vertex; `false`
+ * otherwise.
  */
 bool cda_rail::simulator::GeneralSimulator::is_final_state() const {
   for (size_t tr = 0; tr < m_instance->get_const_train_list().size(); ++tr) {
@@ -608,7 +634,8 @@ cda_rail::simulator::GeneralSimulator::edge_milestones(size_t tr) const {
  * @param edge_id Edge identifier.
  * @return `true` if the edge is on the train's route, `false` otherwise.
  *
- * @throw cda_rail::exceptions::EdgeNotExistentException if the edge does not exist in the network.
+ * @throw cda_rail::exceptions::EdgeNotExistentException if the edge does not
+ * exist in the network.
  */
 bool cda_rail::simulator::GeneralSimulator::is_on_route(size_t tr,
                                                         size_t edge_id) const {
@@ -624,8 +651,8 @@ bool cda_rail::simulator::GeneralSimulator::is_on_route(size_t tr,
 /**
  * @brief Maps trains to each network edge.
  *
- * @return A vector of unordered sets, indexed by edge ID. Each set contains the train
- * indices routed on that edge.
+ * @return A vector of unordered sets, indexed by edge ID. Each set contains the
+ * train indices routed on that edge.
  */
 std::vector<std::unordered_set<size_t>>
 cda_rail::simulator::GeneralSimulator::tr_on_edges() const {
@@ -647,7 +674,8 @@ cda_rail::simulator::GeneralSimulator::tr_on_edges() const {
 }
 
 /**
- * @brief Validates that all edges in the given TTD sections exist in the network.
+ * @brief Validates that all edges in the given TTD sections exist in the
+ * network.
  *
  * @param ttd_sections Vector of TTD sections, each containing edge IDs.
  * @throws EdgeNotExistentException if any edge does not exist in the network.
@@ -664,7 +692,8 @@ void cda_rail::simulator::GeneralSimulator::check_ttd_sections(
 }
 
 /**
- * @brief Validates that a sequence of edges is compatible with a train's schedule entry and edge successors.
+ * @brief Validates that a sequence of edges is compatible with a train's
+ * schedule entry and edge successors.
  *
  * @param tr Train ID.
  * @param edges Sequence of edge indices to validate.
@@ -702,13 +731,14 @@ void cda_rail::simulator::GeneralSimulator::check_train_edges_for_tr(
 /**
  * @brief Validates train edge routes for correct count and connectivity.
  *
- * Ensures the train edges vector size matches the number of trains in the instance 
- * and that each train's edge sequence forms a valid connected path according to 
- * the network topology and schedule.
+ * Ensures the train edges vector size matches the number of trains in the
+ * instance and that each train's edge sequence forms a valid connected path
+ * according to the network topology and schedule.
  *
  * @param train_edges Vector of edge sequences, one per train.
  *
- * @throws InvalidInputException if the vector size does not match the number of trains.
+ * @throws InvalidInputException if the vector size does not match the number of
+ * trains.
  */
 void cda_rail::simulator::GeneralSimulator::check_train_edges(
     std::vector<cda_rail::index_vector> const& train_edges) const {
@@ -754,11 +784,14 @@ void cda_rail::simulator::GeneralSimulator::check_if_all_tr_unique(
 /**
  * @brief Validates TTD section orderings.
  *
- * Ensures that the number of orderings matches the number of TTD sections, and that each ordering contains only valid, unique train IDs.
+ * Ensures that the number of orderings matches the number of TTD sections, and
+ * that each ordering contains only valid, unique train IDs.
  *
  * @param ttd_orders Orderings of trains for each TTD section.
  *
- * @throws InvalidInputException if the size of ttd_orders does not match the number of TTD sections, or if any ordering contains invalid or duplicate train IDs.
+ * @throws InvalidInputException if the size of ttd_orders does not match the
+ * number of TTD sections, or if any ordering contains invalid or duplicate
+ * train IDs.
  */
 void cda_rail::simulator::GeneralSimulator::check_ttd_orders(
     std::vector<cda_rail::index_vector> const& ttd_orders) const {
@@ -774,10 +807,11 @@ void cda_rail::simulator::GeneralSimulator::check_ttd_orders(
 }
 
 /**
- * @brief Ensures vertex orders match the network size and contain valid, unique train IDs.
+ * @brief Ensures vertex orders match the network size and contain valid, unique
+ * train IDs.
  *
- * @throws InvalidInputException If the size does not match the number of vertices,
- *         or if any ordering contains invalid or duplicate train IDs.
+ * @throws InvalidInputException If the size does not match the number of
+ * vertices, or if any ordering contains invalid or duplicate train IDs.
  */
 void cda_rail::simulator::GeneralSimulator::check_vertex_orders(
     std::vector<cda_rail::index_vector> const& vertex_orders) const {
@@ -848,7 +882,8 @@ void cda_rail::simulator::GeneralSimulator::check_stop_positions_for_tr(
  *
  * @param stop_positions Stop positions for each train.
  *
- * @throws InvalidInputException if the number of entries does not match the number of trains.
+ * @throws InvalidInputException if the number of entries does not match the
+ * number of trains.
  */
 void cda_rail::simulator::GeneralSimulator::check_stop_positions(
     std::vector<std::vector<double>> const& stop_positions) const {

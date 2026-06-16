@@ -85,10 +85,10 @@ public:
    * GETTER
    */
   /**
- * @brief Retrieves the earliest service start time.
- *
- * @return The service start time, guaranteed to be non-negative.
- */
+   * @brief Retrieves the earliest service start time.
+   *
+   * @return The service start time, guaranteed to be non-negative.
+   */
   [[nodiscard]] double get_service_time() const { return m_service_time; }
 
   /**
@@ -97,7 +97,7 @@ public:
    * @return The earliest departure time.
    */
   [[nodiscard]] double get_earliest_departure() const
-  [[nodiscard]] double get_earliest_departure() const {
+      [[nodiscard]] double get_earliest_departure() const {
     return m_service_time + m_service_duration;
   }
 
@@ -111,10 +111,10 @@ public:
   }
 
   /**
- * @brief Accesses the station associated with this stop.
- *
- * @return Constant reference to the associated station (guaranteed non-null).
- */
+   * @brief Accesses the station associated with this stop.
+   *
+   * @return Constant reference to the associated station (guaranteed non-null).
+   */
   [[nodiscard]] Station const& get_station() const { return *m_station; }
 
   /*
@@ -202,12 +202,12 @@ private:
   check_stops_validity_helper(std::vector<ScheduledStop> const& stops);
 
   /**
- * @brief Constructs a Schedule with uninitialized members.
- *
- * Private constructor that creates a Schedule in an uninitialized state.
- * Intended for use by `Timetable` to initialize vectors prior to proper
- * assignment of entry/exit constraints and stops.
- */
+   * @brief Constructs a Schedule with uninitialized members.
+   *
+   * Private constructor that creates a Schedule in an uninitialized state.
+   * Intended for use by `Timetable` to initialize vectors prior to proper
+   * assignment of entry/exit constraints and stops.
+   */
   Schedule() = default;
   friend class Timetable;
 
@@ -242,18 +242,19 @@ public:
    */
 
   /**
- * @brief Provides the entry time.
- *
- * @return The entry time.
- */
-</parameter>
-  [[nodiscard]] double get_entry_time() const { return m_entry_time; }
+   * @brief Provides the entry time.
+   *
+   * @return The entry time.
+   */
+  </ parameter> [[nodiscard]] double get_entry_time() const {
+    return m_entry_time;
+  }
 
   /**
- * @brief Gets the scheduled exit time.
- *
- * @return The exit time constraint.
- */
+   * @brief Gets the scheduled exit time.
+   *
+   * @return The exit time constraint.
+   */
   [[nodiscard]] double get_exit_time() const { return m_exit_time; }
 
   /**
@@ -266,30 +267,31 @@ public:
   }
 
   /**
- * @brief Obtains the exit velocity.
- *
- * @return The exit velocity.
- */
+   * @brief Obtains the exit velocity.
+   *
+   * @return The exit velocity.
+   */
   [[nodiscard]] double get_exit_velocity() const { return m_exit_velocity; }
 
   /**
- * @brief Determines the network vertex where the train enters.
- *
- * @return The entry vertex ID.
- */
+   * @brief Determines the network vertex where the train enters.
+   *
+   * @return The entry vertex ID.
+   */
   [[nodiscard]] size_t get_entry_vertex() const { return m_entry_vertex; }
 
   /**
- * @brief Gets the exit vertex of the schedule.
- *
- * @return The exit vertex ID.
- */
+   * @brief Gets the exit vertex of the schedule.
+   *
+   * @return The exit vertex ID.
+   */
   [[nodiscard]] size_t get_exit_vertex() const { return m_exit_vertex; }
 
   /**
    * @brief Retrieves the scheduled stops for this train.
    *
-   * @return Const reference to the vector of scheduled stops, ordered by service time.
+   * @return Const reference to the vector of scheduled stops, ordered by
+   * service time.
    */
   [[nodiscard]] std::vector<ScheduledStop> const& get_stops() const {
     return m_stops;
@@ -303,7 +305,8 @@ public:
    * @brief Sets the entry time.
    *
    * @param newEntryTime New entry time.
-   * @throws cda_rail::exceptions::InvalidInputException If `newEntryTime` is negative.
+   * @throws cda_rail::exceptions::InvalidInputException If `newEntryTime` is
+   * negative.
    */
   void set_entry_time(double const newEntryTime) {
     cda_rail::exceptions::throw_if_negative(newEntryTime, "Entry time");
@@ -328,7 +331,8 @@ public:
    * @brief Updates the initial velocity.
    *
    * @param newInitialVelocity The new initial velocity.
-   * @throws cda_rail::exceptions::InvalidInputException If the value is negative.
+   * @throws cda_rail::exceptions::InvalidInputException If the value is
+   * negative.
    */
   void set_initial_velocity(double const newInitialVelocity) {
     cda_rail::exceptions::throw_if_negative(newInitialVelocity,
@@ -350,8 +354,7 @@ public:
   /**
    * @brief Sets the entry vertex.
    */
-  ```
-  void set_entry_vertex(size_t const newEntryVertex) {
+  ``` void set_entry_vertex(size_t const newEntryVertex) {
     m_entry_vertex = newEntryVertex;
   }
 
@@ -451,8 +454,9 @@ private:
   /**
    * @brief Sets the train list and reinitializes all schedules.
    *
-   * Copies the provided train list and creates a default-initialized schedule for each
-   * train. The schedules vector is resized to match the number of trains in the list.
+   * Copies the provided train list and creates a default-initialized schedule
+   * for each train. The schedules vector is resized to match the number of
+   * trains in the list.
    *
    * @param tl The train list to set.
    */
@@ -481,51 +485,52 @@ private:
 
 public:
   /**
- * @brief Creates an empty timetable.
- */
+   * @brief Creates an empty timetable.
+   */
   Timetable() = default;
   Timetable(StationList station_list, TrainList train_list,
             const std::vector<Schedule>& schedules);
   Timetable(const std::filesystem::path& p, const Network& network);
   /**
-       * @brief Constructs a timetable from a file path specified as a string.
-       *
-       * @param path Path to the timetable data.
-       */
-      Timetable(const std::string& path, const Network& network)
+   * @brief Constructs a timetable from a file path specified as a string.
+   *
+   * @param path Path to the timetable data.
+   */
+  Timetable(const std::string& path, const Network& network)
       : Timetable(std::filesystem::path(path), network) {};
   /**
-       * @brief Constructs a timetable from a C-string path.
-       *
-       * @param path C-string path to the timetable file.
-       * @param network Network used for vertex validation.
-       */
-      Timetable(char const* const path, Network const& network)
+   * @brief Constructs a timetable from a C-string path.
+   *
+   * @param path C-string path to the timetable file.
+   * @param network Network used for vertex validation.
+   */
+  Timetable(char const* const path, Network const& network)
       : Timetable(std::filesystem::path(path), network) {};
 
   // Rule of 0 suffices
 
   /**
- * @brief Provides a read-only iterator to the first schedule.
- * @return Const iterator to the beginning of the schedule list.
- */
+   * @brief Provides a read-only iterator to the first schedule.
+   * @return Const iterator to the beginning of the schedule list.
+   */
   [[nodiscard]] constexpr auto begin() const { return m_schedules.cbegin(); };
   /**
- * @brief Provides the end iterator for iterating over schedules.
- * @return A const iterator to the position past the last schedule.
- */
+   * @brief Provides the end iterator for iterating over schedules.
+   * @return A const iterator to the position past the last schedule.
+   */
   [[nodiscard]] constexpr auto end() const { return m_schedules.cend(); };
   /** @brief Read-only iterator to the first schedule (explicit const). */
   [[nodiscard]] constexpr auto cbegin() const { return m_schedules.cbegin(); };
   /**
- * @brief Returns a const iterator to one past the last schedule.
- *
- * @return A const iterator to the position following the last schedule.
- */
+   * @brief Returns a const iterator to one past the last schedule.
+   *
+   * @return A const iterator to the position following the last schedule.
+   */
   [[nodiscard]] constexpr auto cend() const { return m_schedules.cend(); };
   /**
    * @brief Const reverse iterator to the last schedule.
-   * @return auto Const reverse iterator to the beginning of the reversed schedule sequence.
+   * @return auto Const reverse iterator to the beginning of the reversed
+   * schedule sequence.
    */
   [[nodiscard]] constexpr auto crbegin() const {
     return m_schedules.crbegin();
@@ -689,7 +694,8 @@ public:
    * @param serviceTime Earliest service start time.
    * @param serviceDuration Minimum service duration.
    *
-   * @throws cda_rail::exceptions::InvalidInputException if the station already exists in the train's schedule.
+   * @throws cda_rail::exceptions::InvalidInputException if the station already
+   * exists in the train's schedule.
    */
   void insert_stop(std::string const& train_name,
                    std::string const& station_name, double const serviceTime,
@@ -705,9 +711,12 @@ public:
    *
    * @param train_name Name of the train.
    * @param station_name Name of the station to remove.
-   * @param throw_exception_if_not_existent If `true`, throws an exception if the station is not found in the schedule.
+   * @param throw_exception_if_not_existent If `true`, throws an exception if
+   * the station is not found in the schedule.
    *
-   * @throws cda_rail::exceptions::InvalidInputException If `throw_exception_if_not_existent` is `true` and the station is not in the train's schedule.
+   * @throws cda_rail::exceptions::InvalidInputException If
+   * `throw_exception_if_not_existent` is `true` and the station is not in the
+   * train's schedule.
    */
   void remove_stop(std::string const& train_name,
                    std::string const& station_name,
@@ -843,7 +852,8 @@ public:
   /**
    * @brief Updates the timetable after network discretization.
    *
-   * @param new_edges Pairs of vertex IDs and their associated edge indices after discretization.
+   * @param new_edges Pairs of vertex IDs and their associated edge indices
+   * after discretization.
    */
   void update_after_discretization(
       std::vector<std::pair<size_t, cda_rail::index_set>> const& new_edges) {
@@ -852,7 +862,8 @@ public:
   /**
    * @brief Updates the timetable after discretization.
    *
-   * @param new_edges Vector of pairs mapping edge identifiers to their discretized indices.
+   * @param new_edges Vector of pairs mapping edge identifiers to their
+   * discretized indices.
    */
   void update_after_discretization(
       std::vector<std::pair<size_t, cda_rail::index_vector>> const& new_edges) {
@@ -867,9 +878,11 @@ public:
    *
    * @param train_name The name of the train.
    * @param dt The time discretization step.
-   * @param tnInclusive Whether to include the final time index. Defaults to `true`.
+   * @param tnInclusive Whether to include the final time index. Defaults to
+   * `true`.
    *
-   * @return A pair `(start_index, end_index)` of discretized time indices for the train.
+   * @return A pair `(start_index, end_index)` of discretized time indices for
+   * the train.
    */
   [[nodiscard]] std::pair<size_t, size_t>
   time_index_interval(std::string const& train_name, double const dt,

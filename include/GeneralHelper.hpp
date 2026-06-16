@@ -46,7 +46,8 @@ template <std::floating_point T>
 // Rounding Functions
 
 /**
- * @brief Sets a value to zero if its absolute magnitude is less than a tolerance threshold.
+ * @brief Sets a value to zero if its absolute magnitude is less than a
+ * tolerance threshold.
  *
  * If the absolute value of @p val is less than @p tol, @p val is set to zero;
  * otherwise, @p val remains unchanged.
@@ -68,8 +69,10 @@ static void round_small_numbers_to_zero_inplace(double&      val,
  *
  * @param value Value to round.
  * @param tolerance Positive rounding step.
- * @return Value rounded to the nearest multiple of @p tolerance, up to floating-point round-off.
- * @throws cda_rail::exceptions::InvalidInputException If @p tolerance is not strictly positive.
+ * @return Value rounded to the nearest multiple of @p tolerance, up to
+ * floating-point round-off.
+ * @throws cda_rail::exceptions::InvalidInputException If @p tolerance is not
+ * strictly positive.
  */
 [[nodiscard]] static double round_to_given_tolerance(double const value,
                                                      double const tolerance) {

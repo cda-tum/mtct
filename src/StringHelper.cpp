@@ -32,10 +32,13 @@ std::string cda_rail::concatenate_string_views(
 }
 
 /**
- * @brief Parses a string view as a boolean and updates an optional if recognized.
+ * @brief Parses a string view as a boolean and updates an optional if
+ * recognized.
  *
- * Compares @p sView against "true" and "false" in a case-insensitive manner. Sets @p b to `true` if
- * @p sView matches "true", or to `false` if @p sView matches "false". If @p sView matches neither,
+ * Compares @p sView against "true" and "false" in a case-insensitive manner.
+ * Sets @p b to `true` if
+ * @p sView matches "true", or to `false` if @p sView matches "false". If @p
+ * sView matches neither,
  * @p b remains unchanged.
  *
  * @param sView The string to parse.

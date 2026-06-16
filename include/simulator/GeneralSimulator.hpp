@@ -90,11 +90,12 @@ public:
       std::vector<std::vector<double>>                        stop_positions);
 
   /**
- * @brief Virtual destructor.
- *
- * Ensures proper cleanup when derived class instances are deleted through base class pointers.
- */
-virtual ~GeneralSimulator() = default;
+   * @brief Virtual destructor.
+   *
+   * Ensures proper cleanup when derived class instances are deleted through
+   * base class pointers.
+   */
+  virtual ~GeneralSimulator() = default;
 
   // Rule of 5 (due to virtual deconstructor)
   GeneralSimulator(GeneralSimulator const&)            = default;
@@ -117,7 +118,8 @@ virtual ~GeneralSimulator() = default;
   /**
    * @brief Retrieves the TTD sections considered by the simulator.
    *
-   * @return const std::vector<cda_rail::index_set>& Vector of TTD section identifier sets.
+   * @return const std::vector<cda_rail::index_set>& Vector of TTD section
+   * identifier sets.
    */
   [[nodiscard]] const std::vector<cda_rail::index_set>&
   get_ttd_sections() const {
@@ -152,7 +154,8 @@ virtual ~GeneralSimulator() = default;
   /**
    * @brief Accesses the train ordering for each vertex.
    *
-   * @return const std::vector<cda_rail::index_vector>& The ordering vectors per vertex.
+   * @return const std::vector<cda_rail::index_vector>& The ordering vectors per
+   * vertex.
    */
   [[nodiscard]] const std::vector<cda_rail::index_vector>&
   get_vertex_orders() const {
@@ -164,8 +167,8 @@ virtual ~GeneralSimulator() = default;
   /**
    * @brief Accesses all trains' scheduled stop positions.
    *
-   * @return Const reference to a vector where each element is a vector of stop positions
-   *         for the corresponding train.
+   * @return Const reference to a vector where each element is a vector of stop
+   * positions for the corresponding train.
    */
   [[nodiscard]] const std::vector<std::vector<double>>&
   get_stop_positions() const {
@@ -186,7 +189,8 @@ virtual ~GeneralSimulator() = default;
   is_route_end_valid_stop_pos(size_t                        tr,
                               const cda_rail::index_vector& edges) const;
   /**
-   * @brief Checks whether the train's current last edge is a valid stop position.
+   * @brief Checks whether the train's current last edge is a valid stop
+   * position.
    *
    * @param tr Train ID.
    * @return `true` if the position is valid for stopping, `false` otherwise.
@@ -241,9 +245,12 @@ virtual ~GeneralSimulator() = default;
            bool save_trajectories) const = 0;
 
   /**
-   * @brief Simulates train movements given the current routing, ordering, and stopping configuration.
+   * @brief Simulates train movements given the current routing, ordering, and
+   * stopping configuration.
    *
-   * @return SimulatorResults containing the simulation outcome, including train exit times, stop timestamps, braking information, vertex headways, and—when enabled—train trajectories over time.
+   * @return SimulatorResults containing the simulation outcome, including train
+   * exit times, stop timestamps, braking information, vertex headways, and—when
+   * enabled—train trajectories over time.
    */
   [[nodiscard]] SimulatorResults
   simulate(bool late_entry_possible = false,

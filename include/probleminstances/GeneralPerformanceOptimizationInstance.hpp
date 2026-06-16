@@ -35,11 +35,11 @@ public:
   // -------------------
   // CONSTRUCTOR
   /**
- * @brief Constructs an instance with default values.
- */
-```
+   * @brief Constructs an instance with default values.
+   */
+  ```
 
-  GeneralPerformanceOptimizationInstance() = default;
+      GeneralPerformanceOptimizationInstance() = default;
   /**
    * @brief Constructs an instance from a network.
    *
@@ -64,13 +64,14 @@ public:
       std::string_view instance_name, std::string_view instance_subdirectory,
       std::filesystem::path const& working_directory);
   /**
-             * @brief Constructs an instance from a named subdirectory.
-             *
-             * @param instanceName The name of the instance to load.
-             * @param instanceSubdirectory The subdirectory containing the instance data.
-             * @param working_directory The working directory containing the instance subdirectory.
-             */
-            GeneralPerformanceOptimizationInstance(
+   * @brief Constructs an instance from a named subdirectory.
+   *
+   * @param instanceName The name of the instance to load.
+   * @param instanceSubdirectory The subdirectory containing the instance data.
+   * @param working_directory The working directory containing the instance
+   * subdirectory.
+   */
+  GeneralPerformanceOptimizationInstance(
       std::string_view const instanceName,
       std::string_view const instanceSubdirectory,
       std::string const&     working_directory)
@@ -78,13 +79,15 @@ public:
             instanceName, instanceSubdirectory,
             std::filesystem::path(working_directory)) {}
   /**
-             * @brief Constructs an instance by loading from a specified directory structure.
-             *
-             * @param instanceName Name identifying the instance to load.
-             * @param instanceSubdirectory Subdirectory (within `workingDirectory`) containing instance data.
-             * @param workingDirectory Root directory path for loading instance data.
-             */
-            GeneralPerformanceOptimizationInstance(
+   * @brief Constructs an instance by loading from a specified directory
+   * structure.
+   *
+   * @param instanceName Name identifying the instance to load.
+   * @param instanceSubdirectory Subdirectory (within `workingDirectory`)
+   * containing instance data.
+   * @param workingDirectory Root directory path for loading instance data.
+   */
+  GeneralPerformanceOptimizationInstance(
       std::string_view const instanceName,
       std::string_view const instanceSubdirectory,
       char const* const      workingDirectory)
@@ -97,7 +100,8 @@ public:
   /**
    * @brief Accesses the per-train weights.
    *
-   * @return A const reference to the vector of per-train weights, indexed by train.
+   * @return A const reference to the vector of per-train weights, indexed by
+   * train.
    */
 
   [[nodiscard]] const auto& get_train_weights() const {
@@ -106,7 +110,8 @@ public:
   /**
    * @brief Gets the station delay weight.
    *
-   * @return double The weight applied to station delays in the objective function.
+   * @return double The weight applied to station delays in the objective
+   * function.
    */
   [[nodiscard]] double get_station_delay_weight() const {
     return m_station_delay_weight;
@@ -202,7 +207,8 @@ public:
    * @brief Adds a train with an associated weight to the instance.
    *
    * @param tim Whether the train operates under timetable constraints.
-   * @param tr_weight Weight coefficient for this train in the objective (default 1).
+   * @param tr_weight Weight coefficient for this train in the objective
+   * (default 1).
    * @return Index of the newly added train.
    */
 
@@ -221,7 +227,8 @@ public:
     return index;
   }
   /**
-   * @brief Adds a train to the instance with specified characteristics and weight.
+   * @brief Adds a train to the instance with specified characteristics and
+   * weight.
    *
    * @param train_name Name of the train.
    * @param length Length of the train.
@@ -234,7 +241,8 @@ public:
    * @param exit_time Time at which the train exits the network.
    * @param exit_velocity Exit velocity of the train.
    * @param exit_vertex Exit vertex for the train.
-   * @param tr_weight Per-train weight factor for objective calculation (default: 1).
+   * @param tr_weight Per-train weight factor for objective calculation
+   * (default: 1).
    * @return The index of the added train.
    */
   size_t add_train(std::string const& train_name, double length,
@@ -268,7 +276,8 @@ public:
   /**
    * @brief Checks if the instance is consistent.
    *
-   * @return `true` if the instance is consistent and every train has a route, `false` otherwise.
+   * @return `true` if the instance is consistent and every train has a route,
+   * `false` otherwise.
    */
   [[nodiscard]] bool check_consistency() const override {
     return check_consistency(true);
@@ -295,7 +304,8 @@ public:
         this->get_const_timetable().get_train_list().get_train_index(tr_name));
   };
   /**
-   * @brief Determines the maximum departure time for a train at a specified velocity.
+   * @brief Determines the maximum departure time for a train at a specified
+   * velocity.
    *
    * @param v Velocity constraint.
    * @return Maximum departure time.
@@ -344,7 +354,8 @@ public:
   using SolGeneralProblemInstanceWithScheduleAndRoutes::load_solution;
 
   /**
-   * @brief Initializes a solution object for a performance optimization problem instance.
+   * @brief Initializes a solution object for a performance optimization problem
+   * instance.
    *
    * @param instance The problem instance to associate with this solution.
    */
@@ -356,7 +367,8 @@ public:
     this->initialize_vectors();
   }
   /**
-   * @brief Constructs a solution instance with metadata for the given optimization problem.
+   * @brief Constructs a solution instance with metadata for the given
+   * optimization problem.
    *
    * @param instance The optimization problem instance to solve.
    * @param status The solution status.
@@ -373,10 +385,9 @@ public:
   }
 
   /**
-       * @brief Constructs a copy of an existing solution instance.
-       */
-      ```
-  SolGeneralPerformanceOptimizationInstance(
+   * @brief Constructs a copy of an existing solution instance.
+   */
+  ``` SolGeneralPerformanceOptimizationInstance(
       SolGeneralPerformanceOptimizationInstance const&) = default;
   SolGeneralPerformanceOptimizationInstance&
   operator=(SolGeneralPerformanceOptimizationInstance const&) = default;
@@ -385,9 +396,9 @@ public:
   SolGeneralPerformanceOptimizationInstance&
   operator=(SolGeneralPerformanceOptimizationInstance&&) noexcept = default;
   /**
- * @brief Virtual destructor.
- */
-~SolGeneralPerformanceOptimizationInstance() override           = default;
+   * @brief Virtual destructor.
+   */
+  ~SolGeneralPerformanceOptimizationInstance() override = default;
 
   // Import / Export
 
