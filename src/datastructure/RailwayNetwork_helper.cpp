@@ -135,11 +135,11 @@ void cda_rail::Network::extract_vertices_from_key_inplace(
   const size_t q4 = key.find_first_of('\'', q3 + 1);
   if (q1 == std::string::npos || q2 == std::string::npos ||
       q3 == std::string::npos || q4 == std::string::npos) {
-    throw exceptions::InvalidInputException(
-        "Malformed edge key string: " + key);
+    throw exceptions::InvalidInputException("Malformed edge key string: " +
+                                            key);
   }
-  source_name     = key.substr(q1 + 1, q2 - q1 - 1);
-  target_name     = key.substr(q3 + 1, q4 - q3 - 1);
+  source_name = key.substr(q1 + 1, q2 - q1 - 1);
+  target_name = key.substr(q3 + 1, q4 - q3 - 1);
 }
 
 void cda_rail::Network::add_edges_from_graphml(
