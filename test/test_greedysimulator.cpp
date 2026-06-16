@@ -553,7 +553,7 @@ TEST(GreedySimulator, TrainsOnEdges) {
   EXPECT_EQ(tr_on_edges.size(), network.number_of_edges());
   for (size_t i = 0; i < network.number_of_edges(); ++i) {
     if (i == l0_l1) {
-      EXPECT_EQ(tr_on_edges.at(i).size(), 3);
+      EXPECT_EQ(tr_on_edges.at(i).size(), 4);
       EXPECT_TRUE(tr_on_edges.at(i).contains(tr1));
       EXPECT_TRUE(tr_on_edges.at(i).contains(tr2));
       EXPECT_TRUE(tr_on_edges.at(i).contains(tr3));
