@@ -112,15 +112,20 @@ int main(int argc, char** argv) {
                "Allow late entry (delays) in the solution (default without "
                "flag is false)")
       ->group("Model Parameters");
-  app.add_flag("!-f,!--speed-limit-only-on-train-front",
+  app.add_flag("!-f,!--speed-limit-only-on-train-front,--limit-speed-by-"
+               "leaving-edges",
                limit_speed_by_leaving_edges,
                "If this flag is set, trains only respect the limit of their "
                "front position. Otherwise (by default) any edge's speed limit "
-               "any part of the train is on applies.")
+               "any part of the train is on applies, i.e., by default speed "
+               "limits of edges the train is leaving (and the front already "
+               "left) are also relevant.")
       ->group("Model Parameters");
-  app.add_flag("!-y,!--allow-early-exit", consider_earliest_exit,
+  app.add_flag("!-y,!--allow-early-exit,--consider-earliest-exit",
+               consider_earliest_exit,
                "Allow to leave stations and the network early. By defaults "
-               "trains cannot leave before the scheduled time.")
+               "trains cannot leave before the scheduled time, i.e., the "
+               "earliest exit times imposed by the schedule are respected.")
       ->group("Model Parameters");
   app.add_flag("-a,--time-aware-state-transitions",
                time_aware_state_transitions,
