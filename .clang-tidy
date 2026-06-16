@@ -25,7 +25,7 @@ Checks: |
   readability-*,
   -readability-identifier-length,
   -readability-magic-numbers,
-  -readability-function-cognitive-complexity
+  -readability-function-cognitive-complexity,
   -readability-redundant-member-init
 
 CheckOptions:
