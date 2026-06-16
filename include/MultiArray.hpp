@@ -38,8 +38,8 @@ private:
    */
   template <typename... Args>
   [[nodiscard]] static FixedSizeVector<size_t> make_index_vector(Args... args) {
-    auto to_size_t_checked = [](auto v) -> size_t {
-      using V = decltype(v);
+    auto to_size_t_checked = []<typename T0>(T0 v) -> size_t {
+      using V = T0;
       static_assert(std::is_integral_v<V>, "Indices/extents must be integral");
       if constexpr (std::is_signed_v<V>) {
         if (v < 0) {
