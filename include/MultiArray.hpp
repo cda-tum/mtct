@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include <stdexcept>
+#include <type_traits>
 
 namespace cda_rail {
 
@@ -36,11 +37,7 @@ private:
    *         in the order they were supplied.
    */
   template <typename... Args>
-`#include ` <type_traits>
-
-      template <typename... Args>
-      [[nodiscard]] static FixedSizeVector<size_t>
-      make_index_vector(Args... args) {
+  [[nodiscard]] static FixedSizeVector<size_t> make_index_vector(Args... args) {
     auto to_size_t_checked = [](auto v) -> size_t {
       using V = decltype(v);
       static_assert(std::is_integral_v<V>, "Indices/extents must be integral");
