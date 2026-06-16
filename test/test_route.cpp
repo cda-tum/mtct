@@ -32,11 +32,11 @@ TEST(RouteFunctionality, FirstPosOnEdge) {
   const auto p2 = route.get_first_pos_on_edges({e1}, network);
   const auto p3 = route.get_first_pos_on_edges({e2}, network);
 
-  EXPECT_TRUE(p1.has_value());
-  EXPECT_TRUE(p2.has_value());
+  ASSERT_TRUE(p1.has_value());
+  ASSERT_TRUE(p2.has_value());
   EXPECT_FALSE(p3.has_value());
-  EXPECT_EQ(p1.value_or(-1), 0);
-  EXPECT_EQ(p2.value_or(-1), 1);
+  EXPECT_EQ(p1.value(), 0);
+  EXPECT_EQ(p2.value(), 1);
 }
 
 TEST(RouteFunctionality, LastPosOnEdge) {
@@ -63,13 +63,13 @@ TEST(RouteFunctionality, LastPosOnEdge) {
   const auto p3 = route.get_last_pos_on_edges({e2}, network);
   const auto p4 = route.get_last_pos_on_edges({e0}, network);
 
-  EXPECT_TRUE(p1.has_value());
-  EXPECT_TRUE(p2.has_value());
+  ASSERT_TRUE(p1.has_value());
+  ASSERT_TRUE(p2.has_value());
   EXPECT_FALSE(p3.has_value());
-  EXPECT_TRUE(p4.has_value());
-  EXPECT_EQ(p1.value_or(-1), 4);
-  EXPECT_EQ(p2.value_or(-1), 4);
-  EXPECT_EQ(p4.value_or(-1), 1);
+  ASSERT_TRUE(p4.has_value());
+  EXPECT_EQ(p1.value(), 4);
+  EXPECT_EQ(p2.value(), 4);
+  EXPECT_EQ(p4.value(), 1);
 }
 
 namespace {
@@ -263,10 +263,11 @@ TEST(RouteFunctionality, GetFirstPosOnEdgesReturnsStartOfFirstMatchingEdge) {
   route.push_back_edge(e0, network);
   route.push_back_edge(e1, network);
 
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
   const auto pos = route.get_first_pos_on_edges({e1}, network);
 
   ASSERT_TRUE(pos.has_value());
-  EXPECT_DOUBLE_EQ(pos.value_or(-1.0), 1.0);
+  EXPECT_DOUBLE_EQ(pos.value(), 1.0);
 }
 
 TEST(RouteFunctionality, GetLastPosOnEdgesReturnsEndOfLastMatchingEdge) {
@@ -279,7 +280,8 @@ TEST(RouteFunctionality, GetLastPosOnEdgesReturnsEndOfLastMatchingEdge) {
   const auto pos = route.get_last_pos_on_edges({e0, e2}, network);
 
   ASSERT_TRUE(pos.has_value());
-  EXPECT_DOUBLE_EQ(pos.value_or(-1.0), 6.0);
+  EXPECT_DOUBLE_EQ(pos.value(), 6.0);
+  // NOLINTEND(bugprone-unchecked-optional-access)
 }
 
 TEST(RouteFunctionality, GetFirstAndLastPosOnEdgesReturnNoValueForEmptyRoute) {

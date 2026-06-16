@@ -1534,9 +1534,9 @@ TEST(RailwayNetwork, NetworkSections) {
     }
   }
   // s0, s1 and s2 should be all different and within.at(0, 2)
-  EXPECT_TRUE(s0.has_value());
-  EXPECT_TRUE(s1.has_value());
-  EXPECT_TRUE(s2.has_value());
+  ASSERT_TRUE(s0.has_value());
+  ASSERT_TRUE(s1.has_value());
+  ASSERT_TRUE(s2.has_value());
   EXPECT_NE(s0, s1);
   EXPECT_NE(s0, s2);
   EXPECT_NE(s1, s2);
@@ -3356,7 +3356,7 @@ TEST(RailwayNetwork, ShortestPaths) {
   // Shortest paths
   const auto [shortest_paths_1_val, shortest_paths_1_path] =
       network.shortest_edge_to_vertex_path(v1_v2, v6);
-  EXPECT_TRUE(shortest_paths_1_val.has_value());
+  ASSERT_TRUE(shortest_paths_1_val.has_value());
   EXPECT_EQ(shortest_paths_1_val.value(), 1700);
   EXPECT_EQ(shortest_paths_1_path.size(), 4);
   EXPECT_EQ(shortest_paths_1_path,
@@ -3364,7 +3364,7 @@ TEST(RailwayNetwork, ShortestPaths) {
 
   const auto [shortest_paths_1b_val, shortest_paths_1b_path] =
       network.shortest_edge_to_vertex_path(v1_v2, v6, false);
-  EXPECT_TRUE(shortest_paths_1b_val.has_value());
+  ASSERT_TRUE(shortest_paths_1b_val.has_value());
   EXPECT_EQ(shortest_paths_1b_val.value(), 1700);
   EXPECT_EQ(shortest_paths_1b_path.size(), 4);
   EXPECT_EQ(shortest_paths_1b_path,
@@ -3374,7 +3374,7 @@ TEST(RailwayNetwork, ShortestPaths) {
       network.shortest_edge_to_vertex_path(
           v1_v2, v6, true,
           {v1_v2, v2_v3, v3_v4, v4_v3, v4_v5, v5_v4, v5_v6, v6_v5});
-  EXPECT_TRUE(shortest_paths_2_val.has_value());
+  ASSERT_TRUE(shortest_paths_2_val.has_value());
   EXPECT_EQ(shortest_paths_2_val.value(), 1900);
   EXPECT_EQ(shortest_paths_2_path.size(), 5);
   EXPECT_EQ(shortest_paths_2_path,
@@ -3384,7 +3384,7 @@ TEST(RailwayNetwork, ShortestPaths) {
       network.shortest_edge_to_vertex_path(
           v1_v2, v6, false,
           {v1_v2, v2_v3, v3_v4, v4_v3, v4_v5, v5_v4, v5_v6, v6_v5});
-  EXPECT_TRUE(shortest_paths_2b_val.has_value());
+  ASSERT_TRUE(shortest_paths_2b_val.has_value());
   EXPECT_EQ(shortest_paths_2b_val.value(), 1900);
   EXPECT_EQ(shortest_paths_2b_path.size(), 5);
   EXPECT_EQ(shortest_paths_2b_path,
@@ -3397,14 +3397,14 @@ TEST(RailwayNetwork, ShortestPaths) {
 
   const auto [shortest_paths_3b_val, shortest_paths_3b_path] =
       network.shortest_edge_to_vertex_path(v5_v4, v1, false);
-  EXPECT_TRUE(shortest_paths_3b_val.has_value());
+  ASSERT_TRUE(shortest_paths_3b_val.has_value());
   EXPECT_EQ(shortest_paths_3b_val.value(), 500);
   EXPECT_EQ(shortest_paths_3b_path.size(), 2);
   EXPECT_EQ(shortest_paths_3b_path, std::vector<size_t>({v5_v4, v4_v1}));
 
   const auto [shortest_paths_4_val, shortest_paths_4_path] =
       network.shortest_edge_to_vertex_path(v1_v2, v2);
-  EXPECT_TRUE(shortest_paths_4_val.has_value());
+  ASSERT_TRUE(shortest_paths_4_val.has_value());
   EXPECT_EQ(shortest_paths_4_val.value(), 0);
   EXPECT_EQ(shortest_paths_4_path.size(), 1);
   EXPECT_EQ(shortest_paths_4_path, std::vector<size_t>({v1_v2}));
@@ -3444,75 +3444,75 @@ TEST(RailwayNetwork, QuickestPaths) {
   // Calculate shortest path
   const auto shortest_dist =
       network.shortest_path_from_edge_to_vertex(v1_v2, v4, false, false);
-  EXPECT_TRUE(shortest_dist.has_value());
+  ASSERT_TRUE(shortest_dist.has_value());
   // 200+100
   EXPECT_EQ(shortest_dist.value(), 300);
 
   const auto shortest_dist_edge =
       network.shortest_path_from_edge_to_edge(v1_v2, v3_v4, false, false);
-  EXPECT_TRUE(shortest_dist_edge.has_value());
+  ASSERT_TRUE(shortest_dist_edge.has_value());
   EXPECT_EQ(shortest_dist_edge.value(), 300);
 
   const auto shortest_dist_zero =
       network.shortest_path_from_edge_to_vertex(v1_v2, v2, false, false);
-  EXPECT_TRUE(shortest_dist_zero.has_value());
+  ASSERT_TRUE(shortest_dist_zero.has_value());
   EXPECT_EQ(shortest_dist_zero.value(), 0);
 
   const auto shortest_dist_zero_edge =
       network.shortest_path_from_edge_to_edge(v1_v2, v1_v2, false, false);
-  EXPECT_TRUE(shortest_dist_zero_edge.has_value());
+  ASSERT_TRUE(shortest_dist_zero_edge.has_value());
   EXPECT_EQ(shortest_dist_zero_edge.value(), 0);
 
   // Calculate quickest path
   const auto quickest_dist_1 =
       network.shortest_path_from_edge_to_vertex(v1_v2, v4, false, true);
-  EXPECT_TRUE(quickest_dist_1.has_value());
+  ASSERT_TRUE(quickest_dist_1.has_value());
   // 200/40 + 200/40 + 100/10 = 20
   EXPECT_EQ(quickest_dist_1.value(), 20);
   const auto quickest_dist_1b =
       network.shortest_path_from_edge_to_vertex(v1_v2, v4, true, true);
   // 100/10 more -> 30
-  EXPECT_TRUE(quickest_dist_1b.has_value());
+  ASSERT_TRUE(quickest_dist_1b.has_value());
   EXPECT_EQ(quickest_dist_1b.value(), 30);
 
   const auto quickest_dist_1_edge =
       network.shortest_path_from_edge_to_edge(v1_v2, v3_v4, false, true);
-  EXPECT_TRUE(quickest_dist_1_edge.has_value());
+  ASSERT_TRUE(quickest_dist_1_edge.has_value());
   EXPECT_EQ(quickest_dist_1_edge.value(), 20);
 
   // Calculate quickest path with max speed 25
   const auto quickest_dist_2 =
       network.shortest_path_from_edge_to_vertex(v1_v2, v4, false, true, 25);
-  EXPECT_TRUE(quickest_dist_2.has_value());
+  ASSERT_TRUE(quickest_dist_2.has_value());
   // 200/25 + 200/25 + 100/10 = 26
   EXPECT_EQ(quickest_dist_2.value(), 26);
 
   const auto quickest_dist_2_edge =
       network.shortest_path_from_edge_to_edge(v1_v2, v3_v4, false, true, 25);
-  EXPECT_TRUE(quickest_dist_2_edge.has_value());
+  ASSERT_TRUE(quickest_dist_2_edge.has_value());
   EXPECT_EQ(quickest_dist_2_edge.value(), 26);
 
   // Calculate quickest path with max speed 15
   const auto quickest_dist_3 =
       network.shortest_path_from_edge_to_vertex(v1_v2, v4, false, true, 15);
-  EXPECT_TRUE(quickest_dist_3.has_value());
+  ASSERT_TRUE(quickest_dist_3.has_value());
   // 200/10 + 100/10 = 30
   EXPECT_EQ(quickest_dist_3.value(), 30);
 
   const auto quickest_dist_3_edge =
       network.shortest_path_from_edge_to_edge(v1_v2, v3_v4, false, true, 15);
-  EXPECT_TRUE(quickest_dist_3_edge.has_value());
+  ASSERT_TRUE(quickest_dist_3_edge.has_value());
   EXPECT_EQ(quickest_dist_3_edge.value(), 30);
 
   const auto& quickest_dist_4 =
       network.shortest_path_from_edge_to_vertex(v1_v2, v3, false, true, 10);
-  EXPECT_TRUE(quickest_dist_4.has_value());
+  ASSERT_TRUE(quickest_dist_4.has_value());
   // 200/10 = 20
   EXPECT_EQ(quickest_dist_4.value(), 20);
 
   const auto& quickest_dist_4_edge =
       network.shortest_path_from_edge_to_edge(v1_v2, v5_v3, false, true, 10);
-  EXPECT_TRUE(quickest_dist_4_edge.has_value());
+  ASSERT_TRUE(quickest_dist_4_edge.has_value());
   // 200/10 + 200/10 = 40
   EXPECT_EQ(quickest_dist_4_edge.value(), 40);
 
@@ -3567,57 +3567,57 @@ TEST(RailwayNetwork, ShortestPathsBetweenSets) {
   const auto shortest_dist_1 =
       network.shortest_path_from_edge_to_vertex(v4_v3, v6);
   // 100 + 500 + 100 = 700
-  EXPECT_TRUE(shortest_dist_1.has_value());
+  ASSERT_TRUE(shortest_dist_1.has_value());
   EXPECT_EQ(shortest_dist_1.value(), 700);
   const auto shortest_dist_1_edge =
       network.shortest_path_from_edge_to_edge(v4_v3, v5_v6);
-  EXPECT_TRUE(shortest_dist_1_edge.has_value());
+  ASSERT_TRUE(shortest_dist_1_edge.has_value());
   EXPECT_EQ(shortest_dist_1_edge.value(), 700);
 
   const auto shortest_dist_2 =
       network.shortest_path_length_between_edge_and_vertex_set({v4_v3},
                                                                {v6, v1});
   // 100 + 100 = 200
-  EXPECT_TRUE(shortest_dist_2.has_value());
+  ASSERT_TRUE(shortest_dist_2.has_value());
   EXPECT_EQ(shortest_dist_2.value(), 200);
   const auto shortest_dist_2b =
       network.shortest_path_length_between_edge_and_vertex_set({v4_v3},
                                                                {v6, v1}, true);
   // 100 more for first edge -> 300
-  EXPECT_TRUE(shortest_dist_2b.has_value());
+  ASSERT_TRUE(shortest_dist_2b.has_value());
   EXPECT_EQ(shortest_dist_2b.value(), 300);
   const auto shortest_dist_2_edge =
       network.shortest_path_length_between_edge_sets({v4_v3}, {v5_v6, v2_v1});
-  EXPECT_TRUE(shortest_dist_2_edge.has_value());
+  ASSERT_TRUE(shortest_dist_2_edge.has_value());
   EXPECT_EQ(shortest_dist_2_edge.value(), 200);
 
   const auto shortest_dist_3 =
       network.shortest_path_length_between_edge_and_vertex_set({v4_v3, v3_v4},
                                                                {v6});
   // 200 + 100 = 300
-  EXPECT_TRUE(shortest_dist_3.has_value());
+  ASSERT_TRUE(shortest_dist_3.has_value());
   EXPECT_EQ(shortest_dist_3.value(), 300);
   const auto shortest_dist_3b =
       network.shortest_path_length_between_edge_and_vertex_set({v4_v3, v3_v4},
                                                                {v6}, true);
   // 100 more for first edge -> 400
-  EXPECT_TRUE(shortest_dist_3b.has_value());
+  ASSERT_TRUE(shortest_dist_3b.has_value());
   EXPECT_EQ(shortest_dist_3b.value(), 400);
   const auto shortest_dist_3_edge =
       network.shortest_path_length_between_edge_sets({v4_v3, v3_v4}, {v5_v6});
-  EXPECT_TRUE(shortest_dist_3_edge.has_value());
+  ASSERT_TRUE(shortest_dist_3_edge.has_value());
   EXPECT_EQ(shortest_dist_3_edge.value(), 300);
 
   const auto shortest_dist_4 =
       network.shortest_path_length_between_edge_and_vertex_set({v4_v3, v3_v4},
                                                                {v1, v6});
   // 100 + 100 = 200
-  EXPECT_TRUE(shortest_dist_4.has_value());
+  ASSERT_TRUE(shortest_dist_4.has_value());
   EXPECT_EQ(shortest_dist_4.value(), 200);
   const auto shortest_dist_4_edge =
       network.shortest_path_length_between_edge_sets({v4_v3, v3_v4},
                                                      {v2_v1, v5_v6});
-  EXPECT_TRUE(shortest_dist_4_edge.has_value());
+  ASSERT_TRUE(shortest_dist_4_edge.has_value());
   EXPECT_EQ(shortest_dist_4_edge.value(), 200);
 
   EXPECT_THROW(
