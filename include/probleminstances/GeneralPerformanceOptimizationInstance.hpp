@@ -8,7 +8,6 @@
 #include "nlohmann/json_fwd.hpp"
 
 #include <cassert>
-#include <cstdarg>
 #include <cstddef>
 #include <filesystem>
 #include <map>
@@ -18,8 +17,6 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-
-// for some reason only works if imported after cstdarg
 
 using json = nlohmann::json;
 
