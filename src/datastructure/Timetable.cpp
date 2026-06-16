@@ -90,8 +90,11 @@ void cda_rail::Schedule::insert_stop(ScheduledStop new_stop) {
 
   // Insert in stops while maintaining order by service time
   // If multiple stops with the same service time exist, append
-  auto const insert_pos = std::ranges::upper_bound(
-      m_stops, stop_time, {}, &ScheduledStop::get_service_time);
+  auto const insert_pos =
+      std::upper_bound(m_stops.begin(), m_stops.end(), stop_time,
+                       [](double time, ScheduledStop const& stop) {
+                         return time < stop.get_service_time();
+                       });
   m_stops.insert(insert_pos, std::move(new_stop));
 }
 

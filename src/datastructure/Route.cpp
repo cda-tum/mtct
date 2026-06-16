@@ -41,7 +41,8 @@ double cda_rail::Route::length(const Network& network) const {
       m_edges | std::views::transform([&network](size_t edge) {
         return network.get_edge(edge).length;
       });
-  return std::ranges::fold_left(edge_lengths, 0.0, std::plus{});
+  return std::accumulate(edge_lengths.begin(), edge_lengths.end(), 0.0,
+                         std::plus{});
 }
 
 cda_rail::Route::EdgePosition
@@ -64,8 +65,8 @@ cda_rail::Route::edge_pos_on_route(Network::EdgeInput const& edge,
         return network.get_edge(route_edge).length;
       });
 
-  const double source_pos =
-      std::ranges::fold_left(prefix_edges, 0.0, std::plus{});
+  const double source_pos = std::accumulate(
+      prefix_edges.begin(), prefix_edges.end(), 0.0, std::plus{});
 
   return {.source = source_pos,
           .target = source_pos + network.get_edge(*edge_it).length};

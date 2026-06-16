@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-enum : int { CYCLE_LIMIT = 1000 };
+enum : std::uint16_t { CycleLimit = 1000 };
 
 // If TEST_FRIENDS has value true, the corresponding test is friended to test
 // complex private functions.

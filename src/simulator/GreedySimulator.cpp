@@ -161,7 +161,7 @@ cda_rail::simulator::GreedySimulator::simulate(
   }
 
   int cycles_without_movement = 0;
-  while (cycles_without_movement < CYCLE_LIMIT) {
+  while (cycles_without_movement < CycleLimit) {
     PLOGV << "----------------------------";
     PLOGV << "Current time: " << t;
 

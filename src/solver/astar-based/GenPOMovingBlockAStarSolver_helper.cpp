@@ -15,9 +15,10 @@ bool cda_rail::solver::astar_based::GreedySimulatorState::operator==(
 bool cda_rail::solver::astar_based::GreedySimulatorState::operator>(
     const GreedySimulatorState& other) const {
   auto get_obj = [](const auto& edges) {
-    return std::ranges::fold_left(
-        edges | std::views::transform([](const auto& e) { return e.size(); }),
-        0.0, std::plus<>{});
+    const auto edge_sizes =
+        edges | std::views::transform([](const auto& e) { return e.size(); });
+    return std::accumulate(edge_sizes.begin(), edge_sizes.end(), 0.0,
+                           std::plus<>{});
   };
 
   return get_obj(train_edges) > get_obj(other.train_edges);
