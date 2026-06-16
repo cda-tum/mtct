@@ -200,7 +200,7 @@ size_t MultiArray<T>::flat_index(const FixedSizeVector<size_t>& args) const {
   check_args(args);
   size_t index      = 0;
   size_t multiplier = 1;
-  for (size_t i = 0; i < args.size(); ++i) {
+  for (size_t i = args.size(); i-- > 0;) {
     index += args.at(i) * multiplier;
     multiplier *= m_shape.at(i);
   }
