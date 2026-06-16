@@ -1,8 +1,8 @@
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <functional>
+#include <numeric>
 #include <ranges>
 
 bool cda_rail::solver::astar_based::GreedySimulatorState::operator==(

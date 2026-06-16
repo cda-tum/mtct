@@ -160,7 +160,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     }
   }
 
-  double cycles_without_movement = 0;
+  int cycles_without_movement = 0;
   while (cycles_without_movement < CYCLE_LIMIT) {
     PLOGV << "----------------------------";
     PLOGV << "Current time: " << t;
@@ -459,7 +459,7 @@ cda_rail::simulator::GreedySimulator::simulate(
   }
 
   throw std::runtime_error("Simulation failed: Cycle limit reached.");
-  // NOLINTBEGIN(*-inconsistent-ifelse-braces)
+  // NOLINTEND(*-inconsistent-ifelse-braces)
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)

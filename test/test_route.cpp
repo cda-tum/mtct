@@ -266,7 +266,7 @@ TEST(RouteFunctionality, GetFirstPosOnEdgesReturnsStartOfFirstMatchingEdge) {
   const auto pos = route.get_first_pos_on_edges({e1}, network);
 
   ASSERT_TRUE(pos.has_value());
-  EXPECT_DOUBLE_EQ(pos.value(), 1.0);
+  EXPECT_DOUBLE_EQ(pos.value_or(-1.0), 1.0);
 }
 
 TEST(RouteFunctionality, GetLastPosOnEdgesReturnsEndOfLastMatchingEdge) {
@@ -279,7 +279,7 @@ TEST(RouteFunctionality, GetLastPosOnEdgesReturnsEndOfLastMatchingEdge) {
   const auto pos = route.get_last_pos_on_edges({e0, e2}, network);
 
   ASSERT_TRUE(pos.has_value());
-  EXPECT_DOUBLE_EQ(pos.value(), 6.0);
+  EXPECT_DOUBLE_EQ(pos.value_or(-1.0), 6.0);
 }
 
 TEST(RouteFunctionality, GetFirstAndLastPosOnEdgesReturnNoValueForEmptyRoute) {

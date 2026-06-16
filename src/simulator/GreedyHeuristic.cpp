@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cstddef>
 #include <iterator>
+#include <ranges>
 #include <utility>
 #include <vector>
 

@@ -524,9 +524,10 @@ cda_rail::Network::sort_edge_pairs(
   }
 
   // Build vertex → edge-pair-index adjacency
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
   std::unordered_map<size_t, std::unordered_set<size_t>> vertex_neighbors;
   for (size_t i = 0; i < edge_pairs.size(); ++i) {
-    const auto& e = get_edge(edge_pairs.at(i).first.value()); // NOLINT
+    const auto& e = get_edge(edge_pairs.at(i).first.value());
     vertex_neighbors[e.source].emplace(i);
     vertex_neighbors[e.target].emplace(i);
   }
@@ -570,6 +571,7 @@ cda_rail::Network::sort_edge_pairs(
           "Something went wrong, source and target are not as expected.");
     }
   }
+  // NOLINTEND(bugprone-unchecked-optional-access)
 
   if (std::ranges::any_of(std::views::iota(size_t{0}, number_of_vertices()),
                           [&vertex_neighbors](size_t i) {

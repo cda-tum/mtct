@@ -426,6 +426,11 @@ protected:
             get_instance()->get_instance_subdirectory() / adjusted_name};
   }
 
+  [[nodiscard]] GeneralProblemInstance const*
+  get_uncast_instance_pointer() const {
+    return m_instance.get();
+  };
+
 public:
   [[nodiscard]] virtual GeneralProblemInstance const* get_instance() const {
     return m_instance.get();
@@ -560,7 +565,7 @@ public:
   [[nodiscard]] GeneralProblemInstanceWithScheduleAndRoutes const*
   get_instance() const override {
     return dynamic_cast<GeneralProblemInstanceWithScheduleAndRoutes const*>(
-        SolGeneralProblemInstance::get_instance());
+        get_uncast_instance_pointer());
   }
 
   // Problem Specific Getters

@@ -272,23 +272,23 @@ TEST(GeneralHelper, BoolOptionalChar) {
 
   cda_rail::to_bool_optional_inplace("true", opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
-  EXPECT_TRUE(opt_bool.value());
+  EXPECT_TRUE(opt_bool.value_or(false));
 
   cda_rail::to_bool_optional_inplace("false", opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
-  EXPECT_FALSE(opt_bool.value());
+  EXPECT_FALSE(opt_bool.value_or(true));
 
   cda_rail::to_bool_optional_inplace("test", opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
-  EXPECT_FALSE(opt_bool.value()); // unchanged
+  EXPECT_FALSE(opt_bool.value_or(true)); // unchanged
 
   cda_rail::to_bool_optional_inplace("TRue", opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
-  EXPECT_TRUE(opt_bool.value());
+  EXPECT_TRUE(opt_bool.value_or(false));
 
   cda_rail::to_bool_optional_inplace("fALsE", opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
-  EXPECT_FALSE(opt_bool.value());
+  EXPECT_FALSE(opt_bool.value_or(true));
 }
 
 TEST(GeneralHelper, BoolOptionalString) {
@@ -306,23 +306,23 @@ TEST(GeneralHelper, BoolOptionalString) {
 
   cda_rail::to_bool_optional_inplace(str_true, opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
-  EXPECT_TRUE(opt_bool.value());
+  EXPECT_TRUE(opt_bool.value_or(false));
 
   cda_rail::to_bool_optional_inplace(str_false, opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
-  EXPECT_FALSE(opt_bool.value());
+  EXPECT_FALSE(opt_bool.value_or(true));
 
   cda_rail::to_bool_optional_inplace(str_test, opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
-  EXPECT_FALSE(opt_bool.value()); // unchanged
+  EXPECT_FALSE(opt_bool.value_or(true)); // unchanged
 
   cda_rail::to_bool_optional_inplace(str_true_capitalized, opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
-  EXPECT_TRUE(opt_bool.value());
+  EXPECT_TRUE(opt_bool.value_or(false));
 
   cda_rail::to_bool_optional_inplace(str_false_capitalized, opt_bool);
   EXPECT_TRUE(opt_bool.has_value());
-  EXPECT_FALSE(opt_bool.value());
+  EXPECT_FALSE(opt_bool.value_or(true));
 }
 
 TEST(Functionality, IsDirectory) {

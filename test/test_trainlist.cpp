@@ -292,10 +292,11 @@ TEST(TrainList, ConstIteratorsTraverseTrainsInInsertionOrder) {
   trains.add_train("tr2", 150.0, 50.0, 3.0, 2.0, false);
 
   std::vector<std::string> names;
-  for (auto it = trains.cbegin(); it != trains.cend();
-       ++it) { // NOLINT(*-loop-convert)
+  // NOLINTBEGIN(*-loop-convert)
+  for (auto it = trains.cbegin(); it != trains.cend(); ++it) {
     names.push_back(it->get_name());
   }
+  // NOLINTEND(*-loop-convert)
 
   EXPECT_EQ(names, (std::vector<std::string>{"tr1", "tr2"}));
 }
@@ -306,10 +307,11 @@ TEST(TrainList, ConstReverseIteratorsTraverseTrainsInReverseOrder) {
   trains.add_train("tr2", 150.0, 50.0, 3.0, 2.0, false);
 
   std::vector<std::string> names;
-  for (auto it = trains.crbegin(); it != trains.crend();
-       ++it) { // NOLINT(*-loop-convert)
+  // NOLINTBEGIN(*-loop-convert)
+  for (auto it = trains.crbegin(); it != trains.crend(); ++it) {
     names.push_back(it->get_name());
   }
+  // NOLINTEND(*-loop-convert)
 
   EXPECT_EQ(names, (std::vector<std::string>{"tr2", "tr1"}));
 }

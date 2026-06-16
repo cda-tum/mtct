@@ -3,9 +3,9 @@
 #include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 
-#include "gmock/gmock-spec-builders.h"
 #include "gtest/gtest.h"
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <limits>

@@ -6,6 +6,7 @@
 #include "GeneralHelper.hpp"
 #include "StringHelper.hpp"
 #include "datastructure/Timetable.hpp"
+#include "nlohmann/json.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <algorithm>
@@ -17,8 +18,10 @@
 #include <limits>
 #include <map>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 // ---------------------

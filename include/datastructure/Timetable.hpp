@@ -4,7 +4,6 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Station.hpp"
 #include "datastructure/Train.hpp"
-#include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>

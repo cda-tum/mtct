@@ -18,6 +18,7 @@
 #include <functional>
 #include <iterator>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <ranges>
 #include <string>

@@ -5,7 +5,6 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
-#include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 
 #include <cassert>
@@ -273,7 +272,7 @@ public:
   [[nodiscard]] GeneralPerformanceOptimizationInstance const*
   get_instance() const override {
     return dynamic_cast<GeneralPerformanceOptimizationInstance const*>(
-        SolGeneralProblemInstance::get_instance());
+        get_uncast_instance_pointer());
   }
 
   // Problem Specific Getters

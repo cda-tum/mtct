@@ -3,8 +3,8 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Timetable.hpp"
 
-#include "gmock/gmock-spec-builders.h"
 #include "gtest/gtest.h"
+#include <filesystem>
 
 TEST(TimetableFunctionality, ReadTimetable) {
   auto network = cda_rail::Network::import_network("SimpleStation", "./data/");
