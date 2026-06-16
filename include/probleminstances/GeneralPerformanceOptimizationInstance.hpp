@@ -135,11 +135,12 @@ public:
                    double                      exit_velocity,
                    Network::VertexInput const& exit_vertex,
                    double                      tr_weight = 1) {
-    m_train_weights.emplace_back(tr_weight);
-    return GeneralProblemInstanceWithScheduleAndRoutes::add_train(
+    auto index = GeneralProblemInstanceWithScheduleAndRoutes::add_train(
         train_name, length, max_speed, acceleration, deceleration, tim,
         entry_time, initial_velocity, entry_vertex, exit_time, exit_velocity,
         exit_vertex);
+    m_train_weights.emplace_back(tr_weight);
+    return index;
   }
   size_t add_train(std::string const& train_name, double length,
                    double max_speed, double acceleration, double deceleration,
