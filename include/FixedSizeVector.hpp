@@ -94,7 +94,10 @@ public:
    *
    * After the move, @p other is in a valid but unspecified state.
    */
-  FixedSizeVector(FixedSizeVector&&) noexcept = default;
+  FixedSizeVector(FixedSizeVector&& other) noexcept
+      : m_data(std::move(other.m_data)), m_len(other.m_len) {
+    other.m_len = 0;
+  }
 
   /**
    * @brief Move-assignment operator.  Transfers ownership from @p other in
@@ -103,7 +106,14 @@ public:
    * After the move, @p other is in a valid but unspecified state.
    * @return Reference to this object after assignment.
    */
-  FixedSizeVector& operator=(FixedSizeVector&&) noexcept = default;
+  FixedSizeVector& operator=(FixedSizeVector&& other) noexcept {
+    if (this != &other) {
+      m_data      = std::move(other.m_data);
+      m_len       = other.m_len;
+      other.m_len = 0;
+    }
+    return *this;
+  }
 
   /**
    * @brief Destructor.  Releases the managed array.

@@ -151,9 +151,13 @@ bool cda_rail::instances::GeneralPerformanceOptimizationInstance::
 
 double cda_rail::instances::GeneralPerformanceOptimizationInstance::
     get_approximate_leaving_time(size_t train) const {
-  const auto& tr_object = this->get_const_train_list().get_train(train);
-  const auto& timetable = this->get_const_timetable().get_schedule(train);
-  return tr_object.get_length() / timetable.get_exit_velocity();
+  const auto& tr_object     = this->get_const_train_list().get_train(train);
+  const auto& timetable     = this->get_const_timetable().get_schedule(train);
+  const auto  exit_velocity = timetable.get_exit_velocity();
+  if (exit_velocity <= EPS) {
+    return get_minimal_leaving_time(train, 0);
+  }
+  return tr_object.get_length() / exit_velocity;
 }
 
 double cda_rail::instances::GeneralPerformanceOptimizationInstance::

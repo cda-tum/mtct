@@ -166,6 +166,7 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
    * @return edges potentially used by a specific train
    */
 
+  get_const_train_list().throw_if_train_not_exist(train_name);
   if (!fixed_routes ||
       (!error_if_no_route && !get_const_routes().has_route(train_name))) {
     // return set with values 0, 1, ..., num_edges-1
@@ -447,9 +448,12 @@ bool cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
     return false;
   }
 
-  if (!this->get_instance()->check_consistency(false)) {
+  const auto* instance = this->get_instance();
+  if (!instance->check_consistency(false)) {
     return false;
   }
 
-  return true;
+  return m_solution_routes.check_consistency(instance->get_const_train_list(),
+                                             instance->get_const_network(),
+                                             this->has_solution());
 }

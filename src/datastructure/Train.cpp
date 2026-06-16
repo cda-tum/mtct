@@ -50,8 +50,11 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
   }
 
   std::ifstream f((p / "trains.json"));
-  json          data = json::parse(f);
+  if (!f.is_open()) {
+    throw exceptions::ImportException("Could not open trains.json.");
+  }
 
+  json data = json::parse(f);
   for (const auto& [name, train] : data.items()) {
     const bool tim =
         train.contains("tim") ? static_cast<bool>(train.at("tim")) : true;

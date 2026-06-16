@@ -296,8 +296,12 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
     // if tn_inclusive, we want to include the time step at t_n, which is t_n /
     // dt if tn_inclusive is false, we want to exclude the time step at t_n,
     // which is (t_n / dt) - 1
-    return {t_0_index,
-            static_cast<size_t>(tnInclusive ? (t_n / dt) : (t_n / dt) - 1)};
+    auto const t_n_div = static_cast<size_t>(t_n / dt);
+    if (!tnInclusive && t_n_div == 0) {
+      throw exceptions::InvalidInputException(
+          "Cannot compute non-inclusive end index when exit time is 0");
+    }
+    return {t_0_index, tnInclusive ? t_n_div : t_n_div - 1};
   }
 
   size_t const t_n_index =
@@ -410,7 +414,7 @@ cda_rail::Timetable::check_consistency_helper() const {
 }
 
 bool cda_rail::Timetable::check_consistency(Network const& network) const {
-  if (auto const [result, exception] = check_consistency_helper(); !result) {
+  if (!check_consistency_helper().first) {
     return false;
   }
 

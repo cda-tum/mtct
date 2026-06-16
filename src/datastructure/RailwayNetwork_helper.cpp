@@ -36,6 +36,9 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   }
 
   tinyxml2::XMLElement* graphml_body = graph_xml.FirstChildElement("graphml");
+  if (graphml_body == nullptr) {
+    throw exceptions::ImportException("graphml");
+  }
 
   std::optional<std::string> breakable;
   std::optional<std::string> length;
@@ -238,6 +241,10 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
 
 void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   std::ofstream file(p / "tracks.graphml");
+  if (!file) {
+    throw exceptions::ExportException("Could not open file " +
+                                      (p / "tracks.graphml").string());
+  }
 
   // Key IDs
   constexpr auto breakable_key             = "d0";

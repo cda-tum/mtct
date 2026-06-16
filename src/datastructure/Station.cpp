@@ -75,6 +75,9 @@ cda_rail::StationList::StationList(std::filesystem::path const& p,
   }
 
   std::ifstream file(p / "stations.json");
+  if (!file.is_open()) {
+    throw exceptions::ImportException("Could not open stations.json.");
+  }
 
   for (json data = json::parse(file);
        const auto& [name, edges] : data.items()) {

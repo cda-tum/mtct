@@ -413,6 +413,7 @@ double cda_rail::time_on_edge(double v_1, double v_2, double v_line, double a,
 
 double cda_rail::pos_on_edge_at_time(double v_1, double v_2, double v_line,
                                      double a, double d, double s, double t) {
+  exceptions::throw_if_negative(t, "t");
   const auto profile    = build_line_speed_profile(v_1, v_2, v_line, a, d, s);
   const auto total_time = profile.total_time;
   if (std::abs(total_time) < GRB_EPS) {
@@ -443,6 +444,7 @@ double cda_rail::pos_on_edge_at_time(double v_1, double v_2, double v_line,
 
 double cda_rail::vel_on_edge_at_time(double v_1, double v_2, double v_line,
                                      double a, double d, double s, double t) {
+  exceptions::throw_if_negative(t, "t");
   const auto profile    = build_line_speed_profile(v_1, v_2, v_line, a, d, s);
   const auto total_time = profile.total_time;
   if (std::abs(total_time) < GRB_EPS) {
