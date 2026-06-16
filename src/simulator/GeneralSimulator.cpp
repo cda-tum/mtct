@@ -480,7 +480,7 @@ void cda_rail::simulator::GeneralSimulator::check_if_all_tr_valid(
 }
 
 void cda_rail::simulator::GeneralSimulator::check_if_all_tr_unique(
-    cda_rail::index_vector const& train_ids) const {
+    cda_rail::index_vector const& train_ids) {
   std::unordered_set<size_t> seen_trains;
   for (auto const& tr : train_ids) {
     if (!seen_trains.insert(tr).second) {

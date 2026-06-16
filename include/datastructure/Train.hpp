@@ -60,7 +60,7 @@ public:
    *
    * @return Train name.
    */
-  [[nodiscard]] std::string get_name() const { return m_name; };
+  [[nodiscard]] std::string const& get_name() const { return m_name; };
 
   /**
    * @brief Returns the length of the train.

@@ -507,21 +507,23 @@ class SolGeneralProblemInstanceWithScheduleAndRoutes
     : public SolGeneralProblemInstance {
   RouteMap m_solution_routes{};
 
+  [[nodiscard]] GeneralProblemInstanceWithScheduleAndRoutes const*
+  cast_instance() const {
+    return dynamic_cast<GeneralProblemInstanceWithScheduleAndRoutes const*>(
+        get_uncast_instance_pointer());
+  }
+
 protected:
   explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
       std::shared_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr)
       : SolGeneralProblemInstance(std::move(instance_ptr)),
-        m_solution_routes(
-            SolGeneralProblemInstanceWithScheduleAndRoutes::get_instance()
-                ->get_const_routes()) {}
+        m_solution_routes(cast_instance()->get_const_routes()) {}
   SolGeneralProblemInstanceWithScheduleAndRoutes(
       std::shared_ptr<GeneralProblemInstanceWithScheduleAndRoutes> instance_ptr,
       SolutionStatus status, double obj, bool has_sol)
       : SolGeneralProblemInstance(std::move(instance_ptr), status, obj,
                                   has_sol),
-        m_solution_routes(
-            SolGeneralProblemInstanceWithScheduleAndRoutes::get_instance()
-                ->get_const_routes()) {};
+        m_solution_routes(cast_instance()->get_const_routes()) {};
 
 public:
   using SolGeneralProblemInstance::export_solution;
@@ -564,8 +566,7 @@ public:
   // Additional Getter
   [[nodiscard]] GeneralProblemInstanceWithScheduleAndRoutes const*
   get_instance() const override {
-    return dynamic_cast<GeneralProblemInstanceWithScheduleAndRoutes const*>(
-        get_uncast_instance_pointer());
+    return cast_instance();
   }
 
   // Problem Specific Getters

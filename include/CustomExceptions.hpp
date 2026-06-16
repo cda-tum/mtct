@@ -278,7 +278,7 @@ public:
  *                  enforces @p value >= @p threshold.
  * @throws InvalidInputException If the constraint is violated.
  */
-static void throw_if_less(double const value, double const threshold,
+inline void throw_if_less(double const value, double const threshold,
                           std::string_view const name, bool inclusive) {
   if (inclusive) {
     if (value <= threshold) {
@@ -302,7 +302,7 @@ static void throw_if_less(double const value, double const threshold,
  * @param name Human-readable parameter name used in the error message.
  * @throws InvalidInputException If @p value < @p threshold.
  */
-static void throw_if_less_than(double const value, double const threshold,
+inline void throw_if_less_than(double const value, double const threshold,
                                std::string_view const name) {
   throw_if_less(value, threshold, name, false);
 };
@@ -313,7 +313,7 @@ static void throw_if_less_than(double const value, double const threshold,
  * @param name Human-readable parameter name used in the error message.
  * @throws InvalidInputException If @p value <= @p threshold.
  */
-static void throw_if_less_than_or_equal(double const           value,
+inline void throw_if_less_than_or_equal(double const           value,
                                         double const           threshold,
                                         std::string_view const name) {
   throw_if_less(value, threshold, name, true);
@@ -325,7 +325,7 @@ static void throw_if_less_than_or_equal(double const           value,
  * @param name Human-readable parameter name used in the error message.
  * @throws InvalidInputException If @p value < 0.
  */
-static void throw_if_negative(double const value, std::string_view const name) {
+inline void throw_if_negative(double const value, std::string_view const name) {
   throw_if_less_than(value, 0, name);
 };
 
@@ -336,7 +336,7 @@ static void throw_if_negative(double const value, std::string_view const name) {
  * @param name Human-readable parameter name used in the error message.
  * @throws InvalidInputException If @p value <= @p tolerance.
  */
-static void throw_if_non_positive(double const value, double tolerance,
+inline void throw_if_non_positive(double const value, double tolerance,
                                   std::string_view const name) {
   throw_if_less_than_or_equal(value, tolerance, name);
 };
@@ -346,7 +346,7 @@ static void throw_if_non_positive(double const value, double tolerance,
  * @param name Human-readable parameter name used in the error message.
  * @throws InvalidInputException If @p value <= 0.
  */
-static void throw_if_non_positive(double const           value,
+inline void throw_if_non_positive(double const           value,
                                   std::string_view const name) {
   throw_if_non_positive(value, 0.0, name);
 };
@@ -356,7 +356,7 @@ static void throw_if_non_positive(double const           value,
  * @param name Human-readable parameter name used in the error message.
  * @throws InvalidInputException If @p value <= 0.
  */
-static void throw_if_non_positive(int const              value,
+inline void throw_if_non_positive(int const              value,
                                   std::string_view const name) {
   throw_if_non_positive(static_cast<double>(value), 0.0, name);
 };

@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
                "Allow to leave stations and the network early. By defaults "
                "trains cannot leave before the scheduled time.")
       ->group("Model Parameters");
-  app.add_flag("!-a,!--time-aware-state-transitions",
+  app.add_flag("-a,--time-aware-state-transitions",
                time_aware_state_transitions,
                "If this flag is set, use time aware state transitions to avoid "
                "unnecessary state exploration.")

@@ -234,7 +234,7 @@ private:
       std::vector<cda_rail::index_vector> const& train_edges) const;
 
   void check_if_all_tr_valid(cda_rail::index_vector const& train_ids) const;
-  void check_if_all_tr_unique(cda_rail::index_vector const& train_ids) const;
+  static void check_if_all_tr_unique(cda_rail::index_vector const& train_ids);
   void
   check_ttd_orders(std::vector<cda_rail::index_vector> const& ttd_orders) const;
   void check_vertex_orders(

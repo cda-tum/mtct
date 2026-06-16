@@ -290,10 +290,6 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
   cda_rail::exceptions::throw_if_negative(t_0, "Entry time");
   cda_rail::exceptions::throw_if_negative(t_n, "Exit time");
 
-  if (t_0 < 0 || t_n < 0) {
-    throw exceptions::ConsistencyException("Time cannot be negative.");
-  }
-
   auto const t_0_index = static_cast<size_t>(std::floor(t_0 / dt));
   // if t_n is divisible by dt (approx)
   if (std::abs(std::fmod(t_n, dt)) < EPS) {
@@ -304,9 +300,8 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
             static_cast<size_t>(tnInclusive ? (t_n / dt) : (t_n / dt) - 1)};
   }
 
-  size_t const t_n_index = static_cast<size_t>(std::round(t_n / dt)) +
-                           (tnInclusive ? 1 : 0) +
-                           (std::abs(std::fmod(t_n, dt)) < EPS ? -1 : 0);
+  size_t const t_n_index =
+      static_cast<size_t>(std::round(t_n / dt)) + (tnInclusive ? 1 : 0);
 
   return {t_0_index, t_n_index};
 }

@@ -190,12 +190,8 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
   cda_rail::index_set return_vertices;
   for (const auto& e_id : edges) {
     const auto& edge = this->get_const_network().get_edge(e_id);
-    if (!std::ranges::contains(return_vertices, edge.source)) {
-      return_vertices.insert(edge.source);
-    }
-    if (!std::ranges::contains(return_vertices, edge.target)) {
-      return_vertices.insert(edge.target);
-    }
+    return_vertices.insert(edge.source);
+    return_vertices.insert(edge.target);
   }
   return return_vertices;
 }

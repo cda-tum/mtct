@@ -216,7 +216,11 @@ void cda_rail::Network::add_edges_from_graphml(
 
 void cda_rail::Network::read_successors(const std::filesystem::path& p) {
   std::ifstream f(p / "successors_cpp.json");
-  const json    data = json::parse(f);
+  if (!f.is_open()) {
+    throw exceptions::ImportException("Could not open file " +
+                                      (p / "successors_cpp.json").string());
+  }
+  const json data = json::parse(f);
 
   for (const auto& [key, val] : data.items()) {
     std::string source_name;
