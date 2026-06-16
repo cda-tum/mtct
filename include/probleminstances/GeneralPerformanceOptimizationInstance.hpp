@@ -37,9 +37,7 @@ public:
   /**
    * @brief Constructs an instance with default values.
    */
-  ```
-
-      GeneralPerformanceOptimizationInstance() = default;
+  GeneralPerformanceOptimizationInstance() = default;
   /**
    * @brief Constructs an instance from a network.
    *
@@ -387,7 +385,7 @@ public:
   /**
    * @brief Constructs a copy of an existing solution instance.
    */
-  ``` SolGeneralPerformanceOptimizationInstance(
+  SolGeneralPerformanceOptimizationInstance(
       SolGeneralPerformanceOptimizationInstance const&) = default;
   SolGeneralPerformanceOptimizationInstance&
   operator=(SolGeneralPerformanceOptimizationInstance const&) = default;

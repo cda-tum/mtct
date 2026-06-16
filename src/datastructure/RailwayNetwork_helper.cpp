@@ -26,7 +26,6 @@
 
 using json = nlohmann::json;
 
-
 void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   tinyxml2::XMLDocument graph_xml;
   graph_xml.LoadFile((p / "tracks.graphml").string().c_str());
@@ -233,7 +232,6 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
   }
 }
 
-
 void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   std::ofstream file(p / "tracks.graphml");
 
@@ -313,8 +311,8 @@ void cda_rail::Network::export_successors_python(
   file << "}\n";
 }
 
-</ parameter> void
-cda_rail::Network::export_successors_cpp(const std::filesystem::path& p) const {
+void cda_rail::Network::export_successors_cpp(
+    const std::filesystem::path& p) const {
   json j;
   for (size_t i = 0; i < number_of_edges(); ++i) {
     const auto&                                      edge = get_edge(i);
@@ -354,7 +352,6 @@ void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,
   file << "}";
 }
 
-
 std::pair<cda_rail::index_vector, cda_rail::index_vector>
 cda_rail::Network::separate_edge_private_helper(
     size_t edge_index, double min_length,
@@ -376,7 +373,7 @@ cda_rail::Network::separate_edge_private_helper(
   return separate_edge_at(edge_index, distances, new_edge_breakable);
 }
 
-</ parameter> std::pair<cda_rail::index_vector, cda_rail::index_vector>
+std::pair<cda_rail::index_vector, cda_rail::index_vector>
 cda_rail::Network::separate_edge_at(
     size_t edge_index, const std::vector<double>& distances_from_source,
     bool new_edge_breakable) {
@@ -600,7 +597,6 @@ cda_rail::Network::sort_edge_pairs(
   return result;
 }
 
-
 void cda_rail::Network::check_new_edge_requirements(size_t source,
                                                     size_t target) const {
   if (source == target) {
@@ -616,7 +612,6 @@ void cda_rail::Network::check_new_edge_requirements(size_t source,
     throw exceptions::InvalidInputException("Edge already exists");
   }
 }
-
 
 double cda_rail::Network::delta_dist_helper(const Edge& edge, double max_v,
                                             bool use_minimal_time) {

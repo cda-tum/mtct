@@ -139,7 +139,7 @@ public:
    * @brief Exception indicating a vertex with the specified name does not
    * exist.
    */
-  ``` explicit VertexNotExistentException(std::string_view const vertexName)
+  explicit VertexNotExistentException(std::string_view const vertexName)
       : CustomException(concatenate_string_views(
             {"Vertex ", vertexName, " does not exist"})) {}
   /**
@@ -208,7 +208,7 @@ public:
   /**
    * @brief Creates an exception for a missing train identified by name.
    */
-  ``` explicit TrainNotExistentException(std::string_view const trainName)
+  explicit TrainNotExistentException(std::string_view const trainName)
       : CustomException(concatenate_string_views(
             {"Train ", trainName, " does not exist."})) {}
   /**

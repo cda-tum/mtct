@@ -23,7 +23,6 @@
 
 // using directives from header
 
-
 cda_rail::Schedule::Schedule(double const entryTime,
                              double const initialVelocity,
                              size_t const entryVertex, double const exitTime,
@@ -115,10 +114,8 @@ void cda_rail::Schedule::remove_stop(std::string const& station_name,
  * TIMETABLE
  */
 
-
 cda_rail::Timetable::Timetable(const std::filesystem::path& p,
                                const Network&               network) {
-
   if (!std::filesystem::exists(p)) {
     throw exceptions::ImportException("Path does not exist.");
   }
@@ -201,10 +198,8 @@ void cda_rail::Timetable::add_json_data(json& j, const size_t i,
       {"stops", stops}};
 }
 
-
 void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
                                            const Network& network) const {
-
   if (!is_directory_and_create(p)) {
     throw exceptions::ExportException("Could not create directory " +
                                       p.string());
@@ -222,7 +217,6 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
   file << j << '\n';
 }
 
-
 double cda_rail::Timetable::latest_exit_time() const {
   if (m_schedules.empty()) {
     return NAN;
@@ -231,9 +225,8 @@ double cda_rail::Timetable::latest_exit_time() const {
                           std::views::transform(&Schedule::get_exit_time));
 }
 
-</ code> std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
+std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
     size_t const trainIndex, double const dt, bool const tnInclusive) const {
-
   if (!m_train_list.has_train(trainIndex)) {
     throw exceptions::TrainNotExistentException(trainIndex);
   }
@@ -261,7 +254,6 @@ double cda_rail::Timetable::latest_exit_time() const {
 
   return {t_0_index, t_n_index};
 }
-
 
 size_t cda_rail::Timetable::add_train_private_helper(
     std::string const& train_name, double const length, double const maxSpeed,
@@ -315,7 +307,6 @@ void cda_rail::Timetable::remove_stop(size_t             train_index,
   m_schedules.at(train_index)
       .remove_stop(station_name, throw_exception_if_not_existent);
 }
-
 
 std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
 cda_rail::Timetable::check_consistency_helper() const {

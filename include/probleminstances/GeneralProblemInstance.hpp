@@ -972,11 +972,11 @@ public:
   /**
    * @brief Creates a solution wrapper from a problem instance.
    */
-  ``` explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
+  explicit SolGeneralProblemInstanceWithScheduleAndRoutes(
       GeneralProblemInstanceWithScheduleAndRoutes const& instance)
       : SolGeneralProblemInstanceWithScheduleAndRoutes(
             std::make_shared<GeneralProblemInstanceWithScheduleAndRoutes>(
-                instance)){};
+                instance)) {};
   /**
    * @brief Initializes a solution wrapper around a copy of the provided
    * instance.

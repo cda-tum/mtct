@@ -109,7 +109,7 @@ public:
    * @brief Checks whether the route is empty.
    * @return `true` if the route has no edges, `false` otherwise.
    */
-  ``` [[nodiscard]] bool empty() const { return m_edges.empty(); };
+  [[nodiscard]] bool empty() const { return m_edges.empty(); };
 
   /**
    * @brief Provides the edges forming the route in travel order.

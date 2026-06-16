@@ -96,8 +96,7 @@ public:
    *
    * @return The earliest departure time.
    */
-  [[nodiscard]] double get_earliest_departure() const
-      [[nodiscard]] double get_earliest_departure() const {
+  [[nodiscard]] double get_earliest_departure() const {
     return m_service_time + m_service_duration;
   }
 
@@ -246,9 +245,7 @@ public:
    *
    * @return The entry time.
    */
-  </ parameter> [[nodiscard]] double get_entry_time() const {
-    return m_entry_time;
-  }
+  [[nodiscard]] double get_entry_time() const { return m_entry_time; }
 
   /**
    * @brief Gets the scheduled exit time.
@@ -354,7 +351,7 @@ public:
   /**
    * @brief Sets the entry vertex.
    */
-  ``` void set_entry_vertex(size_t const newEntryVertex) {
+  void set_entry_vertex(size_t const newEntryVertex) {
     m_entry_vertex = newEntryVertex;
   }
 
