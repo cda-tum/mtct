@@ -229,6 +229,7 @@ void cda_rail::simulator::GeneralSimulator::set_ttd_orders_of_ttd(
         "TTD index out of bounds.");
   }
   check_if_all_tr_valid(orders);
+  check_if_all_tr_unique(orders);
   m_ttd_orders.at(ttd_index) = std::move(orders);
 }
 
@@ -242,6 +243,7 @@ void cda_rail::simulator::GeneralSimulator::set_vertex_orders_of_vertex(
     cda_rail::Network::VertexInput const& vertex,
     cda_rail::index_vector                orders) {
   check_if_all_tr_valid(orders);
+  check_if_all_tr_unique(orders);
   m_vertex_orders.at(m_instance->get_const_network().resolve_vertex_index(
       vertex)) = std::move(orders);
 }
@@ -477,6 +479,17 @@ void cda_rail::simulator::GeneralSimulator::check_if_all_tr_valid(
   }
 }
 
+void cda_rail::simulator::GeneralSimulator::check_if_all_tr_unique(
+    cda_rail::index_vector const& train_ids) const {
+  std::unordered_set<size_t> seen_trains;
+  for (auto const& tr : train_ids) {
+    if (!seen_trains.insert(tr).second) {
+      throw cda_rail::exceptions::InvalidInputException(
+          "Train order contains duplicate train IDs.");
+    }
+  }
+}
+
 void cda_rail::simulator::GeneralSimulator::check_ttd_orders(
     std::vector<cda_rail::index_vector> const& ttd_orders) const {
   if (ttd_orders.size() != m_ttd_sections.size()) {
@@ -486,6 +499,7 @@ void cda_rail::simulator::GeneralSimulator::check_ttd_orders(
   }
   for (auto const& ttd_order : ttd_orders) {
     check_if_all_tr_valid(ttd_order);
+    check_if_all_tr_unique(ttd_order);
   }
 }
 
@@ -499,6 +513,7 @@ void cda_rail::simulator::GeneralSimulator::check_vertex_orders(
   }
   for (auto const& vertex_order : vertex_orders) {
     check_if_all_tr_valid(vertex_order);
+    check_if_all_tr_unique(vertex_order);
   }
 }
 

@@ -107,6 +107,11 @@ TEST(GreedySimulator, BasicFunctions) {
   // TTD Orders
   EXPECT_THROW((void)simulator.set_ttd_orders({}),
                cda_rail::exceptions::InvalidInputException);
+  auto duplicate_ttd_orders = std::vector<std::vector<size_t>>(
+      ttd_sections.size(), std::vector<size_t>());
+  duplicate_ttd_orders.at(0) = {tr1, tr1};
+  EXPECT_THROW((void)simulator.set_ttd_orders(duplicate_ttd_orders),
+               cda_rail::exceptions::InvalidInputException);
   simulator.set_ttd_orders(std::vector<std::vector<size_t>>(
       ttd_sections.size(), std::vector<size_t>()));
   const auto& ttd_orders1 = simulator.get_ttd_orders();
@@ -123,9 +128,16 @@ TEST(GreedySimulator, BasicFunctions) {
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW((void)simulator.set_ttd_orders_of_ttd(1000, {tr1}),
                cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW((void)simulator.set_ttd_orders_of_ttd(0, {tr1, tr1}),
+               cda_rail::exceptions::InvalidInputException);
 
   // Entry Orders
   EXPECT_THROW((void)simulator.set_vertex_orders({}),
+               cda_rail::exceptions::InvalidInputException);
+  auto duplicate_vertex_orders = std::vector<std::vector<size_t>>(
+      network.number_of_vertices(), std::vector<size_t>());
+  duplicate_vertex_orders.at(l0) = {tr1, tr1};
+  EXPECT_THROW((void)simulator.set_vertex_orders(duplicate_vertex_orders),
                cda_rail::exceptions::InvalidInputException);
   simulator.set_vertex_orders(std::vector<std::vector<size_t>>(
       network.number_of_vertices(), std::vector<size_t>()));
@@ -142,6 +154,8 @@ TEST(GreedySimulator, BasicFunctions) {
                cda_rail::exceptions::VertexNotExistentException);
   EXPECT_THROW((void)simulator.set_vertex_orders_of_vertex(1000, {tr1}),
                cda_rail::exceptions::VertexNotExistentException);
+  EXPECT_THROW((void)simulator.set_vertex_orders_of_vertex(l0, {tr1, tr1}),
+               cda_rail::exceptions::InvalidInputException);
 
   // Stop positions
   simulator.set_train_edges_of_tr(
