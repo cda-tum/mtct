@@ -256,8 +256,9 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
     return {t_0_index, tnInclusive ? t_n_div : t_n_div - 1};
   }
 
-  size_t const t_n_index =
-      static_cast<size_t>(std::round(t_n / dt)) + (tnInclusive ? 1 : 0);
+  size_t const t_n_index = tnInclusive
+                               ? static_cast<size_t>(std::ceil(t_n / dt))
+                               : static_cast<size_t>(std::floor(t_n / dt));
 
   return {t_0_index, t_n_index};
 }
