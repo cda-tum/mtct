@@ -261,6 +261,13 @@ cda_rail::simulator::GreedySimulator::simulate(
         exit_times.at(tr) = t;
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " reached the end of its route on an edge within the network.";
+        if (disappear_at_partial_route_end) {
+          trains_to_remove.emplace_back(tr);
+          trains_left.insert(tr);
+          PLOGV << "At time " << t << ", "
+                << train_list.get_train(tr).get_name()
+                << " disappeared at the end of its route.";
+        }
       } else if (tr_status == DestinationType::Station) {
         assert(tr_next_stop_id.at(tr).has_value());
         const auto& last_stop =
