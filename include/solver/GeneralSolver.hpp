@@ -84,10 +84,9 @@ protected:
    *
    * @param args Arguments passed to construct the problem instance.
    */
-  template <
-      typename... Args,
-      std::enable_if_t<!IsSingleInstanceArgument<Args...>::value, int> = 0>
+  template <typename... Args>
   explicit GeneralSolver(Args&&... args)
+    requires(!IsSingleInstanceArgument<Args...>::value)
       : m_instance(std::forward<Args>(args)...) {}
 
 public:
