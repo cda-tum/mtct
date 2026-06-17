@@ -35,15 +35,9 @@ private:
    * @param args Dimension indices or extents to pack.
    * @return `FixedSizeVector` containing each argument cast to `size_t`,
    *         in the order they were supplied.
-   */
-  template <typename... Args>
-  /**
-   * @brief Converts variadic integral arguments to a size vector.
-   *
-   * @return FixedSizeVector<size_t> A vector containing the converted
-   * arguments.
    * @throws std::invalid_argument If any argument is negative.
    */
+  template <typename... Args>
   [[nodiscard]] static FixedSizeVector<size_t> make_index_vector(Args... args) {
     auto to_size_t_checked = []<typename T0>(T0 v) -> size_t {
       using V = T0;
@@ -103,18 +97,9 @@ public:
    *
    * @tparam Args Integral types convertible to `size_t`.
    * @param args Extents of each dimension, in order.
+   * @throws std::invalid_argument If any argument is a negative signed value.
    */
-  template <typename... Args> /**
-                               * @brief Creates a multi-dimensional array with
-                               * the specified extents.
-                               *
-                               * @param args Dimension extents for each axis.
-                               * Passing no arguments creates a scalar.
-                               *
-                               * @throws std::invalid_argument If any argument
-                               * is a negative signed value.
-                               */
-  explicit MultiArray(Args... args) {
+  template <typename... Args> explicit MultiArray(Args... args) {
     init(make_index_vector(args...));
   }
 
@@ -123,10 +108,11 @@ public:
    */
 
   /**
-   * @brief Unchecked multi-dimensional element access (non-const).
+   * @brief Checked multi-dimensional element access (non-const).
    *
    * The number of arguments must equal `dimensions()` and each index must be
    * within bounds; these conditions are enforced via `flat_index`/`check_args`.
+   * The operator syntax mirrors array access, but this is not unchecked access.
    *
    * @tparam Args Integral types convertible to `size_t`.
    * @param args One index per dimension.
@@ -135,23 +121,7 @@ public:
    *         `dimensions()`.
    * @throws std::out_of_range If any index exceeds its dimension's extent.
    */
-  template <typename... Args> /**
-                               * @brief Accesses an element by multidimensional
-                               * indices.
-                               *
-                               * @param args Integral indices for each dimension
-                               * in order.
-                               * @return Reference to the element at the
-                               * specified indices.
-                               *
-                               * @throws std::invalid_argument If any index
-                               * argument is negative (for signed types) or if
-                               * the number of indices does not match the
-                               * array's dimensions.
-                               * @throws std::out_of_range If any index exceeds
-                               * the bounds of its corresponding dimension.
-                               */
-  T& operator()(Args... args) {
+  template <typename... Args> T& operator()(Args... args) {
     return m_data[flat_index(make_index_vector(args...))];
   }
 
@@ -165,28 +135,7 @@ public:
    *         `dimensions()`.
    * @throws std::out_of_range If any index exceeds its dimension's extent.
    */
-  template <
-      typename... Args> /**
-                         * @brief Accesses an element at the specified indices
-                         * with bounds checking.
-                         *
-                         * Computes the flat index from the provided indices and
-                         * returns a mutable reference to the element at that
-                         * location. Index bounds are validated against the
-                         * array shape.
-                         *
-                         * @tparam Args Integral types for each dimension index.
-                         * @param args Index values, one per dimension.
-                         * @return T& Reference to the element at the specified
-                         * indices.
-                         *
-                         * @throws std::invalid_argument If the number of
-                         * indices does not match the array's dimensionality, or
-                         * if a signed index argument is negative.
-                         * @throws std::out_of_range If any index is greater
-                         * than or equal to the corresponding dimension extent.
-                         */
-  [[nodiscard]] T& at(Args... args) {
+  template <typename... Args> [[nodiscard]] T& at(Args... args) {
     return m_data.at(flat_index(make_index_vector(args...)));
   }
 
@@ -200,19 +149,7 @@ public:
    *         `dimensions()`.
    * @throws std::out_of_range If any index exceeds its dimension's extent.
    */
-  template <typename... Args> /**
-                               * @brief Accesses an element at the specified
-                               * indices with bounds checking.
-                               *
-                               * @return const T& Const reference to the element
-                               * at the specified indices.
-                               * @throws std::invalid_argument If the number of
-                               * indices does not match the number of
-                               * dimensions, or if any signed index is negative.
-                               * @throws std::out_of_range If any index exceeds
-                               * its corresponding dimension extent.
-                               */
-  [[nodiscard]] const T& at(Args... args) const {
+  template <typename... Args> [[nodiscard]] const T& at(Args... args) const {
     return m_data.at(flat_index(make_index_vector(args...)));
   }
 
@@ -246,7 +183,6 @@ public:
   [[nodiscard]] size_t dimensions() const { return m_shape.size(); }
 };
 
-template <typename T>
 /**
  * @brief Validates that indices match the array dimensions and are within
  * bounds.
@@ -258,6 +194,7 @@ template <typename T>
  * @throws std::out_of_range If any index is greater than or equal to its
  * corresponding dimension extent.
  */
+template <typename T>
 void MultiArray<T>::check_args(const FixedSizeVector<size_t>& args) const {
   if (m_shape.size() != args.size()) {
     throw std::invalid_argument(
@@ -272,7 +209,6 @@ void MultiArray<T>::check_args(const FixedSizeVector<size_t>& args) const {
   }
 }
 
-template <typename T>
 /**
  * @brief Computes the row-major flat index for given multi-dimensional indices.
  *
@@ -282,6 +218,7 @@ template <typename T>
  * array dimensions.
  * @throw std::out_of_range If any index is out of bounds for its dimension.
  */
+template <typename T>
 size_t MultiArray<T>::flat_index(const FixedSizeVector<size_t>& args) const {
   check_args(args);
   size_t index      = 0;
@@ -293,13 +230,13 @@ size_t MultiArray<T>::flat_index(const FixedSizeVector<size_t>& args) const {
   return index;
 }
 
-template <typename T>
 /**
  * @brief Initializes the array's shape and allocates storage.
  *
  * Establishes the array's shape and allocates flat storage for all elements.
  * An empty dimension vector creates a scalar with capacity for one element.
  */
+template <typename T>
 void MultiArray<T>::init(const FixedSizeVector<size_t>& dims) {
   m_shape    = dims;
   size_t cap = 1;

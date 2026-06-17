@@ -386,7 +386,7 @@ inline void throw_if_non_positive(int const              value,
  * @throws InvalidInputException if the folder name violates any of the above
  * constraints.
  */
-static void throw_if_invalid_folder_name(std::string_view const folderName) {
+inline void throw_if_invalid_folder_name(std::string_view const folderName) {
   if (folderName.empty()) {
     throw InvalidInputException("Folder name must not be empty.");
   }

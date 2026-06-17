@@ -5,7 +5,7 @@ macro(ADD_SIM_EXECUTABLE appname)
 
   # Statically link libgcc and libstdc++ on MinGW to avoid DLL problems on Windows.
   if(MINGW)
-    target_link_options(${PROJECT_NAME}_${appname} PRIVATE "-static-libgcc" "-static-libstdc++")
+    target_link_options(${PROJECT_NAME}_${appname} PRIVATE "-static" "-static-libgcc" "-static-libstdc++")
     if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
       target_compile_definitions(${PROJECT_NAME}_${appname} PRIVATE GXX_TYPEINFO_EQUALITY_INLINE=0)
     else()

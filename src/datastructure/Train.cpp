@@ -80,6 +80,20 @@ size_t cda_rail::TrainList::add_train(Train train) {
   return idx;
 }
 
+void cda_rail::TrainList::rename_train(std::string const& old_name,
+                                       std::string        new_name) {
+  throw_if_train_not_exist(old_name);
+  if (has_train(new_name)) {
+    throw exceptions::ConsistencyException("Train " + new_name +
+                                           " already exists.");
+  }
+
+  const auto index = get_train_index(old_name);
+  train_name_to_index.erase(old_name);
+  trains.at(index).set_name(std::move(new_name));
+  train_name_to_index.emplace(trains.at(index).get_name(), index);
+}
+
 void cda_rail::TrainList::export_trains(std::filesystem::path const& p) const {
   if (!is_directory_and_create(p)) {
     throw exceptions::ExportException("Could not create directory " +

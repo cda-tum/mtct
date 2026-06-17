@@ -286,6 +286,31 @@ TEST(TrainList, EditableTrainByNameReturnsMutableReference) {
   EXPECT_TRUE(trains.get_train("tr2").has_tim());
 }
 
+TEST(TrainList, RenameTrainUpdatesNameLookupAndPreservesIndex) {
+  cda_rail::TrainList trains;
+  trains.add_train("tr1", 100.0, 40.0, 2.0, 1.0);
+  trains.add_train("tr2", 150.0, 50.0, 3.0, 2.0, false);
+
+  trains.rename_train("tr1", "renamed");
+
+  EXPECT_FALSE(trains.has_train("tr1"));
+  EXPECT_TRUE(trains.has_train("renamed"));
+  EXPECT_EQ(trains.get_train_index("renamed"), 0U);
+  EXPECT_EQ(trains.get_train(0).get_name(), "renamed");
+  EXPECT_DOUBLE_EQ(trains.get_train("renamed").get_length(), 100.0);
+}
+
+TEST(TrainList, RenameTrainRejectsMissingAndDuplicateNames) {
+  cda_rail::TrainList trains;
+  trains.add_train("tr1", 100.0, 40.0, 2.0, 1.0);
+  trains.add_train("tr2", 150.0, 50.0, 3.0, 2.0, false);
+
+  EXPECT_THROW(trains.rename_train("missing", "renamed"),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(trains.rename_train("tr1", "tr2"),
+               cda_rail::exceptions::ConsistencyException);
+}
+
 TEST(TrainList, ConstIteratorsTraverseTrainsInInsertionOrder) {
   cda_rail::TrainList trains;
   trains.add_train("tr1", 100.0, 40.0, 2.0, 1.0);

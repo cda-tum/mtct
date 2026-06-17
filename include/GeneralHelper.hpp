@@ -16,8 +16,8 @@ namespace cda_rail {
 // Comparison Helper
 
 /**
- * @brief Compares two floating-point values using a machine-epsilon-scaled
- *        tolerance.
+ * @brief Determines if two floating-point values are approximately equal using
+ * a machine-epsilon-scaled tolerance.
  * @tparam T Floating-point type of the compared values.
  * @param a First value.
  * @param b Second value.
@@ -28,16 +28,6 @@ namespace cda_rail {
  * negative.
  */
 template <std::floating_point T>
-/**
- * @brief Determines if two floating-point values are approximately equal.
- *
- * @tparam T Floating-point type.
- * @param a First value to compare.
- * @param b Second value to compare.
- * @param factor Scaling factor for the epsilon tolerance. Default is 10.
- * @return `true` if the values are approximately equal, `false` otherwise.
- * @throws cda_rail::exceptions::InvalidInputException if `factor` is negative.
- */
 [[nodiscard]] bool approx_equal(T const a, T const b, T const factor = 10) {
   cda_rail::exceptions::throw_if_negative(factor, "factor");
   return std::abs(a - b) < factor * std::numeric_limits<T>::epsilon();
@@ -56,7 +46,7 @@ template <std::floating_point T>
  * @param tol Absolute tolerance threshold.
  * @throws cda_rail::exceptions::InvalidInputException If @p tol is negative.
  */
-static void round_small_numbers_to_zero_inplace(double&      val,
+inline void round_small_numbers_to_zero_inplace(double&      val,
                                                 double const tol = EPS) {
   cda_rail::exceptions::throw_if_negative(tol, "tol");
   if (std::abs(val) < tol) {
@@ -74,7 +64,7 @@ static void round_small_numbers_to_zero_inplace(double&      val,
  * @throws cda_rail::exceptions::InvalidInputException If @p tolerance is not
  * strictly positive.
  */
-[[nodiscard]] static double round_to_given_tolerance(double const value,
+[[nodiscard]] inline double round_to_given_tolerance(double const value,
                                                      double const tolerance) {
   cda_rail::exceptions::throw_if_non_positive(tolerance, "tolerance");
   const auto factor = 1.0 / tolerance;

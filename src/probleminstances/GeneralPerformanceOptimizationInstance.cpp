@@ -38,7 +38,10 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::
 
   std::ifstream file(working_directory / "instances" / instanceSubdirectory /
                      instanceName / "problem_data.json");
-  json          j = json::parse(file);
+  if (!file.is_open()) {
+    throw exceptions::ImportException("Could not open problem_data.json.");
+  }
+  json j = json::parse(file);
   for (const auto& [train_name, weight] : j.at("train_weights").items()) {
     set_train_weight(train_name, static_cast<double>(weight));
   }
@@ -214,7 +217,10 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
   // Read train_pos
   std::ifstream train_pos_file(p / "train_pos.json");
-  json          train_pos_json = json::parse(train_pos_file);
+  if (!train_pos_file.is_open()) {
+    throw exceptions::ImportException("Could not open train_pos.json.");
+  }
+  json train_pos_json = json::parse(train_pos_file);
   for (const auto& [tr_name, tr_pos_json] : train_pos_json.items()) {
     for (const auto& [idx, pos_pair] : tr_pos_json.items()) {
       const auto [t, pos] = pos_pair.get<std::pair<double, double>>();
@@ -224,7 +230,10 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
   // Read train_speed-
   std::ifstream train_speed_file(p / "train_speed.json");
-  json          train_speed_json = json::parse(train_speed_file);
+  if (!train_speed_file.is_open()) {
+    throw exceptions::ImportException("Could not open train_speed.json.");
+  }
+  json train_speed_json = json::parse(train_speed_file);
   for (const auto& [tr_name, tr_speed_json] : train_speed_json.items()) {
     for (const auto& [idx, speed_pair] : tr_speed_json.items()) {
       const auto [t, speed] = speed_pair.get<std::pair<double, double>>();

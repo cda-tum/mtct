@@ -127,7 +127,10 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
   this->m_station_list = StationList::import_stations(p, network);
 
   std::ifstream f(p / "schedules.json");
-  json          data = json::parse(f);
+  if (!f.is_open()) {
+    throw exceptions::ImportException("Could not open schedules.json.");
+  }
+  json data = json::parse(f);
 
   for (size_t i = 0; i < this->m_train_list.size(); i++) {
     const auto& tr = this->m_train_list.get_train(i);

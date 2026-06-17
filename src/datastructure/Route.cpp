@@ -539,7 +539,10 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
   }
 
   std::ifstream file(p / "routes.json");
-  const json    data = json::parse(file);
+  if (!file.is_open()) {
+    throw exceptions::ImportException((p / "routes.json").string());
+  }
+  const json data = json::parse(file);
 
   for (const auto& [name, route] : data.items()) {
     add_empty_route(name);

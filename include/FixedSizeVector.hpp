@@ -266,11 +266,6 @@ public:
  *         at every index, otherwise `false`.
  */
 template <typename T>
-/**
- * @brief Compares a FixedSizeVector with a std::vector for equality.
- *
- * @return `true` if the containers are equal, `false` otherwise.
- */
 bool operator==(const FixedSizeVector<T>& lhs, const std::vector<T>& rhs) {
   if (lhs.size() != rhs.size()) {
     return false;
@@ -293,15 +288,6 @@ bool operator==(const FixedSizeVector<T>& lhs, const std::vector<T>& rhs) {
  *         at every index, otherwise `false`.
  */
 template <typename T>
-/**
- * @brief Determines whether a std::vector and FixedSizeVector are equal.
- *
- * @tparam T Element type.
- * @param lhs The std::vector to compare.
- * @param rhs The FixedSizeVector to compare.
- * @return `true` if the vector and FixedSizeVector have equal size and
- * identical elements, `false` otherwise.
- */
 bool operator==(const std::vector<T>& lhs, const FixedSizeVector<T>& rhs) {
   return rhs == lhs;
 }
@@ -314,9 +300,6 @@ bool operator==(const std::vector<T>& lhs, const FixedSizeVector<T>& rhs) {
  * @param rhs Second vector.
  */
 template <typename T>
-/**
- * @brief Exchanges the contents of two FixedSizeVector objects.
- */
 void swap(FixedSizeVector<T>& lhs, FixedSizeVector<T>& rhs) noexcept {
   lhs.swap(rhs);
 }

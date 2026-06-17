@@ -42,6 +42,11 @@ protected:
   int64_t                                             m_create_time = 0;
   int64_t                                             m_solve_time  = 0;
 
+  template <typename... Args>
+  struct IsSingleInstanceArgument : std::false_type {};
+  template <typename Arg>
+  struct IsSingleInstanceArgument<Arg> : std::is_same<T, std::decay_t<Arg>> {};
+
   /**
    * @brief Initializes logging and conditionally records solver start time.
    *
@@ -73,13 +78,15 @@ protected:
    * @param instance The problem instance to store.
    */
   explicit GeneralSolver(const T& instance) : m_instance(instance) {}
-  template <typename... Args>
   /**
    * @brief Constructs a GeneralSolver with arguments for the problem instance
    * constructor.
    *
    * @param args Arguments passed to construct the problem instance.
    */
+  template <
+      typename... Args,
+      std::enable_if_t<!IsSingleInstanceArgument<Args...>::value, int> = 0>
   explicit GeneralSolver(Args&&... args)
       : m_instance(std::forward<Args>(args)...) {}
 

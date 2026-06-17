@@ -32,7 +32,6 @@ objective_val(const GreedySimulator&                  simulator,
 // Braking Time Heuristic
 // --------------------------
 
-[[nodiscard]] double
 /**
  * @brief Computes the braking-time heuristic for a train.
  *
@@ -45,6 +44,7 @@ objective_val(const GreedySimulator&                  simulator,
  * @return The braking-time heuristic value, typically representing time lost to
  * braking constraints.
  */
+[[nodiscard]] double
 simple_braking_time_heuristic(size_t tr, const GreedySimulator& simulator,
                               double tr_exit_time, double braking_time,
                               double braking_distance);
@@ -131,7 +131,6 @@ struct HeuristicResult {
   bool   feasible;
   double objective_value_difference;
 };
-[[nodiscard]] HeuristicResult
 /**
  * @brief Combines braking-time and remaining-time heuristics into a single
  * objective-value difference for a train.
@@ -149,13 +148,13 @@ struct HeuristicResult {
  * @return `HeuristicResult` containing feasibility status and the computed
  * objective-value difference.
  */
+[[nodiscard]] HeuristicResult
 greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
                  RemainingTimeHeuristicType remaining_time_heuristic_type,
                  size_t tr, const GreedySimulator& simulator,
                  double tr_exit_time, double braking_time,
                  double braking_distance, bool consider_earliest_exit);
 
-[[nodiscard]] HeuristicResult
 /**
  * @brief Computes a weighted-sum objective-value difference for all trains.
  *
@@ -173,6 +172,7 @@ greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
  * match train count.
  * @throws cda_rail::exceptions::InvalidInputException If the simulation failed.
  */
+[[nodiscard]] HeuristicResult
 full_greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
                       RemainingTimeHeuristicType remaining_time_heuristic_type,
                       const GreedySimulator&     simulator,

@@ -51,7 +51,7 @@ bool cda_rail::Station::is_fully_in_station(
       tracks; // needed because struct element cannot be captured directly
 
   return std::ranges::all_of(edges, [&station_tracks](size_t edge) {
-    return std::ranges::contains(station_tracks, edge);
+    return station_tracks.contains(edge);
   });
 }
 

@@ -14,8 +14,6 @@
 #include <utility>
 #include <vector>
 
-enum : std::uint16_t { CycleLimit = 1000 };
-
 // If TEST_FRIENDS has value true, the corresponding test is friended to test
 // complex private functions.
 // This is not good practice. However, after consideration, it was decided that
@@ -47,6 +45,8 @@ class GreedySimulator_FutureSpeedRestrictionConstraintsAfterLeaving_Test;
 #endif
 
 namespace cda_rail::simulator {
+
+enum : std::uint16_t { CycleLimit = 1000 };
 
 class GreedySimulator : public GeneralSimulator {
 public:

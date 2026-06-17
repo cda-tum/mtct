@@ -32,7 +32,13 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
   std::ifstream network_file(working_directory / "instances" /
                              instanceSubdirectory / instanceName /
                              "network.json");
-  json          network_json = json::parse(network_file);
+  if (!network_file.is_open()) {
+    throw exceptions::ImportException(
+        (working_directory / "instances" / instanceSubdirectory / instanceName /
+         "network.json")
+            .string());
+  }
+  json network_json = json::parse(network_file);
   network_file.close();
   m_network =
       Network(network_json.at("network").get<std::string>(), working_directory);

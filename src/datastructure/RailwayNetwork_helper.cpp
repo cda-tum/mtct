@@ -18,6 +18,7 @@
 #include <stack>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -58,7 +59,8 @@ void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   if (graphml_graph == nullptr) {
     throw exceptions::ImportException("graphml");
   }
-  if (graphml_graph->Attribute("edgedefault") != std::string("directed")) {
+  const char* edge_default = graphml_graph->Attribute("edgedefault");
+  if (edge_default == nullptr || std::string_view(edge_default) != "directed") {
     throw exceptions::InvalidInputException("Graph is not directed");
   }
 
@@ -88,7 +90,11 @@ void cda_rail::Network::get_keys_inplace(
        key       = key->NextSiblingElement("key")) {
     if (const char* attr_name = key->Attribute("attr.name")) {
       if (auto it = key_map.find(attr_name); it != key_map.end()) {
-        *it->second = key->Attribute("id");
+        const char* id_attr = key->Attribute("id");
+        if (id_attr == nullptr) {
+          throw exceptions::ImportException("graphml");
+        }
+        *it->second = id_attr;
       }
     }
   }
@@ -129,8 +135,12 @@ void cda_rail::Network::add_vertices_from_graphml(
     if (!v_type.has_value()) {
       throw exceptions::ImportException("graphml");
     }
-    add_vertex({node->Attribute("id"), static_cast<VertexType>(v_type.value()),
-                headway_value});
+    const char* node_id = node->Attribute("id");
+    if (node_id == nullptr) {
+      throw exceptions::ImportException("graphml");
+    }
+    add_vertex(
+        {node_id, static_cast<VertexType>(v_type.value()), headway_value});
   }
 }
 
@@ -209,9 +219,14 @@ void cda_rail::Network::add_edges_from_graphml(
     if (!e_length.has_value() || !e_max_speed.has_value()) {
       throw exceptions::ImportException("graphml");
     }
-    add_edge({cur->Attribute("source")}, {cur->Attribute("target")},
-             e_length.value(), e_max_speed.value(), e_breakable,
-             e_min_block_length, e_min_stop_block_length);
+    const char* edge_source = cur->Attribute("source");
+    const char* edge_target = cur->Attribute("target");
+    if (edge_source == nullptr || edge_target == nullptr) {
+      throw exceptions::ImportException("graphml");
+    }
+    add_edge({edge_source}, {edge_target}, e_length.value(),
+             e_max_speed.value(), e_breakable, e_min_block_length,
+             e_min_stop_block_length);
   }
 }
 
@@ -390,8 +405,10 @@ cda_rail::Network::separate_edge_at(
   if (distances_from_source.empty()) {
     throw exceptions::InvalidInputException("Distances are not specified");
   }
-  if (!std::ranges::is_sorted(distances_from_source)) {
-    throw exceptions::ConsistencyException("Distances are not sorted");
+  if (std::ranges::adjacent_find(distances_from_source, std::greater_equal{}) !=
+      distances_from_source.end()) {
+    throw exceptions::ConsistencyException(
+        "Distances are not strictly increasing");
   }
 
   // Copy edge (referenced edge is modified below)
@@ -401,6 +418,17 @@ cda_rail::Network::separate_edge_at(
       distances_from_source.back() >= edge.length) {
     throw exceptions::ConsistencyException(
         "Distances are not strictly between 0 and the length of the edge");
+  }
+
+  std::optional<size_t> reverse_edge_index;
+  std::optional<Edge>   reverse_edge;
+  if (has_edge(edge.target, edge.source)) {
+    reverse_edge_index = get_edge_index(edge.target, edge.source);
+    reverse_edge       = get_edge(reverse_edge_index.value());
+    if (reverse_edge->length != edge.length) {
+      throw exceptions::ConsistencyException(
+          "Reverse edge has different length");
+    }
   }
 
   // Create intermediate NoBorderVSS vertices
@@ -458,13 +486,9 @@ cda_rail::Network::separate_edge_at(
 
   // Handle reverse edge if it exists
   auto& new_reverse_edges = return_edges.second;
-  if (has_edge(edge.target, edge.source)) {
-    const auto rev_idx  = get_edge_index(edge.target, edge.source);
-    const auto rev_edge = get_edge(rev_idx);
-    if (rev_edge.length != edge.length) {
-      throw exceptions::ConsistencyException(
-          "Reverse edge has different length");
-    }
+  if (reverse_edge_index.has_value()) {
+    const auto rev_idx  = reverse_edge_index.value();
+    const auto rev_edge = reverse_edge.value();
 
     // First reverse sub-edge: target → last new vertex
     new_reverse_edges.emplace_back(

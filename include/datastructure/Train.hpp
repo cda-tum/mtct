@@ -400,6 +400,18 @@ public:
    */
   size_t add_train(Train train);
 
+  /**
+   * @brief Renames an existing train while preserving its index and properties.
+   *
+   * @param old_name Current train name.
+   * @param new_name New train name.
+   * @throws cda_rail::exceptions::TrainNotExistentException If no train named
+   * `old_name` exists.
+   * @throws cda_rail::exceptions::ConsistencyException If `new_name` is
+   * already used by another train.
+   */
+  void rename_train(std::string const& old_name, std::string new_name);
+
   // No removal method for now (academic code): Is assumed that trains are only
   // added and no "mistakes" are made.
 

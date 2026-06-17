@@ -737,27 +737,24 @@ public:
 
 private:
   /**
-   * TODO: FIX DOCSTRING TO NEW VARIABLES
-   * This method adds a train to the timetable. The train is specified by its
-   * parameters.
+   * @brief Adds a train and its schedule using resolved entry/exit vertices.
    *
    * @param train_name The name of the train.
    * @param length The length of the train in m.
    * @param max_speed The maximum speed of the train in m/s.
    * @param acceleration The acceleration of the train in m/s^2.
    * @param deceleration The deceleration of the train in m/s^2.
-   * @param tim Whether train is equipped with a train integrity
-   * monitoring system.
-   * @param entry_time The time at which the train enters the network in s.
-   * @param initial_velocity The speed at which the train enters the network in
-   * m/s.
-   * @param entry_vertex The index of the entry vertex in the network.
-   * @param exit_time The time at which the train leaves the network in s.
-   * @param exit_velocity The speed at which the train leaves the network in
-   * m/s.
-   * @param exit_vertex The index of the exit vertex in the network.
+   * @param tim Whether train integrity monitoring is available.
+   * @param entry_time Earliest time at which the train may enter the network.
+   * @param initial_velocity Initial velocity at the entry vertex in m/s.
+   * @param entry_vertex Index of the entry vertex in the network.
+   * @param exit_time Desired exit time from the network.
+   * @param exit_velocity Desired velocity at the exit vertex in m/s.
+   * @param exit_vertex Index of the exit vertex in the network.
    *
    * @return The index of the train in the train list.
+   * @throws cda_rail::exceptions::ConsistencyException If a train with the
+   * same name already exists.
    */
   [[nodiscard]] size_t add_train_private_helper(
       std::string const& train_name, double length, double max_speed,
@@ -829,15 +826,12 @@ public:
   // Further helpers
 
   /**
-   * TODO: FIX DOCSTRING
-   * This method checks if the timetable is consistent with the network, i.e.,
-   * if the following holds:
-   * - All vertices used as entry and exit points are valid vertices of the
-   * network
-   * - Entry and exit vertices have exactly one neighboring vertex
-   * - All scheduled stops are ordered by time and on pairwise disjointstations
-   * - All edges of stations are valid edges of the network
-   * - All scheduled stops lie within t_0 and t_n
+   * @brief Checks whether timetable data is consistent with the network.
+   *
+   * Verifies that entry and exit vertices exist and are terminal vertices,
+   * station tracks refer to valid network edges, scheduled stops are ordered by
+   * service time and use distinct stations, and each stop's service interval is
+   * contained in the train's entry/exit time window.
    *
    * @param network The network to which the timetable belongs.
    *

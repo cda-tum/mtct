@@ -100,7 +100,8 @@ int main(int argc, char** argv) {
         return k;
       }
     }
-    return std::string{"UNKNOWN"};
+    std::cerr << "Internal error: unsupported option value." << '\n';
+    std::exit(EXIT_FAILURE);
   };
 
   app.add_option("-c,--dt,--timestep", dt,
