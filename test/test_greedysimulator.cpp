@@ -3547,5 +3547,63 @@ TEST(GreedySimulation, DisappearOnPartialRoute) {
                 (5000.0 / 50.0)); // successful but delayed by tr1
 }
 
+TEST(GreedySimulation, ExitTimeConstraint) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 0);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 0);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 250, 50, 4, 2, true, 0, 50, v0,
+                                       105, 50, v1, network);
+  Timetable  timetable2;
+  const auto tr1b = timetable2.add_train("Train1", 250, 50, 4, 2, true, 0, 50,
+                                         v0, 200, 50, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance2(
+      network, timetable2, routes);
+
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  cda_rail::simulator::GreedySimulator simulator2(instance2, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1});
+
+  simulator2.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator2.set_vertex_orders_of_vertex(v0, {tr1});
+  simulator2.set_vertex_orders_of_vertex(v1, {tr1});
+
+  const auto sim_res  = simulator.simulate(5.0, false, true);
+  const auto sim_res2 = simulator2.simulate(5.0, false, true);
+
+  ASSERT_FALSE(sim_res.exit_times.empty());
+  PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
+        << ", Objective value: " << sim_res.exit_times.back() << std::endl;
+  EXPECT_TRUE(sim_res.success);
+  ASSERT_EQ(sim_res.exit_times.size(), 1);
+  EXPECT_EQ(sim_res.exit_times[0], 105);
+  ASSERT_EQ(sim_res.braking_times.size(), 1);
+  EXPECT_EQ(sim_res.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res.braking_distances.size(), 1);
+  EXPECT_EQ(sim_res.braking_distances.at(tr1), -1);
+
+  ASSERT_FALSE(sim_res2.exit_times.empty());
+  PLOGD << "Simulation 2 success: " << (sim_res2.success ? "true" : "false")
+        << ", Objective value: " << sim_res2.exit_times.back() << std::endl;
+  EXPECT_TRUE(sim_res2.success);
+  ASSERT_EQ(sim_res2.exit_times.size(), 1);
+  EXPECT_GE(sim_res2.exit_times[0], 200);
+  ASSERT_EQ(sim_res2.braking_times.size(), 1);
+  EXPECT_EQ(sim_res2.braking_times.at(tr1), -1);
+  ASSERT_EQ(sim_res2.braking_distances.size(), 1);
+  EXPECT_EQ(sim_res2.braking_distances.at(tr1), -1);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
