@@ -305,6 +305,20 @@ double max_travel_time_to_end_no_stopping(double v_1, double v_2, double v_m,
 double max_travel_time_to_end_stopping_allowed(double v_1, double v_2, double a,
                                                double d, double s, double x);
 
+/**
+ * @brief Returns the initial velocity, such that the maximal travel time over
+ * distance s is t assuming the final velocity is irrelevant.
+ *
+ * @param t Target time in s.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Edge length in metres.
+ * @return Initial velocity
+ * @pre All values >0
+ * @throws cda_rail::exceptions::InvalidInputException If an input is
+ * non-positive.
+ */
+double max_travel_time_inverse(double t, double d, double s);
+
 // ---------------------------
 // LINE SPEED CALCULATIONS
 //

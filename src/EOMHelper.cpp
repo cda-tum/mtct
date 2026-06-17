@@ -331,6 +331,14 @@ double cda_rail::max_travel_time_to_end_stopping_allowed(double v_1, double v_2,
   return max_travel_time_from_start_stopping_allowed(v_2, v_1, d, a, s, s - x);
 }
 
+double cda_rail::max_travel_time_inverse(double t, double d, double s) {
+  exceptions::throw_if_non_positive(t, "Time");
+  exceptions::throw_if_non_positive(d, "Deceleration");
+  exceptions::throw_if_non_positive(s, "Distance");
+
+  return (d * t / 2.0) + (s / t);
+}
+
 // ---------------------------
 // LINE SPEED CALCULATIONS
 

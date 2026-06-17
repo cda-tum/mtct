@@ -1543,3 +1543,18 @@ TEST(EoM, EoMMinimalTravelTimeEdgeCases) {
   // Accelerate and immediately decelerate (no cruising phase).
   EXPECT_APPROX_EQ(cda_rail::min_travel_time(2, 2, 10, 1, 1, 5), 2);
 }
+
+TEST(EoM, MaximalTimeInverse) {
+  // Train starts with velocity 20
+  // decelerates at rate 2 for 4 seconds
+  // new speed is 20-8=12
+  // Distance traveled is (20+12)/2 * 4 = 16*4 = 64
+  EXPECT_EQ(cda_rail::max_travel_time_inverse(4, 2, 64), 20.0);
+
+  EXPECT_THROW(cda_rail::max_travel_time_inverse(0, 2, 64),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::max_travel_time_inverse(4, 0, 64),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::max_travel_time_inverse(4, 2, 0),
+               cda_rail::exceptions::InvalidInputException);
+}
