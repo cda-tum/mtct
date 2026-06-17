@@ -172,15 +172,16 @@ private:
    * strategy.
    *
    * @param simulator The greedy simulator providing the current state.
-   * @param next_state_strategy_input The strategy to use for state transitions.
+   * @param solver_strategy_input The strategy to use, in particular, for state
+   * transitions.
    * @return An unordered set of next possible states.
    * @throws cda_rail::exceptions::ConsistencyException If the transition
    * strategy is unknown.
    */
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states(const simulator::GreedySimulator& simulator,
-              const NextStateStrategy&          next_state_strategy_input) {
-    switch (next_state_strategy_input) {
+              const SolverStrategyMBAStar&      solver_strategy_input) {
+    switch (solver_strategy_input.next_state_strategy) {
     case NextStateStrategy::SingleEdge:
       return next_states_single_edge(simulator);
     case NextStateStrategy::NextTTD:

@@ -145,8 +145,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     simulator.set_stop_positions(
         current_state_objective_pair.state.stop_positions);
 
-    const auto next_states_set =
-        next_states(simulator, solver_strategy_input.next_state_strategy);
+    const auto next_states_set = next_states(simulator, solver_strategy_input);
     PLOGV << "Found " << next_states_set.size() << " next states.";
     size_t i = 0;
     for (const auto& s : next_states_set) {
