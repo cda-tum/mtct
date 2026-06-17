@@ -1,3 +1,5 @@
 reviews:
   path_filters:
     - "!**/test/*/**"
+    - "!**.old"
+    - "!**.TODO"
