@@ -181,6 +181,11 @@ private:
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states(const simulator::GreedySimulator& simulator,
               const SolverStrategyMBAStar&      solver_strategy_input) {
+    if (solver_strategy_input.time_aware_state_transitions) {
+      throw cda_rail::exceptions::ConsistencyException(
+          "Time aware state transitions are not yet implemented.");
+    }
+
     switch (solver_strategy_input.next_state_strategy) {
     case NextStateStrategy::SingleEdge:
       return next_states_single_edge(simulator);
