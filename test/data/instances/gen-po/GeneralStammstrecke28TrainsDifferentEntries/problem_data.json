@@ -1,0 +1,33 @@
+{
+  "station_delay_weight": 1,
+  "train_weights": {
+    "Train0": 8.0,
+    "Train1": 6.0,
+    "Train10": 1.4,
+    "Train11": 9.7,
+    "Train12": 3.0,
+    "Train13": 3.9,
+    "Train14": 5.0,
+    "Train15": 5.5,
+    "Train16": 6.9,
+    "Train17": 6.3,
+    "Train18": 7.6,
+    "Train19": 2.4,
+    "Train2": 7.2,
+    "Train20": 3.5,
+    "Train21": 8.0,
+    "Train22": 1.7,
+    "Train23": 8.2,
+    "Train24": 9.8,
+    "Train25": 9.1,
+    "Train26": 5.7,
+    "Train27": 1.2,
+    "Train3": 1.2,
+    "Train4": 8.1,
+    "Train5": 9.7,
+    "Train6": 1.3,
+    "Train7": 8.8,
+    "Train8": 2.9,
+    "Train9": 4.5
+  }
+}

@@ -13,16 +13,14 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
-#include <numeric>
 #include <queue>
-#include <string>
+#include <string_view>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 // If TEST_FRIENDS has value true, the corresponding test is friended to test
-// complex private functions
-// This is not good practice, however after consideration, it was decided that
+// complex private functions.
+// This is not good practice. However, after consideration, it was decided that
 // - it is not reasonable to make the functions public
 // - they have a complexity that should be tested
 // - by only testing the overall solution, there is too much code tested at once
@@ -44,11 +42,9 @@ enum class NextStateStrategy : std::uint8_t {
 };
 
 struct ModelDetail {
-  int  dt                           = 6; // DB simulation default is 6 seconds
-  bool late_entry_possible          = false;
-  bool late_exit_possible           = false;
-  bool late_stop_possible           = false;
-  bool limit_speed_by_leaving_edges = true;
+  double dt                  = 6.0; // DB simulation default is 6 seconds
+  bool   late_entry_possible = false;
+  bool   limit_speed_by_leaving_edges = true;
 };
 
 struct SolverStrategyMBAStar {
@@ -58,6 +54,8 @@ struct SolverStrategyMBAStar {
       simulator::RemainingTimeHeuristicType::Simple;
   NextStateStrategy next_state_strategy    = NextStateStrategy::SingleEdge;
   bool              consider_earliest_exit = true;
+  bool              time_aware_state_transitions = false;
+  double            a_star_weight                = 1.0;
 };
 
 struct GreedySimulatorState {
@@ -66,110 +64,119 @@ struct GreedySimulatorState {
   std::vector<cda_rail::index_vector> vertex_orders;
   std::vector<std::vector<double>>    stop_positions;
 
-  bool operator==(const GreedySimulatorState& other) const {
-    return train_edges == other.train_edges && ttd_orders == other.ttd_orders &&
-           vertex_orders == other.vertex_orders &&
-           stop_positions == other.stop_positions;
-  }
+  bool operator==(const GreedySimulatorState& other) const;
 
-  bool operator>(const GreedySimulatorState& other) const {
-    const double this_obj = std::accumulate(
-        train_edges.begin(), train_edges.end(), 0.0,
-        [](double sum, const auto& tr_edge) { return sum + tr_edge.size(); });
-    const double other_obj = std::accumulate(
-        other.train_edges.begin(), other.train_edges.end(), 0.0,
-        [](double sum, const auto& tr_edge) { return sum + tr_edge.size(); });
-    return this_obj > other_obj;
-  }
+  bool operator>(const GreedySimulatorState& other) const;
 };
 } // namespace cda_rail::solver::astar_based
 
-namespace std {
-template <> struct hash<cda_rail::solver::astar_based::GreedySimulatorState> {
-  size_t operator()(
-      const cda_rail::solver::astar_based::GreedySimulatorState& state) const {
-    // Based on boost::hash_combine implementation
-
-    size_t seed         = 0;
-    auto   hash_combine = [&seed](size_t h) {
-      seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    };
-
-    hash_combine(std::hash<size_t>{}(state.train_edges.size()));
-    for (const auto& vec : state.train_edges) {
-      hash_combine(std::hash<size_t>{}(vec.size()));
-      for (const size_t v : vec) {
-        hash_combine(std::hash<size_t>{}(v));
-      }
-    }
-    hash_combine(std::hash<size_t>{}(state.ttd_orders.size()));
-    for (const auto& vec : state.ttd_orders) {
-      hash_combine(std::hash<size_t>{}(vec.size()));
-      for (const size_t v : vec) {
-        hash_combine(std::hash<size_t>{}(v));
-      }
-    }
-    hash_combine(std::hash<size_t>{}(state.vertex_orders.size()));
-    for (const auto& vec : state.vertex_orders) {
-      hash_combine(std::hash<size_t>{}(vec.size()));
-      for (const size_t v : vec) {
-        hash_combine(std::hash<size_t>{}(v));
-      }
-    }
-    hash_combine(std::hash<size_t>{}(state.stop_positions.size()));
-    for (const auto& vec : state.stop_positions) {
-      hash_combine(std::hash<size_t>{}(vec.size()));
-      for (const double v : vec) {
-        hash_combine(std::hash<double>{}(v));
-      }
-    }
-
-    return seed;
-  }
-};
-} // namespace std
+template <>
+struct std::hash<cda_rail::solver::astar_based::GreedySimulatorState> {
+  size_t operator()(const cda_rail::solver::astar_based::GreedySimulatorState&
+                        state) const noexcept;
+}; // namespace std
 
 namespace cda_rail::solver::astar_based {
 class GenPOMovingBlockAStarSolver
     : public GeneralSolver<
           instances::GeneralPerformanceOptimizationInstance,
-          instances::SolGeneralPerformanceOptimizationInstance<
-              instances::GeneralPerformanceOptimizationInstance>> {
+          instances::SolGeneralPerformanceOptimizationInstance> {
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStatesTTD);
 #endif
 
-  using StateObjectivePair =
-      std::pair<std::pair<double, bool>, GreedySimulatorState>;
+public:
+  // ------------------------
+  // CONSTRUCTOR
+  /**
+   * @brief Constructs a default solver instance.
+   */
 
-  struct CompareByObjective {
-    bool operator()(const StateObjectivePair& a,
-                    const StateObjectivePair& b) const {
-      return (a.first.first > b.first.first) ||
-             (a.first.first == b.first.first && !a.first.second &&
-              b.first.second) ||
-             (a.first.first == b.first.first && !a.first.second &&
-              !b.first.second && b.second > a.second);
-    }
+  GenPOMovingBlockAStarSolver() = default;
+  /**
+   * @brief Constructs the solver from a performance optimization instance.
+   *
+   * @param instance The performance optimization problem instance to solve.
+   */
+  explicit GenPOMovingBlockAStarSolver(
+      const instances::GeneralPerformanceOptimizationInstance& instance)
+      : GeneralSolver(instance) {};
+  /**
+   * @brief Constructs a solver instance from file-based configuration.
+   *
+   * @param instanceName The name of the instance.
+   * @param instanceSubdirectory The subdirectory containing instance files.
+   * @param working_directory The root working directory path.
+   */
+  GenPOMovingBlockAStarSolver(std::string_view const       instanceName,
+                              std::string_view const       instanceSubdirectory,
+                              std::filesystem::path const& working_directory)
+      : GeneralSolver(instanceName, instanceSubdirectory, working_directory) {}
+
+  ~GenPOMovingBlockAStarSolver() override = default;
+
+  // Rule of 5 (due to virtual deconstructor)
+  GenPOMovingBlockAStarSolver(const GenPOMovingBlockAStarSolver&) = default;
+  GenPOMovingBlockAStarSolver(GenPOMovingBlockAStarSolver&&)      = default;
+  GenPOMovingBlockAStarSolver&
+  operator=(const GenPOMovingBlockAStarSolver&) = default;
+  GenPOMovingBlockAStarSolver&
+  operator=(GenPOMovingBlockAStarSolver&&) = default;
+
+  // ----------------------------
+  // SOLVE
+  // ----------------------------
+
+  using GeneralSolver::solve;
+  /**
+   * @brief Solves the problem with default model and strategy configurations.
+   *
+   * @param time_limit Time limit in seconds (-1 for no limit).
+   * @param debug_input If true, enables debug mode.
+   * @param overwrite_severity If true, overwrites solution severity.
+   * @return Solution to the general performance optimization problem.
+   */
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
+  solve(int time_limit, bool debug_input, bool overwrite_severity) override {
+    return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
   };
 
-  using MinPriorityQueue =
-      std::priority_queue<StateObjectivePair, std::vector<StateObjectivePair>,
-                          CompareByObjective>;
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
+  solve(const ModelDetail&             model_detail_input,
+        const SolverStrategyMBAStar&   solver_strategy_input,
+        const GeneralSolutionSettings& solution_settings_input,
+        int time_limit = -1, bool debug_input = false,
+        bool overwrite_severity = true);
 
+private:
+  // ---------------------------
+  // STATE TRANSITION HELPER
+  // ---------------------------
+
+  // Helper
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
-  next_states_next_ttd(const simulator::GreedySimulator& simulator);
-
+              next_states_next_ttd(const simulator::GreedySimulator& simulator);
   static void next_state_ttd_helper(size_t tr, GreedySimulatorState& state,
                                     const simulator::GreedySimulator& simulator,
                                     const cda_rail::index_vector& new_edges);
   static void
   next_state_exit_vertex_helper(size_t tr, GreedySimulatorState& state,
                                 const simulator::GreedySimulator& simulator);
+
+  /**
+   * @brief Generates the next reachable states using the specified transition
+   * strategy.
+   *
+   * @param simulator The greedy simulator providing the current state.
+   * @param next_state_strategy_input The strategy to use for state transitions.
+   * @return An unordered set of next possible states.
+   * @throws cda_rail::exceptions::ConsistencyException If the transition
+   * strategy is unknown.
+   */
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states(const simulator::GreedySimulator& simulator,
               const NextStateStrategy&          next_state_strategy_input) {
@@ -182,51 +189,42 @@ private:
       throw cda_rail::exceptions::ConsistencyException(
           "Unknown next state strategy.");
     }
+  }
+
+  // ----------------------
+  // DATA STRUCTURE
+  // ----------------------
+
+  struct StateObjectivePair {
+    double               objective{};
+    bool                 is_final_state{};
+    GreedySimulatorState state{};
   };
 
-public:
-  GenPOMovingBlockAStarSolver() = default;
-
-  explicit GenPOMovingBlockAStarSolver(
-      const instances::GeneralPerformanceOptimizationInstance& instance)
-      : GeneralSolver<instances::GeneralPerformanceOptimizationInstance,
-                      instances::SolGeneralPerformanceOptimizationInstance<
-                          instances::GeneralPerformanceOptimizationInstance>>(
-            instance) {};
-
-  explicit GenPOMovingBlockAStarSolver(const std::filesystem::path& p)
-      : GeneralSolver<instances::GeneralPerformanceOptimizationInstance,
-                      instances::SolGeneralPerformanceOptimizationInstance<
-                          instances::GeneralPerformanceOptimizationInstance>>(
-            p) {};
-
-  explicit GenPOMovingBlockAStarSolver(const std::string& path)
-      : GeneralSolver<instances::GeneralPerformanceOptimizationInstance,
-                      instances::SolGeneralPerformanceOptimizationInstance<
-                          instances::GeneralPerformanceOptimizationInstance>>(
-            path) {};
-
-  explicit GenPOMovingBlockAStarSolver(const char* path)
-      : GeneralSolver<instances::GeneralPerformanceOptimizationInstance,
-                      instances::SolGeneralPerformanceOptimizationInstance<
-                          instances::GeneralPerformanceOptimizationInstance>>(
-            path) {};
-
-  ~GenPOMovingBlockAStarSolver() override = default;
-
-  using GeneralSolver::solve;
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
-  solve(int time_limit, bool debug_input, bool overwrite_severity) override {
-    return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
+  struct CompareByObjective {
+    /**
+     * @brief Defines priority ordering for the A* search queue.
+     *
+     * Lower objectives have higher priority; final states are prioritized over
+     * non-final states when objectives are equal; remaining ties use state
+     * comparison.
+     *
+     * @param a First state-objective pair.
+     * @param b Second state-objective pair.
+     * @return `true` if `a` should be dequeued after `b`, `false` otherwise.
+     */
+    bool operator()(const StateObjectivePair& a,
+                    const StateObjectivePair& b) const {
+      return (a.objective > b.objective) ||
+             (a.objective == b.objective && !a.is_final_state &&
+              b.is_final_state) ||
+             (a.objective == b.objective && !a.is_final_state &&
+              !b.is_final_state && b.state > a.state);
+    }
   };
 
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
-  solve(const ModelDetail&             model_detail_input,
-        const SolverStrategyMBAStar&   solver_strategy_input,
-        const GeneralSolutionSettings& solution_settings_input,
-        int time_limit = -1, bool debug_input = false,
-        bool overwrite_severity = true);
+  using MinPriorityQueue =
+      std::priority_queue<StateObjectivePair, std::vector<StateObjectivePair>,
+                          CompareByObjective>;
 };
 } // namespace cda_rail::solver::astar_based
