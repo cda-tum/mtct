@@ -3504,5 +3504,48 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res8.vertex_headways.at(v4), 156 + 30 + 102);
 }
 
+TEST(GreedySimulation, DisappearOnPartialRoute) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 0);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 0);
+  const auto v2 = network.add_vertex("v2", VertexType::TTD, 0);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  const auto v1_v2 = network.add_edge(v1, v2, 5000, 50, true);
+
+  network.add_successor(v0_v1, v1_v2);
+
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 20, 4, 2, true, 0, 20, v0,
+                                       500, 20, v2, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 50, 4, 4, true, 60, 50,
+                                       v0, 260, 50, v2, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
+  simulator.set_vertex_orders_of_vertex(v2, {tr2});
+  simulator.set_train_edges_of_tr(tr2, {v0_v1, v1_v2});
+
+  const auto sim_res_1 = simulator.simulate(6.0, false, true, false, false);
+  const auto sim_res_2 = simulator.simulate(6.0, false, true, false, true);
+
+  EXPECT_FALSE(sim_res_1.success);
+
+  EXPECT_TRUE(sim_res_2.success);
+  ASSERT_EQ(sim_res_2.exit_times.size(), 2);
+  ASSERT_GE(sim_res_2.exit_times.at(tr1), 5000.0 / 20.0);
+  ASSERT_GE(sim_res_2.exit_times.at(tr2),
+            sim_res_2.exit_times.at(tr1) +
+                (5000.0 / 50.0)); // successful but delayed by tr1
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

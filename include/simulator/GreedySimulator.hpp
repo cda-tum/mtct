@@ -116,8 +116,9 @@ public:
   // ------------------
   [[nodiscard]] SimulatorResults
   simulate(double dt, bool late_entry_possible = false,
-           bool limit_speed_by_leaving_edges = true,
-           bool save_trajectories            = false) const;
+           bool limit_speed_by_leaving_edges   = true,
+           bool save_trajectories              = false,
+           bool disappear_at_partial_route_end = false) const;
 
   /**
    * @brief Runs the simulation using a fixed time step of 6.0 seconds.
@@ -126,9 +127,10 @@ public:
    */
   [[nodiscard]] SimulatorResults
   simulate(bool late_entry_possible, bool limit_speed_by_leaving_edges,
-           bool save_trajectories) const override {
+           bool save_trajectories,
+           bool disappear_at_partial_route_end) const override {
     return simulate(6.0, late_entry_possible, limit_speed_by_leaving_edges,
-                    save_trajectories);
+                    save_trajectories, disappear_at_partial_route_end);
   }
 
 private:

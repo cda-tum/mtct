@@ -60,7 +60,7 @@ cda_rail::simulator::GreedySimulator::GreedySimulator(
 cda_rail::simulator::SimulatorResults
 cda_rail::simulator::GreedySimulator::simulate(
     double dt, bool late_entry_possible, bool limit_speed_by_leaving_edges,
-    bool save_trajectories) const {
+    bool save_trajectories, bool disappear_at_partial_route_end) const {
   // NOLINTBEGIN(*-inconsistent-ifelse-braces)
 
   exceptions::throw_if_non_positive(dt, "Time step length dt");

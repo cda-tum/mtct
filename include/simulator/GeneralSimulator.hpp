@@ -242,7 +242,8 @@ public:
   // virtual function
   [[nodiscard]] virtual SimulatorResults
   simulate(bool late_entry_possible, bool limit_speed_by_leaving_edges,
-           bool save_trajectories) const = 0;
+           bool save_trajectories,
+           bool disappear_at_partial_route_end) const = 0;
 
   /**
    * @brief Simulates train movements given the current routing, ordering, and
@@ -253,10 +254,12 @@ public:
    * enabled—train trajectories over time.
    */
   [[nodiscard]] SimulatorResults
-  simulate(bool late_entry_possible = false,
-           bool limit_speed_by_leaving_edges =
-               true) const { // default values for virtual function
-    return simulate(late_entry_possible, limit_speed_by_leaving_edges, false);
+  simulate(bool late_entry_possible          = false,
+           bool limit_speed_by_leaving_edges = true,
+           bool save_trajectories =
+               false) const { // default values for virtual function
+    return simulate(late_entry_possible, limit_speed_by_leaving_edges,
+                    save_trajectories, false);
   };
 
 protected:
