@@ -1545,16 +1545,55 @@ TEST(EoM, EoMMinimalTravelTimeEdgeCases) {
 }
 
 TEST(EoM, MaximalTimeInverse) {
-  // Train starts with velocity 20
-  // decelerates at rate 2 for 4 seconds
+  // Train starts with velocity 14
+  // Accelerates to velocity 20 within 6 seconds
+  // --> distance traveled: (14+20)/2*6 = 17*6 = 102
+  // From velocity 20, decelerates at rate 2 for 4 seconds
   // new speed is 20-8=12
-  // Distance traveled is (20+12)/2 * 4 = 16*4 = 64
-  EXPECT_EQ(cda_rail::max_travel_time_inverse(4, 2, 64), 20.0);
+  // Distance traveled while braking is (20+12)/2 * 4 = 16*4 = 64
+  // Total distance: 102 + 64 = 168
+  // Total time after one step: 4
+  EXPECT_EQ(cda_rail::max_travel_time_inverse(14, 10, 4, 2, 168), 20.0);
 
-  EXPECT_THROW(cda_rail::max_travel_time_inverse(0, 2, 64),
+  EXPECT_THROW(cda_rail::max_travel_time_inverse(-1, 10, 4, 2, 168),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(cda_rail::max_travel_time_inverse(4, 0, 64),
+  EXPECT_THROW(cda_rail::max_travel_time_inverse(14, 0, 4, 2, 168),
                cda_rail::exceptions::InvalidInputException);
-  EXPECT_THROW(cda_rail::max_travel_time_inverse(4, 2, 0),
+  EXPECT_THROW(cda_rail::max_travel_time_inverse(14, 10, 0, 2, 168),
                cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::max_travel_time_inverse(14, 10, 4, 0, 168),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::max_travel_time_inverse(14, 10, 4, 2, 0),
+               cda_rail::exceptions::InvalidInputException);
+}
+
+TEST(EoM, MinTravelTimeFlexibleExit) {
+  // Train starts with velocity 5
+  // Train accelerates at rate 3 for 4 seconds
+  // Reaches speed 5 + 3*4 = 5+12 = 17
+  // Distance: (5+17)/2*4 = 11*4 = 44
+  EXPECT_EQ(cda_rail::min_travel_time_flexible_exit_speed(5, 50, 3, 44), 4);
+
+  // Now travel at speed 17 for 6 seconds
+  // Additional distance: 17*6 = 102
+  // Total dist: 102+44 = 146
+  // Total time: 4+6 = 10
+  EXPECT_EQ(cda_rail::min_travel_time_flexible_exit_speed(5, 17, 3, 146), 10);
+}
+
+TEST(EoM, MaxTravelTimeToStop) {
+  // v_0 = 10
+  // v_1 = 8
+  // dt = 5
+  // d = 2
+  // Distance traveled: (10+8)/2*5 = 9*5 = 45
+  // Time to stop: 8/2 = 4
+  // Distance to stop: 8/2 * 4 = 4*4 = 16
+  // Distance to stop: 8*8/(2*2) = 8*8/4 = 8*2 = 16 (check)
+  // Total distance: 45 + 16 = 61
+  // Relevant time: 4
+
+  EXPECT_EQ(cda_rail::max_travel_time_to_stop_at_end_after_one_time_step(10, 5,
+                                                                         2, 61),
+            4);
 }
