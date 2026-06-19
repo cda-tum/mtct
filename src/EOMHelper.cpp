@@ -3,6 +3,7 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "GeneralHelper.hpp"
+#include "plog/Log.h"
 
 #include <algorithm>
 #include <cassert>
@@ -63,8 +64,12 @@ split_distance_by_change_points(double x, double s_1, double s_2, double s) {
   // Refactoring helper: split traveled distance into the 3 profile phases.
   auto ub2 = s_2 - s_1;
   auto ub3 = s - s_2;
+  PLOGV << "ub2: " << ub2;
+  PLOGV << "ub3: " << ub3;
   round_small_numbers_to_zero_inplace(ub2);
   round_small_numbers_to_zero_inplace(ub3);
+  PLOGV << "ub2 (after rounding): " << ub2;
+  PLOGV << "ub3 (after rounding): " << ub3;
   return {
       .first  = std::min(x, s_1),
       .second = std::clamp(x - s_1, 0.0, ub2),
