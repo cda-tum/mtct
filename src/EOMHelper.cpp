@@ -3,7 +3,6 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "GeneralHelper.hpp"
-#include "plog/Log.h"
 
 #include <algorithm>
 #include <cassert>
