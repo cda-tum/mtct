@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <optional>
 #include <ranges>
 #include <unordered_set>
 #include <vector>
@@ -333,45 +334,70 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
    * In case of tie, existing trains win over new trains.
    * In case of tie, either train wins.
    * No train is returned if all trains have left the network.
-   * At most one train is returnde.
+   * At most one train is returned.
    */
 
-  index_set retval;
-  double    current_time{std::numeric_limits<double>::max()};
-  double    current_weight{0.0};
-  for (size_t tr = 0; tr < instance->get_const_train_list().size(); ++tr) {
-    bool const tr_not_entered = simulator_state.train_edges.at(tr).empty();
-    bool const tr_on_network =
-        !tr_not_entered &&
-        instance->get_const_network()
-                .get_edge(simulator_state.train_edges.at(tr).back())
-                .target != instance->get_const_schedule(tr).get_exit_vertex();
+  struct Candidate {
+    size_t train;
+    double time;
+    double weight;
+    bool   is_on_network;
+  };
 
-    auto const tr_weight = instance->get_train_weight(tr);
-    if (tr_not_entered) {
-      auto const tr_entry_time =
-          instance->get_const_schedule(tr).get_entry_time();
-      if (tr_entry_time < current_time ||
-          (tr_entry_time == current_time && tr_weight > current_weight)) {
-        retval.clear();
-        retval.insert(tr);
-        current_time   = tr_entry_time;
-        current_weight = tr_weight;
-      }
+  auto const candidate_for = [&simulator_state, &simulator_result, &instance](
+                                 size_t const tr) -> std::optional<Candidate> {
+    auto const& train_edges = simulator_state.train_edges.at(tr);
+    auto const  weight      = instance->get_train_weight(tr);
+
+    if (train_edges.empty()) {
+      return Candidate{.train = tr,
+                       .time =
+                           instance->get_const_schedule(tr).get_entry_time(),
+                       .weight        = weight,
+                       .is_on_network = false};
     }
-    if (tr_on_network) {
-      auto const tr_braking_time = simulator_result.braking_times.at(tr);
-      if (tr_braking_time < current_time ||
-          (tr_braking_time == current_time && tr_weight >= current_weight)) {
-        retval.clear();
-        retval.insert(tr);
-        current_time   = tr_braking_time;
-        current_weight = tr_weight;
-      }
+
+    auto const exit_vertex = instance->get_const_schedule(tr).get_exit_vertex();
+    auto const current_vertex =
+        instance->get_const_network().get_edge(train_edges.back()).target;
+    if (current_vertex == exit_vertex) {
+      return std::nullopt;
+    }
+
+    return Candidate{.train         = tr,
+                     .time          = simulator_result.braking_times.at(tr),
+                     .weight        = weight,
+                     .is_on_network = true};
+  };
+
+  auto const is_better = [](Candidate const& candidate,
+                            Candidate const& incumbent) {
+    if (candidate.time != incumbent.time) {
+      return candidate.time < incumbent.time;
+    }
+    if (candidate.weight != incumbent.weight) {
+      return candidate.weight > incumbent.weight;
+    }
+    return candidate.is_on_network && !incumbent.is_on_network;
+  };
+
+  std::vector<Candidate> candidates;
+  for (auto const tr :
+       std::views::iota(size_t{0}, instance->get_const_train_list().size())) {
+    if (auto const candidate = candidate_for(tr); candidate.has_value()) {
+      candidates.emplace_back(candidate.value());
     }
   }
 
-  return retval;
+  if (candidates.empty()) {
+    return index_set{};
+  }
+
+  auto const best = std::ranges::min_element(
+      candidates, [&is_better](Candidate const& lhs, Candidate const& rhs) {
+        return is_better(lhs, rhs);
+      });
+  return {best->train};
 }
 
 cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
