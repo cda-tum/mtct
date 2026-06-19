@@ -236,7 +236,7 @@ private:
   [[nodiscard]] MaAndMaxVResult
   get_future_max_speed_constraints(size_t tr, const Train& train, double pos,
                                    double v_0, double max_displacement,
-                                   double                     dt,
+                                   double current_time, double dt,
                                    cda_rail::index_set const& blocked_vertices,
                                    bool also_limit_by_leaving_edges) const;
 
@@ -250,8 +250,8 @@ private:
 
   [[nodiscard]] MaAndMaxVResult
   get_ma_and_maxv(size_t tr, const std::vector<double>& train_velocities,
-                  std::optional<size_t> next_stop, double dt,
-                  cda_rail::index_set const&        blocked_vertices,
+                  std::optional<size_t> next_stop, double current_time,
+                  double dt, cda_rail::index_set const& blocked_vertices,
                   const std::vector<TrainPosition>& train_positions,
                   const std::unordered_set<size_t>& trains_in_network,
                   const std::unordered_set<size_t>& trains_left,

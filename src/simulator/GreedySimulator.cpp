@@ -162,18 +162,8 @@ cda_rail::simulator::GreedySimulator::simulate(
 
       // Calculate MA
 
-      auto blocked_vertices_tr = blocked_vertices;
-
-      if (t < get_instance()->get_const_schedule(tr).get_exit_time()) {
-        PLOGV << train_object.get_name()
-              << "'s exit vertex is blocked by earliest exit.";
-        const auto tr_exit_vertex =
-            get_instance()->get_const_schedule(tr).get_exit_vertex();
-        blocked_vertices_tr.insert(tr_exit_vertex);
-      }
-
       const auto tr_ma_data = get_ma_and_maxv(
-          tr, train_velocities, tr_next_stop_id.at(tr), dt, blocked_vertices_tr,
+          tr, train_velocities, tr_next_stop_id.at(tr), t, dt, blocked_vertices,
           train_positions, trains_in_network, trains_left, trains_on_edges,
           limit_speed_by_leaving_edges);
       PLOGV << train_object.get_name() << " positioned at "
@@ -846,7 +836,7 @@ cda_rail::simulator::GreedySimulator::speed_restriction_helper(
 cda_rail::simulator::GreedySimulator::MaAndMaxVResult
 cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     size_t tr, const cda_rail::Train& train, double pos, double v_0,
-    double max_displacement, double dt,
+    double max_displacement, double current_time, double dt,
     cda_rail::index_set const& blocked_vertices,
     bool                       also_limit_by_leaving_edges) const {
   round_small_numbers_to_zero_inplace(pos);
@@ -910,12 +900,60 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
                                : 0); // + train.length because train needs to
                                      // fully leave the network
   PosVel retval_without_route_end = {.pos = retval.pos, .vel = retval.vel};
-  if (pos + max_displacement >= relevant_last_pos) {
+  if (pos + max_displacement >= milestones.back()) {
     const double last_edge_exit_restriction =
         last_edge_leaves_network ? tr_schedule.get_exit_velocity() : 0;
     retval = speed_restriction_helper(
         retval.pos, retval.vel, pos, relevant_last_pos, v_0,
         last_edge_exit_restriction, train.get_deceleration(), dt);
+    if (last_edge_leaves_network) {
+      auto const exit_time_tr =
+          this->get_instance()->get_const_schedule(tr).get_exit_time();
+      if (current_time == 24) {
+        PLOGV << "BP";
+      }
+      if (current_time + EPS < exit_time_tr) {
+        bool       calc_speed = true;
+        auto const bd         = braking_distance(v_0, train.get_deceleration());
+        if (pos + bd <= milestones.back() + GRB_EPS) {
+          auto const max_t =
+              max_travel_time_to_stop_at_end_after_one_time_step(
+                  v_0, dt, train.get_deceleration(), milestones.back() - pos) +
+              min_travel_time_flexible_exit_speed(0, last_edge_exit_restriction,
+                                                  train.get_acceleration(),
+                                                  train.get_length());
+          if (max_t + EPS < exit_time_tr - current_time + dt) {
+            PLOGV << "At time " << current_time << ", train "
+                  << get_instance()
+                         ->get_const_train_list()
+                         .get_train(tr)
+                         .get_name()
+                  << " has to stop and wait in order not to arrive early.";
+            retval.pos = std::min(retval.pos, milestones.back() - pos);
+            calc_speed = false;
+          }
+        }
+        if (current_time + dt + EPS >= exit_time_tr &&
+            pos + (retval.vel / 2 * dt) + EPS < relevant_last_pos) {
+          PLOGV
+              << "At time " << current_time << ", train "
+              << get_instance()->get_const_train_list().get_train(tr).get_name()
+              << " does not have to be slowed down shortly before exit.";
+          calc_speed = false;
+        }
+        if (calc_speed) {
+          auto const new_limit = max_travel_time_inverse(
+              v_0, exit_time_tr - current_time, dt, train.get_deceleration(),
+              relevant_last_pos - pos);
+          PLOGV
+              << "At time " << current_time << ", train "
+              << get_instance()->get_const_train_list().get_train(tr).get_name()
+              << " has speed limit " << new_limit
+              << " in order not to arrive early at the exit vertex.";
+          retval.vel = std::min(retval.vel, new_limit);
+        }
+      }
+    }
   }
   if (last_edge_leaves_network) {
     retval_without_route_end = retval;
@@ -973,7 +1011,7 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
 cda_rail::simulator::GreedySimulator::MaAndMaxVResult
 cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
     size_t tr, const std::vector<double>& train_velocities,
-    std::optional<size_t> next_stop, double dt,
+    std::optional<size_t> next_stop, double current_time, double dt,
     cda_rail::index_set const&                     blocked_vertices,
     const std::vector<TrainPosition>&              train_positions,
     const std::unordered_set<size_t>&              trains_in_network,
@@ -991,8 +1029,8 @@ cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
   ma = get_absolute_distance_ma(tr, ma, train_positions, train_velocities,
                                 trains_in_network, trains_left, tr_on_edges);
   return get_future_max_speed_constraints(
-      tr, train, train_positions.at(tr).front, train_velocities.at(tr), ma, dt,
-      blocked_vertices, also_limit_speed_by_leaving_edges);
+      tr, train, train_positions.at(tr).front, train_velocities.at(tr), ma,
+      current_time, dt, blocked_vertices, also_limit_speed_by_leaving_edges);
 }
 
 double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,

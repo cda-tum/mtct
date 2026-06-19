@@ -205,6 +205,11 @@ double cda_rail::min_travel_time(double v_1, double v_2, double v_m, double a,
                                  double d, double s) {
   return min_travel_time_from_start(v_1, v_2, v_m, a, d, s, s);
 }
+double cda_rail::min_travel_time_flexible_exit_speed(double v_1, double v_m,
+                                                     double a, double s) {
+  auto const v_2 = std::min(v_m, std::sqrt((v_1 * v_1) + (2 * a * s)));
+  return min_travel_time(v_1, v_2, v_m, a, 1, s);
+}
 
 double cda_rail::min_travel_time_from_start(double v_1, double v_2, double v_m,
                                             double a, double d, double s,
@@ -329,6 +334,37 @@ double cda_rail::max_travel_time_to_end_stopping_allowed(double v_1, double v_2,
   // and deceleration swapped
   // NOLINTNEXTLINE(readability-suspicious-call-argument)
   return max_travel_time_from_start_stopping_allowed(v_2, v_1, d, a, s, s - x);
+}
+
+double cda_rail::max_travel_time_inverse(double v_0, double t, double dt,
+                                         double d, double s) {
+  exceptions::throw_if_negative(v_0, "Initial speed");
+  exceptions::throw_if_non_positive(t, "Time");
+  exceptions::throw_if_non_positive(dt, "Time step");
+  exceptions::throw_if_non_positive(d, "Deceleration");
+  exceptions::throw_if_non_positive(s, "Distance");
+
+  // s = (v_0+v_1)/2*dt + (v_1+v_1-d*t)/2*t
+  // v_1 = (d*t^2-dt*v_0+2*s)/(dt+2*t)
+  auto const v_1 = ((d * t * t) - (dt * v_0) + (2 * s)) / (dt + (2 * t));
+  exceptions::throw_if_less_than(v_1, d * t, "Calculated max speed");
+  return v_1;
+}
+
+double cda_rail::max_travel_time_to_stop_at_end_after_one_time_step(double v_0,
+                                                                    double dt,
+                                                                    double d,
+                                                                    double s) {
+  // (v_0+v_1)/2 * dt + v_1^2/(2*d) = s
+  // Relevant return time: v_1/d
+
+  // Hence: v_1/d = (sqrt(d*dt^2-4*(dt*v_0-2*s))-sqrt(d)*dt)/(2*sqrt(d))
+
+  // Stable version: (4*s - 2*dt*v_0)/(sqrt(d^2*dt^2-4*d*(dt*v_0-2*s))+d*dt)
+
+  return ((4 * s) - (2 * dt * v_0)) /
+         (sqrt((d * d * dt * dt) - (4 * d * ((dt * v_0) - (2 * s)))) +
+          (d * dt));
 }
 
 // ---------------------------

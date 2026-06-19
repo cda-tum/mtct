@@ -96,6 +96,19 @@ double min_travel_time(double v_1, double v_2, double v_m, double a, double d,
                        double s);
 
 /**
+ * @brief Returns the minimal travel time when starting with v_1 and no
+ * constraint on exit velocity (besides staying below maximal speed).
+ *
+ * @param v_1 Entry speed in m/s.
+ * @param v_m Maximal speed in m/s,
+ * @param a Acceleration in m/s^2.
+ * @param s Distance in m.
+ * @return Minimal travel time.
+ */
+double min_travel_time_flexible_exit_speed(double v_1, double v_m, double a,
+                                           double s);
+
+/**
  * @brief Returns minimal time to reach position @p x from the edge start.
  *
  * The profile is the time-optimal one under acceleration bound @p a,
@@ -304,6 +317,41 @@ double max_travel_time_to_end_no_stopping(double v_1, double v_2, double v_m,
  */
 double max_travel_time_to_end_stopping_allowed(double v_1, double v_2, double a,
                                                double d, double s, double x);
+
+/**
+ * @brief Let v_0/s_0 vel/pos at t_0, v_1/s_1 at t_1 and v_2/s_2 at t_2.
+ * Find maximal v_1, such that:
+ * - s_2-s_0 = s (remaining distance)
+ * - t_2-t_1 = t (desired travel time after moving one time step)
+ * - t_1-t_0 = dt (time step)
+ *
+ * @param v_0 Initial velocity in m/s.
+ * @param t Target time in s.
+ * @param dt Time step in s.
+ * @param d Maximum deceleration in m/s^2.
+ * @param s Desired travel distance in metres.
+ * @return Maximal v_1
+ * @pre All values >0
+ * @throws cda_rail::exceptions::InvalidInputException If an input is
+ * non-positive. v_0 may be 0.
+ */
+double max_travel_time_inverse(double v_0, double t, double dt, double d,
+                               double s);
+
+/**
+ * @brief Assuming v_0/s_0 at t_0, v_1/s_1 at t_0+dt and v_2/s_2 at t_2:
+ * - v_2 = 0
+ * - s_2 - s_0 = s
+ * - What is t_2-t_1 (t_1 = t_0+dt)
+ *
+ * @param v_0 Initial velocity in m/s.
+ * @param dt Time step in s.
+ * @param d Maximal deceleration in m/s^2.
+ * @param s Distance until stop position.
+ * @return Maximal time as described.
+ */
+double max_travel_time_to_stop_at_end_after_one_time_step(double v_0, double dt,
+                                                          double d, double s);
 
 // ---------------------------
 // LINE SPEED CALCULATIONS
