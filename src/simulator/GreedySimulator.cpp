@@ -839,6 +839,7 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     double max_displacement, double current_time, double dt,
     cda_rail::index_set const& blocked_vertices,
     bool                       also_limit_by_leaving_edges) const {
+  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
   round_small_numbers_to_zero_inplace(pos);
   round_small_numbers_to_zero_inplace(v_0);
   round_small_numbers_to_zero_inplace(max_displacement);
@@ -909,9 +910,6 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     if (last_edge_leaves_network) {
       auto const exit_time_tr =
           this->get_instance()->get_const_schedule(tr).get_exit_time();
-      if (current_time == 24) {
-        PLOGV << "BP";
-      }
       if (current_time + EPS < exit_time_tr) {
         bool       calc_speed = true;
         auto const bd         = braking_distance(v_0, train.get_deceleration());
@@ -962,6 +960,7 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
           .ma_without_route_end    = retval_without_route_end.pos,
           .max_v                   = retval.vel,
           .max_v_without_route_end = retval_without_route_end.vel};
+  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
 double cda_rail::simulator::GreedySimulator::get_next_stop_ma(
