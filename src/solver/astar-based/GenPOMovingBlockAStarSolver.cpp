@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <ranges>
 #include <unordered_set>
 #include <vector>
 
@@ -301,6 +302,97 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 // -----------------------
 // PRIVATE HELPER
 // ----------------------
+
+cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+    get_all_trains_for_state_transition(
+        GreedySimulatorState const& simulator_state,
+        instances::GeneralPerformanceOptimizationInstance const* instance) {
+  // All trains whose last edge is not their exit edge
+  index_set trains;
+  std::ranges::copy_if(
+      std::views::iota(size_t{0}, instance->get_const_train_list().size()),
+      std::inserter(trains, trains.end()),
+      [&simulator_state, &instance](size_t const tr) {
+        return simulator_state.train_edges.at(tr).empty() ||
+               (instance->get_const_network()
+                    .get_edge(simulator_state.train_edges.at(tr).back())
+                    .target !=
+                instance->get_const_schedule(tr).get_exit_vertex());
+      });
+  return trains;
+}
+
+cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+    get_next_time_aware_train(
+        GreedySimulatorState const&        simulator_state,
+        simulator::SimulatorResults const& simulator_result,
+        instances::GeneralPerformanceOptimizationInstance const* instance) {
+  /**
+   * In the time-aware case, ordering is done by braking time / scheduled entry.
+   * In case of tie, trains with higher weight win.
+   * In case of tie, existing trains win over new trains.
+   * In case of tie, either train wins.
+   * No train is returned if all trains have left the network.
+   * At most one train is returnde.
+   */
+
+  index_set retval;
+  double    current_time{std::numeric_limits<double>::max()};
+  double    current_weight{0.0};
+  for (size_t tr = 0; tr < instance->get_const_train_list().size(); ++tr) {
+    bool const tr_not_entered = simulator_state.train_edges.at(tr).empty();
+    bool const tr_on_network =
+        !tr_not_entered &&
+        instance->get_const_network()
+                .get_edge(simulator_state.train_edges.at(tr).back())
+                .target != instance->get_const_schedule(tr).get_exit_vertex();
+
+    auto const tr_weight = instance->get_train_weight(tr);
+    if (tr_not_entered) {
+      auto const tr_entry_time =
+          instance->get_const_schedule(tr).get_entry_time();
+      if (tr_entry_time < current_time ||
+          (tr_entry_time == current_time && tr_weight > current_weight)) {
+        retval.clear();
+        retval.insert(tr);
+        current_time   = tr_entry_time;
+        current_weight = tr_weight;
+      }
+    }
+    if (tr_on_network) {
+      auto const tr_braking_time = simulator_result.braking_times.at(tr);
+      if (tr_braking_time < current_time ||
+          (tr_braking_time == current_time && tr_weight >= current_weight)) {
+        retval.clear();
+        retval.insert(tr);
+        current_time   = tr_braking_time;
+        current_weight = tr_weight;
+      }
+    }
+  }
+
+  return retval;
+}
+
+cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+    get_relevant_trains_for_state_transition(
+        GreedySimulatorState const&        simulator_state,
+        simulator::SimulatorResults const& simulator_result,
+        instances::GeneralPerformanceOptimizationInstance const* instance,
+        SolverStrategyMBAStar const& solver_strategy) {
+  /**
+   * Returns "all" trains if not time-aware. Returns only the next train if
+   * time-aware. Trains with fully specified route are not returned. In the
+   * time-aware case, ordering is done by braking time / scheduled entry. In
+   * case of tie, trains with higher weight win. In case of tie, existing
+   * trains win over new trains. In case of tie, either train wins.
+   */
+
+  return solver_strategy.time_aware_state_transitions
+             ? get_next_time_aware_train(simulator_state, simulator_result,
+                                         instance)
+             : get_all_trains_for_state_transition(simulator_state, instance);
+}
 
 std::unordered_set<cda_rail::solver::astar_based::GreedySimulatorState>
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::

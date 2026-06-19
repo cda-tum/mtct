@@ -15,6 +15,153 @@ using namespace cda_rail;
 // NOLINTBEGIN
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
 
+TEST(GenPOMovingBlockAStarSolver, NextTrains) {
+  instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", VertexType::TTD);
+  auto const e1 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 50);
+  auto const e2 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 50, 50);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+
+  auto const tr4 = instance.add_train("Train4", 100, 50, 4, 2, true, 100, 15,
+                                      {"v0"}, 300, 40, {"v2"}, 4);
+  auto const tr2 = instance.add_train("Train2", 100, 50, 4, 2, true, 60, 15,
+                                      {"v0"}, 300, 40, {"v2"}, 3);
+  auto const tr1 = instance.add_train("Train1", 100, 50, 4, 2, true, 60, 15,
+                                      {"v0"}, 300, 40, {"v2"}, 2);
+  auto const tr3 = instance.add_train("Train3", 100, 50, 4, 2, true, 90, 15,
+                                      {"v0"}, 300, 40, {"v2"}, 3);
+
+  std::vector<std::vector<size_t>> train_edges{{}, {}, {}, {}};
+  std::vector<double>              braking_times{-1, -1, -1, -1};
+
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr1, tr2, tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr2}));
+
+  train_edges.at(tr1).push_back(e1);
+  train_edges.at(tr2).push_back(e1);
+  braking_times.at(tr1) = 100;
+  braking_times.at(tr2) = 100;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr1, tr2, tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr3}));
+
+  braking_times.at(tr2) = 90;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr1, tr2, tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr2}));
+
+  braking_times.at(tr1) = 80;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr1, tr2, tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr1}));
+
+  train_edges.at(tr1).push_back(e2);
+  train_edges.at(tr2).push_back(e2);
+  train_edges.at(tr3).push_back(e1);
+  braking_times.at(tr1) = -1;
+  braking_times.at(tr2) = -1;
+  braking_times.at(tr3) = 100;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr4}));
+
+  train_edges.at(tr4).push_back(e1);
+  braking_times.at(tr4) = 120;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr3}));
+
+  braking_times.at(tr3) = -1;
+  train_edges.at(tr3).push_back(e2);
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr4}));
+
+  train_edges.at(tr4).push_back(e2);
+  braking_times.at(tr4) = -1;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = false}),
+            cda_rail::index_set({}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges},
+                    {.braking_times = braking_times}, &instance,
+                    {.time_aware_state_transitions = true}),
+            cda_rail::index_set({}));
+}
+
 TEST(GenPOMovingBlockAStarSolver, NextStates) {
   Network    network;
   const auto v0  = network.add_vertex("v0", VertexType::TTD);

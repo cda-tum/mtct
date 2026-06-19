@@ -29,6 +29,7 @@
 #endif
 #if TEST_FRIENDS
 class GenPOMovingBlockAStarSolver;
+class GenPOMovingBlockAStarSolver_NextTrains_Test;
 class GenPOMovingBlockAStarSolver_NextStates_Test;
 class GenPOMovingBlockAStarSolver_NextStatesTTD_Test;
 #endif
@@ -83,6 +84,7 @@ class GenPOMovingBlockAStarSolver
           instances::SolGeneralPerformanceOptimizationInstance> {
 private:
 #if TEST_FRIENDS
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextTrains);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStatesTTD);
 #endif
@@ -156,6 +158,20 @@ private:
   // ---------------------------
 
   // Helper
+  [[nodiscard]] static cda_rail::index_set get_all_trains_for_state_transition(
+      GreedySimulatorState const&                              simulator_state,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
+  [[nodiscard]] static cda_rail::index_set get_next_time_aware_train(
+      GreedySimulatorState const&                              simulator_state,
+      simulator::SimulatorResults const&                       simulator_result,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
+  [[nodiscard]] static cda_rail::index_set
+  get_relevant_trains_for_state_transition(
+      GreedySimulatorState const&                              simulator_state,
+      simulator::SimulatorResults const&                       simulator_result,
+      instances::GeneralPerformanceOptimizationInstance const* instance,
+      SolverStrategyMBAStar const&                             solver_strategy);
+
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
