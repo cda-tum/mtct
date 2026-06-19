@@ -61,10 +61,14 @@ struct DistancePhases {
 [[nodiscard]] DistancePhases
 split_distance_by_change_points(double x, double s_1, double s_2, double s) {
   // Refactoring helper: split traveled distance into the 3 profile phases.
+  auto ub2 = s_2 - s_1;
+  auto ub3 = s - s_2;
+  round_small_numbers_to_zero_inplace(ub2, GRB_EPS);
+  round_small_numbers_to_zero_inplace(ub3, GRB_EPS);
   return {
       .first  = std::min(x, s_1),
-      .second = std::clamp(x - s_1, 0.0, s_2 - s_1),
-      .third  = std::clamp(x - s_2, 0.0, s - s_2),
+      .second = std::clamp(x - s_1, 0.0, ub2),
+      .third  = std::clamp(x - s_2, 0.0, ub3),
   };
 }
 
