@@ -14,43 +14,13 @@
 #include <utility>
 #include <vector>
 
-double cda_rail::simulator::simple_braking_time_heuristic(
-    size_t tr, const cda_rail::simulator::GreedySimulator& simulator,
-    double tr_exit_time, double braking_time, double braking_distance) {
-  if (braking_time < 0 && braking_distance < 0) {
-    return 0.0; // No braking time, no heuristic value
-  }
-  assert(braking_time >= 0);
-  assert(braking_distance >= 0);
-  assert(tr_exit_time >= 0);
-  const auto& tr_edges = simulator.get_train_edges_of_tr(tr);
-  assert(!tr_edges.empty());
-
-  const auto& train =
-      simulator.get_instance()->get_const_train_list().get_train(tr);
-  double ret_val = braking_time - tr_exit_time;
-  double len     = 0.0;
-  for (auto it = tr_edges.rbegin();
-       (len <= braking_distance) && (it != tr_edges.rend()); ++it) {
-    const auto& edge =
-        simulator.get_instance()->get_const_network().get_edge(*it);
-    const auto& speed_limit = std::min(edge.max_speed, train.get_max_speed());
-    const auto  rel_len     = std::min(edge.length, braking_distance - len);
-    ret_val += rel_len / speed_limit;
-    len += edge.length;
-  }
-  return ret_val;
-}
-
 cda_rail::simulator::RemainingTimeHeuristicResult
 cda_rail::simulator::simple_remaining_time_heuristic(
     size_t tr, const cda_rail::simulator::GreedySimulator& simulator,
-    double tr_exit_time, double braking_time_heuristic,
-    bool consider_earliest_exit) {
-  const double rel_exit_time =
-      std::max(tr_exit_time + braking_time_heuristic, 0.0);
-  double heuristic_exit_time = rel_exit_time;
-  double average_stop_delay  = 0.0;
+    double tr_exit_time, bool consider_earliest_exit) {
+  double const relevant_tr_time    = std::max(tr_exit_time, 0.0);
+  double       heuristic_exit_time = relevant_tr_time;
+  double       average_stop_delay  = 0.0;
 
   const auto& tr_edges    = simulator.get_train_edges_of_tr(tr);
   const auto& tr_schedule = simulator.get_instance()->get_const_schedule(tr);
@@ -157,23 +127,18 @@ cda_rail::simulator::simple_remaining_time_heuristic(
         std::max(heuristic_exit_time, tr_schedule.get_exit_time());
   }
 
-  return {.feasible = true,
-          .remaining_exit_time =
-              heuristic_exit_time - rel_exit_time + braking_time_heuristic,
+  return {.feasible            = true,
+          .remaining_exit_time = heuristic_exit_time - relevant_tr_time,
           .average_remaining_stop_delay = average_stop_delay};
 }
 
 cda_rail::simulator::HeuristicResult cda_rail::simulator::greedy_heuristic(
-    BrakingTimeHeuristicType   braking_time_heuristic_type,
     RemainingTimeHeuristicType remaining_time_heuristic_type, size_t tr,
-    const GreedySimulator& simulator, double tr_exit_time, double braking_time,
-    double braking_distance, bool consider_earliest_exit) {
-  const double bt_val =
-      braking_time_heuristic(braking_time_heuristic_type, tr, simulator,
-                             tr_exit_time, braking_time, braking_distance);
+    const GreedySimulator& simulator, double tr_exit_time,
+    bool consider_earliest_exit) {
   const auto [feasible, remaining_exit_time, average_remaining_stop_delay] =
       remaining_time_heuristic(remaining_time_heuristic_type, tr, simulator,
-                               tr_exit_time, bt_val, consider_earliest_exit);
+                               tr_exit_time, consider_earliest_exit);
   return {.feasible = feasible,
           .objective_value_difference =
               remaining_exit_time +
@@ -182,15 +147,12 @@ cda_rail::simulator::HeuristicResult cda_rail::simulator::greedy_heuristic(
 }
 
 cda_rail::simulator::HeuristicResult cda_rail::simulator::full_greedy_heuristic(
-    BrakingTimeHeuristicType   braking_time_heuristic_type,
     RemainingTimeHeuristicType remaining_time_heuristic_type,
     const GreedySimulator& simulator, const SimulatorResults& sim_results,
     bool consider_earliest_exit) {
   const auto train_count =
       simulator.get_instance()->get_const_train_list().size();
-  if (sim_results.exit_times.size() != train_count ||
-      sim_results.braking_times.size() != train_count ||
-      sim_results.braking_distances.size() != train_count) {
+  if (sim_results.exit_times.size() != train_count) {
     throw cda_rail::exceptions::ConsistencyException(
         "SimulatorResults size does not match simulator train count.");
   }
@@ -203,11 +165,9 @@ cda_rail::simulator::HeuristicResult cda_rail::simulator::full_greedy_heuristic(
   bool   feas = true;
   double obj  = 0.0;
   for (size_t tr = 0; tr < train_count; ++tr) {
-    const auto [feas_tr, obj_tr] = greedy_heuristic(
-        braking_time_heuristic_type, remaining_time_heuristic_type, tr,
-        simulator, sim_results.exit_times.at(tr),
-        sim_results.braking_times.at(tr), sim_results.braking_distances.at(tr),
-        consider_earliest_exit);
+    const auto [feas_tr, obj_tr] =
+        greedy_heuristic(remaining_time_heuristic_type, tr, simulator,
+                         sim_results.exit_times.at(tr), consider_earliest_exit);
     feas = feas && feas_tr;
     obj += simulator.get_instance()->get_train_weights().at(tr) * obj_tr;
   }

@@ -25,12 +25,6 @@ struct SimulatorResults {
   std::vector<std::vector<double>>
       stop_times; // For every train, a vector of times at which scheduled stops
                   // were reached
-  std::vector<double>
-      braking_times; // time (in seconds) at which each train had to brake due
-                     // to approaching their route end
-  std::vector<double>
-      braking_distances; // distance before route end at which each train had to
-                         // brake due to approaching their route end
   std::vector<double> vertex_headways; // for every vertex, earliest time at
                                        // which next train can enter
   std::vector<std::map<double, PosVel>>
@@ -247,10 +241,12 @@ public:
 
   /**
    * @brief Simulates train movements given the current routing, ordering, and
-   * stopping configuration.
+   * stopping configuration. For partial routes, it is assumed that trains
+   * instantaneously stop at their route end. If
+   * disappear_at_partial_route_end=true, they also disappear.
    *
    * @return SimulatorResults containing the simulation outcome, including train
-   * exit times, stop timestamps, braking information, vertex headways, and—when
+   * exit times, stop timestamps, vertex headways, and—when
    * enabled—train trajectories over time.
    */
   [[nodiscard]] SimulatorResults
