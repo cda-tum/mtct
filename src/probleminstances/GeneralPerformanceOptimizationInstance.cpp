@@ -519,7 +519,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_train_order(
             .source;
 
     const auto time_at_e_pos_source =
-        get_time_at_pos(tr_object.get_name(), e_pos_source);
+        get_time_at_pos(tr_object.get_name(), e_pos_source, true);
     tr_times.insert({tr, time_at_e_pos_source});
   }
 
@@ -564,7 +564,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
                                  this->get_instance()->get_const_network())
               .source;
       const auto time_at_e_pos_source =
-          get_time_at_pos(tr_object.get_name(), e_pos_source);
+          get_time_at_pos(tr_object.get_name(), e_pos_source, true);
       tr_times.insert({tr, time_at_e_pos_source});
       ret_vec.emplace_back(tr, direction);
     }
@@ -580,15 +580,23 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
 double
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_time_at_pos(
-    const std::string& tr_name, double pos) const {
+    const std::string& tr_name, double pos, bool lb) const {
   if (!this->get_instance()->get_const_train_list().has_train(tr_name)) {
     throw exceptions::TrainNotExistentException(tr_name);
   }
   const auto tr_times = get_train_times(tr_name);
+  double     retval   = -1;
   for (const auto& t : tr_times) {
-    if (std::abs(get_train_pos(tr_name, t) - pos) < GRB_EPS) {
+    double pos_diff = get_train_pos(tr_name, t) - pos;
+    if (pos_diff > -GRB_EPS) {
+      retval = t;
+    }
+    if (std::abs(pos_diff) < GRB_EPS) {
       return t;
     }
+  }
+  if (lb) {
+    return retval;
   }
   throw exceptions::ConsistencyException("No time for train " + tr_name +
                                          " at position " + std::to_string(pos));

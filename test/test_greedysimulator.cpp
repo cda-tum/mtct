@@ -3519,5 +3519,87 @@ TEST(GreedySimulation, ExitTimeConstraintStopping) {
   EXPECT_LE(sim_res2.exit_times[0], 205);
 }
 
+TEST(GreedySimulator, DesiredOrderInstanceSolution) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  auto const v0a = network.add_vertex("v0a", VertexType::TTD);
+  auto const v0b = network.add_vertex("v0b", VertexType::TTD);
+  auto const v0c = network.add_vertex("v0c", VertexType::TTD);
+  auto const v1a = network.add_vertex("v1a", VertexType::TTD);
+  auto const v1b = network.add_vertex("v1b", VertexType::TTD);
+  auto const v1c = network.add_vertex("v1c", VertexType::TTD);
+  auto const v2  = network.add_vertex("v2", VertexType::NoBorder);
+  auto const v3  = network.add_vertex("v3", VertexType::TTD);
+  auto const v4  = network.add_vertex("v4", VertexType::TTD);
+
+  auto const v01a = network.add_edge({"v0a"}, {"v1a"}, 100, 20, true);
+  auto const v01b = network.add_edge({"v0b"}, {"v1b"}, 100, 20, true);
+  auto const v01c = network.add_edge({"v0c"}, {"v1c"}, 100, 20, true);
+
+  // Switch
+  auto const v12a = network.add_edge({"v1a"}, {"v2"}, 10, 20, false);
+  auto const v12b = network.add_edge({"v1b"}, {"v2"}, 10, 20, false);
+  auto const v12c = network.add_edge({"v1c"}, {"v2"}, 10, 20, false);
+  auto const v23  = network.add_edge({"v2"}, {"v3"}, 10, 20, false);
+
+  auto const v34 = network.add_edge({"v3"}, {"v4"}, 100, 20, true);
+
+  network.add_successor({"v0a", "v1a"}, {"v1a", "v2"});
+  network.add_successor({"v0b", "v1b"}, {"v1b", "v2"});
+  network.add_successor({"v0c", "v1c"}, {"v1c", "v2"});
+  network.add_successor({"v1a", "v2"}, {"v2", "v3"});
+  network.add_successor({"v1b", "v2"}, {"v2", "v3"});
+  network.add_successor({"v1c", "v2"}, {"v2", "v3"});
+  network.add_successor({"v2", "v3"}, {"v3", "v4"});
+
+  // Trains
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 20, 2, 4, true, 0, 20,
+                                       {"v0a"}, 500, 20, {"v4"}, network);
+  const auto tr2 = timetable.add_train("Train2", 50, 20, 2, 4, true, 100, 20,
+                                       {"v0b"}, 300, 20, {"v4"}, network);
+  const auto tr3 = timetable.add_train("Train3", 50, 20, 2, 4, true, 200, 20,
+                                       {"v0c"}, 400, 20, {"v4"}, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  instance.set_train_weight(tr1, 1);
+  instance.set_train_weight(tr2, 2);
+  instance.set_train_weight(tr3, 3);
+
+  cda_rail::simulator::GreedySimulator simulator(instance,
+                                                 {{v12a, v12b, v12c, v23}});
+  simulator.set_train_edges_of_tr(tr1, {v01a, v12a, v23, v34});
+  simulator.set_train_edges_of_tr(tr2, {v01b, v12b, v23, v34});
+  simulator.set_train_edges_of_tr(tr3, {v01c, v12c, v23, v34});
+  simulator.set_ttd_orders_of_ttd(0, {tr2, tr3, tr1});
+  simulator.set_vertex_orders_of_vertex(v0a, {tr1});
+  simulator.set_vertex_orders_of_vertex(v0b, {tr2});
+  simulator.set_vertex_orders_of_vertex(v0c, {tr3});
+  simulator.set_vertex_orders_of_vertex(v4, {tr2, tr3, tr1});
+
+  auto const sim_res = simulator.simulate(5.0, false, true, true);
+  ASSERT_EQ(sim_res.exit_times.size(), 3);
+  auto const& tr1_exit = sim_res.exit_times.at(tr1);
+  auto const& tr2_exit = sim_res.exit_times.at(tr2);
+  auto const& tr3_exit = sim_res.exit_times.at(tr3);
+
+  EXPECT_EQ(tr1_exit, 500.0);
+  EXPECT_EQ(tr2_exit, 300.0);
+  EXPECT_EQ(tr3_exit, 400.0);
+
+  ASSERT_TRUE(sim_res.train_trajectories.at(tr1).contains(tr1_exit));
+  EXPECT_GE(sim_res.train_trajectories.at(tr1).at(tr1_exit).pos,
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sim_res.train_trajectories.at(tr2).at(tr2_exit).pos,
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sim_res.train_trajectories.at(tr3).at(tr3_exit).pos,
+            100 + 10 + 10 + 100 + 50);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

@@ -482,8 +482,8 @@ public:
   [[nodiscard]] std::vector<TrainDirection>
   get_train_order_with_reverse(size_t edge_index) const;
 
-  [[nodiscard]] double get_time_at_pos(const std::string& tr_name,
-                                       double             pos) const;
+  [[nodiscard]] double get_time_at_pos(const std::string& tr_name, double pos,
+                                       bool lb = false) const;
 
   // Add train timing information
 
