@@ -587,7 +587,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_time_at_pos(
   const auto tr_times = get_train_times(tr_name);
   double     retval   = -1;
   for (const auto& t : tr_times) {
-    double pos_diff = get_train_pos(tr_name, t) - pos;
+    auto const pos_diff = get_train_pos(tr_name, t) - pos;
     if (pos_diff > -GRB_EPS) {
       retval = t;
     }
