@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <iterator>
 #include <optional>
 #include <ranges>
 #include <unordered_set>
