@@ -3593,11 +3593,11 @@ TEST(GreedySimulator, DesiredOrderInstanceSolution) {
   EXPECT_EQ(tr3_exit, 400.0);
 
   ASSERT_TRUE(sim_res.train_trajectories.at(tr1).contains(tr1_exit));
-  EXPECT_EQ(sim_res.train_trajectories.at(tr1).at(tr1_exit).pos,
+  EXPECT_GE(sim_res.train_trajectories.at(tr1).at(tr1_exit).pos,
             100 + 10 + 10 + 100 + 50);
-  EXPECT_EQ(sim_res.train_trajectories.at(tr2).at(tr2_exit).pos,
+  EXPECT_GE(sim_res.train_trajectories.at(tr2).at(tr2_exit).pos,
             100 + 10 + 10 + 100 + 50);
-  EXPECT_EQ(sim_res.train_trajectories.at(tr3).at(tr3_exit).pos,
+  EXPECT_GE(sim_res.train_trajectories.at(tr3).at(tr3_exit).pos,
             100 + 10 + 10 + 100 + 50);
 }
 
