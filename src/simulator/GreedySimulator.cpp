@@ -893,17 +893,35 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
           tr_schedule.get_exit_velocity(), train.get_deceleration(), dt);
       auto const exit_time_tr =
           this->get_instance()->get_const_schedule(tr).get_exit_time();
-      if (current_time + EPS < exit_time_tr) {
+      if (current_time + GRB_EPS < exit_time_tr) {
         bool       calc_speed = true;
         auto const bd         = braking_distance(v_0, train.get_deceleration());
-        if (pos + bd <= milestones.back() + GRB_EPS) {
+        auto const pos_after_dt = pos + ((v_0 + retval.vel) / 2.0 * dt);
+        auto const bd_after_dt =
+            braking_distance(retval.vel, train.get_deceleration());
+
+        if (pos_after_dt + bd_after_dt <= milestones.back() + GRB_EPS) {
+          PLOGV
+              << "At time " << current_time << ", train "
+              << get_instance()->get_const_train_list().get_train(tr).get_name()
+              << " moving authority will not reach route end. No need to slow "
+                 "down.";
+          calc_speed = false;
+        } else if (current_time + dt + GRB_EPS >= exit_time_tr &&
+                   pos_after_dt + GRB_EPS < relevant_last_pos) {
+          PLOGV
+              << "At time " << current_time << ", train "
+              << get_instance()->get_const_train_list().get_train(tr).get_name()
+              << " does not have to be slowed down shortly before exit.";
+          calc_speed = false;
+        } else if (pos + bd <= milestones.back() + GRB_EPS) {
           auto const max_t =
               max_travel_time_to_stop_at_end_after_one_time_step(
                   v_0, dt, train.get_deceleration(), milestones.back() - pos) +
               min_travel_time_flexible_exit_speed(
                   0, tr_schedule.get_exit_velocity(), train.get_acceleration(),
                   train.get_length());
-          if (max_t + EPS < exit_time_tr - current_time + dt) {
+          if (max_t - GRB_EPS < exit_time_tr - current_time) {
             PLOGV << "At time " << current_time << ", train "
                   << get_instance()
                          ->get_const_train_list()
@@ -913,14 +931,6 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
             retval.pos = std::min(retval.pos, milestones.back() - pos);
             calc_speed = false;
           }
-        }
-        if (current_time + dt + EPS >= exit_time_tr &&
-            pos + (retval.vel / 2 * dt) + EPS < relevant_last_pos) {
-          PLOGV
-              << "At time " << current_time << ", train "
-              << get_instance()->get_const_train_list().get_train(tr).get_name()
-              << " does not have to be slowed down shortly before exit.";
-          calc_speed = false;
         }
         if (calc_speed) {
           auto const new_limit = max_travel_time_inverse(
