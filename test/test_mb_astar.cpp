@@ -37,128 +37,112 @@ TEST(GenPOMovingBlockAStarSolver, NextTrains) {
                                       {"v0"}, 300, 40, {"v2"}, 3);
 
   std::vector<std::vector<size_t>> train_edges{{}, {}, {}, {}};
-  std::vector<double>              braking_times{-1, -1, -1, -1};
+  std::vector<double>              exit_times{-1, -1, -1, -1};
 
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = false}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
             cda_rail::index_set({tr1, tr2, tr3, tr4}));
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = true}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
             cda_rail::index_set({tr2}));
 
   train_edges.at(tr1).push_back(e1);
   train_edges.at(tr2).push_back(e1);
-  braking_times.at(tr1) = 100;
-  braking_times.at(tr2) = 100;
+  exit_times.at(tr1) = 100;
+  exit_times.at(tr2) = 100;
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = false}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
             cda_rail::index_set({tr1, tr2, tr3, tr4}));
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = true}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
             cda_rail::index_set({tr3}));
 
-  braking_times.at(tr2) = 90;
+  exit_times.at(tr2) = 90;
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = false}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
             cda_rail::index_set({tr1, tr2, tr3, tr4}));
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = true}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
             cda_rail::index_set({tr2}));
 
-  braking_times.at(tr1) = 80;
+  exit_times.at(tr1) = 80;
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = false}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
             cda_rail::index_set({tr1, tr2, tr3, tr4}));
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = true}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
             cda_rail::index_set({tr1}));
 
   train_edges.at(tr1).push_back(e2);
   train_edges.at(tr2).push_back(e2);
   train_edges.at(tr3).push_back(e1);
-  braking_times.at(tr1) = -1;
-  braking_times.at(tr2) = -1;
-  braking_times.at(tr3) = 100;
+  exit_times.at(tr1) = -1;
+  exit_times.at(tr2) = -1;
+  exit_times.at(tr3) = 100;
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = false}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
             cda_rail::index_set({tr3, tr4}));
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = true}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
             cda_rail::index_set({tr4}));
 
   train_edges.at(tr4).push_back(e1);
-  braking_times.at(tr4) = 120;
+  exit_times.at(tr4) = 120;
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = false}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
             cda_rail::index_set({tr3, tr4}));
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = true}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
             cda_rail::index_set({tr3}));
 
-  braking_times.at(tr3) = -1;
+  exit_times.at(tr3) = -1;
   train_edges.at(tr3).push_back(e2);
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = false}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
             cda_rail::index_set({tr4}));
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = true}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
             cda_rail::index_set({tr4}));
 
   train_edges.at(tr4).push_back(e2);
-  braking_times.at(tr4) = -1;
+  exit_times.at(tr4) = -1;
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = false}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
             cda_rail::index_set({}));
   EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges},
-                    {.braking_times = braking_times}, &instance,
-                    {.time_aware_state_transitions = true}),
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
             cda_rail::index_set({}));
 }
 

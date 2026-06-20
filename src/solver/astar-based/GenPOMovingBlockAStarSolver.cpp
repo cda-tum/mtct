@@ -327,12 +327,11 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
         simulator::SimulatorResults const& simulator_result,
         instances::GeneralPerformanceOptimizationInstance const* instance) {
   /**
-   * In the time-aware case, ordering is done by braking time / scheduled entry.
-   * In case of tie, trains with higher weight win.
-   * In case of tie, existing trains win over new trains.
-   * In case of tie, either train wins.
-   * No train is returned if all trains have left the network.
-   * At most one train is returned.
+   * In the time-aware case, ordering is done by simulated exit time / scheduled
+   * entry. In case of tie, trains with higher weight win. In case of tie,
+   * existing trains win over new trains. In case of tie, either train wins. No
+   * train is returned if all trains have left the network. At most one train is
+   * returned.
    */
 
   struct Candidate {
@@ -363,7 +362,7 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     }
 
     return Candidate{.train         = tr,
-                     .time          = simulator_result.braking_times.at(tr),
+                     .time          = simulator_result.exit_times.at(tr),
                      .weight        = weight,
                      .is_on_network = true};
   };
