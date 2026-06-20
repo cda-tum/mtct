@@ -167,7 +167,6 @@ cda_rail::simulator::GreedySimulator::simulate(
             << train_positions.at(tr).front
             << " has MA: " << train_positions.at(tr).front + tr_ma_data.ma
             << " and max velocity: " << tr_ma_data.max_v;
-      const auto tr_edge_len = train_edge_length(tr);
 
       auto tr_new_speed =
           std::min(tr_ma_data.max_v,
