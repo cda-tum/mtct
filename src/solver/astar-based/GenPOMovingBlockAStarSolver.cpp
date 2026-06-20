@@ -59,7 +59,6 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
                                init_simulator_result.stop_times);
   const auto [init_heuristic_feas, init_heuristic_val] =
       simulator::full_greedy_heuristic(
-          solver_strategy_input.braking_time_heuristic_type,
           solver_strategy_input.remaining_time_heuristic_type, simulator,
           init_simulator_result, solver_strategy_input.consider_earliest_exit);
 
@@ -173,7 +172,6 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
                                                 sim_res.stop_times);
       const auto [heuristic_feas, heuristic_val] =
           simulator::full_greedy_heuristic(
-              solver_strategy_input.braking_time_heuristic_type,
               solver_strategy_input.remaining_time_heuristic_type, simulator,
               sim_res, solver_strategy_input.consider_earliest_exit);
       const auto new_obj =

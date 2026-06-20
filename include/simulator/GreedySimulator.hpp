@@ -229,9 +229,7 @@ private:
 
   struct MaAndMaxVResult {
     double ma;
-    double ma_without_route_end;
     double max_v;
-    double max_v_without_route_end;
   };
   [[nodiscard]] MaAndMaxVResult
   get_future_max_speed_constraints(size_t tr, const Train& train, double pos,

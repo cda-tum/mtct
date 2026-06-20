@@ -9,7 +9,6 @@
 #include <vector>
 
 namespace cda_rail::simulator {
-enum class BrakingTimeHeuristicType : std::uint8_t { Simple = 0 };
 enum class RemainingTimeHeuristicType : std::uint8_t { Zero = 0, Simple = 1 };
 
 // --------------------------
@@ -28,47 +27,6 @@ objective_val(const GreedySimulator&                  simulator,
                                                      false);
 }
 
-// --------------------------
-// Braking Time Heuristic
-// --------------------------
-
-/**
- * @brief Computes the braking-time heuristic for a train.
- *
- * @param tr The train identifier.
- * @param simulator The simulator providing train and network data.
- * @param tr_exit_time The time at which the train exits the network.
- * @param braking_time The time at which braking begins.
- * @param braking_distance The distance over which the train brakes.
- *
- * @return The braking-time heuristic value, typically representing time lost to
- * braking constraints.
- */
-[[nodiscard]] double
-simple_braking_time_heuristic(size_t tr, const GreedySimulator& simulator,
-                              double tr_exit_time, double braking_time,
-                              double braking_distance);
-
-/**
- * @brief Executes the selected braking-time heuristic.
- *
- * @param type The braking-time heuristic implementation to use.
- * @return double Computed braking-time estimate.
- */
-[[nodiscard]] inline double
-braking_time_heuristic(BrakingTimeHeuristicType type, size_t tr,
-                       const GreedySimulator& simulator, double tr_exit_time,
-                       double braking_time, double braking_distance) {
-  switch (type) {
-  case BrakingTimeHeuristicType::Simple:
-    return simple_braking_time_heuristic(tr, simulator, tr_exit_time,
-                                         braking_time, braking_distance);
-  }
-  // This should never be reached
-  throw cda_rail::exceptions::ConsistencyException(
-      "This code should not have been reachable...");
-};
-
 // ----------------------------
 // Remaining Time Heuristic
 // ----------------------------
@@ -79,9 +37,10 @@ struct RemainingTimeHeuristicResult {
   double average_remaining_stop_delay;
 };
 // Remaining time heuristics for A*
-[[nodiscard]] RemainingTimeHeuristicResult simple_remaining_time_heuristic(
-    size_t tr, const GreedySimulator& simulator, double tr_exit_time,
-    double braking_time_heuristic, bool consider_earliest_exit);
+[[nodiscard]] RemainingTimeHeuristicResult
+simple_remaining_time_heuristic(size_t tr, const GreedySimulator& simulator,
+                                double tr_exit_time,
+                                bool   consider_earliest_exit);
 
 /**
  * @brief Computes a remaining-time heuristic estimate using the selected
@@ -96,7 +55,6 @@ struct RemainingTimeHeuristicResult {
  * @param tr Train index.
  * @param simulator Reference to the greedy simulator.
  * @param tr_exit_time The train's exit time.
- * @param braking_time_heuristic The estimated braking time.
  * @param consider_earliest_exit Whether to consider the train's earliest exit
  * time.
  *
@@ -106,8 +64,7 @@ struct RemainingTimeHeuristicResult {
 [[nodiscard]] inline RemainingTimeHeuristicResult
 remaining_time_heuristic(RemainingTimeHeuristicType type, size_t tr,
                          const GreedySimulator& simulator, double tr_exit_time,
-                         double braking_time_heuristic,
-                         bool   consider_earliest_exit) {
+                         bool consider_earliest_exit) {
   switch (type) {
   case RemainingTimeHeuristicType::Zero:
     return {.feasible                     = true,
@@ -115,7 +72,6 @@ remaining_time_heuristic(RemainingTimeHeuristicType type, size_t tr,
             .average_remaining_stop_delay = 0.0};
   case RemainingTimeHeuristicType::Simple:
     return simple_remaining_time_heuristic(tr, simulator, tr_exit_time,
-                                           braking_time_heuristic,
                                            consider_earliest_exit);
   }
   // This should never be reached
@@ -138,8 +94,6 @@ struct HeuristicResult {
  * Computes the objective-value difference as remaining-exit-time plus the
  * station-delay weight multiplied by average-remaining-stop-delay.
  *
- * @param braking_time_heuristic_type Type of braking-time heuristic variant to
- * use.
  * @param remaining_time_heuristic_type Type of remaining-time heuristic variant
  * to use.
  * @param consider_earliest_exit Whether to enforce earliest departure and exit
@@ -149,16 +103,13 @@ struct HeuristicResult {
  * objective-value difference.
  */
 [[nodiscard]] HeuristicResult
-greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
-                 RemainingTimeHeuristicType remaining_time_heuristic_type,
+greedy_heuristic(RemainingTimeHeuristicType remaining_time_heuristic_type,
                  size_t tr, const GreedySimulator& simulator,
-                 double tr_exit_time, double braking_time,
-                 double braking_distance, bool consider_earliest_exit);
+                 double tr_exit_time, bool consider_earliest_exit);
 
 /**
  * @brief Computes a weighted-sum objective-value difference for all trains.
  *
- * @param braking_time_heuristic_type Braking-time heuristic type.
  * @param remaining_time_heuristic_type Remaining-time heuristic type.
  * @param simulator The greedy simulator.
  * @param sim_results Simulation results with exit times and braking parameters.
@@ -173,8 +124,7 @@ greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
  * @throws cda_rail::exceptions::InvalidInputException If the simulation failed.
  */
 [[nodiscard]] HeuristicResult
-full_greedy_heuristic(BrakingTimeHeuristicType   braking_time_heuristic_type,
-                      RemainingTimeHeuristicType remaining_time_heuristic_type,
+full_greedy_heuristic(RemainingTimeHeuristicType remaining_time_heuristic_type,
                       const GreedySimulator&     simulator,
                       const SimulatorResults&    sim_results,
                       bool                       consider_earliest_exit);

@@ -72,8 +72,6 @@ int main(int argc, char** argv) {
 
   cda_rail::solver::astar_based::NextStateStrategy next_state_strategy{
       cda_rail::solver::astar_based::NextStateStrategy::SingleEdge};
-  cda_rail::simulator::BrakingTimeHeuristicType braking_time_heuristic_type{
-      cda_rail::simulator::BrakingTimeHeuristicType::Simple};
   cda_rail::simulator::RemainingTimeHeuristicType remaining_time_heuristic_type{
       cda_rail::simulator::RemainingTimeHeuristicType::Simple};
 
@@ -84,10 +82,6 @@ int main(int argc, char** argv) {
            cda_rail::solver::astar_based::NextStateStrategy::SingleEdge},
           {"NextTTD",
            cda_rail::solver::astar_based::NextStateStrategy::NextTTD}};
-
-  std::map<std::string, cda_rail::simulator::BrakingTimeHeuristicType> const
-      braking_time_heuristic_type_map{
-          {"Simple", cda_rail::simulator::BrakingTimeHeuristicType::Simple}};
 
   std::map<std::string, cda_rail::simulator::RemainingTimeHeuristicType> const
       remaining_time_heuristic_type_map{
@@ -144,14 +138,6 @@ int main(int argc, char** argv) {
                  "supports 'SingleEdge' and 'NextTTD'.")
       ->transform(
           CLI::CheckedTransformer(next_state_strategy_map, CLI::ignore_case))
-      ->capture_default_str()
-      ->group("Solver Parameters");
-  app.add_option("-b,--braking-time-heuristic-strategy",
-                 braking_time_heuristic_type,
-                 "Braking time heuristic strategy to use in the simulation. "
-                 "Currently only supports 'Simple'")
-      ->transform(CLI::CheckedTransformer(braking_time_heuristic_type_map,
-                                          CLI::ignore_case))
       ->capture_default_str()
       ->group("Solver Parameters");
   app.add_option("-r,--remaining-time-heuristic-strategy",
@@ -263,9 +249,6 @@ int main(int argc, char** argv) {
          bool_to_str(time_aware_state_transitions), "_",
          format_double(a_star_weight), "_",
          get_key_by_value(next_state_strategy_map, next_state_strategy), "_",
-         get_key_by_value(braking_time_heuristic_type_map,
-                          braking_time_heuristic_type),
-         "_",
          get_key_by_value(remaining_time_heuristic_type_map,
                           remaining_time_heuristic_type),
          "_", std::to_string(time_limit)});
@@ -288,9 +271,6 @@ int main(int argc, char** argv) {
   PLOGD << "  Heuristic weight (w): " << a_star_weight;
   PLOGD << "  Next state strategy: "
         << get_key_by_value(next_state_strategy_map, next_state_strategy);
-  PLOGD << "  Braking time heuristic strategy: "
-        << get_key_by_value(braking_time_heuristic_type_map,
-                            braking_time_heuristic_type);
   PLOGD << "  Remaining time heuristic strategy: "
         << get_key_by_value(remaining_time_heuristic_type_map,
                             remaining_time_heuristic_type);
@@ -327,8 +307,7 @@ int main(int argc, char** argv) {
       {.dt                           = dt,
        .late_entry_possible          = late_entry_possible,
        .limit_speed_by_leaving_edges = limit_speed_by_leaving_edges},
-      {.braking_time_heuristic_type   = braking_time_heuristic_type,
-       .remaining_time_heuristic_type = remaining_time_heuristic_type,
+      {.remaining_time_heuristic_type = remaining_time_heuristic_type,
        .next_state_strategy           = next_state_strategy,
        .consider_earliest_exit        = consider_earliest_exit,
        .time_aware_state_transitions  = time_aware_state_transitions,

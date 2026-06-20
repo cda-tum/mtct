@@ -49,8 +49,6 @@ struct ModelDetail {
 };
 
 struct SolverStrategyMBAStar {
-  simulator::BrakingTimeHeuristicType braking_time_heuristic_type =
-      simulator::BrakingTimeHeuristicType::Simple;
   simulator::RemainingTimeHeuristicType remaining_time_heuristic_type =
       simulator::RemainingTimeHeuristicType::Simple;
   NextStateStrategy next_state_strategy    = NextStateStrategy::SingleEdge;
