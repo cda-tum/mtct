@@ -406,4 +406,18 @@ TEST(Functionality, Iterators) {
   }
 }
 
+TEST(Playground, VectorInsert) {
+  std::vector<int> vec{5, 3, 8};
+  EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));
+
+  vec.insert(vec.begin() + 0, 10);
+  EXPECT_EQ(vec, std::vector<int>({10, 5, 3, 8}));
+
+  vec.insert(vec.begin() + 2, 20);
+  EXPECT_EQ(vec, std::vector<int>({10, 5, 20, 3, 8}));
+
+  vec.insert(vec.begin() + 5, 30);
+  EXPECT_EQ(vec, std::vector<int>({10, 5, 20, 3, 8, 30}));
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
