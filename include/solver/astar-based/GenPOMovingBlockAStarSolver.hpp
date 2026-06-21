@@ -60,23 +60,11 @@ struct SolverStrategyMBAStar {
   bool              time_aware_state_transitions = false;
   double            a_star_weight                = 1.0;
 };
-
-struct GreedySimulatorState {
-  std::vector<cda_rail::index_vector> train_edges;
-  std::vector<cda_rail::index_vector> ttd_orders;
-  std::vector<cda_rail::index_vector> vertex_orders;
-  std::vector<std::vector<double>>    stop_positions;
-
-  bool operator==(const GreedySimulatorState& other) const;
-
-  bool operator>(const GreedySimulatorState& other) const;
-};
 } // namespace cda_rail::solver::astar_based
 
-template <>
-struct std::hash<cda_rail::solver::astar_based::GreedySimulatorState> {
-  size_t operator()(const cda_rail::solver::astar_based::GreedySimulatorState&
-                        state) const noexcept;
+template <> struct std::hash<cda_rail::simulator::SimulatorState> {
+  size_t
+  operator()(const cda_rail::simulator::SimulatorState& state) const noexcept;
 }; // namespace std
 
 namespace cda_rail::solver::astar_based {
@@ -163,15 +151,15 @@ private:
 
   // Relevant Trains
   [[nodiscard]] static cda_rail::index_set get_all_trains_for_state_transition(
-      GreedySimulatorState const&                              simulator_state,
+      simulator::SimulatorState const&                         simulator_state,
       instances::GeneralPerformanceOptimizationInstance const* instance);
   [[nodiscard]] static cda_rail::index_set get_next_time_aware_train(
-      GreedySimulatorState const&                              simulator_state,
+      simulator::SimulatorState const&                         simulator_state,
       simulator::SimulatorResults const&                       simulator_result,
       instances::GeneralPerformanceOptimizationInstance const* instance);
   [[nodiscard]] static cda_rail::index_set
   get_relevant_trains_for_state_transition(
-      GreedySimulatorState const&                              simulator_state,
+      simulator::SimulatorState const&                         simulator_state,
       simulator::SimulatorResults const&                       simulator_result,
       instances::GeneralPerformanceOptimizationInstance const* instance,
       SolverStrategyMBAStar const&                             solver_strategy);
@@ -184,15 +172,13 @@ private:
     cda_rail::index_vector path{};
     size_t                 stop_possible_from_idx_onward{0};
 
-#if TEST_FRIENDS
     bool operator==(const PathExtensionData& other) const {
       return path == other.path && stop_possible_from_idx_onward ==
                                        other.stop_possible_from_idx_onward;
     }
-#endif
   };
   [[nodiscard]] static std::vector<PathExtensionData> get_path_extensions(
-      size_t tr, GreedySimulatorState const& simulator_state,
+      size_t tr, simulator::SimulatorState const& simulator_state,
       NextStateStrategy next_state_strategy,
       instances::GeneralPerformanceOptimizationInstance const* instance,
       std::vector<cda_rail::index_set> const&                  ttd_sections);
@@ -202,26 +188,30 @@ private:
     size_t lb{};
     size_t ub{};
 
-#if TEST_FRIENDS
     bool operator==(const IndexBound& other) const {
       return lb == other.lb && ub == other.ub;
     }
-#endif
   };
   [[nodiscard]] static IndexBound infer_order_insertion_bounds(
       size_t tr, cda_rail::index_vector const& prev_order,
       cda_rail::index_vector const& next_order,
       cda_rail::index_set const& tr_sharing_path, bool insert_at_end);
 
-  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
+  // State Extension
+  [[nodiscard]] std::vector<simulator::SimulatorState>
+  extend_state_by_path_extension(
+      size_t tr, simulator::SimulatorState state,
+      std::vector<cda_rail::index_set> const& ttd_sections);
+
+  [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);
-  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
+  [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
               next_states_next_ttd(const simulator::GreedySimulator& simulator);
-  static void next_state_ttd_helper(size_t tr, GreedySimulatorState& state,
+  static void next_state_ttd_helper(size_t tr, simulator::SimulatorState& state,
                                     const simulator::GreedySimulator& simulator,
                                     const cda_rail::index_vector& new_edges);
   static void
-  next_state_exit_vertex_helper(size_t tr, GreedySimulatorState& state,
+  next_state_exit_vertex_helper(size_t tr, simulator::SimulatorState& state,
                                 const simulator::GreedySimulator& simulator);
 
   /**
@@ -235,7 +225,7 @@ private:
    * @throws cda_rail::exceptions::ConsistencyException If the transition
    * strategy is unknown.
    */
-  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
+  [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
   next_states(const simulator::GreedySimulator& simulator,
               const SolverStrategyMBAStar&      solver_strategy_input) {
     if (solver_strategy_input.time_aware_state_transitions) {
@@ -265,9 +255,9 @@ private:
   // ----------------------
 
   struct StateObjectivePair {
-    double               objective{};
-    bool                 is_final_state{};
-    GreedySimulatorState state{};
+    double                    objective{};
+    bool                      is_final_state{};
+    simulator::SimulatorState state{};
   };
 
   struct CompareByObjective {

@@ -32,6 +32,17 @@ struct SimulatorResults {
                           // velocity at that time
 };
 
+struct SimulatorState {
+  std::vector<cda_rail::index_vector> train_edges;
+  std::vector<cda_rail::index_vector> ttd_orders;
+  std::vector<cda_rail::index_vector> vertex_orders;
+  std::vector<std::vector<double>>    stop_positions;
+
+  bool operator==(const SimulatorState& other) const;
+
+  bool operator>(const SimulatorState& other) const;
+};
+
 class GeneralSimulator {
   /**
    * This abstract class defines the interface for a general simulator to

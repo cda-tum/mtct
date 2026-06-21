@@ -1,3 +1,4 @@
+#include "simulator/GeneralSimulator.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
 #include <cstddef>
@@ -5,29 +6,8 @@
 #include <numeric>
 #include <ranges>
 
-bool cda_rail::solver::astar_based::GreedySimulatorState::operator==(
-    const GreedySimulatorState& other) const {
-  return train_edges == other.train_edges && ttd_orders == other.ttd_orders &&
-         vertex_orders == other.vertex_orders &&
-         stop_positions == other.stop_positions;
-}
-
-bool cda_rail::solver::astar_based::GreedySimulatorState::operator>(
-    const GreedySimulatorState& other) const {
-  auto get_obj = [](const auto& edges) {
-    const auto edge_sizes =
-        edges | std::views::transform([](const auto& e) { return e.size(); });
-    return std::accumulate(edge_sizes.begin(), edge_sizes.end(), 0.0,
-                           std::plus<>{});
-  };
-
-  return get_obj(train_edges) > get_obj(other.train_edges);
-}
-
-std::size_t
-std::hash<cda_rail::solver::astar_based::GreedySimulatorState>::operator()(
-    const cda_rail::solver::astar_based::GreedySimulatorState& state)
-    const noexcept {
+std::size_t std::hash<cda_rail::simulator::SimulatorState>::operator()(
+    const cda_rail::simulator::SimulatorState& state) const noexcept {
   // Based on boost::hash_combine implementation
 
   size_t seed         = 0;

@@ -229,7 +229,7 @@ TEST(GenPOMovingBlockAStarSolver, PathExtensions) {
   std::vector<cda_rail::index_vector> vertex_orders(
       network.number_of_vertices());
   vertex_orders.at(v0).emplace_back(tr1);
-  solver::astar_based::GreedySimulatorState state{
+  simulator::SimulatorState state{
       .train_edges    = {{v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5b, v5b_v6b}, {}},
       .ttd_orders     = {{tr1}, {}, {}},
       .vertex_orders  = vertex_orders,
@@ -602,19 +602,19 @@ TEST(GenPOMovingBlockAStarSolver, NextStates) {
   cda_rail::simulator::GreedySimulator simulator(
       instance, {{v1_v2, v2_v3a, v2_v3b}, {v4a_v5, v4b_v5, v5_v6}});
 
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state1_1{
+  simulator::SimulatorState expected_state1_1{
       .train_edges    = {{v0_v1}, {}},
       .ttd_orders     = {{}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(10),
       .stop_positions = {{}, {}}};
   expected_state1_1.vertex_orders.at(v0).emplace_back(tr1);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state1_2{
+  simulator::SimulatorState expected_state1_2{
       .train_edges    = {{}, {v0_v1, v1_v2, v2_v3a, v3a_v4a}},
       .ttd_orders     = {{tr2}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(10),
       .stop_positions = {{}, {}}};
   expected_state1_2.vertex_orders.at(v0).emplace_back(tr2);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state1_3{
+  simulator::SimulatorState expected_state1_3{
       .train_edges    = {{}, {v0_v1, v1_v2, v2_v3b, v3b_v4b}},
       .ttd_orders     = {{tr2}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(10),
@@ -638,20 +638,20 @@ TEST(GenPOMovingBlockAStarSolver, NextStates) {
   simulator.set_vertex_orders_of_vertex(v0, {tr2});
   simulator.set_ttd_orders_of_ttd(0, {tr2});
 
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state2_1{
+  simulator::SimulatorState expected_state2_1{
       .train_edges    = {{v0_v1}, {v0_v1, v1_v2}},
       .ttd_orders     = {{tr2}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(10),
       .stop_positions = {{}, {}}};
   expected_state2_1.vertex_orders.at(v0).emplace_back(tr2);
   expected_state2_1.vertex_orders.at(v0).emplace_back(tr1);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state2_2 = {
+  simulator::SimulatorState expected_state2_2 = {
       .train_edges    = {{}, {v0_v1, v1_v2, v2_v3a}},
       .ttd_orders     = {{tr2}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(10),
       .stop_positions = {{}, {}}};
   expected_state2_2.vertex_orders.at(v0).emplace_back(tr2);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state2_3 = {
+  simulator::SimulatorState expected_state2_3 = {
       .train_edges    = {{}, {v0_v1, v1_v2, v2_v3b}},
       .ttd_orders     = {{tr2}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(10),
@@ -671,7 +671,7 @@ TEST(GenPOMovingBlockAStarSolver, NextStates) {
   simulator.set_ttd_orders_of_ttd(0, {tr2});
   simulator.set_ttd_orders_of_ttd(1, {tr2});
 
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state3_1{
+  simulator::SimulatorState expected_state3_1{
       .train_edges    = {{v0_v1},
                          {v0_v1, v1_v2, v2_v3a, v3a_v4a, v4a_v5, v5_v6, v6_v7}},
       .ttd_orders     = {{tr2}, {tr2}},
@@ -679,7 +679,7 @@ TEST(GenPOMovingBlockAStarSolver, NextStates) {
       .stop_positions = {{}, {}}};
   expected_state3_1.vertex_orders.at(v0) = {tr2, tr1};
   expected_state3_1.vertex_orders.at(v7).emplace_back(tr2);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state3_2 = {
+  simulator::SimulatorState expected_state3_2 = {
       .train_edges    = {{v0_v1, v1_v2},
                          {v0_v1, v1_v2, v2_v3a, v3a_v4a, v4a_v5, v5_v6}},
       .ttd_orders     = {{tr2, tr1}, {tr2}},
@@ -698,15 +698,15 @@ TEST(GenPOMovingBlockAStarSolver, NextStates) {
   simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3b, v3b_v4b});
   simulator.set_ttd_orders_of_ttd(0, {tr2, tr1});
 
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state4_1{
+  simulator::SimulatorState expected_state4_1{
       .train_edges    = {{v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5},
                          {v0_v1, v1_v2, v2_v3a, v3a_v4a, v4a_v5, v5_v6, v6_v7}},
       .ttd_orders     = {{tr2, tr1}, {tr2, tr1}},
       .vertex_orders  = std::vector<std::vector<size_t>>(10),
       .stop_positions = {{}, {}}};
-  expected_state4_1.vertex_orders.at(v0) = {tr2, tr1};
-  expected_state4_1.vertex_orders.at(v7) = {tr2};
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state4_2 = {
+  expected_state4_1.vertex_orders.at(v0)      = {tr2, tr1};
+  expected_state4_1.vertex_orders.at(v7)      = {tr2};
+  simulator::SimulatorState expected_state4_2 = {
       .train_edges    = {{v0_v1, v1_v2, v2_v3b, v3b_v4b},
                          {v0_v1, v1_v2, v2_v3a, v3a_v4a, v4a_v5, v5_v6, v6_v7}},
       .ttd_orders     = {{tr2, tr1}, {tr2}},
@@ -721,8 +721,7 @@ TEST(GenPOMovingBlockAStarSolver, NextStates) {
   EXPECT_TRUE(next_states4.contains(expected_state4_2));
 
   simulator.append_current_stop_position_of_tr(tr1);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state5_1 =
-      expected_state4_1;
+  simulator::SimulatorState expected_state5_1 = expected_state4_1;
   expected_state5_1.stop_positions.at(0).emplace_back(330);
   const auto next_states5 = cda_rail::solver::astar_based::
       GenPOMovingBlockAStarSolver::next_states_single_edge(simulator);
@@ -733,7 +732,7 @@ TEST(GenPOMovingBlockAStarSolver, NextStates) {
       tr1, {v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5, v5_v6, v6_v7});
   simulator.set_ttd_orders_of_ttd(1, {tr2, tr1});
 
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state6_1 = {
+  simulator::SimulatorState expected_state6_1 = {
       .train_edges    = {{v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5, v5_v6, v6_v7},
                          {v0_v1, v1_v2, v2_v3a, v3a_v4a, v4a_v5, v5_v6, v6_v7}},
       .ttd_orders     = {{tr2, tr1}, {tr2, tr1}},
@@ -824,13 +823,13 @@ TEST(GenPOMovingBlockAStarSolver, NextStatesTTD) {
 
   const auto num_vertices = network.number_of_vertices();
 
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state1_1{
+  simulator::SimulatorState expected_state1_1{
       .train_edges    = {{v0_v1}},
       .ttd_orders     = {{}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(num_vertices),
       .stop_positions = {{}}};
   expected_state1_1.vertex_orders.at(v0).emplace_back(tr1);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state1_2{
+  simulator::SimulatorState expected_state1_2{
       .train_edges    = {{v0_v1}},
       .ttd_orders     = {{}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(num_vertices),
@@ -849,13 +848,13 @@ TEST(GenPOMovingBlockAStarSolver, NextStatesTTD) {
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
 
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state2_1{
+  simulator::SimulatorState expected_state2_1{
       .train_edges    = {{v0_v1, v1_v2, v2_v3a, v3a_v4a, v4a_v5a}},
       .ttd_orders     = {{tr1}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(num_vertices),
       .stop_positions = {{}}};
   expected_state2_1.vertex_orders.at(v0).emplace_back(tr1);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state2_2{
+  simulator::SimulatorState expected_state2_2{
       .train_edges    = {{v0_v1, v1_v2, v2_v3b, v3b_v5b}},
       .ttd_orders     = {{tr1}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(num_vertices),
@@ -868,25 +867,23 @@ TEST(GenPOMovingBlockAStarSolver, NextStatesTTD) {
   EXPECT_TRUE(next_states2.contains(expected_state2_2));
 
   simulator.append_current_stop_position_of_tr(tr1);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state3_1 =
-      expected_state2_1;
+  simulator::SimulatorState expected_state3_1 = expected_state2_1;
   expected_state3_1.stop_positions.at(0).emplace_back(100);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state3_2 =
-      expected_state2_2;
+  simulator::SimulatorState expected_state3_2 = expected_state2_2;
   expected_state3_2.stop_positions.at(0).emplace_back(100);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state3_3{
+  simulator::SimulatorState expected_state3_3{
       .train_edges    = {{v0_v1, v1_v2, v2_v3a, v3a_v4a, v4a_v5a}},
       .ttd_orders     = {{tr1}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(num_vertices),
       .stop_positions = {{100, 320}}};
   expected_state3_3.vertex_orders.at(v0).emplace_back(tr1);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state3_4{
+  simulator::SimulatorState expected_state3_4{
       .train_edges    = {{v0_v1, v1_v2, v2_v3a, v3a_v4a}},
       .ttd_orders     = {{tr1}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(num_vertices),
       .stop_positions = {{100, 220}}};
   expected_state3_4.vertex_orders.at(v0).emplace_back(tr1);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state3_5{
+  simulator::SimulatorState expected_state3_5{
       .train_edges    = {{v0_v1, v1_v2, v2_v3b, v3b_v5b}},
       .ttd_orders     = {{tr1}, {}},
       .vertex_orders  = std::vector<std::vector<size_t>>(num_vertices),
@@ -905,15 +902,14 @@ TEST(GenPOMovingBlockAStarSolver, NextStatesTTD) {
                                   {v0_v1, v1_v2, v2_v3a, v3a_v4a, v4a_v5a});
   simulator.set_ttd_orders_of_ttd(0, {tr1});
   simulator.append_current_stop_position_of_tr(tr1);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state4_1{
+  simulator::SimulatorState expected_state4_1{
       .train_edges   = {{v0_v1, v1_v2, v2_v3a, v3a_v4a, v4a_v5a, v5a_v6, v6_v7a,
                          v7a_v8a}},
       .ttd_orders    = {{tr1}, {tr1}},
       .vertex_orders = std::vector<std::vector<size_t>>(num_vertices),
       .stop_positions = {{100, 320}}};
   expected_state4_1.vertex_orders.at(v0).emplace_back(tr1);
-  cda_rail::solver::astar_based::GreedySimulatorState expected_state4_2 =
-      expected_state4_1;
+  simulator::SimulatorState expected_state4_2 = expected_state4_1;
   expected_state4_2.stop_positions.at(0).emplace_back(540);
   expected_state4_2.vertex_orders.at(v8a).emplace_back(tr1);
   const auto next_states4 = cda_rail::solver::astar_based::

@@ -38,8 +38,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       get_instance().get_const_network().unbreakable_sections();
   simulator::GreedySimulator simulator(get_instance(), ttd_section);
 
-  std::unordered_set<GreedySimulatorState> explored_states;
-  MinPriorityQueue                         pq;
+  std::unordered_set<simulator::SimulatorState> explored_states;
+  MinPriorityQueue                              pq;
 
   cda_rail::instances::SolGeneralPerformanceOptimizationInstance sol_object(
       get_instance());
@@ -72,7 +72,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         << (init_heuristic_feas ? "feasible" : "infeasible");
 
   if (init_simulator_result.success && init_heuristic_feas) {
-    const GreedySimulatorState init_state{
+    const simulator::SimulatorState init_state{
         .train_edges    = simulator.get_train_edges(),
         .ttd_orders     = simulator.get_ttd_orders(),
         .vertex_orders  = simulator.get_vertex_orders(),
@@ -83,9 +83,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     explored_states.insert(init_state);
   }
 
-  size_t               iteration = 0;
-  double               best_obj  = cda_rail::INF;
-  GreedySimulatorState best_state;
+  size_t                    iteration = 0;
+  double                    best_obj  = cda_rail::INF;
+  simulator::SimulatorState best_state;
 
   // A* iteration
   while (!pq.empty()) {
@@ -305,7 +305,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
 cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     get_all_trains_for_state_transition(
-        GreedySimulatorState const& simulator_state,
+        simulator::SimulatorState const& simulator_state,
         instances::GeneralPerformanceOptimizationInstance const* instance) {
   // All trains whose last edge is not their exit edge
   index_set trains;
@@ -324,7 +324,7 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
 
 cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     get_next_time_aware_train(
-        GreedySimulatorState const&        simulator_state,
+        simulator::SimulatorState const&   simulator_state,
         simulator::SimulatorResults const& simulator_result,
         instances::GeneralPerformanceOptimizationInstance const* instance) {
   /**
@@ -400,7 +400,7 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
 
 cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     get_relevant_trains_for_state_transition(
-        GreedySimulatorState const&        simulator_state,
+        simulator::SimulatorState const&   simulator_state,
         simulator::SimulatorResults const& simulator_result,
         instances::GeneralPerformanceOptimizationInstance const* instance,
         SolverStrategyMBAStar const& solver_strategy) {
@@ -434,7 +434,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::get_entry_paths(
 std::vector<cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                 PathExtensionData>
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::get_path_extensions(
-    size_t tr, GreedySimulatorState const& simulator_state,
+    size_t tr, simulator::SimulatorState const& simulator_state,
     NextStateStrategy next_state_strategy,
     instances::GeneralPerformanceOptimizationInstance const* instance,
     std::vector<cda_rail::index_set> const&                  ttd_sections) {
@@ -524,9 +524,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
   return retval;
 }
 
-std::unordered_set<cda_rail::solver::astar_based::GreedySimulatorState>
-cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-    next_states_single_edge(
+std::unordered_set<cda_rail::simulator::SimulatorState> cda_rail::solver::
+    astar_based::GenPOMovingBlockAStarSolver::next_states_single_edge(
         const cda_rail::simulator::GreedySimulator& simulator) {
   /**
    * This function determines all possible next states. This state could be
@@ -537,7 +536,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
    * edge)
    */
 
-  std::unordered_set<GreedySimulatorState> next_states;
+  std::unordered_set<simulator::SimulatorState> next_states;
 
   for (size_t tr = 0;
        tr < simulator.get_instance()->get_const_train_list().size(); ++tr) {
@@ -557,7 +556,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                                              tr_obj.get_deceleration()),
                   tr_schedule.get_exit_vertex(), {}, true);
       for (const auto& path : entry_paths) {
-        GreedySimulatorState new_state{
+        simulator::SimulatorState new_state{
             .train_edges    = simulator.get_train_edges(),
             .ttd_orders     = simulator.get_ttd_orders(),
             .vertex_orders  = simulator.get_vertex_orders(),
@@ -572,7 +571,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     } else {
       if (simulator.is_current_pos_valid_stop_position(tr)) {
         // Train can stop at the current edge
-        GreedySimulatorState new_state{
+        simulator::SimulatorState new_state{
             .train_edges    = simulator.get_train_edges(),
             .ttd_orders     = simulator.get_ttd_orders(),
             .vertex_orders  = simulator.get_vertex_orders(),
@@ -586,7 +585,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
           simulator.get_instance()->get_const_network().get_successors(
               simulator.get_train_edges_of_tr(tr).back());
       for (const auto& next_edge : next_edges) {
-        GreedySimulatorState new_state{
+        simulator::SimulatorState new_state{
             .train_edges    = simulator.get_train_edges(),
             .ttd_orders     = simulator.get_ttd_orders(),
             .vertex_orders  = simulator.get_vertex_orders(),
@@ -602,9 +601,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
   return next_states;
 }
 
-std::unordered_set<cda_rail::solver::astar_based::GreedySimulatorState>
-cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-    next_states_next_ttd(
+std::unordered_set<cda_rail::simulator::SimulatorState> cda_rail::solver::
+    astar_based::GenPOMovingBlockAStarSolver::next_states_next_ttd(
         const cda_rail::simulator::GreedySimulator& simulator) {
   /** This function determines all possible next states. This state could be
    * obtained by:
@@ -613,7 +611,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
    * - a single train advancing to a edge of its next stop and halting
    */
 
-  std::unordered_set<GreedySimulatorState> next_states;
+  std::unordered_set<simulator::SimulatorState> next_states;
   for (size_t tr = 0;
        tr < simulator.get_instance()->get_const_train_list().size(); ++tr) {
     const auto& train_edges = simulator.get_train_edges_of_tr(tr);
@@ -631,7 +629,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                                              tr_obj.get_deceleration()),
                   tr_schedule.get_exit_vertex(), {}, true);
       for (const auto& path : entry_paths) {
-        GreedySimulatorState new_state{
+        simulator::SimulatorState new_state{
             .train_edges    = simulator.get_train_edges(),
             .ttd_orders     = simulator.get_ttd_orders(),
             .vertex_orders  = simulator.get_vertex_orders(),
@@ -658,7 +656,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
               train_edges.back(), simulator.get_ttd_sections(),
               tr_schedule.get_exit_vertex());
       for (const auto& path : paths_to_next_ttd) {
-        GreedySimulatorState new_state{
+        simulator::SimulatorState new_state{
             .train_edges    = simulator.get_train_edges(),
             .ttd_orders     = simulator.get_ttd_orders(),
             .vertex_orders  = simulator.get_vertex_orders(),
@@ -668,7 +666,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
           new_state.train_edges.at(tr).emplace_back(e);
           if (simulator.is_route_end_valid_stop_pos(
                   tr, new_state.train_edges.at(tr))) {
-            GreedySimulatorState new_state_stop = new_state;
+            simulator::SimulatorState new_state_stop = new_state;
             new_state_stop.stop_positions.at(tr).emplace_back(
                 simulator.get_instance()->get_const_network().length_of_path(
                     new_state_stop.train_edges.at(tr)));
@@ -693,10 +691,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
 }
 
 void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-    next_state_ttd_helper(
-        size_t tr, cda_rail::solver::astar_based::GreedySimulatorState& state,
-        const cda_rail::simulator::GreedySimulator& simulator,
-        const cda_rail::index_vector&               new_edges) {
+    next_state_ttd_helper(size_t tr, simulator::SimulatorState& state,
+                          const cda_rail::simulator::GreedySimulator& simulator,
+                          const cda_rail::index_vector& new_edges) {
   const auto& ttd_sections = simulator.get_ttd_sections();
 
   for (size_t ttd_id = 0; ttd_id < ttd_sections.size(); ++ttd_id) {
@@ -718,7 +715,7 @@ void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
 
 void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     next_state_exit_vertex_helper(
-        size_t tr, cda_rail::solver::astar_based::GreedySimulatorState& state,
+        size_t tr, simulator::SimulatorState& state,
         const cda_rail::simulator::GreedySimulator& simulator) {
   const auto& last_edge_id = state.train_edges.at(tr).back();
   const auto& last_edge =

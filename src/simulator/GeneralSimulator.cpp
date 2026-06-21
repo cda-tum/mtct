@@ -9,11 +9,32 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <numeric>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+bool cda_rail::simulator::SimulatorState::operator==(
+    const SimulatorState& other) const {
+  return train_edges == other.train_edges && ttd_orders == other.ttd_orders &&
+         vertex_orders == other.vertex_orders &&
+         stop_positions == other.stop_positions;
+}
+
+bool cda_rail::simulator::SimulatorState::operator>(
+    const SimulatorState& other) const {
+  auto get_obj = [](const auto& edges) {
+    const auto edge_sizes =
+        edges | std::views::transform([](const auto& e) { return e.size(); });
+    return std::accumulate(edge_sizes.begin(), edge_sizes.end(), 0.0,
+                           std::plus<>{});
+  };
+
+  return get_obj(train_edges) > get_obj(other.train_edges);
+}
 
 cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     std::shared_ptr<
