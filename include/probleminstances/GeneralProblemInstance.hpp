@@ -193,6 +193,13 @@ public:
   using GeneralProblemInstance::export_instance;
 
   // --------------------
+  // HELPER
+  // --------------------
+  [[nodiscard]] bool
+  is_route_end_valid_stop_pos(size_t tr, const cda_rail::index_vector& edges,
+                              size_t next_stop_id) const;
+
+  // --------------------
   // EXPORT
   // --------------------
 

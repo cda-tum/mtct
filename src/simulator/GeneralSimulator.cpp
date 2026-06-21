@@ -185,34 +185,6 @@ size_t cda_rail::simulator::GeneralSimulator::get_edge_at_position(
       std::to_string(train_id) + ".");
 }
 
-bool cda_rail::simulator::GeneralSimulator::is_route_end_valid_stop_pos(
-    size_t tr, const cda_rail::index_vector& edges,
-    std::vector<double> const& tr_stop_positions) const {
-  m_instance->get_const_train_list().throw_if_train_not_exist(tr);
-
-  const auto& tr_length =
-      m_instance->get_const_train_list().get_train(tr).get_length();
-  const auto& tr_schedule = m_instance->get_const_schedule(tr).get_stops();
-  if (tr_stop_positions.size() >= tr_schedule.size()) {
-    // All stops have been set, hence, no further stop is possible
-    return false;
-  }
-  const auto& next_station =
-      tr_schedule.at(tr_stop_positions.size()).get_station();
-
-  double len = 0;
-  for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
-       ++it) {
-    if (!std::ranges::contains(next_station.tracks, *it)) {
-      // Track does not belong to the next station
-      return false;
-    }
-    len += m_instance->get_const_network().get_edge(*it).length;
-  }
-
-  return len >= tr_length;
-}
-
 void cda_rail::simulator::GeneralSimulator::set_simulator_state(
     SimulatorState state) {
   set_train_edges(std::move(state.train_edges));

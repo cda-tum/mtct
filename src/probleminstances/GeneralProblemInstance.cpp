@@ -53,8 +53,38 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
                       m_network);
 }
 
+// -------------
+// HELPER
+// -------------
+bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
+    is_route_end_valid_stop_pos(size_t tr, const cda_rail::index_vector& edges,
+                                size_t next_stop_id) const {
+  get_const_train_list().throw_if_train_not_exist(tr);
+
+  const auto& tr_length   = get_const_train_list().get_train(tr).get_length();
+  const auto& tr_schedule = get_const_schedule(tr).get_stops();
+  if (next_stop_id >= tr_schedule.size()) {
+    // All stops have been set, hence, no further stop is possible
+    return false;
+  }
+  const auto& next_station = tr_schedule.at(next_stop_id).get_station();
+
+  double len = 0;
+  for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
+       ++it) {
+    if (!std::ranges::contains(next_station.tracks, *it)) {
+      // Track does not belong to the next station
+      return false;
+    }
+    len += get_const_network().get_edge(*it).length;
+  }
+
+  return len >= tr_length;
+}
+
 // --------------------
 // EXPORT
+// --------------------
 
 void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     export_instance(std::filesystem::path const& working_directory,

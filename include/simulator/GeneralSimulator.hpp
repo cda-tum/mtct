@@ -190,13 +190,11 @@ public:
   [[nodiscard]] size_t get_edge_at_position(size_t train_id,
                                             double position) const;
 
-  [[nodiscard]] bool is_route_end_valid_stop_pos(
-      size_t tr, const cda_rail::index_vector& edges,
-      std::vector<double> const& tr_stop_positions) const;
   [[nodiscard]] bool
   is_route_end_valid_stop_pos(size_t                        tr,
                               const cda_rail::index_vector& edges) const {
-    return is_route_end_valid_stop_pos(tr, edges, get_stop_positions_of_tr(tr));
+    return get_instance()->is_route_end_valid_stop_pos(
+        tr, edges, get_stop_positions_of_tr(tr).size());
   }
   /**
    * @brief Checks whether the train's current last edge is a valid stop
