@@ -3759,4 +3759,413 @@ TEST(RailwayNetwork, TrackIndex) {
   EXPECT_EQ(network.get_track_index(e2), std::min(e0, e2));
 }
 
+TEST(RailwayNetwork, TTDBorder) {
+  // --------------
+  // NETWORK
+  // --------------
+
+  cda_rail::Network network;
+  const auto        v0  = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto        v1  = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto        v2  = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto        v3a = network.add_vertex("v3a", cda_rail::VertexType::TTD);
+  const auto        v3b = network.add_vertex("v3b", cda_rail::VertexType::TTD);
+  const auto        v4a = network.add_vertex("v4a", cda_rail::VertexType::TTD);
+  const auto        v4b = network.add_vertex("v4b", cda_rail::VertexType::TTD);
+  const auto        v5a = network.add_vertex("v5a", cda_rail::VertexType::TTD);
+  const auto        v5b = network.add_vertex("v5b", cda_rail::VertexType::TTD);
+  const auto        v6  = network.add_vertex("v6", cda_rail::VertexType::TTD);
+  const auto        v7b = network.add_vertex("v7b", cda_rail::VertexType::TTD);
+  const auto        v7c = network.add_vertex("v7c", cda_rail::VertexType::TTD);
+  const auto        v8b = network.add_vertex("v8b", cda_rail::VertexType::TTD);
+  const auto        v8c = network.add_vertex("v8c", cda_rail::VertexType::TTD);
+  const auto        v9b = network.add_vertex("v9b", cda_rail::VertexType::TTD);
+  const auto        v9c = network.add_vertex("v9c", cda_rail::VertexType::TTD);
+
+  const auto v0_v1   = network.add_edge(v0, v1, 10, 20);
+  const auto v1_v2   = network.add_edge(v1, v2, 10, 20);
+  const auto v2_v3a  = network.add_edge(v2, v3a, 10, 20);
+  const auto v2_v3b  = network.add_edge(v2, v3b, 10, 20);
+  const auto v3a_v4a = network.add_edge(v3a, v4a, 100, 20);
+  const auto v3b_v4b = network.add_edge(v3b, v4b, 100, 20);
+  const auto v4a_v5a = network.add_edge(v4a, v5a, 10, 20);
+  const auto v4b_v5b = network.add_edge(v4b, v5b, 10, 20);
+  const auto v5a_v6  = network.add_edge(v5a, v6, 10, 20);
+  const auto v5b_v6  = network.add_edge(v5b, v6, 10, 20);
+  const auto v6_v7b  = network.add_edge(v6, v7b, 10, 20);
+  const auto v6_v7c  = network.add_edge(v6, v7c, 10, 20);
+  const auto v7b_v8b = network.add_edge(v7b, v8b, 10, 20);
+  const auto v7c_v8c = network.add_edge(v7c, v8c, 10, 20);
+  const auto v8b_v9b = network.add_edge(v8b, v9b, 10, 20);
+  const auto v8c_v9c = network.add_edge(v8c, v9c, 10, 20);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3a);
+  network.add_successor(v1_v2, v2_v3b);
+  network.add_successor(v2_v3a, v3a_v4a);
+  network.add_successor(v2_v3b, v3b_v4b);
+  network.add_successor(v3a_v4a, v4a_v5a);
+  network.add_successor(v3b_v4b, v4b_v5b);
+  network.add_successor(v4a_v5a, v5a_v6);
+  network.add_successor(v4b_v5b, v5b_v6);
+  network.add_successor(v5a_v6, v6_v7c);
+  network.add_successor(v5b_v6, v6_v7b);
+  network.add_successor(v6_v7b, v7b_v8b);
+  network.add_successor(v6_v7c, v7c_v8c);
+  network.add_successor(v7b_v8b, v8b_v9b);
+  network.add_successor(v7c_v8c, v8c_v9c);
+
+  // Add inverse edges
+  auto const          num_relevant_edges = network.number_of_edges();
+  std::vector<size_t> inverse_edges{};
+  inverse_edges.reserve(num_relevant_edges);
+  for (size_t i = 0; i < num_relevant_edges; ++i) {
+    const auto edge_obj = network.get_edge(i);
+    const auto inverse_edge =
+        network.add_edge(edge_obj.target, edge_obj.source, 10, 20);
+    inverse_edges.emplace_back(inverse_edge);
+  }
+  for (size_t i = 0; i < num_relevant_edges; ++i) {
+    for (auto const j : network.get_successors(i)) {
+      network.add_successor(inverse_edges.at(j), inverse_edges.at(i));
+    }
+  }
+
+  // One Way TTD
+  const auto v10 = network.add_vertex("v10", cda_rail::VertexType::TTD);
+  const auto v11 = network.add_vertex("v11", cda_rail::VertexType::TTD);
+
+  const auto v9b_v10 = network.add_edge(v9b, v10, 10, 20);
+  const auto v9c_v10 = network.add_edge(v9c, v10, 10, 20);
+  const auto v10_v11 = network.add_edge(v10, v11, 10, 20);
+
+  network.add_successor(v8b_v9b, v9b_v10);
+  network.add_successor(v8c_v9c, v9c_v10);
+  network.add_successor(v9b_v10, v10_v11);
+  network.add_successor(v9c_v10, v10_v11);
+
+  cda_rail::index_set const ttd_1{v1_v2,
+                                  v2_v3a,
+                                  v2_v3b,
+                                  v3b_v4b,
+                                  inverse_edges.at(v1_v2),
+                                  inverse_edges.at(v2_v3a),
+                                  inverse_edges.at(v2_v3b),
+                                  inverse_edges.at(v3b_v4b)};
+  cda_rail::index_set const ttd_1_single{v1_v2, v2_v3a, v2_v3b, v3b_v4b};
+  cda_rail::index_set const ttd_2{v5a_v6,
+                                  v5b_v6,
+                                  v6_v7b,
+                                  v6_v7c,
+                                  v7c_v8c,
+                                  inverse_edges.at(v5a_v6),
+                                  inverse_edges.at(v5b_v6),
+                                  inverse_edges.at(v6_v7b),
+                                  inverse_edges.at(v6_v7c),
+                                  inverse_edges.at(v7c_v8c)};
+  cda_rail::index_set const ttd_3{v9b_v10, v9c_v10, v10_v11};
+
+  // --------------
+  // TEST
+  // --------------
+
+  EXPECT_EQ(network.get_border_vertices_of_ttd(ttd_1),
+            cda_rail::index_set({v1, v3a, v4b}));
+  EXPECT_EQ(network.get_border_vertices_of_ttd(ttd_1_single),
+            cda_rail::index_set({v1, v3a, v4b}));
+  EXPECT_EQ(network.get_border_vertices_of_ttd(ttd_2),
+            cda_rail::index_set({v5a, v5b, v7b, v8c}));
+  EXPECT_EQ(network.get_border_vertices_of_ttd(ttd_3),
+            cda_rail::index_set({v9b, v9c, v11}));
+}
+
+TEST(RailwayNetwork, TTDPath) {
+  // --------------
+  // NETWORK
+  // --------------
+
+  cda_rail::Network network;
+  const auto        v0  = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto        v1  = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto        v2  = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto        v3a = network.add_vertex("v3a", cda_rail::VertexType::TTD);
+  const auto        v3b = network.add_vertex("v3b", cda_rail::VertexType::TTD);
+  const auto        v4a = network.add_vertex("v4a", cda_rail::VertexType::TTD);
+  const auto        v4b = network.add_vertex("v4b", cda_rail::VertexType::TTD);
+  const auto        v5a = network.add_vertex("v5a", cda_rail::VertexType::TTD);
+  const auto        v5b = network.add_vertex("v5b", cda_rail::VertexType::TTD);
+  const auto        v6  = network.add_vertex("v6", cda_rail::VertexType::TTD);
+  const auto        v7b = network.add_vertex("v7b", cda_rail::VertexType::TTD);
+  const auto        v7c = network.add_vertex("v7c", cda_rail::VertexType::TTD);
+  const auto        v8b = network.add_vertex("v8b", cda_rail::VertexType::TTD);
+  const auto        v8c = network.add_vertex("v8c", cda_rail::VertexType::TTD);
+  const auto        v9b = network.add_vertex("v9b", cda_rail::VertexType::TTD);
+  const auto        v9c = network.add_vertex("v9c", cda_rail::VertexType::TTD);
+
+  const auto v0_v1   = network.add_edge(v0, v1, 10, 20);
+  const auto v1_v2   = network.add_edge(v1, v2, 10, 20);
+  const auto v2_v3a  = network.add_edge(v2, v3a, 10, 20);
+  const auto v2_v3b  = network.add_edge(v2, v3b, 10, 20);
+  const auto v3a_v4a = network.add_edge(v3a, v4a, 100, 20);
+  const auto v3b_v4b = network.add_edge(v3b, v4b, 100, 20);
+  const auto v4a_v5a = network.add_edge(v4a, v5a, 10, 20);
+  const auto v4b_v5b = network.add_edge(v4b, v5b, 10, 20);
+  const auto v5a_v6  = network.add_edge(v5a, v6, 10, 20);
+  const auto v5b_v6  = network.add_edge(v5b, v6, 10, 20);
+  const auto v6_v7b  = network.add_edge(v6, v7b, 10, 20);
+  const auto v6_v7c  = network.add_edge(v6, v7c, 10, 20);
+  const auto v7b_v8b = network.add_edge(v7b, v8b, 10, 20);
+  const auto v7c_v8c = network.add_edge(v7c, v8c, 10, 20);
+  const auto v8b_v9b = network.add_edge(v8b, v9b, 10, 20);
+  const auto v8c_v9c = network.add_edge(v8c, v9c, 10, 20);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3a);
+  network.add_successor(v1_v2, v2_v3b);
+  network.add_successor(v2_v3a, v3a_v4a);
+  network.add_successor(v2_v3b, v3b_v4b);
+  network.add_successor(v3a_v4a, v4a_v5a);
+  network.add_successor(v3b_v4b, v4b_v5b);
+  network.add_successor(v4a_v5a, v5a_v6);
+  network.add_successor(v4b_v5b, v5b_v6);
+  network.add_successor(v5a_v6, v6_v7c);
+  network.add_successor(v5b_v6, v6_v7b);
+  network.add_successor(v6_v7b, v7b_v8b);
+  network.add_successor(v6_v7c, v7c_v8c);
+  network.add_successor(v7b_v8b, v8b_v9b);
+  network.add_successor(v7c_v8c, v8c_v9c);
+
+  // Add inverse edges
+  auto const          num_relevant_edges = network.number_of_edges();
+  std::vector<size_t> inverse_edges{};
+  inverse_edges.reserve(num_relevant_edges);
+  for (size_t i = 0; i < num_relevant_edges; ++i) {
+    const auto edge_obj = network.get_edge(i);
+    const auto inverse_edge =
+        network.add_edge(edge_obj.target, edge_obj.source, 10, 20);
+    inverse_edges.emplace_back(inverse_edge);
+  }
+  for (size_t i = 0; i < num_relevant_edges; ++i) {
+    for (auto const j : network.get_successors(i)) {
+      network.add_successor(inverse_edges.at(j), inverse_edges.at(i));
+    }
+  }
+
+  // One Way TTD
+  const auto v10 = network.add_vertex("v10", cda_rail::VertexType::TTD);
+  const auto v11 = network.add_vertex("v11", cda_rail::VertexType::TTD);
+
+  const auto v9b_v10 = network.add_edge(v9b, v10, 10, 20);
+  const auto v9c_v10 = network.add_edge(v9c, v10, 10, 20);
+  const auto v10_v11 = network.add_edge(v10, v11, 10, 20);
+
+  network.add_successor(v8b_v9b, v9b_v10);
+  network.add_successor(v8c_v9c, v9c_v10);
+  network.add_successor(v9b_v10, v10_v11);
+  network.add_successor(v9c_v10, v10_v11);
+
+  cda_rail::index_set const ttd_1{v1_v2,
+                                  v2_v3a,
+                                  v2_v3b,
+                                  v3b_v4b,
+                                  inverse_edges.at(v1_v2),
+                                  inverse_edges.at(v2_v3a),
+                                  inverse_edges.at(v2_v3b),
+                                  inverse_edges.at(v3b_v4b)};
+  cda_rail::index_set const ttd_1_single{v1_v2, v2_v3a, v2_v3b, v3b_v4b};
+  cda_rail::index_set const ttd_2{v5a_v6,
+                                  v5b_v6,
+                                  v6_v7b,
+                                  v6_v7c,
+                                  v7c_v8c,
+                                  inverse_edges.at(v5a_v6),
+                                  inverse_edges.at(v5b_v6),
+                                  inverse_edges.at(v6_v7b),
+                                  inverse_edges.at(v6_v7c),
+                                  inverse_edges.at(v7c_v8c)};
+  cda_rail::index_set const ttd_3{v9b_v10, v9c_v10, v10_v11};
+
+  // --------------
+  // TEST
+  // --------------
+
+  EXPECT_TRUE(network.has_ttd_path(v1, v3a, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path(v1, v4b, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path(v3a, v1, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path(v4b, v1, ttd_1));
+  EXPECT_FALSE(network.has_ttd_path(v3a, v4b, ttd_1));
+  EXPECT_FALSE(network.has_ttd_path(v4b, v3a, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path({"v1"}, v3a, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path(v1, {"v4b"}, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path({"v3a"}, {"v1"}, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path({"v4b"}, {"v1"}, ttd_1));
+  EXPECT_FALSE(network.has_ttd_path({"v3a"}, {"v4b"}, ttd_1));
+  EXPECT_FALSE(network.has_ttd_path({"v4b"}, {"v3a"}, ttd_1));
+
+  EXPECT_TRUE(network.has_ttd_path(v1, v3a, ttd_1_single));
+  EXPECT_TRUE(network.has_ttd_path(v1, v4b, ttd_1_single));
+  EXPECT_FALSE(network.has_ttd_path(v3a, v1, ttd_1_single));
+  EXPECT_FALSE(network.has_ttd_path(v4b, v1, ttd_1_single));
+  EXPECT_FALSE(network.has_ttd_path(v3a, v4b, ttd_1_single));
+  EXPECT_FALSE(network.has_ttd_path(v4b, v3a, ttd_1_single));
+
+  EXPECT_TRUE(network.has_ttd_path(v5a, v8c, ttd_2));
+  EXPECT_TRUE(network.has_ttd_path(v8c, v5a, ttd_2));
+  EXPECT_TRUE(network.has_ttd_path(v5b, v7b, ttd_2));
+  EXPECT_TRUE(network.has_ttd_path(v7b, v5b, ttd_2));
+  EXPECT_FALSE(network.has_ttd_path(v5a, v7b, ttd_2));
+  EXPECT_FALSE(network.has_ttd_path(v7b, v5a, ttd_2));
+  EXPECT_FALSE(network.has_ttd_path(v5b, v8c, ttd_2));
+  EXPECT_FALSE(network.has_ttd_path(v8c, v5b, ttd_2));
+
+  EXPECT_TRUE(network.has_ttd_path(v9b, v11, ttd_3));
+  EXPECT_TRUE(network.has_ttd_path(v9c, v11, ttd_3));
+  EXPECT_FALSE(network.has_ttd_path(v11, v9b, ttd_3));
+  EXPECT_FALSE(network.has_ttd_path(v11, v9c, ttd_3));
+}
+
+TEST(RailwayNetwork, OtherTTDTraversal) {
+  // --------------
+  // NETWORK
+  // --------------
+
+  cda_rail::Network network;
+  const auto        v0  = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto        v1  = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto        v2  = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto        v3a = network.add_vertex("v3a", cda_rail::VertexType::TTD);
+  const auto        v3b = network.add_vertex("v3b", cda_rail::VertexType::TTD);
+  const auto        v4a = network.add_vertex("v4a", cda_rail::VertexType::TTD);
+  const auto        v4b = network.add_vertex("v4b", cda_rail::VertexType::TTD);
+  const auto        v5a = network.add_vertex("v5a", cda_rail::VertexType::TTD);
+  const auto        v5b = network.add_vertex("v5b", cda_rail::VertexType::TTD);
+  const auto        v6  = network.add_vertex("v6", cda_rail::VertexType::TTD);
+  const auto        v7b = network.add_vertex("v7b", cda_rail::VertexType::TTD);
+  const auto        v7c = network.add_vertex("v7c", cda_rail::VertexType::TTD);
+  const auto        v8b = network.add_vertex("v8b", cda_rail::VertexType::TTD);
+  const auto        v8c = network.add_vertex("v8c", cda_rail::VertexType::TTD);
+  const auto        v9b = network.add_vertex("v9b", cda_rail::VertexType::TTD);
+  const auto        v9c = network.add_vertex("v9c", cda_rail::VertexType::TTD);
+
+  const auto v0_v1   = network.add_edge(v0, v1, 10, 20);
+  const auto v1_v2   = network.add_edge(v1, v2, 10, 20);
+  const auto v2_v3a  = network.add_edge(v2, v3a, 10, 20);
+  const auto v2_v3b  = network.add_edge(v2, v3b, 10, 20);
+  const auto v3a_v4a = network.add_edge(v3a, v4a, 100, 20);
+  const auto v3b_v4b = network.add_edge(v3b, v4b, 100, 20);
+  const auto v4a_v5a = network.add_edge(v4a, v5a, 10, 20);
+  const auto v4b_v5b = network.add_edge(v4b, v5b, 10, 20);
+  const auto v5a_v6  = network.add_edge(v5a, v6, 10, 20);
+  const auto v5b_v6  = network.add_edge(v5b, v6, 10, 20);
+  const auto v6_v7b  = network.add_edge(v6, v7b, 10, 20);
+  const auto v6_v7c  = network.add_edge(v6, v7c, 10, 20);
+  const auto v7b_v8b = network.add_edge(v7b, v8b, 10, 20);
+  const auto v7c_v8c = network.add_edge(v7c, v8c, 10, 20);
+  const auto v8b_v9b = network.add_edge(v8b, v9b, 10, 20);
+  const auto v8c_v9c = network.add_edge(v8c, v9c, 10, 20);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3a);
+  network.add_successor(v1_v2, v2_v3b);
+  network.add_successor(v2_v3a, v3a_v4a);
+  network.add_successor(v2_v3b, v3b_v4b);
+  network.add_successor(v3a_v4a, v4a_v5a);
+  network.add_successor(v3b_v4b, v4b_v5b);
+  network.add_successor(v4a_v5a, v5a_v6);
+  network.add_successor(v4b_v5b, v5b_v6);
+  network.add_successor(v5a_v6, v6_v7c);
+  network.add_successor(v5b_v6, v6_v7b);
+  network.add_successor(v6_v7b, v7b_v8b);
+  network.add_successor(v6_v7c, v7c_v8c);
+  network.add_successor(v7b_v8b, v8b_v9b);
+  network.add_successor(v7c_v8c, v8c_v9c);
+
+  // Add inverse edges
+  auto const          num_relevant_edges = network.number_of_edges();
+  std::vector<size_t> inverse_edges{};
+  inverse_edges.reserve(num_relevant_edges);
+  for (size_t i = 0; i < num_relevant_edges; ++i) {
+    const auto edge_obj = network.get_edge(i);
+    const auto inverse_edge =
+        network.add_edge(edge_obj.target, edge_obj.source, 10, 20);
+    inverse_edges.emplace_back(inverse_edge);
+  }
+  for (size_t i = 0; i < num_relevant_edges; ++i) {
+    for (auto const j : network.get_successors(i)) {
+      network.add_successor(inverse_edges.at(j), inverse_edges.at(i));
+    }
+  }
+
+  // One Way TTD
+  const auto v10 = network.add_vertex("v10", cda_rail::VertexType::TTD);
+  const auto v11 = network.add_vertex("v11", cda_rail::VertexType::TTD);
+
+  const auto v9b_v10 = network.add_edge(v9b, v10, 10, 20);
+  const auto v9c_v10 = network.add_edge(v9c, v10, 10, 20);
+  const auto v10_v11 = network.add_edge(v10, v11, 10, 20);
+
+  network.add_successor(v8b_v9b, v9b_v10);
+  network.add_successor(v8c_v9c, v9c_v10);
+  network.add_successor(v9b_v10, v10_v11);
+  network.add_successor(v9c_v10, v10_v11);
+
+  cda_rail::index_set const ttd_1{v1_v2,
+                                  v2_v3a,
+                                  v2_v3b,
+                                  v3b_v4b,
+                                  inverse_edges.at(v1_v2),
+                                  inverse_edges.at(v2_v3a),
+                                  inverse_edges.at(v2_v3b),
+                                  inverse_edges.at(v3b_v4b)};
+  cda_rail::index_set const ttd_1_single{v1_v2, v2_v3a, v2_v3b, v3b_v4b};
+  cda_rail::index_set const ttd_2{v5a_v6,
+                                  v5b_v6,
+                                  v6_v7b,
+                                  v6_v7c,
+                                  v7c_v8c,
+                                  inverse_edges.at(v5a_v6),
+                                  inverse_edges.at(v5b_v6),
+                                  inverse_edges.at(v6_v7b),
+                                  inverse_edges.at(v6_v7c),
+                                  inverse_edges.at(v7c_v8c)};
+  cda_rail::index_set const ttd_3{v9b_v10, v9c_v10, v10_v11};
+
+  // --------------
+  // TEST
+  // --------------
+
+  EXPECT_FALSE(network.has_ttd_path_not_using_border_vertex(v1, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex(v3a, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex(v4b, ttd_1));
+  EXPECT_FALSE(network.has_ttd_path_not_using_border_vertex({"v1"}, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex({"v3a"}, ttd_1));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex({"v4b"}, ttd_1));
+
+  EXPECT_FALSE(network.has_ttd_path_not_using_border_vertex(v1, ttd_1_single));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex(v3a, ttd_1_single));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex(v4b, ttd_1_single));
+  EXPECT_FALSE(
+      network.has_ttd_path_not_using_border_vertex({"v1"}, ttd_1_single));
+  EXPECT_TRUE(
+      network.has_ttd_path_not_using_border_vertex({"v3a"}, ttd_1_single));
+  EXPECT_TRUE(
+      network.has_ttd_path_not_using_border_vertex({"v4b"}, ttd_1_single));
+
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex(v5a, ttd_2));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex(v5b, ttd_2));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex(v7b, ttd_2));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex(v8c, ttd_2));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex({"v5a"}, ttd_2));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex({"v5b"}, ttd_2));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex({"v7b"}, ttd_2));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex({"v8c"}, ttd_2));
+
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex(v9b, ttd_3));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex(v9c, ttd_3));
+  EXPECT_FALSE(network.has_ttd_path_not_using_border_vertex(v11, ttd_3));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex({"v9b"}, ttd_3));
+  EXPECT_TRUE(network.has_ttd_path_not_using_border_vertex({"v9c"}, ttd_3));
+  EXPECT_FALSE(network.has_ttd_path_not_using_border_vertex({"v11"}, ttd_3));
+}
+
 // NOLINTEND(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores,bugprone-unchecked-optional-access)

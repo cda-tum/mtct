@@ -945,3 +945,22 @@ cda_rail::Network::shortest_path_between_sets_using_edges_helper(
 
   return {std::nullopt, {}};
 }
+
+std::unordered_set<size_t> cda_rail::Network::get_border_vertices_of_ttd(
+    const cda_rail::index_set& ttd_section) const {
+  // TODO: Implement
+  return {};
+}
+
+bool cda_rail::Network::has_ttd_path_helper(
+    size_t source_vertex, size_t target_vertex,
+    const cda_rail::index_set& ttd_section) const {
+  // TODO: Implement
+  return false;
+}
+
+bool cda_rail::Network::has_ttd_path_not_using_border_vertex_helper(
+    size_t border_vertex, const cda_rail::index_set& ttd_section) const {
+  // TODO: Implement
+  return false;
+}
