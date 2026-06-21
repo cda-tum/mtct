@@ -1725,7 +1725,8 @@ private:
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_ending_at_ttd_helper(
       size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
-      std::optional<size_t> exit_node) const;
+      std::optional<size_t> exit_node, bool skip_irrelevant_ttds,
+      bool zero_length_if_next_edge_is_ttd) const;
 
 public:
   /**
@@ -1742,9 +1743,12 @@ public:
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_ending_at_ttd(EdgeInput const&                        edge,
                           const std::vector<cda_rail::index_set>& ttd_sections,
-                          std::optional<size_t> exit_node = {}) const {
+                          std::optional<size_t> exit_node            = {},
+                          bool                  skip_irrelevant_ttds = false,
+                          bool zero_length_if_next_edge_is_ttd = false) const {
     return all_paths_ending_at_ttd_helper(edge.resolve(this), ttd_sections,
-                                          exit_node);
+                                          exit_node, skip_irrelevant_ttds,
+                                          zero_length_if_next_edge_is_ttd);
   };
 
   /**
@@ -2462,7 +2466,7 @@ private:
   all_paths_ending_at_ttd_recursive_helper(
       size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
       std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
-      bool first_edge) const;
+      bool first_edge, bool skip_irrelevant_ttds) const;
 
 public:
   // exception helper

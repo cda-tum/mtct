@@ -806,7 +806,7 @@ std::vector<cda_rail::index_vector>
 cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
     size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
     std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
-    bool first_edge) const {
+    bool first_edge, bool skip_irrelevant_ttds) const {
   if (!has_edge(e_0)) {
     throw exceptions::EdgeNotExistentException(e_0);
   }
@@ -821,6 +821,7 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
         return {{}};
       }
       safe_ttd = ttd_idx;
+      break;
     }
   }
 
@@ -832,7 +833,8 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
   std::vector<cda_rail::index_vector> result;
   for (const auto succ : get_successors(e_0)) {
     for (const auto& sub_path : all_paths_ending_at_ttd_recursive_helper(
-             succ, ttd_sections, exit_node, safe_ttd, false)) {
+             succ, ttd_sections, exit_node, safe_ttd, false,
+             skip_irrelevant_ttds)) {
       cda_rail::index_vector path{e_0};
       path.insert(path.end(), sub_path.begin(), sub_path.end());
       result.push_back(std::move(path));

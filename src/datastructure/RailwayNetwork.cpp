@@ -761,11 +761,22 @@ cda_rail::Network::discretize(const vss::SeparationFunction& sep_func) {
 std::vector<cda_rail::index_vector>
 cda_rail::Network::all_paths_ending_at_ttd_helper(
     size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
-    std::optional<size_t> exit_node) const {
+    std::optional<size_t> exit_node, bool skip_irrelevant_ttds,
+    bool zero_length_if_next_edge_is_ttd) const {
   std::vector<cda_rail::index_vector> result;
+
+  std::optional<size_t> safe_ttd{};
+  for (size_t ttd_idx = 0; ttd_idx < ttd_sections.size(); ++ttd_idx) {
+    if (ttd_sections.at(ttd_idx).contains(e_0)) {
+      safe_ttd = ttd_idx;
+      break;
+    }
+  }
+
   for (const auto successor : get_successors(e_0)) {
     for (const auto& path : all_paths_ending_at_ttd_recursive_helper(
-             successor, ttd_sections, exit_node, {}, true)) {
+             successor, ttd_sections, exit_node, safe_ttd,
+             !zero_length_if_next_edge_is_ttd, skip_irrelevant_ttds)) {
       result.push_back(path);
     }
   }
