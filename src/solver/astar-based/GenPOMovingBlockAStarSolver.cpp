@@ -418,6 +418,19 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
              : get_all_trains_for_state_transition(simulator_state, instance);
 }
 
+std::vector<cda_rail::index_vector>
+cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::get_entry_paths(
+    size_t                                                   tr,
+    instances::GeneralPerformanceOptimizationInstance const* instance) {
+  const auto& tr_schedule = instance->get_const_schedule(tr);
+  const auto& tr_obj      = instance->get_const_train_list().get_train(tr);
+  return instance->get_const_network().all_paths_of_length_starting_in_vertex(
+      tr_schedule.get_entry_vertex(),
+      cda_rail::braking_distance(tr_schedule.get_initial_velocity(),
+                                 tr_obj.get_deceleration()),
+      tr_schedule.get_exit_vertex(), {}, true);
+}
+
 std::unordered_set<cda_rail::solver::astar_based::GreedySimulatorState>
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     next_states_single_edge(

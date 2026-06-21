@@ -171,6 +171,16 @@ private:
       instances::GeneralPerformanceOptimizationInstance const* instance,
       SolverStrategyMBAStar const&                             solver_strategy);
 
+  [[nodiscard]] static std::vector<cda_rail::index_vector> get_entry_paths(
+      size_t                                                   tr,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
+
+  struct PathData {
+    cda_rail::index_vector path{};
+    bool                   partial_route_end_without_stop_possible{false};
+    bool                   stop_at_end_possible{false};
+  };
+
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
@@ -200,6 +210,12 @@ private:
       throw cda_rail::exceptions::ConsistencyException(
           "Time aware state transitions are not yet implemented.");
     }
+
+    // Relevant trains
+
+    // for every train
+
+    // get next states and combine
 
     switch (solver_strategy_input.next_state_strategy) {
     case NextStateStrategy::SingleEdge:
