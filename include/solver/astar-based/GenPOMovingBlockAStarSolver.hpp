@@ -31,6 +31,7 @@
 #if TEST_FRIENDS
 class GenPOMovingBlockAStarSolver;
 class GenPOMovingBlockAStarSolver_NextTrains_Test;
+class GenPOMovingBlockAStarSolver_PathExtensions_Test;
 class GenPOMovingBlockAStarSolver_NextStates_Test;
 class GenPOMovingBlockAStarSolver_NextStatesTTD_Test;
 #endif
@@ -39,8 +40,9 @@ namespace cda_rail::solver::astar_based {
 #define DEBUG_LOGGING_RATE 1000
 
 enum class NextStateStrategy : std::uint8_t {
-  SingleEdge = 0,
-  NextTTD    = 1,
+  SingleEdge      = 0,
+  NextTTD         = 1,
+  NextRelevantTTD = 2,
 };
 
 struct ModelDetail {
@@ -84,6 +86,7 @@ class GenPOMovingBlockAStarSolver
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextTrains);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, PathExtensions);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStatesTTD);
 #endif
@@ -174,12 +177,20 @@ private:
   [[nodiscard]] static std::vector<cda_rail::index_vector> get_entry_paths(
       size_t                                                   tr,
       instances::GeneralPerformanceOptimizationInstance const* instance);
-
-  struct PathData {
+  struct PathExtensionData {
     cda_rail::index_vector path{};
-    bool                   partial_route_end_without_stop_possible{false};
-    bool                   stop_at_end_possible{false};
+    size_t                 stop_possible_from_idx_onward{0};
+
+    bool operator==(const PathExtensionData& other) const {
+      return path == other.path && stop_possible_from_idx_onward ==
+                                       other.stop_possible_from_idx_onward;
+    }
   };
+  [[nodiscard]] static std::vector<PathExtensionData> get_path_extensions(
+      size_t tr, GreedySimulatorState const& simulator_state,
+      NextStateStrategy next_state_strategy,
+      instances::GeneralPerformanceOptimizationInstance const* instance,
+      std::vector<cda_rail::index_set> const&                  ttd_sections);
 
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);

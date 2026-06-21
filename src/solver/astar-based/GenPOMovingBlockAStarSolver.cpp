@@ -431,6 +431,61 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::get_entry_paths(
       tr_schedule.get_exit_vertex(), {}, true);
 }
 
+std::vector<cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                PathExtensionData>
+cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::get_path_extensions(
+    size_t tr, GreedySimulatorState const& simulator_state,
+    NextStateStrategy next_state_strategy,
+    instances::GeneralPerformanceOptimizationInstance const* instance,
+    std::vector<cda_rail::index_set> const&                  ttd_sections) {
+  std::vector<PathExtensionData> path_extensions{};
+
+  auto const& tr_edges    = simulator_state.train_edges.at(tr);
+  bool        tr_entering = tr_edges.empty();
+
+  if (tr_entering) {
+    const auto entry_paths = get_entry_paths(tr, instance);
+    for (auto const& entry_path : entry_paths) {
+      path_extensions.emplace_back(entry_path, entry_path.size() - 1);
+    }
+  } else {
+    auto const& successor_edges =
+        instance->get_const_network().get_successors(tr_edges.back());
+    for (auto const& successor_edge : successor_edges) {
+      path_extensions.emplace_back(cda_rail::index_vector({successor_edge}), 0);
+    }
+  }
+
+  if (next_state_strategy == NextStateStrategy::SingleEdge) {
+    return path_extensions;
+  }
+
+  assert(next_state_strategy == NextStateStrategy::NextTTD ||
+         next_state_strategy == NextStateStrategy::NextRelevantTTD);
+
+  // For the next TTD strategy, we need to extend the path until the next TTD
+  // (multiple options per path possible)
+  std::vector<PathExtensionData> extended_path_extensions;
+  for (auto const& path_extension : path_extensions) {
+    auto const next_ttd_paths =
+        instance->get_const_network().all_paths_ending_at_ttd(
+            path_extension.path.back(), ttd_sections,
+            instance->get_const_schedule(tr).get_exit_vertex(),
+            next_state_strategy == NextStateStrategy::NextRelevantTTD, true);
+    for (auto const& next_ttd_path : next_ttd_paths) {
+      PathExtensionData new_path_extension{
+          .path = path_extension.path,
+          .stop_possible_from_idx_onward =
+              path_extension.stop_possible_from_idx_onward};
+      new_path_extension.path.insert(new_path_extension.path.end(),
+                                     next_ttd_path.begin(),
+                                     next_ttd_path.end());
+      extended_path_extensions.emplace_back(new_path_extension);
+    }
+  }
+  return extended_path_extensions;
+}
+
 std::unordered_set<cda_rail::solver::astar_based::GreedySimulatorState>
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     next_states_single_edge(

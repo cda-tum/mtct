@@ -81,7 +81,9 @@ int main(int argc, char** argv) {
           {"SingleEdge",
            cda_rail::solver::astar_based::NextStateStrategy::SingleEdge},
           {"NextTTD",
-           cda_rail::solver::astar_based::NextStateStrategy::NextTTD}};
+           cda_rail::solver::astar_based::NextStateStrategy::NextTTD},
+          {"NextRelevantTTD",
+           cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD}};
 
   std::map<std::string, cda_rail::simulator::RemainingTimeHeuristicType> const
       remaining_time_heuristic_type_map{
@@ -135,7 +137,7 @@ int main(int argc, char** argv) {
       ->group("Solver Parameters");
   app.add_option("-x,--next-state-strategy", next_state_strategy,
                  "Next state strategy to use in the A* search. Currently "
-                 "supports 'SingleEdge' and 'NextTTD'.")
+                 "supports 'SingleEdge', 'NextTTD', and 'NextRelevantTTD'.")
       ->transform(
           CLI::CheckedTransformer(next_state_strategy_map, CLI::ignore_case))
       ->capture_default_str()
