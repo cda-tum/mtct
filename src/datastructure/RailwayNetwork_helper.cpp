@@ -810,6 +810,7 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
   if (!has_edge(e_0)) {
     throw exceptions::EdgeNotExistentException(e_0);
   }
+  const auto& e0_edge = get_edge(e_0);
 
   // Check TTD membership: stop if we enter a new TTD section
   for (size_t ttd_idx = 0; ttd_idx < ttd_sections.size(); ++ttd_idx) {
@@ -817,7 +818,9 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
       continue;
     }
     if (ttd_sections.at(ttd_idx).contains(e_0)) {
-      if (!first_edge) {
+      if (!first_edge && (!skip_irrelevant_ttds ||
+                          has_ttd_path_not_using_border_vertex(
+                              e0_edge.source, ttd_sections.at(ttd_idx)))) {
         return {{}};
       }
       safe_ttd = ttd_idx;
@@ -825,7 +828,6 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
     }
   }
 
-  const auto& e0_edge = get_edge(e_0);
   if (exit_node.has_value() && e0_edge.target == *exit_node) {
     return {{e_0}};
   }
