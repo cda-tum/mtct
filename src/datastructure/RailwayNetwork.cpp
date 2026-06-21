@@ -308,6 +308,23 @@ cda_rail::Network::get_reverse_edge_index_helper(size_t edge_index) const {
   return {};
 }
 
+std::optional<cda_rail::index_vector>
+cda_rail::Network::get_reverse_path(cda_rail::index_vector const& edges) const {
+  if (edges.empty()) {
+    return std::nullopt;
+  }
+
+  cda_rail::index_vector retval;
+  for (auto const& edge : edges | std::views::reverse) {
+    auto const rev_edge_index = get_reverse_edge_index(edge);
+    if (!rev_edge_index.has_value()) {
+      return std::nullopt;
+    }
+    retval.emplace_back(rev_edge_index.value());
+  }
+  return retval;
+}
+
 std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
 cda_rail::Network::combine_reverse_edges(
     const cda_rail::index_vector& edges_to_consider, bool sort) const {

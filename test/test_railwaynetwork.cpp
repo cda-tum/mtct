@@ -2973,6 +2973,45 @@ TEST(RailwayNetwork, ReverseIndices) {
               edges_combined.end());
 }
 
+TEST(RailwayNetwork, ReversePath) {
+  cda_rail::Network           network;
+  [[maybe_unused]] auto const v1 =
+      network.add_vertex("v1", cda_rail::VertexType::TTD);
+  [[maybe_unused]] auto const v2 =
+      network.add_vertex("v2", cda_rail::VertexType::TTD);
+  [[maybe_unused]] auto const v3 =
+      network.add_vertex("v3", cda_rail::VertexType::TTD);
+  [[maybe_unused]] auto const v4 =
+      network.add_vertex("v4", cda_rail::VertexType::TTD);
+  [[maybe_unused]] auto const v5 =
+      network.add_vertex("v5", cda_rail::VertexType::TTD);
+
+  [[maybe_unused]] auto const v1_v2 = network.add_edge(v1, v2, 100, 10, true);
+  [[maybe_unused]] auto const v2_v3 = network.add_edge(v2, v3, 100, 10, true);
+  [[maybe_unused]] auto const v3_v4 = network.add_edge(v3, v4, 100, 10, true);
+  [[maybe_unused]] auto const v4_v5 = network.add_edge(v4, v5, 100, 10, true);
+
+  [[maybe_unused]] auto const v5_v4 = network.add_edge(v5, v4, 100, 10, true);
+  [[maybe_unused]] auto const v4_v3 = network.add_edge(v4, v3, 100, 10, true);
+  [[maybe_unused]] auto const v2_v1 = network.add_edge(v2, v1, 100, 10, true);
+
+  auto const reverse1 = network.get_reverse_path({v1_v2, v2_v3, v3_v4, v4_v5});
+  EXPECT_FALSE(reverse1.has_value());
+
+  auto const reverse2a = network.get_reverse_path({v3_v4, v4_v5});
+  EXPECT_TRUE(reverse2a.has_value());
+  EXPECT_EQ(reverse2a.value_or(cda_rail::index_vector{}),
+            cda_rail::index_vector({v5_v4, v4_v3}));
+
+  auto const reverse2b = network.get_reverse_path({v5_v4, v4_v3});
+  EXPECT_TRUE(reverse2b.has_value());
+  EXPECT_EQ(reverse2b.value_or(cda_rail::index_vector{}),
+            cda_rail::index_vector({v3_v4, v4_v5}));
+
+  auto const reverse3 = network.get_reverse_path({});
+  EXPECT_FALSE(reverse3.has_value());
+}
+
 TEST(RailwayNetwork, InverseEdges) {
   cda_rail::Network network;
 

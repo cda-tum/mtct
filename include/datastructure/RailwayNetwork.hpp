@@ -933,6 +933,16 @@ public:
   };
 
   /**
+   * @brief Get reverse path
+   *
+   * @param edges Vector of edge indices.
+   * @return Vector of reverse indices in revers order, if all reverse edges
+   * exist.
+   */
+  [[nodiscard]] std::optional<cda_rail::index_vector>
+  get_reverse_path(cda_rail::index_vector const& edges) const;
+
+  /**
    * @brief Wraps `get_reverse_edge_index` to propagate an optional input.
    *
    * If @p edgeIndex has no value, `std::nullopt` is returned immediately
