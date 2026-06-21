@@ -3741,6 +3741,22 @@ TEST(RailwayNetwork, NetworkNextTTD) {
   EXPECT_EQ(routing4.at(0), std::vector<size_t>({v6_v7, v7_v8b, v8b_v9b}));
 }
 
+namespace {
+void print_paths_vector(std::vector<cda_rail::index_vector> const& paths,
+                        cda_rail::Network const&                   network) {
+  std::cout << "Number of paths: " << paths.size() << '\n';
+  for (size_t i = 0; i < paths.size(); ++i) {
+    std::cout << "Path " << i << ": ";
+    for (size_t j = 0; j < paths[i].size(); ++j) {
+      auto const& edge = network.get_edge(paths.at(i).at(j));
+      std::cout << network.get_vertex(edge.source).name << " -> "
+                << network.get_vertex(edge.target).name << " / ";
+    }
+    std::cout << '\n';
+  }
+}
+} // namespace
+
 TEST(RailwayNetwork, NetworkNextTTDAdvanced) {
   cda_rail::Network network;
 
@@ -3812,6 +3828,7 @@ TEST(RailwayNetwork, NetworkNextTTDAdvanced) {
   network.add_successor(v7b_v8b, v8b_v10b);
   network.add_successor(v7b_v8c, v8c_v10c);
   network.add_successor(v8a_v9a, v9a_v10a);
+  network.add_successor(v8ab_v9a, v9a_v10a);
 
   cda_rail::index_set const ttd1{v1a_v2, v1b_v2, v2_v3};
   cda_rail::index_set const ttd2{v4_v5, v5_v6a, v5_v6b};
@@ -3832,6 +3849,7 @@ TEST(RailwayNetwork, NetworkNextTTDAdvanced) {
 
   auto const routing1 =
       network.all_paths_ending_at_ttd(v0a_v1a, ttd_sections, v10b, true, false);
+  print_paths_vector(routing1, network);
   EXPECT_EQ(routing1.size(), 3);
   EXPECT_TRUE(std::ranges::contains(
       routing1,
@@ -3856,6 +3874,7 @@ TEST(RailwayNetwork, NetworkNextTTDAdvanced) {
 
   auto const routing2 =
       network.all_paths_ending_at_ttd(v1a_v2, ttd_sections, v10b, true, false);
+  print_paths_vector(routing2, network);
   EXPECT_EQ(routing2.size(), 3);
   EXPECT_TRUE(std::ranges::contains(
       routing2, std::vector<size_t>{v2_v3, v3_v4, v4_v5, v5_v6a, v6a_v8a}));
@@ -3871,6 +3890,7 @@ TEST(RailwayNetwork, NetworkNextTTDAdvanced) {
   // -----------------
   auto const routing3a =
       network.all_paths_ending_at_ttd(v3_v4, ttd_sections, v10c, false, false);
+  print_paths_vector(routing3a, network);
   EXPECT_EQ(routing3a.size(), 2);
   EXPECT_TRUE(std::ranges::contains(
       routing3a, std::vector<size_t>{v4_v5, v5_v6a, v6a_v8a}));
@@ -3879,10 +3899,12 @@ TEST(RailwayNetwork, NetworkNextTTDAdvanced) {
 
   auto const routing3b =
       network.all_paths_ending_at_ttd(v3_v4, ttd_sections, v10c, false, true);
+  print_paths_vector(routing3b, network);
   EXPECT_EQ(routing3b, std::vector<cda_rail::index_vector>({{}}));
 
   auto const routing3c =
       network.all_paths_ending_at_ttd(v3_v4, ttd_sections, v10c, true, false);
+  print_paths_vector(routing3c, network);
   EXPECT_EQ(routing3c.size(), 3);
   EXPECT_TRUE(std::ranges::contains(
       routing3c, std::vector<size_t>{v4_v5, v5_v6a, v6a_v8a}));
