@@ -948,19 +948,47 @@ cda_rail::Network::shortest_path_between_sets_using_edges_helper(
 
 std::unordered_set<size_t> cda_rail::Network::get_border_vertices_of_ttd(
     const cda_rail::index_set& ttd_section) const {
-  // TODO: Implement
-  return {};
+  std::unordered_map<size_t, std::unordered_set<size_t>> ttd_vertices{};
+  for (auto const& edge : ttd_section) {
+    auto const& edge_obj = get_edge(edge);
+    ttd_vertices[edge_obj.source].insert(edge_obj.target);
+    ttd_vertices[edge_obj.target].insert(edge_obj.source);
+  }
+  // Get all vertices whose neighbor set has size 1
+  auto border_vertices_view = ttd_vertices |
+                              std::views::filter([](const auto& pair) {
+                                return pair.second.size() == 1;
+                              }) |
+                              std::views::keys;
+
+  std::unordered_set<size_t> retval;
+  std::ranges::copy(border_vertices_view, std::inserter(retval, retval.end()));
+
+  return retval;
 }
 
 bool cda_rail::Network::has_ttd_path_helper(
     size_t source_vertex, size_t target_vertex,
     const cda_rail::index_set& ttd_section) const {
-  // TODO: Implement
-  return false;
+  auto const first_edges = out_edges_helper(source_vertex);
+  return !first_edges.empty() &&
+         shortest_path_between_edge_and_vertex_set(first_edges, {target_vertex},
+                                                   true, ttd_section)
+             .first.has_value();
 }
 
 bool cda_rail::Network::has_ttd_path_not_using_border_vertex_helper(
     size_t border_vertex, const cda_rail::index_set& ttd_section) const {
-  // TODO: Implement
+  auto border_vertices = get_border_vertices_of_ttd(ttd_section);
+  border_vertices.erase(border_vertex);
+
+  for (const auto v1 : border_vertices) {
+    for (const auto v2 : border_vertices) {
+      if (v1 != v2 && has_ttd_path_helper(v1, v2, ttd_section)) {
+        return true;
+      }
+    }
+  }
+
   return false;
 }
