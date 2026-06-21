@@ -186,18 +186,19 @@ size_t cda_rail::simulator::GeneralSimulator::get_edge_at_position(
 }
 
 bool cda_rail::simulator::GeneralSimulator::is_route_end_valid_stop_pos(
-    size_t tr, const cda_rail::index_vector& edges) const {
+    size_t tr, const cda_rail::index_vector& edges,
+    std::vector<double> const& tr_stop_positions) const {
   m_instance->get_const_train_list().throw_if_train_not_exist(tr);
 
   const auto& tr_length =
       m_instance->get_const_train_list().get_train(tr).get_length();
   const auto& tr_schedule = m_instance->get_const_schedule(tr).get_stops();
-  if (m_stop_positions.at(tr).size() >= tr_schedule.size()) {
+  if (tr_stop_positions.size() >= tr_schedule.size()) {
     // All stops have been set, hence, no further stop is possible
     return false;
   }
   const auto& next_station =
-      tr_schedule.at(m_stop_positions.at(tr).size()).get_station();
+      tr_schedule.at(tr_stop_positions.size()).get_station();
 
   double len = 0;
   for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
