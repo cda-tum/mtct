@@ -32,6 +32,7 @@
 class GenPOMovingBlockAStarSolver;
 class GenPOMovingBlockAStarSolver_NextTrains_Test;
 class GenPOMovingBlockAStarSolver_PathExtensions_Test;
+class GenPOMovingBlockAStarSolver_InferInsertionBounds_Test;
 class GenPOMovingBlockAStarSolver_NextStates_Test;
 class GenPOMovingBlockAStarSolver_NextStatesTTD_Test;
 #endif
@@ -87,6 +88,7 @@ private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextTrains);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, PathExtensions);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, InferInsertionBounds);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStatesTTD);
 #endif
@@ -159,7 +161,7 @@ private:
   // STATE TRANSITION HELPER
   // ---------------------------
 
-  // Helper
+  // Relevant Trains
   [[nodiscard]] static cda_rail::index_set get_all_trains_for_state_transition(
       GreedySimulatorState const&                              simulator_state,
       instances::GeneralPerformanceOptimizationInstance const* instance);
@@ -174,6 +176,7 @@ private:
       instances::GeneralPerformanceOptimizationInstance const* instance,
       SolverStrategyMBAStar const&                             solver_strategy);
 
+  // Path Extensions
   [[nodiscard]] static std::vector<cda_rail::index_vector> get_entry_paths(
       size_t                                                   tr,
       instances::GeneralPerformanceOptimizationInstance const* instance);
@@ -181,16 +184,34 @@ private:
     cda_rail::index_vector path{};
     size_t                 stop_possible_from_idx_onward{0};
 
+#if TEST_FRIENDS
     bool operator==(const PathExtensionData& other) const {
       return path == other.path && stop_possible_from_idx_onward ==
                                        other.stop_possible_from_idx_onward;
     }
+#endif
   };
   [[nodiscard]] static std::vector<PathExtensionData> get_path_extensions(
       size_t tr, GreedySimulatorState const& simulator_state,
       NextStateStrategy next_state_strategy,
       instances::GeneralPerformanceOptimizationInstance const* instance,
       std::vector<cda_rail::index_set> const&                  ttd_sections);
+
+  // Train Order
+  struct IndexBound {
+    size_t lb{};
+    size_t ub{};
+
+#if TEST_FRIENDS
+    bool operator==(const IndexBound& other) const {
+      return lb == other.lb && ub == other.ub;
+    }
+#endif
+  };
+  [[nodiscard]] static IndexBound infer_order_insertion_bounds(
+      size_t tr, cda_rail::index_vector const& prev_order,
+      cda_rail::index_vector const& next_order,
+      cda_rail::index_set const& tr_sharing_path, bool insert_at_end);
 
   [[nodiscard]] static std::unordered_set<GreedySimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);

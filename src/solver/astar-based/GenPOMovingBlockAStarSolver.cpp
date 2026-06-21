@@ -486,6 +486,44 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::get_path_extensions(
   return extended_path_extensions;
 }
 
+cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::IndexBound
+cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+    infer_order_insertion_bounds(size_t const                  tr,
+                                 cda_rail::index_vector const& prev_order,
+                                 cda_rail::index_vector const& next_order,
+                                 cda_rail::index_set const&    tr_sharing_path,
+                                 bool const                    insertAtEnd) {
+  if (insertAtEnd) {
+    return {.lb = next_order.size(), .ub = next_order.size()};
+  }
+
+  // Get position of tr in prev_order
+  size_t const tr_idx_in_prev_order =
+      std::ranges::find(prev_order, tr) - prev_order.begin();
+  assert(tr_idx_in_prev_order < prev_order.size());
+
+  IndexBound retval{.lb = 0, .ub = next_order.size()};
+  for (auto const& tr_other : tr_sharing_path) {
+    size_t const tr_other_idx_in_prev_order =
+        std::ranges::find(prev_order, tr_other) - prev_order.begin();
+    size_t const tr_other_idx_in_next_order =
+        std::ranges::find(next_order, tr_other) - next_order.begin();
+
+    assert(tr_other_idx_in_prev_order < prev_order.size());
+    assert(tr_other_idx_in_next_order < next_order.size());
+    assert(tr_idx_in_prev_order != tr_other_idx_in_prev_order);
+    if (tr_idx_in_prev_order < tr_other_idx_in_prev_order) {
+      // tr travels before tr_other
+      retval.ub = std::min(retval.ub, tr_other_idx_in_next_order);
+    } else {
+      // tr travels after tr_other
+      retval.lb = std::max(retval.lb, tr_other_idx_in_next_order + 1);
+    }
+  }
+
+  return retval;
+}
+
 std::unordered_set<cda_rail::solver::astar_based::GreedySimulatorState>
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     next_states_single_edge(

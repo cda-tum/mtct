@@ -350,6 +350,21 @@ TEST(GenPOMovingBlockAStarSolver, PathExtensions) {
   EXPECT_TRUE(std::ranges::contains(path_extensions2c, expected_2c_3));
 }
 
+TEST(GenPOMovingBlockAStarSolver, InferInsertionBounds) {
+  EXPECT_EQ(
+      cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+          infer_order_insertion_bounds(2, {3, 9, 4, 2, 5, 7, 10},
+                                       {3, 9, 17, 5, 10, 4}, {3, 9, 10}, true),
+      cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::IndexBound(
+          {.lb = 6, .ub = 6}));
+  EXPECT_EQ(
+      cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+          infer_order_insertion_bounds(2, {3, 9, 4, 2, 5, 7, 10},
+                                       {3, 9, 17, 5, 10, 4}, {3, 9, 10}, false),
+      cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::IndexBound(
+          {.lb = 2, .ub = 4}));
+}
+
 TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
   Network network;
   network.add_vertex("v0a", VertexType::TTD);
