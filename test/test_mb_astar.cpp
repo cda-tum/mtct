@@ -15,6 +15,523 @@ using namespace cda_rail;
 // NOLINTBEGIN
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
 
+// ----------------------------------
+// New Tests for Time-Aware Version
+// ----------------------------------
+
+TEST(GenPOMovingBlockAStarSolver, NextTrains) {
+  instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", VertexType::TTD);
+  auto const e1 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 50);
+  auto const e2 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 50, 50);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+
+  auto const tr4 = instance.add_train("Train4", 100, 50, 4, 2, true, 100, 15,
+                                      {"v0"}, 300, 40, {"v2"}, 4);
+  auto const tr2 = instance.add_train("Train2", 100, 50, 4, 2, true, 60, 15,
+                                      {"v0"}, 300, 40, {"v2"}, 3);
+  auto const tr1 = instance.add_train("Train1", 100, 50, 4, 2, true, 60, 15,
+                                      {"v0"}, 300, 40, {"v2"}, 2);
+  auto const tr3 = instance.add_train("Train3", 100, 50, 4, 2, true, 90, 15,
+                                      {"v0"}, 300, 40, {"v2"}, 3);
+
+  std::vector<std::vector<size_t>> train_edges{{}, {}, {}, {}};
+  std::vector<double>              exit_times{-1, -1, -1, -1};
+
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr1, tr2, tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr2}));
+
+  train_edges.at(tr1).push_back(e1);
+  train_edges.at(tr2).push_back(e1);
+  exit_times.at(tr1) = 100;
+  exit_times.at(tr2) = 100;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr1, tr2, tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr3}));
+
+  exit_times.at(tr2) = 90;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr1, tr2, tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr2}));
+
+  exit_times.at(tr1) = 80;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr1, tr2, tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr1}));
+
+  train_edges.at(tr1).push_back(e2);
+  train_edges.at(tr2).push_back(e2);
+  train_edges.at(tr3).push_back(e1);
+  exit_times.at(tr1) = -1;
+  exit_times.at(tr2) = -1;
+  exit_times.at(tr3) = 100;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr4}));
+
+  train_edges.at(tr4).push_back(e1);
+  exit_times.at(tr4) = 120;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr3, tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr3}));
+
+  exit_times.at(tr3) = -1;
+  train_edges.at(tr3).push_back(e2);
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
+            cda_rail::index_set({tr4}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
+            cda_rail::index_set({tr4}));
+
+  train_edges.at(tr4).push_back(e2);
+  exit_times.at(tr4) = -1;
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = false}),
+            cda_rail::index_set({}));
+  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+                get_relevant_trains_for_state_transition(
+                    {.train_edges = train_edges}, {.exit_times = exit_times},
+                    &instance, {.time_aware_state_transitions = true}),
+            cda_rail::index_set({}));
+}
+
+TEST(GenPOMovingBlockAStarSolver, PathExtensions) {
+  // clang-format off
+  //                                            - v7c --------------- v10c (exit)
+  //                                           /
+  //                - v3b --- v4b --- v5b - v6b - v7b --- v8b - v9b - v10b
+  //               /                                           /
+  // v0 --- v1 - v2 - v3a ----------- v5a --------------- v8a -
+  // clang-format on
+
+  // Network
+  Network    network;
+  const auto v0   = network.add_vertex("v0", VertexType::TTD);
+  const auto v1   = network.add_vertex("v1", VertexType::TTD);
+  const auto v2   = network.add_vertex("v2", VertexType::NoBorder);
+  const auto v3a  = network.add_vertex("v3a", VertexType::TTD);
+  const auto v3b  = network.add_vertex("v3b", VertexType::TTD);
+  const auto v4b  = network.add_vertex("v4b", VertexType::TTD);
+  const auto v5a  = network.add_vertex("v5a", VertexType::TTD);
+  const auto v5b  = network.add_vertex("v5b", VertexType::TTD);
+  const auto v6b  = network.add_vertex("v6b", VertexType::NoBorder);
+  const auto v7b  = network.add_vertex("v7b", VertexType::TTD);
+  const auto v7c  = network.add_vertex("v7c", VertexType::TTD);
+  const auto v8a  = network.add_vertex("v8a", VertexType::TTD);
+  const auto v8b  = network.add_vertex("v8b", VertexType::TTD);
+  const auto v9b  = network.add_vertex("v9b", VertexType::NoBorder);
+  const auto v10b = network.add_vertex("v10b", VertexType::TTD);
+  const auto v10c = network.add_vertex("v10c", VertexType::TTD);
+
+  const auto v0_v1    = network.add_edge(v0, v1, 100, 30, true);
+  const auto v1_v2    = network.add_edge(v1, v2, 10, 30, false);
+  const auto v2_v3a   = network.add_edge(v2, v3a, 10, 30, false);
+  const auto v2_v3b   = network.add_edge(v2, v3b, 10, 30, false);
+  const auto v3a_v5a  = network.add_edge(v3a, v5a, 200, 30, true);
+  const auto v3b_v4b  = network.add_edge(v3b, v4b, 100, 30, true);
+  const auto v4b_v5b  = network.add_edge(v4b, v5b, 100, 30, true);
+  const auto v5a_v8a  = network.add_edge(v5a, v8a, 120, 30, true);
+  const auto v5b_v6b  = network.add_edge(v5b, v6b, 10, 30, false);
+  const auto v6b_v7b  = network.add_edge(v6b, v7b, 10, 30, false);
+  const auto v6b_v7c  = network.add_edge(v6b, v7c, 10, 30, false);
+  const auto v7b_v8b  = network.add_edge(v7b, v8b, 100, 30, true);
+  const auto v7c_v10c = network.add_edge(v7c, v10c, 120, 30, true);
+  const auto v8a_v9b  = network.add_edge(v8a, v9b, 10, 30, false);
+  const auto v8b_v9b  = network.add_edge(v8b, v9b, 10, 30, false);
+  const auto v9b_v10b = network.add_edge(v9b, v10b, 10, 30, false);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3a);
+  network.add_successor(v1_v2, v2_v3b);
+  network.add_successor(v2_v3a, v3a_v5a);
+  network.add_successor(v2_v3b, v3b_v4b);
+  network.add_successor(v3a_v5a, v5a_v8a);
+  network.add_successor(v3b_v4b, v4b_v5b);
+  network.add_successor(v4b_v5b, v5b_v6b);
+  network.add_successor(v5a_v8a, v8a_v9b);
+  network.add_successor(v5b_v6b, v6b_v7b);
+  network.add_successor(v5b_v6b, v6b_v7c);
+  network.add_successor(v6b_v7b, v7b_v8b);
+  network.add_successor(v6b_v7c, v7c_v10c);
+  network.add_successor(v7b_v8b, v8b_v9b);
+  network.add_successor(v8a_v9b, v9b_v10b);
+  network.add_successor(v8b_v9b, v9b_v10b);
+
+  cda_rail::index_set const              ttd1{v1_v2, v2_v3a, v2_v3b};
+  cda_rail::index_set const              ttd2{v5b_v6b, v6b_v7b, v6b_v7c};
+  cda_rail::index_set const              ttd3{v8a_v9b, v8b_v9b, v9b_v10b};
+  std::vector<cda_rail::index_set> const ttd_sections{ttd1, ttd2, ttd3};
+
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 20, 3, 3, true, 0, 20, v0,
+                                       100, 20, v10c, network);
+  const auto tr2 = timetable.add_train("Train2", 50, 30, 4, 2, true, 100, 30,
+                                       v0, 200, 20, v10c, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  std::vector<cda_rail::index_vector> vertex_orders(
+      network.number_of_vertices());
+  vertex_orders.at(v0).emplace_back(tr1);
+  solver::astar_based::GreedySimulatorState state{
+      .train_edges    = {{v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5b, v5b_v6b}, {}},
+      .ttd_orders     = {{tr1}, {}, {}},
+      .vertex_orders  = vertex_orders,
+      .stop_positions = {{}, {}}};
+
+  auto print_path_extensions =
+      [&network](
+          std::vector<cda_rail::solver::astar_based::
+                          GenPOMovingBlockAStarSolver::PathExtensionData> const&
+                             path_extension,
+          std::string const& label) {
+        std::cout << label << '\n';
+        std::cout << "Path extension size: " << path_extension.size() << '\n';
+        for (size_t i = 0; i < path_extension.size(); ++i) {
+          std::cout << "Path extension " << i << '\n';
+          std::cout << "First stop edge: "
+                    << path_extension.at(i).stop_possible_from_idx_onward
+                    << '\n';
+          std::cout << "Path: ";
+          for (size_t j = 0; j < path_extension.at(i).path.size(); ++j) {
+            auto const& edge_obj =
+                network.get_edge(path_extension.at(i).path.at(j));
+            std::cout << network.get_vertex(edge_obj.source).name << "->"
+                      << network.get_vertex(edge_obj.target).name << " / ";
+          }
+          std::cout << '\n';
+        }
+      };
+
+  auto const path_extensions1a = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::get_path_extensions(
+          tr1, state, solver::astar_based::NextStateStrategy::SingleEdge,
+          &instance, ttd_sections);
+  print_path_extensions(path_extensions1a, "1A");
+  EXPECT_EQ(path_extensions1a.size(), 2);
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_1a_1{.path = {v6b_v7b}, .stop_possible_from_idx_onward = 0};
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_1a_2{.path = {v6b_v7c}, .stop_possible_from_idx_onward = 0};
+  EXPECT_TRUE(std::ranges::contains(path_extensions1a, expected_1a_1));
+  EXPECT_TRUE(std::ranges::contains(path_extensions1a, expected_1a_2));
+
+  auto const path_extensions1b =
+      cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+          get_path_extensions(tr1, state,
+                              solver::astar_based::NextStateStrategy::NextTTD,
+                              &instance, ttd_sections);
+  print_path_extensions(path_extensions1b, "1B");
+  EXPECT_EQ(path_extensions1b.size(), 2);
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_1b_1{.path                          = {v6b_v7b, v7b_v8b},
+                    .stop_possible_from_idx_onward = 0};
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_1b_2{.path                          = {v6b_v7c, v7c_v10c},
+                    .stop_possible_from_idx_onward = 0};
+  EXPECT_TRUE(std::ranges::contains(path_extensions1b, expected_1b_1));
+  EXPECT_TRUE(std::ranges::contains(path_extensions1b, expected_1b_2));
+
+  auto const path_extensions1c = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::get_path_extensions(
+          tr1, state, solver::astar_based::NextStateStrategy::NextRelevantTTD,
+          &instance, ttd_sections);
+  print_path_extensions(path_extensions1c, "1C");
+  EXPECT_TRUE(std::ranges::contains(path_extensions1c, expected_1b_1));
+  EXPECT_TRUE(std::ranges::contains(path_extensions1c, expected_1b_2));
+
+  // tr2 braking distance: 30*30 / 4 = 225
+  // hence entry path up to v4b_v5b or v3a_v5a
+
+  auto const path_extensions2a = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::get_path_extensions(
+          tr2, state, solver::astar_based::NextStateStrategy::SingleEdge,
+          &instance, ttd_sections);
+  print_path_extensions(path_extensions2a, "2A");
+  EXPECT_EQ(path_extensions2a.size(), 2);
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_2a_1{.path = {v0_v1, v1_v2, v2_v3a, v3a_v5a},
+                    .stop_possible_from_idx_onward = 3};
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_2a_2{.path = {v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5b},
+                    .stop_possible_from_idx_onward = 4};
+  EXPECT_TRUE(std::ranges::contains(path_extensions2a, expected_2a_1));
+  EXPECT_TRUE(std::ranges::contains(path_extensions2a, expected_2a_2));
+
+  auto const path_extensions2b =
+      cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+          get_path_extensions(tr2, state,
+                              solver::astar_based::NextStateStrategy::NextTTD,
+                              &instance, ttd_sections);
+  print_path_extensions(path_extensions2b, "2B");
+  EXPECT_EQ(path_extensions2b.size(), 2);
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_2b_1{.path = {v0_v1, v1_v2, v2_v3a, v3a_v5a, v5a_v8a},
+                    .stop_possible_from_idx_onward = 3};
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_2b_2{.path = {v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5b},
+                    .stop_possible_from_idx_onward = 4};
+  EXPECT_TRUE(std::ranges::contains(path_extensions2b, expected_2b_1));
+  EXPECT_TRUE(std::ranges::contains(path_extensions2b, expected_2b_2));
+
+  auto const path_extensions2c = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::get_path_extensions(
+          tr2, state, solver::astar_based::NextStateStrategy::NextRelevantTTD,
+          &instance, ttd_sections);
+  print_path_extensions(path_extensions2c, "2C");
+  EXPECT_EQ(path_extensions2c.size(), 3);
+  // expectd_2b_1
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_2c_2{.path = {v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5b, v5b_v6b,
+                             v6b_v7b, v7b_v8b},
+                    .stop_possible_from_idx_onward = 4};
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_2c_3{.path = {v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5b, v5b_v6b,
+                             v6b_v7c, v7c_v10c},
+                    .stop_possible_from_idx_onward = 4};
+  EXPECT_TRUE(std::ranges::contains(path_extensions2c, expected_2b_1));
+  EXPECT_TRUE(std::ranges::contains(path_extensions2c, expected_2c_2));
+  EXPECT_TRUE(std::ranges::contains(path_extensions2c, expected_2c_3));
+}
+
+TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
+  Network network;
+  network.add_vertex("v0a", VertexType::TTD);
+  network.add_vertex("v0b", VertexType::TTD);
+  network.add_vertex("v0c", VertexType::TTD);
+  network.add_vertex("v1a", VertexType::TTD);
+  network.add_vertex("v1b", VertexType::TTD);
+  network.add_vertex("v1c", VertexType::TTD);
+  network.add_vertex("v2", VertexType::NoBorder);
+  network.add_vertex("v3", VertexType::TTD);
+  network.add_vertex("v4", VertexType::TTD);
+
+  network.add_edge({"v0a"}, {"v1a"}, 100, 20, true);
+  network.add_edge({"v0b"}, {"v1b"}, 100, 20, true);
+  network.add_edge({"v0c"}, {"v1c"}, 100, 20, true);
+
+  // Switch
+  network.add_edge({"v1a"}, {"v2"}, 10, 20, false);
+  network.add_edge({"v1b"}, {"v2"}, 10, 20, false);
+  network.add_edge({"v1c"}, {"v2"}, 10, 20, false);
+
+  network.add_edge({"v2"}, {"v3"}, 10, 20, false);
+  network.add_edge({"v3"}, {"v4"}, 100, 20, true);
+
+  network.add_successor({"v0a", "v1a"}, {"v1a", "v2"});
+  network.add_successor({"v0b", "v1b"}, {"v1b", "v2"});
+  network.add_successor({"v0c", "v1c"}, {"v1c", "v2"});
+  network.add_successor({"v1a", "v2"}, {"v2", "v3"});
+  network.add_successor({"v1b", "v2"}, {"v2", "v3"});
+  network.add_successor({"v1c", "v2"}, {"v2", "v3"});
+  network.add_successor({"v2", "v3"}, {"v3", "v4"});
+
+  // Trains
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 20, 2, 4, true, 0, 20,
+                                       {"v0a"}, 500, 20, {"v4"}, network);
+  const auto tr2 = timetable.add_train("Train2", 50, 20, 2, 4, true, 100, 20,
+                                       {"v0b"}, 300, 20, {"v4"}, network);
+  const auto tr3 = timetable.add_train("Train3", 50, 20, 2, 4, true, 200, 20,
+                                       {"v0c"}, 400, 20, {"v4"}, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  instance.set_train_weight(tr1, 1);
+  instance.set_train_weight(tr2, 2);
+  instance.set_train_weight(tr3, 3);
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto                                                 sol_obj_single =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::SingleEdge,
+                    .time_aware_state_transitions = false},
+                   {}, -1, true);
+  const auto sol_obj_ttd = solver.solve(
+      {.dt = 5},
+      {.next_state_strategy = solver::astar_based::NextStateStrategy::NextTTD,
+       .time_aware_state_transitions = false},
+      {}, -1, true);
+
+  EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  auto const v2_v3 =
+      sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
+                                                                        {"v3"});
+  auto const tr_order = sol_obj_single.get_train_order(v2_v3);
+  EXPECT_EQ(tr_order.size(), 3);
+  EXPECT_EQ(tr_order.at(0), tr2);
+  EXPECT_EQ(tr_order.at(1), tr3);
+  EXPECT_EQ(tr_order.at(2), tr1);
+
+  auto const tr_times_tr1 = sol_obj_single.get_train_times("Train1");
+  auto const tr_times_tr2 = sol_obj_single.get_train_times("Train2");
+  auto const tr_times_tr3 = sol_obj_single.get_train_times("Train3");
+
+  EXPECT_EQ(tr_times_tr1.back(), 500);
+  EXPECT_EQ(tr_times_tr2.back(), 300);
+  EXPECT_EQ(tr_times_tr3.back(), 400);
+
+  EXPECT_GE(sol_obj_single.get_train_pos("Train1", tr_times_tr1.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_single.get_train_pos("Train2", tr_times_tr2.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_single.get_train_pos("Train3", tr_times_tr3.back()),
+            100 + 10 + 10 + 100 + 50);
+}
+
+TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
+  Network network;
+  network.add_vertex("v0a", VertexType::TTD);
+  network.add_vertex("v0b", VertexType::TTD);
+  network.add_vertex("v0c", VertexType::TTD);
+  network.add_vertex("v1a", VertexType::TTD);
+  network.add_vertex("v1b", VertexType::TTD);
+  network.add_vertex("v1c", VertexType::TTD);
+  network.add_vertex("v2", VertexType::NoBorder);
+  network.add_vertex("v3", VertexType::TTD);
+  network.add_vertex("v4", VertexType::TTD);
+
+  network.add_edge({"v0a"}, {"v1a"}, 100, 20, true);
+  network.add_edge({"v0b"}, {"v1b"}, 100, 20, true);
+  network.add_edge({"v0c"}, {"v1c"}, 100, 20, true);
+
+  // Switch
+  network.add_edge({"v1a"}, {"v2"}, 10, 20, false);
+  network.add_edge({"v1b"}, {"v2"}, 10, 20, false);
+  network.add_edge({"v1c"}, {"v2"}, 10, 20, false);
+
+  network.add_edge({"v2"}, {"v3"}, 10, 20, false);
+  network.add_edge({"v3"}, {"v4"}, 100, 20, true);
+
+  network.add_successor({"v0a", "v1a"}, {"v1a", "v2"});
+  network.add_successor({"v0b", "v1b"}, {"v1b", "v2"});
+  network.add_successor({"v0c", "v1c"}, {"v1c", "v2"});
+  network.add_successor({"v1a", "v2"}, {"v2", "v3"});
+  network.add_successor({"v1b", "v2"}, {"v2", "v3"});
+  network.add_successor({"v1c", "v2"}, {"v2", "v3"});
+  network.add_successor({"v2", "v3"}, {"v3", "v4"});
+
+  // Trains
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 20, 2, 4, true, 0, 20,
+                                       {"v0a"}, 500, 20, {"v4"}, network);
+  const auto tr2 = timetable.add_train("Train2", 50, 20, 2, 4, true, 100, 20,
+                                       {"v0b"}, 300, 20, {"v4"}, network);
+  const auto tr3 = timetable.add_train("Train3", 50, 20, 2, 4, true, 200, 20,
+                                       {"v0c"}, 400, 20, {"v4"}, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  instance.set_train_weight(tr1, 1);
+  instance.set_train_weight(tr2, 2);
+  instance.set_train_weight(tr3, 3);
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto                                                 sol_obj_single =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::SingleEdge,
+                    .time_aware_state_transitions = true},
+                   {}, -1, true);
+  const auto sol_obj_ttd = solver.solve(
+      {.dt = 5},
+      {.next_state_strategy = solver::astar_based::NextStateStrategy::NextTTD,
+       .time_aware_state_transitions = true},
+      {}, -1, true);
+
+  EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  auto const v2_v3 =
+      sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
+                                                                        {"v3"});
+  auto const tr_order = sol_obj_single.get_train_order(v2_v3);
+  EXPECT_EQ(tr_order.size(), 3);
+  EXPECT_EQ(tr_order.at(0), tr2);
+  EXPECT_EQ(tr_order.at(1), tr3);
+  EXPECT_EQ(tr_order.at(2), tr1);
+
+  auto const tr_times_tr1 = sol_obj_single.get_train_times("Train1");
+  auto const tr_times_tr2 = sol_obj_single.get_train_times("Train2");
+  auto const tr_times_tr3 = sol_obj_single.get_train_times("Train3");
+
+  EXPECT_EQ(tr_times_tr1.back(), 500);
+  EXPECT_EQ(tr_times_tr2.back(), 300);
+  EXPECT_EQ(tr_times_tr3.back(), 400);
+
+  EXPECT_GE(sol_obj_single.get_train_pos("Train1", tr_times_tr1.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_single.get_train_pos("Train2", tr_times_tr2.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_single.get_train_pos("Train3", tr_times_tr3.back()),
+            100 + 10 + 10 + 100 + 50);
+}
+
+// ----------------
+// Original Tests
+// ----------------
+
 TEST(GenPOMovingBlockAStarSolver, NextStates) {
   Network    network;
   const auto v0  = network.add_vertex("v0", VertexType::TTD);
@@ -643,226 +1160,6 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExport) {
 
   // Remove tmp3folder and its contents
   std::filesystem::remove_all("tmp3folder");
-}
-
-TEST(GenPOMovingBlockAStarSolver, NextTrains) {
-  instances::GeneralPerformanceOptimizationInstance instance;
-  instance.get_editable_network().add_vertex("v0", VertexType::TTD);
-  instance.get_editable_network().add_vertex("v1", VertexType::TTD);
-  instance.get_editable_network().add_vertex("v2", VertexType::TTD);
-  auto const e1 =
-      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 50);
-  auto const e2 =
-      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 50, 50);
-
-  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
-
-  auto const tr4 = instance.add_train("Train4", 100, 50, 4, 2, true, 100, 15,
-                                      {"v0"}, 300, 40, {"v2"}, 4);
-  auto const tr2 = instance.add_train("Train2", 100, 50, 4, 2, true, 60, 15,
-                                      {"v0"}, 300, 40, {"v2"}, 3);
-  auto const tr1 = instance.add_train("Train1", 100, 50, 4, 2, true, 60, 15,
-                                      {"v0"}, 300, 40, {"v2"}, 2);
-  auto const tr3 = instance.add_train("Train3", 100, 50, 4, 2, true, 90, 15,
-                                      {"v0"}, 300, 40, {"v2"}, 3);
-
-  std::vector<std::vector<size_t>> train_edges{{}, {}, {}, {}};
-  std::vector<double>              exit_times{-1, -1, -1, -1};
-
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = false}),
-            cda_rail::index_set({tr1, tr2, tr3, tr4}));
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = true}),
-            cda_rail::index_set({tr2}));
-
-  train_edges.at(tr1).push_back(e1);
-  train_edges.at(tr2).push_back(e1);
-  exit_times.at(tr1) = 100;
-  exit_times.at(tr2) = 100;
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = false}),
-            cda_rail::index_set({tr1, tr2, tr3, tr4}));
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = true}),
-            cda_rail::index_set({tr3}));
-
-  exit_times.at(tr2) = 90;
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = false}),
-            cda_rail::index_set({tr1, tr2, tr3, tr4}));
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = true}),
-            cda_rail::index_set({tr2}));
-
-  exit_times.at(tr1) = 80;
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = false}),
-            cda_rail::index_set({tr1, tr2, tr3, tr4}));
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = true}),
-            cda_rail::index_set({tr1}));
-
-  train_edges.at(tr1).push_back(e2);
-  train_edges.at(tr2).push_back(e2);
-  train_edges.at(tr3).push_back(e1);
-  exit_times.at(tr1) = -1;
-  exit_times.at(tr2) = -1;
-  exit_times.at(tr3) = 100;
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = false}),
-            cda_rail::index_set({tr3, tr4}));
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = true}),
-            cda_rail::index_set({tr4}));
-
-  train_edges.at(tr4).push_back(e1);
-  exit_times.at(tr4) = 120;
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = false}),
-            cda_rail::index_set({tr3, tr4}));
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = true}),
-            cda_rail::index_set({tr3}));
-
-  exit_times.at(tr3) = -1;
-  train_edges.at(tr3).push_back(e2);
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = false}),
-            cda_rail::index_set({tr4}));
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = true}),
-            cda_rail::index_set({tr4}));
-
-  train_edges.at(tr4).push_back(e2);
-  exit_times.at(tr4) = -1;
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = false}),
-            cda_rail::index_set({}));
-  EXPECT_EQ(cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
-                get_relevant_trains_for_state_transition(
-                    {.train_edges = train_edges}, {.exit_times = exit_times},
-                    &instance, {.time_aware_state_transitions = true}),
-            cda_rail::index_set({}));
-}
-
-TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
-  Network network;
-  network.add_vertex("v0a", VertexType::TTD);
-  network.add_vertex("v0b", VertexType::TTD);
-  network.add_vertex("v0c", VertexType::TTD);
-  network.add_vertex("v1a", VertexType::TTD);
-  network.add_vertex("v1b", VertexType::TTD);
-  network.add_vertex("v1c", VertexType::TTD);
-  network.add_vertex("v2", VertexType::NoBorder);
-  network.add_vertex("v3", VertexType::TTD);
-  network.add_vertex("v4", VertexType::TTD);
-
-  network.add_edge({"v0a"}, {"v1a"}, 100, 20, true);
-  network.add_edge({"v0b"}, {"v1b"}, 100, 20, true);
-  network.add_edge({"v0c"}, {"v1c"}, 100, 20, true);
-
-  // Switch
-  network.add_edge({"v1a"}, {"v2"}, 10, 20, false);
-  network.add_edge({"v1b"}, {"v2"}, 10, 20, false);
-  network.add_edge({"v1c"}, {"v2"}, 10, 20, false);
-
-  network.add_edge({"v2"}, {"v3"}, 10, 20, false);
-  network.add_edge({"v3"}, {"v4"}, 100, 20, true);
-
-  network.add_successor({"v0a", "v1a"}, {"v1a", "v2"});
-  network.add_successor({"v0b", "v1b"}, {"v1b", "v2"});
-  network.add_successor({"v0c", "v1c"}, {"v1c", "v2"});
-  network.add_successor({"v1a", "v2"}, {"v2", "v3"});
-  network.add_successor({"v1b", "v2"}, {"v2", "v3"});
-  network.add_successor({"v1c", "v2"}, {"v2", "v3"});
-  network.add_successor({"v2", "v3"}, {"v3", "v4"});
-
-  // Trains
-  Timetable  timetable;
-  const auto tr1 = timetable.add_train("Train1", 50, 20, 2, 4, true, 0, 20,
-                                       {"v0a"}, 500, 20, {"v4"}, network);
-  const auto tr2 = timetable.add_train("Train2", 50, 20, 2, 4, true, 100, 20,
-                                       {"v0b"}, 300, 20, {"v4"}, network);
-  const auto tr3 = timetable.add_train("Train3", 50, 20, 2, 4, true, 200, 20,
-                                       {"v0c"}, 400, 20, {"v4"}, network);
-
-  RouteMap                                                    routes;
-  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      network, timetable, routes);
-
-  instance.set_train_weight(tr1, 1);
-  instance.set_train_weight(tr2, 2);
-  instance.set_train_weight(tr3, 3);
-
-  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
-  const auto                                                 sol_obj_single =
-      solver.solve({.dt = 5},
-                   {.next_state_strategy =
-                        solver::astar_based::NextStateStrategy::SingleEdge,
-                    .time_aware_state_transitions = false},
-                   {}, -1, true);
-  const auto sol_obj_ttd = solver.solve(
-      {.dt = 5},
-      {.next_state_strategy = solver::astar_based::NextStateStrategy::NextTTD,
-       .time_aware_state_transitions = false},
-      {}, -1, true);
-
-  EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
-  EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
-  auto const v2_v3 =
-      sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
-                                                                        {"v3"});
-  auto const tr_order = sol_obj_single.get_train_order(v2_v3);
-  EXPECT_EQ(tr_order.size(), 3);
-  EXPECT_EQ(tr_order.at(0), tr2);
-  EXPECT_EQ(tr_order.at(1), tr3);
-  EXPECT_EQ(tr_order.at(2), tr1);
-
-  auto const tr_times_tr1 = sol_obj_single.get_train_times("Train1");
-  auto const tr_times_tr2 = sol_obj_single.get_train_times("Train2");
-  auto const tr_times_tr3 = sol_obj_single.get_train_times("Train3");
-
-  EXPECT_EQ(tr_times_tr1.back(), 500);
-  EXPECT_EQ(tr_times_tr2.back(), 300);
-  EXPECT_EQ(tr_times_tr3.back(), 400);
-
-  EXPECT_GE(sol_obj_single.get_train_pos("Train1", tr_times_tr1.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_single.get_train_pos("Train2", tr_times_tr2.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_single.get_train_pos("Train3", tr_times_tr3.back()),
-            100 + 10 + 10 + 100 + 50);
 }
 
 // NOLINTEND
