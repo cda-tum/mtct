@@ -213,6 +213,14 @@ bool cda_rail::simulator::GeneralSimulator::is_route_end_valid_stop_pos(
   return len >= tr_length;
 }
 
+void cda_rail::simulator::GeneralSimulator::set_simulator_state(
+    SimulatorState state) {
+  set_train_edges(std::move(state.train_edges));
+  set_stop_positions(std::move(state.stop_positions));
+  set_ttd_orders(std::move(state.ttd_orders));
+  set_vertex_orders(std::move(state.vertex_orders));
+}
+
 void cda_rail::simulator::GeneralSimulator::set_train_edges(
     std::vector<cda_rail::index_vector> tr_edges) {
   check_train_edges(tr_edges);

@@ -222,6 +222,8 @@ public:
   // EDITING FUNCTIONS
   // -------------------
 
+  void set_simulator_state(SimulatorState state);
+
   void set_train_edges(std::vector<cda_rail::index_vector> tr_edges);
   void set_train_edges_of_tr(size_t train_id, cda_rail::index_vector edges);
   void append_train_edge_to_tr(size_t train_id, size_t edge);
