@@ -524,6 +524,29 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
   return retval;
 }
 
+std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
+    GenPOMovingBlockAStarSolver::extend_state_by_path_extension(
+        size_t tr, simulator::SimulatorState state,
+        PathExtensionData const& path_extension_data,
+        instances::GeneralPerformanceOptimizationInstance const* instance) {
+  std::vector<cda_rail::simulator::SimulatorState> retval{};
+  for (size_t i = 0; i < path_extension_data.path.size(); ++i) {
+    state.train_edges.at(tr).emplace_back(path_extension_data.path.at(i));
+    if (i >= path_extension_data.stop_possible_from_idx_onward) {
+      if (instance->is_route_end_valid_stop_pos(
+              tr, state.train_edges.at(tr),
+              state.stop_positions.at(tr).size())) {
+        retval.emplace_back(state);
+        retval.back().stop_positions.at(tr).emplace_back(
+            instance->get_const_network().length_of_path(
+                state.train_edges.at(tr)));
+      }
+    }
+  }
+  retval.emplace_back(state);
+  return retval;
+}
+
 std::unordered_set<cda_rail::simulator::SimulatorState> cda_rail::solver::
     astar_based::GenPOMovingBlockAStarSolver::next_states_single_edge(
         const cda_rail::simulator::GreedySimulator& simulator) {

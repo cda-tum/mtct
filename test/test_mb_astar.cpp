@@ -454,6 +454,89 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
             100 + 10 + 10 + 100 + 50);
 }
 
+TEST(GenPOMovingBlockAStarSolver, ExtendStateWithPathExtension) {
+  Network    network;
+  auto const v1  = network.add_vertex("v1", VertexType::TTD);
+  auto const v2  = network.add_vertex("v2", VertexType::TTD);
+  auto const v3  = network.add_vertex("v3", VertexType::TTD);
+  auto const v4  = network.add_vertex("v4", VertexType::TTD);
+  auto const v5  = network.add_vertex("v5", VertexType::TTD);
+  auto const v6  = network.add_vertex("v6", VertexType::TTD);
+  auto const v7  = network.add_vertex("v7", VertexType::TTD);
+  auto const v8  = network.add_vertex("v8", VertexType::TTD);
+  auto const v9  = network.add_vertex("v9", VertexType::TTD);
+  auto const v10 = network.add_vertex("v10", VertexType::TTD);
+  auto const v11 = network.add_vertex("v11", VertexType::TTD);
+
+  auto const v1_v2   = network.add_edge(v1, v2, 100, 20, true);   // 100
+  auto const v2_v3   = network.add_edge(v2, v3, 100, 20, true);   // 200
+  auto const v3_v4   = network.add_edge(v3, v4, 100, 20, true);   // 300
+  auto const v4_v5   = network.add_edge(v4, v5, 100, 20, true);   // 400
+  auto const v5_v6   = network.add_edge(v5, v6, 30, 20, true);    // 430
+  auto const v6_v7   = network.add_edge(v6, v7, 30, 20, true);    // 460
+  auto const v7_v8   = network.add_edge(v7, v8, 30, 20, true);    // 490
+  auto const v8_v9   = network.add_edge(v8, v9, 100, 20, true);   // 590
+  auto const v9_v10  = network.add_edge(v9, v10, 100, 20, true);  // 690
+  auto const v10_v11 = network.add_edge(v10, v11, 100, 20, true); // 790
+
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+  network.add_successor(v3_v4, v4_v5);
+  network.add_successor(v4_v5, v5_v6);
+  network.add_successor(v5_v6, v6_v7);
+  network.add_successor(v6_v7, v7_v8);
+
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 20, 2, 4, true, 0, 20, v1,
+                                       500, 20, v8, network);
+  timetable.add_empty_station("Station1");
+  timetable.add_empty_station("Station2");
+  timetable.add_empty_station("Station3");
+  timetable.add_track_to_station("Station1", v2_v3, network);
+  timetable.add_track_to_station("Station2", v3_v4, network);
+  timetable.add_track_to_station("Station2", v5_v6, network);
+  timetable.add_track_to_station("Station2", v6_v7, network);
+  timetable.add_track_to_station("Station2", v7_v8, network);
+  timetable.add_track_to_station("Station3", v9_v10, network);
+
+  timetable.insert_stop(tr1, "Station1", 100, 60);
+  timetable.insert_stop(tr1, "Station2", 200, 60);
+  timetable.insert_stop(tr1, "Station3", 300, 60);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  simulator::SimulatorState state{.train_edges    = {{v1_v2, v2_v3}},
+                                  .ttd_orders     = {},
+                                  .vertex_orders  = {},
+                                  .stop_positions = {{200}}};
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+             data{.path = {v3_v4, v4_v5, v5_v6, v6_v7, v7_v8},
+                  .stop_possible_from_idx_onward = 1};
+  auto const extended_stats =
+      cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+          extend_state_by_path_extension(tr1, state, data, &instance);
+  EXPECT_EQ(extended_stats.size(), 3);
+  ASSERT_GE(extended_stats.size(), 1);
+  EXPECT_EQ(extended_stats.at(0).train_edges.at(tr1),
+            cda_rail::index_vector({v1_v2, v2_v3, v3_v4, v4_v5, v5_v6, v6_v7}));
+  EXPECT_EQ(extended_stats.at(0).stop_positions.at(tr1),
+            std::vector<double>({200, 460}));
+  ASSERT_GE(extended_stats.size(), 2);
+  EXPECT_EQ(extended_stats.at(1).train_edges.at(tr1),
+            cda_rail::index_vector(
+                {v1_v2, v2_v3, v3_v4, v4_v5, v5_v6, v6_v7, v7_v8}));
+  EXPECT_EQ(extended_stats.at(1).stop_positions.at(tr1),
+            std::vector<double>({200, 490}));
+  ASSERT_GE(extended_stats.size(), 3);
+  EXPECT_EQ(extended_stats.at(2).train_edges.at(tr1),
+            cda_rail::index_vector(
+                {v1_v2, v2_v3, v3_v4, v4_v5, v5_v6, v6_v7, v7_v8}));
+  EXPECT_EQ(extended_stats.at(2).stop_positions.at(tr1),
+            std::vector<double>({200}));
+}
+
 TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
   Network network;
   network.add_vertex("v0a", VertexType::TTD);

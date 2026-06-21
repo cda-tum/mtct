@@ -33,6 +33,7 @@ class GenPOMovingBlockAStarSolver;
 class GenPOMovingBlockAStarSolver_NextTrains_Test;
 class GenPOMovingBlockAStarSolver_PathExtensions_Test;
 class GenPOMovingBlockAStarSolver_InferInsertionBounds_Test;
+class GenPOMovingBlockAStarSolver_ExtendStateWithPathExtension_Test;
 class GenPOMovingBlockAStarSolver_NextStates_Test;
 class GenPOMovingBlockAStarSolver_NextStatesTTD_Test;
 #endif
@@ -77,6 +78,7 @@ private:
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextTrains);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, PathExtensions);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, InferInsertionBounds);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, ExtendStateWithPathExtension);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStatesTTD);
 #endif
@@ -198,10 +200,11 @@ private:
       cda_rail::index_set const& tr_sharing_path, bool insert_at_end);
 
   // State Extension
-  [[nodiscard]] std::vector<simulator::SimulatorState>
+  [[nodiscard]] static std::vector<simulator::SimulatorState>
   extend_state_by_path_extension(
       size_t tr, simulator::SimulatorState state,
-      std::vector<cda_rail::index_set> const& ttd_sections);
+      PathExtensionData const& path_extension_data,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
 
   [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);
