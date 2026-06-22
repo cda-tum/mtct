@@ -558,6 +558,17 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
         size_t tr, simulator::SimulatorState state,
         PathExtensionData const& path_extension_data,
         instances::GeneralPerformanceOptimizationInstance const* instance) {
+  if (state.stop_positions.at(tr).size() >=
+      instance->get_const_schedule(tr).get_stops().size()) {
+    // add entire path_extension_data.path to state.train_edges.at(tr) since no
+    // stop left
+    state.train_edges.at(tr).insert(state.train_edges.at(tr).end(),
+                                    path_extension_data.path.begin(),
+                                    path_extension_data.path.end());
+    return {state};
+  }
+
+  // at least one stop left
   std::vector<cda_rail::simulator::SimulatorState> retval{};
   for (size_t i = 0; i < path_extension_data.path.size(); ++i) {
     state.train_edges.at(tr).emplace_back(path_extension_data.path.at(i));
@@ -572,7 +583,14 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
       }
     }
   }
-  retval.emplace_back(state);
+
+  if (instance->get_const_network()
+          .get_edge(state.train_edges.at(tr).back())
+          .target != instance->get_const_schedule(tr).get_exit_vertex()) {
+    // only allowed to add edges without stopping if exit vertex is not reached,
+    // because some stops are still open
+    retval.emplace_back(state);
+  }
   return retval;
 }
 
