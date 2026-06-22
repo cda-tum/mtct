@@ -665,11 +665,22 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
     return {state};
   }
 
+  if (next_ttd_id.has_value() &&
+      std::ranges::contains(state.ttd_orders.at(next_ttd_id.value()), tr)) {
+    // Train already present on TTD, no addition needed
+    return extend_train_orders_of_state_recursive_helper(
+        tr, state, solver_strategy_input, ttd_sections, instance,
+        state.ttd_orders.at(next_ttd_id.value()),
+        last_new_ttd_route_edge_idx.value(), next_ttd_id);
+  }
+
   auto& next_order_editable = next_ttd_id.has_value()
                                   ? state.ttd_orders.at(next_ttd_id.value())
                                   : state.vertex_orders.at(tr_exit_vertex);
-  auto const  next_order    = next_order_editable;
-  auto const& subpath       = cda_rail::index_vector(
+  auto const next_order     = next_order_editable;
+  assert(!std::ranges::contains(next_order, tr));
+
+  auto const& subpath = cda_rail::index_vector(
       std::next(tr_edges.begin(),
                 static_cast<std::ptrdiff_t>(first_edge_index)),
       std::next(tr_edges.begin(), static_cast<std::ptrdiff_t>(
