@@ -198,6 +198,10 @@ private:
       size_t tr, cda_rail::index_vector const& prev_order,
       cda_rail::index_vector const& next_order,
       cda_rail::index_set const& tr_sharing_path, bool insert_at_end);
+  [[nodiscard]] static IndexBound infer_order_entry_order_bounds(
+      size_t tr, cda_rail::index_vector const& entry_order,
+      bool late_entry_possible,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
 
   // State Extension
   [[nodiscard]] static std::vector<simulator::SimulatorState>
@@ -205,6 +209,21 @@ private:
       size_t tr, simulator::SimulatorState state,
       PathExtensionData const& path_extension_data,
       instances::GeneralPerformanceOptimizationInstance const* instance);
+  [[nodiscard]] static std::vector<simulator::SimulatorState>
+  extend_train_orders_of_state(
+      size_t tr, simulator::SimulatorState state,
+      const ModelDetail&                      model_detail_input,
+      const SolverStrategyMBAStar&            solver_strategy_input,
+      std::vector<cda_rail::index_set> const& ttd_sections,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
+  [[nodiscard]] static std::vector<simulator::SimulatorState>
+  extend_train_orders_of_state_recursive_helper(
+      size_t tr, simulator::SimulatorState state,
+      const SolverStrategyMBAStar&            solver_strategy_input,
+      std::vector<cda_rail::index_set> const& ttd_sections,
+      instances::GeneralPerformanceOptimizationInstance const* instance,
+      cda_rail::index_vector const& prev_order, size_t first_edge_index,
+      std::optional<size_t> const& safe_ttd);
 
   [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);
@@ -230,6 +249,7 @@ private:
    */
   [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
   next_states(const simulator::GreedySimulator& simulator,
+              const ModelDetail&                model_detail_input,
               const SolverStrategyMBAStar&      solver_strategy_input) {
     if (solver_strategy_input.time_aware_state_transitions) {
       throw cda_rail::exceptions::ConsistencyException(

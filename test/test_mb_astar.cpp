@@ -705,7 +705,7 @@ TEST(GenPOMovingBlockAStarSolver, NextStates) {
   expected_state1_3.vertex_orders.at(v0).emplace_back(tr2);
   const auto next_states1 =
       cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::next_states(
-          simulator,
+          simulator, {},
           {.next_state_strategy =
                cda_rail::solver::astar_based::NextStateStrategy::SingleEdge,
            .time_aware_state_transitions = false});
@@ -920,7 +920,7 @@ TEST(GenPOMovingBlockAStarSolver, NextStatesTTD) {
   expected_state1_2.vertex_orders.at(v0).emplace_back(tr1);
   const auto next_states1 =
       cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::next_states(
-          simulator,
+          simulator, {},
           {.next_state_strategy =
                cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
            .time_aware_state_transitions = false});

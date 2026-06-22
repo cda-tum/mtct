@@ -147,7 +147,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     simulator.set_stop_positions(
         current_state_objective_pair.state.stop_positions);
 
-    const auto next_states_set = next_states(simulator, solver_strategy_input);
+    const auto next_states_set =
+        next_states(simulator, model_detail_input, solver_strategy_input);
     PLOGV << "Found " << next_states_set.size() << " next states.";
     size_t i = 0;
     for (const auto& s : next_states_set) {
@@ -524,6 +525,33 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
   return retval;
 }
 
+cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::IndexBound
+cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+    infer_order_entry_order_bounds(
+        size_t tr, cda_rail::index_vector const& entry_order,
+        bool late_entry_possible,
+        instances::GeneralPerformanceOptimizationInstance const* instance) {
+  IndexBound retval{.lb = 0, .ub = entry_order.size()};
+
+  if (late_entry_possible) {
+    return retval;
+  }
+
+  auto const& tr_entry = instance->get_const_schedule(tr).get_entry_time();
+  for (size_t tr_other_idx = 0; tr_other_idx < entry_order.size();
+       ++tr_other_idx) {
+    auto const& tr_other_entry =
+        instance->get_const_schedule(entry_order.at(tr_other_idx))
+            .get_entry_time();
+    if (tr_other_entry < tr_entry) {
+      retval.lb = std::max(retval.lb, tr_other_idx + 1);
+    } else if (tr_other_entry > tr_entry) {
+      retval.ub = std::min(retval.ub, tr_other_idx);
+    }
+  }
+  return retval;
+}
+
 std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
     GenPOMovingBlockAStarSolver::extend_state_by_path_extension(
         size_t tr, simulator::SimulatorState state,
@@ -544,6 +572,134 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
     }
   }
   retval.emplace_back(state);
+  return retval;
+}
+
+std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
+    GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+        size_t tr, simulator::SimulatorState state,
+        const ModelDetail&                      model_detail_input,
+        const SolverStrategyMBAStar&            solver_strategy_input,
+        std::vector<cda_rail::index_set> const& ttd_sections,
+        instances::GeneralPerformanceOptimizationInstance const* instance) {
+  auto const& tr_edges = state.train_edges.at(tr);
+  if (tr_edges.empty()) {
+    return {state};
+  }
+
+  auto const& tr_entry_vertex =
+      instance->get_const_schedule(tr).get_entry_vertex();
+  auto const& tr_entry_order = state.vertex_orders.at(tr_entry_vertex);
+  if (std::ranges::contains(tr_entry_order, tr)) {
+    return extend_train_orders_of_state_recursive_helper(
+        tr, state, solver_strategy_input, ttd_sections, instance,
+        tr_entry_order, 0, std::nullopt);
+  }
+
+  auto const entry_bounds = infer_order_entry_order_bounds(
+      tr, tr_entry_order, model_detail_input.late_entry_possible, instance);
+  std::vector<cda_rail::simulator::SimulatorState> retval{};
+  for (size_t tr_entry_order_idx = entry_bounds.lb;
+       tr_entry_order_idx <= entry_bounds.ub; ++tr_entry_order_idx) {
+    state.vertex_orders.at(tr_entry_vertex)
+        .insert(std::next(state.vertex_orders.at(tr_entry_vertex).begin(),
+                          static_cast<std::ptrdiff_t>(tr_entry_order_idx)),
+                tr);
+
+    auto const state_extension = extend_train_orders_of_state_recursive_helper(
+        tr, state, solver_strategy_input, ttd_sections, instance,
+        state.vertex_orders.at(tr_entry_vertex), 0, std::nullopt);
+    retval.insert(retval.end(), state_extension.begin(), state_extension.end());
+
+    state.vertex_orders.at(tr_entry_vertex) = tr_entry_order;
+  }
+  return retval;
+}
+
+std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
+    GenPOMovingBlockAStarSolver::extend_train_orders_of_state_recursive_helper(
+        size_t tr, simulator::SimulatorState state,
+        const SolverStrategyMBAStar&            solver_strategy_input,
+        std::vector<cda_rail::index_set> const& ttd_sections,
+        instances::GeneralPerformanceOptimizationInstance const* instance,
+        cda_rail::index_vector const& prev_order, size_t first_edge_index,
+        std::optional<size_t> const& safe_ttd) {
+  auto const& tr_edges = state.train_edges.at(tr);
+  assert(!tr_edges.empty());
+
+  std::optional<size_t> first_new_ttd_route_edge_idx{};
+  std::optional<size_t> last_new_ttd_route_edge_idx{};
+  std::optional<size_t> next_ttd_id;
+  for (size_t route_edge_idx = first_edge_index;
+       route_edge_idx < tr_edges.size(); ++route_edge_idx) {
+    auto const& edge_id = tr_edges.at(route_edge_idx);
+    auto const& edge_ttd =
+        cda_rail::Network::get_ttd_of_edge(edge_id, ttd_sections);
+    if (edge_ttd.has_value() &&
+        (!safe_ttd.has_value() || edge_ttd.value() != safe_ttd.value())) {
+      if (!first_new_ttd_route_edge_idx.has_value()) {
+        first_new_ttd_route_edge_idx = route_edge_idx;
+        last_new_ttd_route_edge_idx  = route_edge_idx;
+        next_ttd_id                  = edge_ttd;
+      }
+      if (next_ttd_id.has_value() && edge_ttd.value() == next_ttd_id.value()) {
+        last_new_ttd_route_edge_idx = route_edge_idx;
+      } else {
+        break;
+      }
+    } else if (next_ttd_id.has_value()) {
+      break;
+    }
+  }
+
+  auto const tr_exit_vertex =
+      instance->get_const_schedule(tr).get_exit_vertex();
+  bool const tr_leaves_network_at_end_of_route =
+      instance->get_const_network().get_edge(tr_edges.back()).target ==
+      tr_exit_vertex;
+  if (!first_new_ttd_route_edge_idx.has_value() &&
+      !tr_leaves_network_at_end_of_route) {
+    // No new order required -> DONE
+    return {state};
+  }
+
+  auto& next_order_editable = next_ttd_id.has_value()
+                                  ? state.ttd_orders.at(next_ttd_id.value())
+                                  : state.vertex_orders.at(tr_exit_vertex);
+  auto const  next_order    = next_order_editable;
+  auto const& subpath       = cda_rail::index_vector(
+      std::next(tr_edges.begin(),
+                static_cast<std::ptrdiff_t>(first_edge_index)),
+      std::next(tr_edges.begin(), static_cast<std::ptrdiff_t>(
+                                      first_new_ttd_route_edge_idx.value_or(
+                                          tr_edges.size() - 1)) +
+                                      1));
+  auto tr_sharing_subpath = simulator::GeneralSimulator::trains_on_path(
+      subpath, state.train_edges, instance->get_const_network(), true);
+  tr_sharing_subpath.erase(tr);
+
+  std::vector<simulator::SimulatorState> retval{};
+  auto const tr_order_insertion_interval = infer_order_insertion_bounds(
+      tr, prev_order, next_order, tr_sharing_subpath,
+      !solver_strategy_input.time_aware_state_transitions);
+  for (size_t insertion_idx = tr_order_insertion_interval.lb;
+       insertion_idx <= tr_order_insertion_interval.ub; ++insertion_idx) {
+    next_order_editable.insert(
+        std::next(next_order_editable.begin(),
+                  static_cast<std::ptrdiff_t>(insertion_idx)),
+        tr);
+    std::vector<simulator::SimulatorState> const state_extensions =
+        next_ttd_id.has_value()
+            ? extend_train_orders_of_state_recursive_helper(
+                  tr, state, solver_strategy_input, ttd_sections, instance,
+                  next_order_editable, last_new_ttd_route_edge_idx.value(),
+                  next_ttd_id)
+            : std::vector<simulator::SimulatorState>({state});
+    retval.insert(retval.end(), state_extensions.begin(),
+                  state_extensions.end());
+    next_order_editable = next_order;
+  }
+
   return retval;
 }
 
