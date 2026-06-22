@@ -243,7 +243,7 @@ private:
    * transitions.
    * @param instance The problem instance.
    * @param ttd_sections The TTD sections of the network.
-   * @return An vector of next possible states.
+   * @return A vector of next possible states.
    * @throws cda_rail::exceptions::ConsistencyException If the transition
    * strategy is unknown.
    */
