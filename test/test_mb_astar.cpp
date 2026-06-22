@@ -604,6 +604,63 @@ TEST(GenPOMovingBlockAStarSolver, ExtendTrainOrderEntry) {
                                     expected_vertex_orders2.at(0)));
   EXPECT_TRUE(std::ranges::contains(actual_vertex_orders2,
                                     expected_vertex_orders2.at(1)));
+
+  auto const extended3 = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+          tr4, state, {.late_entry_possible = true},
+          {.time_aware_state_transitions = true}, ttd_sections, &instance);
+  EXPECT_EQ(extended3.size(), 4);
+  ASSERT_GE(extended3.size(), 4);
+  EXPECT_EQ(extended3.at(0).train_edges, state.train_edges);
+  EXPECT_EQ(extended3.at(0).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended3.at(1).train_edges, state.train_edges);
+  EXPECT_EQ(extended3.at(1).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended3.at(2).train_edges, state.train_edges);
+  EXPECT_EQ(extended3.at(2).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended3.at(3).train_edges, state.train_edges);
+  EXPECT_EQ(extended3.at(3).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended3.at(0).vertex_orders.at(v0),
+            extended3.at(0).ttd_orders.at(0));
+  EXPECT_EQ(extended3.at(1).vertex_orders.at(v0),
+            extended3.at(1).ttd_orders.at(0));
+  EXPECT_EQ(extended3.at(2).vertex_orders.at(v0),
+            extended3.at(2).ttd_orders.at(0));
+  EXPECT_EQ(extended3.at(3).vertex_orders.at(v0),
+            extended3.at(3).ttd_orders.at(0));
+  EXPECT_EQ(extended3.at(0).ttd_orders.at(1), state.ttd_orders.at(1));
+  EXPECT_EQ(extended3.at(1).ttd_orders.at(1), state.ttd_orders.at(1));
+  EXPECT_EQ(extended3.at(2).ttd_orders.at(1), state.ttd_orders.at(1));
+  EXPECT_EQ(extended3.at(3).ttd_orders.at(1), state.ttd_orders.at(1));
+  EXPECT_EQ(extended3.at(0).vertex_orders.at(v7), state.vertex_orders.at(v7));
+  EXPECT_EQ(extended3.at(1).vertex_orders.at(v7), state.vertex_orders.at(v7));
+  EXPECT_EQ(extended3.at(2).vertex_orders.at(v7), state.vertex_orders.at(v7));
+  EXPECT_EQ(extended3.at(3).vertex_orders.at(v7), state.vertex_orders.at(v7));
+  std::vector<cda_rail::index_vector> expected_vertex_orders3{
+      {tr4, tr1, tr2, tr3},
+      {tr1, tr4, tr2, tr3},
+      {tr1, tr2, tr4, tr3},
+      {tr1, tr2, tr3, tr4}};
+  std::vector<cda_rail::index_vector> actual_vertex_orders3{
+      extended3.at(0).vertex_orders.at(v0),
+      extended3.at(1).vertex_orders.at(v0),
+      extended3.at(2).vertex_orders.at(v0),
+      extended3.at(3).vertex_orders.at(v0)};
+  EXPECT_TRUE(std::ranges::contains(expected_vertex_orders3,
+                                    extended3.at(0).vertex_orders.at(v0)));
+  EXPECT_TRUE(std::ranges::contains(expected_vertex_orders3,
+                                    extended3.at(1).vertex_orders.at(v0)));
+  EXPECT_TRUE(std::ranges::contains(expected_vertex_orders3,
+                                    extended3.at(2).vertex_orders.at(v0)));
+  EXPECT_TRUE(std::ranges::contains(expected_vertex_orders3,
+                                    extended3.at(3).vertex_orders.at(v0)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders3,
+                                    expected_vertex_orders3.at(0)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders3,
+                                    expected_vertex_orders3.at(1)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders3,
+                                    expected_vertex_orders3.at(2)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders3,
+                                    expected_vertex_orders3.at(3)));
 }
 
 TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
