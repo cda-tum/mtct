@@ -420,4 +420,21 @@ TEST(Playground, VectorInsert) {
   EXPECT_EQ(vec, std::vector<int>({10, 5, 20, 3, 8, 30}));
 }
 
+TEST(Playground, VectorRemoval) {
+  std::vector<int> vec{5, 3, 8};
+  EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));
+
+  vec.insert(vec.begin() + 0, 10);
+  EXPECT_EQ(vec, std::vector<int>({10, 5, 3, 8}));
+
+  vec.erase(vec.begin() + 0);
+  EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));
+
+  vec.insert(vec.begin() + 2, 20);
+  EXPECT_EQ(vec, std::vector<int>({5, 3, 20, 8}));
+
+  vec.erase(vec.begin() + 2);
+  EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
