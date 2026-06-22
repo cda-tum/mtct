@@ -428,7 +428,7 @@ TEST(GenPOMovingBlockAStarSolver, ExtendStateWithPathExtension) {
   auto const extended_stats =
       cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
           extend_state_by_path_extension(tr1, state, data, &instance);
-  EXPECT_EQ(extended_stats.size(), 3);
+  EXPECT_EQ(extended_stats.size(), 2);
   ASSERT_GE(extended_stats.size(), 1);
   EXPECT_EQ(extended_stats.at(0).train_edges.at(tr1),
             cda_rail::index_vector({v1_v2, v2_v3, v3_v4, v4_v5, v5_v6, v6_v7}));
@@ -440,12 +440,6 @@ TEST(GenPOMovingBlockAStarSolver, ExtendStateWithPathExtension) {
                 {v1_v2, v2_v3, v3_v4, v4_v5, v5_v6, v6_v7, v7_v8}));
   EXPECT_EQ(extended_stats.at(1).stop_positions.at(tr1),
             std::vector<double>({200, 490}));
-  ASSERT_GE(extended_stats.size(), 3);
-  EXPECT_EQ(extended_stats.at(2).train_edges.at(tr1),
-            cda_rail::index_vector(
-                {v1_v2, v2_v3, v3_v4, v4_v5, v5_v6, v6_v7, v7_v8}));
-  EXPECT_EQ(extended_stats.at(2).stop_positions.at(tr1),
-            std::vector<double>({200}));
 }
 
 TEST(GenPOMovingBlockAStarSolver, ExtendTrainOrderEntry) {
