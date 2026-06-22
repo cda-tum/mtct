@@ -5,6 +5,7 @@
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <cstddef>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>

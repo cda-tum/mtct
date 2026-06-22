@@ -12,7 +12,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <functional>
 #include <optional>
 #include <queue>
 #include <string_view>
