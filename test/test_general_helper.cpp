@@ -437,4 +437,24 @@ TEST(Playground, VectorRemoval) {
   EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));
 }
 
+TEST(Playground, StructEdit) {
+  struct TestStruct {
+    std::vector<cda_rail::index_vector> vec1{};
+    cda_rail::index_vector              vec2{};
+  };
+
+  TestStruct test_struct{.vec1 = {{1, 2, 3}, {4, 5, 6}}, .vec2 = {7, 8, 9}};
+  auto&      editable_vec = test_struct.vec1.at(1);
+  editable_vec.push_back(7);
+
+  EXPECT_EQ(test_struct.vec1.at(0), cda_rail::index_vector({1, 2, 3}));
+  EXPECT_EQ(test_struct.vec1.at(1), cda_rail::index_vector({4, 5, 6, 7}));
+  EXPECT_EQ(test_struct.vec2, cda_rail::index_vector({7, 8, 9}));
+
+  editable_vec = cda_rail::index_vector({10, 11});
+  EXPECT_EQ(test_struct.vec1.at(0), cda_rail::index_vector({1, 2, 3}));
+  EXPECT_EQ(test_struct.vec1.at(1), cda_rail::index_vector({10, 11}));
+  EXPECT_EQ(test_struct.vec2, cda_rail::index_vector({7, 8, 9}));
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
