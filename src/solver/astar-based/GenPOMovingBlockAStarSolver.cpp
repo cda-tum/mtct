@@ -686,10 +686,14 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
   if (next_ttd_id.has_value() &&
       std::ranges::contains(state.ttd_orders.at(next_ttd_id.value()), tr)) {
     // Train already present on TTD, no addition needed
+
+    // NOLINTBEGIN(bugprone-unchecked-optional-access)
+    assert(last_new_ttd_route_edge_idx.has_value());
     return extend_train_orders_of_state_recursive_helper(
         tr, state, solver_strategy_input, ttd_sections, instance,
         state.ttd_orders.at(next_ttd_id.value()),
         last_new_ttd_route_edge_idx.value(), next_ttd_id);
+    // NOLINTEND(bugprone-unchecked-optional-access)
   }
 
   auto& next_order_editable = next_ttd_id.has_value()
@@ -719,6 +723,8 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
         std::next(next_order_editable.begin(),
                   static_cast<std::ptrdiff_t>(insertion_idx)),
         tr);
+    // NOLINTBEGIN(bugprone-unchecked-optional-access)
+    assert(!next_ttd_id.has_value() || last_new_ttd_route_edge_idx.has_value());
     std::vector<simulator::SimulatorState> const state_extensions =
         next_ttd_id.has_value()
             ? extend_train_orders_of_state_recursive_helper(
@@ -726,6 +732,7 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
                   next_order_editable, last_new_ttd_route_edge_idx.value(),
                   next_ttd_id)
             : std::vector<simulator::SimulatorState>({state});
+    // NOLINTEND(bugprone-unchecked-optional-access)
     retval.insert(retval.end(), state_extensions.begin(),
                   state_extensions.end());
     next_order_editable = next_order;
