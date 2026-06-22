@@ -1062,9 +1062,16 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
       {.next_state_strategy = solver::astar_based::NextStateStrategy::NextTTD,
        .time_aware_state_transitions = false},
       {}, -1, true);
+  const auto sol_obj_ttd_2 =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::NextRelevantTTD,
+                    .time_aware_state_transitions = false},
+                   {}, -1, true);
 
   EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   auto const v2_v3 =
       sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
                                                                         {"v3"});
@@ -1074,19 +1081,52 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
   EXPECT_EQ(tr_order.at(1), tr3);
   EXPECT_EQ(tr_order.at(2), tr1);
 
+  EXPECT_EQ(sol_obj_ttd.get_train_order(v2_v3), tr_order);
+  EXPECT_EQ(sol_obj_ttd_2.get_train_order(v2_v3), tr_order);
+
   auto const tr_times_tr1 = sol_obj_single.get_train_times("Train1");
   auto const tr_times_tr2 = sol_obj_single.get_train_times("Train2");
   auto const tr_times_tr3 = sol_obj_single.get_train_times("Train3");
 
+  auto const tr_times_tr1_ttd = sol_obj_ttd.get_train_times("Train1");
+  auto const tr_times_tr2_ttd = sol_obj_ttd.get_train_times("Train2");
+  auto const tr_times_tr3_ttd = sol_obj_ttd.get_train_times("Train3");
+
+  auto const tr_times_tr1_ttd_2 = sol_obj_ttd_2.get_train_times("Train1");
+  auto const tr_times_tr2_ttd_2 = sol_obj_ttd_2.get_train_times("Train2");
+  auto const tr_times_tr3_ttd_2 = sol_obj_ttd_2.get_train_times("Train3");
+
   EXPECT_EQ(tr_times_tr1.back(), 500);
   EXPECT_EQ(tr_times_tr2.back(), 300);
   EXPECT_EQ(tr_times_tr3.back(), 400);
+
+  EXPECT_EQ(tr_times_tr1_ttd.back(), 500);
+  EXPECT_EQ(tr_times_tr2_ttd.back(), 300);
+  EXPECT_EQ(tr_times_tr3_ttd.back(), 400);
+
+  EXPECT_EQ(tr_times_tr1_ttd_2.back(), 500);
+  EXPECT_EQ(tr_times_tr2_ttd_2.back(), 300);
+  EXPECT_EQ(tr_times_tr3_ttd_2.back(), 400);
 
   EXPECT_GE(sol_obj_single.get_train_pos("Train1", tr_times_tr1.back()),
             100 + 10 + 10 + 100 + 50);
   EXPECT_GE(sol_obj_single.get_train_pos("Train2", tr_times_tr2.back()),
             100 + 10 + 10 + 100 + 50);
   EXPECT_GE(sol_obj_single.get_train_pos("Train3", tr_times_tr3.back()),
+            100 + 10 + 10 + 100 + 50);
+
+  EXPECT_GE(sol_obj_ttd.get_train_pos("Train1", tr_times_tr1_ttd.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_ttd.get_train_pos("Train2", tr_times_tr2_ttd.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_ttd.get_train_pos("Train3", tr_times_tr3_ttd.back()),
+            100 + 10 + 10 + 100 + 50);
+
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train1", tr_times_tr1_ttd_2.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train2", tr_times_tr2_ttd_2.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train3", tr_times_tr3_ttd_2.back()),
             100 + 10 + 10 + 100 + 50);
 }
 
@@ -1151,9 +1191,16 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
       {.next_state_strategy = solver::astar_based::NextStateStrategy::NextTTD,
        .time_aware_state_transitions = true},
       {}, -1, true);
+  const auto sol_obj_ttd_2 =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::NextRelevantTTD,
+                    .time_aware_state_transitions = true},
+                   {}, -1, true);
 
   EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   auto const v2_v3 =
       sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
                                                                         {"v3"});
@@ -1163,19 +1210,52 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
   EXPECT_EQ(tr_order.at(1), tr3);
   EXPECT_EQ(tr_order.at(2), tr1);
 
+  EXPECT_EQ(sol_obj_ttd.get_train_order(v2_v3), tr_order);
+  EXPECT_EQ(sol_obj_ttd_2.get_train_order(v2_v3), tr_order);
+
   auto const tr_times_tr1 = sol_obj_single.get_train_times("Train1");
   auto const tr_times_tr2 = sol_obj_single.get_train_times("Train2");
   auto const tr_times_tr3 = sol_obj_single.get_train_times("Train3");
 
+  auto const tr_times_tr1_ttd = sol_obj_ttd.get_train_times("Train1");
+  auto const tr_times_tr2_ttd = sol_obj_ttd.get_train_times("Train2");
+  auto const tr_times_tr3_ttd = sol_obj_ttd.get_train_times("Train3");
+
+  auto const tr_times_tr1_ttd_2 = sol_obj_ttd_2.get_train_times("Train1");
+  auto const tr_times_tr2_ttd_2 = sol_obj_ttd_2.get_train_times("Train2");
+  auto const tr_times_tr3_ttd_2 = sol_obj_ttd_2.get_train_times("Train3");
+
   EXPECT_EQ(tr_times_tr1.back(), 500);
   EXPECT_EQ(tr_times_tr2.back(), 300);
   EXPECT_EQ(tr_times_tr3.back(), 400);
+
+  EXPECT_EQ(tr_times_tr1_ttd.back(), 500);
+  EXPECT_EQ(tr_times_tr2_ttd.back(), 300);
+  EXPECT_EQ(tr_times_tr3_ttd.back(), 400);
+
+  EXPECT_EQ(tr_times_tr1_ttd_2.back(), 500);
+  EXPECT_EQ(tr_times_tr2_ttd_2.back(), 300);
+  EXPECT_EQ(tr_times_tr3_ttd_2.back(), 400);
 
   EXPECT_GE(sol_obj_single.get_train_pos("Train1", tr_times_tr1.back()),
             100 + 10 + 10 + 100 + 50);
   EXPECT_GE(sol_obj_single.get_train_pos("Train2", tr_times_tr2.back()),
             100 + 10 + 10 + 100 + 50);
   EXPECT_GE(sol_obj_single.get_train_pos("Train3", tr_times_tr3.back()),
+            100 + 10 + 10 + 100 + 50);
+
+  EXPECT_GE(sol_obj_ttd.get_train_pos("Train1", tr_times_tr1_ttd.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_ttd.get_train_pos("Train2", tr_times_tr2_ttd.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_ttd.get_train_pos("Train3", tr_times_tr3_ttd.back()),
+            100 + 10 + 10 + 100 + 50);
+
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train1", tr_times_tr1_ttd_2.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train2", tr_times_tr2_ttd_2.back()),
+            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train3", tr_times_tr3_ttd_2.back()),
             100 + 10 + 10 + 100 + 50);
 }
 
