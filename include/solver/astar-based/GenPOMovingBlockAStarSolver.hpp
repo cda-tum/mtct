@@ -34,6 +34,7 @@ class GenPOMovingBlockAStarSolver_NextTrains_Test;
 class GenPOMovingBlockAStarSolver_PathExtensions_Test;
 class GenPOMovingBlockAStarSolver_InferInsertionBounds_Test;
 class GenPOMovingBlockAStarSolver_ExtendStateWithPathExtension_Test;
+class GenPOMovingBlockAStarSolver_ExtendTrainOrderEntry_Test;
 class GenPOMovingBlockAStarSolver_NextStates_Test;
 class GenPOMovingBlockAStarSolver_NextStatesTTD_Test;
 #endif
@@ -79,6 +80,7 @@ private:
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, PathExtensions);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, InferInsertionBounds);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, ExtendStateWithPathExtension);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, ExtendTrainOrderEntry);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStatesTTD);
 #endif
@@ -200,7 +202,7 @@ private:
       cda_rail::index_set const& tr_sharing_path, bool insert_at_end);
   [[nodiscard]] static IndexBound infer_order_entry_order_bounds(
       size_t tr, cda_rail::index_vector const& entry_order,
-      bool late_entry_possible,
+      bool late_entry_possible, bool insert_at_end,
       instances::GeneralPerformanceOptimizationInstance const* instance);
 
   // State Extension

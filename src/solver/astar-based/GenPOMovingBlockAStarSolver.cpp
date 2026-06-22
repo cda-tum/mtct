@@ -529,23 +529,32 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::IndexBound
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     infer_order_entry_order_bounds(
         size_t tr, cda_rail::index_vector const& entry_order,
-        bool late_entry_possible,
+        bool late_entry_possible, bool insert_at_end,
         instances::GeneralPerformanceOptimizationInstance const* instance) {
-  IndexBound retval{.lb = 0, .ub = entry_order.size()};
+  if (insert_at_end) {
+    return {.lb = entry_order.size(), .ub = entry_order.size()};
+  }
 
+  IndexBound retval{.lb = 0, .ub = entry_order.size()};
   if (late_entry_possible) {
     return retval;
   }
 
-  auto const& tr_entry = instance->get_const_schedule(tr).get_entry_time();
+  auto const& tr_schedule = instance->get_const_schedule(tr);
   for (size_t tr_other_idx = 0; tr_other_idx < entry_order.size();
        ++tr_other_idx) {
-    auto const& tr_other_entry =
-        instance->get_const_schedule(entry_order.at(tr_other_idx))
-            .get_entry_time();
-    if (tr_other_entry < tr_entry) {
+    auto const& tr_other_schedule =
+        instance->get_const_schedule(entry_order.at(tr_other_idx));
+    if (tr_schedule.get_entry_vertex() ==
+            tr_other_schedule.get_entry_vertex() &&
+        tr_other_schedule.get_entry_time() < tr_schedule.get_entry_time()) {
       retval.lb = std::max(retval.lb, tr_other_idx + 1);
-    } else if (tr_other_entry > tr_entry) {
+    }
+    if (tr_other_schedule.get_entry_time() > tr_schedule.get_entry_time()) {
+      retval.ub = std::min(retval.ub, tr_other_idx);
+    }
+    if (tr_schedule.get_entry_vertex() == tr_other_schedule.get_exit_vertex() &&
+        tr_other_schedule.get_exit_time() > tr_schedule.get_entry_time()) {
       retval.ub = std::min(retval.ub, tr_other_idx);
     }
   }
@@ -589,7 +598,7 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
 
   auto const& tr_entry_vertex =
       instance->get_const_schedule(tr).get_entry_vertex();
-  auto const& tr_entry_order = state.vertex_orders.at(tr_entry_vertex);
+  auto const tr_entry_order = state.vertex_orders.at(tr_entry_vertex);
   if (std::ranges::contains(tr_entry_order, tr)) {
     return extend_train_orders_of_state_recursive_helper(
         tr, state, solver_strategy_input, ttd_sections, instance,
@@ -597,7 +606,8 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
   }
 
   auto const entry_bounds = infer_order_entry_order_bounds(
-      tr, tr_entry_order, model_detail_input.late_entry_possible, instance);
+      tr, tr_entry_order, model_detail_input.late_entry_possible,
+      !solver_strategy_input.time_aware_state_transitions, instance);
   std::vector<cda_rail::simulator::SimulatorState> retval{};
   for (size_t tr_entry_order_idx = entry_bounds.lb;
        tr_entry_order_idx <= entry_bounds.ub; ++tr_entry_order_idx) {
