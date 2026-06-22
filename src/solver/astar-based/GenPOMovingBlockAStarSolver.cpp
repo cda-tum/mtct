@@ -9,6 +9,7 @@
 #include "solver/GeneralSolver.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <cstddef>
 #include <iterator>
@@ -434,7 +435,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::get_path_extensions(
   std::vector<PathExtensionData> path_extensions{};
 
   auto const& tr_edges    = simulator_state.train_edges.at(tr);
-  bool        tr_entering = tr_edges.empty();
+  bool const  tr_entering = tr_edges.empty();
 
   if (tr_entering) {
     const auto entry_paths = get_entry_paths(tr, instance);

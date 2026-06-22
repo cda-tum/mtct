@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GeneralSimulator.hpp"
@@ -14,9 +13,9 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <queue>
 #include <string_view>
-#include <unordered_set>
 #include <vector>
 
 // If TEST_FRIENDS has value true, the corresponding test is friended to test

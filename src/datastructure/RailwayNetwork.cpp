@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <functional>
+#include <iterator>
 #include <limits>
 #include <numeric>
 #include <optional>

@@ -7,6 +7,7 @@
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <algorithm>
+#include <assert.h>
 #include <cstddef>
 #include <memory>
 #include <numeric>
