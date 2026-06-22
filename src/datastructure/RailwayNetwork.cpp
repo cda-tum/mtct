@@ -782,13 +782,7 @@ cda_rail::Network::all_paths_ending_at_ttd_helper(
     bool zero_length_if_next_edge_is_ttd) const {
   std::vector<cda_rail::index_vector> result;
 
-  std::optional<size_t> safe_ttd{};
-  for (size_t ttd_idx = 0; ttd_idx < ttd_sections.size(); ++ttd_idx) {
-    if (ttd_sections.at(ttd_idx).contains(e_0)) {
-      safe_ttd = ttd_idx;
-      break;
-    }
-  }
+  std::optional<size_t> const safe_ttd = get_ttd_of_edge(e_0, ttd_sections);
 
   for (const auto successor : get_successors(e_0)) {
     for (const auto& path : all_paths_ending_at_ttd_recursive_helper(
@@ -798,6 +792,16 @@ cda_rail::Network::all_paths_ending_at_ttd_helper(
     }
   }
   return result;
+}
+
+std::optional<size_t> cda_rail::Network::get_ttd_of_edge(
+    size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections) {
+  for (size_t ttd_idx = 0; ttd_idx < ttd_sections.size(); ++ttd_idx) {
+    if (ttd_sections.at(ttd_idx).contains(e_0)) {
+      return ttd_idx;
+    }
+  }
+  return std::nullopt;
 }
 
 double

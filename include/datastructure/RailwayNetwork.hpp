@@ -1748,6 +1748,10 @@ private:
       bool zero_length_if_next_edge_is_ttd) const;
 
 public:
+  [[nodiscard]] static std::optional<size_t>
+  get_ttd_of_edge(size_t                                  e_0,
+                  const std::vector<cda_rail::index_set>& ttd_sections);
+
   /**
    * @brief Returns all paths starting immediately after edge @p e_0 and
    *        ending upon entering a TTD section or reaching the exit vertex if
