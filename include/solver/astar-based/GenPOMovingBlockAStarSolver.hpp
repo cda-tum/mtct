@@ -231,27 +231,19 @@ private:
       cda_rail::index_vector const& prev_order, size_t first_edge_index,
       std::optional<size_t> const& safe_ttd);
 
-#if 0
-  [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
-  next_states_single_edge(const simulator::GreedySimulator& simulator);
-  [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
-              next_states_next_ttd(const simulator::GreedySimulator& simulator);
-  static void next_state_ttd_helper(size_t tr, simulator::SimulatorState& state,
-                                    const simulator::GreedySimulator& simulator,
-                                    const cda_rail::index_vector& new_edges);
-  static void
-  next_state_exit_vertex_helper(size_t tr, simulator::SimulatorState& state,
-                                const simulator::GreedySimulator& simulator);
-#endif
-
   /**
    * @brief Generates the next reachable states using the specified transition
    * strategy.
    *
-   * @param simulator The greedy simulator providing the current state.
+   * @param simulator_state The current simulator state
+   * @param simulator_results The current simulator results
+   * @param model_detail_input The model details, in particular, if late entry
+   * is possible
    * @param solver_strategy_input The strategy to use, in particular, for state
    * transitions.
-   * @return An unordered set of next possible states.
+   * @param instance The problem instance.
+   * @param ttd_sections The TTD sections of the network.
+   * @return An vector of next possible states.
    * @throws cda_rail::exceptions::ConsistencyException If the transition
    * strategy is unknown.
    */
