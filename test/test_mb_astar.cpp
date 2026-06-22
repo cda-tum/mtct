@@ -663,6 +663,220 @@ TEST(GenPOMovingBlockAStarSolver, ExtendTrainOrderEntry) {
                                     expected_vertex_orders3.at(3)));
 }
 
+TEST(GenPOMovingBlockAStarSolver, ExtendTrainOrderExit) {
+  // clang-format off
+  //                - v3b -- v4b -
+  //               /              \
+  // v0 --- v1 - v2 - v3a -- v4a - v5 - v6 -- v7
+  // clang-format on
+
+  Network    network;
+  auto const v0  = network.add_vertex("v0", VertexType::TTD);
+  auto const v1  = network.add_vertex("v1", VertexType::TTD);
+  auto const v2  = network.add_vertex("v2", VertexType::NoBorder);
+  auto const v3a = network.add_vertex("v3a", VertexType::TTD);
+  auto const v3b = network.add_vertex("v3b", VertexType::TTD);
+  auto const v4a = network.add_vertex("v4a", VertexType::TTD);
+  auto const v4b = network.add_vertex("v4b", VertexType::TTD);
+  auto const v5  = network.add_vertex("v5", VertexType::NoBorder);
+  auto const v6  = network.add_vertex("v6", VertexType::TTD);
+  auto const v7  = network.add_vertex("v7", VertexType::TTD);
+
+  auto const v0_v1   = network.add_edge(v0, v1, 100, 20, true);
+  auto const v1_v2   = network.add_edge(v1, v2, 10, 20, false);
+  auto const v2_v3a  = network.add_edge(v2, v3a, 10, 20, false);
+  auto const v2_v3b  = network.add_edge(v2, v3b, 10, 20, false);
+  auto const v3a_v4a = network.add_edge(v3a, v4a, 100, 20, true);
+  auto const v3b_v4b = network.add_edge(v3b, v4b, 100, 20, true);
+  auto const v4a_v5  = network.add_edge(v4a, v5, 10, 20, false);
+  auto const v4b_v5  = network.add_edge(v4b, v5, 10, 20, false);
+  auto const v5_v6   = network.add_edge(v5, v6, 10, 20, false);
+  auto const v6_v7   = network.add_edge(v6, v7, 100, 20, true);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3a);
+  network.add_successor(v1_v2, v2_v3b);
+  network.add_successor(v2_v3a, v3a_v4a);
+  network.add_successor(v2_v3b, v3b_v4b);
+  network.add_successor(v3a_v4a, v4a_v5);
+  network.add_successor(v3b_v4b, v4b_v5);
+  network.add_successor(v4a_v5, v5_v6);
+  network.add_successor(v4b_v5, v5_v6);
+  network.add_successor(v5_v6, v6_v7);
+
+  // Add all reverse edges
+  auto const          num_edges = network.number_of_edges();
+  std::vector<size_t> reverse_edges;
+  reverse_edges.resize(num_edges);
+  for (size_t i = 0; i < num_edges; ++i) {
+    auto const& edge    = network.get_edge(i);
+    reverse_edges.at(i) = network.add_edge(
+        edge.target, edge.source, edge.length, edge.max_speed, edge.breakable);
+  }
+
+  for (size_t i = 0; i < num_edges; ++i) {
+    auto const& successors = network.get_successors(i);
+    for (auto const& successor : successors) {
+      network.add_successor(reverse_edges.at(successor), reverse_edges.at(i));
+    }
+  }
+
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 20, 2, 4, true, 0, 20, v0,
+                                       100, 20, v7, network);
+  const auto tr2 = timetable.add_train("Train2", 50, 20, 2, 4, true, 100, 20,
+                                       v7, 300, 20, v0, network);
+  const auto tr3 = timetable.add_train("Train3", 50, 20, 2, 4, true, 200, 20,
+                                       v7, 500, 20, v0, network);
+  const auto tr4 = timetable.add_train("Train4", 50, 20, 2, 4, true, 400, 20,
+                                       v0, 700, 20, v7, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::index_set              ttd1{v1_v2,
+                                        v2_v3a,
+                                        v2_v3b,
+                                        reverse_edges.at(v1_v2),
+                                        reverse_edges.at(v2_v3a),
+                                        reverse_edges.at(v2_v3b)};
+  cda_rail::index_set              ttd2{v4a_v5,
+                                        v4b_v5,
+                                        v5_v6,
+                                        reverse_edges.at(v4a_v5),
+                                        reverse_edges.at(v4b_v5),
+                                        reverse_edges.at(v5_v6)};
+  std::vector<cda_rail::index_set> ttd_sections{ttd1, ttd2};
+
+  simulator::SimulatorState state{
+      .train_edges = std::vector<cda_rail::index_vector>(
+          instance.get_const_train_list().get_number_of_trains()),
+      .ttd_orders = std::vector<cda_rail::index_vector>(ttd_sections.size()),
+      .vertex_orders =
+          std::vector<cda_rail::index_vector>(network.number_of_vertices()),
+      .stop_positions = std::vector<std::vector<double>>(
+          instance.get_const_train_list().get_number_of_trains())};
+  state.train_edges.at(tr1) = {v0_v1,  v1_v2, v2_v3b, v3b_v4b,
+                               v4b_v5, v5_v6, v6_v7};
+  state.train_edges.at(tr2) = {
+      reverse_edges.at(v6_v7),  reverse_edges.at(v5_v6),
+      reverse_edges.at(v4a_v5), reverse_edges.at(v3a_v4a),
+      reverse_edges.at(v2_v3a), reverse_edges.at(v1_v2),
+      reverse_edges.at(v0_v1)};
+  state.train_edges.at(tr3) = state.train_edges.at(tr2);
+  state.train_edges.at(tr4) = state.train_edges.at(tr1);
+
+  state.ttd_orders.at(0)     = {tr1, tr2, tr3};
+  state.ttd_orders.at(1)     = {tr2, tr1, tr3};
+  state.vertex_orders.at(v0) = {tr1, tr4, tr2, tr3};
+  state.vertex_orders.at(v7) = {tr2, tr1, tr3};
+
+  auto const extended1 = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+          tr4, state, {.late_entry_possible = false},
+          {.time_aware_state_transitions = false}, ttd_sections, &instance);
+  EXPECT_EQ(extended1.size(), 1);
+  ASSERT_GE(extended1.size(), 1);
+  EXPECT_EQ(extended1.at(0).train_edges, state.train_edges);
+  EXPECT_EQ(extended1.at(0).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended1.at(0).vertex_orders.at(v0),
+            cda_rail::index_vector({tr1, tr4, tr2, tr3}));
+  EXPECT_EQ(extended1.at(0).ttd_orders.at(0),
+            cda_rail::index_vector({tr1, tr2, tr3, tr4}));
+  EXPECT_EQ(extended1.at(0).ttd_orders.at(1),
+            cda_rail::index_vector({tr2, tr1, tr3, tr4}));
+  EXPECT_EQ(extended1.at(0).vertex_orders.at(v7),
+            cda_rail::index_vector({tr2, tr1, tr3, tr4}));
+
+  auto const extended2 = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+          tr4, state, {.late_entry_possible = false},
+          {.time_aware_state_transitions = true}, ttd_sections, &instance);
+  EXPECT_EQ(extended2.size(), 2);
+  ASSERT_GE(extended2.size(), 2);
+  EXPECT_EQ(extended2.at(0).train_edges, state.train_edges);
+  EXPECT_EQ(extended2.at(0).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended2.at(1).train_edges, state.train_edges);
+  EXPECT_EQ(extended2.at(1).stop_positions, state.stop_positions);
+
+  EXPECT_EQ(extended2.at(0).vertex_orders.at(v0), state.vertex_orders.at(v0));
+  EXPECT_EQ(extended2.at(1).vertex_orders.at(v0), state.vertex_orders.at(v0));
+
+  EXPECT_EQ(extended2.at(0).vertex_orders.at(v0),
+            extended2.at(0).ttd_orders.at(0));
+  EXPECT_EQ(extended2.at(1).vertex_orders.at(v0),
+            extended2.at(1).ttd_orders.at(0));
+  EXPECT_EQ(extended2.at(0).vertex_orders.at(v7),
+            extended2.at(0).ttd_orders.at(1));
+  EXPECT_EQ(extended2.at(1).vertex_orders.at(v7),
+            extended2.at(1).ttd_orders.at(1));
+
+  EXPECT_NE(extended2.at(0).ttd_orders.at(1), extended2.at(1).ttd_orders.at(1));
+  EXPECT_NE(extended2.at(0).vertex_orders.at(v7),
+            extended2.at(1).vertex_orders.at(v7));
+
+  std::vector<cda_rail::index_vector> expected_vertex_orders2{
+      {tr2, tr1, tr4, tr3}, {tr2, tr1, tr3, tr4}};
+  std::vector<cda_rail::index_vector> actual_vertex_orders2{
+      extended2.at(0).vertex_orders.at(v7),
+      extended2.at(1).vertex_orders.at(v7)};
+  EXPECT_TRUE(std::ranges::contains(expected_vertex_orders2,
+                                    extended2.at(0).vertex_orders.at(v7)));
+  EXPECT_TRUE(std::ranges::contains(expected_vertex_orders2,
+                                    extended2.at(1).vertex_orders.at(v7)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders2,
+                                    expected_vertex_orders2.at(0)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders2,
+                                    expected_vertex_orders2.at(1)));
+
+  // Test also upper bound on insertion location
+  state.ttd_orders.at(0)     = {tr4, tr2, tr3};
+  state.ttd_orders.at(1)     = {tr2, tr4, tr3};
+  state.vertex_orders.at(v0) = {tr1, tr4, tr2, tr3};
+  state.vertex_orders.at(v7) = {tr2, tr4, tr3};
+  auto const extended3       = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+          tr1, state, {.late_entry_possible = false},
+          {.time_aware_state_transitions = true}, ttd_sections, &instance);
+  EXPECT_EQ(extended3.size(), 2);
+  ASSERT_GE(extended3.size(), 2);
+  EXPECT_EQ(extended3.at(0).train_edges, state.train_edges);
+  EXPECT_EQ(extended3.at(0).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended3.at(1).train_edges, state.train_edges);
+  EXPECT_EQ(extended3.at(1).stop_positions, state.stop_positions);
+
+  EXPECT_EQ(extended3.at(0).vertex_orders.at(v0), state.vertex_orders.at(v0));
+  EXPECT_EQ(extended3.at(1).vertex_orders.at(v0), state.vertex_orders.at(v0));
+
+  EXPECT_EQ(extended3.at(0).vertex_orders.at(v0),
+            extended3.at(0).ttd_orders.at(0));
+  EXPECT_EQ(extended3.at(1).vertex_orders.at(v0),
+            extended3.at(1).ttd_orders.at(0));
+  EXPECT_EQ(extended3.at(0).vertex_orders.at(v7),
+            extended3.at(0).ttd_orders.at(1));
+  EXPECT_EQ(extended3.at(1).vertex_orders.at(v7),
+            extended3.at(1).ttd_orders.at(1));
+
+  EXPECT_NE(extended3.at(0).ttd_orders.at(1), extended3.at(1).ttd_orders.at(1));
+  EXPECT_NE(extended3.at(0).vertex_orders.at(v7),
+            extended3.at(1).vertex_orders.at(v7));
+
+  std::vector<cda_rail::index_vector> expected_vertex_orders3{
+      {tr1, tr2, tr4, tr3}, {tr2, tr1, tr4, tr3}};
+  std::vector<cda_rail::index_vector> actual_vertex_orders3{
+      extended3.at(0).vertex_orders.at(v7),
+      extended3.at(1).vertex_orders.at(v7)};
+  EXPECT_TRUE(std::ranges::contains(expected_vertex_orders3,
+                                    extended3.at(0).vertex_orders.at(v7)));
+  EXPECT_TRUE(std::ranges::contains(expected_vertex_orders3,
+                                    extended3.at(1).vertex_orders.at(v7)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders3,
+                                    expected_vertex_orders3.at(0)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders3,
+                                    expected_vertex_orders3.at(1)));
+}
+
 TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
   Network network;
   network.add_vertex("v0a", VertexType::TTD);
