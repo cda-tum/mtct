@@ -65,11 +65,6 @@ struct SolverStrategyMBAStar {
 };
 } // namespace cda_rail::solver::astar_based
 
-template <> struct std::hash<cda_rail::simulator::SimulatorState> {
-  size_t
-  operator()(const cda_rail::simulator::SimulatorState& state) const noexcept;
-}; // namespace std
-
 namespace cda_rail::solver::astar_based {
 class GenPOMovingBlockAStarSolver
     : public GeneralSolver<

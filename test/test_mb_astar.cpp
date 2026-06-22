@@ -5,7 +5,6 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
-#include "simulator/GreedySimulator.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
 #include "gtest/gtest.h"

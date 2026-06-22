@@ -4,6 +4,7 @@
 #include "EOMHelper.hpp"
 #include "plog/Log.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "simulator/GreedySimulator.hpp"
 #include "solver/GeneralSolver.hpp"

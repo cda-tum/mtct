@@ -335,3 +335,8 @@ private:
       std::vector<std::vector<double>> const& stop_positions) const;
 };
 } // namespace cda_rail::simulator
+
+template <> struct std::hash<cda_rail::simulator::SimulatorState> {
+  size_t
+  operator()(const cda_rail::simulator::SimulatorState& state) const noexcept;
+}; // namespace std

@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <iostream>
 #include <limits>
 #include <optional>
 #include <string>
