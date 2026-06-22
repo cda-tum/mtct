@@ -34,9 +34,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   cda_rail::exceptions::throw_if_less_than(solver_strategy_input.a_star_weight,
                                            1.0, "A* weight");
 
-  const auto ttd_section =
+  const auto ttd_sections =
       get_instance().get_const_network().unbreakable_sections();
-  simulator::GreedySimulator simulator(get_instance(), ttd_section);
+  simulator::GreedySimulator simulator(get_instance(), ttd_sections);
 
   std::unordered_set<simulator::SimulatorState> explored_states;
   MinPriorityQueue                              pq;
@@ -54,7 +54,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   // const auto [init_feas, init_exit_times, init_braking, init_headways] =
   const auto init_simulator_result = simulator.simulate(
       model_detail_input.dt, model_detail_input.late_entry_possible,
-      model_detail_input.limit_speed_by_leaving_edges, false);
+      model_detail_input.limit_speed_by_leaving_edges, false,
+      solver_strategy_input.time_aware_state_transitions);
   const auto init_obj =
       simulator::objective_val(simulator, init_simulator_result.exit_times,
                                init_simulator_result.stop_times);
@@ -79,7 +80,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         .stop_positions = simulator.get_stop_positions()};
     pq.push(
         {init_obj + solver_strategy_input.a_star_weight * init_heuristic_val,
-         simulator.is_final_state(), init_state});
+         simulator.is_final_state(), init_state, init_simulator_result});
     explored_states.insert(init_state);
   }
 
@@ -140,32 +141,25 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       break;
     }
 
-    simulator.set_train_edges(current_state_objective_pair.state.train_edges);
-    simulator.set_ttd_orders(current_state_objective_pair.state.ttd_orders);
-    simulator.set_vertex_orders(
-        current_state_objective_pair.state.vertex_orders);
-    simulator.set_stop_positions(
-        current_state_objective_pair.state.stop_positions);
-
     const auto next_states_set =
-        next_states(simulator, model_detail_input, solver_strategy_input);
+        next_states(current_state_objective_pair.state,
+                    current_state_objective_pair.results, model_detail_input,
+                    solver_strategy_input, &get_instance(), ttd_sections);
     PLOGV << "Found " << next_states_set.size() << " next states.";
     size_t i = 0;
     for (const auto& s : next_states_set) {
       i++;
       PLOGV << "Processing next state " << i << "/" << next_states_set.size();
-      simulator.set_train_edges(s.train_edges);
-      simulator.set_ttd_orders(s.ttd_orders);
-      simulator.set_vertex_orders(s.vertex_orders);
-      simulator.set_stop_positions(s.stop_positions);
       if (explored_states.contains(s)) {
         PLOGV << "State already explored, skipping.";
         continue;
       }
+      simulator.set_simulator_state(s);
 
       const auto sim_res = simulator.simulate(
           model_detail_input.dt, model_detail_input.late_entry_possible,
-          model_detail_input.limit_speed_by_leaving_edges, false);
+          model_detail_input.limit_speed_by_leaving_edges, false,
+          solver_strategy_input.time_aware_state_transitions);
       if (!sim_res.success) {
         PLOGV << "State is infeasible, skipping.";
         continue;
@@ -197,7 +191,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         sol_object.set_status(cda_rail::SolutionStatus::Feasible);
       }
       if (heuristic_feas) {
-        pq.push({new_obj, final, s});
+        pq.push({new_obj, final, s, sim_res});
         explored_states.insert(s);
         PLOGV << "State added to priority queue.";
       }
@@ -219,15 +213,13 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   if (sol_object.has_solution()) {
     // Add solution data to the solution object
 
-    simulator.set_train_edges(best_state.train_edges);
-    simulator.set_ttd_orders(best_state.ttd_orders);
-    simulator.set_vertex_orders(best_state.vertex_orders);
-    simulator.set_stop_positions(best_state.stop_positions);
+    simulator.set_simulator_state(best_state);
 
     // Determine trajectories
     const auto final_simulation_result = simulator.simulate(
         model_detail_input.dt, model_detail_input.late_entry_possible,
-        model_detail_input.limit_speed_by_leaving_edges, true);
+        model_detail_input.limit_speed_by_leaving_edges, true,
+        false); // no partial routes should exist
     if (!final_simulation_result.success) {
       throw cda_rail::exceptions::ConsistencyException(
           "Final trajectory extraction failed for a previously feasible "
@@ -713,6 +705,40 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
   return retval;
 }
 
+std::vector<cda_rail::simulator::SimulatorState>
+cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::next_states(
+    const simulator::SimulatorState&   simulator_state,
+    const simulator::SimulatorResults& simulator_results,
+    const ModelDetail&                 model_detail_input,
+    const SolverStrategyMBAStar&       solver_strategy_input,
+    instances::GeneralPerformanceOptimizationInstance const* instance,
+    std::vector<cda_rail::index_set> const&                  ttd_sections) {
+  // Relevant trains
+  auto const tr_to_advance = get_relevant_trains_for_state_transition(
+      simulator_state, simulator_results, instance, solver_strategy_input);
+
+  // for every train, get next states and combine
+  std::vector<simulator::SimulatorState> next_states{};
+  for (auto const& tr : tr_to_advance) {
+    auto const tr_path_extensions = get_path_extensions(
+        tr, simulator_state, solver_strategy_input.next_state_strategy,
+        instance, ttd_sections);
+    for (auto const& tr_path_extension : tr_path_extensions) {
+      auto const tr_path_extended_states = extend_state_by_path_extension(
+          tr, simulator_state, tr_path_extension, instance);
+      for (auto const& tr_path_extended_state : tr_path_extended_states) {
+        auto const tr_extended_paths = extend_train_orders_of_state(
+            tr, tr_path_extended_state, model_detail_input,
+            solver_strategy_input, ttd_sections, instance);
+        next_states.insert(next_states.end(), tr_extended_paths.begin(),
+                           tr_extended_paths.end());
+      }
+    }
+  }
+  return next_states;
+}
+
+#if 0
 std::unordered_set<cda_rail::simulator::SimulatorState> cda_rail::solver::
     astar_based::GenPOMovingBlockAStarSolver::next_states_single_edge(
         const cda_rail::simulator::GreedySimulator& simulator) {
@@ -918,3 +944,4 @@ void cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     }
   }
 }
+#endif

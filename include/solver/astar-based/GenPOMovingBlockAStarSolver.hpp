@@ -229,6 +229,7 @@ private:
       cda_rail::index_vector const& prev_order, size_t first_edge_index,
       std::optional<size_t> const& safe_ttd);
 
+#if 0
   [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
   next_states_single_edge(const simulator::GreedySimulator& simulator);
   [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
@@ -239,6 +240,7 @@ private:
   static void
   next_state_exit_vertex_helper(size_t tr, simulator::SimulatorState& state,
                                 const simulator::GreedySimulator& simulator);
+#endif
 
   /**
    * @brief Generates the next reachable states using the specified transition
@@ -251,40 +253,23 @@ private:
    * @throws cda_rail::exceptions::ConsistencyException If the transition
    * strategy is unknown.
    */
-  [[nodiscard]] static std::unordered_set<simulator::SimulatorState>
-  next_states(const simulator::GreedySimulator& simulator,
-              const ModelDetail&                model_detail_input,
-              const SolverStrategyMBAStar&      solver_strategy_input) {
-    if (solver_strategy_input.time_aware_state_transitions) {
-      throw cda_rail::exceptions::ConsistencyException(
-          "Time aware state transitions are not yet implemented.");
-    }
-
-    // Relevant trains
-
-    // for every train
-
-    // get next states and combine
-
-    switch (solver_strategy_input.next_state_strategy) {
-    case NextStateStrategy::SingleEdge:
-      return next_states_single_edge(simulator);
-    case NextStateStrategy::NextTTD:
-      return next_states_next_ttd(simulator);
-    default:
-      throw cda_rail::exceptions::ConsistencyException(
-          "Unknown next state strategy.");
-    }
-  }
+  [[nodiscard]] static std::vector<simulator::SimulatorState>
+  next_states(const simulator::SimulatorState&   simulator_state,
+              const simulator::SimulatorResults& simulator_results,
+              const ModelDetail&                 model_detail_input,
+              const SolverStrategyMBAStar&       solver_strategy_input,
+              instances::GeneralPerformanceOptimizationInstance const* instance,
+              std::vector<cda_rail::index_set> const& ttd_sections);
 
   // ----------------------
   // DATA STRUCTURE
   // ----------------------
 
   struct StateObjectivePair {
-    double                    objective{};
-    bool                      is_final_state{};
-    simulator::SimulatorState state{};
+    double                      objective{};
+    bool                        is_final_state{};
+    simulator::SimulatorState   state{};
+    simulator::SimulatorResults results{};
   };
 
   struct CompareByObjective {
