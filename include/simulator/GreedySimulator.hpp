@@ -219,7 +219,8 @@ private:
       const std::vector<double>&                     train_velocities,
       const std::unordered_set<size_t>&              trains_in_network,
       const std::unordered_set<size_t>&              trains_left,
-      const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
+      const std::vector<std::unordered_set<size_t>>& tr_on_edges,
+      bool also_check_reverse_edges) const;
 
   [[nodiscard]] static PosVel speed_restriction_helper(double ma, double max_v,
                                                        double pos,
@@ -254,7 +255,8 @@ private:
                   const std::unordered_set<size_t>& trains_in_network,
                   const std::unordered_set<size_t>& trains_left,
                   const std::vector<std::unordered_set<size_t>>& tr_on_edges,
-                  bool also_limit_speed_by_leaving_edges) const;
+                  bool also_limit_speed_by_leaving_edges,
+                  bool also_check_reverse_edges) const;
 
   // MA to Speed Helper
 

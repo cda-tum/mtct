@@ -1142,132 +1142,134 @@ TEST(GreedySimulator, AbsoluteDistanceMA) {
   };
   std::vector<double> train_velocities(3, 0);
 
-  EXPECT_EQ(simulator.get_absolute_distance_ma(
-                tr1, 200, train_pos, train_velocities, {tr1}, {}, tr_on_edges),
+  EXPECT_EQ(simulator.get_absolute_distance_ma(tr1, 200, train_pos,
+                                               train_velocities, {tr1}, {},
+                                               tr_on_edges, true),
             200);
   train_pos[tr1] = {40, 90};
-  EXPECT_EQ(simulator.get_absolute_distance_ma(
-                tr1, 200, train_pos, train_velocities, {tr1}, {}, tr_on_edges),
+  EXPECT_EQ(simulator.get_absolute_distance_ma(tr1, 200, train_pos,
+                                               train_velocities, {tr1}, {},
+                                               tr_on_edges, true),
             200);
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             100);
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr2}, {tr1},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             200);
   train_pos[tr2] = {0, 50};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             50);
   train_pos[tr1] = {52, 102};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             50);
   train_pos[tr1] = {90, 140};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             50);
   train_pos[tr1] = {102, 152};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             50);
   train_pos[tr1] = {112, 162};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             50);
   train_pos[tr1] = {120, 170};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             50);
   train_pos[tr1] = {120, 200};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             50);
   train_pos[tr1] = {121, 200};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             70);
   train_pos[tr1] = {121.1, 200};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             70.1);
   train_pos[tr1] = {150, 200};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             99);
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 98, train_pos,
                                                train_velocities, {tr1, tr2}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             98);
   train_pos[tr1] = {200, 250};
   EXPECT_EQ(simulator.get_absolute_distance_ma(tr3, 200, train_pos,
                                                train_velocities, {tr1, tr3}, {},
-                                               tr_on_edges),
+                                               tr_on_edges, true),
             100);
   train_pos[tr2] = {50, 100};
-  EXPECT_EQ(
-      simulator.get_absolute_distance_ma(tr3, 200, train_pos, train_velocities,
-                                         {tr1, tr2, tr3}, {}, tr_on_edges),
-      50);
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 200, train_pos, train_velocities, {tr1, tr2, tr3}, {},
+                tr_on_edges, true),
+            50);
   train_pos[tr2] = {105, 155};
-  EXPECT_EQ(
-      simulator.get_absolute_distance_ma(tr3, 200, train_pos, train_velocities,
-                                         {tr1, tr2, tr3}, {}, tr_on_edges),
-      100);
-  EXPECT_EQ(
-      simulator.get_absolute_distance_ma(tr3, 99, train_pos, train_velocities,
-                                         {tr1, tr2, tr3}, {}, tr_on_edges),
-      99);
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 200, train_pos, train_velocities, {tr1, tr2, tr3}, {},
+                tr_on_edges, true),
+            100);
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 99, train_pos, train_velocities, {tr1, tr2, tr3}, {},
+                tr_on_edges, true),
+            99);
   train_pos[tr3] = {50, 100};
-  EXPECT_EQ(
-      simulator.get_absolute_distance_ma(tr3, 200, train_pos, train_velocities,
-                                         {tr1, tr2, tr3}, {}, tr_on_edges),
-      0);
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 200, train_pos, train_velocities, {tr1, tr2, tr3}, {},
+                tr_on_edges, true),
+            0);
   train_pos[tr2] = {140, 190};
-  EXPECT_EQ(
-      simulator.get_absolute_distance_ma(tr3, 200, train_pos, train_velocities,
-                                         {tr1, tr2, tr3}, {}, tr_on_edges),
-      40);
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 200, train_pos, train_velocities, {tr1, tr2, tr3}, {},
+                tr_on_edges, true),
+            40);
 
   train_pos[tr1] = {200, 250};
   train_pos[tr2] = {160, 195};
   train_pos[tr3] = {140, 150};
-  EXPECT_EQ(
-      simulator.get_absolute_distance_ma(tr1, 200, train_pos, train_velocities,
-                                         {tr1, tr2, tr3}, {}, tr_on_edges),
-      200);
-  EXPECT_EQ(
-      simulator.get_absolute_distance_ma(tr2, 200, train_pos, train_velocities,
-                                         {tr1, tr2, tr3}, {}, tr_on_edges),
-      4);
-  EXPECT_EQ(
-      simulator.get_absolute_distance_ma(tr3, 200, train_pos, train_velocities,
-                                         {tr1, tr2, tr3}, {}, tr_on_edges),
-      10);
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr1, 200, train_pos, train_velocities, {tr1, tr2, tr3}, {},
+                tr_on_edges, true),
+            200);
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr2, 200, train_pos, train_velocities, {tr1, tr2, tr3}, {},
+                tr_on_edges, true),
+            4);
+  EXPECT_EQ(simulator.get_absolute_distance_ma(
+                tr3, 200, train_pos, train_velocities, {tr1, tr2, tr3}, {},
+                tr_on_edges, true),
+            10);
 
-  EXPECT_THROW(
-      (void)simulator.get_absolute_distance_ma(
-          tr3, 200, train_pos, train_velocities, {tr1, tr2}, {}, tr_on_edges),
-      cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW((void)simulator.get_absolute_distance_ma(
+                   tr3, 200, train_pos, train_velocities, {tr1, tr2}, {},
+                   tr_on_edges, true),
+               cda_rail::exceptions::ConsistencyException);
   EXPECT_THROW((void)simulator.get_absolute_distance_ma(
                    tr3, -1, train_pos, train_velocities, {tr1, tr2, tr3}, {},
-                   tr_on_edges),
+                   tr_on_edges, true),
                cda_rail::exceptions::InvalidInputException);
   EXPECT_THROW((void)simulator.get_absolute_distance_ma(
                    1000, 200, train_pos, train_velocities, {tr1, tr2, 1000}, {},
-                   tr_on_edges),
+                   tr_on_edges, true),
                cda_rail::exceptions::TrainNotExistentException);
 }
 
@@ -1823,18 +1825,17 @@ TEST(GreedySimulator, MAandMaxV) {
 
   // Train 3: No bounds -> maximal displacement, a = 6, d = 12
   train_velocities.at(tr3) = 10;
-  const auto ma_data3 =
-      simulator.get_ma_and_maxv(tr3, train_velocities, {}, 400, 2, {},
-                                train_pos, train_ids, {}, tr_on_edges, true);
+  const auto ma_data3      = simulator.get_ma_and_maxv(
+      tr3, train_velocities, {}, 400, 2, {}, train_pos, train_ids, {},
+      tr_on_edges, true, true);
   const auto ma3    = ma_data3.ma;
   const auto max_v3 = ma_data3.max_v;
   EXPECT_APPROX_EQ_6(ma3, 52.0 + 1.0 / 6.0);
   EXPECT_GE((10.0 + max_v3) * 2.0 / 2.0 + ((max_v3 * max_v3) / (2 * 12)), ma3);
   train_velocities.at(tr3) = 30;
-  const auto ma_data3b =
-      simulator.get_ma_and_maxv(tr3, train_velocities, {}, 400, 20, {},
-                                train_pos, train_ids, {}, tr_on_edges,
-                                true); // this time limited by tr2
+  const auto ma_data3b     = simulator.get_ma_and_maxv(
+      tr3, train_velocities, {}, 400, 20, {}, train_pos, train_ids, {},
+      tr_on_edges, true, true); // this time limited by tr2
   const auto ma3b    = ma_data3b.ma;
   const auto max_v3b = ma_data3b.max_v;
   EXPECT_EQ(ma3b, 870);
@@ -1843,9 +1844,9 @@ TEST(GreedySimulator, MAandMaxV) {
 
   // Train 4: Bound by Train 3, a = 5, d = 10
   train_velocities.at(tr4) = 28;
-  const auto ma_data4 =
-      simulator.get_ma_and_maxv(tr4, train_velocities, {}, 400, 2, {},
-                                train_pos, train_ids, {}, tr_on_edges, true);
+  const auto ma_data4      = simulator.get_ma_and_maxv(
+      tr4, train_velocities, {}, 400, 2, {}, train_pos, train_ids, {},
+      tr_on_edges, true, true);
   const auto ma4    = ma_data4.ma;
   const auto max_v4 = ma_data4.max_v;
   EXPECT_EQ(ma4, 40);
@@ -1853,18 +1854,18 @@ TEST(GreedySimulator, MAandMaxV) {
 
   // Train 5: Bound by stopping at Station1, a = 4, d = 8
   train_velocities.at(tr5) = 0;
-  const auto ma_data5 =
-      simulator.get_ma_and_maxv(tr5, train_velocities, {0}, 400, 2, {},
-                                train_pos, train_ids, {}, tr_on_edges, true);
+  const auto ma_data5      = simulator.get_ma_and_maxv(
+      tr5, train_velocities, {0}, 400, 2, {}, train_pos, train_ids, {},
+      tr_on_edges, true, true);
   const auto ma5    = ma_data5.ma;
   const auto max_v5 = ma_data5.max_v;
   EXPECT_EQ(ma5, 0);
   EXPECT_GE((0.0 + max_v5) * 2.0 / 2.0 + ((max_v5 * max_v5) / (2 * 8)), ma5);
   // Otherwise 90m away from tr4
   train_velocities.at(tr5) = 30;
-  const auto ma_data5b =
-      simulator.get_ma_and_maxv(tr5, train_velocities, {}, 400, 2, {},
-                                train_pos, train_ids, {}, tr_on_edges, true);
+  const auto ma_data5b     = simulator.get_ma_and_maxv(
+      tr5, train_velocities, {}, 400, 2, {}, train_pos, train_ids, {},
+      tr_on_edges, true, true);
   const auto ma5b    = ma_data5b.ma;
   const auto max_v5b = ma_data5b.max_v;
   EXPECT_EQ(ma5b, 90);
@@ -1874,9 +1875,9 @@ TEST(GreedySimulator, MAandMaxV) {
   // Train 6: Bound by Train 5 in TTD, a = 3, d = 6
   // 15m away from TTD
   train_velocities.at(tr6) = 10;
-  const auto ma_data6 =
-      simulator.get_ma_and_maxv(tr6, train_velocities, {}, 400, 2, {},
-                                train_pos, train_ids, {}, tr_on_edges, true);
+  const auto ma_data6      = simulator.get_ma_and_maxv(
+      tr6, train_velocities, {}, 400, 2, {}, train_pos, train_ids, {},
+      tr_on_edges, true, true);
   const auto ma6    = ma_data6.ma;
   const auto max_v6 = ma_data6.max_v;
   EXPECT_EQ(ma6, 15);
@@ -1884,17 +1885,17 @@ TEST(GreedySimulator, MAandMaxV) {
 
   // Train 7: Bound by speed limit of edge, a = 2, d = 4
   train_velocities.at(tr7) = 4;
-  const auto ma_data7 =
-      simulator.get_ma_and_maxv(tr7, train_velocities, {}, 400, 4, {},
-                                train_pos, train_ids, {}, tr_on_edges, true);
+  const auto ma_data7      = simulator.get_ma_and_maxv(
+      tr7, train_velocities, {}, 400, 4, {}, train_pos, train_ids, {},
+      tr_on_edges, true, true);
   const auto ma7    = ma_data7.ma;
   const auto max_v7 = ma_data7.max_v;
   EXPECT_EQ(max_v7, 5);
   EXPECT_LE((4.0 + max_v7) * 4.0 / 2.0 + ((max_v7 * max_v7) / (2 * 4)), ma7);
   train_velocities.at(tr7) = 4;
-  const auto ma_data7b =
-      simulator.get_ma_and_maxv(tr7, train_velocities, {}, 400, 4, {},
-                                train_pos, train_ids, {}, tr_on_edges, false);
+  const auto ma_data7b     = simulator.get_ma_and_maxv(
+      tr7, train_velocities, {}, 400, 4, {}, train_pos, train_ids, {},
+      tr_on_edges, false, true);
   const auto ma7b    = ma_data7b.ma;
   const auto max_v7b = ma_data7b.max_v;
   EXPECT_EQ(max_v7b, 10);
@@ -1907,9 +1908,9 @@ TEST(GreedySimulator, MAandMaxV) {
   // --> ma at 800.78125
   // Train is 200m away from position 800
   train_velocities.at(tr8) = 30;
-  const auto ma_data8 =
-      simulator.get_ma_and_maxv(tr8, train_velocities, {}, 400, 5, {},
-                                train_pos, train_ids, {}, tr_on_edges, true);
+  const auto ma_data8      = simulator.get_ma_and_maxv(
+      tr8, train_velocities, {}, 400, 5, {}, train_pos, train_ids, {},
+      tr_on_edges, true, true);
   const auto ma8    = ma_data8.ma;
   const auto max_v8 = ma_data8.max_v;
   EXPECT_EQ(ma8, 200.78125);
@@ -2203,9 +2204,9 @@ TEST(GreedySimulator, ReverseEdgeMA) {
   // x_1 = (0 + 2) * 2 / 2 = 2
   // bd = 2 * 2 / (2*2) = 1
   // ma = x_1 + bd = 2 + 1 = 3
-  const auto ma_data1 =
-      simulator.get_ma_and_maxv(tr1, train_velocities, {}, 400, 2, {},
-                                train_pos, {tr1, tr2}, {}, tr_on_edges, true);
+  const auto ma_data1 = simulator.get_ma_and_maxv(
+      tr1, train_velocities, {}, 400, 2, {}, train_pos, {tr1, tr2}, {},
+      tr_on_edges, true, true);
   const auto ma1    = ma_data1.ma;
   const auto max_v1 = ma_data1.max_v;
   EXPECT_EQ(ma1, 3);
@@ -2216,9 +2217,9 @@ TEST(GreedySimulator, ReverseEdgeMA) {
   // x_1 = (0 + 20) * 10 / 2 = 100
   // bd = 20 * 20 / (2*4) = 50
   // ma = x_1 + bd = 100 + 50 = 150
-  const auto ma_data2 =
-      simulator.get_ma_and_maxv(tr2, train_velocities, {}, 400, 10, {},
-                                train_pos, {tr1, tr2}, {}, tr_on_edges, true);
+  const auto ma_data2 = simulator.get_ma_and_maxv(
+      tr2, train_velocities, {}, 400, 10, {}, train_pos, {tr1, tr2}, {},
+      tr_on_edges, true, true);
   const auto ma2    = ma_data2.ma;
   const auto max_v2 = ma_data2.max_v;
   EXPECT_EQ(ma2, 150);
@@ -2233,17 +2234,17 @@ TEST(GreedySimulator, ReverseEdgeMA) {
   // bd = 13 * 13 / (2*2) = 42.25
   // ma = x_1 + bd = 24 + 42.25 = 66.25
   train_velocities.at(tr1) = 11;
-  const auto ma_data1b =
-      simulator.get_ma_and_maxv(tr1, train_velocities, {}, 400, 2, {},
-                                train_pos, {tr1, tr2}, {}, tr_on_edges, true);
+  const auto ma_data1b     = simulator.get_ma_and_maxv(
+      tr1, train_velocities, {}, 400, 2, {}, train_pos, {tr1, tr2}, {},
+      tr_on_edges, true, true);
   const auto ma1b    = ma_data1b.ma;
   const auto max_v1b = ma_data1b.max_v;
   EXPECT_EQ(ma1b, 66.25);
   EXPECT_EQ(max_v1b, 13);
 
-  const auto ma_data2b =
-      simulator.get_ma_and_maxv(tr2, train_velocities, {}, 400, 10, {},
-                                train_pos, {tr1, tr2}, {}, tr_on_edges, true);
+  const auto ma_data2b = simulator.get_ma_and_maxv(
+      tr2, train_velocities, {}, 400, 10, {}, train_pos, {tr1, tr2}, {},
+      tr_on_edges, true, true);
   const auto ma2b    = ma_data2b.ma;
   const auto max_v2b = ma_data2b.max_v;
   EXPECT_EQ(ma2b, 50);

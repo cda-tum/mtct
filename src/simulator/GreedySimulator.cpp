@@ -162,7 +162,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       const auto tr_ma_data = get_ma_and_maxv(
           tr, train_velocities, tr_next_stop_id.at(tr), t, dt, blocked_vertices,
           train_positions, trains_in_network, trains_left, trains_on_edges,
-          limit_speed_by_leaving_edges);
+          limit_speed_by_leaving_edges, !disappear_at_partial_route_end);
       PLOGV << train_object.get_name() << " positioned at "
             << train_positions.at(tr).front
             << " has MA: " << train_positions.at(tr).front + tr_ma_data.ma
@@ -680,7 +680,8 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
     const std::vector<double>&                     train_velocities,
     const std::unordered_set<size_t>&              trains_in_network,
     const std::unordered_set<size_t>&              trains_left,
-    const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
+    const std::vector<std::unordered_set<size_t>>& tr_on_edges,
+    bool also_check_reverse_edges) const {
   if (!trains_in_network.contains(tr)) {
     throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
         {"Train ",
@@ -734,26 +735,29 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
         }
       }
 
-      const auto reverse_edge_id =
-          get_instance()->get_const_network().get_reverse_edge_index(edge_id);
-      if (reverse_edge_id.has_value()) {
-        const auto& potential_trains_reverse =
-            tr_on_edges.at(reverse_edge_id.value());
-        for (const auto& other_tr : potential_trains_reverse) {
-          if (other_tr == tr || !trains_in_network.contains(other_tr)) {
-            continue; // Skip the train itself or trains that are not in the
-                      // network
-          }
-          [[maybe_unused]] const auto [occ_rev, pos_rev] = get_position_on_edge(
-              other_tr,
-              {.rear  = train_positions.at(other_tr).rear,
-               .front = train_positions.at(other_tr).front +
-                        tr_braking_distance(other_tr,
-                                            train_velocities.at(other_tr))},
-              reverse_edge_id.value());
-          if (occ_rev.tr_on_edge) {
-            // Other train has already been cleared to enter the reverse edge
-            return milestones.at(i) - train_positions.at(tr).front;
+      if (also_check_reverse_edges) {
+        const auto reverse_edge_id =
+            get_instance()->get_const_network().get_reverse_edge_index(edge_id);
+        if (reverse_edge_id.has_value()) {
+          const auto& potential_trains_reverse =
+              tr_on_edges.at(reverse_edge_id.value());
+          for (const auto& other_tr : potential_trains_reverse) {
+            if (other_tr == tr || !trains_in_network.contains(other_tr)) {
+              continue; // Skip the train itself or trains that are not in the
+              // network
+            }
+            [[maybe_unused]] const auto [occ_rev, pos_rev] =
+                get_position_on_edge(
+                    other_tr,
+                    {.rear  = train_positions.at(other_tr).rear,
+                     .front = train_positions.at(other_tr).front +
+                              tr_braking_distance(
+                                  other_tr, train_velocities.at(other_tr))},
+                    reverse_edge_id.value());
+            if (occ_rev.tr_on_edge) {
+              // Other train has already been cleared to enter the reverse edge
+              return milestones.at(i) - train_positions.at(tr).front;
+            }
           }
         }
       }
@@ -1003,7 +1007,8 @@ cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
     const std::unordered_set<size_t>&              trains_in_network,
     const std::unordered_set<size_t>&              trains_left,
     const std::vector<std::unordered_set<size_t>>& tr_on_edges,
-    bool also_limit_speed_by_leaving_edges) const {
+    bool also_limit_speed_by_leaving_edges,
+    bool also_check_reverse_edges) const {
   const auto& train = get_instance()->get_const_train_list().get_train(tr);
   double      ma    = max_displacement(train, train_velocities.at(tr), dt);
   if (next_stop.has_value()) {
@@ -1013,7 +1018,8 @@ cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
   ma = get_exit_vertex_order_ma(tr, train_positions.at(tr).front, ma,
                                 trains_in_network, trains_left);
   ma = get_absolute_distance_ma(tr, ma, train_positions, train_velocities,
-                                trains_in_network, trains_left, tr_on_edges);
+                                trains_in_network, trains_left, tr_on_edges,
+                                also_check_reverse_edges);
   return get_future_max_speed_constraints(
       tr, train, train_positions.at(tr).front, train_velocities.at(tr), ma,
       current_time, dt, blocked_vertices, also_limit_speed_by_leaving_edges);
