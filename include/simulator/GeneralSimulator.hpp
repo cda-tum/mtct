@@ -288,6 +288,29 @@ protected:
   [[nodiscard]] std::vector<std::unordered_set<size_t>> tr_on_edges() const;
 
 private:
+  [[nodiscard]] static cda_rail::index_set
+  trains_on_path_helper(cda_rail::index_vector const&              edges,
+                        std::vector<cda_rail::index_vector> const& tr_edges);
+
+public:
+  [[nodiscard]] cda_rail::index_set
+  trains_on_path(cda_rail::index_vector const& edges,
+                 bool also_reverse_path = false) const {
+    return trains_on_path(edges, get_train_edges(), also_reverse_path);
+  }
+  [[nodiscard]] cda_rail::index_set
+  trains_on_path(cda_rail::index_vector const&              edges,
+                 std::vector<cda_rail::index_vector> const& tr_edges,
+                 bool also_reverse_path = false) const {
+    return trains_on_path(edges, tr_edges, get_instance()->get_const_network(),
+                          also_reverse_path);
+  }
+  [[nodiscard]] static cda_rail::index_set
+  trains_on_path(cda_rail::index_vector const&              edges,
+                 std::vector<cda_rail::index_vector> const& tr_edges,
+                 Network const& network, bool also_reverse_path = false);
+
+private:
   // -----------------------
   // EXCEPTION HELPER
   // -----------------------

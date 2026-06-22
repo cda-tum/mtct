@@ -316,6 +316,102 @@ TEST(GreedySimulator, ValidStopPos) {
   EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr1));
 }
 
+TEST(GreedySimulator, TrainsOnPath) {
+  Network network;
+
+  auto const v0  = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  auto const v1  = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  auto const v2  = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  auto const v3a = network.add_vertex("v3a", cda_rail::VertexType::TTD);
+  auto const v3b = network.add_vertex("v3b", cda_rail::VertexType::TTD);
+  auto const v4b = network.add_vertex("v4b", cda_rail::VertexType::TTD);
+
+  auto const v0_v1   = network.add_edge(v0, v1, 50, 10);
+  auto const v1_v2   = network.add_edge(v1, v2, 50, 10);
+  auto const v2_v3a  = network.add_edge(v2, v3a, 50, 10);
+  auto const v2_v3b  = network.add_edge(v2, v3b, 50, 10);
+  auto const v3b_v4b = network.add_edge(v3b, v4b, 50, 10);
+
+  auto const v1_v0  = network.add_edge(v1, v0, 50, 10);
+  auto const v2_v1  = network.add_edge(v2, v1, 50, 10);
+  auto const v3a_v2 = network.add_edge(v3a, v2, 50, 10);
+  auto const v3b_v2 = network.add_edge(v3b, v2, 50, 10);
+  // 3b->4b has no reverse edge
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3a);
+  network.add_successor(v1_v2, v2_v3b);
+  network.add_successor(v2_v3b, v3b_v4b);
+  network.add_successor(v3a_v2, v2_v1);
+  network.add_successor(v3b_v2, v2_v1);
+  network.add_successor(v2_v1, v1_v0);
+
+  Timetable  timetable;
+  const auto tr1a = timetable.add_train("Train1a", 50, 10, 1, 1, true, 0, 0, v0,
+                                        360, 0, v3a, network);
+  const auto tr1b = timetable.add_train("Train1b", 50, 10, 1, 1, true, 0, 0, v0,
+                                        360, 0, v3a, network);
+  const auto tr2  = timetable.add_train("Train2", 50, 10, 1, 1, true, 0, 0, v0,
+                                        360, 0, v4b, network);
+  const auto tr3a = timetable.add_train("Train3a", 50, 10, 1, 1, true, 0, 0,
+                                        v3a, 360, 0, v0, network);
+  const auto tr3b = timetable.add_train("Train3b", 50, 10, 1, 1, true, 0, 0,
+                                        v3a, 360, 0, v0, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  simulator.set_train_edges_of_tr(tr1a, {v0_v1, v1_v2, v2_v3a});
+  simulator.set_train_edges_of_tr(tr1b, {v0_v1, v1_v2});
+  simulator.set_train_edges_of_tr(tr2, {v0_v1, v1_v2, v2_v3b, v3b_v4b});
+  simulator.set_train_edges_of_tr(tr3a, {v3a_v2, v2_v1, v1_v0});
+  simulator.set_train_edges_of_tr(tr3b, {v3a_v2, v2_v1});
+
+  EXPECT_EQ(simulator.trains_on_path({v0_v1, v1_v2, v2_v3a}, false),
+            cda_rail::index_set({tr1a}));
+  EXPECT_EQ(simulator.trains_on_path({v0_v1, v1_v2, v2_v3a}, true),
+            cda_rail::index_set({tr1a, tr3a}));
+
+  EXPECT_EQ(simulator.trains_on_path({v0_v1, v1_v2, v2_v3b, v3b_v4b}, false),
+            cda_rail::index_set({tr2}));
+  EXPECT_EQ(simulator.trains_on_path({v0_v1, v1_v2, v2_v3b, v3b_v4b}, true),
+            cda_rail::index_set({tr2}));
+
+  EXPECT_EQ(simulator.trains_on_path({v0_v1, v1_v2}, false),
+            cda_rail::index_set({tr1a, tr1b, tr2}));
+  EXPECT_EQ(simulator.trains_on_path({v0_v1, v1_v2}, true),
+            cda_rail::index_set({tr1a, tr1b, tr2, tr3a}));
+
+  EXPECT_EQ(simulator.trains_on_path({v1_v2, v2_v3a}, false),
+            cda_rail::index_set({tr1a}));
+  EXPECT_EQ(simulator.trains_on_path({v1_v2, v2_v3a}, true),
+            cda_rail::index_set({tr1a, tr3a, tr3b}));
+
+  EXPECT_EQ(simulator.trains_on_path({v1_v2}, false),
+            cda_rail::index_set({tr1a, tr1b, tr2}));
+  EXPECT_EQ(simulator.trains_on_path({v1_v2}, true),
+            cda_rail::index_set({tr1a, tr1b, tr2, tr3a, tr3b}));
+
+  EXPECT_EQ(simulator.trains_on_path({}, false), cda_rail::index_set({}));
+  EXPECT_EQ(simulator.trains_on_path({}, true), cda_rail::index_set({}));
+
+  std::vector<cda_rail::index_vector> tr_edges_patched(
+      instance.get_const_train_list().get_number_of_trains());
+  tr_edges_patched.at(tr1a) = {v0_v1};
+  tr_edges_patched.at(tr1b) = {v0_v1, v1_v2};
+
+  EXPECT_EQ(simulator.trains_on_path({v0_v1}, tr_edges_patched, false),
+            cda_rail::index_set({tr1a, tr1b}));
+  EXPECT_EQ(simulator.trains_on_path({v0_v1}, tr_edges_patched, true),
+            cda_rail::index_set({tr1a, tr1b}));
+  EXPECT_EQ(simulator.trains_on_path({v0_v1}, tr_edges_patched, network, false),
+            cda_rail::index_set({tr1a, tr1b}));
+  EXPECT_EQ(simulator.trains_on_path({v0_v1}, tr_edges_patched, network, true),
+            cda_rail::index_set({tr1a, tr1b}));
+}
+
 // ---------------------------
 // Test private functions
 // ---------------------------

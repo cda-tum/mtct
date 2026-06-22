@@ -398,6 +398,43 @@ cda_rail::simulator::GeneralSimulator::tr_on_edges() const {
   return trains_on_edges;
 }
 
+cda_rail::index_set
+cda_rail::simulator::GeneralSimulator::trains_on_path_helper(
+    cda_rail::index_vector const&              edges,
+    std::vector<cda_rail::index_vector> const& tr_edges) {
+  // Set of trains where edges is exact subsequence of tr_edges.at(tr)
+  if (edges.empty()) {
+    return {};
+  }
+
+  cda_rail::index_set retval;
+  auto                matching_indices =
+      std::views::iota(size_t{0}, tr_edges.size()) |
+      std::views::filter([&tr_edges, &edges](size_t const tr) {
+        return std::ranges::contains_subrange(tr_edges.at(tr), edges);
+      });
+
+  std::ranges::copy(matching_indices, std::inserter(retval, retval.end()));
+  return retval;
+}
+
+cda_rail::index_set cda_rail::simulator::GeneralSimulator::trains_on_path(
+    cda_rail::index_vector const&              edges,
+    std::vector<cda_rail::index_vector> const& tr_edges, Network const& network,
+    bool also_reverse_path) {
+  auto retval = trains_on_path_helper(edges, tr_edges);
+  if (also_reverse_path) {
+    if (auto const reverse_path = network.get_reverse_path(edges);
+        reverse_path.has_value()) {
+      auto const tr_on_reverse_path =
+          trains_on_path_helper(reverse_path.value(), tr_edges);
+      std::ranges::copy(tr_on_reverse_path,
+                        std::inserter(retval, retval.end()));
+    }
+  }
+  return retval;
+}
+
 void cda_rail::simulator::GeneralSimulator::check_ttd_sections(
     std::vector<cda_rail::index_set> const& ttd_sections) const {
   for (auto const& section : ttd_sections) {
