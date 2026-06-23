@@ -3,6 +3,7 @@
 #include "CustomExceptions.hpp"
 #include "GeneralHelper.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <chrono>
@@ -10,8 +11,6 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
-#include <plog/Logger.h>
-#include <plog/Severity.h>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -71,19 +70,16 @@ protected:
   struct IsSingleInstanceArgument<Arg> : std::is_same<T, std::decay_t<Arg>> {};
 
   /**
-   * @brief Initializes logging and conditionally records solver start time.
+   * @brief Initializes logging and records solver start time.
    *
    * Initializes the plog logging framework according to the settings provided.
    * Records the current high-resolution clock time as the solver's start
-   * timestamp if either debug logging is enabled or a positive time limit is
-   * specified.
+   * timestamp.
    *
-   * @param time_limit If positive, triggers start time recording.
    * @param debug_input If true, enables debug-level logging.
    * @param overwrite_severity If true, overwrites the logging severity level.
    */
-  void solve_init_general(int time_limit, bool debug_input,
-                          bool overwrite_severity) {
+  void solve_init_general(bool debug_input, bool overwrite_severity) {
     cda_rail::initialize_plog(debug_input, overwrite_severity);
 
     m_start = std::chrono::high_resolution_clock::now();

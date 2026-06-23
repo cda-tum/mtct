@@ -31,7 +31,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
                                                      solver_strategy_input,
     const cda_rail::solver::GeneralSolutionSettings& solution_settings_input,
     int time_limit, bool debug_input, bool overwrite_severity) {
-  this->solve_init_general(time_limit, debug_input, overwrite_severity);
+  this->solve_init_general(debug_input, overwrite_severity);
 
   cda_rail::exceptions::throw_if_less_than(solver_strategy_input.a_star_weight,
                                            1.0, "A* weight");

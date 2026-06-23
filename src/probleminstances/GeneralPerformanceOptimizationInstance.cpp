@@ -7,6 +7,7 @@
 #include "StringHelper.hpp"
 #include "datastructure/Timetable.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <algorithm>

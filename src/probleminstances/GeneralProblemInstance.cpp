@@ -5,6 +5,7 @@
 #include "GeneralHelper.hpp"
 #include "datastructure/Timetable.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
 #include <cstddef>
