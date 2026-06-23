@@ -126,4 +126,13 @@ void initialize_plog(bool debug_input, bool overwrite_severity = false);
  */
 [[nodiscard]] double relu(double val);
 
+[[nodiscard]] inline double get_time_difference_in_seconds(
+    std::chrono::system_clock::time_point const& start,
+    std::chrono::system_clock::time_point const& end) {
+  return static_cast<double>(
+             std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+                 .count()) /
+         1000.0;
+}
+
 } // namespace cda_rail

@@ -197,6 +197,8 @@ int main(int argc, char** argv) {
 
   export_sol_flag->needs(solution_subdir_opt);
   export_sol_inst_flag->needs(solution_subdir_opt);
+  export_sol_flag->excludes(export_sol_inst_flag);
+  export_sol_inst_flag->excludes(export_sol_flag);
 
   auto* parameter_identifier_option =
       app.add_option(
@@ -216,7 +218,6 @@ int main(int argc, char** argv) {
                    "to be set explicitly if it should not remain empty.")
           ->group("Export Options");
 
-  export_sol_flag->excludes(export_sol_inst_flag);
   generate_identifier_flag->excludes(parameter_identifier_option);
 
   CLI11_PARSE(app, argc, argv);

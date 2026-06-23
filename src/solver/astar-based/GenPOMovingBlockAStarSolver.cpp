@@ -204,10 +204,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       std::chrono::high_resolution_clock::now(); // Finished model solving
 
   PLOGD << "Terminated after " << iteration << " iterations, "
-        << (std::chrono::duration_cast<std::chrono::milliseconds>(
-                m_model_solved - m_start)
-                .count() /
-            1000.0)
+        << get_time_difference_in_seconds(m_start, m_model_solved)
         << " seconds.";
 
   PLOGI << "Extracting solution object...";
@@ -283,11 +280,18 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     const bool export_instance =
         (solution_settings_input.export_option ==
          GeneralExportOption::ExportSolutionWithInstance);
-    PLOGI << "Saving solution";
+
+    auto const& export_path = sol_object.get_export_path(
+        solution_settings_input.working_directory,
+        solution_settings_input.solution_subdirectory,
+        solution_settings_input.parameter_identifier);
+    PLOGI << "Saving solution to " << export_path.string();
     sol_object.export_solution(solution_settings_input.working_directory,
                                solution_settings_input.solution_subdirectory,
                                export_instance,
                                solution_settings_input.parameter_identifier);
+    export_solver_data(export_path,
+                       {.integer_data = {{"iterations", iteration}}});
   }
 
   return sol_object;

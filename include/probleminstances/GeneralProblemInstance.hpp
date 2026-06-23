@@ -848,6 +848,17 @@ protected:
   void set_general_solution_data(const json& data);
 
   /**
+   * @brief Retrieves the underlying problem instance pointer.
+   *
+   * @return Const pointer to the underlying `GeneralProblemInstance`.
+   */
+  [[nodiscard]] GeneralProblemInstance const*
+  get_uncast_instance_pointer() const {
+    return m_instance.get();
+  };
+
+public:
+  /**
    * @brief Computes the file path for exporting a solution.
    *
    * Constructs a path of the form
@@ -875,17 +886,6 @@ protected:
             get_instance()->get_instance_subdirectory() / adjusted_name};
   }
 
-  /**
-   * @brief Retrieves the underlying problem instance pointer.
-   *
-   * @return Const pointer to the underlying `GeneralProblemInstance`.
-   */
-  [[nodiscard]] GeneralProblemInstance const*
-  get_uncast_instance_pointer() const {
-    return m_instance.get();
-  };
-
-public:
   /**
    * @brief Provides access to the problem instance.
    * @return GeneralProblemInstance const* A const pointer to the underlying

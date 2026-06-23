@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GeneralHelper.hpp"
+#include "nlohmann/json.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <chrono>
@@ -88,6 +89,54 @@ protected:
   explicit GeneralSolver(Args&&... args)
     requires(!IsSingleInstanceArgument<Args...>::value)
       : m_instance(std::forward<Args>(args)...) {}
+
+  struct FurtherData {
+    std::unordered_map<std::string, int>         integer_data;
+    std::unordered_map<std::string, double>      double_data;
+    std::unordered_map<std::string, std::string> string_data;
+  };
+  /**
+   * @brief Exports solver data, i.e., timing and further information (e.g.
+   * iterations, nodes, etc.) into solver_data.json.
+   *
+   * @param export_directory The directory of the solution export
+   * @param further_data Additional solver-specific data
+   * @throws exceptions::ExportException If the export directory could not be
+   * created
+   */
+  void export_solver_data(std::filesystem::path const& export_directory,
+                          FurtherData const&           further_data = {}) {
+    if (!is_directory_and_create(export_directory)) {
+      throw exceptions::ExportException("Could not create directory " +
+                                        export_directory.string());
+    }
+
+    json data;
+    data["model_creation_time"] =
+        get_time_difference_in_seconds(m_start, m_model_created);
+    data["model_solving_time"] =
+        get_time_difference_in_seconds(m_model_created, m_model_solved);
+    data["total_time"] =
+        get_time_difference_in_seconds(m_start, m_model_solved);
+    for (auto const& [key, value] : further_data.integer_data) {
+      std::string const json_key =
+          concatenate_string_views(key.c_str(), "_int");
+      data[json_key] = value;
+    }
+    for (auto const& [key, value] : further_data.double_data) {
+      std::string const json_key =
+          concatenate_string_views(key.c_str(), "_double");
+      data[json_key] = value;
+    }
+    for (auto const& [key, value] : further_data.string_data) {
+      std::string const json_key =
+          concatenate_string_views(key.c_str(), "_string");
+      data[json_key] = value;
+    }
+    std::ofstream data_file(export_directory / "solver_data.json");
+    data_file << data << '\n';
+    data_file.close();
+  }
 
 public:
   /**
