@@ -26,6 +26,11 @@ endif()
 cmake_policy(SET CMP0069 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
 
+project(
+  rail
+  LANGUAGES CXX
+  DESCRIPTION "")
+
 # Require C++23
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -49,11 +54,6 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         Please update your compiler.")
   endif()
 endif()
-
-project(
-  rail
-  LANGUAGES CXX
-  DESCRIPTION "")
 
 # check whether the submodule ``modulename`` is correctly cloned in the ``/extern`` directory.
 macro(CHECK_SUBMODULE_PRESENT modulename)
