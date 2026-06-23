@@ -358,5 +358,17 @@ TEST(GreedyHeuristic, FinalStateHeuristic) {
   EXPECT_EQ(stops_val, 0); // already at exit
 }
 
+TEST(GreedyHeuristic, RemainingTimeHeuristicTypeToString) {
+  EXPECT_EQ(remaining_time_heuristic_type_to_string(
+                simulator::RemainingTimeHeuristicType::Zero),
+            "Zero");
+  EXPECT_EQ(remaining_time_heuristic_type_to_string(
+                simulator::RemainingTimeHeuristicType::Simple),
+            "Simple");
+  EXPECT_THROW(remaining_time_heuristic_type_to_string(
+                   static_cast<simulator::RemainingTimeHeuristicType>(255)),
+               cda_rail::exceptions::ConsistencyException);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

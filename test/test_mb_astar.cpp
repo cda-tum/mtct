@@ -2417,5 +2417,20 @@ TEST(GenPOMovingBlockAStarSolver, SolverDataExport) {
             "something with spaces");
 }
 
+TEST(GreedyHeuristic, NextStateStrategyToString) {
+  EXPECT_EQ(solver::astar_based::next_state_strategy_to_string(
+                solver::astar_based::NextStateStrategy::SingleEdge),
+            "SingleEdge");
+  EXPECT_EQ(solver::astar_based::next_state_strategy_to_string(
+                solver::astar_based::NextStateStrategy::NextTTD),
+            "NextTTD");
+  EXPECT_EQ(solver::astar_based::next_state_strategy_to_string(
+                solver::astar_based::NextStateStrategy::NextRelevantTTD),
+            "NextRelevantTTD");
+  EXPECT_THROW(solver::astar_based::next_state_strategy_to_string(
+                   static_cast<solver::astar_based::NextStateStrategy>(255)),
+               exceptions::ConsistencyException);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
