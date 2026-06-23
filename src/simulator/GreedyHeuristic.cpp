@@ -50,8 +50,9 @@ cda_rail::simulator::simple_remaining_time_heuristic(
       tr_edges.empty()
           ? simulator.get_instance()->get_const_network().out_edges(
                 tr_schedule.get_entry_vertex())
-          : cda_rail::index_set{tr_edges.back()};
-  bool include_first_edge = tr_edges.empty();
+          : simulator.get_instance()->get_const_network().get_successors(
+                tr_edges.back());
+  bool include_first_edge = true;
 
   for (size_t next_stop = first_next_stop; next_stop < tr_stops.size();
        ++next_stop) {
