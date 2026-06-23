@@ -509,9 +509,21 @@ TEST(GenPOMovingBlockAStarSolver, ExtendTrainOrderEntry) {
   const auto tr4 = timetable.add_train("Train4", 50, 20, 2, 4, true, 400, 20,
                                        v0, 700, 20, v7, network);
 
+  Timetable  timetable2;
+  const auto tr1b = timetable2.add_train("Train1", 50, 20, 2, 4, true, 200, 20,
+                                         v0, 500, 20, v7, network);
+  const auto tr2b = timetable2.add_train("Train2", 50, 20, 2, 4, true, 0, 20,
+                                         v7, 50, 20, v0, network);
+  const auto tr3b = timetable2.add_train("Train3", 50, 20, 2, 4, true, 50, 20,
+                                         v7, 100, 20, v0, network);
+  const auto tr4b = timetable2.add_train("Train4", 50, 20, 2, 4, true, 400, 20,
+                                         v0, 700, 20, v7, network);
+
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance2(
+      network, timetable2, routes);
 
   cda_rail::index_set              ttd1{v1_v2,
                                         v2_v3a,
@@ -535,7 +547,7 @@ TEST(GenPOMovingBlockAStarSolver, ExtendTrainOrderEntry) {
           std::vector<cda_rail::index_vector>(network.number_of_vertices()),
       .stop_positions = std::vector<std::vector<double>>(
           instance.get_const_train_list().get_number_of_trains())};
-  state.train_edges.at(tr1) = {v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5, v5_v6};
+
   state.train_edges.at(tr2) = {
       reverse_edges.at(v6_v7),  reverse_edges.at(v5_v6),
       reverse_edges.at(v4a_v5), reverse_edges.at(v3a_v4a),
@@ -544,6 +556,124 @@ TEST(GenPOMovingBlockAStarSolver, ExtendTrainOrderEntry) {
   state.train_edges.at(tr3) = state.train_edges.at(tr2);
   state.train_edges.at(tr4) = {v0_v1, v1_v2, v2_v3b, v3b_v4b};
 
+  state.ttd_orders.at(0)     = {tr2, tr4, tr3};
+  state.ttd_orders.at(1)     = {tr2, tr3};
+  state.vertex_orders.at(v0) = {tr2, tr4, tr3};
+  state.vertex_orders.at(v7) = {tr2, tr3};
+
+  auto const extended0_1 = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+          tr1, state, {.late_entry_possible = false},
+          {.time_aware_state_transitions = false}, ttd_sections, &instance2);
+  EXPECT_EQ(extended0_1.size(), 1);
+  ASSERT_GE(extended0_1.size(), 1);
+  EXPECT_EQ(extended0_1.at(0).train_edges, state.train_edges);
+  EXPECT_EQ(extended0_1.at(0).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended0_1.at(0).ttd_orders, state.ttd_orders);
+  EXPECT_EQ(extended0_1.at(0).vertex_orders, state.vertex_orders);
+
+  auto const extended0_2 = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+          tr1, state, {.late_entry_possible = false},
+          {.time_aware_state_transitions = true}, ttd_sections, &instance2);
+  EXPECT_EQ(extended0_2.size(), 1);
+  ASSERT_GE(extended0_2.size(), 1);
+  EXPECT_EQ(extended0_2.at(0).train_edges, state.train_edges);
+  EXPECT_EQ(extended0_2.at(0).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended0_2.at(0).ttd_orders, state.ttd_orders);
+  EXPECT_EQ(extended0_2.at(0).vertex_orders, state.vertex_orders);
+
+  auto const extended0_3 = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+          tr1, state, {.late_entry_possible = true},
+          {.time_aware_state_transitions = true}, ttd_sections, &instance2);
+  EXPECT_EQ(extended0_3.size(), 1);
+  ASSERT_GE(extended0_3.size(), 1);
+  EXPECT_EQ(extended0_3.at(0).train_edges, state.train_edges);
+  EXPECT_EQ(extended0_3.at(0).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended0_3.at(0).ttd_orders, state.ttd_orders);
+  EXPECT_EQ(extended0_3.at(0).vertex_orders, state.vertex_orders);
+
+  state.train_edges.at(tr1) = {v0_v1};
+
+  auto const extended0_1b = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+          tr1, state, {.late_entry_possible = false},
+          {.time_aware_state_transitions = false}, ttd_sections, &instance2);
+  EXPECT_EQ(extended0_1b.size(), 1);
+  ASSERT_GE(extended0_1b.size(), 1);
+  EXPECT_EQ(extended0_1b.at(0).train_edges, state.train_edges);
+  EXPECT_EQ(extended0_1b.at(0).stop_positions, state.stop_positions);
+  EXPECT_EQ(extended0_1b.at(0).ttd_orders, state.ttd_orders);
+  EXPECT_EQ(extended0_1b.at(0).vertex_orders.at(v0),
+            cda_rail::index_vector({tr2, tr4, tr3, tr1}));
+  EXPECT_EQ(extended0_1b.at(0).vertex_orders.at(v7),
+            state.vertex_orders.at(v7));
+
+  auto const extended0_2b = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+          tr1, state, {.late_entry_possible = false},
+          {.time_aware_state_transitions = true}, ttd_sections, &instance2);
+  EXPECT_EQ(extended0_2b.size(), 2);
+
+  std::vector<cda_rail::index_vector> expected_vertex_orders0_2b{
+      {tr1, tr2, tr4, tr3}, {tr2, tr1, tr4, tr3}};
+  std::vector<cda_rail::index_vector> actual_vertex_orders02_b{};
+  for (auto const& extended_state : extended0_2b) {
+    actual_vertex_orders02_b.emplace_back(extended_state.vertex_orders.at(v0));
+  }
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders02_b,
+                                    expected_vertex_orders0_2b.at(0)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders02_b,
+                                    expected_vertex_orders0_2b.at(1)));
+  for (auto const& actual_order : actual_vertex_orders02_b) {
+    EXPECT_TRUE(
+        std::ranges::contains(expected_vertex_orders0_2b, actual_order));
+  }
+
+  for (auto const& extended_state : extended0_2b) {
+    EXPECT_EQ(extended_state.train_edges, state.train_edges);
+    EXPECT_EQ(extended_state.stop_positions, state.stop_positions);
+    EXPECT_EQ(extended_state.ttd_orders, state.ttd_orders);
+    EXPECT_EQ(extended_state.vertex_orders.at(v7), state.vertex_orders.at(v7));
+  }
+
+  auto const extended0_3b = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
+          tr1, state, {.late_entry_possible = true},
+          {.time_aware_state_transitions = true}, ttd_sections, &instance2);
+  EXPECT_EQ(extended0_3b.size(), 4);
+
+  std::vector<cda_rail::index_vector> expected_vertex_orders0_3b{
+      {tr1, tr2, tr4, tr3},
+      {tr2, tr1, tr4, tr3},
+      {tr2, tr4, tr1, tr3},
+      {tr2, tr4, tr3, tr1}};
+  std::vector<cda_rail::index_vector> actual_vertex_orders03_b{};
+  for (auto const& extended_state : extended0_3b) {
+    actual_vertex_orders03_b.emplace_back(extended_state.vertex_orders.at(v0));
+  }
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders03_b,
+                                    expected_vertex_orders0_3b.at(0)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders03_b,
+                                    expected_vertex_orders0_3b.at(1)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders03_b,
+                                    expected_vertex_orders0_3b.at(2)));
+  EXPECT_TRUE(std::ranges::contains(actual_vertex_orders03_b,
+                                    expected_vertex_orders0_3b.at(3)));
+  for (auto const& actual_order : actual_vertex_orders03_b) {
+    EXPECT_TRUE(
+        std::ranges::contains(expected_vertex_orders0_3b, actual_order));
+  }
+
+  for (auto const& extended_state : extended0_3b) {
+    EXPECT_EQ(extended_state.train_edges, state.train_edges);
+    EXPECT_EQ(extended_state.stop_positions, state.stop_positions);
+    EXPECT_EQ(extended_state.ttd_orders, state.ttd_orders);
+    EXPECT_EQ(extended_state.vertex_orders.at(v7), state.vertex_orders.at(v7));
+  }
+
+  state.train_edges.at(tr1)  = {v0_v1, v1_v2, v2_v3b, v3b_v4b, v4b_v5, v5_v6};
   state.ttd_orders.at(0)     = {tr1, tr2, tr3};
   state.ttd_orders.at(1)     = {tr2, tr3, tr1};
   state.vertex_orders.at(v0) = {tr1, tr2, tr3};
