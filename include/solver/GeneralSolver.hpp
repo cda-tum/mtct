@@ -1,16 +1,21 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
 #include "GeneralHelper.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <optional>
 #include <plog/Logger.h>
 #include <plog/Severity.h>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 
 // If TEST_FRIENDS has value true, the corresponding test is friended to test

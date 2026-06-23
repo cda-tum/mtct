@@ -3,6 +3,7 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 
+#include <chrono>
 #include <cmath>
 #include <concepts>
 #include <cstddef>

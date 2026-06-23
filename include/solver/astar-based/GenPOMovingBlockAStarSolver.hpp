@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GeneralSimulator.hpp"
@@ -14,6 +15,7 @@
 #include <filesystem>
 #include <optional>
 #include <queue>
+#include <string>
 #include <string_view>
 #include <vector>
 
