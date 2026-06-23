@@ -159,6 +159,8 @@ cda_rail::simulator::GreedySimulator::simulate(
 
       // Calculate MA
 
+      // A* partial-route search: trains disappear at route end, so reverse-edge
+      // conflicts cannot occur by definition
       const auto tr_ma_data = get_ma_and_maxv(
           tr, train_velocities, tr_next_stop_id.at(tr), t, dt, blocked_vertices,
           train_positions, trains_in_network, trains_left, trains_on_edges,
