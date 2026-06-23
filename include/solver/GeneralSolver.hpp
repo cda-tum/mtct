@@ -86,9 +86,7 @@ protected:
                           bool overwrite_severity) {
     cda_rail::initialize_plog(debug_input, overwrite_severity);
 
-    if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
-      m_start = std::chrono::high_resolution_clock::now();
-    }
+    m_start = std::chrono::high_resolution_clock::now();
   }
 
   /**
