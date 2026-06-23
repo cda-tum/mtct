@@ -83,7 +83,6 @@ macro(CHECK_SUBMODULE_PRESENT modulename)
   endif()
 endmacro()
 
-include(cmake/StandardProjectSettings.cmake)
 if(NOT TARGET project_options)
   # Use the options specified in CompilerOptions.cmake
   add_library(project_options INTERFACE)
