@@ -25,8 +25,30 @@ endif()
 # This avoids googletest complaining that this (IPO) policy is not set
 cmake_policy(SET CMP0069 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
+
+# Require C++23
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF) # Highly recommended to prevent GCC/Clang-specific extensions
+
+# Explicitly check for C++23 capable compilers
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "13.0")
+    message(
+      FATAL_ERROR
+        "GCC >= 13.0 is strictly required for C++23 <ranges> support.
+        You are using GCC ${CMAKE_CXX_COMPILER_VERSION}.
+        Please update your compiler or use 'export CXX=g++-13'.")
+  endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "17.0")
+    message(
+      FATAL_ERROR
+        "Clang >= 17.0 is strictly required for C++23 <ranges> support.
+        You are using Clang ${CMAKE_CXX_COMPILER_VERSION}.
+        Please update your compiler.")
+  endif()
+endif()
 
 project(
   rail

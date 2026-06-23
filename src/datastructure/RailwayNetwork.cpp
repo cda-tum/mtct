@@ -141,7 +141,9 @@ cda_rail::Network::get_vertices_by_type(VertexType type) const {
                  std::views::filter([this, type](size_t i) {
                    return m_vertices.at(i).type == type;
                  });
-  return {indices.begin(), indices.end()};
+  cda_rail::index_vector result;
+  std::ranges::copy(indices, std::back_inserter(result));
+  return result;
 }
 
 std::pair<size_t, double>
@@ -357,7 +359,9 @@ cda_rail::index_vector cda_rail::Network::breakable_edges() const {
   auto view =
       std::views::iota(size_t{0}, number_of_edges()) |
       std::views::filter([this](size_t i) { return get_edge(i).breakable; });
-  return {view.begin(), view.end()};
+  cda_rail::index_vector result;
+  std::ranges::copy(view, std::back_inserter(result));
+  return result;
 }
 
 cda_rail::index_vector cda_rail::Network::relevant_breakable_edges() const {
