@@ -263,6 +263,13 @@ TEST(GeneralHelper, IsDirectoryAndCreate) {
   std::filesystem::remove_all(test_root, ec);
 }
 
+TEST(GeneralHelper, GetTimeDifferenceInSecondsSupportsSteadyClock) {
+  const auto start = std::chrono::steady_clock::now();
+  const auto end   = start + std::chrono::milliseconds(1250);
+
+  EXPECT_DOUBLE_EQ(cda_rail::get_time_difference_in_seconds(start, end), 1.25);
+}
+
 TEST(GeneralHelper, BoolOptionalChar) {
   std::optional<bool> opt_bool;
   EXPECT_FALSE(opt_bool.has_value());

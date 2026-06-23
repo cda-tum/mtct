@@ -126,9 +126,10 @@ void initialize_plog(bool debug_input, bool overwrite_severity = false);
  */
 [[nodiscard]] double relu(double val);
 
+template <typename Clock, typename Duration1, typename Duration2>
 [[nodiscard]] inline double get_time_difference_in_seconds(
-    std::chrono::system_clock::time_point const& start,
-    std::chrono::system_clock::time_point const& end) {
+    std::chrono::time_point<Clock, Duration1> const& start,
+    std::chrono::time_point<Clock, Duration2> const& end) {
   return static_cast<double>(
              std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
                  .count()) /
