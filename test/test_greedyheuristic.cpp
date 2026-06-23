@@ -292,11 +292,89 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   EXPECT_EQ(obj_tr4_a, 135);
   EXPECT_APPROX_EQ_6(stops_tr4_a, 1.5);
 
+  const auto [feas_tr4_b, obj_tr4_b, stops_tr4_b] =
+      simulator::remaining_time_heuristic(
+          simulator::RemainingTimeHeuristicType::Zero, tr4, simulator, -1,
+          false);
+  EXPECT_TRUE(feas_tr4_b);
+  EXPECT_EQ(obj_tr4_b, 0);
+  EXPECT_APPROX_EQ_6(stops_tr4_b, 0);
+
   // Train 5, too long for station
   const auto [feas_tr5_a, obj_tr5_a, stops_tr5_a] =
       simulator::simple_remaining_time_heuristic(tr5, simulator, -1, false);
   EXPECT_FALSE(feas_tr5_a);
   EXPECT_APPROX_EQ_6(obj_tr5_a, cda_rail::INF);
+}
+
+TEST(GreedyHeuristic, InfeasibleStopRequests) {
+  Network    network;
+  auto const v0 = network.add_vertex("v0", VertexType::TTD);
+  auto const v1 = network.add_vertex("v1", VertexType::TTD);
+  auto const v2 = network.add_vertex("v2", VertexType::TTD);
+  auto const v3 = network.add_vertex("v3", VertexType::TTD);
+  auto const v4 = network.add_vertex("v4", VertexType::TTD);
+  auto const v5 = network.add_vertex("v5", VertexType::TTD);
+  auto const v6 = network.add_vertex("v6", VertexType::TTD);
+
+  auto const v0_v1 = network.add_edge(v0, v1, 100, 10);
+  auto const v1_v2 = network.add_edge(v1, v2, 100, 5);  // Station
+  auto const v2_v3 = network.add_edge(v2, v3, 100, 25); // Station
+  auto const v3_v4 = network.add_edge(v3, v4, 100, 50);
+  auto const v4_v5 = network.add_edge(v4, v5, 100, 100); // Station (too short)
+  auto const v5_v6 = network.add_edge(v5, v6, 100, 20);
+
+  network.add_successor(v0_v1, v1_v2);
+  network.add_successor(v1_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+  network.add_successor(v3_v4, v4_v5);
+  network.add_successor(v4_v5, v5_v6);
+
+  Timetable timetable;
+  timetable.add_empty_station("Station1");
+  timetable.add_track_to_station("Station1", v1_v2, network);
+  timetable.add_track_to_station("Station1", v2_v3, network);
+  timetable.add_track_to_station("Station1", v4_v5, network);
+
+  auto const tr1 = timetable.add_train("Train1", 150, 100, 4, 2, true, 0, 10,
+                                       v0, 0, 20, v6, network);
+  timetable.insert_stop(tr1, "Station1", 30, 200);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  auto [feas_tr1, obj_tr1, stops_tr1] =
+      simulator::simple_remaining_time_heuristic(tr1, simulator, -1, false);
+  EXPECT_TRUE(feas_tr1);
+  EXPECT_EQ(obj_tr1, 100.0 / 10.0 + 100.0 / 5.0 + 100.0 / 25.0 + 100.0 / 50.0 +
+                         100.0 / 100.0 + 100.0 / 20.0 + 150.0 / 100.0 + 200.0);
+  EXPECT_EQ(stops_tr1, 100.0 / 10.0 + 100.0 / 5.0 + 100.0 / 25.0 - 30.0);
+
+  simulator.append_train_edge_to_tr(tr1, v0_v1);
+  simulator.append_train_edge_to_tr(tr1, v1_v2);
+  auto [feas_tr2, obj_tr2, stops_tr2] =
+      simulator::simple_remaining_time_heuristic(tr1, simulator, 500, false);
+  EXPECT_TRUE(feas_tr2);
+  EXPECT_EQ(obj_tr2, 100.0 / 25.0 + 100.0 / 50.0 + 100.0 / 100.0 +
+                         100.0 / 20.0 + 150.0 / 100.0 + 200.0);
+  EXPECT_EQ(stops_tr2, 500 + 100.0 / 25.0 - 30.0);
+
+  simulator.append_train_edge_to_tr(tr1, v2_v3);
+  auto [feas_tr3, obj_tr3, stops_tr3] =
+      simulator::simple_remaining_time_heuristic(tr1, simulator, 500, false);
+  EXPECT_FALSE(feas_tr3);
+  EXPECT_EQ(obj_tr3, cda_rail::INF);
+  EXPECT_EQ(stops_tr3, cda_rail::INF);
+
+  simulator.append_current_stop_position_of_tr(tr1);
+  auto [feas_tr4, obj_tr4, stops_tr4] =
+      simulator::simple_remaining_time_heuristic(tr1, simulator, 500, false);
+  EXPECT_TRUE(feas_tr4);
+  EXPECT_EQ(obj_tr4,
+            100.0 / 50.0 + 100.0 / 100.0 + 100.0 / 20.0 + 150.0 / 100.0);
+  EXPECT_EQ(stops_tr4, 0);
 }
 
 TEST(GreedyHeuristic, FullGreedyHeuristicRejectsMismatchedResultSizes) {
