@@ -44,7 +44,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         "GCC >= 13.0 is strictly required for C++23 <ranges> support.
         You are using GCC ${CMAKE_CXX_COMPILER_VERSION}.
         Please update your compiler or use 'export CXX=g++-13'.
-Alternatively, you can use 'CXX=g++-13 CC=gcc-13 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release'.")
+        Alternatively, you can use 'CXX=g++-13 CC=gcc-13 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release'.")
   endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "17.0")
