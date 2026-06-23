@@ -78,10 +78,26 @@ public:
   // ----------------
   // CONSTRUCTOR
   // ----------------
+  /**
+   * @brief Constructs a greedy simulator from an instance and TTD sections.
+   *
+   * @param instance Performance optimization instance.
+   * @param ttd_sections TTD sections used by the simulator.
+   */
   explicit GreedySimulator(
       cda_rail::instances::GeneralPerformanceOptimizationInstance const&
                                        instance,
       std::vector<cda_rail::index_set> ttd_sections);
+  /**
+   * @brief Constructs a greedy simulator with explicit state vectors.
+   *
+   * @param instance Performance optimization instance.
+   * @param ttd_sections TTD sections used by the simulator.
+   * @param train_edges Per-train edge sequences.
+   * @param ttd_orders Per-TTD train orders.
+   * @param vertex_orders Per-vertex train orders.
+   * @param stop_positions Per-train stop positions.
+   */
   explicit GreedySimulator(
       cda_rail::instances::GeneralPerformanceOptimizationInstance const&
                                           instance,
@@ -92,11 +108,16 @@ public:
       std::vector<std::vector<double>>    stop_positions);
 
   // Rule of 5
-  GreedySimulator(GreedySimulator const&)            = default;
-  GreedySimulator(GreedySimulator&&)                 = default;
+  /** @brief Copy constructor. */
+  GreedySimulator(GreedySimulator const&) = default;
+  /** @brief Move constructor. */
+  GreedySimulator(GreedySimulator&&) = default;
+  /** @brief Copy assignment operator. */
   GreedySimulator& operator=(GreedySimulator const&) = default;
-  GreedySimulator& operator=(GreedySimulator&&)      = default;
-  ~GreedySimulator() override                        = default;
+  /** @brief Move assignment operator. */
+  GreedySimulator& operator=(GreedySimulator&&) = default;
+  /** @brief Virtual destructor. */
+  ~GreedySimulator() override = default;
 
   /**
    * @brief Retrieves the typed performance optimization instance.
@@ -114,6 +135,17 @@ public:
   // ------------------
   // SIMULATION
   // ------------------
+  /**
+   * @brief Runs the greedy simulation with an explicit time step.
+   *
+   * @param dt Simulation time step in seconds.
+   * @param late_entry_possible Whether trains may enter later than scheduled.
+   * @param limit_speed_by_leaving_edges Whether leaving edges constrain speed.
+   * @param save_trajectories Whether to retain detailed trajectories.
+   * @param disappear_at_partial_route_end Whether trains disappear at partial
+   *        route ends.
+   * @return Simulation results.
+   */
   [[nodiscard]] SimulatorResults
   simulate(double dt, bool late_entry_possible = false,
            bool limit_speed_by_leaving_edges   = true,
@@ -239,6 +271,14 @@ private:
                                    cda_rail::index_set const& blocked_vertices,
                                    bool also_limit_by_leaving_edges) const;
 
+  /**
+   * @brief Converts a next-stop position into a moving-authority distance.
+   *
+   * @param max_displacement Maximal forward displacement in the time step.
+   * @param pos Current train-front position.
+   * @param next_stop_pos Route position of the next stop.
+   * @return Moving-authority distance toward the next stop.
+   */
   [[nodiscard]] static double
   get_next_stop_ma(double max_displacement, double pos, double next_stop_pos);
 
@@ -269,11 +309,23 @@ private:
   move_train(size_t tr, double v_0, double v_1, double ma, double dt,
              std::vector<TrainPosition>& train_positions);
 
+  /**
+   * @brief Updates rear positions after front positions were advanced.
+   *
+   * @param train_positions Train positions updated in place.
+   */
   void update_rear_positions(std::vector<TrainPosition>& train_positions) const;
 
   // Final State Helper
 
   enum class DestinationType : std::uint8_t { None, Network, Station, Edge };
+  /**
+   * @brief Classifies what destination a train has reached, if any.
+   *
+   * @param tr Train index.
+   * @param train_pos Current train positions.
+   * @return Destination classification for the train.
+   */
   [[nodiscard]] DestinationType
   tr_reached_end(size_t tr, const std::vector<TrainPosition>& train_pos) const;
 };

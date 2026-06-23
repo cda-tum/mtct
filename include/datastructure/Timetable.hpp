@@ -197,6 +197,13 @@ private:
    */
   static void check_stops_validity(std::vector<ScheduledStop> const& stops);
 
+  /**
+   * @brief Validates a stop list and returns a structured result.
+   *
+   * @param stops Stop list to validate.
+   * @return Pair consisting of a success flag and an optional exception object
+   *         describing the first detected issue.
+   */
   static std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
   check_stops_validity_helper(std::vector<ScheduledStop> const& stops);
 
@@ -340,6 +347,7 @@ public:
   /**
    * @brief Sets the exit velocity.
    *
+   * @param newExitVelocity New exit velocity.
    * @throws cda_rail::exceptions::InvalidInputException If the exit velocity
    * is negative.
    */
@@ -350,6 +358,8 @@ public:
 
   /**
    * @brief Sets the entry vertex.
+   *
+   * @param newEntryVertex New entry vertex id.
    */
   void set_entry_vertex(size_t const newEntryVertex) {
     m_entry_vertex = newEntryVertex;
@@ -372,6 +382,8 @@ public:
 
   /**
    * @brief Sets the exit vertex id.
+   *
+   * @param newExitVertex New exit vertex id.
    */
   void set_exit_vertex(size_t const newExitVertex) {
     m_exit_vertex = newExitVertex;
@@ -464,8 +476,21 @@ private:
         tl.size(), Schedule()); // this requires friendship
   }
 
+  /**
+   * @brief Parses one train schedule entry from JSON input.
+   *
+   * @param schedule_data JSON object containing schedule information.
+   * @param i Train index whose schedule is populated.
+   */
   void parse_schedule_data(const json& schedule_data, size_t i);
 
+  /**
+   * @brief Appends one schedule entry to an export JSON object.
+   *
+   * @param j JSON object updated in place.
+   * @param i Train index whose schedule is exported.
+   * @param network Network used to resolve vertex names.
+   */
   void add_json_data(json& j, size_t i, const Network& network) const;
 
   /**
@@ -485,8 +510,22 @@ public:
    * @brief Creates an empty timetable.
    */
   Timetable() = default;
+  /**
+   * @brief Constructs a timetable from explicit station, train, and schedule
+   *        data.
+   *
+   * @param station_list Station list owned by the timetable.
+   * @param train_list Train list owned by the timetable.
+   * @param schedules Schedule vector indexed by train.
+   */
   Timetable(StationList station_list, TrainList train_list,
             const std::vector<Schedule>& schedules);
+  /**
+   * @brief Loads a timetable from a filesystem path.
+   *
+   * @param p Path to the timetable data.
+   * @param network Network used for validation and vertex resolution.
+   */
   Timetable(const std::filesystem::path& p, const Network& network);
   /**
    * @brief Constructs a timetable from a file path specified as a string.
@@ -536,6 +575,12 @@ public:
   [[nodiscard]] constexpr auto crend() const { return m_schedules.crend(); };
 
   // Export / Import
+  /**
+   * @brief Exports the timetable to the given filesystem path.
+   *
+   * @param p Output path.
+   * @param network Network context used during export.
+   */
   void export_timetable(const std::filesystem::path& p,
                         const Network&               network) const;
   /**
@@ -631,6 +676,11 @@ public:
     return get_schedule(m_train_list.get_train_index(train_name));
   };
 
+  /**
+   * @brief Returns the latest scheduled exit time across all trains.
+   *
+   * @return Maximum exit time in the timetable, or `0` if no trains exist.
+   */
   [[nodiscard]] double latest_exit_time() const;
 
   /**
@@ -681,6 +731,14 @@ public:
     m_station_list.add_empty_station(station_name);
   };
 
+  /**
+   * @brief Inserts a scheduled stop for a train identified by index.
+   *
+   * @param train_index Index of the train.
+   * @param station_name Name of the station.
+   * @param service_time Earliest service start time.
+   * @param service_duration Minimum service duration.
+   */
   void insert_stop(size_t train_index, std::string const& station_name,
                    double service_time, double service_duration);
   /**
@@ -861,6 +919,14 @@ public:
     m_station_list.update_after_discretization(new_edges);
   }
 
+  /**
+   * @brief Returns the discrete time-index interval relevant for one train.
+   *
+   * @param train_index Index of the train.
+   * @param dt Time discretization step.
+   * @param tn_inclusive Whether the upper bound includes the final time index.
+   * @return Pair `(first_index, last_index)`.
+   */
   [[nodiscard]] std::pair<size_t, size_t>
   time_index_interval(size_t train_index, double dt,
                       bool tn_inclusive = true) const;

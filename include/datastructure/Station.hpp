@@ -81,6 +81,13 @@ private:
   std::unordered_map<std::string, std::shared_ptr<Station>> stations;
 
   friend class Timetable;
+  /**
+   * @brief Retrieves the shared pointer stored for a station name.
+   *
+   * @param name Station name.
+   * @return Shared pointer to the requested station.
+   * @throws exceptions::StationNotExistentException If `name` is unknown.
+   */
   [[nodiscard]] std::shared_ptr<Station>
   get_station_ptr(const std::string& name);
 

@@ -113,10 +113,14 @@ public:
   ~GenPOMovingBlockAStarSolver() override = default;
 
   // Rule of 5 (due to virtual deconstructor)
+  /** @brief Copy constructor. */
   GenPOMovingBlockAStarSolver(const GenPOMovingBlockAStarSolver&) = default;
-  GenPOMovingBlockAStarSolver(GenPOMovingBlockAStarSolver&&)      = default;
+  /** @brief Move constructor. */
+  GenPOMovingBlockAStarSolver(GenPOMovingBlockAStarSolver&&) = default;
+  /** @brief Copy assignment operator. */
   GenPOMovingBlockAStarSolver&
   operator=(const GenPOMovingBlockAStarSolver&) = default;
+  /** @brief Move assignment operator. */
   GenPOMovingBlockAStarSolver&
   operator=(GenPOMovingBlockAStarSolver&&) = default;
 

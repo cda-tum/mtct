@@ -118,6 +118,12 @@ void initialize_plog(bool debug_input, bool overwrite_severity = false);
  */
 [[nodiscard]] bool is_directory_and_create(const std::filesystem::path& p);
 
+/**
+ * @brief Returns the positive part of a scalar.
+ *
+ * @param val Input value.
+ * @return `val` if it is positive, otherwise `0`.
+ */
 [[nodiscard]] double relu(double val);
 
 } // namespace cda_rail

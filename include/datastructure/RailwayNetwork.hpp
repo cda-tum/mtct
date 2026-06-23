@@ -57,6 +57,12 @@ struct Vertex {
       : name(name), type(type), headway(headway.value_or(HEADWAY_DEFAULT)) {};
 
   // Operators
+  /**
+   * @brief Compares two vertices for equality.
+   *
+   * @param other Vertex to compare against.
+   * @return `true` if name, type, and headway all match; otherwise `false`.
+   */
   bool operator==(Vertex const& other) const {
     return name == other.name && type == other.type && headway == other.headway;
   }
@@ -130,6 +136,12 @@ struct Edge {
             min_stop_block_length.value_or(MIN_STOP_BLOCK_LENGTH_DEFAULT)) {};
 
   // Operators
+  /**
+   * @brief Compares two edges for equality.
+   *
+   * @param other Edge to compare against.
+   * @return `true` if all edge attributes match; otherwise `false`.
+   */
   bool operator==(const Edge& other) const {
     return (source == other.source && target == other.target &&
             length == other.length && max_speed == other.max_speed &&
@@ -610,6 +622,16 @@ public:
    */
   [[nodiscard]] size_t get_vertex_index(std::string_view name) const;
 
+  /**
+   * @brief Resolves a vertex descriptor to its numeric vertex index.
+   *
+   * @param vertex Vertex descriptor.
+   * @return Numeric vertex index.
+   * @throws cda_rail::exceptions::VertexNotExistentException If the vertex
+   *         does not exist.
+   * @throws cda_rail::exceptions::ConsistencyException If a `Vertex` object
+   *         conflicts with the stored vertex data.
+   */
   [[nodiscard]] size_t resolve_vertex_index(VertexInput const& vertex) const {
     return vertex.resolve(this);
   }
@@ -666,6 +688,16 @@ public:
     return get_edge_index_helper(source.resolve(this), target.resolve(this));
   }
 
+  /**
+   * @brief Resolves an edge descriptor to its numeric edge index.
+   *
+   * @param edge_input Edge descriptor.
+   * @return Numeric edge index.
+   * @throws cda_rail::exceptions::EdgeNotExistentException If the edge does
+   *         not exist.
+   * @throws cda_rail::exceptions::ConsistencyException If an `Edge` object
+   *         conflicts with the stored edge data.
+   */
   [[nodiscard]] size_t get_edge_index(EdgeInput const& edge_input) const {
     return edge_input.resolve(this);
   }
@@ -1748,6 +1780,14 @@ private:
       bool zero_length_if_next_edge_is_ttd) const;
 
 public:
+  /**
+   * @brief Returns the index of the TTD section that contains a given edge.
+   *
+   * @param e_0 Edge index to look up.
+   * @param ttd_sections Collection of TTD sections.
+   * @return Index of the containing TTD section, or `std::nullopt` if none
+   *         contains @p e_0.
+   */
   [[nodiscard]] static std::optional<size_t>
   get_ttd_of_edge(size_t                                  e_0,
                   const std::vector<cda_rail::index_set>& ttd_sections);
@@ -2163,6 +2203,14 @@ public:
   get_border_vertices_of_ttd(const cda_rail::index_set& ttd_section) const;
 
 private:
+  /**
+   * @brief Checks reachability inside a TTD section between two vertices.
+   *
+   * @param source_vertex Source vertex index.
+   * @param target_vertex Target vertex index.
+   * @param ttd_section Edge set describing the TTD section.
+   * @return `true` if a path exists using only edges from @p ttd_section.
+   */
   [[nodiscard]] bool
   has_ttd_path_helper(size_t source_vertex, size_t target_vertex,
                       const cda_rail::index_set& ttd_section) const;
@@ -2186,6 +2234,14 @@ public:
   }
 
 private:
+  /**
+   * @brief Checks whether a TTD remains traversable without one border vertex.
+   *
+   * @param border_vertex Border vertex to exclude.
+   * @param ttd_section Edge set describing the TTD section.
+   * @return `true` if another path through the TTD exists without using
+   *         @p border_vertex as boundary.
+   */
   [[nodiscard]] bool has_ttd_path_not_using_border_vertex_helper(
       size_t border_vertex, const cda_rail::index_set& ttd_section) const;
 
