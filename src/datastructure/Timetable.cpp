@@ -215,7 +215,13 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
   }
 
   std::ofstream file(p / "schedules.json");
-  file << j << '\n';
+  if (!file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open schedules.json for writing");
+  }
+  if (!(file << j << '\n')) {
+    throw exceptions::ExportException("Failed to write schedules.json");
+  }
 }
 
 double cda_rail::Timetable::latest_exit_time() const {

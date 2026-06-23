@@ -145,7 +145,13 @@ void cda_rail::StationList::export_stations(const std::filesystem::path& p,
   }
 
   std::ofstream file(p / "stations.json");
-  file << j << '\n';
+  if (!file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open stations.json for writing");
+  }
+  if (!(file << j << '\n')) {
+    throw exceptions::ExportException("Failed to write stations.json");
+  }
 }
 
 // HELPER

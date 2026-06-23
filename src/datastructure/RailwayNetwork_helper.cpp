@@ -250,7 +250,7 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
 
 void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   std::ofstream file(p / "tracks.graphml");
-  if (!file) {
+  if (!file.is_open()) {
     throw exceptions::ExportException("Could not open file " +
                                       (p / "tracks.graphml").string());
   }
@@ -311,11 +311,19 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   }
 
   file << "</graph>\n</graphml>\n";
+  if (!file) {
+    throw exceptions::ExportException("Failed to write file " +
+                                      (p / "tracks.graphml").string());
+  }
 }
 
 void cda_rail::Network::export_successors_python(
     const std::filesystem::path& p) const {
   std::ofstream file(p / "successors.txt");
+  if (!file.is_open()) {
+    throw exceptions::ExportException("Could not open file " +
+                                      (p / "successors.txt").string());
+  }
   file << "{";
   bool first = true;
   for (size_t i = 0; i < number_of_edges(); ++i) {
@@ -329,6 +337,10 @@ void cda_rail::Network::export_successors_python(
     write_successor_set_to_file(file, i);
   }
   file << "}\n";
+  if (!file) {
+    throw exceptions::ExportException("Failed to write file " +
+                                      (p / "successors.txt").string());
+  }
 }
 
 void cda_rail::Network::export_successors_cpp(
@@ -348,7 +360,14 @@ void cda_rail::Network::export_successors_cpp(
     // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
   }
   std::ofstream file(p / "successors_cpp.json");
-  file << j << '\n';
+  if (!file.is_open()) {
+    throw exceptions::ExportException("Could not open file " +
+                                      (p / "successors_cpp.json").string());
+  }
+  if (!(file << j << '\n')) {
+    throw exceptions::ExportException("Failed to write file " +
+                                      (p / "successors_cpp.json").string());
+  }
 }
 
 void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,

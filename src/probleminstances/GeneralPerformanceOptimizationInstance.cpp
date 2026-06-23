@@ -115,7 +115,13 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
   std::ofstream file(working_directory / "instances" /
                      get_instance_subdirectory() / get_instance_name() /
                      "problem_data.json");
-  file << j << '\n';
+  if (!file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open problem_data.json for writing");
+  }
+  if (!(file << j << '\n')) {
+    throw exceptions::ExportException("Failed to write problem_data.json");
+  }
 }
 
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
@@ -272,12 +278,22 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 
   std::ofstream train_pos_file(p / "train_pos.json");
-  train_pos_file << train_pos_json << '\n';
-  train_pos_file.close();
+  if (!train_pos_file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open train_pos.json for writing");
+  }
+  if (!(train_pos_file << train_pos_json << '\n')) {
+    throw exceptions::ExportException("Failed to write train_pos.json");
+  }
 
   std::ofstream train_speed_file(p / "train_speed.json");
-  train_speed_file << train_speed_json << '\n';
-  train_speed_file.close();
+  if (!train_speed_file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open train_speed.json for writing");
+  }
+  if (!(train_speed_file << train_speed_json << '\n')) {
+    throw exceptions::ExportException("Failed to write train_speed.json");
+  }
 }
 
 double
@@ -797,8 +813,12 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   std::filesystem::path const p = get_export_path(
       workingDirectory, solutionSubdirectory, parameter_identifier);
   std::ofstream vss_pos_file(p / "vss_pos.json");
-  vss_pos_file << vss_pos_json << '\n';
-  vss_pos_file.close();
+  if (!vss_pos_file.is_open()) {
+    throw exceptions::ExportException("Could not open vss_pos.json for writing");
+  }
+  if (!(vss_pos_file << vss_pos_json << '\n')) {
+    throw exceptions::ExportException("Failed to write vss_pos.json");
+  }
 }
 
 bool cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::

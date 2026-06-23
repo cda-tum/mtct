@@ -152,8 +152,13 @@ protected:
       data[concatenate_string_views({key, "_string"})] = value;
     }
     std::ofstream data_file(export_directory / "solver_data.json");
-    data_file << data << '\n';
-    data_file.close();
+    if (!data_file.is_open()) {
+      throw exceptions::ExportException(
+          "Could not open solver_data.json for writing");
+    }
+    if (!(data_file << data << '\n')) {
+      throw exceptions::ExportException("Failed to write solver_data.json");
+    }
   }
 
 public:

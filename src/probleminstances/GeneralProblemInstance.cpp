@@ -108,8 +108,13 @@ void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
   std::ofstream network_file(working_directory / "instances" /
                              get_instance_subdirectory() / get_instance_name() /
                              "network.json");
-  network_file << network_json << '\n';
-  network_file.close();
+  if (!network_file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open network.json for writing");
+  }
+  if (!(network_file << network_json << '\n')) {
+    throw exceptions::ExportException("Failed to write network.json");
+  }
 }
 
 // ---------------------
@@ -377,8 +382,13 @@ void cda_rail::instances::SolGeneralProblemInstance::export_solution(
 
   nlohmann::json const data = get_general_solution_data();
   std::ofstream        data_file(p / "solution_data.json");
-  data_file << data << '\n';
-  data_file.close();
+  if (!data_file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open solution_data.json for writing");
+  }
+  if (!(data_file << data << '\n')) {
+    throw exceptions::ExportException("Failed to write solution_data.json");
+  }
 }
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::

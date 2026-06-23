@@ -525,7 +525,12 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
   }
 
   std::ofstream file(p / "routes.json");
-  file << j << '\n';
+  if (!file.is_open()) {
+    throw exceptions::ExportException("Could not open routes.json for writing");
+  }
+  if (!(file << j << '\n')) {
+    throw exceptions::ExportException("Failed to write routes.json");
+  }
 }
 
 cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
