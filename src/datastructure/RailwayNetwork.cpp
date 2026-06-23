@@ -1003,7 +1003,6 @@ bool cda_rail::Network::has_ttd_path_helper(
                                                    true, ttd_section)
              .first.has_value();
 }
-}
 
 bool cda_rail::Network::has_ttd_path_not_using_border_vertex_helper(
     size_t border_vertex, const cda_rail::index_set& ttd_section) const {
