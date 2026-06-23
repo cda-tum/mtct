@@ -46,13 +46,29 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         Please update your compiler or use 'export CXX=g++-13'.
         Alternatively, you can use 'CXX=g++-13 CC=gcc-13 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release'.")
   endif()
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "17.0")
     message(
       FATAL_ERROR
         "Clang >= 17.0 is strictly required for C++23 <ranges> support.
         You are using Clang ${CMAKE_CXX_COMPILER_VERSION}.
         Please update your compiler.")
+  endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "16.0")
+    message(
+      FATAL_ERROR
+        "Apple Clang >= 16.0 (Xcode >= 16.0) is strictly required for C++23 <ranges> support.
+        You are using Apple Clang ${CMAKE_CXX_COMPILER_VERSION}.
+        Please update Xcode.")
+  endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "19.34")
+    message(
+      FATAL_ERROR
+        "MSVC >= 19.34 (Visual Studio 2022 17.4) is strictly required for C++23 <ranges> support.
+        You are using MSVC ${CMAKE_CXX_COMPILER_VERSION}.
+        Please update Visual Studio.")
   endif()
 endif()
 
