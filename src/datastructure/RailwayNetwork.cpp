@@ -992,11 +992,17 @@ std::unordered_set<size_t> cda_rail::Network::get_border_vertices_of_ttd(
 bool cda_rail::Network::has_ttd_path_helper(
     size_t source_vertex, size_t target_vertex,
     const cda_rail::index_set& ttd_section) const {
-  auto const first_edges = out_edges_helper(source_vertex);
+  cda_rail::index_set first_edges{};
+  for (auto const e : out_edges_helper(source_vertex)) {
+    if (ttd_section.contains(e)) {
+      first_edges.insert(e);
+    }
+  }
   return !first_edges.empty() &&
          shortest_path_between_edge_and_vertex_set(first_edges, {target_vertex},
                                                    true, ttd_section)
              .first.has_value();
+}
 }
 
 bool cda_rail::Network::has_ttd_path_not_using_border_vertex_helper(
