@@ -10,6 +10,18 @@
 
 namespace cda_rail::simulator {
 enum class RemainingTimeHeuristicType : std::uint8_t { Zero = 0, Simple = 1 };
+constexpr std::string
+remaining_time_heuristic_type_to_string(RemainingTimeHeuristicType const type) {
+  switch (type) {
+  case RemainingTimeHeuristicType::Zero:
+    return "Zero";
+  case RemainingTimeHeuristicType::Simple:
+    return "Simple";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown remaining-time heuristic type");
+  }
+}
 
 // --------------------------
 // Objective Value

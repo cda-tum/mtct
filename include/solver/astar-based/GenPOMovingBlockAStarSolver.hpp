@@ -47,6 +47,20 @@ enum class NextStateStrategy : std::uint8_t {
   NextTTD         = 1,
   NextRelevantTTD = 2,
 };
+constexpr std::string
+next_state_strategy_to_string(NextStateStrategy strategy) {
+  switch (strategy) {
+  case NextStateStrategy::SingleEdge:
+    return "SingleEdge";
+  case NextStateStrategy::NextTTD:
+    return "NextTTD";
+  case NextStateStrategy::NextRelevantTTD:
+    return "NextRelevantTTD";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown next-state strategy");
+  }
+}
 
 struct ModelDetail {
   double dt                  = 6.0; // DB simulation default is 6 seconds

@@ -109,6 +109,7 @@ protected:
       : m_instance(std::forward<Args>(args)...) {}
 
   struct FurtherData {
+    std::unordered_map<std::string, bool>        bool_data;
     std::unordered_map<std::string, int>         integer_data;
     std::unordered_map<std::string, double>      double_data;
     std::unordered_map<std::string, std::string> string_data;
@@ -136,6 +137,9 @@ protected:
         get_time_difference_in_seconds(m_model_created, m_model_solved);
     data["total_time"] =
         get_time_difference_in_seconds(m_start, m_model_solved);
+    for (auto const& [key, value] : further_data.bool_data) {
+      data[concatenate_string_views({key, "_bool"})] = value;
+    }
     for (auto const& [key, value] : further_data.integer_data) {
       data[concatenate_string_views({key, "_int"})] = value;
     }

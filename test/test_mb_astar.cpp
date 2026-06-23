@@ -2296,6 +2296,9 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExport) {
       "testinstance-tmp2id/solution_data.json"));
   EXPECT_TRUE(std::filesystem::exists(
       "tmp2folder/solutions/tmp2subdirectory/instancesubdirectory/"
+      "testinstance-tmp2id/solver_data.json"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp2folder/solutions/tmp2subdirectory/instancesubdirectory/"
       "testinstance-tmp2id/routes.json"));
   EXPECT_TRUE(std::filesystem::exists(
       "tmp2folder/solutions/tmp2subdirectory/instancesubdirectory/"
@@ -2331,6 +2334,9 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExport) {
   EXPECT_TRUE(std::filesystem::exists(
       "tmp3folder/solutions/tmp3subdirectory/instancesubdirectory/"
       "testinstance-tmp3id/solution_data.json"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "tmp3folder/solutions/tmp3subdirectory/instancesubdirectory/"
+      "testinstance-tmp3id/solver_data.json"));
   EXPECT_TRUE(std::filesystem::exists(
       "tmp3folder/solutions/tmp3subdirectory/instancesubdirectory/"
       "testinstance-tmp3id/routes.json"));
@@ -2371,7 +2377,8 @@ TEST(GenPOMovingBlockAStarSolver, SolverDataExport) {
 
   solver.export_solver_data(
       "tmp_solverdata_folder",
-      {.integer_data = {{"test_data_1", 6}, {"test_data_2", 0}},
+      {.bool_data    = {{"bool_data_0", true}, {"bool_data_1", false}},
+       .integer_data = {{"test_data_1", 6}, {"test_data_2", 0}},
        .double_data  = {{"test_data_3", 3.14},
                         {"test_data_4", 0.0},
                         {"test_data_5", 2.71828}},
@@ -2398,6 +2405,8 @@ TEST(GenPOMovingBlockAStarSolver, SolverDataExport) {
   EXPECT_EQ(data.at("model_solving_time").get<double>(), 10.8);
   EXPECT_EQ(data.at("total_time").get<double>(), 1.5 + 10.8);
 
+  EXPECT_TRUE(data.at("bool_data_0_bool").get<bool>());
+  EXPECT_FALSE(data.at("bool_data_1_bool").get<bool>());
   EXPECT_EQ(data.at("test_data_1_int").get<int>(), 6);
   EXPECT_EQ(data.at("test_data_2_int").get<int>(), 0);
   EXPECT_EQ(data.at("test_data_3_double").get<double>(), 3.14);
