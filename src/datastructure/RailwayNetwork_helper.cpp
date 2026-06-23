@@ -25,8 +25,6 @@
 #include <variant>
 #include <vector>
 
-using json = nlohmann::json;
-
 void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   tinyxml2::XMLDocument graph_xml;
   graph_xml.LoadFile((p / "tracks.graphml").string().c_str());
@@ -236,7 +234,7 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
     throw exceptions::ImportException("Could not open file " +
                                       (p / "successors_cpp.json").string());
   }
-  const json data = json::parse(f);
+  const nlohmann::json data = nlohmann::json::parse(f);
 
   for (const auto& [key, val] : data.items()) {
     std::string source_name;
@@ -335,7 +333,7 @@ void cda_rail::Network::export_successors_python(
 
 void cda_rail::Network::export_successors_cpp(
     const std::filesystem::path& p) const {
-  json j;
+  nlohmann::json j;
   for (size_t i = 0; i < number_of_edges(); ++i) {
     const auto&                                      edge = get_edge(i);
     std::vector<std::pair<std::string, std::string>> succ_list;

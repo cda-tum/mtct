@@ -12,8 +12,6 @@
 #include "gtest/gtest.h"
 
 using namespace cda_rail;
-using json = nlohmann::json;
-
 // NOLINTBEGIN
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
 
@@ -2395,7 +2393,7 @@ TEST(GenPOMovingBlockAStarSolver, SolverDataExport) {
     throw exceptions::ImportException(
         "Could not open file tmp_solverdata_folder/solver_data.json");
   }
-  json data;
+  nlohmann::json data;
   data_file >> data;
   data_file.close();
 

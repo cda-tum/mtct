@@ -3,7 +3,6 @@
 #include "CustomExceptions.hpp"
 #include "GeneralHelper.hpp"
 #include "nlohmann/json.hpp"
-#include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <chrono>
@@ -135,7 +134,7 @@ protected:
                                         export_directory.string());
     }
 
-    json data;
+    nlohmann::json data;
     data["model_creation_time"] =
         get_time_difference_in_seconds(m_start, m_model_created);
     data["model_solving_time"] =

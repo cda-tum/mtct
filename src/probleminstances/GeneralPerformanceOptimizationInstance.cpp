@@ -41,7 +41,7 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::
   if (!file.is_open()) {
     throw exceptions::ImportException("Could not open problem_data.json.");
   }
-  json j = json::parse(file);
+  nlohmann::json j = nlohmann::json::parse(file);
   for (const auto& [train_name, weight] : j.at("train_weights").items()) {
     set_train_weight(train_name, static_cast<double>(weight));
   }
@@ -104,7 +104,7 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
   GeneralProblemInstanceWithScheduleAndRoutes::export_instance(
       working_directory, saveNetwork);
   // NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
-  json j;
+  nlohmann::json j;
   for (size_t i = 0; i < m_train_weights.size(); ++i) {
     j["train_weights"][this->get_const_train_list().get_train(i).get_name()] =
         m_train_weights.at(i);
@@ -220,7 +220,7 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   if (!train_pos_file.is_open()) {
     throw exceptions::ImportException("Could not open train_pos.json.");
   }
-  json train_pos_json = json::parse(train_pos_file);
+  nlohmann::json train_pos_json = nlohmann::json::parse(train_pos_file);
   for (const auto& [tr_name, tr_pos_json] : train_pos_json.items()) {
     for (const auto& [idx, pos_pair] : tr_pos_json.items()) {
       const auto [t, pos] = pos_pair.get<std::pair<double, double>>();
@@ -233,7 +233,7 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   if (!train_speed_file.is_open()) {
     throw exceptions::ImportException("Could not open train_speed.json.");
   }
-  json train_speed_json = json::parse(train_speed_file);
+  nlohmann::json train_speed_json = nlohmann::json::parse(train_speed_file);
   for (const auto& [tr_name, tr_speed_json] : train_speed_json.items()) {
     for (const auto& [idx, speed_pair] : tr_speed_json.items()) {
       const auto [t, speed] = speed_pair.get<std::pair<double, double>>();
@@ -259,8 +259,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
       working_directory, solutionSubdirectory, parameter_identifier);
 
   // NOLINTBEGIN(misc-const-correctness)
-  json train_pos_json;
-  json train_speed_json;
+  nlohmann::json train_pos_json;
+  nlohmann::json train_speed_json;
   // NOLINTEND(misc-const-correctness)
   auto const& train_list = this->get_instance()->get_const_train_list();
   for (size_t tr_id = 0; tr_id < train_list.size(); ++tr_id) {
@@ -783,7 +783,7 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
       parameter_identifier);
 
   // NOLINTNEXTLINE(misc-const-correctness)
-  json vss_pos_json;
+  nlohmann::json vss_pos_json;
 
   auto const& const_network = this->get_instance()->get_const_network();
   for (size_t edge_id = 0; edge_id < const_network.number_of_edges();
@@ -832,7 +832,7 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   std::filesystem::path const p = this->get_export_path(
       workingDirectory, solutionSubdirectory, parameter_identifier);
   std::ifstream vss_pos_file(p / "vss_pos.json");
-  json          vss_pos_json = json::parse(vss_pos_file);
+  nlohmann::json vss_pos_json = nlohmann::json::parse(vss_pos_file);
   vss_pos_file.close();
 
   auto const& const_network = this->get_instance()->get_const_network();

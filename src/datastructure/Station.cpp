@@ -19,8 +19,6 @@
 #include <utility>
 #include <vector>
 
-using json = nlohmann::json;
-
 std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>
 cda_rail::Station::get_stop_tracks(
     double const trLen, cda_rail::Network const& network,
@@ -73,7 +71,7 @@ cda_rail::StationList::StationList(std::filesystem::path const& p,
     throw exceptions::ImportException("Could not open stations.json.");
   }
 
-  for (json data = json::parse(file);
+  for (nlohmann::json data = nlohmann::json::parse(file);
        const auto& [name, edges] : data.items()) {
     this->add_empty_station(name);
     for (const auto& edge : edges) {
@@ -135,7 +133,7 @@ void cda_rail::StationList::export_stations(const std::filesystem::path& p,
                                       p.string());
   }
 
-  json j;
+  nlohmann::json j;
   for (const auto& station : stations | std::views::values) {
     std::vector<std::pair<std::string, std::string>> edges;
     for (const auto& track : station->tracks) {

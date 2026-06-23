@@ -38,7 +38,7 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
          "network.json")
             .string());
   }
-  json network_json = json::parse(network_file);
+  nlohmann::json network_json = nlohmann::json::parse(network_file);
   network_file.close();
   m_network =
       Network(network_json.at("network").get<std::string>(), working_directory);
@@ -101,7 +101,7 @@ void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
                              "routes",
                          get_const_network());
 
-  json network_json{};
+  nlohmann::json network_json{};
   network_json["network"] =
       get_const_network()
           .get_network_name(); // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
@@ -314,10 +314,10 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 // Solution Objects
 // -------------------
 
-cda_rail::json
+nlohmann::json
 cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
     const {
-  json data;
+  nlohmann::json data;
   data["status"] = static_cast<int>(
       m_status);       // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   data["obj"] = m_obj; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
@@ -327,7 +327,7 @@ cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
 }
 
 void cda_rail::instances::SolGeneralProblemInstance::set_general_solution_data(
-    const json& data) {
+    const nlohmann::json& data) {
   this->m_status  = static_cast<SolutionStatus>(data.at("status").get<int>());
   this->m_obj     = data.at("obj").get<double>();
   this->m_has_sol = data.at("has_solution").get<bool>();
@@ -356,7 +356,7 @@ void cda_rail::instances::SolGeneralProblemInstance::load_solution(
   if (!data_file.is_open()) {
     throw exceptions::ImportException("Could not open file " + p.string());
   }
-  json data;
+  nlohmann::json data;
   data_file >> data;
   data_file.close();
 
@@ -375,8 +375,8 @@ void cda_rail::instances::SolGeneralProblemInstance::export_solution(
                                       p.string());
   }
 
-  json const    data = get_general_solution_data();
-  std::ofstream data_file(p / "solution_data.json");
+  nlohmann::json const data = get_general_solution_data();
+  std::ofstream        data_file(p / "solution_data.json");
   data_file << data << '\n';
   data_file.close();
 }

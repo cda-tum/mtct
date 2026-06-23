@@ -7,6 +7,7 @@
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 #include "datastructure/Train.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -839,13 +840,13 @@ protected:
    *
    * @return JSON object containing status, objective, and availability flags.
    */
-  [[nodiscard]] json get_general_solution_data() const;
+  [[nodiscard]] nlohmann::json get_general_solution_data() const;
   /**
    * @brief Loads solution-wide metadata from JSON.
    *
    * @param data JSON object containing general solution fields.
    */
-  void set_general_solution_data(const json& data);
+  void set_general_solution_data(const nlohmann::json& data);
 
   /**
    * @brief Retrieves the underlying problem instance pointer.

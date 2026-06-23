@@ -17,8 +17,6 @@
 
 namespace cda_rail {
 
-using json = nlohmann::json;
-
 class ScheduledStop {
   /**
    * @brief Scheduling information for a stop within a timetable.
@@ -482,7 +480,7 @@ private:
    * @param schedule_data JSON object containing schedule information.
    * @param i Train index whose schedule is populated.
    */
-  void parse_schedule_data(const json& schedule_data, size_t i);
+  void parse_schedule_data(const nlohmann::json& schedule_data, size_t i);
 
   /**
    * @brief Appends one schedule entry to an export JSON object.
@@ -491,7 +489,7 @@ private:
    * @param i Train index whose schedule is exported.
    * @param network Network used to resolve vertex names.
    */
-  void add_json_data(json& j, size_t i, const Network& network) const;
+  void add_json_data(nlohmann::json& j, size_t i, const Network& network) const;
 
   /**
    * @brief Sorts the stops within each train schedule by service time.

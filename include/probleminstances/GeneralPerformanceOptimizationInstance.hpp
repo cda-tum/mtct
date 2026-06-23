@@ -5,7 +5,6 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
-#include "nlohmann/json_fwd.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -17,8 +16,6 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-
-using json = nlohmann::json;
 
 namespace cda_rail::instances {
 
