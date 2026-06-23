@@ -853,6 +853,9 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   std::filesystem::path const p = this->get_export_path(
       workingDirectory, solutionSubdirectory, parameter_identifier);
   std::ifstream vss_pos_file(p / "vss_pos.json");
+  if (!vss_pos_file.is_open()) {
+    throw exceptions::ImportException("Could not open vss_pos.json.");
+  }
   nlohmann::json vss_pos_json = nlohmann::json::parse(vss_pos_file);
   vss_pos_file.close();
 
