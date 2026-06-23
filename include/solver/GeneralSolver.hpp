@@ -13,6 +13,20 @@
 #include <type_traits>
 #include <utility>
 
+// If TEST_FRIENDS has value true, the corresponding test is friended to test
+// complex private functions.
+// This is not good practice. However, after consideration, it was decided that
+// - it is not reasonable to make the functions public
+// - they have a complexity that should be tested
+// - by only testing the overall solution, there is too much code tested at once
+#ifndef TEST_FRIENDS
+#define TEST_FRIENDS false
+#endif
+#if TEST_FRIENDS
+class GenPOMovingBlockAStarSolver;
+class GenPOMovingBlockAStarSolver_SolverDataExport_Test;
+#endif
+
 namespace cda_rail::solver {
 enum class GeneralExportOption : std::uint8_t {
   NoExport                   = 0,
@@ -28,6 +42,10 @@ struct GeneralSolutionSettings {
 };
 
 template <typename T, typename S> class GeneralSolver {
+#if TEST_FRIENDS
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, SolverDataExport);
+#endif
+
   static_assert(
       std::is_base_of_v<cda_rail::instances::GeneralProblemInstance, T>,
       "T must be a child of GeneralProblemInstance");
@@ -119,19 +137,13 @@ protected:
     data["total_time"] =
         get_time_difference_in_seconds(m_start, m_model_solved);
     for (auto const& [key, value] : further_data.integer_data) {
-      std::string const json_key =
-          concatenate_string_views(key.c_str(), "_int");
-      data[json_key] = value;
+      data[concatenate_string_views({key, "_int"})] = value;
     }
     for (auto const& [key, value] : further_data.double_data) {
-      std::string const json_key =
-          concatenate_string_views(key.c_str(), "_double");
-      data[json_key] = value;
+      data[concatenate_string_views({key, "_double"})] = value;
     }
     for (auto const& [key, value] : further_data.string_data) {
-      std::string const json_key =
-          concatenate_string_views(key.c_str(), "_string");
-      data[json_key] = value;
+      data[concatenate_string_views({key, "_string"})] = value;
     }
     std::ofstream data_file(export_directory / "solver_data.json");
     data_file << data << '\n';

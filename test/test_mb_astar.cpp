@@ -4,12 +4,14 @@
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
+#include "nlohmann/json.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
 #include "gtest/gtest.h"
 
 using namespace cda_rail;
+using json = nlohmann::json;
 
 // NOLINTBEGIN
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
@@ -2349,6 +2351,61 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExport) {
 
   // Remove tmp3folder and its contents
   std::filesystem::remove_all("tmp3folder");
+}
+
+TEST(GenPOMovingBlockAStarSolver, SolverDataExport) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  std::filesystem::remove_all("tmp_solverdata_folder");
+
+  ASSERT_FALSE(std::filesystem::exists("tmp_solverdata_folder"));
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  // solver.m_start = now
+  // solver.m_model_created = 1.5 seconds later
+  // solver.m_model_solved = m_model_created + 10.8 seconds
+  solver.m_start         = std::chrono::high_resolution_clock::now();
+  solver.m_model_created = solver.m_start + std::chrono::milliseconds(1500);
+  solver.m_model_solved =
+      solver.m_model_created + std::chrono::milliseconds(10800);
+
+  solver.export_solver_data(
+      "tmp_solverdata_folder",
+      {.integer_data = {{"test_data_1", 6}, {"test_data_2", 0}},
+       .double_data  = {{"test_data_3", 3.14},
+                        {"test_data_4", 0.0},
+                        {"test_data_5", 2.71828}},
+       .string_data  = {{"test_data_6", "test_string"},
+                        {"test_data_7", "something with spaces"}}});
+
+  ASSERT_TRUE(std::filesystem::exists("tmp_solverdata_folder"));
+  ASSERT_TRUE(
+      std::filesystem::exists("tmp_solverdata_folder/solver_data.json"));
+
+  std::ifstream data_file("tmp_solverdata_folder/solver_data.json");
+  if (!data_file.is_open()) {
+    throw exceptions::ImportException(
+        "Could not open file tmp_solverdata_folder/solver_data.json");
+  }
+  json data;
+  data_file >> data;
+  data_file.close();
+
+  std::filesystem::remove_all("tmp_solverdata_folder");
+  EXPECT_FALSE(std::filesystem::exists("tmp_solverdata_folder"));
+
+  EXPECT_EQ(data.at("model_creation_time").get<double>(), 1.5);
+  EXPECT_EQ(data.at("model_solving_time").get<double>(), 10.8);
+  EXPECT_EQ(data.at("total_time").get<double>(), 1.5 + 10.8);
+
+  EXPECT_EQ(data.at("test_data_1_int").get<int>(), 6);
+  EXPECT_EQ(data.at("test_data_2_int").get<int>(), 0);
+  EXPECT_EQ(data.at("test_data_3_double").get<double>(), 3.14);
+  EXPECT_EQ(data.at("test_data_4_double").get<double>(), 0.0);
+  EXPECT_EQ(data.at("test_data_5_double").get<double>(), 2.71828);
+  EXPECT_EQ(data.at("test_data_6_string").get<std::string>(), "test_string");
+  EXPECT_EQ(data.at("test_data_7_string").get<std::string>(),
+            "something with spaces");
 }
 
 // NOLINTEND
