@@ -1022,18 +1022,16 @@ bool cda_rail::simulator::GreedySimulator::is_exit_vertex_blocked(
     // no restriction
     return false;
   }
+
   const auto& prev_tr = *(idx - 1); // Previous train in the exit vertex order
   const auto  prev_tr_entering =
       (get_instance()->get_const_schedule(prev_tr).get_entry_vertex() ==
        tr_schedule.get_exit_vertex());
-  if (trains_left.contains(prev_tr) ||
-      (prev_tr_entering && trains_in_network.contains(prev_tr))) {
-    // Previous train has already cleared vertex
-    return false; // No restriction
-  }
+  const bool previous_train_cleared_vertex =
+      trains_left.contains(prev_tr) ||
+      (prev_tr_entering && trains_in_network.contains(prev_tr));
 
-  // Train cannot leave the network due to the exit vertex order
-  return true;
+  return !previous_train_cleared_vertex;
 }
 
 cda_rail::simulator::GreedySimulator::MaAndMaxVResult

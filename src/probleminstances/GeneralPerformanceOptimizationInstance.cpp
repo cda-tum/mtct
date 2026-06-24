@@ -765,7 +765,7 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     set_train_stop_time(const std::string& tr_name,
                         std::string const& station_name, double stop_time) {
-  return set_train_stop_time(
+  set_train_stop_time(
       tr_name,
       get_instance()->get_const_schedule(tr_name).get_station_index(
           station_name),
@@ -877,7 +877,7 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
       return false;
     }
   }
-  for (auto const stop_times : m_train_stop_times) {
+  for (auto const& stop_times : m_train_stop_times) {
     // is stop_times sorted?
     if (std::ranges::any_of(stop_times, [](double const t) { return t < 0; })) {
       return false;

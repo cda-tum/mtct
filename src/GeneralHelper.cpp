@@ -3,6 +3,7 @@
 #include "Definitions.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <iterator>
