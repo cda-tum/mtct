@@ -54,6 +54,13 @@ cda_rail::simulator::simple_remaining_time_heuristic(
                 tr_edges.back());
   bool include_first_edge = true;
 
+  if (start_edges.empty()) {
+    // dead-end which is not exit vertex
+    return {.feasible                     = false,
+            .remaining_exit_time          = cda_rail::INF,
+            .average_remaining_stop_delay = cda_rail::INF};
+  }
+
   for (size_t next_stop = first_next_stop; next_stop < tr_stops.size();
        ++next_stop) {
     // Quickest path to next station
@@ -165,6 +172,10 @@ cda_rail::simulator::HeuristicResult cda_rail::simulator::full_greedy_heuristic(
     const auto [feas_tr, obj_tr] =
         greedy_heuristic(remaining_time_heuristic_type, tr, simulator,
                          sim_results.exit_times.at(tr), consider_earliest_exit);
+    if (!feas_tr) {
+      // shortcut on infeasibility
+      return {.feasible = false, .objective_value_difference = INF};
+    }
     feas = feas && feas_tr;
     obj += simulator.get_instance()->get_train_weights().at(tr) * obj_tr;
   }
