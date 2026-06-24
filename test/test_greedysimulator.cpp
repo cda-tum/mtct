@@ -4188,7 +4188,7 @@ TEST(GreedySimulator, TrainsFollowing) {
   auto const v0_v1 =
       instance.get_editable_network().add_edge(v0, v1, 100, 10, true);
   auto const v1_v2 =
-      instance.get_editable_network().add_edge(v1, v2, 100, 10, true);
+      instance.get_editable_network().add_edge(v1, v2, 5000, 10, true);
   auto const v2_v3 =
       instance.get_editable_network().add_edge(v2, v3, 100, 10, true);
 
@@ -4223,7 +4223,20 @@ TEST(GreedySimulator, TrainsFollowing) {
   auto const sim_res4 = simulator.simulate(5.0, false, false, false, false);
   EXPECT_TRUE(sim_res4.success);
   EXPECT_EQ(sim_res4.exit_times.at(tr1), 10);
-  EXPECT_EQ(sim_res4.exit_times.at(tr2), 80);
+  EXPECT_EQ(sim_res4.exit_times.at(tr2), 570);
+
+  simulator.set_train_edges_of_tr(tr2, {v0_v1});
+  simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2});
+
+  auto const sim_res5 = simulator.simulate(5.0, false, false, false, true);
+  EXPECT_TRUE(sim_res5.success);
+  EXPECT_EQ(sim_res5.exit_times.at(tr1), 510);
+  EXPECT_EQ(sim_res5.exit_times.at(tr2), 70);
+
+  auto const sim_res6 = simulator.simulate(5.0, false, false, false, false);
+  EXPECT_TRUE(sim_res6.success);
+  EXPECT_EQ(sim_res6.exit_times.at(tr1), 510);
+  EXPECT_EQ(sim_res6.exit_times.at(tr2), 70);
 }
 
 // NOLINTEND
