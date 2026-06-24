@@ -43,6 +43,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   std::unordered_set<simulator::SimulatorState> explored_states;
   MinPriorityQueue                              pq;
   int                                           state_reexplorations{0};
+  int                                           states_simulated{0};
 
   cda_rail::instances::SolGeneralPerformanceOptimizationInstance sol_object(
       get_instance());
@@ -59,6 +60,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       model_detail_input.dt, model_detail_input.late_entry_possible,
       model_detail_input.limit_speed_by_leaving_edges, false,
       !solver_strategy_input.time_aware_state_transitions);
+  states_simulated++;
   const auto init_obj =
       simulator::objective_val(simulator, init_simulator_result.exit_times,
                                init_simulator_result.stop_times);
@@ -164,6 +166,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
           model_detail_input.dt, model_detail_input.late_entry_possible,
           model_detail_input.limit_speed_by_leaving_edges, false,
           !solver_strategy_input.time_aware_state_transitions);
+      states_simulated++;
       if (!sim_res.success) {
         PLOGV << "State is infeasible, skipping.";
         continue;
@@ -206,7 +209,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       std::chrono::high_resolution_clock::now(); // Finished model solving
 
   PLOGD << "Terminated after " << iteration << " iterations, "
-        << state_reexplorations << " state re-explorations, "
+        << states_simulated << " states simulated, " << state_reexplorations
+        << " state re-explored, "
         << get_time_difference_in_seconds(m_start, m_model_solved)
         << " seconds.";
 
@@ -307,6 +311,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
                           {"time_aware_state_transitions",
                            solver_strategy_input.time_aware_state_transitions}},
             .integer_data = {{"iterations", iteration},
+                             {"states_simulated", states_simulated},
                              {"state_reexplorations", state_reexplorations},
                              {"time_limit", time_limit}},
             .double_data  = {{"time_step", model_detail_input.dt},
