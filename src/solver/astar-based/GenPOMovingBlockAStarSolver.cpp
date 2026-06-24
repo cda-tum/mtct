@@ -42,6 +42,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
   std::unordered_set<simulator::SimulatorState> explored_states;
   MinPriorityQueue                              pq;
+  int                                           state_reexplorations{0};
 
   cda_rail::instances::SolGeneralPerformanceOptimizationInstance sol_object(
       get_instance());
@@ -154,6 +155,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       PLOGV << "Processing next state " << i << "/" << next_states_set.size();
       if (explored_states.contains(s)) {
         PLOGV << "State already explored, skipping.";
+        state_reexplorations++;
         continue;
       }
       simulator.set_simulator_state(s);
@@ -204,6 +206,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       std::chrono::high_resolution_clock::now(); // Finished model solving
 
   PLOGD << "Terminated after " << iteration << " iterations, "
+        << state_reexplorations << " state re-explorations, "
         << get_time_difference_in_seconds(m_start, m_model_solved)
         << " seconds.";
 
@@ -304,6 +307,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
                           {"time_aware_state_transitions",
                            solver_strategy_input.time_aware_state_transitions}},
             .integer_data = {{"iterations", iteration},
+                             {"state_reexplorations", state_reexplorations},
                              {"time_limit", time_limit}},
             .double_data  = {{"time_step", model_detail_input.dt},
                              {"a_star_weight",
