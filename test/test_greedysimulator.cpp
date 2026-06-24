@@ -686,6 +686,8 @@ TEST(GreedySimulator, EdgePositions) {
   // Create instance
   Network     network("SimpleStation", "./data/");
   const auto& l0 = network.get_vertex_index("l0");
+  const auto& l1 = network.get_vertex_index("l1");
+  const auto& l2 = network.get_vertex_index("l2");
   const auto& r0 = network.get_vertex_index("r0");
 
   const auto& l0_l1   = network.get_edge_index({"l0", "l1"});
@@ -694,6 +696,9 @@ TEST(GreedySimulator, EdgePositions) {
   const auto& l3_g00  = network.get_edge_index({"l3", "g00"});
   const auto& l3_g10  = network.get_edge_index({"l3", "g10"});
   const auto& g00_g01 = network.get_edge_index({"g00", "g01"});
+
+  auto const& l0_l1_obj = network.get_edge(l0_l1);
+  auto const& l1_l2_obj = network.get_edge(l1_l2);
 
   Timetable  timetable;
   const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 2, true, 0, 0,
@@ -734,6 +739,39 @@ TEST(GreedySimulator, EdgePositions) {
   simulator.append_train_edge_to_tr(tr1, l3_g00);
   simulator.append_train_edge_to_tr(tr1, g00_g01);
   simulator.append_train_edge_to_tr(tr3, l0_l1);
+
+  // Vertex positions
+  auto const vertex_pos1 = simulator.get_vertex_pos(tr1, l0);
+  EXPECT_TRUE(vertex_pos1.is_on_route);
+  EXPECT_EQ(vertex_pos1.pos, 0);
+
+  auto const vertex_pos2 = simulator.get_vertex_pos(tr1, l1);
+  EXPECT_TRUE(vertex_pos2.is_on_route);
+  EXPECT_EQ(vertex_pos2.pos, l0_l1_obj.length);
+
+  auto const vertex_pos3 = simulator.get_vertex_pos(tr1, l2);
+  EXPECT_TRUE(vertex_pos3.is_on_route);
+  EXPECT_EQ(vertex_pos3.pos, l0_l1_obj.length + l1_l2_obj.length);
+
+  auto const vertex_pos4 = simulator.get_vertex_pos(tr1, r0);
+  EXPECT_FALSE(vertex_pos4.is_on_route);
+
+  auto const vertex_pos31 = simulator.get_vertex_pos(tr3, l0);
+  EXPECT_TRUE(vertex_pos31.is_on_route);
+  EXPECT_EQ(vertex_pos31.pos, 0);
+
+  auto const vertex_pos32 = simulator.get_vertex_pos(tr3, l1);
+  EXPECT_TRUE(vertex_pos32.is_on_route);
+  EXPECT_EQ(vertex_pos32.pos, l0_l1_obj.length);
+
+  auto const vertex_pos33 = simulator.get_vertex_pos(tr3, l2);
+  EXPECT_FALSE(vertex_pos33.is_on_route);
+
+  auto const vertex_pos34 = simulator.get_vertex_pos(tr3, r0);
+  EXPECT_FALSE(vertex_pos34.is_on_route);
+
+  auto const vertex_pos21 = simulator.get_vertex_pos(tr2, l0);
+  EXPECT_FALSE(vertex_pos21.is_on_route);
 
   // Edge position
   const auto& [occupation, pos] =
@@ -3447,8 +3485,8 @@ TEST(GreedySimulation, DisappearOnPartialRoute) {
   simulator.set_vertex_orders_of_vertex(v2, {tr2});
   simulator.set_train_edges_of_tr(tr2, {v0_v1, v1_v2});
 
-  const auto sim_res_1 = simulator.simulate(6.0, false, true, false, false);
-  const auto sim_res_2 = simulator.simulate(6.0, false, true, false, true);
+  const auto sim_res_1 = simulator.simulate(6.0, false, true, false, true);
+  const auto sim_res_2 = simulator.simulate(6.0, false, true, false, false);
 
   EXPECT_FALSE(sim_res_1.success);
 
@@ -3745,13 +3783,13 @@ TEST(GreedySimulator, HeadOnCollision1) {
   PLOGV << "------------------------------------------";
   PLOGV << "Simulation 1";
   PLOGV << "------------------------------------------";
-  auto const sim_res = simulator.simulate(5.0, false, true, false, false);
+  auto const sim_res = simulator.simulate(5.0, false, true, false, true);
   EXPECT_FALSE(sim_res.success);
 
   PLOGV << "------------------------------------------";
   PLOGV << "Simulation 2";
   PLOGV << "------------------------------------------";
-  auto const sim_res2 = simulator.simulate(5.0, false, true, false, true);
+  auto const sim_res2 = simulator.simulate(5.0, false, true, false, false);
   EXPECT_TRUE(sim_res2.success);
 }
 
@@ -3858,13 +3896,13 @@ TEST(GreedySimulator, HeadOnCollision2) {
   PLOGV << "------------------------------------------";
   PLOGV << "Simulation 1";
   PLOGV << "------------------------------------------";
-  auto const sim_res = simulator.simulate(5.0, false, true, false, false);
+  auto const sim_res = simulator.simulate(5.0, false, true, false, true);
   EXPECT_FALSE(sim_res.success);
 
   PLOGV << "------------------------------------------";
   PLOGV << "Simulation 2";
   PLOGV << "------------------------------------------";
-  auto const sim_res2 = simulator.simulate(5.0, false, true, false, true);
+  auto const sim_res2 = simulator.simulate(5.0, false, true, false, false);
   EXPECT_TRUE(sim_res2.success);
 }
 
@@ -4108,12 +4146,12 @@ TEST(GreedySimulator, EndAtStop) {
   PLOGV << "------------------------------------------";
   PLOGV << "Simulation 1";
   PLOGV << "------------------------------------------";
-  auto const sim_res_1 = simulator.simulate(2.5, false, false, false, false);
+  auto const sim_res_1 = simulator.simulate(2.5, false, false, false, true);
 
   PLOGV << "------------------------------------------";
   PLOGV << "Simulation 2";
   PLOGV << "------------------------------------------";
-  auto const sim_res_2 = simulator.simulate(2.5, false, false, false, true);
+  auto const sim_res_2 = simulator.simulate(2.5, false, false, false, false);
 
   PLOGV << "------------------------------------------";
   PLOGV << "Assertion";
@@ -4130,6 +4168,62 @@ TEST(GreedySimulator, EndAtStop) {
   EXPECT_TRUE(sim_res_2.stop_times.at(tr2).empty());
   ASSERT_EQ(sim_res_2.stop_times.at(tr1).size(), 1);
   EXPECT_EQ(sim_res_2.stop_times.at(tr1).at(0), 10);
+}
+
+TEST(GreedySimulator, TrainsFollowing) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto const v0 =
+      instance.get_editable_network().add_vertex("v0", VertexType::TTD);
+  auto const v1 =
+      instance.get_editable_network().add_vertex("v1", VertexType::TTD);
+  auto const v2 =
+      instance.get_editable_network().add_vertex("v2", VertexType::TTD);
+  auto const v3 =
+      instance.get_editable_network().add_vertex("v3", VertexType::TTD);
+
+  auto const v0_v1 =
+      instance.get_editable_network().add_edge(v0, v1, 100, 10, true);
+  auto const v1_v2 =
+      instance.get_editable_network().add_edge(v1, v2, 100, 10, true);
+  auto const v2_v3 =
+      instance.get_editable_network().add_edge(v2, v3, 100, 10, true);
+
+  instance.get_editable_network().add_successor(v0_v1, v1_v2);
+  instance.get_editable_network().add_successor(v1_v2, v2_v3);
+
+  auto const tr1 = instance.add_train("Train1", 20, 10, 2, 2, true, 0, 10,
+                                      {"v0"}, 0, 10, {"v3"});
+  auto const tr2 = instance.add_train("Train2", 20, 10, 2, 2, true, 60, 10,
+                                      {"v0"}, 60, 10, {"v3"});
+
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  simulator.append_train_edge_to_tr(tr1, v0_v1);
+  simulator.append_train_edge_to_tr(tr2, v0_v1);
+  simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
+
+  auto const sim_res1 = simulator.simulate(5.0, false, false, false, true);
+  EXPECT_TRUE(sim_res1.success);
+  EXPECT_EQ(sim_res1.exit_times.at(tr1), 10);
+  EXPECT_EQ(sim_res1.exit_times.at(tr2), 70);
+
+  auto const sim_res2 = simulator.simulate(5.0, false, false, false, false);
+  EXPECT_TRUE(sim_res2.success);
+  EXPECT_EQ(sim_res2.exit_times.at(tr1), 10);
+  EXPECT_EQ(sim_res2.exit_times.at(tr2), 70);
+
+  simulator.append_train_edge_to_tr(tr2, v1_v2);
+
+  auto const sim_res3 = simulator.simulate(5.0, false, false, false, true);
+  EXPECT_FALSE(sim_res3.success);
+
+  auto const sim_res4 = simulator.simulate(5.0, false, false, false, false);
+  EXPECT_TRUE(sim_res4.success);
+  EXPECT_EQ(sim_res4.exit_times.at(tr1), 10);
+  EXPECT_EQ(sim_res4.exit_times.at(tr2), 80);
 }
 
 // NOLINTEND

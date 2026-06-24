@@ -382,14 +382,14 @@ public:
    * @param late_entry_possible Whether trains may enter later than scheduled.
    * @param limit_speed_by_leaving_edges Whether leaving edges constrain speed.
    * @param save_trajectories Whether to retain detailed trajectories.
-   * @param disappear_at_partial_route_end Whether trains disappear at partial
-   *        route ends.
+   * @param block_vertices_after_disappearing Whether trains block their last
+   * vertex after disappearing on a partial route.
    * @return Simulation results.
    */
   [[nodiscard]] virtual SimulatorResults
   simulate(bool late_entry_possible, bool limit_speed_by_leaving_edges,
            bool save_trajectories,
-           bool disappear_at_partial_route_end) const = 0;
+           bool block_vertices_after_disappearing) const = 0;
 
   /**
    * @brief Simulates train movements given the current routing, ordering, and
@@ -407,7 +407,7 @@ public:
            bool save_trajectories =
                false) const { // default values for virtual function
     return simulate(late_entry_possible, limit_speed_by_leaving_edges,
-                    save_trajectories, false);
+                    save_trajectories, true);
   };
 
 protected:

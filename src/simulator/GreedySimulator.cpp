@@ -60,7 +60,7 @@ cda_rail::simulator::GreedySimulator::GreedySimulator(
 cda_rail::simulator::SimulatorResults
 cda_rail::simulator::GreedySimulator::simulate(
     double dt, bool late_entry_possible, bool limit_speed_by_leaving_edges,
-    bool save_trajectories, bool disappear_at_partial_route_end) const {
+    bool save_trajectories, bool block_vertices_after_disappearing) const {
   // NOLINTBEGIN(*-inconsistent-ifelse-braces)
 
   exceptions::throw_if_non_positive(dt, "Time step length dt");
@@ -74,6 +74,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       number_of_trains,
       0); // Initially each train is simulated until
           // time t=0, for t>0 the heuristic is needed.
+  std::vector<double>              blocked_positions(number_of_trains, INF);
   std::vector<std::vector<double>> stop_times(number_of_trains);
   std::vector<std::map<double, PosVel>>
       train_trajectories; // time -> {pos, vel}
@@ -164,7 +165,7 @@ cda_rail::simulator::GreedySimulator::simulate(
       const auto tr_ma_data = get_ma_and_maxv(
           tr, train_velocities, tr_next_stop_id.at(tr), t, dt, blocked_vertices,
           train_positions, trains_in_network, trains_left, trains_on_edges,
-          limit_speed_by_leaving_edges, !disappear_at_partial_route_end);
+          limit_speed_by_leaving_edges, block_vertices_after_disappearing);
       PLOGV << train_object.get_name() << " positioned at "
             << train_positions.at(tr).front
             << " has MA: " << train_positions.at(tr).front + tr_ma_data.ma
@@ -272,12 +273,12 @@ cda_rail::simulator::GreedySimulator::simulate(
         exit_times.at(tr) = t;
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " reached the end of its route on an edge within the network.";
-        if (disappear_at_partial_route_end) {
-          trains_to_remove.emplace_back(tr);
-          trains_left.insert(tr);
-          PLOGV << "At time " << t << ", "
-                << train_list.get_train(tr).get_name()
-                << " disappeared at the end of its route.";
+        trains_to_remove.emplace_back(tr);
+        trains_left.insert(tr);
+        PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
+              << " disappeared at the end of its route.";
+        if (block_vertices_after_disappearing) {
+          // TODO
         }
       } else if (tr_status == DestinationType::Station) {
         assert(tr_next_stop_id.at(tr).has_value());
@@ -1148,4 +1149,23 @@ cda_rail::simulator::GreedySimulator::tr_reached_end(
   }
   // Train stops at the end of its route, but not at a station stop
   return DestinationType::Edge;
+}
+
+cda_rail::simulator::GreedySimulator::VertexRoutePos
+cda_rail::simulator::GreedySimulator::get_vertex_pos(size_t tr,
+                                                     size_t vertex) const {
+  double      pos{0.0};
+  auto const& tr_edges = get_train_edges_of_tr(tr);
+  for (size_t i = 0; i < tr_edges.size(); ++i) {
+    const auto& edge =
+        get_instance()->get_const_network().get_edge(tr_edges.at(i));
+    if (i == 0 && edge.source == vertex) {
+      return {.is_on_route = true, .pos = pos};
+    }
+    pos += edge.length;
+    if (edge.target == vertex) {
+      return {.is_on_route = true, .pos = pos};
+    }
+  }
+  return {.is_on_route = false, .pos = INF};
 }
