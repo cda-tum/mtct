@@ -42,17 +42,13 @@ cda_rail::Schedule::Schedule(double const entryTime,
 
 size_t
 cda_rail::Schedule::get_station_index(std::string const& station_name) const {
-  std::optional<size_t> station_idx;
-  for (size_t i = 0; i < m_stops.size(); ++i) {
-    if (m_stops.at(i).get_station().name == station_name) {
-      station_idx = i;
-      break;
-    }
-  }
-  if (!station_idx.has_value()) {
+  auto const it = std::ranges::find_if(m_stops, [&](auto const& stop) {
+    return stop.get_station().name == station_name;
+  });
+  if (it == m_stops.end()) {
     throw exceptions::StationNotExistentException(station_name);
   }
-  return station_idx.value();
+  return static_cast<size_t>(std::distance(m_stops.begin(), it));
 }
 
 std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>

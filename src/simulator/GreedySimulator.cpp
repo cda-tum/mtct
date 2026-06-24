@@ -1139,11 +1139,7 @@ cda_rail::simulator::GreedySimulator::tr_reached_end(
           ->get_const_network()
           .get_edge(get_train_edges_of_tr(tr).back())
           .target) {
-    // Train leaves the network at the end of its route, hence it has to fully
-    // leave the network
-
-    return pos >= route_len - GRB_EPS ? DestinationType::Network
-                                      : DestinationType::None;
+    return DestinationType::Network;
   }
   if (has_stop_left && !get_stop_positions_of_tr(tr).empty() &&
       get_stop_positions_of_tr(tr).back() >= route_len - GRB_EPS) {
