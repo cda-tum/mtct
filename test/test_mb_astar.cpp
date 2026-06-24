@@ -2444,12 +2444,53 @@ TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
        .time_aware_state_transitions = true},
       {}, -1, true);
 
+  const auto sol_obj_3 = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
+       .time_aware_state_transitions = false},
+      {}, -1, true);
+
+  const auto sol_obj_4 = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
+       .time_aware_state_transitions = true},
+      {}, -1, true);
+
+  const auto sol_obj_5 = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::SingleEdge,
+       .time_aware_state_transitions = false},
+      {}, -1, true);
+
+  const auto sol_obj_6 = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::SingleEdge,
+       .time_aware_state_transitions = true},
+      {}, -1, true);
+
   EXPECT_TRUE(sol_obj.has_solution());
   EXPECT_TRUE(sol_obj_2.has_solution());
+  EXPECT_TRUE(sol_obj_3.has_solution());
+  EXPECT_TRUE(sol_obj_4.has_solution());
+  EXPECT_TRUE(sol_obj_5.has_solution());
+  EXPECT_TRUE(sol_obj_6.has_solution());
+
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_2.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_obj_3.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_obj_4.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_obj_5.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_obj_6.get_status(), cda_rail::SolutionStatus::Optimal);
 
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_2.get_obj());
+  EXPECT_EQ(sol_obj.get_obj(), sol_obj_3.get_obj());
+  EXPECT_EQ(sol_obj.get_obj(), sol_obj_4.get_obj());
+  EXPECT_EQ(sol_obj.get_obj(), sol_obj_5.get_obj());
+  EXPECT_EQ(sol_obj.get_obj(), sol_obj_6.get_obj());
 }
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
