@@ -110,3 +110,15 @@ bool cda_rail::is_directory_and_create(const std::filesystem::path& p) {
 }
 
 double cda_rail::relu(double const val) { return std::max(0.0, val); }
+double cda_rail::get_last_time_step_before(double t, double dt,
+                                           bool t_inclusive) {
+  // max (k * dt s.th. k*dt <= t) if t_inclusive is true, otherwise max (k * dt
+  // s.th. k*dt < t)
+  return t_inclusive ? std::floor(t / dt) * dt : std::ceil(t / dt) * dt - dt;
+}
+double cda_rail::get_first_time_step_after(double t, double dt,
+                                           bool t_inclusive) {
+  // min (k * dt s.th. k*dt >= t) if t_inclusive is true, otherwise min (k * dt
+  // s.th. k*dt > t)
+  return t_inclusive ? std::ceil(t / dt) * dt : std::floor(t / dt) * dt + dt;
+}

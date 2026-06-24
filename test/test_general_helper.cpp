@@ -413,6 +413,18 @@ TEST(Functionality, Iterators) {
   }
 }
 
+TEST(GeneralHelper, LastFirstTimeStep) {
+  EXPECT_EQ(cda_rail::get_last_time_step_before(7.5, 2.5, true), 7.5);
+  EXPECT_EQ(cda_rail::get_last_time_step_before(7.5, 2.5, false), 5.0);
+  EXPECT_EQ(cda_rail::get_last_time_step_before(8.5, 2.5, true), 7.5);
+  EXPECT_EQ(cda_rail::get_last_time_step_before(8.5, 2.5, false), 7.5);
+
+  EXPECT_EQ(cda_rail::get_first_time_step_after(7.5, 2.5, true), 7.5);
+  EXPECT_EQ(cda_rail::get_first_time_step_after(7.5, 2.5, false), 10.0);
+  EXPECT_EQ(cda_rail::get_first_time_step_after(6.5, 2.5, true), 7.5);
+  EXPECT_EQ(cda_rail::get_first_time_step_after(6.5, 2.5, false), 7.5);
+}
+
 TEST(Playground, VectorInsert) {
   std::vector<int> vec{5, 3, 8};
   EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));

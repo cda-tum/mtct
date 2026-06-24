@@ -137,4 +137,27 @@ template <typename Clock, typename Duration1, typename Duration2>
          1000.0;
 }
 
+/**
+ * @brief return last time step before t
+ *
+ * @param t Time t
+ * @param dt Timestep
+ * @param t_inclusive Can t itself be returned?
+ * @return max (k * dt s.th. k*dt <= t) if t_inclusive is true, otherwise max (k
+ * * dt s.th. k*dt < t)
+ */
+[[nodiscard]] double get_last_time_step_before(double t, double dt,
+                                               bool t_inclusive);
+/**
+ * @brief return first time step after t
+ *
+ * @param t Time t
+ * @param dt Timestep
+ * @param t_inclusive Can t itself be returned?
+ * @return min (k * dt s.th. k*dt >= t) if t_inclusive is true, otherwise min (k
+ * * dt s.th. k*dt > t)
+ */
+[[nodiscard]] double get_first_time_step_after(double t, double dt,
+                                               bool t_inclusive);
+
 } // namespace cda_rail
