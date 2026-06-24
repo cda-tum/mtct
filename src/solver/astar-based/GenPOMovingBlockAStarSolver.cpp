@@ -56,7 +56,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   // const auto [init_feas, init_exit_times, init_braking, init_headways] =
   const auto init_simulator_result = simulator.simulate(
       model_detail_input.dt, model_detail_input.late_entry_possible,
-      model_detail_input.limit_speed_by_leaving_edges, false, false);
+      model_detail_input.limit_speed_by_leaving_edges, false,
+      !solver_strategy_input.time_aware_state_transitions);
   const auto init_obj =
       simulator::objective_val(simulator, init_simulator_result.exit_times,
                                init_simulator_result.stop_times);
@@ -157,10 +158,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       }
       simulator.set_simulator_state(s);
 
-      const auto final   = simulator.is_final_state();
       const auto sim_res = simulator.simulate(
           model_detail_input.dt, model_detail_input.late_entry_possible,
-          model_detail_input.limit_speed_by_leaving_edges, false, final);
+          model_detail_input.limit_speed_by_leaving_edges, false,
+          !solver_strategy_input.time_aware_state_transitions);
       if (!sim_res.success) {
         PLOGV << "State is infeasible, skipping.";
         continue;
@@ -173,6 +174,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
               sim_res, solver_strategy_input.consider_earliest_exit);
       const auto new_obj =
           obj + solver_strategy_input.a_star_weight * heuristic_val;
+      const auto final = simulator.is_final_state();
       PLOGV << "Objective = " << obj << ", heuristic = " << heuristic_val
             << ", total = " << new_obj << ", feasibility = "
             << (heuristic_feas ? "feasible" : "infeasible")
@@ -783,98 +785,6 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::next_states(
   auto const tr_to_advance = get_relevant_trains_for_state_transition(
       simulator_state, simulator_results, instance, solver_strategy_input);
 
-  auto const is_before_in_order = [](cda_rail::index_vector const& order,
-                                     size_t                        before,
-                                     size_t after) -> std::optional<bool> {
-    auto const before_pos = std::ranges::find(order, before);
-    auto const after_pos  = std::ranges::find(order, after);
-    if (before_pos == order.end() || after_pos == order.end()) {
-      return std::nullopt;
-    }
-    return before_pos < after_pos;
-  };
-
-  auto const train_before_at_partial_route_end =
-      [&is_before_in_order, &simulator_state, instance, &ttd_sections](
-          simulator::SimulatorState const& state, size_t before, size_t after) {
-        auto const& before_route = simulator_state.train_edges.at(before);
-        assert(!before_route.empty());
-
-        auto const* relevant_order = &state.vertex_orders.at(
-            instance->get_const_schedule(before).get_entry_vertex());
-        for (auto const edge_id : before_route) {
-          auto const edge_ttd =
-              cda_rail::Network::get_ttd_of_edge(edge_id, ttd_sections);
-          if (edge_ttd.has_value()) {
-            relevant_order = &state.ttd_orders.at(edge_ttd.value());
-          }
-        }
-
-        if (auto ordered = is_before_in_order(*relevant_order, before, after);
-            ordered.has_value()) {
-          return ordered.value();
-        }
-
-        auto const& last_edge =
-            instance->get_const_network().get_edge(before_route.back());
-        if (auto ordered = is_before_in_order(
-                state.vertex_orders.at(last_edge.source), before, after);
-            ordered.has_value()) {
-          return ordered.value();
-        }
-
-        return false;
-      };
-
-  auto const route_goes_past_edge_end =
-      [instance](cda_rail::index_vector const& route, size_t edge_id) {
-        auto const reverse_edge_id =
-            instance->get_const_network().get_reverse_edge_index(edge_id);
-        for (size_t edge_pos = 0; edge_pos < route.size(); ++edge_pos) {
-          auto const route_edge = route.at(edge_pos);
-          if (route_edge == edge_id) {
-            return edge_pos + 1 < route.size();
-          }
-          if (reverse_edge_id.has_value() &&
-              route_edge == reverse_edge_id.value()) {
-            return true;
-          }
-        }
-        return false;
-      };
-
-  auto const crosses_partial_route_end =
-      [&simulator_state, &train_before_at_partial_route_end,
-       &route_goes_past_edge_end,
-       instance](size_t tr, simulator::SimulatorState const& child_state) {
-        for (size_t other = 0; other < simulator_state.train_edges.size();
-             ++other) {
-          if (other == tr || simulator_state.train_edges.at(other).empty()) {
-            continue;
-          }
-          auto const other_last_edge =
-              simulator_state.train_edges.at(other).back();
-          auto const other_exit_vertex =
-              instance->get_const_schedule(other).get_exit_vertex();
-          if (instance->get_const_network().get_edge(other_last_edge).target ==
-              other_exit_vertex) {
-            continue;
-          }
-          if (!train_before_at_partial_route_end(child_state, other, tr)) {
-            continue;
-          }
-          if (route_goes_past_edge_end(simulator_state.train_edges.at(tr),
-                                       other_last_edge)) {
-            continue;
-          }
-          if (route_goes_past_edge_end(child_state.train_edges.at(tr),
-                                       other_last_edge)) {
-            return true;
-          }
-        }
-        return false;
-      };
-
   // for every train, get next states and combine
   std::vector<simulator::SimulatorState> next_states{};
   for (auto const& tr : tr_to_advance) {
@@ -888,13 +798,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::next_states(
         auto const tr_extended_paths = extend_train_orders_of_state(
             tr, tr_path_extended_state, model_detail_input,
             solver_strategy_input, ttd_sections, instance);
-        for (auto const& tr_extended_state : tr_extended_paths) {
-          if (!solver_strategy_input.time_aware_state_transitions &&
-              crosses_partial_route_end(tr, tr_extended_state)) {
-            continue;
-          }
-          next_states.emplace_back(tr_extended_state);
-        }
+        next_states.insert(next_states.end(), tr_extended_paths.begin(),
+                           tr_extended_paths.end());
       }
     }
   }
