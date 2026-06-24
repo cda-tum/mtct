@@ -296,7 +296,8 @@ cda_rail::simulator::GreedySimulator::simulate(
 
             auto const blocking_vertex_pos =
                 get_vertex_pos(tr_other, blocking_vertex);
-            if (blocking_vertex_pos.is_on_route) {
+            if (blocking_vertex_pos.is_on_route &&
+                train_positions.at(tr_other).front <= blocking_vertex_pos.pos) {
               blocked_positions.at(tr_other) = std::min(
                   blocked_positions.at(tr_other), blocking_vertex_pos.pos);
               PLOGV << "At time " << t << ", "
