@@ -1020,6 +1020,87 @@ TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesExportImport) {
   EXPECT_EQ(sol_read.get_train_speed("tr1", 230), 20);
 }
 
+TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesAccessors) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto const v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  auto const v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  auto const v2 = instance.get_editable_network().add_vertex(
+      "v2", cda_rail::VertexType::TTD);
+
+  auto const v0_v1 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 10);
+  auto const v1_v2 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 10);
+
+  instance.add_train("tr1", 50, 30, 2, 2, 0, 10, v0, 100, 10, v2);
+  instance.add_train("tr2", 50, 30, 2, 2, 0, 10, v0, 100, 10, v2);
+
+  instance.add_empty_station("Station1");
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station1", v0_v1);
+  instance.add_track_to_station("Station2", v1_v2);
+  instance.insert_stop("tr1", "Station1", 10, 5);
+  instance.insert_stop("tr1", "Station2", 30, 5);
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+
+  sol_instance.set_train_exit_time("tr1", 101);
+  sol_instance.set_train_stop_time("tr1", 0, 11);
+  sol_instance.set_train_stop_time("tr1", "Station2", 31);
+  EXPECT_EQ(sol_instance.get_exit_time("tr1"), 101);
+  EXPECT_EQ(sol_instance.get_stop_time("tr1", 0), 11);
+  EXPECT_EQ(sol_instance.get_stop_time("tr1", "Station2"), 31);
+  EXPECT_EQ(sol_instance.get_stop_times("tr1"), std::vector<double>({11, 31}));
+
+  sol_instance.set_train_stop_times("tr1", {12, 32});
+  sol_instance.set_exit_times({102, 202});
+  sol_instance.set_stop_times({{13, 33}, {}});
+  EXPECT_EQ(sol_instance.get_exit_time("tr1"), 102);
+  EXPECT_EQ(sol_instance.get_exit_time("tr2"), 202);
+  EXPECT_EQ(sol_instance.get_stop_times("tr1"), std::vector<double>({13, 33}));
+  EXPECT_EQ(sol_instance.get_stop_times("tr2"), std::vector<double>({}));
+  EXPECT_EQ(sol_instance.get_stop_time("tr1", "Station1"), 13);
+  EXPECT_EQ(sol_instance.get_stop_time("tr1", 1), 33);
+
+  EXPECT_THROW((void)sol_instance.get_exit_time("unknown"),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW((void)sol_instance.get_stop_times("unknown"),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW((void)sol_instance.get_stop_time("unknown", 0),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW((void)sol_instance.get_stop_time("tr1", "unknown"),
+               cda_rail::exceptions::StationNotExistentException);
+  EXPECT_ANY_THROW((void)sol_instance.get_stop_time("tr1", 2));
+
+  EXPECT_THROW(sol_instance.set_train_exit_time("tr1", -1),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(sol_instance.set_train_exit_time("unknown", 1),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(sol_instance.set_train_stop_time("tr1", 0, -1),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(sol_instance.set_train_stop_time("unknown", 0, 1),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_ANY_THROW(sol_instance.set_train_stop_time("tr1", 2, 1));
+  EXPECT_THROW(sol_instance.set_train_stop_time("tr1", "Station1", -1),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(sol_instance.set_train_stop_time("tr1", "unknown", 1),
+               cda_rail::exceptions::StationNotExistentException);
+  EXPECT_THROW(sol_instance.set_train_stop_times("tr1", {1}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol_instance.set_train_stop_times("tr1", {14, 14}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(sol_instance.set_exit_times({1}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol_instance.set_exit_times({1, -1}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(sol_instance.set_stop_times({{1, 2}}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol_instance.set_stop_times({{1}, {}}),
+               cda_rail::exceptions::ConsistencyException);
+}
+
 TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops1) {
   // Create instance members
   Network network("SimpleStation", "./data/");
