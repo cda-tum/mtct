@@ -2430,5 +2430,17 @@ TEST(GenPOMovingBlockAStarSolver, NextStateStrategyToString) {
                    static_cast<solver::astar_based::NextStateStrategy>(255)),
                exceptions::ConsistencyException);
 }
+
+TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleNetwork", "atmos2023", "./data");
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto sol_obj = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD},
+      {}, -1, true);
+}
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

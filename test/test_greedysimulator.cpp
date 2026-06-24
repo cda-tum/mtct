@@ -3924,5 +3924,49 @@ TEST(GreedySimulator, HeadOnCollision2) {
   EXPECT_TRUE(sim_res2.success);
 }
 
+// -----------------
+// Bugfixing Tests
+// -----------------
+
+TEST(GreedySimulator, SimpleNetwork) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleNetwork", "atmos2023", "./data");
+
+  const auto ttd_sections = instance.get_const_network().unbreakable_sections();
+  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+
+  auto const tr1rl = instance.get_const_train_list().get_train_index("tr1rl");
+  EXPECT_EQ(tr1rl, 1);
+
+  simulator.append_train_edge_to_tr(tr1rl, {"v14b", "v13b"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v13b", "v12"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v12", "v11"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v11", "v10"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v10", "v9"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v9", "v8b"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v8b", "v7b"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v7b", "v6"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v6", "v5"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v5", "v4"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v4", "v3"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v3", "v2b"});
+  simulator.append_train_edge_to_tr(tr1rl, {"v2b", "v1b"});
+
+  EXPECT_EQ(ttd_sections.size(), 4);
+  for (size_t i = 0; i < ttd_sections.size(); ++i) {
+    simulator.set_ttd_orders_of_ttd(i, {tr1rl});
+  }
+  simulator.set_vertex_orders_of_vertex({"v14b"}, {tr1rl});
+  simulator.set_vertex_orders_of_vertex({"v1b"}, {tr1rl});
+
+  auto const sim_res = simulator.simulate();
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_GE(sim_res.exit_times.at(tr1rl), 960);
+  EXPECT_LE(sim_res.exit_times.at(tr1rl), 960 + 6);
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
