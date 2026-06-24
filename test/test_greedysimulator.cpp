@@ -4156,7 +4156,18 @@ TEST(GreedySimulator, EndAtStop) {
   PLOGV << "------------------------------------------";
   PLOGV << "Assertion";
   PLOGV << "------------------------------------------";
-  EXPECT_FALSE(sim_res_1.success);
+  EXPECT_TRUE(sim_res_1.success);
+  ASSERT_EQ(sim_res_1.exit_times.size(), 2);
+  EXPECT_EQ(sim_res_1.exit_times.at(tr1), 10 + 30);
+  auto const exit_time_tmp = sim_res_1.exit_times.at(tr1) + 10;
+  EXPECT_GE(sim_res_1.exit_times.at(tr2), exit_time_tmp);
+  EXPECT_EQ(sim_res_1.exit_times.at(tr2),
+            get_first_time_step_after(exit_time_tmp, 2.5, true));
+  ASSERT_EQ(sim_res_1.stop_times.size(), 2);
+  EXPECT_TRUE(sim_res_1.stop_times.at(tr2).empty());
+  ASSERT_EQ(sim_res_1.stop_times.at(tr1).size(), 1);
+  EXPECT_EQ(sim_res_1.stop_times.at(tr1).at(0), 10);
+
   EXPECT_TRUE(sim_res_2.success);
   ASSERT_EQ(sim_res_2.exit_times.size(), 2);
   EXPECT_EQ(sim_res_2.exit_times.at(tr1), 10 + 30);
