@@ -351,7 +351,15 @@ double cda_rail::max_travel_time_inverse(double v_0, double t, double dt,
   // s = (v_0+v_1)/2*dt + (v_1+v_1-d*t)/2*t
   // v_1 = (d*t^2-dt*v_0+2*s)/(dt+2*t)
   auto const v_1 = ((d * t * t) - (dt * v_0) + (2 * s)) / (dt + (2 * t));
-  exceptions::throw_if_less_than(v_1, d * t, "Calculated max speed");
+  if (v_1 < d * t) {
+    // Potentially problematic because calculation contains negative values
+    auto const rel_t = std::ceil(t / dt) - 1;
+    exceptions::throw_if_less_than(v_1 + GRB_EPS, d * rel_t,
+                                   "Calculated max speed");
+    auto const rel_pos =
+        (((v_0 + v_1) / 2) * dt) + (((v_1 + v_1 - (d * rel_t)) / 2) * rel_t);
+    exceptions::throw_if_less_than(s + GRB_EPS, rel_pos, "Distance");
+  }
   return v_1;
 }
 
