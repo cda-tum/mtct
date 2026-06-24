@@ -335,7 +335,8 @@ public:
   /** @brief Replaces the edge sequence of one train. */
   void set_train_edges_of_tr(size_t train_id, cda_rail::index_vector edges);
   /** @brief Appends one edge to a train edge sequence. */
-  void append_train_edge_to_tr(size_t train_id, size_t edge);
+  void append_train_edge_to_tr(size_t                              train_id,
+                               cda_rail::Network::EdgeInput const& edge);
 
   /** @brief Replaces all TTD train orders. */
   void set_ttd_orders(std::vector<cda_rail::index_vector> orders);

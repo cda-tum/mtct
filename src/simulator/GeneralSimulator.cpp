@@ -209,16 +209,17 @@ void cda_rail::simulator::GeneralSimulator::set_train_edges_of_tr(
 }
 
 void cda_rail::simulator::GeneralSimulator::append_train_edge_to_tr(
-    size_t train_id, size_t edge) {
+    size_t train_id, cda_rail::Network::EdgeInput const& edge) {
   m_instance->get_const_train_list().throw_if_train_not_exist(train_id);
+  auto const edge_id = m_instance->get_const_network().get_edge_index(edge);
   if (m_train_edges.at(train_id).empty()) {
-    check_train_edges_for_tr(train_id, cda_rail::index_vector{edge});
+    check_train_edges_for_tr(train_id, cda_rail::index_vector{edge_id});
   } else {
     auto const& last_edge = m_train_edges.at(train_id).back();
     m_instance->get_const_network().throw_if_not_valid_successor(last_edge,
                                                                  edge);
   }
-  m_train_edges.at(train_id).push_back(edge);
+  m_train_edges.at(train_id).push_back(edge_id);
 }
 
 void cda_rail::simulator::GeneralSimulator::set_ttd_orders(
