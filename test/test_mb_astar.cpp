@@ -1208,50 +1208,47 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
   EXPECT_EQ(sol_obj_ttd.get_train_order(v2_v3), tr_order);
   EXPECT_EQ(sol_obj_ttd_2.get_train_order(v2_v3), tr_order);
 
-  auto const tr_times_tr1 = sol_obj_single.get_train_times("Train1");
-  auto const tr_times_tr2 = sol_obj_single.get_train_times("Train2");
-  auto const tr_times_tr3 = sol_obj_single.get_train_times("Train3");
+  EXPECT_EQ(sol_obj_single.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_single.get_exit_time("Train2"), 300);
+  EXPECT_EQ(sol_obj_single.get_exit_time("Train3"), 400);
 
-  auto const tr_times_tr1_ttd = sol_obj_ttd.get_train_times("Train1");
-  auto const tr_times_tr2_ttd = sol_obj_ttd.get_train_times("Train2");
-  auto const tr_times_tr3_ttd = sol_obj_ttd.get_train_times("Train3");
+  EXPECT_EQ(sol_obj_ttd.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_ttd.get_exit_time("Train2"), 300);
+  EXPECT_EQ(sol_obj_ttd.get_exit_time("Train3"), 400);
 
-  auto const tr_times_tr1_ttd_2 = sol_obj_ttd_2.get_train_times("Train1");
-  auto const tr_times_tr2_ttd_2 = sol_obj_ttd_2.get_train_times("Train2");
-  auto const tr_times_tr3_ttd_2 = sol_obj_ttd_2.get_train_times("Train3");
+  EXPECT_EQ(sol_obj_ttd_2.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_ttd_2.get_exit_time("Train2"), 300);
+  EXPECT_EQ(sol_obj_ttd_2.get_exit_time("Train3"), 400);
 
-  EXPECT_EQ(tr_times_tr1.back(), 500);
-  EXPECT_EQ(tr_times_tr2.back(), 300);
-  EXPECT_EQ(tr_times_tr3.back(), 400);
+  EXPECT_GE(sol_obj_single.get_train_pos(
+                "Train1", sol_obj_single.get_exit_time("Train1")),
+            100 + 10 + 10 + 100);
+  EXPECT_GE(sol_obj_single.get_train_pos(
+                "Train2", sol_obj_single.get_exit_time("Train2")),
+            100 + 10 + 10 + 100);
+  EXPECT_GE(sol_obj_single.get_train_pos(
+                "Train3", sol_obj_single.get_exit_time("Train3")),
+            100 + 10 + 10 + 100);
 
-  EXPECT_EQ(tr_times_tr1_ttd.back(), 500);
-  EXPECT_EQ(tr_times_tr2_ttd.back(), 300);
-  EXPECT_EQ(tr_times_tr3_ttd.back(), 400);
+  EXPECT_GE(
+      sol_obj_ttd.get_train_pos("Train1", sol_obj_ttd.get_exit_time("Train1")),
+      100 + 10 + 10 + 100);
+  EXPECT_GE(
+      sol_obj_ttd.get_train_pos("Train2", sol_obj_ttd.get_exit_time("Train2")),
+      100 + 10 + 10 + 100);
+  EXPECT_GE(
+      sol_obj_ttd.get_train_pos("Train3", sol_obj_ttd.get_exit_time("Train3")),
+      100 + 10 + 10 + 100);
 
-  EXPECT_EQ(tr_times_tr1_ttd_2.back(), 500);
-  EXPECT_EQ(tr_times_tr2_ttd_2.back(), 300);
-  EXPECT_EQ(tr_times_tr3_ttd_2.back(), 400);
-
-  EXPECT_GE(sol_obj_single.get_train_pos("Train1", tr_times_tr1.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_single.get_train_pos("Train2", tr_times_tr2.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_single.get_train_pos("Train3", tr_times_tr3.back()),
-            100 + 10 + 10 + 100 + 50);
-
-  EXPECT_GE(sol_obj_ttd.get_train_pos("Train1", tr_times_tr1_ttd.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_ttd.get_train_pos("Train2", tr_times_tr2_ttd.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_ttd.get_train_pos("Train3", tr_times_tr3_ttd.back()),
-            100 + 10 + 10 + 100 + 50);
-
-  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train1", tr_times_tr1_ttd_2.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train2", tr_times_tr2_ttd_2.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train3", tr_times_tr3_ttd_2.back()),
-            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train1",
+                                        sol_obj_ttd_2.get_exit_time("Train1")),
+            100 + 10 + 10 + 100);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train2",
+                                        sol_obj_ttd_2.get_exit_time("Train2")),
+            100 + 10 + 10 + 100);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train3",
+                                        sol_obj_ttd_2.get_exit_time("Train3")),
+            100 + 10 + 10 + 100);
 }
 
 TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
@@ -1337,50 +1334,47 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
   EXPECT_EQ(sol_obj_ttd.get_train_order(v2_v3), tr_order);
   EXPECT_EQ(sol_obj_ttd_2.get_train_order(v2_v3), tr_order);
 
-  auto const tr_times_tr1 = sol_obj_single.get_train_times("Train1");
-  auto const tr_times_tr2 = sol_obj_single.get_train_times("Train2");
-  auto const tr_times_tr3 = sol_obj_single.get_train_times("Train3");
+  EXPECT_EQ(sol_obj_single.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_single.get_exit_time("Train2"), 300);
+  EXPECT_EQ(sol_obj_single.get_exit_time("Train3"), 400);
 
-  auto const tr_times_tr1_ttd = sol_obj_ttd.get_train_times("Train1");
-  auto const tr_times_tr2_ttd = sol_obj_ttd.get_train_times("Train2");
-  auto const tr_times_tr3_ttd = sol_obj_ttd.get_train_times("Train3");
+  EXPECT_EQ(sol_obj_ttd.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_ttd.get_exit_time("Train2"), 300);
+  EXPECT_EQ(sol_obj_ttd.get_exit_time("Train3"), 400);
 
-  auto const tr_times_tr1_ttd_2 = sol_obj_ttd_2.get_train_times("Train1");
-  auto const tr_times_tr2_ttd_2 = sol_obj_ttd_2.get_train_times("Train2");
-  auto const tr_times_tr3_ttd_2 = sol_obj_ttd_2.get_train_times("Train3");
+  EXPECT_EQ(sol_obj_ttd_2.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_ttd_2.get_exit_time("Train2"), 300);
+  EXPECT_EQ(sol_obj_ttd_2.get_exit_time("Train3"), 400);
 
-  EXPECT_EQ(tr_times_tr1.back(), 500);
-  EXPECT_EQ(tr_times_tr2.back(), 300);
-  EXPECT_EQ(tr_times_tr3.back(), 400);
+  EXPECT_GE(sol_obj_single.get_train_pos(
+                "Train1", sol_obj_single.get_exit_time("Train1")),
+            100 + 10 + 10 + 100);
+  EXPECT_GE(sol_obj_single.get_train_pos(
+                "Train2", sol_obj_single.get_exit_time("Train2")),
+            100 + 10 + 10 + 100);
+  EXPECT_GE(sol_obj_single.get_train_pos(
+                "Train3", sol_obj_single.get_exit_time("Train3")),
+            100 + 10 + 10 + 100);
 
-  EXPECT_EQ(tr_times_tr1_ttd.back(), 500);
-  EXPECT_EQ(tr_times_tr2_ttd.back(), 300);
-  EXPECT_EQ(tr_times_tr3_ttd.back(), 400);
+  EXPECT_GE(
+      sol_obj_ttd.get_train_pos("Train1", sol_obj_ttd.get_exit_time("Train1")),
+      100 + 10 + 10 + 100);
+  EXPECT_GE(
+      sol_obj_ttd.get_train_pos("Train2", sol_obj_ttd.get_exit_time("Train2")),
+      100 + 10 + 10 + 100);
+  EXPECT_GE(
+      sol_obj_ttd.get_train_pos("Train3", sol_obj_ttd.get_exit_time("Train3")),
+      100 + 10 + 10 + 100);
 
-  EXPECT_EQ(tr_times_tr1_ttd_2.back(), 500);
-  EXPECT_EQ(tr_times_tr2_ttd_2.back(), 300);
-  EXPECT_EQ(tr_times_tr3_ttd_2.back(), 400);
-
-  EXPECT_GE(sol_obj_single.get_train_pos("Train1", tr_times_tr1.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_single.get_train_pos("Train2", tr_times_tr2.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_single.get_train_pos("Train3", tr_times_tr3.back()),
-            100 + 10 + 10 + 100 + 50);
-
-  EXPECT_GE(sol_obj_ttd.get_train_pos("Train1", tr_times_tr1_ttd.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_ttd.get_train_pos("Train2", tr_times_tr2_ttd.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_ttd.get_train_pos("Train3", tr_times_tr3_ttd.back()),
-            100 + 10 + 10 + 100 + 50);
-
-  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train1", tr_times_tr1_ttd_2.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train2", tr_times_tr2_ttd_2.back()),
-            100 + 10 + 10 + 100 + 50);
-  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train3", tr_times_tr3_ttd_2.back()),
-            100 + 10 + 10 + 100 + 50);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train1",
+                                        sol_obj_ttd_2.get_exit_time("Train1")),
+            100 + 10 + 10 + 100);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train2",
+                                        sol_obj_ttd_2.get_exit_time("Train2")),
+            100 + 10 + 10 + 100);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train3",
+                                        sol_obj_ttd_2.get_exit_time("Train3")),
+            100 + 10 + 10 + 100);
 }
 
 TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
@@ -1492,33 +1486,35 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
       sol_obj_ttd_2.get_time_at_pos("Train2", 170, true);
   EXPECT_GT(tr1_time_ttd_2, tr2_time_ttd_2);
 
-  auto const tr_times_single_tr1 = sol_obj_single.get_train_times("Train1");
-  auto const tr_times_single_tr2 = sol_obj_single.get_train_times("Train2");
-  auto const tr_times_ttd_tr1    = sol_obj_ttd.get_train_times("Train1");
-  auto const tr_times_ttd_tr2    = sol_obj_ttd.get_train_times("Train2");
-  auto const tr_times_ttd_2_tr1  = sol_obj_ttd_2.get_train_times("Train1");
-  auto const tr_times_ttd_2_tr2  = sol_obj_ttd_2.get_train_times("Train2");
-  EXPECT_EQ(tr_times_single_tr1.back(), 500);
-  EXPECT_EQ(tr_times_single_tr2.back(), 300);
-  EXPECT_EQ(tr_times_ttd_tr1.back(), 500);
-  EXPECT_EQ(tr_times_ttd_tr2.back(), 300);
-  EXPECT_EQ(tr_times_ttd_2_tr1.back(), 500);
-  EXPECT_EQ(tr_times_ttd_2_tr2.back(), 300);
+  EXPECT_EQ(sol_obj_single.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_single.get_exit_time("Train2"), 300);
 
-  EXPECT_GE(sol_obj_single.get_train_pos("Train1", tr_times_single_tr1.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
-  EXPECT_GE(sol_obj_single.get_train_pos("Train2", tr_times_single_tr2.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
+  EXPECT_EQ(sol_obj_ttd.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_ttd.get_exit_time("Train2"), 300);
 
-  EXPECT_GE(sol_obj_ttd.get_train_pos("Train1", tr_times_ttd_tr1.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
-  EXPECT_GE(sol_obj_ttd.get_train_pos("Train2", tr_times_ttd_tr2.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
+  EXPECT_EQ(sol_obj_ttd_2.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_ttd_2.get_exit_time("Train2"), 300);
 
-  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train1", tr_times_ttd_2_tr1.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
-  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train2", tr_times_ttd_2_tr2.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
+  EXPECT_GE(sol_obj_single.get_train_pos(
+                "Train1", sol_obj_single.get_exit_time("Train1")),
+            100 + 10 + 10 + 100 + 10 + 10);
+  EXPECT_GE(sol_obj_single.get_train_pos(
+                "Train2", sol_obj_single.get_exit_time("Train2")),
+            100 + 10 + 10 + 100 + 10 + 10);
+
+  EXPECT_GE(
+      sol_obj_ttd.get_train_pos("Train1", sol_obj_ttd.get_exit_time("Train1")),
+      100 + 10 + 10 + 100 + 10 + 10);
+  EXPECT_GE(
+      sol_obj_ttd.get_train_pos("Train2", sol_obj_ttd.get_exit_time("Train2")),
+      100 + 10 + 10 + 100 + 10 + 10);
+
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train1",
+                                        sol_obj_ttd_2.get_exit_time("Train1")),
+            100 + 10 + 10 + 100 + 10 + 10);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train2",
+                                        sol_obj_ttd_2.get_exit_time("Train2")),
+            100 + 10 + 10 + 100 + 10 + 10);
 }
 
 TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware2) {
@@ -1630,33 +1626,35 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware2) {
       sol_obj_ttd_2.get_time_at_pos("Train2", 170, true);
   EXPECT_GT(tr1_time_ttd_2, tr2_time_ttd_2);
 
-  auto const tr_times_single_tr1 = sol_obj_single.get_train_times("Train1");
-  auto const tr_times_single_tr2 = sol_obj_single.get_train_times("Train2");
-  auto const tr_times_ttd_tr1    = sol_obj_ttd.get_train_times("Train1");
-  auto const tr_times_ttd_tr2    = sol_obj_ttd.get_train_times("Train2");
-  auto const tr_times_ttd_2_tr1  = sol_obj_ttd_2.get_train_times("Train1");
-  auto const tr_times_ttd_2_tr2  = sol_obj_ttd_2.get_train_times("Train2");
-  EXPECT_EQ(tr_times_single_tr1.back(), 500);
-  EXPECT_EQ(tr_times_single_tr2.back(), 300);
-  EXPECT_EQ(tr_times_ttd_tr1.back(), 500);
-  EXPECT_EQ(tr_times_ttd_tr2.back(), 300);
-  EXPECT_EQ(tr_times_ttd_2_tr1.back(), 500);
-  EXPECT_EQ(tr_times_ttd_2_tr2.back(), 300);
+  EXPECT_EQ(sol_obj_single.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_single.get_exit_time("Train2"), 300);
 
-  EXPECT_GE(sol_obj_single.get_train_pos("Train1", tr_times_single_tr1.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
-  EXPECT_GE(sol_obj_single.get_train_pos("Train2", tr_times_single_tr2.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
+  EXPECT_EQ(sol_obj_ttd.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_ttd.get_exit_time("Train2"), 300);
 
-  EXPECT_GE(sol_obj_ttd.get_train_pos("Train1", tr_times_ttd_tr1.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
-  EXPECT_GE(sol_obj_ttd.get_train_pos("Train2", tr_times_ttd_tr2.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
+  EXPECT_EQ(sol_obj_ttd_2.get_exit_time("Train1"), 500);
+  EXPECT_EQ(sol_obj_ttd_2.get_exit_time("Train2"), 300);
 
-  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train1", tr_times_ttd_2_tr1.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
-  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train2", tr_times_ttd_2_tr2.back()),
-            100 + 10 + 10 + 100 + 10 + 10 + 10 + 50);
+  EXPECT_GE(sol_obj_single.get_train_pos(
+                "Train1", sol_obj_single.get_exit_time("Train1")),
+            100 + 10 + 10 + 100 + 10 + 10);
+  EXPECT_GE(sol_obj_single.get_train_pos(
+                "Train2", sol_obj_single.get_exit_time("Train2")),
+            100 + 10 + 10 + 100 + 10 + 10);
+
+  EXPECT_GE(
+      sol_obj_ttd.get_train_pos("Train1", sol_obj_ttd.get_exit_time("Train1")),
+      100 + 10 + 10 + 100 + 10 + 10);
+  EXPECT_GE(
+      sol_obj_ttd.get_train_pos("Train2", sol_obj_ttd.get_exit_time("Train2")),
+      100 + 10 + 10 + 100 + 10 + 10);
+
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train1",
+                                        sol_obj_ttd_2.get_exit_time("Train1")),
+            100 + 10 + 10 + 100 + 10 + 10);
+  EXPECT_GE(sol_obj_ttd_2.get_train_pos("Train2",
+                                        sol_obj_ttd_2.get_exit_time("Train2")),
+            100 + 10 + 10 + 100 + 10 + 10);
 }
 
 // ----------------
@@ -2166,7 +2164,8 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
       sol_obj.get_const_solution_routes().get_route("Train1").get_edge_id(0),
       v0_v1);
 
-  EXPECT_EQ(sol_obj.get_train_times("Train1").size(), 8);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").size(), 7);
+  ASSERT_GE(sol_obj.get_train_times("Train1").size(), 7);
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(0), 10);
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(1), 15);
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(2), 20);
@@ -2174,7 +2173,6 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(4), 30);
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(5), 35);
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(6), 40);
-  EXPECT_EQ(sol_obj.get_train_times("Train1").at(7), 45);
 
   // At time 10, the train enters
   EXPECT_EQ(sol_obj.get_train_pos("Train1", 10), 0);
@@ -2203,10 +2201,6 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
   // t = 40 -> v = 20 -> s = 400 + (20 + 20)/2 * 5 = 500
   EXPECT_EQ(sol_obj.get_train_pos("Train1", 40), 500);
   EXPECT_EQ(sol_obj.get_train_speed("Train1", 40), 20);
-
-  // t = 45 -> v = 20 -> s = 500 + (20 + 20)/2 * 5 = 600
-  EXPECT_EQ(sol_obj.get_train_pos("Train1", 45), 600);
-  EXPECT_EQ(sol_obj.get_train_speed("Train1", 45), 20);
 }
 
 TEST(GenPOMovingBlockAStarSolver, GeneralSimpleNetwork) {

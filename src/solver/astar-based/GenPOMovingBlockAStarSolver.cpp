@@ -246,6 +246,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         sol_object.add_train_pos(tr_name, time, posvel.pos);
         sol_object.add_train_speed(tr_name, time, posvel.vel);
       }
+      sol_object.set_exit_times(final_simulation_result.exit_times);
+      sol_object.set_stop_times(final_simulation_result.stop_times);
     }
   }
 

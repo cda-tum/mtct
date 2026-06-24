@@ -119,9 +119,6 @@ cda_rail::simulator::simple_remaining_time_heuristic(
   }
 
   heuristic_exit_time += time_diff.value();
-  heuristic_exit_time +=
-      tr_obj.get_length() /
-      tr_obj.get_max_speed(); // Only left after fully leaving the network
   if (consider_earliest_exit) {
     heuristic_exit_time =
         std::max(heuristic_exit_time, tr_schedule.get_exit_time());

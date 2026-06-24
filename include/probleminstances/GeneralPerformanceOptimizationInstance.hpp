@@ -379,6 +379,9 @@ private:
   std::vector<std::map<double, double>> m_train_pos;
   std::vector<std::map<double, double>> m_train_speed;
 
+  std::vector<double>              m_train_exit_times;
+  std::vector<std::vector<double>> m_train_stop_times;
+
   /** @brief Initializes per-train solution storage containers. */
   void initialize_vectors();
 
@@ -590,6 +593,14 @@ public:
   [[nodiscard]] double get_time_at_pos(const std::string& tr_name, double pos,
                                        bool lb = false) const;
 
+  [[nodiscard]] double get_exit_time(const std::string& tr_name) const;
+  [[nodiscard]] std::vector<double>
+                       get_stop_times(const std::string& tr_name) const;
+  [[nodiscard]] double get_stop_time(const std::string& tr_name,
+                                     const std::string& station_name) const;
+  [[nodiscard]] double get_stop_time(const std::string& tr_name,
+                                     size_t             stop_index) const;
+
   // Add train timing information
 
   /**
@@ -608,6 +619,17 @@ public:
    * @param speed Sample speed.
    */
   void add_train_speed(const std::string& tr_name, double t, double speed);
+
+  void set_train_exit_time(const std::string& tr_name, double t);
+  void set_train_stop_time(const std::string& tr_name, size_t stop_idx,
+                           double stop_time);
+  void set_train_stop_time(const std::string& tr_name,
+                           std::string const& station_name, double stop_time);
+  void set_train_stop_times(const std::string&  tr_name,
+                            std::vector<double> stop_times);
+
+  void set_exit_times(const std::vector<double>& exit_times);
+  void set_stop_times(const std::vector<std::vector<double>>& stop_times);
 
   // Check solution consistency
 

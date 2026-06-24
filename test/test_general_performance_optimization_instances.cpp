@@ -868,7 +868,6 @@ TEST(GeneralPerformanceOptimizationInstances,
   auto sol1_read =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
   sol1_read.load_solution("./tmp", "test-sol-instance-1");
-  sol1_read.load_solution("./tmp", "test-sol-instance-2");
 
   auto sol2_read =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
@@ -881,12 +880,12 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_EQ(sol1_read.get_obj(), 0.5);
   EXPECT_EQ(sol1_read.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 0), 0);
-  EXPECT_EQ(sol1_read.get_train_pos("tr1", 30), 50);
-  EXPECT_THROW((void)sol1_read.get_train_pos("tr1", 60),
+  EXPECT_EQ(sol1_read.get_train_pos("tr1", 60), 100);
+  EXPECT_THROW((void)sol1_read.get_train_pos("tr1", 30),
                cda_rail::exceptions::ConsistencyException);
   EXPECT_EQ(sol1_read.get_train_speed("tr1", 0), 10);
-  EXPECT_EQ(sol1_read.get_train_speed("tr1", 30), 5);
-  EXPECT_THROW((void)sol1_read.get_train_speed("tr1", 60),
+  EXPECT_EQ(sol1_read.get_train_speed("tr1", 60), 5);
+  EXPECT_THROW((void)sol1_read.get_train_speed("tr1", 30),
                cda_rail::exceptions::ConsistencyException);
   EXPECT_TRUE(sol1_read.get_const_solution_routes().has_route("tr1"));
   const auto& tr1_route =
@@ -917,6 +916,108 @@ TEST(GeneralPerformanceOptimizationInstances,
             sol2_read.get_instance()->get_const_network().get_edge_index(
                 {"v1"}, {"v2"}));
   EXPECT_FALSE(sol2_read.get_instance()->get_const_routes().has_route("tr2"));
+}
+
+TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesExportImport) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto const v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  auto const v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  auto const v2 = instance.get_editable_network().add_vertex(
+      "v2", cda_rail::VertexType::TTD);
+
+  auto const v0_v1 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 10);
+  auto const v1_v2 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 200, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+
+  instance.add_train("tr1", 50, 30, 2, 2, 0, 20, v0, 120, 20, v2);
+  instance.add_train("tr2", 50, 30, 2, 2, 120, 20, v0, 200, 20, v2);
+
+  instance.add_empty_station("Station1");
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station1", v0_v1);
+  instance.add_track_to_station("Station2", v1_v2);
+
+  instance.insert_stop("tr1", "Station1", 10, 10);
+  instance.insert_stop("tr1", "Station2", 40, 10);
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+
+  sol_instance.set_solution_found();
+  sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
+
+  sol_instance.add_empty_route("tr1");
+  sol_instance.add_empty_route("tr2");
+
+  sol_instance.push_back_edge_to_route("tr1", v0_v1);
+  sol_instance.push_back_edge_to_route("tr1", v1_v2);
+  sol_instance.push_back_edge_to_route("tr2", v0_v1);
+  sol_instance.push_back_edge_to_route("tr2", v1_v2);
+
+  sol_instance.add_train_pos("tr1", 0, 0);
+  sol_instance.add_train_pos("tr1", 60, 100);
+  sol_instance.add_train_pos("tr1", 70, 100);
+  sol_instance.add_train_pos("tr1", 90, 120);
+  sol_instance.add_train_pos("tr1", 200, 300);
+  sol_instance.add_train_pos("tr1", 210, 300);
+  sol_instance.add_train_pos("tr1", 230, 330);
+
+  sol_instance.add_train_speed("tr1", 0, 20);
+  sol_instance.add_train_speed("tr1", 60, 0);
+  sol_instance.add_train_speed("tr1", 70, 0);
+  sol_instance.add_train_speed("tr1", 90, 20);
+  sol_instance.add_train_speed("tr1", 200, 0);
+  sol_instance.add_train_speed("tr1", 210, 0);
+  sol_instance.add_train_speed("tr1", 230, 20);
+
+  sol_instance.add_train_pos("tr2", 120, 0);
+  sol_instance.add_train_pos("tr2", 320, 300);
+  sol_instance.add_train_speed("tr2", 120, 20);
+  sol_instance.add_train_speed("tr2", 320, 20);
+
+  sol_instance.set_train_exit_time("tr1", 230);
+  sol_instance.set_train_exit_time("tr2", 320);
+
+  sol_instance.set_train_stop_times("tr1", {60, 200});
+
+  sol_instance.set_obj(1000);
+
+  EXPECT_TRUE(sol_instance.check_consistency());
+
+  sol_instance.export_solution("./tmp", "test-sol-instance-with-stops", true,
+                               {});
+  auto sol_read =
+      cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
+  sol_read.load_solution("./tmp", "test-sol-instance-with-stops");
+  std::filesystem::remove_all("./tmp");
+
+  EXPECT_TRUE(sol_read.check_consistency());
+  EXPECT_EQ(sol_read.get_obj(), 1000);
+  EXPECT_EQ(sol_read.get_status(), cda_rail::SolutionStatus::Optimal);
+
+  EXPECT_EQ(sol_read.get_exit_time("tr1"), 230);
+  EXPECT_EQ(sol_read.get_exit_time("tr2"), 320);
+  EXPECT_EQ(sol_read.get_stop_times("tr1"), std::vector<double>({60, 200}));
+  EXPECT_EQ(sol_read.get_stop_times("tr2"), std::vector<double>({}));
+
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 0), 0);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 60), 100);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 70), 100);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 90), 120);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 200), 300);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 210), 300);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 230), 330);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 0), 20);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 60), 0);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 70), 0);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 90), 20);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 200), 0);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 210), 0);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 230), 20);
 }
 
 TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops1) {

@@ -299,6 +299,8 @@ public:
     return m_stops;
   }
 
+  [[nodiscard]] size_t get_station_index(std::string const& station_name) const;
+
   /*
    * SETTER
    */

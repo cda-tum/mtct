@@ -286,6 +286,10 @@ private:
   get_exit_vertex_order_ma(size_t tr, double pos, double max_displacement,
                            const std::unordered_set<size_t>& trains_in_network,
                            const std::unordered_set<size_t>& trains_left) const;
+  [[nodiscard]] bool
+  is_exit_vertex_blocked(size_t                            tr,
+                         const std::unordered_set<size_t>& trains_in_network,
+                         const std::unordered_set<size_t>& trains_left) const;
 
   [[nodiscard]] MaAndMaxVResult
   get_ma_and_maxv(size_t tr, const std::vector<double>& train_velocities,
@@ -327,7 +331,8 @@ private:
    * @return Destination classification for the train.
    */
   [[nodiscard]] DestinationType
-  tr_reached_end(size_t tr, const std::vector<TrainPosition>& train_pos) const;
+  tr_reached_end(size_t tr, const std::vector<TrainPosition>& train_pos,
+                 bool has_stop_left) const;
 };
 
 } // namespace cda_rail::simulator

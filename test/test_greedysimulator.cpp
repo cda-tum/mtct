@@ -1409,58 +1409,44 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
   EXPECT_EQ(ma12tol, 310);
   EXPECT_EQ(vm12tol, 3);
 
-  // Test exit speed limit at 2010 + 200 = 2210
+  // Test exit speed limit at 2010
   // Linear movement 20 -> 14 over 10s: 170m
-  // Braking distance: 14*14/4 = 49 to 2259
-  // if-case: 2210 - 170 = 2040
+  // Braking distance: 14*14/4 = 49 to 2059
+  // if-case: 2010 - 170 = 1840
   const auto ma_data13prev = simulator.get_future_max_speed_constraints(
-      tr1, train, 1800, 20, 1000, 400, 10, {}, false);
+      tr1, train, 1600, 20, 1000, 400, 10, {}, false);
   const auto ma13prev = ma_data13prev.ma;
   const auto vm13prev = ma_data13prev.max_v;
   EXPECT_EQ(ma13prev, 459);
   EXPECT_EQ(vm13prev, 50);
 
   const auto ma_data13 = simulator.get_future_max_speed_constraints(
-      tr1, train, 2000, 20, 1000, 400, 10, {}, false);
+      tr1, train, 1800, 20, 1000, 400, 10, {}, false);
   const auto ma13 = ma_data13.ma;
   const auto vm13 = ma_data13.max_v;
   EXPECT_EQ(ma13, 259);
   EXPECT_EQ(vm13, 50);
 
   const auto ma_data13b = simulator.get_future_max_speed_constraints(
-      tr1, train, 2000, 20, 100, 400, 10, {}, false);
+      tr1, train, 1800, 20, 100, 400, 10, {}, false);
   const auto ma13b = ma_data13b.ma;
   const auto vm13b = ma_data13b.max_v;
   EXPECT_EQ(ma13b, 100);
   EXPECT_EQ(vm13b, 50);
 
   const auto ma_data14 = simulator.get_future_max_speed_constraints(
-      tr1, train, 2040, 20, 1000, 400, 10, {}, false);
+      tr1, train, 1840, 20, 1000, 400, 10, {}, false);
   const auto ma14 = ma_data14.ma;
   const auto vm14 = ma_data14.max_v;
   EXPECT_EQ(ma14, 1000);
   EXPECT_EQ(vm14, 14);
 
   const auto ma_data15 = simulator.get_future_max_speed_constraints(
-      tr1, train, 2041, 20, 1000, 400, 10, {}, false);
+      tr1, train, 1841, 20, 1000, 400, 10, {}, false);
   const auto ma15 = ma_data15.ma;
   const auto vm15 = ma_data15.max_v;
   EXPECT_EQ(ma15, 1000);
   EXPECT_EQ(vm15, 14);
-
-  const auto ma_data15b = simulator.get_future_max_speed_constraints(
-      tr1, train, 2041, 20, 100, 400, 10, {}, false);
-  const auto ma15b = ma_data15b.ma;
-  const auto vm15b = ma_data15b.max_v;
-  EXPECT_EQ(ma15b, 100);
-  EXPECT_EQ(vm15b, 14); // Exit is reachable
-
-  const auto ma_data16 = simulator.get_future_max_speed_constraints(
-      tr1, train, 2300, 20, 1000, 400, 10, {}, false);
-  const auto ma16 = ma_data16.ma;
-  const auto vm16 = ma_data16.max_v;
-  EXPECT_EQ(ma16, 1000);
-  EXPECT_EQ(vm16, 14);
 
   // Stopping on route edge after 510m (no stopping anymore)
   simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3, v3_v4});
@@ -1493,49 +1479,6 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
   EXPECT_THROW((void)simulator.get_future_max_speed_constraints(
                    1000, train, 10, 10, 10, 400, 10, {}, true),
                cda_rail::exceptions::TrainNotExistentException);
-}
-
-TEST(GreedySimulator, FutureSpeedRestrictionConstraintsAfterLeaving) {
-  Network    network;
-  const auto v0 = network.add_vertex("v0", VertexType::TTD);
-  const auto v1 = network.add_vertex("v1", VertexType::TTD);
-
-  const auto v0_v1 = network.add_edge(v0, v1, 70, 15, true);
-
-  Timetable  timetable;
-  const auto tr1 = timetable.add_train("Train1", 100, 20, 3, 2, true, 0, 10, v0,
-                                       360, 10, v1, network);
-  RouteMap   routes;
-  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {{}});
-  simulator.set_train_edges_of_tr(tr1, {v0_v1});
-  simulator.set_vertex_orders({{tr1}, {tr1}});
-  const auto& train =
-      simulator.get_instance()->get_const_train_list().get_train(tr1);
-
-  // Train 1 has 50 minute to exit the TTD at v_n = 10
-  // Linear movement takes 4 seconds to reach the exit
-  const auto ma_data1 = simulator.get_future_max_speed_constraints(
-      tr1, train, 120, 15, 500, 400, 4, {}, false);
-  const auto ma1 = ma_data1.ma;
-  const auto vm1 = ma_data1.max_v;
-  EXPECT_EQ(vm1, 10);
-  EXPECT_GE(ma1, (15.0 + 10.0) * 4.0 / 2.0 + 10.0 * 10.0 / 4.0);
-
-  const auto ma_data2 = simulator.get_future_max_speed_constraints(
-      tr1, train, 120, 15, 500, 400, 1, {}, false);
-  const auto ma2 = ma_data2.ma;
-  const auto vm2 = ma_data2.max_v;
-  EXPECT_EQ(ma2, 50 + 10.0 * 10.0 / 4.0);
-  EXPECT_GE((15.0 + vm2) * 1.0 / 2.0 + vm2 * vm2 / 4.0, ma2);
-
-  const auto ma_data3 = simulator.get_future_max_speed_constraints(
-      tr1, train, 120, 15, 500, 400, 1, {}, true);
-  const auto ma3 = ma_data3.ma;
-  const auto vm3 = ma_data3.max_v;
-  EXPECT_EQ(vm3, 15);
-  EXPECT_GE(ma3, (15.0 + 15.0) * 1.0 / 2.0 + 15.0 * 15.0 / 4.0);
 }
 
 TEST(GreedySimulator, FutureMaxSpeedWithMiddleEdge) {
@@ -2403,10 +2346,10 @@ TEST(GreedySimulation, SimpleSimulationTwoTrains) {
         << ", Objective value: " << "(" << sim_res.exit_times[0] << ", "
         << sim_res.exit_times[1] << ")";
   EXPECT_TRUE(sim_res.success);
-  EXPECT_GE(sim_res.exit_times[0], 255);
-  EXPECT_LE(sim_res.exit_times[0], 255 + 8);
-  EXPECT_GE(sim_res.exit_times[1], 120 + 255);
-  EXPECT_LE(sim_res.exit_times[1], 120 + 255 + 8);
+  EXPECT_GE(sim_res.exit_times[0], 250);
+  EXPECT_LE(sim_res.exit_times[0], 250 + 6);
+  EXPECT_GE(sim_res.exit_times[1], 120 + 250);
+  EXPECT_LE(sim_res.exit_times[1], 120 + 250 + 6);
   ASSERT_EQ(sim_res.vertex_headways.size(), 2);
   EXPECT_EQ(sim_res.vertex_headways.at(v0), 240);
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[1] + 30);
@@ -3691,11 +3634,11 @@ TEST(GreedySimulator, DesiredOrderInstanceSolution) {
 
   ASSERT_TRUE(sim_res.train_trajectories.at(tr1).contains(tr1_exit));
   EXPECT_GE(sim_res.train_trajectories.at(tr1).at(tr1_exit).pos,
-            100 + 10 + 10 + 100 + 50);
+            100 + 10 + 10 + 100);
   EXPECT_GE(sim_res.train_trajectories.at(tr2).at(tr2_exit).pos,
-            100 + 10 + 10 + 100 + 50);
+            100 + 10 + 10 + 100);
   EXPECT_GE(sim_res.train_trajectories.at(tr3).at(tr3_exit).pos,
-            100 + 10 + 10 + 100 + 50);
+            100 + 10 + 10 + 100);
 }
 
 TEST(GreedySimulator, HeadOnCollision1) {
@@ -4084,6 +4027,41 @@ TEST(GreedySimulator, SimpleNetworkLRTrains) {
   EXPECT_LE(sim_res.exit_times.at(tr1lr), 960 + 6);
   EXPECT_GE(sim_res.exit_times.at(tr2lr), 990);
   EXPECT_LE(sim_res.exit_times.at(tr2lr), 990 + 6);
+  EXPECT_TRUE(sim_res.stop_times.at(tr1lr).empty());
+  EXPECT_EQ(sim_res.stop_times.at(tr2lr).size(), 2);
+}
+
+TEST(GreedySimulator, StopAtRouteEnd) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto const v0 =
+      instance.get_editable_network().add_vertex("v0", VertexType::TTD);
+  auto const v1 =
+      instance.get_editable_network().add_vertex("v1", VertexType::TTD);
+
+  auto const v0_v1 =
+      instance.get_editable_network().add_edge(v0, v1, 100, 10, true);
+
+  instance.add_train("Train1", 20, 10, 2, 2, true, 0, 10, {"v0"}, 0, 10,
+                     {"v1"});
+  instance.add_empty_station("Station");
+  instance.add_track_to_station("Station", v0_v1);
+  instance.insert_stop("Train1", "Station", 0, 30);
+
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  simulator.append_train_edge_to_tr(0, v0_v1);
+  simulator.set_stop_positions_of_tr(0, {100});
+  simulator.set_vertex_orders({{0}, {0}});
+
+  auto const sim_res = simulator.simulate(5.0);
+  EXPECT_TRUE(sim_res.success);
+  ASSERT_EQ(sim_res.exit_times.size(), 1);
+  ASSERT_EQ(sim_res.stop_times.size(), 1);
+  ASSERT_EQ(sim_res.stop_times.at(0).size(), 1);
+  EXPECT_GE(sim_res.exit_times.at(0), sim_res.stop_times.at(0).back() + 30);
 }
 
 // NOLINTEND

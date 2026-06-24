@@ -79,7 +79,7 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   // v5 -> v6: 50 / 20 = 2.5 seconds
   // v6 -> v7: 150 / 20 = 7.5 seconds
   // v7 -> v8: 50 / 25 = 2 seconds
-  // Exit: 100 / 50 = 2 seconds
+  // Exit: 100 / 50 = 2 seconds (not included anymore)
   // Total: 92.5
   const auto tr1 = timetable.add_train("Train1", 100, 50, 4, 2, true, 30, 15,
                                        v0t, 300, 20, v8, network);
@@ -95,7 +95,7 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   // v5 -> v6: 50 / 20 = 2.5 seconds
   // v6 -> v7: 150 / 20 = 7.5 seconds
   // v7 -> v8: 50 / 20 = 2.5 seconds
-  // Exit: 300 / 20 = 15 seconds
+  // Exit: 300 / 20 = 15 seconds (not included anymore)
   // Total: 136
   const auto tr2 = timetable.add_train("Train2", 300, 20, 4, 2, true, 60, 15,
                                        v0b, 340, 20, v8, network);
@@ -121,7 +121,7 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   // Stopping for 30 seconds until 236
   timetable.insert_stop(tr3, "Station2", 204, 30);
   // Quickest path from Station2 to v8
-  // Exit: 50 / 20 = 2.5 seconds
+  // Exit: 50 / 20 = 2.5 seconds (not included anymore)
   // Total: 2.5 seconds
   // Hence, at time 236 + 2.5 = 238.5 seconds
 
@@ -142,7 +142,7 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   // Arriving at Station 2 at 88 seconds
   // Stopping for 45 seconds until 133 seconds
   timetable.insert_stop(tr4, "Station2", 180, 45);
-  // Exit: 100 / 50 = 2 seconds
+  // Exit: 100 / 50 = 2 seconds (not included anymore)
   // Total: 135 seconds
 
   // Train 5 (Length 120, Max Speed 20)
@@ -158,7 +158,7 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   const auto [feas_tr1_a, obj_tr1_a, stops_tr1_a] =
       simulator::simple_remaining_time_heuristic(tr1, simulator, -1, false);
   EXPECT_TRUE(feas_tr1_a);
-  EXPECT_EQ(obj_tr1_a, 92.5);
+  EXPECT_EQ(obj_tr1_a, 92.5 - 2);
   EXPECT_APPROX_EQ_6(stops_tr1_a, 0);
   const auto [feas_tr1_b, obj_tr1_b, stops_tr1_b] =
       simulator::simple_remaining_time_heuristic(tr1, simulator, -1, true);
@@ -177,7 +177,7 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   const auto [feas_tr1_c, obj_tr1_c, stops_tr1_c] =
       simulator::simple_remaining_time_heuristic(tr1, simulator, 90, false);
   EXPECT_TRUE(feas_tr1_c);
-  EXPECT_EQ(obj_tr1_c, 36.5);
+  EXPECT_EQ(obj_tr1_c, 36.5 - 2);
   EXPECT_APPROX_EQ_6(stops_tr1_c, 0);
   const auto [feas_tr1_d, obj_tr1_d, stops_tr1_d] =
       simulator::simple_remaining_time_heuristic(tr1, simulator, 90, true);
@@ -195,7 +195,7 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   const auto [feas_tr1_e, obj_tr1_e, stops_tr1_e] =
       simulator::simple_remaining_time_heuristic(tr1, simulator, 70, false);
   EXPECT_TRUE(feas_tr1_e);
-  EXPECT_EQ(obj_tr1_e, 39);
+  EXPECT_EQ(obj_tr1_e, 39 - 2);
   EXPECT_APPROX_EQ_6(stops_tr1_e, 0);
   const auto [feas_tr1_f, obj_tr1_f, stops_tr1_f] =
       simulator::simple_remaining_time_heuristic(tr1, simulator, 70, true);
@@ -215,7 +215,7 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   const auto [feas_tr2_a, obj_tr2_a, stops_tr2_a] =
       simulator::simple_remaining_time_heuristic(tr2, simulator, -1, false);
   EXPECT_TRUE(feas_tr2_a);
-  EXPECT_EQ(obj_tr2_a, 136);
+  EXPECT_EQ(obj_tr2_a, 136 - 15);
   EXPECT_APPROX_EQ_6(stops_tr2_a, 0);
   const auto [feas_tr2_b, obj_tr2_b, stops_tr2_b] =
       simulator::simple_remaining_time_heuristic(tr2, simulator, -1, true);
@@ -234,7 +234,7 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   const auto [feas_tr2_c, obj_tr2_c, stops_tr2_c] =
       simulator::simple_remaining_time_heuristic(tr2, simulator, 90, false);
   EXPECT_TRUE(feas_tr2_c);
-  EXPECT_EQ(obj_tr2_c, 57.5);
+  EXPECT_EQ(obj_tr2_c, 57.5 - 15);
   EXPECT_APPROX_EQ_6(stops_tr2_c, 0);
   const auto [feas_tr2_d, obj_tr2_d, stops_tr2_d] =
       simulator::simple_remaining_time_heuristic(tr2, simulator, 90, true);
@@ -246,19 +246,19 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   const auto [feas_tr2_f, obj_tr2_f, stops_tr2_f] =
       simulator::simple_remaining_time_heuristic(tr2, simulator, 548, false);
   EXPECT_TRUE(feas_tr2_f);
-  EXPECT_EQ(obj_tr2_f, 57.5);
+  EXPECT_EQ(obj_tr2_f, 57.5 - 15);
   EXPECT_APPROX_EQ_6(stops_tr2_f, 0);
 
   // Train 3
   const auto [feas_tr3_a, obj_tr3_a, stops_tr3_a] =
       simulator::simple_remaining_time_heuristic(tr3, simulator, -1, false);
   EXPECT_TRUE(feas_tr3_a);
-  EXPECT_EQ(obj_tr3_a, 238.5);
+  EXPECT_EQ(obj_tr3_a, 238.5 - 2.5);
   EXPECT_APPROX_EQ_6(stops_tr3_a, 1);
   const auto [feas_tr3_b, obj_tr3_b, stops_tr3_b] =
       simulator::simple_remaining_time_heuristic(tr3, simulator, -1, true);
   EXPECT_TRUE(feas_tr3_b);
-  EXPECT_EQ(obj_tr3_b, 240);
+  EXPECT_EQ(obj_tr3_b, 240 - 2.5);
   EXPECT_APPROX_EQ_6(stops_tr3_b, 1.75);
   simulator.set_train_edges_of_tr(tr3,
                                   {v0t_v1t, v1t_v2, v2_v3, v3_v4t, v4t_v5});
@@ -270,18 +270,18 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   const auto [feas_tr3_c, obj_tr3_c, stops_tr3_c] =
       simulator::simple_remaining_time_heuristic(tr3, simulator, 200, false);
   EXPECT_TRUE(feas_tr3_c);
-  EXPECT_EQ(obj_tr3_c, 35.0);
+  EXPECT_EQ(obj_tr3_c, 35.0 - 2.5);
   EXPECT_APPROX_EQ_6(stops_tr3_c, 0);
   const auto [feas_tr3_d, obj_tr3_d, stops_tr3_d] =
       simulator::simple_remaining_time_heuristic(tr3, simulator, 200, true);
   EXPECT_TRUE(feas_tr3_d);
-  EXPECT_EQ(obj_tr3_d, 204 + 30 + 2.5 - 200);
+  EXPECT_EQ(obj_tr3_d, 204 + 30 - 200);
   EXPECT_APPROX_EQ_6(stops_tr3_d, 0);
 
   const auto [feas_tr3_f, obj_tr3_f, stops_tr3_f] =
       simulator::simple_remaining_time_heuristic(tr3, simulator, 300, false);
   EXPECT_TRUE(feas_tr3_f);
-  EXPECT_EQ(obj_tr3_f, 35.0);
+  EXPECT_EQ(obj_tr3_f, 35.0 - 2.5);
   EXPECT_APPROX_EQ_6(stops_tr3_f,
                      98.5 / 2); // 302.5 instead of 204 -> 98.5 delayed
 
@@ -289,7 +289,7 @@ TEST(GreedyHeuristic, SimpleRemainingTimeHeuristic) {
   const auto [feas_tr4_a, obj_tr4_a, stops_tr4_a] =
       simulator::simple_remaining_time_heuristic(tr4, simulator, -1, false);
   EXPECT_TRUE(feas_tr4_a);
-  EXPECT_EQ(obj_tr4_a, 135);
+  EXPECT_EQ(obj_tr4_a, 135 - 2);
   EXPECT_APPROX_EQ_6(stops_tr4_a, 1.5);
 
   const auto [feas_tr4_b, obj_tr4_b, stops_tr4_b] =
@@ -349,7 +349,7 @@ TEST(GreedyHeuristic, InfeasibleStopRequests) {
       simulator::simple_remaining_time_heuristic(tr1, simulator, -1, false);
   EXPECT_TRUE(feas_tr1);
   EXPECT_EQ(obj_tr1, 100.0 / 10.0 + 100.0 / 5.0 + 100.0 / 25.0 + 100.0 / 50.0 +
-                         100.0 / 100.0 + 100.0 / 20.0 + 150.0 / 100.0 + 200.0);
+                         100.0 / 100.0 + 100.0 / 20.0 + 200.0);
   EXPECT_EQ(stops_tr1, 100.0 / 10.0 + 100.0 / 5.0 + 100.0 / 25.0 - 30.0);
 
   simulator.append_train_edge_to_tr(tr1, v0_v1);
@@ -357,8 +357,8 @@ TEST(GreedyHeuristic, InfeasibleStopRequests) {
   auto [feas_tr2, obj_tr2, stops_tr2] =
       simulator::simple_remaining_time_heuristic(tr1, simulator, 500, false);
   EXPECT_TRUE(feas_tr2);
-  EXPECT_EQ(obj_tr2, 100.0 / 25.0 + 100.0 / 50.0 + 100.0 / 100.0 +
-                         100.0 / 20.0 + 150.0 / 100.0 + 200.0);
+  EXPECT_EQ(obj_tr2,
+            100.0 / 25.0 + 100.0 / 50.0 + 100.0 / 100.0 + 100.0 / 20.0 + 200.0);
   EXPECT_EQ(stops_tr2, 500 + 100.0 / 25.0 - 30.0);
 
   simulator.append_train_edge_to_tr(tr1, v2_v3);
@@ -372,8 +372,7 @@ TEST(GreedyHeuristic, InfeasibleStopRequests) {
   auto [feas_tr4, obj_tr4, stops_tr4] =
       simulator::simple_remaining_time_heuristic(tr1, simulator, 500, false);
   EXPECT_TRUE(feas_tr4);
-  EXPECT_EQ(obj_tr4,
-            100.0 / 50.0 + 100.0 / 100.0 + 100.0 / 20.0 + 150.0 / 100.0);
+  EXPECT_EQ(obj_tr4, 100.0 / 50.0 + 100.0 / 100.0 + 100.0 / 20.0);
   EXPECT_EQ(stops_tr4, 0);
 }
 
