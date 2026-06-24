@@ -3,6 +3,7 @@
 
 #include "CustomExceptions.hpp"
 #include "EOMHelper.hpp"
+#include "GeneralHelper.hpp"
 #include "datastructure/Timetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GreedySimulator.hpp"
@@ -4062,6 +4063,73 @@ TEST(GreedySimulator, StopAtRouteEnd) {
   ASSERT_EQ(sim_res.stop_times.size(), 1);
   ASSERT_EQ(sim_res.stop_times.at(0).size(), 1);
   EXPECT_GE(sim_res.exit_times.at(0), sim_res.stop_times.at(0).back() + 30);
+}
+
+TEST(GreedySimulator, EndAtStop) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  // Train 1 moves for 5 seconds at speed 10 --> 50
+  // Train 1 decelerates for 5 seconds at rate 2 --> stopping
+  // pos = 50 + 10/2*5 = 50 + 25 = 75
+
+  // Train 2 stops after 5 seconds at pos 25
+
+  // As soon as it can move again it accelerates over 50m and 10 seconds
+
+  instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto const v0 =
+      instance.get_editable_network().add_vertex("v0", VertexType::TTD);
+  auto const v1 =
+      instance.get_editable_network().add_vertex("v1", VertexType::TTD);
+  auto const v2 =
+      instance.get_editable_network().add_vertex("v2", VertexType::TTD);
+  auto const v3 =
+      instance.get_editable_network().add_vertex("v3", VertexType::TTD);
+
+  auto const v0_v1 =
+      instance.get_editable_network().add_edge(v0, v1, 75, 10, true);
+
+  auto const tr1 = instance.add_train("Train1", 50, 10, 2, 2, true, 0, 10,
+                                      {"v0"}, 0, 10, {"v2"});
+  auto const tr2 = instance.add_train("Train2", 50, 10, 1, 2, true, 20, 10,
+                                      {"v0"}, 20, 10, {"v2"});
+  instance.add_empty_station("Station");
+  instance.add_track_to_station("Station", v0_v1);
+  instance.insert_stop("Train1", "Station", 0, 30);
+
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  simulator.append_train_edge_to_tr(tr1, v0_v1);
+  simulator.append_train_edge_to_tr(tr2, v0_v1);
+  simulator.set_stop_positions_of_tr(tr1, {75});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
+
+  PLOGV << "------------------------------------------";
+  PLOGV << "Simulation 1";
+  PLOGV << "------------------------------------------";
+  auto const sim_res_1 = simulator.simulate(2.5, false, false, false, false);
+
+  PLOGV << "------------------------------------------";
+  PLOGV << "Simulation 2";
+  PLOGV << "------------------------------------------";
+  auto const sim_res_2 = simulator.simulate(2.5, false, false, false, true);
+
+  PLOGV << "------------------------------------------";
+  PLOGV << "Assertion";
+  PLOGV << "------------------------------------------";
+  EXPECT_FALSE(sim_res_1.success);
+  EXPECT_TRUE(sim_res_2.success);
+  ASSERT_EQ(sim_res_2.exit_times.size(), 2);
+  EXPECT_EQ(sim_res_2.exit_times.at(tr1), 10 + 30);
+  auto const exit_time = sim_res_2.exit_times.at(tr1) + 10;
+  EXPECT_GE(sim_res_2.exit_times.at(tr2), exit_time);
+  EXPECT_EQ(sim_res_2.exit_times.at(tr2),
+            get_first_time_step_after(exit_time, 2.5, true));
+  ASSERT_EQ(sim_res_2.stop_times.size(), 2);
+  EXPECT_TRUE(sim_res_2.stop_times.at(tr2).empty());
+  ASSERT_EQ(sim_res_2.stop_times.at(tr1).size(), 1);
+  EXPECT_EQ(sim_res_2.stop_times.at(tr1).at(0), 10);
 }
 
 // NOLINTEND

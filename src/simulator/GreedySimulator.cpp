@@ -360,7 +360,7 @@ cda_rail::simulator::GreedySimulator::simulate(
                                  trains_in_network, trains_on_edges)) {
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " cannot enter the network at " << entry_vertex.name
-              << " due to moving authority constraints constraints.";
+              << " due to moving authority constraints.";
       } else {
         trains_in_network.insert(tr);
         vertex_headways.at(train_schedule.get_entry_vertex()) =
@@ -585,7 +585,7 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
       const auto& other_pos = train_positions.at(other_tr);
       [[maybe_unused]] const auto [occ, pos] =
           get_position_on_edge(other_tr, other_pos, edge_id);
-      if (occ.tr_on_edge && pos.rear <= bd - milestones.at(i) + EPS) {
+      if (occ.tr_on_edge && pos.rear + EPS <= bd - milestones.at(i)) {
         return false; // Other train is occupying the edge within the braking
                       // distance
       }
