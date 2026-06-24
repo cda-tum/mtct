@@ -278,7 +278,40 @@ cda_rail::simulator::GreedySimulator::simulate(
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " disappeared at the end of its route.";
         if (block_vertices_after_disappearing) {
-          // TODO
+          auto const blocking_vertex =
+              get_instance()
+                  ->get_const_network()
+                  .get_edge(get_train_edges_of_tr(tr).back())
+                  .target;
+          for (size_t tr_other = 0; tr_other < number_of_trains; ++tr_other) {
+            if (tr_other == tr) {
+              continue;
+            }
+            if (trains_finished_simulating.contains(tr_other)) {
+              continue;
+            }
+            if (trains_left.contains(tr_other)) {
+              continue;
+            }
+
+            auto const blocking_vertex_pos =
+                get_vertex_pos(tr_other, blocking_vertex);
+            if (blocking_vertex_pos.is_on_route) {
+              blocked_positions.at(tr_other) = std::min(
+                  blocked_positions.at(tr_other), blocking_vertex_pos.pos);
+              PLOGV << "At time " << t << ", "
+                    << train_list.get_train(tr).get_name() << " blocks vertex "
+                    << get_instance()
+                           ->get_const_network()
+                           .get_vertex(blocking_vertex)
+                           .name
+                    << " for train "
+                    << train_list.get_train(tr_other).get_name()
+                    << " at position " << blocking_vertex_pos.pos
+                    << " and is now blocked until "
+                    << blocked_positions.at(tr_other);
+            }
+          }
         }
       } else if (tr_status == DestinationType::Station) {
         assert(tr_next_stop_id.at(tr).has_value());
@@ -336,6 +369,21 @@ cda_rail::simulator::GreedySimulator::simulate(
     // Remove trains that have left the network
     for (const auto& tr : trains_to_remove) {
       trains_in_network.erase(tr);
+    }
+
+    if (block_vertices_after_disappearing) {
+      for (auto const& tr : trains_in_network) {
+        if (train_positions.at(tr).front >=
+            blocked_positions.at(tr) + GRB_EPS) {
+          PLOGV << "At time " << t << ", "
+                << train_list.get_train(tr).get_name() << " is at position "
+                << train_positions.at(tr).front
+                << " which is past its blocked position "
+                << blocked_positions.at(tr);
+          // Simulation failed
+          return build_results(false);
+        }
+      }
     }
 
     // Check for new trains entering the network
