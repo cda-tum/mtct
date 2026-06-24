@@ -2209,7 +2209,7 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
   EXPECT_EQ(sol_obj.get_train_speed("Train1", 45), 20);
 }
 
-TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
+TEST(GenPOMovingBlockAStarSolver, GeneralSimpleNetwork) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       "GeneralSimpleNetworkB3Trains", "gen-po", "./data");
 
@@ -2416,7 +2416,7 @@ TEST(GenPOMovingBlockAStarSolver, SolverDataExport) {
             "something with spaces");
 }
 
-TEST(GreedyHeuristic, NextStateStrategyToString) {
+TEST(GenPOMovingBlockAStarSolver, NextStateStrategyToString) {
   EXPECT_EQ(solver::astar_based::next_state_strategy_to_string(
                 solver::astar_based::NextStateStrategy::SingleEdge),
             "SingleEdge");
@@ -2430,6 +2430,5 @@ TEST(GreedyHeuristic, NextStateStrategyToString) {
                    static_cast<solver::astar_based::NextStateStrategy>(255)),
                exceptions::ConsistencyException);
 }
-
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
