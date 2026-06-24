@@ -57,7 +57,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   const auto init_simulator_result = simulator.simulate(
       model_detail_input.dt, model_detail_input.late_entry_possible,
       model_detail_input.limit_speed_by_leaving_edges, false,
-      solver_strategy_input.time_aware_state_transitions);
+      !solver_strategy_input.time_aware_state_transitions);
   const auto init_obj =
       simulator::objective_val(simulator, init_simulator_result.exit_times,
                                init_simulator_result.stop_times);
@@ -161,7 +161,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       const auto sim_res = simulator.simulate(
           model_detail_input.dt, model_detail_input.late_entry_possible,
           model_detail_input.limit_speed_by_leaving_edges, false,
-          solver_strategy_input.time_aware_state_transitions);
+          !solver_strategy_input.time_aware_state_transitions);
       if (!sim_res.success) {
         PLOGV << "State is infeasible, skipping.";
         continue;
@@ -218,7 +218,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     const auto final_simulation_result = simulator.simulate(
         model_detail_input.dt, model_detail_input.late_entry_possible,
         model_detail_input.limit_speed_by_leaving_edges, true,
-        false); // no partial routes should exist
+        true); // no partial routes should exist
     if (!final_simulation_result.success) {
       throw cda_rail::exceptions::ConsistencyException(
           "Final trajectory extraction failed for a previously feasible "
