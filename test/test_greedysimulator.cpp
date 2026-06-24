@@ -3928,7 +3928,7 @@ TEST(GreedySimulator, HeadOnCollision2) {
 // Bugfixing Tests
 // -----------------
 
-TEST(GreedySimulator, SimpleNetwork) {
+TEST(GreedySimulator, SimpleNetworkTR1RL) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3966,6 +3966,124 @@ TEST(GreedySimulator, SimpleNetwork) {
   EXPECT_TRUE(sim_res.success);
   EXPECT_GE(sim_res.exit_times.at(tr1rl), 960);
   EXPECT_LE(sim_res.exit_times.at(tr1rl), 960 + 6);
+}
+
+TEST(GreedySimulator, SimpleNetworkTR1LR) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleNetwork", "atmos2023", "./data");
+
+  const auto ttd_sections = instance.get_const_network().unbreakable_sections();
+  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+
+  auto const tr1lr = instance.get_const_train_list().get_train_index("tr1lr");
+  EXPECT_EQ(tr1lr, 0);
+
+  simulator.append_train_edge_to_tr(tr1lr, {"v1b", "v2b"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v2b", "v3"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v3", "v4"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v4", "v5"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v5", "v6"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v6", "v7b"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v7b", "v8b"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v8b", "v9"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v9", "v10"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v10", "v11"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v11", "v12"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v12", "v13b"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v13b", "v14b"});
+
+  EXPECT_EQ(ttd_sections.size(), 4);
+  for (size_t i = 0; i < ttd_sections.size(); ++i) {
+    simulator.set_ttd_orders_of_ttd(i, {tr1lr});
+  }
+  simulator.set_vertex_orders_of_vertex({"v14b"}, {tr1lr});
+  simulator.set_vertex_orders_of_vertex({"v1b"}, {tr1lr});
+
+  auto const sim_res = simulator.simulate();
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_GE(sim_res.exit_times.at(tr1lr), 960);
+  EXPECT_LE(sim_res.exit_times.at(tr1lr), 960 + 6);
+}
+
+TEST(GreedySimulator, SimpleNetworkLRTrains) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleNetwork", "atmos2023", "./data");
+
+  const auto ttd_sections = instance.get_const_network().unbreakable_sections();
+  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+
+  auto const tr1lr = instance.get_const_train_list().get_train_index("tr1lr");
+  auto const tr2lr = instance.get_const_train_list().get_train_index("tr2lr");
+  EXPECT_EQ(tr1lr, 0);
+  EXPECT_EQ(tr2lr, 2);
+
+  simulator.append_train_edge_to_tr(tr1lr, {"v1b", "v2b"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v2b", "v3"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v3", "v4"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v4", "v5"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v5", "v6"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v6", "v7b"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v7b", "v8b"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v8b", "v9"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v9", "v10"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v10", "v11"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v11", "v12"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v12", "v13b"});
+  simulator.append_train_edge_to_tr(tr1lr, {"v13b", "v14b"});
+
+  simulator.append_train_edge_to_tr(tr2lr, {"v1c", "v2c"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v2c", "v3"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v3", "v4"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v4", "v5"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v5", "v6"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v6", "v7a"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v7a", "v8a"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v8a", "v9"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v9", "v10"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v10", "v11"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v11", "v12"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v12", "v13c"});
+  simulator.append_train_edge_to_tr(tr2lr, {"v13c", "v14c"});
+
+  simulator.set_stop_positions_of_tr(tr2lr, {475, 23000});
+
+  auto const ttd1_edge =
+      instance.get_const_network().get_edge_index({"v2b", "v3"});
+  auto const ttd2_edge =
+      instance.get_const_network().get_edge_index({"v6", "v7b"});
+  auto const ttd3_edge =
+      instance.get_const_network().get_edge_index({"v8b", "v9"});
+  auto const ttd4_edge =
+      instance.get_const_network().get_edge_index({"v12", "v13b"});
+  EXPECT_EQ(ttd_sections.size(), 4);
+  for (size_t i = 0; i < ttd_sections.size(); ++i) {
+    if (ttd_sections.at(i).contains(ttd1_edge) ||
+        ttd_sections.at(i).contains(ttd2_edge)) {
+      simulator.set_ttd_orders_of_ttd(i, {tr1lr, tr2lr});
+    } else if (ttd_sections.at(i).contains(ttd3_edge) ||
+               ttd_sections.at(i).contains(ttd4_edge)) {
+      simulator.set_ttd_orders_of_ttd(i, {tr2lr, tr1lr});
+    } else {
+      EXPECT_FALSE(true) << "Unexpected TTD section";
+    }
+  }
+  simulator.set_vertex_orders_of_vertex({"v1b"}, {tr1lr});
+  simulator.set_vertex_orders_of_vertex({"v14b"}, {tr1lr});
+  simulator.set_vertex_orders_of_vertex({"v1c"}, {tr2lr});
+  simulator.set_vertex_orders_of_vertex({"v14c"}, {tr2lr});
+
+  auto const sim_res = simulator.simulate();
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_GE(sim_res.exit_times.at(tr1lr), 960);
+  EXPECT_LE(sim_res.exit_times.at(tr1lr), 960 + 6);
+  EXPECT_GE(sim_res.exit_times.at(tr2lr), 990);
+  EXPECT_LE(sim_res.exit_times.at(tr2lr), 990 + 6);
 }
 
 // NOLINTEND
