@@ -2433,8 +2433,23 @@ TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
   const auto sol_obj = solver.solve(
       {},
       {.next_state_strategy =
-           cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD},
+           cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
+       .time_aware_state_transitions = false},
       {}, -1, true);
+
+  const auto sol_obj_2 = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
+       .time_aware_state_transitions = true},
+      {}, -1, true);
+
+  EXPECT_TRUE(sol_obj.has_solution());
+  EXPECT_TRUE(sol_obj_2.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_obj_2.get_status(), cda_rail::SolutionStatus::Optimal);
+
+  EXPECT_EQ(sol_obj.get_obj(), sol_obj_2.get_obj());
 }
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
