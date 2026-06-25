@@ -209,7 +209,18 @@ public:
   /**
    * @brief Adds a train with an associated weight to the instance.
    *
+   * @param train_name Name of the train.
+   * @param length Length of the train.
+   * @param max_speed Maximum speed of the train.
+   * @param acceleration Acceleration capability of the train.
+   * @param deceleration Deceleration capability of the train.
    * @param tim Whether the train operates under timetable constraints.
+   * @param entry_time Time at which the train enters the network.
+   * @param initial_velocity Initial velocity of the train.
+   * @param entry_vertex Entry vertex for the train.
+   * @param exit_time Time at which the train exits the network.
+   * @param exit_velocity Exit velocity of the train.
+   * @param exit_vertex Exit vertex for the train.
    * @param tr_weight Weight coefficient for this train in the objective
    * (default 1).
    * @return Index of the newly added train.
@@ -593,11 +604,37 @@ public:
   [[nodiscard]] double get_time_at_pos(const std::string& tr_name, double pos,
                                        bool lb = false) const;
 
+  /**
+   * @brief Returns the stored exit time of a train.
+   *
+   * @param tr_name Name of the train.
+   * @return Stored exit time for the train.
+   */
   [[nodiscard]] double get_exit_time(const std::string& tr_name) const;
+  /**
+   * @brief Returns all stored stop times of a train.
+   *
+   * @param tr_name Name of the train.
+   * @return Vector of stop times in schedule order.
+   */
   [[nodiscard]] std::vector<double>
-                       get_stop_times(const std::string& tr_name) const;
+  get_stop_times(const std::string& tr_name) const;
+  /**
+   * @brief Returns one stored stop time identified by station name.
+   *
+   * @param tr_name Name of the train.
+   * @param station_name Name of the station.
+   * @return Stored stop time for the matching station.
+   */
   [[nodiscard]] double get_stop_time(const std::string& tr_name,
                                      const std::string& station_name) const;
+  /**
+   * @brief Returns one stored stop time identified by stop index.
+   *
+   * @param tr_name Name of the train.
+   * @param stop_index Stop index in schedule order.
+   * @return Stored stop time for the specified stop.
+   */
   [[nodiscard]] double get_stop_time(const std::string& tr_name,
                                      size_t             stop_index) const;
 
@@ -620,15 +657,51 @@ public:
    */
   void add_train_speed(const std::string& tr_name, double t, double speed);
 
+  /**
+   * @brief Stores the exit time of a train.
+   *
+   * @param tr_name Name of the train.
+   * @param t Exit time to store.
+   */
   void set_train_exit_time(const std::string& tr_name, double t);
+  /**
+   * @brief Stores one stop time identified by stop index.
+   *
+   * @param tr_name Name of the train.
+   * @param stop_idx Stop index in schedule order.
+   * @param stop_time Stop time to store.
+   */
   void set_train_stop_time(const std::string& tr_name, size_t stop_idx,
                            double stop_time);
+  /**
+   * @brief Stores one stop time identified by station name.
+   *
+   * @param tr_name Name of the train.
+   * @param station_name Name of the station.
+   * @param stop_time Stop time to store.
+   */
   void set_train_stop_time(const std::string& tr_name,
                            std::string const& station_name, double stop_time);
+  /**
+   * @brief Replaces all stop times of one train.
+   *
+   * @param tr_name Name of the train.
+   * @param stop_times Stop times in schedule order.
+   */
   void set_train_stop_times(const std::string&  tr_name,
                             std::vector<double> stop_times);
 
+  /**
+   * @brief Replaces all stored exit times.
+   *
+   * @param exit_times Exit times indexed by train.
+   */
   void set_exit_times(const std::vector<double>& exit_times);
+  /**
+   * @brief Replaces all stored stop times.
+   *
+   * @param stop_times Stop times indexed by train and stop.
+   */
   void set_stop_times(const std::vector<std::vector<double>>& stop_times);
 
   // Check solution consistency

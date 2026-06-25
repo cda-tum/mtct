@@ -361,6 +361,7 @@ public:
   /**
    * @brief Computes the total length of a train's route.
    *
+   * @param train_name Name of the train.
    * @return double The total length of the train's route.
    */
   [[nodiscard]] double route_length(const std::string& train_name) const {
@@ -386,6 +387,14 @@ public:
         tr, station_name, this->get_const_network(), edges_to_consider);
   };
 
+  /**
+   * @brief Returns the last reachable stop position of a station on a route.
+   *
+   * @param tr_id Train index.
+   * @param station_name Name of the station.
+   * @return Last route position on which the train can stop at the station, or
+   *         `std::nullopt` if no such position exists on the current route.
+   */
   [[nodiscard]] std::optional<double>
   get_last_stop_position_on_route(size_t             tr_id,
                                   const std::string& station_name) const;
@@ -539,6 +548,16 @@ public:
     return trains_on_edge(this->get_const_routes(), edge_id, fixed_routes,
                           trains_to_consider, error_if_not_route);
   }
+  /**
+   * @brief Identifies which trains from a subset use the specified edge.
+   *
+   * @param route_map Route map to inspect.
+   * @param edge_id Edge index.
+   * @param fixed_routes Whether to restrict the check to fixed routes.
+   * @param trains_to_consider Subset of train indices to test.
+   * @param error_if_not_route Whether to treat missing routes as errors.
+   * @return Index set of trains from `trains_to_consider` that use the edge.
+   */
   [[nodiscard]] cda_rail::index_set
   trains_on_edge(RouteMap const& route_map, size_t edge_id, bool fixed_routes,
                  const cda_rail::index_set& trains_to_consider,
@@ -559,6 +578,15 @@ public:
     return all_trains_on_edge(this->get_const_routes(), edge_id, fixed_routes,
                               error_if_not_route);
   }
+  /**
+   * @brief Returns all trains whose routes use the specified edge.
+   *
+   * @param route_map Route map to inspect.
+   * @param edge_id Edge index.
+   * @param fixed_routes Whether to restrict the check to fixed routes.
+   * @param error_if_not_route Whether to treat missing routes as errors.
+   * @return Index set of all trains using the edge under the chosen route map.
+   */
   [[nodiscard]] cda_rail::index_set
   all_trains_on_edge(RouteMap const& route_map, size_t edge_id,
                      bool fixed_routes       = true,
@@ -569,6 +597,18 @@ public:
   /**
    * @brief Adds a train with the specified properties to the timetable.
    *
+   * @param train_name Name identifier for the train.
+   * @param length Length of the train.
+   * @param max_speed Maximum speed.
+   * @param acceleration Acceleration rate.
+   * @param deceleration Deceleration rate.
+   * @param tim Whether train integrity monitoring is available.
+   * @param entry_time Time when the train enters the network.
+   * @param initial_velocity Velocity upon entry.
+   * @param entry_vertex Vertex where the train enters.
+   * @param exit_time Time when the train exits the network.
+   * @param exit_velocity Velocity upon exit.
+   * @param exit_vertex Vertex where the train exits.
    * @return Index of the newly added train.
    */
 
@@ -750,6 +790,8 @@ public:
   /**
    * @brief Identifies time-to-distance overlaps between two trains.
    *
+   * @param train1 Name of the first train.
+   * @param train2 Name of the second train.
    * @return std::vector<ConflictPair> Conflicts where the trains overlap in
    * time and distance.
    */
@@ -761,6 +803,8 @@ public:
   /**
    * @brief Identifies sections where two trains travel in opposite directions.
    *
+   * @param train1 Name of the first train.
+   * @param train2 Name of the second train.
    * @return A vector of conflict pairs representing sections where the trains
    * traverse the same edges in opposite directions.
    */
@@ -773,6 +817,8 @@ public:
   /**
    * @brief Identifies crossing conflicts between two trains' routes.
    *
+   * @param train1 Name of the first train.
+   * @param train2 Name of the second train.
    * @return std::vector<ConflictPair> containing all crossing conflicts between
    * the two trains' routes.
    */

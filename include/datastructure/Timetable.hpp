@@ -299,6 +299,14 @@ public:
     return m_stops;
   }
 
+  /**
+   * @brief Returns the index of a scheduled stop by station name.
+   *
+   * @param station_name Name of the stop station.
+   * @return Index of the matching stop in `get_stops()`.
+   * @throws cda_rail::exceptions::StationNotExistentException If the station
+   *         does not appear in the schedule.
+   */
   [[nodiscard]] size_t get_station_index(std::string const& station_name) const;
 
   /*
@@ -759,6 +767,14 @@ public:
                 serviceTime, serviceDuration);
   }
 
+  /**
+   * @brief Removes a stop from a train's schedule by train index.
+   *
+   * @param train_index Index of the train.
+   * @param station_name Name of the station to remove.
+   * @param throw_exception_if_not_existent If `true`, throws when no matching
+   *        stop exists.
+   */
   void remove_stop(size_t train_index, std::string const& station_name,
                    bool throw_exception_if_not_existent = true);
   /**

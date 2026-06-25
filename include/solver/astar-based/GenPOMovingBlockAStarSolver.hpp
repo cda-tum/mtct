@@ -158,6 +158,17 @@ public:
     return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
   };
 
+  /**
+   * @brief Solves the problem with explicit model, strategy, and export setup.
+   *
+   * @param model_detail_input Simulation-model settings.
+   * @param solver_strategy_input A* search strategy settings.
+   * @param solution_settings_input Solution export settings.
+   * @param time_limit Time limit in seconds (-1 for no limit).
+   * @param debug_input If true, enables debug mode.
+   * @param overwrite_severity If true, overwrites solution severity.
+   * @return Solution to the general performance optimization problem.
+   */
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(const ModelDetail&             model_detail_input,
         const SolverStrategyMBAStar&   solver_strategy_input,
@@ -171,13 +182,37 @@ private:
   // ---------------------------
 
   // Relevant Trains
+  /**
+   * @brief Returns all trains whose state can still be extended.
+   *
+   * @param simulator_state Current simulator state.
+   * @param instance Performance-optimization instance.
+   * @return Set of train indices eligible for state extension.
+   */
   [[nodiscard]] static cda_rail::index_set get_all_trains_for_state_transition(
       simulator::SimulatorState const&                         simulator_state,
       instances::GeneralPerformanceOptimizationInstance const* instance);
+  /**
+   * @brief Returns the single next train under time-aware state transitions.
+   *
+   * @param simulator_state Current simulator state.
+   * @param simulator_result Simulation result of the current state.
+   * @param instance Performance-optimization instance.
+   * @return Empty set if no train remains, otherwise a singleton train set.
+   */
   [[nodiscard]] static cda_rail::index_set get_next_time_aware_train(
       simulator::SimulatorState const&                         simulator_state,
       simulator::SimulatorResults const&                       simulator_result,
       instances::GeneralPerformanceOptimizationInstance const* instance);
+  /**
+   * @brief Selects the trains to consider for the next state transition.
+   *
+   * @param simulator_state Current simulator state.
+   * @param simulator_result Simulation result of the current state.
+   * @param instance Performance-optimization instance.
+   * @param solver_strategy Strategy controlling time-aware transitions.
+   * @return Set of train indices to extend next.
+   */
   [[nodiscard]] static cda_rail::index_set
   get_relevant_trains_for_state_transition(
       simulator::SimulatorState const&                         simulator_state,
@@ -186,6 +221,13 @@ private:
       SolverStrategyMBAStar const&                             solver_strategy);
 
   // Path Extensions
+  /**
+   * @brief Computes feasible initial path extensions for a train.
+   *
+   * @param tr Train index.
+   * @param instance Performance-optimization instance.
+   * @return Candidate entry paths from the train's entry vertex.
+   */
   [[nodiscard]] static std::vector<cda_rail::index_vector> get_entry_paths(
       size_t                                                   tr,
       instances::GeneralPerformanceOptimizationInstance const* instance);
@@ -198,6 +240,16 @@ private:
                                        other.stop_possible_from_idx_onward;
     }
   };
+  /**
+   * @brief Computes route extensions according to the configured strategy.
+   *
+   * @param tr Train index.
+   * @param simulator_state Current simulator state.
+   * @param next_state_strategy Path-extension strategy.
+   * @param instance Performance-optimization instance.
+   * @param ttd_sections TTD sections used for next-TTD expansion.
+   * @return Candidate path extensions together with stop metadata.
+   */
   [[nodiscard]] static std::vector<PathExtensionData> get_path_extensions(
       size_t tr, simulator::SimulatorState const& simulator_state,
       NextStateStrategy next_state_strategy,
@@ -213,21 +265,61 @@ private:
       return lb == other.lb && ub == other.ub;
     }
   };
+  /**
+   * @brief Infers feasible insertion bounds in a successor order.
+   *
+   * @param tr Train index to insert.
+   * @param prev_order Previous order constraining relative precedence.
+   * @param next_order Order into which the train is inserted.
+   * @param tr_sharing_path Trains sharing the relevant subpath.
+   * @param insert_at_end Whether insertion is forced to the end.
+   * @return Inclusive lower and upper insertion bounds.
+   */
   [[nodiscard]] static IndexBound infer_order_insertion_bounds(
       size_t tr, cda_rail::index_vector const& prev_order,
       cda_rail::index_vector const& next_order,
       cda_rail::index_set const& tr_sharing_path, bool insert_at_end);
+  /**
+   * @brief Infers feasible insertion bounds in an entry-vertex order.
+   *
+   * @param tr Train index to insert.
+   * @param entry_order Existing order at the entry vertex.
+   * @param late_entry_possible Whether late entry relaxes ordering bounds.
+   * @param insert_at_end Whether insertion is forced to the end.
+   * @param instance Performance-optimization instance.
+   * @return Inclusive lower and upper insertion bounds.
+   */
   [[nodiscard]] static IndexBound infer_order_entry_order_bounds(
       size_t tr, cda_rail::index_vector const& entry_order,
       bool late_entry_possible, bool insert_at_end,
       instances::GeneralPerformanceOptimizationInstance const* instance);
 
   // State Extension
+  /**
+   * @brief Extends one train route by a candidate path extension.
+   *
+   * @param tr Train index.
+   * @param state State to extend.
+   * @param path_extension_data Candidate path extension.
+   * @param instance Performance-optimization instance.
+   * @return Extended states generated from the path extension.
+   */
   [[nodiscard]] static std::vector<simulator::SimulatorState>
   extend_state_by_path_extension(
       size_t tr, simulator::SimulatorState state,
       PathExtensionData const& path_extension_data,
       instances::GeneralPerformanceOptimizationInstance const* instance);
+  /**
+   * @brief Extends TTD and vertex orders for one train in a state.
+   *
+   * @param tr Train index.
+   * @param state State to extend.
+   * @param model_detail_input Simulation-model settings.
+   * @param solver_strategy_input A* search strategy settings.
+   * @param ttd_sections TTD sections of the network.
+   * @param instance Performance-optimization instance.
+   * @return States with updated order vectors.
+   */
   [[nodiscard]] static std::vector<simulator::SimulatorState>
   extend_train_orders_of_state(
       size_t tr, simulator::SimulatorState state,
@@ -235,6 +327,20 @@ private:
       const SolverStrategyMBAStar&            solver_strategy_input,
       std::vector<cda_rail::index_set> const& ttd_sections,
       instances::GeneralPerformanceOptimizationInstance const* instance);
+  /**
+   * @brief Recursively propagates order extensions along newly added route
+   *        segments.
+   *
+   * @param tr Train index.
+   * @param state State to extend.
+   * @param solver_strategy_input A* search strategy settings.
+   * @param ttd_sections TTD sections of the network.
+   * @param instance Performance-optimization instance.
+   * @param prev_order Previously fixed order constraining the next insertion.
+   * @param first_edge_index First route-edge index to inspect.
+   * @param safe_ttd Optional TTD already accounted for.
+   * @return States with recursively extended order vectors.
+   */
   [[nodiscard]] static std::vector<simulator::SimulatorState>
   extend_train_orders_of_state_recursive_helper(
       size_t tr, simulator::SimulatorState state,
