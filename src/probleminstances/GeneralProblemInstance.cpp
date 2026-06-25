@@ -5,6 +5,7 @@
 #include "GeneralHelper.hpp"
 #include "datastructure/Timetable.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -38,7 +39,7 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
          "network.json")
             .string());
   }
-  json network_json = json::parse(network_file);
+  nlohmann::json network_json = nlohmann::json::parse(network_file);
   network_file.close();
   m_network =
       Network(network_json.at("network").get<std::string>(), working_directory);
@@ -53,8 +54,38 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
                       m_network);
 }
 
+// -------------
+// HELPER
+// -------------
+bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
+    is_route_end_valid_stop_pos(size_t tr, const cda_rail::index_vector& edges,
+                                size_t next_stop_id) const {
+  get_const_train_list().throw_if_train_not_exist(tr);
+
+  const auto& tr_length   = get_const_train_list().get_train(tr).get_length();
+  const auto& tr_schedule = get_const_schedule(tr).get_stops();
+  if (next_stop_id >= tr_schedule.size()) {
+    // All stops have been set, hence, no further stop is possible
+    return false;
+  }
+  const auto& next_station = tr_schedule.at(next_stop_id).get_station();
+
+  double len = 0;
+  for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
+       ++it) {
+    if (!std::ranges::contains(next_station.tracks, *it)) {
+      // Track does not belong to the next station
+      return false;
+    }
+    len += get_const_network().get_edge(*it).length;
+  }
+
+  return len >= tr_length;
+}
+
 // --------------------
 // EXPORT
+// --------------------
 
 void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     export_instance(std::filesystem::path const& working_directory,
@@ -71,15 +102,20 @@ void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
                              "routes",
                          get_const_network());
 
-  json network_json{};
+  nlohmann::json network_json{};
   network_json["network"] =
       get_const_network()
           .get_network_name(); // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   std::ofstream network_file(working_directory / "instances" /
                              get_instance_subdirectory() / get_instance_name() /
                              "network.json");
-  network_file << network_json << '\n';
-  network_file.close();
+  if (!network_file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open network.json for writing");
+  }
+  if (!(network_file << network_json << '\n')) {
+    throw exceptions::ExportException("Failed to write network.json");
+  }
 }
 
 // ---------------------
@@ -284,10 +320,10 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 // Solution Objects
 // -------------------
 
-cda_rail::json
+nlohmann::json
 cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
     const {
-  json data;
+  nlohmann::json data;
   data["status"] = static_cast<int>(
       m_status);       // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   data["obj"] = m_obj; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
@@ -297,7 +333,7 @@ cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
 }
 
 void cda_rail::instances::SolGeneralProblemInstance::set_general_solution_data(
-    const json& data) {
+    const nlohmann::json& data) {
   this->m_status  = static_cast<SolutionStatus>(data.at("status").get<int>());
   this->m_obj     = data.at("obj").get<double>();
   this->m_has_sol = data.at("has_solution").get<bool>();
@@ -326,7 +362,7 @@ void cda_rail::instances::SolGeneralProblemInstance::load_solution(
   if (!data_file.is_open()) {
     throw exceptions::ImportException("Could not open file " + p.string());
   }
-  json data;
+  nlohmann::json data;
   data_file >> data;
   data_file.close();
 
@@ -345,10 +381,15 @@ void cda_rail::instances::SolGeneralProblemInstance::export_solution(
                                       p.string());
   }
 
-  json const    data = get_general_solution_data();
-  std::ofstream data_file(p / "solution_data.json");
-  data_file << data << '\n';
-  data_file.close();
+  nlohmann::json const data = get_general_solution_data();
+  std::ofstream        data_file(p / "solution_data.json");
+  if (!data_file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open solution_data.json for writing");
+  }
+  if (!(data_file << data << '\n')) {
+    throw exceptions::ExportException("Failed to write solution_data.json");
+  }
 }
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::

@@ -5,7 +5,6 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
-#include "nlohmann/json_fwd.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -17,8 +16,6 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-
-using json = nlohmann::json;
 
 namespace cda_rail::instances {
 
@@ -61,6 +58,19 @@ public:
   GeneralPerformanceOptimizationInstance(
       std::string_view instance_name, std::string_view instance_subdirectory,
       std::filesystem::path const& working_directory);
+  /**
+   * @brief Evaluates the objective for explicit exit and stop times.
+   *
+   * @param tr_exit_times Exit times per train.
+   * @param stop_times Stop times per train and stop.
+   * @param throw_error_if_not_all_stops_specified Whether missing stop times
+   *        should trigger an error.
+   * @return Objective value induced by the provided timing data.
+   */
+  [[nodiscard]] double
+  get_objective_val(const std::vector<double>&              tr_exit_times,
+                    const std::vector<std::vector<double>>& stop_times,
+                    bool throw_error_if_not_all_stops_specified = true) const;
   /**
    * @brief Constructs an instance from a named subdirectory.
    *
@@ -149,11 +159,6 @@ public:
 
   // Objective
 
-  [[nodiscard]] double
-  get_objective_val(const std::vector<double>&              tr_exit_times,
-                    const std::vector<std::vector<double>>& stop_times,
-                    bool throw_error_if_not_all_stops_specified = true) const;
-
   // -------------------
   // EDITING
   // -------------------
@@ -204,7 +209,18 @@ public:
   /**
    * @brief Adds a train with an associated weight to the instance.
    *
+   * @param train_name Name of the train.
+   * @param length Length of the train.
+   * @param max_speed Maximum speed of the train.
+   * @param acceleration Acceleration capability of the train.
+   * @param deceleration Deceleration capability of the train.
    * @param tim Whether the train operates under timetable constraints.
+   * @param entry_time Time at which the train enters the network.
+   * @param initial_velocity Initial velocity of the train.
+   * @param entry_vertex Entry vertex for the train.
+   * @param exit_time Time at which the train exits the network.
+   * @param exit_velocity Exit velocity of the train.
+   * @param exit_vertex Exit vertex for the train.
    * @param tr_weight Weight coefficient for this train in the objective
    * (default 1).
    * @return Index of the newly added train.
@@ -269,6 +285,7 @@ public:
   // ---------------------
 
   // Transformation functions
+  /** @brief Discretizes stop edges used by the instance timetable. */
   void discretize_stops();
 
   /**
@@ -281,6 +298,13 @@ public:
     return check_consistency(true);
   }
 
+  /**
+   * @brief Checks instance consistency under the chosen route-completeness
+   *        rule.
+   *
+   * @param every_train_must_have_route Whether every train must have a route.
+   * @return `true` if the instance is consistent under the requested rule.
+   */
   [[nodiscard]] bool
   check_consistency(bool every_train_must_have_route) const override;
 
@@ -288,8 +312,28 @@ public:
   // HELPER
   // -----------------
 
+  /**
+   * @brief Returns an approximate leaving time for a train.
+   *
+   * @param train Train index.
+   * @return Approximate leaving time.
+   */
   [[nodiscard]] double get_approximate_leaving_time(size_t train) const;
+  /**
+   * @brief Returns a maximal leaving time under a speed bound.
+   *
+   * @param train Train index.
+   * @param v Speed bound.
+   * @return Maximal leaving time.
+   */
   [[nodiscard]] double get_maximal_leaving_time(size_t train, double v) const;
+  /**
+   * @brief Returns a minimal leaving time under a speed bound.
+   *
+   * @param train Train index.
+   * @param v Speed bound.
+   * @return Minimal leaving time.
+   */
   [[nodiscard]] double get_minimal_leaving_time(size_t train, double v) const;
   /**
    * @brief Gets the approximate leaving time for a train by name.
@@ -317,6 +361,7 @@ public:
   /**
    * @brief Gets the minimal leaving time for a train.
    *
+   * @param tr_name The name of the train.
    * @param v Constraint value for the calculation.
    * @return double The minimal leaving time for the specified train.
    */
@@ -345,6 +390,10 @@ private:
   std::vector<std::map<double, double>> m_train_pos;
   std::vector<std::map<double, double>> m_train_speed;
 
+  std::vector<double>              m_train_exit_times;
+  std::vector<std::vector<double>> m_train_stop_times;
+
+  /** @brief Initializes per-train solution storage containers. */
   void initialize_vectors();
 
 public:
@@ -416,6 +465,15 @@ public:
                     parameter_identifier);
   }
 
+  /**
+   * @brief Exports the solution, optionally including the instance data.
+   *
+   * @param working_directory Base export directory.
+   * @param solution_subdirectory Solution subdirectory.
+   * @param save_instance Whether to export the instance as well.
+   * @param parameter_identifier Optional parameter identifier for the export
+   *        path.
+   */
   void export_solution(
       const std::filesystem::path& working_directory,
       std::string_view solution_subdirectory, bool save_instance,
@@ -434,6 +492,13 @@ public:
 
   // Problem Specific Getters
 
+  /**
+   * @brief Returns the stored position of a train at a given time.
+   *
+   * @param tr_name Name of the train.
+   * @param t Query time.
+   * @return Train position.
+   */
   [[nodiscard]] double get_train_pos(const std::string& tr_name,
                                      double             t) const;
 
@@ -442,6 +507,13 @@ public:
     double previous_time_step;
     double next_time_step;
   };
+  /**
+   * @brief Returns the containing edge and surrounding time bounds.
+   *
+   * @param tr_name Name of the train.
+   * @param t Query time.
+   * @return Edge/time-bound data at time @p t.
+   */
   [[nodiscard]] EdgeTimeBound
   get_edge_and_time_bounds(const std::string& tr_name, double t) const;
 
@@ -457,6 +529,13 @@ public:
     PosBound pos;
     VelBound vel;
   };
+  /**
+   * @brief Returns exact lower and upper bounds on position and velocity.
+   *
+   * @param tr_name Name of the train.
+   * @param t Query time.
+   * @return Position/velocity bounds at time @p t.
+   */
   [[nodiscard]] PosVelBound
   get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const;
 
@@ -464,34 +543,175 @@ public:
     double pos;
     double vel;
   };
+  /**
+   * @brief Returns an approximate position/velocity pair if available.
+   *
+   * @param tr_name Name of the train.
+   * @param t Query time.
+   * @return Approximate position/velocity pair, or `std::nullopt`.
+   */
   [[nodiscard]] std::optional<PosVel>
   get_approximate_train_pos_and_vel(const std::string& tr_name, double t) const;
 
+  /**
+   * @brief Returns the stored train speed at a given time.
+   *
+   * @param tr_name Name of the train.
+   * @param t Query time.
+   * @return Train speed.
+   */
   [[nodiscard]] double get_train_speed(const std::string& tr_name,
                                        double             t) const;
 
+  /**
+   * @brief Returns all recorded times for one train.
+   *
+   * @param tr_name Name of the train.
+   * @return Sorted list of recorded times.
+   */
   [[nodiscard]] std::vector<double>
   get_train_times(const std::string& tr_name) const;
 
+  /**
+   * @brief Returns train order on a given edge.
+   *
+   * @param edge_index Edge index.
+   * @return Ordered train indices on that edge.
+   */
   [[nodiscard]] cda_rail::index_vector get_train_order(size_t edge_index) const;
 
   struct TrainDirection {
     size_t train_id;
     bool   original_direction;
   };
+  /**
+   * @brief Returns train order on a given edge together with orientation.
+   *
+   * @param edge_index Edge index.
+   * @return Ordered train/direction data.
+   */
   [[nodiscard]] std::vector<TrainDirection>
   get_train_order_with_reverse(size_t edge_index) const;
 
+  /**
+   * @brief Returns the time at which a train reaches a route position.
+   *
+   * @param tr_name Name of the train.
+   * @param pos Position on the route.
+   * @param lb Whether to return a lower-bound time.
+   * @return Time associated with @p pos.
+   */
   [[nodiscard]] double get_time_at_pos(const std::string& tr_name, double pos,
                                        bool lb = false) const;
 
+  /**
+   * @brief Returns the stored exit time of a train.
+   *
+   * @param tr_name Name of the train.
+   * @return Stored exit time for the train.
+   */
+  [[nodiscard]] double get_exit_time(const std::string& tr_name) const;
+  /**
+   * @brief Returns all stored stop times of a train.
+   *
+   * @param tr_name Name of the train.
+   * @return Vector of stop times in schedule order.
+   */
+  [[nodiscard]] std::vector<double>
+  get_stop_times(const std::string& tr_name) const;
+  /**
+   * @brief Returns one stored stop time identified by station name.
+   *
+   * @param tr_name Name of the train.
+   * @param station_name Name of the station.
+   * @return Stored stop time for the matching station.
+   */
+  [[nodiscard]] double get_stop_time(const std::string& tr_name,
+                                     const std::string& station_name) const;
+  /**
+   * @brief Returns one stored stop time identified by stop index.
+   *
+   * @param tr_name Name of the train.
+   * @param stop_index Stop index in schedule order.
+   * @return Stored stop time for the specified stop.
+   */
+  [[nodiscard]] double get_stop_time(const std::string& tr_name,
+                                     size_t             stop_index) const;
+
   // Add train timing information
 
+  /**
+   * @brief Stores a train position sample.
+   *
+   * @param tr_name Name of the train.
+   * @param t Sample time.
+   * @param pos Sample position.
+   */
   void add_train_pos(const std::string& tr_name, double t, double pos);
+  /**
+   * @brief Stores a train speed sample.
+   *
+   * @param tr_name Name of the train.
+   * @param t Sample time.
+   * @param speed Sample speed.
+   */
   void add_train_speed(const std::string& tr_name, double t, double speed);
+
+  /**
+   * @brief Stores the exit time of a train.
+   *
+   * @param tr_name Name of the train.
+   * @param t Exit time to store.
+   */
+  void set_train_exit_time(const std::string& tr_name, double t);
+  /**
+   * @brief Stores one stop time identified by stop index.
+   *
+   * @param tr_name Name of the train.
+   * @param stop_idx Stop index in schedule order.
+   * @param stop_time Stop time to store.
+   */
+  void set_train_stop_time(const std::string& tr_name, size_t stop_idx,
+                           double stop_time);
+  /**
+   * @brief Stores one stop time identified by station name.
+   *
+   * @param tr_name Name of the train.
+   * @param station_name Name of the station.
+   * @param stop_time Stop time to store.
+   */
+  void set_train_stop_time(const std::string& tr_name,
+                           std::string const& station_name, double stop_time);
+  /**
+   * @brief Replaces all stop times of one train.
+   *
+   * @param tr_name Name of the train.
+   * @param stop_times Stop times in schedule order.
+   */
+  void set_train_stop_times(const std::string&  tr_name,
+                            std::vector<double> stop_times);
+
+  /**
+   * @brief Replaces all stored exit times.
+   *
+   * @param exit_times Exit times indexed by train.
+   */
+  void set_exit_times(const std::vector<double>& exit_times);
+  /**
+   * @brief Replaces all stored stop times.
+   *
+   * @param stop_times Stop times indexed by train and stop.
+   */
+  void set_stop_times(const std::vector<std::vector<double>>& stop_times);
 
   // Check solution consistency
 
+  /**
+   * @brief Checks whether the stored performance-optimization solution is
+   *        consistent.
+   *
+   * @return `true` if the solution data is consistent, otherwise `false`.
+   */
   [[nodiscard]] bool check_consistency() const override;
 };
 } // namespace cda_rail::instances

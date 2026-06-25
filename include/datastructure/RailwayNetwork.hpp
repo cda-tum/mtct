@@ -57,6 +57,12 @@ struct Vertex {
       : name(name), type(type), headway(headway.value_or(HEADWAY_DEFAULT)) {};
 
   // Operators
+  /**
+   * @brief Compares two vertices for equality.
+   *
+   * @param other Vertex to compare against.
+   * @return `true` if name, type, and headway all match; otherwise `false`.
+   */
   bool operator==(Vertex const& other) const {
     return name == other.name && type == other.type && headway == other.headway;
   }
@@ -130,6 +136,12 @@ struct Edge {
             min_stop_block_length.value_or(MIN_STOP_BLOCK_LENGTH_DEFAULT)) {};
 
   // Operators
+  /**
+   * @brief Compares two edges for equality.
+   *
+   * @param other Edge to compare against.
+   * @return `true` if all edge attributes match; otherwise `false`.
+   */
   bool operator==(const Edge& other) const {
     return (source == other.source && target == other.target &&
             length == other.length && max_speed == other.max_speed &&
@@ -610,6 +622,16 @@ public:
    */
   [[nodiscard]] size_t get_vertex_index(std::string_view name) const;
 
+  /**
+   * @brief Resolves a vertex descriptor to its numeric vertex index.
+   *
+   * @param vertex Vertex descriptor.
+   * @return Numeric vertex index.
+   * @throws cda_rail::exceptions::VertexNotExistentException If the vertex
+   *         does not exist.
+   * @throws cda_rail::exceptions::ConsistencyException If a `Vertex` object
+   *         conflicts with the stored vertex data.
+   */
   [[nodiscard]] size_t resolve_vertex_index(VertexInput const& vertex) const {
     return vertex.resolve(this);
   }
@@ -666,6 +688,16 @@ public:
     return get_edge_index_helper(source.resolve(this), target.resolve(this));
   }
 
+  /**
+   * @brief Resolves an edge descriptor to its numeric edge index.
+   *
+   * @param edge_input Edge descriptor.
+   * @return Numeric edge index.
+   * @throws cda_rail::exceptions::EdgeNotExistentException If the edge does
+   *         not exist.
+   * @throws cda_rail::exceptions::ConsistencyException If an `Edge` object
+   *         conflicts with the stored edge data.
+   */
   [[nodiscard]] size_t get_edge_index(EdgeInput const& edge_input) const {
     return edge_input.resolve(this);
   }
@@ -931,6 +963,16 @@ public:
   get_reverse_edge_index(EdgeInput const& edge) const {
     return get_reverse_edge_index_helper(edge.resolve(this));
   };
+
+  /**
+   * @brief Get reverse path
+   *
+   * @param edges Vector of edge indices.
+   * @return Vector of reverse indices in revers order, if all reverse edges
+   * exist.
+   */
+  [[nodiscard]] std::optional<cda_rail::index_vector>
+  get_reverse_path(cda_rail::index_vector const& edges) const;
 
   /**
    * @brief Wraps `get_reverse_edge_index` to propagate an optional input.
@@ -1720,14 +1762,36 @@ private:
    *                     this edge).
    * @param ttd_sections Vector of TTD sections (each a set of edge indices).
    * @param exit_node    Optional vertex at which paths may terminate.
+   * @param skip_irrelevant_ttds If true, TTD sections are traversed if there if
+   * every path through TTD contains the entry node as entry or exit. In this
+   * case it is not possible for another train to traverse the TTD while a train
+   * waits at the specified entry node. Hence, the train can safely traverse
+   * through the TTD since it will never have to wait.
+   * @param zero_length_if_next_edge_is_ttd If true, a path of length zero is
+   * returned if the first edge after @p e_0 is already part of a (new) TTD
+   * section. This reflects that a train could also wait before entering a TTD.
+   * If false, the train is forced to move at least one edge.
    * @return Vector of edge-index vectors, each representing one such path.
    */
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_ending_at_ttd_helper(
       size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
-      std::optional<size_t> exit_node) const;
+      std::optional<size_t> exit_node, bool skip_irrelevant_ttds,
+      bool zero_length_if_next_edge_is_ttd) const;
 
 public:
+  /**
+   * @brief Returns the index of the TTD section that contains a given edge.
+   *
+   * @param e_0 Edge index to look up.
+   * @param ttd_sections Collection of TTD sections.
+   * @return Index of the containing TTD section, or `std::nullopt` if none
+   *         contains @p e_0.
+   */
+  [[nodiscard]] static std::optional<size_t>
+  get_ttd_of_edge(size_t                                  e_0,
+                  const std::vector<cda_rail::index_set>& ttd_sections);
+
   /**
    * @brief Returns all paths starting immediately after edge @p e_0 and
    *        ending upon entering a TTD section or reaching the exit vertex if
@@ -1737,14 +1801,27 @@ public:
    *                     this edge).
    * @param ttd_sections Vector of TTD sections (each a set of edge indices).
    * @param exit_node    Optional vertex at which paths may terminate.
+   * @param skip_irrelevant_ttds If true, TTD sections are traversed if there if
+   * every path through TTD contains the entry node as entry or exit. In this
+   * case it is not possible for another train to traverse the TTD while a train
+   * waits at the specified entry node. Hence, the train can safely traverse
+   * through the TTD since it will never have to wait.
+   * @param zero_length_if_next_edge_is_ttd If true, a path of length zero is
+   * returned if the first edge after @p e_0 is already part of a (new) TTD
+   * section. This reflects that a train could also wait before entering a TTD.
+   * If false, the train is forced to move at least one edge.
+   *
    * @return Vector of edge-index vectors, each representing one such path.
    */
   [[nodiscard]] std::vector<cda_rail::index_vector>
   all_paths_ending_at_ttd(EdgeInput const&                        edge,
                           const std::vector<cda_rail::index_set>& ttd_sections,
-                          std::optional<size_t> exit_node = {}) const {
+                          std::optional<size_t> exit_node            = {},
+                          bool                  skip_irrelevant_ttds = false,
+                          bool zero_length_if_next_edge_is_ttd = false) const {
     return all_paths_ending_at_ttd_helper(edge.resolve(this), ttd_sections,
-                                          exit_node);
+                                          exit_node, skip_irrelevant_ttds,
+                                          zero_length_if_next_edge_is_ttd);
   };
 
   /**
@@ -2111,6 +2188,80 @@ public:
         use_minimal_time, max_v);
   };
 
+  // -------------------------
+  // Irrelevant TTD helper
+  // -------------------------
+  /**
+   * @brief Returns the border vertices of a given TTD section.
+   *
+   * A border vertex is a vertex with only one neighbor within the TTD.
+   *
+   * @param ttd_section Edges within the TTD section
+   * @return All border vertices
+   */
+  [[nodiscard]] std::unordered_set<size_t>
+  get_border_vertices_of_ttd(const cda_rail::index_set& ttd_section) const;
+
+private:
+  /**
+   * @brief Checks reachability inside a TTD section between two vertices.
+   *
+   * @param source_vertex Source vertex index.
+   * @param target_vertex Target vertex index.
+   * @param ttd_section Edge set describing the TTD section.
+   * @return `true` if a path exists using only edges from @p ttd_section.
+   */
+  [[nodiscard]] bool
+  has_ttd_path_helper(size_t source_vertex, size_t target_vertex,
+                      const cda_rail::index_set& ttd_section) const;
+
+public:
+  /**
+   * @brief Checks if a TTD can be traversed from a given source to target.
+   *
+   * @param source_vertex Source vertex
+   * @param target_vertex Destination/Target vertex
+   * @param ttd_section Edges within the TTD section
+   * @return True if there is a path from source to target only using edges
+   * within the TTD section
+   */
+  [[nodiscard]] bool
+  has_ttd_path(VertexInput const&         source_vertex,
+               VertexInput const&         target_vertex,
+               const cda_rail::index_set& ttd_section) const {
+    return has_ttd_path_helper(source_vertex.resolve(this),
+                               target_vertex.resolve(this), ttd_section);
+  }
+
+private:
+  /**
+   * @brief Checks whether a TTD remains traversable without one border vertex.
+   *
+   * @param border_vertex Border vertex to exclude.
+   * @param ttd_section Edge set describing the TTD section.
+   * @return `true` if another path through the TTD exists without using
+   *         @p border_vertex as boundary.
+   */
+  [[nodiscard]] bool has_ttd_path_not_using_border_vertex_helper(
+      size_t border_vertex, const cda_rail::index_set& ttd_section) const;
+
+public:
+  /**
+   * @brief Checks if a TTD can be traversed without using a given border
+   * vertex.
+   *
+   * @param border_vertex Border vertex of the TTD section
+   * @param ttd_section Edges within the TTD section
+   * @return True if there is another path through the TTD that does neither
+   * begin nor end at the specified border vertex.
+   */
+  [[nodiscard]] bool has_ttd_path_not_using_border_vertex(
+      VertexInput const&         border_vertex,
+      const cda_rail::index_set& ttd_section) const {
+    return has_ttd_path_not_using_border_vertex_helper(
+        border_vertex.resolve(this), ttd_section);
+  }
+
 private:
   // ---------------------
   // Private Helper
@@ -2454,6 +2605,11 @@ private:
    *                     section).
    * @param first_edge   `true` on the initial call; `false` in recursive
    *                     calls.
+   * @param skip_irrelevant_ttds If true, TTD sections are traversed if there if
+   * every path through TTD contains the entry node as entry or exit. In this
+   * case it is not possible for another train to traverse the TTD while a train
+   * waits at the specified entry node. Hence, the train can safely traverse
+   * through the TTD since it will never have to wait.
    * @return Vector of edge-index vectors representing found paths.
    * @throws cda_rail::exceptions::EdgeNotExistentException If @p e_0 does
    *         not exist.
@@ -2462,7 +2618,7 @@ private:
   all_paths_ending_at_ttd_recursive_helper(
       size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
       std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
-      bool first_edge) const;
+      bool first_edge, bool skip_irrelevant_ttds) const;
 
 public:
   // exception helper

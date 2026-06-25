@@ -50,8 +50,16 @@ cda_rail::simulator::simple_remaining_time_heuristic(
       tr_edges.empty()
           ? simulator.get_instance()->get_const_network().out_edges(
                 tr_schedule.get_entry_vertex())
-          : cda_rail::index_set{tr_edges.back()};
-  bool include_first_edge = tr_edges.empty();
+          : simulator.get_instance()->get_const_network().get_successors(
+                tr_edges.back());
+  bool include_first_edge = true;
+
+  if (start_edges.empty()) {
+    // dead-end which is not exit vertex
+    return {.feasible                     = false,
+            .remaining_exit_time          = cda_rail::INF,
+            .average_remaining_stop_delay = cda_rail::INF};
+  }
 
   for (size_t next_stop = first_next_stop; next_stop < tr_stops.size();
        ++next_stop) {
@@ -118,9 +126,6 @@ cda_rail::simulator::simple_remaining_time_heuristic(
   }
 
   heuristic_exit_time += time_diff.value();
-  heuristic_exit_time +=
-      tr_obj.get_length() /
-      tr_obj.get_max_speed(); // Only left after fully leaving the network
   if (consider_earliest_exit) {
     heuristic_exit_time =
         std::max(heuristic_exit_time, tr_schedule.get_exit_time());
@@ -167,6 +172,10 @@ cda_rail::simulator::HeuristicResult cda_rail::simulator::full_greedy_heuristic(
     const auto [feas_tr, obj_tr] =
         greedy_heuristic(remaining_time_heuristic_type, tr, simulator,
                          sim_results.exit_times.at(tr), consider_earliest_exit);
+    if (!feas_tr) {
+      // shortcut on infeasibility
+      return {.feasible = false, .objective_value_difference = INF};
+    }
     feas = feas && feas_tr;
     obj += simulator.get_instance()->get_train_weights().at(tr) * obj_tr;
   }

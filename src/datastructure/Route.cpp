@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-using json = nlohmann::json;
 using std::size_t;
 
 // -----------------------------
@@ -513,7 +512,7 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
                                       p.string());
   }
 
-  json j;
+  nlohmann::json j;
   for (const auto& [name, route] : m_routes) {
     const auto edge_pairs =
         route.get_edges() | std::views::transform([&network](size_t edge_id) {
@@ -526,7 +525,12 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
   }
 
   std::ofstream file(p / "routes.json");
-  file << j << '\n';
+  if (!file.is_open()) {
+    throw exceptions::ExportException("Could not open routes.json for writing");
+  }
+  if (!(file << j << '\n')) {
+    throw exceptions::ExportException("Failed to write routes.json");
+  }
 }
 
 cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
@@ -542,7 +546,7 @@ cda_rail::RouteMap::RouteMap(const std::filesystem::path& p,
   if (!file.is_open()) {
     throw exceptions::ImportException((p / "routes.json").string());
   }
-  const json data = json::parse(file);
+  const nlohmann::json data = nlohmann::json::parse(file);
 
   for (const auto& [name, route] : data.items()) {
     add_empty_route(name);

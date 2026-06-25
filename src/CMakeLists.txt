@@ -45,8 +45,7 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/simulator/GreedyHeuristic.hpp
   simulator/GreedyHeuristic.cpp
   ${PROJECT_SOURCE_DIR}/include/solver/astar-based/GenPOMovingBlockAStarSolver.hpp
-  solver/astar-based/GenPOMovingBlockAStarSolver.cpp
-  solver/astar-based/GenPOMovingBlockAStarSolver_helper.cpp)
+  solver/astar-based/GenPOMovingBlockAStarSolver.cpp)
 
 # set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)

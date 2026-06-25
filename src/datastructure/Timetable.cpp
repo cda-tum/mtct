@@ -6,6 +6,7 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Train.hpp"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -13,6 +14,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -20,8 +22,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-
-// using directives from header
 
 cda_rail::Schedule::Schedule(double const entryTime,
                              double const initialVelocity,
@@ -39,6 +39,17 @@ cda_rail::Schedule::Schedule(double const entryTime,
                                           "Initial velocity");
   cda_rail::exceptions::throw_if_negative(m_exit_velocity, "Exit velocity");
   check_stops_validity(m_stops);
+}
+
+size_t
+cda_rail::Schedule::get_station_index(std::string const& station_name) const {
+  auto const it = std::ranges::find_if(m_stops, [&](auto const& stop) {
+    return stop.get_station().name == station_name;
+  });
+  if (it == m_stops.end()) {
+    throw exceptions::StationNotExistentException(station_name);
+  }
+  return static_cast<size_t>(std::distance(m_stops.begin(), it));
 }
 
 std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
@@ -130,7 +141,7 @@ cda_rail::Timetable::Timetable(const std::filesystem::path& p,
   if (!f.is_open()) {
     throw exceptions::ImportException("Could not open schedules.json.");
   }
-  json data = json::parse(f);
+  nlohmann::json data = nlohmann::json::parse(f);
 
   for (size_t i = 0; i < this->m_train_list.size(); i++) {
     const auto& tr = this->m_train_list.get_train(i);
@@ -169,8 +180,8 @@ cda_rail::Timetable::Timetable(StationList station_list, TrainList train_list,
   }
 }
 
-void cda_rail::Timetable::parse_schedule_data(json const&  schedule_data,
-                                              size_t const i) {
+void cda_rail::Timetable::parse_schedule_data(
+    nlohmann::json const& schedule_data, size_t const i) {
   this->m_schedules.at(i).set_entry_time(schedule_data.at("t_0").get<double>());
   this->m_schedules.at(i).set_exit_time(schedule_data.at("t_n").get<double>());
   for (const auto& stop_data : schedule_data.at("stops")) {
@@ -180,10 +191,10 @@ void cda_rail::Timetable::parse_schedule_data(json const&  schedule_data,
   }
 }
 
-void cda_rail::Timetable::add_json_data(json& j, const size_t i,
+void cda_rail::Timetable::add_json_data(nlohmann::json& j, const size_t i,
                                         const Network& network) const {
-  const auto& schedule = m_schedules.at(i);
-  json        stops;
+  const auto&    schedule = m_schedules.at(i);
+  nlohmann::json stops;
 
   for (const auto& stop : schedule.get_stops()) {
     stops.push_back({{"begin", stop.get_service_time()},
@@ -211,13 +222,19 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
   m_train_list.export_trains(p);
   m_station_list.export_stations(p, network);
 
-  json j = json::object();
+  nlohmann::json j = nlohmann::json::object();
   for (size_t i = 0; i < m_schedules.size(); ++i) {
     add_json_data(j, i, network);
   }
 
   std::ofstream file(p / "schedules.json");
-  file << j << '\n';
+  if (!file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open schedules.json for writing");
+  }
+  if (!(file << j << '\n')) {
+    throw exceptions::ExportException("Failed to write schedules.json");
+  }
 }
 
 double cda_rail::Timetable::latest_exit_time() const {

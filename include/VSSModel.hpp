@@ -20,6 +20,13 @@ enum class ModelType : std::uint8_t {
 };
 
 namespace functions {
+/**
+ * @brief Computes uniformly spaced normalized positions.
+ *
+ * @param i Zero-based node index.
+ * @param n Total number of nodes.
+ * @return Normalized position in `[0, 1]`.
+ */
 [[nodiscard]] static double uniform(size_t i, size_t n) {
   double ret_val = (static_cast<double>(i) + 1) / static_cast<double>(n);
   ret_val        = std::min<double>(ret_val, 1);

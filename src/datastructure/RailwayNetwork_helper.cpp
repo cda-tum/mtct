@@ -25,8 +25,6 @@
 #include <variant>
 #include <vector>
 
-using json = nlohmann::json;
-
 void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   tinyxml2::XMLDocument graph_xml;
   graph_xml.LoadFile((p / "tracks.graphml").string().c_str());
@@ -236,7 +234,7 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
     throw exceptions::ImportException("Could not open file " +
                                       (p / "successors_cpp.json").string());
   }
-  const json data = json::parse(f);
+  const nlohmann::json data = nlohmann::json::parse(f);
 
   for (const auto& [key, val] : data.items()) {
     std::string source_name;
@@ -252,7 +250,7 @@ void cda_rail::Network::read_successors(const std::filesystem::path& p) {
 
 void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   std::ofstream file(p / "tracks.graphml");
-  if (!file) {
+  if (!file.is_open()) {
     throw exceptions::ExportException("Could not open file " +
                                       (p / "tracks.graphml").string());
   }
@@ -313,11 +311,19 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   }
 
   file << "</graph>\n</graphml>\n";
+  if (!file) {
+    throw exceptions::ExportException("Failed to write file " +
+                                      (p / "tracks.graphml").string());
+  }
 }
 
 void cda_rail::Network::export_successors_python(
     const std::filesystem::path& p) const {
   std::ofstream file(p / "successors.txt");
+  if (!file.is_open()) {
+    throw exceptions::ExportException("Could not open file " +
+                                      (p / "successors.txt").string());
+  }
   file << "{";
   bool first = true;
   for (size_t i = 0; i < number_of_edges(); ++i) {
@@ -331,11 +337,15 @@ void cda_rail::Network::export_successors_python(
     write_successor_set_to_file(file, i);
   }
   file << "}\n";
+  if (!file) {
+    throw exceptions::ExportException("Failed to write file " +
+                                      (p / "successors.txt").string());
+  }
 }
 
 void cda_rail::Network::export_successors_cpp(
     const std::filesystem::path& p) const {
-  json j;
+  nlohmann::json j;
   for (size_t i = 0; i < number_of_edges(); ++i) {
     const auto&                                      edge = get_edge(i);
     std::vector<std::pair<std::string, std::string>> succ_list;
@@ -350,7 +360,14 @@ void cda_rail::Network::export_successors_cpp(
     // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
   }
   std::ofstream file(p / "successors_cpp.json");
-  file << j << '\n';
+  if (!file.is_open()) {
+    throw exceptions::ExportException("Could not open file " +
+                                      (p / "successors_cpp.json").string());
+  }
+  if (!(file << j << '\n')) {
+    throw exceptions::ExportException("Failed to write file " +
+                                      (p / "successors_cpp.json").string());
+  }
 }
 
 void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,
@@ -806,10 +823,11 @@ std::vector<cda_rail::index_vector>
 cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
     size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
     std::optional<size_t> exit_node, std::optional<size_t> safe_ttd,
-    bool first_edge) const {
+    bool first_edge, bool skip_irrelevant_ttds) const {
   if (!has_edge(e_0)) {
     throw exceptions::EdgeNotExistentException(e_0);
   }
+  const auto& e0_edge = get_edge(e_0);
 
   // Check TTD membership: stop if we enter a new TTD section
   for (size_t ttd_idx = 0; ttd_idx < ttd_sections.size(); ++ttd_idx) {
@@ -817,14 +835,16 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
       continue;
     }
     if (ttd_sections.at(ttd_idx).contains(e_0)) {
-      if (!first_edge) {
+      if (!first_edge && (!skip_irrelevant_ttds ||
+                          has_ttd_path_not_using_border_vertex(
+                              e0_edge.source, ttd_sections.at(ttd_idx)))) {
         return {{}};
       }
       safe_ttd = ttd_idx;
+      break;
     }
   }
 
-  const auto& e0_edge = get_edge(e_0);
   if (exit_node.has_value() && e0_edge.target == *exit_node) {
     return {{e_0}};
   }
@@ -832,7 +852,8 @@ cda_rail::Network::all_paths_ending_at_ttd_recursive_helper(
   std::vector<cda_rail::index_vector> result;
   for (const auto succ : get_successors(e_0)) {
     for (const auto& sub_path : all_paths_ending_at_ttd_recursive_helper(
-             succ, ttd_sections, exit_node, safe_ttd, false)) {
+             succ, ttd_sections, exit_node, safe_ttd, false,
+             skip_irrelevant_ttds)) {
       cda_rail::index_vector path{e_0};
       path.insert(path.end(), sub_path.begin(), sub_path.end());
       result.push_back(std::move(path));

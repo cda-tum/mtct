@@ -21,6 +21,8 @@ concatenate_string_views(std::initializer_list<std::string_view> parts);
 /**
  * @brief Compares two strings for equality, ignoring case.
  *
+ * @param a First string to compare.
+ * @param b Second string to compare.
  * @return `true` if the strings are equal when compared case-insensitively,
  * `false` otherwise.
  */
@@ -32,6 +34,15 @@ inline bool case_insensitive_str_equal(std::string_view a, std::string_view b) {
   });
 }
 
+/**
+ * @brief Parses a textual boolean value into an optional in place.
+ *
+ * Recognized true/false spellings are interpreted case-insensitively. Empty
+ * input clears the optional.
+ *
+ * @param s_view Input string view to parse.
+ * @param b Optional boolean updated in place.
+ */
 void to_bool_optional_inplace(std::string_view s_view, std::optional<bool>& b);
 
 } // namespace cda_rail

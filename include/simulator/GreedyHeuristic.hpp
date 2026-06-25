@@ -6,16 +6,32 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace cda_rail::simulator {
 enum class RemainingTimeHeuristicType : std::uint8_t { Zero = 0, Simple = 1 };
+constexpr std::string
+remaining_time_heuristic_type_to_string(RemainingTimeHeuristicType const type) {
+  switch (type) {
+  case RemainingTimeHeuristicType::Zero:
+    return "Zero";
+  case RemainingTimeHeuristicType::Simple:
+    return "Simple";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown remaining-time heuristic type");
+  }
+}
 
 // --------------------------
 // Objective Value
 /**
  * @brief Computes the objective value based on train exit times and stop times.
  *
+ * @param simulator Greedy simulator providing the problem instance.
+ * @param tr_exit_times Exit times per train.
+ * @param stop_times Stop times per train and stop.
  * @return double The computed objective value.
  */
 
@@ -37,6 +53,15 @@ struct RemainingTimeHeuristicResult {
   double average_remaining_stop_delay;
 };
 // Remaining time heuristics for A*
+/**
+ * @brief Computes the simple remaining-time heuristic for one train.
+ *
+ * @param tr Train index.
+ * @param simulator Greedy simulator providing route and instance data.
+ * @param tr_exit_time Current simulated exit time.
+ * @param consider_earliest_exit Whether earliest-exit constraints are enforced.
+ * @return Remaining-time heuristic result for the train.
+ */
 [[nodiscard]] RemainingTimeHeuristicResult
 simple_remaining_time_heuristic(size_t tr, const GreedySimulator& simulator,
                                 double tr_exit_time,
@@ -96,6 +121,9 @@ struct HeuristicResult {
  *
  * @param remaining_time_heuristic_type Type of remaining-time heuristic variant
  * to use.
+ * @param tr Train index.
+ * @param simulator Greedy simulator.
+ * @param tr_exit_time Current simulated exit time of the train.
  * @param consider_earliest_exit Whether to enforce earliest departure and exit
  * constraints.
  *
