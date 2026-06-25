@@ -501,10 +501,16 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::get_path_extensions(
   // (multiple options per path possible)
   std::vector<PathExtensionData> extended_path_extensions;
   for (auto const& path_extension : path_extensions) {
+    auto const exit_vertex = instance->get_const_schedule(tr).get_exit_vertex();
+    if (instance->get_const_network()
+            .get_edge(path_extension.path.back())
+            .target == exit_vertex) {
+      extended_path_extensions.emplace_back(path_extension);
+      continue;
+    }
     auto const next_ttd_paths =
         instance->get_const_network().all_paths_ending_at_ttd(
-            path_extension.path.back(), ttd_sections,
-            instance->get_const_schedule(tr).get_exit_vertex(),
+            path_extension.path.back(), ttd_sections, exit_vertex,
             next_state_strategy == NextStateStrategy::NextRelevantTTD, true);
     for (auto const& next_ttd_path : next_ttd_paths) {
       PathExtensionData new_path_extension{
