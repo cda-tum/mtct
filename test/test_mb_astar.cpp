@@ -350,6 +350,90 @@ TEST(GenPOMovingBlockAStarSolver, PathExtensions) {
   EXPECT_TRUE(std::ranges::contains(path_extensions2c, expected_2c_3));
 }
 
+TEST(GenPOMovingBlockAStarSolver, PathExtensionsCloseToEnd) {
+  Network network;
+
+  auto const v0 = network.add_vertex("v0", VertexType::TTD);
+  auto const v1 = network.add_vertex("v1", VertexType::TTD);
+  auto const v2 = network.add_vertex("v2", VertexType::TTD);
+
+  auto const v0_v1 = network.add_edge(v0, v1, 100, 20, true);
+  auto const v1_v2 = network.add_edge(v1, v2, 100, 20, true);
+
+  network.add_successor(v0_v1, v1_v2);
+
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 20, 2, 4, true, 0, 20, v0,
+                                       500, 20, v2, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  std::vector<cda_rail::index_vector> vertex_orders(
+      network.number_of_vertices());
+  vertex_orders.at(v0).emplace_back(tr1);
+  simulator::SimulatorState state{.train_edges    = {{v0_v1}},
+                                  .ttd_orders     = {},
+                                  .vertex_orders  = vertex_orders,
+                                  .stop_positions = {{}}};
+
+  auto print_path_extensions =
+      [&network](
+          std::vector<cda_rail::solver::astar_based::
+                          GenPOMovingBlockAStarSolver::PathExtensionData> const&
+                             path_extension,
+          std::string const& label) {
+        std::cout << label << '\n';
+        std::cout << "Path extension size: " << path_extension.size() << '\n';
+        for (size_t i = 0; i < path_extension.size(); ++i) {
+          std::cout << "Path extension " << i << '\n';
+          std::cout << "First stop edge: "
+                    << path_extension.at(i).stop_possible_from_idx_onward
+                    << '\n';
+          std::cout << "Path: ";
+          for (size_t j = 0; j < path_extension.at(i).path.size(); ++j) {
+            auto const& edge_obj =
+                network.get_edge(path_extension.at(i).path.at(j));
+            std::cout << network.get_vertex(edge_obj.source).name << "->"
+                      << network.get_vertex(edge_obj.target).name << " / ";
+          }
+          std::cout << '\n';
+        }
+      };
+
+  auto const path_extensions1a = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::get_path_extensions(
+          tr1, state, solver::astar_based::NextStateStrategy::SingleEdge,
+          &instance, {});
+  print_path_extensions(path_extensions1a, "1A");
+  EXPECT_EQ(path_extensions1a.size(), 1);
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_1a{.path = {v1_v2}, .stop_possible_from_idx_onward = 0};
+  EXPECT_TRUE(std::ranges::contains(path_extensions1a, expected_1a));
+
+  auto const path_extensions1b =
+      cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
+          get_path_extensions(tr1, state,
+                              solver::astar_based::NextStateStrategy::NextTTD,
+                              &instance, {});
+  print_path_extensions(path_extensions1b, "1B");
+  EXPECT_EQ(path_extensions1b.size(), 1);
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_1b{.path = {v1_v2}, .stop_possible_from_idx_onward = 0};
+  EXPECT_TRUE(std::ranges::contains(path_extensions1b, expected_1b));
+
+  auto const path_extensions1c = cda_rail::solver::astar_based::
+      GenPOMovingBlockAStarSolver::get_path_extensions(
+          tr1, state, solver::astar_based::NextStateStrategy::NextRelevantTTD,
+          &instance, {});
+  print_path_extensions(path_extensions1c, "1C");
+  EXPECT_EQ(path_extensions1c.size(), 1);
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::PathExtensionData
+      expected_1c{.path = {v1_v2}, .stop_possible_from_idx_onward = 0};
+  EXPECT_TRUE(std::ranges::contains(path_extensions1c, expected_1c));
+}
+
 TEST(GenPOMovingBlockAStarSolver, InferInsertionBounds) {
   EXPECT_EQ(
       cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::

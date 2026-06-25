@@ -32,6 +32,7 @@
 class GenPOMovingBlockAStarSolver;
 class GenPOMovingBlockAStarSolver_NextTrains_Test;
 class GenPOMovingBlockAStarSolver_PathExtensions_Test;
+class GenPOMovingBlockAStarSolver_PathExtensionsCloseToEnd_Test;
 class GenPOMovingBlockAStarSolver_InferInsertionBounds_Test;
 class GenPOMovingBlockAStarSolver_ExtendStateWithPathExtension_Test;
 class GenPOMovingBlockAStarSolver_ExtendTrainOrderEntry_Test;
@@ -89,6 +90,7 @@ private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextTrains);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, PathExtensions);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, PathExtensionsCloseToEnd);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, InferInsertionBounds);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, ExtendStateWithPathExtension);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, ExtendTrainOrderEntry);
