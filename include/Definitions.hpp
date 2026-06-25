@@ -12,7 +12,7 @@ using index_set    = std::unordered_set<size_t>;
 
 // Constants
 constexpr double INF     = std::numeric_limits<double>::max() / 3;
-constexpr double EPS     = 10 * std::numeric_limits<double>::epsilon();
+constexpr double EPS     = 1000 * std::numeric_limits<double>::epsilon();
 constexpr double GRB_EPS = 1e-4;
 constexpr double V_MIN   = 0.3;
 constexpr double ROUNDING_PRECISION       = 1;

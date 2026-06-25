@@ -3,6 +3,7 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "simulator/GreedySimulator.hpp"
 #include "solver/GeneralSolver.hpp"
@@ -12,10 +13,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <functional>
+#include <optional>
 #include <queue>
+#include <string>
 #include <string_view>
-#include <unordered_set>
 #include <vector>
 
 // If TEST_FRIENDS has value true, the corresponding test is friended to test
@@ -29,6 +30,14 @@
 #endif
 #if TEST_FRIENDS
 class GenPOMovingBlockAStarSolver;
+class GenPOMovingBlockAStarSolver_NextTrains_Test;
+class GenPOMovingBlockAStarSolver_PathExtensions_Test;
+class GenPOMovingBlockAStarSolver_PathExtensionsCloseToEnd_Test;
+class GenPOMovingBlockAStarSolver_InferInsertionBounds_Test;
+class GenPOMovingBlockAStarSolver_ExtendStateWithPathExtension_Test;
+class GenPOMovingBlockAStarSolver_ExtendTrainOrderEntry_Test;
+class GenPOMovingBlockAStarSolver_ExtendTrainOrderExit_Test;
+class GenPOMovingBlockAStarSolver_ExtendTrainOrderNothingToChange_Test;
 class GenPOMovingBlockAStarSolver_NextStates_Test;
 class GenPOMovingBlockAStarSolver_NextStatesTTD_Test;
 #endif
@@ -37,9 +46,24 @@ namespace cda_rail::solver::astar_based {
 #define DEBUG_LOGGING_RATE 1000
 
 enum class NextStateStrategy : std::uint8_t {
-  SingleEdge = 0,
-  NextTTD    = 1,
+  SingleEdge      = 0,
+  NextTTD         = 1,
+  NextRelevantTTD = 2,
 };
+constexpr std::string
+next_state_strategy_to_string(NextStateStrategy strategy) {
+  switch (strategy) {
+  case NextStateStrategy::SingleEdge:
+    return "SingleEdge";
+  case NextStateStrategy::NextTTD:
+    return "NextTTD";
+  case NextStateStrategy::NextRelevantTTD:
+    return "NextRelevantTTD";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown next-state strategy");
+  }
+}
 
 struct ModelDetail {
   double dt                  = 6.0; // DB simulation default is 6 seconds
@@ -55,24 +79,7 @@ struct SolverStrategyMBAStar {
   bool              time_aware_state_transitions = false;
   double            a_star_weight                = 1.0;
 };
-
-struct GreedySimulatorState {
-  std::vector<cda_rail::index_vector> train_edges;
-  std::vector<cda_rail::index_vector> ttd_orders;
-  std::vector<cda_rail::index_vector> vertex_orders;
-  std::vector<std::vector<double>>    stop_positions;
-
-  bool operator==(const GreedySimulatorState& other) const;
-
-  bool operator>(const GreedySimulatorState& other) const;
-};
 } // namespace cda_rail::solver::astar_based
-
-template <>
-struct std::hash<cda_rail::solver::astar_based::GreedySimulatorState> {
-  size_t operator()(const cda_rail::solver::astar_based::GreedySimulatorState&
-                        state) const noexcept;
-}; // namespace std
 
 namespace cda_rail::solver::astar_based {
 class GenPOMovingBlockAStarSolver
@@ -81,6 +88,14 @@ class GenPOMovingBlockAStarSolver
           instances::SolGeneralPerformanceOptimizationInstance> {
 private:
 #if TEST_FRIENDS
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextTrains);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, PathExtensions);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, PathExtensionsCloseToEnd);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, InferInsertionBounds);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, ExtendStateWithPathExtension);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, ExtendTrainOrderEntry);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, ExtendTrainOrderExit);
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, ExtendTrainOrderNothingToChange);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStates);
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, NextStatesTTD);
 #endif
@@ -116,10 +131,14 @@ public:
   ~GenPOMovingBlockAStarSolver() override = default;
 
   // Rule of 5 (due to virtual deconstructor)
+  /** @brief Copy constructor. */
   GenPOMovingBlockAStarSolver(const GenPOMovingBlockAStarSolver&) = default;
-  GenPOMovingBlockAStarSolver(GenPOMovingBlockAStarSolver&&)      = default;
+  /** @brief Move constructor. */
+  GenPOMovingBlockAStarSolver(GenPOMovingBlockAStarSolver&&) = default;
+  /** @brief Copy assignment operator. */
   GenPOMovingBlockAStarSolver&
   operator=(const GenPOMovingBlockAStarSolver&) = default;
+  /** @brief Move assignment operator. */
   GenPOMovingBlockAStarSolver&
   operator=(GenPOMovingBlockAStarSolver&&) = default;
 
@@ -141,6 +160,17 @@ public:
     return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
   };
 
+  /**
+   * @brief Solves the problem with explicit model, strategy, and export setup.
+   *
+   * @param model_detail_input Simulation-model settings.
+   * @param solver_strategy_input A* search strategy settings.
+   * @param solution_settings_input Solution export settings.
+   * @param time_limit Time limit in seconds (-1 for no limit).
+   * @param debug_input If true, enables debug mode.
+   * @param overwrite_severity If true, overwrites solution severity.
+   * @return Solution to the general performance optimization problem.
+   */
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(const ModelDetail&             model_detail_input,
         const SolverStrategyMBAStar&   solver_strategy_input,
@@ -153,56 +183,208 @@ private:
   // STATE TRANSITION HELPER
   // ---------------------------
 
-  // Helper
-  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
-  next_states_single_edge(const simulator::GreedySimulator& simulator);
-  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
-              next_states_next_ttd(const simulator::GreedySimulator& simulator);
-  static void next_state_ttd_helper(size_t tr, GreedySimulatorState& state,
-                                    const simulator::GreedySimulator& simulator,
-                                    const cda_rail::index_vector& new_edges);
-  static void
-  next_state_exit_vertex_helper(size_t tr, GreedySimulatorState& state,
-                                const simulator::GreedySimulator& simulator);
+  // Relevant Trains
+  /**
+   * @brief Returns all trains whose state can still be extended.
+   *
+   * @param simulator_state Current simulator state.
+   * @param instance Performance-optimization instance.
+   * @return Set of train indices eligible for state extension.
+   */
+  [[nodiscard]] static cda_rail::index_set get_all_trains_for_state_transition(
+      simulator::SimulatorState const&                         simulator_state,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
+  /**
+   * @brief Returns the single next train under time-aware state transitions.
+   *
+   * @param simulator_state Current simulator state.
+   * @param simulator_result Simulation result of the current state.
+   * @param instance Performance-optimization instance.
+   * @return Empty set if no train remains, otherwise a singleton train set.
+   */
+  [[nodiscard]] static cda_rail::index_set get_next_time_aware_train(
+      simulator::SimulatorState const&                         simulator_state,
+      simulator::SimulatorResults const&                       simulator_result,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
+  /**
+   * @brief Selects the trains to consider for the next state transition.
+   *
+   * @param simulator_state Current simulator state.
+   * @param simulator_result Simulation result of the current state.
+   * @param instance Performance-optimization instance.
+   * @param solver_strategy Strategy controlling time-aware transitions.
+   * @return Set of train indices to extend next.
+   */
+  [[nodiscard]] static cda_rail::index_set
+  get_relevant_trains_for_state_transition(
+      simulator::SimulatorState const&                         simulator_state,
+      simulator::SimulatorResults const&                       simulator_result,
+      instances::GeneralPerformanceOptimizationInstance const* instance,
+      SolverStrategyMBAStar const&                             solver_strategy);
+
+  // Path Extensions
+  /**
+   * @brief Computes feasible initial path extensions for a train.
+   *
+   * @param tr Train index.
+   * @param instance Performance-optimization instance.
+   * @return Candidate entry paths from the train's entry vertex.
+   */
+  [[nodiscard]] static std::vector<cda_rail::index_vector> get_entry_paths(
+      size_t                                                   tr,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
+  struct PathExtensionData {
+    cda_rail::index_vector path{};
+    size_t                 stop_possible_from_idx_onward{0};
+
+    bool operator==(const PathExtensionData& other) const {
+      return path == other.path && stop_possible_from_idx_onward ==
+                                       other.stop_possible_from_idx_onward;
+    }
+  };
+  /**
+   * @brief Computes route extensions according to the configured strategy.
+   *
+   * @param tr Train index.
+   * @param simulator_state Current simulator state.
+   * @param next_state_strategy Path-extension strategy.
+   * @param instance Performance-optimization instance.
+   * @param ttd_sections TTD sections used for next-TTD expansion.
+   * @return Candidate path extensions together with stop metadata.
+   */
+  [[nodiscard]] static std::vector<PathExtensionData> get_path_extensions(
+      size_t tr, simulator::SimulatorState const& simulator_state,
+      NextStateStrategy next_state_strategy,
+      instances::GeneralPerformanceOptimizationInstance const* instance,
+      std::vector<cda_rail::index_set> const&                  ttd_sections);
+
+  // Train Order
+  struct IndexBound {
+    size_t lb{};
+    size_t ub{};
+
+    bool operator==(const IndexBound& other) const {
+      return lb == other.lb && ub == other.ub;
+    }
+  };
+  /**
+   * @brief Infers feasible insertion bounds in a successor order.
+   *
+   * @param tr Train index to insert.
+   * @param prev_order Previous order constraining relative precedence.
+   * @param next_order Order into which the train is inserted.
+   * @param tr_sharing_path Trains sharing the relevant subpath.
+   * @param insert_at_end Whether insertion is forced to the end.
+   * @return Inclusive lower and upper insertion bounds.
+   */
+  [[nodiscard]] static IndexBound infer_order_insertion_bounds(
+      size_t tr, cda_rail::index_vector const& prev_order,
+      cda_rail::index_vector const& next_order,
+      cda_rail::index_set const& tr_sharing_path, bool insert_at_end);
+  /**
+   * @brief Infers feasible insertion bounds in an entry-vertex order.
+   *
+   * @param tr Train index to insert.
+   * @param entry_order Existing order at the entry vertex.
+   * @param late_entry_possible Whether late entry relaxes ordering bounds.
+   * @param insert_at_end Whether insertion is forced to the end.
+   * @param instance Performance-optimization instance.
+   * @return Inclusive lower and upper insertion bounds.
+   */
+  [[nodiscard]] static IndexBound infer_order_entry_order_bounds(
+      size_t tr, cda_rail::index_vector const& entry_order,
+      bool late_entry_possible, bool insert_at_end,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
+
+  // State Extension
+  /**
+   * @brief Extends one train route by a candidate path extension.
+   *
+   * @param tr Train index.
+   * @param state State to extend.
+   * @param path_extension_data Candidate path extension.
+   * @param instance Performance-optimization instance.
+   * @return Extended states generated from the path extension.
+   */
+  [[nodiscard]] static std::vector<simulator::SimulatorState>
+  extend_state_by_path_extension(
+      size_t tr, simulator::SimulatorState state,
+      PathExtensionData const& path_extension_data,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
+  /**
+   * @brief Extends TTD and vertex orders for one train in a state.
+   *
+   * @param tr Train index.
+   * @param state State to extend.
+   * @param model_detail_input Simulation-model settings.
+   * @param solver_strategy_input A* search strategy settings.
+   * @param ttd_sections TTD sections of the network.
+   * @param instance Performance-optimization instance.
+   * @return States with updated order vectors.
+   */
+  [[nodiscard]] static std::vector<simulator::SimulatorState>
+  extend_train_orders_of_state(
+      size_t tr, simulator::SimulatorState state,
+      const ModelDetail&                      model_detail_input,
+      const SolverStrategyMBAStar&            solver_strategy_input,
+      std::vector<cda_rail::index_set> const& ttd_sections,
+      instances::GeneralPerformanceOptimizationInstance const* instance);
+  /**
+   * @brief Recursively propagates order extensions along newly added route
+   *        segments.
+   *
+   * @param tr Train index.
+   * @param state State to extend.
+   * @param solver_strategy_input A* search strategy settings.
+   * @param ttd_sections TTD sections of the network.
+   * @param instance Performance-optimization instance.
+   * @param prev_order Previously fixed order constraining the next insertion.
+   * @param first_edge_index First route-edge index to inspect.
+   * @param safe_ttd Optional TTD already accounted for.
+   * @return States with recursively extended order vectors.
+   */
+  [[nodiscard]] static std::vector<simulator::SimulatorState>
+  extend_train_orders_of_state_recursive_helper(
+      size_t tr, simulator::SimulatorState state,
+      const SolverStrategyMBAStar&            solver_strategy_input,
+      std::vector<cda_rail::index_set> const& ttd_sections,
+      instances::GeneralPerformanceOptimizationInstance const* instance,
+      cda_rail::index_vector const& prev_order, size_t first_edge_index,
+      std::optional<size_t> const& safe_ttd);
 
   /**
    * @brief Generates the next reachable states using the specified transition
    * strategy.
    *
-   * @param simulator The greedy simulator providing the current state.
+   * @param simulator_state The current simulator state
+   * @param simulator_results The current simulator results
+   * @param model_detail_input The model details, in particular, if late entry
+   * is possible
    * @param solver_strategy_input The strategy to use, in particular, for state
    * transitions.
-   * @return An unordered set of next possible states.
+   * @param instance The problem instance.
+   * @param ttd_sections The TTD sections of the network.
+   * @return A vector of next possible states.
    * @throws cda_rail::exceptions::ConsistencyException If the transition
    * strategy is unknown.
    */
-  [[nodiscard]] static std::unordered_set<GreedySimulatorState>
-  next_states(const simulator::GreedySimulator& simulator,
-              const SolverStrategyMBAStar&      solver_strategy_input) {
-    if (solver_strategy_input.time_aware_state_transitions) {
-      throw cda_rail::exceptions::ConsistencyException(
-          "Time aware state transitions are not yet implemented.");
-    }
-
-    switch (solver_strategy_input.next_state_strategy) {
-    case NextStateStrategy::SingleEdge:
-      return next_states_single_edge(simulator);
-    case NextStateStrategy::NextTTD:
-      return next_states_next_ttd(simulator);
-    default:
-      throw cda_rail::exceptions::ConsistencyException(
-          "Unknown next state strategy.");
-    }
-  }
+  [[nodiscard]] static std::vector<simulator::SimulatorState>
+  next_states(const simulator::SimulatorState&   simulator_state,
+              const simulator::SimulatorResults& simulator_results,
+              const ModelDetail&                 model_detail_input,
+              const SolverStrategyMBAStar&       solver_strategy_input,
+              instances::GeneralPerformanceOptimizationInstance const* instance,
+              std::vector<cda_rail::index_set> const& ttd_sections);
 
   // ----------------------
   // DATA STRUCTURE
   // ----------------------
 
   struct StateObjectivePair {
-    double               objective{};
-    bool                 is_final_state{};
-    GreedySimulatorState state{};
+    double                      objective{};
+    bool                        is_final_state{};
+    simulator::SimulatorState   state{};
+    simulator::SimulatorResults results{};
   };
 
   struct CompareByObjective {

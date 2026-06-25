@@ -7,6 +7,7 @@
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 #include "datastructure/Train.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -46,6 +47,11 @@ protected:
   };
 
 public:
+  /**
+   * @brief Exports the instance to the specified working directory.
+   *
+   * @param working_directory Base export directory.
+   */
   virtual void
   export_instance(const std::filesystem::path& working_directory) const = 0;
 
@@ -67,14 +73,24 @@ public:
     export_instance(std::filesystem::path(workingDirectory));
   };
 
+  /**
+   * @brief Checks whether the instance is internally consistent.
+   *
+   * @return `true` if the instance is consistent, otherwise `false`.
+   */
   [[nodiscard]] virtual bool check_consistency() const = 0;
 
+  /** @brief Virtual destructor. */
   virtual ~GeneralProblemInstance() = default;
 
   // rule of 5 (because of virtual destructor)
-  GeneralProblemInstance(const GeneralProblemInstance&)            = default;
+  /** @brief Copy constructor. */
+  GeneralProblemInstance(const GeneralProblemInstance&) = default;
+  /** @brief Copy assignment operator. */
   GeneralProblemInstance& operator=(const GeneralProblemInstance&) = default;
-  GeneralProblemInstance(GeneralProblemInstance&&) noexcept        = default;
+  /** @brief Move constructor. */
+  GeneralProblemInstance(GeneralProblemInstance&&) noexcept = default;
+  /** @brief Move assignment operator. */
   GeneralProblemInstance&
   operator=(GeneralProblemInstance&&) noexcept = default;
 
@@ -125,6 +141,7 @@ class GeneralProblemInstanceWithScheduleAndRoutes
   RouteMap  m_routes{};
 
 protected:
+  /** @brief Constructs an empty problem instance with schedule and routes. */
   GeneralProblemInstanceWithScheduleAndRoutes() = default;
   /**
    * @brief Initializes the instance with a network.
@@ -141,6 +158,13 @@ protected:
                                                        RouteMap  routes)
       : m_network(std::move(network)), m_timetable(std::move(timetable)),
         m_routes(std::move(routes)) {};
+  /**
+   * @brief Loads a full problem instance from disk.
+   *
+   * @param instance_name Instance name.
+   * @param instance_subdirectory Instance subdirectory.
+   * @param working_directory Base working directory.
+   */
   GeneralProblemInstanceWithScheduleAndRoutes(
       std::string_view instance_name, std::string_view instance_subdirectory,
       std::filesystem::path const& working_directory);
@@ -193,9 +217,30 @@ public:
   using GeneralProblemInstance::export_instance;
 
   // --------------------
+  // HELPER
+  // --------------------
+  /**
+   * @brief Checks whether a route end is a valid stopping position.
+   *
+   * @param tr Train index.
+   * @param edges Current route edges.
+   * @param next_stop_id Index of the next scheduled stop.
+   * @return `true` if the route end can serve as a stop position.
+   */
+  [[nodiscard]] bool
+  is_route_end_valid_stop_pos(size_t tr, const cda_rail::index_vector& edges,
+                              size_t next_stop_id) const;
+
+  // --------------------
   // EXPORT
   // --------------------
 
+  /**
+   * @brief Exports the instance and optionally its network.
+   *
+   * @param working_directory Base export directory.
+   * @param save_network Whether to export the network alongside the instance.
+   */
   virtual void export_instance(std::filesystem::path const& working_directory,
                                bool                         save_network) const;
   /**
@@ -306,11 +351,17 @@ public:
 
   // Route getter
 
+  /**
+   * @brief Checks whether every train has an assigned route.
+   *
+   * @return `true` if each train has a route, otherwise `false`.
+   */
   [[nodiscard]] bool has_route_for_every_train() const;
 
   /**
    * @brief Computes the total length of a train's route.
    *
+   * @param train_name Name of the train.
    * @return double The total length of the train's route.
    */
   [[nodiscard]] double route_length(const std::string& train_name) const {
@@ -336,10 +387,26 @@ public:
         tr, station_name, this->get_const_network(), edges_to_consider);
   };
 
+  /**
+   * @brief Returns the last reachable stop position of a station on a route.
+   *
+   * @param tr_id Train index.
+   * @param station_name Name of the station.
+   * @return Last route position on which the train can stop at the station, or
+   *         `std::nullopt` if no such position exists on the current route.
+   */
   [[nodiscard]] std::optional<double>
   get_last_stop_position_on_route(size_t             tr_id,
                                   const std::string& station_name) const;
 
+  /**
+   * @brief Computes feasible stop-edge paths for a train at a station.
+   *
+   * @param tr Train index.
+   * @param station_name Name of the station.
+   * @param edges_to_consider Optional subset of edges to consider.
+   * @return Possible stop vertices, organized by track.
+   */
   [[nodiscard]] std::vector<
       std::pair<size_t, std::vector<cda_rail::index_vector>>>
   possible_stop_vertices(
@@ -365,6 +432,14 @@ public:
 
   // Train usage functions
 
+  /**
+   * @brief Returns the edges used by a train.
+   *
+   * @param train_name Name of the train.
+   * @param fixed_routes Whether to use fixed routes.
+   * @param error_if_no_route Whether to throw if no route exists.
+   * @return Set of used edge indices.
+   */
   [[nodiscard]] cda_rail::index_set
   edges_used_by_train(const std::string& train_name, bool fixed_routes,
                       bool error_if_no_route = true) const;
@@ -385,6 +460,14 @@ public:
         error_if_no_route);
   }
 
+  /**
+   * @brief Returns the vertices used by a train.
+   *
+   * @param tr_name Name of the train.
+   * @param fixed_routes Whether to use fixed routes.
+   * @param error_if_no_route Whether to throw if no route exists.
+   * @return Set of used vertex indices.
+   */
   [[nodiscard]] cda_rail::index_set
   vertices_used_by_train(const std::string& tr_name, bool fixed_routes,
                          bool error_if_no_route = true) const;
@@ -405,6 +488,15 @@ public:
         error_if_no_route);
   }
 
+  /**
+   * @brief Returns the queried sections used by a train.
+   *
+   * @param tr_name Name of the train.
+   * @param sections Sections to test.
+   * @param fixed_routes Whether to use fixed routes.
+   * @param error_if_no_route Whether to throw if no route exists.
+   * @return Set of section indices used by the train.
+   */
   [[nodiscard]] cda_rail::index_set
   sections_used_by_train(const std::string&                      tr_name,
                          const std::vector<cda_rail::index_set>& sections,
@@ -428,6 +520,14 @@ public:
         fixed_routes, error_if_no_route);
   }
 
+  /**
+   * @brief Returns the trains that use a section.
+   *
+   * @param section Section represented as an edge set.
+   * @param fix_routes Whether to use fixed routes.
+   * @param error_if_no_route Whether to throw for trains without routes.
+   * @return Set of train indices using the section.
+   */
   [[nodiscard]] cda_rail::index_set
   trains_in_section(const cda_rail::index_set& section, bool fix_routes = true,
                     bool error_if_no_route = true) const;
@@ -448,6 +548,16 @@ public:
     return trains_on_edge(this->get_const_routes(), edge_id, fixed_routes,
                           trains_to_consider, error_if_not_route);
   }
+  /**
+   * @brief Identifies which trains from a subset use the specified edge.
+   *
+   * @param route_map Route map to inspect.
+   * @param edge_id Edge index.
+   * @param fixed_routes Whether to restrict the check to fixed routes.
+   * @param trains_to_consider Subset of train indices to test.
+   * @param error_if_not_route Whether to treat missing routes as errors.
+   * @return Index set of trains from `trains_to_consider` that use the edge.
+   */
   [[nodiscard]] cda_rail::index_set
   trains_on_edge(RouteMap const& route_map, size_t edge_id, bool fixed_routes,
                  const cda_rail::index_set& trains_to_consider,
@@ -468,6 +578,15 @@ public:
     return all_trains_on_edge(this->get_const_routes(), edge_id, fixed_routes,
                               error_if_not_route);
   }
+  /**
+   * @brief Returns all trains whose routes use the specified edge.
+   *
+   * @param route_map Route map to inspect.
+   * @param edge_id Edge index.
+   * @param fixed_routes Whether to restrict the check to fixed routes.
+   * @param error_if_not_route Whether to treat missing routes as errors.
+   * @return Index set of all trains using the edge under the chosen route map.
+   */
   [[nodiscard]] cda_rail::index_set
   all_trains_on_edge(RouteMap const& route_map, size_t edge_id,
                      bool fixed_routes       = true,
@@ -478,6 +597,18 @@ public:
   /**
    * @brief Adds a train with the specified properties to the timetable.
    *
+   * @param train_name Name identifier for the train.
+   * @param length Length of the train.
+   * @param max_speed Maximum speed.
+   * @param acceleration Acceleration rate.
+   * @param deceleration Deceleration rate.
+   * @param tim Whether train integrity monitoring is available.
+   * @param entry_time Time when the train enters the network.
+   * @param initial_velocity Velocity upon entry.
+   * @param entry_vertex Vertex where the train enters.
+   * @param exit_time Time when the train exits the network.
+   * @param exit_velocity Velocity upon exit.
+   * @param exit_vertex Vertex where the train exits.
    * @return Index of the newly added train.
    */
 
@@ -659,6 +790,8 @@ public:
   /**
    * @brief Identifies time-to-distance overlaps between two trains.
    *
+   * @param train1 Name of the first train.
+   * @param train2 Name of the second train.
    * @return std::vector<ConflictPair> Conflicts where the trains overlap in
    * time and distance.
    */
@@ -670,6 +803,8 @@ public:
   /**
    * @brief Identifies sections where two trains travel in opposite directions.
    *
+   * @param train1 Name of the first train.
+   * @param train2 Name of the second train.
    * @return A vector of conflict pairs representing sections where the trains
    * traverse the same edges in opposite directions.
    */
@@ -682,6 +817,8 @@ public:
   /**
    * @brief Identifies crossing conflicts between two trains' routes.
    *
+   * @param train1 Name of the first train.
+   * @param train2 Name of the second train.
    * @return std::vector<ConflictPair> containing all crossing conflicts between
    * the two trains' routes.
    */
@@ -705,6 +842,12 @@ public:
     return check_consistency(true);
   }
 
+  /**
+   * @brief Checks consistency while optionally allowing trains without routes.
+   *
+   * @param every_train_must_have_route Whether every train must have a route.
+   * @return `true` if the instance is consistent under the requested rule.
+   */
   [[nodiscard]] virtual bool
   check_consistency(bool every_train_must_have_route) const;
 };
@@ -738,9 +881,30 @@ protected:
       : m_instance(std::move(instance_ptr)), m_status(status), m_obj(obj),
         m_has_sol(has_sol) {};
 
-  [[nodiscard]] json get_general_solution_data() const;
-  void               set_general_solution_data(const json& data);
+  /**
+   * @brief Serializes solution-wide metadata to JSON.
+   *
+   * @return JSON object containing status, objective, and availability flags.
+   */
+  [[nodiscard]] nlohmann::json get_general_solution_data() const;
+  /**
+   * @brief Loads solution-wide metadata from JSON.
+   *
+   * @param data JSON object containing general solution fields.
+   */
+  void set_general_solution_data(const nlohmann::json& data);
 
+  /**
+   * @brief Retrieves the underlying problem instance pointer.
+   *
+   * @return Const pointer to the underlying `GeneralProblemInstance`.
+   */
+  [[nodiscard]] GeneralProblemInstance const*
+  get_uncast_instance_pointer() const {
+    return m_instance.get();
+  };
+
+public:
   /**
    * @brief Computes the file path for exporting a solution.
    *
@@ -769,17 +933,6 @@ protected:
             get_instance()->get_instance_subdirectory() / adjusted_name};
   }
 
-  /**
-   * @brief Retrieves the underlying problem instance pointer.
-   *
-   * @return Const pointer to the underlying `GeneralProblemInstance`.
-   */
-  [[nodiscard]] GeneralProblemInstance const*
-  get_uncast_instance_pointer() const {
-    return m_instance.get();
-  };
-
-public:
   /**
    * @brief Provides access to the problem instance.
    * @return GeneralProblemInstance const* A const pointer to the underlying
@@ -919,8 +1072,14 @@ public:
                     parameter_identifier);
   };
 
+  /**
+   * @brief Checks whether the stored solution metadata is consistent.
+   *
+   * @return `true` if the solution state is consistent, otherwise `false`.
+   */
   [[nodiscard]] virtual bool check_consistency() const;
 
+  /** @brief Virtual destructor. */
   virtual ~SolGeneralProblemInstance() = default;
 
   // Rule of 5 due to virtual deconstructor
@@ -1009,6 +1168,7 @@ public:
       SolGeneralProblemInstanceWithScheduleAndRoutes&&) noexcept = default;
   ~SolGeneralProblemInstanceWithScheduleAndRoutes() override     = default;
 
+  /** @brief Loads the route-aware part of a solution from disk. */
   void load_solution(
       const std::filesystem::path&      working_directory,
       std::string_view                  solution_subdirectory,
@@ -1048,7 +1208,13 @@ public:
   }
 
   // RouteMap functions
+  /** @brief Resets solution routes to the instance's fixed routes. */
   void reset_routes();
+  /**
+   * @brief Adds an empty solution route for a train.
+   *
+   * @param train_name Name of the train.
+   */
   void add_empty_route(const std::string& train_name);
 
   /**
@@ -1127,6 +1293,11 @@ public:
                   std::string_view solution_subdirectory, bool save_instance,
                   std::optional<std::string> const& parameter_identifier) const;
 
+  /**
+   * @brief Checks whether the solution routes are consistent with the instance.
+   *
+   * @return `true` if the solution is consistent, otherwise `false`.
+   */
   [[nodiscard]] bool check_consistency() const override;
 };
 } // namespace cda_rail::instances

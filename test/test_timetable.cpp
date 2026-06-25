@@ -436,3 +436,41 @@ TEST(TimetableFunctionality, TimetableConsistency2) {
   EXPECT_EQ(timetable.get_schedule("TestTrain").get_stops().size(), 1);
   EXPECT_FALSE(timetable.check_consistency(network2));
 }
+
+TEST(TimetableFunctionality, ScheduleStationIndex) {
+  cda_rail::Network network;
+  network.add_vertex("v0", cda_rail::VertexType::TTD);
+  network.add_vertex("v1", cda_rail::VertexType::TTD);
+  network.add_edge({"v0"}, {"v1"}, 100, 10, true, 10);
+
+  cda_rail::Timetable timetable;
+  timetable.add_empty_station("Station1");
+  timetable.add_empty_station("Station2");
+  timetable.add_empty_station("Station3");
+
+  auto const tr1 = timetable.add_train("Train1", 100, 10, 1, 1, 0, 0, {"v0"},
+                                       60, 0, {"v1"}, network);
+  auto const tr2 = timetable.add_train("Train2", 100, 10, 1, 1, 0, 0, {"v1"},
+                                       60, 0, {"v0"}, network);
+
+  timetable.insert_stop(tr1, "Station2", 10, 20);
+  timetable.insert_stop(tr1, "Station3", 30, 20);
+
+  EXPECT_EQ(timetable.get_schedule(tr1).get_station_index("Station2"), 0);
+  EXPECT_EQ(timetable.get_schedule(tr1).get_station_index("Station3"), 1);
+  EXPECT_THROW((void)timetable.get_schedule(tr1).get_station_index("Station1"),
+               cda_rail::exceptions::StationNotExistentException);
+  EXPECT_THROW(
+      (void)timetable.get_schedule(tr1).get_station_index("NonExitingStation"),
+      cda_rail::exceptions::StationNotExistentException);
+
+  EXPECT_THROW((void)timetable.get_schedule(tr2).get_station_index("Station1"),
+               cda_rail::exceptions::StationNotExistentException);
+  EXPECT_THROW((void)timetable.get_schedule(tr2).get_station_index("Station2"),
+               cda_rail::exceptions::StationNotExistentException);
+  EXPECT_THROW((void)timetable.get_schedule(tr2).get_station_index("Station3"),
+               cda_rail::exceptions::StationNotExistentException);
+  EXPECT_THROW(
+      (void)timetable.get_schedule(tr2).get_station_index("NonExitingStation"),
+      cda_rail::exceptions::StationNotExistentException);
+}

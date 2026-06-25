@@ -7,13 +7,37 @@
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
+#include <functional>
+#include <iterator>
 #include <memory>
+#include <numeric>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+bool cda_rail::simulator::SimulatorState::operator==(
+    const SimulatorState& other) const {
+  return train_edges == other.train_edges && ttd_orders == other.ttd_orders &&
+         vertex_orders == other.vertex_orders &&
+         stop_positions == other.stop_positions;
+}
+
+bool cda_rail::simulator::SimulatorState::operator>(
+    const SimulatorState& other) const {
+  auto get_obj = [](const auto& edges) {
+    const auto edge_sizes =
+        edges | std::views::transform([](const auto& e) { return e.size(); });
+    return std::accumulate(edge_sizes.begin(), edge_sizes.end(), 0.0,
+                           std::plus<>{});
+  };
+
+  return get_obj(train_edges) > get_obj(other.train_edges);
+}
 
 cda_rail::simulator::GeneralSimulator::GeneralSimulator(
     std::shared_ptr<
@@ -164,31 +188,12 @@ size_t cda_rail::simulator::GeneralSimulator::get_edge_at_position(
       std::to_string(train_id) + ".");
 }
 
-bool cda_rail::simulator::GeneralSimulator::is_route_end_valid_stop_pos(
-    size_t tr, const cda_rail::index_vector& edges) const {
-  m_instance->get_const_train_list().throw_if_train_not_exist(tr);
-
-  const auto& tr_length =
-      m_instance->get_const_train_list().get_train(tr).get_length();
-  const auto& tr_schedule = m_instance->get_const_schedule(tr).get_stops();
-  if (m_stop_positions.at(tr).size() >= tr_schedule.size()) {
-    // All stops have been set, hence, no further stop is possible
-    return false;
-  }
-  const auto& next_station =
-      tr_schedule.at(m_stop_positions.at(tr).size()).get_station();
-
-  double len = 0;
-  for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
-       ++it) {
-    if (!std::ranges::contains(next_station.tracks, *it)) {
-      // Track does not belong to the next station
-      return false;
-    }
-    len += m_instance->get_const_network().get_edge(*it).length;
-  }
-
-  return len >= tr_length;
+void cda_rail::simulator::GeneralSimulator::set_simulator_state(
+    SimulatorState state) {
+  set_train_edges(std::move(state.train_edges));
+  set_stop_positions(std::move(state.stop_positions));
+  set_ttd_orders(std::move(state.ttd_orders));
+  set_vertex_orders(std::move(state.vertex_orders));
 }
 
 void cda_rail::simulator::GeneralSimulator::set_train_edges(
@@ -204,16 +209,17 @@ void cda_rail::simulator::GeneralSimulator::set_train_edges_of_tr(
 }
 
 void cda_rail::simulator::GeneralSimulator::append_train_edge_to_tr(
-    size_t train_id, size_t edge) {
+    size_t train_id, cda_rail::Network::EdgeInput const& edge) {
   m_instance->get_const_train_list().throw_if_train_not_exist(train_id);
+  auto const edge_id = m_instance->get_const_network().get_edge_index(edge);
   if (m_train_edges.at(train_id).empty()) {
-    check_train_edges_for_tr(train_id, cda_rail::index_vector{edge});
+    check_train_edges_for_tr(train_id, cda_rail::index_vector{edge_id});
   } else {
     auto const& last_edge = m_train_edges.at(train_id).back();
     m_instance->get_const_network().throw_if_not_valid_successor(last_edge,
                                                                  edge);
   }
-  m_train_edges.at(train_id).push_back(edge);
+  m_train_edges.at(train_id).push_back(edge_id);
 }
 
 void cda_rail::simulator::GeneralSimulator::set_ttd_orders(
@@ -396,6 +402,43 @@ cda_rail::simulator::GeneralSimulator::tr_on_edges() const {
   return trains_on_edges;
 }
 
+cda_rail::index_set
+cda_rail::simulator::GeneralSimulator::trains_on_path_helper(
+    cda_rail::index_vector const&              edges,
+    std::vector<cda_rail::index_vector> const& tr_edges) {
+  // Set of trains where edges is exact subsequence of tr_edges.at(tr)
+  if (edges.empty()) {
+    return {};
+  }
+
+  cda_rail::index_set retval;
+  auto                matching_indices =
+      std::views::iota(size_t{0}, tr_edges.size()) |
+      std::views::filter([&tr_edges, &edges](size_t const tr) {
+        return std::ranges::contains_subrange(tr_edges.at(tr), edges);
+      });
+
+  std::ranges::copy(matching_indices, std::inserter(retval, retval.end()));
+  return retval;
+}
+
+cda_rail::index_set cda_rail::simulator::GeneralSimulator::trains_on_path(
+    cda_rail::index_vector const&              edges,
+    std::vector<cda_rail::index_vector> const& tr_edges, Network const& network,
+    bool also_reverse_path) {
+  auto retval = trains_on_path_helper(edges, tr_edges);
+  if (also_reverse_path) {
+    if (auto const reverse_path = network.get_reverse_path(edges);
+        reverse_path.has_value()) {
+      auto const tr_on_reverse_path =
+          trains_on_path_helper(reverse_path.value(), tr_edges);
+      std::ranges::copy(tr_on_reverse_path,
+                        std::inserter(retval, retval.end()));
+    }
+  }
+  return retval;
+}
+
 void cda_rail::simulator::GeneralSimulator::check_ttd_sections(
     std::vector<cda_rail::index_set> const& ttd_sections) const {
   for (auto const& section : ttd_sections) {
@@ -539,4 +582,45 @@ void cda_rail::simulator::GeneralSimulator::check_stop_positions(
   for (size_t tr = 0; tr < m_instance->get_const_train_list().size(); ++tr) {
     check_stop_positions_for_tr(tr, stop_positions.at(tr));
   }
+}
+
+std::size_t std::hash<cda_rail::simulator::SimulatorState>::operator()(
+    const cda_rail::simulator::SimulatorState& state) const noexcept {
+  // Based on boost::hash_combine implementation
+
+  size_t seed         = 0;
+  auto   hash_combine = [&seed](size_t h) {
+    seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  };
+
+  hash_combine(std::hash<size_t>{}(state.train_edges.size()));
+  for (const auto& vec : state.train_edges) {
+    hash_combine(std::hash<size_t>{}(vec.size()));
+    for (const size_t v : vec) {
+      hash_combine(std::hash<size_t>{}(v));
+    }
+  }
+  hash_combine(std::hash<size_t>{}(state.ttd_orders.size()));
+  for (const auto& vec : state.ttd_orders) {
+    hash_combine(std::hash<size_t>{}(vec.size()));
+    for (const size_t v : vec) {
+      hash_combine(std::hash<size_t>{}(v));
+    }
+  }
+  hash_combine(std::hash<size_t>{}(state.vertex_orders.size()));
+  for (const auto& vec : state.vertex_orders) {
+    hash_combine(std::hash<size_t>{}(vec.size()));
+    for (const size_t v : vec) {
+      hash_combine(std::hash<size_t>{}(v));
+    }
+  }
+  hash_combine(std::hash<size_t>{}(state.stop_positions.size()));
+  for (const auto& vec : state.stop_positions) {
+    hash_combine(std::hash<size_t>{}(vec.size()));
+    for (const double v : vec) {
+      hash_combine(std::hash<double>{}(v));
+    }
+  }
+
+  return seed;
 }

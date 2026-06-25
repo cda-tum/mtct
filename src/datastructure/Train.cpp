@@ -12,8 +12,6 @@
 #include <string>
 #include <utility>
 
-using json = nlohmann::json;
-
 cda_rail::Train::Train(std::string name, double const length,
                        double const maxSpeed, double const acceleration,
                        double const deceleration, bool const tim)
@@ -45,7 +43,7 @@ cda_rail::TrainList::TrainList(const std::filesystem::path& p) {
     throw exceptions::ImportException("Could not open trains.json.");
   }
 
-  json data = json::parse(f);
+  nlohmann::json data = nlohmann::json::parse(f);
   for (const auto& [name, train] : data.items()) {
     const bool tim =
         train.contains("tim") ? static_cast<bool>(train.at("tim")) : true;
@@ -100,7 +98,7 @@ void cda_rail::TrainList::export_trains(std::filesystem::path const& p) const {
                                       p.string());
   }
 
-  json j;
+  nlohmann::json j;
   for (const auto& train : trains) {
     // NOLINTNEXTLINE(*-pro-bounds-avoid-unchecked-container-access)
     j[train.get_name()] = {{"length", train.get_length()},
@@ -111,5 +109,10 @@ void cda_rail::TrainList::export_trains(std::filesystem::path const& p) const {
   }
 
   std::ofstream file(p / "trains.json");
-  file << j << '\n';
+  if (!file.is_open()) {
+    throw exceptions::ExportException("Could not open trains.json for writing");
+  }
+  if (!(file << j << '\n')) {
+    throw exceptions::ExportException("Failed to write trains.json");
+  }
 }

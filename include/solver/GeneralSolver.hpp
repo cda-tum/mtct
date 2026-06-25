@@ -1,16 +1,34 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
 #include "GeneralHelper.hpp"
+#include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <optional>
-#include <plog/Logger.h>
-#include <plog/Severity.h>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
+
+// If TEST_FRIENDS has value true, the corresponding test is friended to test
+// complex private functions.
+// This is not good practice. However, after consideration, it was decided that
+// - it is not reasonable to make the functions public
+// - they have a complexity that should be tested
+// - by only testing the overall solution, there is too much code tested at once
+#ifndef TEST_FRIENDS
+#define TEST_FRIENDS false
+#endif
+#if TEST_FRIENDS
+class GenPOMovingBlockAStarSolver;
+class GenPOMovingBlockAStarSolver_SolverDataExport_Test;
+#endif
 
 namespace cda_rail::solver {
 enum class GeneralExportOption : std::uint8_t {
@@ -27,6 +45,10 @@ struct GeneralSolutionSettings {
 };
 
 template <typename T, typename S> class GeneralSolver {
+#if TEST_FRIENDS
+  FRIEND_TEST(::GenPOMovingBlockAStarSolver, SolverDataExport);
+#endif
+
   static_assert(
       std::is_base_of_v<cda_rail::instances::GeneralProblemInstance, T>,
       "T must be a child of GeneralProblemInstance");
@@ -48,24 +70,19 @@ protected:
   struct IsSingleInstanceArgument<Arg> : std::is_same<T, std::decay_t<Arg>> {};
 
   /**
-   * @brief Initializes logging and conditionally records solver start time.
+   * @brief Initializes logging and records solver start time.
    *
    * Initializes the plog logging framework according to the settings provided.
    * Records the current high-resolution clock time as the solver's start
-   * timestamp if either debug logging is enabled or a positive time limit is
-   * specified.
+   * timestamp.
    *
-   * @param time_limit If positive, triggers start time recording.
    * @param debug_input If true, enables debug-level logging.
    * @param overwrite_severity If true, overwrites the logging severity level.
    */
-  void solve_init_general(int time_limit, bool debug_input,
-                          bool overwrite_severity) {
+  void solve_init_general(bool debug_input, bool overwrite_severity) {
     cda_rail::initialize_plog(debug_input, overwrite_severity);
 
-    if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
-      m_start = std::chrono::high_resolution_clock::now();
-    }
+    m_start = std::chrono::high_resolution_clock::now();
   }
 
   /**
@@ -88,6 +105,57 @@ protected:
   explicit GeneralSolver(Args&&... args)
     requires(!IsSingleInstanceArgument<Args...>::value)
       : m_instance(std::forward<Args>(args)...) {}
+
+  struct FurtherData {
+    std::unordered_map<std::string, bool>        bool_data;
+    std::unordered_map<std::string, int>         integer_data;
+    std::unordered_map<std::string, double>      double_data;
+    std::unordered_map<std::string, std::string> string_data;
+  };
+  /**
+   * @brief Exports solver data, i.e., timing and further information (e.g.
+   * iterations, nodes, etc.) into solver_data.json.
+   *
+   * @param export_directory The directory of the solution export
+   * @param further_data Additional solver-specific data
+   * @throws exceptions::ExportException If the export directory could not be
+   * created
+   */
+  void export_solver_data(std::filesystem::path const& export_directory,
+                          FurtherData const&           further_data = {}) {
+    if (!is_directory_and_create(export_directory)) {
+      throw exceptions::ExportException("Could not create directory " +
+                                        export_directory.string());
+    }
+
+    nlohmann::json data;
+    data["model_creation_time"] =
+        get_time_difference_in_seconds(m_start, m_model_created);
+    data["model_solving_time"] =
+        get_time_difference_in_seconds(m_model_created, m_model_solved);
+    data["total_time"] =
+        get_time_difference_in_seconds(m_start, m_model_solved);
+    for (auto const& [key, value] : further_data.bool_data) {
+      data[concatenate_string_views({key, "_bool"})] = value;
+    }
+    for (auto const& [key, value] : further_data.integer_data) {
+      data[concatenate_string_views({key, "_int"})] = value;
+    }
+    for (auto const& [key, value] : further_data.double_data) {
+      data[concatenate_string_views({key, "_double"})] = value;
+    }
+    for (auto const& [key, value] : further_data.string_data) {
+      data[concatenate_string_views({key, "_string"})] = value;
+    }
+    std::ofstream data_file(export_directory / "solver_data.json");
+    if (!data_file.is_open()) {
+      throw exceptions::ExportException(
+          "Could not open solver_data.json for writing");
+    }
+    if (!(data_file << data << '\n')) {
+      throw exceptions::ExportException("Failed to write solver_data.json");
+    }
+  }
 
 public:
   /**

@@ -25,13 +25,52 @@ endif()
 # This avoids googletest complaining that this (IPO) policy is not set
 cmake_policy(SET CMP0069 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(
   rail
   LANGUAGES CXX
   DESCRIPTION "")
+
+# Require C++23
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF) # Highly recommended to prevent GCC/Clang-specific extensions
+
+# Explicitly check for C++23 capable compilers
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "13.0")
+    message(
+      FATAL_ERROR
+        "GCC >= 13.0 is strictly required for C++23 <ranges> support.
+        You are using GCC ${CMAKE_CXX_COMPILER_VERSION}.
+        Please update your compiler or use 'export CXX=g++-13'.
+        Alternatively, you can use 'CXX=g++-13 CC=gcc-13 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release'.")
+  endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "17.0")
+    message(
+      FATAL_ERROR
+        "Clang >= 17.0 is strictly required for C++23 <ranges> support.
+        You are using Clang ${CMAKE_CXX_COMPILER_VERSION}.
+        Please update your compiler.")
+  endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "16.0")
+    message(
+      FATAL_ERROR
+        "Apple Clang >= 16.0 (Xcode >= 16.0) is strictly required for C++23 <ranges> support.
+        You are using Apple Clang ${CMAKE_CXX_COMPILER_VERSION}.
+        Please update Xcode.")
+  endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "19.34")
+    message(
+      FATAL_ERROR
+        "MSVC >= 19.34 (Visual Studio 2022 17.4) is strictly required for C++23 <ranges> support.
+        You are using MSVC ${CMAKE_CXX_COMPILER_VERSION}.
+        Please update Visual Studio.")
+  endif()
+endif()
 
 # check whether the submodule ``modulename`` is correctly cloned in the ``/extern`` directory.
 macro(CHECK_SUBMODULE_PRESENT modulename)
@@ -44,7 +83,6 @@ macro(CHECK_SUBMODULE_PRESENT modulename)
   endif()
 endmacro()
 
-include(cmake/StandardProjectSettings.cmake)
 if(NOT TARGET project_options)
   # Use the options specified in CompilerOptions.cmake
   add_library(project_options INTERFACE)

@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <functional>
+#include <iterator>
 #include <limits>
 #include <numeric>
 #include <optional>
@@ -140,7 +141,9 @@ cda_rail::Network::get_vertices_by_type(VertexType type) const {
                  std::views::filter([this, type](size_t i) {
                    return m_vertices.at(i).type == type;
                  });
-  return {indices.begin(), indices.end()};
+  cda_rail::index_vector result;
+  std::ranges::copy(indices, std::back_inserter(result));
+  return result;
 }
 
 std::pair<size_t, double>
@@ -308,6 +311,23 @@ cda_rail::Network::get_reverse_edge_index_helper(size_t edge_index) const {
   return {};
 }
 
+std::optional<cda_rail::index_vector>
+cda_rail::Network::get_reverse_path(cda_rail::index_vector const& edges) const {
+  if (edges.empty()) {
+    return std::nullopt;
+  }
+
+  cda_rail::index_vector retval;
+  for (auto const& edge : edges | std::views::reverse) {
+    auto const rev_edge_index = get_reverse_edge_index(edge);
+    if (!rev_edge_index.has_value()) {
+      return std::nullopt;
+    }
+    retval.emplace_back(rev_edge_index.value());
+  }
+  return retval;
+}
+
 std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
 cda_rail::Network::combine_reverse_edges(
     const cda_rail::index_vector& edges_to_consider, bool sort) const {
@@ -339,7 +359,9 @@ cda_rail::index_vector cda_rail::Network::breakable_edges() const {
   auto view =
       std::views::iota(size_t{0}, number_of_edges()) |
       std::views::filter([this](size_t i) { return get_edge(i).breakable; });
-  return {view.begin(), view.end()};
+  cda_rail::index_vector result;
+  std::ranges::copy(view, std::back_inserter(result));
+  return result;
 }
 
 cda_rail::index_vector cda_rail::Network::relevant_breakable_edges() const {
@@ -761,15 +783,30 @@ cda_rail::Network::discretize(const vss::SeparationFunction& sep_func) {
 std::vector<cda_rail::index_vector>
 cda_rail::Network::all_paths_ending_at_ttd_helper(
     size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections,
-    std::optional<size_t> exit_node) const {
+    std::optional<size_t> exit_node, bool skip_irrelevant_ttds,
+    bool zero_length_if_next_edge_is_ttd) const {
   std::vector<cda_rail::index_vector> result;
+
+  std::optional<size_t> const safe_ttd = get_ttd_of_edge(e_0, ttd_sections);
+
   for (const auto successor : get_successors(e_0)) {
     for (const auto& path : all_paths_ending_at_ttd_recursive_helper(
-             successor, ttd_sections, exit_node, {}, true)) {
+             successor, ttd_sections, exit_node, safe_ttd,
+             !zero_length_if_next_edge_is_ttd, skip_irrelevant_ttds)) {
       result.push_back(path);
     }
   }
   return result;
+}
+
+std::optional<size_t> cda_rail::Network::get_ttd_of_edge(
+    size_t e_0, const std::vector<cda_rail::index_set>& ttd_sections) {
+  for (size_t ttd_idx = 0; ttd_idx < ttd_sections.size(); ++ttd_idx) {
+    if (ttd_sections.at(ttd_idx).contains(e_0)) {
+      return ttd_idx;
+    }
+  }
+  return std::nullopt;
 }
 
 double
@@ -933,4 +970,56 @@ cda_rail::Network::shortest_path_between_sets_using_edges_helper(
   }
 
   return {std::nullopt, {}};
+}
+
+std::unordered_set<size_t> cda_rail::Network::get_border_vertices_of_ttd(
+    const cda_rail::index_set& ttd_section) const {
+  std::unordered_map<size_t, std::unordered_set<size_t>> ttd_vertices{};
+  for (auto const& edge : ttd_section) {
+    auto const& edge_obj = get_edge(edge);
+    ttd_vertices[edge_obj.source].insert(edge_obj.target);
+    ttd_vertices[edge_obj.target].insert(edge_obj.source);
+  }
+  // Get all vertices whose neighbor set has size 1
+  auto border_vertices_view = ttd_vertices |
+                              std::views::filter([](const auto& pair) {
+                                return pair.second.size() == 1;
+                              }) |
+                              std::views::keys;
+
+  std::unordered_set<size_t> retval;
+  std::ranges::copy(border_vertices_view, std::inserter(retval, retval.end()));
+
+  return retval;
+}
+
+bool cda_rail::Network::has_ttd_path_helper(
+    size_t source_vertex, size_t target_vertex,
+    const cda_rail::index_set& ttd_section) const {
+  cda_rail::index_set first_edges{};
+  for (auto const e : out_edges_helper(source_vertex)) {
+    if (ttd_section.contains(e)) {
+      first_edges.insert(e);
+    }
+  }
+  return !first_edges.empty() &&
+         shortest_path_between_edge_and_vertex_set(first_edges, {target_vertex},
+                                                   true, ttd_section)
+             .first.has_value();
+}
+
+bool cda_rail::Network::has_ttd_path_not_using_border_vertex_helper(
+    size_t border_vertex, const cda_rail::index_set& ttd_section) const {
+  auto border_vertices = get_border_vertices_of_ttd(ttd_section);
+  border_vertices.erase(border_vertex);
+
+  for (const auto v1 : border_vertices) {
+    for (const auto v2 : border_vertices) {
+      if (v1 != v2 && has_ttd_path_helper(v1, v2, ttd_section)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }

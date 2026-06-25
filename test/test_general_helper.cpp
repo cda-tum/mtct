@@ -263,6 +263,13 @@ TEST(GeneralHelper, IsDirectoryAndCreate) {
   std::filesystem::remove_all(test_root, ec);
 }
 
+TEST(GeneralHelper, GetTimeDifferenceInSecondsSupportsSteadyClock) {
+  const auto start = std::chrono::steady_clock::now();
+  const auto end   = start + std::chrono::milliseconds(1250);
+
+  EXPECT_DOUBLE_EQ(cda_rail::get_time_difference_in_seconds(start, end), 1.25);
+}
+
 TEST(GeneralHelper, BoolOptionalChar) {
   std::optional<bool> opt_bool;
   EXPECT_FALSE(opt_bool.has_value());
@@ -404,6 +411,69 @@ TEST(Functionality, Iterators) {
     EXPECT_EQ(&schedule, &timetable.get_schedule(name));
     ++schedule_idx;
   }
+}
+
+TEST(GeneralHelper, LastFirstTimeStep) {
+  EXPECT_EQ(cda_rail::get_last_time_step_before(7.5, 2.5, true), 7.5);
+  EXPECT_EQ(cda_rail::get_last_time_step_before(7.5, 2.5, false), 5.0);
+  EXPECT_EQ(cda_rail::get_last_time_step_before(8.5, 2.5, true), 7.5);
+  EXPECT_EQ(cda_rail::get_last_time_step_before(8.5, 2.5, false), 7.5);
+
+  EXPECT_EQ(cda_rail::get_first_time_step_after(7.5, 2.5, true), 7.5);
+  EXPECT_EQ(cda_rail::get_first_time_step_after(7.5, 2.5, false), 10.0);
+  EXPECT_EQ(cda_rail::get_first_time_step_after(6.5, 2.5, true), 7.5);
+  EXPECT_EQ(cda_rail::get_first_time_step_after(6.5, 2.5, false), 7.5);
+}
+
+TEST(Playground, VectorInsert) {
+  std::vector<int> vec{5, 3, 8};
+  EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));
+
+  vec.insert(vec.begin() + 0, 10);
+  EXPECT_EQ(vec, std::vector<int>({10, 5, 3, 8}));
+
+  vec.insert(vec.begin() + 2, 20);
+  EXPECT_EQ(vec, std::vector<int>({10, 5, 20, 3, 8}));
+
+  vec.insert(vec.begin() + 5, 30);
+  EXPECT_EQ(vec, std::vector<int>({10, 5, 20, 3, 8, 30}));
+}
+
+TEST(Playground, VectorRemoval) {
+  std::vector<int> vec{5, 3, 8};
+  EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));
+
+  vec.insert(vec.begin() + 0, 10);
+  EXPECT_EQ(vec, std::vector<int>({10, 5, 3, 8}));
+
+  vec.erase(vec.begin() + 0);
+  EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));
+
+  vec.insert(vec.begin() + 2, 20);
+  EXPECT_EQ(vec, std::vector<int>({5, 3, 20, 8}));
+
+  vec.erase(vec.begin() + 2);
+  EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));
+}
+
+TEST(Playground, StructEdit) {
+  struct TestStruct {
+    std::vector<cda_rail::index_vector> vec1{};
+    cda_rail::index_vector              vec2{};
+  };
+
+  TestStruct test_struct{.vec1 = {{1, 2, 3}, {4, 5, 6}}, .vec2 = {7, 8, 9}};
+  auto&      editable_vec = test_struct.vec1.at(1);
+  editable_vec.push_back(7);
+
+  EXPECT_EQ(test_struct.vec1.at(0), cda_rail::index_vector({1, 2, 3}));
+  EXPECT_EQ(test_struct.vec1.at(1), cda_rail::index_vector({4, 5, 6, 7}));
+  EXPECT_EQ(test_struct.vec2, cda_rail::index_vector({7, 8, 9}));
+
+  editable_vec = cda_rail::index_vector({10, 11});
+  EXPECT_EQ(test_struct.vec1.at(0), cda_rail::index_vector({1, 2, 3}));
+  EXPECT_EQ(test_struct.vec1.at(1), cda_rail::index_vector({10, 11}));
+  EXPECT_EQ(test_struct.vec2, cda_rail::index_vector({7, 8, 9}));
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)
