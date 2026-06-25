@@ -165,6 +165,7 @@ int main(int argc, char** argv) {
   cda_rail::solver::GeneralExportOption export_option{
       cda_rail::solver::GeneralExportOption::NoExport};
   std::string                solution_subdirectory{};
+  std::string                export_working_directory{};
   std::optional<std::string> parameter_identifier{};
   bool                       generate_identifier{false};
 
@@ -187,12 +188,32 @@ int main(int argc, char** argv) {
              "Export the solution and the instance.")
           ->group("Export Options");
 
+  CLI::Validator requires_export_option(
+      [&export_sol_flag, &export_sol_inst_flag](std::string&) {
+        if (export_sol_flag->count() == 0 &&
+            export_sol_inst_flag->count() == 0) {
+          return std::string{"requires either --export-solution or "
+                             "--export-solution-and-instance"};
+        }
+        return std::string{};
+      },
+      " Needs: --export-solution or --export-solution-and-instance");
+  requires_export_option.non_modifying();
+
+  auto* export_working_directory_opt =
+      app.add_option(
+             "-b,--export-working-directory", export_working_directory,
+             "Working directory for exporting solutions. If unset, the normal "
+             "working directory is used.")
+          ->check(requires_export_option)
+          ->group("Export Options");
   auto* solution_subdir_opt =
       app.add_option(
              "-e,--solution-export-subdirectory", solution_subdirectory,
              "Subdirectory to export the solution to. Will be created in "
-             "working_directory/solutions/solution_subdirectory/"
+             "export_working_directory/solutions/solution_subdirectory/"
              "instance_name-parameters.")
+          ->check(requires_export_option)
           ->group("Export Options");
 
   export_sol_flag->needs(solution_subdir_opt);
@@ -221,11 +242,9 @@ int main(int argc, char** argv) {
   generate_identifier_flag->excludes(parameter_identifier_option);
 
   CLI11_PARSE(app, argc, argv);
-  if (solution_subdir_opt->count() > 0 && export_sol_flag->count() == 0 &&
-      export_sol_inst_flag->count() == 0) {
-    return app.exit(CLI::ValidationError(solution_subdir_opt->get_name(),
-                                         "requires either --export-solution or "
-                                         "--export-solution-and-instance"));
+
+  if (export_working_directory_opt->count() == 0) {
+    export_working_directory = working_directory;
   }
 
   // ----------------------
@@ -292,6 +311,7 @@ int main(int argc, char** argv) {
     PLOGD << "  Export option: Export solution with instance";
     break;
   }
+  PLOGD << "  Export working directory: " << export_working_directory;
   PLOGD << "  Solution export subdirectory: " << solution_subdirectory;
   PLOGD << "  Parameter identifier: " << parameter_identifier.value_or("-")
         << (generate_identifier ? " (generated)" : "");
@@ -316,7 +336,7 @@ int main(int argc, char** argv) {
        .time_aware_state_transitions  = time_aware_state_transitions,
        .a_star_weight                 = a_star_weight},
       {.export_option         = export_option,
-       .working_directory     = working_directory,
+       .working_directory     = export_working_directory,
        .solution_subdirectory = solution_subdirectory,
        .parameter_identifier  = parameter_identifier},
       time_limit, debug_output, true);
