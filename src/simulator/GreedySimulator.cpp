@@ -965,7 +965,7 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
   const bool last_edge_leaves_network =
       (last_edge.target == tr_schedule.get_exit_vertex());
 
-  if (last_edge_leaves_network) {
+  if (last_edge_leaves_network && pos < milestones.back() - GRB_EPS) {
     if (pos + max_displacement >= milestones.back()) {
       // Train's moving authority can potentially leave the network
       retval = speed_restriction_helper(
