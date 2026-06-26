@@ -130,6 +130,16 @@ public:
     exceptions::throw_if_invalid_folder_name(instanceSubdirectory);
     m_instance_subdirectory = instanceSubdirectory;
   }
+
+protected:
+  struct FeasibilityCheck {
+    bool        is_obviously_infeasible{false};
+    std::string reason{};
+  };
+
+public:
+  [[nodiscard]] virtual FeasibilityCheck
+  is_obviously_infeasible(bool late_entry_allowed) const = 0;
 };
 
 class GeneralProblemInstanceWithScheduleAndRoutes
@@ -850,6 +860,10 @@ public:
    */
   [[nodiscard]] virtual bool
   check_consistency(bool every_train_must_have_route) const;
+
+  // Helper
+  [[nodiscard]] FeasibilityCheck
+  is_obviously_infeasible(bool late_entry_allowed) const override;
 };
 
 class SolGeneralProblemInstance {
