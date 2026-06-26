@@ -207,6 +207,8 @@ protected:
             std::filesystem::path(workingDirectory)) {};
 
 public:
+  Timetable& editable_timetable() { return m_timetable; }
+
   // Rule of 5
   GeneralProblemInstanceWithScheduleAndRoutes(
       const GeneralProblemInstanceWithScheduleAndRoutes&) = default;
