@@ -1,6 +1,5 @@
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
-#include "GeneralHelper.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
@@ -2679,62 +2678,5 @@ TEST(GeneralPerformanceOptimizationInstances, RAS) {
       EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
     }
   }
-}
-
-TEST(GeneralPerformanceOptimizationInsancens, FixRAS) {
-  instances::GeneralPerformanceOptimizationInstance instance("practical", "ras",
-                                                             "data");
-
-  struct EntryInformation {
-    size_t tr_id;
-    Train  tr_obj;
-    double entry_time;
-  };
-  std::vector<std::vector<EntryInformation>> entry_information(
-      instance.get_const_network().number_of_vertices());
-
-  auto const num_trains =
-      instance.get_const_train_list().get_number_of_trains();
-  for (size_t tr = 0; tr < num_trains; ++tr) {
-    auto const& tr_obj      = instance.get_const_train_list().get_train(tr);
-    auto const& tr_schedule = instance.get_const_schedule(tr);
-    entry_information.at(tr_schedule.get_entry_vertex())
-        .emplace_back(tr, tr_obj, tr_schedule.get_entry_time());
-  }
-  for (size_t v = 0; v < instance.get_const_network().number_of_vertices();
-       ++v) {
-    auto const& vertex_obj = instance.get_const_network().get_vertex(v);
-
-    if (entry_information.at(v).empty()) {
-      continue;
-    }
-    // sort entry_information.at(v) by entry_time
-    std::ranges::sort(entry_information.at(v),
-                      [](const EntryInformation& a, const EntryInformation& b) {
-                        return a.entry_time < b.entry_time;
-                      });
-
-    double earliest_entry_time = 0.0;
-    for (auto const& entry : entry_information.at(v)) {
-      auto& tr_schedule =
-          instance.editable_timetable().editable_schedule(entry.tr_id);
-      if (entry.entry_time < earliest_entry_time) {
-        auto const time_diff =
-            relu(earliest_entry_time - tr_schedule.get_entry_time());
-        tr_schedule.set_entry_time(tr_schedule.get_entry_time() + time_diff);
-        for (size_t i = 0; i < tr_schedule.get_stops().size(); ++i) {
-          tr_schedule.editable_scheduled_stop(i).set_service_time(
-              tr_schedule.editable_scheduled_stop(i).get_service_time() +
-              time_diff);
-        }
-      }
-      earliest_entry_time = tr_schedule.get_entry_time() + vertex_obj.headway;
-    }
-  }
-
-  auto const [infeas, reas] = instance.is_obviously_infeasible(false);
-  ASSERT_FALSE(infeas) << "Instance is infeasible: " << reas;
-
-  instance.export_instance("data", false);
 }
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
