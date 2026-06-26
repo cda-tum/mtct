@@ -2639,4 +2639,24 @@ TEST(GeneralPerformanceOptimizationInstances,
   auto const [infeas2, reas2] = instance.is_obviously_infeasible(false);
   EXPECT_FALSE(infeas2);
 }
+
+TEST(GeneralPerformanceOptimizationInstances, ATMOS2023) {
+  std::filesystem::path const wd           = "data";
+  std::string const           subdirectory = "atmos2023";
+  // Expect directory data\instances\atmos2023 to exist
+  std::filesystem::path const dir_path = wd / "instances" / subdirectory;
+  EXPECT_TRUE(std::filesystem::exists(dir_path));
+  EXPECT_TRUE(std::filesystem::is_directory(dir_path));
+
+  // get all names of subdirecotires
+  for (auto const& entry : std::filesystem::directory_iterator(dir_path)) {
+    if (entry.is_directory()) {
+      auto const& name = entry.path().filename().string();
+      instances::GeneralPerformanceOptimizationInstance instance(
+          name, subdirectory, wd);
+      auto const [infeas, reas] = instance.is_obviously_infeasible(false);
+      EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
+    }
+  }
+}
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
