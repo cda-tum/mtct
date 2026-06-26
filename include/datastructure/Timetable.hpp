@@ -216,8 +216,6 @@ private:
   friend class Timetable;
 
 public:
-  ScheduledStop& editable_scheduled_stop(size_t idx) { return m_stops.at(idx); }
-
   // user-defined-constructor
   /**
    * @brief Constructs a schedule with fixed entry/exit constraints.
@@ -516,10 +514,6 @@ private:
   check_consistency_helper() const;
 
 public:
-  Schedule& editable_schedule(size_t train_index) {
-    return m_schedules.at(train_index);
-  }
-
   /**
    * @brief Creates an empty timetable.
    */
