@@ -131,7 +131,6 @@ public:
     m_instance_subdirectory = instanceSubdirectory;
   }
 
-public:
   struct FeasibilityCheck {
     bool        is_obviously_infeasible{false};
     std::string reason{};
