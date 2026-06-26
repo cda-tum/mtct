@@ -2289,7 +2289,7 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
 
 TEST(GenPOMovingBlockAStarSolver, GeneralSimpleNetwork) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "GeneralSimpleNetworkB3Trains", "gen-po", "./data");
+      "GeneralSimpleNetwork3Trains", "gen-po", "./data");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(
@@ -2305,7 +2305,7 @@ TEST(GenPOMovingBlockAStarSolver, GeneralSimpleNetwork) {
 
 TEST(GenPOMovingBlockAStarSolver, Timeout) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "GeneralSimpleNetworkB6Trains", "gen-po", "./data");
+      "GeneralSimpleNetwork6Trains", "gen-po", "./data");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(

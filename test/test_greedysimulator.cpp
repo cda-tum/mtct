@@ -2860,7 +2860,7 @@ TEST(GreedySimulation, SimpleNetwork) {
   plog::init(plog::verbose, &console_appender);
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "GeneralSimpleNetworkB6Trains", "gen-po", "./data");
+      "GeneralSimpleNetwork6Trains", "gen-po", "./data");
 
   const auto v2c_v3 =
       instance.get_const_network().get_edge_index({"v2c"}, {"v3"});
@@ -3140,7 +3140,7 @@ TEST(GreedySimulation, FaultyInstance) {
   plog::init(plog::verbose, &console_appender);
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "GeneralSimpleNetworkB6Trains", "gen-po", "./data");
+      "GeneralSimpleNetwork6Trains", "gen-po", "./data");
   const auto ttd_sections = instance.get_const_network().unbreakable_sections();
   cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
 
