@@ -3,8 +3,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 0,
-    "t_n": 900,
+    "t_0": 0.0,
+    "t_n": 900.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -12,8 +12,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": 0,
-    "t_n": 900,
+    "t_0": 0.0,
+    "t_n": 900.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -21,19 +21,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      {
-        "begin": 30,
-        "duration": 45,
-        "station": "StationRight"
-      },
-      {
-        "begin": 800,
-        "duration": 45,
-        "station": "StationLeft"
-      }
+      { "begin": 30.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 800.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 0,
-    "t_n": 900,
+    "t_0": 0.0,
+    "t_n": 900.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -41,19 +33,11 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      {
-        "begin": 1030,
-        "duration": 45,
-        "station": "StationLeft"
-      },
-      {
-        "begin": 1800,
-        "duration": 45,
-        "station": "StationRight"
-      }
+      { "begin": 1030.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 1800.0, "duration": 45.0, "station": "StationRight" }
     ],
-    "t_0": 1000,
-    "t_n": 1900,
+    "t_0": 1000.0,
+    "t_n": 1900.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -61,19 +45,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      {
-        "begin": 1030,
-        "duration": 45,
-        "station": "StationRight"
-      },
-      {
-        "begin": 1800,
-        "duration": 45,
-        "station": "StationLeft"
-      }
+      { "begin": 1030.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 1800.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 1000,
-    "t_n": 1900,
+    "t_0": 1000.0,
+    "t_n": 1900.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -81,19 +57,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      {
-        "begin": 1030,
-        "duration": 45,
-        "station": "StationRight"
-      },
-      {
-        "begin": 1800,
-        "duration": 45,
-        "station": "StationLeft"
-      }
+      { "begin": 1090.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 1860.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 1000,
-    "t_n": 1900,
+    "t_0": 1060.0,
+    "t_n": 1960.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -101,19 +69,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      {
-        "begin": 2030,
-        "duration": 45,
-        "station": "StationRight"
-      },
-      {
-        "begin": 2800,
-        "duration": 45,
-        "station": "StationLeft"
-      }
+      { "begin": 2030.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 2800.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 2000,
-    "t_n": 2900,
+    "t_0": 2000.0,
+    "t_n": 2900.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -121,8 +81,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": 2000,
-    "t_n": 2900,
+    "t_0": 2000.0,
+    "t_n": 2900.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -130,8 +90,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 2000,
-    "t_n": 2900,
+    "t_0": 2000.0,
+    "t_n": 2900.0,
     "v_0": 50.0,
     "v_n": 50.0
   }
