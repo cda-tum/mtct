@@ -1,6 +1,5 @@
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
-#include "GeneralHelper.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
