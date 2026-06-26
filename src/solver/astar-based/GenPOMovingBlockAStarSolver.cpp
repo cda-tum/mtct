@@ -293,6 +293,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         std::max(sol_object.get_lower_bound(), lowest_unweighted_bound));
   }
 
+  if (std::abs(sol_object.get_lower_bound() - sol_object.get_obj()) < GRB_EPS) {
+    sol_object.set_lower_bound(sol_object.get_obj());
+  }
+
   if (sol_object.has_solution()) {
     if (sol_object.get_lower_bound() >= sol_object.get_obj()) {
       sol_object.set_status(cda_rail::SolutionStatus::Optimal);
