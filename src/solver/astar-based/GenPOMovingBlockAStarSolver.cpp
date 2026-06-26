@@ -74,6 +74,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         << ", objective = " << init_obj
         << ", heuristic = " << init_heuristic_val
         << ", total = " << init_obj + init_heuristic_val
+        << ", total weighted = "
+        << init_obj + solver_strategy_input.a_star_weight * init_heuristic_val
         << ", heuristic feasibility = "
         << (init_heuristic_feas ? "feasible" : "infeasible");
 
@@ -85,7 +87,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         .stop_positions = simulator.get_stop_positions()};
     pq.push(
         {init_obj + solver_strategy_input.a_star_weight * init_heuristic_val,
-         simulator.is_final_state(), init_state, init_simulator_result});
+         init_obj + init_heuristic_val, simulator.is_final_state(), init_state,
+         init_simulator_result});
     explored_states.insert(init_state);
   }
 
@@ -120,14 +123,14 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       PLOGD << "----------------------------";
       PLOGD << "Iteration " << iteration << ", queue size: " << pq.size();
       PLOGD << "Best objective so far: " << best_obj;
-      PLOGD << "Current lower bound: "
-            << current_state_objective_pair.objective;
+      PLOGD << "Current lower bound (only proven if weight = 1): "
+            << current_state_objective_pair.unweighted_objective;
     } else {
       PLOGV << "----------------------------";
       PLOGV << "Iteration " << iteration << ", queue size: " << pq.size();
       PLOGV << "Best objective so far: " << best_obj;
-      PLOGV << "Current lower bound: "
-            << current_state_objective_pair.objective;
+      PLOGV << "Current lower bound (only proven if weight = 1): "
+            << current_state_objective_pair.unweighted_objective;
     }
 
     if (current_state_objective_pair.is_final_state) {
@@ -179,7 +182,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
               sim_res, solver_strategy_input.consider_earliest_exit);
       const auto new_obj =
           obj + solver_strategy_input.a_star_weight * heuristic_val;
-      const auto final = simulator.is_final_state();
+      const auto new_unweighted_obj = obj + heuristic_val;
+      const auto final              = simulator.is_final_state();
       PLOGV << "Objective = " << obj << ", heuristic = " << heuristic_val
             << ", total = " << new_obj << ", feasibility = "
             << (heuristic_feas ? "feasible" : "infeasible")
@@ -198,7 +202,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         sol_object.set_status(cda_rail::SolutionStatus::Feasible);
       }
       if (heuristic_feas) {
-        pq.push({new_obj, final, s, sim_res});
+        pq.push({new_obj, new_unweighted_obj, final, s, sim_res});
         explored_states.insert(s);
         PLOGV << "State added to priority queue.";
       }
@@ -260,6 +264,41 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
   if (pq.empty() && !sol_object.has_solution()) {
     sol_object.set_status(cda_rail::SolutionStatus::Infeasible);
+  }
+
+  if (sol_object.get_status() == cda_rail::SolutionStatus::Optimal) {
+    sol_object.set_lower_bound(sol_object.get_obj() /
+                               solver_strategy_input.a_star_weight);
+    PLOGD << "Lower bound (w-approximation) = " << sol_object.get_lower_bound();
+  }
+  if (!pq.empty()) {
+    double lowest_unweighted_bound = sol_object.get_obj();
+    bool   cont                    = true;
+    while (cont && !pq.empty()) {
+      auto const tmp_val2 = pq.top();
+      lowest_unweighted_bound =
+          std::min(lowest_unweighted_bound, tmp_val2.unweighted_objective);
+      if (tmp_val2.objective / solver_strategy_input.a_star_weight >=
+          lowest_unweighted_bound) {
+        // Let x'/h' be any other value and heuristic
+        // Let x/h be the current value and heuristic
+        // other_val = x' + h' >= (x' + wh')/w >= (pq sorted) (x + wh)/w
+        cont = false;
+      }
+      pq.pop();
+    }
+    PLOGD << "Lower bound by remaining priority quese: "
+          << lowest_unweighted_bound;
+    sol_object.set_lower_bound(
+        std::max(sol_object.get_lower_bound(), lowest_unweighted_bound));
+  }
+
+  if (sol_object.has_solution()) {
+    if (sol_object.get_lower_bound() >= sol_object.get_obj()) {
+      sol_object.set_status(cda_rail::SolutionStatus::Optimal);
+    } else {
+      sol_object.set_status(cda_rail::SolutionStatus::Feasible);
+    }
   }
 
   PLOGI << "DONE! Solution extracted.";

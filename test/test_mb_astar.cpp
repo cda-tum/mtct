@@ -1276,10 +1276,23 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = false},
                    {}, -1, true);
+  const auto sol_obj_ttd_3 =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::NextRelevantTTD,
+                    .time_aware_state_transitions = false,
+                    .a_star_weight                = 2},
+                   {}, -1, true);
 
   EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
+  EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
+  EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 2);
   auto const v2_v3 =
       sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
                                                                         {"v3"});
@@ -1402,10 +1415,23 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = true},
                    {}, -1, true);
+  const auto sol_obj_ttd_3 =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::NextRelevantTTD,
+                    .time_aware_state_transitions = true,
+                    .a_star_weight                = 3},
+                   {}, -1, true);
 
   EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
+  EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
+  EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 3);
   auto const v2_v3 =
       sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
                                                                         {"v3"});
@@ -1551,10 +1577,23 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = false},
                    {}, -1, true);
+  const auto sol_obj_ttd_3 =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::NextRelevantTTD,
+                    .time_aware_state_transitions = false,
+                    .a_star_weight                = 4},
+                   {}, -1, true);
 
   EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300);
   EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300);
   EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300);
+  EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
+  EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
+  EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 4);
 
   auto const tr1_time_single =
       sol_obj_single.get_time_at_pos("Train1", 170, true);
@@ -1691,10 +1730,23 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware2) {
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = true},
                    {}, -1, true);
+  const auto sol_obj_ttd_3 =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::NextRelevantTTD,
+                    .time_aware_state_transitions = true,
+                    .a_star_weight                = 5},
+                   {}, -1, true);
 
   EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300);
   EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300);
   EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300);
+  EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
+  EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
+  EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 5);
 
   auto const tr1_time_single =
       sol_obj_single.get_time_at_pos("Train1", 170, true);
@@ -2556,12 +2608,21 @@ TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
        .time_aware_state_transitions = true},
       {}, -1, true);
 
+  const auto sol_obj_7 = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
+       .time_aware_state_transitions = true,
+       .a_star_weight                = 10},
+      {}, -1, true);
+
   EXPECT_TRUE(sol_obj.has_solution());
   EXPECT_TRUE(sol_obj_2.has_solution());
   EXPECT_TRUE(sol_obj_3.has_solution());
   EXPECT_TRUE(sol_obj_4.has_solution());
   EXPECT_TRUE(sol_obj_5.has_solution());
   EXPECT_TRUE(sol_obj_6.has_solution());
+  EXPECT_TRUE(sol_obj_7.has_solution());
 
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_2.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -2569,12 +2630,21 @@ TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
   EXPECT_EQ(sol_obj_4.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_5.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_6.get_status(), cda_rail::SolutionStatus::Optimal);
+  if (sol_obj_7.get_lower_bound() >= sol_obj_7.get_obj()) {
+    EXPECT_EQ(sol_obj_7.get_status(), cda_rail::SolutionStatus::Optimal);
+  } else {
+    EXPECT_EQ(sol_obj_7.get_status(), cda_rail::SolutionStatus::Feasible);
+  }
 
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_2.get_obj());
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_3.get_obj());
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_4.get_obj());
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_5.get_obj());
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_6.get_obj());
+
+  EXPECT_GE(sol_obj_7.get_obj(), sol_obj.get_obj());
+  EXPECT_LE(sol_obj_7.get_lower_bound(), sol_obj.get_obj());
+  EXPECT_LE(sol_obj_7.get_obj(), sol_obj_7.get_lower_bound() * 10);
 }
 
 TEST(GenPOMovingBlockAStarSolver, Stammstrecke4Trains) {
@@ -2603,16 +2673,33 @@ TEST(GenPOMovingBlockAStarSolver, Stammstrecke4Trains) {
        .time_aware_state_transitions = true},
       {}, -1, true);
 
+  const auto sol_obj_4 = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
+       .time_aware_state_transitions = true,
+       .a_star_weight                = 2},
+      {}, -1, true);
+
   EXPECT_TRUE(sol_obj.has_solution());
   EXPECT_TRUE(sol_obj_2.has_solution());
   EXPECT_TRUE(sol_obj_3.has_solution());
+  EXPECT_TRUE(sol_obj_4.has_solution());
 
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_3.get_status(), cda_rail::SolutionStatus::Optimal);
+  if (sol_obj_4.get_lower_bound() >= sol_obj_4.get_obj()) {
+    EXPECT_EQ(sol_obj_4.get_status(), cda_rail::SolutionStatus::Optimal);
+  } else {
+    EXPECT_EQ(sol_obj_4.get_status(), cda_rail::SolutionStatus::Feasible);
+  }
 
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_2.get_obj());
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_3.get_obj());
+  EXPECT_GE(sol_obj_4.get_obj(), sol_obj.get_obj());
+  EXPECT_LE(sol_obj_4.get_lower_bound(), sol_obj.get_obj());
+  EXPECT_LE(sol_obj_4.get_obj(), sol_obj_4.get_lower_bound() * 2);
 }
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

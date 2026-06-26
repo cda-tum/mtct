@@ -382,6 +382,7 @@ private:
 
   struct StateObjectivePair {
     double                      objective{};
+    double                      unweighted_objective{};
     bool                        is_final_state{};
     simulator::SimulatorState   state{};
     simulator::SimulatorResults results{};
