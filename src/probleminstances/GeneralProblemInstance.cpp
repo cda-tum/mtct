@@ -9,6 +9,7 @@
 #include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
