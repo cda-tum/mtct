@@ -2722,6 +2722,7 @@ TEST(GeneralPerformanceOptimizationInsancens, FixRAS) {
         auto const time_diff =
             relu(earliest_entry_time - tr_schedule.get_entry_time());
         tr_schedule.set_entry_time(tr_schedule.get_entry_time() + time_diff);
+        tr_schedule.set_exit_time(tr_schedule.get_exit_time() + time_diff);
         for (size_t i = 0; i < tr_schedule.get_stops().size(); ++i) {
           tr_schedule.editable_scheduled_stop(i).set_service_time(
               tr_schedule.editable_scheduled_stop(i).get_service_time() +
