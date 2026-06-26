@@ -131,13 +131,11 @@ public:
     m_instance_subdirectory = instanceSubdirectory;
   }
 
-protected:
+public:
   struct FeasibilityCheck {
     bool        is_obviously_infeasible{false};
     std::string reason{};
   };
-
-public:
   [[nodiscard]] virtual FeasibilityCheck
   is_obviously_infeasible(bool late_entry_allowed) const = 0;
 };
