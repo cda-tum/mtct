@@ -450,6 +450,7 @@ cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
   data["status"] = static_cast<int>(
       m_status);       // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   data["obj"] = m_obj; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+  data["lb"]  = m_lb;  // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   data["has_solution"] =
       m_has_sol; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   return data;
@@ -459,6 +460,7 @@ void cda_rail::instances::SolGeneralProblemInstance::set_general_solution_data(
     const nlohmann::json& data) {
   this->m_status  = static_cast<SolutionStatus>(data.at("status").get<int>());
   this->m_obj     = data.at("obj").get<double>();
+  this->m_lb      = data.at("lb").get<double>();
   this->m_has_sol = data.at("has_solution").get<bool>();
 }
 

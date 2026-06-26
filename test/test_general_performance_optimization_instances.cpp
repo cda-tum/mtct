@@ -836,6 +836,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
 
   sol_instance.set_obj(0.5);
+  sol_instance.set_lower_bound(0.2);
   sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
 
   sol_instance.add_empty_route("tr1");
@@ -853,6 +854,7 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   instances::SolGeneralPerformanceOptimizationInstance sol_instance_2(instance);
   sol_instance_2.set_obj(0.5);
+  sol_instance_2.set_lower_bound(0.3);
   sol_instance_2.set_status(cda_rail::SolutionStatus::Optimal);
 
   sol_instance_2.add_empty_route("tr1");
@@ -879,6 +881,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_TRUE(sol2_read.check_consistency());
 
   EXPECT_EQ(sol1_read.get_obj(), 0.5);
+  EXPECT_EQ(sol1_read.get_lower_bound(), 0.2);
   EXPECT_EQ(sol1_read.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 0), 0);
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 60), 100);
@@ -901,6 +904,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(sol1_read.get_instance()->get_const_routes().has_route("tr2"));
 
   EXPECT_EQ(sol2_read.get_obj(), 0.5);
+  EXPECT_EQ(sol2_read.get_lower_bound(), 0.3);
   EXPECT_EQ(sol2_read.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol2_read.get_train_pos("tr1", 0), 0);
   EXPECT_EQ(sol2_read.get_train_pos("tr1", 30), 50);
@@ -986,6 +990,7 @@ TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesExportImport) {
   sol_instance.set_train_stop_times("tr1", {60, 200});
 
   sol_instance.set_obj(1000);
+  sol_instance.set_lower_bound(900);
 
   EXPECT_TRUE(sol_instance.check_consistency());
 
@@ -998,6 +1003,7 @@ TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesExportImport) {
 
   EXPECT_TRUE(sol_read.check_consistency());
   EXPECT_EQ(sol_read.get_obj(), 1000);
+  EXPECT_EQ(sol_read.get_lower_bound(), 900);
   EXPECT_EQ(sol_read.get_status(), cda_rail::SolutionStatus::Optimal);
 
   EXPECT_EQ(sol_read.get_exit_time("tr1"), 230);
