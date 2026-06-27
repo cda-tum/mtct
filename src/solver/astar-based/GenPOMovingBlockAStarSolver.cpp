@@ -287,7 +287,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       }
       pq.pop();
     }
-    PLOGD << "Lower bound by remaining priority quese: "
+    PLOGD << "Lower bound by remaining priority queue: "
           << lowest_unweighted_bound;
     sol_object.set_lower_bound(
         std::max(sol_object.get_lower_bound(), lowest_unweighted_bound));
