@@ -2662,6 +2662,9 @@ TEST(GeneralPerformanceOptimizationInstances, ATMOS2023) {
           name, subdirectory, wd);
       auto const [infeas, reas] = instance.is_obviously_infeasible(false);
       EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
+
+      auto const consistency = instance.check_consistency(false);
+      EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
     }
   }
 }
@@ -2682,6 +2685,9 @@ TEST(GeneralPerformanceOptimizationInstances, RAS) {
           name, subdirectory, wd);
       auto const [infeas, reas] = instance.is_obviously_infeasible(false);
       EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
+
+      auto const consistency = instance.check_consistency(false);
+      EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
     }
   }
 }
@@ -2702,6 +2708,9 @@ TEST(GeneralPerformanceOptimizationInstances, GenPO) {
           name, subdirectory, wd);
       auto const [infeas, reas] = instance.is_obviously_infeasible(false);
       EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
+
+      auto const consistency = instance.check_consistency(false);
+      EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
     }
   }
 }
