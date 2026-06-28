@@ -72,6 +72,11 @@ public:
                     const std::vector<std::vector<double>>& stop_times,
                     bool throw_error_if_not_all_stops_specified = true) const;
 
+  /**
+   * @brief Calculates the weighted sum of all (earliest) exit times.
+   *
+   * @return Weighted sum
+   */
   [[nodiscard]] double sum_of_weighted_exit_times() const;
 
   /**
