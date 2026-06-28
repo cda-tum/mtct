@@ -2,6 +2,7 @@
 
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
+#include "plog/Init.h"
 #include "plog/Log.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GeneralSimulator.hpp"
@@ -272,20 +273,25 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   }
 
   if (sol_object.get_status() == cda_rail::SolutionStatus::Optimal) {
-    sol_object.set_lower_bound(sol_object.get_obj() /
-                               solver_strategy_input.a_star_weight);
+    assert(init_obj <= sol_object.get_obj());
+    auto const obj_diff = sol_object.get_obj() - init_obj;
+    sol_object.set_lower_bound(
+        init_obj + (obj_diff / solver_strategy_input.a_star_weight));
     PLOGD << "Lower bound (w-approximation) = " << sol_object.get_lower_bound();
   }
   if (!pq.empty()) {
-    double lowest_unweighted_bound =
-        sol_object.has_solution() ? sol_object.get_obj() : INF;
+    double lowest_unweighted_diff_bound =
+        sol_object.has_solution() ? sol_object.get_obj() - init_obj : INF;
+    assert(lowest_unweighted_diff_bound >= 0);
     bool cont = true;
     while (cont && !pq.empty()) {
       auto const tmp_val2 = pq.top();
-      lowest_unweighted_bound =
-          std::min(lowest_unweighted_bound, tmp_val2.unweighted_objective);
-      if (tmp_val2.objective / solver_strategy_input.a_star_weight >=
-          lowest_unweighted_bound) {
+      lowest_unweighted_diff_bound =
+          std::min(lowest_unweighted_diff_bound,
+                   tmp_val2.unweighted_objective - init_obj);
+      if ((tmp_val2.objective - init_obj) /
+              solver_strategy_input.a_star_weight >=
+          lowest_unweighted_diff_bound) {
         // Let x'/h' be any other value and heuristic
         // Let x/h be the current value and heuristic
         // other_val = x' + h' >= (x' + wh')/w >= (pq sorted) (x + wh)/w
@@ -293,10 +299,13 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       }
       pq.pop();
     }
+
+    PLOGD << "Lowest unweighted difference bound = "
+          << lowest_unweighted_diff_bound;
     PLOGD << "Lower bound by remaining priority queue: "
-          << lowest_unweighted_bound;
-    sol_object.set_lower_bound(
-        std::max(sol_object.get_lower_bound(), lowest_unweighted_bound));
+          << init_obj + lowest_unweighted_diff_bound;
+    sol_object.set_lower_bound(std::max(
+        sol_object.get_lower_bound(), init_obj + lowest_unweighted_diff_bound));
   }
 
   if (std::abs(sol_object.get_lower_bound() - sol_object.get_obj()) < GRB_EPS) {
