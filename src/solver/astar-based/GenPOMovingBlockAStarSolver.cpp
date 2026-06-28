@@ -272,8 +272,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     PLOGD << "Lower bound (w-approximation) = " << sol_object.get_lower_bound();
   }
   if (!pq.empty()) {
-    double lowest_unweighted_bound = sol_object.get_obj();
-    bool   cont                    = true;
+    double lowest_unweighted_bound =
+        sol_object.has_solution() ? sol_object.get_obj() : INF;
+    bool cont = true;
     while (cont && !pq.empty()) {
       auto const tmp_val2 = pq.top();
       lowest_unweighted_bound =
