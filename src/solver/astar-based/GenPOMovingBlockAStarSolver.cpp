@@ -33,6 +33,11 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     int time_limit, bool debug_input, bool overwrite_severity) {
   this->solve_init_general(debug_input, overwrite_severity);
 
+  if (!get_instance().check_consistency(false)) {
+    throw cda_rail::exceptions::ConsistencyException(
+        "Instance is inconsistent.");
+  }
+
   cda_rail::exceptions::throw_if_less_than(solver_strategy_input.a_star_weight,
                                            1.0, "A* weight");
 
