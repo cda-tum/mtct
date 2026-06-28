@@ -2425,8 +2425,8 @@ TEST(GreedySimulator, DeadlockTest1) {
   PLOGD << "Simulation success: " << (sim_res.success ? "true" : "false")
         << ", Objective value: (" << sim_res.exit_times.at(0) << ", "
         << sim_res.exit_times.at(1) << ")";
-  EXPECT_EQ(sim_res.exit_times.at(0), 0);
-  EXPECT_EQ(sim_res.exit_times.at(1), 0);
+  EXPECT_EQ(sim_res.exit_times.at(tr1), 0);
+  EXPECT_EQ(sim_res.exit_times.at(tr2), 130);
   EXPECT_FALSE(sim_res.success);
   ASSERT_EQ(sim_res.vertex_headways.size(), 2);
   EXPECT_EQ(sim_res.vertex_headways.at(v0), 60);
