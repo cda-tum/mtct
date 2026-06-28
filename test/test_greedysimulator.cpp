@@ -2812,8 +2812,8 @@ TEST(GreedySimulation, TightEntry) {
 
   EXPECT_FALSE(sim_res.success);
   ASSERT_EQ(sim_res.exit_times.size(), 2);
-  EXPECT_EQ(sim_res.exit_times[0], 0);
-  EXPECT_EQ(sim_res.exit_times[1], 0);
+  EXPECT_EQ(sim_res.exit_times[tr1], 0);
+  EXPECT_EQ(sim_res.exit_times[tr2], 12);
   ASSERT_EQ(sim_res.vertex_headways.size(), 2);
   EXPECT_EQ(sim_res.vertex_headways.at(v0), 6);
   EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
@@ -3253,7 +3253,7 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_TRUE(sim_res.success);
   ASSERT_EQ(sim_res.exit_times.size(), 2);
   EXPECT_EQ(sim_res.exit_times.at(tr1), 12);
-  EXPECT_EQ(sim_res.exit_times.at(tr2), 0);
+  EXPECT_EQ(sim_res.exit_times.at(tr2), 102);
   ASSERT_EQ(sim_res.stop_times.size(), 2);
   ASSERT_TRUE(sim_res.stop_times.at(tr1).empty());
   ASSERT_TRUE(sim_res.stop_times.at(tr2).empty());
@@ -3284,7 +3284,7 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_TRUE(sim_res2.success);
   ASSERT_EQ(sim_res2.exit_times.size(), 2);
   EXPECT_EQ(sim_res2.exit_times.at(tr1), 24);
-  EXPECT_EQ(sim_res2.exit_times.at(tr2), 0);
+  EXPECT_EQ(sim_res2.exit_times.at(tr2), 102);
   ASSERT_EQ(sim_res2.stop_times.size(), 2);
   ASSERT_TRUE(sim_res2.stop_times.at(tr1).empty());
   ASSERT_TRUE(sim_res2.stop_times.at(tr2).empty());
@@ -3309,7 +3309,7 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_TRUE(sim_res3.success);
   ASSERT_EQ(sim_res3.exit_times.size(), 2);
   EXPECT_EQ(sim_res3.exit_times.at(tr1), 90);
-  EXPECT_EQ(sim_res3.exit_times.at(tr2), 0);
+  EXPECT_EQ(sim_res3.exit_times.at(tr2), 102);
   ASSERT_EQ(sim_res3.stop_times.size(), 2);
   ASSERT_EQ(sim_res3.stop_times.at(tr1).size(), 1);
   EXPECT_EQ(sim_res3.stop_times.at(tr1).at(0), 30);
@@ -3350,7 +3350,7 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_TRUE(sim_res5.success);
   ASSERT_EQ(sim_res5.exit_times.size(), 2);
   EXPECT_EQ(sim_res5.exit_times.at(tr1), 138);
-  EXPECT_EQ(sim_res5.exit_times.at(tr2), 0);
+  EXPECT_EQ(sim_res5.exit_times.at(tr2), 102);
   ASSERT_EQ(sim_res5.stop_times.size(), 2);
   ASSERT_EQ(sim_res5.stop_times.at(tr1).size(), 2);
   EXPECT_EQ(sim_res5.stop_times.at(tr1).at(0), 30);
@@ -3378,7 +3378,7 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_TRUE(sim_res6.success);
   ASSERT_EQ(sim_res6.exit_times.size(), 2);
   EXPECT_EQ(sim_res6.exit_times.at(tr1), 156);
-  EXPECT_EQ(sim_res6.exit_times.at(tr2), 0);
+  EXPECT_EQ(sim_res6.exit_times.at(tr2), 102);
   ASSERT_EQ(sim_res6.stop_times.size(), 2);
   ASSERT_EQ(sim_res6.stop_times.at(tr1).size(), 2);
   EXPECT_EQ(sim_res6.stop_times.at(tr1).at(0), 30);

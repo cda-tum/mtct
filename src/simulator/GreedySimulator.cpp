@@ -74,6 +74,10 @@ cda_rail::simulator::GreedySimulator::simulate(
       number_of_trains,
       0); // Initially each train is simulated until
           // time t=0, for t>0 the heuristic is needed.
+  for (size_t tr = 0; tr < number_of_trains; ++tr) {
+    exit_times.at(tr) = get_instance()->get_const_schedule(tr).get_entry_time();
+  }
+
   std::vector<double>              blocked_positions(number_of_trains, INF);
   std::vector<std::vector<double>> stop_times(number_of_trains);
   std::vector<std::map<double, PosVel>>
