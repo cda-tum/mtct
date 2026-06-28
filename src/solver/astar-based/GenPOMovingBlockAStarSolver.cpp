@@ -58,6 +58,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   m_model_created =
       std::chrono::high_resolution_clock::now(); // Start model creation timer
 
+  auto const sum_of_exit = get_instance().sum_of_weighted_exit_times();
+
+  PLOGD << "Sum of (weighted) exit times = " << sum_of_exit;
+
   PLOGI << "Starting A* search";
 
   // const auto [init_feas, init_exit_times, init_braking, init_headways] =
@@ -373,7 +377,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
                              {"time_limit", time_limit}},
             .double_data  = {{"time_step", model_detail_input.dt},
                              {"a_star_weight",
-                              solver_strategy_input.a_star_weight}},
+                              solver_strategy_input.a_star_weight},
+                             {"weighted_exit_times", sum_of_exit}},
             .string_data =
                 {{"remaining_time_heuristic",
                   simulator::remaining_time_heuristic_type_to_string(

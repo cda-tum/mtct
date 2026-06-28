@@ -2076,6 +2076,8 @@ TEST(GeneralPerformanceOptimizationInstances, ObjectiveValue) {
   instance.insert_stop("tr2", "Station2", 25, 5);
   instance.insert_stop("tr2", "Station3", 44.3, 5);
 
+  EXPECT_EQ(instance.sum_of_weighted_exit_times(), 1.5 * 100 + 2 * 100);
+
   auto const obj1 =
       instance.get_objective_val({110, 120.5}, {{}, {9.5, 25, 44.3}});
   EXPECT_APPROX_EQ_6(obj1, 1.5 * 110 + 2 * 120.5);
@@ -2526,6 +2528,8 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   instance.insert_stop("tr2", "Station1", 130, 30);
   instance.insert_stop("tr2", "Station2", 160, 30);
+
+  EXPECT_EQ(instance.sum_of_weighted_exit_times(), 100 + 300);
 
   auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
   EXPECT_TRUE(infeas1);

@@ -98,6 +98,14 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
   }
   return obj;
 }
+double cda_rail::instances::GeneralPerformanceOptimizationInstance::
+    sum_of_weighted_exit_times() const {
+  double retval{0.0};
+  for (size_t tr = 0; tr < get_const_train_list().size(); ++tr) {
+    retval += get_train_weight(tr) * get_const_schedule(tr).get_exit_time();
+  }
+  return retval;
+}
 
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     export_instance(const std::filesystem::path& working_directory,

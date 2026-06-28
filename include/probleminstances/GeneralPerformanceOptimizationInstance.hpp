@@ -71,6 +71,9 @@ public:
   get_objective_val(const std::vector<double>&              tr_exit_times,
                     const std::vector<std::vector<double>>& stop_times,
                     bool throw_error_if_not_all_stops_specified = true) const;
+
+  [[nodiscard]] double sum_of_weighted_exit_times() const;
+
   /**
    * @brief Constructs an instance from a named subdirectory.
    *
