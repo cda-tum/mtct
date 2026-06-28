@@ -2,7 +2,6 @@
 
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
-#include "plog/Init.h"
 #include "plog/Log.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/GeneralSimulator.hpp"
