@@ -1293,6 +1293,13 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
   EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 2);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
+
   auto const v2_v3 =
       sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
                                                                         {"v3"});
@@ -1432,6 +1439,13 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
   EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 3);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
+
   auto const v2_v3 =
       sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
                                                                         {"v3"});
@@ -1595,6 +1609,12 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
   EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 4);
 
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
+
   auto const tr1_time_single =
       sol_obj_single.get_time_at_pos("Train1", 170, true);
   auto const tr2_time_single =
@@ -1747,6 +1767,12 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware2) {
   EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 5);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
 
   auto const tr1_time_single =
       sol_obj_single.get_time_at_pos("Train1", 170, true);
@@ -2645,6 +2671,15 @@ TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
   EXPECT_GE(sol_obj_7.get_obj(), sol_obj.get_obj());
   EXPECT_LE(sol_obj_7.get_lower_bound(), sol_obj.get_obj());
   EXPECT_LE(sol_obj_7.get_obj(), sol_obj_7.get_lower_bound() * 10);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_3.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_4.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_5.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_6.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_7.get_lower_bound(), instance_weighted_sum);
 }
 
 TEST(GenPOMovingBlockAStarSolver, Stammstrecke4Trains) {
@@ -2700,6 +2735,13 @@ TEST(GenPOMovingBlockAStarSolver, Stammstrecke4Trains) {
   EXPECT_GE(sol_obj_4.get_obj(), sol_obj.get_obj());
   EXPECT_LE(sol_obj_4.get_lower_bound(), sol_obj.get_obj());
   EXPECT_LE(sol_obj_4.get_obj(), sol_obj_4.get_lower_bound() * 2);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_3.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_4.get_lower_bound(), instance_weighted_sum);
 }
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
