@@ -2743,5 +2743,73 @@ TEST(GenPOMovingBlockAStarSolver, Stammstrecke4Trains) {
   EXPECT_GE(sol_obj_4.get_lower_bound(), instance_weighted_sum);
 }
 
+TEST(GenPOMovingBlockAStarSolver, HighWeightTrain) {
+  // clang-format off
+  // v0a -- v1a -
+  //             \
+  // v0b -- v1b - v2 - v3 -- (station) v4 -- v5
+  // clang-forman on
+
+  Network network;
+  auto const v0a = network.add_vertex("v0a", VertexType::TTD);
+  auto const v0b = network.add_vertex("v0b", VertexType::TTD);
+  auto const v1a = network.add_vertex("v1a", VertexType::TTD);
+  auto const v1b = network.add_vertex("v1b", VertexType::TTD);
+  auto const v2   = network.add_vertex("v2", VertexType::NoBorder);
+  auto const v3   = network.add_vertex("v3", VertexType::TTD);
+  auto const v4   = network.add_vertex("v4", VertexType::TTD);
+  auto const v5   = network.add_vertex("v5", VertexType::TTD);
+
+  auto const v0a_v1a = network.add_edge(v0a, v1a, 100, 10, true);
+  auto const v0b_v1b = network.add_edge(v0b, v1b, 100, 10, true);
+  auto const v1a_v2   = network.add_edge(v1a, v2, 10, 10, false);
+  auto const v1b_v2 = network.add_edge(v1b, v2, 10, 10, false);
+  auto const v2_v3   = network.add_edge(v2, v3, 10, 10, false);
+  auto const v3_v4 = network.add_edge(v3, v4, 2000, 10, true);
+  auto const v4_v5 = network.add_edge(v4, v5, 2000, 10, true);
+
+  network.add_successor(v0a_v1a, v1a_v2);
+  network.add_successor(v0b_v1b, v1b_v2);
+  network.add_successor(v1a_v2, v2_v3);
+  network.add_successor(v1b_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+  network.add_successor(v3_v4, v4_v5);
+
+        Timetable timetable;
+  auto const tr1 = timetable.add_train("Train1", 100, 10, 2, 1, true, 0, 10, v0a, 90, 40, v5, network);
+  auto const tr2 = timetable.add_train("Train2", 100, 10, 2, 1, true, 60, 10, v0b, 120, 40, v5, network);
+
+  timetable.add_empty_station("Station");
+  timetable.add_track_to_station("Station", v3_v4, network);
+  timetable.insert_stop(tr1, "Station", 30, 60);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(network, timetable, routes);
+
+  instance.set_train_weight(tr1, 1);
+  instance.set_train_weight(tr2, 10);
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto sol_obj = solver.solve(
+    {},
+    {.next_state_strategy =
+         cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
+     .time_aware_state_transitions = true},
+    {}, -1, true);
+
+  EXPECT_GE(sol_obj.get_exit_time("Train1"), sol_obj.get_exit_time("Train2"));
+
+  const auto sol_obj2 = solver.solve(
+    {},
+    {.next_state_strategy =
+         cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
+     .time_aware_state_transitions = false},
+    {}, -1, true);
+
+  EXPECT_GE(sol_obj2.get_exit_time("Train1"), sol_obj2.get_exit_time("Train2"));
+
+  EXPECT_EQ(sol_obj.get_obj(), sol_obj2.get_obj());
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
