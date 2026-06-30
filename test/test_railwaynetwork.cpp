@@ -4395,8 +4395,8 @@ TEST(RailwayNetwork, TTDSectionConsistency) {
 
   for (auto const& entry : std::filesystem::directory_iterator(dir_path)) {
     if (entry.is_directory()) {
-      auto const&       name = entry.path().filename().string();
-      cda_rail::Network network(name, wd);
+      auto const&             name = entry.path().filename().string();
+      cda_rail::Network const network(name, wd);
 
       bool ttd_sections_consistent = true;
 
