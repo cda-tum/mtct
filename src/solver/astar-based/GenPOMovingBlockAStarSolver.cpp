@@ -215,6 +215,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       max_heuristic_inconsistency =
           std::max(max_heuristic_inconsistency, heuristic_diff - edge_weight);
 
+      round_small_numbers_to_zero_inplace(max_heuristic_inconsistency, GRB_EPS);
+
       if (final && new_obj < best_obj) {
         PLOGD << "Explored new best final state with objective = " << new_obj
               << " after " << iteration << " iterations, "

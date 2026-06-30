@@ -2577,7 +2577,8 @@ TEST(GreedySimulator, PartialRouteTest) {
   // no stopping but instantaneous stop at route end (overshooting to 500 after
   // 10s, still stopping at 490 after 10s)
   EXPECT_TRUE(sim_res.success);
-  EXPECT_EQ(sim_res.exit_times.at(0), 10.0);
+  EXPECT_EQ(sim_res.exit_times.at(0),
+            10.0 - 10.0 / 50.0); // this is now accounted for
   ASSERT_EQ(sim_res.train_trajectories.size(), 1);
   ASSERT_TRUE(sim_res.train_trajectories.at(0).contains(10.0));
   EXPECT_EQ(sim_res.train_trajectories.at(0).at(10.0).pos, 490.0);
@@ -4248,6 +4249,45 @@ TEST(GreedySimulator, TrainsFollowing) {
   EXPECT_TRUE(sim_res6.success);
   EXPECT_EQ(sim_res6.exit_times.at(tr1), 510);
   EXPECT_EQ(sim_res6.exit_times.at(tr2), 70);
+}
+
+TEST(GreedySimulator, DiscretizationErrorFix) {
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto const v0 =
+      instance.get_editable_network().add_vertex("v0", VertexType::TTD);
+  auto const v1 =
+      instance.get_editable_network().add_vertex("v1", VertexType::TTD);
+  auto const v2 =
+      instance.get_editable_network().add_vertex("v2", VertexType::TTD);
+
+  auto const v0_v1 =
+      instance.get_editable_network().add_edge(v0, v1, 100, 10, true);
+  auto const v1_v2 =
+      instance.get_editable_network().add_edge(v1, v2, 100, 10, true);
+
+  instance.get_editable_network().add_successor(v0_v1, v1_v2);
+
+  auto const tr1 = instance.add_train("Train1", 20, 10, 2, 2, true, 0, 10,
+                                      {"v0"}, 0, 10, {"v2"});
+
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+
+  simulator.append_train_edge_to_tr(tr1, v0_v1);
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+
+  auto const sim_res1 = simulator.simulate(5.0);
+  EXPECT_TRUE(sim_res1.success);
+  ASSERT_EQ(sim_res1.exit_times.size(), 1);
+  EXPECT_APPROX_EQ_6(sim_res1.exit_times.at(tr1), 10.0);
+
+  auto const sim_res2 = simulator.simulate(6.0);
+  EXPECT_TRUE(sim_res2.success);
+  ASSERT_EQ(sim_res2.exit_times.size(), 1);
+  EXPECT_APPROX_EQ_6(sim_res2.exit_times.at(tr1), 10.0);
 }
 
 // NOLINTEND
