@@ -17,11 +17,11 @@
 <data key="d6">90</data>
 </node>
 <node id="PasingSwitch1">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="PasingSwitch2">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="Laim1L">
@@ -45,7 +45,7 @@
 <data key="d6">0</data>
 </node>
 <node id="LaimSwitchNymphenburg">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="LaimExitNymphenburg">
@@ -53,7 +53,7 @@
 <data key="d6">45</data>
 </node>
 <node id="LaimSwitchHirschgarten">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="Hirschgarten1L">
@@ -89,19 +89,19 @@
 <data key="d6">0</data>
 </node>
 <node id="HackerbrueckeSwitch1">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="HackerbrueckeSwitch2">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="HackerbrueckeSwitch3">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="HackerbrueckeSwitch4">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="HackerbrueckeSwitchC">
@@ -125,11 +125,11 @@
 <data key="d6">0</data>
 </node>
 <node id="HackerbrueckeSwitchEntry">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="HackerbrueckeSwitchExit">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="DonnersbergerEntry">
@@ -189,11 +189,11 @@
 <data key="d6">0</data>
 </node>
 <node id="IsartorSwitchLR">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="IsartorSwitchRL">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="Isartor1L">
@@ -213,11 +213,11 @@
 <data key="d6">0</data>
 </node>
 <node id="IsartorSwitchR_LR">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="IsartorSwitchR_RL">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="Rosenheimer1L">
@@ -241,15 +241,15 @@
 <data key="d6">0</data>
 </node>
 <node id="OstSwitch5_LR">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="OstSwitch1_RL">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="OstSwitch2_RL">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="OstSwitch3_RL">
@@ -276,44 +276,224 @@
 <data key="d5">2</data>
 <data key="d6">90</data>
 </node>
-<edge source="PasingEntry" target="PasingSwitch1">
-<data key="d0">true</data>
-<data key="d1">280</data>
+<node id="PasingSwitch1-PasingSwitch2_0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch1-HackerbrueckeSwitchC_0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch2-HackerbrueckeSwitchC_0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch3-HackerbrueckeSwitchC_0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch4-HackerbrueckeSwitchC_0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="IsartorSwitchRL-IsartorSwitchLR_0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="IsartorSwitchR_LR-IsartorSwitchR_RL_0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="Ost2Entry-OstSwitch2_RL_0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="Ost1Entry-OstSwitch1_RL_0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="OstSwitch1_RL-Rosenheimer2R_0">
+<data key="d5">2</data>
+<data key="d6">0</data>
+</node>
+<node id="PasingSwitch1-Laim1L_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="PasingEntry-PasingSwitch1_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="PasingSwitch2-PasingExit_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="LaimSwitchNymphenburg-PasingSwitch2_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="LaimSwitchNymphenburg-LaimSwitchNymphenburg-PasingSwitch2_0_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="LaimSwitchNymphenburg-LaimExitNymphenburg_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="Laim3L-LaimSwitchNymphenburg_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="LaimSwitchHirschgarten-Hirschgarten1L_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="LaimEntry-LaimSwitchHirschgarten_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="Laim1R-LaimSwitchHirschgarten_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch1-HackerbrueckeSwitch2_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitchEntry-HackerbrueckeSwitch1_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch2-Hackerbruecke1L_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch1-HackerbrueckeSwitch2_0-HackerbrueckeSwitch2_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch3-HackerbrueckeSwitch4_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="Hackerbruecke2L-HackerbrueckeSwitch3_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch4-HackerbrueckeSwitchExit_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch3-HackerbrueckeSwitch4_0-HackerbrueckeSwitch4_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitchEntry-HackerbrueckeSwitchEntry-HackerbrueckeSwitch1_0_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="DonnersbergerEntry-HackerbrueckeSwitchEntry_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="Donnersbergerbruecke1R-HackerbrueckeSwitchEntry_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitchExit-DonnersbergerExit_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitchExit-Donnersbergerbruecke2R_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="HackerbrueckeSwitch4-HackerbrueckeSwitchExit_0-HackerbrueckeSwitchExit_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="IsartorSwitchLR-Isartor1L_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="Marienplatz1R-IsartorSwitchLR_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="IsartorSwitchRL-Marienplatz2R_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="Isartor2L-IsartorSwitchRL_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="IsartorSwitchR_LR-Isartor1R_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="IsartorSwitchR_LR-Rosenheimer1L_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="IsartorSwitchR_RL-Isartor2R_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="Rosenheimer2L-IsartorSwitchR_RL_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="OstSwitch5_LR-Ost5Exit_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="OstSwitch5_LR-OstSwitch4_LR_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="Rosenheimer1R-OstSwitch5_LR_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<edge source="PasingEntry-PasingSwitch1_0" target="PasingSwitch1">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">33.3333</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="PasingSwitch2" target="PasingExit">
+<edge source="PasingSwitch2-PasingExit_0" target="PasingExit">
 <data key="d0">true</data>
-<data key="d1">160</data>
+<data key="d1">144</data>
 <data key="d2">33.3333</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="PasingSwitch1" target="Laim1L">
+<edge source="PasingSwitch1-Laim1L_0" target="Laim1L">
 <data key="d0">true</data>
-<data key="d1">2812</data>
+<data key="d1">2792</data>
 <data key="d2">33.3333</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="LaimSwitchNymphenburg" target="PasingSwitch2">
-<data key="d0">true</data>
-<data key="d1">2562</data>
+<edge source="LaimSwitchNymphenburg-PasingSwitch2_0" target="PasingSwitch2">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">33.3333</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Laim3L" target="LaimSwitchNymphenburg">
-<data key="d0">true</data>
-<data key="d1">370</data>
+<edge source="Laim3L-LaimSwitchNymphenburg_0" target="LaimSwitchNymphenburg">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">33.3333</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="LaimSwitchNymphenburg" target="LaimExitNymphenburg">
+<edge source="LaimSwitchNymphenburg-LaimExitNymphenburg_0" target="LaimExitNymphenburg">
 <data key="d0">true</data>
-<data key="d1">30</data>
+<data key="d1">27</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -332,37 +512,37 @@
 <data key="d3">25</data>
 <data key="d4">100</data>
 </edge>
-<edge source="PasingSwitch1" target="PasingSwitch2">
-<data key="d0">true</data>
-<data key="d1">120</data>
+<edge source="PasingSwitch1-PasingSwitch2_0" target="PasingSwitch2">
+<data key="d0">false</data>
+<data key="d1">60</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="PasingSwitch2" target="PasingSwitch1">
-<data key="d0">true</data>
-<data key="d1">120</data>
+<edge source="PasingSwitch1-PasingSwitch2_0" target="PasingSwitch1">
+<data key="d0">false</data>
+<data key="d1">60</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Laim1R" target="LaimSwitchHirschgarten">
-<data key="d0">true</data>
-<data key="d1">200</data>
+<edge source="Laim1R-LaimSwitchHirschgarten_0" target="LaimSwitchHirschgarten">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="LaimEntry" target="LaimSwitchHirschgarten">
-<data key="d0">true</data>
-<data key="d1">200</data>
+<edge source="LaimEntry-LaimSwitchHirschgarten_0" target="LaimSwitchHirschgarten">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="LaimSwitchHirschgarten" target="Hirschgarten1L">
+<edge source="LaimSwitchHirschgarten-Hirschgarten1L_0" target="Hirschgarten1L">
 <data key="d0">true</data>
-<data key="d1">692</data>
+<data key="d1">672</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -416,37 +596,37 @@
 <data key="d3">25</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Donnersbergerbruecke1R" target="HackerbrueckeSwitchEntry">
-<data key="d0">true</data>
-<data key="d1">210</data>
+<edge source="Donnersbergerbruecke1R-HackerbrueckeSwitchEntry_0" target="HackerbrueckeSwitchEntry">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitchEntry" target="HackerbrueckeSwitch1">
-<data key="d0">true</data>
-<data key="d1">294</data>
+<edge source="HackerbrueckeSwitchEntry-HackerbrueckeSwitch1_0" target="HackerbrueckeSwitch1">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="DonnersbergerEntry" target="HackerbrueckeSwitchEntry">
-<data key="d0">true</data>
-<data key="d1">210</data>
+<edge source="DonnersbergerEntry-HackerbrueckeSwitchEntry_0" target="HackerbrueckeSwitchEntry">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitch1" target="HackerbrueckeSwitch2">
-<data key="d0">true</data>
-<data key="d1">150</data>
+<edge source="HackerbrueckeSwitch1-HackerbrueckeSwitch2_0-HackerbrueckeSwitch2_0" target="HackerbrueckeSwitch2">
+<data key="d0">false</data>
+<data key="d1">13.5</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitch2" target="Hackerbruecke1L">
+<edge source="HackerbrueckeSwitch2-Hackerbruecke1L_0" target="Hackerbruecke1L">
 <data key="d0">true</data>
-<data key="d1">40</data>
+<data key="d1">36</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -458,37 +638,37 @@
 <data key="d3">25</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitchExit" target="Donnersbergerbruecke2R">
+<edge source="HackerbrueckeSwitchExit-Donnersbergerbruecke2R_0" target="Donnersbergerbruecke2R">
 <data key="d0">true</data>
-<data key="d1">210</data>
+<data key="d1">190</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitch4" target="HackerbrueckeSwitchExit">
-<data key="d0">true</data>
-<data key="d1">294</data>
+<edge source="HackerbrueckeSwitch4-HackerbrueckeSwitchExit_0-HackerbrueckeSwitchExit_0" target="HackerbrueckeSwitchExit">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitchExit" target="DonnersbergerExit">
+<edge source="HackerbrueckeSwitchExit-DonnersbergerExit_0" target="DonnersbergerExit">
 <data key="d0">true</data>
-<data key="d1">210</data>
+<data key="d1">190</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitch3" target="HackerbrueckeSwitch4">
-<data key="d0">true</data>
-<data key="d1">150</data>
+<edge source="HackerbrueckeSwitch3-HackerbrueckeSwitch4_0-HackerbrueckeSwitch4_0" target="HackerbrueckeSwitch4">
+<data key="d0">false</data>
+<data key="d1">13.5</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Hackerbruecke2L" target="HackerbrueckeSwitch3">
-<data key="d0">true</data>
-<data key="d1">40</data>
+<edge source="Hackerbruecke2L-HackerbrueckeSwitch3_0" target="HackerbrueckeSwitch3">
+<data key="d0">false</data>
+<data key="d1">4</data>
 <data key="d2">27.7778</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -500,58 +680,58 @@
 <data key="d3">25</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitch1" target="HackerbrueckeSwitchC">
-<data key="d0">true</data>
-<data key="d1">75</data>
+<edge source="HackerbrueckeSwitch1-HackerbrueckeSwitchC_0" target="HackerbrueckeSwitchC">
+<data key="d0">false</data>
+<data key="d1">55</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitch2" target="HackerbrueckeSwitchC">
-<data key="d0">true</data>
-<data key="d1">75</data>
+<edge source="HackerbrueckeSwitch2-HackerbrueckeSwitchC_0" target="HackerbrueckeSwitchC">
+<data key="d0">false</data>
+<data key="d1">55</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitch3" target="HackerbrueckeSwitchC">
-<data key="d0">true</data>
-<data key="d1">75</data>
+<edge source="HackerbrueckeSwitch3-HackerbrueckeSwitchC_0" target="HackerbrueckeSwitchC">
+<data key="d0">false</data>
+<data key="d1">55</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitch4" target="HackerbrueckeSwitchC">
-<data key="d0">true</data>
-<data key="d1">75</data>
+<edge source="HackerbrueckeSwitch4-HackerbrueckeSwitchC_0" target="HackerbrueckeSwitchC">
+<data key="d0">false</data>
+<data key="d1">55</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitchC" target="HackerbrueckeSwitch1">
-<data key="d0">true</data>
-<data key="d1">75</data>
+<edge source="HackerbrueckeSwitch1-HackerbrueckeSwitchC_0" target="HackerbrueckeSwitch1">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitchC" target="HackerbrueckeSwitch2">
-<data key="d0">true</data>
-<data key="d1">75</data>
+<edge source="HackerbrueckeSwitch2-HackerbrueckeSwitchC_0" target="HackerbrueckeSwitch2">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitchC" target="HackerbrueckeSwitch3">
-<data key="d0">true</data>
-<data key="d1">75</data>
+<edge source="HackerbrueckeSwitch3-HackerbrueckeSwitchC_0" target="HackerbrueckeSwitch3">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="HackerbrueckeSwitchC" target="HackerbrueckeSwitch4">
-<data key="d0">true</data>
-<data key="d1">75</data>
+<edge source="HackerbrueckeSwitch4-HackerbrueckeSwitchC_0" target="HackerbrueckeSwitch4">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -640,16 +820,16 @@
 <data key="d3">25</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Marienplatz1R" target="IsartorSwitchLR">
-<data key="d0">true</data>
-<data key="d1">393</data>
+<edge source="Marienplatz1R-IsartorSwitchLR_0" target="IsartorSwitchLR">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="IsartorSwitchLR" target="Isartor1L">
+<edge source="IsartorSwitchLR-Isartor1L_0" target="Isartor1L">
 <data key="d0">true</data>
-<data key="d1">100</data>
+<data key="d1">90</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -661,16 +841,16 @@
 <data key="d3">25</data>
 <data key="d4">100</data>
 </edge>
-<edge source="IsartorSwitchRL" target="Marienplatz2R">
+<edge source="IsartorSwitchRL-Marienplatz2R_0" target="Marienplatz2R">
 <data key="d0">true</data>
-<data key="d1">343</data>
+<data key="d1">323</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Isartor2L" target="IsartorSwitchRL">
-<data key="d0">true</data>
-<data key="d1">150</data>
+<edge source="Isartor2L-IsartorSwitchRL_0" target="IsartorSwitchRL">
+<data key="d0">false</data>
+<data key="d1">15</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -682,16 +862,16 @@
 <data key="d3">25</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Isartor1R" target="IsartorSwitchR_LR">
-<data key="d0">true</data>
-<data key="d1">100</data>
+<edge source="IsartorSwitchR_LR-Isartor1R_0" target="IsartorSwitchR_LR">
+<data key="d0">false</data>
+<data key="d1">10</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="IsartorSwitchR_LR" target="Rosenheimer1L">
+<edge source="IsartorSwitchR_LR-Rosenheimer1L_0" target="Rosenheimer1L">
 <data key="d0">true</data>
-<data key="d1">592</data>
+<data key="d1">572</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -703,16 +883,16 @@
 <data key="d3">25</data>
 <data key="d4">100</data>
 </edge>
-<edge source="IsartorSwitchR_RL" target="Isartor2R">
+<edge source="IsartorSwitchR_RL-Isartor2R_0" target="Isartor2R">
 <data key="d0">true</data>
-<data key="d1">150</data>
+<data key="d1">135</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Rosenheimer2L" target="IsartorSwitchR_RL">
-<data key="d0">true</data>
-<data key="d1">542</data>
+<edge source="Rosenheimer2L-IsartorSwitchR_RL_0" target="IsartorSwitchR_RL">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -724,37 +904,37 @@
 <data key="d3">25</data>
 <data key="d4">100</data>
 </edge>
-<edge source="IsartorSwitchLR" target="IsartorSwitchRL">
-<data key="d0">true</data>
-<data key="d1">50</data>
+<edge source="IsartorSwitchRL-IsartorSwitchLR_0" target="IsartorSwitchRL">
+<data key="d0">false</data>
+<data key="d1">25</data>
 <data key="d2">16.6667</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="IsartorSwitchRL" target="IsartorSwitchLR">
-<data key="d0">true</data>
-<data key="d1">50</data>
+<edge source="IsartorSwitchRL-IsartorSwitchLR_0" target="IsartorSwitchLR">
+<data key="d0">false</data>
+<data key="d1">25</data>
 <data key="d2">16.6667</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="IsartorSwitchR_LR" target="IsartorSwitchR_RL">
-<data key="d0">true</data>
-<data key="d1">50</data>
+<edge source="IsartorSwitchR_LR-IsartorSwitchR_RL_0" target="IsartorSwitchR_RL">
+<data key="d0">false</data>
+<data key="d1">25</data>
 <data key="d2">16.6667</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="IsartorSwitchR_RL" target="IsartorSwitchR_LR">
-<data key="d0">true</data>
-<data key="d1">50</data>
+<edge source="IsartorSwitchR_LR-IsartorSwitchR_RL_0" target="IsartorSwitchR_LR">
+<data key="d0">false</data>
+<data key="d1">25</data>
 <data key="d2">16.6667</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="IsartorSwitchR_LR" target="Isartor1R">
+<edge source="IsartorSwitchR_LR-Isartor1R_0" target="Isartor1R">
 <data key="d0">true</data>
-<data key="d1">100</data>
+<data key="d1">90</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -766,23 +946,23 @@
 <data key="d3">25</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Isartor1L" target="IsartorSwitchLR">
-<data key="d0">true</data>
-<data key="d1">100</data>
+<edge source="IsartorSwitchLR-Isartor1L_0" target="IsartorSwitchLR">
+<data key="d0">false</data>
+<data key="d1">10</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Rosenheimer1R" target="OstSwitch5_LR">
-<data key="d0">true</data>
-<data key="d1">792</data>
+<edge source="Rosenheimer1R-OstSwitch5_LR_0" target="OstSwitch5_LR">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="OstSwitch5_LR" target="OstSwitch4_LR">
+<edge source="OstSwitch5_LR-OstSwitch4_LR_0" target="OstSwitch4_LR">
 <data key="d0">true</data>
-<data key="d1">60</data>
+<data key="d1">54</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
@@ -794,43 +974,43 @@
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="OstSwitch5_LR" target="Ost5Exit">
+<edge source="OstSwitch5_LR-Ost5Exit_0" target="Ost5Exit">
 <data key="d0">true</data>
-<data key="d1">100</data>
+<data key="d1">90</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="OstSwitch1_RL" target="Rosenheimer2R">
+<edge source="OstSwitch1_RL-Rosenheimer2R_0" target="Rosenheimer2R">
 <data key="d0">true</data>
-<data key="d1">752</data>
+<data key="d1">732</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Ost1Entry" target="OstSwitch1_RL">
-<data key="d0">true</data>
-<data key="d1">140</data>
+<edge source="Ost1Entry-OstSwitch1_RL_0" target="OstSwitch1_RL">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
 <edge source="OstSwitch2_RL" target="OstSwitch1_RL">
-<data key="d0">true</data>
+<data key="d0">false</data>
 <data key="d1">40</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
-<edge source="Ost2Entry" target="OstSwitch2_RL">
-<data key="d0">true</data>
-<data key="d1">100</data>
+<edge source="Ost2Entry-OstSwitch2_RL_0" target="OstSwitch2_RL">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
 </edge>
 <edge source="OstSwitch3_RL" target="OstSwitch2_RL">
-<data key="d0">true</data>
+<data key="d0">false</data>
 <data key="d1">60</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
@@ -839,6 +1019,384 @@
 <edge source="Ost3Entry" target="OstSwitch3_RL">
 <data key="d0">true</data>
 <data key="d1">40</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="PasingSwitch1" target="PasingSwitch1-PasingSwitch2_0">
+<data key="d0">false</data>
+<data key="d1">60</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="PasingSwitch2" target="PasingSwitch1-PasingSwitch2_0">
+<data key="d0">false</data>
+<data key="d1">60</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch1" target="HackerbrueckeSwitch1-HackerbrueckeSwitchC_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitchC" target="HackerbrueckeSwitch1-HackerbrueckeSwitchC_0">
+<data key="d0">false</data>
+<data key="d1">55</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch2" target="HackerbrueckeSwitch2-HackerbrueckeSwitchC_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitchC" target="HackerbrueckeSwitch2-HackerbrueckeSwitchC_0">
+<data key="d0">false</data>
+<data key="d1">55</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch3" target="HackerbrueckeSwitch3-HackerbrueckeSwitchC_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitchC" target="HackerbrueckeSwitch3-HackerbrueckeSwitchC_0">
+<data key="d0">false</data>
+<data key="d1">55</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch4" target="HackerbrueckeSwitch4-HackerbrueckeSwitchC_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitchC" target="HackerbrueckeSwitch4-HackerbrueckeSwitchC_0">
+<data key="d0">false</data>
+<data key="d1">55</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="IsartorSwitchRL" target="IsartorSwitchRL-IsartorSwitchLR_0">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">16.6667</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="IsartorSwitchLR" target="IsartorSwitchRL-IsartorSwitchLR_0">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">16.6667</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="IsartorSwitchR_LR" target="IsartorSwitchR_LR-IsartorSwitchR_RL_0">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">16.6667</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="IsartorSwitchR_RL" target="IsartorSwitchR_LR-IsartorSwitchR_RL_0">
+<data key="d0">false</data>
+<data key="d1">25</data>
+<data key="d2">16.6667</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Ost2Entry" target="Ost2Entry-OstSwitch2_RL_0">
+<data key="d0">true</data>
+<data key="d1">80</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Ost1Entry" target="Ost1Entry-OstSwitch1_RL_0">
+<data key="d0">true</data>
+<data key="d1">120</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="OstSwitch1_RL" target="OstSwitch1_RL-Rosenheimer2R_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="PasingSwitch1" target="PasingSwitch1-Laim1L_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">33.3333</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="PasingEntry" target="PasingEntry-PasingSwitch1_0">
+<data key="d0">true</data>
+<data key="d1">260</data>
+<data key="d2">33.3333</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="PasingSwitch2" target="PasingSwitch2-PasingExit_0">
+<data key="d0">false</data>
+<data key="d1">16</data>
+<data key="d2">33.3333</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="LaimSwitchNymphenburg-LaimSwitchNymphenburg-PasingSwitch2_0_0" target="LaimSwitchNymphenburg-PasingSwitch2_0">
+<data key="d0">true</data>
+<data key="d1">2522</data>
+<data key="d2">33.3333</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="LaimSwitchNymphenburg" target="LaimSwitchNymphenburg-LaimSwitchNymphenburg-PasingSwitch2_0_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">33.3333</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="LaimSwitchNymphenburg" target="LaimSwitchNymphenburg-LaimExitNymphenburg_0">
+<data key="d0">false</data>
+<data key="d1">3</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Laim3L" target="Laim3L-LaimSwitchNymphenburg_0">
+<data key="d0">true</data>
+<data key="d1">350</data>
+<data key="d2">33.3333</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="LaimSwitchHirschgarten" target="LaimSwitchHirschgarten-Hirschgarten1L_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="LaimEntry" target="LaimEntry-LaimSwitchHirschgarten_0">
+<data key="d0">true</data>
+<data key="d1">180</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Laim1R" target="Laim1R-LaimSwitchHirschgarten_0">
+<data key="d0">true</data>
+<data key="d1">180</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch1" target="HackerbrueckeSwitch1-HackerbrueckeSwitch2_0">
+<data key="d0">false</data>
+<data key="d1">15</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitchEntry-HackerbrueckeSwitchEntry-HackerbrueckeSwitch1_0_0" target="HackerbrueckeSwitchEntry-HackerbrueckeSwitch1_0">
+<data key="d0">true</data>
+<data key="d1">254</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch2" target="HackerbrueckeSwitch2-Hackerbruecke1L_0">
+<data key="d0">false</data>
+<data key="d1">4</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch1-HackerbrueckeSwitch2_0" target="HackerbrueckeSwitch1-HackerbrueckeSwitch2_0-HackerbrueckeSwitch2_0">
+<data key="d0">true</data>
+<data key="d1">121.5</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch3" target="HackerbrueckeSwitch3-HackerbrueckeSwitch4_0">
+<data key="d0">false</data>
+<data key="d1">15</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Hackerbruecke2L" target="Hackerbruecke2L-HackerbrueckeSwitch3_0">
+<data key="d0">true</data>
+<data key="d1">36</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch4" target="HackerbrueckeSwitch4-HackerbrueckeSwitchExit_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch3-HackerbrueckeSwitch4_0" target="HackerbrueckeSwitch3-HackerbrueckeSwitch4_0-HackerbrueckeSwitch4_0">
+<data key="d0">true</data>
+<data key="d1">121.5</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitchEntry" target="HackerbrueckeSwitchEntry-HackerbrueckeSwitchEntry-HackerbrueckeSwitch1_0_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="DonnersbergerEntry" target="DonnersbergerEntry-HackerbrueckeSwitchEntry_0">
+<data key="d0">true</data>
+<data key="d1">190</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Donnersbergerbruecke1R" target="Donnersbergerbruecke1R-HackerbrueckeSwitchEntry_0">
+<data key="d0">true</data>
+<data key="d1">190</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitchExit" target="HackerbrueckeSwitchExit-DonnersbergerExit_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitchExit" target="HackerbrueckeSwitchExit-Donnersbergerbruecke2R_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="HackerbrueckeSwitch4-HackerbrueckeSwitchExit_0" target="HackerbrueckeSwitch4-HackerbrueckeSwitchExit_0-HackerbrueckeSwitchExit_0">
+<data key="d0">true</data>
+<data key="d1">254</data>
+<data key="d2">27.7778</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="IsartorSwitchLR" target="IsartorSwitchLR-Isartor1L_0">
+<data key="d0">false</data>
+<data key="d1">10</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Isartor1L" target="IsartorSwitchLR-Isartor1L_0">
+<data key="d0">true</data>
+<data key="d1">90</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Marienplatz1R" target="Marienplatz1R-IsartorSwitchLR_0">
+<data key="d0">true</data>
+<data key="d1">373</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="IsartorSwitchRL" target="IsartorSwitchRL-Marienplatz2R_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Isartor2L" target="Isartor2L-IsartorSwitchRL_0">
+<data key="d0">true</data>
+<data key="d1">135</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="IsartorSwitchR_LR" target="IsartorSwitchR_LR-Isartor1R_0">
+<data key="d0">false</data>
+<data key="d1">10</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Isartor1R" target="IsartorSwitchR_LR-Isartor1R_0">
+<data key="d0">true</data>
+<data key="d1">90</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="IsartorSwitchR_LR" target="IsartorSwitchR_LR-Rosenheimer1L_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="IsartorSwitchR_RL" target="IsartorSwitchR_RL-Isartor2R_0">
+<data key="d0">false</data>
+<data key="d1">15</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Rosenheimer2L" target="Rosenheimer2L-IsartorSwitchR_RL_0">
+<data key="d0">true</data>
+<data key="d1">522</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="OstSwitch5_LR" target="OstSwitch5_LR-Ost5Exit_0">
+<data key="d0">false</data>
+<data key="d1">10</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="OstSwitch5_LR" target="OstSwitch5_LR-OstSwitch4_LR_0">
+<data key="d0">false</data>
+<data key="d1">6</data>
+<data key="d2">22.2222</data>
+<data key="d3">50</data>
+<data key="d4">100</data>
+</edge>
+<edge source="Rosenheimer1R" target="Rosenheimer1R-OstSwitch5_LR_0">
+<data key="d0">true</data>
+<data key="d1">772</data>
 <data key="d2">22.2222</data>
 <data key="d3">50</data>
 <data key="d4">100</data>
