@@ -79,6 +79,8 @@ public:
    */
   [[nodiscard]] double sum_of_weighted_exit_times() const;
 
+  [[nodiscard]] double sum_of_train_weights() const;
+
   /**
    * @brief Constructs an instance from a named subdirectory.
    *

@@ -107,6 +107,15 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
   return retval;
 }
 
+double cda_rail::instances::GeneralPerformanceOptimizationInstance::
+    sum_of_train_weights() const {
+  double retval{0.0};
+  for (size_t tr = 0; tr < get_const_train_list().size(); ++tr) {
+    retval += get_train_weight(tr);
+  }
+  return retval;
+}
+
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     export_instance(const std::filesystem::path& working_directory,
                     bool const                   saveNetwork) const {
