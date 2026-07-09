@@ -1597,3 +1597,26 @@ TEST(EoM, MaxTravelTimeToStop) {
                                                                          2, 61),
             4);
 }
+
+TEST(EoM, ConstantAcceleration) {
+  // Train travels 5 seconds at speed 10 coves 50
+  EXPECT_EQ(
+      cda_rail::time_to_travel_distance_with_constant_acceleration(10, 0, 50),
+      5.0);
+
+  // Train starts with speed 5
+  // Accelerates at rate 2 for 10 seconds
+  // Reaches speed 25
+  // Traveled: (5+25)/2 * 10 = 15*10 = 150
+  EXPECT_EQ(
+      cda_rail::time_to_travel_distance_with_constant_acceleration(5, 2, 150),
+      10.0);
+
+  // Train starts with speed 20
+  // Decelerates at rate 3 for 4 seconds
+  // Reaches speed 20-12 = 8
+  // Traveled: (8+20)/2 * 4 = 14*4 = 56
+  EXPECT_EQ(
+      cda_rail::time_to_travel_distance_with_constant_acceleration(20, -3, 56),
+      4.0);
+}

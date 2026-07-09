@@ -130,6 +130,13 @@ public:
     exceptions::throw_if_invalid_folder_name(instanceSubdirectory);
     m_instance_subdirectory = instanceSubdirectory;
   }
+
+  struct FeasibilityCheck {
+    bool        is_obviously_infeasible{false};
+    std::string reason{};
+  };
+  [[nodiscard]] virtual FeasibilityCheck
+  is_obviously_infeasible(bool late_entry_allowed) const = 0;
 };
 
 class GeneralProblemInstanceWithScheduleAndRoutes
@@ -850,6 +857,10 @@ public:
    */
   [[nodiscard]] virtual bool
   check_consistency(bool every_train_must_have_route) const;
+
+  // Helper
+  [[nodiscard]] FeasibilityCheck
+  is_obviously_infeasible(bool late_entry_allowed) const override;
 };
 
 class SolGeneralProblemInstance {
@@ -857,6 +868,7 @@ private:
   std::shared_ptr<GeneralProblemInstance> m_instance;
   SolutionStatus                          m_status{SolutionStatus::Unknown};
   double                                  m_obj{-1};
+  double                                  m_lb{-1};
   bool                                    m_has_sol{false};
 
 protected:
@@ -955,6 +967,12 @@ public:
    */
   [[nodiscard]] double get_obj() const { return m_obj; };
   /**
+   * @brief Gets the lower bound on the objective value of the solution.
+   *
+   * @return double The lower bound.
+   */
+  [[nodiscard]] double get_lower_bound() const { return m_lb; };
+  /**
    * @brief Indicates whether a solution has been found.
    *
    * @return bool `true` if a solution has been found, `false` otherwise.
@@ -970,6 +988,12 @@ public:
    * @param new_obj The new objective value.
    */
   void set_obj(double new_obj) { m_obj = new_obj; };
+  /**
+   * @brief Sets the loewr bound of the objective value of the solution.
+   *
+   * @param new_obj The lower bound.
+   */
+  void set_lower_bound(double new_lb) { m_lb = new_lb; };
   /**
    * @brief Marks the solution as found.
    */
