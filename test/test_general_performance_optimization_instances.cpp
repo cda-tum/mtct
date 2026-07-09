@@ -835,6 +835,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
 
   sol_instance.set_obj(0.5);
+  sol_instance.set_lower_bound(0.2);
   sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
 
   sol_instance.add_empty_route("tr1");
@@ -852,6 +853,7 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   instances::SolGeneralPerformanceOptimizationInstance sol_instance_2(instance);
   sol_instance_2.set_obj(0.5);
+  sol_instance_2.set_lower_bound(0.3);
   sol_instance_2.set_status(cda_rail::SolutionStatus::Optimal);
 
   sol_instance_2.add_empty_route("tr1");
@@ -878,6 +880,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_TRUE(sol2_read.check_consistency());
 
   EXPECT_EQ(sol1_read.get_obj(), 0.5);
+  EXPECT_EQ(sol1_read.get_lower_bound(), 0.2);
   EXPECT_EQ(sol1_read.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 0), 0);
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 60), 100);
@@ -900,6 +903,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(sol1_read.get_instance()->get_const_routes().has_route("tr2"));
 
   EXPECT_EQ(sol2_read.get_obj(), 0.5);
+  EXPECT_EQ(sol2_read.get_lower_bound(), 0.3);
   EXPECT_EQ(sol2_read.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol2_read.get_train_pos("tr1", 0), 0);
   EXPECT_EQ(sol2_read.get_train_pos("tr1", 30), 50);
@@ -985,6 +989,7 @@ TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesExportImport) {
   sol_instance.set_train_stop_times("tr1", {60, 200});
 
   sol_instance.set_obj(1000);
+  sol_instance.set_lower_bound(900);
 
   EXPECT_TRUE(sol_instance.check_consistency());
 
@@ -997,6 +1002,7 @@ TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesExportImport) {
 
   EXPECT_TRUE(sol_read.check_consistency());
   EXPECT_EQ(sol_read.get_obj(), 1000);
+  EXPECT_EQ(sol_read.get_lower_bound(), 900);
   EXPECT_EQ(sol_read.get_status(), cda_rail::SolutionStatus::Optimal);
 
   EXPECT_EQ(sol_read.get_exit_time("tr1"), 230);
@@ -2070,6 +2076,9 @@ TEST(GeneralPerformanceOptimizationInstances, ObjectiveValue) {
   instance.insert_stop("tr2", "Station2", 25, 5);
   instance.insert_stop("tr2", "Station3", 44.3, 5);
 
+  EXPECT_EQ(instance.sum_of_weighted_exit_times(), 1.5 * 100 + 2 * 100);
+  EXPECT_EQ(instance.sum_of_train_weights(), 1.5 + 2);
+
   auto const obj1 =
       instance.get_objective_val({110, 120.5}, {{}, {9.5, 25, 44.3}});
   EXPECT_APPROX_EQ_6(obj1, 1.5 * 110 + 2 * 120.5);
@@ -2089,4 +2098,626 @@ TEST(GeneralPerformanceOptimizationInstances, ObjectiveValue) {
                cda_rail::exceptions::InvalidInputException);
 }
 
+// Ovisous Infeasibility Tests
+
+TEST(GeneralPerformanceOptimizationInstances, ObviousInfeasibilityHeadway) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD,
+                                             120);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 10, {"v0"}, 100, 10, {"v1"}, 1.5);
+  instance.add_train("tr2", 100, 20, 2, 2, 120, 10, {"v0"}, 220, 10, {"v1"}, 2);
+  instance.add_train("tr3", 100, 20, 2, 2, 239, 10, {"v0"}, 339, 10, {"v1"}, 2);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Entry times at vertex v0 are closer than the vertex "
+                   "headway for trains tr2 and tr3");
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(true);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityBrakingDistance) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 40, 2, 3, 0, 20, {"v0"}, 100, 10, {"v1"}, 1.5);
+  instance.add_train("tr2", 100, 40, 2, 1, 15, 20, {"v0"}, 220, 10, {"v1"}, 2);
+  instance.add_train("tr3", 100, 40, 2, 1, 29, 20, {"v0"}, 339, 10, {"v1"}, 2);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "At vertex v0, train tr2 cannot clear the braking distance "
+                   "of the following train tr3");
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(true);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityTooManyEntryEdges) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 10000, 20);
+  instance.get_editable_network().add_edge({"v0"}, {"v2"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 40, 2, 3, 0, 20, {"v0"}, 100, 10, {"v2"}, 1);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr1 has more or less than one entry edge");
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityTooFewEntryEdges) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 40, 2, 3, 0, 20, {"v0"}, 100, 10, {"v2"}, 1);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr1 has more or less than one entry edge");
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityTooManyExitEdges) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v2"}, 10000, 20);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 40, 2, 3, 0, 20, {"v0"}, 100, 10, {"v2"}, 1);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr1 has more or less than one exit edge");
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityTooFewExitEdges) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 40, 2, 3, 0, 20, {"v0"}, 100, 10, {"v2"}, 1);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr1 has more or less than one exit edge");
+}
+
+TEST(GeneralPerformanceOptimizationInstances, ObviousInfeasibilityNoExitPath) {
+  // clang-format off
+  //                - v3b -- v4b -                    - v9b -- v10b -
+  //               /              \                  /                \
+  // v0 --- v1 - v2 - v3a -- v4a - v5 - v6 -- v7 - v8 - v9a -- v10a - v11 - v12a -- v13a
+  //                                                                    \
+  //                                                                      - v12b -- v13b
+  // clang-format on
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v3a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v5",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v6", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v7", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v8",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v9a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v9b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v11",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v12a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v12b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13b", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3a"}, {"v4a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3b"}, {"v4b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4a"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4b"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v5"}, {"v6"}, 100, 20);
+  instance.get_editable_network().add_edge({"v6"}, {"v7"}, 100, 20);
+  instance.get_editable_network().add_edge({"v7"}, {"v8"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9a"}, {"v10a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9b"}, {"v10b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10a"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10b"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12a"}, {"v13a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12b"}, {"v13b"}, 100, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3a"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3b"});
+  instance.get_editable_network().add_successor({"v2", "v3a"}, {"v3a", "v4a"});
+  instance.get_editable_network().add_successor({"v2", "v3b"}, {"v3b", "v4b"});
+  instance.get_editable_network().add_successor({"v3a", "v4a"}, {"v4a", "v5"});
+  instance.get_editable_network().add_successor({"v3b", "v4b"}, {"v4b", "v5"});
+  instance.get_editable_network().add_successor({"v4a", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v4b", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v5", "v6"}, {"v6", "v7"});
+  instance.get_editable_network().add_successor({"v6", "v7"}, {"v7", "v8"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9a"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9b"});
+  instance.get_editable_network().add_successor({"v8", "v9a"}, {"v9a", "v10a"});
+  instance.get_editable_network().add_successor({"v8", "v9b"}, {"v9b", "v10b"});
+  instance.get_editable_network().add_successor({"v9a", "v10a"},
+                                                {"v10a", "v11"});
+  instance.get_editable_network().add_successor({"v9b", "v10b"},
+                                                {"v10b", "v11"});
+  instance.get_editable_network().add_successor({"v10a", "v11"},
+                                                {"v11", "v12a"});
+  instance.get_editable_network().add_successor({"v10b", "v11"},
+                                                {"v11", "v12b"});
+  instance.get_editable_network().add_successor({"v11", "v12b"},
+                                                {"v12b", "v13b"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", {"v3b", "v4b"});
+
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station2", {"v9b", "v10b"});
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 20, {"v0"}, 100, 10, {"v13a"}, 1);
+  instance.add_train("tr2", 100, 20, 2, 2, 200, 20, {"v0"}, 300, 10, {"v13b"},
+                     1);
+
+  instance.insert_stop("tr2", "Station1", 130, 30);
+  instance.insert_stop("tr2", "Station2", 160, 30);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr1 cannot reach exit vertex");
+
+  instance.get_editable_network().add_successor({"v11", "v12a"},
+                                                {"v12a", "v13a"});
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(false);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityNoPathToStation1) {
+  // clang-format off
+  //                - v3b -- v4b -                    - v9b -- v10b -
+  //               /              \                  /                \
+  // v0 --- v1 - v2 - v3a -- v4a - v5 - v6 -- v7 - v8 - v9a -- v10a - v11 - v12a -- v13a
+  //                                                                    \
+  //                                                                      - v12b -- v13b
+  // clang-format on
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v3a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v5",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v6", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v7", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v8",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v9a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v9b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v11",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v12a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v12b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13b", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3a"}, {"v4a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3b"}, {"v4b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4a"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4b"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v5"}, {"v6"}, 100, 20);
+  instance.get_editable_network().add_edge({"v6"}, {"v7"}, 100, 20);
+  instance.get_editable_network().add_edge({"v7"}, {"v8"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9a"}, {"v10a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9b"}, {"v10b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10a"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10b"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12a"}, {"v13a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12b"}, {"v13b"}, 100, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3a"});
+  instance.get_editable_network().add_successor({"v2", "v3a"}, {"v3a", "v4a"});
+  instance.get_editable_network().add_successor({"v2", "v3b"}, {"v3b", "v4b"});
+  instance.get_editable_network().add_successor({"v3a", "v4a"}, {"v4a", "v5"});
+  instance.get_editable_network().add_successor({"v3b", "v4b"}, {"v4b", "v5"});
+  instance.get_editable_network().add_successor({"v4a", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v4b", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v5", "v6"}, {"v6", "v7"});
+  instance.get_editable_network().add_successor({"v6", "v7"}, {"v7", "v8"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9a"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9b"});
+  instance.get_editable_network().add_successor({"v8", "v9a"}, {"v9a", "v10a"});
+  instance.get_editable_network().add_successor({"v8", "v9b"}, {"v9b", "v10b"});
+  instance.get_editable_network().add_successor({"v9a", "v10a"},
+                                                {"v10a", "v11"});
+  instance.get_editable_network().add_successor({"v9b", "v10b"},
+                                                {"v10b", "v11"});
+  instance.get_editable_network().add_successor({"v10a", "v11"},
+                                                {"v11", "v12a"});
+  instance.get_editable_network().add_successor({"v10b", "v11"},
+                                                {"v11", "v12b"});
+  instance.get_editable_network().add_successor({"v11", "v12a"},
+                                                {"v12a", "v13a"});
+  instance.get_editable_network().add_successor({"v11", "v12b"},
+                                                {"v12b", "v13b"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", {"v3b", "v4b"});
+
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station2", {"v9b", "v10b"});
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 20, {"v0"}, 100, 10, {"v13a"}, 1);
+  instance.add_train("tr2", 100, 20, 2, 2, 200, 20, {"v0"}, 300, 10, {"v13b"},
+                     1);
+
+  instance.insert_stop("tr2", "Station1", 130, 30);
+  instance.insert_stop("tr2", "Station2", 160, 30);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr2 cannot reach station Station1");
+
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3b"});
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(false);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityNoPathToStation2) {
+  // clang-format off
+  //                - v3b -- v4b -                    - v9b -- v10b -
+  //               /              \                  /                \
+  // v0 --- v1 - v2 - v3a -- v4a - v5 - v6 -- v7 - v8 - v9a -- v10a - v11 - v12a -- v13a
+  //                                                                    \
+  //                                                                      - v12b -- v13b
+  // clang-format on
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v3a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v5",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v6", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v7", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v8",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v9a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v9b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v11",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v12a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v12b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13b", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3a"}, {"v4a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3b"}, {"v4b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4a"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4b"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v5"}, {"v6"}, 100, 20);
+  instance.get_editable_network().add_edge({"v6"}, {"v7"}, 100, 20);
+  instance.get_editable_network().add_edge({"v7"}, {"v8"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9a"}, {"v10a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9b"}, {"v10b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10a"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10b"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12a"}, {"v13a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12b"}, {"v13b"}, 100, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3a"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3b"});
+  instance.get_editable_network().add_successor({"v2", "v3a"}, {"v3a", "v4a"});
+  instance.get_editable_network().add_successor({"v2", "v3b"}, {"v3b", "v4b"});
+  instance.get_editable_network().add_successor({"v3a", "v4a"}, {"v4a", "v5"});
+  instance.get_editable_network().add_successor({"v4a", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v4b", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v5", "v6"}, {"v6", "v7"});
+  instance.get_editable_network().add_successor({"v6", "v7"}, {"v7", "v8"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9a"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9b"});
+  instance.get_editable_network().add_successor({"v8", "v9a"}, {"v9a", "v10a"});
+  instance.get_editable_network().add_successor({"v8", "v9b"}, {"v9b", "v10b"});
+  instance.get_editable_network().add_successor({"v9a", "v10a"},
+                                                {"v10a", "v11"});
+  instance.get_editable_network().add_successor({"v9b", "v10b"},
+                                                {"v10b", "v11"});
+  instance.get_editable_network().add_successor({"v10a", "v11"},
+                                                {"v11", "v12a"});
+  instance.get_editable_network().add_successor({"v10b", "v11"},
+                                                {"v11", "v12b"});
+  instance.get_editable_network().add_successor({"v11", "v12a"},
+                                                {"v12a", "v13a"});
+  instance.get_editable_network().add_successor({"v11", "v12b"},
+                                                {"v12b", "v13b"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", {"v3b", "v4b"});
+
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station2", {"v9b", "v10b"});
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 20, {"v0"}, 100, 10, {"v13a"}, 1);
+  instance.add_train("tr2", 100, 20, 2, 2, 200, 20, {"v0"}, 300, 10, {"v13b"},
+                     1);
+
+  instance.insert_stop("tr2", "Station1", 130, 30);
+  instance.insert_stop("tr2", "Station2", 160, 30);
+
+  EXPECT_EQ(instance.sum_of_weighted_exit_times(), 100 + 300);
+  EXPECT_EQ(instance.sum_of_train_weights(), 1 + 1);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr2 cannot reach station Station2");
+
+  instance.get_editable_network().add_successor({"v3b", "v4b"}, {"v4b", "v5"});
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(false);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityNoPathAfterLastStation) {
+  // clang-format off
+  //                - v3b -- v4b -                    - v9b -- v10b -
+  //               /              \                  /                \
+  // v0 --- v1 - v2 - v3a -- v4a - v5 - v6 -- v7 - v8 - v9a -- v10a - v11 - v12a -- v13a
+  //                                                                    \
+  //                                                                      - v12b -- v13b
+  // clang-format on
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v3a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v5",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v6", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v7", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v8",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v9a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v9b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v11",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v12a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v12b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13b", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3a"}, {"v4a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3b"}, {"v4b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4a"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4b"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v5"}, {"v6"}, 100, 20);
+  instance.get_editable_network().add_edge({"v6"}, {"v7"}, 100, 20);
+  instance.get_editable_network().add_edge({"v7"}, {"v8"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9a"}, {"v10a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9b"}, {"v10b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10a"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10b"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12a"}, {"v13a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12b"}, {"v13b"}, 100, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3a"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3b"});
+  instance.get_editable_network().add_successor({"v2", "v3a"}, {"v3a", "v4a"});
+  instance.get_editable_network().add_successor({"v2", "v3b"}, {"v3b", "v4b"});
+  instance.get_editable_network().add_successor({"v3a", "v4a"}, {"v4a", "v5"});
+  instance.get_editable_network().add_successor({"v3b", "v4b"}, {"v4b", "v5"});
+  instance.get_editable_network().add_successor({"v4a", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v4b", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v5", "v6"}, {"v6", "v7"});
+  instance.get_editable_network().add_successor({"v6", "v7"}, {"v7", "v8"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9a"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9b"});
+  instance.get_editable_network().add_successor({"v8", "v9a"}, {"v9a", "v10a"});
+  instance.get_editable_network().add_successor({"v8", "v9b"}, {"v9b", "v10b"});
+  instance.get_editable_network().add_successor({"v9a", "v10a"},
+                                                {"v10a", "v11"});
+  instance.get_editable_network().add_successor({"v9b", "v10b"},
+                                                {"v10b", "v11"});
+  instance.get_editable_network().add_successor({"v10a", "v11"},
+                                                {"v11", "v12a"});
+  instance.get_editable_network().add_successor({"v11", "v12a"},
+                                                {"v12a", "v13a"});
+  instance.get_editable_network().add_successor({"v11", "v12b"},
+                                                {"v12b", "v13b"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", {"v3b", "v4b"});
+
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station2", {"v9b", "v10b"});
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 20, {"v0"}, 100, 10, {"v13a"}, 1);
+  instance.add_train("tr2", 100, 20, 2, 2, 200, 20, {"v0"}, 300, 10, {"v13b"},
+                     1);
+
+  instance.insert_stop("tr2", "Station1", 130, 30);
+  instance.insert_stop("tr2", "Station2", 160, 30);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr2 cannot reach exit vertex");
+
+  instance.get_editable_network().add_successor({"v10b", "v11"},
+                                                {"v11", "v12b"});
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(false);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances, ATMOS2023) {
+  std::filesystem::path const wd           = "data";
+  std::string const           subdirectory = "atmos2023";
+  // Expect directory data\instances\atmos2023 to exist
+  std::filesystem::path const dir_path = wd / "instances" / subdirectory;
+  EXPECT_TRUE(std::filesystem::exists(dir_path));
+  EXPECT_TRUE(std::filesystem::is_directory(dir_path));
+
+  // get all names of subdirecotires
+  for (auto const& entry : std::filesystem::directory_iterator(dir_path)) {
+    if (entry.is_directory()) {
+      auto const& name = entry.path().filename().string();
+      instances::GeneralPerformanceOptimizationInstance instance(
+          name, subdirectory, wd);
+      auto const [infeas, reas] = instance.is_obviously_infeasible(false);
+      EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
+
+      auto const consistency = instance.check_consistency(false);
+      EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
+    }
+  }
+}
+
+TEST(GeneralPerformanceOptimizationInstances, RAS) {
+  std::filesystem::path const wd           = "data";
+  std::string const           subdirectory = "ras";
+  // Expect directory data\instances\atmos2023 to exist
+  std::filesystem::path const dir_path = wd / "instances" / subdirectory;
+  EXPECT_TRUE(std::filesystem::exists(dir_path));
+  EXPECT_TRUE(std::filesystem::is_directory(dir_path));
+
+  // get all names of subdirecotires
+  for (auto const& entry : std::filesystem::directory_iterator(dir_path)) {
+    if (entry.is_directory()) {
+      auto const& name = entry.path().filename().string();
+      instances::GeneralPerformanceOptimizationInstance instance(
+          name, subdirectory, wd);
+      auto const [infeas, reas] = instance.is_obviously_infeasible(false);
+      EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
+
+      auto const consistency = instance.check_consistency(false);
+      EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
+    }
+  }
+}
+
+TEST(GeneralPerformanceOptimizationInstances, GenPO) {
+  std::filesystem::path const wd           = "data";
+  std::string const           subdirectory = "gen-po";
+  // Expect directory data\instances\atmos2023 to exist
+  std::filesystem::path const dir_path = wd / "instances" / subdirectory;
+  EXPECT_TRUE(std::filesystem::exists(dir_path));
+  EXPECT_TRUE(std::filesystem::is_directory(dir_path));
+
+  // get all names of subdirecotires
+  for (auto const& entry : std::filesystem::directory_iterator(dir_path)) {
+    if (entry.is_directory()) {
+      auto const& name = entry.path().filename().string();
+      instances::GeneralPerformanceOptimizationInstance instance(
+          name, subdirectory, wd);
+      auto const [infeas, reas] = instance.is_obviously_infeasible(false);
+      EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
+
+      auto const consistency = instance.check_consistency(false);
+      EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
+    }
+  }
+}
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

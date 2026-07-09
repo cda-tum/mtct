@@ -2,12 +2,14 @@
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "EOMHelper.hpp"
 #include "GeneralHelper.hpp"
 #include "datastructure/Timetable.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -316,6 +318,127 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
   return true;
 }
 
+cda_rail::instances::GeneralProblemInstance::FeasibilityCheck
+cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
+    is_obviously_infeasible(bool late_entry_allowed) const {
+  auto const num_trains = get_const_train_list().get_number_of_trains();
+
+  // Check if routes exist
+  for (size_t tr = 0; tr < num_trains; ++tr) {
+    auto const& tr_obj      = get_const_train_list().get_train(tr);
+    auto const& tr_name     = tr_obj.get_name();
+    auto const& tr_schedule = get_const_schedule(tr);
+    auto        entry_edges =
+        get_const_network().out_edges(tr_schedule.get_entry_vertex());
+    if (entry_edges.size() != 1) {
+      return {.is_obviously_infeasible = true,
+              .reason =
+                  "Train " + tr_name + " has more or less than one entry edge"};
+    }
+    if (auto const& exit_edges =
+            get_const_network().in_edges(tr_schedule.get_exit_vertex());
+        exit_edges.size() != 1) {
+      return {.is_obviously_infeasible = true,
+              .reason =
+                  "Train " + tr_name + " has more or less than one exit edge"};
+    }
+    for (auto const& stop : tr_schedule.get_stops()) {
+      auto const& stop_tracks = stop.get_station().tracks;
+      if (auto const p_len =
+              get_const_network().shortest_path_length_between_edge_sets(
+                  entry_edges, stop_tracks);
+          !p_len.has_value()) {
+        return {.is_obviously_infeasible = true,
+                .reason = "Train " + tr_name + " cannot reach station " +
+                          stop.get_station().name};
+      }
+      entry_edges = stop_tracks;
+    }
+    if (auto const p_len =
+            get_const_network()
+                .shortest_path_length_between_edge_and_vertex_set(
+                    entry_edges, {tr_schedule.get_exit_vertex()});
+        !p_len.has_value()) {
+      return {.is_obviously_infeasible = true,
+              .reason = "Train " + tr_name + " cannot reach exit vertex"};
+    }
+  }
+
+  // Check entry times
+  if (late_entry_allowed) {
+    return {.is_obviously_infeasible = false};
+  }
+
+  struct EntryInformation {
+    Train  tr_obj;
+    double entry_time;
+    double entry_velocity;
+  };
+  std::vector<std::vector<EntryInformation>> entry_information(
+      get_const_network().number_of_vertices());
+
+  for (size_t tr = 0; tr < num_trains; ++tr) {
+    auto const& tr_obj      = get_const_train_list().get_train(tr);
+    auto const& tr_schedule = get_const_schedule(tr);
+    entry_information.at(tr_schedule.get_entry_vertex())
+        .emplace_back(tr_obj, tr_schedule.get_entry_time(),
+                      tr_schedule.get_initial_velocity());
+  }
+  for (size_t v = 0; v < get_const_network().number_of_vertices(); ++v) {
+    if (entry_information.at(v).empty()) {
+      continue;
+    }
+    // sort entry_information.at(v) by entry_time
+    std::ranges::sort(entry_information.at(v),
+                      [](const EntryInformation& a, const EntryInformation& b) {
+                        return a.entry_time < b.entry_time;
+                      });
+
+    auto const vertex_obj  = get_const_network().get_vertex(v);
+    auto const entry_edges = get_const_network().out_edges(v);
+    assert(entry_edges.size() == 1);
+    auto const entry_edge_id = *entry_edges.begin();
+    auto const entry_edge    = get_const_network().get_edge(entry_edge_id);
+
+    for (size_t entry_idx = 1; entry_idx < entry_information.at(v).size();
+         ++entry_idx) {
+      auto const& entry_obj      = entry_information.at(v).at(entry_idx);
+      auto const& prev_entry_obj = entry_information.at(v).at(entry_idx - 1);
+      if (entry_obj.entry_time <
+          prev_entry_obj.entry_time + vertex_obj.headway) {
+        return {.is_obviously_infeasible = true,
+                .reason = "Entry times at vertex " + vertex_obj.name +
+                          " are closer than the vertex headway for trains " +
+                          prev_entry_obj.tr_obj.get_name() + " and " +
+                          entry_obj.tr_obj.get_name()};
+      }
+      auto const bd = braking_distance(entry_obj.entry_velocity,
+                                       entry_obj.tr_obj.get_deceleration());
+      if (auto const max_speed =
+              bd <= entry_edge.length
+                  ? std::min(entry_edge.max_speed,
+                             prev_entry_obj.tr_obj.get_max_speed())
+                  : prev_entry_obj.tr_obj.get_max_speed();
+          entry_obj.entry_time <
+          prev_entry_obj.entry_time +
+              min_travel_time_flexible_exit_speed(
+                  prev_entry_obj.entry_velocity, max_speed,
+                  prev_entry_obj.tr_obj.get_acceleration(),
+                  prev_entry_obj.tr_obj.get_length() + bd)) {
+        return {
+            .is_obviously_infeasible = true,
+            .reason =
+                "At vertex " + vertex_obj.name + ", train " +
+                prev_entry_obj.tr_obj.get_name() +
+                " cannot clear the braking distance of the following train " +
+                entry_obj.tr_obj.get_name()};
+      }
+    }
+  }
+
+  return {.is_obviously_infeasible = false};
+}
+
 // -------------------
 // Solution Objects
 // -------------------
@@ -327,6 +450,7 @@ cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
   data["status"] = static_cast<int>(
       m_status);       // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   data["obj"] = m_obj; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
+  data["lb"]  = m_lb;  // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   data["has_solution"] =
       m_has_sol; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   return data;
@@ -336,6 +460,7 @@ void cda_rail::instances::SolGeneralProblemInstance::set_general_solution_data(
     const nlohmann::json& data) {
   this->m_status  = static_cast<SolutionStatus>(data.at("status").get<int>());
   this->m_obj     = data.at("obj").get<double>();
+  this->m_lb      = data.at("lb").get<double>();
   this->m_has_sol = data.at("has_solution").get<bool>();
 }
 

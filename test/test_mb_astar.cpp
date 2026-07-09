@@ -1276,10 +1276,30 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = false},
                    {}, -1, true);
+  const auto sol_obj_ttd_3 =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::NextRelevantTTD,
+                    .time_aware_state_transitions = false,
+                    .a_star_weight                = 2},
+                   {}, -1, true);
 
   EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
+  EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
+  EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 2);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
+
   auto const v2_v3 =
       sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
                                                                         {"v3"});
@@ -1402,10 +1422,30 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = true},
                    {}, -1, true);
+  const auto sol_obj_ttd_3 =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::NextRelevantTTD,
+                    .time_aware_state_transitions = true,
+                    .a_star_weight                = 3},
+                   {}, -1, true);
 
   EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
   EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
+  EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
+  EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 3);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
+
   auto const v2_v3 =
       sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
                                                                         {"v3"});
@@ -1551,10 +1591,29 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = false},
                    {}, -1, true);
+  const auto sol_obj_ttd_3 =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::NextRelevantTTD,
+                    .time_aware_state_transitions = false,
+                    .a_star_weight                = 4},
+                   {}, -1, true);
 
   EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300);
   EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300);
   EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300);
+  EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
+  EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
+  EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 4);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
 
   auto const tr1_time_single =
       sol_obj_single.get_time_at_pos("Train1", 170, true);
@@ -1691,10 +1750,29 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware2) {
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = true},
                    {}, -1, true);
+  const auto sol_obj_ttd_3 =
+      solver.solve({.dt = 5},
+                   {.next_state_strategy =
+                        solver::astar_based::NextStateStrategy::NextRelevantTTD,
+                    .time_aware_state_transitions = true,
+                    .a_star_weight                = 5},
+                   {}, -1, true);
 
   EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300);
   EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300);
   EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300);
+  EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
+  EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
+  EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
+  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 5);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
 
   auto const tr1_time_single =
       sol_obj_single.get_time_at_pos("Train1", 170, true);
@@ -2289,7 +2367,7 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
 
 TEST(GenPOMovingBlockAStarSolver, GeneralSimpleNetwork) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "GeneralSimpleNetworkB3Trains", "gen-po", "./data");
+      "GeneralSimpleNetwork3Trains", "gen-po", "./data");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(
@@ -2305,7 +2383,7 @@ TEST(GenPOMovingBlockAStarSolver, GeneralSimpleNetwork) {
 
 TEST(GenPOMovingBlockAStarSolver, Timeout) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "GeneralSimpleNetworkB6Trains", "gen-po", "./data");
+      "GeneralSimpleNetwork6Trains", "gen-po", "./data");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(
@@ -2556,12 +2634,21 @@ TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
        .time_aware_state_transitions = true},
       {}, -1, true);
 
+  const auto sol_obj_7 = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
+       .time_aware_state_transitions = true,
+       .a_star_weight                = 10},
+      {}, -1, true);
+
   EXPECT_TRUE(sol_obj.has_solution());
   EXPECT_TRUE(sol_obj_2.has_solution());
   EXPECT_TRUE(sol_obj_3.has_solution());
   EXPECT_TRUE(sol_obj_4.has_solution());
   EXPECT_TRUE(sol_obj_5.has_solution());
   EXPECT_TRUE(sol_obj_6.has_solution());
+  EXPECT_TRUE(sol_obj_7.has_solution());
 
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_2.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -2569,12 +2656,30 @@ TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
   EXPECT_EQ(sol_obj_4.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_5.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_6.get_status(), cda_rail::SolutionStatus::Optimal);
+  if (sol_obj_7.get_lower_bound() >= sol_obj_7.get_obj()) {
+    EXPECT_EQ(sol_obj_7.get_status(), cda_rail::SolutionStatus::Optimal);
+  } else {
+    EXPECT_EQ(sol_obj_7.get_status(), cda_rail::SolutionStatus::Feasible);
+  }
 
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_2.get_obj());
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_3.get_obj());
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_4.get_obj());
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_5.get_obj());
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_6.get_obj());
+
+  EXPECT_GE(sol_obj_7.get_obj(), sol_obj.get_obj());
+  EXPECT_LE(sol_obj_7.get_lower_bound(), sol_obj.get_obj());
+  EXPECT_LE(sol_obj_7.get_obj(), sol_obj_7.get_lower_bound() * 10);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_3.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_4.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_5.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_6.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_7.get_lower_bound(), instance_weighted_sum);
 }
 
 TEST(GenPOMovingBlockAStarSolver, Stammstrecke4Trains) {
@@ -2603,16 +2708,108 @@ TEST(GenPOMovingBlockAStarSolver, Stammstrecke4Trains) {
        .time_aware_state_transitions = true},
       {}, -1, true);
 
+  const auto sol_obj_4 = solver.solve(
+      {},
+      {.next_state_strategy =
+           cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
+       .time_aware_state_transitions = true,
+       .a_star_weight                = 2},
+      {}, -1, true);
+
   EXPECT_TRUE(sol_obj.has_solution());
   EXPECT_TRUE(sol_obj_2.has_solution());
   EXPECT_TRUE(sol_obj_3.has_solution());
+  EXPECT_TRUE(sol_obj_4.has_solution());
 
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_3.get_status(), cda_rail::SolutionStatus::Optimal);
+  if (sol_obj_4.get_lower_bound() >= sol_obj_4.get_obj()) {
+    EXPECT_EQ(sol_obj_4.get_status(), cda_rail::SolutionStatus::Optimal);
+  } else {
+    EXPECT_EQ(sol_obj_4.get_status(), cda_rail::SolutionStatus::Feasible);
+  }
 
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_2.get_obj());
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_3.get_obj());
+  EXPECT_GE(sol_obj_4.get_obj(), sol_obj.get_obj());
+  EXPECT_LE(sol_obj_4.get_lower_bound(), sol_obj.get_obj());
+  EXPECT_LE(sol_obj_4.get_obj(), sol_obj_4.get_lower_bound() * 2);
+
+  auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
+  EXPECT_GE(sol_obj.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_2.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_3.get_lower_bound(), instance_weighted_sum);
+  EXPECT_GE(sol_obj_4.get_lower_bound(), instance_weighted_sum);
 }
+
+TEST(GenPOMovingBlockAStarSolver, HighWeightTrain) {
+  // clang-format off
+  // v0a -- v1a -
+  //             \
+  // v0b -- v1b - v2 - v3 -- (station) v4 -- v5
+  // clang-forman on
+
+  Network network;
+  auto const v0a = network.add_vertex("v0a", VertexType::TTD);
+  auto const v0b = network.add_vertex("v0b", VertexType::TTD);
+  auto const v1a = network.add_vertex("v1a", VertexType::TTD);
+  auto const v1b = network.add_vertex("v1b", VertexType::TTD);
+  auto const v2   = network.add_vertex("v2", VertexType::NoBorder);
+  auto const v3   = network.add_vertex("v3", VertexType::TTD);
+  auto const v4   = network.add_vertex("v4", VertexType::TTD);
+  auto const v5   = network.add_vertex("v5", VertexType::TTD);
+
+  auto const v0a_v1a = network.add_edge(v0a, v1a, 100, 10, true);
+  auto const v0b_v1b = network.add_edge(v0b, v1b, 100, 10, true);
+  auto const v1a_v2   = network.add_edge(v1a, v2, 10, 10, false);
+  auto const v1b_v2 = network.add_edge(v1b, v2, 10, 10, false);
+  auto const v2_v3   = network.add_edge(v2, v3, 10, 10, false);
+  auto const v3_v4 = network.add_edge(v3, v4, 2000, 10, true);
+  auto const v4_v5 = network.add_edge(v4, v5, 2000, 10, true);
+
+  network.add_successor(v0a_v1a, v1a_v2);
+  network.add_successor(v0b_v1b, v1b_v2);
+  network.add_successor(v1a_v2, v2_v3);
+  network.add_successor(v1b_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+  network.add_successor(v3_v4, v4_v5);
+
+        Timetable timetable;
+  auto const tr1 = timetable.add_train("Train1", 100, 10, 2, 1, true, 0, 10, v0a, 90, 40, v5, network);
+  auto const tr2 = timetable.add_train("Train2", 100, 10, 2, 1, true, 60, 10, v0b, 120, 40, v5, network);
+
+  timetable.add_empty_station("Station");
+  timetable.add_track_to_station("Station", v3_v4, network);
+  timetable.insert_stop(tr1, "Station", 30, 60);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(network, timetable, routes);
+
+  instance.set_train_weight(tr1, 1);
+  instance.set_train_weight(tr2, 10);
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto sol_obj = solver.solve(
+    {},
+    {.next_state_strategy =
+         cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
+     .time_aware_state_transitions = true},
+    {}, -1, true);
+
+  EXPECT_GE(sol_obj.get_exit_time("Train1"), sol_obj.get_exit_time("Train2"));
+
+  const auto sol_obj2 = solver.solve(
+    {},
+    {.next_state_strategy =
+         cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
+     .time_aware_state_transitions = false},
+    {}, -1, true);
+
+  EXPECT_GE(sol_obj2.get_exit_time("Train1"), sol_obj2.get_exit_time("Train2"));
+
+  EXPECT_EQ(sol_obj.get_obj(), sol_obj2.get_obj());
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

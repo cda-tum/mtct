@@ -74,6 +74,10 @@ cda_rail::simulator::GreedySimulator::simulate(
       number_of_trains,
       0); // Initially each train is simulated until
           // time t=0, for t>0 the heuristic is needed.
+  for (size_t tr = 0; tr < number_of_trains; ++tr) {
+    exit_times.at(tr) = get_instance()->get_const_schedule(tr).get_entry_time();
+  }
+
   std::vector<double>              blocked_positions(number_of_trains, INF);
   std::vector<std::vector<double>> stop_times(number_of_trains);
   std::vector<std::map<double, PosVel>>
@@ -94,6 +98,7 @@ cda_rail::simulator::GreedySimulator::simulate(
     train_trajectories.clear();
     train_trajectories.resize(number_of_trains);
   }
+  std::vector<double> overshooting_times(number_of_trains, 0);
 
   std::vector<TrainPosition> train_positions(
       number_of_trains,
@@ -198,6 +203,17 @@ cda_rail::simulator::GreedySimulator::simulate(
           PLOGV << "Train " << train_object.get_name()
                 << " overshot the end of its route at "
                 << train_positions.at(tr).front << " and is now stopped.";
+          auto const overshooting_distance =
+              train_positions.at(tr).front - tr_route_len;
+          PLOGV << "Overshooting distance: " << overshooting_distance;
+          if (overshooting_distance > GRB_EPS) {
+            auto const reverse_acceleration =
+                (train_velocities.at(tr) - tr_new_speed) / dt;
+            overshooting_times.at(tr) =
+                time_to_travel_distance_with_constant_acceleration(
+                    tr_new_speed, reverse_acceleration, overshooting_distance);
+            PLOGV << "Overshooting time: " << overshooting_times.at(tr);
+          }
           train_positions.at(tr).front = tr_route_len;
           tr_new_speed                 = 0.0;
         }
@@ -270,12 +286,15 @@ cda_rail::simulator::GreedySimulator::simulate(
               << " left the network.";
       } else if (tr_status == DestinationType::Edge && after_stop_until_time) {
         trains_finished_simulating.insert(tr);
-        exit_times.at(tr) = t;
+        exit_times.at(tr) = t - overshooting_times.at(tr);
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
-              << " reached the end of its route on an edge within the network.";
+              << " reached the end of its route on an edge within the network "
+                 "and overshooting time "
+              << overshooting_times.at(tr) << " is deduced from the exit time.";
         trains_to_remove.emplace_back(tr);
         trains_left.insert(tr);
-        PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
+        PLOGV << "At time " << exit_times.at(tr) << ", "
+              << train_list.get_train(tr).get_name()
               << " disappeared at the end of its route.";
         if (block_vertices_after_disappearing) {
           auto const blocking_vertex =

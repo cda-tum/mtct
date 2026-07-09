@@ -381,7 +381,10 @@ private:
   // ----------------------
 
   struct StateObjectivePair {
-    double                      objective{};
+    double                      simulated_objective_val{};
+    double                      heuristic_val{};
+    double                      state_value{};
+    double                      unweighted_state_value{};
     bool                        is_final_state{};
     simulator::SimulatorState   state{};
     simulator::SimulatorResults results{};
@@ -401,10 +404,10 @@ private:
      */
     bool operator()(const StateObjectivePair& a,
                     const StateObjectivePair& b) const {
-      return (a.objective > b.objective) ||
-             (a.objective == b.objective && !a.is_final_state &&
+      return (a.state_value > b.state_value) ||
+             (a.state_value == b.state_value && !a.is_final_state &&
               b.is_final_state) ||
-             (a.objective == b.objective && !a.is_final_state &&
+             (a.state_value == b.state_value && !a.is_final_state &&
               !b.is_final_state && b.state > a.state);
     }
   };

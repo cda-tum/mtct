@@ -178,7 +178,7 @@ size_t cda_rail::simulator::GeneralSimulator::get_edge_at_position(
   double current_pos = 0.0;
   for (auto const& edge : m_train_edges.at(train_id)) {
     current_pos += m_instance->get_const_network().get_edge(edge).length;
-    if (current_pos >= position) {
+    if (current_pos + GRB_EPS >= position) {
       return edge;
     }
   }

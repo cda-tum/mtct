@@ -33,6 +33,11 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     int time_limit, bool debug_input, bool overwrite_severity) {
   this->solve_init_general(debug_input, overwrite_severity);
 
+  if (!get_instance().check_consistency(false)) {
+    throw cda_rail::exceptions::ConsistencyException(
+        "Instance is inconsistent.");
+  }
+
   cda_rail::exceptions::throw_if_less_than(solver_strategy_input.a_star_weight,
                                            1.0, "A* weight");
 
@@ -44,6 +49,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   MinPriorityQueue                              pq;
   int                                           state_reexplorations{0};
   int                                           states_simulated{0};
+  double                                        max_edge_cost{-INF};
+  double                                        min_edge_cost{INF};
+  double max_heuristic_inconsistency{0.0};
 
   cda_rail::instances::SolGeneralPerformanceOptimizationInstance sol_object(
       get_instance());
@@ -52,6 +60,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
   m_model_created =
       std::chrono::high_resolution_clock::now(); // Start model creation timer
+
+  auto const sum_of_exit = get_instance().sum_of_weighted_exit_times();
+
+  PLOGD << "Sum of (weighted) exit times = " << sum_of_exit;
 
   PLOGI << "Starting A* search";
 
@@ -74,6 +86,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         << ", objective = " << init_obj
         << ", heuristic = " << init_heuristic_val
         << ", total = " << init_obj + init_heuristic_val
+        << ", total weighted = "
+        << init_obj + solver_strategy_input.a_star_weight * init_heuristic_val
         << ", heuristic feasibility = "
         << (init_heuristic_feas ? "feasible" : "infeasible");
 
@@ -84,8 +98,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         .vertex_orders  = simulator.get_vertex_orders(),
         .stop_positions = simulator.get_stop_positions()};
     pq.push(
-        {init_obj + solver_strategy_input.a_star_weight * init_heuristic_val,
-         simulator.is_final_state(), init_state, init_simulator_result});
+        {init_obj, init_heuristic_val,
+         init_obj + solver_strategy_input.a_star_weight * init_heuristic_val,
+         init_obj + init_heuristic_val, simulator.is_final_state(), init_state,
+         init_simulator_result});
     explored_states.insert(init_state);
   }
 
@@ -120,25 +136,25 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       PLOGD << "----------------------------";
       PLOGD << "Iteration " << iteration << ", queue size: " << pq.size();
       PLOGD << "Best objective so far: " << best_obj;
-      PLOGD << "Current lower bound: "
-            << current_state_objective_pair.objective;
+      PLOGD << "Current lower bound (only proven if weight = 1): "
+            << current_state_objective_pair.unweighted_state_value;
     } else {
       PLOGV << "----------------------------";
       PLOGV << "Iteration " << iteration << ", queue size: " << pq.size();
       PLOGV << "Best objective so far: " << best_obj;
-      PLOGV << "Current lower bound: "
-            << current_state_objective_pair.objective;
+      PLOGV << "Current lower bound (only proven if weight = 1): "
+            << current_state_objective_pair.unweighted_state_value;
     }
 
     if (current_state_objective_pair.is_final_state) {
       PLOGD << "Optimal solution found, obj = "
-            << current_state_objective_pair.objective << ", after " << iteration
-            << " iterations, "
+            << current_state_objective_pair.simulated_objective_val
+            << ", after " << iteration << " iterations, "
             << std::chrono::duration_cast<std::chrono::seconds>(
                    std::chrono::high_resolution_clock::now() - m_start)
                    .count()
             << " seconds.";
-      best_obj   = current_state_objective_pair.objective;
+      best_obj   = current_state_objective_pair.simulated_objective_val;
       best_state = current_state_objective_pair.state;
       sol_object.set_obj(best_obj);
       sol_object.set_solution_found();
@@ -179,11 +195,28 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
               sim_res, solver_strategy_input.consider_earliest_exit);
       const auto new_obj =
           obj + solver_strategy_input.a_star_weight * heuristic_val;
-      const auto final = simulator.is_final_state();
+      const auto new_unweighted_obj = obj + heuristic_val;
+      const auto final              = simulator.is_final_state();
       PLOGV << "Objective = " << obj << ", heuristic = " << heuristic_val
             << ", total = " << new_obj << ", feasibility = "
             << (heuristic_feas ? "feasible" : "infeasible")
             << ", final = " << (final ? "yes" : "no");
+
+      auto const edge_weight =
+          obj - current_state_objective_pair.simulated_objective_val;
+      auto const heuristic_diff =
+          current_state_objective_pair.heuristic_val - heuristic_val;
+
+      // consistent: heuristic_diff <= edge_weight -> heuristic_diff -
+      // edge_weight <= 0
+
+      min_edge_cost = std::min(min_edge_cost, edge_weight);
+      max_edge_cost = std::max(max_edge_cost, edge_weight);
+      max_heuristic_inconsistency =
+          std::max(max_heuristic_inconsistency, heuristic_diff - edge_weight);
+
+      round_small_numbers_to_zero_inplace(max_heuristic_inconsistency, GRB_EPS);
+
       if (final && new_obj < best_obj) {
         PLOGD << "Explored new best final state with objective = " << new_obj
               << " after " << iteration << " iterations, "
@@ -198,7 +231,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         sol_object.set_status(cda_rail::SolutionStatus::Feasible);
       }
       if (heuristic_feas) {
-        pq.push({new_obj, final, s, sim_res});
+        pq.push({obj, heuristic_val, new_obj, new_unweighted_obj, final, s,
+                 sim_res});
         explored_states.insert(s);
         PLOGV << "State added to priority queue.";
       }
@@ -213,6 +247,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         << " state re-explored, "
         << get_time_difference_in_seconds(m_start, m_model_solved)
         << " seconds.";
+
+  PLOGD << "Min edge cost = " << min_edge_cost
+        << ", max edge cost = " << max_edge_cost;
+  PLOGD << "Max heuristic inconsistency = " << max_heuristic_inconsistency;
 
   PLOGI << "Extracting solution object...";
 
@@ -260,6 +298,58 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
   if (pq.empty() && !sol_object.has_solution()) {
     sol_object.set_status(cda_rail::SolutionStatus::Infeasible);
+  }
+
+  if (sol_object.get_status() == cda_rail::SolutionStatus::Optimal) {
+    assert(init_obj <= sol_object.get_obj());
+    auto const obj_diff = sol_object.get_obj() - init_obj;
+    sol_object.set_lower_bound(
+        init_obj + (obj_diff / solver_strategy_input.a_star_weight));
+    PLOGD << "Lower bound (w-approximation) = " << sol_object.get_lower_bound();
+  }
+  if (sol_object.has_solution() && pq.empty()) {
+    PLOGD << "No states left in priority queue, hence optimal.";
+    sol_object.set_lower_bound(sol_object.get_obj());
+  }
+  if (!pq.empty()) {
+    double lowest_unweighted_diff_bound =
+        sol_object.has_solution() ? sol_object.get_obj() - init_obj : INF;
+    assert(lowest_unweighted_diff_bound >= 0);
+    bool cont = true;
+    while (cont && !pq.empty()) {
+      auto const tmp_val2 = pq.top();
+      lowest_unweighted_diff_bound =
+          std::min(lowest_unweighted_diff_bound,
+                   tmp_val2.unweighted_state_value - init_obj);
+      if ((tmp_val2.state_value - init_obj) /
+              solver_strategy_input.a_star_weight >=
+          lowest_unweighted_diff_bound) {
+        // Let x'/h' be any other value and heuristic
+        // Let x/h be the current value and heuristic
+        // other_val = x' + h' >= (x' + wh')/w >= (pq sorted) (x + wh)/w
+        cont = false;
+      }
+      pq.pop();
+    }
+
+    PLOGD << "Lowest unweighted difference bound = "
+          << lowest_unweighted_diff_bound;
+    PLOGD << "Lower bound by remaining priority queue: "
+          << init_obj + lowest_unweighted_diff_bound;
+    sol_object.set_lower_bound(std::max(
+        sol_object.get_lower_bound(), init_obj + lowest_unweighted_diff_bound));
+  }
+
+  if (std::abs(sol_object.get_lower_bound() - sol_object.get_obj()) < GRB_EPS) {
+    sol_object.set_lower_bound(sol_object.get_obj());
+  }
+
+  if (sol_object.has_solution()) {
+    if (sol_object.get_lower_bound() >= sol_object.get_obj()) {
+      sol_object.set_status(cda_rail::SolutionStatus::Optimal);
+    } else {
+      sol_object.set_status(cda_rail::SolutionStatus::Feasible);
+    }
   }
 
   PLOGI << "DONE! Solution extracted.";
@@ -316,7 +406,12 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
                              {"time_limit", time_limit}},
             .double_data  = {{"time_step", model_detail_input.dt},
                              {"a_star_weight",
-                              solver_strategy_input.a_star_weight}},
+                              solver_strategy_input.a_star_weight},
+                             {"weighted_exit_times", sum_of_exit},
+                             {"min_edge_cost", min_edge_cost},
+                             {"max_edge_cost", max_edge_cost},
+                             {"max_heuristic_inconsistency",
+                              max_heuristic_inconsistency}},
             .string_data =
                 {{"remaining_time_heuristic",
                   simulator::remaining_time_heuristic_type_to_string(

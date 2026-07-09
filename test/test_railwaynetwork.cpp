@@ -4382,4 +4382,56 @@ TEST(RailwayNetwork, OtherTTDTraversal) {
   EXPECT_FALSE(network.has_ttd_path_not_using_border_vertex({"v11"}, ttd_3));
 }
 
+// --------------------
+// SPECIFIC BUG TESTS
+// --------------------
+
+TEST(RailwayNetwork, TTDSectionConsistency) {
+  std::filesystem::path const wd       = "data";
+  std::filesystem::path const dir_path = wd / "networks";
+
+  ASSERT_TRUE(std::filesystem::exists(dir_path));
+  ASSERT_TRUE(std::filesystem::is_directory(dir_path));
+
+  for (auto const& entry : std::filesystem::directory_iterator(dir_path)) {
+    if (entry.is_directory()) {
+      auto const&             name = entry.path().filename().string();
+      cda_rail::Network const network(name, wd);
+
+      bool ttd_sections_consistent = true;
+
+      auto const number_of_vertices = network.number_of_vertices();
+      for (size_t v = 0; v < number_of_vertices; ++v) {
+        auto const vertex_obj = network.get_vertex(v);
+        auto const neighbors  = network.neighbors(v);
+        if (neighbors.size() >= 3) {
+          if (vertex_obj.type != cda_rail::VertexType::NoBorder) {
+            ttd_sections_consistent = false;
+            std::cerr << "Network " << name << ": " << vertex_obj.name
+                      << " has " << neighbors.size()
+                      << " neighbors and is of type "
+                      << static_cast<int>(vertex_obj.type) << '\n';
+          }
+
+          for (auto const edge : network.neighboring_edges(v)) {
+            auto const edge_obj   = network.get_edge(edge);
+            auto const source_obj = network.get_vertex(edge_obj.source);
+            auto const target_obj = network.get_vertex(edge_obj.target);
+            if (edge_obj.breakable) {
+              ttd_sections_consistent = false;
+              std::cerr << "Network " << name << ": " << source_obj.name
+                        << " -> " << target_obj.name
+                        << " is a breakable edge of length " << edge_obj.length
+                        << "\n";
+            }
+          }
+        }
+      }
+
+      EXPECT_TRUE(ttd_sections_consistent)
+          << "Network " << name << " has inconsistent TTD sections";
+    }
+  }
+}
+
 // NOLINTEND(clang-diagnostic-unused-result,clang-analyzer-deadcode.DeadStores,bugprone-unchecked-optional-access)

@@ -819,3 +819,16 @@ cda_rail::get_max_travel_time_acceleration_change_points(double v_1, double v_2,
 
   return {y, y};
 }
+double cda_rail::time_to_travel_distance_with_constant_acceleration(double v_0,
+                                                                    double a,
+                                                                    double s) {
+  if (std::abs(a) < GRB_EPS) {
+    return s / v_0;
+  }
+
+  // Wolframalpha:
+  // t = (sqrt(v^2+2as)-v)/a
+  // Stable: 2s / (v + sqrt(v^2+2as))
+
+  return stable_ratio_with_sqrt(2 * s, 1.0, (2 * a * s) + square(v_0), v_0);
+}

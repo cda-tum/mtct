@@ -938,7 +938,7 @@
 </node>
 <node id="v_233">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="v_234">
 <data key="d5">2</data>
@@ -950,7 +950,7 @@
 </node>
 <node id="v_238">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="v_500">
 <data key="d5">2</data>
@@ -2394,7 +2394,7 @@
 </node>
 <node id="v_860">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="v_861">
 <data key="d5">2</data>
@@ -2402,7 +2402,7 @@
 </node>
 <node id="v_862">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="v_863">
 <data key="d5">2</data>
@@ -3598,11 +3598,11 @@
 </node>
 <node id="v_1296">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="v_1297">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="v_1500">
 <data key="d5">2</data>
@@ -5378,7 +5378,7 @@
 </node>
 <node id="v_1943">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="v_1944">
 <data key="d5">2</data>
@@ -5394,18 +5394,18 @@
 </node>
 <node id="v_1947">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="v_1948">
 <data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="v_2000">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="v_2001">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="v_2002">
@@ -5441,7 +5441,7 @@
 <data key="d6">0</data>
 </node>
 <node id="v_2010">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="v_2011">
@@ -5453,7 +5453,7 @@
 <data key="d6">0</data>
 </node>
 <node id="v_2013">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="v_2014">
@@ -5853,11 +5853,11 @@
 <data key="d6">0</data>
 </node>
 <node id="v_2113">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="v_2114">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="v_2115">
@@ -5965,7 +5965,7 @@
 <data key="d6">0</data>
 </node>
 <node id="v_2141">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="v_2142">
@@ -5977,7 +5977,7 @@
 <data key="d6">0</data>
 </node>
 <node id="v_2144">
-<data key="d5">2</data>
+<data key="d5">0</data>
 <data key="d6">0</data>
 </node>
 <node id="v_2145">
@@ -6482,6 +6482,102 @@
 </node>
 <node id="v_16602">
 <data key="d5">0</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2000-v_2006_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2000-v_2002_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_1500-v_2000_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2001-v_1501_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2004-v_2001_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2003-v_2001_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2010-v_2_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2009-v_2010_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2014-v_2010_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2013-v_2012_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2013-v_2015_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_1-v_2013_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2113-v_2137_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2113-v_2115_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2112-v_2113_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2114-v_2111_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2148-v_2114_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2116-v_2114_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2141-v_2142_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2140-v_2141_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2254-v_2141_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2144-v_2255_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2144-v_2145_0">
+<data key="d5">3</data>
+<data key="d6">0</data>
+</node>
+<node id="v_2143-v_2144_0">
+<data key="d5">3</data>
 <data key="d6">0</data>
 </node>
 <edge source="v_233" target="v_231">
@@ -8325,16 +8421,16 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_1" target="v_2013">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_1-v_2013_0" target="v_2013">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2013" target="v_2015">
+<edge source="v_2013-v_2015_0" target="v_2015">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -9144,16 +9240,16 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2112" target="v_2113">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_2112-v_2113_0" target="v_2113">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2113" target="v_2115">
+<edge source="v_2113-v_2115_0" target="v_2115">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -9270,16 +9366,16 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2116" target="v_2114">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_2116-v_2114_0" target="v_2114">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2114" target="v_2111">
+<edge source="v_2114-v_2111_0" target="v_2111">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -9809,30 +9905,30 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2014" target="v_2010">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_2014-v_2010_0" target="v_2010">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2010" target="v_2">
+<edge source="v_2010-v_2_0" target="v_2">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_1500" target="v_2000">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_1500-v_2000_0" target="v_2000">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2000" target="v_2002">
+<edge source="v_2000-v_2002_0" target="v_2002">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -9851,16 +9947,16 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2009" target="v_2010">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_2009-v_2010_0" target="v_2010">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2000" target="v_2006">
+<edge source="v_2000-v_2006_0" target="v_2006">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -10243,16 +10339,16 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2254" target="v_2141">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_2254-v_2141_0" target="v_2141">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2141" target="v_2142">
+<edge source="v_2141-v_2142_0" target="v_2142">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -10264,9 +10360,9 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2113" target="v_2137">
+<edge source="v_2113-v_2137_0" target="v_2137">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -10292,9 +10388,9 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2140" target="v_2141">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_2140-v_2141_0" target="v_2141">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -10306,16 +10402,16 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2143" target="v_2144">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_2143-v_2144_0" target="v_2144">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2144" target="v_2145">
+<edge source="v_2144-v_2145_0" target="v_2145">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -10341,16 +10437,16 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2148" target="v_2114">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_2148-v_2114_0" target="v_2114">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2144" target="v_2255">
+<edge source="v_2144-v_2255_0" target="v_2255">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -11097,23 +11193,23 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2003" target="v_2001">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_2003-v_2001_0" target="v_2001">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2001" target="v_1501">
+<edge source="v_2001-v_1501_0" target="v_1501">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2013" target="v_2012">
+<edge source="v_2013-v_2012_0" target="v_2012">
 <data key="d0">true</data>
-<data key="d1">2414.02</data>
+<data key="d1">2394.02</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -11132,9 +11228,9 @@
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
-<edge source="v_2004" target="v_2001">
-<data key="d0">true</data>
-<data key="d1">2414.02</data>
+<edge source="v_2004-v_2001_0" target="v_2001">
+<data key="d0">false</data>
+<data key="d1">20</data>
 <data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
@@ -20628,6 +20724,174 @@
 <data key="d0">false</data>
 <data key="d1">32.1869</data>
 <data key="d2">13.4112</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2000" target="v_2000-v_2006_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2000" target="v_2000-v_2002_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_1500" target="v_1500-v_2000_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2001" target="v_2001-v_1501_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2004" target="v_2004-v_2001_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2003" target="v_2003-v_2001_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2010" target="v_2010-v_2_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2009" target="v_2009-v_2010_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2014" target="v_2014-v_2010_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2013" target="v_2013-v_2012_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2013" target="v_2013-v_2015_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_1" target="v_1-v_2013_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2113" target="v_2113-v_2137_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2113" target="v_2113-v_2115_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2112" target="v_2112-v_2113_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2114" target="v_2114-v_2111_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2148" target="v_2148-v_2114_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2116" target="v_2116-v_2114_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2141" target="v_2141-v_2142_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2140" target="v_2140-v_2141_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2254" target="v_2254-v_2141_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2144" target="v_2144-v_2255_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2144" target="v_2144-v_2145_0">
+<data key="d0">false</data>
+<data key="d1">20</data>
+<data key="d2">80.4672</data>
+<data key="d3">1</data>
+<data key="d4">100</data>
+</edge>
+<edge source="v_2143" target="v_2143-v_2144_0">
+<data key="d0">true</data>
+<data key="d1">2394.02</data>
+<data key="d2">80.4672</data>
 <data key="d3">1</data>
 <data key="d4">100</data>
 </edge>
