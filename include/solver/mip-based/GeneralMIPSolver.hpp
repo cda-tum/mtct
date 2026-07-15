@@ -56,7 +56,7 @@ class GeneralMIPSolver : public GeneralSolver<T, S> {
       std::is_base_of_v<cda_rail::instances::GeneralProblemInstance, T>,
       "T must be a child of GeneralProblemInstance");
   static_assert(
-      std::is_base_of_v<cda_rail::instances::SolGeneralProblemInstance<T>, S>,
+      std::is_base_of_v<cda_rail::instances::SolGeneralProblemInstance, S>,
       "S must be a child of SolGeneralProblemInstance<T>");
 
 protected:
