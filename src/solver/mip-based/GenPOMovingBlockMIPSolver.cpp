@@ -2143,13 +2143,13 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::cleanup() {
   GeneralMIPSolver::cleanup();
-  solution_settings = {};
-  model_detail      = {};
-  solver_strategy   = {};
-  m_num_tr          = 0;
-  m_num_edges       = 0;
-  m_num_vertices    = 0;
-  m_num_ttd         = 0;
+  m_solution_settings = {};
+  m_model_detail      = {};
+  m_solver_strategy   = {};
+  m_num_tr            = 0;
+  m_num_edges         = 0;
+  m_num_vertices      = 0;
+  m_num_ttd           = 0;
   // max_t = 0;
   m_ttd_sections.clear();
   m_tr_stop_data.clear();

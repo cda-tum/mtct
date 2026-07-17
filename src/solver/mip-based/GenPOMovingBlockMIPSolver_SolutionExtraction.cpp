@@ -21,9 +21,7 @@ using std::size_t;
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
-    cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
-        cda_rail::instances::GeneralPerformanceOptimizationInstance>& sol)
-    const {
+    cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol) const {
   PLOGI << "Extracting solution object...";
 
   // Is there a solution?
@@ -62,9 +60,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   // Extract routes
   PLOGD << "Setting routes...";
   std::vector<std::vector<std::pair<size_t, double>>> route_markers;
-  route_markers.reserve(num_tr);
+  route_markers.reserve(m_num_tr);
   sol.reset_routes();
-  for (int tr = 0; tr < num_tr; tr++) {
+  for (int tr = 0; tr < m_num_tr; tr++) {
     bool        tr_routed = false;
     const auto& tr_object = m_instance.get_train_list().get_train(tr);
     sol.add_empty_route(tr_object.name);
@@ -77,8 +75,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
     while (!edges_to_consider.empty()) {
       const auto& edge_id = edges_to_consider.back();
       edges_to_consider.pop_back();
-      if (!vars.at("x").at(tr, edge_id).sameAs(GRBVar()) &&
-          vars.at("x").at(tr, edge_id).get(GRB_DoubleAttr_X) > 0.5) {
+      if (!m_vars.at("x").at(tr, edge_id).sameAs(GRBVar()) &&
+          m_vars.at("x").at(tr, edge_id).get(GRB_DoubleAttr_X) > 0.5) {
         const auto& edge_object = m_instance.const_n().get_edge(edge_id);
         current_pos += edge_object.length;
         route_marker_tr.emplace_back(edge_object.target, current_pos);
@@ -98,14 +96,15 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
 
   // Save routing times
   PLOGD << "Setting timings and velocities...";
-  for (int tr = 0; tr < num_tr; tr++) {
+  for (int tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_object   = m_instance.get_train_list().get_train(tr);
     const auto& tr_schedule = m_instance.get_schedule(tr);
     for (const auto& [vertex_id, pos] : route_markers[tr]) {
       const auto time_1 =
-          vars.at("t_front_arrival").at(tr, vertex_id).get(GRB_DoubleAttr_X);
-      const auto time_2 =
-          vars.at("t_front_departure").at(tr, vertex_id).get(GRB_DoubleAttr_X);
+          m_vars.at("t_front_arrival").at(tr, vertex_id).get(GRB_DoubleAttr_X);
+      const auto time_2       = m_vars.at("t_front_departure")
+                                    .at(tr, vertex_id)
+                                    .get(GRB_DoubleAttr_X);
       const auto vertex_speed = extract_speed(tr, vertex_id);
       sol.add_train_pos(tr_object.name, time_1, pos);
       sol.add_train_speed(tr_object.name, time_1, vertex_speed);
@@ -115,8 +114,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
       }
 
       if (vertex_id == tr_schedule.get_exit()) {
-        const auto last_time =
-            vars.at("t_rear_departure").at(tr, vertex_id).get(GRB_DoubleAttr_X);
+        const auto last_time  = m_vars.at("t_rear_departure")
+                                    .at(tr, vertex_id)
+                                    .get(GRB_DoubleAttr_X);
         const auto last_speed = tr_schedule.get_v_n();
         sol.add_train_pos(tr_object.name, last_time, pos + tr_object.length);
         sol.add_train_speed(tr_object.name, last_time, last_speed);
@@ -152,7 +152,7 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
         const auto& v2 = v2_extensions.at(v2_idx);
         if (possible_by_eom(v1, v2, tr_object.acceleration,
                             tr_object.deceleration, edge_obj.length)) {
-          GRBVar rel_var = vars.at("y").at(tr, edge_id, v1_idx, v2_idx);
+          GRBVar rel_var = m_vars.at("y").at(tr, edge_id, v1_idx, v2_idx);
           if (!rel_var.sameAs(GRBVar()) &&
               rel_var.get(GRB_DoubleAttr_X) > 0.5) {
             return edge_obj.source == vertex_id ? v1 : v2;

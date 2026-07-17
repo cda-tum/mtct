@@ -967,10 +967,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                     ExportOption::ExportSolutionAndLP ||
                 solver->m_solution_settings.export_option ==
                     ExportOption::ExportSolutionWithInstanceAndLP) {
-              solver->lazy_constraints.push_back(lhs1 >= rhs1);
-              solver->lazy_constraints.push_back(lhs1 <= 1);
-              solver->lazy_constraints.push_back(lhs2 >= rhs2);
-              solver->lazy_constraints.push_back(lhs3 >= rhs3);
+              solver->m_lazy_constraints.push_back(lhs1 >= rhs1);
+              solver->m_lazy_constraints.push_back(lhs1 <= 1);
+              solver->m_lazy_constraints.push_back(lhs2 >= rhs2);
+              solver->m_lazy_constraints.push_back(lhs3 >= rhs3);
             }
 
             violated_constraint_found = true;
@@ -1085,7 +1085,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   ExportOption::ExportSolutionAndLP ||
               solver->m_solution_settings.export_option ==
                   ExportOption::ExportSolutionWithInstanceAndLP) {
-            solver->lazy_constraints.push_back(lhs >= rhs);
+            solver->m_lazy_constraints.push_back(lhs >= rhs);
           }
           violated_constraint_found = true;
         }
@@ -1169,7 +1169,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                       ExportOption::ExportSolutionAndLP ||
                   solver->m_solution_settings.export_option ==
                       ExportOption::ExportSolutionWithInstanceAndLP) {
-                solver->lazy_constraints.push_back(lhs >= rhs);
+                solver->m_lazy_constraints.push_back(lhs >= rhs);
               }
               violated_constraint_found = true;
             }
