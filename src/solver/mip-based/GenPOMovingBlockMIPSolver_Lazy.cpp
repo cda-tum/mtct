@@ -88,8 +88,9 @@ std::vector<std::vector<std::pair<size_t, double>>> cda_rail::solver::
     double current_pos = 0;
     routes[tr].emplace_back(entry, current_pos);
     while (!edges_to_consider.empty()) {
-      const auto& edge_id = edges_to_consider.back();
-      edges_to_consider.pop_back();
+      const auto& edge_id_ptr = edges_to_consider.begin();
+      const auto  edge_id     = *edge_id_ptr;
+      edges_to_consider.erase(edge_id_ptr);
       auto& tmp_var = solver->m_vars["x"](tr, edge_id);
       if (!tmp_var.sameAs(GRBVar()) && getSolution(tmp_var) > 0.5) {
         const auto& edge_object =

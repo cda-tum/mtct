@@ -85,7 +85,7 @@ private:
   size_t                      m_num_vertices      = 0;
   size_t                      m_num_ttd           = 0;
   // int m_max_t = 0;
-  std::vector<cda_rail::index_vector> m_ttd_sections;
+  std::vector<cda_rail::index_set> m_ttd_sections;
   // tr_stop_data:
   // For every train, for every station, list of possible stop vertices together
   // with respective edges
