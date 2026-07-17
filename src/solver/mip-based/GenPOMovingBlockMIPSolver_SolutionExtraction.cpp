@@ -27,18 +27,18 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   PLOGI << "Extracting solution object...";
 
   // Is there a solution?
-  if (const auto grb_status = model->get(GRB_IntAttr_Status);
+  if (const auto grb_status = m_model->get(GRB_IntAttr_Status);
       grb_status == GRB_OPTIMAL) {
     PLOGD << "Solution status: Optimal";
     sol.set_status(SolutionStatus::Optimal);
   } else if (grb_status == GRB_INFEASIBLE) {
     PLOGD << "Solution status: Infeasible";
     sol.set_status(SolutionStatus::Infeasible);
-  } else if (model->get(GRB_IntAttr_SolCount) >= 1) {
+  } else if (m_model->get(GRB_IntAttr_SolCount) >= 1) {
     PLOGD << "Solution status: Feasible (optimality unknown)";
     sol.set_status(SolutionStatus::Feasible);
   } else if (grb_status == GRB_TIME_LIMIT &&
-             model->get(GRB_IntAttr_SolCount) == 0) {
+             m_model->get(GRB_IntAttr_SolCount) == 0) {
     PLOGD << "Solution status: Timeout (Feasibility unknown)";
     sol.set_status(SolutionStatus::Timeout);
   } else {
@@ -47,14 +47,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
         "Gurobi status code " + std::to_string(grb_status) + " unknown.");
   }
 
-  if (const auto sol_count = model->get(GRB_IntAttr_SolCount);
+  if (const auto sol_count = m_model->get(GRB_IntAttr_SolCount);
       sol_count < 0.5) {
     sol.set_solution_not_found();
     return;
   }
 
   const auto mip_obj_val =
-      static_cast<int>(std::round(model->get(GRB_DoubleAttr_ObjVal)));
+      static_cast<int>(std::round(m_model->get(GRB_DoubleAttr_ObjVal)));
   sol.set_solution_found();
   sol.set_obj(mip_obj_val);
   PLOGD << "MIP objective: " << mip_obj_val;
@@ -66,10 +66,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   sol.reset_routes();
   for (int tr = 0; tr < num_tr; tr++) {
     bool        tr_routed = false;
-    const auto& tr_object = instance.get_train_list().get_train(tr);
+    const auto& tr_object = m_instance.get_train_list().get_train(tr);
     sol.add_empty_route(tr_object.name);
-    const auto entry             = instance.get_schedule(tr).get_entry();
-    auto       edges_to_consider = instance.const_n().out_edges(entry);
+    const auto entry             = m_instance.get_schedule(tr).get_entry();
+    auto       edges_to_consider = m_instance.const_n().out_edges(entry);
 
     double                                 current_pos = 0;
     std::vector<std::pair<size_t, double>> route_marker_tr;
@@ -79,17 +79,17 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
       edges_to_consider.pop_back();
       if (!vars.at("x").at(tr, edge_id).sameAs(GRBVar()) &&
           vars.at("x").at(tr, edge_id).get(GRB_DoubleAttr_X) > 0.5) {
-        const auto& edge_object = instance.const_n().get_edge(edge_id);
+        const auto& edge_object = m_instance.const_n().get_edge(edge_id);
         current_pos += edge_object.length;
         route_marker_tr.emplace_back(edge_object.target, current_pos);
         const auto& [old_edge_id, old_edge_pos] =
-            instance.const_n().get_old_edge(edge_id);
+            m_instance.const_n().get_old_edge(edge_id);
         if (old_edge_pos == 0) {
           sol.push_back_edge_to_route(tr_object.name, old_edge_id);
           tr_routed = true;
         }
-        edges_to_consider = instance.const_n().out_edges(
-            instance.const_n().get_edge(edge_id).target);
+        edges_to_consider = m_instance.const_n().out_edges(
+            m_instance.const_n().get_edge(edge_id).target);
       }
     }
     route_markers.push_back(route_marker_tr);
@@ -99,8 +99,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   // Save routing times
   PLOGD << "Setting timings and velocities...";
   for (int tr = 0; tr < num_tr; tr++) {
-    const auto& tr_object   = instance.get_train_list().get_train(tr);
-    const auto& tr_schedule = instance.get_schedule(tr);
+    const auto& tr_object   = m_instance.get_train_list().get_train(tr);
+    const auto& tr_schedule = m_instance.get_schedule(tr);
     for (const auto& [vertex_id, pos] : route_markers[tr]) {
       const auto time_1 =
           vars.at("t_front_arrival").at(tr, vertex_id).get(GRB_DoubleAttr_X);
@@ -129,11 +129,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
 
 double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
     size_t tr, size_t vertex_id) const {
-  assert(model->get(GRB_IntAttr_SolCount) >= 1);
-  const auto& tr_object      = instance.get_train_list().get_train(tr);
-  const auto  delta_consider = instance.const_n().neighboring_edges(vertex_id);
-  const auto  edges_used_by_td =
-      instance.edges_used_by_train(tr, model_detail.fix_routes, false);
+  assert(m_model->get(GRB_IntAttr_SolCount) >= 1);
+  const auto& tr_object     = m_instance.get_train_list().get_train(tr);
+  const auto delta_consider = m_instance.const_n().neighboring_edges(vertex_id);
+  const auto edges_used_by_td =
+      m_instance.edges_used_by_train(tr, m_model_detail.fix_routes, false);
   cda_rail::index_vector edges_to_consider;
   for (const auto& edge_id : delta_consider) {
     if (std::ranges::contains(edges_used_by_td, edge_id)) {
@@ -142,7 +142,7 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
   }
 
   for (const auto& edge_id : edges_to_consider) {
-    const auto edge_obj = instance.const_n().get_edge(edge_id);
+    const auto edge_obj = m_instance.const_n().get_edge(edge_id);
     assert(edge_obj.source == vertex_id || edge_obj.target == vertex_id);
     const auto v1_extensions = velocity_extensions.at(tr).at(edge_obj.source);
     const auto v2_extensions = velocity_extensions.at(tr).at(edge_obj.target);
