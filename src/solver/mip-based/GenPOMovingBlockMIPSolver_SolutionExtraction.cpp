@@ -62,7 +62,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   std::vector<std::vector<std::pair<size_t, double>>> route_markers;
   route_markers.reserve(m_num_tr);
   sol.reset_routes();
-  for (int tr = 0; tr < m_num_tr; tr++) {
+  for (size_t tr = 0; tr < m_num_tr; tr++) {
     bool        tr_routed = false;
     const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
     sol.add_empty_route(tr_object.get_name());
@@ -73,10 +73,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
     std::vector<std::pair<size_t, double>> route_marker_tr;
     route_marker_tr.emplace_back(entry, current_pos);
     while (!edges_to_consider.empty()) {
-      const auto& edge_id = edges_to_consider.back();
-      edges_to_consider.pop_back();
-      if (!m_vars.at("x").at(tr, edge_id).sameAs(GRBVar()) &&
-          m_vars.at("x").at(tr, edge_id).get(GRB_DoubleAttr_X) > 0.5) {
+      const auto& edge_id_ptr = edges_to_consider.begin();
+      auto const  edge_id     = *edge_id_ptr;
+      edges_to_consider.erase(edge_id_ptr);
+      GRBVar x_var = m_vars.at("x").at(tr, edge_id);
+      if (!x_var.sameAs(GRBVar()) && x_var.get(GRB_DoubleAttr_X) > 0.5) {
         const auto& edge_object =
             m_instance.get_const_network().get_edge(edge_id);
         current_pos += edge_object.length;
@@ -92,12 +93,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
       }
     }
     route_markers.push_back(route_marker_tr);
-    sol.set_train_routed_value(tr_object.get_name(), tr_routed);
   }
 
   // Save routing times
   PLOGD << "Setting timings and velocities...";
-  for (int tr = 0; tr < m_num_tr; tr++) {
+  for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_object   = m_instance.get_const_train_list().get_train(tr);
     const auto& tr_schedule = m_instance.get_const_schedule(tr);
     for (const auto& [vertex_id, pos] : route_markers[tr]) {
