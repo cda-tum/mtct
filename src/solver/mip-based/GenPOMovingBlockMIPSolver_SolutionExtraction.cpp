@@ -64,10 +64,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   sol.reset_routes();
   for (int tr = 0; tr < m_num_tr; tr++) {
     bool        tr_routed = false;
-    const auto& tr_object = m_instance.get_train_list().get_train(tr);
-    sol.add_empty_route(tr_object.name);
-    const auto entry             = m_instance.get_schedule(tr).get_entry();
-    auto       edges_to_consider = m_instance.const_n().out_edges(entry);
+    const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
+    sol.add_empty_route(tr_object.get_name());
+    const auto entry = m_instance.get_const_schedule(tr).get_entry_vertex();
+    auto edges_to_consider = m_instance.get_const_network().out_edges(entry);
 
     double                                 current_pos = 0;
     std::vector<std::pair<size_t, double>> route_marker_tr;
@@ -77,28 +77,29 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
       edges_to_consider.pop_back();
       if (!m_vars.at("x").at(tr, edge_id).sameAs(GRBVar()) &&
           m_vars.at("x").at(tr, edge_id).get(GRB_DoubleAttr_X) > 0.5) {
-        const auto& edge_object = m_instance.const_n().get_edge(edge_id);
+        const auto& edge_object =
+            m_instance.get_const_network().get_edge(edge_id);
         current_pos += edge_object.length;
         route_marker_tr.emplace_back(edge_object.target, current_pos);
         const auto& [old_edge_id, old_edge_pos] =
-            m_instance.const_n().get_old_edge(edge_id);
+            m_instance.get_const_network().get_old_edge(edge_id);
         if (old_edge_pos == 0) {
-          sol.push_back_edge_to_route(tr_object.name, old_edge_id);
+          sol.push_back_edge_to_route(tr_object.get_name(), old_edge_id);
           tr_routed = true;
         }
-        edges_to_consider = m_instance.const_n().out_edges(
-            m_instance.const_n().get_edge(edge_id).target);
+        edges_to_consider = m_instance.get_const_network().out_edges(
+            m_instance.get_const_network().get_edge(edge_id).target);
       }
     }
     route_markers.push_back(route_marker_tr);
-    sol.set_train_routed_value(tr_object.name, tr_routed);
+    sol.set_train_routed_value(tr_object.get_name(), tr_routed);
   }
 
   // Save routing times
   PLOGD << "Setting timings and velocities...";
   for (int tr = 0; tr < m_num_tr; tr++) {
-    const auto& tr_object   = m_instance.get_train_list().get_train(tr);
-    const auto& tr_schedule = m_instance.get_schedule(tr);
+    const auto& tr_object   = m_instance.get_const_train_list().get_train(tr);
+    const auto& tr_schedule = m_instance.get_const_schedule(tr);
     for (const auto& [vertex_id, pos] : route_markers[tr]) {
       const auto time_1 =
           m_vars.at("t_front_arrival").at(tr, vertex_id).get(GRB_DoubleAttr_X);
@@ -106,20 +107,21 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
                                     .at(tr, vertex_id)
                                     .get(GRB_DoubleAttr_X);
       const auto vertex_speed = extract_speed(tr, vertex_id);
-      sol.add_train_pos(tr_object.name, time_1, pos);
-      sol.add_train_speed(tr_object.name, time_1, vertex_speed);
+      sol.add_train_pos(tr_object.get_name(), time_1, pos);
+      sol.add_train_speed(tr_object.get_name(), time_1, vertex_speed);
       if (time_2 > time_1 + GRB_EPS) {
-        sol.add_train_pos(tr_object.name, time_2, pos);
-        sol.add_train_speed(tr_object.name, time_2, vertex_speed);
+        sol.add_train_pos(tr_object.get_name(), time_2, pos);
+        sol.add_train_speed(tr_object.get_name(), time_2, vertex_speed);
       }
 
-      if (vertex_id == tr_schedule.get_exit()) {
+      if (vertex_id == tr_schedule.get_exit_vertex()) {
         const auto last_time  = m_vars.at("t_rear_departure")
                                     .at(tr, vertex_id)
                                     .get(GRB_DoubleAttr_X);
-        const auto last_speed = tr_schedule.get_v_n();
-        sol.add_train_pos(tr_object.name, last_time, pos + tr_object.length);
-        sol.add_train_speed(tr_object.name, last_time, last_speed);
+        const auto last_speed = tr_schedule.get_exit_velocity();
+        sol.add_train_pos(tr_object.get_name(), last_time,
+                          pos + tr_object.get_length());
+        sol.add_train_speed(tr_object.get_name(), last_time, last_speed);
       }
     }
   }
@@ -130,8 +132,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
 double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
     size_t tr, size_t vertex_id) const {
   assert(m_model->get(GRB_IntAttr_SolCount) >= 1);
-  const auto& tr_object     = m_instance.get_train_list().get_train(tr);
-  const auto delta_consider = m_instance.const_n().neighboring_edges(vertex_id);
+  const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
+  const auto  delta_consider =
+      m_instance.get_const_network().neighboring_edges(vertex_id);
   const auto edges_used_by_td =
       m_instance.edges_used_by_train(tr, m_model_detail.fix_routes, false);
   cda_rail::index_vector edges_to_consider;
@@ -142,16 +145,16 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
   }
 
   for (const auto& edge_id : edges_to_consider) {
-    const auto edge_obj = m_instance.const_n().get_edge(edge_id);
+    const auto edge_obj = m_instance.get_const_network().get_edge(edge_id);
     assert(edge_obj.source == vertex_id || edge_obj.target == vertex_id);
-    const auto v1_extensions = velocity_extensions.at(tr).at(edge_obj.source);
-    const auto v2_extensions = velocity_extensions.at(tr).at(edge_obj.target);
+    const auto v1_extensions = m_velocity_extensions.at(tr).at(edge_obj.source);
+    const auto v2_extensions = m_velocity_extensions.at(tr).at(edge_obj.target);
     for (size_t v1_idx = 0; v1_idx < v1_extensions.size(); v1_idx++) {
       const auto& v1 = v1_extensions.at(v1_idx);
       for (size_t v2_idx = 0; v2_idx < v2_extensions.size(); v2_idx++) {
         const auto& v2 = v2_extensions.at(v2_idx);
-        if (possible_by_eom(v1, v2, tr_object.acceleration,
-                            tr_object.deceleration, edge_obj.length)) {
+        if (possible_by_eom(v1, v2, tr_object.get_acceleration(),
+                            tr_object.get_deceleration(), edge_obj.length)) {
           GRBVar rel_var = m_vars.at("y").at(tr, edge_id, v1_idx, v2_idx);
           if (!rel_var.sameAs(GRBVar()) &&
               rel_var.get(GRB_DoubleAttr_X) > 0.5) {
@@ -162,7 +165,7 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
     }
   }
   throw exceptions::ConsistencyException("No speed found for train " +
-                                         tr_object.name + " at vertex " +
+                                         tr_object.get_name() + " at vertex " +
                                          std::to_string(vertex_id));
 }
 

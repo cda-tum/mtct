@@ -80,8 +80,10 @@ std::vector<std::vector<std::pair<size_t, double>>> cda_rail::solver::
   for (size_t tr = 0; tr < solver->m_num_tr; tr++) {
     routes.emplace_back();
     assert(routes.size() == tr + 1);
-    const auto entry       = solver->m_instance.get_schedule(tr).get_entry();
-    auto edges_to_consider = solver->m_instance.const_n().out_edges(entry);
+    const auto entry =
+        solver->m_instance.get_const_schedule(tr).get_entry_vertex();
+    auto edges_to_consider =
+        solver->m_instance.get_const_network().out_edges(entry);
 
     double current_pos = 0;
     routes[tr].emplace_back(entry, current_pos);
@@ -91,13 +93,13 @@ std::vector<std::vector<std::pair<size_t, double>>> cda_rail::solver::
       auto& tmp_var = solver->m_vars["x"](tr, edge_id);
       if (!tmp_var.sameAs(GRBVar()) && getSolution(tmp_var) > 0.5) {
         const auto& edge_object =
-            solver->m_instance.const_n().get_edge(edge_id);
+            solver->m_instance.get_const_network().get_edge(edge_id);
         current_pos += edge_object.length;
         routes[tr].emplace_back(edge_object.target, current_pos);
         const auto& [old_edge_id, old_edge_pos] =
-            solver->m_instance.const_n().get_old_edge(edge_id);
-        edges_to_consider = solver->m_instance.const_n().out_edges(
-            solver->m_instance.const_n().get_edge(edge_id).target);
+            solver->m_instance.get_const_network().get_old_edge(edge_id);
+        edges_to_consider = solver->m_instance.get_const_network().out_edges(
+            solver->m_instance.get_const_network().get_edge(edge_id).target);
       }
     }
   }
@@ -147,7 +149,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   for (size_t edge_id = 0; edge_id < solver->m_num_edges; edge_id++) {
     train_orders_on_edges.emplace_back();
     assert(train_orders_on_edges.size() == edge_id + 1);
-    const auto& edge_object = solver->m_instance.const_n().get_edge(edge_id);
+    const auto& edge_object =
+        solver->m_instance.get_const_network().get_edge(edge_id);
     std::unordered_map<size_t, double> train_edge_times_source;
     std::unordered_map<size_t, double> train_edge_times_target;
     for (size_t tr = 0; tr < solver->m_num_tr; tr++) {
@@ -206,12 +209,13 @@ std::vector<std::unordered_map<size_t, double>> cda_rail::solver::mip_based::
     for (size_t route_v_idx = 0; route_v_idx < routes[tr].size();
          route_v_idx++) {
       const auto& v_idx = routes[tr][route_v_idx].first;
-      const auto  e_idx = (route_v_idx == routes[tr].size() - 1)
-                              ? solver->m_instance.const_n().get_edge_index(
-                                    routes[tr][route_v_idx - 1].first, v_idx)
-                              : solver->m_instance.const_n().get_edge_index(
-                                    v_idx, routes[tr][route_v_idx + 1].first);
-      const auto& edge  = solver->m_instance.const_n().get_edge(e_idx);
+      const auto  e_idx =
+          (route_v_idx == routes[tr].size() - 1)
+              ? solver->m_instance.get_const_network().get_edge_index(
+                    routes[tr][route_v_idx - 1].first, v_idx)
+              : solver->m_instance.get_const_network().get_edge_index(
+                    v_idx, routes[tr][route_v_idx + 1].first);
+      const auto& edge = solver->m_instance.get_const_network().get_edge(e_idx);
       const auto& source_velocities =
           solver->m_velocity_extensions.at(tr).at(edge.source);
       const auto& target_velocities =
@@ -257,9 +261,11 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   for (size_t tr = 0; tr < solver->m_num_tr &&
                       (!only_one_constraint || !violated_constraint_found);
        tr++) {
-    const auto& tr_object = solver->m_instance.get_train_list().get_train(tr);
-    const auto  t_bound   = solver->ub_timing_variable(tr);
-    const auto& entry     = solver->m_instance.get_schedule(tr).get_entry();
+    const auto& tr_object =
+        solver->m_instance.get_const_train_list().get_train(tr);
+    const auto  t_bound = solver->ub_timing_variable(tr);
+    const auto& entry =
+        solver->m_instance.get_const_schedule(tr).get_entry_vertex();
     // Check every vertex except the last one, because only vertex headway is
     // imposed in that case
     for (size_t r_v_idx = 0;
@@ -268,7 +274,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
          r_v_idx++) {
       const auto& [v_idx, pos] = routes.at(tr).at(r_v_idx);
       const auto& vel          = train_velocities.at(tr).at(v_idx);
-      const auto  bd           = vel * vel / (2 * tr_object.deceleration);
+      const auto  bd           = vel * vel / (2 * tr_object.get_deceleration());
       const auto  ma_pos       = pos + bd;
 
       const auto& tr_t_var       = solver->m_vars["t_front_arrival"](tr, v_idx);
@@ -296,14 +302,15 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           cda_rail::index_vector p_tmp;
           p_tmp.reserve(r_ma_idx - r_v_idx + 1);
           for (size_t i = r_v_idx; i <= r_ma_idx; i++) {
-            p_tmp.emplace_back(solver->m_instance.const_n().get_edge_index(
-                routes.at(tr).at(i).first, routes.at(tr).at(i + 1).first));
+            p_tmp.emplace_back(
+                solver->m_instance.get_const_network().get_edge_index(
+                    routes.at(tr).at(i).first, routes.at(tr).at(i + 1).first));
           }
           return p_tmp;
         }();
         const auto& rel_e_idx = p.back();
         const auto& rel_e_obj =
-            solver->m_instance.const_n().get_edge(rel_e_idx);
+            solver->m_instance.get_const_network().get_edge(rel_e_idx);
 
         // Create path expression according to route. The first edge must
         // use the specified velocity or faster, since only then the desired
@@ -344,7 +351,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         }
         for (const auto& tr_other_idx : other_trains) {
           const auto& tr_other_object =
-              solver->m_instance.get_train_list().get_train(tr_other_idx);
+              solver->m_instance.get_const_train_list().get_train(tr_other_idx);
           const auto& tr_other_source_speed =
               train_velocities.at(tr_other_idx).at(rel_source);
           const auto& tr_other_target_speed =
@@ -356,21 +363,22 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               solver->m_vars["t_rear_departure"](tr_other_idx, rel_target);
 
           const auto& tr_other_max_speed =
-              std::min(tr_other_object.max_speed, rel_e_obj.max_speed);
+              std::min(tr_other_object.get_max_speed(), rel_e_obj.max_speed);
 
           // Check if this constraint should be added
           bool add_constr =
               (solver->m_solver_strategy.lazy_constraint_selection_strategy ==
                LazyConstraintSelectionStrategy::AllChecked);
           if (!add_constr &&
-              tr_t_var_value <
-                  getSolution(tr_other_source_var) +
-                      cda_rail::min_travel_time_from_start(
-                          tr_other_source_speed, tr_other_target_speed,
-                          tr_other_max_speed, tr_other_object.acceleration,
-                          tr_other_object.deceleration, rel_e_obj.length,
-                          rel_pos_on_edge) -
-                      GRB_EPS) {
+              tr_t_var_value < getSolution(tr_other_source_var) +
+                                   cda_rail::min_travel_time_from_start(
+                                       tr_other_source_speed,
+                                       tr_other_target_speed,
+                                       tr_other_max_speed,
+                                       tr_other_object.get_acceleration(),
+                                       tr_other_object.get_deceleration(),
+                                       rel_e_obj.length, rel_pos_on_edge) -
+                                   GRB_EPS) {
             add_constr = true;
           }
           if (!add_constr && rel_pos_on_edge > EPS &&
@@ -378,8 +386,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   getSolution(tr_other_target_var) -
                       cda_rail::max_travel_time_to_end(
                           tr_other_source_speed, tr_other_target_speed, V_MIN,
-                          tr_other_object.acceleration,
-                          tr_other_object.deceleration, rel_e_obj.length,
+                          tr_other_object.get_acceleration(),
+                          tr_other_object.get_deceleration(), rel_e_obj.length,
                           rel_pos_on_edge, rel_e_obj.breakable) -
                       GRB_EPS) {
             add_constr = true;
@@ -428,23 +436,25 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   }
                   if (cda_rail::possible_by_eom(
                           vel_tr_other_source, vel_tr_other_target,
-                          tr_other_object.acceleration,
-                          tr_other_object.deceleration, rel_e_obj.length)) {
-                    rhs.at(0) +=
-                        solver->m_vars["y"](tr_other_idx, rel_e_idx,
-                                            v_tr_other_source_index,
-                                            v_tr_other_target_index) *
-                        cda_rail::min_travel_time_from_start(
-                            vel_tr_other_source, vel_tr_other_target,
-                            tr_other_max_speed, tr_other_object.acceleration,
-                            tr_other_object.deceleration, rel_e_obj.length,
-                            rel_pos_on_edge);
+                          tr_other_object.get_acceleration(),
+                          tr_other_object.get_deceleration(),
+                          rel_e_obj.length)) {
+                    rhs.at(0) += solver->m_vars["y"](tr_other_idx, rel_e_idx,
+                                                     v_tr_other_source_index,
+                                                     v_tr_other_target_index) *
+                                 cda_rail::min_travel_time_from_start(
+                                     vel_tr_other_source, vel_tr_other_target,
+                                     tr_other_max_speed,
+                                     tr_other_object.get_acceleration(),
+                                     tr_other_object.get_deceleration(),
+                                     rel_e_obj.length, rel_pos_on_edge);
                     const auto max_travel_time =
                         cda_rail::max_travel_time_to_end(
                             vel_tr_other_source, vel_tr_other_target, V_MIN,
-                            tr_other_object.acceleration,
-                            tr_other_object.deceleration, rel_e_obj.length,
-                            rel_pos_on_edge, rel_e_obj.breakable);
+                            tr_other_object.get_acceleration(),
+                            tr_other_object.get_deceleration(),
+                            rel_e_obj.length, rel_pos_on_edge,
+                            rel_e_obj.breakable);
                     rhs.at(1) -=
                         solver->m_vars["y"](tr_other_idx, rel_e_idx,
                                             v_tr_other_source_index,
@@ -468,7 +478,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                       ExportOption::ExportSolutionAndLP ||
                   solver->m_solution_settings.export_option ==
                       ExportOption::ExportSolutionWithInstanceAndLP) {
-                solver->lazy_constraints.push_back(lhs >= rhs_expr);
+                solver->m_lazy_constraints.push_back(lhs >= rhs_expr);
               }
               violated_constraint_found = true;
             }
@@ -486,8 +496,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           const auto p_tmp_len = std::accumulate(
               p_tmp.begin(), p_tmp.end(), 0.0,
               [this](double sum, const auto& edge_index) {
-                return sum +
-                       solver->m_instance.const_n().get_edge(edge_index).length;
+                return sum + solver->m_instance.get_const_network()
+                                 .get_edge(edge_index)
+                                 .length;
               });
           GRBLinExpr edge_tmp_path_expr = 0;
           for (const auto& e_tmp : p_tmp) {
@@ -516,28 +527,30 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             prev_pos   = routes.at(tr).at(r_v_idx - 1).second;
             prev_vel   = train_velocities.at(tr).at(prev_v_idx.value());
             const auto& prev_bd     = prev_vel.value() * prev_vel.value() /
-                                      (2 * tr_object.deceleration);
+                                      (2 * tr_object.get_deceleration());
             const auto& prev_ma_pos = prev_pos.value() + prev_bd;
-            prev_edge_index = solver->m_instance.const_n().get_edge_index(
-                prev_v_idx.value(), v_idx);
+            prev_edge_index =
+                solver->m_instance.get_const_network().get_edge_index(
+                    prev_v_idx.value(), v_idx);
             const auto& prev_edge_object =
-                solver->m_instance.const_n().get_edge(prev_edge_index.value());
+                solver->m_instance.get_const_network().get_edge(
+                    prev_edge_index.value());
             prev_t_var =
                 solver->m_vars["t_front_departure"](tr, prev_v_idx.value());
             prev_t_var_value = getSolution(prev_t_var.value());
             const auto& prev_max_speed =
-                std::min(prev_edge_object.max_speed, tr_object.max_speed);
+                std::min(prev_edge_object.max_speed, tr_object.get_max_speed());
             if (prev_ma_pos > pos + p_tmp_len) {
               skip = true;
               // obd is too long and relevant vertex is earlier
             } else {
               t_reduction = cda_rail::min_time_from_rear_to_ma_point(
                   prev_vel.value(), vel, V_MIN, prev_max_speed,
-                  tr_object.acceleration, tr_object.deceleration,
+                  tr_object.get_acceleration(), tr_object.get_deceleration(),
                   prev_edge_object.length, obd);
               const auto tmp_max = cda_rail::max_time_from_front_to_ma_point(
-                  prev_vel.value(), vel, V_MIN, tr_object.acceleration,
-                  tr_object.deceleration, prev_edge_object.length, obd,
+                  prev_vel.value(), vel, V_MIN, tr_object.get_acceleration(),
+                  tr_object.get_deceleration(), prev_edge_object.length, obd,
                   prev_edge_object.breakable);
               if (tmp_max < std::numeric_limits<double>::infinity()) {
                 t_addition = tmp_max;
@@ -651,7 +664,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                         ExportOption::ExportSolutionAndLP ||
                     solver->m_solution_settings.export_option ==
                         ExportOption::ExportSolutionWithInstanceAndLP) {
-                  solver->lazy_constraints.push_back(lhs_expr >= rhs);
+                  solver->m_lazy_constraints.push_back(lhs_expr >= rhs);
                 }
                 violated_constraint_found = true;
               }
@@ -682,7 +695,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                       (!only_one_constraint || !violated_constraint_found);
        tr++) {
     const auto tr_t_bound = solver->ub_timing_variable(tr);
-    const auto tr_object  = solver->m_instance.get_train_list().get_train(tr);
+    const auto tr_object =
+        solver->m_instance.get_const_train_list().get_train(tr);
     // Check every vertex on the route
     for (size_t r_v_idx = 0;
          r_v_idx < routes.at(tr).size() - 1 &&
@@ -693,28 +707,29 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       const auto& vel_source = train_velocities.at(tr).at(v_source);
       const auto& vel_target = train_velocities.at(tr).at(v_target);
       const auto& edge_index =
-          solver->m_instance.const_n().get_edge_index(v_source, v_target);
+          solver->m_instance.get_const_network().get_edge_index(v_source,
+                                                                v_target);
 
       const auto& [rel_tr_order_source, rel_tr_order_target] =
           train_orders_on_edges.at(edge_index);
 
       const auto& v_source_obj =
-          solver->m_instance.const_n().get_vertex(v_source);
+          solver->m_instance.get_const_network().get_vertex(v_source);
       const auto& v_target_obj =
-          solver->m_instance.const_n().get_vertex(v_target);
+          solver->m_instance.get_const_network().get_vertex(v_target);
 
       // Variables to possibly strengthen the constraints
       auto [hw_s1_max, hw_s1, hw_t1_max, hw_t1] =
           solver->get_vertex_headway_expressions(tr, edge_index);
 
-      auto hw_s1_value = std::max(
-          v_source_obj.headway,
-          min_time_to_push_ma_fully_backward(vel_source, tr_object.acceleration,
-                                             tr_object.deceleration));
-      auto hw_t1_value = std::max(
-          v_target_obj.headway,
-          min_time_to_push_ma_fully_backward(vel_target, tr_object.acceleration,
-                                             tr_object.deceleration));
+      auto hw_s1_value = std::max(v_source_obj.headway,
+                                  min_time_to_push_ma_fully_backward(
+                                      vel_source, tr_object.get_acceleration(),
+                                      tr_object.get_deceleration()));
+      auto hw_t1_value = std::max(v_target_obj.headway,
+                                  min_time_to_push_ma_fully_backward(
+                                      vel_target, tr_object.get_acceleration(),
+                                      tr_object.get_deceleration()));
 
       const auto tr_idx_source =
           std::ranges::find(rel_tr_order_source,
@@ -852,12 +867,12 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               solver->m_solution_settings.export_option ==
                   ExportOption::ExportSolutionWithInstanceAndLP) {
             // So that the constraint can be exported
-            solver->lazy_constraints.push_back(order_expr <= 0.5 * edge_expr);
-            solver->lazy_constraints.push_back(order_expr >= edge_expr - 1);
-            solver->lazy_constraints.push_back(lhs_source >= rhs_source);
-            solver->lazy_constraints.push_back(lhs_target >= rhs_target);
-            solver->lazy_constraints.push_back(lhs_source_2 >= rhs_source_2);
-            solver->lazy_constraints.push_back(lhs_target_2 >= rhs_target_2);
+            solver->m_lazy_constraints.push_back(order_expr <= 0.5 * edge_expr);
+            solver->m_lazy_constraints.push_back(order_expr >= edge_expr - 1);
+            solver->m_lazy_constraints.push_back(lhs_source >= rhs_source);
+            solver->m_lazy_constraints.push_back(lhs_target >= rhs_target);
+            solver->m_lazy_constraints.push_back(lhs_source_2 >= rhs_source_2);
+            solver->m_lazy_constraints.push_back(lhs_target_2 >= rhs_target_2);
           }
           violated_constraint_found = true;
         }
@@ -884,7 +899,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                        (!only_one_constraint || !violated_constraint_found);
        idx++) {
     const auto& [e1, e2] = solver->m_relevant_reverse_edges.at(idx);
-    const auto& e_obj    = solver->m_instance.const_n().get_edge(e1);
+    const auto& e_obj    = solver->m_instance.get_const_network().get_edge(e1);
     for (size_t i = 0;
          i < 2 && (!only_one_constraint || !violated_constraint_found); i++) {
       const auto& tr_order = i == 0 ? train_orders_on_edges.at(e1).first
@@ -999,7 +1014,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                       (!only_one_constraint || !violated_constraint_found);
        tr++) {
     const auto tr_t_bound = solver->ub_timing_variable(tr);
-    const auto tr_object  = solver->m_instance.get_train_list().get_train(tr);
+    const auto tr_object =
+        solver->m_instance.get_const_train_list().get_train(tr);
     // Check every vertex on the route
     for (size_t r_v_idx = 0;
          r_v_idx < routes.at(tr).size() - 1 &&
@@ -1010,9 +1026,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       const auto& vel_source = train_velocities.at(tr).at(v_source);
       const auto& vel_target = train_velocities.at(tr).at(v_target);
       const auto& edge_index =
-          solver->m_instance.const_n().get_edge_index(v_source, v_target);
+          solver->m_instance.get_const_network().get_edge_index(v_source,
+                                                                v_target);
       const auto& edge_object =
-          solver->m_instance.const_n().get_edge(edge_index);
+          solver->m_instance.get_const_network().get_edge(edge_index);
 
       const auto hw_edge =
           cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::headway(
@@ -1093,7 +1110,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 
       // TTD constraint on entering edge
       const auto neighboring_edges =
-          solver->m_instance.const_n().neighboring_edges(v_source);
+          solver->m_instance.get_const_network().neighboring_edges(v_source);
       const auto intersecting_ttd = cda_rail::Network::get_intersecting_ttd(
           {edge_index}, solver->m_ttd_sections);
       for (const auto& [ttd_index, _] : intersecting_ttd) {
@@ -1134,7 +1151,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 
           const auto hw_ttd_value =
               cda_rail::min_time_to_push_ma_fully_backward(
-                  vel_source, tr_object.acceleration, tr_object.deceleration);
+                  vel_source, tr_object.get_acceleration(),
+                  tr_object.get_deceleration());
 
           for (const auto& tr_other_ttd : other_trains_ttd) {
             const auto& tr_other_t_var_ttd =
