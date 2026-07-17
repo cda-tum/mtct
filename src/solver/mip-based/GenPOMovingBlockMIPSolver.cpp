@@ -52,10 +52,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   std::optional<LazyCallback> cb;
   if (solver_strategy_input.use_lazy_constraints) {
     cb = LazyCallback(this);
-    this->solve_init_general_mip(time_limit, debug_input, overwrite_severity,
+    this->solve_init_general_mip(debug_input, overwrite_severity,
                                  &(cb.value()));
   } else {
-    this->solve_init_general_mip(time_limit, debug_input, overwrite_severity);
+    this->solve_init_general_mip(debug_input, overwrite_severity);
   }
 
   if (!m_instance.get_const_network().is_consistent_for_transformation()) {

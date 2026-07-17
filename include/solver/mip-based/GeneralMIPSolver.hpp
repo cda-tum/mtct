@@ -77,25 +77,24 @@ protected:
     m_env.reset();
   };
 
-  void solve_init_general_mip(int time_limit, bool debug_input,
-                              bool overwrite_severity) {
+  void solve_init_general_mip(bool debug_input, bool overwrite_severity) {
     static auto message_callback = MessageCallback();
-    this->solve_init_general_mip(time_limit, debug_input, overwrite_severity,
+    this->solve_init_general_mip(debug_input, overwrite_severity,
                                  &message_callback);
   };
 
-  void solve_init_general_mip(int time_limit, bool debug_input,
-                              bool overwrite_severity, GRBCallback* cb) {
-    this->solve_init_general(time_limit, debug_input, overwrite_severity);
+  void solve_init_general_mip(bool debug_input, bool overwrite_severity,
+                              GRBCallback* cb) {
+    this->solve_init_general(debug_input, overwrite_severity);
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     PLOGD << "Create Gurobi environment and model";
-    this->env.emplace(true);
-    this->env->start();
-    this->model.emplace(m_env.value());
+    this->m_env.emplace(true);
+    this->m_env->start();
+    this->m_model.emplace(m_env.value());
 
-    this->model->setCallback(cb);
-    this->model->set(GRB_IntParam_LogToConsole, 0);
+    this->m_model->setCallback(cb);
+    this->m_model->set(GRB_IntParam_LogToConsole, 0);
   };
 
   GeneralMIPSolver() = default;
