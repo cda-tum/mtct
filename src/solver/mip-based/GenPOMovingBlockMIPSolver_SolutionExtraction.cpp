@@ -63,7 +63,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   route_markers.reserve(m_num_tr);
   sol.reset_routes();
   for (size_t tr = 0; tr < m_num_tr; tr++) {
-    bool        tr_routed = false;
     const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
     sol.add_empty_route(tr_object.get_name());
     const auto entry = m_instance.get_const_schedule(tr).get_entry_vertex();
@@ -86,7 +85,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
             m_instance.get_const_network().get_old_edge(edge_id);
         if (old_edge_pos == 0) {
           sol.push_back_edge_to_route(tr_object.get_name(), old_edge_id);
-          tr_routed = true;
         }
         edges_to_consider = m_instance.get_const_network().out_edges(
             m_instance.get_const_network().get_edge(edge_id).target);
