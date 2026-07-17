@@ -71,30 +71,29 @@ struct SolverStrategyMovingBlock {
 class GenPOMovingBlockMIPSolver
     : public GeneralMIPSolver<
           instances::GeneralPerformanceOptimizationInstance,
-          instances::SolGeneralPerformanceOptimizationInstance<
-              instances::GeneralPerformanceOptimizationInstance>> {
+          instances::SolGeneralPerformanceOptimizationInstance> {
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, PrivateFillFunctions);
 #endif
 
-  SolutionSettingsMovingBlock         solution_settings = {};
-  ModelDetail                         model_detail      = {};
-  SolverStrategyMovingBlock           solver_strategy   = {};
-  size_t                              num_tr            = 0;
-  size_t                              num_edges         = 0;
-  size_t                              num_vertices      = 0;
-  size_t                              num_ttd           = 0;
-  int                                 max_t             = 0;
-  std::vector<cda_rail::index_vector> ttd_sections;
+  SolutionSettingsMovingBlock m_solution_settings = {};
+  ModelDetail                 m_model_detail      = {};
+  SolverStrategyMovingBlock   m_solver_strategy   = {};
+  size_t                      m_num_tr            = 0;
+  size_t                      m_num_edges         = 0;
+  size_t                      m_num_vertices      = 0;
+  size_t                      m_num_ttd           = 0;
+  // int m_max_t = 0;
+  std::vector<cda_rail::index_vector> m_ttd_sections;
   // tr_stop_data:
   // For every train, for every station, list of possible stop vertices together
   // with respective edges
   std::vector<std::vector<
       std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>>>
-                                                tr_stop_data;
-  std::vector<std::vector<std::vector<double>>> velocity_extensions;
-  std::vector<std::pair<size_t, size_t>>        relevant_reverse_edges;
+                                                m_tr_stop_data;
+  std::vector<std::vector<std::vector<double>>> m_velocity_extensions;
+  std::vector<std::pair<size_t, size_t>>        m_relevant_reverse_edges;
 
   void initialize_variables(
       const SolutionSettingsMovingBlock& solution_settings_input,
@@ -144,8 +143,7 @@ private:
                      bool   also_higher_velocities = false);
 
   void extract_solution(
-      instances::SolGeneralPerformanceOptimizationInstance<
-          instances::GeneralPerformanceOptimizationInstance>& sol) const;
+      instances::SolGeneralPerformanceOptimizationInstance& sol) const;
   [[nodiscard]] double extract_speed(size_t tr, size_t vertex_id) const;
   static double headway(const Train& tr_obj, const Edge& e_obj, double v_0,
                         double v_1, bool entry_vertex = false);
@@ -203,41 +201,24 @@ public:
 
   explicit GenPOMovingBlockMIPSolver(
       const instances::GeneralPerformanceOptimizationInstance& instance)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(instance) {
-        };
+      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
+                         instances::SolGeneralPerformanceOptimizationInstance>(
+            instance) {};
 
-  explicit GenPOMovingBlockMIPSolver(const std::filesystem::path& p)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(p) {};
-
-  explicit GenPOMovingBlockMIPSolver(const std::string& path)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(path) {};
-
-  explicit GenPOMovingBlockMIPSolver(const char* path)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(path) {};
+  template <typename... Args>
+  explicit GenPOMovingBlockMIPSolver(Args&&... args)
+    requires(!IsSingleInstanceArgument<Args...>::value)
+      : GeneralMIPSolver(std::forward<Args>(args)...) {}
 
   ~GenPOMovingBlockMIPSolver() override = default;
 
   using GeneralSolver::solve;
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(int time_limit, bool debug_input, bool overwrite_severity) override {
     return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
   };
 
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(const ModelDetail&                 model_detail_input,
         const SolverStrategyMovingBlock&   solver_strategy_input,
         const SolutionSettingsMovingBlock& solution_settings_input,

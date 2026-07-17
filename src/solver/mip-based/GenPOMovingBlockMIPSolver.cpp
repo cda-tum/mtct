@@ -2128,7 +2128,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::cleanup() {
   num_edges         = 0;
   num_vertices      = 0;
   num_ttd           = 0;
-  max_t             = 0;
+  // max_t = 0;
   ttd_sections.clear();
   tr_stop_data.clear();
   velocity_extensions.clear();
