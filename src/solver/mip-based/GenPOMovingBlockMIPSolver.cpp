@@ -218,29 +218,32 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   m_vars["t_front_arrival"]   = MultiArray<GRBVar>(m_num_tr, m_num_vertices);
   m_vars["t_front_departure"] = MultiArray<GRBVar>(m_num_tr, m_num_vertices);
   m_vars["t_rear_departure"]  = MultiArray<GRBVar>(m_num_tr, m_num_vertices);
+  m_vars["waiting_at_vertex"] = MultiArray<GRBVar>(m_num_tr, m_num_vertices);
   m_vars["t_ttd_departure"]   = MultiArray<GRBVar>(m_num_tr, m_num_ttd);
 
   for (size_t tr = 0; tr < m_num_tr; tr++) {
-    const double ub_timing_dept = ub_timing_variable(tr);
-    const auto&  tr_name =
+    const auto& tr_name =
         m_instance.get_const_train_list().get_train(tr).get_name();
     for (const auto v : m_instance.vertices_used_by_train(
              tr, m_model_detail.fix_routes, false)) {
       const auto& v_name = m_instance.get_const_network().get_vertex(v).name;
       m_vars["t_front_arrival"](tr, v) =
-          m_model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS,
+          m_model->addVar(0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS,
                           "t_front_arrival_" + tr_name + "_" + v_name);
       m_vars["t_front_departure"](tr, v) =
-          m_model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS,
+          m_model->addVar(0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS,
                           "t_front_departure_" + tr_name + "_" + v_name);
       m_vars["t_rear_departure"](tr, v) =
-          m_model->addVar(0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS,
+          m_model->addVar(0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS,
                           "t_rear_departure_" + tr_name + "_" + v_name);
+      m_vars["waiting_at_vertex"](tr, v) =
+          m_model->addVar(0.0, 1.0, 0.0, GRB_BINARY,
+                          "waiting_at_vertex_" + tr_name + "_" + v_name);
     }
     for (const auto& ttd : m_instance.sections_used_by_train(
              tr, m_ttd_sections, m_model_detail.fix_routes, false)) {
       m_vars["t_ttd_departure"](tr, ttd) = m_model->addVar(
-          0.0, ub_timing_dept, 0.0, GRB_CONTINUOUS,
+          0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS,
           "t_ttd_departure_" + tr_name + "_" + std::to_string(ttd));
     }
   }
@@ -316,6 +319,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         max_num_stops, m_instance.get_const_schedule(tr).get_stops().size());
   }
   m_vars["stop"] = MultiArray<GRBVar>(m_num_tr, max_num_stops, m_num_vertices);
+  m_vars["service_delay"] = MultiArray<GRBVar>(m_num_tr, max_num_stops);
 
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_name =
@@ -334,6 +338,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             "stop_" + tr_name + "_" + stop_name + "_" +
                 m_instance.get_const_network().get_vertex(v).name);
       }
+      m_vars["service_delay"](tr, stop) =
+          m_model->addVar(0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS,
+                          "service_delay_" + tr_name + "_" + stop_name);
     }
   }
 }
@@ -426,8 +433,16 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_objective() {
     const auto& tr_weight = m_instance.get_train_weight(tr);
     tr_weight_sum += tr_weight;
 
+    // TODO: Verify objective
     obj_expr +=
         tr_weight * (m_vars["t_rear_departure"](tr, exit_node) - min_exit_time);
+
+    auto const& scheduled_stops = m_instance.get_const_schedule(tr).get_stops();
+    for (size_t stop_idx = 0; stop_idx < scheduled_stops.size(); stop_idx++) {
+      obj_expr += m_instance.get_station_delay_weight() * tr_weight /
+                  scheduled_stops.size() *
+                  m_vars["service_delay"](tr, stop_idx);
+    }
   }
   obj_expr /= tr_weight_sum;
   m_model->setObjective(obj_expr, GRB_MINIMIZE);
@@ -833,10 +848,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 v1_values.at(i), v2_values.at(j), V_MIN,
                 tr_object.get_acceleration(), tr_object.get_deceleration(),
                 edge.length, edge.breakable);
-            m_model->addConstr(
-                m_vars["t_front_arrival"](tr, edge.target) +
-                        (ub_timing_variable(tr) + min_t_arc) *
-                            (1 - m_vars["y"](tr, e, i, j)) >=
+            m_model->addGenConstrIndicator(
+                m_vars["y"](tr, e, i, j), 1,
+                m_vars["t_front_arrival"](tr, edge.target) >=
                     m_vars["t_front_departure"](tr, edge.source) + min_t_arc,
                 "edge_minimal_travel_time_" + tr_object.get_name() + "_" +
                     m_instance.get_const_network()
@@ -849,17 +863,16 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                     "_" + std::to_string(v1_values.at(i)) + "-" +
                     std::to_string(v2_values.at(j)));
 
-            if (max_t_arc >= std::numeric_limits<double>::infinity()) {
+            if (max_t_arc >= GRB_INFINITY) {
               continue;
             }
 
             // t_front_arrival <= t_rear_departure + maximal travel time if arc
             // is used
-            m_model->addConstr(
+            m_model->addGenConstrIndicator(
+                m_vars["y"](tr, e, i, j), 1,
                 m_vars["t_front_arrival"](tr, edge.target) <=
-                    m_vars["t_front_departure"](tr, edge.source) + max_t_arc +
-                        (ub_timing_variable(tr) - max_t_arc) *
-                            (1 - m_vars["y"](tr, e, i, j)),
+                    m_vars["t_front_departure"](tr, edge.source) + max_t_arc,
                 "edge_maximal_travel_time_" + tr_object.get_name() + "_" +
                     m_instance.get_const_network()
                         .get_vertex(edge.source)
@@ -934,21 +947,28 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           }
         }
       }
-      m_model->addConstr(m_vars["t_front_departure"](tr, v) <=
-                             m_vars["t_front_arrival"](tr, v) +
-                                 ub_timing_variable(tr) * speed_0_arcs,
-                         "tr_might_stop_at_vertex_" + tr_object.get_name() +
-                             "_" +
+      m_model->addConstr(m_vars["t_front_departure"](tr, v) <= speed_0_arcs,
+                         "tr_can_only_stop_by_using_stopping_edge" +
+                             tr_object.get_name() + "_" +
                              m_instance.get_const_network().get_vertex(v).name);
+      m_model->addGenConstrIndicator(
+          m_vars["waiting_at_vertex"](tr, v), 0,
+          m_vars["t_front_departure"](tr, v) <=
+              m_vars["t_front_arrival"](tr, v),
+          "tr_cannot_stop_unless_allowed_" + tr_object.get_name() + "_" +
+              m_instance.get_const_network().get_vertex(v).name);
     }
   }
 }
 
+#if 0
+// TODO: REMOVE?
 double
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::ub_timing_variable(
     size_t tr) const {
   return m_instance.get_const_schedule(tr).get_exit_time();
 }
+#endif
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_basic_order_constraints() {
@@ -998,7 +1018,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         m_instance.edges_used_by_train(tr, m_model_detail.fix_routes, false);
 
     // NOLINTNEXTLINE(readability-identifier-naming)
-    const auto M = ub_timing_variable(tr);
 
     for (const auto& v : m_instance.vertices_used_by_train(
              tr, m_model_detail.fix_routes, false)) {
@@ -1124,11 +1143,22 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           const auto& last_edge_obj =
               m_instance.get_const_network().get_edge(last_edge);
 
-          GRBLinExpr lhs = m_vars["t_rear_departure"](tr, v) +
-                           M * static_cast<double>(p.size());
+          auto const helper_binary = m_model->addVar(
+              0.0, 1.0, 0.0, GRB_BINARY,
+              "train_rear_constraint_path_binary_helper_" +
+                  tr_object.get_name() + "_" +
+                  m_instance.get_const_network().get_vertex(v).name + "_" +
+                  std::to_string(p_ind));
+          GRBLinExpr path_indicator_sum = 1;
           for (const auto& e_p : p) {
-            lhs -= M * m_vars["x"](tr, e_p);
+            path_indicator_sum += m_vars["x"](tr, e_p) - 1;
           }
+          m_model->addConstr(
+              helper_binary >= path_indicator_sum,
+              "train_rear_constraint_path_binary_helper_1_" +
+                  tr_object.get_name() + "_" +
+                  m_instance.get_const_network().get_vertex(v).name + "_" +
+                  std::to_string(p_ind));
 
           if (last_edge_obj.target == exit &&
               last_edge_obj.length + p_len_last_vertex <
@@ -1191,9 +1221,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               }
             }
 
-            m_model->addConstr(
-                lhs >= m_vars["t_front_departure"](tr, exit) +
-                           min_travel_time_expr,
+            // GRBLinExpr lhs = m_vars["t_rear_departure"](tr, v) +
+            m_model->addGenConstrIndicator(
+                helper_binary, 1,
+                m_vars["t_rear_departure"](tr, v) >=
+                    m_vars["t_front_departure"](tr, exit) +
+                        min_travel_time_expr,
                 "rear_departure_half_leaving_1_" + tr_object.get_name() + "_" +
                     m_instance.get_const_network().get_vertex(v).name + "_" +
                     std::to_string(p_ind));
@@ -1219,8 +1252,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
             if (rel_pt_on_edge + 1e-6 >= last_edge_obj.length) {
               // Directly use corresponding variable
-              m_model->addConstr(
-                  lhs >= m_vars["t_front_departure"](tr, last_edge_obj.target),
+              m_model->addGenConstrIndicator(
+                  helper_binary, 1,
+                  m_vars["t_rear_departure"](tr, v) >=
+                      m_vars["t_front_departure"](tr, last_edge_obj.target),
                   "rear_departure_2_" + tr_object.get_name() + "_" +
                       m_instance.get_const_network().get_vertex(v).name + "_" +
                       std::to_string(p_ind));
@@ -1233,6 +1268,15 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                   m_vars["t_front_arrival"](tr, last_edge_obj.target);
               const auto v_max_rel_e =
                   std::min(last_edge_obj.max_speed, tr_object.get_max_speed());
+
+              auto const t_ref_2_relevant = m_model->addVar(
+                  0.0, 1.0, 0.0, GRB_BINARY,
+                  "train_rear_constraint_path_t_ref_2_relevant_helper_" +
+                      tr_object.get_name() + "_" +
+                      m_instance.get_const_network().get_vertex(v).name + "_" +
+                      std::to_string(p_ind));
+              GRBLinExpr t_ref_2_relevant_sum = helper_binary;
+
               for (size_t i = 0; i < v_0_velocities.size(); i++) {
                 if (v_0_velocities.at(i) > v_max_rel_e) {
                   continue;
@@ -1257,22 +1301,32 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                             tr_object.get_acceleration(),
                             tr_object.get_deceleration(), last_edge_obj.length,
                             rel_pt_on_edge, last_edge_obj.breakable);
-                    t_ref_2 -= m_vars["y"](tr, last_edge, i, j) *
-                               (max_travel_time >=
-                                        std::numeric_limits<double>::infinity()
-                                    ? M
-                                    : max_travel_time);
+                    if (max_travel_time >= GRB_INFINITY) {
+                      t_ref_2_relevant_sum -= m_vars["y"](tr, last_edge, i, j);
+                    } else {
+                      t_ref_2 -=
+                          m_vars["y"](tr, last_edge, i, j) * max_travel_time;
+                    }
                   }
                 }
               }
 
               m_model->addConstr(
-                  lhs >= t_ref_1,
+                  t_ref_2_relevant >= t_ref_2_relevant_sum,
+                  "train_rear_constraint_path_t_ref_2_relevant_helper_1_" +
+                      tr_object.get_name() + "_" +
+                      m_instance.get_const_network().get_vertex(v).name + "_" +
+                      std::to_string(p_ind));
+
+              m_model->addGenConstrIndicator(
+                  helper_binary, 1,
+                  m_vars["t_rear_departure"](tr, v) >= t_ref_1,
                   "rear_departure_1_" + tr_object.get_name() + "_" +
                       m_instance.get_const_network().get_vertex(v).name + "_" +
                       std::to_string(p_ind));
-              m_model->addConstr(
-                  lhs >= t_ref_2,
+              m_model->addGenConstrIndicator(
+                  t_ref_2_relevant, 1,
+                  m_vars["t_rear_departure"](tr, v) >= t_ref_2,
                   "rear_departure_2_" + tr_object.get_name() + "_" +
                       m_instance.get_const_network().get_vertex(v).name + "_" +
                       std::to_string(p_ind));
@@ -1289,7 +1343,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
     // NOLINTNEXTLINE(readability-identifier-naming)
-    const auto M = ub_timing_variable(tr);
 
     // Stop at exactly one stop using lhs
     const auto& tr_schedule = m_instance.get_const_schedule(tr);
@@ -1322,6 +1375,15 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 m_instance.get_const_network().get_vertex(v).name);
 
         // TODO: Check semantics objective
+        // Add station delay for objective use (only lb, since objective pushes
+        // down)
+        m_model->addGenConstrIndicator(
+            m_vars["stop"](tr, stop, v), 1,
+            m_vars["service_delay"](tr, stop) >=
+                m_vars["t_front_arrival"](tr, v) -
+                    stop_object.get_service_time(),
+            "service_delay_" + tr_object.get_name() + "_" + stop_station_name +
+                "_vertex_" + m_instance.get_const_network().get_vertex(v).name);
 
         // Train can only stop if one of the valid edge paths is used
         GRBLinExpr path_expr = 0;
@@ -1393,7 +1455,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         m_instance.edges_used_by_train(tr, m_model_detail.fix_routes, false);
     const auto& tr_schedule_object = m_instance.get_const_schedule(tr);
     const auto& entry_node         = tr_schedule_object.get_entry_vertex();
-    const auto  t_bound            = ub_timing_variable(tr);
 
     for (const auto v : m_instance.vertices_used_by_train(
              tr, m_model_detail.fix_routes, false)) {
@@ -1441,12 +1502,26 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               continue;
             }
 
-            const auto t_bound_tmp = std::max(t_bound, ub_timing_variable(tr2));
+            std::vector<GRBVar> rhs_binary_helper;
+            rhs_binary_helper.emplace_back(m_model->addVar(
+                0.0, 1.0, 0.0, GRB_BINARY,
+                "headway_binary_helper_" + tr_object.get_name() + "_" +
+                    m_instance.get_const_train_list()
+                        .get_train(tr2)
+                        .get_name() +
+                    "_" + m_instance.get_const_network().get_vertex(v).name +
+                    "_" + std::to_string(vel) + "_" + std::to_string(p_index)));
+            m_model->addConstr(
+                rhs_binary_helper.at(0) >= m_vars["order"](tr, tr2, p.back()) +
+                                               edge_path_expr -
+                                               static_cast<double>(p.size()),
+                "headway_binary_helper_1_" + tr_object.get_name() + "_" +
+                    m_instance.get_const_train_list()
+                        .get_train(tr2)
+                        .get_name() +
+                    "_" + m_instance.get_const_network().get_vertex(v).name +
+                    "_" + std::to_string(vel) + "_" + std::to_string(p_index));
 
-            const GRBLinExpr lhs =
-                m_vars["t_front_arrival"](tr, v) +
-                t_bound_tmp * (static_cast<double>(p.size()) - edge_path_expr) +
-                t_bound_tmp * (1 - m_vars["order"](tr, tr2, p.back()));
             std::vector<GRBLinExpr> rhs;
             if (p_len + EPS >= bd && p_len - EPS <= bd) {
               // Target vertex is exactly the desired moving authority
@@ -1465,6 +1540,17 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                   m_vars["t_rear_departure"](tr2, last_edge_object.source));
               rhs.emplace_back(
                   m_vars["t_rear_departure"](tr2, last_edge_object.target));
+              rhs_binary_helper.emplace_back(m_model->addVar(
+                  0.0, 1.0, 0.0, GRB_BINARY,
+                  "headway_binary_helper_rhs1_relevant_" +
+                      tr_object.get_name() + "_" +
+                      m_instance.get_const_train_list()
+                          .get_train(tr2)
+                          .get_name() +
+                      "_" + m_instance.get_const_network().get_vertex(v).name +
+                      "_" + std::to_string(vel) + "_" +
+                      std::to_string(p_index)));
+              GRBLinExpr  rhs1_relevant_helper_sum = rhs_binary_helper.at(0);
               const auto& tr2_object =
                   m_instance.get_const_train_list().get_train(tr2);
               const auto max_speed = std::min(tr2_object.get_max_speed(),
@@ -1505,18 +1591,35 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                             tr2_object.get_deceleration(),
                             last_edge_object.length, target_point,
                             last_edge_object.breakable);
-                    rhs.at(1) -=
-                        m_vars["y"](tr2, p.back(), v_tr2_source_index,
-                                    v_tr2_target_index) *
-                        (max_travel_time > t_bound_tmp ? t_bound_tmp
-                                                       : max_travel_time);
+                    if (max_travel_time >= GRB_INFINITY) {
+                      rhs1_relevant_helper_sum -=
+                          m_vars["y"](tr2, p.back(), v_tr2_source_index,
+                                      v_tr2_target_index);
+                    } else {
+                      rhs.at(1) -=
+                          m_vars["y"](tr2, p.back(), v_tr2_source_index,
+                                      v_tr2_target_index) *
+                          max_travel_time;
+                    }
                   }
                 }
               }
-            }
-            for (size_t rhs_idx = 0; rhs_idx < rhs.size(); rhs_idx++) {
               m_model->addConstr(
-                  lhs >= rhs.at(rhs_idx),
+                  rhs_binary_helper.at(1) >= rhs1_relevant_helper_sum,
+                  "headway_binary_helper_rhs1_relevant_helper_1_" +
+                      tr_object.get_name() + "_" +
+                      m_instance.get_const_train_list()
+                          .get_train(tr2)
+                          .get_name() +
+                      "_" + m_instance.get_const_network().get_vertex(v).name +
+                      "_" + std::to_string(vel) + "_" +
+                      std::to_string(p_index));
+            }
+            assert(rhs_binary_helper.size() == rhs.size());
+            for (size_t rhs_idx = 0; rhs_idx < rhs.size(); rhs_idx++) {
+              m_model->addGenConstrIndicator(
+                  rhs_binary_helper.at(rhs_idx), 1,
+                  m_vars["t_front_arrival"](tr, v) >= rhs.at(rhs_idx),
                   "headway_" + std::to_string(rhs_idx) + "-" +
                       std::to_string(rhs.size()) + "_" + tr_object.get_name() +
                       "_" +
@@ -1557,9 +1660,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               if (tr == tr2) {
                 continue;
               }
-
-              const auto t_bound_tmp =
-                  std::max(t_bound, ub_timing_variable(tr2));
 
               GRBLinExpr lhs_from_rear =
                   m_vars["t_front_arrival"](tr, v) +
@@ -1692,7 +1792,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
-    const auto  t_bound   = ub_timing_variable(tr);
 
     for (const auto e : m_instance.edges_used_by_train(
              tr, this->m_model_detail.fix_routes, false)) {
@@ -1718,14 +1817,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         if (tr == tr2) {
           continue;
         }
-        const auto t_bound_tmp = std::max(t_bound, ub_timing_variable(tr2));
-        const auto tr2_t_var   = m_vars["t_rear_departure"](tr2, v_target);
+        const auto tr2_t_var = m_vars["t_rear_departure"](tr2, v_target);
 
-        m_model->addConstr(
-            tr_t_var - tr2_t_var +
-                    (t_bound_tmp + hw_max) *
-                        (1 - m_vars["order"](tr, tr2, e)) >=
-                headway_tr_on_e,
+        m_model->addGenConstrIndicator(
+            m_vars["order"](tr, tr2, e), 1,
+            tr_t_var - tr2_t_var >= headway_tr_on_e,
             "headway_simplified_" + tr_object.get_name() + "_" +
                 m_instance.get_const_train_list().get_train(tr2).get_name() +
                 "_" + v_source_object.name + "_" + v_target_object.name);
@@ -1753,13 +1849,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             if (tr == tr2) {
               continue;
             }
-            const auto t_bound_tmp = std::max(t_bound, ub_timing_variable(tr2));
-            const auto tr2_t_var   = m_vars["t_ttd_departure"](tr2, ttd_index);
-            m_model->addConstr(
-                tr_t_var - tr2_t_var +
-                        (t_bound_tmp + hw_max_ttd) *
-                            (1 - m_vars["order_ttd"](tr, tr2, ttd_index)) >=
-                    headway_tr_on_ttd,
+            const auto tr2_t_var = m_vars["t_ttd_departure"](tr2, ttd_index);
+            m_model->addGenConstrIndicator(
+                m_vars["order_ttd"](tr, tr2, ttd_index), 1,
+                tr_t_var - tr2_t_var >= headway_tr_on_ttd,
                 "headway_simplified_ttd_" + tr_object.get_name() + "_" +
                     m_instance.get_const_train_list()
                         .get_train(tr2)
@@ -1780,7 +1873,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     const auto  tr_on_ttd   = m_instance.trains_in_section(
         ttd_section, m_model_detail.fix_routes, false);
     for (auto const& tr : tr_on_ttd) {
-      const auto  t_bound = ub_timing_variable(tr);
       const auto& tr_name =
           m_instance.get_const_train_list().get_train(tr).get_name();
 
@@ -1817,10 +1909,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         // t_ttd >= 0 (already by definition)
         // Because we are only interested in bounding the time from below no
         // other constraints are needed.
-        m_model->addConstr(
+        m_model->addGenConstrIndicator(
+            m_vars["x"](tr, e), 1,
             m_vars["t_ttd_departure"](tr, i) >=
-                m_vars["t_rear_departure"](tr, e_object.target) -
-                    t_bound * (1 - m_vars["x"](tr, e)),
+                m_vars["t_rear_departure"](tr, e_object.target),
             "ttd_departure_bound_" +
                 m_instance.get_const_train_list().get_train(tr).get_name() +
                 "_" + std::to_string(i) + "_" + v1_name + "-" + v2_name);
@@ -1835,7 +1927,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         if (tr2 <= tr) {
           continue;
         }
-        const auto  t_bound_tmp = std::max(t_bound, ub_timing_variable(tr2));
         const auto& tr2_name =
             m_instance.get_const_train_list().get_train(tr2).get_name();
 
@@ -1852,20 +1943,18 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 std::to_string(i));
 
         // If tr1 follows tr2 then t_ttd_departure(tr1) >= t_ttd_departure(tr2)
-        m_model->addConstr(m_vars["t_ttd_departure"](tr, i) +
-                                   t_bound_tmp *
-                                       (1 - m_vars["order_ttd"](tr, tr2, i)) >=
-                               m_vars["t_ttd_departure"](tr2, i),
-                           "ttd_order_3_time_" + tr_name + "_" + tr2_name +
-                               "_" + std::to_string(i));
+        m_model->addGenConstrIndicator(m_vars["order_ttd"](tr, tr2, i), 1,
+                                       m_vars["t_ttd_departure"](tr, i) >=
+                                           m_vars["t_ttd_departure"](tr2, i),
+                                       "ttd_order_3_" + tr_name + "_" +
+                                           tr2_name + "_" + std::to_string(i));
 
         // If tr2 follows tr1 then t_ttd_departure(tr2) >= t_ttd_departure(tr1)
-        m_model->addConstr(m_vars["t_ttd_departure"](tr2, i) +
-                                   t_bound_tmp *
-                                       (1 - m_vars["order_ttd"](tr2, tr, i)) >=
-                               m_vars["t_ttd_departure"](tr, i),
-                           "ttd_order_4_time_" + tr2_name + "_" + tr_name +
-                               "_" + std::to_string(i));
+        m_model->addGenConstrIndicator(m_vars["order_ttd"](tr2, tr, i), 1,
+                                       m_vars["t_ttd_departure"](tr2, i) >=
+                                           m_vars["t_ttd_departure"](tr, i),
+                                       "ttd_order_4_" + tr2_name + "_" +
+                                           tr_name + "_" + std::to_string(i));
       }
     }
   }
@@ -1889,15 +1978,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     for (const auto& tr1 : tr_list_1) {
       const auto& tr1_name =
           m_instance.get_const_train_list().get_train(tr1).get_name();
-      const auto ub_val_1 = ub_timing_variable(tr1);
       for (const auto& tr2 : tr_list_2) {
         if (tr1 == tr2) {
           continue;
         }
         const auto& tr2_name =
             m_instance.get_const_train_list().get_train(tr2).get_name();
-        const auto ub_val_2 = ub_timing_variable(tr2);
-        const auto t_bound  = std::max(ub_val_1, ub_val_2);
         m_model->addConstr(m_vars["reverse_order"](tr1, tr2, idx) +
                                    m_vars["reverse_order"](tr2, tr1, idx) >=
                                m_vars["x"](tr1, e1) + m_vars["x"](tr2, e2) - 1,
@@ -1911,18 +1997,18 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
         // If tr1 follows tr2 then front of tr1 >= rear of tr2 at source vertex
         // (of e1)
-        m_model->addConstr(
-            m_vars["t_front_arrival"](tr1, e_obj.source) +
-                    t_bound * (1 - m_vars["reverse_order"](tr1, tr2, idx)) >=
+        m_model->addGenConstrIndicator(
+            m_vars["reverse_order"](tr1, tr2, idx), 1,
+            m_vars["t_front_arrival"](tr1, e_obj.source) >=
                 m_vars["t_rear_departure"](tr2, e_obj.source),
             "reverse_order_1_" + tr1_name + "_" + tr2_name + "_" + v1_name +
                 "-" + v2_name);
 
         // If tr2 follows tr1 then front of tr2 >= rear of tr1 at source vertex
         // of e2, hence, target vertex of e1
-        m_model->addConstr(
-            m_vars["t_front_arrival"](tr2, e_obj.target) +
-                    t_bound * (1 - m_vars["reverse_order"](tr2, tr1, idx)) >=
+        m_model->addGenConstrIndicator(
+            m_vars["reverse_order"](tr2, tr1, idx), 1,
+            m_vars["t_front_arrival"](tr2, e_obj.target) >=
                 m_vars["t_rear_departure"](tr1, e_obj.target),
             "reverse_order_2_" + tr2_name + "_" + tr1_name + "_" + v1_name +
                 "-" + v2_name);
@@ -1952,7 +2038,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
     for (auto const& tr1 : tr_on_edge) {
       const auto& tr1_object = m_instance.get_const_train_list().get_train(tr1);
-      const auto  tr1_t_bound = ub_timing_variable(tr1);
 
       auto [hw_s1_max, hw_s1, hw_t1_max, hw_t1] =
           get_vertex_headway_expressions(tr1, e);
@@ -1963,42 +2048,36 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         }
         const auto& tr2_object =
             m_instance.get_const_train_list().get_train(tr2);
-        const auto tr2_t_bound = ub_timing_variable(tr2);
-        const auto t_bound     = std::max(tr1_t_bound, tr2_t_bound);
 
         auto [hw_s2_max, hw_s2, hw_t2_max, hw_t2] =
             get_vertex_headway_expressions(tr2, e);
 
         // Add headway constraints to both source and target vertices depending
         // on train order
-        m_model->addConstr(
-            m_vars["t_front_arrival"](tr1, source_v) +
-                    (t_bound + hw_s1_max) *
-                        (1 - m_vars["order"](tr1, tr2, e)) >=
+        m_model->addGenConstrIndicator(
+            m_vars["order"](tr1, tr2, e), 1,
+            m_vars["t_front_arrival"](tr1, source_v) >=
                 m_vars["t_rear_departure"](tr2, source_v) + hw_s1,
             "headway_vertex_source_1_" + tr1_object.get_name() + "_" +
                 tr2_object.get_name() + "_" + source_v_object.name + "-" +
                 target_v_object.name);
-        m_model->addConstr(
-            m_vars["t_front_arrival"](tr2, source_v) +
-                    (t_bound + hw_s2_max) *
-                        (1 - m_vars["order"](tr2, tr1, e)) >=
+        m_model->addGenConstrIndicator(
+            m_vars["order"](tr2, tr1, e), 1,
+            m_vars["t_front_arrival"](tr2, source_v) >=
                 m_vars["t_rear_departure"](tr1, source_v) + hw_s2,
             "headway_vertex_source_2_" + tr1_object.get_name() + "_" +
                 tr2_object.get_name() + "_" + source_v_object.name + "-" +
                 target_v_object.name);
-        m_model->addConstr(
-            m_vars["t_front_arrival"](tr1, target_v) +
-                    (t_bound + hw_t1_max) *
-                        (1 - m_vars["order"](tr1, tr2, e)) >=
+        m_model->addGenConstrIndicator(
+            m_vars["order"](tr1, tr2, e), 1,
+            m_vars["t_front_arrival"](tr1, target_v) >=
                 m_vars["t_rear_departure"](tr2, target_v) + hw_t1,
             "headway_vertex_target_1_" + tr1_object.get_name() + "_" +
                 tr2_object.get_name() + "_" + source_v_object.name + "-" +
                 target_v_object.name);
-        m_model->addConstr(
-            m_vars["t_front_arrival"](tr2, target_v) +
-                    (t_bound + hw_t2_max) *
-                        (1 - m_vars["order"](tr2, tr1, e)) >=
+        m_model->addGenConstrIndicator(
+            m_vars["order"](tr2, tr1, e), 1,
+            m_vars["t_front_arrival"](tr2, target_v) >=
                 m_vars["t_rear_departure"](tr1, target_v) + hw_t2,
             "headway_vertex_target_2_" + tr1_object.get_name() + "_" +
                 tr2_object.get_name() + "_" + source_v_object.name + "-" +
@@ -2177,7 +2256,6 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
 
   const auto& tr_schedule_object = m_instance.get_const_schedule(tr);
   const auto& entry_node         = tr_schedule_object.get_entry_vertex();
-  const auto  t_bound            = ub_timing_variable(tr);
 
   GRBLinExpr headway_tr_on_e   = 0;
   GRBLinExpr headway_tr_on_ttd = 0;
@@ -2206,12 +2284,6 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
         const auto hw_tmp_ttd = min_time_to_push_ma_fully_backward(
             vel_source, tr_object.get_acceleration(),
             tr_object.get_deceleration());
-
-        if (hw_tmp < -t_bound) {
-          hw_tmp = -t_bound;
-        } else if (hw_tmp > t_bound) {
-          hw_tmp = t_bound;
-        }
 
         hw_max     = std::max(hw_tmp, hw_max);
         hw_max_ttd = std::max(hw_tmp_ttd, hw_max_ttd);

@@ -100,7 +100,8 @@ private:
       const SolverStrategyMovingBlock&   solver_strategy_input,
       const ModelDetail&                 model_detail_input);
 
-  double ub_timing_variable(size_t tr) const;
+  // double ub_timing_variable(size_t tr) const;
+  //  TODO: REMOVE?
 
   void fill_tr_stop_data();
   void fill_relevant_reverse_edges();
