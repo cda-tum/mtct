@@ -1650,6 +1650,21 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               edge_tmp_path_expr += m_vars["x"](tr, e_tmp);
             }
 
+            auto const edge_tmp_binary = m_model->addVar(
+                0.0, 1.0, 0.0, GRB_BINARY,
+                "headway_ttd_" + std::to_string(ttd_index) + "_path_binary_" +
+                    tr_object.get_name() + "_" +
+                    m_instance.get_const_network().get_vertex(v).name + "_" +
+                    std::to_string(vel) + "_" + std::to_string(p_index));
+
+            m_model->addConstr(
+                edge_tmp_binary >=
+                    edge_tmp_path_expr - static_cast<double>(p_tmp.size()) + 1,
+                "headway_ttd_" + std::to_string(ttd_index) +
+                    "_path_binary_helper_" + tr_object.get_name() + "_" +
+                    m_instance.get_const_network().get_vertex(v).name + "_" +
+                    std::to_string(vel) + "_" + std::to_string(p_index));
+
             const auto obd = bd - p_tmp_len;
 
             assert(obd >= 0);
@@ -1661,13 +1676,31 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 continue;
               }
 
-              GRBLinExpr lhs_from_rear =
-                  m_vars["t_front_arrival"](tr, v) +
-                  t_bound_tmp *
-                      (static_cast<double>(p_tmp.size()) - edge_tmp_path_expr);
-              const GRBLinExpr rhs =
-                  m_vars["t_ttd_departure"](tr2, ttd_index) +
-                  t_bound_tmp * (m_vars["order_ttd"](tr, tr2, ttd_index) - 1);
+              auto const path_order_helper_binary = m_model->addVar(
+                  0.0, 1.0, 0.0, GRB_BINARY,
+                  "headway_ttd_" + std::to_string(ttd_index) +
+                      "_path_order_binary_" + tr_object.get_name() + "_" +
+                      m_instance.get_const_train_list()
+                          .get_train(tr2)
+                          .get_name() +
+                      "_" + m_instance.get_const_network().get_vertex(v).name +
+                      "_" + std::to_string(vel) + "_" +
+                      std::to_string(p_index));
+              m_model->addConstr(
+                  path_order_helper_binary >=
+                      path_order_helper_binary +
+                          m_vars["order_ttd"](tr, tr2, ttd_index) - 1,
+                  "headway_ttd_" + std::to_string(ttd_index) +
+                      "_path_order_helper_binary_" + tr_object.get_name() +
+                      "_" +
+                      m_instance.get_const_train_list()
+                          .get_train(tr2)
+                          .get_name() +
+                      "_" + m_instance.get_const_network().get_vertex(v).name +
+                      "_" + std::to_string(vel) + "_" +
+                      std::to_string(p_index));
+
+              GRBLinExpr lhs_from_rear = m_vars["t_front_arrival"](tr, v);
 
               bool is_relevant = obd < GRB_EPS;
 
@@ -1727,6 +1760,43 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                 e_before_v_obj.length, obd);
                         is_relevant = true;
 
+                        auto const path_vel_binary = m_model->addVar(
+                            0.0, 1.0, 0.0, GRB_BINARY,
+                            "headway_ttd_" + std::to_string(ttd_index) +
+                                "_path_vel_binary_" + tr_object.get_name() +
+                                "_" +
+                                m_instance.get_const_train_list()
+                                    .get_train(tr2)
+                                    .get_name() +
+                                "_" +
+                                m_instance.get_const_network()
+                                    .get_vertex(v)
+                                    .name +
+                                "_" + std::to_string(vel) + "_" +
+                                std::to_string(p_index) + "_" +
+                                std::to_string(e_before_v) + "_" +
+                                std::to_string(vel_before_v));
+                        m_model->addConstr(
+                            path_vel_binary >= path_order_helper_binary +
+                                                   m_vars["y"](tr, e_before_v,
+                                                               v_before_v_index,
+                                                               v_source_index) -
+                                                   1,
+                            "headway_ttd_" + std::to_string(ttd_index) +
+                                "_path_vel_constraint_" + tr_object.get_name() +
+                                "_" +
+                                m_instance.get_const_train_list()
+                                    .get_train(tr2)
+                                    .get_name() +
+                                "_" +
+                                m_instance.get_const_network()
+                                    .get_vertex(v)
+                                    .name +
+                                "_" + std::to_string(vel) + "_" +
+                                std::to_string(p_index) + "_" +
+                                std::to_string(e_before_v) + "_" +
+                                std::to_string(vel_before_v));
+
                         const auto max_from_front =
                             cda_rail::max_time_from_front_to_ma_point(
                                 vel_before_v, vel, V_MIN,
@@ -1734,16 +1804,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                 tr_object.get_deceleration(),
                                 e_before_v_obj.length, obd,
                                 e_before_v_obj.breakable);
-                        const GRBLinExpr lhs_from_front =
+                        m_model->addGenConstrIndicator(
+                            path_vel_binary, 1,
                             m_vars["t_front_departure"](tr, v_before_v) +
-                            std::min(max_from_front, t_bound_tmp) +
-                            t_bound_tmp *
-                                (static_cast<double>(p_tmp.size()) + 1 -
-                                 m_vars["y"](tr, e_before_v, v_before_v_index,
-                                             v_source_index) -
-                                 edge_tmp_path_expr);
-                        m_model->addConstr(
-                            lhs_from_front >= rhs,
+                                    max_from_front >=
+                                m_vars["t_ttd_departure"](tr2, ttd_index),
                             "headway_ttd_" + std::to_string(ttd_index) +
                                 "from_front_" + tr_object.get_name() + "_" +
                                 m_instance.get_const_train_list()
@@ -1763,8 +1828,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 }
               }
               if (is_relevant) {
-                m_model->addConstr(
-                    lhs_from_rear >= rhs,
+                m_model->addGenConstrIndicator(
+                    path_order_helper_binary, 1,
+                    lhs_from_rear >= m_vars["t_ttd_departure"](tr2, ttd_index),
                     "headway_ttd_" + tr_object.get_name() + "_" +
                         m_instance.get_const_train_list()
                             .get_train(tr2)
