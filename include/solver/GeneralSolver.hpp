@@ -6,6 +6,7 @@
 #include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
+#include "gtest/gtest_prod.h"
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
