@@ -1381,7 +1381,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         m_model->addConstr(
             m_vars["t_front_departure"](tr, v) -
                     m_vars["t_front_arrival"](tr, v) >=
-                stop_object.get_service_time() * m_vars["stop"](tr, stop, v),
+                stop_object.get_service_duration() *
+                    m_vars["stop"](tr, stop, v),
             "min_stop_time_" + sanitize(tr_object.get_name()) + "_" +
                 sanitize(stop_station_name) + "_vertex_" +
                 sanitize(m_instance.get_const_network().get_vertex(v).name));
