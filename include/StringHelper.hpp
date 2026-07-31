@@ -45,4 +45,6 @@ inline bool case_insensitive_str_equal(std::string_view a, std::string_view b) {
  */
 void to_bool_optional_inplace(std::string_view s_view, std::optional<bool>& b);
 
+std::string sanitize(std::string s);
+
 } // namespace cda_rail

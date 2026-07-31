@@ -90,6 +90,7 @@ protected:
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     PLOGD << "Create Gurobi environment and model";
     this->m_env.emplace(true);
+    // this->m_env->set(GRB_StringParam_LogFile, "test_log.log");
     this->m_env->start();
     this->m_model.emplace(m_env.value());
 
