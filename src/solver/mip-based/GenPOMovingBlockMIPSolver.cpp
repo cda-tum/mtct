@@ -947,8 +947,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           }
         }
       }
-      m_model->addConstr(m_vars["t_front_departure"](tr, v) <= speed_0_arcs,
-                         "tr_can_only_stop_by_using_stopping_edge" +
+      m_model->addConstr(m_vars["waiting_at_vertex"](tr, v) <= speed_0_arcs,
+                         "tr_can_only_stop_by_using_stopping_edge_" +
                              tr_object.get_name() + "_" +
                              m_instance.get_const_network().get_vertex(v).name);
       m_model->addGenConstrIndicator(
