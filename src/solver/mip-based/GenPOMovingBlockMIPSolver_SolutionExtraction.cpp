@@ -51,8 +51,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
     return;
   }
 
-  const auto mip_obj_val =
-      static_cast<int>(std::round(m_model->get(GRB_DoubleAttr_ObjVal)));
+  const auto mip_obj_val = m_model->get(GRB_DoubleAttr_ObjVal);
   sol.set_solution_found();
   sol.set_obj(mip_obj_val);
   PLOGD << "MIP objective: " << mip_obj_val;
