@@ -11,6 +11,13 @@ macro(ADD_SIM_EXECUTABLE appname)
     else()
       target_link_options(${PROJECT_NAME}_${appname} PRIVATE "-Wl,--allow-multiple-definition")
     endif()
+    # MinGW GCC 15+ updated libwinpthread/libmsvcrt with new symbol dependencies: libpthread.a needs
+    # __intrinsic_setjmpex  (alias to _setjmpex in libmsvcrt.a) libmsvcrt.a  needs __ms_vsnprintf        (defined in
+    # libmingwex.a) Both providing libs are already linked by MinGW but scanned before the libs that need them. Use
+    # --defsym to alias __intrinsic_setjmpex to _setjmpex (same signature/semantics, already in msvcrt.dll) and
+    # --undefined to force libmingwex to pull in the __ms_vsnprintf object early.
+    target_link_options(${PROJECT_NAME}_${appname} PRIVATE "-Wl,--defsym=__intrinsic_setjmpex=_setjmpex"
+                        "-Wl,--undefined=__ms_vsnprintf")
   endif()
 endmacro()
 
