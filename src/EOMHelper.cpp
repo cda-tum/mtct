@@ -764,8 +764,10 @@ cda_rail::get_min_travel_time_acceleration_change_points(double v_1, double v_2,
     throw exceptions::ConsistencyException("v_m must be greater than 0.");
   }
   if (v_1 > v_m || v_2 > v_m) {
-    throw exceptions::ConsistencyException(
-        "v_m must be greater than or equal to v_1 and v_2.");
+    throw exceptions::ConsistencyException(concatenate_string_views(
+        {"v_m (", std::to_string(v_m),
+         ") must be greater than or equal to v_1 (", std::to_string(v_1),
+         ") and v_2 (", std::to_string(v_2), ")."}));
   }
 
   const double s_1 = (square(v_m) - square(v_1)) / (2 * a);
