@@ -611,7 +611,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               // NOLINTNEXTLINE(misc-const-correctness)
               // TODO: Can GRB_INFINTIY be remove -> helper vars cannot be added
               // lazily
-              GRBLinExpr rhs =
+              GRBLinExpr const rhs =
                   other_tr_t_variable +
                   GRB_INFINITY *
                       (solver->m_vars["order_ttd"](tr, other_tr, ttd_index) -
@@ -817,7 +817,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // NOLINTNEXTLINE(misc-const-correctness)
           // TODO: Can GRB_INFINITY be removed -> Problem: indicator
           // constraints cannot be added lazily
-          GRBLinExpr lhs_source =
+          GRBLinExpr const lhs_source =
               tr_t_var_source_front +
               GRB_INFINITY *
                   (1 - solver->m_vars["order"](tr, other_tr, edge_index));
@@ -956,7 +956,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             // NOLINTNEXTLINE(misc-const-correctness)
             // TODO: Can GRB_INFINITY be removed -> Problem: addLazy does not
             // support indicator constraints
-            GRBLinExpr lhs2 =
+            GRBLinExpr const lhs2 =
                 tr1_t_var_front +
                 GRB_INFINITY *
                     (1 - solver->m_vars["reverse_order"](tr1, tr2, idx));
@@ -1086,7 +1086,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // NOLINTNEXTLINE(misc-const-correctness)
           // TODO: Can GRB_INFINITY be removed -> problem indicator constraints
           // cannot be added lazily
-          GRBLinExpr lhs =
+          GRBLinExpr const lhs =
               tr_t_var - tr_other_t_var +
               GRB_INFINITY *
                   (1 - solver->m_vars["order"](tr, tr_other_idx, edge_index));
@@ -1170,7 +1170,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               // NOLINTNEXTLINE(misc-const-correctness)
               // TODO: Can GRB_INFINITY be removed -> Problem: indicator
               // constraints cannot be added lazily
-              GRBLinExpr lhs =
+              GRBLinExpr const lhs =
                   tr_t_var - tr_other_t_var_ttd +
                   GRB_INFINITY * (1 - solver->m_vars["order_ttd"](
                                           tr, tr_other_ttd, ttd_index));

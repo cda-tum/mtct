@@ -476,4 +476,10 @@ TEST(Playground, StructEdit) {
   EXPECT_EQ(test_struct.vec2, cda_rail::index_vector({7, 8, 9}));
 }
 
+TEST(StringHelper, Sanitize) {
+  EXPECT_EQ(cda_rail::sanitize("AÜB"), "A-B");
+  EXPECT_EQ(cda_rail::sanitize("AB"), "AB");
+  EXPECT_EQ(cda_rail::sanitize("A&bC"), "A-bC");
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)

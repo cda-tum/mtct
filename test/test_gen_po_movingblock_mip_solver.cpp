@@ -6,7 +6,6 @@
 
 #include "gtest/gtest.h"
 #include <filesystem>
-#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>

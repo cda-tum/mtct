@@ -3,7 +3,9 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
+#include "GeneralHelper.hpp"
 #include "MultiArray.hpp"
+#include "StringHelper.hpp"
 #include "gurobi_c++.h"
 #include "gurobi_c.h"
 #include "plog/Log.h"
@@ -18,7 +20,6 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
-#include <limits>
 #include <numeric>
 #include <optional>
 #include <string>
@@ -26,6 +27,8 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+using std::size_t;
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 

@@ -12,8 +12,6 @@
 #include "gtest/gtest_prod.h"
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
-#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -36,6 +34,8 @@ class GenPOMovingBlockMIPSolver_PrivateFillFunctions_Test;
 
 namespace cda_rail::solver::mip_based {
 
+using std::size_t;
+
 struct ModelDetail {
   bool                       fix_routes         = false;
   double                     max_velocity_delta = 5.55; // 20 km/h
@@ -48,12 +48,12 @@ struct ModelDetail {
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
   OnlyViolated   = 0,
   OnlyFirstFound = 1,
-  AllChecked     = 2
+  AllChecked     = 2,
 };
 
 enum class LazyTrainSelectionStrategy : std::uint8_t {
   OnlyAdjacent = 0,
-  All          = 1
+  All          = 1,
 };
 
 struct SolverStrategyMovingBlock {

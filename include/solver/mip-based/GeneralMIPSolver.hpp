@@ -7,7 +7,6 @@
 #include "probleminstances/GeneralProblemInstance.hpp"
 #include "solver/GeneralSolver.hpp"
 
-#include <filesystem>
 #include <optional>
 #include <plog/Log.h>
 #include <string>

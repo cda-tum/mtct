@@ -1,8 +1,10 @@
 #include "StringHelper.hpp"
 
 #include <cstddef>
+#include <ctype.h>
 #include <initializer_list>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <string_view>
 
@@ -32,6 +34,6 @@ void cda_rail::to_bool_optional_inplace(std::string_view const sView,
 std::string cda_rail::sanitize(std::string s) {
   // Replace all chars that are not isalnum with '-'
   std::ranges::replace_if(
-      s, [](unsigned char const c) { return !std::isalnum(c); }, '-');
+      s, [](unsigned char const c) { return std::isalnum(c) == 0; }, '-');
   return s;
 }
