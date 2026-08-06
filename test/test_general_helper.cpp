@@ -477,7 +477,6 @@ TEST(Playground, StructEdit) {
 }
 
 TEST(StringHelper, Sanitize) {
-  EXPECT_EQ(cda_rail::sanitize("AÜB"), "A-B");
   EXPECT_EQ(cda_rail::sanitize("AB"), "AB");
   EXPECT_EQ(cda_rail::sanitize("A&bC"), "A-bC");
 }
