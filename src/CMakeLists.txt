@@ -75,16 +75,3 @@ target_link_libraries(${PROJECT_NAME} PUBLIC plog::plog)
 # add gtest for FRIEND_TEST
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/googletest extern/googletest)
 target_link_libraries(${PROJECT_NAME} PUBLIC gtest)
-
-# cpptrace for cross-platform stack traces in debug logging
-include(FetchContent)
-FetchContent_Declare(
-  cpptrace
-  GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
-  GIT_TAG v1.0.4)
-# Force a static build so no cpptrace.dll needs to be distributed alongside executables.
-set(_cpptrace_shared_save ${BUILD_SHARED_LIBS})
-set(BUILD_SHARED_LIBS OFF)
-FetchContent_MakeAvailable(cpptrace)
-set(BUILD_SHARED_LIBS ${_cpptrace_shared_save})
-target_link_libraries(${PROJECT_NAME} PRIVATE cpptrace::cpptrace)

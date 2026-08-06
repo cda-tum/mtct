@@ -12,15 +12,6 @@ macro(ADD_SIM_EXECUTABLE appname)
       target_link_options(${PROJECT_NAME}_${appname} PRIVATE "-Wl,--allow-multiple-definition")
     endif()
   endif()
-
-  # On macOS generate a .dSYM bundle so cpptrace can resolve symbols reliably.
-  if(APPLE)
-    add_custom_command(
-      TARGET ${PROJECT_NAME}_${appname}
-      POST_BUILD
-      COMMAND dsymutil $<TARGET_FILE:${PROJECT_NAME}_${appname}>
-      COMMENT "Generating ${PROJECT_NAME}_${appname}.dSYM")
-  endif()
 endmacro()
 
 # add_sim_executable(vss_generation_timetable_mip_testing)

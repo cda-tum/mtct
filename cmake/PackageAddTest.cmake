@@ -4,14 +4,6 @@ macro(PACKAGE_ADD_TEST testname linklibs)
   add_executable(${testname} ${ARGN})
   # link the Google test infrastructure and a default main function to the test executable.
   target_link_libraries(${testname} PRIVATE ${linklibs} gmock gtest_main)
-  # On macOS generate a .dSYM bundle so cpptrace can resolve symbols reliably.
-  if(APPLE)
-    add_custom_command(
-      TARGET ${testname}
-      POST_BUILD
-      COMMAND dsymutil $<TARGET_FILE:${testname}>
-      COMMENT "Generating ${testname}.dSYM")
-  endif()
   # discover tests
   gtest_discover_tests(
     ${testname}
