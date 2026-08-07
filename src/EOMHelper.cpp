@@ -3,7 +3,6 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "GeneralHelper.hpp"
-#include "plog/Log.h"
 
 #include <algorithm>
 #include <cassert>
@@ -219,7 +218,6 @@ double cda_rail::min_travel_time_flexible_exit_speed(double v_1, double v_m,
 double cda_rail::min_travel_time_from_start(double v_1, double v_2, double v_m,
                                             double a, double d, double s,
                                             double x) {
-  PLOGI << "Passed v_m value to min_travel_time_from_start: " << v_m;
   check_consistency_of_eom_input(v_1, v_2, a, d, s, x);
 
   const auto [s_1, s_2] =
@@ -761,10 +759,6 @@ std::pair<double, double>
 cda_rail::get_min_travel_time_acceleration_change_points(double v_1, double v_2,
                                                          double v_m, double a,
                                                          double d, double s) {
-  PLOGI
-      << "Passed v_m value to get_min_travel_time_acceleration_change_points: "
-      << v_m;
-
   check_consistency_of_eom_input(v_1, v_2, a, d, s, s);
   if (v_m <= 0) {
     throw exceptions::ConsistencyException("v_m must be greater than 0.");
