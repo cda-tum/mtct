@@ -383,7 +383,6 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           bool add_constr =
               (solver->m_solver_strategy.lazy_constraint_selection_strategy ==
                LazyConstraintSelectionStrategy::AllChecked);
-          PLOGI << "Now tr_other_max_speed is " << tr_other_max_speed;
           if (!add_constr &&
               tr_t_var_value < getSolution(tr_other_source_var) +
                                    cda_rail::min_travel_time_from_start(
@@ -454,8 +453,6 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                           tr_other_object.get_acceleration(),
                           tr_other_object.get_deceleration(),
                           rel_e_obj.length)) {
-                    PLOGI << "And now tr_other_max_speed is "
-                          << tr_other_max_speed;
                     rhs.at(0) += solver->m_vars["y"](tr_other_idx, rel_e_idx,
                                                      v_tr_other_source_index,
                                                      v_tr_other_target_index) *
