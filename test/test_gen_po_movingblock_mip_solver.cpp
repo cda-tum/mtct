@@ -883,29 +883,64 @@ TEST(GenPOMovingBlockMIPSolver, Default2) {
     check_last_train_pos(instance, sol, p);
   }
 }
-#if 0
+
 TEST(GenPOMovingBlockMIPSolver, Default3) {
-  const std::vector<std::string> paths{
-      "Stammstrecke4Trains", "Stammstrecke8Trains", "Stammstrecke16Trains"};
+  const std::vector<std::string> paths{"Stammstrecke4Trains"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto                                             sol = solver.solve();
+    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {});
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, Default4) {
+  const std::vector<std::string> paths{"Stammstrecke8Trains"};
+
+  for (const auto& p : paths) {
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {});
+
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "Solution status is not optimal for instance " << p;
+    EXPECT_EQ(sol.get_obj(), 0)
+        << "Objective value is not 0 for instance " << p;
+
+    check_last_train_pos(instance, sol, p);
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, Default5) {
+  const std::vector<std::string> paths{"Stammstrecke16Trains"};
+
+  for (const auto& p : paths) {
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {});
+
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "Solution status is not optimal for instance " << p;
+    EXPECT_EQ(sol.get_obj(), 0)
+        << "Objective value is not 0 for instance " << p;
+
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -914,28 +949,27 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
       "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto                                             sol =
-        solver.solve({false, 5.55, cda_rail::VelocityRefinementStrategy::None},
-                     {true, false, true,
-                      cda_rail::solver::mip_based::
-                          LazyConstraintSelectionStrategy::OnlyFirstFound},
-                     {}, 100);
+    const auto                                             sol = solver.solve(
+        {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = false,
+         .include_higher_velocities_in_edge_expr = true,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::OnlyFirstFound,
+         .abs_mip_gap = 0},
+        {}, 100);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -944,58 +978,111 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
                                        "SingleTrackWithStation"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto                                             sol =
-        solver.solve({},
-                     {true, false, true,
-                      cda_rail::solver::mip_based::
-                          LazyConstraintSelectionStrategy::OnlyFirstFound},
-                     {}, 120);
+    const auto                                             sol = solver.solve(
+        {},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = false,
+         .include_higher_velocities_in_edge_expr = true,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::OnlyFirstFound,
+         .abs_mip_gap = 0},
+        {}, 120);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
-TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3) {
-  const std::vector<std::string> paths{
-      "Stammstrecke4Trains", "Stammstrecke8Trains", "Stammstrecke16Trains"};
+TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
+  const std::vector<std::string> paths{"Stammstrecke4Trains"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto                                             sol =
-        solver.solve({},
-                     {true, false, true,
-                      cda_rail::solver::mip_based::
-                          LazyConstraintSelectionStrategy::OnlyFirstFound},
-                     {}, 120);
+    const auto                                             sol = solver.solve(
+        {},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = false,
+         .include_higher_velocities_in_edge_expr = true,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::OnlyFirstFound,
+         .abs_mip_gap = 0},
+        {}, 120);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_8Trains) {
+  const std::vector<std::string> paths{"Stammstrecke8Trains"};
+
+  for (const auto& p : paths) {
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = false,
+         .include_higher_velocities_in_edge_expr = true,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::OnlyFirstFound,
+         .abs_mip_gap = 0},
+        {}, 120);
+
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "Solution status is not optimal for instance " << p;
+    EXPECT_EQ(sol.get_obj(), 0)
+        << "Objective value is not 0 for instance " << p;
+
+    check_last_train_pos(instance, sol, p);
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_16Trains) {
+  const std::vector<std::string> paths{"Stammstrecke16Trains"};
+
+  for (const auto& p : paths) {
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = false,
+         .include_higher_velocities_in_edge_expr = true,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::OnlyFirstFound,
+         .abs_mip_gap = 0},
+        {}, 120);
+
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "Solution status is not optimal for instance " << p;
+    EXPECT_EQ(sol.get_obj(), 0)
+        << "Objective value is not 0 for instance " << p;
+
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1004,29 +1091,29 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
       "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
-        {true, true, false,
-         cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
-             AllChecked,
-         cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = true,
+         .include_higher_velocities_in_edge_expr = false,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::AllChecked,
+         .lazy_train_selection_strategy =
+             cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
+         .abs_mip_gap = 0},
         {}, 140);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1034,29 +1121,29 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
   const std::vector<std::string> paths{"Overtake"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {true, 5.55, cda_rail::VelocityRefinementStrategy::None},
-        {true, true, false,
-         cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
-             AllChecked,
-         cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = true,
+         .include_higher_velocities_in_edge_expr = false,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::AllChecked,
+         .lazy_train_selection_strategy =
+             cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
+         .abs_mip_gap = 0},
         {}, 420);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1065,60 +1152,119 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
                                        "SingleTrackWithStation"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {},
-        {true, true, false,
-         cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
-             AllChecked,
-         cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = true,
+         .include_higher_velocities_in_edge_expr = false,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::AllChecked,
+         .lazy_train_selection_strategy =
+             cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
+         .abs_mip_gap = 0},
         {}, 130);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
-TEST(GenPOMovingBlockMIPSolver, All3) {
-  const std::vector<std::string> paths{
-      "Stammstrecke4Trains", "Stammstrecke8Trains", "Stammstrecke16Trains"};
+TEST(GenPOMovingBlockMIPSolver, All3_4Trains) {
+  const std::vector<std::string> paths{"Stammstrecke4Trains"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {},
-        {true, true, false,
-         cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
-             AllChecked,
-         cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = true,
+         .include_higher_velocities_in_edge_expr = false,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::AllChecked,
+         .lazy_train_selection_strategy =
+             cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
+         .abs_mip_gap = 0},
         {}, 130);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, All3_8Trains) {
+  const std::vector<std::string> paths{"Stammstrecke8Trains"};
+
+  for (const auto& p : paths) {
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = true,
+         .include_higher_velocities_in_edge_expr = false,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::AllChecked,
+         .lazy_train_selection_strategy =
+             cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
+         .abs_mip_gap = 0},
+        {}, 130);
+
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "Solution status is not optimal for instance " << p;
+    EXPECT_EQ(sol.get_obj(), 0)
+        << "Objective value is not 0 for instance " << p;
+
+    check_last_train_pos(instance, sol, p);
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, All3_16Trains) {
+  const std::vector<std::string> paths{"Stammstrecke16Trains"};
+
+  for (const auto& p : paths) {
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {},
+        {.use_lazy_constraints                   = true,
+         .include_reverse_headways               = true,
+         .include_higher_velocities_in_edge_expr = false,
+         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+             LazyConstraintSelectionStrategy::AllChecked,
+         .lazy_train_selection_strategy =
+             cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
+         .abs_mip_gap = 0},
+        {}, 130);
+
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "Solution status is not optimal for instance " << p;
+    EXPECT_EQ(sol.get_obj(), 0)
+        << "Objective value is not 0 for instance " << p;
+
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1126,23 +1272,20 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1) {
   const std::vector<std::string> paths{"SimpleStation"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {false}, {}, 250);
+    const auto                                             sol = solver.solve(
+        {}, {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1150,25 +1293,21 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
   const std::vector<std::string> paths{"SimpleNetwork"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto                                             sol =
-        solver.solve({false, 5.55, cda_rail::VelocityRefinementStrategy::None},
-                     {false}, {}, 250);
+    const auto                                             sol = solver.solve(
+        {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1176,23 +1315,20 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
   const std::vector<std::string> paths{"SingleTrack"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {false}, {}, 250);
+    const auto                                             sol = solver.solve(
+        {}, {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1200,26 +1336,22 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
   const std::vector<std::string> paths{"SimpleStation"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
          true},
-        {false}, {}, 250, true);
+        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250, true);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1227,26 +1359,22 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified2) {
   const std::vector<std::string> paths{"SimpleNetwork"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
          true},
-        {false}, {}, 250, true);
+        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250, true);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1254,26 +1382,22 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified3) {
   const std::vector<std::string> paths{"SingleTrack"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
          true},
-        {false}, {}, 250, true);
+        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250, true);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1281,26 +1405,22 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified1) {
   const std::vector<std::string> paths{"SimpleStation"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
          true},
-        {true}, {}, 250, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 250, true);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1308,25 +1428,21 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified2) {
   const std::vector<std::string> paths{"SimpleNetwork"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::None, true, true},
-        {true}, {}, 250, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 250, true);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
@@ -1334,36 +1450,29 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified3) {
   const std::vector<std::string> paths{"SingleTrack"};
 
   for (const auto& p : paths) {
-    const std::string instance_path = "./example-networks/" + p + "/";
-    const auto        instance_before_parse =
-        cda_rail::instances::VSSGenerationTimetable(instance_path);
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance::
-            cast_from_vss_generation(instance_before_parse);
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
          true},
-        {true}, {}, 250, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 250, true);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
-        << "Solution status is not optimal for instance " << instance_path;
+        << "Solution status is not optimal for instance " << p;
     EXPECT_EQ(sol.get_obj(), 0)
-        << "Objective value is not 0 for instance " << instance_path;
+        << "Objective value is not 0 for instance " << p;
 
-    check_last_train_pos(instance_before_parse, sol, instance_path);
+    check_last_train_pos(instance, sol, p);
   }
 }
 
 TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
-  const std::string instance_path = "./example-networks/SimpleStation/";
-  const auto        instance_before_parse =
-      cda_rail::instances::VSSGenerationTimetable(instance_path);
   const auto instance =
-      cda_rail::instances::GeneralPerformanceOptimizationInstance::
-          cast_from_vss_generation(instance_before_parse);
+      cda_rail::instances::GeneralPerformanceOptimizationInstance(
+          "SimpleStation", "atmos2023", "data");
   cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
 
   std::filesystem::remove_all("tmp1folder");
@@ -1380,7 +1489,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting first solve" << std::endl;
   const auto obj_val = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+      {.abs_mip_gap = 0},
       {cda_rail::ExportOption::ExportLP, "tmp1file", "tmp1folder"}, 30, true);
 
   // Expect optimal value of 0
@@ -1397,7 +1507,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting second solve" << std::endl;
   const auto obj_val2 = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+      {.abs_mip_gap = 0},
       {cda_rail::ExportOption::ExportSolution, "tmp2file", "tmp2folder"}, 30,
       true);
 
@@ -1431,11 +1542,12 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   std::filesystem::remove_all("tmp2folder");
 
   std::cout << "Starting third solve" << std::endl;
-  const auto obj_val3 = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
-      {cda_rail::ExportOption::ExportSolutionWithInstance, "tmp3file",
-       "tmp3folder"},
-      30, true);
+  const auto obj_val3 =
+      solver.solve({false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+                   {.abs_mip_gap = 0},
+                   {cda_rail::ExportOption::ExportSolutionWithInstance,
+                    "tmp3file", "tmp3folder"},
+                   30, true);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val3.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1478,7 +1590,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting fourth solve" << std::endl;
   const auto obj_val4 = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+      {.abs_mip_gap = 0},
       {cda_rail::ExportOption::NoExport, "tmp4file", "tmp4folder"}, 30, true);
 
   // Expect optimal value of 0
@@ -1489,7 +1602,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting fifth solve" << std::endl;
   const auto obj_val5 = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
+      {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+      {.abs_mip_gap = 0},
       {cda_rail::ExportOption::ExportSolutionAndLP, "tmp5file", "tmp5folder"},
       30, false);
 
@@ -1523,11 +1637,12 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   std::cout << "ERROR!: " << ec.message() << std::endl;
 
   std::cout << "Starting sixth solve" << std::endl;
-  const auto obj_val6 = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
-      {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP, "tmp6file",
-       "tmp6folder"},
-      30, false);
+  const auto obj_val6 =
+      solver.solve({false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+                   {.abs_mip_gap = 0},
+                   {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP,
+                    "tmp6file", "tmp6folder"},
+                   30, false);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val6.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1616,16 +1731,16 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
         "./example-networks-gen-po-ras/" + p + "/";
     const auto instance =
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
-            instance_path);
+            "toy", "gen-po-ras", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 10, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
          true},
-        {true}, {}, 400, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 400, true);
 
     EXPECT_TRUE(sol.has_solution())
         << "No solution found for instance " << instance_path;
   }
 }
-#endif
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
