@@ -365,20 +365,6 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           const auto tr_other_max_speed =
               std::min(tr_other_object.get_max_speed(), rel_e_obj.max_speed);
 
-          if (tr_other_max_speed <= 0) {
-            PLOGI << "Train " << tr_other_object.get_name() << " has max speed "
-                  << tr_other_object.get_max_speed() << " edge "
-                  << solver->m_instance.get_const_network()
-                         .get_vertex(rel_e_obj.source)
-                         .name
-                  << " -> "
-                  << solver->m_instance.get_const_network()
-                         .get_vertex(rel_e_obj.target)
-                         .name
-                  << " has max speed " << rel_e_obj.max_speed
-                  << " hence tr_other_max_speed is " << tr_other_max_speed;
-          }
-
           // Check if this constraint should be added
           bool add_constr =
               (solver->m_solver_strategy.lazy_constraint_selection_strategy ==
