@@ -362,7 +362,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           const auto& tr_other_target_var =
               solver->m_vars["t_rear_departure"](tr_other_idx, rel_target);
 
-          const auto& tr_other_max_speed =
+          const auto tr_other_max_speed =
               std::min(tr_other_object.get_max_speed(), rel_e_obj.max_speed);
 
           // if (tr_other_max_speed <= 0) {
