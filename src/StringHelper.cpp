@@ -1,10 +1,10 @@
 #include "StringHelper.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <cstddef>
-#include <ctype.h>
 #include <initializer_list>
 #include <optional>
-#include <ranges>
 #include <string>
 #include <string_view>
 

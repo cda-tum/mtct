@@ -442,7 +442,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_objective() {
     auto const& scheduled_stops = m_instance.get_const_schedule(tr).get_stops();
     for (size_t stop_idx = 0; stop_idx < scheduled_stops.size(); stop_idx++) {
       m_objective_expr += m_instance.get_station_delay_weight() * tr_weight /
-                          scheduled_stops.size() *
+                          static_cast<double>(scheduled_stops.size()) *
                           m_vars["service_delay"](tr, stop_idx);
     }
   }
@@ -969,15 +969,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     }
   }
 }
-
-#if 0
-// TODO: REMOVE?
-double
-cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::ub_timing_variable(
-    size_t tr) const {
-  return m_instance.get_const_schedule(tr).get_exit_time();
-}
-#endif
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_basic_order_constraints() {
