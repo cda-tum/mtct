@@ -2288,7 +2288,7 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::headway(
   const auto obd = v_2 * v_2 / (2 * tr_obj.get_deceleration());
 
   return -max_time_from_front_to_ma_point(
-      v_1, v_2, V_MIN, tr_obj.get_acceleration(), tr_obj.get_acceleration(),
+      v_1, v_2, V_MIN, tr_obj.get_acceleration(), tr_obj.get_deceleration(),
       e_obj.length, obd, e_obj.breakable);
 }
 
