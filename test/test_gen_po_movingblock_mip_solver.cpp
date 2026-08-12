@@ -851,7 +851,7 @@ TEST(GenPOMovingBlockMIPSolver, Default1) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {});
+    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -872,7 +872,7 @@ TEST(GenPOMovingBlockMIPSolver, Default2) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {});
+    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -892,7 +892,7 @@ TEST(GenPOMovingBlockMIPSolver, Default3) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {});
+    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -912,7 +912,7 @@ TEST(GenPOMovingBlockMIPSolver, Default4) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {});
+    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -932,7 +932,7 @@ TEST(GenPOMovingBlockMIPSolver, Default5) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {});
+    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1727,19 +1727,16 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
   const std::vector<std::string> paths{"toy"};
 
   for (const auto& p : paths) {
-    const std::string instance_path =
-        "./example-networks-gen-po-ras/" + p + "/";
     const auto instance =
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
-            "toy", "gen-po-ras", "data");
+            "toy", "ras", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {false, 10, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
          true},
         {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 400, true);
 
-    EXPECT_TRUE(sol.has_solution())
-        << "No solution found for instance " << instance_path;
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
   }
 }
 
