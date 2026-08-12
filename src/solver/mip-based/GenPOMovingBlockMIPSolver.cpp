@@ -227,17 +227,20 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_name =
         m_instance.get_const_train_list().get_train(tr).get_name();
+    const auto& exit_time = m_instance.get_const_schedule(tr).get_exit_time();
+    const auto  max_time =
+        std::min(exit_time + m_model_detail.max_exit_delay, GRB_INFINITY);
     for (const auto v : m_instance.vertices_used_by_train(
              tr, m_model_detail.fix_routes, false)) {
       const auto& v_name = m_instance.get_const_network().get_vertex(v).name;
       m_vars["t_front_arrival"](tr, v) = m_model->addVar(
-          0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS,
+          0.0, max_time, 0.0, GRB_CONTINUOUS,
           "t_front_arrival_" + sanitize(tr_name) + "_" + sanitize(v_name));
       m_vars["t_front_departure"](tr, v) = m_model->addVar(
-          0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS,
+          0.0, max_time, 0.0, GRB_CONTINUOUS,
           "t_front_departure_" + sanitize(tr_name) + "_" + sanitize(v_name));
       m_vars["t_rear_departure"](tr, v) = m_model->addVar(
-          0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS,
+          0.0, max_time, 0.0, GRB_CONTINUOUS,
           "t_rear_departure_" + sanitize(tr_name) + "_" + sanitize(v_name));
       m_vars["waiting_at_vertex"](tr, v) = m_model->addVar(
           0.0, 1.0, 0.0, GRB_BINARY,
@@ -246,7 +249,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     for (const auto& ttd : m_instance.sections_used_by_train(
              tr, m_ttd_sections, m_model_detail.fix_routes, false)) {
       m_vars["t_ttd_departure"](tr, ttd) = m_model->addVar(
-          0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS,
+          0.0, max_time, 0.0, GRB_CONTINUOUS,
           "t_ttd_departure_" + sanitize(tr_name) + "_" + std::to_string(ttd));
     }
   }
@@ -328,6 +331,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_name =
         m_instance.get_const_train_list().get_train(tr).get_name();
+    const auto& exit_time = m_instance.get_const_schedule(tr).get_exit_time();
+    const auto  max_time =
+        std::min(exit_time + m_model_detail.max_exit_delay, GRB_INFINITY);
     for (size_t stop = 0;
          stop < m_instance.get_const_schedule(tr).get_stops().size(); stop++) {
       const auto& stop_name = m_instance.get_const_schedule(tr)
@@ -343,7 +349,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 sanitize(m_instance.get_const_network().get_vertex(v).name));
       }
       m_vars["service_delay"](tr, stop) = m_model->addVar(
-          0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS,
+          0.0, max_time, 0.0, GRB_CONTINUOUS,
           "service_delay_" + sanitize(tr_name) + "_" + sanitize(stop_name));
     }
   }
