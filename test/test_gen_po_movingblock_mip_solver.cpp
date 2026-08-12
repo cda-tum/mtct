@@ -851,7 +851,8 @@ TEST(GenPOMovingBlockMIPSolver, Default1) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {}, 250);
+    const auto                                             sol =
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -872,7 +873,8 @@ TEST(GenPOMovingBlockMIPSolver, Default2) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {}, 250);
+    const auto                                             sol =
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -892,7 +894,8 @@ TEST(GenPOMovingBlockMIPSolver, Default3) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {}, 250);
+    const auto                                             sol =
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -912,7 +915,8 @@ TEST(GenPOMovingBlockMIPSolver, Default4) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {}, 250);
+    const auto                                             sol =
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -932,7 +936,8 @@ TEST(GenPOMovingBlockMIPSolver, Default5) {
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto sol = solver.solve({}, {.abs_mip_gap = 0}, {}, 250);
+    const auto                                             sol =
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -954,7 +959,11 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+        {.fix_routes         = false,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::None,
+         .max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = false,
          .include_higher_velocities_in_edge_expr = true,
@@ -983,7 +992,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {},
+        {.max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = false,
          .include_higher_velocities_in_edge_expr = true,
@@ -1011,7 +1020,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {},
+        {.max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = false,
          .include_higher_velocities_in_edge_expr = true,
@@ -1039,7 +1048,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_8Trains) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {},
+        {.max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = false,
          .include_higher_velocities_in_edge_expr = true,
@@ -1067,7 +1076,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_16Trains) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {},
+        {.max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = false,
          .include_higher_velocities_in_edge_expr = true,
@@ -1096,7 +1105,11 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+        {.fix_routes         = false,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::None,
+         .max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = true,
          .include_higher_velocities_in_edge_expr = false,
@@ -1126,7 +1139,11 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {true, 5.55, cda_rail::VelocityRefinementStrategy::None},
+        {.fix_routes         = true,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::None,
+         .max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = true,
          .include_higher_velocities_in_edge_expr = false,
@@ -1157,7 +1174,7 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {},
+        {.max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = true,
          .include_higher_velocities_in_edge_expr = false,
@@ -1187,7 +1204,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_4Trains) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {},
+        {.max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = true,
          .include_higher_velocities_in_edge_expr = false,
@@ -1217,7 +1234,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_8Trains) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {},
+        {.max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = true,
          .include_higher_velocities_in_edge_expr = false,
@@ -1247,7 +1264,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_16Trains) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {},
+        {.max_exit_delay = 0.0},
         {.use_lazy_constraints                   = true,
          .include_reverse_headways               = true,
          .include_higher_velocities_in_edge_expr = false,
@@ -1277,7 +1294,8 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {}, {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
+        {.max_exit_delay = 0.0},
+        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1298,7 +1316,11 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+        {.fix_routes         = false,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::None,
+         .max_exit_delay = 0.0},
         {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
@@ -1320,7 +1342,8 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {}, {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
+        {.max_exit_delay = 0.0},
+        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1341,8 +1364,13 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-         true},
+        {.fix_routes         = false,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::MinOneStep,
+         .simplify_headway_constraints          = true,
+         .strengthen_vertex_headway_constraints = true,
+         .max_exit_delay                        = 0.0},
         {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
@@ -1364,8 +1392,13 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified2) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-         true},
+        {.fix_routes         = false,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::MinOneStep,
+         .simplify_headway_constraints          = true,
+         .strengthen_vertex_headway_constraints = true,
+         .max_exit_delay                        = 0.0},
         {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
@@ -1387,8 +1420,13 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified3) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-         true},
+        {.fix_routes         = false,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::MinOneStep,
+         .simplify_headway_constraints          = true,
+         .strengthen_vertex_headway_constraints = true,
+         .max_exit_delay                        = 0.0},
         {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
@@ -1410,8 +1448,13 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified1) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-         true},
+        {.fix_routes         = false,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::MinOneStep,
+         .simplify_headway_constraints          = true,
+         .strengthen_vertex_headway_constraints = true,
+         .max_exit_delay                        = 0.0},
         {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
@@ -1433,7 +1476,13 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified2) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 5.55, cda_rail::VelocityRefinementStrategy::None, true, true},
+        {.fix_routes         = false,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::None,
+         .simplify_headway_constraints          = true,
+         .strengthen_vertex_headway_constraints = true,
+         .max_exit_delay                        = 0.0},
         {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
@@ -1455,8 +1504,13 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified3) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 5.55, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-         true},
+        {.fix_routes         = false,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::MinOneStep,
+         .simplify_headway_constraints          = true,
+         .strengthen_vertex_headway_constraints = true,
+         .max_exit_delay                        = 0.0},
         {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
@@ -1489,7 +1543,11 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting first solve" << std::endl;
   const auto obj_val = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+      {.fix_routes         = false,
+       .max_velocity_delta = 5.55,
+       .velocity_refinement_strategy =
+           cda_rail::VelocityRefinementStrategy::None,
+       .max_exit_delay = 0.0},
       {.abs_mip_gap = 0},
       {cda_rail::ExportOption::ExportLP, "tmp1file", "tmp1folder"}, 30, true);
 
@@ -1507,7 +1565,11 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting second solve" << std::endl;
   const auto obj_val2 = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+      {.fix_routes         = false,
+       .max_velocity_delta = 5.55,
+       .velocity_refinement_strategy =
+           cda_rail::VelocityRefinementStrategy::None,
+       .max_exit_delay = 0.0},
       {.abs_mip_gap = 0},
       {cda_rail::ExportOption::ExportSolution, "tmp2file", "tmp2folder"}, 30,
       true);
@@ -1543,7 +1605,11 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting third solve" << std::endl;
   const auto obj_val3 =
-      solver.solve({false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+      solver.solve({.fix_routes         = false,
+                    .max_velocity_delta = 5.55,
+                    .velocity_refinement_strategy =
+                        cda_rail::VelocityRefinementStrategy::None,
+                    .max_exit_delay = 0.0},
                    {.abs_mip_gap = 0},
                    {cda_rail::ExportOption::ExportSolutionWithInstance,
                     "tmp3file", "tmp3folder"},
@@ -1590,7 +1656,11 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting fourth solve" << std::endl;
   const auto obj_val4 = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+      {.fix_routes         = false,
+       .max_velocity_delta = 5.55,
+       .velocity_refinement_strategy =
+           cda_rail::VelocityRefinementStrategy::None,
+       .max_exit_delay = 0.0},
       {.abs_mip_gap = 0},
       {cda_rail::ExportOption::NoExport, "tmp4file", "tmp4folder"}, 30, true);
 
@@ -1602,7 +1672,11 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting fifth solve" << std::endl;
   const auto obj_val5 = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+      {.fix_routes         = false,
+       .max_velocity_delta = 5.55,
+       .velocity_refinement_strategy =
+           cda_rail::VelocityRefinementStrategy::None,
+       .max_exit_delay = 0.0},
       {.abs_mip_gap = 0},
       {cda_rail::ExportOption::ExportSolutionAndLP, "tmp5file", "tmp5folder"},
       30, false);
@@ -1638,7 +1712,11 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting sixth solve" << std::endl;
   const auto obj_val6 =
-      solver.solve({false, 5.55, cda_rail::VelocityRefinementStrategy::None},
+      solver.solve({.fix_routes         = false,
+                    .max_velocity_delta = 5.55,
+                    .velocity_refinement_strategy =
+                        cda_rail::VelocityRefinementStrategy::None,
+                    .max_exit_delay = 0.0},
                    {.abs_mip_gap = 0},
                    {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP,
                     "tmp6file", "tmp6folder"},
@@ -1687,8 +1765,12 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   std::cout << "Starting seventh solve" << std::endl;
   const auto obj_val7 = solver.solve(
-      {false, 5.55, cda_rail::VelocityRefinementStrategy::None}, {},
-      {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP}, 30, false);
+      {.fix_routes         = false,
+       .max_velocity_delta = 5.55,
+       .velocity_refinement_strategy =
+           cda_rail::VelocityRefinementStrategy::None,
+       .max_exit_delay = 0.0},
+      {}, {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP}, 30, false);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val7.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1732,8 +1814,12 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
             "toy", "ras", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
-        {false, 10, cda_rail::VelocityRefinementStrategy::MinOneStep, true,
-         true},
+        {.fix_routes         = false,
+         .max_velocity_delta = 10,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::MinOneStep,
+         .simplify_headway_constraints          = true,
+         .strengthen_vertex_headway_constraints = true},
         {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 400, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
