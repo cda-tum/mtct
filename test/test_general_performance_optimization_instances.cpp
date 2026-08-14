@@ -2812,4 +2812,67 @@ TEST(GeneralPerformanceOptimizationInstances, PointerCopyIssue) {
   EXPECT_TRUE(instance2.get_const_timetable().check_consistency(
       instance.get_const_network()));
 }
+
+TEST(GeneralPerformanceOptimizationInstances, ScheduledStopPointerCopyIssue) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance{};
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+  auto const e0 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  auto const e1 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", e0);
+
+  // Add a train with a stop
+  instance.add_train("Train1", 100, 10, 1, 1, true, 0, 0, {"v0"}, 360, 0,
+                     {"v2"});
+  instance.insert_stop("Train1", "Station1", 60, 120);
+
+  // Get the address of the station in the station list
+  auto const& station_from_list =
+      instance.get_const_timetable().get_station_list().get_station("Station1");
+  auto const station_list_address = &station_from_list;
+
+  // Get the address of the station from the scheduled stop
+  auto const& schedule = instance.get_const_timetable().get_schedule("Train1");
+  auto const& stops    = schedule.get_stops();
+  ASSERT_EQ(stops.size(), 1);
+  auto const& stop                 = stops[0];
+  auto const& station_from_stop    = stop.get_station();
+  auto const  stop_station_address = &station_from_stop;
+
+  // Before copying, they should be the same object
+  EXPECT_EQ(station_list_address, stop_station_address);
+
+  // Copy the instance
+  auto const instance2 = instance;
+
+  // Get the addresses from the copied instance
+  auto const& station_from_list2 =
+      instance2.get_const_timetable().get_station_list().get_station(
+          "Station1");
+  auto const station_list_address2 = &station_from_list2;
+
+  auto const& schedule2 =
+      instance2.get_const_timetable().get_schedule("Train1");
+  auto const& stops2 = schedule2.get_stops();
+  ASSERT_EQ(stops2.size(), 1);
+  auto const& stop2                 = stops2[0];
+  auto const& station_from_stop2    = stop2.get_station();
+  auto const  stop_station_address2 = &station_from_stop2;
+
+  // After copying, the station list should have a new station object
+  // (deep copy), so the address should be different from the original
+  EXPECT_NE(station_list_address, station_list_address2);
+
+  // However, the scheduled stop should point to the NEW station object
+  // in the copied station list, not the old one
+  // This is the bug: stop_station_address2 still points to the old station
+  // (or a copy of it, but not the one in the copied station list)
+  EXPECT_EQ(station_list_address2, stop_station_address2);
+}
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
