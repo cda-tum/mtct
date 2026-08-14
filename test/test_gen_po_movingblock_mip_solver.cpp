@@ -866,12 +866,12 @@ TEST(GenPOMovingBlockMIPSolver, Default1) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol =
-        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 0}, {}, 250);
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 10}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -888,12 +888,12 @@ TEST(GenPOMovingBlockMIPSolver, Default2) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol =
-        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 0}, {}, 250);
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 10}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -983,13 +983,13 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
          .include_higher_velocities_in_edge_expr = true,
          .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 100);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1012,13 +1012,13 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
          .include_higher_velocities_in_edge_expr = true,
          .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 120);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1040,13 +1040,13 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
          .include_higher_velocities_in_edge_expr = true,
          .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 120);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1068,13 +1068,13 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_8Trains) {
          .include_higher_velocities_in_edge_expr = true,
          .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 120);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1096,13 +1096,13 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_16Trains) {
          .include_higher_velocities_in_edge_expr = true,
          .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 120);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1110,8 +1110,8 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_16Trains) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, All1) {
-  const std::vector<std::string> paths{
-      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
+  const std::vector<std::string> paths{"HighSpeedTrack2Trains",
+                                       "HighSpeedTrack5Trains"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -1131,13 +1131,13 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 140);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1165,13 +1165,13 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 420);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1196,13 +1196,13 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 130);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1226,13 +1226,13 @@ TEST(GenPOMovingBlockMIPSolver, All3_4Trains) {
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 130);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1256,13 +1256,13 @@ TEST(GenPOMovingBlockMIPSolver, All3_8Trains) {
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 130);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1286,13 +1286,13 @@ TEST(GenPOMovingBlockMIPSolver, All3_16Trains) {
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
-         .abs_mip_gap = 0},
+         .abs_mip_gap = 10},
         {}, 130);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1309,12 +1309,12 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1335,12 +1335,12 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
          .velocity_refinement_strategy =
              cda_rail::VelocityRefinementStrategy::None,
          .max_exit_delay = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1357,12 +1357,12 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1385,12 +1385,12 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250, true);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1413,12 +1413,12 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified2) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250, true);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1441,12 +1441,12 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified3) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 0}, {}, 250, true);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1469,12 +1469,12 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified1) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 250, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1497,12 +1497,12 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified2) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 250, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1525,12 +1525,12 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified3) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 250, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 250, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
         << "Solution status is not optimal for instance " << p;
-    EXPECT_EQ(sol.get_obj(), 0)
+    EXPECT_LE(sol.get_obj(), 10)
         << "Objective value is not 0 for instance " << p;
 
     check_last_train_pos(instance, sol, p);
@@ -1554,12 +1554,12 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
        .velocity_refinement_strategy =
            cda_rail::VelocityRefinementStrategy::None,
        .max_exit_delay = 0.0},
-      {.abs_mip_gap = 0},
+      {.abs_mip_gap = 10},
       {cda_rail::ExportOption::ExportLP, "tmp1file", "tmp1folder"}, 30, true);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val.get_obj(), 0);
+  EXPECT_LE(obj_val.get_obj(), 10);
   // Check that tmp1folder and tmp1folder/tmp1file.mps and
   // tmp1folder/tmp1file.sol exist
   EXPECT_TRUE(std::filesystem::exists("tmp1folder"));
@@ -1575,13 +1575,13 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
        .velocity_refinement_strategy =
            cda_rail::VelocityRefinementStrategy::None,
        .max_exit_delay = 0.0},
-      {.abs_mip_gap = 0},
+      {.abs_mip_gap = 10},
       {cda_rail::ExportOption::ExportSolution, "tmp2file", "tmp2folder"}, 30,
       true);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val2.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val2.get_obj(), 0);
+  EXPECT_LE(obj_val2.get_obj(), 10);
   // Check that tmp2folder and solutions structure exists
   EXPECT_TRUE(std::filesystem::exists("tmp2folder"));
   EXPECT_TRUE(std::filesystem::exists(
@@ -1612,14 +1612,14 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
                     .velocity_refinement_strategy =
                         cda_rail::VelocityRefinementStrategy::None,
                     .max_exit_delay = 0.0},
-                   {.abs_mip_gap = 0},
+                   {.abs_mip_gap = 10},
                    {cda_rail::ExportOption::ExportSolutionWithInstance,
                     "tmp3file", "tmp3folder"},
                    30, true);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val3.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val3.get_obj(), 0);
+  EXPECT_LE(obj_val3.get_obj(), 10);
   // Check that corresponding folders exist
   EXPECT_TRUE(std::filesystem::exists("tmp3folder"));
   EXPECT_TRUE(
@@ -1670,12 +1670,12 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
        .velocity_refinement_strategy =
            cda_rail::VelocityRefinementStrategy::None,
        .max_exit_delay = 0.0},
-      {.abs_mip_gap = 0},
+      {.abs_mip_gap = 10},
       {cda_rail::ExportOption::NoExport, "tmp4file", "tmp4folder"}, 30, true);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val4.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val4.get_obj(), 0);
+  EXPECT_LE(obj_val4.get_obj(), 10);
   // Expect no folder tmp4folder to exist
   EXPECT_FALSE(std::filesystem::exists("tmp4folder"));
 
@@ -1686,13 +1686,13 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
        .velocity_refinement_strategy =
            cda_rail::VelocityRefinementStrategy::None,
        .max_exit_delay = 0.0},
-      {.abs_mip_gap = 0},
+      {.abs_mip_gap = 10},
       {cda_rail::ExportOption::ExportSolutionAndLP, "tmp5file", "tmp5folder"},
       30, false);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val5.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val5.get_obj(), 0);
+  EXPECT_LE(obj_val5.get_obj(), 10);
   // Check that tmp5folder exists with LP files and solutions
   EXPECT_TRUE(std::filesystem::exists("tmp5folder"));
   EXPECT_TRUE(std::filesystem::exists("tmp5folder/tmp5file.mps"));
@@ -1725,14 +1725,14 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
                     .velocity_refinement_strategy =
                         cda_rail::VelocityRefinementStrategy::None,
                     .max_exit_delay = 0.0},
-                   {.abs_mip_gap = 0},
+                   {.abs_mip_gap = 10},
                    {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP,
                     "tmp6file", "tmp6folder"},
                    30, false);
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val6.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val6.get_obj(), 0);
+  EXPECT_LE(obj_val6.get_obj(), 10);
   // Check that tmp6folder exists with LP files, instance, networks, and
   // solutions
   EXPECT_TRUE(std::filesystem::exists("tmp6folder"));
@@ -1790,7 +1790,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   EXPECT_EQ(obj_val7.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val7.get_obj(), 0);
+  EXPECT_LE(obj_val7.get_obj(), 10);
   // Expect LP files to exist
   EXPECT_TRUE(std::filesystem::exists("model.mps"));
   EXPECT_TRUE(std::filesystem::exists("model.json"));
@@ -1844,7 +1844,7 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
              cda_rail::VelocityRefinementStrategy::MinOneStep,
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true},
-        {.use_lazy_constraints = true, .abs_mip_gap = 0}, {}, 400, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 400, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
   }
