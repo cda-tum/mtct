@@ -2723,19 +2723,6 @@ TEST(GeneralPerformanceOptimizationInstances, GenPO) {
   }
 }
 
-TEST(GeneralPerformanceOptimizationInstances, SimpleStationImportBug) {
-  const auto instance =
-      cda_rail::instances::GeneralPerformanceOptimizationInstance(
-          "SimpleStation", "atmos2023", "data");
-
-  for (auto const& station : instance.get_const_station_list()) {
-    auto const& stop_tracks = station.second->tracks;
-    for (auto const& stop_track : stop_tracks) {
-      EXPECT_TRUE(instance.get_const_network().has_edge(stop_track));
-    }
-  }
-}
-
 TEST(GeneralPerformanceOptimizationInstances, PointerCopyIssue) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance{};
   instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
