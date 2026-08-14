@@ -43,7 +43,7 @@ struct ModelDetail {
       VelocityRefinementStrategy::MinOneStep;
   bool   simplify_headway_constraints          = false;
   bool   strengthen_vertex_headway_constraints = false;
-  double max_exit_delay                        = GRB_INFINITY;
+  double max_exit_delay                        = 1e9;
 };
 
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
