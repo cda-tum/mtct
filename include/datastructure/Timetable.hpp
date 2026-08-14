@@ -29,6 +29,8 @@ class ScheduledStop {
    * @invariant m_station is always non-null after construction.
    */
 
+  friend class Timetable;
+
 private:
   // member variables have no default -> user-defined constructors
   double                   m_service_time;     // earliest start of service
@@ -551,7 +553,64 @@ public:
   Timetable(char const* const path, Network const& network)
       : Timetable(std::filesystem::path(path), network) {};
 
-  // Rule of 0 suffices
+  // Custom copy constructor and assignment operator for deep copying
+  // When copying, we need to ensure that ScheduledStop objects point to
+  // the stations in the copied StationList, not the original ones
+  /**
+   * @brief Copy constructor that performs a deep copy.
+   *
+   * Creates new Station objects and updates all ScheduledStop references to
+   * point to the corresponding stations in the copied StationList.
+   *
+   * @param other The Timetable to copy from.
+   */
+  Timetable(const Timetable& other)
+      : m_station_list(other.m_station_list), m_train_list(other.m_train_list),
+        m_schedules(other.m_schedules) {
+    // After copying, update all ScheduledStop objects to point to the new
+    // stations The StationList copy creates new Station objects, so we need to
+    // update the shared_ptr in ScheduledStop to point to these new objects
+    for (auto& schedule : m_schedules) {
+      for (auto& stop : schedule.m_stops) {
+        // Find the corresponding station in the new station list
+        auto const& station_name = stop.m_station->name;
+        if (m_station_list.has_station(station_name)) {
+          stop.m_station = m_station_list.get_station_ptr(station_name);
+        }
+      }
+    }
+  }
+
+  /**
+   * @brief Copy assignment operator that performs a deep copy.
+   *
+   * @param other The Timetable to copy from.
+   * @return Reference to this Timetable.
+   */
+  Timetable& operator=(const Timetable& other) {
+    if (this != &other) {
+      m_station_list = other.m_station_list;
+      m_train_list   = other.m_train_list;
+      m_schedules    = other.m_schedules;
+
+      // Update all ScheduledStop objects to point to the new stations
+      for (auto& schedule : m_schedules) {
+        for (auto& stop : schedule.m_stops) {
+          auto const& station_name = stop.m_station->name;
+          if (m_station_list.has_station(station_name)) {
+            stop.m_station = m_station_list.get_station_ptr(station_name);
+          }
+        }
+      }
+    }
+    return *this;
+  }
+
+  // Default move constructor and assignment operator
+  /** @brief Move constructor. */
+  Timetable(Timetable&&) noexcept = default;
+  /** @brief Move assignment operator. */
+  Timetable& operator=(Timetable&&) noexcept = default;
 
   /**
    * @brief Provides a read-only iterator to the first schedule.
