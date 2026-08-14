@@ -10,7 +10,7 @@
 <graph edgedefault="directed">
 <node id="v0">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="v1">
 <data key="d5">2</data>
@@ -22,7 +22,7 @@
 </node>
 <node id="v3">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <edge source="v0" target="v1">
 <data key="d0">true</data>
