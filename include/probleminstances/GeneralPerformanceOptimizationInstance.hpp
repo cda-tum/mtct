@@ -31,6 +31,8 @@
 #if TEST_FRIENDS
 class GeneralPerformanceOptimizationInstances;
 class GeneralPerformanceOptimizationInstances_PointerCopyIssue_Test;
+class
+    GeneralPerformanceOptimizationInstances_ScheduledStopPointerCopyIssue_Test;
 #endif
 
 namespace cda_rail::instances {
@@ -41,6 +43,8 @@ class GeneralPerformanceOptimizationInstance
   // friend class SolVSSGeneralPerformanceOptimizationInstance;
 #if TEST_FRIENDS
   FRIEND_TEST(::GeneralPerformanceOptimizationInstances, PointerCopyIssue);
+  FRIEND_TEST(::GeneralPerformanceOptimizationInstances,
+              ScheduledStopPointerCopyIssue);
 #endif
 
   std::vector<double> m_train_weights{};
