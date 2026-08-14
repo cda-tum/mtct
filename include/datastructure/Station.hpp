@@ -132,7 +132,39 @@ public:
   StationList(char const* const path, Network const& network)
       : StationList(std::filesystem::path(path), network) {};
 
-  // Rule of 0 suffices
+  // Custom copy constructor and assignment operator for deep copying
+  /**
+   * @brief Copy constructor that performs a deep copy of all stations.
+   *
+   * @param other The StationList to copy from.
+   */
+  StationList(const StationList& other) {
+    for (const auto& [name, station_ptr] : other.stations) {
+      stations[name] = std::make_shared<Station>(*station_ptr);
+    }
+  }
+
+  /**
+   * @brief Copy assignment operator that performs a deep copy of all stations.
+   *
+   * @param other The StationList to copy from.
+   * @return Reference to this StationList.
+   */
+  StationList& operator=(const StationList& other) {
+    if (this != &other) {
+      stations.clear();
+      for (const auto& [name, station_ptr] : other.stations) {
+        stations[name] = std::make_shared<Station>(*station_ptr);
+      }
+    }
+    return *this;
+  }
+
+  // Default move constructor and move assignment operator
+  /** @brief Move constructor. */
+  StationList(StationList&&) noexcept = default;
+  /** @brief Move assignment operator. */
+  StationList& operator=(StationList&&) noexcept = default;
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
