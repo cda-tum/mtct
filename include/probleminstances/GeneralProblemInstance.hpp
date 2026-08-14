@@ -9,6 +9,8 @@
 #include "datastructure/Train.hpp"
 #include "nlohmann/json_fwd.hpp"
 
+// NOLINTNEXTLINE(misc-include-cleaner)
+#include "gtest/gtest_prod.h"
 #include <cstddef>
 #include <filesystem>
 #include <memory>
@@ -17,6 +19,19 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+
+// If TEST_FRIENDS has value true, the corresponding test is friended to test
+// complex private functions.
+// This is not good practice. However, after consideration, it was decided that
+// - it is not reasonable to make the functions public
+// - they have a complexity that should be tested
+// - by only testing the overall solution, there is too much code tested at once
+#ifndef TEST_FRIENDS
+#define TEST_FRIENDS false
+#endif
+#if TEST_FRIENDS
+class GeneralPerformanceOptimizationInstances_PointerCopyIssue_Test;
+#endif
 
 namespace cda_rail::instances {
 
@@ -142,6 +157,9 @@ public:
 class GeneralProblemInstanceWithScheduleAndRoutes
     : public GeneralProblemInstance {
   friend class SolGeneralProblemInstanceWithScheduleAndRoutes;
+#if TEST_FRIENDS
+  FRIEND_TEST(::GeneralPerformanceOptimizationInstances, PointerCopyIssue);
+#endif
 
   Network   m_network{};
   Timetable m_timetable{};

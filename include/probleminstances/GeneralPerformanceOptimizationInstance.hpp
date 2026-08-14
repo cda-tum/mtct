@@ -6,6 +6,8 @@
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
 
+// NOLINTNEXTLINE(misc-include-cleaner)
+#include "gtest/gtest_prod.h"
 #include <cassert>
 #include <cstddef>
 #include <filesystem>
@@ -17,12 +19,29 @@
 #include <utility>
 #include <vector>
 
+// If TEST_FRIENDS has value true, the corresponding test is friended to test
+// complex private functions.
+// This is not good practice. However, after consideration, it was decided that
+// - it is not reasonable to make the functions public
+// - they have a complexity that should be tested
+// - by only testing the overall solution, there is too much code tested at once
+#ifndef TEST_FRIENDS
+#define TEST_FRIENDS false
+#endif
+#if TEST_FRIENDS
+class GeneralPerformanceOptimizationInstances;
+class GeneralPerformanceOptimizationInstances_PointerCopyIssue_Test;
+#endif
+
 namespace cda_rail::instances {
 
 class GeneralPerformanceOptimizationInstance
     : public GeneralProblemInstanceWithScheduleAndRoutes {
   friend class SolGeneralPerformanceOptimizationInstance;
   // friend class SolVSSGeneralPerformanceOptimizationInstance;
+#if TEST_FRIENDS
+  FRIEND_TEST(::GeneralPerformanceOptimizationInstances, PointerCopyIssue);
+#endif
 
   std::vector<double> m_train_weights{};
   double m_station_delay_weight{1}; // add (average) station delays with given

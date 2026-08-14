@@ -1,3 +1,5 @@
+#define TEST_FRIENDS true
+
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "datastructure/Route.hpp"
@@ -2719,5 +2721,98 @@ TEST(GeneralPerformanceOptimizationInstances, GenPO) {
       EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
     }
   }
+}
+
+TEST(GeneralPerformanceOptimizationInstances, SimpleStationImportBug) {
+  const auto instance =
+      cda_rail::instances::GeneralPerformanceOptimizationInstance(
+          "SimpleStation", "atmos2023", "data");
+
+  for (auto const& station : instance.get_const_station_list()) {
+    auto const& stop_tracks = station.second->tracks;
+    for (auto const& stop_track : stop_tracks) {
+      EXPECT_TRUE(instance.get_const_network().has_edge(stop_track));
+    }
+  }
+}
+
+TEST(GeneralPerformanceOptimizationInstances, PointerCopyIssue) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance{};
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+  auto const e0 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  auto const e1 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", e0);
+
+  EXPECT_EQ(instance.get_const_station_list().get_station_names().size(), 1);
+  ASSERT_TRUE(instance.get_const_station_list().has_station("Station1"));
+  EXPECT_EQ(
+      instance.get_const_station_list().get_station("Station1").tracks.size(),
+      1);
+  EXPECT_TRUE(instance.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e0));
+  EXPECT_FALSE(instance.get_const_station_list()
+                   .get_station("Station1")
+                   .tracks.contains(e1));
+
+  auto const instance2 = instance;
+
+  EXPECT_EQ(instance.get_const_station_list().get_station_names().size(), 1);
+  ASSERT_TRUE(instance.get_const_station_list().has_station("Station1"));
+  EXPECT_EQ(
+      instance.get_const_station_list().get_station("Station1").tracks.size(),
+      1);
+  EXPECT_TRUE(instance.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e0));
+  EXPECT_FALSE(instance.get_const_station_list()
+                   .get_station("Station1")
+                   .tracks.contains(e1));
+
+  EXPECT_EQ(instance2.get_const_station_list().get_station_names().size(), 1);
+  ASSERT_TRUE(instance2.get_const_station_list().has_station("Station1"));
+  EXPECT_EQ(
+      instance2.get_const_station_list().get_station("Station1").tracks.size(),
+      1);
+  EXPECT_TRUE(instance2.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e0));
+  EXPECT_FALSE(instance2.get_const_station_list()
+                   .get_station("Station1")
+                   .tracks.contains(e1));
+
+  instance.get_editable_timetable().add_track_to_station(
+      "Station1", e1, instance.get_const_network());
+
+  EXPECT_EQ(instance.get_const_station_list().get_station_names().size(), 1);
+  ASSERT_TRUE(instance.get_const_station_list().has_station("Station1"));
+  EXPECT_EQ(
+      instance.get_const_station_list().get_station("Station1").tracks.size(),
+      2);
+  EXPECT_TRUE(instance.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e0));
+  EXPECT_TRUE(instance.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e1));
+
+  EXPECT_EQ(instance2.get_const_station_list().get_station_names().size(), 1);
+  ASSERT_TRUE(instance2.get_const_station_list().has_station("Station1"));
+  EXPECT_EQ(
+      instance2.get_const_station_list().get_station("Station1").tracks.size(),
+      1);
+  EXPECT_TRUE(instance2.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e0));
+  EXPECT_FALSE(instance2.get_const_station_list()
+                   .get_station("Station1")
+                   .tracks.contains(e1));
 }
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
