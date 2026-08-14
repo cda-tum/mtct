@@ -2748,6 +2748,8 @@ TEST(GeneralPerformanceOptimizationInstances, PointerCopyIssue) {
   EXPECT_FALSE(instance.get_const_station_list()
                    .get_station("Station1")
                    .tracks.contains(e1));
+  EXPECT_TRUE(instance.get_const_timetable().check_consistency(
+      instance.get_const_network()));
 
   auto const instance2 = instance;
 
@@ -2762,6 +2764,8 @@ TEST(GeneralPerformanceOptimizationInstances, PointerCopyIssue) {
   EXPECT_FALSE(instance.get_const_station_list()
                    .get_station("Station1")
                    .tracks.contains(e1));
+  EXPECT_TRUE(instance.get_const_timetable().check_consistency(
+      instance.get_const_network()));
 
   EXPECT_EQ(instance2.get_const_station_list().get_station_names().size(), 1);
   ASSERT_TRUE(instance2.get_const_station_list().has_station("Station1"));
@@ -2774,6 +2778,8 @@ TEST(GeneralPerformanceOptimizationInstances, PointerCopyIssue) {
   EXPECT_FALSE(instance2.get_const_station_list()
                    .get_station("Station1")
                    .tracks.contains(e1));
+  EXPECT_TRUE(instance2.get_const_timetable().check_consistency(
+      instance.get_const_network()));
 
   instance.get_editable_timetable().add_track_to_station(
       "Station1", e1, instance.get_const_network());
@@ -2789,6 +2795,8 @@ TEST(GeneralPerformanceOptimizationInstances, PointerCopyIssue) {
   EXPECT_TRUE(instance.get_const_station_list()
                   .get_station("Station1")
                   .tracks.contains(e1));
+  EXPECT_TRUE(instance.get_const_timetable().check_consistency(
+      instance.get_const_network()));
 
   EXPECT_EQ(instance2.get_const_station_list().get_station_names().size(), 1);
   ASSERT_TRUE(instance2.get_const_station_list().has_station("Station1"));
@@ -2801,5 +2809,7 @@ TEST(GeneralPerformanceOptimizationInstances, PointerCopyIssue) {
   EXPECT_FALSE(instance2.get_const_station_list()
                    .get_station("Station1")
                    .tracks.contains(e1));
+  EXPECT_TRUE(instance2.get_const_timetable().check_consistency(
+      instance.get_const_network()));
 }
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
