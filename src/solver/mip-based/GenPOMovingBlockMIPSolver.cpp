@@ -2405,9 +2405,9 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
             vel_source, tr_object.get_acceleration(),
             tr_object.get_deceleration());
 
-        // Bound hw to [-GRB_INFINITY,GRB_INFINITY]
-        hw_tmp     = std::clamp(hw_tmp, -GRB_INFINITY, GRB_INFINITY);
-        hw_tmp_ttd = std::clamp(hw_tmp_ttd, -GRB_INFINITY, GRB_INFINITY);
+        // Bound hw to [-M,M]
+        hw_tmp     = std::clamp(hw_tmp, -M, M);
+        hw_tmp_ttd = std::clamp(hw_tmp_ttd, -M, M);
 
         hw_max     = std::max(hw_tmp, hw_max);
         hw_max_ttd = std::max(hw_tmp_ttd, hw_max_ttd);

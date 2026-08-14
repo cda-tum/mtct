@@ -21,10 +21,6 @@
 #include <utility>
 #include <vector>
 
-namespace {
-double constexpr M = 1e9;
-}
-
 using std::size_t;
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
