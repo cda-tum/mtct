@@ -1910,7 +1910,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       // departure because ma might move forward, otherwise arrival and
       // departure are equal due to non-zero velocity
       // NOLINTNEXTLINE(misc-const-correctness)
-      GRBVar tr_t_var = m_vars["t_front_departure"](tr, v_source);
+      GRBVar const tr_t_var = m_vars["t_front_departure"](tr, v_source);
 
       const auto tr_on_e =
           m_instance.all_trains_on_edge(e, m_model_detail.fix_routes, false);
@@ -1918,7 +1918,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         if (tr == tr2) {
           continue;
         }
-        const auto tr2_t_var = m_vars["t_rear_departure"](tr2, v_target);
+        GRBVar const tr2_t_var = m_vars["t_rear_departure"](tr2, v_target);
 
         m_model->addGenConstrIndicator(
             m_vars["order"](tr, tr2, e), 1,
@@ -2399,11 +2399,15 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
       if (cda_rail::possible_by_eom(
               vel_source, vel_target, tr_object.get_acceleration(),
               tr_object.get_deceleration(), e_obj.length)) {
-        auto       hw_tmp = headway(tr_object, e_obj, vel_source, vel_target,
-                                    v_source_index == entry_node);
-        const auto hw_tmp_ttd = min_time_to_push_ma_fully_backward(
+        auto hw_tmp     = headway(tr_object, e_obj, vel_source, vel_target,
+                                  v_source_index == entry_node);
+        auto hw_tmp_ttd = min_time_to_push_ma_fully_backward(
             vel_source, tr_object.get_acceleration(),
             tr_object.get_deceleration());
+
+        // Bound hw to [-GRB_INFINITY,GRB_INFINITY]
+        hw_tmp     = std::clamp(hw_tmp, -GRB_INFINITY, GRB_INFINITY);
+        hw_tmp_ttd = std::clamp(hw_tmp_ttd, -GRB_INFINITY, GRB_INFINITY);
 
         hw_max     = std::max(hw_tmp, hw_max);
         hw_max_ttd = std::max(hw_tmp_ttd, hw_max_ttd);
