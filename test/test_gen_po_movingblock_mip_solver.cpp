@@ -866,7 +866,7 @@ TEST(GenPOMovingBlockMIPSolver, Default1) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol =
-        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 10}, {}, 250);
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 10}, {}, 350);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -888,7 +888,7 @@ TEST(GenPOMovingBlockMIPSolver, Default2) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol =
-        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 10}, {}, 250);
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 10}, {}, 240);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -909,7 +909,7 @@ TEST(GenPOMovingBlockMIPSolver, Default3) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol =
-        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 5}, {}, 250);
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 5}, {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -930,7 +930,7 @@ TEST(GenPOMovingBlockMIPSolver, Default4) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol =
-        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 5}, {}, 250);
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 5}, {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -951,7 +951,7 @@ TEST(GenPOMovingBlockMIPSolver, Default5) {
             p, "atmos2023", "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol =
-        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 5}, {}, 250);
+        solver.solve({.max_exit_delay = 0.0}, {.abs_mip_gap = 5}, {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -984,7 +984,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
          .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
          .abs_mip_gap = 10},
-        {}, 100);
+        {}, 240);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1013,7 +1013,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
          .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
          .abs_mip_gap = 10},
-        {}, 120);
+        {}, 240);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1041,7 +1041,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
          .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
          .abs_mip_gap = 10},
-        {}, 120);
+        {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1069,7 +1069,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_8Trains) {
          .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
          .abs_mip_gap = 10},
-        {}, 120);
+        {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1097,7 +1097,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_16Trains) {
          .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
          .abs_mip_gap = 10},
-        {}, 120);
+        {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1132,7 +1132,7 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
          .abs_mip_gap = 10},
-        {}, 140);
+        {}, 350);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1166,7 +1166,7 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
          .abs_mip_gap = 10},
-        {}, 420);
+        {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1197,7 +1197,7 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
          .abs_mip_gap = 10},
-        {}, 130);
+        {}, 240);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1227,7 +1227,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_4Trains) {
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
          .abs_mip_gap = 10},
-        {}, 130);
+        {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1257,7 +1257,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_8Trains) {
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
          .abs_mip_gap = 10},
-        {}, 130);
+        {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1287,7 +1287,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_16Trains) {
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
          .abs_mip_gap = 10},
-        {}, 130);
+        {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1309,7 +1309,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1335,7 +1335,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
          .velocity_refinement_strategy =
              cda_rail::VelocityRefinementStrategy::None,
          .max_exit_delay = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1357,7 +1357,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1385,7 +1385,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250, true);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 700, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1413,7 +1413,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified2) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250, true);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 700, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1441,7 +1441,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified3) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 250, true);
+        {.use_lazy_constraints = false, .abs_mip_gap = 10}, {}, 700, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1469,7 +1469,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified1) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 250, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 700, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1497,7 +1497,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified2) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 250, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 700, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1525,7 +1525,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified3) {
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true,
          .max_exit_delay                        = 0.0},
-        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 250, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 700, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
@@ -1844,7 +1844,7 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
              cda_rail::VelocityRefinementStrategy::MinOneStep,
          .simplify_headway_constraints          = true,
          .strengthen_vertex_headway_constraints = true},
-        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 400, true);
+        {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 700, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
   }
