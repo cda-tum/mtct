@@ -10,11 +10,11 @@
 <graph edgedefault="directed">
 <node id="PasingEntry">
 <data key="d5">2</data>
-<data key="d6">90</data>
+<data key="d6">30</data>
 </node>
 <node id="PasingExit">
 <data key="d5">2</data>
-<data key="d6">90</data>
+<data key="d6">30</data>
 </node>
 <node id="PasingSwitch1">
 <data key="d5">0</data>
@@ -38,7 +38,7 @@
 </node>
 <node id="LaimEntry">
 <data key="d5">2</data>
-<data key="d6">90</data>
+<data key="d6">30</data>
 </node>
 <node id="Laim3R">
 <data key="d5">2</data>
@@ -50,7 +50,7 @@
 </node>
 <node id="LaimExitNymphenburg">
 <data key="d5">2</data>
-<data key="d6">45</data>
+<data key="d6">30</data>
 </node>
 <node id="LaimSwitchHirschgarten">
 <data key="d5">0</data>
@@ -134,11 +134,11 @@
 </node>
 <node id="DonnersbergerEntry">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="DonnersbergerExit">
 <data key="d5">2</data>
-<data key="d6">60</data>
+<data key="d6">30</data>
 </node>
 <node id="Hbf1L">
 <data key="d5">2</data>
@@ -258,23 +258,23 @@
 </node>
 <node id="Ost1Entry">
 <data key="d5">2</data>
-<data key="d6">120</data>
+<data key="d6">30</data>
 </node>
 <node id="Ost2Entry">
 <data key="d5">2</data>
-<data key="d6">120</data>
+<data key="d6">30</data>
 </node>
 <node id="Ost3Entry">
 <data key="d5">2</data>
-<data key="d6">120</data>
+<data key="d6">30</data>
 </node>
 <node id="Ost4Exit">
 <data key="d5">2</data>
-<data key="d6">90</data>
+<data key="d6">30</data>
 </node>
 <node id="Ost5Exit">
 <data key="d5">2</data>
-<data key="d6">90</data>
+<data key="d6">30</data>
 </node>
 <node id="PasingSwitch1-PasingSwitch2_0">
 <data key="d5">2</data>
