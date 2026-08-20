@@ -1836,9 +1836,7 @@ TEST(GenPOMovingblockMIPSolver, PreventOvertakingWhileStopping) {
 
   cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver2(instance);
   const auto                                             sol2 = solver2.solve(
-      {.max_exit_delay = 0.0}, {.use_lazy_constraints = false},
-      {.export_option = cda_rail::ExportOption::ExportSolutionAndLP}, 100,
-      true);
+      {.max_exit_delay = 0.0}, {.use_lazy_constraints = false}, {}, 100, true);
 
   std::cout << "------------------------------" << std::endl;
   std::cout << "Feasible Version with lazy constraints" << std::endl;
@@ -1857,6 +1855,24 @@ TEST(GenPOMovingblockMIPSolver, PreventOvertakingWhileStopping) {
       solver4.solve({.max_exit_delay = 100.0}, {.use_lazy_constraints = false},
                     {}, 100, true);
 
+  std::cout << "------------------------------" << std::endl;
+  std::cout << "Late Entry with lazy constraints" << std::endl;
+  std::cout << "------------------------------" << std::endl;
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver5(instance);
+  const auto                                             sol5 =
+      solver5.solve({.allow_late_entry = true, .max_exit_delay = 0.0},
+                    {.use_lazy_constraints = true}, {}, 100, true);
+
+  std::cout << "------------------------------" << std::endl;
+  std::cout << "Late Entry without lazy constraints" << std::endl;
+  std::cout << "------------------------------" << std::endl;
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver6(instance);
+  const auto                                             sol6 =
+      solver6.solve({.allow_late_entry = true, .max_exit_delay = 0.0},
+                    {.use_lazy_constraints = false}, {}, 100, true);
+
   EXPECT_FALSE(sol.has_solution())
       << "Expected no solution with lazy constraints";
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Infeasible)
@@ -1870,20 +1886,34 @@ TEST(GenPOMovingblockMIPSolver, PreventOvertakingWhileStopping) {
   EXPECT_TRUE(sol3.has_solution())
       << "Expected feasible solution with lazy constraints";
   EXPECT_EQ(sol3.get_status(), cda_rail::SolutionStatus::Optimal)
-      << "Expected feasible solution with lazy constraints";
-  EXPECT_GE(sol3.get_obj(), 120.0 + 2 * 120.0)
+      << "Expected optimal solution with lazy constraints";
+  EXPECT_GE(sol3.get_obj(), 2 * (120.0 - 90.0))
       << "Expected expensive optimum with lazy constraints";
-  EXPECT_LE(sol3.get_obj(), 120.0 + 2 * 190.0)
+  EXPECT_LE(sol3.get_obj(), 2 * (190.0 - 90.0))
       << "Expected expensive optimum with lazy constraints";
 
   EXPECT_TRUE(sol4.has_solution())
       << "Expected feasible solution without lazy constraints";
   EXPECT_EQ(sol4.get_status(), cda_rail::SolutionStatus::Optimal)
-      << "Expected feasible solution without lazy constraints";
-  EXPECT_GE(sol4.get_obj(), 120.0 + 2 * 120.0)
+      << "Expected optimal solution without lazy constraints";
+  EXPECT_GE(sol4.get_obj(), 2 * (120.0 - 90.0))
       << "Expected expensive optimum without lazy constraints";
-  EXPECT_LE(sol4.get_obj(), 120.0 + 2 * 190.0)
+  EXPECT_LE(sol4.get_obj(), 2 * (190.0 - 90.0))
       << "Expected expensive optimum without lazy constraints";
+
+  EXPECT_TRUE(sol5.has_solution())
+      << "Expected feasible solution on late entry with lazy constraints";
+  EXPECT_EQ(sol5.get_status(), cda_rail::SolutionStatus::Optimal)
+      << "Expected optimal solution on late entry with lazy constraints";
+  EXPECT_EQ(sol5.get_obj(), 0.0)
+      << "Expected zero objective on late entry with lazy constraints";
+
+  EXPECT_TRUE(sol6.has_solution())
+      << "Expected feasible solution on late entry without lazy constraints";
+  EXPECT_EQ(sol6.get_status(), cda_rail::SolutionStatus::Optimal)
+      << "Expected optimal solution on late entry without lazy constraints";
+  EXPECT_EQ(sol6.get_obj(), 0.0)
+      << "Expected zero objective on late entry without lazy constraints";
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

@@ -43,6 +43,7 @@ struct ModelDetail {
       VelocityRefinementStrategy::MinOneStep;
   bool   simplify_headway_constraints          = false;
   bool   strengthen_vertex_headway_constraints = false;
+  bool   allow_late_entry                      = false;
   double max_exit_delay                        = 1e9;
 };
 
