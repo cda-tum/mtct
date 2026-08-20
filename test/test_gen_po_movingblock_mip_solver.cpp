@@ -1,6 +1,7 @@
 #include <cstdlib>
 #define TEST_FRIENDS true
 
+#include "Definitions.hpp"
 #include "TestingWarning.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
@@ -79,15 +80,15 @@ void check_last_train_pos(
 template <typename SolutionType>
 void check_objective_if_optimal_or_warn(const SolutionType& solution,
                                         const std::string&  instance_name,
-                                        const double        max_obj) {
+                                        const double        maxObj) {
   const auto status = solution.get_status();
   if (status == cda_rail::SolutionStatus::Optimal) {
-    EXPECT_LE(solution.get_obj(), max_obj)
+    EXPECT_LE(solution.get_obj(), maxObj)
         << "Objective value is too high for instance " << instance_name;
     return;
   }
 
-  cda_rail::test::TestingWarning::AddWarning(
+  cda_rail::test::TestingWarning::add_warning(
       "Non-optimal solution status for instance " + instance_name + ": " +
       to_string(status));
 }

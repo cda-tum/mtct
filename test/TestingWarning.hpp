@@ -16,30 +16,31 @@ namespace cda_rail::test {
  */
 class TestingWarning {
 public:
-  static void AddWarning(const std::string& message) {
+  static void add_warning(const std::string& message) {
     std::call_once(listener_registration_flag(), []() {
+      // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
       ::testing::UnitTest::GetInstance()->listeners().Append(
-          new warning_summary_listener());
+          new WarningSummaryListener());
     });
 
-    std::scoped_lock lock(warning_mutex());
+    const std::scoped_lock lock(warning_mutex());
     warning_entries().push_back(
-        warning_entry{.test_name = current_test_name(), .message = message});
+        WarningEntry{.test_name = current_test_name(), .message = message});
   }
 
 private:
-  struct warning_entry {
+  struct WarningEntry {
     std::string test_name{};
     std::string message{};
   };
 
-  class warning_summary_listener final
+  class WarningSummaryListener final
       : public ::testing::EmptyTestEventListener {
   public:
-    void OnTestProgramEnd(const ::testing::UnitTest&) override {
-      std::vector<warning_entry> warnings;
+    void OnTestProgramEnd(const ::testing::UnitTest& /*unused*/) override {
+      std::vector<WarningEntry> warnings;
       {
-        std::scoped_lock lock(warning_mutex());
+        const std::scoped_lock lock(warning_mutex());
         warnings = warning_entries();
       }
 
@@ -73,8 +74,8 @@ private:
     return mutex;
   }
 
-  [[nodiscard]] static std::vector<warning_entry>& warning_entries() {
-    static std::vector<warning_entry> entries;
+  [[nodiscard]] static std::vector<WarningEntry>& warning_entries() {
+    static std::vector<WarningEntry> entries;
     return entries;
   }
 };

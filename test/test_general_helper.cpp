@@ -478,9 +478,10 @@ TEST(Playground, StructEdit) {
 }
 
 TEST(WarningHelper, AddTestWarning) {
-  cda_rail::test::TestingWarning::AddWarning("This is a test property 1");
+  cda_rail::test::TestingWarning::add_warning("This is a test property 1");
   EXPECT_TRUE(true);
-  cda_rail::test::TestingWarning::AddWarning("This is another test property 1");
+  cda_rail::test::TestingWarning::add_warning(
+      "This is another test property 1");
 }
 
 TEST(StringHelper, Sanitize) {
