@@ -11,12 +11,15 @@ macro(PACKAGE_ADD_TEST testname linklibs)
   # discover tests
   gtest_discover_tests(
     ${testname}
-    TEST_LIST ${testname}_test_list
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" DISCOVERY_TIMEOUT 60)
-
-  set_tests_properties(${${testname}_test_list} PROPERTIES ENVIRONMENT "CDA_RAIL_WARNING_FILE=${warning_file}"
-                                                           FIXTURES_REQUIRED ${testname}_warnings_fixture)
+    PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY
+               "${CMAKE_CURRENT_SOURCE_DIR}"
+               DISCOVERY_TIMEOUT
+               60
+               ENVIRONMENT
+               "CDA_RAIL_WARNING_FILE=${warning_file}"
+               FIXTURES_REQUIRED
+               ${testname}_warnings_fixture)
 
   add_test(NAME ${testname}_warning_summary COMMAND ${CMAKE_COMMAND} "-DWARNING_FILE=${warning_file}" -P
                                                     "${PROJECT_SOURCE_DIR}/cmake/PrintWarningSummary.cmake")
