@@ -53,8 +53,7 @@ void append_warning_to_file(const std::string& warning_file,
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 
-  std::cerr << "Failed to write test warning to file: " << warning_file
-            << std::endl;
+  std::cerr << "Failed to write test warning to file: " << warning_file << '\n';
 }
 
 class WarningSummaryListener final : public ::testing::EmptyTestEventListener {
