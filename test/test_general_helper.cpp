@@ -481,4 +481,10 @@ TEST(StringHelper, Sanitize) {
   EXPECT_EQ(cda_rail::sanitize("A&bC"), "A-bC");
 }
 
+TEST(RecordProperty, RecordPropertyTest) {
+  RecordProperty("Test", "This is a test property");
+  EXPECT_TRUE(true);
+  RecordProperty("Test2", "This is another test property");
+}
+
 // NOLINTEND(clang-diagnostic-unused-result)
