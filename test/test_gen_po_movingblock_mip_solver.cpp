@@ -1802,7 +1802,7 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
   }
 }
 
-TEST(GenPOMovingblockMIPSolver, PreventOvertakingWhileStopping) {
+TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 
   auto const v0 = instance.get_editable_network().add_vertex(
