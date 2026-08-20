@@ -11,15 +11,20 @@ macro(PACKAGE_ADD_TEST testname linklibs)
   # discover tests
   gtest_discover_tests(
     ${testname}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY
-               "${CMAKE_CURRENT_SOURCE_DIR}"
-               DISCOVERY_TIMEOUT
-               60
-               ENVIRONMENT
-               "CDA_RAIL_WARNING_FILE=${warning_file}"
-               FIXTURES_REQUIRED
-               ${testname}_warnings_fixture)
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DISCOVERY_TIMEOUT 60
+    TEST_LIST ${testname}_test_list
+    PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+
+  set(warning_config_file "${CMAKE_CURRENT_BINARY_DIR}/${testname}_warning_config.cmake")
+  file(WRITE "${warning_config_file}" "foreach(current_test IN LISTS ${testname}_test_list)\n")
+  file(APPEND "${warning_config_file}" "  set_tests_properties(\"\${current_test}\" PROPERTIES\n")
+  file(APPEND "${warning_config_file}" "    ENVIRONMENT \"CDA_RAIL_WARNING_FILE=${warning_file}\"\n")
+  file(APPEND "${warning_config_file}" "    FIXTURES_REQUIRED ${testname}_warnings_fixture)\n")
+  file(APPEND "${warning_config_file}" "endforeach()\n")
+  set_property(
+    DIRECTORY
+    APPEND
+    PROPERTY TEST_INCLUDE_FILES "${warning_config_file}")
 
   add_test(NAME ${testname}_warning_summary COMMAND ${CMAKE_COMMAND} "-DWARNING_FILE=${warning_file}" -P
                                                     "${PROJECT_SOURCE_DIR}/cmake/PrintWarningSummary.cmake")
