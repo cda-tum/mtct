@@ -476,15 +476,21 @@ TEST(Playground, StructEdit) {
   EXPECT_EQ(test_struct.vec2, cda_rail::index_vector({7, 8, 9}));
 }
 
+TEST(WarningHelper, AddTestWarning) {
+  RecordProperty("Test", "This is a test property 1");
+  EXPECT_TRUE(true);
+  RecordProperty("Test2", "This is another test property 1");
+}
+
 TEST(StringHelper, Sanitize) {
   EXPECT_EQ(cda_rail::sanitize("AB"), "AB");
   EXPECT_EQ(cda_rail::sanitize("A&bC"), "A-bC");
 }
 
-TEST(RecordProperty, RecordPropertyTest) {
-  RecordProperty("Test", "This is a test property");
+TEST(WarningHelper, AddTestWarning2) {
+  RecordProperty("Test", "This is a test property 2");
   EXPECT_TRUE(true);
-  RecordProperty("Test2", "This is another test property");
+  RecordProperty("Test2", "This is another test property 2");
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)
