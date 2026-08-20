@@ -2,6 +2,7 @@
 #include "Definitions.hpp"
 #include "GeneralHelper.hpp"
 #include "StringHelper.hpp"
+#include "TestingWarning.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Station.hpp"
@@ -477,20 +478,14 @@ TEST(Playground, StructEdit) {
 }
 
 TEST(WarningHelper, AddTestWarning) {
-  RecordProperty("Test", "This is a test property 1");
+  cda_rail::test::TestingWarning::AddWarning("This is a test property 1");
   EXPECT_TRUE(true);
-  RecordProperty("Test2", "This is another test property 1");
+  cda_rail::test::TestingWarning::AddWarning("This is another test property 1");
 }
 
 TEST(StringHelper, Sanitize) {
   EXPECT_EQ(cda_rail::sanitize("AB"), "AB");
   EXPECT_EQ(cda_rail::sanitize("A&bC"), "A-bC");
-}
-
-TEST(WarningHelper, AddTestWarning2) {
-  RecordProperty("Test", "This is a test property 2");
-  EXPECT_TRUE(true);
-  RecordProperty("Test2", "This is another test property 2");
 }
 
 // NOLINTEND(clang-diagnostic-unused-result)
