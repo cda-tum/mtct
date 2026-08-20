@@ -1017,6 +1017,41 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 "_" + sanitize(v1.name) + "-" + sanitize(v2.name));
       }
     }
+
+    for (auto const& successors =
+             m_instance.get_const_network().get_successors(e);
+         auto const& e1 : successors) {
+      const auto e1_obj = m_instance.get_const_network().get_edge(e1);
+      const auto v3 = m_instance.get_const_network().get_vertex(e1_obj.target);
+
+      auto const& tr_on_e1 =
+          m_instance.all_trains_on_edge(e1, m_model_detail.fix_routes, false);
+      for (auto const& tr1 : tr_on_edge) {
+        if (!tr_on_e1.contains(tr1)) {
+          continue;
+        }
+        for (auto const& tr2 : tr_on_edge) {
+          if (tr1 == tr2) {
+            continue;
+          }
+          if (!tr_on_e1.contains(tr2)) {
+            continue;
+          }
+          m_model->addConstr(m_vars["order"](tr1, tr2, e1) <=
+                                 1 - m_vars["order"](tr2, tr1, e),
+                             "successor_order_flip_prevention_" +
+                                 sanitize(m_instance.get_const_train_list()
+                                              .get_train(tr1)
+                                              .get_name()) +
+                                 "_" +
+                                 sanitize(m_instance.get_const_train_list()
+                                              .get_train(tr2)
+                                              .get_name()) +
+                                 "_" + sanitize(v1.name) + "-" +
+                                 sanitize(v2.name) + "-" + sanitize(v3.name));
+        }
+      }
+    }
   }
 }
 
