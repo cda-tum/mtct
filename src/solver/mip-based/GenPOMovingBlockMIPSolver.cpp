@@ -1867,23 +1867,29 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               edge_tmp_path_expr += m_vars["x"](tr, e_tmp);
             }
 
-            auto const edge_tmp_binary = m_model->addVar(
-                0.0, 1.0, 0.0, GRB_BINARY,
-                "headway_ttd_" + std::to_string(ttd_index) + "_path_binary_" +
-                    sanitize(tr_object.get_name()) + "_" +
-                    sanitize(
-                        m_instance.get_const_network().get_vertex(v).name) +
-                    "_" + std::to_string(vel) + "_" + std::to_string(p_index));
+            std::optional<GRBVar> edge_tmp_binary{};
+            if (m_solver_strategy.use_indicator_constraints) {
+              edge_tmp_binary = m_model->addVar(
+                  0.0, 1.0, 0.0, GRB_BINARY,
+                  "headway_ttd_" + std::to_string(ttd_index) + "_path_binary_" +
+                      sanitize(tr_object.get_name()) + "_" +
+                      sanitize(
+                          m_instance.get_const_network().get_vertex(v).name) +
+                      "_" + std::to_string(vel) + "_" +
+                      std::to_string(p_index));
 
-            m_model->addConstr(
-                edge_tmp_binary >=
-                    edge_tmp_path_expr - static_cast<double>(p_tmp.size()) + 1,
-                "headway_ttd_" + std::to_string(ttd_index) +
-                    "_path_binary_helper_" + sanitize(tr_object.get_name()) +
-                    "_" +
-                    sanitize(
-                        m_instance.get_const_network().get_vertex(v).name) +
-                    "_" + std::to_string(vel) + "_" + std::to_string(p_index));
+              m_model->addConstr(
+                  edge_tmp_binary.value() >=
+                      edge_tmp_path_expr - static_cast<double>(p_tmp.size()) +
+                          1,
+                  "headway_ttd_" + std::to_string(ttd_index) +
+                      "_path_binary_helper_" + sanitize(tr_object.get_name()) +
+                      "_" +
+                      sanitize(
+                          m_instance.get_const_network().get_vertex(v).name) +
+                      "_" + std::to_string(vel) + "_" +
+                      std::to_string(p_index));
+            }
 
             const auto obd = bd - p_tmp_len;
 
@@ -1900,22 +1906,27 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                   m_instance.get_const_train_list().get_train(tr2).get_name());
               const auto v_name_sanitized =
                   sanitize(m_instance.get_const_network().get_vertex(v).name);
+              const auto t_bound_tmp = std::max(t_bound, latest_exit_time(tr2));
 
-              auto const path_order_helper_binary = m_model->addVar(
-                  0.0, 1.0, 0.0, GRB_BINARY,
-                  "headway_ttd_" + std::to_string(ttd_index) +
-                      "_path_order_binary_" + sanitize(tr_object.get_name()) +
-                      "_" + tr2_name_sanitized + "_" + v_name_sanitized + "_" +
-                      std::to_string(vel) + "_" + std::to_string(p_index));
-              m_model->addConstr(
-                  path_order_helper_binary >=
-                      path_order_helper_binary +
-                          m_vars["order_ttd"](tr, tr2, ttd_index) - 1,
-                  "headway_ttd_" + std::to_string(ttd_index) +
-                      "_path_order_helper_binary_" +
-                      sanitize(tr_object.get_name()) + "_" +
-                      tr2_name_sanitized + "_" + v_name_sanitized + "_" +
-                      std::to_string(vel) + "_" + std::to_string(p_index));
+              std::optional<GRBVar> path_order_helper_binary{};
+              if (m_solver_strategy.use_indicator_constraints) {
+                path_order_helper_binary = m_model->addVar(
+                    0.0, 1.0, 0.0, GRB_BINARY,
+                    "headway_ttd_" + std::to_string(ttd_index) +
+                        "_path_order_binary_" + sanitize(tr_object.get_name()) +
+                        "_" + tr2_name_sanitized + "_" + v_name_sanitized +
+                        "_" + std::to_string(vel) + "_" +
+                        std::to_string(p_index));
+                m_model->addConstr(
+                    path_order_helper_binary.value() >=
+                        edge_tmp_binary.value() +
+                            m_vars["order_ttd"](tr, tr2, ttd_index) - 1,
+                    "headway_ttd_" + std::to_string(ttd_index) +
+                        "_path_order_helper_binary_" +
+                        sanitize(tr_object.get_name()) + "_" +
+                        tr2_name_sanitized + "_" + v_name_sanitized + "_" +
+                        std::to_string(vel) + "_" + std::to_string(p_index));
+              }
 
               GRBLinExpr lhs_from_rear = m_vars["t_front_arrival"](tr, v);
 
@@ -1977,38 +1988,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                 e_before_v_obj.length, obd);
                         is_relevant = true;
 
-                        const auto tr2_name_sanitized =
-                            sanitize(m_instance.get_const_train_list()
-                                         .get_train(tr2)
-                                         .get_name());
-                        const auto v_name_sanitized = sanitize(
-                            m_instance.get_const_network().get_vertex(v).name);
-
-                        auto const path_vel_binary = m_model->addVar(
-                            0.0, 1.0, 0.0, GRB_BINARY,
-                            "headway_ttd_" + std::to_string(ttd_index) +
-                                "_path_vel_binary_" +
-                                sanitize(tr_object.get_name()) + "_" +
-                                tr2_name_sanitized + "_" + v_name_sanitized +
-                                "_" + std::to_string(vel) + "_" +
-                                std::to_string(p_index) + "_" +
-                                std::to_string(e_before_v) + "_" +
-                                std::to_string(vel_before_v));
-                        m_model->addConstr(
-                            path_vel_binary >= path_order_helper_binary +
-                                                   m_vars["y"](tr, e_before_v,
-                                                               v_before_v_index,
-                                                               v_source_index) -
-                                                   1,
-                            "headway_ttd_" + std::to_string(ttd_index) +
-                                "_path_vel_constraint_" +
-                                sanitize(tr_object.get_name()) + "_" +
-                                tr2_name_sanitized + "_" + v_name_sanitized +
-                                "_" + std::to_string(vel) + "_" +
-                                std::to_string(p_index) + "_" +
-                                std::to_string(e_before_v) + "_" +
-                                std::to_string(vel_before_v));
-
                         const auto max_from_front =
                             cda_rail::max_time_from_front_to_ma_point(
                                 vel_before_v, vel, V_MIN,
@@ -2016,46 +1995,123 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                 tr_object.get_deceleration(),
                                 e_before_v_obj.length, obd,
                                 e_before_v_obj.breakable);
-                        // TODO
-                        m_model->addGenConstrIndicator(
-                            path_vel_binary, 1,
-                            m_vars["t_front_departure"](tr, v_before_v) +
-                                    max_from_front >=
-                                m_vars["t_ttd_departure"](tr2, ttd_index),
-                            "headway_ttd_" + std::to_string(ttd_index) +
-                                "from_front_" + sanitize(tr_object.get_name()) +
-                                "_" +
-                                m_instance.get_const_train_list()
-                                    .get_train(tr2)
-                                    .get_name() +
-                                "_" +
-                                sanitize(m_instance.get_const_network()
-                                             .get_vertex(v)
-                                             .name) +
-                                "_" + std::to_string(vel) + "_" +
-                                std::to_string(p_index) + "_" +
-                                std::to_string(e_before_v) + "_" +
-                                std::to_string(vel_before_v));
+                        if (m_solver_strategy.use_indicator_constraints) {
+                          auto const path_vel_binary = m_model->addVar(
+                              0.0, 1.0, 0.0, GRB_BINARY,
+                              "headway_ttd_" + std::to_string(ttd_index) +
+                                  "_path_vel_binary_" +
+                                  sanitize(tr_object.get_name()) + "_" +
+                                  tr2_name_sanitized + "_" + v_name_sanitized +
+                                  "_" + std::to_string(vel) + "_" +
+                                  std::to_string(p_index) + "_" +
+                                  std::to_string(e_before_v) + "_" +
+                                  std::to_string(vel_before_v));
+                          m_model->addConstr(
+                              path_vel_binary >=
+                                  path_order_helper_binary.value() +
+                                      m_vars["y"](tr, e_before_v,
+                                                  v_before_v_index,
+                                                  v_source_index) -
+                                      1,
+                              "headway_ttd_" + std::to_string(ttd_index) +
+                                  "_path_vel_constraint_" +
+                                  sanitize(tr_object.get_name()) + "_" +
+                                  tr2_name_sanitized + "_" + v_name_sanitized +
+                                  "_" + std::to_string(vel) + "_" +
+                                  std::to_string(p_index) + "_" +
+                                  std::to_string(e_before_v) + "_" +
+                                  std::to_string(vel_before_v));
+
+                          m_model->addGenConstrIndicator(
+                              path_vel_binary, 1,
+                              m_vars["t_front_departure"](tr, v_before_v) +
+                                      std::min(max_from_front, t_bound_tmp) >=
+                                  m_vars["t_ttd_departure"](tr2, ttd_index),
+                              "headway_ttd_" + std::to_string(ttd_index) +
+                                  "from_front_" +
+                                  sanitize(tr_object.get_name()) + "_" +
+                                  m_instance.get_const_train_list()
+                                      .get_train(tr2)
+                                      .get_name() +
+                                  "_" +
+                                  sanitize(m_instance.get_const_network()
+                                               .get_vertex(v)
+                                               .name) +
+                                  "_" + std::to_string(vel) + "_" +
+                                  std::to_string(p_index) + "_" +
+                                  std::to_string(e_before_v) + "_" +
+                                  std::to_string(vel_before_v));
+                        } else {
+                          const GRBLinExpr lhs_from_front =
+                              m_vars["t_front_departure"](tr, v_before_v) +
+                              std::min(max_from_front, t_bound_tmp) +
+                              t_bound_tmp *
+                                  (static_cast<double>(p_tmp.size()) + 1 -
+                                   m_vars["y"](tr, e_before_v, v_before_v_index,
+                                               v_source_index) -
+                                   edge_tmp_path_expr) +
+                              t_bound_tmp *
+                                  (1 - m_vars["order_ttd"](tr, tr2, ttd_index));
+                          m_model->addConstr(
+                              lhs_from_front >=
+                                  m_vars["t_ttd_departure"](tr2, ttd_index),
+                              "headway_ttd_" + std::to_string(ttd_index) +
+                                  "from_front_" +
+                                  sanitize(tr_object.get_name()) + "_" +
+                                  m_instance.get_const_train_list()
+                                      .get_train(tr2)
+                                      .get_name() +
+                                  "_" +
+                                  sanitize(m_instance.get_const_network()
+                                               .get_vertex(v)
+                                               .name) +
+                                  "_" + std::to_string(vel) + "_" +
+                                  std::to_string(p_index) + "_" +
+                                  std::to_string(e_before_v) + "_" +
+                                  std::to_string(vel_before_v));
+                        }
                       }
                     }
                   }
                 }
               }
               if (is_relevant) {
-                // TODO
-                m_model->addGenConstrIndicator(
-                    path_order_helper_binary, 1,
-                    lhs_from_rear >= m_vars["t_ttd_departure"](tr2, ttd_index),
-                    "headway_ttd_" + sanitize(tr_object.get_name()) + "_" +
-                        m_instance.get_const_train_list()
-                            .get_train(tr2)
-                            .get_name() +
-                        "_" +
-                        sanitize(
-                            m_instance.get_const_network().get_vertex(v).name) +
-                        "_" + std::to_string(vel) + "_" +
-                        std::to_string(p_index) + "_" +
-                        std::to_string(ttd_index));
+                if (m_solver_strategy.use_indicator_constraints) {
+                  m_model->addGenConstrIndicator(
+                      path_order_helper_binary.value(), 1,
+                      lhs_from_rear >=
+                          m_vars["t_ttd_departure"](tr2, ttd_index),
+                      "headway_ttd_" + sanitize(tr_object.get_name()) + "_" +
+                          m_instance.get_const_train_list()
+                              .get_train(tr2)
+                              .get_name() +
+                          "_" +
+                          sanitize(m_instance.get_const_network()
+                                       .get_vertex(v)
+                                       .name) +
+                          "_" + std::to_string(vel) + "_" +
+                          std::to_string(p_index) + "_" +
+                          std::to_string(ttd_index));
+                } else {
+                  m_model->addConstr(
+                      lhs_from_rear +
+                              t_bound_tmp * (static_cast<double>(p_tmp.size()) -
+                                             edge_tmp_path_expr) +
+                              t_bound_tmp * (1 - m_vars["order_ttd"](
+                                                     tr, tr2, ttd_index)) >=
+                          m_vars["t_ttd_departure"](tr2, ttd_index),
+                      "headway_ttd_" + sanitize(tr_object.get_name()) + "_" +
+                          m_instance.get_const_train_list()
+                              .get_train(tr2)
+                              .get_name() +
+                          "_" +
+                          sanitize(m_instance.get_const_network()
+                                       .get_vertex(v)
+                                       .name) +
+                          "_" + std::to_string(vel) + "_" +
+                          std::to_string(p_index) + "_" +
+                          std::to_string(ttd_index));
+                }
               }
             }
           }
