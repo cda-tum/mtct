@@ -212,27 +212,34 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
 
   // Initialize relevant variables
-  EXPECT_THROW(solver.initialize_variables(
-                   {},
-                   {true, true, true,
-                    cda_rail::solver::mip_based::
-                        LazyConstraintSelectionStrategy::OnlyFirstFound},
-                   {true, 5.55, cda_rail::VelocityRefinementStrategy::None}),
-               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(
+      solver.initialize_variables(
+          {},
+          {.use_lazy_constraints                   = true,
+           .include_reverse_headways               = true,
+           .include_higher_velocities_in_edge_expr = true,
+           .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
+               LazyConstraintSelectionStrategy::OnlyFirstFound},
+          {true, 5.55, cda_rail::VelocityRefinementStrategy::None}),
+      cda_rail::exceptions::InvalidInputException);
 
   EXPECT_THROW(solver.initialize_variables(
                    {},
-                   {false, true, true,
-                    cda_rail::solver::mip_based::
-                        LazyConstraintSelectionStrategy::AllChecked},
+                   {.use_lazy_constraints                   = false,
+                    .include_reverse_headways               = true,
+                    .include_higher_velocities_in_edge_expr = true,
+                    .lazy_constraint_selection_strategy     = cda_rail::solver::
+                        mip_based::LazyConstraintSelectionStrategy::AllChecked},
                    {true, 5.55, cda_rail::VelocityRefinementStrategy::None}),
                cda_rail::exceptions::InvalidInputException);
 
   solver.initialize_variables(
       {},
-      {true, false, true,
-       cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
-           OnlyFirstFound},
+      {.use_lazy_constraints                   = true,
+       .include_reverse_headways               = false,
+       .include_higher_velocities_in_edge_expr = true,
+       .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+           LazyConstraintSelectionStrategy::OnlyFirstFound},
       {true, 5.55, cda_rail::VelocityRefinementStrategy::None});
 
   EXPECT_TRUE(solver.m_model_detail.fix_routes);
