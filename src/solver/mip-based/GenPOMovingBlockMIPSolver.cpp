@@ -1497,12 +1497,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                   tr_schedule.get_entry_time(),
         "initial_arrival_time_lb_" + sanitize(tr_object.get_name()));
 
-    // TODO: Add ub if no late entry allowed
-    /**m_model->addConstr(
-        m_vars["t_front_arrival"](tr, tr_schedule.get_entry_vertex()) <=
-            tr_schedule.get_entry_time(),
-        "initial_arrival_time_ub_" + sanitize(tr_object.get_name()));**/
-
     // Final
     m_model->addConstr(
         m_vars["t_rear_departure"](tr, tr_schedule.get_exit_vertex()) >=
