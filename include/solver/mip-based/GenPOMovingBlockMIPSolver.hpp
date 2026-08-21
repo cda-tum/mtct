@@ -59,6 +59,7 @@ enum class LazyTrainSelectionStrategy : std::uint8_t {
 };
 
 struct SolverStrategyMovingBlock {
+  bool use_indicator_constraints = false;
   bool use_lazy_constraints =
       true; // If false, the following settings are ignored
   bool include_reverse_headways               = false;

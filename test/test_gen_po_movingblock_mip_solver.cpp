@@ -1304,6 +1304,27 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1) {
   }
 }
 
+TEST(GenPOMovingBlockMIPSolver, NoLazy1Indicator) {
+  const std::vector<std::string> paths{"SimpleStation"};
+
+  for (const auto& p : paths) {
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto sol = solver.solve({.max_exit_delay = 0.0},
+                                  {.use_indicator_constraints = true,
+                                   .use_lazy_constraints      = false,
+                                   .abs_mip_gap               = 10},
+                                  {}, 700);
+
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+    check_objective_if_optimal_or_warn(sol, p, 10);
+
+    check_last_train_pos(instance, sol, p);
+  }
+}
+
 TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
   const std::vector<std::string> paths{"SimpleNetwork"};
 
