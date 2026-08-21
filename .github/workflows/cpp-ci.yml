@@ -180,24 +180,20 @@ jobs:
       - name: Build
         run: cmake --build build --config Debug
       - name: Test
-        shell: powershell
         env:
-          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}\build\test\rail_test_warnings.log
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
         run: |
-          if (Test-Path $env:CDA_RAIL_WARNING_FILE) {
-            Remove-Item $env:CDA_RAIL_WARNING_FILE -Force
-          }
+          rm -f "$CDA_RAIL_WARNING_FILE"
           ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:2 --timeout 750
       - name: Print warning summary
         if: always()
-        shell: powershell
         env:
-          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}\build\test\rail_test_warnings.log
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
         run: |
-          if ((Test-Path $env:CDA_RAIL_WARNING_FILE) -and ((Get-Item $env:CDA_RAIL_WARNING_FILE).Length -gt 0)) {
-            Write-Output "[ WARNING SUMMARY ]"
-            Get-Content $env:CDA_RAIL_WARNING_FILE
-          }
+          if [ -s "$CDA_RAIL_WARNING_FILE" ]; then
+            echo "[ WARNING SUMMARY ]"
+            cat "$CDA_RAIL_WARNING_FILE"
+          fi
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
