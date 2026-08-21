@@ -227,9 +227,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_name =
         m_instance.get_const_train_list().get_train(tr).get_name();
-    const auto& exit_time = m_instance.get_const_schedule(tr).get_exit_time();
-    const auto  max_time =
-        std::min(exit_time + m_model_detail.max_exit_delay, GRB_INFINITY);
+    auto const& latest_tr_exit_time = latest_exit_time(tr);
+    const auto  max_time = std::min(latest_tr_exit_time, GRB_INFINITY);
     for (const auto v : m_instance.vertices_used_by_train(
              tr, m_model_detail.fix_routes, false)) {
       const auto& v_name = m_instance.get_const_network().get_vertex(v).name;
@@ -331,9 +330,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_name =
         m_instance.get_const_train_list().get_train(tr).get_name();
-    const auto& exit_time = m_instance.get_const_schedule(tr).get_exit_time();
-    const auto  max_time =
-        std::min(exit_time + m_model_detail.max_exit_delay, GRB_INFINITY);
+    auto const& latest_tr_exit_time = latest_exit_time(tr);
+    const auto  max_time = std::min(latest_tr_exit_time, GRB_INFINITY);
     for (size_t stop = 0;
          stop < m_instance.get_const_schedule(tr).get_stops().size(); stop++) {
       const auto& stop_name = m_instance.get_const_schedule(tr)
@@ -643,6 +641,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   this->fill_tr_stop_data();
   this->fill_velocity_extensions();
   this->fill_relevant_reverse_edges();
+}
+double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::latest_exit_time(
+    size_t tr) const {
+  auto const& exit_time = m_instance.get_const_schedule(tr).get_exit_time();
+  return exit_time + m_model_detail.max_exit_delay;
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -2406,6 +2409,8 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
   const auto& v_source_velocities = m_velocity_extensions.at(tr).at(v_source);
   const auto& v_target_velocities = m_velocity_extensions.at(tr).at(v_target);
 
+  auto const& latest_tr_exit_time = latest_exit_time(tr);
+
   const auto& tr_schedule_object = m_instance.get_const_schedule(tr);
   const auto& entry_node         = tr_schedule_object.get_entry_vertex();
 
@@ -2438,8 +2443,9 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
             tr_object.get_deceleration());
 
         // Bound hw to [-M,M]
-        hw_tmp     = std::clamp(hw_tmp, -M, M);
-        hw_tmp_ttd = std::clamp(hw_tmp_ttd, -M, M);
+        hw_tmp = std::clamp(hw_tmp, -latest_tr_exit_time, latest_tr_exit_time);
+        hw_tmp_ttd =
+            std::clamp(hw_tmp_ttd, -latest_tr_exit_time, latest_tr_exit_time);
 
         hw_max     = std::max(hw_tmp, hw_max);
         hw_max_ttd = std::max(hw_tmp_ttd, hw_max_ttd);

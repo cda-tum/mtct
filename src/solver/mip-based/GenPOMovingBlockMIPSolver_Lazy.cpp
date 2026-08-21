@@ -264,6 +264,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
        tr++) {
     const auto& tr_object =
         solver->m_instance.get_const_train_list().get_train(tr);
+    const auto  t_bound = solver->latest_exit_time(tr);
     const auto& entry =
         solver->m_instance.get_const_schedule(tr).get_entry_vertex();
     // Check every vertex except the last one, because only vertex headway is
@@ -393,13 +394,15 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             add_constr = true;
           }
 
+          const auto t_bound_tmp =
+              std::max(t_bound, solver->latest_exit_time(tr_other_idx));
+
           if (add_constr) {
-            // TODO: Can GRB_INFINITY be removed -> problem: lazily no new
-            // helper variables
             const GRBLinExpr lhs =
                 tr_t_var +
-                M * (static_cast<double>(p.size()) - edge_path_expr) +
-                M * (1 - solver->m_vars["order"](tr, tr_other_idx, p.back()));
+                t_bound_tmp * (static_cast<double>(p.size()) - edge_path_expr) +
+                t_bound_tmp *
+                    (1 - solver->m_vars["order"](tr, tr_other_idx, p.back()));
             std::vector<GRBLinExpr> rhs;
             if (std::abs(rel_e_obj.length - rel_pos_on_edge) < EPS) {
               rhs.emplace_back(tr_other_target_var);
@@ -453,12 +456,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                             tr_other_object.get_deceleration(),
                             rel_e_obj.length, rel_pos_on_edge,
                             rel_e_obj.breakable);
-                    rhs.at(1) -=
-                        solver->m_vars["y"](tr_other_idx, rel_e_idx,
-                                            v_tr_other_source_index,
-                                            v_tr_other_target_index) *
-                        (max_travel_time > GRB_INFINITY ? GRB_INFINITY
-                                                        : max_travel_time);
+                    rhs.at(1) -= solver->m_vars["y"](tr_other_idx, rel_e_idx,
+                                                     v_tr_other_source_index,
+                                                     v_tr_other_target_index) *
+                                 std::min(max_travel_time, t_bound_tmp);
                   }
                 }
               }
@@ -606,12 +607,13 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             }
 
             if (add_constr) {
-              // NOLINTNEXTLINE(misc-const-correctness)
-              // TODO: Can GRB_INFINTIY be remove -> helper vars cannot be added
-              // lazily
+              const auto t_bound_tmp =
+                  std::max(t_bound, solver->latest_exit_time(other_tr));
+
               GRBLinExpr const rhs =
                   other_tr_t_variable +
-                  M * (solver->m_vars["order_ttd"](tr, other_tr, ttd_index) -
+                  t_bound_tmp *
+                      (solver->m_vars["order_ttd"](tr, other_tr, ttd_index) -
                        1);
               std::vector<GRBLinExpr> lhs;
               if (prev_edge_index.has_value()) {
@@ -629,7 +631,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                         .begin();
                 lhs.emplace_back(
                     tr_t_var - t_reduction +
-                    M * (static_cast<double>(p_tmp.size()) -
+                    t_bound_tmp *
+                        (static_cast<double>(p_tmp.size()) -
                          edge_tmp_path_expr + 1 -
                          solver->m_vars["y"](tr, prev_edge_index.value(),
                                              prev_vel_idx, vel_idx)));
@@ -637,7 +640,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   assert(prev_t_var.has_value());
                   lhs.emplace_back(
                       prev_t_var.value() + t_addition.value() +
-                      M * (static_cast<double>(p_tmp.size()) -
+                      t_bound_tmp *
+                          (static_cast<double>(p_tmp.size()) -
                            edge_tmp_path_expr + 1 -
                            solver->m_vars["y"](tr, prev_edge_index.value(),
                                                prev_vel_idx, vel_idx)));
@@ -646,7 +650,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                 // Entry node
                 assert(v_idx == entry);
                 lhs.emplace_back(tr_t_var - t_reduction +
-                                 M * (static_cast<double>(p_tmp.size()) -
+                                 t_bound_tmp *
+                                     (static_cast<double>(p_tmp.size()) -
                                       edge_tmp_path_expr));
               }
 
@@ -688,6 +693,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   for (size_t tr = 0; tr < solver->m_num_tr &&
                       (!only_one_constraint || !violated_constraint_found);
        tr++) {
+    const auto tr_t_bound = solver->latest_exit_time(tr);
     const auto tr_object =
         solver->m_instance.get_const_train_list().get_train(tr);
     // Check every vertex on the route
@@ -796,6 +802,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             getSolution(tr_t_var_target_front) -
                     getSolution(other_tr_t_var_target_rear) <
                 hw_t1_value - GRB_EPS) {
+          const auto t_bound_tmp =
+              std::max(tr_t_bound, solver->latest_exit_time(other_tr));
+
           // Introduce basic constraints on order
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr order_expr =
@@ -809,18 +818,18 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 
           // Add headway constraints
           // NOLINTNEXTLINE(misc-const-correctness)
-          // TODO: Can GRB_INFINITY be removed -> Problem: indicator
-          // constraints cannot be added lazily
           GRBLinExpr const lhs_source =
               tr_t_var_source_front +
-              M * (1 - solver->m_vars["order"](tr, other_tr, edge_index));
+              t_bound_tmp *
+                  (1 - solver->m_vars["order"](tr, other_tr, edge_index));
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr rhs_source = other_tr_t_var_source_rear + hw_s1;
 
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr lhs_target =
               tr_t_var_target_front +
-              M * (1 - solver->m_vars["order"](tr, other_tr, edge_index));
+              t_bound_tmp *
+                  (1 - solver->m_vars["order"](tr, other_tr, edge_index));
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr rhs_target = other_tr_t_var_target_rear + hw_t1;
 
@@ -833,14 +842,16 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr lhs_source_2 =
               other_tr_t_var_source_front +
-              M * (1 - solver->m_vars["order"](other_tr, tr, edge_index));
+              t_bound_tmp *
+                  (1 - solver->m_vars["order"](other_tr, tr, edge_index));
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr rhs_source_2 = tr_t_var_source_rear + hw_s2;
 
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr lhs_target_2 =
               other_tr_t_var_target_front +
-              M * (1 - solver->m_vars["order"](other_tr, tr, edge_index));
+              t_bound_tmp *
+                  (1 - solver->m_vars["order"](other_tr, tr, edge_index));
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr rhs_target_2 = tr_t_var_target_rear + hw_t2;
 
@@ -902,6 +913,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         const auto& tr1_t_var_value_front = getSolution(tr1_t_var_front);
         const auto& tr1_t_var_rear        = solver->m_vars["t_rear_departure"](
             tr1, tr1_direction ? e_obj.target : e_obj.source);
+        const auto tr1_t_bound = solver->latest_exit_time(tr1);
 
         size_t       lb_idx = 0;
         const size_t ub_idx = tr1_idx;
@@ -933,8 +945,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           if (solver->m_solver_strategy.lazy_constraint_selection_strategy ==
                   LazyConstraintSelectionStrategy::AllChecked ||
               tr1_t_var_value_front < tr2_t_var_value_rear - GRB_EPS) {
-            const auto& tr1_edge = tr1_direction ? e1 : e2;
-            const auto& tr2_edge = tr2_direction ? e1 : e2;
+            const auto  tr2_t_bound = solver->latest_exit_time(tr2);
+            const auto  t_bound     = std::max(tr1_t_bound, tr2_t_bound);
+            const auto& tr1_edge    = tr1_direction ? e1 : e2;
+            const auto& tr2_edge    = tr2_direction ? e1 : e2;
 
             // NOLINTNEXTLINE(misc-const-correctness)
             GRBLinExpr lhs1 = solver->m_vars["reverse_order"](tr1, tr2, idx) +
@@ -944,17 +958,15 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                               solver->m_vars["x"](tr2, tr2_edge) - 1;
 
             // NOLINTNEXTLINE(misc-const-correctness)
-            // TODO: Can GRB_INFINITY be removed -> Problem: addLazy does not
-            // support indicator constraints
             GRBLinExpr const lhs2 =
                 tr1_t_var_front +
-                M * (1 - solver->m_vars["reverse_order"](tr1, tr2, idx));
+                t_bound * (1 - solver->m_vars["reverse_order"](tr1, tr2, idx));
             // NOLINTNEXTLINE(misc-const-correctness)
             GRBLinExpr rhs2 = tr2_t_var_rear;
             // NOLINTNEXTLINE(misc-const-correctness)
             GRBLinExpr lhs3 =
                 tr2_t_var_front +
-                M * (1 - solver->m_vars["reverse_order"](tr2, tr1, idx));
+                t_bound * (1 - solver->m_vars["reverse_order"](tr2, tr1, idx));
             // NOLINTNEXTLINE(misc-const-correctness)
             GRBLinExpr rhs3 = tr1_t_var_rear;
 
@@ -1000,6 +1012,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   for (size_t tr = 0; tr < solver->m_num_tr &&
                       (!only_one_constraint || !violated_constraint_found);
        tr++) {
+    const auto tr_t_bound = solver->latest_exit_time(tr);
     const auto tr_object =
         solver->m_instance.get_const_train_list().get_train(tr);
     // Check every vertex on the route
@@ -1070,13 +1083,15 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           add_constr = true;
         }
 
+        const auto t_bound_tmp =
+            std::max(tr_t_bound, solver->latest_exit_time(tr_other_idx));
+
         if (add_constr) {
           // NOLINTNEXTLINE(misc-const-correctness)
-          // TODO: Can GRB_INFINITY be removed -> problem indicator constraints
-          // cannot be added lazily
           GRBLinExpr const lhs =
               tr_t_var - tr_other_t_var +
-              M * (1 - solver->m_vars["order"](tr, tr_other_idx, edge_index));
+              (t_bound_tmp + hw_max) *
+                  (1 - solver->m_vars["order"](tr, tr_other_idx, edge_index));
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr rhs = headway_tr_on_e;
           addLazy(lhs >= rhs);
@@ -1153,12 +1168,14 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               add_constr = true;
             }
 
+            const auto t_bound_tmp =
+                std::max(tr_t_bound, solver->latest_exit_time(tr_other_ttd));
+
             if (add_constr) {
               // NOLINTNEXTLINE(misc-const-correctness)
-              // TODO: Can GRB_INFINITY be removed -> Problem: indicator
-              // constraints cannot be added lazily
               GRBLinExpr const lhs = tr_t_var - tr_other_t_var_ttd +
-                                     M * (1 - solver->m_vars["order_ttd"](
+                                     (t_bound_tmp + hw_max_ttd) *
+                                         (1 - solver->m_vars["order_ttd"](
                                                   tr, tr_other_ttd, ttd_index));
               // NOLINTNEXTLINE(misc-const-correctness)
               GRBLinExpr rhs = headway_tr_on_ttd;
