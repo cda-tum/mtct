@@ -4,6 +4,8 @@ macro(PACKAGE_ADD_TEST testname linklibs)
   add_executable(${testname} ${ARGN})
   # link the Google test infrastructure and a default main function to the test executable.
   target_link_libraries(${testname} PRIVATE ${linklibs} gmock gtest_main)
+  file(TO_CMAKE_PATH "${CMAKE_CURRENT_BINARY_DIR}" warning_root_dir)
+  target_compile_definitions(${testname} PRIVATE CDA_RAIL_TEST_WARNING_ROOT="${warning_root_dir}")
 
   set(warning_file "${CMAKE_CURRENT_BINARY_DIR}/${testname}_warnings.log")
   file(REMOVE "${warning_file}")

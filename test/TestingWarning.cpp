@@ -3,6 +3,7 @@
 #include "gtest/gtest.h"
 #include <chrono>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -34,16 +35,58 @@ std::vector<WarningEntry>& warning_entries() {
   return entries;
 }
 
-std::string warning_file_path_from_env() {
-  const char* warning_file = std::getenv("CDA_RAIL_WARNING_FILE");
-  if (warning_file == nullptr) {
-    return "";
-  }
-  return warning_file;
+std::filesystem::path warning_file_root() {
+#ifdef CDA_RAIL_TEST_WARNING_ROOT
+  return std::filesystem::path(CDA_RAIL_TEST_WARNING_ROOT).lexically_normal();
+#else
+  return std::filesystem::current_path().lexically_normal();
+#endif
 }
 
-void append_warning_to_file(const std::string& warning_file,
-                            const std::string& warning_line) {
+bool is_path_within_directory(const std::filesystem::path& candidate,
+                              const std::filesystem::path& directory) {
+  const auto normalized_candidate = candidate.lexically_normal();
+  const auto normalized_directory = directory.lexically_normal();
+
+  auto candidate_it = normalized_candidate.begin();
+  auto directory_it = normalized_directory.begin();
+  for (; directory_it != normalized_directory.end();
+       ++directory_it, ++candidate_it) {
+    if (candidate_it == normalized_candidate.end() ||
+        *candidate_it != *directory_it) {
+      return false;
+    }
+  }
+  return true;
+}
+
+std::filesystem::path warning_file_path_from_env() {
+  const char* warning_file = std::getenv("CDA_RAIL_WARNING_FILE");
+  if (warning_file == nullptr) {
+    return {};
+  }
+
+  std::filesystem::path warning_path(warning_file);
+  if (warning_path.empty() || !warning_path.has_filename()) {
+    return {};
+  }
+
+  const auto root = warning_file_root();
+  if (!warning_path.is_absolute()) {
+    warning_path = root / warning_path;
+  }
+  warning_path = warning_path.lexically_normal();
+
+  if (!is_path_within_directory(warning_path, root)) {
+    std::cerr << "Ignoring unsafe test warning file path: " << warning_path
+              << '\n';
+    return {};
+  }
+  return warning_path;
+}
+
+void append_warning_to_file(const std::filesystem::path& warning_file,
+                            const std::string&           warning_line) {
   for (std::size_t attempt = 0; attempt < 100; ++attempt) {
     std::ofstream output(warning_file, std::ios::app);
     if (output.is_open()) {
