@@ -72,14 +72,14 @@ jobs:
         run: cmake --build build --config Debug
       - name: Test
         env:
-          CDA_RAIL_WARNING_FILE: ${{ runner.temp }}/rail_test_warnings.log
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
         run: |
           rm -f "$CDA_RAIL_WARNING_FILE"
           ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:2 --timeout 750
       - name: Print warning summary
         if: always()
         env:
-          CDA_RAIL_WARNING_FILE: ${{ runner.temp }}/rail_test_warnings.log
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
         run: |
           if [ -s "$CDA_RAIL_WARNING_FILE" ]; then
             echo "[ WARNING SUMMARY ]"
@@ -119,14 +119,14 @@ jobs:
         run: cmake --build build --config Debug
       - name: Test
         env:
-          CDA_RAIL_WARNING_FILE: ${{ runner.temp }}/rail_test_warnings.log
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
         run: |
           rm -f "$CDA_RAIL_WARNING_FILE"
           ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:2 --timeout 750
       - name: Print warning summary
         if: always()
         env:
-          CDA_RAIL_WARNING_FILE: ${{ runner.temp }}/rail_test_warnings.log
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
         run: |
           if [ -s "$CDA_RAIL_WARNING_FILE" ]; then
             echo "[ WARNING SUMMARY ]"
@@ -182,7 +182,7 @@ jobs:
       - name: Test
         shell: powershell
         env:
-          CDA_RAIL_WARNING_FILE: ${{ runner.temp }}\rail_test_warnings.log
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}\build\test\rail_test_warnings.log
         run: |
           if (Test-Path $env:CDA_RAIL_WARNING_FILE) {
             Remove-Item $env:CDA_RAIL_WARNING_FILE -Force
@@ -192,7 +192,7 @@ jobs:
         if: always()
         shell: powershell
         env:
-          CDA_RAIL_WARNING_FILE: ${{ runner.temp }}\rail_test_warnings.log
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}\build\test\rail_test_warnings.log
         run: |
           if ((Test-Path $env:CDA_RAIL_WARNING_FILE) -and ((Get-Item $env:CDA_RAIL_WARNING_FILE).Length -gt 0)) {
             Write-Output "[ WARNING SUMMARY ]"
@@ -230,14 +230,14 @@ jobs:
         run: cmake --build build --config Debug --target rail_test
       - name: Test
         env:
-          CDA_RAIL_WARNING_FILE: ${{ runner.temp }}/rail_test_warnings.log
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
         run: |
           rm -f "$CDA_RAIL_WARNING_FILE"
           ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:2 --timeout 750
       - name: Print warning summary
         if: always()
         env:
-          CDA_RAIL_WARNING_FILE: ${{ runner.temp }}/rail_test_warnings.log
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
         run: |
           if [ -s "$CDA_RAIL_WARNING_FILE" ]; then
             echo "[ WARNING SUMMARY ]"
