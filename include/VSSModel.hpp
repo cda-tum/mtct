@@ -92,8 +92,6 @@ namespace functions {
 }
 } // namespace functions
 
-// NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if)
-#if 0
 class Model {
 private:
   ModelType                       model_type       = ModelType::Continuous;
@@ -115,10 +113,10 @@ public:
         separation_functions(std::move(separation_functions_input)) {}
 
   /**
- * @brief Retrieves the model type.
- *
- * @return const ModelType& A constant reference to the model type.
- */
+   * @brief Retrieves the model type.
+   *
+   * @return const ModelType& A constant reference to the model type.
+   */
   [[nodiscard]] const ModelType& get_model_type() const { return model_type; }
   [[nodiscard]] bool get_only_stop_at_vss() const { return only_stop_at_vss; }
   [[nodiscard]] const std::vector<SeparationFunction>&
@@ -130,9 +128,11 @@ public:
   }
 
   /**
-   * @brief Validates that the model type and separation functions are consistently configured.
+   * @brief Validates that the model type and separation functions are
+   * consistently configured.
    *
-   * Checks that the model_type and separation_functions match one of these valid configurations:
+   * Checks that the model_type and separation_functions match one of these
+   * valid configurations:
    * - `Discrete` with exactly 1 separation function
    * - `Continuous` with 0 separation functions
    * - `Inferred` with at least 1 separation function
@@ -162,5 +162,4 @@ public:
     return false;
   }
 };
-#endif
 } // namespace cda_rail::vss

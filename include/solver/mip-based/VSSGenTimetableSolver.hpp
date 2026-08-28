@@ -49,9 +49,9 @@ struct ModelDetailMBInformation {
 
 struct ModelSettings {
   // NOLINTNEXTLINE(readability-redundant-member-init)
-  vss::ModelType model_type        = vss::ModelType();
-  bool           use_pwl           = false;
-  bool           use_schedule_cuts = true;
+  vss::Model model_type{};
+  bool       use_pwl{false};
+  bool       use_schedule_cuts{true};
 };
 
 class VSSGenTimetableSolver
@@ -77,7 +77,7 @@ private:
   cda_rail::index_vector relevant_edges;
   cda_rail::index_vector breakable_edges;
   bool                   fix_routes{false};
-  vss::ModelType         vss_model{vss::ModelType::Continuous};
+  vss::Model             vss_model{vss::ModelType::Continuous};
   bool                   include_train_dynamics{false};
   bool                   include_braking_curves{false};
   bool                   use_pwl{false};
