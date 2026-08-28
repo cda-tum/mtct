@@ -27,11 +27,11 @@ add_library(
   ${PROJECT_SOURCE_DIR}/include/FixedSizeVector.hpp
   ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
   ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp
-  # ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
-  # solver/mip-based/VSSGenTimetableSolver_general.cpp
-  # solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
-  # solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
-  # solver/mip-based/VSSGenTimetableSolver_helper.cpp
+  ${PROJECT_SOURCE_DIR}/include/solver/mip-based/VSSGenTimetableSolver.hpp
+  solver/mip-based/VSSGenTimetableSolver_general.cpp
+  solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
+  solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
+  solver/mip-based/VSSGenTimetableSolver_helper.cpp
   # solver/mip-based/VSSGenTimetableSolver_MovingBlockInformation.cpp
   ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GeneralMIPSolver.hpp
   ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GenPOMovingBlockMIPSolver.hpp

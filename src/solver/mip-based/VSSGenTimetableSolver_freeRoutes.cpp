@@ -42,24 +42,28 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       for (size_t e = 0; e < num_edges; ++e) {
         const auto& edge = instance.get_editable_network().get_edge(e);
         const auto& edge_name =
-            "[" + instance.get_editable_network().get_vertex(edge.source).name + "," +
-            instance.get_editable_network().get_vertex(edge.target).name + "]";
+            "[" + instance.get_editable_network().get_vertex(edge.source).name +
+            "," + instance.get_editable_network().get_vertex(edge.target).name +
+            "]";
         if (t < train_interval[tr].second) {
           vars["overlap"](tr, t, e) = model->addVar(
-              0, instance.get_editable_network().get_edge(e).length, 0, GRB_CONTINUOUS,
+              0, instance.get_editable_network().get_edge(e).length, 0,
+              GRB_CONTINUOUS,
               "overlap_" + tr_name + "_" + std::to_string(t * dt) + "_" +
                   edge_name);
         }
         vars["e_lda"](tr, t, e) =
-            model->addVar(0, instance.get_editable_network().get_edge(e).length, 0, GRB_CONTINUOUS,
+            model->addVar(0, instance.get_editable_network().get_edge(e).length,
+                          0, GRB_CONTINUOUS,
                           "e_lda_" + tr_name + "_" + std::to_string(t * dt) +
                               "_" + edge_name);
         vars["e_mu"](tr, t, e) = model->addVar(
-            0, instance.get_editable_network().get_edge(e).length, 0, GRB_CONTINUOUS,
+            0, instance.get_editable_network().get_edge(e).length, 0,
+            GRB_CONTINUOUS,
             "e_mu_" + tr_name + "_" + std::to_string(t * dt) + "_" + edge_name);
       }
       for (size_t v = 0; v < num_vertices; ++v) {
-        const auto& v_name    = instance.get_editable_network().get_vertex(v).name;
+        const auto& v_name = instance.get_editable_network().get_vertex(v).name;
         vars["x_v"](tr, t, v) = model->addVar(
             0, 1, 0, GRB_BINARY,
             "x_v_" + tr_name + "_" + std::to_string(t * dt) + "_" + v_name);
@@ -173,9 +177,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       // Switches are obeyed, i.e., illegal movements prohibited
       // And train does not go backwards
       for (size_t e1 = 0; e1 < num_edges; ++e1) {
-        const auto& v         = instance.get_editable_network().get_edge(e1).target;
+        const auto& v = instance.get_editable_network().get_edge(e1).target;
         const auto& out_edges = instance.get_editable_network().out_edges(v);
-        const auto& e_len     = instance.get_editable_network().get_edge(e1).length;
+        const auto& e_len = instance.get_editable_network().get_edge(e1).length;
         for (const auto& e2 : out_edges) {
           if (t < train_interval[tr].second &&
               instance.get_editable_network().is_valid_successor(e1, e2)) {
@@ -186,7 +190,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                              "train_pos_no_backwards_" + tr_name + "_" +
                                  std::to_string(t) + "_" + std::to_string(e1) +
                                  "_" + std::to_string(e2));
-          } else if (!instance.get_editable_network().is_valid_successor(e1, e2)) {
+          } else if (!instance.get_editable_network().is_valid_successor(e1,
+                                                                         e2)) {
             // Prohibit illegal movement
             // x_e1 + x_e2 <= 1
             model->addConstr(
@@ -267,10 +272,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
       // Determine overlap value per edge
       for (size_t e = 0; e < num_edges; ++e) {
-        const auto& e_v0      = instance.get_editable_network().get_edge(e).source;
-        const auto& e_v1      = instance.get_editable_network().get_edge(e).target;
+        const auto& e_v0 = instance.get_editable_network().get_edge(e).source;
+        const auto& e_v1 = instance.get_editable_network().get_edge(e).target;
         const auto& out_edges = instance.get_editable_network().out_edges(e_v1);
-        const auto& e_len     = instance.get_editable_network().get_edge(e).length;
+        const auto& e_len = instance.get_editable_network().get_edge(e).length;
 
         // overlap >= e_mu(t) - e_lda(t+1) if e is occupied at t+1, i.e.,
         // overlap_e + e_len * (1 - x_e(t+1)) >= e_mu(t) - e_lda(t+1)
@@ -371,11 +376,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& entry   = instance.get_schedule(tr).get_entry();
     const auto& exit    = instance.get_schedule(tr).get_exit();
     for (size_t e = 0; e < num_edges; ++e) {
-      const auto& e_v0      = instance.get_editable_network().get_edge(e).source;
-      const auto& e_v1      = instance.get_editable_network().get_edge(e).target;
-      const auto& in_edges  = instance.get_editable_network().in_edges(e_v0);
+      const auto& e_v0     = instance.get_editable_network().get_edge(e).source;
+      const auto& e_v1     = instance.get_editable_network().get_edge(e).target;
+      const auto& in_edges = instance.get_editable_network().in_edges(e_v0);
       const auto& out_edges = instance.get_editable_network().out_edges(e_v1);
-      const auto& e_len     = instance.get_editable_network().get_edge(e).length;
+      const auto& e_len = instance.get_editable_network().get_edge(e).length;
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         // e_lda <= e_mu
@@ -471,7 +476,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
    * Impossible positions cut off due to schedule.
    */
 
-  const auto apsp = instance.get_editable_network().all_edge_pairs_shortest_paths();
+  const auto apsp =
+      instance.get_editable_network().all_edge_pairs_shortest_paths();
 
   const auto& train_list = instance.get_train_list();
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
@@ -503,10 +509,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
         // Constraint inferred from before position
         if (before_after_struct.t_before <= train_interval[tr].first) {
-          const auto e_before =
-              instance.get_editable_network().out_edges(instance.get_schedule(tr).get_entry())[0];
-          const auto& e_len_before = instance.get_editable_network().get_edge(e_before).length;
-          dist_before              = apsp[e_before][e] + e_len_before - e_len;
+          const auto e_before = instance.get_editable_network().out_edges(
+              instance.get_schedule(tr).get_entry())[0];
+          const auto& e_len_before =
+              instance.get_editable_network().get_edge(e_before).length;
+          dist_before = apsp[e_before][e] + e_len_before - e_len;
         } else {
           dist_before = INF;
           for (const auto& e_tmp : before_after_struct.edges_before) {
@@ -534,14 +541,15 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
         // Constraint inferred from after position
         if (before_after_struct.t_after >= train_interval[tr].second) {
-          const auto e_after =
-              instance.get_editable_network().in_edges(instance.get_schedule(tr).get_exit())[0];
+          const auto e_after = instance.get_editable_network().in_edges(
+              instance.get_schedule(tr).get_exit())[0];
           dist_after = apsp[e][e_after];
         } else {
           dist_after = INF;
           for (const auto& e_tmp : before_after_struct.edges_after) {
             const auto tmp_val =
-                apsp[e][e_tmp] - instance.get_editable_network().get_edge(e_tmp).length;
+                apsp[e][e_tmp] -
+                instance.get_editable_network().get_edge(e_tmp).length;
             dist_after = std::min(tmp_val, dist_after);
           }
         }
@@ -577,9 +585,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).name;
     for (size_t e_index = 0; e_index < breakable_edges.size(); ++e_index) {
-      const auto& e            = breakable_edges[e_index];
-      const auto& e_len        = instance.get_editable_network().get_edge(e).length;
-      const auto  vss_number_e = instance.get_editable_network().max_vss_on_edge(e);
+      const auto& e     = breakable_edges[e_index];
+      const auto& e_len = instance.get_editable_network().get_edge(e).length;
+      const auto  vss_number_e =
+          instance.get_editable_network().max_vss_on_edge(e);
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
@@ -680,13 +689,15 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_free_routes_only_stop_at_vss_constraints() {
   // For every breakable edge position exactly b_pos if tight
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
-    const auto& e            = breakable_edges[i];
-    const auto  vss_number_e = instance.get_editable_network().max_vss_on_edge(e);
-    const auto& edge         = instance.get_editable_network().get_edge(e);
-    const auto& edge_name    = "[" + instance.get_editable_network().get_vertex(edge.source).name +
-                               "," + instance.get_editable_network().get_vertex(edge.target).name +
-                               "]";
-    const auto& e_len        = edge.length;
+    const auto& e = breakable_edges[i];
+    const auto  vss_number_e =
+        instance.get_editable_network().max_vss_on_edge(e);
+    const auto& edge = instance.get_editable_network().get_edge(e);
+    const auto& edge_name =
+        "[" + instance.get_editable_network().get_vertex(edge.source).name +
+        "," + instance.get_editable_network().get_vertex(edge.target).name +
+        "]";
+    const auto& e_len = edge.length;
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
       for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
         const auto& tr_name = instance.get_train_list().get_train(tr).name;
@@ -711,11 +722,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   // Analog for every edge ending
   for (size_t e = 0; e < num_edges; ++e) {
-    const auto& edge      = instance.get_editable_network().get_edge(e);
-    const auto& edge_name = "[" + instance.get_editable_network().get_vertex(edge.source).name +
-                            "," + instance.get_editable_network().get_vertex(edge.target).name +
-                            "]";
-    const auto& e_len     = edge.length;
+    const auto& edge = instance.get_editable_network().get_edge(e);
+    const auto& edge_name =
+        "[" + instance.get_editable_network().get_vertex(edge.source).name +
+        "," + instance.get_editable_network().get_vertex(edge.target).name +
+        "]";
+    const auto& e_len = edge.length;
     for (const size_t tr : instance.trains_on_edge(e, this->fix_routes)) {
       const auto& tr_name = instance.get_train_list().get_train(tr).name;
       for (size_t t = train_interval[tr].first + 2;

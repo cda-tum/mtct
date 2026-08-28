@@ -261,9 +261,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
 
   IF_PLOG(plog::debug) {
     const auto& u =
-        instance.get_editable_network().get_vertex(instance.get_editable_network().get_edge(e).source).name;
+        instance.get_editable_network()
+            .get_vertex(instance.get_editable_network().get_edge(e).source)
+            .name;
     const auto& v =
-        instance.get_editable_network().get_vertex(instance.get_editable_network().get_edge(e).target).name;
+        instance.get_editable_network()
+            .get_vertex(instance.get_editable_network().get_edge(e).target)
+            .name;
     PLOGD << "Update possible VSS on edge " << u << " -> " << v << " from "
           << old_max_vss << " to " << new_max_vss;
   }
@@ -413,19 +417,22 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
 
   if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     // Sections of discretized graph
-    no_border_vss_sections = instance.get_editable_network().no_border_vss_sections();
+    no_border_vss_sections =
+        instance.get_editable_network().no_border_vss_sections();
     num_breakable_sections = no_border_vss_sections.size();
     no_border_vss_vertices =
-        instance.get_editable_network().get_vertices_by_type(VertexType::NoBorderVSS);
+        instance.get_editable_network().get_vertices_by_type(
+            VertexType::NoBorderVSS);
   } else {
     // Sections of non-discretized graph
     breakable_edges = instance.get_editable_network().breakable_edges();
     for (size_t i = 0; i < breakable_edges.size(); ++i) {
       breakable_edge_indices[breakable_edges[i]] = i;
     }
-    breakable_edges_pairs = instance.get_editable_network().combine_reverse_edges(breakable_edges);
+    breakable_edges_pairs =
+        instance.get_editable_network().combine_reverse_edges(breakable_edges);
     num_breakable_sections = breakable_edges.size();
-    relevant_edges         = instance.get_editable_network().relevant_breakable_edges();
+    relevant_edges = instance.get_editable_network().relevant_breakable_edges();
   }
 
   for (size_t i = 0; i < num_tr; ++i) {
@@ -440,8 +447,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
 
   max_vss_per_edge_in_iteration.resize(relevant_edges.size(), 0);
   for (size_t i = 0; i < relevant_edges.size(); ++i) {
-    const auto& e            = relevant_edges.at(i);
-    const auto  vss_number_e = instance.get_editable_network().max_vss_on_edge(e);
+    const auto& e = relevant_edges.at(i);
+    const auto  vss_number_e =
+        instance.get_editable_network().max_vss_on_edge(e);
     if (iterative_vss) {
       if (iterative_update_strategy == UpdateStrategy::Fixed) {
         max_vss_per_edge_in_iteration[i] = std::min(
@@ -569,7 +577,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
         if (static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1 <
                 obj_lb_tmp &&
             max_vss_per_edge_in_iteration.at(i) <
-                instance.get_const_network().max_vss_on_edge(relevant_edges.at(i))) {
+                instance.get_const_network().max_vss_on_edge(
+                    relevant_edges.at(i))) {
           obj_lb_tmp =
               static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1;
         }
