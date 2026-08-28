@@ -267,12 +267,12 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     load_solution(const std::filesystem::path&      working_directory,
-                  std::string_view const            solution_subdirectory,
+                  std::string_view const            solutionSubdirectory,
                   std::optional<std::string> const& parameter_identifier) {
   SolGeneralProblemInstanceWithScheduleAndRoutes::load_solution(
-      working_directory, solution_subdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
 
-  const auto p = get_export_path(working_directory, solution_subdirectory,
+  const auto p = get_export_path(working_directory, solutionSubdirectory,
                                  parameter_identifier);
   for (auto& train_pos : m_train_pos) {
     train_pos.clear();
@@ -339,18 +339,18 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     export_solution(
         const std::filesystem::path& working_directory,
-        std::string_view const solution_subdirectory, bool save_instance,
+        std::string_view const solutionSubdirectory, bool save_instance,
         std::optional<std::string> const& parameter_identifier) const {
   if (!check_consistency()) {
     throw exceptions::ConsistencyException();
   }
 
   SolGeneralProblemInstanceWithScheduleAndRoutes::export_solution(
-      working_directory, solution_subdirectory, save_instance,
+      working_directory, solutionSubdirectory, save_instance,
       parameter_identifier);
 
   std::filesystem::path const p = get_export_path(
-      working_directory, solution_subdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
 
   // NOLINTBEGIN(misc-const-correctness)
   nlohmann::json train_pos_json;
@@ -1057,10 +1057,10 @@ cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     export_solution(
         const std::filesystem::path& working_directory,
-        std::string_view const solution_subdirectory, bool export_instance,
+        std::string_view const solutionSubdirectory, bool export_instance,
         std::optional<std::string> const& parameter_identifier) const {
   SolGeneralPerformanceOptimizationInstance::export_solution(
-      working_directory, solution_subdirectory, export_instance,
+      working_directory, solutionSubdirectory, export_instance,
       parameter_identifier);
 
   // NOLINTNEXTLINE(misc-const-correctness)
@@ -1076,7 +1076,7 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   }
 
   std::filesystem::path const p = get_export_path(
-      working_directory, solution_subdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
   std::ofstream vss_pos_file(p / "vss_pos.json");
   if (!vss_pos_file.is_open()) {
     throw exceptions::ExportException(
@@ -1110,13 +1110,13 @@ bool cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
 
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     load_solution(const std::filesystem::path&      working_directory,
-                  std::string_view const            solution_subdirectory,
+                  std::string_view const            solutionSubdirectory,
                   std::optional<std::string> const& parameter_identifier) {
   SolGeneralPerformanceOptimizationInstance::load_solution(
-      working_directory, solution_subdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
 
   std::filesystem::path const p = this->get_export_path(
-      working_directory, solution_subdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
   std::ifstream vss_pos_file(p / "vss_pos.json");
   if (!vss_pos_file.is_open()) {
     throw exceptions::ImportException("Could not open vss_pos.json.");
