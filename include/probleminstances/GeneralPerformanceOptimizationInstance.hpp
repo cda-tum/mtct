@@ -415,6 +415,29 @@ private:
     m_train_weights.resize(
         this->get_const_timetable().get_train_list().get_number_of_trains(), 1);
   }
+
+  /**
+   * VSS INSTANCE HELPER
+   */
+public:
+  [[nodiscard]] std::pair<size_t, size_t>
+  time_index_interval(size_t train_index, double dt,
+                      bool tn_inclusive = true) const {
+    return this->get_const_timetable().time_index_interval(train_index, dt,
+                                                           tn_inclusive);
+  }
+  [[nodiscard]] std::pair<size_t, size_t>
+  time_index_interval(const std::string& train_name, double dt,
+                      bool tn_inclusive = true) const {
+    return this->get_const_timetable().time_index_interval(train_name, dt,
+                                                           tn_inclusive);
+  }
+  [[nodiscard]] cda_rail::index_set trains_at_t(double t) const;
+  [[nodiscard]] cda_rail::index_set
+  trains_at_t(double t, const cda_rail::index_set& trains_to_consider) const;
+
+  void discretize(
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
 };
 
 class SolGeneralPerformanceOptimizationInstance
@@ -748,8 +771,6 @@ public:
   [[nodiscard]] bool check_consistency() const override;
 };
 
-// NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if)
-#if 0
 class SolVSSGeneralPerformanceOptimizationInstance
     : public SolGeneralPerformanceOptimizationInstance {
   std::vector<std::vector<double>> m_vss_pos;
@@ -761,8 +782,10 @@ public:
   using SolGeneralPerformanceOptimizationInstance::load_solution;
 
   /**
-   * @brief Constructs a solution instance with VSS support from a performance optimization instance.
-   * @param instance The performance optimization instance to base this solution on.
+   * @brief Constructs a solution instance with VSS support from a performance
+   * optimization instance.
+   * @param instance The performance optimization instance to base this solution
+   * on.
    */
   explicit SolVSSGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance)
@@ -779,24 +802,26 @@ public:
 
   void add_vss_pos(cda_rail::Network::EdgeInput const& edge_input, double pos,
                    bool reverse_edge = true);
-
   void set_vss_pos(cda_rail::Network::EdgeInput const& edge_input,
                    std::vector<double>                 pos);
-
   void reset_vss_pos(cda_rail::Network::EdgeInput const& edge_input);
+  std::vector<double>
+  get_vss_pos(cda_rail::Network::EdgeInput const& edge_input) const;
 
-  void export_solution(const std::filesystem::path&      workingDirectory,
-                       std::string_view const            solutionSubdirectory,
-                       bool                              export_instance,
-                       std::optional<std::string> const& parameter_identifier =
-                           {}) const override;
+  [[nodiscard]] std::vector<double>
+  get_valid_border_stops(const std::string& train_name) const;
+
+  void export_solution(
+      const std::filesystem::path& workingDirectory,
+      std::string_view const solutionSubdirectory, bool export_instance,
+      std::optional<std::string> const& parameter_identifier) const override;
 
   [[nodiscard]] bool check_consistency() const override;
 
   void load_solution(
       const std::filesystem::path&      workingDirectory,
       std::string_view const            solutionSubdirectory,
-      std::optional<std::string> const& parameter_identifier = {}) override;
+      std::optional<std::string> const& parameter_identifier) override;
 };
-#endif
+
 } // namespace cda_rail::instances

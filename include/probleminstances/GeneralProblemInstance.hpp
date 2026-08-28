@@ -1007,7 +1007,7 @@ public:
    */
   void set_obj(double new_obj) { m_obj = new_obj; };
   /**
-   * @brief Sets the loewr bound of the objective value of the solution.
+   * @brief Sets the lower bound of the objective value of the solution.
    *
    * @param new_obj The lower bound.
    */

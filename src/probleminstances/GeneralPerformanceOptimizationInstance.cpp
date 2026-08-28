@@ -209,8 +209,46 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
       tr_object.get_deceleration(), tr_object.get_length());
 }
 
+cda_rail::index_set
+cda_rail::instances::GeneralPerformanceOptimizationInstance::trains_at_t(
+    double t) const {
+  const auto          tr_number = get_const_train_list().size();
+  cda_rail::index_set trains_to_consider;
+  trains_to_consider.reserve(tr_number);
+  for (size_t i = 0; i < tr_number; ++i) {
+    trains_to_consider.insert(i);
+  }
+  return trains_at_t(t, trains_to_consider);
+}
+cda_rail::index_set
+cda_rail::instances::GeneralPerformanceOptimizationInstance::trains_at_t(
+    double t, const cda_rail::index_set& trains_to_consider) const {
+  cda_rail::exceptions::throw_if_negative(t, "Time t must be non-negative.");
+  for (auto const& tr : trains_to_consider) {
+    get_const_train_list().throw_if_train_not_exist(tr);
+  }
+
+  cda_rail::index_set trains;
+  for (const auto& tr : trains_to_consider) {
+    const auto& tr_schedule = this->get_const_timetable().get_schedule(tr);
+    if (tr_schedule.get_entry_time() <= t && t < tr_schedule.get_exit_time()) {
+      trains.insert(tr);
+    }
+  }
+
+  return trains;
+}
+
+void cda_rail::instances::GeneralPerformanceOptimizationInstance::discretize(
+    const vss::SeparationFunction& sep_func) {
+  const auto new_edges = this->get_editable_network().discretize(sep_func);
+  this->get_editable_timetable().update_after_discretization(new_edges);
+  this->get_editable_routes().update_after_discretization(new_edges);
+}
+
 // -----------------
 // SOLUTION
+// -----------------
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     initialize_vectors() {
@@ -910,8 +948,7 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 // --------------------
 // SolVSSGeneralPerformanceOptimizationInstance
 // --------------------
-// NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if)
-#if 0
+
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     initialize_vss_vector() {
   m_vss_pos = std::vector<std::vector<double>>(
@@ -975,6 +1012,47 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   m_vss_pos.at(edge_id).clear();
 }
 
+std::vector<double>
+cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::get_vss_pos(
+    cda_rail::Network::EdgeInput const& edge_input) const {
+  auto const edge_id =
+      this->get_instance()->get_const_network().get_edge_index(edge_input);
+  return m_vss_pos.at(edge_id);
+}
+
+std::vector<double>
+cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
+    get_valid_border_stops(const std::string& train_name) const {
+  const auto& tr_route = get_const_solution_routes().get_route(train_name);
+  const auto& tr_route_edges = tr_route.get_edges();
+
+  std::vector<double> valid_border_stops;
+  valid_border_stops.emplace_back(0);
+  for (const auto& e : tr_route_edges) {
+    const auto& edge = get_instance()->get_const_network().get_edge(e);
+    const auto& e_target =
+        get_instance()->get_const_network().get_vertex(edge.target);
+    const auto e_pos =
+        tr_route.edge_pos_on_route(e, get_instance()->get_const_network());
+
+    const auto& vss_on_e = this->get_vss_pos(e);
+    for (const auto& vss : vss_on_e) {
+      if (vss > EPS && vss < edge.length - EPS) {
+        valid_border_stops.emplace_back(e_pos.source + vss);
+      }
+    }
+
+    if (e_target.type != VertexType::NoBorder) {
+      valid_border_stops.emplace_back(e_pos.target);
+    }
+  }
+
+  // Sort return value
+  std::ranges::sort(valid_border_stops);
+
+  return valid_border_stops;
+}
+
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     export_solution(
         const std::filesystem::path& workingDirectory,
@@ -1000,7 +1078,8 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
       workingDirectory, solutionSubdirectory, parameter_identifier);
   std::ofstream vss_pos_file(p / "vss_pos.json");
   if (!vss_pos_file.is_open()) {
-    throw exceptions::ExportException("Could not open vss_pos.json for writing");
+    throw exceptions::ExportException(
+        "Could not open vss_pos.json for writing");
   }
   if (!(vss_pos_file << vss_pos_json << '\n')) {
     throw exceptions::ExportException("Failed to write vss_pos.json");
@@ -1052,4 +1131,3 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     m_vss_pos.at(edge_id) = std::move(pos_vec);
   }
 }
-#endif
