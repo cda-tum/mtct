@@ -2,6 +2,7 @@
 
 #include "Definitions.hpp"
 #include "GeneralProblemInstance.hpp"
+#include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
@@ -812,15 +813,15 @@ public:
   get_valid_border_stops(const std::string& train_name) const;
 
   void export_solution(
-      const std::filesystem::path& workingDirectory,
-      std::string_view const solutionSubdirectory, bool export_instance,
+      const std::filesystem::path& working_directory,
+      std::string_view solutionSubdirectory, bool export_instance,
       std::optional<std::string> const& parameter_identifier) const override;
 
   [[nodiscard]] bool check_consistency() const override;
 
   void load_solution(
-      const std::filesystem::path&      workingDirectory,
-      std::string_view const            solutionSubdirectory,
+      const std::filesystem::path&      working_directory,
+      std::string_view                  solutionSubdirectory,
       std::optional<std::string> const& parameter_identifier) override;
 };
 

@@ -5,6 +5,7 @@
 #include "EOMHelper.hpp"
 #include "GeneralHelper.hpp"
 #include "StringHelper.hpp"
+#include "VSSModel.hpp"
 #include "datastructure/Timetable.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
@@ -1055,11 +1056,11 @@ cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
 
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     export_solution(
-        const std::filesystem::path& workingDirectory,
+        const std::filesystem::path& working_directory,
         std::string_view const solutionSubdirectory, bool export_instance,
         std::optional<std::string> const& parameter_identifier) const {
   SolGeneralPerformanceOptimizationInstance::export_solution(
-      workingDirectory, solutionSubdirectory, export_instance,
+      working_directory, solutionSubdirectory, export_instance,
       parameter_identifier);
 
   // NOLINTNEXTLINE(misc-const-correctness)
@@ -1075,7 +1076,7 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   }
 
   std::filesystem::path const p = get_export_path(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
   std::ofstream vss_pos_file(p / "vss_pos.json");
   if (!vss_pos_file.is_open()) {
     throw exceptions::ExportException(
@@ -1108,14 +1109,14 @@ bool cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
 }
 
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
-    load_solution(const std::filesystem::path&      workingDirectory,
+    load_solution(const std::filesystem::path&      working_directory,
                   std::string_view const            solutionSubdirectory,
                   std::optional<std::string> const& parameter_identifier) {
   SolGeneralPerformanceOptimizationInstance::load_solution(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
 
   std::filesystem::path const p = this->get_export_path(
-      workingDirectory, solutionSubdirectory, parameter_identifier);
+      working_directory, solutionSubdirectory, parameter_identifier);
   std::ifstream vss_pos_file(p / "vss_pos.json");
   if (!vss_pos_file.is_open()) {
     throw exceptions::ImportException("Could not open vss_pos.json.");
