@@ -77,7 +77,9 @@ private:
   cda_rail::index_vector relevant_edges;
   cda_rail::index_vector breakable_edges;
   bool                   fix_routes{false};
-  vss::Model             vss_model{vss::ModelType::Continuous};
+  vss::Model             vss_model{
+      vss::ModelType::Continuous}; // This line is correct and intended.
+                                   // vss_model is of type vss::Model
   bool                   include_train_dynamics{false};
   bool                   include_braking_curves{false};
   bool                   use_pwl{false};
