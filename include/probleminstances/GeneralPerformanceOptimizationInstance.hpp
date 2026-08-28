@@ -814,14 +814,14 @@ public:
 
   void export_solution(
       const std::filesystem::path& working_directory,
-      std::string_view solutionSubdirectory, bool export_instance,
+      std::string_view solution_subdirectory, bool export_instance,
       std::optional<std::string> const& parameter_identifier) const override;
 
   [[nodiscard]] bool check_consistency() const override;
 
   void load_solution(
       const std::filesystem::path&      working_directory,
-      std::string_view                  solutionSubdirectory,
+      std::string_view                  solution_subdirectory,
       std::optional<std::string> const& parameter_identifier) override;
 };
 
