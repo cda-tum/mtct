@@ -7,15 +7,13 @@
 #include "solver/GeneralSolver.hpp"
 #include "unordered_map"
 
-#include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <optional>
-#include <string>
 #include <utility>
 #include <vector>
 
 namespace cda_rail::solver::mip_based {
+using std::size_t;
 
 enum class UpdateStrategy : std::uint8_t { Fixed = 0, Relative = 1 };
 
@@ -246,6 +244,7 @@ public:
   }
 };
 
+// NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if)
 #if 0
 class VSSGenTimetableSolverWithMovingBlockInformation
     : public VSSGenTimetableSolver {

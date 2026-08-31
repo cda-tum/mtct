@@ -1,5 +1,6 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
+#include "GeneralHelper.hpp"
 #include "VSSModel.hpp"
 #include "gurobi_c++.h"
 #include "gurobi_c.h"
@@ -19,10 +20,13 @@
 #include <plog/Log.h>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
+namespace cda_rail {
 using std::size_t;
+}
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 
@@ -88,9 +92,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::
   s.v_after  = tr_schedule.get_exit_velocity();
 
   for (const auto& tr_stop : tr_schedule.get_stops()) {
-    const auto t0 = tr_stop.get_service_time() / dt;
-    const auto t1 = static_cast<int>(
-        std::ceil(static_cast<double>(tr_stop.get_earliest_departure()) / dt));
+    const auto t0 = static_cast<size_t>(tr_stop.get_service_time() / dt);
+    const auto t1 =
+        static_cast<size_t>(std::ceil(tr_stop.get_earliest_departure() / dt));
     if (t >= t0 && t <= t1) {
       s.to_use = false;
       return s;
@@ -581,14 +585,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
       // b = 1 iff num_vss_segments(relevant_edge_index) >= old_max_vss + 1
       m_model->addConstr(m_vars.at("num_vss_segments")(relevant_edge_index) -
                                  static_cast<double>(old_max_vss) <=
-                             (vss_number_e + 1) * b,
+                             static_cast<double>(vss_number_e + 1) * b,
                          "binary_cut_relation_" +
                              std::to_string(relevant_edge_index) + "_" +
                              std::to_string(old_max_vss) + "_1");
       m_model->addConstr(
           static_cast<double>(old_max_vss + 1) -
                   m_vars.at("num_vss_segments")(relevant_edge_index) <=
-              (vss_number_e) * (1 - b),
+              static_cast<double>(vss_number_e) * (1 - b),
           "binary_cut_relation_" + std::to_string(relevant_edge_index) + "_" +
               std::to_string(old_max_vss) + "_2");
       cut_expr += b;
@@ -631,7 +635,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
     const cda_rail::solver::mip_based::ModelSettings&    model_settings,
     const cda_rail::solver::mip_based::SolverStrategy&   solver_strategy,
     const cda_rail::solver::mip_based::SolutionSettings& solution_settings,
-    int time_limit, bool debug_input, bool overwrite_severity) {
+    [[maybe_unused]] int time_limit, bool debug_input,
+    bool overwrite_severity) {
   /**
    * This function initializes the variables affecting the m_model creation and
    * optimization process
@@ -838,7 +843,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
 
   double obj_ub = 1.0;
   for (const auto& e : relevant_edges) {
-    obj_ub += m_instance.get_const_network().max_vss_on_edge(e);
+    obj_ub +=
+        static_cast<double>(m_instance.get_const_network().max_vss_on_edge(e));
   }
   double obj_lb           = 0;
   size_t iteration_number = 0;

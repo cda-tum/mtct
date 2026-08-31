@@ -10,7 +10,9 @@
 #include <cstddef>
 #include <string>
 
+namespace cda_rail {
 using std::size_t;
+}
 
 // NOLINTBEGIN(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
@@ -52,38 +54,45 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           m_vars["overlap"](tr, t, e) = m_model->addVar(
               0, m_instance.get_editable_network().get_edge(e).length, 0,
               GRB_CONTINUOUS,
-              "overlap_" + tr_name + "_" + std::to_string(t * dt) + "_" +
+              "overlap_" + tr_name + "_" +
+                  std::to_string(static_cast<double>(t) * dt) + "_" +
                   edge_name);
         }
         m_vars["e_lda"](tr, t, e) = m_model->addVar(
             0, m_instance.get_editable_network().get_edge(e).length, 0,
             GRB_CONTINUOUS,
-            "e_lda_" + tr_name + "_" + std::to_string(t * dt) + "_" +
-                edge_name);
+            "e_lda_" + tr_name + "_" +
+                std::to_string(static_cast<double>(t) * dt) + "_" + edge_name);
         m_vars["e_mu"](tr, t, e) = m_model->addVar(
             0, m_instance.get_editable_network().get_edge(e).length, 0,
             GRB_CONTINUOUS,
-            "e_mu_" + tr_name + "_" + std::to_string(t * dt) + "_" + edge_name);
+            "e_mu_" + tr_name + "_" +
+                std::to_string(static_cast<double>(t) * dt) + "_" + edge_name);
       }
       for (size_t v = 0; v < num_vertices; ++v) {
         const auto& v_name =
             m_instance.get_editable_network().get_vertex(v).name;
         m_vars["x_v"](tr, t, v) = m_model->addVar(
             0, 1, 0, GRB_BINARY,
-            "x_v_" + tr_name + "_" + std::to_string(t * dt) + "_" + v_name);
+            "x_v_" + tr_name + "_" +
+                std::to_string(static_cast<double>(t) * dt) + "_" + v_name);
       }
       m_vars["len_in"](tr, t) =
           m_model->addVar(0, tr_len, 0, GRB_CONTINUOUS,
-                          "len_in_" + tr_name + "_" + std::to_string(t * dt));
+                          "len_in_" + tr_name + "_" +
+                              std::to_string(static_cast<double>(t) * dt));
       m_vars["x_in"](tr, t) =
           m_model->addVar(0, 1, 0, GRB_BINARY,
-                          "x_in_" + tr_name + "_" + std::to_string(t * dt));
+                          "x_in_" + tr_name + "_" +
+                              std::to_string(static_cast<double>(t) * dt));
       m_vars["len_out"](tr, t) =
           m_model->addVar(0, len_out_ub, 0, GRB_CONTINUOUS,
-                          "len_out_" + tr_name + "_" + std::to_string(t * dt));
+                          "len_out_" + tr_name + "_" +
+                              std::to_string(static_cast<double>(t) * dt));
       m_vars["x_out"](tr, t) =
           m_model->addVar(0, 1, 0, GRB_BINARY,
-                          "x_out_" + tr_name + "_" + std::to_string(t * dt));
+                          "x_out_" + tr_name + "_" +
+                              std::to_string(static_cast<double>(t) * dt));
     }
   }
 }
@@ -263,7 +272,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       // lhs >= 1
       m_model->addConstr(lhs, GRB_GREATER_EQUAL, 1,
                          "train_not_left_" + tr_name + "_" +
-                             std::to_string(t * dt));
+                             std::to_string(static_cast<double>(t) * dt));
 
       // Correct overlap length
       lhs = m_vars["len_in"](tr, t + 1) + m_vars["len_out"](tr, t);
@@ -732,14 +741,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                              m_vars["b_pos"](i, vss) - STOP_TOLERANCE -
                                  e_len * (1 - m_vars["b_tight"](tr, t, i, vss)),
                              "tight_vss_border_constraint_1_" + tr_name + "_" +
-                                 std::to_string(t * dt) + "_" + edge_name +
-                                 "_" + std::to_string(vss));
+                                 std::to_string(static_cast<double>(t) * dt) +
+                                 "_" + edge_name + "_" + std::to_string(vss));
           m_model->addConstr(m_vars["e_mu"](tr, t - 1, e), GRB_LESS_EQUAL,
                              m_vars["b_pos"](i, vss) +
                                  e_len * (1 - m_vars["b_tight"](tr, t, i, vss)),
                              "tight_vss_border_constraint_2_" + tr_name + "_" +
-                                 std::to_string(t * dt) + "_" + edge_name +
-                                 "_" + std::to_string(vss));
+                                 std::to_string(static_cast<double>(t) * dt) +
+                                 "_" + edge_name + "_" + std::to_string(vss));
         }
       }
     }
@@ -762,7 +771,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         m_model->addConstr(m_vars["e_mu"](tr, t - 1, e), GRB_GREATER_EQUAL,
                            e_len * m_vars["e_tight"](tr, t, e) - STOP_TOLERANCE,
                            "tight_ttd_border_constraint_" + tr_name + "_" +
-                               std::to_string(t * dt) + "_" + edge_name);
+                               std::to_string(static_cast<double>(t) * dt) +
+                               "_" + edge_name);
       }
     }
   }
@@ -784,7 +794,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       m_model->addConstr(m_vars["len_out"](tr, t - 1), GRB_LESS_EQUAL,
                          M * m_vars["stopped"](tr, t),
                          "tight_len_out_constraint_" + tr_name + "_" +
-                             std::to_string(t * dt));
+                             std::to_string(static_cast<double>(t) * dt));
     }
   }
 }

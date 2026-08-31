@@ -4,9 +4,6 @@
 #include "VSSModel.hpp"
 #include "gurobi_c++.h"
 #include "gurobi_c.h"
-#include "plog/Init.h"
-#include "plog/Logger.h"
-#include "plog/Severity.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
@@ -14,18 +11,16 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <filesystem>
-#include <memory>
 #include <optional>
-#include <plog/Appenders/ColorConsoleAppender.h>
-#include <plog/Formatters/TxtFormatter.h>
 #include <plog/Log.h>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
+namespace cda_rail {
 using std::size_t;
+}
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 
@@ -146,9 +141,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     auto tr_name = train_list.get_train(i).get_name();
     for (size_t t = train_interval[i].first; t <= train_interval[i].second + 1;
          ++t) {
-      m_vars["v"](i, t) =
-          m_model->addVar(0, max_speed, 0, GRB_CONTINUOUS,
-                          "v_" + tr_name + "_" + std::to_string(t * dt));
+      m_vars["v"](i, t) = m_model->addVar(
+          0, max_speed, 0, GRB_CONTINUOUS,
+          "v_" + tr_name + "_" + std::to_string(static_cast<double>(t) * dt));
     }
     for (size_t t = train_interval[i].first; t <= train_interval[i].second;
          ++t) {
@@ -163,12 +158,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
             "]";
         m_vars["x"](i, t, edge_id) = m_model->addVar(
             0, 1, 0, GRB_BINARY,
-            "x_" + tr_name + "_" + std::to_string(t * dt) + "_" + edge_name);
+            "x_" + tr_name + "_" + std::to_string(static_cast<double>(t) * dt) +
+                "_" + edge_name);
       }
       for (const auto& sec : unbreakable_section_indices(i)) {
         m_vars["x_sec"](i, t, sec) =
             m_model->addVar(0, 1, 0, GRB_BINARY,
-                            "x_sec_" + tr_name + "_" + std::to_string(t * dt) +
+                            "x_sec_" + tr_name + "_" +
+                                std::to_string(static_cast<double>(t) * dt) +
                                 "_" + std::to_string(sec));
       }
     }
@@ -177,10 +174,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (size_t i = 0; i < fwd_bwd_sections.size(); ++i) {
       m_vars["y_sec_fwd"](t, i) = m_model->addVar(
           0, 1, 0, GRB_BINARY,
-          "y_sec_fwd_" + std::to_string(t * dt) + "_" + std::to_string(i));
+          "y_sec_fwd_" + std::to_string(static_cast<double>(t) * dt) + "_" +
+              std::to_string(i));
       m_vars["y_sec_bwd"](t, i) = m_model->addVar(
           0, 1, 0, GRB_BINARY,
-          "y_sec_bwd_" + std::to_string(t * dt) + "_" + std::to_string(i));
+          "y_sec_bwd_" + std::to_string(static_cast<double>(t) * dt) + "_" +
+              std::to_string(i));
     }
   }
 }
@@ -262,15 +261,17 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
            m_instance.all_trains_on_edge(e, this->fix_routes, false)) {
         for (size_t t = train_interval[tr].first;
              t <= train_interval[tr].second; ++t) {
-          m_vars["b_front"](tr, t, i, vss) = m_model->addVar(
-              0, 1, 0, GRB_BINARY,
-              "b_front_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
-                  "_" + edge_name + "_" + std::to_string(vss));
+          m_vars["b_front"](tr, t, i, vss) =
+              m_model->addVar(0, 1, 0, GRB_BINARY,
+                              "b_front_" + std::to_string(tr) + "_" +
+                                  std::to_string(static_cast<double>(t) * dt) +
+                                  "_" + edge_name + "_" + std::to_string(vss));
           if (m_instance.get_const_train_list().get_train(tr).has_tim()) {
             m_vars["b_rear"](tr, t, i, vss) = m_model->addVar(
                 0, 1, 0, GRB_BINARY,
-                "b_rear_" + std::to_string(tr) + "_" + std::to_string(t * dt) +
-                    "_" + edge_name + "_" + std::to_string(vss));
+                "b_rear_" + std::to_string(tr) + "_" +
+                    std::to_string(static_cast<double>(t) * dt) + "_" +
+                    edge_name + "_" + std::to_string(vss));
           }
         }
       }
@@ -288,8 +289,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         "]";
 
     if (this->vss_model.get_model_type() == vss::ModelType::Inferred) {
-      m_vars["num_vss_segments"](i) = m_model->addVar(
-          1, vss_number_e + 1, 0, GRB_INTEGER, "num_vss_segments_" + edge_name);
+      m_vars["num_vss_segments"](i) =
+          m_model->addVar(1, static_cast<int>(vss_number_e + 1), 0, GRB_INTEGER,
+                          "num_vss_segments_" + edge_name);
 
       if (iterative_vss &&
           vss_number_e + 1 > max_vss_per_edge_in_iteration.at(i)) {
@@ -376,10 +378,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
             m_instance.get_const_train_list().get_train(tr).get_name();
         for (size_t t = train_interval[tr].first + 2;
              t <= train_interval[tr].second; ++t) {
-          m_vars["b_tight"](tr, t, i, vss) = m_model->addVar(
-              0, 1, 0, GRB_BINARY,
-              "b_tight_" + tr_name + "_" + std::to_string(t * dt) + "_" +
-                  edge_name + "_" + std::to_string(vss));
+          m_vars["b_tight"](tr, t, i, vss) =
+              m_model->addVar(0, 1, 0, GRB_BINARY,
+                              "b_tight_" + tr_name + "_" +
+                                  std::to_string(static_cast<double>(t) * dt) +
+                                  "_" + edge_name + "_" + std::to_string(vss));
         }
       }
     }
@@ -397,10 +400,10 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           m_instance.get_const_train_list().get_train(tr).get_name();
       for (size_t t = train_interval[tr].first + 2;
            t <= train_interval[tr].second; ++t) {
-        m_vars["e_tight"](tr, t, e) =
-            m_model->addVar(0, 1, 0, GRB_BINARY,
-                            "e_tight_" + tr_name + "_" +
-                                std::to_string(t * dt) + "_" + edge_name);
+        m_vars["e_tight"](tr, t, e) = m_model->addVar(
+            0, 1, 0, GRB_BINARY,
+            "e_tight_" + tr_name + "_" +
+                std::to_string(static_cast<double>(t) * dt) + "_" + edge_name);
       }
     }
   }
@@ -657,11 +660,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_schedule = m_instance.get_const_schedule(tr_name);
     const auto& tr_edges = m_instance.edges_used_by_train(tr, this->fix_routes);
     for (const auto& tr_stop : tr_schedule.get_stops()) {
-      const auto  t0 = static_cast<size_t>(tr_stop.get_service_time() / dt);
-      const auto  t1 = static_cast<size_t>(std::ceil(
-          static_cast<double>(tr_stop.get_earliest_departure()) / dt));
-      const auto& stop_station = tr_stop.get_station();
-      const auto  stop_edges   = stop_station.tracks;
+      const auto t0 = static_cast<size_t>(tr_stop.get_service_time() / dt);
+      const auto t1 =
+          static_cast<size_t>(std::ceil(tr_stop.get_earliest_departure() / dt));
+      const auto&         stop_station = tr_stop.get_station();
+      const auto          stop_edges   = stop_station.tracks;
       cda_rail::index_set inverse_stop_edges;
       for (const auto e : stop_edges) {
         if (!tr_edges.contains(e)) {
@@ -740,7 +743,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
          ++t) {
       m_vars["brakelen"](tr, t) =
           m_model->addVar(0, max_break_len, 0, GRB_CONTINUOUS,
-                          "brakelen_" + tr_name + "_" + std::to_string(t * dt));
+                          "brakelen_" + tr_name + "_" +
+                              std::to_string(static_cast<double>(t) * dt));
     }
   }
 }
@@ -767,11 +771,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         m_model->addConstr(m_vars["v"](tr, t), GRB_GREATER_EQUAL,
                            V_MIN * m_vars["stopped"](tr, t),
                            "v_min_" + std::to_string(tr) + "_" +
-                               std::to_string(t * dt));
+                               std::to_string(static_cast<double>(t) * dt));
         m_model->addConstr(m_vars["v"](tr, t), GRB_LESS_EQUAL,
                            tr_speed * m_vars["stopped"](tr, t),
                            "v_max_" + std::to_string(tr) + "_" +
-                               std::to_string(t * dt));
+                               std::to_string(static_cast<double>(t) * dt));
       }
     }
   }
@@ -1161,7 +1165,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           m_model->addGenConstrPWL(
               m_vars["num_vss_segments"](i),
               m_vars["frac_vss_segments"](i, sep_type_index, vss),
-              vss_number_e + 1, xpts.get(), ypts.get(),
+              static_cast<int>(vss_number_e + 1), xpts.get(), ypts.get(),
               "frac_vss_segments_value_constraint_" + edge_name + "_" +
                   std::to_string(sep_type_index) + "_" + std::to_string(vss));
         }
@@ -1335,7 +1339,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
               m_vars["v"](tr, t + 1), GRB_LESS_EQUAL,
               max_speed + (tr_speed - max_speed) * (1 - m_vars["x"](tr, t, e)),
               "v_max_speed_" + std::to_string(tr) + "_" +
-                  std::to_string((t + 1) * dt) + "_" + std::to_string(e));
+                  std::to_string((static_cast<double>(t) + 1) * dt) + "_" +
+                  std::to_string(e));
           // If brakelens are included the speed is reduced before entering an
           // edge, otherwise also include v(tr,t) <= max_speed + (tr_speed -
           // max_speed) * (1 - x(tr,t,e))
@@ -1344,8 +1349,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                max_speed + (tr_speed - max_speed) *
                                                (1 - m_vars["x"](tr, t, e)),
                                "v_max_speed2_" + std::to_string(tr) + "_" +
-                                   std::to_string(t * dt) + "_" +
-                                   std::to_string(e));
+                                   std::to_string(static_cast<double>(t) * dt) +
+                                   "_" + std::to_string(e));
           }
         }
       }
@@ -1524,7 +1529,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
          ++t) {
       m_vars["stopped"](tr, t) =
           m_model->addVar(0, 1, 0, GRB_BINARY,
-                          "stopped_" + tr_name + "_" + std::to_string(t * dt));
+                          "stopped_" + tr_name + "_" +
+                              std::to_string(static_cast<double>(t) * dt));
     }
   }
 
@@ -1559,7 +1565,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
       m_model->addConstr(lhs, GRB_LESS_EQUAL, 1,
                          "b_tight_max_one_" + tr_name + "_" +
-                             std::to_string(t * dt));
+                             std::to_string(static_cast<double>(t) * dt));
     }
   }
 
@@ -1584,7 +1590,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         }
         m_model->addConstr(lhs, GRB_LESS_EQUAL, 1,
                            "b_tight_e_tight_max_one_" + tr_name + "_" +
-                               std::to_string(t * dt) + "_" + edge_name);
+                               std::to_string(static_cast<double>(t) * dt) +
+                               "_" + edge_name);
       }
     }
   }
@@ -1618,7 +1625,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         m_model->addConstr(lhs, GRB_GREATER_EQUAL,
                            m_vars["x"](tr, t - 1, e) - m_vars["stopped"](tr, t),
                            "b_tight_e_tight_min_one_" + tr_name + "_" +
-                               std::to_string(t * dt) + "_" + edge_name);
+                               std::to_string(static_cast<double>(t) * dt) +
+                               "_" + edge_name);
       }
     }
   }
@@ -1656,10 +1664,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         for (const auto& e_out : delta_out_tr) {
           lhs += m_vars["x"](tr, t - 1, e_out);
         }
-        m_model->addConstr(lhs, GRB_GREATER_EQUAL,
-                           m_vars["x"](tr, t - 1, e) - m_vars["stopped"](tr, t),
-                           "no_stop_on_non-border_edge_ending_" + tr_name +
-                               "_" + std::to_string(t * dt) + "_" + edge_name);
+        m_model->addConstr(
+            lhs, GRB_GREATER_EQUAL,
+            m_vars["x"](tr, t - 1, e) - m_vars["stopped"](tr, t),
+            "no_stop_on_non-border_edge_ending_" + tr_name + "_" +
+                std::to_string(static_cast<double>(t) * dt) + "_" + edge_name);
       }
     }
   }
@@ -1682,13 +1691,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           m_model->addConstr(m_vars["b_tight"](tr, t, i, vss), GRB_LESS_EQUAL,
                              m_vars["b_front"](tr, t, i, vss),
                              "b_tight_not_front_1_" + tr_name + "_" +
-                                 std::to_string(t * dt) + "_" + edge_name +
-                                 "_" + std::to_string(vss));
+                                 std::to_string(static_cast<double>(t) * dt) +
+                                 "_" + edge_name + "_" + std::to_string(vss));
           m_model->addConstr(
               m_vars["b_tight"](tr, t, i, vss), GRB_GREATER_EQUAL,
               m_vars["b_front"](tr, t, i, vss) - m_vars["stopped"](tr, t),
-              "b_tight_not_front_2_" + tr_name + "_" + std::to_string(t * dt) +
-                  "_" + edge_name + "_" + std::to_string(vss));
+              "b_tight_not_front_2_" + tr_name + "_" +
+                  std::to_string(static_cast<double>(t) * dt) + "_" +
+                  edge_name + "_" + std::to_string(vss));
         }
       }
     }
@@ -1716,7 +1726,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
       m_model->addConstr(lhs, GRB_GREATER_EQUAL, 1 - m_vars["stopped"](tr, t),
                          "at_least_one_tight_if_stopped_" + tr_name + "_" +
-                             std::to_string(t * dt));
+                             std::to_string(static_cast<double>(t) * dt));
     }
   }
 }

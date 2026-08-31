@@ -8,6 +8,8 @@
 #include <limits>
 #include <numbers>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 
 namespace cda_rail::vss {
 using SeparationFunction = std::function<double(size_t, size_t)>;

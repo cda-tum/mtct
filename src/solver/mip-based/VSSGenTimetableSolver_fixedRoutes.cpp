@@ -9,6 +9,10 @@
 #include <cstddef>
 #include <string>
 
+namespace cda_rail {
+using std::size_t;
+}
+
 // NOLINTBEGIN(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
@@ -227,9 +231,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  tr_name     = train_list.get_train(tr).get_name();
     const auto& tr_schedule = m_instance.get_const_schedule(tr_name);
     for (const auto& tr_stop : tr_schedule.get_stops()) {
-      const auto  t0 = static_cast<size_t>(tr_stop.get_service_time() / dt);
-      const auto  t1 = static_cast<size_t>(std::ceil(
-          static_cast<double>(tr_stop.get_earliest_departure()) / dt));
+      const auto t0 = static_cast<size_t>(tr_stop.get_service_time() / dt);
+      const auto t1 =
+          static_cast<size_t>(std::ceil(tr_stop.get_earliest_departure() / dt));
       const auto& stop_station = tr_stop.get_station();
       const auto  stop_edges   = cda_rail::index_vector(
           stop_station.tracks.begin(), stop_station.tracks.end());
@@ -453,15 +457,15 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                              m_vars["b_pos"](i, vss) - STOP_TOLERANCE -
                                  r_len * (1 - m_vars["b_tight"](tr, t, i, vss)),
                              "tight_vss_border_constraint_1_" + tr_name + "_" +
-                                 std::to_string(t * dt) + "_" + edge_name +
-                                 "_" + std::to_string(vss));
+                                 std::to_string(static_cast<double>(t) * dt) +
+                                 "_" + edge_name + "_" + std::to_string(vss));
           m_model->addConstr(m_vars["mu"](tr, t - 1) - edge_pos.source,
                              GRB_LESS_EQUAL,
                              m_vars["b_pos"](i, vss) +
                                  mu_ub * (1 - m_vars["b_tight"](tr, t, i, vss)),
                              "tight_vss_border_constraint_2_" + tr_name + "_" +
-                                 std::to_string(t * dt) + "_" + edge_name +
-                                 "_" + std::to_string(vss));
+                                 std::to_string(static_cast<double>(t) * dt) +
+                                 "_" + edge_name + "_" + std::to_string(vss));
         }
       }
     }
@@ -486,7 +490,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                            edge_pos.target - STOP_TOLERANCE -
                                r_len * (1 - m_vars["e_tight"](tr, t, e)),
                            "tight_ttd_border_constraint_" + tr_name + "_" +
-                               std::to_string(t * dt) + "_" + edge_name);
+                               std::to_string(static_cast<double>(t) * dt) +
+                               "_" + edge_name);
       }
     }
   }
@@ -500,10 +505,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  max_brakelen = get_max_brakelen(tr);
     for (size_t t = train_interval[tr].first + 2;
          t <= train_interval[tr].second; ++t) {
-      m_model->addConstr(
-          m_vars["mu"](tr, t - 1), GRB_LESS_EQUAL,
-          r_len + (tr_len + max_brakelen) * m_vars["stopped"](tr, t),
-          "len_out_tight_if_stopped_" + tr_name + "_" + std::to_string(t * dt));
+      m_model->addConstr(m_vars["mu"](tr, t - 1), GRB_LESS_EQUAL,
+                         r_len +
+                             (tr_len + max_brakelen) * m_vars["stopped"](tr, t),
+                         "len_out_tight_if_stopped_" + tr_name + "_" +
+                             std::to_string(static_cast<double>(t) * dt));
     }
   }
 }
