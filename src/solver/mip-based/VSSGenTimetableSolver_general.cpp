@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <plog/Log.h>
 #include <stdexcept>

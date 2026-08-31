@@ -37,7 +37,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     }
     for (size_t t_steps = train_interval[tr].first;
          t_steps <= train_interval[tr].second; ++t_steps) {
-      auto t = t_steps * dt;
+      auto t = static_cast<double>(t_steps) * dt;
       m_vars["mu"](tr, t_steps) =
           m_model->addVar(0, mu_ub, 0, GRB_CONTINUOUS,
                           "mu_" + tr_name + "_" + std::to_string(t));
