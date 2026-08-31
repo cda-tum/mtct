@@ -74,13 +74,13 @@ TEST(VSSModel, Functions) {
   EXPECT_EQ(f2(0, 2), 0.5);
   EXPECT_EQ(f2(1, 2), 1);
   EXPECT_EQ(f2(2, 2), 1);
-  EXPECT_EQ(cda_rail::round_to(f2(0, 3), 1e-5), 0.14645);
-  EXPECT_EQ(cda_rail::round_to(f2(1, 3), 1e-5), 0.85355);
+  EXPECT_EQ(cda_rail::round_to_given_tolerance(f2(0, 3), 1e-5), 0.14645);
+  EXPECT_EQ(cda_rail::round_to_given_tolerance(f2(1, 3), 1e-5), 0.85355);
   EXPECT_EQ(f2(2, 3), 1);
   EXPECT_EQ(f2(3, 3), 1);
-  EXPECT_EQ(cda_rail::round_to(f2(0, 4), 1e-5), 0.06699);
-  EXPECT_EQ(cda_rail::round_to(f2(1, 4), 1e-5), 0.5);
-  EXPECT_EQ(cda_rail::round_to(f2(2, 4), 1e-5), 0.93301);
+  EXPECT_EQ(cda_rail::round_to_given_tolerance(f2(0, 4), 1e-5), 0.06699);
+  EXPECT_EQ(cda_rail::round_to_given_tolerance(f2(1, 4), 1e-5), 0.5);
+  EXPECT_EQ(cda_rail::round_to_given_tolerance(f2(2, 4), 1e-5), 0.93301);
   EXPECT_EQ(f2(3, 4), 1);
   EXPECT_EQ(f2(4, 4), 1);
 
@@ -134,51 +134,44 @@ TEST(VSSModel, Functions) {
 }
 
 TEST(Helper, GreedySimulatorStateHash) {
-  cda_rail::solver::astar_based::GreedySimulatorState state1;
-  cda_rail::solver::astar_based::GreedySimulatorState state2;
-  cda_rail::solver::astar_based::GreedySimulatorState state3;
+  cda_rail::simulator::SimulatorState state1;
+  cda_rail::simulator::SimulatorState state2;
+  cda_rail::simulator::SimulatorState state3;
 
   EXPECT_TRUE(state1 == state2);
-  EXPECT_EQ(
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+  EXPECT_EQ(std::hash<cda_rail::simulator::SimulatorState>()(state1),
+            std::hash<cda_rail::simulator::SimulatorState>()(state2));
 
   state1.train_edges.emplace_back();
   EXPECT_FALSE(state1 == state2);
-  EXPECT_NE(
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+  EXPECT_NE(std::hash<cda_rail::simulator::SimulatorState>()(state1),
+            std::hash<cda_rail::simulator::SimulatorState>()(state2));
 
   state1.train_edges.emplace_back();
   state1.train_edges.at(1).emplace_back(1);
 
   EXPECT_FALSE(state1 == state2);
-  EXPECT_NE(
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+  EXPECT_NE(std::hash<cda_rail::simulator::SimulatorState>()(state1),
+            std::hash<cda_rail::simulator::SimulatorState>()(state2));
 
   state2.train_edges = {{}, {1}};
   EXPECT_TRUE(state1 == state2);
-  EXPECT_EQ(
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+  EXPECT_EQ(std::hash<cda_rail::simulator::SimulatorState>()(state1),
+            std::hash<cda_rail::simulator::SimulatorState>()(state2));
 
   state1.stop_positions = {{1, 2}, {0.5, 2.4}, {1.4}};
   EXPECT_FALSE(state1 == state2);
-  EXPECT_NE(
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+  EXPECT_NE(std::hash<cda_rail::simulator::SimulatorState>()(state1),
+            std::hash<cda_rail::simulator::SimulatorState>()(state2));
 
   state2.stop_positions = {{1, 2}, {0.5, 2.4}, {1.4}};
   EXPECT_TRUE(state1 == state2);
-  EXPECT_EQ(
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state1),
-      std::hash<cda_rail::solver::astar_based::GreedySimulatorState>()(state2));
+  EXPECT_EQ(std::hash<cda_rail::simulator::SimulatorState>()(state1),
+            std::hash<cda_rail::simulator::SimulatorState>()(state2));
 
   state3.ttd_orders = {{1, 2, 3}};
 
-  std::unordered_set<cda_rail::solver::astar_based::GreedySimulatorState>
-      states;
+  std::unordered_set<cda_rail::simulator::SimulatorState> states;
   states.insert(state1);
   states.insert(state3);
 

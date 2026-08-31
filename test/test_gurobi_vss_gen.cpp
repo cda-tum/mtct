@@ -23,7 +23,8 @@ TEST(Solver, GurobiVSSDiscretizeInstanceWithoutChange) {
                {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
                                      {cda_rail::vss::functions::uniform})});
 
-  EXPECT_EQ(num_vertices, solver.get_instance().get_const_network().number_of_vertices());
+  EXPECT_EQ(num_vertices,
+            solver.get_instance().get_const_network().number_of_vertices());
 }
 
 TEST(Solver, GurobiVSSGenDeltaTDefault) {
