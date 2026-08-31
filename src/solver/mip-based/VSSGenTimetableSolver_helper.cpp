@@ -145,6 +145,299 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(
   return ret_val;
 }
 
+cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance
+cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
+    bool postprocess, bool full_model,
+    const std::optional<instances::GeneralPerformanceOptimizationInstance>&
+        old_instance) const {
+  PLOGD << "Extracting solution object...";
+
+  auto sol_obj = instances::SolVSSGeneralPerformanceOptimizationInstance(
+      (old_instance.has_value() ? old_instance.value() : m_instance));
+
+  if (const auto grb_status = m_model->get(GRB_IntAttr_Status);
+      full_model && grb_status == GRB_OPTIMAL) {
+    PLOGD << "Solution status: Optimal";
+    sol_obj.set_status(SolutionStatus::Optimal);
+  } else if (grb_status == GRB_INFEASIBLE) {
+    PLOGD << "Solution status: Infeasible";
+    sol_obj.set_status(SolutionStatus::Infeasible);
+  } else if (m_model->get(GRB_IntAttr_SolCount) >= 1) {
+    PLOGD << "Solution status: Feasible (optimality unknown)";
+    sol_obj.set_status(SolutionStatus::Feasible);
+  } else if (grb_status == GRB_TIME_LIMIT &&
+             m_model->get(GRB_IntAttr_SolCount) == 0) {
+    PLOGD << "Solution status: Timeout (Feasibility unknown)";
+    sol_obj.set_status(SolutionStatus::Timeout);
+  } else {
+    PLOGE << "Solution status code " << grb_status << " unknown";
+    throw exceptions::ConsistencyException(
+        "Gurobi status code " + std::to_string(grb_status) + " unknown.");
+  }
+
+  if (const auto sol_count = m_model->get(GRB_IntAttr_SolCount);
+      sol_count < 0.5) {
+    return sol_obj;
+  }
+
+  const auto mip_obj_val =
+      static_cast<int>(std::round(m_model->get(GRB_DoubleAttr_ObjVal)));
+  PLOGD << "MIP objective: " << mip_obj_val;
+
+  if (vss_model.get_model_type() == vss::ModelType::Discrete) {
+    // TODO: Implement
+    sol_obj.set_obj(mip_obj_val);
+    return sol_obj;
+  }
+
+  sol_obj.set_solution_found();
+
+  int obj = 0;
+
+  for (size_t r_e_index = 0; r_e_index < relevant_edges.size(); ++r_e_index) {
+    const auto e_index = relevant_edges.at(r_e_index);
+    const auto vss_number_e =
+        m_instance.get_const_network().max_vss_on_edge(e_index);
+    const auto& e = m_instance.get_const_network().get_edge(e_index);
+    const auto  reverse_edge_index =
+        m_instance.get_const_network().get_reverse_edge_index(e_index);
+    for (size_t vss = 0; vss < vss_number_e; ++vss) {
+      bool b_used = false;
+
+      if (vss_model.get_model_type() == vss::ModelType::Continuous) {
+        b_used =
+            m_vars.at("b_used").at(r_e_index, vss).get(GRB_DoubleAttr_X) > 0.5;
+      } else if (vss_model.get_model_type() == vss::ModelType::Inferred) {
+        b_used =
+            m_vars.at("num_vss_segments").at(r_e_index).get(GRB_DoubleAttr_X) >
+            static_cast<double>(vss) + 1.5;
+      } else if (vss_model.get_model_type() == vss::ModelType::InferredAlt) {
+        // if any of "type_num_vss_segments"(r_e_index, sep_type_index, num_vss)
+        // is > 0.5 for vss <= num_vss < vss_number_e for sep_type_index = 0,
+        // ..., num_sep_types - 1 then b_used = true
+        for (size_t sep_type_index = 0;
+             sep_type_index < vss_model.get_separation_functions().size();
+             ++sep_type_index) {
+          for (size_t num_vss = vss; num_vss < vss_number_e; ++num_vss) {
+            if (m_vars.at("type_num_vss_segments")
+                    .at(r_e_index, sep_type_index, num_vss)
+                    .get(GRB_DoubleAttr_X) > 0.5) {
+              b_used = true;
+              break;
+            }
+          }
+          if (b_used) {
+            break;
+          }
+        }
+      }
+
+      if (postprocess && b_used) {
+        IF_PLOG(plog::debug) {
+          const auto& source =
+              m_instance.get_const_network().get_vertex(e.source).name;
+          const auto& target =
+              m_instance.get_const_network().get_vertex(e.target).name;
+          PLOGD << "Postprocessing on " << source << " to " << target;
+        }
+        b_used = false;
+        for (size_t tr = 0; tr < num_tr; ++tr) {
+          for (size_t t = train_interval.at(tr).first;
+               t <= train_interval.at(tr).second; ++t) {
+            const auto front1 =
+                m_vars.at("b_front")
+                    .at(tr, t, breakable_edge_indices.at(e_index), vss)
+                    .get(GRB_DoubleAttr_X) > 0.5;
+            const auto rear1 =
+                m_vars.at("b_rear")
+                    .at(tr, t, breakable_edge_indices.at(e_index), vss)
+                    .get(GRB_DoubleAttr_X) > 0.5;
+            const auto front2 =
+                (reverse_edge_index.has_value() &&
+                 !m_instance
+                      .trains_on_edge(reverse_edge_index.value(), fix_routes,
+                                      {tr})
+                      .empty())
+                    ? m_vars.at("b_front")
+                              .at(tr, t,
+                                  breakable_edge_indices.at(
+                                      reverse_edge_index.value()),
+                                  vss)
+                              .get(GRB_DoubleAttr_X) > 0.5
+                    : false;
+            const auto rear2 =
+                (reverse_edge_index.has_value() &&
+                 !m_instance
+                      .trains_on_edge(reverse_edge_index.value(), fix_routes,
+                                      {tr})
+                      .empty())
+                    ? m_vars.at("b_rear")
+                              .at(tr, t,
+                                  breakable_edge_indices.at(
+                                      reverse_edge_index.value()),
+                                  vss)
+                              .get(GRB_DoubleAttr_X) > 0.5
+                    : false;
+            if (front1 || rear1 || front2 || rear2) {
+              b_used = true;
+              break;
+            }
+          }
+          if (b_used) {
+            break;
+          }
+        }
+      }
+
+      if (!b_used) {
+        continue;
+      }
+
+      const auto b_pos_val = round_to_given_tolerance(
+          m_vars.at("b_pos")
+              .at(breakable_edge_indices.at(e_index), vss)
+              .get(GRB_DoubleAttr_X),
+          ROUNDING_PRECISION);
+      IF_PLOG(plog::debug) {
+        const auto& source =
+            m_instance.get_const_network().get_vertex(e.source).name;
+        const auto& target =
+            m_instance.get_const_network().get_vertex(e.target).name;
+        PLOGD << "Add VSS at " << b_pos_val << " on " << source << " to "
+              << target;
+      }
+      sol_obj.add_vss_pos(e_index, b_pos_val, true);
+      obj += 1;
+    }
+  }
+
+  sol_obj.set_obj(obj);
+
+  if (!fix_routes) {
+    sol_obj.reset_routes();
+    PLOGD << "Extracting routes";
+    for (size_t tr = 0; tr < num_tr; ++tr) {
+      const auto train = m_instance.get_const_train_list().get_train(tr);
+      sol_obj.add_empty_route(train.get_name());
+      size_t current_vertex =
+          m_instance.get_const_schedule(tr).get_entry_vertex();
+      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
+           ++t) {
+        std::unordered_set<size_t> edge_list;
+        for (int e = 0; e < num_edges; ++e) {
+          const auto tr_on_edge =
+              m_vars.at("x").at(tr, t, e).get(GRB_DoubleAttr_X) > 0.5;
+          if (tr_on_edge &&
+              !sol_obj.get_const_solution_routes()
+                   .get_route(train.get_name())
+                   .contains_edge(e) &&
+              !edge_list.contains(e)) {
+            edge_list.emplace(e);
+          }
+        }
+        while (!edge_list.empty()) {
+          bool edge_added = false;
+          for (const auto& e : edge_list) {
+            if (m_instance.get_const_network().get_edge(e).source ==
+                current_vertex) {
+              sol_obj.push_back_edge_to_route(train.get_name(), e);
+              current_vertex =
+                  m_instance.get_const_network().get_edge(e).target;
+              edge_list.erase(e);
+              edge_added = true;
+              break;
+            }
+          }
+          if (!edge_added) {
+            throw exceptions::ConsistencyException("Error in route extraction");
+          }
+        }
+      }
+    }
+  }
+
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto train = m_instance.get_const_train_list().get_train(tr);
+    for (size_t t = train_interval[tr].first;
+         t <= train_interval[tr].second + 1; ++t) {
+      auto const& tr_name         = sol_obj.get_instance()
+                                        ->get_const_train_list()
+                                        .get_train(tr)
+                                        .get_name();
+      const auto  train_speed_val = round_to_given_tolerance(
+          m_vars.at("v").at(tr, t).get(GRB_DoubleAttr_X), V_MIN);
+      sol_obj.add_train_speed(tr_name, static_cast<double>(t) * dt,
+                              train_speed_val);
+    }
+  }
+
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    const auto  train  = m_instance.get_const_train_list().get_train(tr);
+    const auto& tr_len = train.get_length();
+    const auto& r_len  = sol_obj.route_length(train.get_name());
+    for (auto t = train_interval[tr].first; t <= train_interval[tr].second;
+         ++t) {
+      double train_pos = r_len;
+      if (fix_routes) {
+        train_pos = m_vars.at("lda").at(tr, t).get(GRB_DoubleAttr_X);
+      } else {
+        const double len_in = round_to_given_tolerance(
+            m_vars.at("len_in").at(tr, t).get(GRB_DoubleAttr_X),
+            ROUNDING_PRECISION);
+        if (len_in > EPS) {
+          train_pos = -len_in;
+        } else {
+          for (auto e_index : sol_obj.get_const_solution_routes()
+                                  .get_route(train.get_name())
+                                  .get_edges()) {
+            const bool e_used =
+                m_vars.at("x").at(tr, t, e_index).get(GRB_DoubleAttr_X) > 0.5;
+            if (e_used) {
+              const double lda_val =
+                  m_vars.at("e_lda").at(tr, t, e_index).get(GRB_DoubleAttr_X);
+              const double e_pos =
+                  sol_obj.get_const_solution_routes()
+                      .route_edge_pos(train.get_name(), e_index)
+                      .first;
+              train_pos = std::min(lda_val + e_pos, train_pos);
+            }
+          }
+        }
+      }
+
+      train_pos += tr_len;
+      train_pos = round_to_given_tolerance(train_pos, ROUNDING_PRECISION);
+      sol_obj.add_train_pos(train.get_name(), static_cast<double>(t) * dt,
+                            train_pos);
+    }
+
+    auto   t_final         = train_interval[tr].second + 1;
+    double train_pos_final = NAN;
+    if (fix_routes) {
+      train_pos_final = round_to_given_tolerance(
+          m_vars.at("mu").at(tr, t_final - 1).get(GRB_DoubleAttr_X),
+          ROUNDING_PRECISION);
+    } else {
+      train_pos_final =
+          r_len +
+          round_to_given_tolerance(
+              m_vars.at("len_out").at(tr, t_final - 1).get(GRB_DoubleAttr_X),
+              ROUNDING_PRECISION);
+    }
+    if (include_braking_curves) {
+      train_pos_final -= round_to_given_tolerance(
+          m_vars.at("brakelen").at(tr, t_final - 1).get(GRB_DoubleAttr_X),
+          ROUNDING_PRECISION);
+    }
+    train_pos_final =
+        round_to_given_tolerance(train_pos_final, ROUNDING_PRECISION);
+    sol_obj.add_train_pos(train.get_name(), static_cast<double>(t_final) * dt,
+                          train_pos_final);
+  }
+
+  return sol_obj;
+}
+
 std::pair<std::vector<cda_rail::index_vector>,
           std::vector<cda_rail::index_vector>>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()

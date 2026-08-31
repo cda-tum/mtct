@@ -30,21 +30,21 @@ struct SolverStrategy {
 };
 
 struct ModelDetail {
-  int  delta_t        = 15;
-  bool fix_routes     = true;
-  bool train_dynamics = true;
-  bool braking_curves = true;
+  double delta_t        = 15;
+  bool   fix_routes     = true;
+  bool   train_dynamics = true;
+  bool   braking_curves = true;
 };
 
 struct ModelDetailMBInformation {
-  int  delta_t                    = 15;
-  bool train_dynamics             = true;
-  bool braking_curves             = true;
-  bool fix_stop_positions         = true;
-  bool fix_exact_positions        = true;
-  bool fix_exact_velocities       = true;
-  bool hint_approximate_positions = true;
-  bool fix_order_on_edges         = true;
+  double delta_t                    = 15;
+  bool   train_dynamics             = true;
+  bool   braking_curves             = true;
+  bool   fix_stop_positions         = true;
+  bool   fix_exact_positions        = true;
+  bool   fix_exact_velocities       = true;
+  bool   hint_approximate_positions = true;
+  bool   fix_order_on_edges         = true;
 };
 
 struct ModelSettings {
