@@ -396,9 +396,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
               const double lda_val =
                   m_vars.at("e_lda").at(tr, t, e_index).get(GRB_DoubleAttr_X);
               const double e_pos =
-                  sol_obj.get_const_solution_routes()
-                      .route_edge_pos(train.get_name(), e_index)
-                      .first;
+                  sol_obj.route_edge_pos(train.get_name(), e_index).source;
               train_pos = std::min(lda_val + e_pos, train_pos);
             }
           }

@@ -1249,6 +1249,17 @@ public:
     return m_solution_routes;
   }
 
+  /**
+   * @brief Computes the total length of a train's solution route.
+   *
+   * @param train_name Name of the train.
+   * @return double The total length of the train's solution route.
+   */
+  [[nodiscard]] double route_length(const std::string& train_name) const {
+    return get_const_solution_routes().route_length(
+        train_name, get_instance()->get_const_network());
+  }
+
   // RouteMap functions
   /** @brief Resets solution routes to the instance's fixed routes. */
   void reset_routes();
@@ -1297,6 +1308,21 @@ public:
    */
   void remove_last_edge_from_route(const std::string& train_name) {
     m_solution_routes.remove_last_edge(train_name);
+  }
+
+  /**
+   * @brief Determines the position of an edge on a train's solution route.
+   *
+   * @param train_name The name of the train.
+   * @param edge The edge to locate on the solution route.
+   * @return The position of the edge on the solution route.
+   */
+  [[nodiscard]] Route::EdgePosition
+  route_edge_pos(const std::string&        train_name,
+                 Network::EdgeInput const& edge) const {
+    return get_const_solution_routes()
+        .get_route(train_name)
+        .edge_pos_on_route(edge, get_instance()->get_const_network());
   }
 
   /**
