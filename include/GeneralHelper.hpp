@@ -68,7 +68,10 @@ inline void round_small_numbers_to_zero_inplace(double&      val,
 [[nodiscard]] inline double round_to_given_tolerance(double const value,
                                                      double const tolerance) {
   cda_rail::exceptions::throw_if_non_positive(tolerance, "tolerance");
-  const auto factor = 1.0 / tolerance;
+  auto factor = 1.0 / tolerance;
+  if (std::abs(factor - std::round(factor)) < GRB_EPS) {
+    factor = std::round(factor);
+  }
   return std::round(value * factor) / factor;
 }
 
