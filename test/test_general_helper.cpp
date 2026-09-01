@@ -80,9 +80,10 @@ TEST(GeneralHelper, RoundToGivenTolerance) {
   EXPECT_EQ(cda_rail::round_to_given_tolerance(1.24, 0.5), 1.0);
   EXPECT_EQ(cda_rail::round_to_given_tolerance(1.26, 0.5), 1.5);
   EXPECT_EQ(cda_rail::round_to_given_tolerance(-1.26, 0.5), -1.5);
-  EXPECT_EQ(cda_rail::round_to_given_tolerance(0.44, 0.3), 0.3);
+  EXPECT_NEAR(cda_rail::round_to_given_tolerance(0.44, 0.3), 0.3,
+              cda_rail::EPS);
 
-  EXPECT_EQ(cda_rail::round_to_given_tolerance(14, 5), 15);
+  EXPECT_NEAR(cda_rail::round_to_given_tolerance(14, 5), 15, cda_rail::EPS);
   EXPECT_EQ(cda_rail::round_to_given_tolerance(13.9485, 1e-2), 13.95);
 
   EXPECT_THROW((void)cda_rail::round_to_given_tolerance(1.0, 0.0),
