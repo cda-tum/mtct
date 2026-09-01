@@ -1,7 +1,9 @@
+#define TEST_FRIENDS true
+
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
-#include "datastructure/GeneralTimetable.hpp"
 #include "datastructure/Route.hpp"
+#include "datastructure/Timetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
 #include "gtest/gtest.h"
@@ -11,33 +13,34 @@
 
 using namespace cda_rail;
 
-#define EXPECT_APPROX_EQ(a, b) EXPECT_APPROX_EQ_2(a, b, 1e-6)
+#define EXPECT_APPROX_EQ_6(a, b) EXPECT_APPROX_EQ(a, b, 1e-6)
+#define EXPECT_APPROX_EQ_2(a, b) EXPECT_APPROX_EQ(a, b, 1e-2)
 
-#define EXPECT_APPROX_EQ_2(a, b, c)                                            \
+#define EXPECT_APPROX_EQ(a, b, c)                                              \
   EXPECT_TRUE(std::abs((a) - (b)) < (c)) << (a) << " !=(approx.) " << (b)
 
 // NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
 
 TEST(GeneralPerformanceOptimizationInstances,
      GeneralPerformanceOptimizationInstanceConsistency) {
-  Network network("./example-networks/SimpleStation/network/");
+  Network network("SimpleStation", "./data/");
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  Timetable timetable;
 
   const auto l0 = network.get_vertex_index("l0");
   const auto r0 = network.get_vertex_index("r0");
 
-  timetable.add_train("Train1", 100, 10, 1, 1, true, {0, 60}, 0, "l0",
-                      {360, 420}, 0, "r0", network);
-  timetable.add_train("Train2", 100, 10, 1, 1, false, {0, 60}, 10, l0,
-                      {400, 460}, 5, r0, network);
+  (void)timetable.add_train("Train1", 100, 10, 1, 1, true, 0, 0, {"l0"}, 360, 0,
+                            {"r0"}, network);
+  (void)timetable.add_train("Train2", 100, 10, 1, 1, false, 0, 10, l0, 400, 5,
+                            r0, network);
 
-  timetable.add_station("Station1");
-  timetable.add_track_to_station("Station1", "g00", "g01", network);
-  timetable.add_track_to_station("Station1", "g01", "g00", network);
-  timetable.add_track_to_station("Station1", "g10", "g11", network);
-  timetable.add_track_to_station("Station1", "g11", "g10", network);
-  timetable.add_stop("Train1", "Station1", {60, 120}, {120, 180}, 60);
+  timetable.add_empty_station("Station1");
+  timetable.add_track_to_station("Station1", {"g00", "g01"}, network);
+  timetable.add_track_to_station("Station1", {"g01", "g00"}, network);
+  timetable.add_track_to_station("Station1", {"g10", "g11"}, network);
+  timetable.add_track_to_station("Station1", {"g11", "g10"}, network);
+  timetable.insert_stop("Train1", "Station1", 60, 120);
 
   EXPECT_TRUE(timetable.check_consistency(network));
 
@@ -51,50 +54,38 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(instance.check_consistency());
 
   instance.set_train_weight("Train2", 2);
-  instance.set_train_optional("Train1");
 
   EXPECT_EQ(instance.get_train_weight("Train2"), 2);
-  EXPECT_EQ(instance.get_train_optional("Train1"), true);
-
-  instance.set_train_mandatory("Train1");
-
-  EXPECT_EQ(instance.get_train_optional("Train1"), false);
-
-  EXPECT_EQ(instance.get_lambda(), 1);
-
-  instance.set_lambda(2);
-
-  EXPECT_EQ(instance.get_lambda(), 2);
 
   instance.add_empty_route("Train1");
 
-  instance.push_back_edge_to_route("Train1", "l0", "l1");
+  instance.push_back_edge_to_route("Train1", {"l0", "l1"});
 
   EXPECT_FALSE(instance.check_consistency(false));
   EXPECT_FALSE(instance.check_consistency(true));
   EXPECT_FALSE(instance.check_consistency());
 
-  instance.push_back_edge_to_route("Train1", "l1", "l2");
-  instance.push_back_edge_to_route("Train1", "l2", "l3");
-  instance.push_back_edge_to_route("Train1", "l3", "g00");
-  instance.push_back_edge_to_route("Train1", "g00", "g01");
-  instance.push_back_edge_to_route("Train1", "g01", "r2");
-  instance.push_back_edge_to_route("Train1", "r2", "r1");
-  instance.push_back_edge_to_route("Train1", "r1", "r0");
+  instance.push_back_edge_to_route("Train1", {"l1", "l2"});
+  instance.push_back_edge_to_route("Train1", {"l2", "l3"});
+  instance.push_back_edge_to_route("Train1", {"l3", "g00"});
+  instance.push_back_edge_to_route("Train1", {"g00", "g01"});
+  instance.push_back_edge_to_route("Train1", {"g01", "r2"});
+  instance.push_back_edge_to_route("Train1", {"r2", "r1"});
+  instance.push_back_edge_to_route("Train1", {"r1", "r0"});
 
   EXPECT_TRUE(instance.check_consistency(false));
   EXPECT_FALSE(instance.check_consistency(true));
   EXPECT_FALSE(instance.check_consistency());
 
   instance.add_empty_route("Train2");
-  instance.push_back_edge_to_route("Train2", "l0", "l1");
-  instance.push_back_edge_to_route("Train2", "l1", "l2");
-  instance.push_back_edge_to_route("Train2", "l2", "l3");
-  instance.push_back_edge_to_route("Train2", "l3", "g00");
-  instance.push_back_edge_to_route("Train2", "g00", "g01");
-  instance.push_back_edge_to_route("Train2", "g01", "r2");
-  instance.push_back_edge_to_route("Train2", "r2", "r1");
-  instance.push_back_edge_to_route("Train2", "r1", "r0");
+  instance.push_back_edge_to_route("Train2", {"l0", "l1"});
+  instance.push_back_edge_to_route("Train2", {"l1", "l2"});
+  instance.push_back_edge_to_route("Train2", {"l2", "l3"});
+  instance.push_back_edge_to_route("Train2", {"l3", "g00"});
+  instance.push_back_edge_to_route("Train2", {"g00", "g01"});
+  instance.push_back_edge_to_route("Train2", {"g01", "r2"});
+  instance.push_back_edge_to_route("Train2", {"r2", "r1"});
+  instance.push_back_edge_to_route("Train2", {"r1", "r0"});
 
   EXPECT_TRUE(instance.check_consistency(false));
   EXPECT_TRUE(instance.check_consistency(true));
@@ -104,206 +95,205 @@ TEST(GeneralPerformanceOptimizationInstances,
 TEST(GeneralPerformanceOptimizationInstances,
      GeneralPerformanceOptimizationInstanceExportImport) {
   // Create instance members
-  Network network("./example-networks/SimpleStation/network/");
+  Network network("SimpleStation", "./data/");
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  Timetable timetable;
 
-  timetable.add_train("Train1", 100, 10, 1, 1, true, {0, 60}, 0, "l0",
-                      {360, 420}, 0, "r0", network);
-  timetable.add_train("Train2", 100, 10, 1, 1, false, {0, 60}, 10, "l0",
-                      {400, 460}, 5, "r0", network);
+  (void)timetable.add_train("Train1", 100, 10, 1, 1, true, 0, 0, {"l0"}, 360, 0,
+                            {"r0"}, network);
+  (void)timetable.add_train("Train2", 100, 10, 1, 1, false, 0, 10, {"l0"}, 400,
+                            5, {"r0"}, network);
 
-  timetable.add_station("Station1");
-  timetable.add_track_to_station("Station1", "g00", "g01", network);
-  timetable.add_track_to_station("Station1", "g01", "g00", network);
-  timetable.add_track_to_station("Station1", "g10", "g11", network);
-  timetable.add_track_to_station("Station1", "g11", "g10", network);
-  timetable.add_stop("Train1", "Station1", {60, 120}, {120, 180}, 60);
+  timetable.add_empty_station("Station1");
+  timetable.add_track_to_station("Station1", {"g00", "g01"}, network);
+  timetable.add_track_to_station("Station1", {"g01", "g00"}, network);
+  timetable.add_track_to_station("Station1", {"g10", "g11"}, network);
+  timetable.add_track_to_station("Station1", {"g11", "g10"}, network);
+  timetable.insert_stop("Train1", "Station1", 60, 120);
 
   RouteMap routes;
 
   // Use above to create instance
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
+  instance.set_instance_name("instance-tmp");
+  instance.set_instance_subdirectory("general-performance-optimization");
 
   // Make some changes to defaults and add train routes
 
   instance.set_train_weight("Train2", 2);
-  instance.set_train_optional("Train1");
-  instance.set_lambda(2);
 
   instance.add_empty_route("Train1");
-  instance.push_back_edge_to_route("Train1", "l0", "l1");
-  instance.push_back_edge_to_route("Train1", "l1", "l2");
-  instance.push_back_edge_to_route("Train1", "l2", "l3");
-  instance.push_back_edge_to_route("Train1", "l3", "g00");
-  instance.push_back_edge_to_route("Train1", "g00", "g01");
-  instance.push_back_edge_to_route("Train1", "g01", "r2");
-  instance.push_back_edge_to_route("Train1", "r2", "r1");
-  instance.push_back_edge_to_route("Train1", "r1", "r0");
+  instance.push_back_edge_to_route("Train1", {"l0", "l1"});
+  instance.push_back_edge_to_route("Train1", {"l1", "l2"});
+  instance.push_back_edge_to_route("Train1", {"l2", "l3"});
+  instance.push_back_edge_to_route("Train1", {"l3", "g00"});
+  instance.push_back_edge_to_route("Train1", {"g00", "g01"});
+  instance.push_back_edge_to_route("Train1", {"g01", "r2"});
+  instance.push_back_edge_to_route("Train1", {"r2", "r1"});
+  instance.push_back_edge_to_route("Train1", {"r1", "r0"});
 
   instance.add_empty_route("Train2");
-  instance.push_back_edge_to_route("Train2", "l0", "l1");
-  instance.push_back_edge_to_route("Train2", "l1", "l2");
-  instance.push_back_edge_to_route("Train2", "l2", "l3");
-  instance.push_back_edge_to_route("Train2", "l3", "g00");
-  instance.push_back_edge_to_route("Train2", "g00", "g01");
-  instance.push_back_edge_to_route("Train2", "g01", "r2");
-  instance.push_back_edge_to_route("Train2", "r2", "r1");
-  instance.push_back_edge_to_route("Train2", "r1", "r0");
+  instance.push_back_edge_to_route("Train2", {"l0", "l1"});
+  instance.push_back_edge_to_route("Train2", {"l1", "l2"});
+  instance.push_back_edge_to_route("Train2", {"l2", "l3"});
+  instance.push_back_edge_to_route("Train2", {"l3", "g00"});
+  instance.push_back_edge_to_route("Train2", {"g00", "g01"});
+  instance.push_back_edge_to_route("Train2", {"g01", "r2"});
+  instance.push_back_edge_to_route("Train2", {"r2", "r1"});
+  instance.push_back_edge_to_route("Train2", {"r1", "r0"});
 
   // Export and import
 
-  instance.export_instance("./tmp/test-general-instance/");
+  instance.export_instance("./tmp", true);
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance_read(
-      "./tmp/test-general-instance/");
+      "instance-tmp", "general-performance-optimization", "./tmp");
   std::filesystem::remove_all("./tmp");
+
+  EXPECT_EQ(instance_read.get_instance_name(), "instance-tmp");
+  EXPECT_EQ(instance_read.get_instance_subdirectory(),
+            "general-performance-optimization");
+  EXPECT_EQ(instance_read.get_const_network().get_network_name(),
+            "SimpleStation");
 
   // Check if imported instance is the same as the original
 
   EXPECT_TRUE(instance_read.check_consistency());
 
-  const auto l0 = instance_read.const_n().get_vertex_index("l0");
-  const auto r0 = instance_read.const_n().get_vertex_index("r0");
+  const auto& tr1 = instance_read.get_const_train_list().get_train("Train1");
+  const auto& tr2 = instance_read.get_const_train_list().get_train("Train2");
 
-  const auto& tr1 = instance_read.get_train_list().get_train("Train1");
-  const auto& tr2 = instance_read.get_train_list().get_train("Train2");
+  EXPECT_EQ(tr1.get_name(), "Train1");
+  EXPECT_EQ(tr1.get_length(), 100);
+  EXPECT_EQ(tr1.get_max_speed(), 10);
+  EXPECT_EQ(tr1.get_acceleration(), 1);
+  EXPECT_EQ(tr1.get_deceleration(), 1);
+  EXPECT_TRUE(tr1.has_tim());
 
-  EXPECT_EQ(tr1.name, "Train1");
-  EXPECT_EQ(tr1.length, 100);
-  EXPECT_EQ(tr1.max_speed, 10);
-  EXPECT_EQ(tr1.acceleration, 1);
-  EXPECT_EQ(tr1.deceleration, 1);
-  EXPECT_EQ(tr1.tim, true);
-
-  EXPECT_EQ(tr2.name, "Train2");
-  EXPECT_EQ(tr2.length, 100);
-  EXPECT_EQ(tr2.max_speed, 10);
-  EXPECT_EQ(tr2.acceleration, 1);
-  EXPECT_EQ(tr2.deceleration, 1);
-  EXPECT_EQ(tr2.tim, false);
+  EXPECT_EQ(tr2.get_name(), "Train2");
+  EXPECT_EQ(tr2.get_length(), 100);
+  EXPECT_EQ(tr2.get_max_speed(), 10);
+  EXPECT_EQ(tr2.get_acceleration(), 1);
+  EXPECT_EQ(tr2.get_deceleration(), 1);
+  EXPECT_FALSE(tr2.has_tim());
 
   EXPECT_EQ(instance_read.get_train_weight("Train1"), 1);
-  EXPECT_EQ(instance_read.get_train_optional("Train1"), true);
   EXPECT_EQ(instance_read.get_train_weight("Train2"), 2);
-  EXPECT_EQ(instance_read.get_train_optional("Train2"), false);
-  EXPECT_EQ(instance_read.get_lambda(), 2);
 
-  const auto& tr1_schedule = instance_read.get_schedule("Train1");
-  const auto& tr2_schedule = instance_read.get_schedule("Train2");
+  const auto& tr1_schedule = instance_read.get_const_schedule("Train1");
+  const auto& tr2_schedule = instance_read.get_const_schedule("Train2");
 
-  EXPECT_EQ(tr1_schedule.get_t_0_range(), (std::pair<int, int>(0, 60)));
-  EXPECT_EQ(tr1_schedule.get_t_n_range(), (std::pair<int, int>(360, 420)));
-  EXPECT_EQ(tr1_schedule.get_v_0(), 0);
-  EXPECT_EQ(tr1_schedule.get_v_n(), 0);
-  EXPECT_EQ(tr1_schedule.get_entry(), l0);
-  EXPECT_EQ(tr1_schedule.get_exit(), r0);
+  EXPECT_EQ(tr1_schedule.get_entry_time(), 0);
+  EXPECT_EQ(tr1_schedule.get_exit_time(), 360);
+  EXPECT_EQ(tr1_schedule.get_initial_velocity(), 0);
+  EXPECT_EQ(tr1_schedule.get_exit_velocity(), 0);
 
-  EXPECT_EQ(tr2_schedule.get_t_0_range(), (std::pair<int, int>(0, 60)));
-  EXPECT_EQ(tr2_schedule.get_t_n_range(), (std::pair<int, int>(400, 460)));
-  EXPECT_EQ(tr2_schedule.get_v_0(), 10);
-  EXPECT_EQ(tr2_schedule.get_v_n(), 5);
-  EXPECT_EQ(tr2_schedule.get_entry(), l0);
-  EXPECT_EQ(tr2_schedule.get_exit(), r0);
+  EXPECT_EQ(tr2_schedule.get_entry_time(), 0);
+  EXPECT_EQ(tr2_schedule.get_exit_time(), 400);
+  EXPECT_EQ(tr2_schedule.get_initial_velocity(), 10);
+  EXPECT_EQ(tr2_schedule.get_exit_velocity(), 5);
 
   EXPECT_EQ(tr1_schedule.get_stops().size(), 1);
-  EXPECT_EQ(tr1_schedule.get_stops().at(0).get_station_name(), "Station1");
-  EXPECT_EQ(tr1_schedule.get_stops().at(0).get_begin_range(),
-            (std::pair<int, int>(60, 120)));
-  EXPECT_EQ(tr1_schedule.get_stops().at(0).get_end_range(),
-            (std::pair<int, int>(120, 180)));
-  EXPECT_EQ(tr1_schedule.get_stops().at(0).get_min_stopping_time(), 60);
+  EXPECT_EQ(tr1_schedule.get_stops().at(0).get_station().name, "Station1");
+  EXPECT_EQ(tr1_schedule.get_stops().at(0).get_service_time(), 60);
+  EXPECT_EQ(tr1_schedule.get_stops().at(0).get_service_duration(), 120);
 
   EXPECT_EQ(tr2_schedule.get_stops().size(), 0);
 
-  const auto& tr1_route = instance_read.get_route("Train1");
-  const auto& tr2_route = instance_read.get_route("Train2");
+  const auto& tr1_route = instance_read.get_const_routes().get_route("Train1");
+  const auto& tr2_route = instance_read.get_const_routes().get_route("Train2");
 
   EXPECT_EQ(tr1_route.size(), 8);
-  EXPECT_EQ(tr1_route.get_edge(0),
-            instance_read.const_n().get_edge_index("l0", "l1"));
-  EXPECT_EQ(tr1_route.get_edge(1),
-            instance_read.const_n().get_edge_index("l1", "l2"));
-  EXPECT_EQ(tr1_route.get_edge(2),
-            instance_read.const_n().get_edge_index("l2", "l3"));
-  EXPECT_EQ(tr1_route.get_edge(3),
-            instance_read.const_n().get_edge_index("l3", "g00"));
-  EXPECT_EQ(tr1_route.get_edge(4),
-            instance_read.const_n().get_edge_index("g00", "g01"));
-  EXPECT_EQ(tr1_route.get_edge(5),
-            instance_read.const_n().get_edge_index("g01", "r2"));
-  EXPECT_EQ(tr1_route.get_edge(6),
-            instance_read.const_n().get_edge_index("r2", "r1"));
-  EXPECT_EQ(tr1_route.get_edge(7),
-            instance_read.const_n().get_edge_index("r1", "r0"));
+  EXPECT_EQ(tr1_route.get_edge_id(0),
+            instance_read.get_const_network().get_edge_index({"l0"}, {"l1"}));
+  EXPECT_EQ(tr1_route.get_edge_id(1),
+            instance_read.get_const_network().get_edge_index({"l1"}, {"l2"}));
+  EXPECT_EQ(tr1_route.get_edge_id(2),
+            instance_read.get_const_network().get_edge_index({"l2"}, {"l3"}));
+  EXPECT_EQ(tr1_route.get_edge_id(3),
+            instance_read.get_const_network().get_edge_index({"l3"}, {"g00"}));
+  EXPECT_EQ(tr1_route.get_edge_id(4),
+            instance_read.get_const_network().get_edge_index({"g00"}, {"g01"}));
+  EXPECT_EQ(tr1_route.get_edge_id(5),
+            instance_read.get_const_network().get_edge_index({"g01"}, {"r2"}));
+  EXPECT_EQ(tr1_route.get_edge_id(6),
+            instance_read.get_const_network().get_edge_index({"r2"}, {"r1"}));
+  EXPECT_EQ(tr1_route.get_edge_id(7),
+            instance_read.get_const_network().get_edge_index({"r1"}, {"r0"}));
 
   EXPECT_EQ(tr2_route.size(), 8);
-  EXPECT_EQ(tr2_route.get_edge(0),
-            instance_read.const_n().get_edge_index("l0", "l1"));
-  EXPECT_EQ(tr2_route.get_edge(1),
-            instance_read.const_n().get_edge_index("l1", "l2"));
-  EXPECT_EQ(tr2_route.get_edge(2),
-            instance_read.const_n().get_edge_index("l2", "l3"));
-  EXPECT_EQ(tr2_route.get_edge(3),
-            instance_read.const_n().get_edge_index("l3", "g00"));
-  EXPECT_EQ(tr2_route.get_edge(4),
-            instance_read.const_n().get_edge_index("g00", "g01"));
-  EXPECT_EQ(tr2_route.get_edge(5),
-            instance_read.const_n().get_edge_index("g01", "r2"));
-  EXPECT_EQ(tr2_route.get_edge(6),
-            instance_read.const_n().get_edge_index("r2", "r1"));
-  EXPECT_EQ(tr2_route.get_edge(7),
-            instance_read.const_n().get_edge_index("r1", "r0"));
+  EXPECT_EQ(tr2_route.get_edge_id(0),
+            instance_read.get_const_network().get_edge_index({"l0"}, {"l1"}));
+  EXPECT_EQ(tr2_route.get_edge_id(1),
+            instance_read.get_const_network().get_edge_index({"l1"}, {"l2"}));
+  EXPECT_EQ(tr2_route.get_edge_id(2),
+            instance_read.get_const_network().get_edge_index({"l2"}, {"l3"}));
+  EXPECT_EQ(tr2_route.get_edge_id(3),
+            instance_read.get_const_network().get_edge_index({"l3"}, {"g00"}));
+  EXPECT_EQ(tr2_route.get_edge_id(4),
+            instance_read.get_const_network().get_edge_index({"g00"}, {"g01"}));
+  EXPECT_EQ(tr2_route.get_edge_id(5),
+            instance_read.get_const_network().get_edge_index({"g01"}, {"r2"}));
+  EXPECT_EQ(tr2_route.get_edge_id(6),
+            instance_read.get_const_network().get_edge_index({"r2"}, {"r1"}));
+  EXPECT_EQ(tr2_route.get_edge_id(7),
+            instance_read.get_const_network().get_edge_index({"r1"}, {"r0"}));
 
-  EXPECT_EQ(instance_read.get_station_list().size(), 1);
+  EXPECT_EQ(instance_read.get_const_station_list().size(), 1);
   const auto& station1 =
-      instance_read.get_station_list().get_station("Station1");
+      instance_read.get_const_station_list().get_station("Station1");
   EXPECT_EQ(station1.name, "Station1");
   const auto& station1_tracks = station1.tracks;
   EXPECT_EQ(station1_tracks.size(), 4);
   EXPECT_TRUE(std::find(station1_tracks.begin(), station1_tracks.end(),
-                        instance_read.const_n().get_edge_index("g00", "g01")) !=
-              station1_tracks.end());
+                        instance_read.get_const_network().get_edge_index(
+                            {"g00"}, {"g01"})) != station1_tracks.end());
   EXPECT_TRUE(std::find(station1_tracks.begin(), station1_tracks.end(),
-                        instance_read.const_n().get_edge_index("g01", "g00")) !=
-              station1_tracks.end());
+                        instance_read.get_const_network().get_edge_index(
+                            {"g01"}, {"g00"})) != station1_tracks.end());
   EXPECT_TRUE(std::find(station1_tracks.begin(), station1_tracks.end(),
-                        instance_read.const_n().get_edge_index("g10", "g11")) !=
-              station1_tracks.end());
+                        instance_read.get_const_network().get_edge_index(
+                            {"g10"}, {"g11"})) != station1_tracks.end());
   EXPECT_TRUE(std::find(station1_tracks.begin(), station1_tracks.end(),
-                        instance_read.const_n().get_edge_index("g11", "g10")) !=
-              station1_tracks.end());
+                        instance_read.get_const_network().get_edge_index(
+                            {"g11"}, {"g10"})) != station1_tracks.end());
 }
 
 TEST(GeneralPerformanceOptimizationInstances,
      SolGeneralPerformanceOptimizationInstanceConsistency) {
-  instances::GeneralPerformanceOptimizationInstance instance;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 
   // Add a simple network to the instance
-  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
-  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
-  const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  const auto v2 = instance.get_editable_network().add_vertex(
+      "v2", cda_rail::VertexType::TTD);
 
-  const auto v0_v1 = instance.n().add_edge("v0", "v1", 100, 10, false);
-  const auto v1_v2 = instance.n().add_edge("v1", "v2", 200, 20, false);
-  const auto v1_v0 = instance.n().add_edge("v1", "v0", 100, 10, false);
-  const auto v2_v1 = instance.n().add_edge("v2", "v1", 200, 20, false);
+  const auto v0_v1 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 10, false);
+  const auto v1_v2 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 200, 20, false);
+  const auto v1_v0 =
+      instance.get_editable_network().add_edge({"v1"}, {"v0"}, 100, 10, false);
+  const auto v2_v1 =
+      instance.get_editable_network().add_edge({"v2"}, {"v1"}, 200, 20, false);
 
-  instance.n().add_successor({"v0", "v1"}, {"v1", "v2"});
-  instance.n().add_successor({"v2", "v1"}, {"v1", "v0"});
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v2", "v1"}, {"v1", "v0"});
 
-  const auto tr1 = instance.add_train("tr1", 50, 10, 2, 2, {0, 60}, 10, "v0",
-                                      {120, 180}, 6, "v2");
-  const auto tr2 = instance.add_train("tr2", 50, 20, 2, 2, {120, 180}, 0, "v2",
-                                      {210, 270}, 0, "v0", 2, true);
+  const auto tr1 =
+      instance.add_train("tr1", 50, 10, 2, 2, 0, 10, v0, 120, 6, v2);
+  const auto tr2 =
+      instance.add_train("tr2", 50, 20, 2, 2, 120, 0, Network::VertexInput{v2},
+                         210, 0, Network::VertexInput{v0}, 2);
 
   // Check the consistency of the instance
   EXPECT_TRUE(instance.check_consistency(false));
 
-  instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
-      sol_instance(instance);
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
 
   EXPECT_FALSE(sol_instance.check_consistency());
 
@@ -314,12 +304,8 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(sol_instance.check_consistency());
 
   sol_instance.add_empty_route("tr1");
-  sol_instance.push_back_edge_to_route("tr1", "v0", "v1");
-  sol_instance.push_back_edge_to_route("tr1", v1, v2);
-
-  EXPECT_FALSE(sol_instance.check_consistency());
-
-  sol_instance.set_train_routed("tr1");
+  sol_instance.push_back_edge_to_route("tr1", {"v0", "v1"});
+  sol_instance.push_back_edge_to_route("tr1", {v1, v2});
 
   EXPECT_FALSE(sol_instance.check_consistency());
 
@@ -337,15 +323,7 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   sol_instance.add_train_speed("tr1", 10, 10);
 
-  EXPECT_TRUE(sol_instance.check_consistency());
-
-  sol_instance.set_train_not_routed("tr1");
-
   EXPECT_FALSE(sol_instance.check_consistency());
-
-  sol_instance.set_train_routed("tr1");
-
-  EXPECT_TRUE(sol_instance.check_consistency());
 
   sol_instance.add_train_pos("tr1", 20, 200);
   sol_instance.add_train_speed("tr1", 20, 10);
@@ -359,104 +337,104 @@ TEST(GeneralPerformanceOptimizationInstances,
   sol_instance.add_train_pos("tr1", 36, 300);
   sol_instance.add_train_speed("tr1", 36, 6);
 
-  EXPECT_TRUE(sol_instance.check_consistency());
+  EXPECT_FALSE(sol_instance.check_consistency());
 
-  EXPECT_APPROX_EQ(sol_instance.get_train_pos("tr1", 0), 0);
-  EXPECT_APPROX_EQ(sol_instance.get_train_pos("tr1", 10), 100);
-  EXPECT_APPROX_EQ(sol_instance.get_train_pos("tr1", 20), 200);
-  EXPECT_APPROX_EQ(sol_instance.get_train_pos("tr1", 36), 300);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_pos("tr1", 0), 0);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_pos("tr1", 10), 100);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_pos("tr1", 20), 200);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_pos("tr1", 36), 300);
 
-  EXPECT_APPROX_EQ(sol_instance.get_train_speed("tr1", 0), 10);
-  EXPECT_APPROX_EQ(sol_instance.get_train_speed("tr1", 10), 10);
-  EXPECT_APPROX_EQ(sol_instance.get_train_speed("tr1", 20), 10);
-  EXPECT_APPROX_EQ(sol_instance.get_train_speed("tr1", 36), 6);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_speed("tr1", 0), 10);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_speed("tr1", 10), 10);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_speed("tr1", 20), 10);
+  EXPECT_APPROX_EQ_6(sol_instance.get_train_speed("tr1", 36), 6);
 
   // Time 0 with speed 10 at position 0
   const auto posvel1 = sol_instance.get_approximate_train_pos_and_vel("tr1", 0);
-  EXPECT_TRUE(posvel1.has_value());
+  ASSERT_TRUE(posvel1.has_value());
   const auto [pos1, vel1] = posvel1.value();
-  EXPECT_APPROX_EQ(pos1, 0);
-  EXPECT_APPROX_EQ(vel1, 10);
+  EXPECT_APPROX_EQ_6(pos1, 0);
+  EXPECT_APPROX_EQ_6(vel1, 10);
 
-  const auto [pos1_lb, pos1_ub, v1_lb, v1_ub] =
+  const auto [pos1_bounds, vel1_bounds] =
       sol_instance.get_exact_pos_and_vel_bounds("tr1", 0);
-  EXPECT_APPROX_EQ(pos1_lb, 0);
-  EXPECT_APPROX_EQ(pos1_ub, 0);
-  EXPECT_APPROX_EQ(v1_lb, 10);
-  EXPECT_APPROX_EQ(v1_ub, 10);
+  EXPECT_APPROX_EQ_6(pos1_bounds.lb, 0);
+  EXPECT_APPROX_EQ_6(pos1_bounds.ub, 0);
+  EXPECT_APPROX_EQ_6(vel1_bounds.lb, 10);
+  EXPECT_APPROX_EQ_6(vel1_bounds.ub, 10);
 
   // Time 5 with speed 10 at position 50
   const auto posvel2 = sol_instance.get_approximate_train_pos_and_vel("tr1", 5);
-  EXPECT_TRUE(posvel2.has_value());
+  ASSERT_TRUE(posvel2.has_value());
   const auto [pos2, vel2] = posvel2.value();
-  EXPECT_APPROX_EQ(pos2, 50);
-  EXPECT_APPROX_EQ(vel2, 10);
+  EXPECT_APPROX_EQ_6(pos2, 50);
+  EXPECT_APPROX_EQ_6(vel2, 10);
 
-  const auto [pos2_lb, pos2_ub, v2_lb, v2_ub] =
+  const auto [pos2_bounds, vel2_bounds] =
       sol_instance.get_exact_pos_and_vel_bounds("tr1", 5);
-  EXPECT_APPROX_EQ(min_travel_time_from_start(10, 10, 10, 2, 2, 100, pos2_ub),
-                   5);
-  EXPECT_APPROX_EQ(
-      max_travel_time_from_start_no_stopping(10, 10, V_MIN, 2, 2, 100, pos2_lb),
-      5);
-  EXPECT_APPROX_EQ(v2_lb, V_MIN);
-  EXPECT_APPROX_EQ(v2_ub, 10);
+  EXPECT_APPROX_EQ_6(
+      min_travel_time_from_start(10, 10, 10, 2, 2, 100, pos2_bounds.ub), 5);
+  EXPECT_APPROX_EQ_6(max_travel_time_from_start_no_stopping(
+                         10, 10, V_MIN, 2, 2, 100, pos2_bounds.lb),
+                     5);
+  EXPECT_APPROX_EQ_6(vel2_bounds.lb, V_MIN);
+  EXPECT_APPROX_EQ_6(vel2_bounds.ub, 10);
 
   // Time 10 with speed 10 at position 100
   const auto posvel3 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 10);
-  EXPECT_TRUE(posvel3.has_value());
+  ASSERT_TRUE(posvel3.has_value());
   const auto [pos3, vel3] = posvel3.value();
-  EXPECT_APPROX_EQ(pos3, 100);
-  EXPECT_APPROX_EQ(vel3, 10);
+  EXPECT_APPROX_EQ_6(pos3, 100);
+  EXPECT_APPROX_EQ_6(vel3, 10);
 
   // Time 15 with speed 10 at position 150
   const auto posvel4 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 15);
-  EXPECT_TRUE(posvel4.has_value());
+  ASSERT_TRUE(posvel4.has_value());
   const auto [pos4, vel4] = posvel4.value();
-  EXPECT_APPROX_EQ(pos4, 150);
-  EXPECT_APPROX_EQ(vel4, 10);
+  EXPECT_APPROX_EQ_6(pos4, 150);
+  EXPECT_APPROX_EQ_6(vel4, 10);
 
   // Time 20 with speed 10 at position 200
   const auto posvel5 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 20);
-  EXPECT_TRUE(posvel5.has_value());
+  ASSERT_TRUE(posvel5.has_value());
   const auto [pos5, vel5] = posvel5.value();
-  EXPECT_APPROX_EQ(pos5, 200);
-  EXPECT_APPROX_EQ(vel5, 10);
+  EXPECT_APPROX_EQ_6(pos5, 200);
+  EXPECT_APPROX_EQ_6(vel5, 10);
 
   // Time 21 with speed 8 at position 209
   const auto posvel6 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 21);
-  EXPECT_TRUE(posvel6.has_value());
+  ASSERT_TRUE(posvel6.has_value());
   const auto [pos6, vel6] = posvel6.value();
-  EXPECT_APPROX_EQ_2(pos6, 209, 10 * cda_rail::LINE_SPEED_ACCURACY);
-  EXPECT_APPROX_EQ_2(vel6, 8, 2 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(pos6, 209, 10 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(vel6, 8, 2 * cda_rail::LINE_SPEED_ACCURACY);
 
   // Time 22 with speed 6 at position 216
   const auto posvel7 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 22);
-  EXPECT_TRUE(posvel7.has_value());
+  ASSERT_TRUE(posvel7.has_value());
   const auto [pos7, vel7] = posvel7.value();
-  EXPECT_APPROX_EQ_2(pos7, 216, 10 * cda_rail::LINE_SPEED_ACCURACY);
-  EXPECT_APPROX_EQ_2(vel7, 6, 2 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(pos7, 216, 10 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(vel7, 6, 2 * cda_rail::LINE_SPEED_ACCURACY);
 
   // Time 25 with speed 6 at position 216+3*6 = 234
   const auto posvel8 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 25);
-  EXPECT_TRUE(posvel8.has_value());
+  ASSERT_TRUE(posvel8.has_value());
   const auto [pos8, vel8] = posvel8.value();
-  EXPECT_APPROX_EQ_2(pos8, 234, 10 * cda_rail::LINE_SPEED_ACCURACY);
-  EXPECT_APPROX_EQ_2(vel8, 6, 2 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(pos8, 234, 10 * cda_rail::LINE_SPEED_ACCURACY);
+  EXPECT_APPROX_EQ(vel8, 6, 2 * cda_rail::LINE_SPEED_ACCURACY);
 
   // Time 36 with speed 6 at position 300
   const auto posvel9 =
       sol_instance.get_approximate_train_pos_and_vel("tr1", 36);
-  EXPECT_TRUE(posvel9.has_value());
+  ASSERT_TRUE(posvel9.has_value());
   const auto [pos9, vel9] = posvel9.value();
-  EXPECT_APPROX_EQ(pos9, 300);
-  EXPECT_APPROX_EQ(vel9, 6);
+  EXPECT_APPROX_EQ_6(pos9, 300);
+  EXPECT_APPROX_EQ_6(vel9, 6);
 
   sol_instance.set_status(cda_rail::SolutionStatus::Infeasible);
   sol_instance.set_solution_not_found();
@@ -470,7 +448,7 @@ TEST(GeneralPerformanceOptimizationInstances,
   EXPECT_FALSE(sol_instance.check_consistency());
   sol_instance.set_obj(0);
 
-  EXPECT_TRUE(sol_instance.check_consistency());
+  EXPECT_FALSE(sol_instance.check_consistency());
 
   // Test tr_order
   sol_instance.add_empty_route("tr2");
@@ -484,59 +462,59 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   const auto tr2_pos_vel_0 =
       sol_instance.get_approximate_train_pos_and_vel("tr2", 0);
-  EXPECT_TRUE(tr2_pos_vel_0.has_value());
+  ASSERT_TRUE(tr2_pos_vel_0.has_value());
   const auto [tr2_pos_0, tr2_vel_0] = tr2_pos_vel_0.value();
-  EXPECT_APPROX_EQ(tr2_pos_0, 0);
-  EXPECT_APPROX_EQ(tr2_vel_0, 0);
+  EXPECT_APPROX_EQ_6(tr2_pos_0, 0);
+  EXPECT_APPROX_EQ_6(tr2_vel_0, 0);
 
   const auto tr2_pos_vel_2 =
       sol_instance.get_approximate_train_pos_and_vel("tr2", 2);
-  EXPECT_TRUE(tr2_pos_vel_2.has_value());
+  ASSERT_TRUE(tr2_pos_vel_2.has_value());
   const auto [tr2_pos_2, tr2_vel_2] = tr2_pos_vel_2.value();
-  EXPECT_APPROX_EQ(tr2_pos_2, 0);
-  EXPECT_APPROX_EQ(tr2_vel_2, 0);
+  EXPECT_APPROX_EQ_6(tr2_pos_2, 0);
+  EXPECT_APPROX_EQ_6(tr2_vel_2, 0);
 
   const auto tr2_pos_vel_5 =
       sol_instance.get_approximate_train_pos_and_vel("tr2", 5);
-  EXPECT_TRUE(tr2_pos_vel_5.has_value());
+  ASSERT_TRUE(tr2_pos_vel_5.has_value());
   const auto [tr2_pos_5, tr2_vel_5] = tr2_pos_vel_5.value();
-  EXPECT_APPROX_EQ(tr2_pos_5, 0);
-  EXPECT_APPROX_EQ(tr2_vel_5, 0);
+  EXPECT_APPROX_EQ_6(tr2_pos_5, 0);
+  EXPECT_APPROX_EQ_6(tr2_vel_5, 0);
 
   const auto tr2_pos_vel_15 =
       sol_instance.get_approximate_train_pos_and_vel("tr2", 15);
-  EXPECT_TRUE(tr2_pos_vel_15.has_value());
+  ASSERT_TRUE(tr2_pos_vel_15.has_value());
   const auto [tr2_pos_15, tr2_vel_15] = tr2_pos_vel_15.value();
-  EXPECT_APPROX_EQ(tr2_pos_15, 100);
-  EXPECT_APPROX_EQ(tr2_vel_15, 20);
+  EXPECT_APPROX_EQ_6(tr2_pos_15, 100);
+  EXPECT_APPROX_EQ_6(tr2_vel_15, 20);
 
   const auto tr2_pos_vel_20 =
       sol_instance.get_approximate_train_pos_and_vel("tr2", 20);
-  EXPECT_TRUE(tr2_pos_vel_20.has_value());
+  ASSERT_TRUE(tr2_pos_vel_20.has_value());
   const auto [tr2_pos_20, tr2_vel_20] = tr2_pos_vel_20.value();
-  EXPECT_APPROX_EQ(tr2_pos_20, 200);
-  EXPECT_APPROX_EQ(tr2_vel_20, 20);
+  EXPECT_APPROX_EQ_6(tr2_pos_20, 200);
+  EXPECT_APPROX_EQ_6(tr2_vel_20, 20);
 
-  const auto [pos_lb_0, pos_ub_0, v_lb_0, v_ub_0] =
+  const auto [pos_bounds_0, vel_bounds_0] =
       sol_instance.get_exact_pos_and_vel_bounds("tr2", 0);
-  EXPECT_APPROX_EQ(pos_lb_0, 0);
-  EXPECT_APPROX_EQ(pos_ub_0, 0);
-  EXPECT_APPROX_EQ(v_lb_0, 0);
-  EXPECT_APPROX_EQ(v_ub_0, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_0.lb, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_0.ub, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_0.lb, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_0.ub, 0);
 
-  const auto [pos_lb_2, pos_ub_2, v_lb_1, v_ub_1] =
+  const auto [pos_bounds_2, vel_bounds_1] =
       sol_instance.get_exact_pos_and_vel_bounds("tr2", 2);
-  EXPECT_APPROX_EQ(pos_lb_2, 0);
-  EXPECT_APPROX_EQ(pos_ub_2, 0);
-  EXPECT_APPROX_EQ(v_lb_1, 0);
-  EXPECT_APPROX_EQ(v_ub_1, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_2.lb, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_2.ub, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_1.lb, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_1.ub, 0);
 
-  const auto [pos_lb_5, pos_ub_5, v_lb_2, v_ub_2] =
+  const auto [pos_bounds_5, vel_bounds_2] =
       sol_instance.get_exact_pos_and_vel_bounds("tr2", 5);
-  EXPECT_APPROX_EQ(pos_lb_5, 0);
-  EXPECT_APPROX_EQ(pos_ub_5, 0);
-  EXPECT_APPROX_EQ(v_lb_2, 0);
-  EXPECT_APPROX_EQ(v_ub_2, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_5.lb, 0);
+  EXPECT_APPROX_EQ_6(pos_bounds_5.ub, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_2.lb, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds_2.ub, 0);
 
   const auto tr_order = sol_instance.get_train_order(v0_v1);
   EXPECT_EQ(tr_order.size(), 1);
@@ -550,34 +528,40 @@ TEST(GeneralPerformanceOptimizationInstances,
 
 TEST(GeneralPerformanceOptimizationInstances,
      SolGeneralPerformanceOptimizationInstanceTrainOrderWithReverseEdge) {
-  instances::GeneralPerformanceOptimizationInstance instance;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 
   // Add a simple network to the instance
-  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
-  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
-  const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  const auto v2 = instance.get_editable_network().add_vertex(
+      "v2", cda_rail::VertexType::TTD);
 
-  const auto v0_v1 = instance.n().add_edge("v0", "v1", 100, 10, false);
-  const auto v1_v2 = instance.n().add_edge("v1", "v2", 200, 20, false);
-  const auto v1_v0 = instance.n().add_edge("v1", "v0", 100, 10, false);
-  const auto v2_v1 = instance.n().add_edge("v2", "v1", 200, 20, false);
+  const auto v0_v1 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 10, false);
+  const auto v1_v2 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 200, 20, false);
+  const auto v1_v0 =
+      instance.get_editable_network().add_edge({"v1"}, {"v0"}, 100, 10, false);
+  const auto v2_v1 =
+      instance.get_editable_network().add_edge({"v2"}, {"v1"}, 200, 20, false);
 
-  instance.n().add_successor({"v0", "v1"}, {"v1", "v2"});
-  instance.n().add_successor({"v2", "v1"}, {"v1", "v0"});
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v2", "v1"}, {"v1", "v0"});
 
-  const auto tr1 = instance.add_train("tr1", 50, 10, 2, 2, {0, 160}, 10, "v0",
-                                      {30, 270}, 6, "v2");
-  const auto tr2 = instance.add_train("tr2", 50, 20, 2, 2, {0, 160}, 0, "v2",
-                                      {30, 270}, 0, "v0", 2, true);
-  const auto tr3 = instance.add_train("tr3", 50, 10, 2, 2, {0, 160}, 10, "v0",
-                                      {30, 270}, 6, "v2");
+  const auto tr1 =
+      instance.add_train("tr1", 50, 10, 2, 2, 0, 10, v0, 30, 6, v2);
+  const auto tr2 =
+      instance.add_train("tr2", 50, 20, 2, 2, 0, 0, Network::VertexInput{v2},
+                         30, 0, Network::VertexInput{v0}, 2);
+  const auto tr3 =
+      instance.add_train("tr3", 50, 10, 2, 2, 0, 10, v0, 30, 6, v2);
 
   // Check the consistency of the instance
   EXPECT_TRUE(instance.check_consistency(false));
 
-  instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
-      sol_instance(instance);
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
 
   sol_instance.add_empty_route("tr1");
   sol_instance.add_empty_route("tr2");
@@ -589,8 +573,8 @@ TEST(GeneralPerformanceOptimizationInstances,
   sol_instance.push_back_edge_to_route("tr2", v2_v1);
   sol_instance.push_back_edge_to_route("tr2", v1_v0);
 
-  sol_instance.push_back_edge_to_route("tr3", v0, v1);
-  sol_instance.push_back_edge_to_route("tr3", v1, v2);
+  sol_instance.push_back_edge_to_route("tr3", {v0, v1});
+  sol_instance.push_back_edge_to_route("tr3", {v1, v2});
 
   sol_instance.add_train_pos("tr1", 0, 0);
   sol_instance.add_train_pos("tr1", 10, 100);
@@ -621,101 +605,244 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   // Check Train Orders
   const auto tr_order_v0_v1 = sol_instance.get_train_order(v0_v1);
-  EXPECT_EQ(tr_order_v0_v1.size(), 2);
+  ASSERT_EQ(tr_order_v0_v1.size(), 2);
   EXPECT_EQ(tr_order_v0_v1.at(0), tr1);
   EXPECT_EQ(tr_order_v0_v1.at(1), tr3);
 
   const auto tr_order_v1_v2 = sol_instance.get_train_order(v1_v2);
-  EXPECT_EQ(tr_order_v1_v2.size(), 2);
+  ASSERT_EQ(tr_order_v1_v2.size(), 2);
   EXPECT_EQ(tr_order_v1_v2.at(0), tr1);
   EXPECT_EQ(tr_order_v1_v2.at(1), tr3);
 
   const auto tr_order_v1_v0 = sol_instance.get_train_order(v1_v0);
-  EXPECT_EQ(tr_order_v1_v0.size(), 1);
+  ASSERT_EQ(tr_order_v1_v0.size(), 1);
   EXPECT_EQ(tr_order_v1_v0.at(0), tr2);
 
   const auto tr_order_v2_v1 = sol_instance.get_train_order(v2_v1);
-  EXPECT_EQ(tr_order_v2_v1.size(), 1);
+  ASSERT_EQ(tr_order_v2_v1.size(), 1);
   EXPECT_EQ(tr_order_v2_v1.at(0), tr2);
 
   const auto tr_order_rev_v0_v1 =
       sol_instance.get_train_order_with_reverse(v0_v1);
-  EXPECT_EQ(tr_order_rev_v0_v1.size(), 3);
-  EXPECT_EQ(tr_order_rev_v0_v1.at(0).first, tr1);
-  EXPECT_EQ(tr_order_rev_v0_v1.at(1).first, tr2);
-  EXPECT_EQ(tr_order_rev_v0_v1.at(2).first, tr3);
-  EXPECT_TRUE(tr_order_rev_v0_v1.at(0).second);
-  EXPECT_FALSE(tr_order_rev_v0_v1.at(1).second);
-  EXPECT_TRUE(tr_order_rev_v0_v1.at(2).second);
+  ASSERT_EQ(tr_order_rev_v0_v1.size(), 3);
+  EXPECT_EQ(tr_order_rev_v0_v1.at(0).train_id, tr1);
+  EXPECT_EQ(tr_order_rev_v0_v1.at(1).train_id, tr2);
+  EXPECT_EQ(tr_order_rev_v0_v1.at(2).train_id, tr3);
+  EXPECT_TRUE(tr_order_rev_v0_v1.at(0).original_direction);
+  EXPECT_FALSE(tr_order_rev_v0_v1.at(1).original_direction);
+  EXPECT_TRUE(tr_order_rev_v0_v1.at(2).original_direction);
 
   const auto tr_order_rev_v1_v2 =
       sol_instance.get_train_order_with_reverse(v1_v2);
-  EXPECT_EQ(tr_order_rev_v1_v2.size(), 3);
-  EXPECT_EQ(tr_order_rev_v1_v2.at(0).first, tr1);
-  EXPECT_EQ(tr_order_rev_v1_v2.at(1).first, tr2);
-  EXPECT_EQ(tr_order_rev_v1_v2.at(2).first, tr3);
-  EXPECT_TRUE(tr_order_rev_v1_v2.at(0).second);
-  EXPECT_FALSE(tr_order_rev_v1_v2.at(1).second);
-  EXPECT_TRUE(tr_order_rev_v1_v2.at(2).second);
+  ASSERT_EQ(tr_order_rev_v1_v2.size(), 3);
+  EXPECT_EQ(tr_order_rev_v1_v2.at(0).train_id, tr1);
+  EXPECT_EQ(tr_order_rev_v1_v2.at(1).train_id, tr2);
+  EXPECT_EQ(tr_order_rev_v1_v2.at(2).train_id, tr3);
+  EXPECT_TRUE(tr_order_rev_v1_v2.at(0).original_direction);
+  EXPECT_FALSE(tr_order_rev_v1_v2.at(1).original_direction);
+  EXPECT_TRUE(tr_order_rev_v1_v2.at(2).original_direction);
 
   const auto tr_order_rev_v1_v0 =
       sol_instance.get_train_order_with_reverse(v1_v0);
-  EXPECT_EQ(tr_order_rev_v1_v0.size(), 3);
-  EXPECT_EQ(tr_order_rev_v1_v0.at(0).first, tr1);
-  EXPECT_EQ(tr_order_rev_v1_v0.at(1).first, tr2);
-  EXPECT_EQ(tr_order_rev_v1_v0.at(2).first, tr3);
-  EXPECT_FALSE(tr_order_rev_v1_v0.at(0).second);
-  EXPECT_TRUE(tr_order_rev_v1_v0.at(1).second);
-  EXPECT_FALSE(tr_order_rev_v1_v0.at(2).second);
+  ASSERT_EQ(tr_order_rev_v1_v0.size(), 3);
+  EXPECT_EQ(tr_order_rev_v1_v0.at(0).train_id, tr1);
+  EXPECT_EQ(tr_order_rev_v1_v0.at(1).train_id, tr2);
+  EXPECT_EQ(tr_order_rev_v1_v0.at(2).train_id, tr3);
+  EXPECT_FALSE(tr_order_rev_v1_v0.at(0).original_direction);
+  EXPECT_TRUE(tr_order_rev_v1_v0.at(1).original_direction);
+  EXPECT_FALSE(tr_order_rev_v1_v0.at(2).original_direction);
 
   const auto tr_order_rev_v2_v1 =
       sol_instance.get_train_order_with_reverse(v2_v1);
-  EXPECT_EQ(tr_order_rev_v2_v1.size(), 3);
-  EXPECT_EQ(tr_order_rev_v2_v1.at(0).first, tr1);
-  EXPECT_EQ(tr_order_rev_v2_v1.at(1).first, tr2);
-  EXPECT_EQ(tr_order_rev_v2_v1.at(2).first, tr3);
-  EXPECT_FALSE(tr_order_rev_v2_v1.at(0).second);
-  EXPECT_TRUE(tr_order_rev_v2_v1.at(1).second);
-  EXPECT_FALSE(tr_order_rev_v2_v1.at(2).second);
+  ASSERT_EQ(tr_order_rev_v2_v1.size(), 3);
+  EXPECT_EQ(tr_order_rev_v2_v1.at(0).train_id, tr1);
+  EXPECT_EQ(tr_order_rev_v2_v1.at(1).train_id, tr2);
+  EXPECT_EQ(tr_order_rev_v2_v1.at(2).train_id, tr3);
+  EXPECT_FALSE(tr_order_rev_v2_v1.at(0).original_direction);
+  EXPECT_TRUE(tr_order_rev_v2_v1.at(1).original_direction);
+  EXPECT_FALSE(tr_order_rev_v2_v1.at(2).original_direction);
 }
 
-TEST(GeneralPerformanceOptimizationInstances,
-     SolGeneralPerformanceOptimizationInstanceExportImport) {
-  instances::GeneralPerformanceOptimizationInstance instance;
+TEST(
+    GeneralPerformanceOptimizationInstances,
+    SolGeneralPerformanceOptimizationInstanceTrainOrderWithReverseEdgeInexactPosTimes) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 
   // Add a simple network to the instance
-  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
-  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
-  const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  const auto v2 = instance.get_editable_network().add_vertex(
+      "v2", cda_rail::VertexType::TTD);
 
-  const auto v0_v1 = instance.n().add_edge("v0", "v1", 100, 10);
-  const auto v1_v2 = instance.n().add_edge("v1", "v2", 200, 20);
-  const auto v1_v0 = instance.n().add_edge("v1", "v0", 100, 10);
-  const auto v2_v1 = instance.n().add_edge("v2", "v1", 200, 20);
+  const auto v0_v1 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 99, 10, false);
+  const auto v1_v2 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 201, 20, false);
+  const auto v1_v0 =
+      instance.get_editable_network().add_edge({"v1"}, {"v0"}, 99, 10, false);
+  const auto v2_v1 =
+      instance.get_editable_network().add_edge({"v2"}, {"v1"}, 201, 20, false);
 
-  instance.n().add_successor({"v0", "v1"}, {"v1", "v2"});
-  instance.n().add_successor({"v2", "v1"}, {"v1", "v0"});
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v2", "v1"}, {"v1", "v0"});
 
-  const auto tr1 = instance.add_train("tr1", 50, 10, 2, 2, {0, 60}, 0, "v0",
-                                      {120, 180}, 5, "v2");
-  const auto tr2 = instance.add_train("tr2", 50, 10, 2, 2, {120, 180}, 0, "v2",
-                                      {210, 270}, 0, "v0", 2, true);
+  const auto tr1 =
+      instance.add_train("tr1", 50, 10, 2, 2, 0, 10, v0, 30, 6, v2);
+  const auto tr2 =
+      instance.add_train("tr2", 50, 20, 2, 2, 0, 0, Network::VertexInput{v2},
+                         30, 0, Network::VertexInput{v0}, 2);
+  const auto tr3 =
+      instance.add_train("tr3", 50, 10, 2, 2, 0, 10, v0, 30, 6, v2);
 
   // Check the consistency of the instance
   EXPECT_TRUE(instance.check_consistency(false));
 
-  instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
-      sol_instance(instance);
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+
+  sol_instance.add_empty_route("tr1");
+  sol_instance.add_empty_route("tr2");
+  sol_instance.add_empty_route("tr3");
+
+  sol_instance.push_back_edge_to_route("tr1", v0_v1);
+  sol_instance.push_back_edge_to_route("tr1", v1_v2);
+
+  sol_instance.push_back_edge_to_route("tr2", v2_v1);
+  sol_instance.push_back_edge_to_route("tr2", v1_v0);
+
+  sol_instance.push_back_edge_to_route("tr3", {v0, v1});
+  sol_instance.push_back_edge_to_route("tr3", {v1, v2});
+
+  sol_instance.add_train_pos("tr1", 0, 0);
+  sol_instance.add_train_pos("tr1", 10, 100);
+  sol_instance.add_train_pos("tr1", 20, 200);
+  sol_instance.add_train_pos("tr1", 30, 300);
+  sol_instance.add_train_speed("tr1", 0, 10);
+  sol_instance.add_train_speed("tr1", 10, 10);
+  sol_instance.add_train_speed("tr1", 20, 10);
+  sol_instance.add_train_speed("tr1", 30, 10);
+
+  sol_instance.add_train_pos("tr2", 40, 0);
+  sol_instance.add_train_pos("tr2", 50, 100);
+  sol_instance.add_train_pos("tr2", 60, 200);
+  sol_instance.add_train_pos("tr2", 70, 300);
+  sol_instance.add_train_speed("tr2", 40, 10);
+  sol_instance.add_train_speed("tr2", 50, 10);
+  sol_instance.add_train_speed("tr2", 60, 10);
+  sol_instance.add_train_speed("tr2", 70, 10);
+
+  sol_instance.add_train_pos("tr3", 80, 0);
+  sol_instance.add_train_pos("tr3", 90, 100);
+  sol_instance.add_train_pos("tr3", 100, 200);
+  sol_instance.add_train_pos("tr3", 110, 300);
+  sol_instance.add_train_speed("tr3", 80, 10);
+  sol_instance.add_train_speed("tr3", 90, 10);
+  sol_instance.add_train_speed("tr3", 100, 10);
+  sol_instance.add_train_speed("tr3", 110, 10);
+
+  // Check Train Orders
+  const auto tr_order_v0_v1 = sol_instance.get_train_order(v0_v1);
+  ASSERT_EQ(tr_order_v0_v1.size(), 2);
+  EXPECT_EQ(tr_order_v0_v1.at(0), tr1);
+  EXPECT_EQ(tr_order_v0_v1.at(1), tr3);
+
+  const auto tr_order_v1_v2 = sol_instance.get_train_order(v1_v2);
+  ASSERT_EQ(tr_order_v1_v2.size(), 2);
+  EXPECT_EQ(tr_order_v1_v2.at(0), tr1);
+  EXPECT_EQ(tr_order_v1_v2.at(1), tr3);
+
+  const auto tr_order_v1_v0 = sol_instance.get_train_order(v1_v0);
+  ASSERT_EQ(tr_order_v1_v0.size(), 1);
+  EXPECT_EQ(tr_order_v1_v0.at(0), tr2);
+
+  const auto tr_order_v2_v1 = sol_instance.get_train_order(v2_v1);
+  ASSERT_EQ(tr_order_v2_v1.size(), 1);
+  EXPECT_EQ(tr_order_v2_v1.at(0), tr2);
+
+  const auto tr_order_rev_v0_v1 =
+      sol_instance.get_train_order_with_reverse(v0_v1);
+  ASSERT_EQ(tr_order_rev_v0_v1.size(), 3);
+  EXPECT_EQ(tr_order_rev_v0_v1.at(0).train_id, tr1);
+  EXPECT_EQ(tr_order_rev_v0_v1.at(1).train_id, tr2);
+  EXPECT_EQ(tr_order_rev_v0_v1.at(2).train_id, tr3);
+  EXPECT_TRUE(tr_order_rev_v0_v1.at(0).original_direction);
+  EXPECT_FALSE(tr_order_rev_v0_v1.at(1).original_direction);
+  EXPECT_TRUE(tr_order_rev_v0_v1.at(2).original_direction);
+
+  const auto tr_order_rev_v1_v2 =
+      sol_instance.get_train_order_with_reverse(v1_v2);
+  ASSERT_EQ(tr_order_rev_v1_v2.size(), 3);
+  EXPECT_EQ(tr_order_rev_v1_v2.at(0).train_id, tr1);
+  EXPECT_EQ(tr_order_rev_v1_v2.at(1).train_id, tr2);
+  EXPECT_EQ(tr_order_rev_v1_v2.at(2).train_id, tr3);
+  EXPECT_TRUE(tr_order_rev_v1_v2.at(0).original_direction);
+  EXPECT_FALSE(tr_order_rev_v1_v2.at(1).original_direction);
+  EXPECT_TRUE(tr_order_rev_v1_v2.at(2).original_direction);
+
+  const auto tr_order_rev_v1_v0 =
+      sol_instance.get_train_order_with_reverse(v1_v0);
+  ASSERT_EQ(tr_order_rev_v1_v0.size(), 3);
+  EXPECT_EQ(tr_order_rev_v1_v0.at(0).train_id, tr1);
+  EXPECT_EQ(tr_order_rev_v1_v0.at(1).train_id, tr2);
+  EXPECT_EQ(tr_order_rev_v1_v0.at(2).train_id, tr3);
+  EXPECT_FALSE(tr_order_rev_v1_v0.at(0).original_direction);
+  EXPECT_TRUE(tr_order_rev_v1_v0.at(1).original_direction);
+  EXPECT_FALSE(tr_order_rev_v1_v0.at(2).original_direction);
+
+  const auto tr_order_rev_v2_v1 =
+      sol_instance.get_train_order_with_reverse(v2_v1);
+  ASSERT_EQ(tr_order_rev_v2_v1.size(), 3);
+  EXPECT_EQ(tr_order_rev_v2_v1.at(0).train_id, tr1);
+  EXPECT_EQ(tr_order_rev_v2_v1.at(1).train_id, tr2);
+  EXPECT_EQ(tr_order_rev_v2_v1.at(2).train_id, tr3);
+  EXPECT_FALSE(tr_order_rev_v2_v1.at(0).original_direction);
+  EXPECT_TRUE(tr_order_rev_v2_v1.at(1).original_direction);
+  EXPECT_FALSE(tr_order_rev_v2_v1.at(2).original_direction);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     SolGeneralPerformanceOptimizationInstanceExportImport) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  // Add a simple network to the instance
+  const auto v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  const auto v2 = instance.get_editable_network().add_vertex(
+      "v2", cda_rail::VertexType::TTD);
+
+  const auto v0_v1 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 10);
+  const auto v1_v2 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 200, 20);
+  const auto v1_v0 =
+      instance.get_editable_network().add_edge({"v1"}, {"v0"}, 100, 10);
+  const auto v2_v1 =
+      instance.get_editable_network().add_edge({"v2"}, {"v1"}, 200, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v2", "v1"}, {"v1", "v0"});
+
+  const auto tr1 =
+      instance.add_train("tr1", 50, 10, 2, 2, 0, 0, v0, 120, 5, v2);
+  const auto tr2 =
+      instance.add_train("tr2", 50, 10, 2, 2, 120, 0, Network::VertexInput{v2},
+                         210, 0, Network::VertexInput{v0}, 2);
+
+  // Check the consistency of the instance
+  EXPECT_TRUE(instance.check_consistency(false));
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
 
   sol_instance.set_obj(0.5);
+  sol_instance.set_lower_bound(0.2);
   sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
 
   sol_instance.add_empty_route("tr1");
-  sol_instance.push_back_edge_to_route("tr1", "v0", "v1");
-  sol_instance.push_back_edge_to_route("tr1", v1, v2);
-
-  sol_instance.set_train_routed("tr1");
+  sol_instance.push_back_edge_to_route("tr1", {"v0", "v1"});
+  sol_instance.push_back_edge_to_route("tr1", {v1, v2});
 
   sol_instance.add_train_pos("tr1", 0, 0);
   sol_instance.add_train_pos("tr1", 60, 100);
@@ -724,64 +851,272 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   EXPECT_TRUE(sol_instance.check_consistency());
 
-  sol_instance.export_solution("./tmp/test-sol-instance-1", true);
-  sol_instance.export_solution("./tmp/test-sol-instance-2", false);
-  const auto sol1_read =
-      cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
-          instances::GeneralPerformanceOptimizationInstance>::
-          import_solution("./tmp/test-sol-instance-1");
-  const auto sol2_read =
-      cda_rail::instances::SolGeneralPerformanceOptimizationInstance<
-          instances::GeneralPerformanceOptimizationInstance>::
-          import_solution("./tmp/test-sol-instance-2", instance);
+  sol_instance.export_solution("./tmp", "test-sol-instance-1", true, {});
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance_2(instance);
+  sol_instance_2.set_obj(0.5);
+  sol_instance_2.set_lower_bound(0.3);
+  sol_instance_2.set_status(cda_rail::SolutionStatus::Optimal);
+
+  sol_instance_2.add_empty_route("tr1");
+  sol_instance_2.push_back_edge_to_route("tr1", {"v0", "v1"});
+  sol_instance_2.push_back_edge_to_route("tr1", {v1, v2});
+
+  sol_instance_2.add_train_pos("tr1", 0, 0);
+  sol_instance_2.add_train_pos("tr1", 30, 50);
+  sol_instance_2.add_train_speed("tr1", 0, 10);
+  sol_instance_2.add_train_speed("tr1", 30, 5);
+
+  sol_instance_2.export_solution("./tmp", "test-sol-instance-2", false, {});
+
+  auto sol1_read =
+      cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
+  sol1_read.load_solution("./tmp", "test-sol-instance-1");
+
+  auto sol2_read =
+      cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
+  sol2_read.load_solution("./tmp", "test-sol-instance-2");
   std::filesystem::remove_all("./tmp");
 
   EXPECT_TRUE(sol1_read.check_consistency());
   EXPECT_TRUE(sol2_read.check_consistency());
 
   EXPECT_EQ(sol1_read.get_obj(), 0.5);
+  EXPECT_EQ(sol1_read.get_lower_bound(), 0.2);
   EXPECT_EQ(sol1_read.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_TRUE(sol1_read.get_train_routed("tr1"));
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 0), 0);
   EXPECT_EQ(sol1_read.get_train_pos("tr1", 60), 100);
+  EXPECT_THROW((void)sol1_read.get_train_pos("tr1", 30),
+               cda_rail::exceptions::ConsistencyException);
   EXPECT_EQ(sol1_read.get_train_speed("tr1", 0), 10);
   EXPECT_EQ(sol1_read.get_train_speed("tr1", 60), 5);
-  EXPECT_TRUE(sol1_read.get_instance().has_route("tr1"));
-  const auto& tr1_route = sol1_read.get_instance().get_route("tr1");
+  EXPECT_THROW((void)sol1_read.get_train_speed("tr1", 30),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_TRUE(sol1_read.get_const_solution_routes().has_route("tr1"));
+  const auto& tr1_route =
+      sol1_read.get_const_solution_routes().get_route("tr1");
   EXPECT_EQ(tr1_route.size(), 2);
-  EXPECT_EQ(tr1_route.get_edge(0),
-            sol1_read.get_instance().const_n().get_edge_index("v0", "v1"));
-  EXPECT_EQ(tr1_route.get_edge(1),
-            sol1_read.get_instance().const_n().get_edge_index("v1", "v2"));
-  EXPECT_FALSE(sol1_read.get_train_routed("tr2"));
-  EXPECT_FALSE(sol1_read.get_instance().has_route("tr2"));
+  EXPECT_EQ(tr1_route.get_edge_id(0),
+            sol1_read.get_instance()->get_const_network().get_edge_index(
+                {"v0"}, {"v1"}));
+  EXPECT_EQ(tr1_route.get_edge_id(1),
+            sol1_read.get_instance()->get_const_network().get_edge_index(
+                {"v1"}, {"v2"}));
+  EXPECT_FALSE(sol1_read.get_instance()->get_const_routes().has_route("tr2"));
 
   EXPECT_EQ(sol2_read.get_obj(), 0.5);
+  EXPECT_EQ(sol2_read.get_lower_bound(), 0.3);
   EXPECT_EQ(sol2_read.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_TRUE(sol2_read.get_train_routed("tr1"));
   EXPECT_EQ(sol2_read.get_train_pos("tr1", 0), 0);
-  EXPECT_EQ(sol2_read.get_train_pos("tr1", 60), 100);
+  EXPECT_EQ(sol2_read.get_train_pos("tr1", 30), 50);
   EXPECT_EQ(sol2_read.get_train_speed("tr1", 0), 10);
-  EXPECT_EQ(sol2_read.get_train_speed("tr1", 60), 5);
-  EXPECT_TRUE(sol2_read.get_instance().has_route("tr1"));
-  const auto& tr1_route2 = sol2_read.get_instance().get_route("tr1");
+  EXPECT_EQ(sol2_read.get_train_speed("tr1", 30), 5);
+  EXPECT_TRUE(sol2_read.get_const_solution_routes().has_route("tr1"));
+  const auto& tr1_route2 =
+      sol2_read.get_const_solution_routes().get_route("tr1");
   EXPECT_EQ(tr1_route2.size(), 2);
-  EXPECT_EQ(tr1_route2.get_edge(0),
-            sol2_read.get_instance().const_n().get_edge_index("v0", "v1"));
-  EXPECT_EQ(tr1_route2.get_edge(1),
-            sol2_read.get_instance().const_n().get_edge_index("v1", "v2"));
-  EXPECT_FALSE(sol2_read.get_train_routed("tr2"));
-  EXPECT_FALSE(sol2_read.get_instance().has_route("tr2"));
+  EXPECT_EQ(tr1_route2.get_edge_id(0),
+            sol2_read.get_instance()->get_const_network().get_edge_index(
+                {"v0"}, {"v1"}));
+  EXPECT_EQ(tr1_route2.get_edge_id(1),
+            sol2_read.get_instance()->get_const_network().get_edge_index(
+                {"v1"}, {"v2"}));
+  EXPECT_FALSE(sol2_read.get_instance()->get_const_routes().has_route("tr2"));
+}
+
+TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesExportImport) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto const v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  auto const v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  auto const v2 = instance.get_editable_network().add_vertex(
+      "v2", cda_rail::VertexType::TTD);
+
+  auto const v0_v1 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 10);
+  auto const v1_v2 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 200, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+
+  instance.add_train("tr1", 50, 30, 2, 2, 0, 20, v0, 120, 20, v2);
+  instance.add_train("tr2", 50, 30, 2, 2, 120, 20, v0, 200, 20, v2);
+
+  instance.add_empty_station("Station1");
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station1", v0_v1);
+  instance.add_track_to_station("Station2", v1_v2);
+
+  instance.insert_stop("tr1", "Station1", 10, 10);
+  instance.insert_stop("tr1", "Station2", 40, 10);
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+
+  sol_instance.set_solution_found();
+  sol_instance.set_status(cda_rail::SolutionStatus::Optimal);
+
+  sol_instance.add_empty_route("tr1");
+  sol_instance.add_empty_route("tr2");
+
+  sol_instance.push_back_edge_to_route("tr1", v0_v1);
+  sol_instance.push_back_edge_to_route("tr1", v1_v2);
+  sol_instance.push_back_edge_to_route("tr2", v0_v1);
+  sol_instance.push_back_edge_to_route("tr2", v1_v2);
+
+  sol_instance.add_train_pos("tr1", 0, 0);
+  sol_instance.add_train_pos("tr1", 60, 100);
+  sol_instance.add_train_pos("tr1", 70, 100);
+  sol_instance.add_train_pos("tr1", 90, 120);
+  sol_instance.add_train_pos("tr1", 200, 300);
+  sol_instance.add_train_pos("tr1", 210, 300);
+  sol_instance.add_train_pos("tr1", 230, 330);
+
+  sol_instance.add_train_speed("tr1", 0, 20);
+  sol_instance.add_train_speed("tr1", 60, 0);
+  sol_instance.add_train_speed("tr1", 70, 0);
+  sol_instance.add_train_speed("tr1", 90, 20);
+  sol_instance.add_train_speed("tr1", 200, 0);
+  sol_instance.add_train_speed("tr1", 210, 0);
+  sol_instance.add_train_speed("tr1", 230, 20);
+
+  sol_instance.add_train_pos("tr2", 120, 0);
+  sol_instance.add_train_pos("tr2", 320, 300);
+  sol_instance.add_train_speed("tr2", 120, 20);
+  sol_instance.add_train_speed("tr2", 320, 20);
+
+  sol_instance.set_train_exit_time("tr1", 230);
+  sol_instance.set_train_exit_time("tr2", 320);
+
+  sol_instance.set_train_stop_times("tr1", {60, 200});
+
+  sol_instance.set_obj(1000);
+  sol_instance.set_lower_bound(900);
+
+  EXPECT_TRUE(sol_instance.check_consistency());
+
+  sol_instance.export_solution("./tmp", "test-sol-instance-with-stops", true,
+                               {});
+  auto sol_read =
+      cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
+  sol_read.load_solution("./tmp", "test-sol-instance-with-stops");
+  std::filesystem::remove_all("./tmp");
+
+  EXPECT_TRUE(sol_read.check_consistency());
+  EXPECT_EQ(sol_read.get_obj(), 1000);
+  EXPECT_EQ(sol_read.get_lower_bound(), 900);
+  EXPECT_EQ(sol_read.get_status(), cda_rail::SolutionStatus::Optimal);
+
+  EXPECT_EQ(sol_read.get_exit_time("tr1"), 230);
+  EXPECT_EQ(sol_read.get_exit_time("tr2"), 320);
+  EXPECT_EQ(sol_read.get_stop_times("tr1"), std::vector<double>({60, 200}));
+  EXPECT_EQ(sol_read.get_stop_times("tr2"), std::vector<double>({}));
+
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 0), 0);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 60), 100);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 70), 100);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 90), 120);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 200), 300);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 210), 300);
+  EXPECT_EQ(sol_read.get_train_pos("tr1", 230), 330);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 0), 20);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 60), 0);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 70), 0);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 90), 20);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 200), 0);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 210), 0);
+  EXPECT_EQ(sol_read.get_train_speed("tr1", 230), 20);
+}
+
+TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesAccessors) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto const v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  auto const v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  auto const v2 = instance.get_editable_network().add_vertex(
+      "v2", cda_rail::VertexType::TTD);
+
+  auto const v0_v1 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 10);
+  auto const v1_v2 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 10);
+
+  instance.add_train("tr1", 50, 30, 2, 2, 0, 10, v0, 100, 10, v2);
+  instance.add_train("tr2", 50, 30, 2, 2, 0, 10, v0, 100, 10, v2);
+
+  instance.add_empty_station("Station1");
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station1", v0_v1);
+  instance.add_track_to_station("Station2", v1_v2);
+  instance.insert_stop("tr1", "Station1", 10, 5);
+  instance.insert_stop("tr1", "Station2", 30, 5);
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+
+  sol_instance.set_train_exit_time("tr1", 101);
+  sol_instance.set_train_stop_time("tr1", 0, 11);
+  sol_instance.set_train_stop_time("tr1", "Station2", 31);
+  EXPECT_EQ(sol_instance.get_exit_time("tr1"), 101);
+  EXPECT_EQ(sol_instance.get_stop_time("tr1", 0), 11);
+  EXPECT_EQ(sol_instance.get_stop_time("tr1", "Station2"), 31);
+  EXPECT_EQ(sol_instance.get_stop_times("tr1"), std::vector<double>({11, 31}));
+
+  sol_instance.set_train_stop_times("tr1", {12, 32});
+  sol_instance.set_exit_times({102, 202});
+  sol_instance.set_stop_times({{13, 33}, {}});
+  EXPECT_EQ(sol_instance.get_exit_time("tr1"), 102);
+  EXPECT_EQ(sol_instance.get_exit_time("tr2"), 202);
+  EXPECT_EQ(sol_instance.get_stop_times("tr1"), std::vector<double>({13, 33}));
+  EXPECT_EQ(sol_instance.get_stop_times("tr2"), std::vector<double>({}));
+  EXPECT_EQ(sol_instance.get_stop_time("tr1", "Station1"), 13);
+  EXPECT_EQ(sol_instance.get_stop_time("tr1", 1), 33);
+
+  EXPECT_THROW((void)sol_instance.get_exit_time("unknown"),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW((void)sol_instance.get_stop_times("unknown"),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW((void)sol_instance.get_stop_time("unknown", 0),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW((void)sol_instance.get_stop_time("tr1", "unknown"),
+               cda_rail::exceptions::StationNotExistentException);
+  EXPECT_ANY_THROW((void)sol_instance.get_stop_time("tr1", 2));
+
+  EXPECT_THROW(sol_instance.set_train_exit_time("tr1", -1),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(sol_instance.set_train_exit_time("unknown", 1),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_THROW(sol_instance.set_train_stop_time("tr1", 0, -1),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(sol_instance.set_train_stop_time("unknown", 0, 1),
+               cda_rail::exceptions::TrainNotExistentException);
+  EXPECT_ANY_THROW(sol_instance.set_train_stop_time("tr1", 2, 1));
+  EXPECT_THROW(sol_instance.set_train_stop_time("tr1", "Station1", -1),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(sol_instance.set_train_stop_time("tr1", "unknown", 1),
+               cda_rail::exceptions::StationNotExistentException);
+  EXPECT_THROW(sol_instance.set_train_stop_times("tr1", {1}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol_instance.set_train_stop_times("tr1", {14, 14}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(sol_instance.set_exit_times({1}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol_instance.set_exit_times({1, -1}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(sol_instance.set_stop_times({{1, 2}}),
+               cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(sol_instance.set_stop_times({{1}, {}}),
+               cda_rail::exceptions::ConsistencyException);
 }
 
 TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops1) {
   // Create instance members
-  Network network("./example-networks/SimpleStation/network/");
+  Network network("SimpleStation", "./data/");
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  Timetable timetable;
 
-  timetable.add_station("Station1");
-  timetable.add_track_to_station("Station1", "g00", "g01", network);
+  timetable.add_empty_station("Station1");
+  timetable.add_track_to_station("Station1", {"g00", "g01"}, network);
 
   RouteMap routes;
 
@@ -793,20 +1128,20 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops1) {
 
   instance.discretize_stops();
 
-  EXPECT_TRUE(instance.const_n().has_vertex("g00_g01_0"));
-  EXPECT_FALSE(instance.const_n().has_vertex("g10_g11_0"));
-  EXPECT_FALSE(instance.const_n().has_vertex("g00_g01_1"));
-  EXPECT_FALSE(instance.const_n().has_vertex("g11_g10_1"));
+  EXPECT_TRUE(instance.get_const_network().has_vertex("g00-g01_0"));
+  EXPECT_FALSE(instance.get_const_network().has_vertex("g10-g11_0"));
+  EXPECT_FALSE(instance.get_const_network().has_vertex("g00-g01_1"));
+  EXPECT_FALSE(instance.get_const_network().has_vertex("g11-g10_1"));
 
-  EXPECT_TRUE(instance.const_n().has_edge("g00", "g00_g01_0"));
-  EXPECT_TRUE(instance.const_n().has_edge("g00_g01_0", "g01"));
-  EXPECT_TRUE(instance.const_n().has_edge("g01", "g00_g01_0"));
-  EXPECT_TRUE(instance.const_n().has_edge("g00_g01_0", "g00"));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00"}, {"g00-g01_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00-g01_0"}, {"g01"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g01"}, {"g00-g01_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00-g01_0"}, {"g00"}));
 
-  const auto& e1 = instance.const_n().get_edge("g00", "g00_g01_0");
-  const auto& e2 = instance.const_n().get_edge("g00_g01_0", "g01");
-  const auto& e3 = instance.const_n().get_edge("g01", "g00_g01_0");
-  const auto& e4 = instance.const_n().get_edge("g00_g01_0", "g00");
+  const auto& e1 = instance.get_const_network().get_edge({"g00", "g00-g01_0"});
+  const auto& e2 = instance.get_const_network().get_edge({"g00-g01_0", "g01"});
+  const auto& e3 = instance.get_const_network().get_edge({"g01", "g00-g01_0"});
+  const auto& e4 = instance.get_const_network().get_edge({"g00-g01_0", "g00"});
 
   EXPECT_DOUBLE_EQ(e1.length, 150);
   EXPECT_DOUBLE_EQ(e1.min_stop_block_length, 150);
@@ -824,35 +1159,36 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops1) {
   EXPECT_DOUBLE_EQ(e4.min_stop_block_length, 150);
   EXPECT_TRUE(e4.breakable);
 
-  const auto& s1 = instance.get_station_list().get_station("Station1");
+  const auto& s1 = instance.get_const_station_list().get_station("Station1");
 
   std::vector<size_t> s1_expected = {
-      instance.const_n().get_edge_index("g00", "g00_g01_0"),
-      instance.const_n().get_edge_index("g00_g01_0", "g01")};
+      instance.get_const_network().get_edge_index({"g00"}, {"g00-g01_0"}),
+      instance.get_const_network().get_edge_index({"g00-g01_0"}, {"g01"})};
 
   EXPECT_EQ(s1_expected.size(), s1.tracks.size());
 
   for (const auto& e : s1_expected) {
     EXPECT_TRUE(std::find(s1.tracks.begin(), s1.tracks.end(), e) !=
                 s1.tracks.end())
-        << instance.const_n().get_edge(e).source << " to "
-        << instance.const_n().get_edge(e).target << " not found in station 1";
+        << instance.get_const_network().get_edge(e).source << " to "
+        << instance.get_const_network().get_edge(e).target
+        << " not found in station 1";
   }
 }
 
 TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
   // Create instance members
-  Network network("./example-networks/SimpleStation/network/");
+  Network network("SimpleStation", "./data/");
 
-  GeneralTimetable<GeneralSchedule<GeneralScheduledStop>> timetable;
+  Timetable timetable;
 
-  timetable.add_station("Station1");
-  timetable.add_track_to_station("Station1", "g00", "g01", network);
+  timetable.add_empty_station("Station1");
+  timetable.add_track_to_station("Station1", {"g00", "g01"}, network);
 
-  timetable.add_station("Station2");
-  timetable.add_track_to_station("Station2", "g00", "g01", network);
-  timetable.add_track_to_station("Station2", "g10", "g11", network);
-  timetable.add_track_to_station("Station2", "g11", "g10", network);
+  timetable.add_empty_station("Station2");
+  timetable.add_track_to_station("Station2", {"g00", "g01"}, network);
+  timetable.add_track_to_station("Station2", {"g10", "g11"}, network);
+  timetable.add_track_to_station("Station2", {"g11", "g10"}, network);
 
   RouteMap routes;
 
@@ -868,30 +1204,30 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
 
   // All stop edges should have been separated once ...
 
-  EXPECT_TRUE(instance.const_n().has_vertex("g00_g01_0"));
-  EXPECT_TRUE(instance.const_n().has_vertex("g10_g11_0"));
-  EXPECT_FALSE(instance.const_n().has_vertex("g00_g01_1"));
-  EXPECT_FALSE(instance.const_n().has_vertex("g11_g10_1"));
+  EXPECT_TRUE(instance.get_const_network().has_vertex("g00-g01_0"));
+  EXPECT_TRUE(instance.get_const_network().has_vertex("g10-g11_0"));
+  EXPECT_FALSE(instance.get_const_network().has_vertex("g00-g01_1"));
+  EXPECT_FALSE(instance.get_const_network().has_vertex("g11-g10_1"));
 
-  EXPECT_TRUE(instance.const_n().has_edge("g00", "g00_g01_0"));
-  EXPECT_TRUE(instance.const_n().has_edge("g00_g01_0", "g01"));
-  EXPECT_TRUE(instance.const_n().has_edge("g01", "g00_g01_0"));
-  EXPECT_TRUE(instance.const_n().has_edge("g00_g01_0", "g00"));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00"}, {"g00-g01_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00-g01_0"}, {"g01"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g01"}, {"g00-g01_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g00-g01_0"}, {"g00"}));
 
-  EXPECT_TRUE(instance.const_n().has_edge("g10", "g10_g11_0"));
-  EXPECT_TRUE(instance.const_n().has_edge("g10_g11_0", "g11"));
-  EXPECT_TRUE(instance.const_n().has_edge("g11", "g10_g11_0"));
-  EXPECT_TRUE(instance.const_n().has_edge("g10_g11_0", "g10"));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g10"}, {"g10-g11_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g10-g11_0"}, {"g11"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g11"}, {"g10-g11_0"}));
+  EXPECT_TRUE(instance.get_const_network().has_edge({"g10-g11_0"}, {"g10"}));
 
-  const auto& e1 = instance.const_n().get_edge("g00", "g00_g01_0");
-  const auto& e2 = instance.const_n().get_edge("g00_g01_0", "g01");
-  const auto& e3 = instance.const_n().get_edge("g01", "g00_g01_0");
-  const auto& e4 = instance.const_n().get_edge("g00_g01_0", "g00");
+  const auto& e1 = instance.get_const_network().get_edge({"g00", "g00-g01_0"});
+  const auto& e2 = instance.get_const_network().get_edge({"g00-g01_0", "g01"});
+  const auto& e3 = instance.get_const_network().get_edge({"g01", "g00-g01_0"});
+  const auto& e4 = instance.get_const_network().get_edge({"g00-g01_0", "g00"});
 
-  const auto& e5 = instance.const_n().get_edge("g10", "g10_g11_0");
-  const auto& e6 = instance.const_n().get_edge("g10_g11_0", "g11");
-  const auto& e7 = instance.const_n().get_edge("g11", "g10_g11_0");
-  const auto& e8 = instance.const_n().get_edge("g10_g11_0", "g10");
+  const auto& e5 = instance.get_const_network().get_edge({"g10", "g10-g11_0"});
+  const auto& e6 = instance.get_const_network().get_edge({"g10-g11_0", "g11"});
+  const auto& e7 = instance.get_const_network().get_edge({"g11", "g10-g11_0"});
+  const auto& e8 = instance.get_const_network().get_edge({"g10-g11_0", "g10"});
 
   // ... in the middle at 150m having carried over the properties of the
   // original edge
@@ -928,20 +1264,20 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
   EXPECT_DOUBLE_EQ(e8.min_stop_block_length, 150);
   EXPECT_TRUE(e8.breakable);
 
-  const auto& s1 = instance.get_station_list().get_station("Station1");
-  const auto& s2 = instance.get_station_list().get_station("Station2");
+  const auto& s1 = instance.get_const_station_list().get_station("Station1");
+  const auto& s2 = instance.get_const_station_list().get_station("Station2");
 
   std::vector<size_t> s1_expected = {
-      instance.const_n().get_edge_index("g00", "g00_g01_0"),
-      instance.const_n().get_edge_index("g00_g01_0", "g01")};
+      instance.get_const_network().get_edge_index({"g00"}, {"g00-g01_0"}),
+      instance.get_const_network().get_edge_index({"g00-g01_0"}, {"g01"})};
 
   std::vector<size_t> s2_expected = {
-      instance.const_n().get_edge_index("g00", "g00_g01_0"),
-      instance.const_n().get_edge_index("g00_g01_0", "g01"),
-      instance.const_n().get_edge_index("g10", "g10_g11_0"),
-      instance.const_n().get_edge_index("g10_g11_0", "g11"),
-      instance.const_n().get_edge_index("g11", "g10_g11_0"),
-      instance.const_n().get_edge_index("g10_g11_0", "g10")};
+      instance.get_const_network().get_edge_index({"g00"}, {"g00-g01_0"}),
+      instance.get_const_network().get_edge_index({"g00-g01_0"}, {"g01"}),
+      instance.get_const_network().get_edge_index({"g10"}, {"g10-g11_0"}),
+      instance.get_const_network().get_edge_index({"g10-g11_0"}, {"g11"}),
+      instance.get_const_network().get_edge_index({"g11"}, {"g10-g11_0"}),
+      instance.get_const_network().get_edge_index({"g10-g11_0"}, {"g10"})};
 
   EXPECT_EQ(s1_expected.size(), s1.tracks.size());
   EXPECT_EQ(s2_expected.size(), s2.tracks.size());
@@ -949,15 +1285,17 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
   for (const auto& e : s1_expected) {
     EXPECT_TRUE(std::find(s1.tracks.begin(), s1.tracks.end(), e) !=
                 s1.tracks.end())
-        << instance.const_n().get_edge(e).source << " to "
-        << instance.const_n().get_edge(e).target << " not found in station 1";
+        << instance.get_const_network().get_edge(e).source << " to "
+        << instance.get_const_network().get_edge(e).target
+        << " not found in station 1";
   }
 
   for (const auto& e : s2_expected) {
     EXPECT_TRUE(std::find(s2.tracks.begin(), s2.tracks.end(), e) !=
                 s2.tracks.end())
-        << instance.const_n().get_edge(e).source << " to "
-        << instance.const_n().get_edge(e).target << " not found in station 2";
+        << instance.get_const_network().get_edge(e).source << " to "
+        << instance.get_const_network().get_edge(e).target
+        << " not found in station 2";
   }
 }
 
@@ -965,20 +1303,34 @@ TEST(GeneralPerformanceOptimizationInstances, StopVertices) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 
   // Create network
-  size_t v0  = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
-  size_t v1  = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
-  size_t v21 = instance.n().add_vertex("v21", cda_rail::VertexType::TTD);
-  size_t v22 = instance.n().add_vertex("v22", cda_rail::VertexType::TTD);
-  size_t v31 = instance.n().add_vertex("v31", cda_rail::VertexType::TTD);
-  size_t v32 = instance.n().add_vertex("v32", cda_rail::VertexType::TTD);
-  size_t v41 = instance.n().add_vertex("v41", cda_rail::VertexType::TTD);
-  size_t v42 = instance.n().add_vertex("v42", cda_rail::VertexType::TTD);
-  size_t v43 = instance.n().add_vertex("v43", cda_rail::VertexType::TTD);
-  size_t v51 = instance.n().add_vertex("v51", cda_rail::VertexType::TTD);
-  size_t v52 = instance.n().add_vertex("v52", cda_rail::VertexType::TTD);
-  size_t v53 = instance.n().add_vertex("v53", cda_rail::VertexType::TTD);
-  size_t v6  = instance.n().add_vertex("v6", cda_rail::VertexType::TTD);
-  size_t v7  = instance.n().add_vertex("v7", cda_rail::VertexType::TTD);
+  size_t v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  size_t v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  size_t v21 = instance.get_editable_network().add_vertex(
+      "v21", cda_rail::VertexType::TTD);
+  size_t v22 = instance.get_editable_network().add_vertex(
+      "v22", cda_rail::VertexType::TTD);
+  size_t v31 = instance.get_editable_network().add_vertex(
+      "v31", cda_rail::VertexType::TTD);
+  size_t v32 = instance.get_editable_network().add_vertex(
+      "v32", cda_rail::VertexType::TTD);
+  size_t v41 = instance.get_editable_network().add_vertex(
+      "v41", cda_rail::VertexType::TTD);
+  size_t v42 = instance.get_editable_network().add_vertex(
+      "v42", cda_rail::VertexType::TTD);
+  size_t v43 = instance.get_editable_network().add_vertex(
+      "v43", cda_rail::VertexType::TTD);
+  size_t v51 = instance.get_editable_network().add_vertex(
+      "v51", cda_rail::VertexType::TTD);
+  size_t v52 = instance.get_editable_network().add_vertex(
+      "v52", cda_rail::VertexType::TTD);
+  size_t v53 = instance.get_editable_network().add_vertex(
+      "v53", cda_rail::VertexType::TTD);
+  size_t v6 = instance.get_editable_network().add_vertex(
+      "v6", cda_rail::VertexType::TTD);
+  size_t v7 = instance.get_editable_network().add_vertex(
+      "v7", cda_rail::VertexType::TTD);
 
   // Edges to add
   const std::vector<std::tuple<size_t, size_t, double>> to_add = {
@@ -993,78 +1345,75 @@ TEST(GeneralPerformanceOptimizationInstances, StopVertices) {
   for (const auto& [source, target, length] : to_add) {
     edge_map.insert_or_assign(
         100 * source + target,
-        instance.n().add_edge(source, target, length, 50));
+        instance.get_editable_network().add_edge(source, target, length, 50));
     edge_map.insert_or_assign(
         100 * target + source,
-        instance.n().add_edge(target, source, length, 50));
+        instance.get_editable_network().add_edge(target, source, length, 50));
   }
 
   EXPECT_EQ(edge_map.size(), 2 * to_add.size());
 
   // Add successors
-  instance.n().add_successor({v0, v1}, {v1, v21});
-  instance.n().add_successor({v0, v1}, {v1, v22});
-  instance.n().add_successor({v1, v21}, {v21, v31});
-  instance.n().add_successor({v1, v22}, {v22, v32});
-  instance.n().add_successor({v21, v31}, {v31, v41});
-  instance.n().add_successor({v22, v32}, {v32, v42});
-  instance.n().add_successor({v22, v32}, {v32, v43});
-  instance.n().add_successor({v31, v41}, {v41, v51});
-  instance.n().add_successor({v32, v42}, {v42, v41});
-  instance.n().add_successor({v32, v42}, {v42, v52});
-  instance.n().add_successor({v32, v43}, {v43, v53});
-  instance.n().add_successor({v41, v51}, {v51, v6});
-  instance.n().add_successor({v42, v52}, {v52, v6});
-  instance.n().add_successor({v43, v53}, {v53, v6});
-  instance.n().add_successor({v51, v6}, {v6, v7});
-  instance.n().add_successor({v52, v6}, {v6, v7});
-  instance.n().add_successor({v53, v6}, {v6, v7});
+  instance.get_editable_network().add_successor({v0, v1}, {v1, v21});
+  instance.get_editable_network().add_successor({v0, v1}, {v1, v22});
+  instance.get_editable_network().add_successor({v1, v21}, {v21, v31});
+  instance.get_editable_network().add_successor({v1, v22}, {v22, v32});
+  instance.get_editable_network().add_successor({v21, v31}, {v31, v41});
+  instance.get_editable_network().add_successor({v22, v32}, {v32, v42});
+  instance.get_editable_network().add_successor({v22, v32}, {v32, v43});
+  instance.get_editable_network().add_successor({v31, v41}, {v41, v51});
+  instance.get_editable_network().add_successor({v32, v42}, {v42, v41});
+  instance.get_editable_network().add_successor({v32, v42}, {v42, v52});
+  instance.get_editable_network().add_successor({v32, v43}, {v43, v53});
+  instance.get_editable_network().add_successor({v41, v51}, {v51, v6});
+  instance.get_editable_network().add_successor({v42, v52}, {v52, v6});
+  instance.get_editable_network().add_successor({v43, v53}, {v53, v6});
+  instance.get_editable_network().add_successor({v51, v6}, {v6, v7});
+  instance.get_editable_network().add_successor({v52, v6}, {v6, v7});
+  instance.get_editable_network().add_successor({v53, v6}, {v6, v7});
   // And all reverse successors
-  instance.n().add_successor({v21, v1}, {v1, v0});
-  instance.n().add_successor({v22, v1}, {v1, v0});
-  instance.n().add_successor({v31, v21}, {v21, v1});
-  instance.n().add_successor({v32, v22}, {v22, v1});
-  instance.n().add_successor({v41, v31}, {v31, v21});
-  instance.n().add_successor({v42, v32}, {v32, v22});
-  instance.n().add_successor({v43, v32}, {v32, v22});
-  instance.n().add_successor({v51, v41}, {v41, v31});
-  instance.n().add_successor({v41, v42}, {v42, v32});
-  instance.n().add_successor({v52, v42}, {v42, v32});
-  instance.n().add_successor({v53, v43}, {v43, v32});
-  instance.n().add_successor({v6, v51}, {v51, v41});
-  instance.n().add_successor({v6, v52}, {v52, v42});
-  instance.n().add_successor({v6, v53}, {v53, v43});
-  instance.n().add_successor({v7, v6}, {v6, v51});
-  instance.n().add_successor({v7, v6}, {v6, v52});
-  instance.n().add_successor({v7, v6}, {v6, v53});
+  instance.get_editable_network().add_successor({v21, v1}, {v1, v0});
+  instance.get_editable_network().add_successor({v22, v1}, {v1, v0});
+  instance.get_editable_network().add_successor({v31, v21}, {v21, v1});
+  instance.get_editable_network().add_successor({v32, v22}, {v22, v1});
+  instance.get_editable_network().add_successor({v41, v31}, {v31, v21});
+  instance.get_editable_network().add_successor({v42, v32}, {v32, v22});
+  instance.get_editable_network().add_successor({v43, v32}, {v32, v22});
+  instance.get_editable_network().add_successor({v51, v41}, {v41, v31});
+  instance.get_editable_network().add_successor({v41, v42}, {v42, v32});
+  instance.get_editable_network().add_successor({v52, v42}, {v42, v32});
+  instance.get_editable_network().add_successor({v53, v43}, {v43, v32});
+  instance.get_editable_network().add_successor({v6, v51}, {v51, v41});
+  instance.get_editable_network().add_successor({v6, v52}, {v52, v42});
+  instance.get_editable_network().add_successor({v6, v53}, {v53, v43});
+  instance.get_editable_network().add_successor({v7, v6}, {v6, v51});
+  instance.get_editable_network().add_successor({v7, v6}, {v6, v52});
+  instance.get_editable_network().add_successor({v7, v6}, {v6, v53});
 
   // Add station bidirectional edges v21-v31-v41-v51, v22-v32-v42-v52,
   // v22-v32-v43-v53
-  instance.add_station("Station1");
-  instance.add_track_to_station("Station1", v21, v31);
-  instance.add_track_to_station("Station1", v31, v41);
-  instance.add_track_to_station("Station1", v41, v51);
-  instance.add_track_to_station("Station1", v22, v32);
-  instance.add_track_to_station("Station1", v32, v42);
-  instance.add_track_to_station("Station1", v42, v52);
-  instance.add_track_to_station("Station1", v32, v43);
-  instance.add_track_to_station("Station1", v43, v53);
-  instance.add_track_to_station("Station1", v31, v21);
-  instance.add_track_to_station("Station1", v41, v31);
-  instance.add_track_to_station("Station1", v51, v41);
-  instance.add_track_to_station("Station1", v32, v22);
-  instance.add_track_to_station("Station1", v42, v32);
-  instance.add_track_to_station("Station1", v52, v42);
-  instance.add_track_to_station("Station1", v43, v32);
-  instance.add_track_to_station("Station1", v53, v43);
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", {v21, v31});
+  instance.add_track_to_station("Station1", {v31, v41});
+  instance.add_track_to_station("Station1", {v41, v51});
+  instance.add_track_to_station("Station1", {v22, v32});
+  instance.add_track_to_station("Station1", {v32, v42});
+  instance.add_track_to_station("Station1", {v42, v52});
+  instance.add_track_to_station("Station1", {v32, v43});
+  instance.add_track_to_station("Station1", {v43, v53});
+  instance.add_track_to_station("Station1", {v31, v21});
+  instance.add_track_to_station("Station1", {v41, v31});
+  instance.add_track_to_station("Station1", {v51, v41});
+  instance.add_track_to_station("Station1", {v32, v22});
+  instance.add_track_to_station("Station1", {v42, v32});
+  instance.add_track_to_station("Station1", {v52, v42});
+  instance.add_track_to_station("Station1", {v43, v32});
+  instance.add_track_to_station("Station1", {v53, v43});
 
   // Add trains of various length
-  instance.add_train("Train100", 100, 50, 1, 1, {0, 60}, 10, v0, {300, 360}, 5,
-                     v7);
-  instance.add_train("Train60", 60, 50, 1, 1, {0, 60}, 10, v0, {300, 360}, 5,
-                     v7);
-  instance.add_train("Train30", 30, 50, 1, 1, {0, 60}, 10, v0, {300, 360}, 5,
-                     v7);
+  instance.add_train("Train100", 100, 50, 1, 1, 0, 10, v0, 300, 5, v7);
+  instance.add_train("Train60", 60, 50, 1, 1, 0, 10, v0, 300, 5, v7);
+  instance.add_train("Train30", 30, 50, 1, 1, 0, 10, v0, 300, 5, v7);
 
   const auto tr100stops =
       instance.possible_stop_vertices("Train100", "Station1");
@@ -1388,22 +1737,24 @@ TEST(GeneralPerformanceOptimizationInstances, LeavingTimes) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 
   // Create simple network
-  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
-  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
 
-  const auto e01 = instance.n().add_edge(v0, v1, 1000, 20);
+  const auto e01 = instance.get_editable_network().add_edge(v0, v1, 1000, 20);
 
   // Add train and schedule
-  const auto tr1 = instance.add_train("Train1", 56, 50, 1.5, 2, {0, 60}, 20, v0,
-                                      {300, 360}, 8, v1);
+  const auto tr1 =
+      instance.add_train("Train1", 56, 50, 1.5, 2, 0, 20, v0, 300, 8, v1);
   // Train 2 stops on exit
   // It will be stopped.
   // Then accelerate to 8 m/s in 8 seconds travelling 4*8=32 meters
   // Then remain at constant speed for 2 seconds traveling 2*8=16 meters
   // Then decelerate for 4 seconds to 0 m/s traveling 4*4=16 meters
   // In total 32+16+16=64 meters -> length
-  const auto tr2 = instance.add_train("Train2", 64, 8, 1, 2, {120, 180}, 20, v0,
-                                      {500, 560}, 0, v1);
+  const auto tr2 =
+      instance.add_train("Train2", 64, 8, 1, 2, 120, 20, v0, 500, 0, v1);
 
   // Train 3 stops on exit
   // It will be stopped.
@@ -1414,8 +1765,8 @@ TEST(GeneralPerformanceOptimizationInstances, LeavingTimes) {
   // traveling 10*5=50 meters
   // In total 100+40+50=190 meters -> length
   // In time 10+2+5=17 seconds
-  const auto tr3 = instance.add_train("Train3", 190, 50, 2, 4, {0, 60}, 20, v0,
-                                      {300, 360}, 0, v1);
+  const auto tr3 =
+      instance.add_train("Train3", 190, 50, 2, 4, 0, 20, v0, 300, 0, v1);
 
   // Train 4 exits with speed 10
   // It arrives at exit node with speed 5
@@ -1425,104 +1776,96 @@ TEST(GeneralPerformanceOptimizationInstances, LeavingTimes) {
   // traveling 2.25*10=22.5 meters
   // Total distance 37.5+22.5=60 meters
   // Total time 5+2.25=7.25 seconds
-  const auto tr4 = instance.add_train("Train4", 60, 50, 1, 2, {0, 60}, 20, v0,
-                                      {300, 360}, 10, v1);
+  const auto tr4 =
+      instance.add_train("Train4", 60, 50, 1, 2, 0, 20, v0, 300, 10, v1);
 
   // Leaving times of Train1
   EXPECT_EQ(instance.get_approximate_leaving_time(tr1), 7);
-  EXPECT_APPROX_EQ(instance.get_maximal_leaving_time(tr1, 10),
-                   cda_rail::max_travel_time_no_stopping(10, 8, cda_rail::V_MIN,
-                                                         1.5, 2, 56));
+  EXPECT_APPROX_EQ_6(instance.get_maximal_leaving_time(tr1, 10),
+                     cda_rail::max_travel_time_no_stopping(
+                         10, 8, cda_rail::V_MIN, 1.5, 2, 56));
 
   // Leaving times of Train2
-  EXPECT_APPROX_EQ(
+  EXPECT_APPROX_EQ_6(
       instance.get_maximal_leaving_time(tr2, 8),
       cda_rail::max_travel_time_no_stopping(8, 0, cda_rail::V_MIN, 1, 2, 64));
-  EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr2, 0), 14);
+  EXPECT_APPROX_EQ_6(instance.get_minimal_leaving_time(tr2, 0), 14);
 
   // Leaving times for Train3
-  EXPECT_APPROX_EQ(
+  EXPECT_APPROX_EQ_6(
       instance.get_maximal_leaving_time(tr3, 10),
       cda_rail::max_travel_time_no_stopping(10, 0, cda_rail::V_MIN, 2, 4, 190));
-  EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr3, 0), 17);
+  EXPECT_APPROX_EQ_6(instance.get_minimal_leaving_time(tr3, 0), 17);
 
   // Leaving times for Train4
-  EXPECT_APPROX_EQ(
+  EXPECT_APPROX_EQ_6(
       instance.get_maximal_leaving_time(tr4, 5),
       cda_rail::max_travel_time_no_stopping(5, 10, cda_rail::V_MIN, 1, 2, 60));
-  EXPECT_APPROX_EQ(instance.get_minimal_leaving_time(tr4, 5), 7.25);
+  EXPECT_APPROX_EQ_6(instance.get_minimal_leaving_time(tr4, 5), 7.25);
 }
 
 TEST(GeneralPerformanceOptimizationInstances, RASPaths) {
-  const std::vector<std::string> paths{"toy", "practical"};
+  const std::vector<std::string> instance_names{"toy", "practical"};
 
-  for (const auto& p : paths) {
-    const std::string instance_path =
-        "./example-networks-gen-po-ras/" + p + "/";
+  for (const auto& instance_name : instance_names) {
     const auto instance =
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
-            instance_path);
+            instance_name, "ras", "./data/");
 
-    for (size_t tr = 0; tr < instance.get_train_list().size(); ++tr) {
-      double min_time = 0;
-
-      const auto tr_schedule = instance.get_schedule(tr);
-      const auto entry       = tr_schedule.get_entry();
-      const auto exit        = tr_schedule.get_exit();
-      const auto entry_edges = instance.const_n().out_edges(entry);
-      const auto tr_obj      = instance.get_train_list().get_train(tr);
-      const auto entry_obj   = instance.const_n().get_vertex(entry);
-      const auto exit_obj    = instance.const_n().get_vertex(exit);
-      EXPECT_EQ(instance.const_n().neighbors(entry).size(), 1)
-          << "Instance " << p << ": Train " << tr_obj.name << ", entry vertex "
-          << entry_obj.name << " does not have exactly one neighbor";
-      EXPECT_EQ(instance.const_n().neighbors(exit).size(), 1)
-          << "Instance " << p << ": Train " << tr_obj.name << ", exit vertex "
-          << exit_obj.name << " does not have exactly one neighbor";
+    for (size_t tr = 0; tr < instance.get_const_train_list().size(); ++tr) {
+      const auto tr_schedule = instance.get_const_schedule(tr);
+      const auto entry       = tr_schedule.get_entry_vertex();
+      const auto exit        = tr_schedule.get_exit_vertex();
+      const auto entry_edges = instance.get_const_network().out_edges(entry);
+      const auto tr_obj      = instance.get_const_train_list().get_train(tr);
+      const auto entry_obj   = instance.get_const_network().get_vertex(entry);
+      const auto exit_obj    = instance.get_const_network().get_vertex(exit);
+      EXPECT_EQ(instance.get_const_network().neighbors(entry).size(), 1)
+          << "Instance " << instance_name << ": Train " << tr_obj.get_name()
+          << ", entry vertex " << entry_obj.name
+          << " does not have exactly one neighbor";
+      EXPECT_EQ(instance.get_const_network().neighbors(exit).size(), 1)
+          << "Instance " << instance_name << ": Train " << tr_obj.get_name()
+          << ", exit vertex " << exit_obj.name
+          << " does not have exactly one neighbor";
       EXPECT_EQ(entry_edges.size(), 1)
-          << "Instance " << p << ": Train " << tr_obj.name
+          << "Instance " << instance_name << ": Train " << tr_obj.get_name()
           << " does not have exactly one entry edge at entry vertex "
           << entry_obj.name;
-      const auto entry_edge = entry_edges[0];
-      const auto p_len      = instance.const_n().shortest_path(
-          entry_edge, exit, false, true, true, tr_obj.max_speed);
+      ASSERT_EQ(entry_edges.size(), 1);
+      const auto entry_edge = *entry_edges.begin();
+      const auto p_len =
+          instance.get_const_network().shortest_path_from_edge_to_vertex(
+              entry_edge, exit, true, true, tr_obj.get_max_speed());
       EXPECT_TRUE(p_len.has_value())
-          << "Instance " << p << ": No path for train " << tr_obj.name
-          << " from " << entry_obj.name << " to " << exit_obj.name;
-      min_time += p_len.value_or(0);
+          << "Instance " << instance_name << ": No path for train "
+          << tr_obj.get_name() << " from " << entry_obj.name << " to "
+          << exit_obj.name;
 
-      std::vector<size_t> last_edges   = {entry_edge};
-      std::string         last_station = "Entry " + entry_obj.name;
+      index_set   last_edges   = {entry_edge};
+      std::string last_station = "Entry " + entry_obj.name;
       for (const auto& stop : tr_schedule.get_stops()) {
-        const auto station_name = stop.get_station_name();
+        const auto station_name = stop.get_station().name;
         const auto station =
-            instance.get_station_list().get_station(station_name);
+            instance.get_const_station_list().get_station(station_name);
         const auto p_station_len =
-            instance.const_n().shortest_path_between_sets(
-                last_edges, station.tracks, true, true, true, tr_obj.max_speed);
+            instance.get_const_network().shortest_path_length_between_edge_sets(
+                last_edges, station.tracks, true, true, tr_obj.get_max_speed());
         EXPECT_TRUE(p_station_len.has_value())
-            << "Instance " << p << ": No path for train " << tr_obj.name
-            << " from " << last_station << " to " << station_name;
+            << "Instance " << instance_name << ": No path for train "
+            << tr_obj.get_name() << " from " << last_station << " to "
+            << station_name;
         last_edges   = station.tracks;
         last_station = station_name;
-        min_time += p_station_len.value_or(0);
-        min_time += stop.get_min_stopping_time();
       }
-      const auto p_exit_len = instance.const_n().shortest_path_between_sets(
-          last_edges, {exit}, false, true, true, tr_obj.max_speed);
+      const auto p_exit_len =
+          instance.get_const_network()
+              .shortest_path_length_between_edge_and_vertex_set(
+                  last_edges, {exit}, true, true, tr_obj.get_max_speed());
       EXPECT_TRUE(p_exit_len.has_value())
-          << "Instance " << p << ": No path for train " << tr_obj.name
-          << " from " << last_station << " to exit " << exit_obj.name;
-      min_time += p_exit_len.value_or(0);
-
-      EXPECT_LE(min_time + 1 * 60 * 60, tr_schedule.get_t_n_range().second -
-                                            tr_schedule.get_t_0_range().second)
-          << "Instance " << p << ": Train " << tr_obj.name
-          << " cannot reach exit in scheduled time with 1h buffer"
-          << " (min time: " << min_time << ", scheduled time: "
-          << tr_schedule.get_t_n_range().second -
-                 tr_schedule.get_t_0_range().second
-          << ")";
+          << "Instance " << instance_name << ": No path for train "
+          << tr_obj.get_name() << " from " << last_station << " to exit "
+          << exit_obj.name;
     }
   }
 }
@@ -1531,32 +1874,44 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 
   // Create simple network with parallel edges
-  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::TTD);
-  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::TTD);
-  const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::NoBorder);
-  const auto v3 = instance.n().add_vertex("v3", cda_rail::VertexType::TTD);
-  const auto v4 = instance.n().add_vertex("v4", cda_rail::VertexType::TTD);
+  const auto v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  const auto v2 = instance.get_editable_network().add_vertex(
+      "v2", cda_rail::VertexType::NoBorder);
+  const auto v3 = instance.get_editable_network().add_vertex(
+      "v3", cda_rail::VertexType::TTD);
+  const auto v4 = instance.get_editable_network().add_vertex(
+      "v4", cda_rail::VertexType::TTD);
 
-  const auto e01 = instance.n().add_edge(v0, v1, 100, 20, true);
-  const auto e12 = instance.n().add_edge(v1, v2, 10, 20, false);
-  const auto e23 = instance.n().add_edge(v2, v3, 20, 20, false);
-  const auto e24 = instance.n().add_edge(v2, v4, 30, 20, false);
-  const auto e42 = instance.n().add_edge(v4, v2, 30, 20, false);
-  const auto e21 = instance.n().add_edge(v2, v1, 10, 20, false);
-  const auto e10 = instance.n().add_edge(v1, v0, 100, 20, true);
+  const auto e01 =
+      instance.get_editable_network().add_edge(v0, v1, 100, 20, true);
+  const auto e12 =
+      instance.get_editable_network().add_edge(v1, v2, 10, 20, false);
+  const auto e23 =
+      instance.get_editable_network().add_edge(v2, v3, 20, 20, false);
+  const auto e24 =
+      instance.get_editable_network().add_edge(v2, v4, 30, 20, false);
+  const auto e42 =
+      instance.get_editable_network().add_edge(v4, v2, 30, 20, false);
+  const auto e21 =
+      instance.get_editable_network().add_edge(v2, v1, 10, 20, false);
+  const auto e10 =
+      instance.get_editable_network().add_edge(v1, v0, 100, 20, true);
 
-  instance.n().add_successor(e01, e12);
-  instance.n().add_successor(e12, e23);
-  instance.n().add_successor(e12, e24);
-  instance.n().add_successor(e42, e21);
-  instance.n().add_successor(e21, e10);
+  instance.get_editable_network().add_successor(e01, e12);
+  instance.get_editable_network().add_successor(e12, e23);
+  instance.get_editable_network().add_successor(e12, e24);
+  instance.get_editable_network().add_successor(e42, e21);
+  instance.get_editable_network().add_successor(e21, e10);
 
-  const auto tr1 = instance.add_train("tr1", 50, 20, 1, 2, {0, 60}, 20, v0,
-                                      {300, 360}, 0, v3);
-  const auto tr2 = instance.add_train("tr2", 50, 20, 1, 2, {0, 60}, 20, v0,
-                                      {300, 360}, 0, v4);
-  const auto tr3 = instance.add_train("tr3", 50, 20, 1, 2, {0, 60}, 20, v4,
-                                      {300, 360}, 0, v0);
+  const auto tr1 =
+      instance.add_train("tr1", 50, 20, 1, 2, 0, 20, v0, 300, 0, v3);
+  const auto tr2 =
+      instance.add_train("tr2", 50, 20, 1, 2, 0, 20, v0, 300, 0, v4);
+  const auto tr3 =
+      instance.add_train("tr3", 50, 20, 1, 2, 0, 20, v4, 300, 0, v0);
 
   instance.add_empty_route("tr1");
   instance.add_empty_route("tr2");
@@ -1579,7 +1934,7 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
   EXPECT_EQ(tr12_parallel_0.pos1.second, 110);
   EXPECT_EQ(tr12_parallel_0.pos2.first, 0);
   EXPECT_EQ(tr12_parallel_0.pos2.second, 110);
-  EXPECT_EQ(tr12_parallel_0.edges, std::unordered_set<size_t>({e01, e12}));
+  EXPECT_EQ(tr12_parallel_0.edges, (cda_rail::index_set{e01, e12}));
 
   const auto tr13_parallel = instance.get_parallel_overlaps("tr1", "tr3");
   EXPECT_TRUE(tr13_parallel.empty());
@@ -1591,7 +1946,7 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
   EXPECT_EQ(tr12_ttd_0.pos1.second, 130);
   EXPECT_EQ(tr12_ttd_0.pos2.first, 100);
   EXPECT_EQ(tr12_ttd_0.pos2.second, 140);
-  EXPECT_EQ(tr12_ttd_0.edges, std::unordered_set<size_t>({e12, e23, e24}));
+  EXPECT_EQ(tr12_ttd_0.edges, (cda_rail::index_set{e12, e23, e24}));
 
   const auto tr13_ttd = instance.get_ttd_overlaps("tr1", "tr3");
   ASSERT_EQ(tr13_ttd.size(), 1);
@@ -1600,7 +1955,7 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
   EXPECT_EQ(tr13_ttd_0.pos1.second, 130);
   EXPECT_EQ(tr13_ttd_0.pos2.first, 0);
   EXPECT_EQ(tr13_ttd_0.pos2.second, 40);
-  EXPECT_EQ(tr13_ttd_0.edges, std::unordered_set<size_t>({e12, e23, e24}));
+  EXPECT_EQ(tr13_ttd_0.edges, (cda_rail::index_set{e12, e23, e24}));
 
   const auto tr12_reverse = instance.get_reverse_overlaps("tr1", "tr2");
   EXPECT_TRUE(tr12_reverse.empty());
@@ -1612,7 +1967,7 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
   EXPECT_EQ(tr13_reverse_0.pos1.second, 110);
   EXPECT_EQ(tr13_reverse_0.pos2.first, 30);
   EXPECT_EQ(tr13_reverse_0.pos2.second, 140);
-  EXPECT_EQ(tr13_reverse_0.edges, std::unordered_set<size_t>({e01, e12}));
+  EXPECT_EQ(tr13_reverse_0.edges, (cda_rail::index_set{e01, e12}));
 
   const auto tr12_crossing = instance.get_crossing_overlaps("tr1", "tr2");
   ASSERT_EQ(tr12_crossing.size(), 1);
@@ -1622,7 +1977,7 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
   EXPECT_EQ(tr12_crossing_0.pos1.second, 130);
   EXPECT_EQ(tr12_crossing_0.pos2.first, 100);
   EXPECT_EQ(tr12_crossing_0.pos2.second, 140);
-  EXPECT_EQ(tr12_crossing_0.edges, std::unordered_set<size_t>({e12, e23, e24}));
+  EXPECT_EQ(tr12_crossing_0.edges, (cda_rail::index_set{e12, e23, e24}));
 
   const auto tr13_crossing = instance.get_crossing_overlaps("tr1", "tr3");
   ASSERT_EQ(tr13_crossing.size(), 1);
@@ -1632,38 +1987,49 @@ TEST(GeneralPerformanceOptimizationInstances, Overlaps) {
   EXPECT_EQ(tr13_crossing_0.pos1.second, 130);
   EXPECT_EQ(tr13_crossing_0.pos2.first, 0);
   EXPECT_EQ(tr13_crossing_0.pos2.second, 140);
-  EXPECT_EQ(tr13_crossing_0.edges,
-            std::unordered_set<size_t>({e01, e12, e23, e24}));
+  EXPECT_EQ(tr13_crossing_0.edges, (cda_rail::index_set{e01, e12, e23, e24}));
 }
 
 TEST(GeneralPerformanceOptimizationInstances, CrossingOverlapNoUnion) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 
   // Create simple network with parallel edges
-  const auto v0 = instance.n().add_vertex("v0", cda_rail::VertexType::NoBorder);
-  const auto v1 = instance.n().add_vertex("v1", cda_rail::VertexType::NoBorder);
-  const auto v2 = instance.n().add_vertex("v2", cda_rail::VertexType::NoBorder);
-  const auto v3 = instance.n().add_vertex("v3", cda_rail::VertexType::NoBorder);
-  const auto v4 = instance.n().add_vertex("v4", cda_rail::VertexType::NoBorder);
+  const auto v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::NoBorder);
+  const auto v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::NoBorder);
+  const auto v2 = instance.get_editable_network().add_vertex(
+      "v2", cda_rail::VertexType::NoBorder);
+  const auto v3 = instance.get_editable_network().add_vertex(
+      "v3", cda_rail::VertexType::NoBorder);
+  const auto v4 = instance.get_editable_network().add_vertex(
+      "v4", cda_rail::VertexType::NoBorder);
 
-  const auto e01 = instance.n().add_edge(v0, v1, 100, 20, true);
-  const auto e12 = instance.n().add_edge(v1, v2, 10, 20, true);
-  const auto e23 = instance.n().add_edge(v2, v3, 20, 20, true);
-  const auto e34 = instance.n().add_edge(v3, v4, 30, 20, true);
-  const auto e43 = instance.n().add_edge(v4, v3, 30, 20, true);
-  const auto e31 = instance.n().add_edge(v3, v1, 10, 20, true);
-  const auto e10 = instance.n().add_edge(v1, v0, 100, 20, true);
+  const auto e01 =
+      instance.get_editable_network().add_edge(v0, v1, 100, 20, true);
+  const auto e12 =
+      instance.get_editable_network().add_edge(v1, v2, 10, 20, true);
+  const auto e23 =
+      instance.get_editable_network().add_edge(v2, v3, 20, 20, true);
+  const auto e34 =
+      instance.get_editable_network().add_edge(v3, v4, 30, 20, true);
+  const auto e43 =
+      instance.get_editable_network().add_edge(v4, v3, 30, 20, true);
+  const auto e31 =
+      instance.get_editable_network().add_edge(v3, v1, 10, 20, true);
+  const auto e10 =
+      instance.get_editable_network().add_edge(v1, v0, 100, 20, true);
 
-  instance.n().add_successor(e01, e12);
-  instance.n().add_successor(e12, e23);
-  instance.n().add_successor(e23, e34);
-  instance.n().add_successor(e43, e31);
-  instance.n().add_successor(e31, e10);
+  instance.get_editable_network().add_successor(e01, e12);
+  instance.get_editable_network().add_successor(e12, e23);
+  instance.get_editable_network().add_successor(e23, e34);
+  instance.get_editable_network().add_successor(e43, e31);
+  instance.get_editable_network().add_successor(e31, e10);
 
-  const auto tr1 = instance.add_train("tr1", 50, 20, 1, 2, {0, 60}, 20, v0,
-                                      {300, 360}, 0, v4);
-  const auto tr2 = instance.add_train("tr2", 50, 20, 1, 2, {0, 60}, 20, v4,
-                                      {300, 360}, 0, v0);
+  const auto tr1 =
+      instance.add_train("tr1", 50, 20, 1, 2, 0, 20, v0, 300, 0, v4);
+  const auto tr2 =
+      instance.add_train("tr2", 50, 20, 1, 2, 0, 20, v4, 300, 0, v0);
 
   instance.add_empty_route("tr1");
   instance.add_empty_route("tr2");
@@ -1682,13 +2048,831 @@ TEST(GeneralPerformanceOptimizationInstances, CrossingOverlapNoUnion) {
   EXPECT_EQ(tr12_crossing_0.pos1.second, 100);
   EXPECT_EQ(tr12_crossing_0.pos2.first, 40);
   EXPECT_EQ(tr12_crossing_0.pos2.second, 140);
-  EXPECT_EQ(tr12_crossing_0.edges, std::unordered_set<size_t>({e01}));
+  EXPECT_EQ(tr12_crossing_0.edges, (cda_rail::index_set{e01}));
   const auto& tr12_crossing_1 = tr12_crossing.at(1);
   EXPECT_EQ(tr12_crossing_1.pos1.first, 130);
   EXPECT_EQ(tr12_crossing_1.pos1.second, 160);
   EXPECT_EQ(tr12_crossing_1.pos2.first, 0);
   EXPECT_EQ(tr12_crossing_1.pos2.second, 30);
-  EXPECT_EQ(tr12_crossing_1.edges, std::unordered_set<size_t>({e34}));
+  EXPECT_EQ(tr12_crossing_1.edges, (cda_rail::index_set{e34}));
 }
 
+TEST(GeneralPerformanceOptimizationInstances, ObjectiveValue) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 1000, 20);
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 10, {"v0"}, 100, 10, {"v1"}, 1.5);
+  instance.add_train("tr2", 100, 20, 2, 2, 0, 10, {"v1"}, 100, 10, {"v0"}, 2);
+
+  instance.set_station_delay_weight(3.5);
+
+  instance.add_empty_station("Station1");
+  instance.add_empty_station("Station2");
+  instance.add_empty_station("Station3");
+
+  instance.insert_stop("tr2", "Station1", 9.5, 5);
+  instance.insert_stop("tr2", "Station2", 25, 5);
+  instance.insert_stop("tr2", "Station3", 44.3, 5);
+
+  EXPECT_EQ(instance.sum_of_weighted_exit_times(), 1.5 * 100 + 2 * 100);
+  EXPECT_EQ(instance.sum_of_train_weights(), 1.5 + 2);
+
+  auto const obj1 =
+      instance.get_objective_val({110, 120.5}, {{}, {9.5, 25, 44.3}});
+  EXPECT_APPROX_EQ_6(obj1, 1.5 * 110 + 2 * 120.5);
+
+  auto const obj2 =
+      instance.get_objective_val({110, 120.5}, {{}, {11, 27, 44.2}});
+  EXPECT_APPROX_EQ_6(obj2, 1.5 * 110 + 2 * 120.5 + 3.5 * 2 * (1.5 + 2 + 0) / 3);
+
+  auto const obj3 =
+      instance.get_objective_val({110, 120.5}, {{}, {11, 28}}, false);
+  EXPECT_APPROX_EQ_6(obj3, 1.5 * 110 + 2 * 120.5 + 3.5 * 2 * (1.5 + 3 + 0) / 3);
+
+  EXPECT_THROW((void)instance.get_objective_val({110, 120.5}, {{}, {11, 28}}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW((void)instance.get_objective_val({110, 120.5},
+                                                {{5}, {11, 27, 44.2}}, false),
+               cda_rail::exceptions::InvalidInputException);
+}
+
+// Ovisous Infeasibility Tests
+
+TEST(GeneralPerformanceOptimizationInstances, ObviousInfeasibilityHeadway) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD,
+                                             120);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 10, {"v0"}, 100, 10, {"v1"}, 1.5);
+  instance.add_train("tr2", 100, 20, 2, 2, 120, 10, {"v0"}, 220, 10, {"v1"}, 2);
+  instance.add_train("tr3", 100, 20, 2, 2, 239, 10, {"v0"}, 339, 10, {"v1"}, 2);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Entry times at vertex v0 are closer than the vertex "
+                   "headway for trains tr2 and tr3");
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(true);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityBrakingDistance) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 40, 2, 3, 0, 20, {"v0"}, 100, 10, {"v1"}, 1.5);
+  instance.add_train("tr2", 100, 40, 2, 1, 15, 20, {"v0"}, 220, 10, {"v1"}, 2);
+  instance.add_train("tr3", 100, 40, 2, 1, 29, 20, {"v0"}, 339, 10, {"v1"}, 2);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "At vertex v0, train tr2 cannot clear the braking distance "
+                   "of the following train tr3");
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(true);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityTooManyEntryEdges) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 10000, 20);
+  instance.get_editable_network().add_edge({"v0"}, {"v2"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 40, 2, 3, 0, 20, {"v0"}, 100, 10, {"v2"}, 1);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr1 has more or less than one entry edge");
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityTooFewEntryEdges) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 40, 2, 3, 0, 20, {"v0"}, 100, 10, {"v2"}, 1);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr1 has more or less than one entry edge");
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityTooManyExitEdges) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v2"}, 10000, 20);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 40, 2, 3, 0, 20, {"v0"}, 100, 10, {"v2"}, 1);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr1 has more or less than one exit edge");
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityTooFewExitEdges) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 10000, 20);
+
+  instance.add_train("tr1", 100, 40, 2, 3, 0, 20, {"v0"}, 100, 10, {"v2"}, 1);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr1 has more or less than one exit edge");
+}
+
+TEST(GeneralPerformanceOptimizationInstances, ObviousInfeasibilityNoExitPath) {
+  // clang-format off
+  //                - v3b -- v4b -                    - v9b -- v10b -
+  //               /              \                  /                \
+  // v0 --- v1 - v2 - v3a -- v4a - v5 - v6 -- v7 - v8 - v9a -- v10a - v11 - v12a -- v13a
+  //                                                                    \
+  //                                                                      - v12b -- v13b
+  // clang-format on
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v3a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v5",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v6", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v7", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v8",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v9a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v9b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v11",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v12a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v12b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13b", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3a"}, {"v4a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3b"}, {"v4b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4a"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4b"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v5"}, {"v6"}, 100, 20);
+  instance.get_editable_network().add_edge({"v6"}, {"v7"}, 100, 20);
+  instance.get_editable_network().add_edge({"v7"}, {"v8"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9a"}, {"v10a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9b"}, {"v10b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10a"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10b"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12a"}, {"v13a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12b"}, {"v13b"}, 100, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3a"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3b"});
+  instance.get_editable_network().add_successor({"v2", "v3a"}, {"v3a", "v4a"});
+  instance.get_editable_network().add_successor({"v2", "v3b"}, {"v3b", "v4b"});
+  instance.get_editable_network().add_successor({"v3a", "v4a"}, {"v4a", "v5"});
+  instance.get_editable_network().add_successor({"v3b", "v4b"}, {"v4b", "v5"});
+  instance.get_editable_network().add_successor({"v4a", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v4b", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v5", "v6"}, {"v6", "v7"});
+  instance.get_editable_network().add_successor({"v6", "v7"}, {"v7", "v8"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9a"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9b"});
+  instance.get_editable_network().add_successor({"v8", "v9a"}, {"v9a", "v10a"});
+  instance.get_editable_network().add_successor({"v8", "v9b"}, {"v9b", "v10b"});
+  instance.get_editable_network().add_successor({"v9a", "v10a"},
+                                                {"v10a", "v11"});
+  instance.get_editable_network().add_successor({"v9b", "v10b"},
+                                                {"v10b", "v11"});
+  instance.get_editable_network().add_successor({"v10a", "v11"},
+                                                {"v11", "v12a"});
+  instance.get_editable_network().add_successor({"v10b", "v11"},
+                                                {"v11", "v12b"});
+  instance.get_editable_network().add_successor({"v11", "v12b"},
+                                                {"v12b", "v13b"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", {"v3b", "v4b"});
+
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station2", {"v9b", "v10b"});
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 20, {"v0"}, 100, 10, {"v13a"}, 1);
+  instance.add_train("tr2", 100, 20, 2, 2, 200, 20, {"v0"}, 300, 10, {"v13b"},
+                     1);
+
+  instance.insert_stop("tr2", "Station1", 130, 30);
+  instance.insert_stop("tr2", "Station2", 160, 30);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr1 cannot reach exit vertex");
+
+  instance.get_editable_network().add_successor({"v11", "v12a"},
+                                                {"v12a", "v13a"});
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(false);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityNoPathToStation1) {
+  // clang-format off
+  //                - v3b -- v4b -                    - v9b -- v10b -
+  //               /              \                  /                \
+  // v0 --- v1 - v2 - v3a -- v4a - v5 - v6 -- v7 - v8 - v9a -- v10a - v11 - v12a -- v13a
+  //                                                                    \
+  //                                                                      - v12b -- v13b
+  // clang-format on
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v3a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v5",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v6", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v7", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v8",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v9a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v9b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v11",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v12a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v12b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13b", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3a"}, {"v4a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3b"}, {"v4b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4a"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4b"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v5"}, {"v6"}, 100, 20);
+  instance.get_editable_network().add_edge({"v6"}, {"v7"}, 100, 20);
+  instance.get_editable_network().add_edge({"v7"}, {"v8"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9a"}, {"v10a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9b"}, {"v10b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10a"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10b"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12a"}, {"v13a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12b"}, {"v13b"}, 100, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3a"});
+  instance.get_editable_network().add_successor({"v2", "v3a"}, {"v3a", "v4a"});
+  instance.get_editable_network().add_successor({"v2", "v3b"}, {"v3b", "v4b"});
+  instance.get_editable_network().add_successor({"v3a", "v4a"}, {"v4a", "v5"});
+  instance.get_editable_network().add_successor({"v3b", "v4b"}, {"v4b", "v5"});
+  instance.get_editable_network().add_successor({"v4a", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v4b", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v5", "v6"}, {"v6", "v7"});
+  instance.get_editable_network().add_successor({"v6", "v7"}, {"v7", "v8"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9a"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9b"});
+  instance.get_editable_network().add_successor({"v8", "v9a"}, {"v9a", "v10a"});
+  instance.get_editable_network().add_successor({"v8", "v9b"}, {"v9b", "v10b"});
+  instance.get_editable_network().add_successor({"v9a", "v10a"},
+                                                {"v10a", "v11"});
+  instance.get_editable_network().add_successor({"v9b", "v10b"},
+                                                {"v10b", "v11"});
+  instance.get_editable_network().add_successor({"v10a", "v11"},
+                                                {"v11", "v12a"});
+  instance.get_editable_network().add_successor({"v10b", "v11"},
+                                                {"v11", "v12b"});
+  instance.get_editable_network().add_successor({"v11", "v12a"},
+                                                {"v12a", "v13a"});
+  instance.get_editable_network().add_successor({"v11", "v12b"},
+                                                {"v12b", "v13b"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", {"v3b", "v4b"});
+
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station2", {"v9b", "v10b"});
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 20, {"v0"}, 100, 10, {"v13a"}, 1);
+  instance.add_train("tr2", 100, 20, 2, 2, 200, 20, {"v0"}, 300, 10, {"v13b"},
+                     1);
+
+  instance.insert_stop("tr2", "Station1", 130, 30);
+  instance.insert_stop("tr2", "Station2", 160, 30);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr2 cannot reach station Station1");
+
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3b"});
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(false);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityNoPathToStation2) {
+  // clang-format off
+  //                - v3b -- v4b -                    - v9b -- v10b -
+  //               /              \                  /                \
+  // v0 --- v1 - v2 - v3a -- v4a - v5 - v6 -- v7 - v8 - v9a -- v10a - v11 - v12a -- v13a
+  //                                                                    \
+  //                                                                      - v12b -- v13b
+  // clang-format on
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v3a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v5",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v6", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v7", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v8",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v9a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v9b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v11",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v12a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v12b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13b", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3a"}, {"v4a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3b"}, {"v4b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4a"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4b"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v5"}, {"v6"}, 100, 20);
+  instance.get_editable_network().add_edge({"v6"}, {"v7"}, 100, 20);
+  instance.get_editable_network().add_edge({"v7"}, {"v8"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9a"}, {"v10a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9b"}, {"v10b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10a"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10b"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12a"}, {"v13a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12b"}, {"v13b"}, 100, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3a"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3b"});
+  instance.get_editable_network().add_successor({"v2", "v3a"}, {"v3a", "v4a"});
+  instance.get_editable_network().add_successor({"v2", "v3b"}, {"v3b", "v4b"});
+  instance.get_editable_network().add_successor({"v3a", "v4a"}, {"v4a", "v5"});
+  instance.get_editable_network().add_successor({"v4a", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v4b", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v5", "v6"}, {"v6", "v7"});
+  instance.get_editable_network().add_successor({"v6", "v7"}, {"v7", "v8"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9a"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9b"});
+  instance.get_editable_network().add_successor({"v8", "v9a"}, {"v9a", "v10a"});
+  instance.get_editable_network().add_successor({"v8", "v9b"}, {"v9b", "v10b"});
+  instance.get_editable_network().add_successor({"v9a", "v10a"},
+                                                {"v10a", "v11"});
+  instance.get_editable_network().add_successor({"v9b", "v10b"},
+                                                {"v10b", "v11"});
+  instance.get_editable_network().add_successor({"v10a", "v11"},
+                                                {"v11", "v12a"});
+  instance.get_editable_network().add_successor({"v10b", "v11"},
+                                                {"v11", "v12b"});
+  instance.get_editable_network().add_successor({"v11", "v12a"},
+                                                {"v12a", "v13a"});
+  instance.get_editable_network().add_successor({"v11", "v12b"},
+                                                {"v12b", "v13b"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", {"v3b", "v4b"});
+
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station2", {"v9b", "v10b"});
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 20, {"v0"}, 100, 10, {"v13a"}, 1);
+  instance.add_train("tr2", 100, 20, 2, 2, 200, 20, {"v0"}, 300, 10, {"v13b"},
+                     1);
+
+  instance.insert_stop("tr2", "Station1", 130, 30);
+  instance.insert_stop("tr2", "Station2", 160, 30);
+
+  EXPECT_EQ(instance.sum_of_weighted_exit_times(), 100 + 300);
+  EXPECT_EQ(instance.sum_of_train_weights(), 1 + 1);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr2 cannot reach station Station2");
+
+  instance.get_editable_network().add_successor({"v3b", "v4b"}, {"v4b", "v5"});
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(false);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     ObviousInfeasibilityNoPathAfterLastStation) {
+  // clang-format off
+  //                - v3b -- v4b -                    - v9b -- v10b -
+  //               /              \                  /                \
+  // v0 --- v1 - v2 - v3a -- v4a - v5 - v6 -- v7 - v8 - v9a -- v10a - v11 - v12a -- v13a
+  //                                                                    \
+  //                                                                      - v12b -- v13b
+  // clang-format on
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v3a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v4b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v5",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v6", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v7", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v8",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v9a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v9b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v10b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v11",
+                                             cda_rail::VertexType::NoBorder);
+  instance.get_editable_network().add_vertex("v12a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v12b", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13a", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v13b", cda_rail::VertexType::TTD);
+
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v2"}, {"v3b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3a"}, {"v4a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v3b"}, {"v4b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4a"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v4b"}, {"v5"}, 100, 20);
+  instance.get_editable_network().add_edge({"v5"}, {"v6"}, 100, 20);
+  instance.get_editable_network().add_edge({"v6"}, {"v7"}, 100, 20);
+  instance.get_editable_network().add_edge({"v7"}, {"v8"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v8"}, {"v9b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9a"}, {"v10a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v9b"}, {"v10b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10a"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v10b"}, {"v11"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v11"}, {"v12b"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12a"}, {"v13a"}, 100, 20);
+  instance.get_editable_network().add_edge({"v12b"}, {"v13b"}, 100, 20);
+
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3a"});
+  instance.get_editable_network().add_successor({"v1", "v2"}, {"v2", "v3b"});
+  instance.get_editable_network().add_successor({"v2", "v3a"}, {"v3a", "v4a"});
+  instance.get_editable_network().add_successor({"v2", "v3b"}, {"v3b", "v4b"});
+  instance.get_editable_network().add_successor({"v3a", "v4a"}, {"v4a", "v5"});
+  instance.get_editable_network().add_successor({"v3b", "v4b"}, {"v4b", "v5"});
+  instance.get_editable_network().add_successor({"v4a", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v4b", "v5"}, {"v5", "v6"});
+  instance.get_editable_network().add_successor({"v5", "v6"}, {"v6", "v7"});
+  instance.get_editable_network().add_successor({"v6", "v7"}, {"v7", "v8"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9a"});
+  instance.get_editable_network().add_successor({"v7", "v8"}, {"v8", "v9b"});
+  instance.get_editable_network().add_successor({"v8", "v9a"}, {"v9a", "v10a"});
+  instance.get_editable_network().add_successor({"v8", "v9b"}, {"v9b", "v10b"});
+  instance.get_editable_network().add_successor({"v9a", "v10a"},
+                                                {"v10a", "v11"});
+  instance.get_editable_network().add_successor({"v9b", "v10b"},
+                                                {"v10b", "v11"});
+  instance.get_editable_network().add_successor({"v10a", "v11"},
+                                                {"v11", "v12a"});
+  instance.get_editable_network().add_successor({"v11", "v12a"},
+                                                {"v12a", "v13a"});
+  instance.get_editable_network().add_successor({"v11", "v12b"},
+                                                {"v12b", "v13b"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", {"v3b", "v4b"});
+
+  instance.add_empty_station("Station2");
+  instance.add_track_to_station("Station2", {"v9b", "v10b"});
+
+  instance.add_train("tr1", 100, 20, 2, 2, 0, 20, {"v0"}, 100, 10, {"v13a"}, 1);
+  instance.add_train("tr2", 100, 20, 2, 2, 200, 20, {"v0"}, 300, 10, {"v13b"},
+                     1);
+
+  instance.insert_stop("tr2", "Station1", 130, 30);
+  instance.insert_stop("tr2", "Station2", 160, 30);
+
+  auto const [infeas1, reas1] = instance.is_obviously_infeasible(false);
+  EXPECT_TRUE(infeas1);
+  EXPECT_EQ(reas1, "Train tr2 cannot reach exit vertex");
+
+  instance.get_editable_network().add_successor({"v10b", "v11"},
+                                                {"v11", "v12b"});
+
+  auto const [infeas2, reas2] = instance.is_obviously_infeasible(false);
+  EXPECT_FALSE(infeas2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances, ATMOS2023) {
+  std::filesystem::path const wd           = "data";
+  std::string const           subdirectory = "atmos2023";
+  // Expect directory data\instances\atmos2023 to exist
+  std::filesystem::path const dir_path = wd / "instances" / subdirectory;
+  EXPECT_TRUE(std::filesystem::exists(dir_path));
+  EXPECT_TRUE(std::filesystem::is_directory(dir_path));
+
+  // get all names of subdirecotires
+  for (auto const& entry : std::filesystem::directory_iterator(dir_path)) {
+    if (entry.is_directory()) {
+      auto const& name = entry.path().filename().string();
+      instances::GeneralPerformanceOptimizationInstance instance(
+          name, subdirectory, wd);
+      auto const [infeas, reas] = instance.is_obviously_infeasible(false);
+      EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
+
+      auto const consistency = instance.check_consistency(false);
+      EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
+    }
+  }
+}
+
+TEST(GeneralPerformanceOptimizationInstances, RAS) {
+  std::filesystem::path const wd           = "data";
+  std::string const           subdirectory = "ras";
+  // Expect directory data\instances\atmos2023 to exist
+  std::filesystem::path const dir_path = wd / "instances" / subdirectory;
+  EXPECT_TRUE(std::filesystem::exists(dir_path));
+  EXPECT_TRUE(std::filesystem::is_directory(dir_path));
+
+  // get all names of subdirecotires
+  for (auto const& entry : std::filesystem::directory_iterator(dir_path)) {
+    if (entry.is_directory()) {
+      auto const& name = entry.path().filename().string();
+      instances::GeneralPerformanceOptimizationInstance instance(
+          name, subdirectory, wd);
+      auto const [infeas, reas] = instance.is_obviously_infeasible(false);
+      EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
+
+      auto const consistency = instance.check_consistency(false);
+      EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
+    }
+  }
+}
+
+TEST(GeneralPerformanceOptimizationInstances, GenPO) {
+  std::filesystem::path const wd           = "data";
+  std::string const           subdirectory = "gen-po";
+  // Expect directory data\instances\atmos2023 to exist
+  std::filesystem::path const dir_path = wd / "instances" / subdirectory;
+  EXPECT_TRUE(std::filesystem::exists(dir_path));
+  EXPECT_TRUE(std::filesystem::is_directory(dir_path));
+
+  // get all names of subdirecotires
+  for (auto const& entry : std::filesystem::directory_iterator(dir_path)) {
+    if (entry.is_directory()) {
+      auto const& name = entry.path().filename().string();
+      instances::GeneralPerformanceOptimizationInstance instance(
+          name, subdirectory, wd);
+      auto const [infeas, reas] = instance.is_obviously_infeasible(false);
+      EXPECT_FALSE(infeas) << "Instance " << name << " is infeasible: " << reas;
+
+      auto const consistency = instance.check_consistency(false);
+      EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
+    }
+  }
+}
+
+TEST(GeneralPerformanceOptimizationInstances, PointerCopyIssue) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance{};
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+  auto const e0 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  auto const e1 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", e0);
+
+  EXPECT_EQ(instance.get_const_station_list().get_station_names().size(), 1);
+  ASSERT_TRUE(instance.get_const_station_list().has_station("Station1"));
+  EXPECT_EQ(
+      instance.get_const_station_list().get_station("Station1").tracks.size(),
+      1);
+  EXPECT_TRUE(instance.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e0));
+  EXPECT_FALSE(instance.get_const_station_list()
+                   .get_station("Station1")
+                   .tracks.contains(e1));
+  EXPECT_TRUE(instance.get_const_timetable().check_consistency(
+      instance.get_const_network()));
+
+  auto const instance2 = instance;
+
+  EXPECT_EQ(instance.get_const_station_list().get_station_names().size(), 1);
+  ASSERT_TRUE(instance.get_const_station_list().has_station("Station1"));
+  EXPECT_EQ(
+      instance.get_const_station_list().get_station("Station1").tracks.size(),
+      1);
+  EXPECT_TRUE(instance.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e0));
+  EXPECT_FALSE(instance.get_const_station_list()
+                   .get_station("Station1")
+                   .tracks.contains(e1));
+  EXPECT_TRUE(instance.get_const_timetable().check_consistency(
+      instance.get_const_network()));
+
+  EXPECT_EQ(instance2.get_const_station_list().get_station_names().size(), 1);
+  ASSERT_TRUE(instance2.get_const_station_list().has_station("Station1"));
+  EXPECT_EQ(
+      instance2.get_const_station_list().get_station("Station1").tracks.size(),
+      1);
+  EXPECT_TRUE(instance2.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e0));
+  EXPECT_FALSE(instance2.get_const_station_list()
+                   .get_station("Station1")
+                   .tracks.contains(e1));
+  EXPECT_TRUE(instance2.get_const_timetable().check_consistency(
+      instance.get_const_network()));
+
+  instance.get_editable_timetable().add_track_to_station(
+      "Station1", e1, instance.get_const_network());
+
+  EXPECT_EQ(instance.get_const_station_list().get_station_names().size(), 1);
+  ASSERT_TRUE(instance.get_const_station_list().has_station("Station1"));
+  EXPECT_EQ(
+      instance.get_const_station_list().get_station("Station1").tracks.size(),
+      2);
+  EXPECT_TRUE(instance.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e0));
+  EXPECT_TRUE(instance.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e1));
+  EXPECT_TRUE(instance.get_const_timetable().check_consistency(
+      instance.get_const_network()));
+
+  EXPECT_EQ(instance2.get_const_station_list().get_station_names().size(), 1);
+  ASSERT_TRUE(instance2.get_const_station_list().has_station("Station1"));
+  EXPECT_EQ(
+      instance2.get_const_station_list().get_station("Station1").tracks.size(),
+      1);
+  EXPECT_TRUE(instance2.get_const_station_list()
+                  .get_station("Station1")
+                  .tracks.contains(e0));
+  EXPECT_FALSE(instance2.get_const_station_list()
+                   .get_station("Station1")
+                   .tracks.contains(e1));
+  EXPECT_TRUE(instance2.get_const_timetable().check_consistency(
+      instance.get_const_network()));
+}
+
+TEST(GeneralPerformanceOptimizationInstances, ScheduledStopPointerCopyIssue) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance{};
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+  auto const e0 =
+      instance.get_editable_network().add_edge({"v0"}, {"v1"}, 100, 20);
+  auto const e1 =
+      instance.get_editable_network().add_edge({"v1"}, {"v2"}, 100, 20);
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+
+  instance.add_empty_station("Station1");
+  instance.add_track_to_station("Station1", e0);
+
+  // Add a train with a stop
+  instance.add_train("Train1", 100, 10, 1, 1, true, 0, 0, {"v0"}, 360, 0,
+                     {"v2"});
+  instance.insert_stop("Train1", "Station1", 60, 120);
+
+  // Get the address of the station in the station list
+  auto const& station_from_list =
+      instance.get_const_timetable().get_station_list().get_station("Station1");
+  auto const station_list_address = &station_from_list;
+
+  // Get the address of the station from the scheduled stop
+  auto const& schedule = instance.get_const_timetable().get_schedule("Train1");
+  auto const& stops    = schedule.get_stops();
+  ASSERT_EQ(stops.size(), 1);
+  auto const& stop                 = stops[0];
+  auto const& station_from_stop    = stop.get_station();
+  auto const  stop_station_address = &station_from_stop;
+
+  // Before copying, they should be the same object
+  EXPECT_EQ(station_list_address, stop_station_address);
+
+  // Copy the instance
+  auto const instance2 = instance;
+
+  // Get the addresses from the copied instance
+  auto const& station_from_list2 =
+      instance2.get_const_timetable().get_station_list().get_station(
+          "Station1");
+  auto const station_list_address2 = &station_from_list2;
+
+  auto const& schedule2 =
+      instance2.get_const_timetable().get_schedule("Train1");
+  auto const& stops2 = schedule2.get_stops();
+  ASSERT_EQ(stops2.size(), 1);
+  auto const& stop2                 = stops2[0];
+  auto const& station_from_stop2    = stop2.get_station();
+  auto const  stop_station_address2 = &station_from_stop2;
+
+  // After copying, the station list should have a new station object
+  // (deep copy), so the address should be different from the original
+  EXPECT_NE(station_list_address, station_list_address2);
+
+  // However, the scheduled stop should point to the NEW station object
+  // in the copied station list, not the old one
+  // This is the bug: stop_station_address2 still points to the old station
+  // (or a copy of it, but not the one in the copied station list)
+  EXPECT_EQ(station_list_address2, stop_station_address2);
+}
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

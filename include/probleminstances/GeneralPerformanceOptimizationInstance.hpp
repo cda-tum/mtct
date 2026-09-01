@@ -1,986 +1,828 @@
 #pragma once
 
-#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
-#include "EOMHelper.hpp"
 #include "GeneralProblemInstance.hpp"
-#include "VSSGenerationTimetable.hpp"
-#include "datastructure/GeneralTimetable.hpp"
+#include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
-#include "nlohmann/json.hpp"
-#include "nlohmann/json_fwd.hpp"
+#include "datastructure/Timetable.hpp"
 
-#include <algorithm>
+// NOLINTNEXTLINE(misc-include-cleaner)
+#include "gtest/gtest_prod.h"
 #include <cassert>
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
-#include <limits>
 #include <map>
+#include <memory>
 #include <optional>
-#include <stdexcept>
 #include <string>
-#include <tuple>
-#include <type_traits>
+#include <string_view>
 #include <utility>
 #include <vector>
 
-using json = nlohmann::json;
+// If TEST_FRIENDS has value true, the corresponding test is friended to test
+// complex private functions.
+// This is not good practice. However, after consideration, it was decided that
+// - it is not reasonable to make the functions public
+// - they have a complexity that should be tested
+// - by only testing the overall solution, there is too much code tested at once
+#ifndef TEST_FRIENDS
+#define TEST_FRIENDS false
+#endif
+#if TEST_FRIENDS
+class GeneralPerformanceOptimizationInstances;
+class GeneralPerformanceOptimizationInstances_PointerCopyIssue_Test;
+class
+    GeneralPerformanceOptimizationInstances_ScheduledStopPointerCopyIssue_Test;
+#endif
 
 namespace cda_rail::instances {
 
 class GeneralPerformanceOptimizationInstance
-    : public GeneralProblemInstanceWithScheduleAndRoutes<
-          GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>> {
-  template <typename S> friend class SolGeneralPerformanceOptimizationInstance;
-  template <typename S>
-  friend class SolVSSGeneralPerformanceOptimizationInstance;
+    : public GeneralProblemInstanceWithScheduleAndRoutes {
+  friend class SolGeneralPerformanceOptimizationInstance;
+  // friend class SolVSSGeneralPerformanceOptimizationInstance;
+#if TEST_FRIENDS
+  FRIEND_TEST(::GeneralPerformanceOptimizationInstances, PointerCopyIssue);
+  FRIEND_TEST(::GeneralPerformanceOptimizationInstances,
+              ScheduledStopPointerCopyIssue);
+#endif
 
-  void initialize_vectors() {
-    train_weights =
-        std::vector<double>(this->get_timetable().get_train_list().size(), 1);
-    train_optional =
-        std::vector<bool>(this->get_timetable().get_train_list().size(), false);
-  }
-
-  std::vector<double> train_weights;
-  std::vector<bool>   train_optional;
-  double lambda = 1; // Minutes of delay (of a weight one train) that are
-                     // "equal" to scheduling another weight one train
+  std::vector<double> m_train_weights{};
+  double m_station_delay_weight{1}; // add (average) station delays with given
+                                    // weight to objective function
 
 public:
+  // -------------------
+  // CONSTRUCTOR
+  /**
+   * @brief Constructs an instance with default values.
+   */
   GeneralPerformanceOptimizationInstance() = default;
-  explicit GeneralPerformanceOptimizationInstance(const Network& network)
-      : GeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>(network) {
+  /**
+   * @brief Constructs an instance from a network.
+   *
+   * @param network The network for this instance.
+   */
+  explicit GeneralPerformanceOptimizationInstance(Network network)
+      : GeneralProblemInstanceWithScheduleAndRoutes(std::move(network)) {
     initialize_vectors();
-  };
-  explicit GeneralPerformanceOptimizationInstance(
-      const Network&                                                 network,
-      const GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>& timetable,
-      const RouteMap&                                                routes)
-      : GeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>(
-            network, timetable, routes) {
+  }
+  /**
+   * @brief Constructs an instance with a network, timetable, and routes.
+   *
+   * Initializes all train weights to 1.
+   */
+  GeneralPerformanceOptimizationInstance(Network network, Timetable timetable,
+                                         RouteMap routes)
+      : GeneralProblemInstanceWithScheduleAndRoutes(
+            std::move(network), std::move(timetable), std::move(routes)) {
     initialize_vectors();
-  };
-  explicit GeneralPerformanceOptimizationInstance(
-      const std::filesystem::path& path)
-      : GeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>(path) {
-    initialize_vectors();
+  }
+  GeneralPerformanceOptimizationInstance(
+      std::string_view instance_name, std::string_view instance_subdirectory,
+      std::filesystem::path const& working_directory);
+  /**
+   * @brief Evaluates the objective for explicit exit and stop times.
+   *
+   * @param tr_exit_times Exit times per train.
+   * @param stop_times Stop times per train and stop.
+   * @param throw_error_if_not_all_stops_specified Whether missing stop times
+   *        should trigger an error.
+   * @return Objective value induced by the provided timing data.
+   */
+  [[nodiscard]] double
+  get_objective_val(const std::vector<double>&              tr_exit_times,
+                    const std::vector<std::vector<double>>& stop_times,
+                    bool throw_error_if_not_all_stops_specified = true) const;
 
-    std::ifstream file(path / "problem_data.json");
-    json          j = json::parse(file);
-    for (const auto& [train_name, weight] : j["train_weights"].items()) {
-      set_train_weight(train_name, static_cast<double>(weight));
-    }
-    for (const auto& [train_name, optional] : j["train_optional"].items()) {
-      set_train_optionality_value(train_name, static_cast<bool>(optional));
-    }
-    lambda = static_cast<double>(j["lambda"]);
-  };
+  /**
+   * @brief Calculates the weighted sum of all (earliest) exit times.
+   *
+   * @return Weighted sum
+   */
+  [[nodiscard]] double sum_of_weighted_exit_times() const;
 
-  static GeneralPerformanceOptimizationInstance
-  cast_from_vss_generation(const VSSGenerationTimetable& vss_gen);
-  [[nodiscard]] VSSGenerationTimetable
-  cast_to_vss_generation(bool throw_error = true) const;
+  [[nodiscard]] double sum_of_train_weights() const;
 
-  using T = GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>;
+  /**
+   * @brief Constructs an instance from a named subdirectory.
+   *
+   * @param instanceName The name of the instance to load.
+   * @param instanceSubdirectory The subdirectory containing the instance data.
+   * @param working_directory The working directory containing the instance
+   * subdirectory.
+   */
+  GeneralPerformanceOptimizationInstance(
+      std::string_view const instanceName,
+      std::string_view const instanceSubdirectory,
+      std::string const&     working_directory)
+      : GeneralPerformanceOptimizationInstance(
+            instanceName, instanceSubdirectory,
+            std::filesystem::path(working_directory)) {}
+  /**
+   * @brief Constructs an instance by loading from a specified directory
+   * structure.
+   *
+   * @param instanceName Name identifying the instance to load.
+   * @param instanceSubdirectory Subdirectory (within `workingDirectory`)
+   * containing instance data.
+   * @param workingDirectory Root directory path for loading instance data.
+   */
+  GeneralPerformanceOptimizationInstance(
+      std::string_view const instanceName,
+      std::string_view const instanceSubdirectory,
+      char const* const      workingDirectory)
+      : GeneralPerformanceOptimizationInstance(
+            instanceName, instanceSubdirectory,
+            std::filesystem::path(workingDirectory)) {}
 
-  template <typename TrainN = std::string, typename EntryN = std::string,
-            typename ExitN = std::string>
-  size_t add_train(const TrainN& name, int length, double max_speed,
-                   double acceleration, double deceleration,
-                   decltype(T::time_type()) t_0, double v_0,
-                   const EntryN& entry, decltype(T::time_type()) t_n,
-                   double v_n, const ExitN& exit, double tr_weight = 1,
-                   bool tr_optional = false) {
-    train_weights.push_back(tr_weight);
-    train_optional.push_back(tr_optional);
-    return GeneralProblemInstanceWithScheduleAndRoutes<T>::add_train(
-        name, length, max_speed, acceleration, deceleration, t_0, v_0, entry,
-        t_n, v_n, exit);
+  // ------------------
+  // GETTER
+  /**
+   * @brief Accesses the per-train weights.
+   *
+   * @return A const reference to the vector of per-train weights, indexed by
+   * train.
+   */
+
+  [[nodiscard]] const auto& get_train_weights() const {
+    return m_train_weights;
+  }
+  /**
+   * @brief Gets the station delay weight.
+   *
+   * @return double The weight applied to station delays in the objective
+   * function.
+   */
+  [[nodiscard]] double get_station_delay_weight() const {
+    return m_station_delay_weight;
   }
 
-  [[nodiscard]] const auto& get_train_weights() const { return train_weights; };
-  [[nodiscard]] const auto& get_train_optional() const {
-    return train_optional;
-  };
-  [[nodiscard]] double get_lambda() const { return lambda; };
-
-  [[nodiscard]] double get_train_weight(size_t train_index) {
-    if (!this->get_timetable().get_train_list().has_train(train_index)) {
-      throw std::invalid_argument("Train index out of bounds");
-    }
-    return train_weights.at(train_index);
+  /**
+   * @brief Retrieves the weight assigned to a specific train.
+   *
+   * @param train_index Index of the train.
+   * @return double The weight for the specified train.
+   */
+  [[nodiscard]] double get_train_weight(size_t train_index) const {
+    get_const_timetable().get_train_list().throw_if_train_not_exist(
+        train_index);
+    return m_train_weights.at(train_index);
   }
-  [[nodiscard]] double get_train_weight(const std::string& train_name) {
+  /**
+   * @brief Retrieves the weight of a train by name.
+   *
+   * @param train_name The name of the train.
+   * @return double The weight assigned to the train.
+   */
+  [[nodiscard]] double get_train_weight(const std::string& train_name) const {
     return get_train_weight(
-        this->get_timetable().get_train_list().get_train_index(train_name));
+        get_const_timetable().get_train_list().get_train_index(train_name));
   }
-  [[nodiscard]] double get_train_weight(const char* train_name) {
+  /**
+   * @brief Returns the weight of a train by its name.
+   *
+   * @param train_name The name of the train.
+   * @return double The weight of the specified train.
+   */
+  [[nodiscard]] double get_train_weight(const char* train_name) const {
     return get_train_weight(
-        this->get_timetable().get_train_list().get_train_index(train_name));
+        get_const_timetable().get_train_list().get_train_index(train_name));
   }
 
-  [[nodiscard]] bool get_train_optional(size_t train_index) {
-    if (!this->get_timetable().get_train_list().has_train(train_index)) {
-      throw std::invalid_argument("Train index out of bounds");
-    }
-    return train_optional.at(train_index);
-  }
-  [[nodiscard]] bool get_train_optional(const std::string& train_name) {
-    return get_train_optional(
-        this->get_timetable().get_train_list().get_train_index(train_name));
-  }
-  [[nodiscard]] bool get_train_optional(const char* train_name) {
-    return get_train_optional(
-        this->get_timetable().get_train_list().get_train_index(train_name));
+  // Objective
+
+  // -------------------
+  // EDITING
+  // -------------------
+
+  /**
+   * @brief Sets the station-delay weight.
+   *
+   * @param new_weight The weight value to assign.
+   */
+
+  void set_station_delay_weight(double new_weight) {
+    m_station_delay_weight = new_weight;
   }
 
-  void set_lambda(double new_lambda) { lambda = new_lambda; };
-
+  /**
+   * @brief Assigns a weight to a specific train.
+   *
+   * @param train_index Index of the train.
+   * @param weight The weight value.
+   */
   void set_train_weight(size_t train_index, double weight) {
-    if (!this->get_timetable().get_train_list().has_train(train_index)) {
-      throw std::invalid_argument("Train index out of bounds");
-    }
-    train_weights[train_index] = weight;
-  };
+    get_const_timetable().get_train_list().throw_if_train_not_exist(
+        train_index);
+    m_train_weights.at(train_index) = weight;
+  }
+  /**
+   * @brief Sets the weight for a train by its name.
+   * @param train_name Name of the train.
+   * @param weight Weight to assign to the train.
+   */
   void set_train_weight(const std::string& train_name, double weight) {
     set_train_weight(
-        this->get_timetable().get_train_list().get_train_index(train_name),
+        get_const_timetable().get_train_list().get_train_index(train_name),
         weight);
-  };
+  }
+  /**
+   * @brief Sets the weight for a train by name.
+   *
+   * @param train_name The name of the train.
+   * @param weight The new weight value.
+   */
   void set_train_weight(const char* train_name, double weight) {
     set_train_weight(
-        this->get_timetable().get_train_list().get_train_index(train_name),
+        get_const_timetable().get_train_list().get_train_index(train_name),
         weight);
-  };
+  }
 
-  void set_train_optionality_value(size_t train_index, bool val) {
-    if (!this->get_timetable().get_train_list().has_train(train_index)) {
-      throw std::invalid_argument("Train index out of bounds");
-    }
-    train_optional[train_index] = val;
-  };
-  void set_train_optionality_value(const std::string& train_name, bool val) {
-    set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
-        val);
-  };
-  void set_train_optionality_value(const char* train_name, bool val) {
-    set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
-        val);
-  };
-  void set_train_optional(size_t train_index) {
-    set_train_optionality_value(train_index, true);
-  };
-  void set_train_optional(const std::string& train_name) {
-    set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
-        true);
-  };
-  void set_train_optional(const char* train_name) {
-    set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
-        true);
-  };
-  void set_train_mandatory(size_t train_index) {
-    set_train_optionality_value(train_index, false);
-  };
-  void set_train_mandatory(const std::string& train_name) {
-    set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
-        false);
-  };
-  void set_train_mandatory(const char* train_name) {
-    set_train_optionality_value(
-        this->get_timetable().get_train_list().get_train_index(train_name),
-        false);
-  };
+  /**
+   * @brief Adds a train with an associated weight to the instance.
+   *
+   * @param train_name Name of the train.
+   * @param length Length of the train.
+   * @param max_speed Maximum speed of the train.
+   * @param acceleration Acceleration capability of the train.
+   * @param deceleration Deceleration capability of the train.
+   * @param tim Whether the train operates under timetable constraints.
+   * @param entry_time Time at which the train enters the network.
+   * @param initial_velocity Initial velocity of the train.
+   * @param entry_vertex Entry vertex for the train.
+   * @param exit_time Time at which the train exits the network.
+   * @param exit_velocity Exit velocity of the train.
+   * @param exit_vertex Exit vertex for the train.
+   * @param tr_weight Weight coefficient for this train in the objective
+   * (default 1).
+   * @return Index of the newly added train.
+   */
+
+  size_t add_train(std::string const& train_name, double length,
+                   double max_speed, double acceleration, double deceleration,
+                   bool tim, double entry_time, double initial_velocity,
+                   Network::VertexInput const& entry_vertex, double exit_time,
+                   double                      exit_velocity,
+                   Network::VertexInput const& exit_vertex,
+                   double                      tr_weight = 1) {
+    auto index = GeneralProblemInstanceWithScheduleAndRoutes::add_train(
+        train_name, length, max_speed, acceleration, deceleration, tim,
+        entry_time, initial_velocity, entry_vertex, exit_time, exit_velocity,
+        exit_vertex);
+    m_train_weights.emplace_back(tr_weight);
+    return index;
+  }
+  /**
+   * @brief Adds a train to the instance with specified characteristics and
+   * weight.
+   *
+   * @param train_name Name of the train.
+   * @param length Length of the train.
+   * @param max_speed Maximum speed of the train.
+   * @param acceleration Acceleration capability of the train.
+   * @param deceleration Deceleration capability of the train.
+   * @param entry_time Time at which the train enters the network.
+   * @param initial_velocity Initial velocity of the train.
+   * @param entry_vertex Entry vertex for the train.
+   * @param exit_time Time at which the train exits the network.
+   * @param exit_velocity Exit velocity of the train.
+   * @param exit_vertex Exit vertex for the train.
+   * @param tr_weight Per-train weight factor for objective calculation
+   * (default: 1).
+   * @return The index of the added train.
+   */
+  size_t add_train(std::string const& train_name, double length,
+                   double max_speed, double acceleration, double deceleration,
+                   double entry_time, double initial_velocity,
+                   Network::VertexInput const& entry_vertex, double exit_time,
+                   double                      exit_velocity,
+                   Network::VertexInput const& exit_vertex,
+                   double                      tr_weight = 1) {
+    return add_train(train_name, length, max_speed, acceleration, deceleration,
+                     true, entry_time, initial_velocity, entry_vertex,
+                     exit_time, exit_velocity, exit_vertex, tr_weight);
+  }
+
+  // ---------------------
+  // EXPORT
+  // ---------------------
+
+  using GeneralProblemInstanceWithScheduleAndRoutes::export_instance;
+
+  void export_instance(const std::filesystem::path& working_directory,
+                       bool save_network) const override;
+
+  // ---------------------
+  // TRANSFORMATION
+  // ---------------------
 
   // Transformation functions
+  /** @brief Discretizes stop edges used by the instance timetable. */
   void discretize_stops();
 
-  using GeneralProblemInstance::export_instance;
-
-  void export_instance(const std::filesystem::path& path) const override {
-    GeneralProblemInstanceWithScheduleAndRoutes<GeneralTimetable<
-        GeneralSchedule<GeneralScheduledStop>>>::export_instance(path);
-
-    json j;
-    for (size_t i = 0; i < train_weights.size(); ++i) {
-      j["train_weights"]
-       [this->get_timetable().get_train_list().get_train(i).name] =
-           train_weights[i];
-      j["train_optional"]
-       [this->get_timetable().get_train_list().get_train(i).name] =
-           train_optional[i];
-    }
-    j["lambda"] = lambda;
-
-    std::ofstream file(path / "problem_data.json");
-    file << j << '\n';
-  };
-
+  /**
+   * @brief Checks if the instance is consistent.
+   *
+   * @return `true` if the instance is consistent and every train has a route,
+   * `false` otherwise.
+   */
   [[nodiscard]] bool check_consistency() const override {
     return check_consistency(true);
   }
 
+  /**
+   * @brief Checks instance consistency under the chosen route-completeness
+   *        rule.
+   *
+   * @param every_train_must_have_route Whether every train must have a route.
+   * @return `true` if the instance is consistent under the requested rule.
+   */
   [[nodiscard]] bool
-  check_consistency(bool every_train_must_have_route) const override {
-    if (!GeneralProblemInstanceWithScheduleAndRoutes<
-            GeneralTimetable<GeneralSchedule<GeneralScheduledStop>>>::
-            check_consistency(every_train_must_have_route)) {
-      return false;
-    }
-    const auto num_tr = this->get_timetable().get_train_list().size();
-    if (train_weights.size() != num_tr || train_optional.size() != num_tr) {
-      return false;
-    }
-    return (lambda >= 0 && std::ranges::all_of(
-                               train_weights, [](double w) { return w >= 0; }));
-  };
+  check_consistency(bool every_train_must_have_route) const override;
 
+  // -----------------
+  // HELPER
+  // -----------------
+
+  /**
+   * @brief Returns an approximate leaving time for a train.
+   *
+   * @param train Train index.
+   * @return Approximate leaving time.
+   */
   [[nodiscard]] double get_approximate_leaving_time(size_t train) const;
+  /**
+   * @brief Returns a maximal leaving time under a speed bound.
+   *
+   * @param train Train index.
+   * @param v Speed bound.
+   * @return Maximal leaving time.
+   */
   [[nodiscard]] double get_maximal_leaving_time(size_t train, double v) const;
+  /**
+   * @brief Returns a minimal leaving time under a speed bound.
+   *
+   * @param train Train index.
+   * @param v Speed bound.
+   * @return Minimal leaving time.
+   */
   [[nodiscard]] double get_minimal_leaving_time(size_t train, double v) const;
+  /**
+   * @brief Gets the approximate leaving time for a train by name.
+   * @param tr_name The name of the train.
+   * @return double The approximate leaving time of the train.
+   */
   [[nodiscard]] double
   get_approximate_leaving_time(const std::string& tr_name) const {
     return get_approximate_leaving_time(
-        this->get_timetable().get_train_list().get_train_index(tr_name));
+        this->get_const_timetable().get_train_list().get_train_index(tr_name));
   };
+  /**
+   * @brief Determines the maximum departure time for a train at a specified
+   * velocity.
+   *
+   * @param v Velocity constraint.
+   * @return Maximum departure time.
+   */
   [[nodiscard]] double get_maximal_leaving_time(const std::string& tr_name,
                                                 double             v) const {
     return get_maximal_leaving_time(
-        this->get_timetable().get_train_list().get_train_index(tr_name), v);
+        this->get_const_timetable().get_train_list().get_train_index(tr_name),
+        v);
   };
+  /**
+   * @brief Gets the minimal leaving time for a train.
+   *
+   * @param tr_name The name of the train.
+   * @param v Constraint value for the calculation.
+   * @return double The minimal leaving time for the specified train.
+   */
   [[nodiscard]] double get_minimal_leaving_time(const std::string& tr_name,
                                                 double             v) const {
     return get_minimal_leaving_time(
-        this->get_timetable().get_train_list().get_train_index(tr_name), v);
+        this->get_const_timetable().get_train_list().get_train_index(tr_name),
+        v);
   };
-};
 
-template <typename T>
-class SolGeneralPerformanceOptimizationInstance
-    : public SolGeneralProblemInstanceWithScheduleAndRoutes<T> {
-  static_assert(
-      std::is_base_of_v<GeneralPerformanceOptimizationInstance, T>,
-      "T must be derived from GeneralPerformanceOptimizationInstance");
-  std::vector<std::map<double, double>> train_pos;
-  std::vector<std::map<double, double>> train_speed;
-  std::vector<bool>                     train_routed;
-
+private:
+  /**
+   * @brief Initializes per-train weights to default values.
+   *
+   * Each train is assigned a weight of 1.
+   */
   void initialize_vectors() {
-    train_pos.reserve(this->instance.get_timetable().get_train_list().size());
-    train_speed.reserve(this->instance.get_timetable().get_train_list().size());
-    train_routed = std::vector<bool>(
-        this->instance.get_timetable().get_train_list().size(), false);
-    for (size_t tr = 0; tr < this->instance.get_train_list().size(); ++tr) {
-      train_pos.emplace_back();
-      train_speed.emplace_back();
-    }
-  };
-
-public:
-  SolGeneralPerformanceOptimizationInstance() = default;
-  explicit SolGeneralPerformanceOptimizationInstance(const T& instance)
-      : SolGeneralProblemInstanceWithScheduleAndRoutes<T>(instance) {
-    this->initialize_vectors();
-  };
-  SolGeneralPerformanceOptimizationInstance(const T&       instance,
-                                            SolutionStatus status, double obj,
-                                            bool has_sol)
-      : SolGeneralProblemInstanceWithScheduleAndRoutes<T>(instance, status, obj,
-                                                          has_sol) {
-    this->initialize_vectors();
-  };
-  explicit SolGeneralPerformanceOptimizationInstance(
-      const std::filesystem::path& p,
-      const std::optional<T>&      instance = std::optional<T>()) {
-    if (!std::filesystem::exists(p)) {
-      throw exceptions::ImportException("Path does not exist");
-    }
-    if (!std::filesystem::is_directory(p)) {
-      throw exceptions::ImportException("Path is not a directory");
-    }
-
-    bool const import_routes = instance.has_value();
-    if (instance.has_value()) {
-      this->instance = instance.value();
-    } else {
-      this->instance = GeneralPerformanceOptimizationInstance(p / "instance");
-    }
-
-    if (import_routes) {
-      this->instance.editable_routes() =
-          RouteMap(p / "instance" / "routes", this->instance.const_n());
-    }
-
-    std::ifstream data_file(p / "solution" / "data.json");
-    json          data = json::parse(data_file);
-    SolGeneralProblemInstanceWithScheduleAndRoutes<
-        GeneralPerformanceOptimizationInstance>::
-        set_general_solution_data(data);
-
-    this->initialize_vectors();
-
-    // Read train_pos
-    std::ifstream train_pos_file(p / "solution" / "train_pos.json");
-    json          train_pos_json = json::parse(train_pos_file);
-    for (const auto& [tr_name, tr_pos_json] : train_pos_json.items()) {
-      for (const auto& [idx, pos_pair] : tr_pos_json.items()) {
-        const auto [t, pos] =
-            pos_pair.template get<std::pair<double, double>>();
-        this->add_train_pos(tr_name, t, pos);
-      }
-    }
-
-    // Read train_speed
-    std::ifstream train_speed_file(p / "solution" / "train_speed.json");
-    json          train_speed_json = json::parse(train_speed_file);
-    for (const auto& [tr_name, tr_speed_json] : train_speed_json.items()) {
-      for (const auto& [idx, speed_pair] : tr_speed_json.items()) {
-        const auto [t, speed] =
-            speed_pair.template get<std::pair<double, double>>();
-        this->add_train_speed(tr_name, t, speed);
-      }
-    }
-
-    // Read train_routed
-    std::ifstream train_routed_file(p / "solution" / "train_routed.json");
-    json          train_routed_json = json::parse(train_routed_file);
-    for (const auto& [tr_name, routed] : train_routed_json.items()) {
-      this->train_routed[this->instance.get_train_list().get_train_index(
-          tr_name)] = routed.template get<bool>();
-    }
-  };
-
-  [[nodiscard]] double get_train_pos(const std::string& tr_name,
-                                     double             t) const {
-    if (!this->instance.get_train_list().has_train(tr_name)) {
-      throw exceptions::TrainNotExistentException(tr_name);
-    }
-    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
-    if (train_pos.at(tr_id).count(t) > 0) {
-      return train_pos.at(tr_id).at(t);
-    }
-    throw exceptions::ConsistencyException("No position for train " + tr_name +
-                                           " at time " + std::to_string(t));
-  };
-  [[nodiscard]] std::tuple<size_t, double, double>
-  get_edge_and_time_bounds(const std::string& tr_name, double t) const {
-    if (!this->instance.get_train_list().has_train(tr_name)) {
-      throw exceptions::TrainNotExistentException(tr_name);
-    }
-    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
-    const auto& tr_pos = train_pos.at(tr_id);
-
-    double t0 = -1;
-    double t1 = -1;
-    for (const auto& [time, pos] : tr_pos) {
-      if (std::abs(time - t) < GRB_EPS) {
-        t0 = time;
-        t1 = time;
-        break;
-      }
-      if (time < t) {
-        t0 = time;
-      } else if (t0 >= 0) {
-        t1 = time;
-        break;
-      } else {
-        throw exceptions::ConsistencyException(
-            "Train " + tr_name + " not present at time " + std::to_string(t));
-      }
-    }
-    if (t1 < 0) {
-      throw exceptions::ConsistencyException(
-          "Train " + tr_name + " not present at time " + std::to_string(t));
-    }
-
-    assert(t >= t0 - GRB_EPS);
-    assert(t <= t1 + GRB_EPS);
-    const auto pos0 = get_train_pos(tr_name, t0);
-
-    const Route& route = this->get_instance().const_routes().get_route(tr_name);
-    const Network& n   = this->get_instance().const_n();
-    const auto     r_len = route.length(n);
-    return {route.get_edge_at_pos(std::min(pos0 + GRB_EPS, r_len), n), t0, t1};
-  };
-  [[nodiscard]] std::tuple<double, double, double, double>
-  get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const {
-    const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
-    assert(t >= t1 - GRB_EPS);
-    assert(t <= t2 + GRB_EPS);
-
-    const auto v1   = get_train_speed(tr_name, t1);
-    const auto v2   = get_train_speed(tr_name, t2);
-    const auto pos1 = get_train_pos(tr_name, t1);
-    const auto pos2 = get_train_pos(tr_name, t2);
-
-    const Route& tr_route         = this->instance.get_route(tr_name);
-    const auto&  r_len            = tr_route.length(this->instance.const_n());
-    const bool   tr_leaving_route = pos2 >= r_len + GRB_EPS;
-
-    if (std::abs(pos2 - pos1) < GRB_EPS) {
-      return {std::min(pos1, pos2), std::max(pos1, pos2), std::min(v1, v2),
-              std::max(v1, v2)};
-    }
-
-    const auto& edge_obj = this->instance.const_n().get_edge(edge);
-    const auto& tr_obj   = this->instance.get_train_list().get_train(tr_name);
-
-    const auto max_speed = tr_leaving_route
-                               ? tr_obj.max_speed
-                               : std::min(edge_obj.max_speed, tr_obj.max_speed);
-
-    const auto max_t =
-        max_travel_time(v1, v2, V_MIN, tr_obj.acceleration, tr_obj.deceleration,
-                        pos2 - pos1, edge_obj.breakable);
-    const auto min_t = min_travel_time(v1, v2, max_speed, tr_obj.acceleration,
-                                       tr_obj.deceleration, pos2 - pos1);
-    double     ub    = pos1;
-    double     lb    = pos1;
-    double     v_lb  = 0;
-    double     v_ub  = max_speed;
-
-    if (max_t >= std::numeric_limits<double>::infinity()) {
-      const auto t_to_stop = v1 / tr_obj.deceleration;
-      const auto rel_t     = std::min(t_to_stop, t - t1);
-      lb += v1 * rel_t - 0.5 * tr_obj.deceleration * rel_t * rel_t;
-      v_lb = v1 - tr_obj.deceleration * rel_t;
-    } else {
-      const auto min_speed = minimal_line_speed(
-          v1, v2, V_MIN, tr_obj.acceleration, tr_obj.deceleration, pos2 - pos1);
-      lb += pos_on_edge_at_time(v1, v2, min_speed, tr_obj.acceleration,
-                                tr_obj.deceleration, pos2 - pos1, t - t1);
-      v_lb = vel_on_edge_at_time(v1, v2, min_speed, tr_obj.acceleration,
-                                 tr_obj.deceleration, pos2 - pos1, t - t1);
-    }
-
-    if (t >= t1 + min_t) {
-      ub += pos2 - pos1;
-    } else {
-      const auto max_line_speed =
-          maximal_line_speed(v1, v2, max_speed, tr_obj.acceleration,
-                             tr_obj.deceleration, pos2 - pos1);
-      ub += pos_on_edge_at_time(v1, v2, max_line_speed, tr_obj.acceleration,
-                                tr_obj.deceleration, pos2 - pos1, t - t1);
-      v_ub = vel_on_edge_at_time(v1, v2, max_line_speed, tr_obj.acceleration,
-                                 tr_obj.deceleration, pos2 - pos1, t - t1);
-    }
-    return {lb, ub, v_lb, v_ub};
-  };
-  [[nodiscard]] std::optional<std::pair<double, double>>
-  get_approximate_train_pos_and_vel(const std::string& tr_name,
-                                    double             t) const {
-    const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
-    assert(t >= t1 - GRB_EPS);
-    assert(t <= t2 + GRB_EPS);
-
-    const auto pos_1 = get_train_pos(tr_name, t1);
-    const auto v1    = get_train_speed(tr_name, t1);
-
-    if (t1 == t2) {
-      return std::make_pair(pos_1, v1);
-    }
-
-    const auto pos_2 = get_train_pos(tr_name, t2);
-    const auto v2    = get_train_speed(tr_name, t2);
-
-    const auto& edge_obj  = this->instance.const_n().get_edge(edge);
-    const auto& tr_obj    = this->instance.get_train_list().get_train(tr_name);
-    const auto  max_speed = std::min(tr_obj.max_speed, edge_obj.max_speed);
-    const auto  dist_travelled = pos_2 - pos_1;
-
-    if (std::abs(dist_travelled) < GRB_EPS) {
-      // Train stopped
-      return std::make_pair(pos_1, 0);
-    }
-
-    const auto v_line =
-        get_line_speed(v1, v2, V_MIN, max_speed, tr_obj.acceleration,
-                       tr_obj.deceleration, dist_travelled, t2 - t1);
-    if (v_line <= 0) {
-      return std::nullopt;
-    }
-
-    const auto tr_pos =
-        get_train_pos(tr_name, t1) +
-        pos_on_edge_at_time(v1, v2, v_line, tr_obj.acceleration,
-                            tr_obj.deceleration, dist_travelled, t - t1);
-    const auto tr_vel =
-        vel_on_edge_at_time(v1, v2, v_line, tr_obj.acceleration,
-                            tr_obj.deceleration, dist_travelled, t - t1);
-
-    return std::make_pair(tr_pos, tr_vel);
-  };
-  [[nodiscard]] double get_train_speed(const std::string& tr_name,
-                                       double             t) const {
-    if (!this->instance.get_train_list().has_train(tr_name)) {
-      throw exceptions::TrainNotExistentException(tr_name);
-    }
-    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
-    if (train_speed.at(tr_id).count(t) > 0) {
-      return train_speed.at(tr_id).at(t);
-    }
-    throw exceptions::ConsistencyException("No speed for train " + tr_name +
-                                           " at time " + std::to_string(t));
-  };
-  [[nodiscard]] bool get_train_routed(const std::string& tr_name) const {
-    if (!this->instance.get_train_list().has_train(tr_name)) {
-      throw exceptions::TrainNotExistentException(tr_name);
-    }
-    return train_routed.at(
-        this->instance.get_train_list().get_train_index(tr_name));
-  };
-  [[nodiscard]] std::vector<double>
-  get_train_times(const std::string& tr_name) const {
-    if (!this->instance.get_train_list().has_train(tr_name)) {
-      throw exceptions::TrainNotExistentException(tr_name);
-    }
-    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
-    const auto& tr_speed_map = train_speed.at(tr_id);
-    // Return keys of the map
-    std::vector<double> times;
-    for (const auto& [t, _] : tr_speed_map) {
-      times.push_back(t);
-    }
-    // Sort
-    std::sort(times.begin(), times.end());
-    return times;
-  };
-  [[nodiscard]] cda_rail::index_vector
-  get_train_order(size_t edge_index) const {
-    cda_rail::index_vector tr_on_edge =
-        this->get_instance().trains_on_edge(edge_index, true);
-    std::map<size_t, double> tr_times;
-    for (const auto& tr : tr_on_edge) {
-      const Train& tr_object =
-          this->get_instance().get_train_list().get_train(tr);
-      const double e_pos =
-          this->get_instance().route_edge_pos(tr_object.name, edge_index).first;
-      const auto time_at_e_pos = get_time_at_pos(tr_object.name, e_pos);
-      tr_times.insert({tr, time_at_e_pos});
-    }
-    std::sort(tr_on_edge.begin(), tr_on_edge.end(),
-              [&tr_times](size_t tr1, size_t tr2) {
-                return tr_times.at(tr1) < tr_times.at(tr2);
-              });
-    return tr_on_edge;
-  };
-  [[nodiscard]] std::vector<std::pair<size_t, bool>>
-  get_train_order_with_reverse(size_t edge_index) const {
-    cda_rail::index_vector tr_on_edge =
-        this->get_instance().trains_on_edge(edge_index, true);
-    const std::optional<size_t> rev_e =
-        this->get_instance().const_n().get_reverse_edge_index(edge_index);
-    cda_rail::index_vector tr_on_rev_edge;
-    if (rev_e.has_value()) {
-      tr_on_rev_edge = this->get_instance().trains_on_edge(rev_e.value(), true);
-    }
-
-    std::vector<std::pair<size_t, bool>> ret_vec;
-    std::map<size_t, double>             tr_times;
-    for (size_t i = 0; i < (rev_e.has_value() ? 2 : 1); ++i) {
-      const bool  direction   = i == 0;
-      const auto& rel_e       = direction ? edge_index : rev_e.value();
-      const auto& rel_tr_on_e = direction ? tr_on_edge : tr_on_rev_edge;
-      for (const auto& tr : rel_tr_on_e) {
-        const Train& tr_object =
-            this->get_instance().get_train_list().get_train(tr);
-        const double e_pos =
-            this->get_instance().route_edge_pos(tr_object.name, rel_e).first;
-        const auto time_at_e_pos = get_time_at_pos(tr_object.name, e_pos);
-        tr_times.insert({tr, time_at_e_pos});
-        ret_vec.emplace_back(tr, direction);
-      }
-    }
-
-    std::sort(
-        ret_vec.begin(), ret_vec.end(),
-        [&tr_times](std::pair<size_t, bool> tr1, std::pair<size_t, bool> tr2) {
-          return tr_times.at(tr1.first) < tr_times.at(tr2.first);
-        });
-
-    return ret_vec;
+    m_train_weights.resize(
+        this->get_const_timetable().get_train_list().get_number_of_trains(), 1);
   }
-  [[nodiscard]] double get_time_at_pos(const std::string& tr_name,
-                                       double             pos) const {
-    if (!this->instance.get_train_list().has_train(tr_name)) {
-      throw exceptions::TrainNotExistentException(tr_name);
-    }
-    const auto tr_times = get_train_times(tr_name);
-    for (const auto& t : tr_times) {
-      if (std::abs(get_train_pos(tr_name, t) - pos) < GRB_EPS) {
-        return t;
-      }
-    }
-    throw exceptions::ConsistencyException(
-        "No time for train " + tr_name + " at position " + std::to_string(pos));
-  };
 
-  void add_train_pos(const std::string& tr_name, double t, double pos) {
-    if (!this->instance.get_train_list().has_train(tr_name)) {
-      throw exceptions::TrainNotExistentException(tr_name);
-    }
-    if (pos + EPS < 0) {
-      throw exceptions::ConsistencyException("Position must be non-negative");
-    }
-    if (t + EPS < 0) {
-      throw exceptions::ConsistencyException("Time must be non-negative");
-    }
+  /**
+   * VSS INSTANCE HELPER
+   */
+public:
+  [[nodiscard]] std::pair<size_t, size_t>
+  time_index_interval(size_t train_index, double dt,
+                      bool tn_inclusive = true) const {
+    return this->get_const_timetable().time_index_interval(train_index, dt,
+                                                           tn_inclusive);
+  }
+  [[nodiscard]] std::pair<size_t, size_t>
+  time_index_interval(const std::string& train_name, double dt,
+                      bool tn_inclusive = true) const {
+    return this->get_const_timetable().time_index_interval(train_name, dt,
+                                                           tn_inclusive);
+  }
+  [[nodiscard]] cda_rail::index_set trains_at_t(double t) const;
+  [[nodiscard]] cda_rail::index_set
+  trains_at_t(double t, const cda_rail::index_set& trains_to_consider) const;
 
-    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
-    if (train_pos.at(tr_id).count(t) > 0) {
-      train_pos.at(tr_id).at(t) = pos;
-    } else {
-      train_pos.at(tr_id).insert({t, pos});
-    }
-  };
-  void add_train_speed(const std::string& tr_name, double t, double speed) {
-    if (!this->instance.get_train_list().has_train(tr_name)) {
-      throw exceptions::TrainNotExistentException(tr_name);
-    }
-    if (speed + EPS < 0) {
-      throw exceptions::ConsistencyException("Speed must be non-negative");
-    }
-    if (t + EPS < 0) {
-      throw exceptions::ConsistencyException("Time must be non-negative");
-    }
-
-    const auto tr_id = this->instance.get_train_list().get_train_index(tr_name);
-    if (train_speed.at(tr_id).count(t) > 0) {
-      train_speed.at(tr_id).at(t) = speed;
-    } else {
-      train_speed.at(tr_id).insert({t, speed});
-    }
-  };
-  void set_train_routed(const std::string& tr_name) {
-    set_train_routed_value(tr_name, true);
-  };
-  void set_train_not_routed(const std::string& tr_name) {
-    set_train_routed_value(tr_name, false);
-  };
-  void set_train_routed_value(const std::string& tr_name, bool val) {
-    if (!this->instance.get_train_list().has_train(tr_name)) {
-      throw exceptions::TrainNotExistentException(tr_name);
-    }
-    train_routed.at(this->instance.get_train_list().get_train_index(tr_name)) =
-        val;
-  };
-
-  void export_solution(const std::filesystem::path& p,
-                       bool export_instance) const override {
-    /**
-     * This method exports the solution object to a specific path. This includes
-     * the following:
-     * - If export_instance is true, the instance is exported to the path p /
-     * instance
-     * - If export_instance is false, the routes are exported to the path p /
-     * instance / routes
-     * - dt, status, obj, and postprocessed are exported to p / solution /
-     * data.json
-     * - train_pos and train_speed are exported to p / solution / train_pos.json
-     * and p / solution / train_speed.json The method throws a
-     * ConsistencyException if the solution is not consistent.
-     *
-     * @param p the path to the folder where the solution should be exported
-     * @param export_instance whether the instance should be exported next to
-     * the solution
-     */
-
-    if (!check_consistency()) {
-      throw exceptions::ConsistencyException();
-    }
-
-    if (!is_directory_and_create(p / "solution")) {
-      throw exceptions::ExportException("Could not create directory " +
-                                        p.string());
-    }
-
-    SolGeneralProblemInstanceWithScheduleAndRoutes<
-        T>::export_general_solution_data_with_routes(p, export_instance, true);
-
-    // NOLINTBEGIN(misc-const-correctness)
-    json train_pos_json;
-    json train_speed_json;
-    json train_routed_json;
-    // NOLINTEND(misc-const-correctness)
-    for (size_t tr_id = 0; tr_id < this->instance.get_train_list().size();
-         ++tr_id) {
-      const auto& train = this->instance.get_train_list().get_train(tr_id);
-      train_pos_json[train.name]    = train_pos.at(tr_id);
-      train_speed_json[train.name]  = train_speed.at(tr_id);
-      train_routed_json[train.name] = train_routed.at(tr_id);
-    }
-
-    std::ofstream train_pos_file(p / "solution" / "train_pos.json");
-    train_pos_file << train_pos_json << '\n';
-    train_pos_file.close();
-
-    std::ofstream train_speed_file(p / "solution" / "train_speed.json");
-    train_speed_file << train_speed_json << '\n';
-    train_speed_file.close();
-
-    std::ofstream train_routed_file(p / "solution" / "train_routed.json");
-    train_routed_file << train_routed_json << '\n';
-    train_routed_file.close();
-  };
-  [[nodiscard]] bool check_consistency() const override {
-    if (!SolGeneralProblemInstanceWithScheduleAndRoutes<
-            T>::check_general_solution_data_consistency()) {
-      return false;
-    }
-    if (!this->instance.check_consistency(false)) {
-      return false;
-    }
-
-    if (!this->has_sol) {
-      return true;
-    }
-
-    for (auto tr_id = 0; tr_id < train_routed.size(); tr_id++) {
-      const auto& tr_name =
-          this->instance.get_train_list().get_train(tr_id).name;
-      if (train_routed.at(tr_id) && !this->instance.has_route(tr_name)) {
-        return false;
-      }
-      if (!train_routed.at(tr_id) &&
-          !this->instance.get_train_optional().at(tr_id)) {
-        return false;
-      }
-      if (train_routed.at(tr_id) && train_pos.at(tr_id).size() < 2) {
-        // At least two points of information are needed to recover the timing
-        return false;
-      }
-
-      if (train_pos.size() != train_speed.size()) {
-        return false;
-      }
-
-      for (const auto& [t, pos] : train_pos.at(tr_id)) {
-        if (train_speed.at(tr_id).count(t) != 1) {
-          return false;
-        }
-      }
-    }
-
-    for (const auto& train_pos_vec : train_pos) {
-      for (const auto& [t, pos] : train_pos_vec) {
-        if (pos + EPS < 0) {
-          return false;
-        }
-      }
-    }
-    for (size_t tr_id = 0; tr_id < train_speed.size(); ++tr_id) {
-      const auto& train = this->instance.get_train_list().get_train(tr_id);
-      for (const auto& [t, v] : train_speed.at(tr_id)) {
-        if (v + EPS < 0 || v > train.max_speed + EPS) {
-          return false;
-        }
-      }
-    }
-    return true;
-  };
-
-  [[nodiscard]] static SolGeneralPerformanceOptimizationInstance
-  import_solution(const std::filesystem::path& p,
-                  const std::optional<T>&      instance = std::optional<T>()) {
-    auto sol = SolGeneralPerformanceOptimizationInstance(p, instance);
-    if (!sol.check_consistency()) {
-      throw exceptions::ConsistencyException(
-          "Imported solution object is not consistent");
-    }
-    return sol;
-  };
-  [[nodiscard]] static SolGeneralPerformanceOptimizationInstance
-  import_solution(const std::string&      path,
-                  const std::optional<T>& instance = std::optional<T>()) {
-    return import_solution(std::filesystem::path(path), instance);
-  };
-  [[nodiscard]] static SolGeneralPerformanceOptimizationInstance
-  import_solution(const char*             path,
-                  const std::optional<T>& instance = std::optional<T>()) {
-    return import_solution(std::filesystem::path(path), instance);
-  };
+  void discretize(
+      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
 };
 
-template <typename T>
-class SolVSSGeneralPerformanceOptimizationInstance
-    : public SolGeneralPerformanceOptimizationInstance<T> {
-  static_assert(
-      std::is_base_of_v<GeneralPerformanceOptimizationInstance, T>,
-      "T must be derived from GeneralPerformanceOptimizationInstance");
+class SolGeneralPerformanceOptimizationInstance
+    : public SolGeneralProblemInstanceWithScheduleAndRoutes {
+private:
+  std::vector<std::map<double, double>> m_train_pos;
+  std::vector<std::map<double, double>> m_train_speed;
 
-  std::vector<std::vector<double>> vss_pos;
+  std::vector<double>              m_train_exit_times;
+  std::vector<std::vector<double>> m_train_stop_times;
+
+  /** @brief Initializes per-train solution storage containers. */
+  void initialize_vectors();
 
 public:
-  SolVSSGeneralPerformanceOptimizationInstance() = default;
+  using SolGeneralProblemInstanceWithScheduleAndRoutes::export_solution;
+  using SolGeneralProblemInstanceWithScheduleAndRoutes::load_solution;
+
+  /**
+   * @brief Initializes a solution object for a performance optimization problem
+   * instance.
+   *
+   * @param instance The problem instance to associate with this solution.
+   */
+  explicit SolGeneralPerformanceOptimizationInstance(
+      const GeneralPerformanceOptimizationInstance& instance)
+      : SolGeneralProblemInstanceWithScheduleAndRoutes(
+            std::make_shared<GeneralPerformanceOptimizationInstance>(
+                instance)) {
+    this->initialize_vectors();
+  }
+  /**
+   * @brief Constructs a solution instance with metadata for the given
+   * optimization problem.
+   *
+   * @param instance The optimization problem instance to solve.
+   * @param status The solution status.
+   * @param obj The objective value.
+   * @param has_sol Whether a valid solution has been obtained.
+   */
+  SolGeneralPerformanceOptimizationInstance(
+      const GeneralPerformanceOptimizationInstance& instance,
+      SolutionStatus status, double obj, bool has_sol)
+      : SolGeneralProblemInstanceWithScheduleAndRoutes(
+            std::make_shared<GeneralPerformanceOptimizationInstance>(instance),
+            status, obj, has_sol) {
+    this->initialize_vectors();
+  }
+
+  /**
+   * @brief Constructs a copy of an existing solution instance.
+   */
+  SolGeneralPerformanceOptimizationInstance(
+      SolGeneralPerformanceOptimizationInstance const&) = default;
+  SolGeneralPerformanceOptimizationInstance&
+  operator=(SolGeneralPerformanceOptimizationInstance const&) = default;
+  SolGeneralPerformanceOptimizationInstance(
+      SolGeneralPerformanceOptimizationInstance&&) noexcept = default;
+  SolGeneralPerformanceOptimizationInstance&
+  operator=(SolGeneralPerformanceOptimizationInstance&&) noexcept = default;
+  /**
+   * @brief Virtual destructor.
+   */
+  ~SolGeneralPerformanceOptimizationInstance() override = default;
+
+  // Import / Export
+
+  void load_solution(
+      const std::filesystem::path&      working_directory,
+      std::string_view                  solution_subdirectory,
+      std::optional<std::string> const& parameter_identifier) override;
+
+  /**
+   * @brief Exports the solution without saving the instance.
+   */
+  void export_solution(
+      const std::filesystem::path&      working_directory,
+      std::string_view const            solutionSubdirectory,
+      std::optional<std::string> const& parameter_identifier) const override {
+    export_solution(working_directory, solutionSubdirectory, false,
+                    parameter_identifier);
+  }
+
+  /**
+   * @brief Exports the solution, optionally including the instance data.
+   *
+   * @param working_directory Base export directory.
+   * @param solution_subdirectory Solution subdirectory.
+   * @param save_instance Whether to export the instance as well.
+   * @param parameter_identifier Optional parameter identifier for the export
+   *        path.
+   */
+  void export_solution(
+      const std::filesystem::path& working_directory,
+      std::string_view solution_subdirectory, bool save_instance,
+      std::optional<std::string> const& parameter_identifier) const override;
+
+  /**
+   * @brief Retrieves the underlying problem instance.
+   *
+   * @return Pointer to the underlying GeneralPerformanceOptimizationInstance.
+   */
+  [[nodiscard]] GeneralPerformanceOptimizationInstance const*
+  get_instance() const override {
+    return dynamic_cast<GeneralPerformanceOptimizationInstance const*>(
+        get_uncast_instance_pointer());
+  }
+
+  // Problem Specific Getters
+
+  /**
+   * @brief Returns the stored position of a train at a given time.
+   *
+   * @param tr_name Name of the train.
+   * @param t Query time.
+   * @return Train position.
+   */
+  [[nodiscard]] double get_train_pos(const std::string& tr_name,
+                                     double             t) const;
+
+  struct EdgeTimeBound {
+    size_t edge_id;
+    double previous_time_step;
+    double next_time_step;
+  };
+  /**
+   * @brief Returns the containing edge and surrounding time bounds.
+   *
+   * @param tr_name Name of the train.
+   * @param t Query time.
+   * @return Edge/time-bound data at time @p t.
+   */
+  [[nodiscard]] EdgeTimeBound
+  get_edge_and_time_bounds(const std::string& tr_name, double t) const;
+
+  struct PosBound {
+    double lb;
+    double ub;
+  };
+  struct VelBound {
+    double lb;
+    double ub;
+  };
+  struct PosVelBound {
+    PosBound pos;
+    VelBound vel;
+  };
+  /**
+   * @brief Returns exact lower and upper bounds on position and velocity.
+   *
+   * @param tr_name Name of the train.
+   * @param t Query time.
+   * @return Position/velocity bounds at time @p t.
+   */
+  [[nodiscard]] PosVelBound
+  get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const;
+
+  struct PosVel {
+    double pos;
+    double vel;
+  };
+  /**
+   * @brief Returns an approximate position/velocity pair if available.
+   *
+   * @param tr_name Name of the train.
+   * @param t Query time.
+   * @return Approximate position/velocity pair, or `std::nullopt`.
+   */
+  [[nodiscard]] std::optional<PosVel>
+  get_approximate_train_pos_and_vel(const std::string& tr_name, double t) const;
+
+  /**
+   * @brief Returns the stored train speed at a given time.
+   *
+   * @param tr_name Name of the train.
+   * @param t Query time.
+   * @return Train speed.
+   */
+  [[nodiscard]] double get_train_speed(const std::string& tr_name,
+                                       double             t) const;
+
+  /**
+   * @brief Returns all recorded times for one train.
+   *
+   * @param tr_name Name of the train.
+   * @return Sorted list of recorded times.
+   */
+  [[nodiscard]] std::vector<double>
+  get_train_times(const std::string& tr_name) const;
+
+  /**
+   * @brief Returns train order on a given edge.
+   *
+   * @param edge_index Edge index.
+   * @return Ordered train indices on that edge.
+   */
+  [[nodiscard]] cda_rail::index_vector get_train_order(size_t edge_index) const;
+
+  struct TrainDirection {
+    size_t train_id;
+    bool   original_direction;
+  };
+  /**
+   * @brief Returns train order on a given edge together with orientation.
+   *
+   * @param edge_index Edge index.
+   * @return Ordered train/direction data.
+   */
+  [[nodiscard]] std::vector<TrainDirection>
+  get_train_order_with_reverse(size_t edge_index) const;
+
+  /**
+   * @brief Returns the time at which a train reaches a route position.
+   *
+   * @param tr_name Name of the train.
+   * @param pos Position on the route.
+   * @param lb Whether to return a lower-bound time.
+   * @return Time associated with @p pos.
+   */
+  [[nodiscard]] double get_time_at_pos(const std::string& tr_name, double pos,
+                                       bool lb = false) const;
+
+  /**
+   * @brief Returns the stored exit time of a train.
+   *
+   * @param tr_name Name of the train.
+   * @return Stored exit time for the train.
+   */
+  [[nodiscard]] double get_exit_time(const std::string& tr_name) const;
+  /**
+   * @brief Returns all stored stop times of a train.
+   *
+   * @param tr_name Name of the train.
+   * @return Vector of stop times in schedule order.
+   */
+  [[nodiscard]] std::vector<double>
+  get_stop_times(const std::string& tr_name) const;
+  /**
+   * @brief Returns one stored stop time identified by station name.
+   *
+   * @param tr_name Name of the train.
+   * @param station_name Name of the station.
+   * @return Stored stop time for the matching station.
+   */
+  [[nodiscard]] double get_stop_time(const std::string& tr_name,
+                                     const std::string& station_name) const;
+  /**
+   * @brief Returns one stored stop time identified by stop index.
+   *
+   * @param tr_name Name of the train.
+   * @param stop_index Stop index in schedule order.
+   * @return Stored stop time for the specified stop.
+   */
+  [[nodiscard]] double get_stop_time(const std::string& tr_name,
+                                     size_t             stop_index) const;
+
+  // Add train timing information
+
+  /**
+   * @brief Stores a train position sample.
+   *
+   * @param tr_name Name of the train.
+   * @param t Sample time.
+   * @param pos Sample position.
+   */
+  void add_train_pos(const std::string& tr_name, double t, double pos);
+  /**
+   * @brief Stores a train speed sample.
+   *
+   * @param tr_name Name of the train.
+   * @param t Sample time.
+   * @param speed Sample speed.
+   */
+  void add_train_speed(const std::string& tr_name, double t, double speed);
+
+  /**
+   * @brief Stores the exit time of a train.
+   *
+   * @param tr_name Name of the train.
+   * @param t Exit time to store.
+   */
+  void set_train_exit_time(const std::string& tr_name, double t);
+  /**
+   * @brief Stores one stop time identified by stop index.
+   *
+   * @param tr_name Name of the train.
+   * @param stop_idx Stop index in schedule order.
+   * @param stop_time Stop time to store.
+   */
+  void set_train_stop_time(const std::string& tr_name, size_t stop_idx,
+                           double stop_time);
+  /**
+   * @brief Stores one stop time identified by station name.
+   *
+   * @param tr_name Name of the train.
+   * @param station_name Name of the station.
+   * @param stop_time Stop time to store.
+   */
+  void set_train_stop_time(const std::string& tr_name,
+                           std::string const& station_name, double stop_time);
+  /**
+   * @brief Replaces all stop times of one train.
+   *
+   * @param tr_name Name of the train.
+   * @param stop_times Stop times in schedule order.
+   */
+  void set_train_stop_times(const std::string&  tr_name,
+                            std::vector<double> stop_times);
+
+  /**
+   * @brief Replaces all stored exit times.
+   *
+   * @param exit_times Exit times indexed by train.
+   */
+  void set_exit_times(const std::vector<double>& exit_times);
+  /**
+   * @brief Replaces all stored stop times.
+   *
+   * @param stop_times Stop times indexed by train and stop.
+   */
+  void set_stop_times(const std::vector<std::vector<double>>& stop_times);
+
+  // Check solution consistency
+
+  /**
+   * @brief Checks whether the stored performance-optimization solution is
+   *        consistent.
+   *
+   * @return `true` if the solution data is consistent, otherwise `false`.
+   */
+  [[nodiscard]] bool check_consistency() const override;
+};
+
+class SolVSSGeneralPerformanceOptimizationInstance
+    : public SolGeneralPerformanceOptimizationInstance {
+  std::vector<std::vector<double>> m_vss_pos;
+
+  void initialize_vss_vector();
+
+public:
+  using SolGeneralPerformanceOptimizationInstance::export_solution;
+  using SolGeneralPerformanceOptimizationInstance::load_solution;
+
+  /**
+   * @brief Constructs a solution instance with VSS support from a performance
+   * optimization instance.
+   * @param instance The performance optimization instance to base this solution
+   * on.
+   */
   explicit SolVSSGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance)
-      : SolGeneralPerformanceOptimizationInstance<T>(instance) {
-    vss_pos = std::vector<std::vector<double>>(
-        this->instance.const_n().number_of_edges());
-  };
+      : SolGeneralPerformanceOptimizationInstance(instance) {
+    this->initialize_vss_vector();
+  }
   SolVSSGeneralPerformanceOptimizationInstance(
       const GeneralPerformanceOptimizationInstance& instance,
       SolutionStatus status, double obj, bool has_sol)
-      : SolGeneralPerformanceOptimizationInstance<T>(instance, status, obj,
-                                                     has_sol) {
-    vss_pos = std::vector<std::vector<double>>(
-        this->instance.const_n().number_of_edges());
-  };
-  explicit SolVSSGeneralPerformanceOptimizationInstance(
-      const std::filesystem::path& p,
-      const std::optional<T>&      instance = std::optional<T>())
-      : SolGeneralPerformanceOptimizationInstance<T>(p, instance) {
-    vss_pos = std::vector<std::vector<double>>(
-        this->instance.const_n().number_of_edges());
-  };
+      : SolGeneralPerformanceOptimizationInstance(instance, status, obj,
+                                                  has_sol) {
+    this->initialize_vss_vector();
+  }
 
-  void add_vss_pos(size_t edge_id, double pos, bool reverse_edge = true) {
-    // Add VSS position on edge. Also on reverse edge if true.
+  void add_vss_pos(cda_rail::Network::EdgeInput const& edge_input, double pos,
+                   bool reverse_edge = true);
+  void set_vss_pos(cda_rail::Network::EdgeInput const& edge_input,
+                   std::vector<double>                 pos);
+  void reset_vss_pos(cda_rail::Network::EdgeInput const& edge_input);
+  std::vector<double>
+  get_vss_pos(cda_rail::Network::EdgeInput const& edge_input) const;
 
-    if (!this->instance.const_n().has_edge(edge_id)) {
-      throw exceptions::EdgeNotExistentException(edge_id);
-    }
+  [[nodiscard]] std::vector<double>
+  get_valid_border_stops(const std::string& train_name) const;
 
-    const auto& edge = this->instance.const_n().get_edge(edge_id);
+  void export_solution(
+      const std::filesystem::path& working_directory,
+      std::string_view solution_subdirectory, bool export_instance,
+      std::optional<std::string> const& parameter_identifier) const override;
 
-    if (pos <= EPS || pos + EPS >= edge.length) {
-      throw exceptions::ConsistencyException(
-          "VSS position " + std::to_string(pos) + " is not on edge " +
-          std::to_string(edge_id));
-    }
+  [[nodiscard]] bool check_consistency() const override;
 
-    vss_pos.at(edge_id).emplace_back(pos);
-    std::sort(vss_pos.at(edge_id).begin(), vss_pos.at(edge_id).end());
-
-    if (reverse_edge) {
-      const auto reverse_edge_index =
-          this->instance.const_n().get_reverse_edge_index(edge_id);
-      if (reverse_edge_index.has_value()) {
-        vss_pos.at(reverse_edge_index.value()).emplace_back(edge.length - pos);
-        std::sort(vss_pos.at(reverse_edge_index.value()).begin(),
-                  vss_pos.at(reverse_edge_index.value()).end());
-      }
-    }
-  };
-  void add_vss_pos(size_t source, size_t target, double pos,
-                   bool reverse_edge = true) {
-    add_vss_pos(this->instance.const_n().get_edge_index(source, target), pos,
-                reverse_edge);
-  };
-  void add_vss_pos(const std::string& source, const std::string& target,
-                   double pos, bool reverse_edge = true) {
-    add_vss_pos(this->instance.const_n().get_edge_index(source, target), pos,
-                reverse_edge);
-  };
-
-  void set_vss_pos(size_t edge_id, std::vector<double> pos) {
-    if (!this->instance.const_n().has_edge(edge_id)) {
-      throw exceptions::EdgeNotExistentException(edge_id);
-    }
-
-    const auto& edge = this->instance.const_n().get_edge(edge_id);
-
-    for (const auto& p : pos) {
-      if (p <= EPS || p + EPS >= edge.length) {
-        throw exceptions::ConsistencyException(
-            "VSS position " + std::to_string(p) + " is not on edge " +
-            std::to_string(edge_id));
-      }
-    }
-
-    vss_pos.at(edge_id) = std::move(pos);
-  };
-  void set_vss_pos(size_t source, size_t target, std::vector<double> pos) {
-    set_vss_pos(this->instance.const_n().get_edge_index(source, target),
-                std::move(pos));
-  };
-  void set_vss_pos(const std::string& source, const std::string& target,
-                   std::vector<double> pos) {
-    set_vss_pos(this->instance.const_n().get_edge_index(source, target),
-                std::move(pos));
-  };
-
-  void reset_vss_pos(size_t edge_id) {
-    if (!this->instance.const_n().has_edge(edge_id)) {
-      throw exceptions::EdgeNotExistentException(edge_id);
-    }
-
-    vss_pos.at(edge_id).clear();
-  };
-  void reset_vss_pos(size_t source, size_t target) {
-    reset_vss_pos(this->instance.const_n().get_edge_index(source, target));
-  };
-  void reset_vss_pos(const std::string& source, const std::string& target) {
-    reset_vss_pos(this->const_n().get_edge_index(source, target));
-  };
-
-  void export_solution(const std::filesystem::path& p,
-                       bool export_instance) const override {
-    SolGeneralPerformanceOptimizationInstance<T>::export_solution(
-        p, export_instance);
-
-    // NOLINTNEXTLINE(misc-const-correctness)
-    json vss_pos_json;
-    for (size_t edge_id = 0;
-         edge_id < this->instance.const_n().number_of_edges(); ++edge_id) {
-      const auto& edge = this->instance.const_n().get_edge(edge_id);
-      const auto& v0   = this->instance.const_n().get_vertex(edge.source).name;
-      const auto& v1   = this->instance.const_n().get_vertex(edge.target).name;
-      vss_pos_json["('" + v0 + "', '" + v1 + "')"] = vss_pos.at(edge_id);
-    }
-
-    std::ofstream vss_pos_file(p / "solution" / "vss_pos.json");
-    vss_pos_file << vss_pos_json << '\n';
-    vss_pos_file.close();
-  };
-  [[nodiscard]] bool check_consistency() const override {
-    if (!SolGeneralPerformanceOptimizationInstance<T>::check_consistency()) {
-      return false;
-    }
-    for (size_t edge_id = 0; edge_id < vss_pos.size(); ++edge_id) {
-      const auto& edge = this->instance.const_n().get_edge(edge_id);
-      if (!edge.breakable && !vss_pos.at(edge_id).empty()) {
-        return false;
-      }
-      for (const auto& pos : vss_pos.at(edge_id)) {
-        if (pos + EPS < 0 || pos > edge.length + EPS) {
-          return false;
-        }
-      }
-    }
-    return true;
-  };
-
-  [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
-  import_solution(const std::filesystem::path& p,
-                  const std::optional<T>&      instance = std::optional<T>()) {
-    auto sol = SolVSSGeneralPerformanceOptimizationInstance(p, instance);
-    if (!sol.check_consistency()) {
-      throw exceptions::ConsistencyException(
-          "Imported solution object is not consistent");
-    }
-    return sol;
-  };
-  [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
-  import_solution(const std::string&      path,
-                  const std::optional<T>& instance = std::optional<T>()) {
-    return import_solution(std::filesystem::path(path), instance);
-  };
-  [[nodiscard]] static SolVSSGeneralPerformanceOptimizationInstance
-  import_solution(const char*             path,
-                  const std::optional<T>& instance = std::optional<T>()) {
-    return import_solution(std::filesystem::path(path), instance);
-  };
+  void load_solution(
+      const std::filesystem::path&      working_directory,
+      std::string_view                  solution_subdirectory,
+      std::optional<std::string> const& parameter_identifier) override;
 };
 
 } // namespace cda_rail::instances

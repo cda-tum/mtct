@@ -1,0 +1,10 @@
+{
+  "StationLeft": [
+    ["v2a", "v1a"],
+    ["v1c", "v2c"]
+  ],
+  "StationRight": [
+    ["v14a", "v13a"],
+    ["v13c", "v14c"]
+  ]
+}
