@@ -14,7 +14,7 @@ using std::size_t;
 
 TEST(Solver, GurobiVSSDiscretizeInstanceWithoutChange) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto num_vertices =
       solver.get_instance().get_const_network().number_of_vertices();
@@ -29,7 +29,7 @@ TEST(Solver, GurobiVSSDiscretizeInstanceWithoutChange) {
 
 TEST(Solver, GurobiVSSGenDeltaTDefault) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -62,7 +62,7 @@ TEST(Solver, GurobiVSSGenDeltaTDefault) {
 
 TEST(Solver, GurobiVSSGenDeltaT) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -88,7 +88,7 @@ TEST(Solver, GurobiVSSGenDeltaT) {
 
 TEST(Solver, GurobiVSSGenDefault) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   // Test various options
   std::cout << "--------------------- DEFAULT ---------------------------"
@@ -99,8 +99,8 @@ TEST(Solver, GurobiVSSGenDefault) {
 }
 
 TEST(Solver, GurobiVSSGenDefaultInstance) {
-  const cda_rail::instances::VSSGenerationTimetable instance(
-      "./example-networks/SimpleStation/");
+  const cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleStation", "atmos2023", "data");
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
 
   // Test various options
@@ -111,22 +111,9 @@ TEST(Solver, GurobiVSSGenDefaultInstance) {
   EXPECT_EQ(obj_val_default.get_obj(), 1);
 }
 
-TEST(Solver, GurobiVSSGenDefaultInstancePath) {
-  const std::filesystem::path instance_path(
-      "./example-networks/SimpleStation/");
-  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance_path);
-
-  // Test various options
-  std::cout << "--------------------- DEFAULT ---------------------------"
-            << '\n';
-  const auto obj_val_default = solver.solve();
-  EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val_default.get_obj(), 1);
-}
-
-TEST(Solver, GurobiVSSGenDefaultInstanceString) {
-  const std::string instance_path("./example-networks/SimpleStation/");
-  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance_path);
+TEST(Solver, GurobiVSSGenDefaultInstanceForward) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "SimpleStation", "atmos2023", "data");
 
   // Test various options
   std::cout << "--------------------- DEFAULT ---------------------------"
