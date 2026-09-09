@@ -58,12 +58,6 @@ TEST(Solver, GurobiVSSGenDeltaTDefault) {
   EXPECT_EQ(obj_val_11.get_obj(), 1);
   EXPECT_EQ(obj_val_18.get_obj(), 1);
   EXPECT_EQ(obj_val_30.get_obj(), 1);
-
-  EXPECT_EQ(obj_val_6.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_15.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_11.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_18.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_30.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenDeltaT) {
@@ -90,10 +84,6 @@ TEST(Solver, GurobiVSSGenDeltaT) {
   EXPECT_EQ(obj_val_1.get_obj(), 1);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
   EXPECT_EQ(obj_val_3.get_obj(), 1);
-
-  EXPECT_EQ(obj_val_1.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_2.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_3.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenDefault) {
@@ -106,7 +96,6 @@ TEST(Solver, GurobiVSSGenDefault) {
   const auto obj_val_default = solver.solve();
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
-  EXPECT_EQ(obj_val_default.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenDefaultInstance) {
@@ -120,7 +109,6 @@ TEST(Solver, GurobiVSSGenDefaultInstance) {
   const auto obj_val_default = solver.solve();
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
-  EXPECT_EQ(obj_val_default.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenDefaultInstancePath) {
@@ -134,7 +122,6 @@ TEST(Solver, GurobiVSSGenDefaultInstancePath) {
   const auto obj_val_default = solver.solve();
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
-  EXPECT_EQ(obj_val_default.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenDefaultInstanceString) {
@@ -147,7 +134,6 @@ TEST(Solver, GurobiVSSGenDefaultInstanceString) {
   const auto obj_val_default = solver.solve();
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
-  EXPECT_EQ(obj_val_default.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenModelDetailFixed) {
@@ -201,13 +187,6 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
   EXPECT_EQ(obj_val_4.get_obj(), 1);
   EXPECT_EQ(obj_val_5.get_obj(), 1);
   EXPECT_EQ(obj_val_6.get_obj(), 1);
-
-  EXPECT_EQ(obj_val_1.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_2.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_3.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_4.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_5.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_6.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenModelDetailFree1) {
@@ -220,7 +199,6 @@ TEST(Solver, GurobiVSSGenModelDetailFree1) {
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_1.get_obj(), 1);
-  EXPECT_EQ(obj_val_1.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenModelDetailFree2) {
@@ -233,7 +211,6 @@ TEST(Solver, GurobiVSSGenModelDetailFree2) {
 
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
-  EXPECT_EQ(obj_val_2.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenModelDetailFree3) {
@@ -247,7 +224,6 @@ TEST(Solver, GurobiVSSGenModelDetailFree3) {
 
   EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_3.get_obj(), 1);
-  EXPECT_EQ(obj_val_3.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenModelDetailFree4) {
@@ -261,7 +237,6 @@ TEST(Solver, GurobiVSSGenModelDetailFree4) {
 
   EXPECT_EQ(obj_val_4.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_4.get_obj(), 1);
-  EXPECT_EQ(obj_val_4.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenModelDetailFree5) {
@@ -275,7 +250,6 @@ TEST(Solver, GurobiVSSGenModelDetailFree5) {
 
   EXPECT_EQ(obj_val_5.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_5.get_obj(), 1);
-  EXPECT_EQ(obj_val_5.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenVSSDiscrete) {
@@ -291,7 +265,6 @@ TEST(Solver, GurobiVSSGenVSSDiscrete) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenTim) {
@@ -334,9 +307,6 @@ TEST(Solver, GurobiVSSGenTim) {
 
   EXPECT_EQ(obj_val_1.get_obj(), 1);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
-
-  EXPECT_EQ(obj_val_1.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_2.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenTimFixed) {
@@ -379,9 +349,6 @@ TEST(Solver, GurobiVSSGenTimFixed) {
 
   EXPECT_EQ(obj_val_1.get_obj(), 1);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
-
-  EXPECT_EQ(obj_val_1.get_mip_obj(), 1);
-  EXPECT_EQ(obj_val_2.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenTimDiscrete1) {
@@ -403,7 +370,6 @@ TEST(Solver, GurobiVSSGenTimDiscrete1) {
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_1.get_obj(), 1);
-  EXPECT_EQ(obj_val_1.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenTimDiscrete2) {
@@ -427,7 +393,6 @@ TEST(Solver, GurobiVSSGenTimDiscrete2) {
 
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
-  EXPECT_EQ(obj_val_2.get_mip_obj(), 1);
 }
 
 TEST(Solver, GurobiVSSGenTimDiscrete3) {
@@ -470,10 +435,6 @@ TEST(Solver, OvertakeFixedContinuous) {
   EXPECT_EQ(obj_val_base.get_obj(), 8);
   EXPECT_EQ(obj_val_dynamics.get_obj(), 8);
   EXPECT_EQ(obj_val_braking.get_obj(), 14);
-
-  EXPECT_EQ(obj_val_base.get_mip_obj(), 8);
-  EXPECT_EQ(obj_val_dynamics.get_mip_obj(), 8);
-  EXPECT_EQ(obj_val_braking.get_mip_obj(), 14);
 }
 
 TEST(Solver, OvertakeFreeContinuous) {
@@ -494,10 +455,6 @@ TEST(Solver, OvertakeFreeContinuous) {
   EXPECT_EQ(obj_val_base.get_obj(), 8);
   EXPECT_EQ(obj_val_dynamics.get_obj(), 8);
   EXPECT_EQ(obj_val_braking.get_obj(), 14);
-
-  EXPECT_EQ(obj_val_base.get_mip_obj(), 8);
-  EXPECT_EQ(obj_val_dynamics.get_mip_obj(), 8);
-  EXPECT_EQ(obj_val_braking.get_mip_obj(), 14);
 }
 
 TEST(Solver, Stammstrecke4FixedContinuous) {
@@ -518,10 +475,6 @@ TEST(Solver, Stammstrecke4FixedContinuous) {
   EXPECT_EQ(obj_val_base.get_obj(), 0);
   EXPECT_EQ(obj_val_dynamics.get_obj(), 6);
   EXPECT_EQ(obj_val_braking.get_obj(), 6);
-
-  EXPECT_EQ(obj_val_base.get_mip_obj(), 0);
-  EXPECT_EQ(obj_val_dynamics.get_mip_obj(), 6);
-  EXPECT_EQ(obj_val_braking.get_mip_obj(), 6);
 }
 
 TEST(Solver, Stammstrecke8FixedContinuous) {
@@ -542,10 +495,6 @@ TEST(Solver, Stammstrecke8FixedContinuous) {
   EXPECT_EQ(obj_val_base.get_obj(), 0);
   EXPECT_EQ(obj_val_dynamics.get_obj(), 14);
   EXPECT_EQ(obj_val_braking.get_obj(), 14);
-
-  EXPECT_EQ(obj_val_base.get_mip_obj(), 0);
-  EXPECT_EQ(obj_val_dynamics.get_mip_obj(), 14);
-  EXPECT_EQ(obj_val_braking.get_mip_obj(), 14);
 }
 
 TEST(Solver, Stammstrecke16FixedContinuousBase) {
@@ -557,7 +506,6 @@ TEST(Solver, Stammstrecke16FixedContinuousBase) {
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_base.get_obj(), 0);
-  EXPECT_EQ(obj_val_base.get_mip_obj(), 0);
 }
 
 TEST(Solver, Stammstrecke16FixedContinuousDynamics) {
@@ -569,7 +517,6 @@ TEST(Solver, Stammstrecke16FixedContinuousDynamics) {
 
   EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_dynamics.get_obj(), 15);
-  EXPECT_EQ(obj_val_dynamics.get_mip_obj(), 15);
 }
 
 TEST(Solver, Stammstrecke16FixedContinuousBraking) {
@@ -581,7 +528,6 @@ TEST(Solver, Stammstrecke16FixedContinuousBraking) {
 
   EXPECT_EQ(obj_val_braking.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_braking.get_obj(), 15);
-  EXPECT_EQ(obj_val_braking.get_mip_obj(), 15);
 }
 
 TEST(Solver, SimpleStationInferredUniform) {
@@ -597,7 +543,6 @@ TEST(Solver, SimpleStationInferredUniform) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
 TEST(Solver, SimpleStationInferredUniformPostprocess) {
@@ -613,7 +558,6 @@ TEST(Solver, SimpleStationInferredUniformPostprocess) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
 TEST(Solver, SimpleStationInferredAltUniformPostprocess) {
@@ -629,7 +573,6 @@ TEST(Solver, SimpleStationInferredAltUniformPostprocess) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
 TEST(Solver, SimpleStationContinuousPostprocess) {
@@ -641,7 +584,6 @@ TEST(Solver, SimpleStationContinuousPostprocess) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
 TEST(Solver, SimpleStationContinuousFixedPostprocess) {
@@ -653,7 +595,6 @@ TEST(Solver, SimpleStationContinuousFixedPostprocess) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
 TEST(Solver, SimpleStationInferredChebychev) {
@@ -669,7 +610,6 @@ TEST(Solver, SimpleStationInferredChebychev) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
 TEST(Solver, SimpleStationInferredBoth) {
@@ -686,7 +626,6 @@ TEST(Solver, SimpleStationInferredBoth) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
 TEST(Solver, SimpleStationInferredAltBoth) {
@@ -703,7 +642,6 @@ TEST(Solver, SimpleStationInferredAltBoth) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
 TEST(Solver, IterativeContinuousSingleTrack) {
@@ -715,7 +653,6 @@ TEST(Solver, IterativeContinuousSingleTrack) {
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 9);
-  EXPECT_EQ(obj_val.get_mip_obj(), 9);
 }
 
 TEST(Solver, IterativeContinuousSingleTrackCuts) {
@@ -730,7 +667,6 @@ TEST(Solver, IterativeContinuousSingleTrackCuts) {
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 9);
-  EXPECT_EQ(obj_val.get_mip_obj(), 9);
 }
 
 TEST(Solver, IterativeContinuousSingleRelative) {
@@ -746,7 +682,6 @@ TEST(Solver, IterativeContinuousSingleRelative) {
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 9);
-  EXPECT_EQ(obj_val.get_mip_obj(), 9);
 }
 
 TEST(Solver, IterativeContinuousSimpleStationInferredCuts) {
@@ -782,7 +717,6 @@ TEST(Solver, IterativeContinuousFeasible) {
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Feasible);
   EXPECT_GE(obj_val.get_obj(), 6);
-  EXPECT_GE(obj_val.get_mip_obj(), 6);
 }
 
 TEST(Solver, IterativeTimeout1) {
@@ -817,7 +751,6 @@ TEST(Solver, IterativeContinuousSimpleStationInferredAlt) {
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 }
 
 TEST(Solver, IterativeContinuousStammstrecke4) {
@@ -828,7 +761,6 @@ TEST(Solver, IterativeContinuousStammstrecke4) {
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 6);
-  EXPECT_EQ(obj_val.get_mip_obj(), 6);
 }
 
 TEST(Solver, IterativeContinuousStammstrecke4Cuts) {
@@ -843,7 +775,6 @@ TEST(Solver, IterativeContinuousStammstrecke4Cuts) {
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 6);
-  EXPECT_EQ(obj_val.get_mip_obj(), 6);
 }
 
 TEST(Solver, IterativeContinuousOvertakeRelative) {
@@ -858,7 +789,6 @@ TEST(Solver, IterativeContinuousOvertakeRelative) {
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 14);
-  EXPECT_EQ(obj_val.get_mip_obj(), 14);
 }
 
 TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
@@ -873,7 +803,6 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 
   for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
        ++tr) {
@@ -928,7 +857,6 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 
   for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
        ++tr) {
@@ -983,7 +911,6 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 
   for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
        ++tr) {
@@ -1038,7 +965,6 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 
   for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
        ++tr) {
@@ -1093,7 +1019,6 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 
   for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
        ++tr) {
@@ -1148,7 +1073,6 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
 
   for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
        ++tr) {
@@ -1215,7 +1139,6 @@ TEST(Solver, SimpleStationExportOptions) {
   // Expect optimal value of 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
-  EXPECT_EQ(obj_val.get_mip_obj(), 1);
   // Check that tmp1folder and tmp1folder/tmp1file.mps and
   // tmp1folder/tmp1file.sol exist
   EXPECT_TRUE(std::filesystem::exists("tmp1folder"));
@@ -1235,7 +1158,6 @@ TEST(Solver, SimpleStationExportOptions) {
   // Expect optimal value of 1
   EXPECT_EQ(obj_val2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val2.get_obj(), 1);
-  EXPECT_EQ(obj_val2.get_mip_obj(), 1);
   // Check that tmp2folder and tmp2folder/tmp2file exist
   EXPECT_TRUE(std::filesystem::exists("tmp2folder"));
   EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file"));
@@ -1288,7 +1210,6 @@ TEST(Solver, SimpleStationExportOptions) {
   // Expect optimal value of 1
   EXPECT_EQ(obj_val3.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val3.get_obj(), 1);
-  EXPECT_EQ(obj_val3.get_mip_obj(), 1);
   // Check that corresponding folders exist
   EXPECT_TRUE(std::filesystem::exists("tmp3folder"));
   EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file"));
@@ -1365,7 +1286,6 @@ TEST(Solver, SimpleStationExportOptions) {
   // Expect optimal value of 1
   EXPECT_EQ(obj_val4.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val4.get_obj(), 1);
-  EXPECT_EQ(obj_val4.get_mip_obj(), 1);
   // Expect no folder tmp4folder to exist
   EXPECT_FALSE(std::filesystem::exists("tmp4folder"));
 
@@ -1378,7 +1298,6 @@ TEST(Solver, SimpleStationExportOptions) {
   // Expect optimal value of 1
   EXPECT_EQ(obj_val5.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val5.get_obj(), 1);
-  EXPECT_EQ(obj_val5.get_mip_obj(), 1);
   // Expect relevant folders to exist
   EXPECT_TRUE(std::filesystem::exists("tmp5folder"));
   EXPECT_TRUE(std::filesystem::exists("tmp5folder/tmp5file"));
@@ -1431,7 +1350,6 @@ TEST(Solver, SimpleStationExportOptions) {
   // Expect optimal value of 1
   EXPECT_EQ(obj_val6.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val6.get_obj(), 1);
-  EXPECT_EQ(obj_val6.get_mip_obj(), 1);
   // Expect relevant folders to exist
   EXPECT_TRUE(std::filesystem::exists("tmp6folder"));
   EXPECT_TRUE(std::filesystem::exists("tmp6folder/tmp6file"));
@@ -1512,7 +1430,6 @@ TEST(Solver, SimpleStationExportOptions) {
   // Expect optimal value of 1
   EXPECT_EQ(obj_val7.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val7.get_obj(), 1);
-  EXPECT_EQ(obj_val7.get_mip_obj(), 1);
   // Expect relevant folders to exist
   EXPECT_TRUE(std::filesystem::exists("model/instance"));
   EXPECT_TRUE(std::filesystem::exists("model/solution"));
