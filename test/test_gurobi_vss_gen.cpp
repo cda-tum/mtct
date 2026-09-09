@@ -261,30 +261,39 @@ TEST(Solver, GurobiVSSGenTim) {
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
 
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr1").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr2").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
   const auto obj_val_1 = solver.solve({15, false});
   std::cout << "--------------------- TEST 2 ---------------------------"
             << '\n';
 
-  solver.editable_instance().editable_tr("tr1").tim = false;
+  solver.editable_instance().editable_train("tr1").set_no_tim();
 
-  EXPECT_FALSE(solver.get_instance().get_train_list().get_train("tr1").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+  EXPECT_FALSE(
+      solver.get_instance().get_const_train_list().get_train("tr1").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr2").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
   const auto obj_val_2 = solver.solve({15, false});
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
 
-  solver.editable_instance().editable_tr("tr1").tim = true;
-  solver.editable_instance().editable_tr("tr2").tim = false;
+  solver.editable_instance().editable_train("tr1").set_tim();
+  solver.editable_instance().editable_train("tr2").set_no_tim();
 
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
-  EXPECT_FALSE(solver.get_instance().get_train_list().get_train("tr2").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr1").has_tim());
+  EXPECT_FALSE(
+      solver.get_instance().get_const_train_list().get_train("tr2").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
   const auto obj_val_3 = solver.solve({15, false});
 
@@ -303,30 +312,39 @@ TEST(Solver, GurobiVSSGenTimFixed) {
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
 
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr1").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr2").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
   const auto obj_val_1 = solver.solve();
   std::cout << "--------------------- TEST 2 ---------------------------"
             << '\n';
 
-  solver.editable_instance().editable_tr("tr1").tim = false;
+  solver.editable_instance().editable_train("tr1").set_no_tim();
 
-  EXPECT_FALSE(solver.get_instance().get_train_list().get_train("tr1").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+  EXPECT_FALSE(
+      solver.get_instance().get_const_train_list().get_train("tr1").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr2").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
   const auto obj_val_2 = solver.solve();
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
 
-  solver.editable_instance().editable_tr("tr1").tim = true;
-  solver.editable_instance().editable_tr("tr2").tim = false;
+  solver.editable_instance().editable_train("tr1").set_tim();
+  solver.editable_instance().editable_train("tr2").set_no_tim();
 
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
-  EXPECT_FALSE(solver.get_instance().get_train_list().get_train("tr2").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr1").has_tim());
+  EXPECT_FALSE(
+      solver.get_instance().get_const_train_list().get_train("tr2").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
   const auto obj_val_3 = solver.solve();
 
@@ -345,9 +363,12 @@ TEST(Solver, GurobiVSSGenTimDiscrete1) {
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
 
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr1").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr2").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
   const auto obj_val_1 =
       solver.solve({15, true, false, false},
@@ -366,11 +387,14 @@ TEST(Solver, GurobiVSSGenTimDiscrete2) {
   std::cout << "--------------------- TEST 2 ---------------------------"
             << '\n';
 
-  solver.editable_instance().editable_tr("tr1").tim = false;
+  solver.editable_instance().editable_train("tr1").set_no_tim();
 
-  EXPECT_FALSE(solver.get_instance().get_train_list().get_train("tr1").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr2").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+  EXPECT_FALSE(
+      solver.get_instance().get_const_train_list().get_train("tr1").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr2").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
   const auto obj_val_2 =
       solver.solve({15, true, false, false},
@@ -389,11 +413,14 @@ TEST(Solver, GurobiVSSGenTimDiscrete3) {
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
 
-  solver.editable_instance().editable_tr("tr2").tim = false;
+  solver.editable_instance().editable_train("tr2").set_no_tim();
 
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr1").tim);
-  EXPECT_FALSE(solver.get_instance().get_train_list().get_train("tr2").tim);
-  EXPECT_TRUE(solver.get_instance().get_train_list().get_train("tr3").tim);
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr1").has_tim());
+  EXPECT_FALSE(
+      solver.get_instance().get_const_train_list().get_train("tr2").has_tim());
+  EXPECT_TRUE(
+      solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
   const auto obj_val_3 =
       solver.solve({15, true, false, false},
@@ -791,11 +818,11 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
-       ++tr) {
-    const auto& allowed_stops = obj_val.get_valid_border_stops(tr);
-    const auto& tr_name =
-        obj_val.get_instance().get_train_list().get_train(tr).name;
+  for (size_t tr = 0;
+       tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
+    const auto& train_name =
+        obj_val.get_instance()->get_const_train_list().get_train(tr).get_name();
+    const auto& allowed_stops = obj_val.get_valid_border_stops(train_name);
 
     // put values of allowed_stops into string separated by comma
     std::string allowed_stops_str;
@@ -806,15 +833,15 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
     allowed_stops_str =
         allowed_stops_str.substr(0, allowed_stops_str.size() - 2);
 
+    constexpr double dt = 15.0;
     const auto& [t0, tn] =
-        obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
+        obj_val.get_instance()->time_index_interval(tr, dt, false);
     for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
-      const auto& train_speed =
-          obj_val.get_train_speed(tr, t * obj_val.get_dt());
+      const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
       }
-      const auto& tr_pos = obj_val.get_train_pos(tr, t * obj_val.get_dt());
+      const auto& tr_pos = obj_val.get_train_pos(train_name, t * dt);
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
@@ -824,10 +851,10 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
           break;
         }
       }
-      EXPECT_TRUE(found) << "Error on train " << tr_name << " (id=" << tr
-                         << ") at time " << t * obj_val.get_dt()
-                         << " with speed " << train_speed << " and position "
-                         << tr_pos << ". Allowed stops: " << allowed_stops_str;
+      EXPECT_TRUE(found) << "Error on train " << train_name << " (id=" << tr
+                         << ") at time " << t * dt << " with speed "
+                         << train_speed << " and position " << tr_pos
+                         << ". Allowed stops: " << allowed_stops_str;
     }
   }
 }
@@ -845,11 +872,11 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
-       ++tr) {
-    const auto& allowed_stops = obj_val.get_valid_border_stops(tr);
-    const auto& tr_name =
-        obj_val.get_instance().get_train_list().get_train(tr).name;
+  for (size_t tr = 0;
+       tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
+    const auto& train_name =
+        obj_val.get_instance()->get_const_train_list().get_train(tr).get_name();
+    const auto& allowed_stops = obj_val.get_valid_border_stops(train_name);
 
     // put values of allowed_stops into string separated by comma
     std::string allowed_stops_str;
@@ -860,15 +887,15 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
     allowed_stops_str =
         allowed_stops_str.substr(0, allowed_stops_str.size() - 2);
 
+    constexpr double dt = 15.0;
     const auto& [t0, tn] =
-        obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
+        obj_val.get_instance()->time_index_interval(tr, dt, false);
     for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
-      const auto& train_speed =
-          obj_val.get_train_speed(tr, t * obj_val.get_dt());
+      const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
       }
-      const auto& tr_pos = obj_val.get_train_pos(tr, t * obj_val.get_dt());
+      const auto& tr_pos = obj_val.get_train_pos(train_name, t * dt);
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
@@ -878,10 +905,10 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
           break;
         }
       }
-      EXPECT_TRUE(found) << "Error on train " << tr_name << " (id=" << tr
-                         << ") at time " << t * obj_val.get_dt()
-                         << " with speed " << train_speed << " and position "
-                         << tr_pos << ". Allowed stops: " << allowed_stops_str;
+      EXPECT_TRUE(found) << "Error on train " << train_name << " (id=" << tr
+                         << ") at time " << t * dt << " with speed "
+                         << train_speed << " and position " << tr_pos
+                         << ". Allowed stops: " << allowed_stops_str;
     }
   }
 }
@@ -899,11 +926,11 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
-       ++tr) {
-    const auto& allowed_stops = obj_val.get_valid_border_stops(tr);
-    const auto& tr_name =
-        obj_val.get_instance().get_train_list().get_train(tr).name;
+  for (size_t tr = 0;
+       tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
+    const auto& train_name =
+        obj_val.get_instance()->get_const_train_list().get_train(tr).get_name();
+    const auto& allowed_stops = obj_val.get_valid_border_stops(train_name);
 
     // put values of allowed_stops into string separated by comma
     std::string allowed_stops_str;
@@ -914,15 +941,15 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
     allowed_stops_str =
         allowed_stops_str.substr(0, allowed_stops_str.size() - 2);
 
+    constexpr double dt = 15.0;
     const auto& [t0, tn] =
-        obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
+        obj_val.get_instance()->time_index_interval(tr, dt, false);
     for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
-      const auto& train_speed =
-          obj_val.get_train_speed(tr, t * obj_val.get_dt());
+      const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
       }
-      const auto& tr_pos = obj_val.get_train_pos(tr, t * obj_val.get_dt());
+      const auto& tr_pos = obj_val.get_train_pos(train_name, t * dt);
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
@@ -932,10 +959,10 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
           break;
         }
       }
-      EXPECT_TRUE(found) << "Error on train " << tr_name << " (id=" << tr
-                         << ") at time " << t * obj_val.get_dt()
-                         << " with speed " << train_speed << " and position "
-                         << tr_pos << ". Allowed stops: " << allowed_stops_str;
+      EXPECT_TRUE(found) << "Error on train " << train_name << " (id=" << tr
+                         << ") at time " << t * dt << " with speed "
+                         << train_speed << " and position " << tr_pos
+                         << ". Allowed stops: " << allowed_stops_str;
     }
   }
 }
@@ -953,11 +980,11 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
-       ++tr) {
-    const auto& allowed_stops = obj_val.get_valid_border_stops(tr);
-    const auto& tr_name =
-        obj_val.get_instance().get_train_list().get_train(tr).name;
+  for (size_t tr = 0;
+       tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
+    const auto& train_name =
+        obj_val.get_instance()->get_const_train_list().get_train(tr).get_name();
+    const auto& allowed_stops = obj_val.get_valid_border_stops(train_name);
 
     // put values of allowed_stops into string separated by comma
     std::string allowed_stops_str;
@@ -968,15 +995,15 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
     allowed_stops_str =
         allowed_stops_str.substr(0, allowed_stops_str.size() - 2);
 
+    constexpr double dt = 15.0;
     const auto& [t0, tn] =
-        obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
+        obj_val.get_instance()->time_index_interval(tr, dt, false);
     for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
-      const auto& train_speed =
-          obj_val.get_train_speed(tr, t * obj_val.get_dt());
+      const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
       }
-      const auto& tr_pos = obj_val.get_train_pos(tr, t * obj_val.get_dt());
+      const auto& tr_pos = obj_val.get_train_pos(train_name, t * dt);
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
@@ -986,10 +1013,10 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
           break;
         }
       }
-      EXPECT_TRUE(found) << "Error on train " << tr_name << " (id=" << tr
-                         << ") at time " << t * obj_val.get_dt()
-                         << " with speed " << train_speed << " and position "
-                         << tr_pos << ". Allowed stops: " << allowed_stops_str;
+      EXPECT_TRUE(found) << "Error on train " << train_name << " (id=" << tr
+                         << ") at time " << t * dt << " with speed "
+                         << train_speed << " and position " << tr_pos
+                         << ". Allowed stops: " << allowed_stops_str;
     }
   }
 }
@@ -1007,11 +1034,11 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
-       ++tr) {
-    const auto& allowed_stops = obj_val.get_valid_border_stops(tr);
-    const auto& tr_name =
-        obj_val.get_instance().get_train_list().get_train(tr).name;
+  for (size_t tr = 0;
+       tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
+    const auto& train_name =
+        obj_val.get_instance()->get_const_train_list().get_train(tr).get_name();
+    const auto& allowed_stops = obj_val.get_valid_border_stops(train_name);
 
     // put values of allowed_stops into string separated by comma
     std::string allowed_stops_str;
@@ -1022,15 +1049,15 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
     allowed_stops_str =
         allowed_stops_str.substr(0, allowed_stops_str.size() - 2);
 
+    constexpr double dt = 15.0;
     const auto& [t0, tn] =
-        obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
+        obj_val.get_instance()->time_index_interval(tr, dt, false);
     for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
-      const auto& train_speed =
-          obj_val.get_train_speed(tr, t * obj_val.get_dt());
+      const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
       }
-      const auto& tr_pos = obj_val.get_train_pos(tr, t * obj_val.get_dt());
+      const auto& tr_pos = obj_val.get_train_pos(train_name, t * dt);
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
@@ -1040,10 +1067,10 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
           break;
         }
       }
-      EXPECT_TRUE(found) << "Error on train " << tr_name << " (id=" << tr
-                         << ") at time " << t * obj_val.get_dt()
-                         << " with speed " << train_speed << " and position "
-                         << tr_pos << ". Allowed stops: " << allowed_stops_str;
+      EXPECT_TRUE(found) << "Error on train " << train_name << " (id=" << tr
+                         << ") at time " << t * dt << " with speed "
+                         << train_speed << " and position " << tr_pos
+                         << ". Allowed stops: " << allowed_stops_str;
     }
   }
 }
@@ -1061,11 +1088,11 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  for (size_t tr = 0; tr < obj_val.get_instance().get_train_list().size();
-       ++tr) {
-    const auto& allowed_stops = obj_val.get_valid_border_stops(tr);
-    const auto& tr_name =
-        obj_val.get_instance().get_train_list().get_train(tr).name;
+  for (size_t tr = 0;
+       tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
+    const auto& train_name =
+        obj_val.get_instance()->get_const_train_list().get_train(tr).get_name();
+    const auto& allowed_stops = obj_val.get_valid_border_stops(train_name);
 
     // put values of allowed_stops into string separated by comma
     std::string allowed_stops_str;
@@ -1076,15 +1103,15 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
     allowed_stops_str =
         allowed_stops_str.substr(0, allowed_stops_str.size() - 2);
 
+    constexpr double dt = 15.0;
     const auto& [t0, tn] =
-        obj_val.get_instance().time_index_interval(tr, obj_val.get_dt(), false);
+        obj_val.get_instance()->time_index_interval(tr, dt, false);
     for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
-      const auto& train_speed =
-          obj_val.get_train_speed(tr, t * obj_val.get_dt());
+      const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
       }
-      const auto& tr_pos = obj_val.get_train_pos(tr, t * obj_val.get_dt());
+      const auto& tr_pos = obj_val.get_train_pos(train_name, t * dt);
       // Expect any of allowed_stops to be within EPS of tr_pos
       bool found = false;
       for (const auto& stop : allowed_stops) {
@@ -1094,10 +1121,10 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
           break;
         }
       }
-      EXPECT_TRUE(found) << "Error on train " << tr_name << " (id=" << tr
-                         << ") at time " << t * obj_val.get_dt()
-                         << " with speed " << train_speed << " and position "
-                         << tr_pos << ". Allowed stops: " << allowed_stops_str;
+      EXPECT_TRUE(found) << "Error on train " << train_name << " (id=" << tr
+                         << ") at time " << t * dt << " with speed "
+                         << train_speed << " and position " << tr_pos
+                         << ". Allowed stops: " << allowed_stops_str;
     }
   }
 }
