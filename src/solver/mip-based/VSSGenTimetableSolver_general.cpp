@@ -664,13 +664,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       const auto t0 = static_cast<size_t>(tr_stop.get_service_time() / dt);
       const auto t1 =
           static_cast<size_t>(std::ceil(tr_stop.get_earliest_departure() / dt));
-      const auto&         stop_station = tr_stop.get_station();
-      const auto          stop_edges   = stop_station.tracks;
-      cda_rail::index_set inverse_stop_edges;
+      const auto& stop_station       = tr_stop.get_station();
+      const auto  stop_edges         = stop_station.tracks;
+      auto        inverse_stop_edges = tr_edges;
       for (const auto e : stop_edges) {
-        if (!tr_edges.contains(e)) {
-          inverse_stop_edges.insert(e);
-        }
+        inverse_stop_edges.erase(e); // no-op if e not present
       }
       for (size_t t = t0 - 1; t <= t1; ++t) {
         if (t >= t0) {
