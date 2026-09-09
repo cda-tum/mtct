@@ -125,7 +125,7 @@ TEST(Solver, GurobiVSSGenDefaultInstanceForward) {
 
 TEST(Solver, GurobiVSSGenModelDetailFixed) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -178,7 +178,7 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
 
 TEST(Solver, GurobiVSSGenModelDetailFree1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -190,7 +190,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree1) {
 
 TEST(Solver, GurobiVSSGenModelDetailFree2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 2 ---------------------------"
             << '\n';
@@ -202,7 +202,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree2) {
 
 TEST(Solver, GurobiVSSGenModelDetailFree3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
@@ -215,7 +215,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree3) {
 
 TEST(Solver, GurobiVSSGenModelDetailFree4) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 4 ---------------------------"
             << '\n';
@@ -228,7 +228,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree4) {
 
 TEST(Solver, GurobiVSSGenModelDetailFree5) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 5 ---------------------------"
             << '\n';
@@ -241,7 +241,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree5) {
 
 TEST(Solver, GurobiVSSGenVSSDiscrete) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val =
       solver.solve({15, true, false, false},
@@ -256,7 +256,7 @@ TEST(Solver, GurobiVSSGenVSSDiscrete) {
 
 TEST(Solver, GurobiVSSGenTim) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -298,7 +298,7 @@ TEST(Solver, GurobiVSSGenTim) {
 
 TEST(Solver, GurobiVSSGenTimFixed) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -340,7 +340,7 @@ TEST(Solver, GurobiVSSGenTimFixed) {
 
 TEST(Solver, GurobiVSSGenTimDiscrete1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -361,7 +361,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete1) {
 
 TEST(Solver, GurobiVSSGenTimDiscrete2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 2 ---------------------------"
             << '\n';
@@ -384,7 +384,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete2) {
 
 TEST(Solver, GurobiVSSGenTimDiscrete3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
@@ -406,7 +406,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete3) {
 
 TEST(Solver, OvertakeFixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Overtake/");
+      "Overtake", "atmos2023", "data");
 
   const auto obj_val_base =
       solver.solve({15, true, false, false}, {}, {}, {}, 120);
@@ -426,7 +426,7 @@ TEST(Solver, OvertakeFixedContinuous) {
 
 TEST(Solver, OvertakeFreeContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Overtake/");
+      "Overtake", "atmos2023", "data");
 
   const auto obj_val_base =
       solver.solve({15, false, false, false}, {}, {}, {}, 120);
@@ -446,7 +446,7 @@ TEST(Solver, OvertakeFreeContinuous) {
 
 TEST(Solver, Stammstrecke4FixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Stammstrecke4Trains/");
+      "Stammstrecke4Trains", "atmos2023", "data");
 
   const auto obj_val_base =
       solver.solve({15, true, false, false}, {}, {}, {}, 120);
@@ -466,7 +466,7 @@ TEST(Solver, Stammstrecke4FixedContinuous) {
 
 TEST(Solver, Stammstrecke8FixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Stammstrecke8Trains/");
+      "Stammstrecke8Trains", "atmos2023", "data");
 
   const auto obj_val_base =
       solver.solve({15, true, false, false}, {}, {}, {}, 120);
@@ -486,7 +486,7 @@ TEST(Solver, Stammstrecke8FixedContinuous) {
 
 TEST(Solver, Stammstrecke16FixedContinuousBase) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Stammstrecke16Trains/");
+      "Stammstrecke16Trains", "atmos2023", "data");
 
   const auto obj_val_base =
       solver.solve({15, true, false, false}, {}, {}, {}, 600);
@@ -497,7 +497,7 @@ TEST(Solver, Stammstrecke16FixedContinuousBase) {
 
 TEST(Solver, Stammstrecke16FixedContinuousDynamics) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Stammstrecke16Trains/");
+      "Stammstrecke16Trains", "atmos2023", "data");
 
   const auto obj_val_dynamics =
       solver.solve({15, true, true, false}, {}, {}, {}, 600);
@@ -508,7 +508,7 @@ TEST(Solver, Stammstrecke16FixedContinuousDynamics) {
 
 TEST(Solver, Stammstrecke16FixedContinuousBraking) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Stammstrecke16Trains/");
+      "Stammstrecke16Trains", "atmos2023", "data");
 
   const auto obj_val_braking =
       solver.solve({15, true, true, true}, {}, {}, {}, 600);
@@ -519,7 +519,7 @@ TEST(Solver, Stammstrecke16FixedContinuousBraking) {
 
 TEST(Solver, SimpleStationInferredUniform) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val =
       solver.solve({},
@@ -534,7 +534,7 @@ TEST(Solver, SimpleStationInferredUniform) {
 
 TEST(Solver, SimpleStationInferredUniformPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val =
       solver.solve({},
@@ -549,7 +549,7 @@ TEST(Solver, SimpleStationInferredUniformPostprocess) {
 
 TEST(Solver, SimpleStationInferredAltUniformPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val =
       solver.solve({},
@@ -564,7 +564,7 @@ TEST(Solver, SimpleStationInferredAltUniformPostprocess) {
 
 TEST(Solver, SimpleStationContinuousPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve({15, false}, {}, {}, {true}, 240, true);
 
@@ -575,7 +575,7 @@ TEST(Solver, SimpleStationContinuousPostprocess) {
 
 TEST(Solver, SimpleStationContinuousFixedPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve({15, true}, {}, {}, {true}, 60, true);
 
@@ -586,7 +586,7 @@ TEST(Solver, SimpleStationContinuousFixedPostprocess) {
 
 TEST(Solver, SimpleStationInferredChebychev) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {},
@@ -601,7 +601,7 @@ TEST(Solver, SimpleStationInferredChebychev) {
 
 TEST(Solver, SimpleStationInferredBoth) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {},
@@ -617,7 +617,7 @@ TEST(Solver, SimpleStationInferredBoth) {
 
 TEST(Solver, SimpleStationInferredAltBoth) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {},
@@ -633,7 +633,7 @@ TEST(Solver, SimpleStationInferredAltBoth) {
 
 TEST(Solver, IterativeContinuousSingleTrack) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SingleTrack/");
+      "SingleTrack", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {}, {}, {true, cda_rail::OptimalityStrategy::Optimal}, {}, 60, true);
@@ -644,7 +644,7 @@ TEST(Solver, IterativeContinuousSingleTrack) {
 
 TEST(Solver, IterativeContinuousSingleTrackCuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SingleTrack/");
+      "SingleTrack", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {}, {},
@@ -658,7 +658,7 @@ TEST(Solver, IterativeContinuousSingleTrackCuts) {
 
 TEST(Solver, IterativeContinuousSingleRelative) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SingleTrack/");
+      "SingleTrack", "atmos2023", "data");
 
   const auto obj_val =
       solver.solve({}, {},
@@ -673,7 +673,7 @@ TEST(Solver, IterativeContinuousSingleRelative) {
 
 TEST(Solver, IterativeContinuousSimpleStationInferredCuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {15, true, true, false},
@@ -686,7 +686,7 @@ TEST(Solver, IterativeContinuousSimpleStationInferredCuts) {
 
 TEST(Solver, IterativeContinuousSimpleStationCuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {15, true, true, false}, {},
@@ -697,7 +697,7 @@ TEST(Solver, IterativeContinuousSimpleStationCuts) {
 
 TEST(Solver, IterativeContinuousFeasible) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Stammstrecke4Trains/");
+      "Stammstrecke4Trains", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {}, {}, {true, cda_rail::OptimalityStrategy::Feasible}, {}, 60, true);
@@ -708,7 +708,7 @@ TEST(Solver, IterativeContinuousFeasible) {
 
 TEST(Solver, IterativeTimeout1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleNetwork/");
+      "SimpleNetwork", "atmos2023", "data");
 
   const auto obj_val = solver.solve({15, false}, {}, {true}, {}, 30, true);
 
@@ -717,7 +717,7 @@ TEST(Solver, IterativeTimeout1) {
 
 TEST(Solver, IterativeTimeout2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleNetwork/");
+      "SimpleNetwork", "atmos2023", "data");
 
   const auto obj_val = solver.solve({}, {}, {true}, {}, 1, true);
 
@@ -726,7 +726,7 @@ TEST(Solver, IterativeTimeout2) {
 
 TEST(Solver, IterativeContinuousSimpleStationInferredAlt) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {15, true, true, false},
@@ -742,7 +742,7 @@ TEST(Solver, IterativeContinuousSimpleStationInferredAlt) {
 
 TEST(Solver, IterativeContinuousStammstrecke4) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Stammstrecke4Trains/");
+      "Stammstrecke4Trains", "atmos2023", "data");
 
   const auto obj_val = solver.solve({}, {}, {true}, {}, 60, true);
 
@@ -752,7 +752,7 @@ TEST(Solver, IterativeContinuousStammstrecke4) {
 
 TEST(Solver, IterativeContinuousStammstrecke4Cuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Stammstrecke4Trains/");
+      "Stammstrecke4Trains", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {}, {},
@@ -766,7 +766,7 @@ TEST(Solver, IterativeContinuousStammstrecke4Cuts) {
 
 TEST(Solver, IterativeContinuousOvertakeRelative) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/Overtake/");
+      "Overtake", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {}, {},
@@ -780,7 +780,7 @@ TEST(Solver, IterativeContinuousOvertakeRelative) {
 
 TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {15, true, false, false},
@@ -834,7 +834,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
 
 TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {15, true, true, false},
@@ -888,7 +888,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
 
 TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {15, true, true, true},
@@ -942,7 +942,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
 
 TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {15, false, false, false},
@@ -996,7 +996,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
 
 TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {15, false, true, false},
@@ -1050,7 +1050,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
 
 TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   const auto obj_val = solver.solve(
       {15, false, true, true},
@@ -1104,7 +1104,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
 
 TEST(Solver, SimpleStationExportOptions) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   std::filesystem::remove_all("tmp1folder");
   std::filesystem::remove_all("tmp2folder");
