@@ -446,9 +446,9 @@ TEST(Solver, OvertakeFixedContinuous) {
   EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_braking.get_status(), cda_rail::SolutionStatus::Optimal);
 
-  EXPECT_EQ(obj_val_base.get_obj(), 8);
-  EXPECT_EQ(obj_val_dynamics.get_obj(), 8);
-  EXPECT_EQ(obj_val_braking.get_obj(), 14);
+  EXPECT_EQ(obj_val_base.get_obj(), 4);
+  EXPECT_EQ(obj_val_dynamics.get_obj(), 4);
+  EXPECT_EQ(obj_val_braking.get_obj(), 7);
 }
 
 TEST(Solver, OvertakeFreeContinuous) {
@@ -466,9 +466,9 @@ TEST(Solver, OvertakeFreeContinuous) {
   EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_braking.get_status(), cda_rail::SolutionStatus::Optimal);
 
-  EXPECT_EQ(obj_val_base.get_obj(), 8);
-  EXPECT_EQ(obj_val_dynamics.get_obj(), 8);
-  EXPECT_EQ(obj_val_braking.get_obj(), 14);
+  EXPECT_EQ(obj_val_base.get_obj(), 4);
+  EXPECT_EQ(obj_val_dynamics.get_obj(), 4);
+  EXPECT_EQ(obj_val_braking.get_obj(), 7);
 }
 
 TEST(Solver, Stammstrecke4FixedContinuous) {
@@ -802,7 +802,7 @@ TEST(Solver, IterativeContinuousOvertakeRelative) {
       {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(obj_val.get_obj(), 14);
+  EXPECT_EQ(obj_val.get_obj(), 7);
 }
 
 TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
