@@ -379,6 +379,12 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     const auto  train  = m_instance.get_const_train_list().get_train(tr);
     const auto& tr_len = train.get_length();
     const auto& r_len  = sol_obj.route_length(train.get_name());
+    // The extracted positions denote the rear end of the train plus its
+    // length. Hence, the train has left the network as soon as this position
+    // has reached the length of its route plus its length.
+    const double pos_left_network =
+        round_to_given_tolerance(r_len + tr_len, ROUNDING_PRECISION);
+    std::optional<double> exit_time;
     for (auto t = train_interval[tr].first; t <= train_interval[tr].second;
          ++t) {
       double train_pos = r_len;
@@ -411,6 +417,10 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
       train_pos = round_to_given_tolerance(train_pos, ROUNDING_PRECISION);
       sol_obj.add_train_pos(train.get_name(), static_cast<double>(t) * dt,
                             train_pos);
+
+      if (!exit_time.has_value() && train_pos + GRB_EPS >= pos_left_network) {
+        exit_time = static_cast<double>(t) * dt;
+      }
     }
 
     auto   t_final         = train_interval[tr].second + 1;
@@ -435,6 +445,17 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         round_to_given_tolerance(train_pos_final, ROUNDING_PRECISION);
     sol_obj.add_train_pos(train.get_name(), static_cast<double>(t_final) * dt,
                           train_pos_final);
+
+    if (!exit_time.has_value() &&
+        train_pos_final + GRB_EPS >= pos_left_network) {
+      exit_time = static_cast<double>(t_final) * dt;
+    }
+    if (!exit_time.has_value()) {
+      PLOGW << "Train " << train.get_name()
+            << " has not left the network until the end of its time horizon";
+      exit_time = INF;
+    }
+    sol_obj.set_train_exit_time(train.get_name(), exit_time.value());
   }
 
   return sol_obj;
