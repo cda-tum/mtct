@@ -3,24 +3,66 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <iostream>
+#include <map>
 #include <string>
 #include <system_error>
+#include <vector>
 
 using std::size_t;
 
 namespace {
+using TrainDirection = cda_rail::instances::
+    SolVSSGeneralPerformanceOptimizationInstance::TrainDirection;
+
+// Only usable within this translation unit.
+std::string order_to_string(cda_rail::TrainList const&    train_list,
+                            cda_rail::index_vector const& order) {
+  std::string ret;
+  for (auto const& tr_id : order) {
+    if (!ret.empty()) {
+      ret += ", ";
+    }
+    ret += train_list.get_train(tr_id).get_name();
+  }
+  return ret;
+}
+
+// Only usable within this translation unit.
+std::string order_to_string(cda_rail::TrainList const&         train_list,
+                            std::vector<TrainDirection> const& order) {
+  std::string ret;
+  for (auto const& tr : order) {
+    if (!ret.empty()) {
+      ret += ", ";
+    }
+    ret += train_list.get_train(tr.train_id).get_name();
+    ret += tr.original_direction ? " (forward)" : " (reverse)";
+  }
+  return ret;
+}
+
 // Only usable within this translation unit.
 void check_exit_times_within_dt_and_order(
     const cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance&
                  sol,
     double const dt, const std::string& label) {
-  for (auto const& tr : sol.get_instance()->get_const_train_list()) {
-    auto const& tr_schedule =
-        sol.get_instance()->get_const_schedule(tr.get_name());
+  // Solutions of the discrete VSS model do not contain any train data, hence
+  // there is nothing to check
+  if (!sol.has_solution()) {
+    return;
+  }
+
+  auto const& instance   = *sol.get_instance();
+  auto const& network    = instance.get_const_network();
+  auto const& train_list = instance.get_const_train_list();
+
+  for (auto const& tr : train_list) {
+    auto const& tr_schedule = instance.get_const_schedule(tr.get_name());
     EXPECT_GE(sol.get_exit_time(tr.get_name()), tr_schedule.get_exit_time())
         << label << ", Train: " << tr.get_name()
         << ", Exit time: " << sol.get_exit_time(tr.get_name())
@@ -30,6 +72,103 @@ void check_exit_times_within_dt_and_order(
         << label << ", Train: " << tr.get_name()
         << ", Exit time: " << sol.get_exit_time(tr.get_name())
         << ", Schedule exit time: " << tr_schedule.get_exit_time();
+  }
+
+  // Every train enters the network on the unique outgoing edge of its entry
+  // vertex and leaves it on the unique incoming edge of its exit vertex. Hence,
+  // the train order on such an edge has to coincide with the order induced by
+  // the scheduled entry respectively exit times at that vertex. Taking the
+  // reverse edge into account, both entering and exiting trains share one
+  // order, where the direction is given by whether a train enters or exits.
+  struct BoundaryTrain {
+    size_t tr_id;
+    bool   entering;
+    double time;
+  };
+  std::map<size_t, std::vector<BoundaryTrain>> boundary_trains;
+  for (size_t tr_id = 0; tr_id < train_list.size(); ++tr_id) {
+    auto const& tr_schedule = instance.get_const_schedule(tr_id);
+    boundary_trains[tr_schedule.get_entry_vertex()].emplace_back(
+        tr_id, true, tr_schedule.get_entry_time());
+    boundary_trains[tr_schedule.get_exit_vertex()].emplace_back(
+        tr_id, false, tr_schedule.get_exit_time());
+  }
+
+  for (auto& [v_id, v_trains] : boundary_trains) {
+    std::ranges::sort(v_trains,
+                      [](BoundaryTrain const& tr1, BoundaryTrain const& tr2) {
+                        return tr1.time < tr2.time;
+                      });
+
+    auto const& v_name = network.get_vertex(v_id).name;
+    auto const  out_e  = network.out_edges(v_id);
+    auto const  in_e   = network.in_edges(v_id);
+
+    cda_rail::index_vector expected_entry_order;
+    cda_rail::index_vector expected_exit_order;
+    for (auto const& tr : v_trains) {
+      if (tr.entering) {
+        expected_entry_order.push_back(tr.tr_id);
+      } else {
+        expected_exit_order.push_back(tr.tr_id);
+      }
+    }
+
+    // Entering trains are ordered by their entry times
+    if (!expected_entry_order.empty()) {
+      EXPECT_EQ(out_e.size(), 1) << label << ", Entry vertex: " << v_name
+                                 << " has no unique outgoing edge";
+      if (out_e.size() == 1) {
+        auto const entry_order = sol.get_train_order(*out_e.begin());
+        EXPECT_EQ(entry_order, expected_entry_order)
+            << label << ", Entry vertex: " << v_name << ", Expected order: "
+            << order_to_string(train_list, expected_entry_order)
+            << ", Actual order: " << order_to_string(train_list, entry_order);
+      }
+    }
+
+    // Exiting trains are ordered by their exit times
+    if (!expected_exit_order.empty()) {
+      EXPECT_EQ(in_e.size(), 1) << label << ", Exit vertex: " << v_name
+                                << " has no unique incoming edge";
+      if (in_e.size() == 1) {
+        auto const exit_order = sol.get_train_order(*in_e.begin());
+        EXPECT_EQ(exit_order, expected_exit_order)
+            << label << ", Exit vertex: " << v_name << ", Expected order: "
+            << order_to_string(train_list, expected_exit_order)
+            << ", Actual order: " << order_to_string(train_list, exit_order);
+      }
+    }
+
+    // Entering and exiting trains share one order on the edge and its reverse
+    if (out_e.size() != 1 && in_e.size() != 1) {
+      continue;
+    }
+    bool const   entering_is_forward = out_e.size() == 1;
+    size_t const reference_edge =
+        entering_is_forward ? *out_e.begin() : *in_e.begin();
+    std::vector<TrainDirection> expected_order;
+    expected_order.reserve(v_trains.size());
+    for (auto const& tr : v_trains) {
+      expected_order.emplace_back(tr.tr_id, tr.entering == entering_is_forward);
+    }
+    auto const order_with_reverse =
+        sol.get_train_order_with_reverse(reference_edge);
+    std::string const order_message =
+        label + ", Vertex: " + v_name +
+        ", Expected order: " + order_to_string(train_list, expected_order) +
+        ", Actual order: " + order_to_string(train_list, order_with_reverse);
+    EXPECT_EQ(order_with_reverse.size(), expected_order.size())
+        << order_message;
+    for (size_t i = 0;
+         i < std::min(order_with_reverse.size(), expected_order.size()); ++i) {
+      EXPECT_EQ(order_with_reverse.at(i).train_id,
+                expected_order.at(i).train_id)
+          << order_message;
+      EXPECT_EQ(order_with_reverse.at(i).original_direction,
+                expected_order.at(i).original_direction)
+          << order_message;
+    }
   }
 }
 } // namespace
