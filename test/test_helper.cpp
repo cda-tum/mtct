@@ -1,18 +1,12 @@
-#include "CustomExceptions.hpp"
-#include "Definitions.hpp"
-#include "EOMHelper.hpp"
+#include "GeneralHelper.hpp"
 #include "VSSModel.hpp"
-#include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
+#include "simulator/GeneralSimulator.hpp"
 
 #include "gtest/gtest.h"
-#include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <limits>
 #include <stdexcept>
-#include <string>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 #define EXPECT_APPROX_EQ(a, b)                                                 \
