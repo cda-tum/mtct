@@ -1410,6 +1410,126 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree3) {
   }
 }
 
+TEST(VSSGenSolver, InfeasibleFree) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 350, 30,
+                                           true); // Train needs 450m to stop
+
+  instance.add_train("Train1", 100, 30, 1, 1, true, 0, 30, {"v0"}, 60, 0,
+                     {"v1"}, 1);
+  instance.add_empty_route("Train1");
+  instance.push_back_edge_to_route("Train1", {"v0", "v1"});
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  auto const sol_obj =
+      solver.solve({5, false, true, false}, {}, {}, {}, 100, true);
+  EXPECT_FALSE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Infeasible);
+}
+TEST(VSSGenSolver, BarelyInfeasibleFree) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 350, 30,
+                                           true); // Train needs 450m to stop
+
+  instance.add_train("Train1", 100, 30, 1, 1, true, 0, 30, {"v0"}, 35, 0,
+                     {"v1"}, 1);
+  instance.add_empty_route("Train1");
+  instance.push_back_edge_to_route("Train1", {"v0", "v1"});
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  auto const sol_obj =
+      solver.solve({5, false, true, false}, {}, {}, {}, 100, true);
+  EXPECT_FALSE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Infeasible);
+}
+TEST(VSSGenSolver, FeasibleFree) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 350, 30,
+                                           true); // Train needs 450m to stop
+
+  instance.add_train("Train1", 100, 30, 1, 1, true, 0, 30, {"v0"}, 30, 0,
+                     {"v1"}, 1);
+  instance.add_empty_route("Train1");
+  instance.push_back_edge_to_route("Train1", {"v0", "v1"});
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  auto const sol_obj =
+      solver.solve({5, false, true, false}, {}, {}, {}, 100, true);
+  EXPECT_TRUE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_obj.get_obj(), 0);
+  EXPECT_EQ(sol_obj.get_exit_time("Train1"), 30);
+}
+
+TEST(VSSGenSolver, InfeasibleFixed) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 350, 30,
+                                           true); // Train needs 450m to stop
+
+  instance.add_train("Train1", 100, 30, 1, 1, true, 0, 30, {"v0"}, 60, 0,
+                     {"v1"}, 1);
+  instance.add_empty_route("Train1");
+  instance.push_back_edge_to_route("Train1", {"v0", "v1"});
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  auto const sol_obj =
+      solver.solve({5, true, true, false}, {}, {}, {}, 100, true);
+  EXPECT_FALSE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Infeasible);
+}
+TEST(VSSGenSolver, BarelyInfeasibleFixed) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 350, 30,
+                                           true); // Train needs 450m to stop
+
+  instance.add_train("Train1", 100, 30, 1, 1, true, 0, 30, {"v0"}, 35, 0,
+                     {"v1"}, 1);
+  instance.add_empty_route("Train1");
+  instance.push_back_edge_to_route("Train1", {"v0", "v1"});
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  auto const sol_obj =
+      solver.solve({5, true, true, false}, {}, {}, {}, 100, true);
+  EXPECT_FALSE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Infeasible);
+}
+TEST(VSSGenSolver, FeasibleFixed) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 350, 30,
+                                           true); // Train needs 450m to stop
+
+  instance.add_train("Train1", 100, 30, 1, 1, true, 0, 30, {"v0"}, 30, 0,
+                     {"v1"}, 1);
+  instance.add_empty_route("Train1");
+  instance.push_back_edge_to_route("Train1", {"v0", "v1"});
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  auto const sol_obj =
+      solver.solve({5, true, true, false}, {}, {}, {}, 100, true);
+  EXPECT_TRUE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_obj.get_obj(), 0);
+  EXPECT_EQ(sol_obj.get_exit_time("Train1"), 30);
+}
+
 TEST(VSSGenSolver, SimpleStationExportOptions) {
   // The instance is read relative to the current working directory, hence the
   // solver has to be created before switching to the temporary directory.
