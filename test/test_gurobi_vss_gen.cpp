@@ -1,6 +1,8 @@
 #include "Definitions.hpp"
 #include "VSSModel.hpp"
+#include "instances/SolVSSGeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
+#include "train_list/TrainList.hpp"
 
 #include "gtest/gtest.h"
 #include <algorithm>
@@ -154,10 +156,13 @@ void check_exit_times_within_dt_and_order(
     }
     auto const order_with_reverse =
         sol.get_train_order_with_reverse(reference_edge);
-    std::string const order_message =
-        label + ", Vertex: " + v_name +
-        ", Expected order: " + order_to_string(train_list, expected_order) +
-        ", Actual order: " + order_to_string(train_list, order_with_reverse);
+    std::string order_message = label;
+    order_message += ", Vertex: ";
+    order_message += v_name;
+    order_message += ", Expected order: ";
+    order_message += order_to_string(train_list, expected_order);
+    order_message += ", Actual order: ";
+    order_message += order_to_string(train_list, order_with_reverse);
     EXPECT_EQ(order_with_reverse.size(), expected_order.size())
         << order_message;
     for (size_t i = 0;
