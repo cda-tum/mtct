@@ -4290,5 +4290,106 @@ TEST(GreedySimulator, DiscretizationErrorFix) {
   EXPECT_APPROX_EQ_6(sim_res2.exit_times.at(tr1), 10.0);
 }
 
+TEST(GreedySimulator, DesiredOrderInstanceSolutionBug) {
+  // clang-format off
+  // (tr1) -> v0a -- v1a -                    - v6a -- (short) v7a
+  //                      \                  /
+  //  v0b -- (short) v1b - v2 - v3 -- v4 - v5 - v6b -- v7b <- (tr2)
+  // clang-format on
+
+  static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+  plog::init(plog::verbose, &console_appender);
+
+  Network    network;
+  auto const v0a = network.add_vertex("v0a", VertexType::TTD);
+  auto const v1a = network.add_vertex("v1a", VertexType::TTD);
+  auto const v0b = network.add_vertex("v0b", VertexType::TTD);
+  auto const v1b = network.add_vertex("v1b", VertexType::TTD);
+  auto const v2  = network.add_vertex("v2", VertexType::NoBorder);
+  auto const v3  = network.add_vertex("v3", VertexType::TTD);
+  auto const v4  = network.add_vertex("v4", VertexType::TTD);
+  auto const v5  = network.add_vertex("v5", VertexType::NoBorder);
+  auto const v6a = network.add_vertex("v6a", VertexType::TTD);
+  auto const v6b = network.add_vertex("v6b", VertexType::TTD);
+  auto const v7a = network.add_vertex("v7a", VertexType::TTD);
+  auto const v7b = network.add_vertex("v7b", VertexType::TTD);
+
+  auto const v0a_v1a = network.add_edge(v0a, v1a, 100, 20, true);
+  auto const v0b_v1b = network.add_edge(v0b, v1b, 10, 20, true);
+  auto const v1a_v2  = network.add_edge(v1a, v2, 10, 20, false);
+  auto const v1b_v2  = network.add_edge(v1b, v2, 10, 20, false);
+  auto const v2_v3   = network.add_edge(v2, v3, 10, 20, false);
+  auto const v3_v4   = network.add_edge(v3, v4, 100, 20, true);
+  auto const v4_v5   = network.add_edge(v4, v5, 10, 20, false);
+  auto const v5_v6a  = network.add_edge(v5, v6a, 10, 20, false);
+  auto const v5_v6b  = network.add_edge(v5, v6b, 10, 20, false);
+  auto const v6a_v7a = network.add_edge(v6a, v7a, 10, 20, true);
+  auto const v6b_v7b = network.add_edge(v6b, v7b, 100, 20, true);
+
+  network.add_successor(v0a_v1a, v1a_v2);
+  network.add_successor(v0b_v1b, v1b_v2);
+  network.add_successor(v1a_v2, v2_v3);
+  network.add_successor(v1b_v2, v2_v3);
+  network.add_successor(v2_v3, v3_v4);
+  network.add_successor(v3_v4, v4_v5);
+  network.add_successor(v4_v5, v5_v6a);
+  network.add_successor(v4_v5, v5_v6b);
+  network.add_successor(v5_v6a, v6a_v7a);
+  network.add_successor(v5_v6b, v6b_v7b);
+
+  // Add all reverse edges
+  auto const             num_edges = network.number_of_edges();
+  cda_rail::index_vector reverse_edges(num_edges);
+  for (size_t i = 0; i < num_edges; ++i) {
+    auto const edge     = network.get_edge(i);
+    reverse_edges.at(i) = network.add_edge(
+        edge.target, edge.source, edge.length, edge.max_speed, edge.breakable);
+  }
+  for (size_t i = 0; i < num_edges; ++i) {
+    auto const& successors = network.get_successors(i);
+    for (auto const& successor : successors) {
+      network.add_successor(reverse_edges.at(successor), reverse_edges.at(i));
+    }
+  }
+
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 20, 2, 4, true, 0, 10,
+                                       {"v0a"}, 500, 20, {"v7a"}, network);
+  const auto tr2 = timetable.add_train("Train2", 50, 20, 2, 4, true, 100, 10,
+                                       {"v7b"}, 300, 20, {"v0b"}, network);
+
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  instance.set_train_weight(tr1, 1);
+  instance.set_train_weight(tr2, 2);
+
+  cda_rail::simulator::GreedySimulator simulator(
+      instance, {{v1a_v2, v1b_v2, v2_v3, reverse_edges.at(v1a_v2),
+                  reverse_edges.at(v1b_v2), reverse_edges.at(v2_v3)},
+                 {v4_v5, v5_v6a, v5_v6b, reverse_edges.at(v4_v5),
+                  reverse_edges.at(v5_v6a), reverse_edges.at(v5_v6b)}});
+
+  simulator.set_train_edges_of_tr(
+      tr1, {v0a_v1a, v1a_v2, v2_v3, v3_v4, v4_v5, v5_v6a, v6a_v7a});
+  simulator.set_train_edges_of_tr(
+      tr2, {reverse_edges.at(v6b_v7b), reverse_edges.at(v5_v6b),
+            reverse_edges.at(v4_v5), reverse_edges.at(v3_v4),
+            reverse_edges.at(v2_v3), reverse_edges.at(v1b_v2),
+            reverse_edges.at(v0b_v1b)});
+  simulator.set_vertex_orders_of_vertex(v0a, {tr1});
+  simulator.set_vertex_orders_of_vertex(v7a, {tr1});
+  simulator.set_vertex_orders_of_vertex(v7b, {tr2});
+  simulator.set_vertex_orders_of_vertex(v0b, {tr2});
+  simulator.set_ttd_orders({{tr1, tr2}, {tr1, tr2}});
+
+  auto const sim_res = simulator.simulate(5.0, false, true, true, true);
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_GE(sim_res.exit_times.at(tr1), 500);
+  EXPECT_LE(sim_res.train_trajectories.at(tr1).at(500).pos, 250);
+  EXPECT_GT(sim_res.exit_times.at(tr2), sim_res.exit_times.at(tr1));
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
