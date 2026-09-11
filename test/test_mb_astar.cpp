@@ -1620,12 +1620,6 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
   auto const tr2_time_single =
       sol_obj_single.get_time_at_pos("Train2", 170, true);
   EXPECT_GT(tr1_time_single, tr2_time_single);
-
-  for (auto const& timing : sol_obj_single.get_train_times("Train1")) {
-    std::cout << "Train1: " << std::to_string(timing) << " -> pos "
-              << sol_obj_single.get_train_pos("Train1", timing) << std::endl;
-  }
-
   auto const tr1_time_ttd = sol_obj_ttd.get_time_at_pos("Train1", 170, true);
   auto const tr2_time_ttd = sol_obj_ttd.get_time_at_pos("Train2", 170, true);
   EXPECT_GT(tr1_time_ttd, tr2_time_ttd);
