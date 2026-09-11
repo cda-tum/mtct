@@ -655,11 +655,12 @@ public:
    *
    * @param tr_name Name of the train.
    * @param pos Position on the route.
-   * @param lb Whether to return a lower-bound time.
+   * @param ub Whether to return a upper-bound on the time if no exact timing is
+   * available.
    * @return Time associated with @p pos.
    */
   [[nodiscard]] double get_time_at_pos(const std::string& tr_name, double pos,
-                                       bool lb = false) const;
+                                       bool ub = false) const;
 
   /**
    * @brief Returns the stored exit time of a train.

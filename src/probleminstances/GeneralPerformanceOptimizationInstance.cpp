@@ -706,23 +706,19 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
 double
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::get_time_at_pos(
-    const std::string& tr_name, double pos, bool lb) const {
+    const std::string& tr_name, double pos, bool ub) const {
   if (!this->get_instance()->get_const_train_list().has_train(tr_name)) {
     throw exceptions::TrainNotExistentException(tr_name);
   }
   const auto tr_times = get_train_times(tr_name);
-  double     retval   = -1;
   for (const auto& t : tr_times) {
     auto const pos_diff = get_train_pos(tr_name, t) - pos;
-    if (pos_diff > -GRB_EPS) {
-      retval = t;
-    }
     if (std::abs(pos_diff) < GRB_EPS) {
       return t;
     }
-  }
-  if (lb) {
-    return retval;
+    if (ub && pos_diff > 0) {
+      return t;
+    }
   }
   throw exceptions::ConsistencyException("No time for train " + tr_name +
                                          " at position " + std::to_string(pos));
