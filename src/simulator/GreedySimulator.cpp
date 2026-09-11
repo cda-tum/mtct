@@ -198,8 +198,17 @@ cda_rail::simulator::GreedySimulator::simulate(
                 .get_edge(get_train_edges_of_tr(tr).back())
                 .target ==
             get_instance()->get_const_schedule(tr).get_exit_vertex();
-        if (!last_edge_leaves_network &&
-            tr_route_len < train_positions.at(tr).front + GRB_EPS) {
+        if (last_edge_leaves_network &&
+            train_positions.at(tr).front > tr_route_len) {
+          // The train's front cannot leave the network. At the latest, it
+          // stops at the exit vertex until the train is allowed to disappear.
+          PLOGV << "Train " << train_object.get_name()
+                << " cannot pass the exit vertex at " << tr_route_len
+                << ", hence, its front position "
+                << train_positions.at(tr).front << " is corrected.";
+          train_positions.at(tr).front = tr_route_len;
+        } else if (!last_edge_leaves_network &&
+                   tr_route_len < train_positions.at(tr).front + GRB_EPS) {
           PLOGV << "Train " << train_object.get_name()
                 << " overshot the end of its route at "
                 << train_positions.at(tr).front << " and is now stopped.";
@@ -389,6 +398,10 @@ cda_rail::simulator::GreedySimulator::simulate(
     // Remove trains that have left the network
     for (const auto& tr : trains_to_remove) {
       trains_in_network.erase(tr);
+    }
+    if (!trains_to_remove.empty()) {
+      // A train leaving the network is progress, even if no train moved
+      movement_detected = true;
     }
 
     if (block_vertices_after_disappearing) {
@@ -984,7 +997,11 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
   const bool last_edge_leaves_network =
       (last_edge.target == tr_schedule.get_exit_vertex());
 
-  if (last_edge_leaves_network && pos < milestones.back() - GRB_EPS) {
+  if (last_edge_leaves_network && pos >= milestones.back() - GRB_EPS) {
+    // The train's front is already at the exit vertex. Since it cannot leave
+    // the network, it waits there until it is allowed to disappear.
+    retval.pos = std::min(retval.pos, std::max(0.0, milestones.back() - pos));
+  } else if (last_edge_leaves_network) {
     if (pos + max_displacement >= milestones.back()) {
       // Train's moving authority can potentially leave the network
       retval = speed_restriction_helper(
