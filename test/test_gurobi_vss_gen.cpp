@@ -1,5 +1,6 @@
 #include "Definitions.hpp"
 #include "VSSModel.hpp"
+#include "datastructure/Train.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
