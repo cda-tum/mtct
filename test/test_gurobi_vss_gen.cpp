@@ -1411,20 +1411,91 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
 }
 
 TEST(Solver, SimpleStationExportOptions) {
+  // The instance is read relative to the current working directory, hence the
+  // solver has to be created before switching to the temporary directory.
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
-  std::filesystem::remove_all("tmp1folder");
-  std::filesystem::remove_all("tmp2folder");
-  std::filesystem::remove_all("tmp3folder");
-  std::filesystem::remove_all("tmp4folder");
-  std::filesystem::remove_all("tmp5folder");
-  std::filesystem::remove_all("tmp6folder");
-  std::filesystem::remove_all("model");
-  std::filesystem::remove("model.mps");
-  std::filesystem::remove("model.sol");
+  // All exports happen relative to the current working directory. Hence, the
+  // test is executed within a temporary directory that is removed afterwards,
+  // even if an expectation fails in between.
+  struct ScopedTempWorkingDirectory {
+    std::filesystem::path original_directory;
+    std::filesystem::path temporary_directory;
+    ~ScopedTempWorkingDirectory() {
+      std::error_code ignored;
+      std::filesystem::current_path(original_directory, ignored);
+      std::filesystem::remove_all(temporary_directory, ignored);
+    }
+  };
+
+  const std::filesystem::path temp_dir =
+      std::filesystem::temp_directory_path() /
+      "cda_rail_test_vss_gen_simple_station_export";
+  std::filesystem::remove_all(temp_dir);
+  ASSERT_TRUE(std::filesystem::create_directories(temp_dir));
+  const ScopedTempWorkingDirectory temp_working_directory{
+      std::filesystem::current_path(), temp_dir};
+  std::filesystem::current_path(temp_dir);
 
   std::error_code ec;
+
+  // Names of the exported instance as given to the solver constructor above.
+  const std::filesystem::path instance_subdirectory = "atmos2023";
+  const std::filesystem::path instance_name         = "SimpleStation";
+  // The network of the SimpleStation instance carries the same name.
+  const std::filesystem::path network_name = "SimpleStation";
+
+  const auto expect_non_empty_file = [&ec](const std::filesystem::path& p) {
+    EXPECT_TRUE(std::filesystem::exists(p)) << "Missing file " << p;
+    EXPECT_GT(std::filesystem::file_size(p, ec), 0) << "Empty file " << p;
+  };
+
+  // A solution is exported to
+  // <export_dir>/solutions/<solution_subdir>/<instance_subdir>/<instance_name>
+  const auto solution_dir =
+      [&](const std::filesystem::path& export_dir,
+          const std::filesystem::path& solution_subdirectory) {
+        return export_dir / "solutions" / solution_subdirectory /
+               instance_subdirectory / instance_name;
+      };
+  const auto expect_solution_files = [&](const std::filesystem::path& p) {
+    EXPECT_TRUE(std::filesystem::is_directory(p)) << "Missing directory " << p;
+    expect_non_empty_file(p / "solution_data.json");
+    expect_non_empty_file(p / "routes.json");
+    expect_non_empty_file(p / "train_pos.json");
+    expect_non_empty_file(p / "train_speed.json");
+    expect_non_empty_file(p / "train_exit_times.json");
+    expect_non_empty_file(p / "train_stop_times.json");
+    expect_non_empty_file(p / "vss_pos.json");
+  };
+
+  // The instance is exported to <export_dir>/instances/... and the
+  // corresponding network to <export_dir>/networks/...
+  const auto expect_instance_files =
+      [&](const std::filesystem::path& export_dir) {
+        const auto instance_dir =
+            export_dir / "instances" / instance_subdirectory / instance_name;
+        const auto network_dir = export_dir / "networks" / network_name;
+        EXPECT_TRUE(std::filesystem::is_directory(instance_dir))
+            << "Missing directory " << instance_dir;
+        EXPECT_TRUE(std::filesystem::is_directory(network_dir))
+            << "Missing directory " << network_dir;
+        expect_non_empty_file(instance_dir / "network.json");
+        expect_non_empty_file(instance_dir / "problem_data.json");
+        expect_non_empty_file(instance_dir / "routes" / "routes.json");
+        expect_non_empty_file(instance_dir / "timetable" / "schedules.json");
+        expect_non_empty_file(instance_dir / "timetable" / "stations.json");
+        expect_non_empty_file(instance_dir / "timetable" / "trains.json");
+        expect_non_empty_file(network_dir / "successors.txt");
+        expect_non_empty_file(network_dir / "successors_cpp.json");
+        expect_non_empty_file(network_dir / "tracks.graphml");
+      };
+  const auto expect_no_instance_files =
+      [](const std::filesystem::path& export_dir) {
+        EXPECT_FALSE(std::filesystem::exists(export_dir / "instances"));
+        EXPECT_FALSE(std::filesystem::exists(export_dir / "networks"));
+      };
 
   const auto obj_val = solver.solve(
       {15, true, true, false}, {}, {},
@@ -1437,13 +1508,13 @@ TEST(Solver, SimpleStationExportOptions) {
 
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
   // Check that tmp1folder and tmp1folder/tmp1file.mps and
-  // tmp1folder/tmp1file.sol exist
+  // tmp1folder/tmp1file.sol exist and are not empty
   EXPECT_TRUE(std::filesystem::exists("tmp1folder"));
-  EXPECT_TRUE(std::filesystem::exists("tmp1folder/tmp1file.mps"));
-  EXPECT_TRUE(std::filesystem::exists("tmp1folder/tmp1file.sol"));
-  // Check that both files are not empty
-  EXPECT_GT(std::filesystem::file_size("tmp1folder/tmp1file.mps", ec), 0);
-  EXPECT_GT(std::filesystem::file_size("tmp1folder/tmp1file.sol", ec), 0);
+  expect_non_empty_file("tmp1folder/tmp1file.mps");
+  expect_non_empty_file("tmp1folder/tmp1file.sol");
+  // Expect no solution and no instance to be exported
+  EXPECT_FALSE(std::filesystem::exists("tmp1folder/solutions"));
+  expect_no_instance_files("tmp1folder");
   // Remove tmp1folder and its contents
   std::filesystem::remove_all("tmp1folder");
 
@@ -1457,46 +1528,14 @@ TEST(Solver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val2.get_obj(), 1);
 
   check_exit_times_within_dt_and_order(obj_val2, 15, "obj_val2");
-  // Check that tmp2folder and tmp2folder/tmp2file exist
+  // Check that tmp2folder and the solution directory exist
   EXPECT_TRUE(std::filesystem::exists("tmp2folder"));
-  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file"));
-  // Expect that .../instance and .../solution exist
-  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file/instance"));
-  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file/solution"));
-  // Expect that .../instance/routes exists
-  EXPECT_TRUE(std::filesystem::exists("tmp2folder/tmp2file/instance/routes"));
-  // Expect that .../instance/routes/routes.json exists and is not empty
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp2folder/tmp2file/instance/routes/routes.json"));
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp2folder/tmp2file/instance/routes/routes.json", ec),
-            0);
-  // Within .../solution expect data.json, train_pos.json, train_speed.json,
-  // vss_pos.json and all not empty
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp2folder/tmp2file/solution/data.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp2folder/tmp2file/solution/train_pos.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp2folder/tmp2file/solution/train_speed.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp2folder/tmp2file/solution/vss_pos.json"));
-  EXPECT_GT(
-      std::filesystem::file_size("tmp2folder/tmp2file/solution/data.json", ec),
-      0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp2folder/tmp2file/solution/train_pos.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp2folder/tmp2file/solution/train_speed.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp2folder/tmp2file/solution/vss_pos.json", ec),
-            0);
-  // Expect folders .../instance/network and .../instance/timetable to not exist
-  EXPECT_FALSE(std::filesystem::exists("tmp2folder/tmp2file/instance/network"));
-  EXPECT_FALSE(
-      std::filesystem::exists("tmp2folder/tmp2file/instance/timetable"));
+  // Expect all solution files to exist and be not empty
+  expect_solution_files(solution_dir("tmp2folder", "tmp2file"));
+  // Expect neither the instance nor the network nor the model to be exported
+  expect_no_instance_files("tmp2folder");
+  EXPECT_FALSE(std::filesystem::exists("tmp2folder/tmp2file.mps"));
+  EXPECT_FALSE(std::filesystem::exists("tmp2folder/tmp2file.sol"));
   // Remove tmp2folder and its contents
   std::filesystem::remove_all("tmp2folder");
 
@@ -1511,71 +1550,13 @@ TEST(Solver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val3.get_obj(), 1);
 
   check_exit_times_within_dt_and_order(obj_val3, 15, "obj_val3");
-  // Check that corresponding folders exist
+  // Check that corresponding folders and files exist and are not empty
   EXPECT_TRUE(std::filesystem::exists("tmp3folder"));
-  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file"));
-  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/instance"));
-  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/solution"));
-  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/instance/routes"));
-  EXPECT_TRUE(std::filesystem::exists("tmp3folder/tmp3file/instance/network"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp3folder/tmp3file/instance/timetable"));
-  // Expect relevant files to exist and be not empty
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/routes/routes.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/network/successors.txt"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/network/successors_cpp.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/network/tracks.graphml"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/timetable/schedules.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/timetable/stations.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/tmp3file/instance/timetable/trains.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp3folder/tmp3file/solution/data.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp3folder/tmp3file/solution/train_pos.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp3folder/tmp3file/solution/train_speed.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp3folder/tmp3file/solution/vss_pos.json"));
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp3folder/tmp3file/instance/routes/routes.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp3folder/tmp3file/instance/network/successors.txt", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp3folder/tmp3file/instance/network/successors_cpp.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp3folder/tmp3file/instance/network/tracks.graphml", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp3folder/tmp3file/instance/timetable/schedules.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp3folder/tmp3file/instance/timetable/stations.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp3folder/tmp3file/instance/timetable/trains.json", ec),
-            0);
-  EXPECT_GT(
-      std::filesystem::file_size("tmp3folder/tmp3file/solution/data.json", ec),
-      0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp3folder/tmp3file/solution/train_pos.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp3folder/tmp3file/solution/train_speed.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp3folder/tmp3file/solution/vss_pos.json", ec),
-            0);
+  expect_solution_files(solution_dir("tmp3folder", "tmp3file"));
+  expect_instance_files("tmp3folder");
+  // Expect the model to not be exported
+  EXPECT_FALSE(std::filesystem::exists("tmp3folder/tmp3file.mps"));
+  EXPECT_FALSE(std::filesystem::exists("tmp3folder/tmp3file.sol"));
   // Remove tmp3folder and its contents
   std::filesystem::remove_all("tmp3folder");
 
@@ -1603,46 +1584,13 @@ TEST(Solver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val5.get_obj(), 1);
 
   check_exit_times_within_dt_and_order(obj_val5, 15, "obj_val5");
-  // Expect relevant folders to exist
+  // Expect relevant folders and files to exist and be not empty
   EXPECT_TRUE(std::filesystem::exists("tmp5folder"));
-  EXPECT_TRUE(std::filesystem::exists("tmp5folder/tmp5file"));
-  EXPECT_TRUE(std::filesystem::exists("tmp5folder/tmp5file/solution"));
-  EXPECT_TRUE(std::filesystem::exists("tmp5folder/tmp5file/instance"));
-  EXPECT_TRUE(std::filesystem::exists("tmp5folder/tmp5file/instance/routes"));
-  // Expect non-relevant folders to not exist
-  EXPECT_FALSE(std::filesystem::exists("tmp5folder/tmp5file/instance/network"));
-  EXPECT_FALSE(
-      std::filesystem::exists("tmp5folder/tmp5file/instance/timetable"));
-  // Expect relevant files to exist and be not empty
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp5folder/tmp5file/instance/routes/routes.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp5folder/tmp5file/solution/data.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp5folder/tmp5file/solution/train_pos.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp5folder/tmp5file/solution/train_speed.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp5folder/tmp5file/solution/vss_pos.json"));
-  EXPECT_TRUE(std::filesystem::exists("tmp5folder/tmp5file.mps"));
-  EXPECT_TRUE(std::filesystem::exists("tmp5folder/tmp5file.sol"));
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp5folder/tmp5file/instance/routes/routes.json", ec),
-            0);
-  EXPECT_GT(
-      std::filesystem::file_size("tmp5folder/tmp5file/solution/data.json", ec),
-      0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp5folder/tmp5file/solution/train_pos.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp5folder/tmp5file/solution/train_speed.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp5folder/tmp5file/solution/vss_pos.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size("tmp5folder/tmp5file.mps", ec), 0);
-  EXPECT_GT(std::filesystem::file_size("tmp5folder/tmp5file.sol", ec), 0);
+  expect_solution_files(solution_dir("tmp5folder", "tmp5file"));
+  expect_non_empty_file("tmp5folder/tmp5file.mps");
+  expect_non_empty_file("tmp5folder/tmp5file.sol");
+  // Expect neither the instance nor the network to be exported
+  expect_no_instance_files("tmp5folder");
   // Remove tmp5folder and its contents
   std::filesystem::remove_all("tmp5folder");
 
@@ -1657,75 +1605,12 @@ TEST(Solver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val6.get_obj(), 1);
 
   check_exit_times_within_dt_and_order(obj_val6, 15, "obj_val6");
-  // Expect relevant folders to exist
+  // Expect relevant folders and files to exist and be not empty
   EXPECT_TRUE(std::filesystem::exists("tmp6folder"));
-  EXPECT_TRUE(std::filesystem::exists("tmp6folder/tmp6file"));
-  EXPECT_TRUE(std::filesystem::exists("tmp6folder/tmp6file/solution"));
-  EXPECT_TRUE(std::filesystem::exists("tmp6folder/tmp6file/instance"));
-  EXPECT_TRUE(std::filesystem::exists("tmp6folder/tmp6file/instance/routes"));
-  EXPECT_TRUE(std::filesystem::exists("tmp6folder/tmp6file/instance/network"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp6folder/tmp6file/instance/timetable"));
-  // Expect relevant files to exist and be not empty
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp6folder/tmp6file/instance/routes/routes.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp6folder/tmp6file/instance/network/successors.txt"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp6folder/tmp6file/instance/network/successors_cpp.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp6folder/tmp6file/instance/network/tracks.graphml"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp6folder/tmp6file/instance/timetable/schedules.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp6folder/tmp6file/instance/timetable/stations.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "tmp6folder/tmp6file/instance/timetable/trains.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp6folder/tmp6file/solution/data.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp6folder/tmp6file/solution/train_pos.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp6folder/tmp6file/solution/train_speed.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("tmp6folder/tmp6file/solution/vss_pos.json"));
-  EXPECT_TRUE(std::filesystem::exists("tmp6folder/tmp6file.mps"));
-  EXPECT_TRUE(std::filesystem::exists("tmp6folder/tmp6file.sol"));
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp6folder/tmp6file/instance/routes/routes.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp6folder/tmp6file/instance/network/successors.txt", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp6folder/tmp6file/instance/network/successors_cpp.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp6folder/tmp6file/instance/network/tracks.graphml", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp6folder/tmp6file/instance/timetable/schedules.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp6folder/tmp6file/instance/timetable/stations.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp6folder/tmp6file/instance/timetable/trains.json", ec),
-            0);
-  EXPECT_GT(
-      std::filesystem::file_size("tmp6folder/tmp6file/solution/data.json", ec),
-      0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp6folder/tmp6file/solution/train_pos.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp6folder/tmp6file/solution/train_speed.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size(
-                "tmp6folder/tmp6file/solution/vss_pos.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size("tmp6folder/tmp6file.mps", ec), 0);
-  EXPECT_GT(std::filesystem::file_size("tmp6folder/tmp6file.sol", ec), 0);
+  expect_solution_files(solution_dir("tmp6folder", "tmp6file"));
+  expect_instance_files("tmp6folder");
+  expect_non_empty_file("tmp6folder/tmp6file.mps");
+  expect_non_empty_file("tmp6folder/tmp6file.sol");
   // Remove tmp6folder and its contents
   std::filesystem::remove_all("tmp6folder");
 
@@ -1739,58 +1624,16 @@ TEST(Solver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val7.get_obj(), 1);
 
   check_exit_times_within_dt_and_order(obj_val7, 15, "obj_val7");
-  // Expect relevant folders to exist
-  EXPECT_TRUE(std::filesystem::exists("model/instance"));
-  EXPECT_TRUE(std::filesystem::exists("model/solution"));
-  EXPECT_TRUE(std::filesystem::exists("model/instance/routes"));
-  EXPECT_TRUE(std::filesystem::exists("model/instance/network"));
-  EXPECT_TRUE(std::filesystem::exists("model/instance/timetable"));
-  // Expect relevant files to exist and be not empty
-  EXPECT_TRUE(std::filesystem::exists("model/instance/routes/routes.json"));
-  EXPECT_TRUE(std::filesystem::exists("model/instance/network/successors.txt"));
-  EXPECT_TRUE(
-      std::filesystem::exists("model/instance/network/successors_cpp.json"));
-  EXPECT_TRUE(std::filesystem::exists("model/instance/network/tracks.graphml"));
-  EXPECT_TRUE(
-      std::filesystem::exists("model/instance/timetable/schedules.json"));
-  EXPECT_TRUE(
-      std::filesystem::exists("model/instance/timetable/stations.json"));
-  EXPECT_TRUE(std::filesystem::exists("model/instance/timetable/trains.json"));
-  EXPECT_TRUE(std::filesystem::exists("model/solution/data.json"));
-  EXPECT_TRUE(std::filesystem::exists("model/solution/train_pos.json"));
-  EXPECT_TRUE(std::filesystem::exists("model/solution/train_speed.json"));
-  EXPECT_TRUE(std::filesystem::exists("model/solution/vss_pos.json"));
-  EXPECT_TRUE(std::filesystem::exists("model.mps"));
-  EXPECT_TRUE(std::filesystem::exists("model.sol"));
-  EXPECT_GT(std::filesystem::file_size("model/instance/routes/routes.json", ec),
-            0);
-  EXPECT_GT(
-      std::filesystem::file_size("model/instance/network/successors.txt", ec),
-      0);
-  EXPECT_GT(std::filesystem::file_size(
-                "model/instance/network/successors_cpp.json", ec),
-            0);
-  EXPECT_GT(
-      std::filesystem::file_size("model/instance/network/tracks.graphml", ec),
-      0);
-  EXPECT_GT(
-      std::filesystem::file_size("model/instance/timetable/schedules.json", ec),
-      0);
-  EXPECT_GT(
-      std::filesystem::file_size("model/instance/timetable/stations.json", ec),
-      0);
-  EXPECT_GT(
-      std::filesystem::file_size("model/instance/timetable/trains.json", ec),
-      0);
-  EXPECT_GT(std::filesystem::file_size("model/solution/data.json", ec), 0);
-  EXPECT_GT(std::filesystem::file_size("model/solution/train_pos.json", ec), 0);
-  EXPECT_GT(std::filesystem::file_size("model/solution/train_speed.json", ec),
-            0);
-  EXPECT_GT(std::filesystem::file_size("model/solution/vss_pos.json", ec), 0);
-  EXPECT_GT(std::filesystem::file_size("model.mps", ec), 0);
-  EXPECT_GT(std::filesystem::file_size("model.sol", ec), 0);
+  // By default everything is exported to the current directory using the name
+  // "model"
+  expect_solution_files(solution_dir(".", "model"));
+  expect_instance_files(".");
+  expect_non_empty_file("model.mps");
+  expect_non_empty_file("model.sol");
   // Remove files and folders
-  std::filesystem::remove_all("model");
+  std::filesystem::remove_all("solutions");
+  std::filesystem::remove_all("instances");
+  std::filesystem::remove_all("networks");
   std::filesystem::remove("model.mps");
   std::filesystem::remove("model.sol");
 }
