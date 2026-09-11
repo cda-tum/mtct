@@ -793,6 +793,15 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     throw exceptions::ConsistencyException("Time must be non-negative");
   }
 
+  auto const& train_obj =
+      get_instance()->get_const_train_list().get_train(tr_name);
+  if (speed > train_obj.get_max_speed() + EPS) {
+    throw exceptions::ConsistencyException(
+        "Speed: " + std::to_string(speed) +
+        " is greater than the maximum speed of the train: " +
+        std::to_string(train_obj.get_max_speed()));
+  }
+
   const auto tr_id = train_list.get_train_index(tr_name);
   if (m_train_speed.at(tr_id).contains(t)) {
     m_train_speed.at(tr_id).at(t) = speed;

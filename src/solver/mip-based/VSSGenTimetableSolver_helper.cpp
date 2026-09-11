@@ -369,7 +369,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
                                         .get_train(tr)
                                         .get_name();
       const auto  train_speed_val = round_to_given_tolerance(
-          m_vars.at("v").at(tr, t).get(GRB_DoubleAttr_X), V_MIN);
+          m_vars.at("v").at(tr, t).get(GRB_DoubleAttr_X), GRB_EPS);
       sol_obj.add_train_speed(tr_name, static_cast<double>(t) * dt,
                               train_speed_val);
     }
