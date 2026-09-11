@@ -6,9 +6,12 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <exception>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -47,6 +50,104 @@ std::string order_to_string(cda_rail::TrainList const&         train_list,
 }
 
 // Only usable within this translation unit.
+std::string double_to_string(double const val) {
+  std::ostringstream oss;
+  oss << std::setprecision(12) << val;
+  return oss.str();
+}
+
+// Only usable within this translation unit.
+// Prints all timing information stored in the solution object for every train.
+// This is mainly relevant to debug failures that only occur in CI, where the
+// solution object itself is not available for inspection.
+void print_timing_debug_information(
+    const cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance&
+                       sol,
+    const std::string& label) {
+  auto const& instance   = *sol.get_instance();
+  auto const& network    = instance.get_const_network();
+  auto const& train_list = instance.get_const_train_list();
+  auto const& routes     = sol.get_const_solution_routes();
+
+  for (auto const& tr : train_list) {
+    auto const& tr_name     = tr.get_name();
+    auto const& tr_schedule = instance.get_const_schedule(tr_name);
+
+    std::cout << "[TIMING] " << label << ", Train " << tr_name << '\n';
+
+    // 1) Exit time stored in the solution object
+    std::cout << "[TIMING]   Exit time: "
+              << double_to_string(sol.get_exit_time(tr_name)) << " (scheduled: "
+              << double_to_string(tr_schedule.get_exit_time()) << ", entry: "
+              << network.get_vertex(tr_schedule.get_entry_vertex()).name
+              << " at " << double_to_string(tr_schedule.get_entry_time())
+              << ", exit: "
+              << network.get_vertex(tr_schedule.get_exit_vertex()).name << ")"
+              << '\n';
+
+    // 2) Raw timings stored in the solution object
+    auto const tr_times = sol.get_train_times(tr_name);
+    std::cout << "[TIMING]   Raw timings (time, position):" << '\n';
+    for (auto const& t : tr_times) {
+      std::cout << "[TIMING]     t = " << double_to_string(t)
+                << ", pos = " << double_to_string(sol.get_train_pos(tr_name, t))
+                << '\n';
+    }
+
+    // 3) Timing at every vertex of the train's route
+    if (!routes.has_route(tr_name)) {
+      std::cout << "[TIMING]   No route stored in the solution object" << '\n';
+      continue;
+    }
+    auto const& route = routes.get_route(tr_name);
+    if (route.empty()) {
+      std::cout << "[TIMING]   Route is empty" << '\n';
+      continue;
+    }
+    // t_reached is the first raw time at which the train's position is at or
+    // beyond the vertex. t_sol is the value returned by the solution object's
+    // get_time_at_pos, i.e. the value the train order on an edge is deduced
+    // from.
+    std::cout << "[TIMING]   Timing at route vertices (vertex, position, "
+                 "t_reached, t_sol):"
+              << '\n';
+    double pos = 0;
+    for (size_t r_idx = 0; r_idx <= route.size(); ++r_idx) {
+      size_t v_id = 0;
+      if (r_idx == 0) {
+        v_id = route.get_first_edge(network).source;
+      } else {
+        auto const& e = route.get_edge(r_idx - 1, network);
+        v_id          = e.target;
+        pos += e.length;
+      }
+
+      std::string t_reached_str = "never reached";
+      for (auto const& t : tr_times) {
+        if (sol.get_train_pos(tr_name, t) - pos > -cda_rail::GRB_EPS) {
+          t_reached_str = double_to_string(t);
+          break;
+        }
+      }
+
+      // get_time_at_pos can throw if the train never reaches the position
+      std::string t_sol_str;
+      try {
+        t_sol_str = double_to_string(sol.get_time_at_pos(tr_name, pos, true));
+      } catch (const std::exception& e) {
+        t_sol_str = std::string("n/a (") + e.what() + ")";
+      }
+
+      std::cout << "[TIMING]     " << network.get_vertex(v_id).name
+                << ", pos = " << double_to_string(pos)
+                << ", t_reached = " << t_reached_str
+                << ", t_sol = " << t_sol_str << '\n';
+    }
+  }
+  std::cout << std::flush;
+}
+
+// Only usable within this translation unit.
 void check_exit_times_within_dt_and_order(
     const cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance&
                  sol,
@@ -60,6 +161,8 @@ void check_exit_times_within_dt_and_order(
   auto const& instance   = *sol.get_instance();
   auto const& network    = instance.get_const_network();
   auto const& train_list = instance.get_const_train_list();
+
+  print_timing_debug_information(sol, label);
 
   for (auto const& tr : train_list) {
     auto const& tr_schedule = instance.get_const_schedule(tr.get_name());
