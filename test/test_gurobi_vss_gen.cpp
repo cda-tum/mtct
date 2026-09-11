@@ -173,7 +173,7 @@ void check_exit_times_within_dt_and_order(
 }
 } // namespace
 
-TEST(Solver, GurobiVSSDiscretizeInstanceWithoutChange) {
+TEST(VSSGenSolver, GurobiVSSDiscretizeInstanceWithoutChange) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -188,7 +188,7 @@ TEST(Solver, GurobiVSSDiscretizeInstanceWithoutChange) {
             solver.get_instance().get_const_network().number_of_vertices());
 }
 
-TEST(Solver, GurobiVSSGenDeltaTDefault) {
+TEST(VSSGenSolver, GurobiVSSGenDeltaTDefault) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -227,7 +227,7 @@ TEST(Solver, GurobiVSSGenDeltaTDefault) {
   check_exit_times_within_dt_and_order(obj_val_30, 30, "obj_val_30");
 }
 
-TEST(Solver, GurobiVSSGenDeltaT) {
+TEST(VSSGenSolver, GurobiVSSGenDeltaT) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -257,7 +257,7 @@ TEST(Solver, GurobiVSSGenDeltaT) {
   check_exit_times_within_dt_and_order(obj_val_3, 30, "obj_val_3");
 }
 
-TEST(Solver, GurobiVSSGenDefault) {
+TEST(VSSGenSolver, GurobiVSSGenDefault) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -271,7 +271,7 @@ TEST(Solver, GurobiVSSGenDefault) {
   check_exit_times_within_dt_and_order(obj_val_default, 15, "obj_val_default");
 }
 
-TEST(Solver, GurobiVSSGenDefaultInstance) {
+TEST(VSSGenSolver, GurobiVSSGenDefaultInstance) {
   const cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       "SimpleStation", "atmos2023", "data");
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
@@ -286,7 +286,7 @@ TEST(Solver, GurobiVSSGenDefaultInstance) {
   check_exit_times_within_dt_and_order(obj_val_default, 15, "obj_val_default");
 }
 
-TEST(Solver, GurobiVSSGenDefaultInstanceForward) {
+TEST(VSSGenSolver, GurobiVSSGenDefaultInstanceForward) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -300,7 +300,7 @@ TEST(Solver, GurobiVSSGenDefaultInstanceForward) {
   check_exit_times_within_dt_and_order(obj_val_default, 15, "obj_val_default");
 }
 
-TEST(Solver, GurobiVSSGenModelDetailFixed) {
+TEST(VSSGenSolver, GurobiVSSGenModelDetailFixed) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -360,7 +360,7 @@ TEST(Solver, GurobiVSSGenModelDetailFixed) {
   check_exit_times_within_dt_and_order(obj_val_6, 15, "obj_val_6");
 }
 
-TEST(Solver, GurobiVSSGenModelDetailFree1) {
+TEST(VSSGenSolver, GurobiVSSGenModelDetailFree1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -374,7 +374,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree1) {
   check_exit_times_within_dt_and_order(obj_val_1, 15, "obj_val_1");
 }
 
-TEST(Solver, GurobiVSSGenModelDetailFree2) {
+TEST(VSSGenSolver, GurobiVSSGenModelDetailFree2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -388,7 +388,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree2) {
   check_exit_times_within_dt_and_order(obj_val_2, 15, "obj_val_2");
 }
 
-TEST(Solver, GurobiVSSGenModelDetailFree3) {
+TEST(VSSGenSolver, GurobiVSSGenModelDetailFree3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -403,7 +403,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree3) {
   check_exit_times_within_dt_and_order(obj_val_3, 15, "obj_val_3");
 }
 
-TEST(Solver, GurobiVSSGenModelDetailFree4) {
+TEST(VSSGenSolver, GurobiVSSGenModelDetailFree4) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -418,7 +418,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree4) {
   check_exit_times_within_dt_and_order(obj_val_4, 15, "obj_val_4");
 }
 
-TEST(Solver, GurobiVSSGenModelDetailFree5) {
+TEST(VSSGenSolver, GurobiVSSGenModelDetailFree5) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -433,7 +433,7 @@ TEST(Solver, GurobiVSSGenModelDetailFree5) {
   check_exit_times_within_dt_and_order(obj_val_5, 15, "obj_val_5");
 }
 
-TEST(Solver, GurobiVSSGenVSSDiscrete) {
+TEST(VSSGenSolver, GurobiVSSGenVSSDiscrete) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -450,7 +450,7 @@ TEST(Solver, GurobiVSSGenVSSDiscrete) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, GurobiVSSGenTim) {
+TEST(VSSGenSolver, GurobiVSSGenTim) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -504,7 +504,7 @@ TEST(Solver, GurobiVSSGenTim) {
   check_exit_times_within_dt_and_order(obj_val_2, 15, "obj_val_2");
 }
 
-TEST(Solver, GurobiVSSGenTimFixed) {
+TEST(VSSGenSolver, GurobiVSSGenTimFixed) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -558,7 +558,7 @@ TEST(Solver, GurobiVSSGenTimFixed) {
   check_exit_times_within_dt_and_order(obj_val_2, 15, "obj_val_2");
 }
 
-TEST(Solver, GurobiVSSGenTimDiscrete1) {
+TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -584,7 +584,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete1) {
   check_exit_times_within_dt_and_order(obj_val_1, 15, "obj_val_1");
 }
 
-TEST(Solver, GurobiVSSGenTimDiscrete2) {
+TEST(VSSGenSolver, GurobiVSSGenTimDiscrete2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -612,7 +612,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete2) {
   check_exit_times_within_dt_and_order(obj_val_2, 15, "obj_val_2");
 }
 
-TEST(Solver, GurobiVSSGenTimDiscrete3) {
+TEST(VSSGenSolver, GurobiVSSGenTimDiscrete3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -637,7 +637,7 @@ TEST(Solver, GurobiVSSGenTimDiscrete3) {
   EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Infeasible);
 }
 
-TEST(Solver, OvertakeFixedContinuous) {
+TEST(VSSGenSolver, OvertakeFixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Overtake", "atmos2023", "data");
 
@@ -662,7 +662,7 @@ TEST(Solver, OvertakeFixedContinuous) {
   check_exit_times_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
 }
 
-TEST(Solver, OvertakeFreeContinuous) {
+TEST(VSSGenSolver, OvertakeFreeContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Overtake", "atmos2023", "data");
 
@@ -687,7 +687,7 @@ TEST(Solver, OvertakeFreeContinuous) {
   check_exit_times_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
 }
 
-TEST(Solver, Stammstrecke4FixedContinuous) {
+TEST(VSSGenSolver, Stammstrecke4FixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Stammstrecke4Trains", "atmos2023", "data");
 
@@ -712,7 +712,7 @@ TEST(Solver, Stammstrecke4FixedContinuous) {
   check_exit_times_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
 }
 
-TEST(Solver, Stammstrecke8FixedContinuous) {
+TEST(VSSGenSolver, Stammstrecke8FixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Stammstrecke8Trains", "atmos2023", "data");
 
@@ -737,7 +737,7 @@ TEST(Solver, Stammstrecke8FixedContinuous) {
   check_exit_times_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
 }
 
-TEST(Solver, Stammstrecke16FixedContinuousBase) {
+TEST(VSSGenSolver, Stammstrecke16FixedContinuousBase) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Stammstrecke16Trains", "atmos2023", "data");
 
@@ -750,7 +750,7 @@ TEST(Solver, Stammstrecke16FixedContinuousBase) {
   check_exit_times_within_dt_and_order(obj_val_base, 15, "obj_val_base");
 }
 
-TEST(Solver, Stammstrecke16FixedContinuousDynamics) {
+TEST(VSSGenSolver, Stammstrecke16FixedContinuousDynamics) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Stammstrecke16Trains", "atmos2023", "data");
 
@@ -764,7 +764,7 @@ TEST(Solver, Stammstrecke16FixedContinuousDynamics) {
                                        "obj_val_dynamics");
 }
 
-TEST(Solver, Stammstrecke16FixedContinuousBraking) {
+TEST(VSSGenSolver, Stammstrecke16FixedContinuousBraking) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Stammstrecke16Trains", "atmos2023", "data");
 
@@ -777,7 +777,7 @@ TEST(Solver, Stammstrecke16FixedContinuousBraking) {
   check_exit_times_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
 }
 
-TEST(Solver, SimpleStationInferredUniform) {
+TEST(VSSGenSolver, SimpleStationInferredUniform) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -794,7 +794,7 @@ TEST(Solver, SimpleStationInferredUniform) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, SimpleStationInferredUniformPostprocess) {
+TEST(VSSGenSolver, SimpleStationInferredUniformPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -811,7 +811,7 @@ TEST(Solver, SimpleStationInferredUniformPostprocess) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, SimpleStationInferredAltUniformPostprocess) {
+TEST(VSSGenSolver, SimpleStationInferredAltUniformPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -828,7 +828,7 @@ TEST(Solver, SimpleStationInferredAltUniformPostprocess) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, SimpleStationContinuousPostprocess) {
+TEST(VSSGenSolver, SimpleStationContinuousPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -841,7 +841,7 @@ TEST(Solver, SimpleStationContinuousPostprocess) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, SimpleStationContinuousFixedPostprocess) {
+TEST(VSSGenSolver, SimpleStationContinuousFixedPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -854,7 +854,7 @@ TEST(Solver, SimpleStationContinuousFixedPostprocess) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, SimpleStationInferredChebychev) {
+TEST(VSSGenSolver, SimpleStationInferredChebychev) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -871,7 +871,7 @@ TEST(Solver, SimpleStationInferredChebychev) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, SimpleStationInferredBoth) {
+TEST(VSSGenSolver, SimpleStationInferredBoth) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -889,7 +889,7 @@ TEST(Solver, SimpleStationInferredBoth) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, SimpleStationInferredAltBoth) {
+TEST(VSSGenSolver, SimpleStationInferredAltBoth) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -907,7 +907,7 @@ TEST(Solver, SimpleStationInferredAltBoth) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, IterativeContinuousSingleTrack) {
+TEST(VSSGenSolver, IterativeContinuousSingleTrack) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SingleTrack", "atmos2023", "data");
 
@@ -920,7 +920,7 @@ TEST(Solver, IterativeContinuousSingleTrack) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, IterativeContinuousSingleTrackCuts) {
+TEST(VSSGenSolver, IterativeContinuousSingleTrackCuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SingleTrack", "atmos2023", "data");
 
@@ -936,7 +936,7 @@ TEST(Solver, IterativeContinuousSingleTrackCuts) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, IterativeContinuousSingleRelative) {
+TEST(VSSGenSolver, IterativeContinuousSingleRelative) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SingleTrack", "atmos2023", "data");
 
@@ -953,7 +953,7 @@ TEST(Solver, IterativeContinuousSingleRelative) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, IterativeContinuousSimpleStationInferredCuts) {
+TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredCuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -968,7 +968,7 @@ TEST(Solver, IterativeContinuousSimpleStationInferredCuts) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, IterativeContinuousSimpleStationCuts) {
+TEST(VSSGenSolver, IterativeContinuousSimpleStationCuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -981,7 +981,7 @@ TEST(Solver, IterativeContinuousSimpleStationCuts) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, IterativeContinuousFeasible) {
+TEST(VSSGenSolver, IterativeContinuousFeasible) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Stammstrecke4Trains", "atmos2023", "data");
 
@@ -994,7 +994,7 @@ TEST(Solver, IterativeContinuousFeasible) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, IterativeTimeout1) {
+TEST(VSSGenSolver, IterativeTimeout1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleNetwork", "atmos2023", "data");
 
@@ -1003,7 +1003,7 @@ TEST(Solver, IterativeTimeout1) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Timeout);
 }
 
-TEST(Solver, IterativeTimeout2) {
+TEST(VSSGenSolver, IterativeTimeout2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleNetwork", "atmos2023", "data");
 
@@ -1012,7 +1012,7 @@ TEST(Solver, IterativeTimeout2) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Timeout);
 }
 
-TEST(Solver, IterativeContinuousSimpleStationInferredAlt) {
+TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredAlt) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -1030,7 +1030,7 @@ TEST(Solver, IterativeContinuousSimpleStationInferredAlt) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, IterativeContinuousStammstrecke4) {
+TEST(VSSGenSolver, IterativeContinuousStammstrecke4) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Stammstrecke4Trains", "atmos2023", "data");
 
@@ -1042,7 +1042,7 @@ TEST(Solver, IterativeContinuousStammstrecke4) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, IterativeContinuousStammstrecke4Cuts) {
+TEST(VSSGenSolver, IterativeContinuousStammstrecke4Cuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Stammstrecke4Trains", "atmos2023", "data");
 
@@ -1058,7 +1058,7 @@ TEST(Solver, IterativeContinuousStammstrecke4Cuts) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, IterativeContinuousOvertakeRelative) {
+TEST(VSSGenSolver, IterativeContinuousOvertakeRelative) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Overtake", "atmos2023", "data");
 
@@ -1074,7 +1074,7 @@ TEST(Solver, IterativeContinuousOvertakeRelative) {
   check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
-TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
+TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -1130,7 +1130,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed1) {
   }
 }
 
-TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
+TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -1186,7 +1186,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed2) {
   }
 }
 
-TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
+TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -1242,7 +1242,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFixed3) {
   }
 }
 
-TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
+TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -1298,7 +1298,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree1) {
   }
 }
 
-TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
+TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -1354,7 +1354,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree2) {
   }
 }
 
-TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
+TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
@@ -1410,7 +1410,7 @@ TEST(Solver, OnlyStopAtBoundariesContinuousFree3) {
   }
 }
 
-TEST(Solver, SimpleStationExportOptions) {
+TEST(VSSGenSolver, SimpleStationExportOptions) {
   // The instance is read relative to the current working directory, hence the
   // solver has to be created before switching to the temporary directory.
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
