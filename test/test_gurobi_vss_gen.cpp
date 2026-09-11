@@ -1,8 +1,7 @@
 #include "Definitions.hpp"
 #include "VSSModel.hpp"
-#include "instances/SolVSSGeneralPerformanceOptimizationInstance.hpp"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
-#include "train_list/TrainList.hpp"
 
 #include "gtest/gtest.h"
 #include <algorithm>
