@@ -142,6 +142,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       m_model->addConstr(lhs, GRB_EQUAL, rhs,
                          "train_pos_len_" + tr_name + "_" + std::to_string(t));
 
+      // The train cannot leave the network before its scheduled exit time.
+      // The rear of the train at time t * dt is strictly before the exit time
+      // for every t <= train_interval[tr].second. Hence, the train either has
+      // not entered completely yet or at least one edge is still occupied. An
+      // edge only counts as occupied if at least MIN_OCCUPIED_LENGTH of the
+      // train is located on it.
+      lhs = m_vars["x_in"](tr, t);
+      for (size_t e = 0; e < num_edges; ++e) {
+        lhs += m_vars["x"](tr, t, e);
+      }
+      m_model->addConstr(lhs, GRB_GREATER_EQUAL, 1,
+                         "train_not_left_" + tr_name + "_" +
+                             std::to_string(static_cast<double>(t) * dt));
+
       // Train position is a simple connected path, i.e.,
       // x_v <= sum_(e in delta_v) x_e
       // x_v >= sum_(e in delta_in_v) x_e
@@ -264,18 +278,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  exit    = m_instance.get_const_schedule(tr).get_exit_vertex();
     for (size_t t = train_interval[tr].first;
          t <= train_interval[tr].second - 1; ++t) {
-      // Train cannot be solely on the exit edge
-      GRBLinExpr lhs = m_vars["x_in"](tr, t);
-      for (size_t e = 0; e < num_edges; ++e) {
-        lhs += m_vars["x"](tr, t, e);
-      }
-      // lhs >= 1
-      m_model->addConstr(lhs, GRB_GREATER_EQUAL, 1,
-                         "train_not_left_" + tr_name + "_" +
-                             std::to_string(static_cast<double>(t) * dt));
-
       // Correct overlap length
-      lhs = m_vars["len_in"](tr, t + 1) + m_vars["len_out"](tr, t);
+      GRBLinExpr lhs = m_vars["len_in"](tr, t + 1) + m_vars["len_out"](tr, t);
       for (size_t e = 0; e < num_edges; ++e) {
         lhs += m_vars["overlap"](tr, t, e);
       }
@@ -448,13 +452,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
             "train_occupation_free_routes_lda_0_if_not_first_edge_" + tr_name +
                 "_" + std::to_string(t) + "_" + std::to_string(e));
 
-        // x = 0 if mu=lda, i.e.,
-        // x <= e_mu - e_lda
-        m_model->addConstr(m_vars["x"](tr, t, e), GRB_LESS_EQUAL,
-                           m_vars["e_mu"](tr, t, e) - m_vars["e_lda"](tr, t, e),
-                           "train_occupation_free_routes_x_0_if_mu_lda_" +
-                               tr_name + "_" + std::to_string(t) + "_" +
-                               std::to_string(e));
+        // x = 0 if mu=lda, i.e., the edge only counts as occupied if at least
+        // MIN_OCCUPIED_LENGTH of the train is on it
+        // MIN_OCCUPIED_LENGTH * x <= e_mu - e_lda
+        m_model->addConstr(
+            MIN_OCCUPIED_LENGTH * m_vars["x"](tr, t, e), GRB_LESS_EQUAL,
+            m_vars["e_mu"](tr, t, e) - m_vars["e_lda"](tr, t, e),
+            "train_occupation_free_routes_x_0_if_mu_lda_" + tr_name + "_" +
+                std::to_string(t) + "_" + std::to_string(e));
       }
     }
 

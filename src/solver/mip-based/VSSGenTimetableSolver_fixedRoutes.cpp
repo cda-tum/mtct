@@ -126,6 +126,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     }
     m_model->addConstr(m_vars["mu"](tr, t) - m_vars["lda"](tr, t) == rhs,
                        "full_pos_" + tr_name + "_" + std::to_string(t));
+
+    // The train cannot leave the network before its scheduled exit time.
+    // lda(tr, t) is the rear of the train at time t * dt, which is strictly
+    // before the exit time for every t <= train_interval[tr].second. Hence, at
+    // least MIN_OCCUPIED_LENGTH of the train has to be left on the route, the
+    // same tolerance with which edge occupation is decided.
+    const auto r_len = m_instance.route_length(tr_name);
+    for (size_t t_no_exit = train_interval[tr].first;
+         t_no_exit <= train_interval[tr].second; ++t_no_exit) {
+      m_model->addConstr(m_vars["lda"](tr, t_no_exit), GRB_LESS_EQUAL,
+                         r_len - MIN_OCCUPIED_LENGTH,
+                         "cannot_leave_early_" + tr_name + "_" +
+                             std::to_string(t_no_exit));
+    }
   }
 }
 
