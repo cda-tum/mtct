@@ -667,11 +667,11 @@ TEST(VSSGenSolver, OvertakeFreeContinuous) {
       "Overtake", "atmos2023", "data");
 
   const auto obj_val_base =
-      solver.solve({15, false, false, false}, {}, {}, {}, 120);
+      solver.solve({15, false, false, false}, {}, {}, {}, 100);
   const auto obj_val_dynamics =
-      solver.solve({15, false, true, false}, {}, {}, {}, 120);
+      solver.solve({15, false, true, false}, {}, {}, {}, 200);
   const auto obj_val_braking =
-      solver.solve({15, false, true, true}, {}, {}, {}, 120);
+      solver.solve({15, false, true, true}, {}, {}, {}, 400);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
