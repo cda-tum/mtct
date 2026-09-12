@@ -1620,31 +1620,6 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
   auto const tr2_time_single =
       sol_obj_single.get_time_at_pos("Train2", 170, true);
   EXPECT_GT(tr1_time_single, tr2_time_single);
-
-  auto const& tr1_times = sol_obj_single.get_train_times("Train1");
-  auto const& tr2_times = sol_obj_single.get_train_times("Train2");
-  auto const  max_t     = std::max(tr1_times.back(), tr2_times.back());
-
-  std::cout << "Exit times: Train1 -> "
-            << sol_obj_single.get_exit_time("Train1") << ", Train2 -> "
-            << sol_obj_single.get_exit_time("Train2") << std::endl;
-
-  for (size_t t = 0; t <= max_t; t += 5) {
-    std::cout << "Time: " << t << " -> Train1: ";
-    if (std::ranges::contains(tr1_times, t)) {
-      std::cout << sol_obj_single.get_train_pos("Train1", t);
-    } else {
-      std::cout << "N/A";
-    }
-    std::cout << ", Train2: ";
-    if (std::ranges::contains(tr2_times, t)) {
-      std::cout << sol_obj_single.get_train_pos("Train2", t);
-    } else {
-      std::cout << "N/A";
-    }
-    std::cout << std::endl;
-  }
-
   auto const tr1_time_ttd = sol_obj_ttd.get_time_at_pos("Train1", 170, true);
   auto const tr2_time_ttd = sol_obj_ttd.get_time_at_pos("Train2", 170, true);
   EXPECT_GT(tr1_time_ttd, tr2_time_ttd);
