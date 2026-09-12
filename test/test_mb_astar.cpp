@@ -1629,10 +1629,6 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
             << sol_obj_single.get_exit_time("Train1") << ", Train2 -> "
             << sol_obj_single.get_exit_time("Train2") << std::endl;
 
-  std::cout << "Route length: Train1 -> "
-            << sol_obj_single.route_length("Train1") << ", Train2 -> "
-            << sol_obj_single.route_length("Train2") << std::endl;
-
   for (size_t t = 0; t <= max_t; t += 5) {
     std::cout << "Time: " << t << " -> Train1: ";
     if (std::ranges::contains(tr1_times, t)) {
