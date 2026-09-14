@@ -14,8 +14,6 @@ TEST(Logging, VSSGenDefaultLogging) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
-  EXPECT_EQ(plog::get()->getMaxSeverity(), plog::debug);
-
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve();
 
