@@ -32,7 +32,7 @@ add_library(
   solver/mip-based/VSSGenTimetableSolver_fixedRoutes.cpp
   solver/mip-based/VSSGenTimetableSolver_freeRoutes.cpp
   solver/mip-based/VSSGenTimetableSolver_helper.cpp
-  # solver/mip-based/VSSGenTimetableSolver_MovingBlockInformation.cpp
+  solver/mip-based/VSSGenTimetableSolver_MovingBlockInformation.cpp
   ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GeneralMIPSolver.hpp
   ${PROJECT_SOURCE_DIR}/include/solver/mip-based/GenPOMovingBlockMIPSolver.hpp
   solver/mip-based/GenPOMovingBlockMIPSolver.cpp
