@@ -23,10 +23,18 @@ struct SolutionSettings {
   std::string  path;
 };
 
-struct SolutionSettingsMovingBlock {
-  ExportOption export_option = ExportOption::NoExport;
-  std::string  name          = "model";
-  std::string  path;
+/**
+ * @brief Export settings of the moving block MIP solver.
+ *
+ * The solution itself is exported using the general settings, i.e., to the
+ * standard path
+ * working_directory/solutions/solution_subdirectory/instance_subdirectory/
+ * instance_name[-parameter_identifier]. In addition, the MIP model itself can
+ * be written to the very same directory using model_name as file name.
+ */
+struct SolutionSettingsMovingBlock : GeneralSolutionSettings {
+  bool        export_lp_model = false;
+  std::string model_name      = "model";
 };
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)

@@ -24,9 +24,9 @@ void cleanup_export_dirs() {
   std::filesystem::remove_all("tmp6folder");
   std::filesystem::remove_all("instances");
   std::filesystem::remove_all("networks");
+  // The model files are written into the solution directory, so removing
+  // "solutions" already takes care of them.
   std::filesystem::remove_all("solutions");
-  std::filesystem::remove("model.mps");
-  std::filesystem::remove("model.json");
 }
 
 void check_last_train_pos(
@@ -1554,35 +1554,48 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   std::error_code ec;
 
   std::cout << "Starting first solve" << std::endl;
-  const auto obj_val = solver.solve(
-      {.fix_routes         = false,
-       .max_velocity_delta = 5.55,
-       .velocity_refinement_strategy =
-           cda_rail::VelocityRefinementStrategy::None,
-       .max_exit_delay = 0.0},
-      {.abs_mip_gap = 10},
-      {cda_rail::ExportOption::ExportLP, "tmp1file", "tmp1folder"}, 30, true);
+  const auto obj_val =
+      solver.solve({.fix_routes         = false,
+                    .max_velocity_delta = 5.55,
+                    .velocity_refinement_strategy =
+                        cda_rail::VelocityRefinementStrategy::None,
+                    .max_exit_delay = 0.0},
+                   {.abs_mip_gap = 10},
+                   {{cda_rail::solver::GeneralExportOption::NoExport,
+                     "tmp1folder", "tmp1file", "tmp1id"},
+                    true,
+                    "tmp1file"},
+                   30, true);
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val, "SimpleStation", 10);
-  // Check that tmp1folder and tmp1folder/tmp1file.mps and
-  // tmp1folder/tmp1file.sol exist
+  // Check that the model files exist in the standard solution directory, which
+  // includes the parameter identifier, but no solution was exported
   EXPECT_TRUE(std::filesystem::exists("tmp1folder"));
-  EXPECT_TRUE(std::filesystem::exists("tmp1folder/tmp1file.mps"));
-  EXPECT_TRUE(std::filesystem::exists("tmp1folder/tmp1file.json"));
+  EXPECT_TRUE(std::filesystem::exists("tmp1folder/solutions/tmp1file/atmos2023/"
+                                      "SimpleStation-tmp1id/tmp1file.mps"));
+  EXPECT_TRUE(std::filesystem::exists("tmp1folder/solutions/tmp1file/atmos2023/"
+                                      "SimpleStation-tmp1id/tmp1file.json"));
+  EXPECT_FALSE(
+      std::filesystem::exists("tmp1folder/solutions/tmp1file/atmos2023/"
+                              "SimpleStation-tmp1id/routes.json"));
+  EXPECT_FALSE(
+      std::filesystem::exists("tmp1folder/solutions/tmp1file/atmos2023/"
+                              "SimpleStation-tmp1id/solver_data.json"));
 
   cleanup_export_dirs();
 
   std::cout << "Starting second solve" << std::endl;
-  const auto obj_val2 = solver.solve(
-      {.fix_routes         = false,
-       .max_velocity_delta = 5.55,
-       .velocity_refinement_strategy =
-           cda_rail::VelocityRefinementStrategy::None,
-       .max_exit_delay = 0.0},
-      {.abs_mip_gap = 10},
-      {cda_rail::ExportOption::ExportSolution, "tmp2file", "tmp2folder"}, 30,
-      true);
+  const auto obj_val2 =
+      solver.solve({.fix_routes         = false,
+                    .max_velocity_delta = 5.55,
+                    .velocity_refinement_strategy =
+                        cda_rail::VelocityRefinementStrategy::None,
+                    .max_exit_delay = 0.0},
+                   {.abs_mip_gap = 10},
+                   {{cda_rail::solver::GeneralExportOption::ExportSolution,
+                     "tmp2folder", "tmp2file"}},
+                   30, true);
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val2, "SimpleStation", 10);
@@ -1603,6 +1616,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
                                       "SimpleStation/train_speed.json"));
   EXPECT_TRUE(std::filesystem::exists("tmp2folder/solutions/tmp2file/atmos2023/"
                                       "SimpleStation/train_stop_times.json"));
+  EXPECT_TRUE(std::filesystem::exists("tmp2folder/solutions/tmp2file/atmos2023/"
+                                      "SimpleStation/solver_data.json"));
   // Expect no instance or network folders to exist
   EXPECT_FALSE(std::filesystem::exists("tmp2folder/instances"));
   EXPECT_FALSE(std::filesystem::exists("tmp2folder/networks"));
@@ -1610,16 +1625,16 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   cleanup_export_dirs();
 
   std::cout << "Starting third solve" << std::endl;
-  const auto obj_val3 =
-      solver.solve({.fix_routes         = false,
-                    .max_velocity_delta = 5.55,
-                    .velocity_refinement_strategy =
-                        cda_rail::VelocityRefinementStrategy::None,
-                    .max_exit_delay = 0.0},
-                   {.abs_mip_gap = 10},
-                   {cda_rail::ExportOption::ExportSolutionWithInstance,
-                    "tmp3file", "tmp3folder"},
-                   30, true);
+  const auto obj_val3 = solver.solve(
+      {.fix_routes         = false,
+       .max_velocity_delta = 5.55,
+       .velocity_refinement_strategy =
+           cda_rail::VelocityRefinementStrategy::None,
+       .max_exit_delay = 0.0},
+      {.abs_mip_gap = 10},
+      {{cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance,
+        "tmp3folder", "tmp3file"}},
+      30, true);
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val3, "SimpleStation", 10);
@@ -1663,18 +1678,22 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
                                       "SimpleStation/train_speed.json"));
   EXPECT_TRUE(std::filesystem::exists("tmp3folder/solutions/tmp3file/atmos2023/"
                                       "SimpleStation/train_stop_times.json"));
+  EXPECT_TRUE(std::filesystem::exists("tmp3folder/solutions/tmp3file/atmos2023/"
+                                      "SimpleStation/solver_data.json"));
 
   cleanup_export_dirs();
 
   std::cout << "Starting fourth solve" << std::endl;
-  const auto obj_val4 = solver.solve(
-      {.fix_routes         = false,
-       .max_velocity_delta = 5.55,
-       .velocity_refinement_strategy =
-           cda_rail::VelocityRefinementStrategy::None,
-       .max_exit_delay = 0.0},
-      {.abs_mip_gap = 10},
-      {cda_rail::ExportOption::NoExport, "tmp4file", "tmp4folder"}, 30, true);
+  const auto obj_val4 =
+      solver.solve({.fix_routes         = false,
+                    .max_velocity_delta = 5.55,
+                    .velocity_refinement_strategy =
+                        cda_rail::VelocityRefinementStrategy::None,
+                    .max_exit_delay = 0.0},
+                   {.abs_mip_gap = 10},
+                   {{cda_rail::solver::GeneralExportOption::NoExport,
+                     "tmp4folder", "tmp4file"}},
+                   30, true);
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val4, "SimpleStation", 10);
@@ -1682,22 +1701,27 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   EXPECT_FALSE(std::filesystem::exists("tmp4folder"));
 
   std::cout << "Starting fifth solve" << std::endl;
-  const auto obj_val5 = solver.solve(
-      {.fix_routes         = false,
-       .max_velocity_delta = 5.55,
-       .velocity_refinement_strategy =
-           cda_rail::VelocityRefinementStrategy::None,
-       .max_exit_delay = 0.0},
-      {.abs_mip_gap = 10},
-      {cda_rail::ExportOption::ExportSolutionAndLP, "tmp5file", "tmp5folder"},
-      30, false);
+  const auto obj_val5 =
+      solver.solve({.fix_routes         = false,
+                    .max_velocity_delta = 5.55,
+                    .velocity_refinement_strategy =
+                        cda_rail::VelocityRefinementStrategy::None,
+                    .max_exit_delay = 0.0},
+                   {.abs_mip_gap = 10},
+                   {{cda_rail::solver::GeneralExportOption::ExportSolution,
+                     "tmp5folder", "tmp5file"},
+                    true,
+                    "tmp5file"},
+                   30, false);
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val5, "SimpleStation", 10);
   // Check that tmp5folder exists with LP files and solutions
   EXPECT_TRUE(std::filesystem::exists("tmp5folder"));
-  EXPECT_TRUE(std::filesystem::exists("tmp5folder/tmp5file.mps"));
-  EXPECT_TRUE(std::filesystem::exists("tmp5folder/tmp5file.json"));
+  EXPECT_TRUE(std::filesystem::exists("tmp5folder/solutions/tmp5file/atmos2023/"
+                                      "SimpleStation/tmp5file.mps"));
+  EXPECT_TRUE(std::filesystem::exists("tmp5folder/solutions/tmp5file/atmos2023/"
+                                      "SimpleStation/tmp5file.json"));
   EXPECT_TRUE(std::filesystem::exists(
       "tmp5folder/solutions/tmp5file/atmos2023/SimpleStation"));
   // Expect solution JSON files to exist
@@ -1713,6 +1737,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
                                       "SimpleStation/train_speed.json"));
   EXPECT_TRUE(std::filesystem::exists("tmp5folder/solutions/tmp5file/atmos2023/"
                                       "SimpleStation/train_stop_times.json"));
+  EXPECT_TRUE(std::filesystem::exists("tmp5folder/solutions/tmp5file/atmos2023/"
+                                      "SimpleStation/solver_data.json"));
   // Expect no instance or network folders to exist
   EXPECT_FALSE(std::filesystem::exists("tmp5folder/instances"));
   EXPECT_FALSE(std::filesystem::exists("tmp5folder/networks"));
@@ -1720,24 +1746,28 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   cleanup_export_dirs();
 
   std::cout << "Starting sixth solve" << std::endl;
-  const auto obj_val6 =
-      solver.solve({.fix_routes         = false,
-                    .max_velocity_delta = 5.55,
-                    .velocity_refinement_strategy =
-                        cda_rail::VelocityRefinementStrategy::None,
-                    .max_exit_delay = 0.0},
-                   {.abs_mip_gap = 10},
-                   {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP,
-                    "tmp6file", "tmp6folder"},
-                   30, false);
+  const auto obj_val6 = solver.solve(
+      {.fix_routes         = false,
+       .max_velocity_delta = 5.55,
+       .velocity_refinement_strategy =
+           cda_rail::VelocityRefinementStrategy::None,
+       .max_exit_delay = 0.0},
+      {.abs_mip_gap = 10},
+      {{cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance,
+        "tmp6folder", "tmp6file"},
+       true,
+       "tmp6file"},
+      30, false);
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val6, "SimpleStation", 10);
   // Check that tmp6folder exists with LP files, instance, networks, and
   // solutions
   EXPECT_TRUE(std::filesystem::exists("tmp6folder"));
-  EXPECT_TRUE(std::filesystem::exists("tmp6folder/tmp6file.mps"));
-  EXPECT_TRUE(std::filesystem::exists("tmp6folder/tmp6file.json"));
+  EXPECT_TRUE(std::filesystem::exists("tmp6folder/solutions/tmp6file/atmos2023/"
+                                      "SimpleStation/tmp6file.mps"));
+  EXPECT_TRUE(std::filesystem::exists("tmp6folder/solutions/tmp6file/atmos2023/"
+                                      "SimpleStation/tmp6file.json"));
   EXPECT_TRUE(
       std::filesystem::exists("tmp6folder/instances/atmos2023/SimpleStation"));
   EXPECT_TRUE(std::filesystem::exists("tmp6folder/networks/SimpleStation"));
@@ -1776,6 +1806,8 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
                                       "SimpleStation/train_speed.json"));
   EXPECT_TRUE(std::filesystem::exists("tmp6folder/solutions/tmp6file/atmos2023/"
                                       "SimpleStation/train_stop_times.json"));
+  EXPECT_TRUE(std::filesystem::exists("tmp6folder/solutions/tmp6file/atmos2023/"
+                                      "SimpleStation/solver_data.json"));
 
   cleanup_export_dirs();
 
@@ -1786,13 +1818,18 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
        .velocity_refinement_strategy =
            cda_rail::VelocityRefinementStrategy::None,
        .max_exit_delay = 0.0},
-      {}, {cda_rail::ExportOption::ExportSolutionWithInstanceAndLP}, 30, false);
+      {},
+      {{cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance},
+       true},
+      30, false);
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val7, "SimpleStation", 10);
-  // Expect LP files to exist
-  EXPECT_TRUE(std::filesystem::exists("model.mps"));
-  EXPECT_TRUE(std::filesystem::exists("model.json"));
+  // Expect LP files to exist in the default solution directory
+  EXPECT_TRUE(std::filesystem::exists(
+      "solutions/unnamed-experiment/atmos2023/SimpleStation/model.mps"));
+  EXPECT_TRUE(std::filesystem::exists(
+      "solutions/unnamed-experiment/atmos2023/SimpleStation/model.json"));
   // Expect instance files to exist
   EXPECT_TRUE(std::filesystem::exists(
       "instances/atmos2023/SimpleStation/network.json"));
@@ -1813,17 +1850,19 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   EXPECT_TRUE(std::filesystem::exists("networks/SimpleStation/tracks.graphml"));
   // Expect solution JSON files to exist
   EXPECT_TRUE(std::filesystem::exists(
-      "solutions/model/atmos2023/SimpleStation/routes.json"));
+      "solutions/unnamed-experiment/atmos2023/SimpleStation/routes.json"));
+  EXPECT_TRUE(std::filesystem::exists("solutions/unnamed-experiment/atmos2023/"
+                                      "SimpleStation/solution_data.json"));
+  EXPECT_TRUE(std::filesystem::exists("solutions/unnamed-experiment/atmos2023/"
+                                      "SimpleStation/train_exit_times.json"));
   EXPECT_TRUE(std::filesystem::exists(
-      "solutions/model/atmos2023/SimpleStation/solution_data.json"));
+      "solutions/unnamed-experiment/atmos2023/SimpleStation/train_pos.json"));
   EXPECT_TRUE(std::filesystem::exists(
-      "solutions/model/atmos2023/SimpleStation/train_exit_times.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "solutions/model/atmos2023/SimpleStation/train_pos.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "solutions/model/atmos2023/SimpleStation/train_speed.json"));
-  EXPECT_TRUE(std::filesystem::exists(
-      "solutions/model/atmos2023/SimpleStation/train_stop_times.json"));
+      "solutions/unnamed-experiment/atmos2023/SimpleStation/train_speed.json"));
+  EXPECT_TRUE(std::filesystem::exists("solutions/unnamed-experiment/atmos2023/"
+                                      "SimpleStation/train_stop_times.json"));
+  EXPECT_TRUE(std::filesystem::exists("solutions/unnamed-experiment/atmos2023/"
+                                      "SimpleStation/solver_data.json"));
 
   cleanup_export_dirs();
 }

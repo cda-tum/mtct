@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <plog/Log.h>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -157,6 +158,45 @@ protected:
     if (!(data_file << data << '\n')) {
       throw exceptions::ExportException("Failed to write solver_data.json");
     }
+  }
+
+  /**
+   * @brief Exports the solution together with the solver data if requested.
+   *
+   * The solution is written to the standard solution path, i.e.,
+   * working_directory/solutions/solution_subdirectory/instance_subdirectory/
+   * instance_name[-parameter_identifier]. Nothing is exported if the export
+   * option is GeneralExportOption::NoExport.
+   *
+   * @param solution The solution to export
+   * @param solution_settings Settings describing where and what to export
+   * @param further_data Additional solver-specific data for solver_data.json
+   * @return The export directory if an export happened, std::nullopt otherwise
+   */
+  std::optional<std::filesystem::path>
+  export_general_solution(const S&                       solution,
+                          const GeneralSolutionSettings& solution_settings,
+                          FurtherData const&             further_data = {}) {
+    if (solution_settings.export_option == GeneralExportOption::NoExport) {
+      return std::nullopt;
+    }
+
+    const bool export_instance =
+        (solution_settings.export_option ==
+         GeneralExportOption::ExportSolutionWithInstance);
+
+    auto const export_path =
+        solution.get_export_path(solution_settings.working_directory,
+                                 solution_settings.solution_subdirectory,
+                                 solution_settings.parameter_identifier);
+    PLOGI << "Saving solution to " << export_path.string();
+    solution.export_solution(solution_settings.working_directory,
+                             solution_settings.solution_subdirectory,
+                             export_instance,
+                             solution_settings.parameter_identifier);
+    export_solver_data(export_path, further_data);
+
+    return export_path;
   }
 
 public:

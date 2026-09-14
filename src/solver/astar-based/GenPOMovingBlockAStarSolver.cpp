@@ -372,57 +372,39 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     break;
   }
 
-  if (solution_settings_input.export_option ==
-          GeneralExportOption::ExportSolution ||
-      solution_settings_input.export_option ==
-          GeneralExportOption::ExportSolutionWithInstance) {
-    const bool export_instance =
-        (solution_settings_input.export_option ==
-         GeneralExportOption::ExportSolutionWithInstance);
-
-    auto const& export_path = sol_object.get_export_path(
-        solution_settings_input.working_directory,
-        solution_settings_input.solution_subdirectory,
-        solution_settings_input.parameter_identifier);
-    PLOGI << "Saving solution to " << export_path.string();
-    sol_object.export_solution(solution_settings_input.working_directory,
-                               solution_settings_input.solution_subdirectory,
-                               export_instance,
-                               solution_settings_input.parameter_identifier);
-    export_solver_data(
-        export_path,
-        {
-            .bool_data = {{"late_entry_possible",
-                           model_detail_input.late_entry_possible},
-                          {"limit_speed_by_leaving_edges",
-                           model_detail_input.limit_speed_by_leaving_edges},
-                          {"consider_earliest_exit",
-                           solver_strategy_input.consider_earliest_exit},
-                          {"time_aware_state_transitions",
-                           solver_strategy_input.time_aware_state_transitions}},
-            .integer_data = {{"iterations", iteration},
-                             {"states_simulated", states_simulated},
-                             {"state_reexplorations", state_reexplorations},
-                             {"time_limit", time_limit}},
-            .double_data  = {{"time_step", model_detail_input.dt},
-                             {"a_star_weight",
-                              solver_strategy_input.a_star_weight},
-                             {"weighted_exit_times", sum_of_exit},
-                             {"min_edge_cost", min_edge_cost},
-                             {"max_edge_cost", max_edge_cost},
-                             {"max_heuristic_inconsistency",
-                              max_heuristic_inconsistency}},
-            .string_data =
-                {{"remaining_time_heuristic",
-                  simulator::remaining_time_heuristic_type_to_string(
-                      solver_strategy_input.remaining_time_heuristic_type)},
-                 {"next_state_strategy",
-                  next_state_strategy_to_string(
-                      solver_strategy_input.next_state_strategy)},
-                 {"parameter_identifier",
-                  solution_settings_input.parameter_identifier.value_or("")}},
-        });
-  }
+  export_general_solution(
+      sol_object, solution_settings_input,
+      {
+          .bool_data = {{"late_entry_possible",
+                         model_detail_input.late_entry_possible},
+                        {"limit_speed_by_leaving_edges",
+                         model_detail_input.limit_speed_by_leaving_edges},
+                        {"consider_earliest_exit",
+                         solver_strategy_input.consider_earliest_exit},
+                        {"time_aware_state_transitions",
+                         solver_strategy_input.time_aware_state_transitions}},
+          .integer_data = {{"iterations", iteration},
+                           {"states_simulated", states_simulated},
+                           {"state_reexplorations", state_reexplorations},
+                           {"time_limit", time_limit}},
+          .double_data  = {{"time_step", model_detail_input.dt},
+                           {"a_star_weight",
+                            solver_strategy_input.a_star_weight},
+                           {"weighted_exit_times", sum_of_exit},
+                           {"min_edge_cost", min_edge_cost},
+                           {"max_edge_cost", max_edge_cost},
+                           {"max_heuristic_inconsistency",
+                            max_heuristic_inconsistency}},
+          .string_data =
+              {{"remaining_time_heuristic",
+                simulator::remaining_time_heuristic_type_to_string(
+                    solver_strategy_input.remaining_time_heuristic_type)},
+               {"next_state_strategy",
+                next_state_strategy_to_string(
+                    solver_strategy_input.next_state_strategy)},
+               {"parameter_identifier",
+                solution_settings_input.parameter_identifier.value_or("")}},
+      });
 
   return sol_object;
 }

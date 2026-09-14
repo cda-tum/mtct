@@ -471,12 +471,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 
             for (const auto& rhs_expr : rhs) {
               addLazy(lhs >= rhs_expr);
-              if (solver->m_solution_settings.export_option ==
-                      ExportOption::ExportLP ||
-                  solver->m_solution_settings.export_option ==
-                      ExportOption::ExportSolutionAndLP ||
-                  solver->m_solution_settings.export_option ==
-                      ExportOption::ExportSolutionWithInstanceAndLP) {
+              if (solver->m_solution_settings.export_lp_model) {
                 solver->m_lazy_constraints.push_back(lhs >= rhs_expr);
               }
               violated_constraint_found = true;
@@ -657,12 +652,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 
               for (const auto& lhs_expr : lhs) {
                 addLazy(lhs_expr >= rhs);
-                if (solver->m_solution_settings.export_option ==
-                        ExportOption::ExportLP ||
-                    solver->m_solution_settings.export_option ==
-                        ExportOption::ExportSolutionAndLP ||
-                    solver->m_solution_settings.export_option ==
-                        ExportOption::ExportSolutionWithInstanceAndLP) {
+                if (solver->m_solution_settings.export_lp_model) {
                   solver->m_lazy_constraints.push_back(lhs_expr >= rhs);
                 }
                 violated_constraint_found = true;
@@ -859,12 +849,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           addLazy(lhs_target >= rhs_target);
           addLazy(lhs_source_2 >= rhs_source_2);
           addLazy(lhs_target_2 >= rhs_target_2);
-          if (solver->m_solution_settings.export_option ==
-                  ExportOption::ExportLP ||
-              solver->m_solution_settings.export_option ==
-                  ExportOption::ExportSolutionAndLP ||
-              solver->m_solution_settings.export_option ==
-                  ExportOption::ExportSolutionWithInstanceAndLP) {
+          if (solver->m_solution_settings.export_lp_model) {
             // So that the constraint can be exported
             solver->m_lazy_constraints.push_back(order_expr <= 0.5 * edge_expr);
             solver->m_lazy_constraints.push_back(order_expr >= edge_expr - 1);
@@ -975,12 +960,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             addLazy(lhs2 >= rhs2);
             addLazy(lhs3 >= rhs3);
 
-            if (solver->m_solution_settings.export_option ==
-                    ExportOption::ExportLP ||
-                solver->m_solution_settings.export_option ==
-                    ExportOption::ExportSolutionAndLP ||
-                solver->m_solution_settings.export_option ==
-                    ExportOption::ExportSolutionWithInstanceAndLP) {
+            if (solver->m_solution_settings.export_lp_model) {
               solver->m_lazy_constraints.push_back(lhs1 >= rhs1);
               solver->m_lazy_constraints.push_back(lhs1 <= 1);
               solver->m_lazy_constraints.push_back(lhs2 >= rhs2);
@@ -1095,12 +1075,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr rhs = headway_tr_on_e;
           addLazy(lhs >= rhs);
-          if (solver->m_solution_settings.export_option ==
-                  ExportOption::ExportLP ||
-              solver->m_solution_settings.export_option ==
-                  ExportOption::ExportSolutionAndLP ||
-              solver->m_solution_settings.export_option ==
-                  ExportOption::ExportSolutionWithInstanceAndLP) {
+          if (solver->m_solution_settings.export_lp_model) {
             solver->m_lazy_constraints.push_back(lhs >= rhs);
           }
           violated_constraint_found = true;
@@ -1180,12 +1155,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
               // NOLINTNEXTLINE(misc-const-correctness)
               GRBLinExpr rhs = headway_tr_on_ttd;
               addLazy(lhs >= rhs);
-              if (solver->m_solution_settings.export_option ==
-                      ExportOption::ExportLP ||
-                  solver->m_solution_settings.export_option ==
-                      ExportOption::ExportSolutionAndLP ||
-                  solver->m_solution_settings.export_option ==
-                      ExportOption::ExportSolutionWithInstanceAndLP) {
+              if (solver->m_solution_settings.export_lp_model) {
                 solver->m_lazy_constraints.push_back(lhs >= rhs);
               }
               violated_constraint_found = true;

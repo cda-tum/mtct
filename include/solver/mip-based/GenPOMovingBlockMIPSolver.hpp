@@ -12,6 +12,7 @@
 #include "gtest/gtest_prod.h"
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -36,6 +37,19 @@ namespace cda_rail::solver::mip_based {
 
 using std::size_t;
 
+constexpr std::string
+velocity_refinement_strategy_to_string(VelocityRefinementStrategy strategy) {
+  switch (strategy) {
+  case VelocityRefinementStrategy::None:
+    return "None";
+  case VelocityRefinementStrategy::MinOneStep:
+    return "MinOneStep";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown velocity refinement strategy");
+  }
+}
+
 struct ModelDetail {
   bool                       fix_routes         = false;
   double                     max_velocity_delta = 5.55; // 20 km/h
@@ -53,10 +67,38 @@ enum class LazyConstraintSelectionStrategy : std::uint8_t {
   AllChecked     = 2,
 };
 
+constexpr std::string lazy_constraint_selection_strategy_to_string(
+    LazyConstraintSelectionStrategy strategy) {
+  switch (strategy) {
+  case LazyConstraintSelectionStrategy::OnlyViolated:
+    return "OnlyViolated";
+  case LazyConstraintSelectionStrategy::OnlyFirstFound:
+    return "OnlyFirstFound";
+  case LazyConstraintSelectionStrategy::AllChecked:
+    return "AllChecked";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown lazy constraint selection strategy");
+  }
+}
+
 enum class LazyTrainSelectionStrategy : std::uint8_t {
   OnlyAdjacent = 0,
   All          = 1,
 };
+
+constexpr std::string
+lazy_train_selection_strategy_to_string(LazyTrainSelectionStrategy strategy) {
+  switch (strategy) {
+  case LazyTrainSelectionStrategy::OnlyAdjacent:
+    return "OnlyAdjacent";
+  case LazyTrainSelectionStrategy::All:
+    return "All";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown lazy train selection strategy");
+  }
+}
 
 struct SolverStrategyMovingBlock {
   bool use_indicator_constraints = false;

@@ -106,12 +106,11 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   PLOGD << "Fixed " << num_fixed << " coefficients";
 
   PLOGI << "Model created. Optimize.";
-  if (plog::get()->checkSeverity(plog::debug) || time_limit > 0) {
-    m_model_created = std::chrono::high_resolution_clock::now();
-    m_create_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
-                          m_model_created - m_start)
-                          .count();
-
+  m_model_created = std::chrono::high_resolution_clock::now();
+  m_create_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        m_model_created - m_start)
+                        .count();
+  {
     auto time_left = time_limit - (m_create_time / 1000);
     if (time_left < 0 && time_limit > 0) {
       time_left = 1;
@@ -138,11 +137,11 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
 
   m_model->optimize();
 
+  m_model_solved = std::chrono::high_resolution_clock::now();
+  m_solve_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
+                       m_model_solved - m_model_created)
+                       .count();
   IF_PLOG(plog::debug) {
-    m_model_solved = std::chrono::high_resolution_clock::now();
-    m_solve_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
-                         m_model_solved - m_model_created)
-                         .count();
     PLOGD << "Model created in "
           << (static_cast<double>(m_create_time) / 1000.0) << " s";
     PLOGD << "Model solved in " << (static_cast<double>(m_solve_time) / 1000.0)
@@ -155,12 +154,12 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   instances::SolGeneralPerformanceOptimizationInstance solution(old_instance);
   extract_solution(solution);
 
-  if (m_solution_settings.export_option == ExportOption::ExportLP ||
-      m_solution_settings.export_option == ExportOption::ExportSolutionAndLP ||
-      m_solution_settings.export_option ==
-          ExportOption::ExportSolutionWithInstanceAndLP) {
-    PLOGI << "Saving model and solution";
-    const std::filesystem::path path = m_solution_settings.path;
+  if (m_solution_settings.export_lp_model) {
+    PLOGI << "Saving model";
+    const std::filesystem::path path =
+        solution.get_export_path(m_solution_settings.working_directory,
+                                 m_solution_settings.solution_subdirectory,
+                                 m_solution_settings.parameter_identifier);
 
     if (!is_directory_and_create(path)) {
       PLOGE << "Could not create directory " << path.string();
@@ -169,7 +168,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     }
 
     if (m_model->get(GRB_IntAttr_SolCount) > 0) {
-      m_model->write((path / (m_solution_settings.name + ".json")).string());
+      m_model->write(
+          (path / (m_solution_settings.model_name + ".json")).string());
     }
 
     PLOGD << "Add " << m_lazy_constraints.size() << " lazy constraints";
@@ -178,26 +178,45 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     }
     m_model->update();
 
-    m_model->write((path / (m_solution_settings.name + ".mps")).string());
+    m_model->write((path / (m_solution_settings.model_name + ".mps")).string());
   }
 
-  if (m_solution_settings.export_option == ExportOption::ExportSolution ||
-      m_solution_settings.export_option ==
-          ExportOption::ExportSolutionWithInstance ||
-      m_solution_settings.export_option == ExportOption::ExportSolutionAndLP ||
-      m_solution_settings.export_option ==
-          ExportOption::ExportSolutionWithInstanceAndLP) {
-    const bool export_instance =
-        (m_solution_settings.export_option ==
-             ExportOption::ExportSolutionWithInstance ||
-         m_solution_settings.export_option ==
-             ExportOption::ExportSolutionWithInstanceAndLP);
-    PLOGI << "Saving solution";
-    std::filesystem::path path = m_solution_settings.path;
-    path /= m_solution_settings.name;
-    solution.export_solution(path.parent_path(), path.filename().string(),
-                             export_instance, {});
-  }
+  export_general_solution(
+      solution, m_solution_settings,
+      {
+          .bool_data =
+              {{"fix_routes", model_detail_input.fix_routes},
+               {"simplify_headway_constraints",
+                model_detail_input.simplify_headway_constraints},
+               {"strengthen_vertex_headway_constraints",
+                model_detail_input.strengthen_vertex_headway_constraints},
+               {"allow_late_entry", model_detail_input.allow_late_entry},
+               {"use_indicator_constraints",
+                solver_strategy_input.use_indicator_constraints},
+               {"use_lazy_constraints",
+                solver_strategy_input.use_lazy_constraints},
+               {"include_reverse_headways",
+                solver_strategy_input.include_reverse_headways},
+               {"include_higher_velocities_in_edge_expr",
+                solver_strategy_input.include_higher_velocities_in_edge_expr}},
+          .integer_data = {{"time_limit", time_limit}},
+          .double_data = {{"max_velocity_delta",
+                           model_detail_input.max_velocity_delta},
+                          {"max_exit_delay", model_detail_input.max_exit_delay},
+                          {"abs_mip_gap", solver_strategy_input.abs_mip_gap}},
+          .string_data =
+              {{"velocity_refinement_strategy",
+                velocity_refinement_strategy_to_string(
+                    model_detail_input.velocity_refinement_strategy)},
+               {"lazy_constraint_selection_strategy",
+                lazy_constraint_selection_strategy_to_string(
+                    solver_strategy_input.lazy_constraint_selection_strategy)},
+               {"lazy_train_selection_strategy",
+                lazy_train_selection_strategy_to_string(
+                    solver_strategy_input.lazy_train_selection_strategy)},
+               {"parameter_identifier",
+                m_solution_settings.parameter_identifier.value_or("")}},
+      });
 
   cleanup();
 
