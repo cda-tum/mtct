@@ -245,19 +245,15 @@ public:
   }
 };
 
-// NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if)
-#if 0
 class VSSGenTimetableSolverWithMovingBlockInformation
     : public VSSGenTimetableSolver {
 private:
-  instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
-       moving_block_solution;
-  bool fix_orders_on_edges        = true;
-  bool fix_stop_positions         = true;
-  bool fix_exact_positions        = true;
-  bool fix_exact_velocities       = true;
-  bool hint_approximate_positions = true;
+  instances::SolGeneralPerformanceOptimizationInstance m_moving_block_solution;
+  bool m_fix_orders_on_edges{true};
+  bool m_fix_stop_positions{true};
+  bool m_fix_exact_positions{true};
+  bool m_fix_exact_velocities{true};
+  bool m_hint_approximate_positions{true};
 
   // Additional functions
   void include_additional_information();
@@ -266,33 +262,20 @@ private:
   void fix_exact_positions_and_velocities_constraints();
   void hint_approximate_positions_constraints();
 
-  virtual void cleanup() override;
+protected:
+  void cleanup() override;
 
 public:
+  ~VSSGenTimetableSolverWithMovingBlockInformation() override = default;
+  // Constructors
   explicit VSSGenTimetableSolverWithMovingBlockInformation(
-      const instances::SolGeneralPerformanceOptimizationInstance<
-          instances::GeneralPerformanceOptimizationInstance>&
-           moving_block_solution_tmp,
-      bool throw_error = true)
-      : VSSGenTimetableSolver(
-            moving_block_solution_tmp.get_instance().cast_to_vss_generation(
-                throw_error)),
-        moving_block_solution(moving_block_solution_tmp) {};
-  explicit VSSGenTimetableSolverWithMovingBlockInformation(
-      const std::filesystem::path& sol_path)
-      : VSSGenTimetableSolverWithMovingBlockInformation(
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>(sol_path)) {
-        };
-  explicit VSSGenTimetableSolverWithMovingBlockInformation(
-      const std::string& sol_path)
-      : VSSGenTimetableSolverWithMovingBlockInformation(
-            std::filesystem::path(sol_path)) {};
-  explicit VSSGenTimetableSolverWithMovingBlockInformation(const char* sol_path)
-      : VSSGenTimetableSolverWithMovingBlockInformation(
-            std::filesystem::path(sol_path)) {};
+      const instances::SolGeneralPerformanceOptimizationInstance&
+          moving_block_solution)
+      : VSSGenTimetableSolver(*moving_block_solution.get_instance()),
+        m_moving_block_solution(moving_block_solution) {};
 
-  [[nodiscard]] instances::SolVSSGenerationTimetable
+  // Methods
+  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
   solve(const ModelDetailMBInformation& model_detail_mb_information,
         const ModelSettings&            model_settings  = {},
         const SolverStrategy&           solver_strategy = {},
@@ -300,10 +283,10 @@ public:
         bool debug_input = false, bool overwrite_severity = true);
 
   using GeneralSolver::solve;
-  [[nodiscard]] virtual instances::SolVSSGenerationTimetable
+  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
   solve(int time_limit, bool debug_input, bool overwrite_severity) override {
     return solve({}, {}, {}, {}, time_limit, debug_input, overwrite_severity);
   }
 };
-#endif
+
 } // namespace cda_rail::solver::mip_based
