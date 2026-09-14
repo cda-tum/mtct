@@ -9,7 +9,6 @@
 #include "gurobi_c++.h"
 #include "gurobi_c.h"
 #include "plog/Log.h"
-#include "plog/Logger.h"
 #include "plog/Severity.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"

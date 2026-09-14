@@ -189,7 +189,10 @@ protected:
         solution.get_export_path(solution_settings.working_directory,
                                  solution_settings.solution_subdirectory,
                                  solution_settings.parameter_identifier);
+    // The reinterpret_cast is a false positive stemming from the plog macro
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
     PLOGI << "Saving solution to " << export_path.string();
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     solution.export_solution(solution_settings.working_directory,
                              solution_settings.solution_subdirectory,
                              export_instance,

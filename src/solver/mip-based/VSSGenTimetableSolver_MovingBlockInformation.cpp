@@ -117,10 +117,9 @@ void cda_rail::solver::mip_based::
     const auto& tr_len  = tr_obj.get_length();
     for (size_t t_steps = train_interval[tr].first + 1;
          t_steps < train_interval[tr].second; ++t_steps) {
-      const auto t = t_steps * dt;
+      const auto t = static_cast<double>(t_steps) * dt;
       const auto approx_info =
-          m_moving_block_solution.get_approximate_train_pos_and_vel(
-              tr_name, static_cast<double>(t));
+          m_moving_block_solution.get_approximate_train_pos_and_vel(tr_name, t);
       if (approx_info.has_value()) {
         const auto& [pos_approx, vel_approx] = approx_info.value();
         if (std::abs(vel_approx) < GRB_EPS &&
@@ -169,9 +168,9 @@ void cda_rail::solver::mip_based::
 
     for (size_t t_steps = train_interval[tr].first + 1;
          t_steps <= train_interval[tr].second; t_steps++) {
-      const auto t      = t_steps * dt;
-      const auto bounds = m_moving_block_solution.get_exact_pos_and_vel_bounds(
-          tr_name, static_cast<double>(t));
+      const auto t = static_cast<double>(t_steps) * dt;
+      const auto bounds =
+          m_moving_block_solution.get_exact_pos_and_vel_bounds(tr_name, t);
       const auto& pos_lb = bounds.pos.lb;
       const auto& pos_ub = bounds.pos.ub;
       const auto& vel_lb = bounds.vel.lb;
@@ -231,10 +230,9 @@ void cda_rail::solver::mip_based::
     const auto& tr_len  = tr_obj.get_length();
     for (size_t t_steps = train_interval[tr].first;
          t_steps <= train_interval[tr].second + 1; ++t_steps) {
-      const auto t = t_steps * dt;
+      const auto t = static_cast<double>(t_steps) * dt;
       const auto approx_info =
-          m_moving_block_solution.get_approximate_train_pos_and_vel(
-              tr_name, static_cast<double>(t));
+          m_moving_block_solution.get_approximate_train_pos_and_vel(tr_name, t);
       if (approx_info.has_value()) {
         const auto& [pos_approx, vel_approx] = approx_info.value();
         const double bl =
@@ -290,7 +288,8 @@ void cda_rail::solver::mip_based::
               m_vars["b_front"](tr_order_on_e.at(tr_i), t, i, vss) ==
                   m_vars["b_rear"](tr_order_on_e.at(tr_i - 1), t, i, vss),
               "fix_order_" + tr_object_prev.get_name() + "_" +
-                  tr_object.get_name() + "_" + std::to_string(t * dt) + "_" +
+                  tr_object.get_name() + "_" +
+                  std::to_string(static_cast<double>(t) * dt) + "_" +
                   edge_name + "_" + std::to_string(vss));
         }
       }
@@ -341,7 +340,7 @@ void cda_rail::solver::mip_based::
            t_idx <=
            std::max(tr_prev_interval.second, tr_following_interval.second);
            ++t_idx) {
-        const int t = static_cast<int>(t_idx) * dt;
+        const int t = static_cast<int>(static_cast<double>(t_idx) * dt);
         if (t_idx >= tr_prev_interval.first &&
             t_idx <= tr_prev_interval.second) {
           prev_x_expr += m_vars["x"](tr_prev, t_idx, prev_e);

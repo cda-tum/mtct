@@ -7,9 +7,10 @@
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
+#include "solver/mip-based/GeneralMIPSolver.hpp"
 
 #include <iomanip>
-#include <limits>
+#include <ios>
 #include <map>
 #include <optional>
 #include <plog/Appenders/ColorConsoleAppender.h>
