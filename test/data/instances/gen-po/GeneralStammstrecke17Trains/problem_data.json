@@ -1,0 +1,22 @@
+{
+  "station_delay_weight": 1,
+  "train_weights": {
+    "Train0": 2.7,
+    "Train1": 4.8,
+    "Train10": 6.6,
+    "Train11": 3.3,
+    "Train12": 2.2,
+    "Train13": 7.1,
+    "Train14": 6.9,
+    "Train15": 8.9,
+    "Train16": 7.3,
+    "Train2": 3.9,
+    "Train3": 9.0,
+    "Train4": 9.6,
+    "Train5": 9.3,
+    "Train6": 5.4,
+    "Train7": 2.8,
+    "Train8": 6.9,
+    "Train9": 5.5
+  }
+}

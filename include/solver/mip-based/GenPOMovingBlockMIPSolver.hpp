@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Train.hpp"
@@ -12,7 +13,6 @@
 #include "gtest/gtest_prod.h"
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -36,27 +36,74 @@ class GenPOMovingBlockMIPSolver_PrivateFillFunctions_Test;
 
 namespace cda_rail::solver::mip_based {
 
+using std::size_t;
+
+constexpr std::string
+velocity_refinement_strategy_to_string(VelocityRefinementStrategy strategy) {
+  switch (strategy) {
+  case VelocityRefinementStrategy::None:
+    return "None";
+  case VelocityRefinementStrategy::MinOneStep:
+    return "MinOneStep";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown velocity refinement strategy");
+  }
+}
+
 struct ModelDetail {
   bool                       fix_routes         = false;
   double                     max_velocity_delta = 5.55; // 20 km/h
   VelocityRefinementStrategy velocity_refinement_strategy =
       VelocityRefinementStrategy::MinOneStep;
-  bool simplify_headway_constraints          = false;
-  bool strengthen_vertex_headway_constraints = false;
+  bool   simplify_headway_constraints          = false;
+  bool   strengthen_vertex_headway_constraints = false;
+  bool   allow_late_entry                      = false;
+  double max_exit_delay                        = 1e9;
+  double max_station_delay                     = 1e9;
 };
 
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
   OnlyViolated   = 0,
   OnlyFirstFound = 1,
-  AllChecked     = 2
+  AllChecked     = 2,
 };
+
+constexpr std::string lazy_constraint_selection_strategy_to_string(
+    LazyConstraintSelectionStrategy strategy) {
+  switch (strategy) {
+  case LazyConstraintSelectionStrategy::OnlyViolated:
+    return "OnlyViolated";
+  case LazyConstraintSelectionStrategy::OnlyFirstFound:
+    return "OnlyFirstFound";
+  case LazyConstraintSelectionStrategy::AllChecked:
+    return "AllChecked";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown lazy constraint selection strategy");
+  }
+}
 
 enum class LazyTrainSelectionStrategy : std::uint8_t {
   OnlyAdjacent = 0,
-  All          = 1
+  All          = 1,
 };
 
+constexpr std::string
+lazy_train_selection_strategy_to_string(LazyTrainSelectionStrategy strategy) {
+  switch (strategy) {
+  case LazyTrainSelectionStrategy::OnlyAdjacent:
+    return "OnlyAdjacent";
+  case LazyTrainSelectionStrategy::All:
+    return "All";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown lazy train selection strategy");
+  }
+}
+
 struct SolverStrategyMovingBlock {
+  bool use_indicator_constraints = false;
   bool use_lazy_constraints =
       true; // If false, the following settings are ignored
   bool include_reverse_headways               = false;
@@ -71,37 +118,36 @@ struct SolverStrategyMovingBlock {
 class GenPOMovingBlockMIPSolver
     : public GeneralMIPSolver<
           instances::GeneralPerformanceOptimizationInstance,
-          instances::SolGeneralPerformanceOptimizationInstance<
-              instances::GeneralPerformanceOptimizationInstance>> {
+          instances::SolGeneralPerformanceOptimizationInstance> {
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, PrivateFillFunctions);
 #endif
 
-  SolutionSettingsMovingBlock         solution_settings = {};
-  ModelDetail                         model_detail      = {};
-  SolverStrategyMovingBlock           solver_strategy   = {};
-  size_t                              num_tr            = 0;
-  size_t                              num_edges         = 0;
-  size_t                              num_vertices      = 0;
-  size_t                              num_ttd           = 0;
-  int                                 max_t             = 0;
-  std::vector<cda_rail::index_vector> ttd_sections;
+  SolutionSettingsMovingBlock m_solution_settings = {};
+  ModelDetail                 m_model_detail      = {};
+  SolverStrategyMovingBlock   m_solver_strategy   = {};
+  size_t                      m_num_tr            = 0;
+  size_t                      m_num_edges         = 0;
+  size_t                      m_num_vertices      = 0;
+  size_t                      m_num_ttd           = 0;
+  // int m_max_t = 0;
+  std::vector<cda_rail::index_set> m_ttd_sections;
   // tr_stop_data:
   // For every train, for every station, list of possible stop vertices together
   // with respective edges
   std::vector<std::vector<
       std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>>>
-                                                tr_stop_data;
-  std::vector<std::vector<std::vector<double>>> velocity_extensions;
-  std::vector<std::pair<size_t, size_t>>        relevant_reverse_edges;
+                                                m_tr_stop_data;
+  std::vector<std::vector<std::vector<double>>> m_velocity_extensions;
+  std::vector<std::pair<size_t, size_t>>        m_relevant_reverse_edges;
 
   void initialize_variables(
       const SolutionSettingsMovingBlock& solution_settings_input,
       const SolverStrategyMovingBlock&   solver_strategy_input,
       const ModelDetail&                 model_detail_input);
 
-  double ub_timing_variable(size_t tr) const;
+  double latest_exit_time(size_t tr) const;
 
   void fill_tr_stop_data();
   void fill_relevant_reverse_edges();
@@ -144,8 +190,7 @@ private:
                      bool   also_higher_velocities = false);
 
   void extract_solution(
-      instances::SolGeneralPerformanceOptimizationInstance<
-          instances::GeneralPerformanceOptimizationInstance>& sol) const;
+      instances::SolGeneralPerformanceOptimizationInstance& sol) const;
   [[nodiscard]] double extract_speed(size_t tr, size_t vertex_id) const;
   static double headway(const Train& tr_obj, const Edge& e_obj, double v_0,
                         double v_1, bool entry_vertex = false);
@@ -203,41 +248,24 @@ public:
 
   explicit GenPOMovingBlockMIPSolver(
       const instances::GeneralPerformanceOptimizationInstance& instance)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(instance) {
-        };
+      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
+                         instances::SolGeneralPerformanceOptimizationInstance>(
+            instance) {};
 
-  explicit GenPOMovingBlockMIPSolver(const std::filesystem::path& p)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(p) {};
-
-  explicit GenPOMovingBlockMIPSolver(const std::string& path)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(path) {};
-
-  explicit GenPOMovingBlockMIPSolver(const char* path)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(path) {};
+  template <typename... Args>
+  explicit GenPOMovingBlockMIPSolver(Args&&... args)
+    requires(!IsSingleInstanceArgument<Args...>::value)
+      : GeneralMIPSolver(std::forward<Args>(args)...) {}
 
   ~GenPOMovingBlockMIPSolver() override = default;
 
   using GeneralSolver::solve;
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(int time_limit, bool debug_input, bool overwrite_severity) override {
     return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
   };
 
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(const ModelDetail&                 model_detail_input,
         const SolverStrategyMovingBlock&   solver_strategy_input,
         const SolutionSettingsMovingBlock& solution_settings_input,

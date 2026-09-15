@@ -35,9 +35,9 @@ TEST(Gurobi, GurobiInstallation) {
   } catch (const GRBException& e) {
     std::cout << "Error code = " << e.getErrorCode() << '\n';
     std::cout << e.getMessage() << '\n';
-    throw e;
+    throw; // rethrow e
   } catch (const std::exception& e) {
     std::cout << "Exception: " << e.what() << '\n';
-    throw e;
+    throw; // rethrow e
   }
 }

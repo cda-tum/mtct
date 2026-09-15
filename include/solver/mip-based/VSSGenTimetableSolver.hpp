@@ -4,19 +4,17 @@
 #include "VSSModel.hpp"
 #include "gurobi_c++.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
-#include "probleminstances/VSSGenerationTimetable.hpp"
 #include "solver/GeneralSolver.hpp"
 #include "unordered_map"
 
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <optional>
-#include <string>
 #include <utility>
 #include <vector>
 
 namespace cda_rail::solver::mip_based {
+using std::size_t;
 
 enum class UpdateStrategy : std::uint8_t { Fixed = 0, Relative = 1 };
 
@@ -31,43 +29,44 @@ struct SolverStrategy {
 };
 
 struct ModelDetail {
-  int  delta_t        = 15;
-  bool fix_routes     = true;
-  bool train_dynamics = true;
-  bool braking_curves = true;
+  double delta_t        = 15;
+  bool   fix_routes     = true;
+  bool   train_dynamics = true;
+  bool   braking_curves = true;
 };
 
 struct ModelDetailMBInformation {
-  int  delta_t                    = 15;
-  bool train_dynamics             = true;
-  bool braking_curves             = true;
-  bool fix_stop_positions         = true;
-  bool fix_exact_positions        = true;
-  bool fix_exact_velocities       = true;
-  bool hint_approximate_positions = true;
-  bool fix_order_on_edges         = true;
+  double delta_t                    = 15;
+  bool   train_dynamics             = true;
+  bool   braking_curves             = true;
+  bool   fix_stop_positions         = true;
+  bool   fix_exact_positions        = true;
+  bool   fix_exact_velocities       = true;
+  bool   hint_approximate_positions = true;
+  bool   fix_order_on_edges         = true;
 };
 
 struct ModelSettings {
   // NOLINTNEXTLINE(readability-redundant-member-init)
-  vss::Model model_type        = vss::Model();
-  bool       use_pwl           = false;
-  bool       use_schedule_cuts = true;
+  vss::Model model_type{};
+  bool       use_pwl{false};
+  bool       use_schedule_cuts{true};
 };
 
 class VSSGenTimetableSolver
-    : public GeneralMIPSolver<instances::VSSGenerationTimetable,
-                              instances::SolVSSGenerationTimetable> {
+    : public GeneralMIPSolver<
+          instances::GeneralPerformanceOptimizationInstance,
+          instances::SolVSSGeneralPerformanceOptimizationInstance> {
   friend class VSSGenTimetableSolverWithMovingBlockInformation;
 
 private:
   // Instance variables
-  int                                    dt                     = -1;
-  size_t                                 num_t                  = 0;
-  size_t                                 num_tr                 = 0;
-  size_t                                 num_edges              = 0;
-  size_t                                 num_vertices           = 0;
-  size_t                                 num_breakable_sections = 0;
+  double                                 dt{-1};
+  size_t                                 num_t{0};
+  size_t                                 num_tr{0};
+  size_t                                 num_edges{0};
+  size_t                                 num_vertices{0};
+  size_t                                 num_breakable_sections{0};
   std::vector<cda_rail::index_vector>    unbreakable_sections;
   std::vector<cda_rail::index_vector>    no_border_vss_sections;
   std::vector<std::pair<size_t, size_t>> train_interval;
@@ -76,25 +75,27 @@ private:
   cda_rail::index_vector no_border_vss_vertices;
   cda_rail::index_vector relevant_edges;
   cda_rail::index_vector breakable_edges;
-  bool                   fix_routes = false;
-  vss::Model             vss_model  = vss::Model(vss::ModelType::Continuous);
-  bool                   include_train_dynamics = false;
-  bool                   include_braking_curves = false;
-  bool                   use_pwl                = false;
-  bool                   use_schedule_cuts      = false;
-  bool                   iterative_vss          = false;
-  OptimalityStrategy     optimality_strategy    = OptimalityStrategy::Optimal;
-  UpdateStrategy         iterative_update_strategy  = UpdateStrategy::Fixed;
-  double                 iterative_initial_value    = 1;
-  double                 iterative_update_value     = 2;
-  bool                   iterative_include_cuts     = true;
-  bool                   iterative_include_cuts_tmp = true;
-  bool                   postprocess                = false;
-  ExportOption           export_option              = ExportOption::NoExport;
-  cda_rail::index_vector max_vss_per_edge_in_iteration;
-  std::unordered_map<size_t, size_t> breakable_edge_indices;
+  bool                   fix_routes{false};
+  vss::Model             vss_model{
+      vss::ModelType::Continuous}; // This line is correct and intended.
+                                   // vss_model is of type vss::Model
+  bool                   include_train_dynamics{false};
+  bool                   include_braking_curves{false};
+  bool                   use_pwl{false};
+  bool                   use_schedule_cuts{false};
+  bool                   iterative_vss{false};
+  OptimalityStrategy     optimality_strategy{OptimalityStrategy::Optimal};
+  UpdateStrategy         iterative_update_strategy{UpdateStrategy::Fixed};
+  double                 iterative_initial_value{1.0};
+  double                 iterative_update_value{2.0};
+  bool                   iterative_include_cuts{true};
+  bool                   iterative_include_cuts_tmp{true};
+  bool                   postprocess{false};
+  ExportOption           export_option{ExportOption::NoExport};
+  cda_rail::index_vector max_vss_per_edge_in_iteration{};
+  std::unordered_map<size_t, size_t> breakable_edge_indices{};
   std::vector<std::pair<cda_rail::index_vector, cda_rail::index_vector>>
-      fwd_bwd_sections;
+      fwd_bwd_sections{};
 
   // Variable functions
   void create_variables();
@@ -154,12 +155,15 @@ private:
 
   // Helper functions
   void set_timeout(int time_limit);
-  [[nodiscard]] std::optional<instances::SolVSSGenerationTimetable>
-  optimize(const std::optional<instances::VSSGenerationTimetable>& old_instance,
+  [[nodiscard]] std::optional<
+      instances::SolVSSGeneralPerformanceOptimizationInstance>
+  optimize(const std::optional<
+               instances::GeneralPerformanceOptimizationInstance>& old_instance,
            int                                                     time_limit);
   void export_lp_if_applicable(const SolutionSettings& solution_settings);
   void export_solution_if_applicable(
-      const std::optional<cda_rail::instances::SolVSSGenerationTimetable>&
+      const std::optional<
+          cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance>&
                               sol_object,
       const SolutionSettings& solution_settings);
   [[nodiscard]] cda_rail::index_vector
@@ -190,18 +194,17 @@ private:
                          const double& v0, const double& a_max,
                          const bool& braking_distance) const;
 
-  virtual void cleanup() override;
-
-  [[nodiscard]] instances::SolVSSGenerationTimetable
-  extract_solution(bool postprocess, bool full_model,
-                   const std::optional<instances::VSSGenerationTimetable>&
-                       old_instance) const;
+  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
+  extract_solution(
+      bool postprocess, bool full_model,
+      const std::optional<instances::GeneralPerformanceOptimizationInstance>&
+          old_instance) const;
 
   bool update_vss(size_t relevant_edge_index, double obj_ub,
                   GRBLinExpr& cut_expr);
   void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss,
                               GRBLinExpr& cut_expr);
-  [[nodiscard]] std::optional<instances::VSSGenerationTimetable>
+  [[nodiscard]] std::optional<instances::GeneralPerformanceOptimizationInstance>
   initialize_variables(const ModelDetail&      model_detail,
                        const ModelSettings&    model_settings,
                        const SolverStrategy&   solver_strategy,
@@ -210,21 +213,25 @@ private:
                        bool overwrite_severity);
 
 protected:
-  void solve_init_vss_gen_timetable(int time_limit, bool debug_input,
-                                    bool overwrite_severity) {
-    this->solve_init_general_mip(time_limit, debug_input, overwrite_severity);
+  void cleanup() override;
+
+  void solve_init_vss_gen_timetable(bool debug_input, bool overwrite_severity) {
+    this->solve_init_general_mip(debug_input, overwrite_severity);
   };
 
 public:
+  ~VSSGenTimetableSolver() override = default;
   // Constructors
   explicit VSSGenTimetableSolver(
-      const instances::VSSGenerationTimetable& instance);
-  explicit VSSGenTimetableSolver(const std::filesystem::path& instance_path);
-  explicit VSSGenTimetableSolver(const std::string& instance_path);
-  explicit VSSGenTimetableSolver(const char* instance_path);
+      const instances::GeneralPerformanceOptimizationInstance& instance)
+      : GeneralMIPSolver(instance) {};
+  template <typename... Args>
+  explicit VSSGenTimetableSolver(Args&&... args)
+    requires(!IsSingleInstanceArgument<Args...>::value)
+      : GeneralMIPSolver(std::forward<Args>(args)...) {}
 
   // Methods
-  [[nodiscard]] instances::SolVSSGenerationTimetable
+  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
   solve(const ModelDetail&      model_detail,
         const ModelSettings&    model_settings    = {},
         const SolverStrategy&   solver_strategy   = {},
@@ -232,7 +239,7 @@ public:
         bool debug_input = false, bool overwrite_severity = true);
 
   using GeneralSolver::solve;
-  [[nodiscard]] virtual instances::SolVSSGenerationTimetable
+  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
   solve(int time_limit, bool debug_input, bool overwrite_severity) override {
     return solve({}, {}, {}, {}, time_limit, debug_input, overwrite_severity);
   }
@@ -241,14 +248,12 @@ public:
 class VSSGenTimetableSolverWithMovingBlockInformation
     : public VSSGenTimetableSolver {
 private:
-  instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
-       moving_block_solution;
-  bool fix_orders_on_edges        = true;
-  bool fix_stop_positions         = true;
-  bool fix_exact_positions        = true;
-  bool fix_exact_velocities       = true;
-  bool hint_approximate_positions = true;
+  instances::SolGeneralPerformanceOptimizationInstance m_moving_block_solution;
+  bool m_fix_orders_on_edges{true};
+  bool m_fix_stop_positions{true};
+  bool m_fix_exact_positions{true};
+  bool m_fix_exact_velocities{true};
+  bool m_hint_approximate_positions{true};
 
   // Additional functions
   void include_additional_information();
@@ -257,33 +262,20 @@ private:
   void fix_exact_positions_and_velocities_constraints();
   void hint_approximate_positions_constraints();
 
-  virtual void cleanup() override;
+protected:
+  void cleanup() override;
 
 public:
+  ~VSSGenTimetableSolverWithMovingBlockInformation() override = default;
+  // Constructors
   explicit VSSGenTimetableSolverWithMovingBlockInformation(
-      const instances::SolGeneralPerformanceOptimizationInstance<
-          instances::GeneralPerformanceOptimizationInstance>&
-           moving_block_solution_tmp,
-      bool throw_error = true)
-      : VSSGenTimetableSolver(
-            moving_block_solution_tmp.get_instance().cast_to_vss_generation(
-                throw_error)),
-        moving_block_solution(moving_block_solution_tmp) {};
-  explicit VSSGenTimetableSolverWithMovingBlockInformation(
-      const std::filesystem::path& sol_path)
-      : VSSGenTimetableSolverWithMovingBlockInformation(
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>(sol_path)) {
-        };
-  explicit VSSGenTimetableSolverWithMovingBlockInformation(
-      const std::string& sol_path)
-      : VSSGenTimetableSolverWithMovingBlockInformation(
-            std::filesystem::path(sol_path)) {};
-  explicit VSSGenTimetableSolverWithMovingBlockInformation(const char* sol_path)
-      : VSSGenTimetableSolverWithMovingBlockInformation(
-            std::filesystem::path(sol_path)) {};
+      const instances::SolGeneralPerformanceOptimizationInstance&
+          moving_block_solution)
+      : VSSGenTimetableSolver(*moving_block_solution.get_instance()),
+        m_moving_block_solution(moving_block_solution) {};
 
-  [[nodiscard]] instances::SolVSSGenerationTimetable
+  // Methods
+  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
   solve(const ModelDetailMBInformation& model_detail_mb_information,
         const ModelSettings&            model_settings  = {},
         const SolverStrategy&           solver_strategy = {},
@@ -291,7 +283,7 @@ public:
         bool debug_input = false, bool overwrite_severity = true);
 
   using GeneralSolver::solve;
-  [[nodiscard]] virtual instances::SolVSSGenerationTimetable
+  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
   solve(int time_limit, bool debug_input, bool overwrite_severity) override {
     return solve({}, {}, {}, {}, time_limit, debug_input, overwrite_severity);
   }

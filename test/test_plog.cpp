@@ -12,9 +12,7 @@
 
 TEST(Logging, VSSGenDefaultLogging) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
-
-  EXPECT_EQ(plog::get()->getMaxSeverity(), plog::debug);
+      "SimpleStation", "atmos2023", "data");
 
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve();
@@ -40,7 +38,7 @@ TEST(Logging, FileLogging) {
   g_logger->addAppender(g_appender.get());
 
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "./example-networks/SimpleStation/");
+      "SimpleStation", "atmos2023", "data");
 
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve();

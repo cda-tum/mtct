@@ -1,0 +1,13 @@
+{
+  "station_delay_weight": 1,
+  "train_weights": {
+    "S2Erding": 1,
+    "S2Petershausen": 1,
+    "S3Deisenhofen": 1,
+    "S6Ebersberg": 1,
+    "S6Tutzing": 1,
+    "S7Aying": 1,
+    "S7Wolfratshausen": 1,
+    "S8Germering": 1
+  }
+}

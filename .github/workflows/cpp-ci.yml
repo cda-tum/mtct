@@ -71,7 +71,20 @@ jobs:
       - name: Build
         run: cmake --build build --config Debug
       - name: Test
-        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 750
+        env:
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
+        run: |
+          rm -f "$CDA_RAIL_WARNING_FILE"
+          ctest -C Debug --output-on-failure --test-dir build --timeout 750
+      - name: Print warning summary
+        if: always()
+        env:
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
+        run: |
+          if [ -s "$CDA_RAIL_WARNING_FILE" ]; then
+            echo "[ WARNING SUMMARY ]"
+            cat "$CDA_RAIL_WARNING_FILE"
+          fi
   cpp-macos-latest:
     name: cpp-macos-latest
     runs-on: macos-latest
@@ -105,7 +118,20 @@ jobs:
       - name: Build
         run: cmake --build build --config Debug
       - name: Test
-        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 750
+        env:
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
+        run: |
+          rm -f "$CDA_RAIL_WARNING_FILE"
+          ctest -C Debug --output-on-failure --test-dir build --timeout 750
+      - name: Print warning summary
+        if: always()
+        env:
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
+        run: |
+          if [ -s "$CDA_RAIL_WARNING_FILE" ]; then
+            echo "[ WARNING SUMMARY ]"
+            cat "$CDA_RAIL_WARNING_FILE"
+          fi
   cpp-windows-latest:
     name: cpp-windows-latest
     runs-on: windows-latest
@@ -154,7 +180,20 @@ jobs:
       - name: Build
         run: cmake --build build --config Debug
       - name: Test
-        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 750
+        env:
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
+        run: |
+          rm -f "$CDA_RAIL_WARNING_FILE"
+          ctest -C Debug --output-on-failure --test-dir build --timeout 750
+      - name: Print warning summary
+        if: always()
+        env:
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
+        run: |
+          if [ -s "$CDA_RAIL_WARNING_FILE" ]; then
+            echo "[ WARNING SUMMARY ]"
+            cat "$CDA_RAIL_WARNING_FILE"
+          fi
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
@@ -186,7 +225,20 @@ jobs:
       - name: Build
         run: cmake --build build --config Debug --target rail_test
       - name: Test
-        run: ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 750
+        env:
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
+        run: |
+          rm -f "$CDA_RAIL_WARNING_FILE"
+          ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 750
+      - name: Print warning summary
+        if: always()
+        env:
+          CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
+        run: |
+          if [ -s "$CDA_RAIL_WARNING_FILE" ]; then
+            echo "[ WARNING SUMMARY ]"
+            cat "$CDA_RAIL_WARNING_FILE"
+          fi
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
