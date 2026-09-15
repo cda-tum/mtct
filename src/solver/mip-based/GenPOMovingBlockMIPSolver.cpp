@@ -1976,7 +1976,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                     const auto& v_before_v = e_before_v_obj.source;
                     const auto  v_before_v_velocities =
                         m_velocity_extensions.at(tr).at(v_before_v);
-                    const auto& e_before_v_tmp_max =
+                    const auto e_before_v_tmp_max =
                         std::min(tmp_max_speed, e_before_v_obj.max_speed);
                     if (vel > e_before_v_tmp_max) {
                       continue;

@@ -532,7 +532,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             prev_t_var =
                 solver->m_vars["t_front_departure"](tr, prev_v_idx.value());
             prev_t_var_value = getSolution(prev_t_var.value());
-            const auto& prev_max_speed =
+            const auto prev_max_speed =
                 std::min(prev_edge_object.max_speed, tr_object.get_max_speed());
             if (prev_ma_pos > pos + p_tmp_len) {
               skip = true;
