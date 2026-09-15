@@ -25,8 +25,9 @@
 //   -o -i -b -e -p -g (export).
 // The remaining letters are assigned to the MIP specific settings; since the
 // two solvers barely share any parameters, a letter may well have a different
-// meaning in the A* app. Only --export-lp-model and --model-name are long
-// option only, because no free letter is left.
+// meaning in the A* app. Since all lowercase letters are used up,
+// --max-station-delay, --max-delay, --export-lp-model and --model-name are
+// long option only.
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
 
@@ -73,6 +74,8 @@ int main(int argc, char** argv) {
   bool   strengthen_vertex_headway_constraints = false;
   bool   late_entry_possible                   = false;
   double max_exit_delay                        = 1e9;
+  double max_station_delay                     = 1e9;
+  double max_delay                             = 1e9;
 
   // solver parameters
   bool   use_indicator_constraints              = false;
@@ -153,12 +156,33 @@ int main(int argc, char** argv) {
                "Allow late entry (delays) in the solution (default without "
                "flag is false)")
       ->group("Model Parameters");
-  app.add_option("-x,--max-exit-delay", max_exit_delay,
-                 "Maximal delay (in seconds) with which a train is allowed to "
-                 "leave the network compared to its scheduled exit time.")
-      ->check(CLI::NonNegativeNumber)
-      ->capture_default_str()
-      ->group("Model Parameters");
+  auto* max_exit_delay_opt =
+      app.add_option("-x,--max-exit-delay", max_exit_delay,
+                     "Maximal delay (in seconds) with which a train is allowed "
+                     "to leave the network compared to its scheduled exit "
+                     "time.")
+          ->check(CLI::NonNegativeNumber)
+          ->capture_default_str()
+          ->group("Model Parameters");
+  auto* max_station_delay_opt =
+      app.add_option("--max-station-delay", max_station_delay,
+                     "Maximal delay (in seconds) with which a train is allowed "
+                     "to be serviced at a station compared to its scheduled "
+                     "service time.")
+          ->check(CLI::NonNegativeNumber)
+          ->capture_default_str()
+          ->group("Model Parameters");
+  auto* max_delay_opt =
+      app.add_option("--max-delay", max_delay,
+                     "Maximal delay (in seconds) used for both the exit and "
+                     "the station delay at once. Mutually exclusive with the "
+                     "individual --max-exit-delay and --max-station-delay "
+                     "settings.")
+          ->check(CLI::NonNegativeNumber)
+          ->group("Model Parameters");
+
+  max_delay_opt->excludes(max_exit_delay_opt);
+  max_delay_opt->excludes(max_station_delay_opt);
 
   app.add_flag("-c,--use-indicator-constraints", use_indicator_constraints,
                "If this flag is set, indicator constraints are used instead "
@@ -317,6 +341,11 @@ int main(int argc, char** argv) {
 
   CLI11_PARSE(app, argc, argv);
 
+  if (max_delay_opt->count() > 0) {
+    max_exit_delay    = max_delay;
+    max_station_delay = max_delay;
+  }
+
   if (export_working_directory_opt->count() == 0) {
     export_working_directory = working_directory;
   }
@@ -353,6 +382,8 @@ int main(int argc, char** argv) {
          bool_to_str(late_entry_possible),
          "_",
          format_double(max_exit_delay),
+         "_",
+         format_double(max_station_delay),
          "_",
          bool_to_str(use_indicator_constraints),
          "_",
@@ -391,6 +422,7 @@ int main(int argc, char** argv) {
         << (strengthen_vertex_headway_constraints ? "yes" : "no");
   PLOGD << "  Allow late entry: " << (late_entry_possible ? "yes" : "no");
   PLOGD << "  Maximal exit delay: " << max_exit_delay;
+  PLOGD << "  Maximal station delay: " << max_station_delay;
   PLOGD << "Solver Settings";
   PLOGD << "  Use indicator constraints: "
         << (use_indicator_constraints ? "yes" : "no");
@@ -454,8 +486,9 @@ int main(int argc, char** argv) {
        .simplify_headway_constraints = simplify_headway_constraints,
        .strengthen_vertex_headway_constraints =
            strengthen_vertex_headway_constraints,
-       .allow_late_entry = late_entry_possible,
-       .max_exit_delay   = max_exit_delay},
+       .allow_late_entry  = late_entry_possible,
+       .max_exit_delay    = max_exit_delay,
+       .max_station_delay = max_station_delay},
       {.use_indicator_constraints = use_indicator_constraints,
        .use_lazy_constraints      = use_lazy_constraints,
        .include_reverse_headways  = include_reverse_headways,
