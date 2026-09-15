@@ -1565,7 +1565,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         } else {
           m_model->addConstr(
               m_vars["service_delay"](tr, stop) +
-                      max_tr_t * (1 - m_vars["stop"](tr, stop, v)) >=
+                      (max_tr_t - stop_object.get_service_time()) *
+                          (1 - m_vars["stop"](tr, stop, v)) >=
                   m_vars["t_front_arrival"](tr, v) -
                       stop_object.get_service_time(),
               "service_delay_" + sanitize(tr_object.get_name()) + "_" +
