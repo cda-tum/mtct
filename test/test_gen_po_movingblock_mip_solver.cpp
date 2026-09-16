@@ -2,12 +2,17 @@
 #define TEST_FRIENDS true
 
 #include "Definitions.hpp"
+#include "EOMHelper.hpp"
 #include "TestingWarning.hpp"
+#include "datastructure/RailwayNetwork.hpp"
+#include "datastructure/Route.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 
 #include "gtest/gtest.h"
+#include <algorithm>
 #include <filesystem>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -97,6 +102,148 @@ void check_last_train_pos(
                                        tr_times.at(tr_times.size() - 1)),
                      route_len + tr_object.get_length())
         << " for train " << tr_object.get_name() << " in " << instance_path;
+  }
+}
+
+// Only usable within this translation unit.
+struct SegmentLimits {
+  double max_speed;
+  bool   stopping_allowed;
+};
+
+// Only usable within this translation unit.
+// Determines the strictest speed limit that applies while the train travels
+// from pos_1 to pos_2 on its route and whether it could come to a full stop in
+// between. A segment behind the end of the route, i.e., the train clearing its
+// exit vertex, is only limited by the train's own maximal speed.
+[[nodiscard]] SegmentLimits get_segment_limits(const cda_rail::Network& network,
+                                               const cda_rail::Route&   route,
+                                               double pos_1, double pos_2,
+                                               double tr_max_speed,
+                                               double tolerance) {
+  SegmentLimits limits{.max_speed = tr_max_speed, .stopping_allowed = false};
+  double        edge_start = 0;
+  for (const auto& e : route.get_edges()) {
+    const auto& edge_object = network.get_edge(e);
+    const auto  edge_end    = edge_start + edge_object.length;
+    if (edge_start < pos_2 - tolerance && edge_end > pos_1 + tolerance) {
+      limits.max_speed = std::min(limits.max_speed, edge_object.max_speed);
+      limits.stopping_allowed =
+          limits.stopping_allowed || edge_object.breakable;
+    }
+    edge_start = edge_end;
+  }
+  return limits;
+}
+
+// Only usable within this translation unit.
+// Verifies the recorded trajectory of every train against the equations of
+// motion. Every segment between two consecutive points in time has to be
+// traversable in exactly the recorded time while respecting the train's and
+// the line's speed limit. This includes the final segment in which the train
+// clears its exit vertex, which is capped by the train's own maximal speed.
+// Moreover, a train may only remain at the same position while standing still,
+// i.e., it can never wait at a vertex at which it cannot have velocity 0.
+// Unless late entry is allowed, a train additionally has to enter the network
+// exactly at its entry time; together with the previous property this means
+// that a train with a positive initial velocity starts moving at t_0.
+void check_trajectory(
+    const cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
+    const cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol,
+    const std::string& instance_path, bool allow_late_entry = false,
+    double tolerance = 1e-3) {
+  if (!sol.has_solution()) {
+    return;
+  }
+
+  const auto& network = instance.get_const_network();
+  const auto  num_tr  = instance.get_const_train_list().size();
+
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    const auto& tr_object   = instance.get_const_train_list().get_train(tr);
+    const auto& tr_name     = tr_object.get_name();
+    const auto& tr_schedule = instance.get_const_schedule(tr);
+    const auto& tr_route = sol.get_const_solution_routes().get_route(tr_name);
+    const auto  tr_times = sol.get_train_times(tr_name);
+
+    EXPECT_GE(tr_times.size(), 2)
+        << " for train " << tr_name << " in " << instance_path;
+    if (tr_times.size() < 2) {
+      continue;
+    }
+
+    // The train enters the network at its entry vertex with its initial
+    // velocity. Only if late entry is allowed, it may do so after its entry
+    // time.
+    if (allow_late_entry) {
+      EXPECT_GE(tr_times.front(), tr_schedule.get_entry_time() - tolerance)
+          << " for train " << tr_name << " in " << instance_path;
+    } else {
+      EXPECT_NEAR(tr_times.front(), tr_schedule.get_entry_time(), tolerance)
+          << " for train " << tr_name << " in " << instance_path;
+    }
+    EXPECT_NEAR(sol.get_train_pos(tr_name, tr_times.front()), 0, tolerance)
+        << " for train " << tr_name << " in " << instance_path;
+    EXPECT_NEAR(sol.get_train_speed(tr_name, tr_times.front()),
+                tr_schedule.get_initial_velocity(), tolerance)
+        << " for train " << tr_name << " in " << instance_path;
+
+    for (size_t i = 0; i + 1 < tr_times.size(); i++) {
+      const auto& t_1   = tr_times.at(i);
+      const auto& t_2   = tr_times.at(i + 1);
+      const auto  pos_1 = sol.get_train_pos(tr_name, t_1);
+      const auto  pos_2 = sol.get_train_pos(tr_name, t_2);
+      const auto  v_1   = sol.get_train_speed(tr_name, t_1);
+      const auto  v_2   = sol.get_train_speed(tr_name, t_2);
+      const auto  dt    = t_2 - t_1;
+      const auto  ds    = pos_2 - pos_1;
+
+      const std::string segment_info =
+          " for train " + tr_name + " between t=" + std::to_string(t_1) +
+          " and t=" + std::to_string(t_2) + " in " + instance_path;
+
+      EXPECT_GT(dt, 0) << segment_info;
+      EXPECT_GE(ds, -tolerance) << segment_info;
+
+      const auto [v_max, stopping_allowed] =
+          get_segment_limits(network, tr_route, pos_1, pos_2,
+                             tr_object.get_max_speed(), tolerance);
+      const bool speeds_within_limit =
+          v_1 <= v_max + tolerance && v_2 <= v_max + tolerance;
+      EXPECT_TRUE(speeds_within_limit)
+          << "Velocity exceeds the maximal speed of " << v_max << segment_info;
+
+      if (ds <= tolerance) {
+        // The train does not move, hence, it has to stand still.
+        EXPECT_NEAR(v_1, 0, tolerance) << segment_info;
+        EXPECT_NEAR(v_2, 0, tolerance) << segment_info;
+        continue;
+      }
+
+      const bool eom_possible =
+          cda_rail::possible_by_eom(v_1, v_2, tr_object.get_acceleration(),
+                                    tr_object.get_deceleration(), ds);
+      EXPECT_TRUE(eom_possible)
+          << "Velocities cannot be connected by the equations of motion"
+          << segment_info;
+      if (!eom_possible || !speeds_within_limit) {
+        // The travel times are not well-defined, the violation is already
+        // reported above.
+        continue;
+      }
+
+      EXPECT_GE(dt, cda_rail::min_travel_time(
+                        v_1, v_2, v_max, tr_object.get_acceleration(),
+                        tr_object.get_deceleration(), ds) -
+                        tolerance)
+          << segment_info;
+      if (const auto max_t = cda_rail::max_travel_time(
+              v_1, v_2, cda_rail::V_MIN, tr_object.get_acceleration(),
+              tr_object.get_deceleration(), ds, stopping_allowed);
+          max_t < std::numeric_limits<double>::infinity()) {
+        EXPECT_LE(dt, max_t + tolerance) << segment_info;
+      }
+    }
   }
 }
 
@@ -960,6 +1107,7 @@ TEST(GenPOMovingBlockMIPSolver, Default1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -980,6 +1128,7 @@ TEST(GenPOMovingBlockMIPSolver, Default2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -999,6 +1148,7 @@ TEST(GenPOMovingBlockMIPSolver, Default3) {
     check_objective_if_optimal_or_warn(sol, p, 5);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1018,6 +1168,7 @@ TEST(GenPOMovingBlockMIPSolver, Default4) {
     check_objective_if_optimal_or_warn(sol, p, 5);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1037,6 +1188,7 @@ TEST(GenPOMovingBlockMIPSolver, Default5) {
     check_objective_if_optimal_or_warn(sol, p, 5);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1068,6 +1220,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1095,6 +1248,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1121,6 +1275,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1147,6 +1302,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_8Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1173,6 +1329,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_16Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1206,6 +1363,7 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1238,6 +1396,7 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1267,6 +1426,7 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1295,6 +1455,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_4Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1323,6 +1484,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_8Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1351,6 +1513,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_16Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1371,6 +1534,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1393,6 +1557,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1Indicator) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1417,6 +1582,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1437,6 +1603,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1457,6 +1624,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy4) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1483,6 +1651,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1509,6 +1678,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1535,6 +1705,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified3) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1561,6 +1732,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1587,6 +1759,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1613,6 +1786,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified3) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1643,6 +1817,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val, "SimpleStation", 10);
+  check_trajectory(instance, obj_val, "SimpleStation");
   check_schedule(instance, obj_val, "SimpleStation", 0.0);
   // Check that the model files exist in the standard solution directory, which
   // includes the parameter identifier, but no solution was exported
@@ -1674,6 +1849,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val2, "SimpleStation", 10);
+  check_trajectory(instance, obj_val2, "SimpleStation");
   check_schedule(instance, obj_val2, "SimpleStation", 0.0);
   // Check that tmp2folder and solutions structure exists
   EXPECT_TRUE(std::filesystem::exists("tmp2folder"));
@@ -1714,6 +1890,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val3, "SimpleStation", 10);
+  check_trajectory(instance, obj_val3, "SimpleStation");
   check_schedule(instance, obj_val3, "SimpleStation", 0.0);
   // Check that corresponding folders exist
   EXPECT_TRUE(std::filesystem::exists("tmp3folder"));
@@ -1774,6 +1951,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val4, "SimpleStation", 10);
+  check_trajectory(instance, obj_val4, "SimpleStation");
   check_schedule(instance, obj_val4, "SimpleStation", 0.0);
   // Expect no folder tmp4folder to exist
   EXPECT_FALSE(std::filesystem::exists("tmp4folder"));
@@ -1794,6 +1972,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val5, "SimpleStation", 10);
+  check_trajectory(instance, obj_val5, "SimpleStation");
   check_schedule(instance, obj_val5, "SimpleStation", 0.0);
   // Check that tmp5folder exists with LP files and solutions
   EXPECT_TRUE(std::filesystem::exists("tmp5folder"));
@@ -1840,6 +2019,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val6, "SimpleStation", 10);
+  check_trajectory(instance, obj_val6, "SimpleStation");
   check_schedule(instance, obj_val6, "SimpleStation", 0.0);
   // Check that tmp6folder exists with LP files, instance, networks, and
   // solutions
@@ -1905,6 +2085,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val7, "SimpleStation", 10);
+  check_trajectory(instance, obj_val7, "SimpleStation");
   check_schedule(instance, obj_val7, "SimpleStation", 0.0);
   // Expect LP files to exist in the default solution directory
   EXPECT_TRUE(std::filesystem::exists(
@@ -1967,6 +2148,7 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
 
+    check_trajectory(instance, sol, p);
     check_schedule(instance, sol, p);
   }
 }
@@ -2060,6 +2242,7 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
       << "Expected expensive optimum with lazy constraints";
   EXPECT_LE(sol3.get_obj(), 2 * (190.0 - 90.0))
       << "Expected expensive optimum with lazy constraints";
+  check_trajectory(instance, sol3, "PreventOvertakingWhileStopping (lazy)");
   check_schedule(instance, sol3, "PreventOvertakingWhileStopping (lazy)",
                  100.0);
 
@@ -2071,6 +2254,7 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
       << "Expected expensive optimum without lazy constraints";
   EXPECT_LE(sol4.get_obj(), 2 * (190.0 - 90.0))
       << "Expected expensive optimum without lazy constraints";
+  check_trajectory(instance, sol4, "PreventOvertakingWhileStopping (no lazy)");
   check_schedule(instance, sol4, "PreventOvertakingWhileStopping (no lazy)",
                  100.0);
 
@@ -2080,6 +2264,8 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
       << "Expected optimal solution on late entry with lazy constraints";
   EXPECT_EQ(sol5.get_obj(), 0.0)
       << "Expected zero objective on late entry with lazy constraints";
+  check_trajectory(instance, sol5,
+                   "PreventOvertakingWhileStopping (late entry, lazy)", true);
   check_schedule(instance, sol5,
                  "PreventOvertakingWhileStopping (late entry, lazy)", 0.0);
 
@@ -2089,6 +2275,9 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
       << "Expected optimal solution on late entry without lazy constraints";
   EXPECT_EQ(sol6.get_obj(), 0.0)
       << "Expected zero objective on late entry without lazy constraints";
+  check_trajectory(instance, sol6,
+                   "PreventOvertakingWhileStopping (late entry, no lazy)",
+                   true);
   check_schedule(instance, sol6,
                  "PreventOvertakingWhileStopping (late entry, no lazy)", 0.0);
 }
@@ -2125,6 +2314,7 @@ TEST(GenPOMovingBlockMIPSolver, OvertakeBugConsistencyException) {
   check_objective_if_optimal_or_warn(sol, "Overtake", 10);
 
   check_last_train_pos(instance, sol, "Overtake");
+  check_trajectory(instance, sol, "Overtake");
   check_schedule(instance, sol, "Overtake", 0.0, 10.0);
 }
 
