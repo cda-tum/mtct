@@ -192,6 +192,7 @@ private:
   void extract_solution(
       instances::SolGeneralPerformanceOptimizationInstance& sol) const;
   [[nodiscard]] double extract_speed(size_t tr, size_t vertex_id) const;
+  [[nodiscard]] double extract_stop_time(size_t tr, size_t stop_idx) const;
   static double headway(const Train& tr_obj, const Edge& e_obj, double v_0,
                         double v_1, bool entry_vertex = false);
 

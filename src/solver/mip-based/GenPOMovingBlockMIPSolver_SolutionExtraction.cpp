@@ -11,6 +11,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <ranges>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -119,11 +120,46 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
         sol.add_train_pos(tr_object.get_name(), last_time,
                           pos + tr_object.get_length());
         sol.add_train_speed(tr_object.get_name(), last_time, last_speed);
+        sol.set_train_exit_time(tr_object.get_name(), last_time);
       }
     }
   }
 
+  // Save the times at which the trains are serviced at their scheduled stops
+  PLOGD << "Setting stop times...";
+  for (size_t tr = 0; tr < m_num_tr; tr++) {
+    const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
+    const auto& tr_stops  = m_instance.get_const_schedule(tr).get_stops();
+    for (size_t stop_idx = 0; stop_idx < tr_stops.size(); stop_idx++) {
+      sol.set_train_stop_time(tr_object.get_name(), stop_idx,
+                              extract_stop_time(tr, stop_idx));
+    }
+  }
+
   PLOGI << "DONE! Solution extracted.";
+}
+
+double
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_stop_time(
+    size_t tr, size_t stop_idx) const {
+  assert(m_model->get(GRB_IntAttr_SolCount) >= 1);
+  const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
+  const auto& stop_object =
+      m_instance.get_const_schedule(tr).get_stops().at(stop_idx);
+
+  for (const auto& vertex_id :
+       m_tr_stop_data.at(tr).at(stop_idx) | std::ranges::views::keys) {
+    GRBVar stop_var = m_vars.at("stop").at(tr, stop_idx, vertex_id);
+    if (!stop_var.sameAs(GRBVar()) && stop_var.get(GRB_DoubleAttr_X) > 0.5) {
+      // The train is serviced as soon as its front arrives at the vertex.
+      return m_vars.at("t_front_arrival")
+          .at(tr, vertex_id)
+          .get(GRB_DoubleAttr_X);
+    }
+  }
+  throw exceptions::ConsistencyException("No stop found for train " +
+                                         tr_object.get_name() + " at station " +
+                                         stop_object.get_station().name);
 }
 
 double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
