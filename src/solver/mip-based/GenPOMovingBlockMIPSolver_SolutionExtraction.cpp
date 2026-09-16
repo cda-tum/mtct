@@ -57,6 +57,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   sol.set_obj(mip_obj_val);
   PLOGD << "MIP objective: " << mip_obj_val;
 
+  auto mip_obj_bound = m_model->get(GRB_DoubleAttr_ObjBound);
+  if (std::abs(mip_obj_bound - mip_obj_val) < GRB_EPS) {
+    // The remaining gap is only numerical noise, hence the solution is optimal.
+    mip_obj_bound = mip_obj_val;
+  }
+  sol.set_lower_bound(mip_obj_bound);
+  PLOGD << "MIP lower bound: " << mip_obj_bound;
+
   // Extract routes
   PLOGD << "Setting routes...";
   std::vector<std::vector<std::pair<size_t, double>>> route_markers;
