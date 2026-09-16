@@ -227,9 +227,16 @@ jobs:
       - name: Test
         env:
           CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log
+          # Tests excluded from the coverage run only. This test spends most of its
+          # time inside the lazy constraint callback, i.e., in our own code rather
+          # than in Gurobi. The unoptimized and instrumented coverage build slows
+          # that callback down so much that Gurobi no longer finds a solution within
+          # the time limit, while the RelWithDebInfo jobs solve it in seconds.
+          CDA_RAIL_COVERAGE_EXCLUDED_TESTS: GenPOMovingBlockMIPSolver\.OvertakeBugConsistencyException
         run: |
           rm -f "$CDA_RAIL_WARNING_FILE"
-          ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 750
+          ctest -C Debug --output-on-failure --test-dir build --repeat until-pass:3 --timeout 750 \
+            -E "$CDA_RAIL_COVERAGE_EXCLUDED_TESTS"
       - name: Print warning summary
         if: always()
         env:
