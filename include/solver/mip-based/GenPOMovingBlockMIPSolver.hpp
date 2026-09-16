@@ -51,6 +51,19 @@ velocity_refinement_strategy_to_string(VelocityRefinementStrategy strategy) {
   }
 }
 
+// The maximal delay is the time horizon of the model and with it the big-M of
+// all timing constraints. A big-M of size M turns the tolerance eps with which
+// a solver still accepts a binary variable as integral into a slack of M * eps
+// seconds within the corresponding constraint. A horizon that is numerically
+// infinite hence voids the travel times altogether, which is why the default
+// is a large but finite one. A delay of more than a day is not to be expected
+// in any realistic instance.
+constexpr double DEFAULT_MAX_DELAY = 24 * 60 * 60; // one day
+
+// Smallest and default integrality tolerance supported by Gurobi.
+constexpr double MIN_INT_FEAS_TOL     = 1e-9;
+constexpr double DEFAULT_INT_FEAS_TOL = 1e-5;
+
 struct ModelDetail {
   bool                       fix_routes         = false;
   double                     max_velocity_delta = 5.55; // 20 km/h
@@ -59,8 +72,8 @@ struct ModelDetail {
   bool   simplify_headway_constraints          = false;
   bool   strengthen_vertex_headway_constraints = false;
   bool   allow_late_entry                      = false;
-  double max_exit_delay                        = 1e9;
-  double max_station_delay                     = 1e9;
+  double max_exit_delay                        = DEFAULT_MAX_DELAY;
+  double max_station_delay                     = DEFAULT_MAX_DELAY;
 };
 
 enum class LazyConstraintSelectionStrategy : std::uint8_t {

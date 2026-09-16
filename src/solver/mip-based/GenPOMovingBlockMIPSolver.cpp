@@ -134,6 +134,23 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   PLOGD << "Set absolute MIP gap to " << m_solver_strategy.abs_mip_gap;
   m_model->set(GRB_DoubleParam_MIPGapAbs, m_solver_strategy.abs_mip_gap);
 
+  // The timing constraints are big-M constraints whose big-M is the time
+  // horizon of the respective train. A binary variable that is accepted as
+  // integral although it deviates by the integrality tolerance eps from 1
+  // hence leaves a slack of horizon * eps seconds within such a constraint,
+  // which is a travel time that the train does not have to spend. The
+  // integrality tolerance is therefore chosen such that this slack stays below
+  // the tolerance with which times are treated as equal anyway.
+  double max_horizon = 0;
+  for (size_t tr = 0; tr < m_num_tr; tr++) {
+    max_horizon = std::max(max_horizon, latest_exit_time(tr));
+  }
+  const auto integrality_tolerance =
+      std::clamp(GRB_EPS / max_horizon, MIN_INT_FEAS_TOL, DEFAULT_INT_FEAS_TOL);
+  PLOGD << "Set integrality tolerance to " << integrality_tolerance
+        << " for a time horizon of " << max_horizon << " s";
+  m_model->set(GRB_DoubleParam_IntFeasTol, integrality_tolerance);
+
   m_model->optimize();
 
   m_model_solved = std::chrono::high_resolution_clock::now();

@@ -73,9 +73,9 @@ int main(int argc, char** argv) {
   bool   simplify_headway_constraints          = false;
   bool   strengthen_vertex_headway_constraints = false;
   bool   late_entry_possible                   = false;
-  double max_exit_delay                        = 1e9;
-  double max_station_delay                     = 1e9;
-  double max_delay                             = 1e9;
+  double max_exit_delay    = cda_rail::solver::mip_based::DEFAULT_MAX_DELAY;
+  double max_station_delay = cda_rail::solver::mip_based::DEFAULT_MAX_DELAY;
+  double max_delay         = cda_rail::solver::mip_based::DEFAULT_MAX_DELAY;
 
   // solver parameters
   bool   use_indicator_constraints              = false;
