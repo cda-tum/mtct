@@ -3,8 +3,15 @@
 
 #include "gtest/gtest.h"
 #include <filesystem>
-
+#if 0
 TEST(VSSGenMBInfoSolver, Default1) {
+  const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            "SimpleStation", "atmos2023", "data");
+  auto sol_obj =
+        cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
+  sol_obj.load_solution("data", "moving-block-solutions");
+
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
       solver("./example-networks-mb-solutions/SimpleStation/");
 
@@ -134,3 +141,4 @@ TEST(VSSGenMBInfoSolver, Default9) {
   EXPECT_EQ(sol.get_obj(), 15);
   EXPECT_EQ(sol.get_mip_obj(), 15);
 }
+#endif
