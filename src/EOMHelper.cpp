@@ -408,7 +408,7 @@ double cda_rail::maximal_line_speed(double v_1, double v_2, double v_max,
 
 double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
                                 double v_max, double a, double d, double s,
-                                double t) {
+                                double t, bool allow_too_short_time) {
   if (max_travel_time_no_stopping(v_1, v_2, v_min, a, d, s) < t - GRB_EPS) {
     return 0;
   }
@@ -419,7 +419,11 @@ double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
   const double t_ub = time_on_edge(v_1, v_2, v_lb, a, d, s);
   double       t_lb = time_on_edge(v_1, v_2, v_ub, a, d, s);
 
-  if (std::abs(t_lb - t) < GRB_EPS) {
+  // If explicitly allowed, a desired time that is shorter than the fastest
+  // possible one is answered with the fastest possible line speed. This is
+  // needed for times stemming from a solution that was only solved up to an
+  // absolute MIP gap and may hence be marginally infeasible.
+  if (std::abs(t_lb - t) < GRB_EPS || (allow_too_short_time && t < t_lb)) {
     return v_ub;
   }
   if (std::abs(t_ub - t) < GRB_EPS) {

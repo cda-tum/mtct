@@ -573,9 +573,11 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     return {{.pos = pos_1, .vel = 0}};
   }
 
+  // The solution might have been obtained up to an absolute MIP gap, in which
+  // case the stored times can be marginally shorter than physically possible.
   const auto v_line =
       get_line_speed(v1, v2, V_MIN, max_speed, tr_obj.get_acceleration(),
-                     tr_obj.get_deceleration(), dist_travelled, t2 - t1);
+                     tr_obj.get_deceleration(), dist_travelled, t2 - t1, true);
   if (v_line <= 0) {
     return std::nullopt;
   }

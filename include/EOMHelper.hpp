@@ -411,13 +411,20 @@ double maximal_line_speed(double v_1, double v_2, double v_max, double a,
  * @param d Maximum deceleration in m/s^2.
  * @param s Edge length in metres.
  * @param t Desired traversal time in seconds.
+ * @param allow_too_short_time If `true`, a @p t that is shorter than the
+ *        fastest possible traversal time is not rejected but answered with
+ *        `maximal_line_speed`. This is only intended for times stemming from a
+ *        solution that was obtained up to an absolute MIP gap and may hence be
+ *        marginally faster than physically possible. By default such a @p t is
+ *        treated as an error.
  * @return Feasible line speed in m/s, or `0` if no finite no-stop solution
  *         exists for @p t.
  * @throws cda_rail::exceptions::ConsistencyException If intermediate EOM checks
  *         fail for the provided parameters.
  */
 double get_line_speed(double v_1, double v_2, double v_min, double v_max,
-                      double a, double d, double s, double t);
+                      double a, double d, double s, double t,
+                      bool allow_too_short_time = false);
 
 /**
  * @brief Computes traversal time for a fixed line speed profile.
