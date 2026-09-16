@@ -15,6 +15,8 @@
 #define EXPECT_APPROX_EQ(a, b)                                                 \
   EXPECT_TRUE(std::abs((a) - (b)) < 1e-2) << (a) << " !=(approx.) " << (b)
 
+namespace {
+// Only usable within this translation unit.
 void cleanup_export_dirs() {
   std::filesystem::remove_all("tmp1folder");
   std::filesystem::remove_all("tmp2folder");
@@ -29,6 +31,7 @@ void cleanup_export_dirs() {
   std::filesystem::remove_all("solutions");
 }
 
+// Only usable within this translation unit.
 void check_schedule(
     const cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
     const cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol,
@@ -64,6 +67,7 @@ void check_schedule(
   }
 }
 
+// Only usable within this translation unit.
 void check_last_train_pos(
     const cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
     const cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol,
@@ -96,6 +100,7 @@ void check_last_train_pos(
   }
 }
 
+// Only usable within this translation unit.
 [[nodiscard]] std::string to_string(cda_rail::SolutionStatus status) {
   switch (status) {
   case cda_rail::SolutionStatus::Optimal:
@@ -112,6 +117,7 @@ void check_last_train_pos(
   return "Unknown";
 }
 
+// Only usable within this translation unit.
 template <typename SolutionType>
 void check_objective_if_optimal_or_warn(const SolutionType& solution,
                                         const std::string&  instance_name,
@@ -127,6 +133,7 @@ void check_objective_if_optimal_or_warn(const SolutionType& solution,
       "Non-optimal solution status for instance " + instance_name + ": " +
       to_string(status));
 }
+} // namespace
 
 // NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
 
