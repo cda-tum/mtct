@@ -975,6 +975,15 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               sanitize(m_instance.get_const_network().get_vertex(v).name));
 
       if (m_velocity_extensions.at(tr).at(v).at(0) != 0) {
+        // The train cannot have velocity 0 at vertex v, hence it cannot wait
+        // there at all. This includes the entry vertex of a train with a
+        // non-zero initial velocity, which therefore has to enter the network
+        // at its entry time.
+        m_model->addConstr(
+            m_vars["t_front_departure"](tr, v) <=
+                m_vars["t_front_arrival"](tr, v),
+            "tr_cannot_stop_at_vertex_" + sanitize(tr_object.get_name()) + "_" +
+                sanitize(m_instance.get_const_network().get_vertex(v).name));
         continue;
       }
 
@@ -1146,8 +1155,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         // In case the train has partially left the network use edge case
         // constraints
         const auto v_max_speed =
-            m_instance.get_const_network().maximal_vertex_speed(
-                v, edges_used_by_train);
+            std::min(m_instance.get_const_network().maximal_vertex_speed(
+                         v, edges_used_by_train),
+                     tr_object.get_max_speed());
         const auto v_exit_velocities = m_velocity_extensions.at(tr).at(v);
         // t_rear_departure(v) >= t_front_departure(v)  + min_t selected by
         // incoming edge speed
