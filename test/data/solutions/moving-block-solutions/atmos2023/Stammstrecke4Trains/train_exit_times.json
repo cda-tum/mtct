@@ -1,1 +1,6 @@
-{ "S2Petershausen": 0.0, "S6Ebersberg": 0.0, "S6Tutzing": 0.0, "S7Aying": 0.0 }
+{
+  "S2Petershausen": 1035.0,
+  "S6Ebersberg": 1185.0,
+  "S6Tutzing": 1230.0,
+  "S7Aying": 1110.0
+}
