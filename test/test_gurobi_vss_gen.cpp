@@ -49,7 +49,7 @@ std::string order_to_string(cda_rail::TrainList const&         train_list,
 }
 
 // Only usable within this translation unit.
-void check_exit_times_within_dt_and_order(
+void check_schedule_within_dt_and_order(
     const cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance&
                  sol,
     double const dt, const std::string& label) {
@@ -74,6 +74,18 @@ void check_exit_times_within_dt_and_order(
         << label << ", Train: " << tr.get_name()
         << ", Exit time: " << sol.get_exit_time(tr.get_name())
         << ", Schedule exit time: " << tr_schedule.get_exit_time();
+
+    // The scheduled service window is a hard constraint of the model, hence a
+    // train is serviced exactly as scheduled without any delay.
+    for (auto const& tr_stop : tr_schedule.get_stops()) {
+      auto const& station_name = tr_stop.get_station().name;
+      EXPECT_EQ(sol.get_stop_time(tr.get_name(), station_name),
+                tr_stop.get_service_time())
+          << label << ", Train: " << tr.get_name()
+          << ", Station: " << station_name
+          << ", Stop time: " << sol.get_stop_time(tr.get_name(), station_name)
+          << ", Schedule service time: " << tr_stop.get_service_time();
+    }
   }
 
   // Every train enters the network on the unique outgoing edge of its entry
@@ -225,11 +237,11 @@ TEST(VSSGenSolver, GurobiVSSGenDeltaTDefault) {
   EXPECT_EQ(obj_val_18.get_obj(), 1);
   EXPECT_EQ(obj_val_30.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_6, 6, "obj_val_6");
-  check_exit_times_within_dt_and_order(obj_val_15, 15, "obj_val_15");
-  check_exit_times_within_dt_and_order(obj_val_11, 11, "obj_val_11");
-  check_exit_times_within_dt_and_order(obj_val_18, 18, "obj_val_18");
-  check_exit_times_within_dt_and_order(obj_val_30, 30, "obj_val_30");
+  check_schedule_within_dt_and_order(obj_val_6, 6, "obj_val_6");
+  check_schedule_within_dt_and_order(obj_val_15, 15, "obj_val_15");
+  check_schedule_within_dt_and_order(obj_val_11, 11, "obj_val_11");
+  check_schedule_within_dt_and_order(obj_val_18, 18, "obj_val_18");
+  check_schedule_within_dt_and_order(obj_val_30, 30, "obj_val_30");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenDeltaT) {
@@ -257,9 +269,9 @@ TEST(VSSGenSolver, GurobiVSSGenDeltaT) {
   EXPECT_EQ(obj_val_2.get_obj(), 1);
   EXPECT_EQ(obj_val_3.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_1, 30, "obj_val_1");
-  check_exit_times_within_dt_and_order(obj_val_2, 30, "obj_val_2");
-  check_exit_times_within_dt_and_order(obj_val_3, 30, "obj_val_3");
+  check_schedule_within_dt_and_order(obj_val_1, 30, "obj_val_1");
+  check_schedule_within_dt_and_order(obj_val_2, 30, "obj_val_2");
+  check_schedule_within_dt_and_order(obj_val_3, 30, "obj_val_3");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenDefault) {
@@ -273,7 +285,7 @@ TEST(VSSGenSolver, GurobiVSSGenDefault) {
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_default, 15, "obj_val_default");
+  check_schedule_within_dt_and_order(obj_val_default, 15, "obj_val_default");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenDefaultInstance) {
@@ -288,7 +300,7 @@ TEST(VSSGenSolver, GurobiVSSGenDefaultInstance) {
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_default, 15, "obj_val_default");
+  check_schedule_within_dt_and_order(obj_val_default, 15, "obj_val_default");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenDefaultInstanceForward) {
@@ -302,7 +314,7 @@ TEST(VSSGenSolver, GurobiVSSGenDefaultInstanceForward) {
   EXPECT_EQ(obj_val_default.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_default.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_default, 15, "obj_val_default");
+  check_schedule_within_dt_and_order(obj_val_default, 15, "obj_val_default");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFixed) {
@@ -357,12 +369,12 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFixed) {
   EXPECT_EQ(obj_val_5.get_obj(), 1);
   EXPECT_EQ(obj_val_6.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_1, 15, "obj_val_1");
-  check_exit_times_within_dt_and_order(obj_val_2, 15, "obj_val_2");
-  check_exit_times_within_dt_and_order(obj_val_3, 15, "obj_val_3");
-  check_exit_times_within_dt_and_order(obj_val_4, 15, "obj_val_4");
-  check_exit_times_within_dt_and_order(obj_val_5, 15, "obj_val_5");
-  check_exit_times_within_dt_and_order(obj_val_6, 15, "obj_val_6");
+  check_schedule_within_dt_and_order(obj_val_1, 15, "obj_val_1");
+  check_schedule_within_dt_and_order(obj_val_2, 15, "obj_val_2");
+  check_schedule_within_dt_and_order(obj_val_3, 15, "obj_val_3");
+  check_schedule_within_dt_and_order(obj_val_4, 15, "obj_val_4");
+  check_schedule_within_dt_and_order(obj_val_5, 15, "obj_val_5");
+  check_schedule_within_dt_and_order(obj_val_6, 15, "obj_val_6");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFree1) {
@@ -376,7 +388,7 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFree1) {
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_1.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_1, 15, "obj_val_1");
+  check_schedule_within_dt_and_order(obj_val_1, 15, "obj_val_1");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFree2) {
@@ -390,7 +402,7 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFree2) {
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_2, 15, "obj_val_2");
+  check_schedule_within_dt_and_order(obj_val_2, 15, "obj_val_2");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFree3) {
@@ -405,7 +417,7 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFree3) {
   EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_3.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_3, 15, "obj_val_3");
+  check_schedule_within_dt_and_order(obj_val_3, 15, "obj_val_3");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFree4) {
@@ -420,7 +432,7 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFree4) {
   EXPECT_EQ(obj_val_4.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_4.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_4, 15, "obj_val_4");
+  check_schedule_within_dt_and_order(obj_val_4, 15, "obj_val_4");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFree5) {
@@ -435,7 +447,7 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFree5) {
   EXPECT_EQ(obj_val_5.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_5.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_5, 15, "obj_val_5");
+  check_schedule_within_dt_and_order(obj_val_5, 15, "obj_val_5");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenVSSDiscrete) {
@@ -452,7 +464,7 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscrete) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenTim) {
@@ -505,8 +517,8 @@ TEST(VSSGenSolver, GurobiVSSGenTim) {
   EXPECT_EQ(obj_val_1.get_obj(), 1);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_1, 15, "obj_val_1");
-  check_exit_times_within_dt_and_order(obj_val_2, 15, "obj_val_2");
+  check_schedule_within_dt_and_order(obj_val_1, 15, "obj_val_1");
+  check_schedule_within_dt_and_order(obj_val_2, 15, "obj_val_2");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenTimFixed) {
@@ -559,8 +571,8 @@ TEST(VSSGenSolver, GurobiVSSGenTimFixed) {
   EXPECT_EQ(obj_val_1.get_obj(), 1);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_1, 15, "obj_val_1");
-  check_exit_times_within_dt_and_order(obj_val_2, 15, "obj_val_2");
+  check_schedule_within_dt_and_order(obj_val_1, 15, "obj_val_1");
+  check_schedule_within_dt_and_order(obj_val_2, 15, "obj_val_2");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {
@@ -586,7 +598,7 @@ TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_1.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_1, 15, "obj_val_1");
+  check_schedule_within_dt_and_order(obj_val_1, 15, "obj_val_1");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenTimDiscrete2) {
@@ -614,7 +626,7 @@ TEST(VSSGenSolver, GurobiVSSGenTimDiscrete2) {
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val_2, 15, "obj_val_2");
+  check_schedule_within_dt_and_order(obj_val_2, 15, "obj_val_2");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenTimDiscrete3) {
@@ -661,10 +673,9 @@ TEST(VSSGenSolver, OvertakeFixedContinuous) {
   EXPECT_EQ(obj_val_dynamics.get_obj(), 4);
   EXPECT_EQ(obj_val_braking.get_obj(), 7);
 
-  check_exit_times_within_dt_and_order(obj_val_base, 15, "obj_val_base");
-  check_exit_times_within_dt_and_order(obj_val_dynamics, 15,
-                                       "obj_val_dynamics");
-  check_exit_times_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
+  check_schedule_within_dt_and_order(obj_val_base, 15, "obj_val_base");
+  check_schedule_within_dt_and_order(obj_val_dynamics, 15, "obj_val_dynamics");
+  check_schedule_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
 }
 
 TEST(VSSGenSolver, OvertakeFreeContinuous) {
@@ -686,10 +697,9 @@ TEST(VSSGenSolver, OvertakeFreeContinuous) {
   EXPECT_EQ(obj_val_dynamics.get_obj(), 4);
   EXPECT_EQ(obj_val_braking.get_obj(), 7);
 
-  check_exit_times_within_dt_and_order(obj_val_base, 15, "obj_val_base");
-  check_exit_times_within_dt_and_order(obj_val_dynamics, 15,
-                                       "obj_val_dynamics");
-  check_exit_times_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
+  check_schedule_within_dt_and_order(obj_val_base, 15, "obj_val_base");
+  check_schedule_within_dt_and_order(obj_val_dynamics, 15, "obj_val_dynamics");
+  check_schedule_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
 }
 
 TEST(VSSGenSolver, Stammstrecke4FixedContinuous) {
@@ -711,10 +721,9 @@ TEST(VSSGenSolver, Stammstrecke4FixedContinuous) {
   EXPECT_EQ(obj_val_dynamics.get_obj(), 6);
   EXPECT_EQ(obj_val_braking.get_obj(), 6);
 
-  check_exit_times_within_dt_and_order(obj_val_base, 15, "obj_val_base");
-  check_exit_times_within_dt_and_order(obj_val_dynamics, 15,
-                                       "obj_val_dynamics");
-  check_exit_times_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
+  check_schedule_within_dt_and_order(obj_val_base, 15, "obj_val_base");
+  check_schedule_within_dt_and_order(obj_val_dynamics, 15, "obj_val_dynamics");
+  check_schedule_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
 }
 
 TEST(VSSGenSolver, Stammstrecke8FixedContinuous) {
@@ -736,10 +745,9 @@ TEST(VSSGenSolver, Stammstrecke8FixedContinuous) {
   EXPECT_EQ(obj_val_dynamics.get_obj(), 14);
   EXPECT_EQ(obj_val_braking.get_obj(), 14);
 
-  check_exit_times_within_dt_and_order(obj_val_base, 15, "obj_val_base");
-  check_exit_times_within_dt_and_order(obj_val_dynamics, 15,
-                                       "obj_val_dynamics");
-  check_exit_times_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
+  check_schedule_within_dt_and_order(obj_val_base, 15, "obj_val_base");
+  check_schedule_within_dt_and_order(obj_val_dynamics, 15, "obj_val_dynamics");
+  check_schedule_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
 }
 
 TEST(VSSGenSolver, Stammstrecke16FixedContinuousBase) {
@@ -752,7 +760,7 @@ TEST(VSSGenSolver, Stammstrecke16FixedContinuousBase) {
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_base.get_obj(), 0);
 
-  check_exit_times_within_dt_and_order(obj_val_base, 15, "obj_val_base");
+  check_schedule_within_dt_and_order(obj_val_base, 15, "obj_val_base");
 }
 
 TEST(VSSGenSolver, Stammstrecke16FixedContinuousDynamics) {
@@ -765,8 +773,7 @@ TEST(VSSGenSolver, Stammstrecke16FixedContinuousDynamics) {
   EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_dynamics.get_obj(), 15);
 
-  check_exit_times_within_dt_and_order(obj_val_dynamics, 15,
-                                       "obj_val_dynamics");
+  check_schedule_within_dt_and_order(obj_val_dynamics, 15, "obj_val_dynamics");
 }
 
 TEST(VSSGenSolver, Stammstrecke16FixedContinuousBraking) {
@@ -779,7 +786,7 @@ TEST(VSSGenSolver, Stammstrecke16FixedContinuousBraking) {
   EXPECT_EQ(obj_val_braking.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_braking.get_obj(), 15);
 
-  check_exit_times_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
+  check_schedule_within_dt_and_order(obj_val_braking, 15, "obj_val_braking");
 }
 
 TEST(VSSGenSolver, SimpleStationInferredUniform) {
@@ -796,7 +803,7 @@ TEST(VSSGenSolver, SimpleStationInferredUniform) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, SimpleStationInferredUniformPostprocess) {
@@ -813,7 +820,7 @@ TEST(VSSGenSolver, SimpleStationInferredUniformPostprocess) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, SimpleStationInferredAltUniformPostprocess) {
@@ -830,7 +837,7 @@ TEST(VSSGenSolver, SimpleStationInferredAltUniformPostprocess) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, SimpleStationContinuousPostprocess) {
@@ -843,7 +850,7 @@ TEST(VSSGenSolver, SimpleStationContinuousPostprocess) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, SimpleStationContinuousFixedPostprocess) {
@@ -856,7 +863,7 @@ TEST(VSSGenSolver, SimpleStationContinuousFixedPostprocess) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, SimpleStationInferredChebychev) {
@@ -873,7 +880,7 @@ TEST(VSSGenSolver, SimpleStationInferredChebychev) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, SimpleStationInferredBoth) {
@@ -891,7 +898,7 @@ TEST(VSSGenSolver, SimpleStationInferredBoth) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, SimpleStationInferredAltBoth) {
@@ -909,7 +916,7 @@ TEST(VSSGenSolver, SimpleStationInferredAltBoth) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, IterativeContinuousSingleTrack) {
@@ -922,7 +929,7 @@ TEST(VSSGenSolver, IterativeContinuousSingleTrack) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 9);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, IterativeContinuousSingleTrackCuts) {
@@ -938,7 +945,7 @@ TEST(VSSGenSolver, IterativeContinuousSingleTrackCuts) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 9);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, IterativeContinuousSingleRelative) {
@@ -955,7 +962,7 @@ TEST(VSSGenSolver, IterativeContinuousSingleRelative) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 9);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredCuts) {
@@ -970,7 +977,7 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredCuts) {
        cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
       {}, 60, true);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, IterativeContinuousSimpleStationCuts) {
@@ -983,7 +990,7 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationCuts) {
        cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
       {}, 60, true);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, IterativeContinuousFeasible) {
@@ -996,7 +1003,7 @@ TEST(VSSGenSolver, IterativeContinuousFeasible) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Feasible);
   EXPECT_GE(obj_val.get_obj(), 6);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, IterativeTimeout1) {
@@ -1032,7 +1039,7 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredAlt) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, IterativeContinuousStammstrecke4) {
@@ -1044,7 +1051,7 @@ TEST(VSSGenSolver, IterativeContinuousStammstrecke4) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 6);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, IterativeContinuousStammstrecke4Cuts) {
@@ -1060,7 +1067,7 @@ TEST(VSSGenSolver, IterativeContinuousStammstrecke4Cuts) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 6);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, IterativeContinuousOvertakeRelative) {
@@ -1076,7 +1083,7 @@ TEST(VSSGenSolver, IterativeContinuousOvertakeRelative) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 7);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
 TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed1) {
@@ -1092,7 +1099,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed1) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 
   for (size_t tr = 0;
        tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
@@ -1148,7 +1155,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed2) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 
   for (size_t tr = 0;
        tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
@@ -1204,7 +1211,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed3) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 
   for (size_t tr = 0;
        tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
@@ -1260,7 +1267,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree1) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 
   for (size_t tr = 0;
        tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
@@ -1316,7 +1323,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree2) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 
   for (size_t tr = 0;
        tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
@@ -1372,7 +1379,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree3) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 
   for (size_t tr = 0;
        tr < obj_val.get_instance()->get_const_train_list().size(); ++tr) {
@@ -1631,7 +1638,7 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val, 15, "obj_val");
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
   // Check that tmp1folder and tmp1folder/tmp1file.mps and
   // tmp1folder/tmp1file.sol exist and are not empty
   EXPECT_TRUE(std::filesystem::exists("tmp1folder"));
@@ -1652,7 +1659,7 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val2.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val2, 15, "obj_val2");
+  check_schedule_within_dt_and_order(obj_val2, 15, "obj_val2");
   // Check that tmp2folder and the solution directory exist
   EXPECT_TRUE(std::filesystem::exists("tmp2folder"));
   // Expect all solution files to exist and be not empty
@@ -1674,7 +1681,7 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val3.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val3.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val3, 15, "obj_val3");
+  check_schedule_within_dt_and_order(obj_val3, 15, "obj_val3");
   // Check that corresponding folders and files exist and are not empty
   EXPECT_TRUE(std::filesystem::exists("tmp3folder"));
   expect_solution_files(solution_dir("tmp3folder", "tmp3file"));
@@ -1694,7 +1701,7 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val4.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val4.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val4, 15, "obj_val4");
+  check_schedule_within_dt_and_order(obj_val4, 15, "obj_val4");
   // Expect no folder tmp4folder to exist
   EXPECT_FALSE(std::filesystem::exists("tmp4folder"));
 
@@ -1708,7 +1715,7 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val5.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val5.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val5, 15, "obj_val5");
+  check_schedule_within_dt_and_order(obj_val5, 15, "obj_val5");
   // Expect relevant folders and files to exist and be not empty
   EXPECT_TRUE(std::filesystem::exists("tmp5folder"));
   expect_solution_files(solution_dir("tmp5folder", "tmp5file"));
@@ -1729,7 +1736,7 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val6.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val6.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val6, 15, "obj_val6");
+  check_schedule_within_dt_and_order(obj_val6, 15, "obj_val6");
   // Expect relevant folders and files to exist and be not empty
   EXPECT_TRUE(std::filesystem::exists("tmp6folder"));
   expect_solution_files(solution_dir("tmp6folder", "tmp6file"));
@@ -1748,7 +1755,7 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val7.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val7.get_obj(), 1);
 
-  check_exit_times_within_dt_and_order(obj_val7, 15, "obj_val7");
+  check_schedule_within_dt_and_order(obj_val7, 15, "obj_val7");
   // By default everything is exported to the current directory using the name
   // "model"
   expect_solution_files(solution_dir(".", "model"));

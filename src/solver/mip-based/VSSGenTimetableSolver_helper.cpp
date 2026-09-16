@@ -456,6 +456,17 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
       exit_time = INF;
     }
     sol_obj.set_train_exit_time(train.get_name(), exit_time.value());
+
+    // The model has no notion of a station delay. It forces the train to a
+    // standstill within the station for the entire scheduled service window,
+    // hence the scheduled service times are exactly the times at which the
+    // train is serviced.
+    const auto& tr_stops =
+        m_instance.get_const_schedule(train.get_name()).get_stops();
+    for (size_t stop = 0; stop < tr_stops.size(); ++stop) {
+      sol_obj.set_train_stop_time(train.get_name(), stop,
+                                  tr_stops.at(stop).get_service_time());
+    }
   }
 
   return sol_obj;
