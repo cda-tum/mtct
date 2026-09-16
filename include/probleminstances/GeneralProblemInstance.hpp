@@ -722,6 +722,12 @@ public:
   }
 
   /**
+   * @brief Replaces all routes of the instance.
+   *
+   * @param routes The new route map.
+   */
+  void set_routes(RouteMap routes) { m_routes = std::move(routes); }
+  /**
    * @brief Adds an empty route for a train.
    *
    * @param train_name Name of the train for which to add an empty route.

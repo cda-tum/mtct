@@ -272,7 +272,14 @@ public:
       const instances::SolGeneralPerformanceOptimizationInstance&
           moving_block_solution)
       : VSSGenTimetableSolver(*moving_block_solution.get_instance()),
-        m_moving_block_solution(moving_block_solution) {};
+        m_moving_block_solution(moving_block_solution) {
+    // All information extracted from the moving block solution (train orders,
+    // positions, velocities, ...) refers to the routes of that solution, which
+    // may differ from the routes specified in the instance. Since this solver
+    // always uses fixed routes, the instance routes are replaced by the ones
+    // of the moving block solution.
+    m_instance.set_routes(m_moving_block_solution.get_const_solution_routes());
+  };
 
   // Methods
   [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance

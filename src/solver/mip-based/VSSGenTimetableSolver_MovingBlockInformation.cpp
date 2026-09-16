@@ -88,7 +88,6 @@ void cda_rail::solver::mip_based::
     VSSGenTimetableSolverWithMovingBlockInformation::
         include_additional_information() {
   PLOGD << "Including additional information";
-  fix_oder_on_edges();
   if (m_fix_orders_on_edges) {
     PLOGD << "Fixing orders on edges";
     fix_oder_on_edges();
