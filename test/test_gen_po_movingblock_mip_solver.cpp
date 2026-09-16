@@ -29,6 +29,41 @@ void cleanup_export_dirs() {
   std::filesystem::remove_all("solutions");
 }
 
+void check_schedule(
+    const cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
+    const cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol,
+    const std::string& instance_path, double exit_tolerance = 1e9,
+    double station_tolerance = 1e9) {
+  if (!sol.has_solution()) {
+    return;
+  }
+  const auto num_tr = instance.get_const_train_list().size();
+  for (size_t tr = 0; tr < num_tr; tr++) {
+    auto const  tr_object   = instance.get_const_train_list().get_train(tr);
+    auto const& tr_schedule = instance.get_const_schedule(tr);
+    EXPECT_GE(sol.get_exit_time(tr_object.get_name()),
+              tr_schedule.get_exit_time())
+        << " for train " << tr_object.get_name() << " in " << instance_path;
+    EXPECT_LE(sol.get_exit_time(tr_object.get_name()),
+              tr_schedule.get_exit_time() + exit_tolerance)
+        << " for train " << tr_object.get_name() << " in " << instance_path;
+
+    auto const& tr_stops = tr_schedule.get_stops();
+    for (auto const& tr_stop : tr_stops) {
+      EXPECT_GE(
+          sol.get_stop_time(tr_object.get_name(), tr_stop.get_station().name),
+          tr_stop.get_service_time())
+          << " for train " << tr_object.get_name() << " at station "
+          << tr_stop.get_station().name << " in " << instance_path;
+      EXPECT_LE(
+          sol.get_stop_time(tr_object.get_name(), tr_stop.get_station().name),
+          tr_stop.get_service_time() + station_tolerance)
+          << " for train " << tr_object.get_name() << " at station "
+          << tr_stop.get_station().name << " in " << instance_path;
+    }
+  }
+}
+
 void check_last_train_pos(
     const cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
     const cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol,
