@@ -1620,3 +1620,21 @@ TEST(EoM, ConstantAcceleration) {
       cda_rail::time_to_travel_distance_with_constant_acceleration(20, -3, 56),
       4.0);
 }
+
+TEST(EoM, EoMGetLineSpeedTooShortTime) {
+  // The fastest possible traversal of the edge. A solution that was only
+  // obtained up to an absolute MIP gap can record a marginally shorter time.
+  const auto v_line_max = cda_rail::maximal_line_speed(10, 22, 25, 2, 1, 152);
+  const auto t_too_short =
+      cda_rail::time_on_edge(10, 22, v_line_max, 2, 1, 152) -
+      (10 * cda_rail::GRB_EPS);
+
+  // By default such a time is an error, ...
+  EXPECT_THROW(cda_rail::get_line_speed(10, 22, 1, 25, 2, 1, 152, t_too_short),
+               cda_rail::exceptions::ConsistencyException);
+
+  // ... but it can be answered with the maximal line speed on request.
+  EXPECT_APPROX_EQ(
+      cda_rail::get_line_speed(10, 22, 1, 25, 2, 1, 152, t_too_short, true),
+      v_line_max);
+}

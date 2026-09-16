@@ -430,7 +430,13 @@ double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
     return v_lb;
   }
 
-  assert(t_lb < t);
+  if (t_lb >= t) {
+    throw exceptions::ConsistencyException(concatenate_string_views(
+        {"t (", std::to_string(t),
+         ") is shorter than the fastest possible travel time (",
+         std::to_string(t_lb),
+         "). Use allow_too_short_time if this is intended."}));
+  }
   assert(t < t_ub);
   while (v_ub - v_lb > LINE_SPEED_ACCURACY &&
          t - t_lb > LINE_SPEED_TIME_ACCURACY) {

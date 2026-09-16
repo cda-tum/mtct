@@ -420,7 +420,8 @@ double maximal_line_speed(double v_1, double v_2, double v_max, double a,
  * @return Feasible line speed in m/s, or `0` if no finite no-stop solution
  *         exists for @p t.
  * @throws cda_rail::exceptions::ConsistencyException If intermediate EOM checks
- *         fail for the provided parameters.
+ *         fail for the provided parameters, or if @p t is shorter than the
+ *         fastest possible travel time and @p allow_too_short_time is `false`.
  */
 double get_line_speed(double v_1, double v_2, double v_min, double v_max,
                       double a, double d, double s, double t,
