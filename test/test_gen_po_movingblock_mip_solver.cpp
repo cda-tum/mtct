@@ -948,6 +948,7 @@ TEST(GenPOMovingBlockMIPSolver, Default1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -967,6 +968,7 @@ TEST(GenPOMovingBlockMIPSolver, Default2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -985,6 +987,7 @@ TEST(GenPOMovingBlockMIPSolver, Default3) {
     check_objective_if_optimal_or_warn(sol, p, 5);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1003,6 +1006,7 @@ TEST(GenPOMovingBlockMIPSolver, Default4) {
     check_objective_if_optimal_or_warn(sol, p, 5);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1021,6 +1025,7 @@ TEST(GenPOMovingBlockMIPSolver, Default5) {
     check_objective_if_optimal_or_warn(sol, p, 5);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1051,6 +1056,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1077,6 +1083,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1102,6 +1109,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1127,6 +1135,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_8Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1152,6 +1161,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_16Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1184,6 +1194,7 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1215,6 +1226,7 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1243,6 +1255,7 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1270,6 +1283,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_4Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1297,6 +1311,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_8Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1324,6 +1339,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_16Trains) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1343,6 +1359,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1364,6 +1381,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1Indicator) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1387,6 +1405,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1406,6 +1425,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1425,6 +1445,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy4) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1450,6 +1471,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1475,6 +1497,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1500,6 +1523,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified3) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1525,6 +1549,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified1) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1550,6 +1575,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified2) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1575,6 +1601,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified3) {
     check_objective_if_optimal_or_warn(sol, p, 10);
 
     check_last_train_pos(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
   }
 }
 
@@ -1604,6 +1631,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val, "SimpleStation", 10);
+  check_schedule(instance, obj_val, "SimpleStation", 0.0);
   // Check that the model files exist in the standard solution directory, which
   // includes the parameter identifier, but no solution was exported
   EXPECT_TRUE(std::filesystem::exists("tmp1folder"));
@@ -1634,6 +1662,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val2, "SimpleStation", 10);
+  check_schedule(instance, obj_val2, "SimpleStation", 0.0);
   // Check that tmp2folder and solutions structure exists
   EXPECT_TRUE(std::filesystem::exists("tmp2folder"));
   EXPECT_TRUE(std::filesystem::exists(
@@ -1673,6 +1702,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val3, "SimpleStation", 10);
+  check_schedule(instance, obj_val3, "SimpleStation", 0.0);
   // Check that corresponding folders exist
   EXPECT_TRUE(std::filesystem::exists("tmp3folder"));
   EXPECT_TRUE(
@@ -1732,6 +1762,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val4, "SimpleStation", 10);
+  check_schedule(instance, obj_val4, "SimpleStation", 0.0);
   // Expect no folder tmp4folder to exist
   EXPECT_FALSE(std::filesystem::exists("tmp4folder"));
 
@@ -1751,6 +1782,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val5, "SimpleStation", 10);
+  check_schedule(instance, obj_val5, "SimpleStation", 0.0);
   // Check that tmp5folder exists with LP files and solutions
   EXPECT_TRUE(std::filesystem::exists("tmp5folder"));
   EXPECT_TRUE(std::filesystem::exists("tmp5folder/solutions/tmp5file/atmos2023/"
@@ -1796,6 +1828,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val6, "SimpleStation", 10);
+  check_schedule(instance, obj_val6, "SimpleStation", 0.0);
   // Check that tmp6folder exists with LP files, instance, networks, and
   // solutions
   EXPECT_TRUE(std::filesystem::exists("tmp6folder"));
@@ -1860,6 +1893,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
 
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val7, "SimpleStation", 10);
+  check_schedule(instance, obj_val7, "SimpleStation", 0.0);
   // Expect LP files to exist in the default solution directory
   EXPECT_TRUE(std::filesystem::exists(
       "solutions/unnamed-experiment/atmos2023/SimpleStation/model.mps"));
@@ -1920,6 +1954,8 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
         {.use_lazy_constraints = true, .abs_mip_gap = 10}, {}, 700, true);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+
+    check_schedule(instance, sol, p);
   }
 }
 
@@ -2012,6 +2048,8 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
       << "Expected expensive optimum with lazy constraints";
   EXPECT_LE(sol3.get_obj(), 2 * (190.0 - 90.0))
       << "Expected expensive optimum with lazy constraints";
+  check_schedule(instance, sol3, "PreventOvertakingWhileStopping (lazy)",
+                 100.0);
 
   EXPECT_TRUE(sol4.has_solution())
       << "Expected feasible solution without lazy constraints";
@@ -2021,6 +2059,8 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
       << "Expected expensive optimum without lazy constraints";
   EXPECT_LE(sol4.get_obj(), 2 * (190.0 - 90.0))
       << "Expected expensive optimum without lazy constraints";
+  check_schedule(instance, sol4, "PreventOvertakingWhileStopping (no lazy)",
+                 100.0);
 
   EXPECT_TRUE(sol5.has_solution())
       << "Expected feasible solution on late entry with lazy constraints";
@@ -2028,6 +2068,8 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
       << "Expected optimal solution on late entry with lazy constraints";
   EXPECT_EQ(sol5.get_obj(), 0.0)
       << "Expected zero objective on late entry with lazy constraints";
+  check_schedule(instance, sol5,
+                 "PreventOvertakingWhileStopping (late entry, lazy)", 0.0);
 
   EXPECT_TRUE(sol6.has_solution())
       << "Expected feasible solution on late entry without lazy constraints";
@@ -2035,6 +2077,8 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
       << "Expected optimal solution on late entry without lazy constraints";
   EXPECT_EQ(sol6.get_obj(), 0.0)
       << "Expected zero objective on late entry without lazy constraints";
+  check_schedule(instance, sol6,
+                 "PreventOvertakingWhileStopping (late entry, no lazy)", 0.0);
 }
 
 // Tests created due to testing errors
@@ -2069,6 +2113,7 @@ TEST(GenPOMovingBlockMIPSolver, OvertakeBugConsistencyException) {
   check_objective_if_optimal_or_warn(sol, "Overtake", 10);
 
   check_last_train_pos(instance, sol, "Overtake");
+  check_schedule(instance, sol, "Overtake", 0.0, 10.0);
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
