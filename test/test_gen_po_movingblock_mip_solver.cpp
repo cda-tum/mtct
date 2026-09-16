@@ -121,11 +121,16 @@ void check_last_train_pos(
 template <typename SolutionType>
 void check_objective_if_optimal_or_warn(const SolutionType& solution,
                                         const std::string&  instance_name,
-                                        const double        maxObj) {
+                                        const double        maxObj,
+                                        double              abs_mip_gap = 10) {
   const auto status = solution.get_status();
   if (status == cda_rail::SolutionStatus::Optimal) {
     EXPECT_LE(solution.get_obj(), maxObj)
         << "Objective value is too high for instance " << instance_name;
+    EXPECT_GE(solution.get_lower_bound(), 0)
+        << "Lower bound is negative for instance " << instance_name;
+    EXPECT_GE(solution.get_lower_bound(), solution.get_obj() - abs_mip_gap)
+        << "Lower bound is too low for instance " << instance_name;
     return;
   }
 
