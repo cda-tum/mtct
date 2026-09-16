@@ -11,7 +11,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
-#include <ranges>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -151,23 +150,15 @@ double
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_stop_time(
     size_t tr, size_t stop_idx) const {
   assert(m_model->get(GRB_IntAttr_SolCount) >= 1);
-  const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
   const auto& stop_object =
       m_instance.get_const_schedule(tr).get_stops().at(stop_idx);
 
-  for (const auto& vertex_id :
-       m_tr_stop_data.at(tr).at(stop_idx) | std::ranges::views::keys) {
-    GRBVar stop_var = m_vars.at("stop").at(tr, stop_idx, vertex_id);
-    if (!stop_var.sameAs(GRBVar()) && stop_var.get(GRB_DoubleAttr_X) > 0.5) {
-      // The train is serviced as soon as its front arrives at the vertex.
-      return m_vars.at("t_front_arrival")
-          .at(tr, vertex_id)
-          .get(GRB_DoubleAttr_X);
-    }
-  }
-  throw exceptions::ConsistencyException("No stop found for train " +
-                                         tr_object.get_name() + " at station " +
-                                         stop_object.get_station().name);
+  // The service cannot start before the scheduled service time, even if the
+  // train arrives earlier. The service delay variable is exactly this
+  // deviation, i.e., max(0, t_front_arrival - service_time). Hence, the
+  // service, and with it the stop, starts at service_time + service_delay.
+  return stop_object.get_service_time() +
+         m_vars.at("service_delay").at(tr, stop_idx).get(GRB_DoubleAttr_X);
 }
 
 double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
