@@ -2335,4 +2335,40 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
                  "PreventOvertakingWhileStopping (late entry, no lazy)", 0.0);
 }
 
+// Tests created due to testing errors
+
+TEST(GenPOMovingBlockMIPSolver, OvertakeBugConsistencyException) {
+  const auto instance =
+      cda_rail::instances::GeneralPerformanceOptimizationInstance(
+          "Overtake", "atmos2023", "data");
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+  const auto                                             sol = solver.solve(
+      {.fix_routes         = false,
+       .max_velocity_delta = 5.55,
+       .velocity_refinement_strategy =
+           cda_rail::VelocityRefinementStrategy::MinOneStep,
+       .simplify_headway_constraints          = false,
+       .strengthen_vertex_headway_constraints = false,
+       .allow_late_entry                      = false,
+       .max_exit_delay                        = 0.0,
+       .max_station_delay                     = 10.0},
+      {.use_indicator_constraints              = false,
+       .use_lazy_constraints                   = true,
+       .include_reverse_headways               = true,
+       .include_higher_velocities_in_edge_expr = false,
+       .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+           LazyConstraintSelectionStrategy::AllChecked,
+       .lazy_train_selection_strategy =
+           cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
+       .abs_mip_gap = 10},
+      {}, 700, true);
+
+  EXPECT_TRUE(sol.has_solution()) << "No solution found for instance Overtake";
+  check_objective_if_optimal_or_warn(sol, "Overtake", 10);
+
+  check_last_train_pos(instance, sol, "Overtake");
+  check_trajectory(instance, sol, "Overtake");
+  check_schedule(instance, sol, "Overtake", 0.0, 10.0);
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
