@@ -17,5 +17,6 @@
   "total_time": 0.028,
   "use_indicator_constraints_bool": false,
   "use_lazy_constraints_bool": true,
+  "use_minimum_time_bounds_bool": true,
   "velocity_refinement_strategy_string": "MinOneStep"
 }
