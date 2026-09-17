@@ -144,9 +144,11 @@ void cda_rail::solver::mip_based::
                                  std::to_string(t));
           m_model->addConstr(m_vars["v"](tr, t_steps) == 0,
                              "stop_vel_" + tr_name + "_" + std::to_string(t));
-          m_model->addConstr(m_vars["brakelen"](tr, t_steps - 1) == 0,
-                             "stop_brakelen_" + tr_name + "_" +
-                                 std::to_string(t));
+          if (include_braking_curves) {
+            m_model->addConstr(m_vars["brakelen"](tr, t_steps - 1) == 0,
+                               "stop_brakelen_" + tr_name + "_" +
+                                   std::to_string(t));
+          }
         }
       }
     }
