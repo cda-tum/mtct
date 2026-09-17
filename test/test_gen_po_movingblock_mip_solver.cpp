@@ -2134,8 +2134,8 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
 
   for (const auto& p : paths) {
     const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance(
-            "toy", "ras", "data");
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(p, "ras",
+                                                                    "data");
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.fix_routes         = false,
