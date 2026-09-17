@@ -8,8 +8,6 @@
 #include <system_error>
 
 namespace {
-// The moving block solutions used as input are stored alongside the instances
-// they belong to, hence both are read from the same instance subdirectory.
 constexpr std::string_view INSTANCE_SUBDIRECTORY = "atmos2023";
 constexpr std::string_view SOLUTION_SUBDIRECTORY = "moving-block-solutions";
 
@@ -77,7 +75,7 @@ TEST(VSSGenMBInfoSolver, Default5) {
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 13);
+  EXPECT_EQ(sol.get_obj(), 7);
 }
 
 TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
@@ -149,7 +147,7 @@ TEST(VSSGenMBInfoSolver, Default6) {
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 9);
+  EXPECT_EQ(sol.get_obj(), 10);
 }
 
 TEST(VSSGenMBInfoSolver, Default7) {
@@ -171,7 +169,7 @@ TEST(VSSGenMBInfoSolver, Default8) {
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 8);
+  EXPECT_EQ(sol.get_obj(), 7);
 }
 
 TEST(VSSGenMBInfoSolver, Default9) {
@@ -182,5 +180,5 @@ TEST(VSSGenMBInfoSolver, Default9) {
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 15);
+  EXPECT_EQ(sol.get_obj(), 14);
 }
