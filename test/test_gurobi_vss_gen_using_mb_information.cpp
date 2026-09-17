@@ -1,79 +1,113 @@
 #include "Definitions.hpp"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
 #include <filesystem>
-#if 0
-TEST(VSSGenMBInfoSolver, Default1) {
-  const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance(
-            "SimpleStation", "atmos2023", "data");
-  auto sol_obj =
-        cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
-  sol_obj.load_solution("data", "moving-block-solutions");
+#include <string_view>
+#include <system_error>
 
+namespace {
+// The moving block solutions used as input are stored alongside the instances
+// they belong to, hence both are read from the same instance subdirectory.
+constexpr std::string_view INSTANCE_SUBDIRECTORY = "atmos2023";
+constexpr std::string_view SOLUTION_SUBDIRECTORY = "moving-block-solutions";
+
+cda_rail::instances::SolGeneralPerformanceOptimizationInstance
+load_moving_block_solution(std::string_view const instance_name) {
+  const auto instance =
+      cda_rail::instances::GeneralPerformanceOptimizationInstance(
+          instance_name, INSTANCE_SUBDIRECTORY, "data");
+  auto sol_obj =
+      cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
+  sol_obj.load_solution("data", SOLUTION_SUBDIRECTORY);
+  return sol_obj;
+}
+} // namespace
+
+TEST(VSSGenMBInfoSolver, Default1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/SimpleStation/");
+      solver(load_moving_block_solution("SimpleStation"));
 
   const auto sol = solver.solve();
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol.get_obj(), 1);
-  EXPECT_EQ(sol.get_mip_obj(), 1);
 }
 
 TEST(VSSGenMBInfoSolver, Default2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/HighSpeedTrack2Trains/");
+      solver(load_moving_block_solution("HighSpeedTrack2Trains"));
 
   const auto sol = solver.solve();
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol.get_obj(), 18);
-  EXPECT_EQ(sol.get_mip_obj(), 18);
 }
 
 TEST(VSSGenMBInfoSolver, Default3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/HighSpeedTrack5Trains/");
+      solver(load_moving_block_solution("HighSpeedTrack5Trains"));
 
   const auto sol = solver.solve({15, true, false});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol.get_obj(), 10);
-  EXPECT_EQ(sol.get_mip_obj(), 10);
 }
 
 TEST(VSSGenMBInfoSolver, Default4) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/Overtake/");
+      solver(load_moving_block_solution("Overtake"));
 
   const auto sol = solver.solve();
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 14);
-  EXPECT_EQ(sol.get_mip_obj(), 14);
+  EXPECT_EQ(sol.get_obj(), 7);
 }
 
 TEST(VSSGenMBInfoSolver, Default5) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/SimpleNetwork/");
+      solver(load_moving_block_solution("SimpleNetwork"));
 
   const auto sol = solver.solve();
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol.get_obj(), 13);
-  EXPECT_EQ(sol.get_mip_obj(), 13);
 }
 
 TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
+  // Both the instance and the moving block solution are read relative to the
+  // current working directory, hence the solver has to be created before
+  // switching to the temporary directory.
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/SimpleNetwork/");
+      solver(load_moving_block_solution("SimpleNetwork"));
+
+  // All exports happen relative to the current working directory. Hence, the
+  // test is executed within a temporary directory that is removed afterwards,
+  // even if an expectation fails in between.
+  struct ScopedTempWorkingDirectory {
+    std::filesystem::path original_directory;
+    std::filesystem::path temporary_directory;
+    ~ScopedTempWorkingDirectory() {
+      std::error_code ignored;
+      std::filesystem::current_path(original_directory, ignored);
+      std::filesystem::remove_all(temporary_directory, ignored);
+    }
+  };
+
+  const std::filesystem::path temp_dir =
+      std::filesystem::temp_directory_path() /
+      "cda_rail_test_vss_gen_mb_info_simple_network_export";
+  std::filesystem::remove_all(temp_dir);
+  ASSERT_TRUE(std::filesystem::create_directories(temp_dir));
+  const ScopedTempWorkingDirectory temp_working_directory{
+      std::filesystem::current_path(), temp_dir};
+  std::filesystem::current_path(temp_dir);
 
   const auto sol = solver.solve(
       {5}, {}, {}, {false, cda_rail::ExportOption::ExportSolution}, 10);
@@ -81,64 +115,72 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
   EXPECT_FALSE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Timeout);
   EXPECT_EQ(sol.get_obj(), -1);
-  EXPECT_EQ(sol.get_mip_obj(), -1);
 
-  // Expect folder model to exist and to contain folders solution and instance
-  EXPECT_TRUE(std::filesystem::exists("model"));
-  EXPECT_TRUE(std::filesystem::exists("model/solution"));
-  EXPECT_TRUE(std::filesystem::exists("model/instance"));
-  // Within solution there should be data.json
-  EXPECT_TRUE(std::filesystem::exists("model/solution/data.json"));
+  // Without an explicit path and name the solution is exported to
+  // ./solutions/model/<instance_subdirectory>/<instance_name>
+  const std::filesystem::path solution_dir =
+      std::filesystem::path("solutions") / "model" / INSTANCE_SUBDIRECTORY /
+      "SimpleNetwork";
+  EXPECT_TRUE(std::filesystem::is_directory(solution_dir));
+  std::error_code ec;
+  for (const auto& file_name :
+       {"solution_data.json", "routes.json", "train_pos.json",
+        "train_speed.json", "train_exit_times.json", "train_stop_times.json",
+        "vss_pos.json"}) {
+    const auto file_path = solution_dir / file_name;
+    EXPECT_TRUE(std::filesystem::exists(file_path))
+        << "Missing file " << file_path;
+    EXPECT_GT(std::filesystem::file_size(file_path, ec), 0)
+        << "Empty file " << file_path;
+  }
 
-  // Remove model folder
-  std::filesystem::remove_all("model");
+  // Neither the instance nor the model itself are expected to be exported
+  EXPECT_FALSE(std::filesystem::exists("instances"));
+  EXPECT_FALSE(std::filesystem::exists("networks"));
+  EXPECT_FALSE(std::filesystem::exists("model.mps"));
+  EXPECT_FALSE(std::filesystem::exists("model.sol"));
 }
 
 TEST(VSSGenMBInfoSolver, Default6) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/SingleTrack/");
+      solver(load_moving_block_solution("SingleTrack"));
 
   const auto sol = solver.solve();
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol.get_obj(), 9);
-  EXPECT_EQ(sol.get_mip_obj(), 9);
 }
 
 TEST(VSSGenMBInfoSolver, Default7) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/SingleTrackWithStation/");
+      solver(load_moving_block_solution("SingleTrackWithStation"));
 
   const auto sol = solver.solve();
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol.get_obj(), 5);
-  EXPECT_EQ(sol.get_mip_obj(), 5);
 }
 
 TEST(VSSGenMBInfoSolver, Default8) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/Stammstrecke4Trains/");
+      solver(load_moving_block_solution("Stammstrecke4Trains"));
 
   const auto sol = solver.solve({5});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 6);
-  EXPECT_EQ(sol.get_mip_obj(), 6);
+  EXPECT_EQ(sol.get_obj(), 8);
 }
 
 TEST(VSSGenMBInfoSolver, Default9) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver("./example-networks-mb-solutions/Stammstrecke8Trains/");
+      solver(load_moving_block_solution("Stammstrecke8Trains"));
 
   const auto sol = solver.solve({5});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol.get_obj(), 15);
-  EXPECT_EQ(sol.get_mip_obj(), 15);
 }
-#endif
