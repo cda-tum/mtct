@@ -11,6 +11,7 @@
 
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "gtest/gtest_prod.h"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -69,11 +70,19 @@ struct ModelDetail {
   double                     max_velocity_delta = 5.55; // 20 km/h
   VelocityRefinementStrategy velocity_refinement_strategy =
       VelocityRefinementStrategy::MinOneStep;
-  bool   simplify_headway_constraints          = false;
-  bool   strengthen_vertex_headway_constraints = false;
-  bool   allow_late_entry                      = false;
-  double max_exit_delay                        = DEFAULT_MAX_DELAY;
-  double max_station_delay                     = DEFAULT_MAX_DELAY;
+  bool simplify_headway_constraints          = false;
+  bool strengthen_vertex_headway_constraints = false;
+  bool allow_late_entry                      = false;
+  // Bound every timing variable by the earliest time at which the
+  // corresponding event can happen, i.e. by the minimal running time the train
+  // needs to get there. Without these bounds the only lower bound on the
+  // objective is the scheduled timetable, and since everything that forces a
+  // train to travel at all is a big-M constraint, the LP relaxation is then
+  // free of any running time. Disabling this is only useful to measure the
+  // effect.
+  bool   use_minimum_time_bounds = true;
+  double max_exit_delay          = DEFAULT_MAX_DELAY;
+  double max_station_delay       = DEFAULT_MAX_DELAY;
 };
 
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
@@ -154,15 +163,39 @@ private:
                                                 m_tr_stop_data;
   std::vector<std::vector<std::vector<double>>> m_velocity_extensions;
   std::vector<std::pair<size_t, size_t>>        m_relevant_reverse_edges;
+  // Earliest time at which the front of a train can arrive at a vertex, by
+  // train and vertex. All zero if ModelDetail::use_minimum_time_bounds is not
+  // set.
+  std::vector<std::vector<double>> m_minimum_arrival_times;
+  // Time the rear of a train needs to reach a vertex after its front, by
+  // train. All zero if ModelDetail::use_minimum_time_bounds is not set.
+  std::vector<double> m_minimum_clearing_times;
+  // Earliest time at which the rear of a train can leave its exit vertex, by
+  // train. At least the scheduled exit time.
+  std::vector<double> m_minimum_exit_times;
+  // Earliest service delay of a scheduled stop, by train and stop. All zero if
+  // ModelDetail::use_minimum_time_bounds is not set.
+  std::vector<std::vector<double>> m_minimum_service_delays;
 
   void initialize_variables(
       const SolutionSettingsMovingBlock& solution_settings_input,
       const SolverStrategyMovingBlock&   solver_strategy_input,
       const ModelDetail&                 model_detail_input);
 
-  double latest_exit_time(size_t tr) const;
-  double earliest_exit_time(size_t tr) const;
+  double               latest_exit_time(size_t tr) const;
+  [[nodiscard]] double minimum_arrival_time(size_t tr, size_t v) const {
+    return m_minimum_arrival_times.at(tr).at(v);
+  };
+  // Between the front and the rear of a train passing a vertex, the train
+  // covers its own length, which takes at least its length divided by its
+  // maximal speed.
+  [[nodiscard]] double minimum_rear_departure_time(size_t tr, size_t v) const {
+    return std::min(minimum_arrival_time(tr, v) +
+                        m_minimum_clearing_times.at(tr),
+                    latest_exit_time(tr));
+  };
 
+  void fill_minimum_time_bounds();
   void fill_tr_stop_data();
   void fill_relevant_reverse_edges();
   void fill_velocity_extensions();

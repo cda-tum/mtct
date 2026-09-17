@@ -38,6 +38,44 @@ class
 
 namespace cda_rail::instances {
 
+/**
+ * @brief Earliest times at which a train can reach its remaining schedule.
+ *
+ * Every entry is a lower bound on the corresponding event: it is obtained by
+ * letting the train travel at the smaller of its own and the respective edge's
+ * speed limit, i.e. by ignoring acceleration, and by ignoring every other
+ * train. It is therefore attainable by no train and valid as a bound.
+ */
+struct MinimumRunningTimes {
+  /**
+   * @brief Whether the remaining schedule can be served at all.
+   *
+   * `false` if some station or the exit vertex cannot be reached from the
+   * given start, in which case the times are meaningless.
+   */
+  bool feasible = true;
+  /**
+   * @brief Earliest arrival of the train's front at a stop vertex of the
+   *        respective station, before its service.
+   *
+   * One entry per considered stop, in schedule order, starting at the stop
+   * passed as `first_stop`.
+   */
+  std::vector<double> stop_arrivals;
+  /**
+   * @brief Earliest time at which the train's front can be at its exit vertex
+   *        with every considered stop served.
+   *
+   * If the last stop happens at the exit vertex itself, this is the earliest
+   * departure from that stop rather than the arrival at it, so it bounds the
+   * departure from the exit vertex and not the arrival there.
+   *
+   * Not raised to the scheduled exit time, which refers to the rear of the
+   * train leaving the network and can hence be later.
+   */
+  double exit_arrival = 0.0;
+};
+
 class GeneralPerformanceOptimizationInstance
     : public GeneralProblemInstanceWithScheduleAndRoutes {
   friend class SolGeneralPerformanceOptimizationInstance;
@@ -104,6 +142,38 @@ public:
   [[nodiscard]] double sum_of_weighted_exit_times() const;
 
   [[nodiscard]] double sum_of_train_weights() const;
+
+  /**
+   * @brief Earliest times at which train @p tr can serve its remaining stops
+   *        and reach its exit vertex.
+   *
+   * Walks the remaining schedule and adds, for every leg, the quickest
+   * possible running time to the next station (respectively to the exit
+   * vertex), the service duration of every stop passed and, if
+   * @p consider_earliest_departures is set, the earliest departure of every
+   * stop. Running times ignore acceleration and every other train, so all
+   * returned times are lower bounds on the respective event.
+   *
+   * @param tr Train index.
+   * @param start_edges Edges the train may start on. The train is assumed to
+   *        be at the source of these edges if @p include_first_edge is set and
+   *        at their common target otherwise.
+   * @param include_first_edge Whether the length of the start edges counts.
+   * @param start_time Time at which the train is at the described position.
+   * @param first_stop Index of the first scheduled stop still to be served.
+   * @param consider_earliest_departures Whether earliest departure times of
+   *        stops are respected.
+   * @return Earliest arrival times, see `MinimumRunningTimes`.
+   * @throws cda_rail::exceptions::TrainNotExistentException If @p tr does not
+   *         exist.
+   * @throws cda_rail::exceptions::InvalidInputException If @p start_edges is
+   *         empty or @p first_stop exceeds the number of scheduled stops.
+   */
+  [[nodiscard]] MinimumRunningTimes
+  minimum_running_times(size_t tr, const cda_rail::index_set& start_edges,
+                        bool include_first_edge, double start_time,
+                        size_t first_stop,
+                        bool   consider_earliest_departures) const;
 
   /**
    * @brief Constructs an instance from a named subdirectory.

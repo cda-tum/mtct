@@ -24,8 +24,6 @@ cda_rail::simulator::simple_remaining_time_heuristic(
   const auto& tr_edges    = simulator.get_train_edges_of_tr(tr);
   const auto& tr_schedule = simulator.get_instance()->get_const_schedule(tr);
   const auto& tr_stops    = tr_schedule.get_stops();
-  const auto& tr_obj =
-      simulator.get_instance()->get_const_train_list().get_train(tr);
 
   if (tr_edges.empty()) {
     heuristic_exit_time =
@@ -61,71 +59,27 @@ cda_rail::simulator::simple_remaining_time_heuristic(
             .average_remaining_stop_delay = cda_rail::INF};
   }
 
-  for (size_t next_stop = first_next_stop; next_stop < tr_stops.size();
-       ++next_stop) {
-    // Quickest path to next station
-    const auto&         next_station = tr_stops.at(next_stop).get_station();
-    cda_rail::index_set next_station_tracks;
-    const auto&         stop_tracks =
-        simulator.get_instance()->get_stop_tracks(tr, next_station.name);
-    next_station_tracks.reserve(stop_tracks.size());
-    for (const auto& track : stop_tracks | std::ranges::views::keys) {
-      next_station_tracks.insert(track);
-    }
-
-    if (next_station_tracks.empty()) {
-      return {.feasible                     = false,
-              .remaining_exit_time          = cda_rail::INF,
-              .average_remaining_stop_delay = cda_rail::INF};
-    }
-    auto const time_diff =
-        simulator.get_instance()
-            ->get_const_network()
-            .shortest_path_length_between_edge_sets(
-                start_edges, next_station_tracks, include_first_edge, true,
-                tr_obj.get_max_speed());
-    if (!time_diff.has_value()) {
-      return {.feasible                     = false,
-              .remaining_exit_time          = cda_rail::INF,
-              .average_remaining_stop_delay = cda_rail::INF};
-    }
-    heuristic_exit_time += time_diff.value();
-
-    average_stop_delay +=
-        relu(heuristic_exit_time - tr_stops.at(next_stop).get_service_time());
-
-    // Stop train
-    heuristic_exit_time += tr_stops.at(next_stop).get_service_duration();
-    if (consider_earliest_exit) {
-      heuristic_exit_time = std::max(
-          heuristic_exit_time, tr_stops.at(next_stop).get_earliest_departure());
-    }
-
-    // Initialize next iteration
-    start_edges        = std::move(next_station_tracks);
-    include_first_edge = false;
+  const auto running_times = simulator.get_instance()->minimum_running_times(
+      tr, start_edges, include_first_edge, heuristic_exit_time, first_next_stop,
+      consider_earliest_exit);
+  if (!running_times.feasible) {
+    return {.feasible                     = false,
+            .remaining_exit_time          = cda_rail::INF,
+            .average_remaining_stop_delay = cda_rail::INF};
   }
 
+  for (size_t i = 0; i < running_times.stop_arrivals.size(); ++i) {
+    average_stop_delay +=
+        relu(running_times.stop_arrivals.at(i) -
+             tr_stops.at(first_next_stop + i).get_service_time());
+  }
   if (!tr_stops.empty()) {
     average_stop_delay /= static_cast<double>(
         tr_stops.size()); // Use known station number, since this is used as
                           // objective difference
   }
 
-  // Move to exit vertex
-  auto const time_diff =
-      simulator.get_instance()
-          ->get_const_network()
-          .shortest_path_length_between_edge_and_vertex_set(
-              start_edges, {tr_schedule.get_exit_vertex()}, include_first_edge,
-              true, tr_obj.get_max_speed());
-  if (!time_diff.has_value()) {
-    return {.feasible                     = false,
-            .remaining_exit_time          = cda_rail::INF,
-            .average_remaining_stop_delay = cda_rail::INF};
-  }
-
-  heuristic_exit_time += time_diff.value();
+  heuristic_exit_time = running_times.exit_arrival;
   if (consider_earliest_exit) {
     heuristic_exit_time =
         std::max(heuristic_exit_time, tr_schedule.get_exit_time());

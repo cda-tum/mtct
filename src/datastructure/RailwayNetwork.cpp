@@ -7,6 +7,7 @@
 #include "VSSModel.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 #include <cmath>
 #include <cstddef>
@@ -851,6 +852,73 @@ std::optional<double> cda_rail::Network::shortest_path_helper(
       .first;
 }
 
+std::optional<size_t> cda_rail::Network::dijkstra_on_edges_helper(
+    const cda_rail::index_set& source_edge_ids, bool only_use_valid_successors,
+    const cda_rail::index_set& edges_to_use, bool include_first_edge,
+    bool use_minimal_time, double max_v,
+    const cda_rail::index_set& target_edges, std::vector<double>& distances,
+    cda_rail::index_vector& predecessors) const {
+  const size_t n = number_of_edges();
+  distances.assign(n, INF);
+  predecessors.assign(n, std::numeric_limits<size_t>::max());
+  std::vector<bool> visited(n, false);
+
+  // Min-heap: (distance, edge_id)
+  std::priority_queue<std::pair<double, size_t>,
+                      std::vector<std::pair<double, size_t>>, std::greater<>>
+      pq;
+
+  for (const auto src : source_edge_ids) {
+    const double d =
+        include_first_edge
+            ? delta_dist_helper(get_edge(src), max_v, use_minimal_time)
+            : 0.0;
+    if (d < distances.at(src)) {
+      distances.at(src) = d;
+      pq.emplace(d, src);
+    }
+  }
+
+  while (!pq.empty()) {
+    auto [dist, edge_id] = pq.top();
+    pq.pop();
+
+    if (visited.at(edge_id)) {
+      continue;
+    }
+    visited.at(edge_id) = true;
+
+    if (target_edges.contains(edge_id)) {
+      return edge_id;
+    }
+
+    const auto& edge           = get_edge(edge_id);
+    const auto& raw_successors = only_use_valid_successors
+                                     ? get_successors(edge_id)
+                                     : out_edges(edge.target);
+
+    for (const auto succ : raw_successors) {
+      if (!edges_to_use.empty() && !edges_to_use.contains(succ)) {
+        continue;
+      }
+      const auto& succ_edge = get_edge(succ);
+      // Skip U-turn (reverse edge)
+      if (succ_edge.source == edge.target && succ_edge.target == edge.source) {
+        continue;
+      }
+      const double new_dist =
+          dist + delta_dist_helper(succ_edge, max_v, use_minimal_time);
+      if (new_dist < distances.at(succ)) {
+        distances.at(succ)    = new_dist;
+        predecessors.at(succ) = edge_id;
+        pq.emplace(new_dist, succ);
+      }
+    }
+  }
+
+  return std::nullopt;
+}
+
 std::pair<std::optional<double>, cda_rail::index_vector>
 cda_rail::Network::shortest_path_between_sets_using_edges_helper(
     const cda_rail::index_set& source_edge_ids,
@@ -897,79 +965,76 @@ cda_rail::Network::shortest_path_between_sets_using_edges_helper(
     }
   }
 
-  const size_t           n = number_of_edges();
-  std::vector<double>    distances(n, INF);
-  std::vector<bool>      visited(n, false);
-  cda_rail::index_vector predecessors(n, std::numeric_limits<size_t>::max());
-
-  // Min-heap: (distance, edge_id)
-  std::priority_queue<std::pair<double, size_t>,
-                      std::vector<std::pair<double, size_t>>, std::greater<>>
-      pq;
-
-  for (const auto src : source_edge_ids) {
-    const double d =
-        include_first_edge
-            ? delta_dist_helper(get_edge(src), max_v, use_minimal_time)
-            : 0.0;
-    if (d < distances.at(src)) {
-      distances.at(src) = d;
-      pq.emplace(d, src);
-    }
-  }
-
-  while (!pq.empty()) {
-    auto [dist, edge_id] = pq.top();
-    pq.pop();
-
-    if (visited.at(edge_id)) {
-      continue;
-    }
-    visited.at(edge_id) = true;
-
-    const auto& edge = get_edge(edge_id);
-
-    // Check if we reached a target
-    if (target_ids.contains(target_is_edge ? edge_id : edge.target)) {
-      // Reconstruct path by walking predecessor chain
-      cda_rail::index_vector path{edge_id};
-      while (!source_edge_ids.contains(path.back()) &&
-             predecessors.at(path.back()) !=
-                 std::numeric_limits<size_t>::max()) {
-        const size_t pred = predecessors.at(path.back());
-        if (std::ranges::contains(path, pred)) {
-          throw exceptions::ConsistencyException("Cycle in path");
-        }
-        path.emplace_back(pred);
-      }
-      std::ranges::reverse(path);
-      return {dist, path};
-    }
-
-    const auto& raw_successors = only_use_valid_successors
-                                     ? get_successors(edge_id)
-                                     : out_edges(edge.target);
-
-    for (const auto succ : raw_successors) {
-      if (!edges_to_use.empty() && !edges_to_use.contains(succ)) {
-        continue;
-      }
-      const auto& succ_edge = get_edge(succ);
-      // Skip U-turn (reverse edge)
-      if (succ_edge.source == edge.target && succ_edge.target == edge.source) {
-        continue;
-      }
-      const double new_dist =
-          dist + delta_dist_helper(succ_edge, max_v, use_minimal_time);
-      if (new_dist < distances.at(succ)) {
-        distances.at(succ)    = new_dist;
-        predecessors.at(succ) = edge_id;
-        pq.emplace(new_dist, succ);
+  // An edge is a target if it is a target edge itself or ends in a target
+  // vertex
+  cda_rail::index_set target_edges;
+  if (target_is_edge) {
+    target_edges = target_ids;
+  } else {
+    for (const auto tgt : target_ids) {
+      for (const auto e_in : in_edges(tgt)) {
+        target_edges.insert(e_in);
       }
     }
   }
 
-  return {std::nullopt, {}};
+  std::vector<double>    distances;
+  cda_rail::index_vector predecessors;
+  const auto             reached = dijkstra_on_edges_helper(
+      source_edge_ids, only_use_valid_successors, edges_to_use,
+      include_first_edge, use_minimal_time, max_v, target_edges, distances,
+      predecessors);
+
+  if (!reached.has_value()) {
+    return {std::nullopt, {}};
+  }
+
+  // Reconstruct path by walking predecessor chain
+  cda_rail::index_vector path{reached.value()};
+  while (!source_edge_ids.contains(path.back()) &&
+         predecessors.at(path.back()) != std::numeric_limits<size_t>::max()) {
+    const size_t pred = predecessors.at(path.back());
+    if (std::ranges::contains(path, pred)) {
+      throw exceptions::ConsistencyException("Cycle in path");
+    }
+    path.emplace_back(pred);
+  }
+  std::ranges::reverse(path);
+  return {distances.at(reached.value()), path};
+}
+
+std::vector<double> cda_rail::Network::shortest_path_lengths_to_all_vertices(
+    const cda_rail::index_set& source_edge_ids, bool include_first_edge,
+    bool use_minimal_time, double max_v) const {
+  if (source_edge_ids.empty()) {
+    throw exceptions::InvalidInputException(
+        "Source edge IDs must not be empty");
+  }
+  for (const auto id : source_edge_ids) {
+    if (!has_edge(id)) {
+      throw exceptions::EdgeNotExistentException(id);
+    }
+  }
+  if (use_minimal_time && max_v <= 0) {
+    throw exceptions::InvalidInputException(
+        "Maximum speed must be strictly positive if minimal time is used");
+  }
+
+  std::vector<double>    distances;
+  cda_rail::index_vector predecessors;
+  // An empty target set runs the search to completion
+  [[maybe_unused]] const auto reached = dijkstra_on_edges_helper(
+      source_edge_ids, true, {}, include_first_edge, use_minimal_time, max_v,
+      {}, distances, predecessors);
+  assert(!reached.has_value());
+
+  std::vector<double> vertex_distances(number_of_vertices(), INF);
+  for (size_t e = 0; e < distances.size(); e++) {
+    const auto target = get_edge(e).target;
+    vertex_distances.at(target) =
+        std::min(vertex_distances.at(target), distances.at(e));
+  }
+  return vertex_distances;
 }
 
 std::unordered_set<size_t> cda_rail::Network::get_border_vertices_of_ttd(

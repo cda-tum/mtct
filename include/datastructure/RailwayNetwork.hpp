@@ -2023,7 +2023,64 @@ private:
         .first;
   };
 
+  /**
+   * @brief Dijkstra over the line graph of the network.
+   *
+   * Settles edges in order of increasing distance, where the distance of an
+   * edge is the cost of the cheapest walk from a source edge up to the target
+   * vertex of that edge. Shared by every shortest-path query on the network.
+   *
+   * @param source_edge_ids          Set of starting edge indices.
+   * @param only_use_valid_successors If `true`, only registered successors
+   *                                  are followed.
+   * @param edges_to_use             If non-empty, restricts traversable edges.
+   * @param include_first_edge       If `true`, includes source edge lengths.
+   * @param use_minimal_time         If `true`, measures in travel time.
+   * @param max_v                    Maximum train speed in m/s.
+   * @param target_edges             Edges at which the search stops. If empty,
+   *                                 the search is run to completion.
+   * @param distances                Out parameter of size `number_of_edges()`,
+   *                                 `INF` for unreachable edges.
+   * @param predecessors             Out parameter of size
+   *                                 `number_of_edges()`, `size_t` maximum
+   *                                 where no predecessor was set.
+   * @return The first settled element of @p target_edges, or `std::nullopt` if
+   *         none was reached.
+   */
+  [[nodiscard]] std::optional<size_t> dijkstra_on_edges_helper(
+      const cda_rail::index_set& source_edge_ids,
+      bool only_use_valid_successors, const cda_rail::index_set& edges_to_use,
+      bool include_first_edge, bool use_minimal_time, double max_v,
+      const cda_rail::index_set& target_edges, std::vector<double>& distances,
+      cda_rail::index_vector& predecessors) const;
+
 public:
+  /**
+   * @brief Returns the shortest distance from any edge in
+   *        @p source_edge_ids to every vertex of the network.
+   *
+   * Entry `[v]` is the distance to vertex @p v, measured as in
+   * `shortest_path_length_between_edge_and_vertex_set`, and `INF` if @p v is
+   * unreachable. The source vertices themselves are not treated specially: a
+   * vertex only gets a finite value if it is the target of some reachable
+   * edge.
+   *
+   * @param source_edge_ids   Set of starting edge indices.
+   * @param include_first_edge If `true`, includes source edge lengths.
+   * @param use_minimal_time  If `true`, measures in travel time.
+   * @param max_v             Maximum train speed in m/s.
+   * @return Vector of size `number_of_vertices()`.
+   * @throws cda_rail::exceptions::InvalidInputException If @p source_edge_ids
+   *         is empty or @p use_minimal_time is `true` with non-positive
+   *         @p max_v.
+   * @throws cda_rail::exceptions::EdgeNotExistentException If a source edge
+   *         does not exist.
+   */
+  [[nodiscard]] std::vector<double> shortest_path_lengths_to_all_vertices(
+      const cda_rail::index_set& source_edge_ids,
+      bool include_first_edge = false, bool use_minimal_time = false,
+      double max_v = INF) const;
+
   /**
    * @brief Returns the shortest path and its length from @p source_edge to
    *        @p target_edge.

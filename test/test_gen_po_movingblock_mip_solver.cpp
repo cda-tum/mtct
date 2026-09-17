@@ -2153,6 +2153,59 @@ TEST(GenPOMovingBlockMIPSolver, RASToy) {
   }
 }
 
+TEST(GenPOMovingBlockMIPSolver, MinimumTimeBoundsDoNotChangeOptimum) {
+  // The minimum time bounds are lower bounds that every feasible schedule
+  // satisfies, so switching them off must not change the optimum. The instance
+  // leaves max_exit_delay at its default and schedules both the stop and the
+  // exit as early as possible, so the vertex, the station and the exit bound
+  // are all non-trivial.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3      = network.add_vertex("v3", cda_rail::VertexType::TTD);
+
+  const auto e01 = network.add_edge(v0, v1, 100, 10);
+  const auto e12 = network.add_edge(v1, v2, 200, 10);
+  const auto e23 = network.add_edge(v2, v3, 100, 10);
+
+  network.add_successor(e01, e12);
+  network.add_successor(e12, e23);
+
+  instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v3, 1);
+  instance.add_train("Tr2", 10, 10, 2, 2, true, 30, 10, v0, 30, 10, v3, 1);
+
+  instance.add_empty_station("S");
+  instance.add_track_to_station("S", e12);
+  instance.insert_stop("Tr1", "S", 0, 30);
+  instance.insert_stop("Tr2", "S", 0, 30);
+
+  const cda_rail::solver::mip_based::SolverStrategyMovingBlock strategy{
+      .abs_mip_gap = 1e-4};
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver_with(instance);
+  const auto                                             sol_with =
+      solver_with.solve({.use_minimum_time_bounds = true}, strategy, {}, 100);
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver_without(
+      instance);
+  const auto sol_without = solver_without.solve(
+      {.use_minimum_time_bounds = false}, strategy, {}, 100);
+
+  ASSERT_TRUE(sol_with.has_solution());
+  ASSERT_TRUE(sol_without.has_solution());
+  EXPECT_EQ(sol_with.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_without.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_APPROX_EQ(sol_with.get_obj(), sol_without.get_obj());
+
+  check_trajectory(instance, sol_with, "MinimumTimeBounds");
+  check_schedule(instance, sol_with, "MinimumTimeBounds");
+  check_trajectory(instance, sol_without, "MinimumTimeBounds");
+  check_schedule(instance, sol_without, "MinimumTimeBounds");
+}
+
 TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 

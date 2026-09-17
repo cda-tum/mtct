@@ -207,6 +207,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
                {"strengthen_vertex_headway_constraints",
                 model_detail_input.strengthen_vertex_headway_constraints},
                {"allow_late_entry", model_detail_input.allow_late_entry},
+               {"use_minimum_time_bounds",
+                model_detail_input.use_minimum_time_bounds},
                {"use_indicator_constraints",
                 solver_strategy_input.use_indicator_constraints},
                {"use_lazy_constraints",
@@ -268,14 +270,18 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     for (const auto v : m_instance.vertices_used_by_train(
              tr, m_model_detail.fix_routes, false)) {
       const auto& v_name = m_instance.get_const_network().get_vertex(v).name;
+      // Neither the front nor the rear of the train can be at v before the
+      // front has arrived there for the first time, and the rear passes v a
+      // full train length later.
+      const auto min_v_time            = minimum_arrival_time(tr, v);
       m_vars["t_front_arrival"](tr, v) = m_model->addVar(
-          0.0, max_time, 0.0, GRB_CONTINUOUS,
+          min_v_time, max_time, 0.0, GRB_CONTINUOUS,
           "t_front_arrival_" + sanitize(tr_name) + "_" + sanitize(v_name));
       m_vars["t_front_departure"](tr, v) = m_model->addVar(
-          0.0, max_time, 0.0, GRB_CONTINUOUS,
+          min_v_time, max_time, 0.0, GRB_CONTINUOUS,
           "t_front_departure_" + sanitize(tr_name) + "_" + sanitize(v_name));
       m_vars["t_rear_departure"](tr, v) = m_model->addVar(
-          0.0, max_time, 0.0, GRB_CONTINUOUS,
+          minimum_rear_departure_time(tr, v), max_time, 0.0, GRB_CONTINUOUS,
           "t_rear_departure_" + sanitize(tr_name) + "_" + sanitize(v_name));
       if (m_solver_strategy.use_indicator_constraints) {
         m_vars["waiting_at_vertex"](tr, v) = m_model->addVar(
@@ -382,11 +388,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             "stop_" + sanitize(tr_name) + "_" + sanitize(stop_name) + "_" +
                 sanitize(m_instance.get_const_network().get_vertex(v).name));
       }
+      const auto max_delay = std::min(max_time - stop_obj.get_service_time(),
+                                      m_model_detail.max_station_delay);
       m_vars["service_delay"](tr, stop) = m_model->addVar(
-          0.0,
-          std::min(max_time - stop_obj.get_service_time(),
-                   m_model_detail.max_station_delay),
-          0.0, GRB_CONTINUOUS,
+          std::min(m_minimum_service_delays.at(tr).at(stop), max_delay),
+          max_delay, 0.0, GRB_CONTINUOUS,
           "service_delay_" + sanitize(tr_name) + "_" + sanitize(stop_name));
     }
   }
@@ -676,6 +682,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   this->m_model_detail      = model_detail_input;
   this->m_ttd_sections = m_instance.get_const_network().unbreakable_sections();
   this->m_num_ttd      = this->m_ttd_sections.size();
+  this->fill_minimum_time_bounds();
   this->fill_tr_stop_data();
   this->fill_velocity_extensions();
   this->fill_relevant_reverse_edges();
@@ -686,29 +693,90 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::latest_exit_time(
   return exit_time + m_model_detail.max_exit_delay;
 }
 
-double
-cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::earliest_exit_time(
-    size_t tr) const {
-  // The rear of a train cannot leave its exit vertex before the train has
-  // traversed the fastest route from its entry to its exit vertex and has
-  // cleared the exit vertex by its own length. Both quantities are bounded
-  // from below by assuming that the train always travels at the smaller of
-  // its own and the respective edge's speed limit, i.e. by ignoring
-  // acceleration, so the returned time cuts off no feasible schedule.
-  auto const& schedule  = m_instance.get_const_schedule(tr);
-  auto const& tr_object = m_instance.get_const_train_list().get_train(tr);
-  auto const& network   = m_instance.get_const_network();
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    fill_minimum_time_bounds() {
+  // Every quantity computed here is a lower bound on the corresponding event
+  // of a feasible schedule. Running times are taken from the network's
+  // minimal-time shortest paths, which let the train travel at the smaller of
+  // its own and the respective edge's speed limit and hence ignore
+  // acceleration; conflicts with other trains are ignored as well; and no
+  // restriction to the edges of a fixed route is applied. All three make the
+  // bounds optimistic, so no feasible schedule is cut off.
+  //
+  // Every arrival time is capped at the time horizon of its train. The cap
+  // only weakens the bound, and it keeps the invariant that
+  // minimum_arrival_time(tr, v) never exceeds latest_exit_time(tr), on which
+  // the big-M of the travel time constraints relies.
+  m_minimum_arrival_times.assign(m_num_tr,
+                                 std::vector<double>(m_num_vertices, 0.0));
+  m_minimum_clearing_times.assign(m_num_tr, 0.0);
+  m_minimum_exit_times.assign(m_num_tr, 0.0);
+  m_minimum_service_delays.clear();
+  m_minimum_service_delays.reserve(m_num_tr);
 
-  auto const min_running_time =
-      network.shortest_path_length_between_edge_and_vertex_set(
-          network.out_edges(schedule.get_entry_vertex()),
-          {schedule.get_exit_vertex()}, true, true, tr_object.get_max_speed());
-  if (!min_running_time.has_value()) {
-    return schedule.get_exit_time();
+  auto const& network = m_instance.get_const_network();
+
+  for (size_t tr = 0; tr < m_num_tr; tr++) {
+    auto const& schedule  = m_instance.get_const_schedule(tr);
+    auto const& tr_object = m_instance.get_const_train_list().get_train(tr);
+    auto const  num_stops = schedule.get_stops().size();
+
+    m_minimum_exit_times.at(tr) = schedule.get_exit_time();
+    m_minimum_service_delays.emplace_back(num_stops, 0.0);
+
+    if (!m_model_detail.use_minimum_time_bounds) {
+      continue;
+    }
+
+    auto const entry_edges = network.out_edges(schedule.get_entry_vertex());
+    if (entry_edges.empty()) {
+      continue;
+    }
+
+    // Between the front and the rear of the train passing a vertex, the train
+    // covers its own length.
+    m_minimum_clearing_times.at(tr) =
+        tr_object.get_length() / tr_object.get_max_speed();
+
+    // The train needs at least the quickest running time from its entry
+    // vertex to arrive anywhere, irrespective of its stops.
+    auto const horizon      = latest_exit_time(tr);
+    auto const vertex_times = network.shortest_path_lengths_to_all_vertices(
+        entry_edges, true, true, tr_object.get_max_speed());
+    for (size_t v = 0; v < m_num_vertices; v++) {
+      if (vertex_times.at(v) < INF) {
+        m_minimum_arrival_times.at(tr).at(v) =
+            std::min(schedule.get_entry_time() + vertex_times.at(v), horizon);
+      }
+    }
+    // The entry vertex is where the train starts, so it is reached at its
+    // entry time and not by travelling around a cycle back to it.
+    m_minimum_arrival_times.at(tr).at(schedule.get_entry_vertex()) =
+        std::min(schedule.get_entry_time(), horizon);
+
+    // Following the scheduled stops in order gives a stronger bound for the
+    // stops and the exit vertex, because it also accounts for the detour via
+    // every station, for the service durations and for the earliest
+    // departures.
+    auto const running_times = m_instance.minimum_running_times(
+        tr, entry_edges, true, schedule.get_entry_time(), 0, true);
+    if (!running_times.feasible) {
+      continue;
+    }
+    for (size_t stop = 0; stop < num_stops; stop++) {
+      m_minimum_service_delays.at(tr).at(stop) =
+          relu(running_times.stop_arrivals.at(stop) -
+               schedule.get_stops().at(stop).get_service_time());
+    }
+    // The chained time is the earliest time at which the front can be at the
+    // exit vertex with every stop served. It bounds the departure from the
+    // exit vertex, but not the arrival there: if the last stop happens at the
+    // exit vertex itself, the train arrives well before it and waits out its
+    // service.
+    m_minimum_exit_times.at(tr) =
+        std::max(m_minimum_exit_times.at(tr),
+                 running_times.exit_arrival + m_minimum_clearing_times.at(tr));
   }
-  return std::max(schedule.get_exit_time(),
-                  schedule.get_entry_time() + min_running_time.value() +
-                      (tr_object.get_length() / tr_object.get_max_speed()));
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -1682,7 +1750,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     // Final
     m_model->addConstr(
         m_vars["t_rear_departure"](tr, tr_schedule.get_exit_vertex()) >=
-            earliest_exit_time(tr),
+            std::min(m_minimum_exit_times.at(tr), max_tr_t),
         "final_departure_time_lb_" + sanitize(tr_object.get_name()));
   }
 }

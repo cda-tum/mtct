@@ -73,6 +73,7 @@ int main(int argc, char** argv) {
   bool   simplify_headway_constraints          = false;
   bool   strengthen_vertex_headway_constraints = false;
   bool   late_entry_possible                   = false;
+  bool   use_minimum_time_bounds               = true;
   double max_exit_delay    = cda_rail::solver::mip_based::DEFAULT_MAX_DELAY;
   double max_station_delay = cda_rail::solver::mip_based::DEFAULT_MAX_DELAY;
   double max_delay         = cda_rail::solver::mip_based::DEFAULT_MAX_DELAY;
@@ -155,6 +156,14 @@ int main(int argc, char** argv) {
   app.add_flag("-l,--allow-late-entry", late_entry_possible,
                "Allow late entry (delays) in the solution (default without "
                "flag is false)")
+      ->group("Model Parameters");
+  app.add_flag("!--no-minimum-time-bounds,--use-minimum-time-bounds",
+               use_minimum_time_bounds,
+               "Every timing variable is bounded by the minimal running time "
+               "the train needs to reach the corresponding event by default. "
+               "If this flag is negated (--no-minimum-time-bounds), these "
+               "bounds are omitted, which weakens the LP relaxation "
+               "considerably and is only useful to measure their effect.")
       ->group("Model Parameters");
   auto* max_exit_delay_opt =
       app.add_option("-x,--max-exit-delay", max_exit_delay,
@@ -381,6 +390,8 @@ int main(int argc, char** argv) {
          "_",
          bool_to_str(late_entry_possible),
          "_",
+         bool_to_str(use_minimum_time_bounds),
+         "_",
          format_double(max_exit_delay),
          "_",
          format_double(max_station_delay),
@@ -421,6 +432,8 @@ int main(int argc, char** argv) {
   PLOGD << "  Strengthen vertex headway constraints: "
         << (strengthen_vertex_headway_constraints ? "yes" : "no");
   PLOGD << "  Allow late entry: " << (late_entry_possible ? "yes" : "no");
+  PLOGD << "  Use minimum time bounds: "
+        << (use_minimum_time_bounds ? "yes" : "no");
   PLOGD << "  Maximal exit delay: " << max_exit_delay;
   PLOGD << "  Maximal station delay: " << max_station_delay;
   PLOGD << "Solver Settings";
@@ -486,9 +499,10 @@ int main(int argc, char** argv) {
        .simplify_headway_constraints = simplify_headway_constraints,
        .strengthen_vertex_headway_constraints =
            strengthen_vertex_headway_constraints,
-       .allow_late_entry  = late_entry_possible,
-       .max_exit_delay    = max_exit_delay,
-       .max_station_delay = max_station_delay},
+       .allow_late_entry        = late_entry_possible,
+       .use_minimum_time_bounds = use_minimum_time_bounds,
+       .max_exit_delay          = max_exit_delay,
+       .max_station_delay       = max_station_delay},
       {.use_indicator_constraints = use_indicator_constraints,
        .use_lazy_constraints      = use_lazy_constraints,
        .include_reverse_headways  = include_reverse_headways,

@@ -117,6 +117,79 @@ double cda_rail::instances::GeneralPerformanceOptimizationInstance::
   return retval;
 }
 
+cda_rail::instances::MinimumRunningTimes
+cda_rail::instances::GeneralPerformanceOptimizationInstance::
+    minimum_running_times(size_t tr, const cda_rail::index_set& start_edges,
+                          bool include_first_edge, double start_time,
+                          size_t first_stop,
+                          bool   consider_earliest_departures) const {
+  get_const_train_list().throw_if_train_not_exist(tr);
+  if (start_edges.empty()) {
+    throw exceptions::InvalidInputException("Start edges must not be empty");
+  }
+  const auto& schedule = get_const_schedule(tr);
+  const auto& stops    = schedule.get_stops();
+  if (first_stop > stops.size()) {
+    throw exceptions::InvalidInputException(
+        "First stop exceeds the number of scheduled stops");
+  }
+  const auto& tr_object = get_const_train_list().get_train(tr);
+
+  MinimumRunningTimes ret_val;
+  ret_val.stop_arrivals.reserve(stops.size() - first_stop);
+
+  double              time            = start_time;
+  cda_rail::index_set current_edges   = start_edges;
+  bool                include_current = include_first_edge;
+
+  for (size_t stop = first_stop; stop < stops.size(); stop++) {
+    const auto&         stop_object = stops.at(stop);
+    cda_rail::index_set station_edges;
+    for (const auto& track :
+         get_stop_tracks(tr, stop_object.get_station().name) |
+             std::ranges::views::keys) {
+      station_edges.insert(track);
+    }
+    if (station_edges.empty()) {
+      return {.feasible = false, .stop_arrivals = {}, .exit_arrival = INF};
+    }
+    // The distance of an edge is measured up to its target vertex, and the
+    // possible stop vertices of a station are exactly the target vertices of
+    // its stop tracks, so this is the earliest arrival at a stop vertex.
+    const auto running_time =
+        get_const_network().shortest_path_length_between_edge_sets(
+            current_edges, station_edges, include_current, true,
+            tr_object.get_max_speed());
+    if (!running_time.has_value()) {
+      return {.feasible = false, .stop_arrivals = {}, .exit_arrival = INF};
+    }
+    time += running_time.value();
+    ret_val.stop_arrivals.emplace_back(time);
+
+    time += stop_object.get_service_duration();
+    if (consider_earliest_departures) {
+      time = std::max(time, stop_object.get_earliest_departure());
+    }
+
+    current_edges   = std::move(station_edges);
+    include_current = false;
+  }
+
+  const auto running_time =
+      get_const_network().shortest_path_length_between_edge_and_vertex_set(
+          current_edges, {schedule.get_exit_vertex()}, include_current, true,
+          tr_object.get_max_speed());
+  if (!running_time.has_value()) {
+    return {.feasible = false, .stop_arrivals = {}, .exit_arrival = INF};
+  }
+  // Deliberately not raised to the scheduled exit time: the scheduled exit
+  // time refers to the rear of the train leaving the network, so the front may
+  // well arrive at the exit vertex before it.
+  ret_val.exit_arrival = time + running_time.value();
+
+  return ret_val;
+}
+
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     export_instance(const std::filesystem::path& working_directory,
                     bool const                   saveNetwork) const {
