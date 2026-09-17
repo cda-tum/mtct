@@ -686,6 +686,31 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::latest_exit_time(
   return exit_time + m_model_detail.max_exit_delay;
 }
 
+double
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::earliest_exit_time(
+    size_t tr) const {
+  // The rear of a train cannot leave its exit vertex before the train has
+  // traversed the fastest route from its entry to its exit vertex and has
+  // cleared the exit vertex by its own length. Both quantities are bounded
+  // from below by assuming that the train always travels at the smaller of
+  // its own and the respective edge's speed limit, i.e. by ignoring
+  // acceleration, so the returned time cuts off no feasible schedule.
+  auto const& schedule  = m_instance.get_const_schedule(tr);
+  auto const& tr_object = m_instance.get_const_train_list().get_train(tr);
+  auto const& network   = m_instance.get_const_network();
+
+  auto const min_running_time =
+      network.shortest_path_length_between_edge_and_vertex_set(
+          network.out_edges(schedule.get_entry_vertex()),
+          {schedule.get_exit_vertex()}, true, true, tr_object.get_max_speed());
+  if (!min_running_time.has_value()) {
+    return schedule.get_exit_time();
+  }
+  return std::max(schedule.get_exit_time(),
+                  schedule.get_entry_time() + min_running_time.value() +
+                      (tr_object.get_length() / tr_object.get_max_speed()));
+}
+
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_general_path_constraints() {
   for (size_t tr = 0; tr < m_num_tr; tr++) {
@@ -1657,7 +1682,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     // Final
     m_model->addConstr(
         m_vars["t_rear_departure"](tr, tr_schedule.get_exit_vertex()) >=
-            tr_schedule.get_exit_time(),
+            earliest_exit_time(tr),
         "final_departure_time_lb_" + sanitize(tr_object.get_name()));
   }
 }

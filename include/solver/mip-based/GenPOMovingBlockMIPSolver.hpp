@@ -161,6 +161,7 @@ private:
       const ModelDetail&                 model_detail_input);
 
   double latest_exit_time(size_t tr) const;
+  double earliest_exit_time(size_t tr) const;
 
   void fill_tr_stop_data();
   void fill_relevant_reverse_edges();
