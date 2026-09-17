@@ -12,10 +12,10 @@ constexpr std::string_view INSTANCE_SUBDIRECTORY = "atmos2023";
 constexpr std::string_view SOLUTION_SUBDIRECTORY = "moving-block-solutions";
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
-load_moving_block_solution(std::string_view const instance_name) {
+load_moving_block_solution(std::string_view const instanceName) {
   const auto instance =
       cda_rail::instances::GeneralPerformanceOptimizationInstance(
-          instance_name, INSTANCE_SUBDIRECTORY, "data");
+          instanceName, INSTANCE_SUBDIRECTORY, "data");
   auto sol_obj =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
   sol_obj.load_solution("data", SOLUTION_SUBDIRECTORY);

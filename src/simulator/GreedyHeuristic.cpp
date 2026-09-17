@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
-#include <ranges>
-#include <utility>
 #include <vector>
 
 cda_rail::simulator::RemainingTimeHeuristicResult
@@ -50,7 +48,7 @@ cda_rail::simulator::simple_remaining_time_heuristic(
                 tr_schedule.get_entry_vertex())
           : simulator.get_instance()->get_const_network().get_successors(
                 tr_edges.back());
-  bool include_first_edge = true;
+  const bool include_first_edge = true;
 
   if (start_edges.empty()) {
     // dead-end which is not exit vertex

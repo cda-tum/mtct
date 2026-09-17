@@ -198,9 +198,11 @@ void check_trajectory(
       const auto  dt    = t_2 - t_1;
       const auto  ds    = pos_2 - pos_1;
 
+      // NOLINTBEGIN(performance-inefficient-string-concatenation)
       const std::string segment_info =
           " for train " + tr_name + " between t=" + std::to_string(t_1) +
           " and t=" + std::to_string(t_2) + " in " + instance_path;
+      // NOLINTEND(performance-inefficient-string-concatenation)
 
       EXPECT_GT(dt, 0) << segment_info;
       EXPECT_GE(ds, -tolerance) << segment_info;
