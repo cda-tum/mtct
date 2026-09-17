@@ -10,22 +10,38 @@
 namespace {
 constexpr std::string_view INSTANCE_SUBDIRECTORY = "atmos2023";
 constexpr std::string_view SOLUTION_SUBDIRECTORY = "moving-block-solutions";
+constexpr std::string_view SOLUTION_SUBDIRECTORY_NO_TOLERANCE =
+    "moving-block-solutions-no-tolerance";
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
-load_moving_block_solution(std::string_view const instanceName) {
+load_moving_block_solution(std::string_view const instanceName,
+                           std::string_view const solutionSubdirectory) {
   const auto instance =
       cda_rail::instances::GeneralPerformanceOptimizationInstance(
           instanceName, INSTANCE_SUBDIRECTORY, "data");
   auto sol_obj =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
-  sol_obj.load_solution("data", SOLUTION_SUBDIRECTORY);
+  sol_obj.load_solution("data", solutionSubdirectory);
   return sol_obj;
 }
 } // namespace
 
 TEST(VSSGenMBInfoSolver, Default1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("SimpleStation"));
+      solver(
+          load_moving_block_solution("SimpleStation", SOLUTION_SUBDIRECTORY));
+
+  const auto sol = solver.solve();
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 1);
+}
+
+TEST(VSSGenMBInfoSolver, Default1NoTolerance) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(load_moving_block_solution("SimpleStation",
+                                        SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
 
   const auto sol = solver.solve();
 
@@ -36,7 +52,20 @@ TEST(VSSGenMBInfoSolver, Default1) {
 
 TEST(VSSGenMBInfoSolver, Default2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("HighSpeedTrack2Trains"));
+      solver(load_moving_block_solution("HighSpeedTrack2Trains",
+                                        SOLUTION_SUBDIRECTORY));
+
+  const auto sol = solver.solve();
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 18);
+}
+
+TEST(VSSGenMBInfoSolver, Default2NoTolerance) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(load_moving_block_solution("HighSpeedTrack2Trains",
+                                        SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
 
   const auto sol = solver.solve();
 
@@ -47,7 +76,20 @@ TEST(VSSGenMBInfoSolver, Default2) {
 
 TEST(VSSGenMBInfoSolver, Default3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("HighSpeedTrack5Trains"));
+      solver(load_moving_block_solution("HighSpeedTrack5Trains",
+                                        SOLUTION_SUBDIRECTORY));
+
+  const auto sol = solver.solve({15, true, false});
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 10);
+}
+
+TEST(VSSGenMBInfoSolver, Default3NoTolerance) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(load_moving_block_solution("HighSpeedTrack5Trains",
+                                        SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
 
   const auto sol = solver.solve({15, true, false});
 
@@ -58,7 +100,19 @@ TEST(VSSGenMBInfoSolver, Default3) {
 
 TEST(VSSGenMBInfoSolver, Default4) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("Overtake"));
+      solver(load_moving_block_solution("Overtake", SOLUTION_SUBDIRECTORY));
+
+  const auto sol = solver.solve();
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 7);
+}
+
+TEST(VSSGenMBInfoSolver, Default4NoTolerance) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(load_moving_block_solution("Overtake",
+                                        SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
 
   const auto sol = solver.solve();
 
@@ -69,7 +123,8 @@ TEST(VSSGenMBInfoSolver, Default4) {
 
 TEST(VSSGenMBInfoSolver, Default5) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("SimpleNetwork"));
+      solver(
+          load_moving_block_solution("SimpleNetwork", SOLUTION_SUBDIRECTORY));
 
   const auto sol = solver.solve();
 
@@ -78,12 +133,25 @@ TEST(VSSGenMBInfoSolver, Default5) {
   EXPECT_EQ(sol.get_obj(), 7);
 }
 
+TEST(VSSGenMBInfoSolver, Default5NoTolerance) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(load_moving_block_solution("SimpleNetwork",
+                                        SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
+
+  const auto sol = solver.solve();
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 17);
+}
+
 TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
   // Both the instance and the moving block solution are read relative to the
   // current working directory, hence the solver has to be created before
   // switching to the temporary directory.
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("SimpleNetwork"));
+      solver(
+          load_moving_block_solution("SimpleNetwork", SOLUTION_SUBDIRECTORY));
 
   // All exports happen relative to the current working directory. Hence, the
   // test is executed within a temporary directory that is removed afterwards,
@@ -141,7 +209,19 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
 
 TEST(VSSGenMBInfoSolver, Default6) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("SingleTrack"));
+      solver(load_moving_block_solution("SingleTrack", SOLUTION_SUBDIRECTORY));
+
+  const auto sol = solver.solve();
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 10);
+}
+
+TEST(VSSGenMBInfoSolver, Default6NoTolerance) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(load_moving_block_solution("SingleTrack",
+                                        SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
 
   const auto sol = solver.solve();
 
@@ -152,7 +232,20 @@ TEST(VSSGenMBInfoSolver, Default6) {
 
 TEST(VSSGenMBInfoSolver, Default7) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("SingleTrackWithStation"));
+      solver(load_moving_block_solution("SingleTrackWithStation",
+                                        SOLUTION_SUBDIRECTORY));
+
+  const auto sol = solver.solve();
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 5);
+}
+
+TEST(VSSGenMBInfoSolver, Default7NoTolerance) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(load_moving_block_solution("SingleTrackWithStation",
+                                        SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
 
   const auto sol = solver.solve();
 
@@ -163,7 +256,8 @@ TEST(VSSGenMBInfoSolver, Default7) {
 
 TEST(VSSGenMBInfoSolver, Default8) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("Stammstrecke4Trains"));
+      solver(load_moving_block_solution("Stammstrecke4Trains",
+                                        SOLUTION_SUBDIRECTORY));
 
   const auto sol = solver.solve({5});
 
@@ -172,13 +266,38 @@ TEST(VSSGenMBInfoSolver, Default8) {
   EXPECT_EQ(sol.get_obj(), 7);
 }
 
+TEST(VSSGenMBInfoSolver, Default8NoTolerance) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(load_moving_block_solution("Stammstrecke4Trains",
+                                        SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
+
+  const auto sol = solver.solve({5});
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 6);
+}
+
 TEST(VSSGenMBInfoSolver, Default9) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("Stammstrecke8Trains"));
+      solver(load_moving_block_solution("Stammstrecke8Trains",
+                                        SOLUTION_SUBDIRECTORY));
 
   const auto sol = solver.solve({5});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol.get_obj(), 14);
+}
+
+TEST(VSSGenMBInfoSolver, Default9NoTolerance) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(load_moving_block_solution("Stammstrecke8Trains",
+                                        SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
+
+  const auto sol = solver.solve({5});
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 15);
 }
