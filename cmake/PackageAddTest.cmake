@@ -8,7 +8,6 @@ macro(PACKAGE_ADD_TEST testname linklibs)
   target_compile_definitions(${testname} PRIVATE CDA_RAIL_TEST_WARNING_ROOT="${warning_root_dir}")
 
   set(warning_file "${CMAKE_CURRENT_BINARY_DIR}/${testname}_warnings.log")
-  file(REMOVE "${warning_file}")
 
   # discover tests
   gtest_discover_tests(
@@ -27,6 +26,10 @@ macro(PACKAGE_ADD_TEST testname linklibs)
     DIRECTORY
     APPEND
     PROPERTY TEST_INCLUDE_FILES "${warning_config_file}")
+
+  # Clear the log before the discovered tests run, so that every ctest invocation starts from an empty warning file.
+  add_test(NAME ${testname}_warning_reset COMMAND ${CMAKE_COMMAND} -E rm -f "${warning_file}")
+  set_tests_properties(${testname}_warning_reset PROPERTIES FIXTURES_SETUP ${testname}_warnings_fixture)
 
   add_test(NAME ${testname}_warning_summary COMMAND ${CMAKE_COMMAND} "-DWARNING_FILE=${warning_file}" -P
                                                     "${PROJECT_SOURCE_DIR}/cmake/PrintWarningSummary.cmake")

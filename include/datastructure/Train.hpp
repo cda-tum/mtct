@@ -100,6 +100,10 @@ public:
   /*
    * SETTER
    */
+private:
+  // Only TrainList may rename a train, because it has to keep its name to
+  // index mapping in sync. Use TrainList::rename_train instead.
+  friend class TrainList;
   /**
    * @brief Sets the name of the train.
    *
@@ -107,6 +111,7 @@ public:
    */
   void set_name(std::string name) { m_name = std::move(name); };
 
+public:
   /**
    * @brief Sets the length of the train.
    *

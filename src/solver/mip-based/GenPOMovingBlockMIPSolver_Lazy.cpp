@@ -810,7 +810,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr const lhs_source =
               tr_t_var_source_front +
-              t_bound_tmp *
+              (t_bound_tmp + hw_s1_max) *
                   (1 - solver->m_vars["order"](tr, other_tr, edge_index));
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr rhs_source = other_tr_t_var_source_rear + hw_s1;
@@ -818,7 +818,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr lhs_target =
               tr_t_var_target_front +
-              t_bound_tmp *
+              (t_bound_tmp + hw_t1_max) *
                   (1 - solver->m_vars["order"](tr, other_tr, edge_index));
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr rhs_target = other_tr_t_var_target_rear + hw_t1;
@@ -832,7 +832,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr lhs_source_2 =
               other_tr_t_var_source_front +
-              t_bound_tmp *
+              (t_bound_tmp + hw_s2_max) *
                   (1 - solver->m_vars["order"](other_tr, tr, edge_index));
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr rhs_source_2 = tr_t_var_source_rear + hw_s2;
@@ -840,7 +840,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr lhs_target_2 =
               other_tr_t_var_target_front +
-              t_bound_tmp *
+              (t_bound_tmp + hw_t2_max) *
                   (1 - solver->m_vars["order"](other_tr, tr, edge_index));
           // NOLINTNEXTLINE(misc-const-correctness)
           GRBLinExpr rhs_target_2 = tr_t_var_target_rear + hw_t2;

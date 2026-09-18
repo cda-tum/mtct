@@ -18,6 +18,19 @@
 
 using std::size_t;
 
+namespace {
+/**
+ * Gurobi is allowed to return values that violate a bound by up to its
+ * feasibility tolerance. Times marginally below zero are snapped to zero, so
+ * that the (correct) non-negativity checks of the solution object do not
+ * reject an otherwise valid solution. Larger violations are passed on
+ * unchanged and hence still throw.
+ */
+double snap_negative_zero(double value) {
+  return (value < 0 && value > -cda_rail::GRB_EPS) ? 0 : value;
+}
+} // namespace
+
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
@@ -106,11 +119,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
     const auto& tr_object   = m_instance.get_const_train_list().get_train(tr);
     const auto& tr_schedule = m_instance.get_const_schedule(tr);
     for (const auto& [vertex_id, pos] : route_markers[tr]) {
-      const auto time_1 =
-          m_vars.at("t_front_arrival").at(tr, vertex_id).get(GRB_DoubleAttr_X);
-      const auto time_2       = m_vars.at("t_front_departure")
-                                    .at(tr, vertex_id)
-                                    .get(GRB_DoubleAttr_X);
+      const auto time_1 = snap_negative_zero(
+          m_vars.at("t_front_arrival").at(tr, vertex_id).get(GRB_DoubleAttr_X));
+      const auto time_2 = snap_negative_zero(m_vars.at("t_front_departure")
+                                                 .at(tr, vertex_id)
+                                                 .get(GRB_DoubleAttr_X));
       const auto vertex_speed = extract_speed(tr, vertex_id);
       sol.add_train_pos(tr_object.get_name(), time_1, pos);
       sol.add_train_speed(tr_object.get_name(), time_1, vertex_speed);
@@ -120,9 +133,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
       }
 
       if (vertex_id == tr_schedule.get_exit_vertex()) {
-        const auto last_time  = m_vars.at("t_rear_departure")
-                                    .at(tr, vertex_id)
-                                    .get(GRB_DoubleAttr_X);
+        const auto last_time  = snap_negative_zero(m_vars.at("t_rear_departure")
+                                                       .at(tr, vertex_id)
+                                                       .get(GRB_DoubleAttr_X));
         const auto last_speed = tr_schedule.get_exit_velocity();
         sol.add_train_pos(tr_object.get_name(), last_time,
                           pos + tr_object.get_length());

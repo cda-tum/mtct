@@ -212,7 +212,10 @@ public:
    *
    * @return Pointer to one past the last element.
    */
-  [[nodiscard]] T* end() { return m_data.get() + m_len; }
+  [[nodiscard]] T* end() {
+    // Avoid pointer arithmetic on the null storage of a moved-from vector.
+    return m_len == 0 ? m_data.get() : m_data.get() + m_len;
+  }
 
   /**
    * @brief Obtains a const pointer to the first element.
@@ -227,7 +230,10 @@ public:
    *
    * @return A const pointer one past the last element.
    */
-  [[nodiscard]] const T* end() const { return m_data.get() + m_len; }
+  [[nodiscard]] const T* end() const {
+    // Avoid pointer arithmetic on the null storage of a moved-from vector.
+    return m_len == 0 ? m_data.get() : m_data.get() + m_len;
+  }
 
   /**
    * @brief Obtains a const pointer to the first element.

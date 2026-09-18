@@ -273,11 +273,12 @@ public:
    */
   [[nodiscard]] double train_edge_length(size_t tr) const;
   /**
-   * @brief Returns the route position at which an edge starts.
+   * @brief Returns the route position at which an edge ends, i.e., the
+   * position of its target vertex.
    *
    * @param train_id Train index.
    * @param edge_id Edge index on the route.
-   * @return Position of the edge start in metres.
+   * @return Position of the edge end in metres.
    */
   [[nodiscard]] double get_edge_position(size_t train_id, size_t edge_id) const;
   /**

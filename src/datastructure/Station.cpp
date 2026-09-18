@@ -136,7 +136,12 @@ void cda_rail::StationList::export_stations(const std::filesystem::path& p,
   nlohmann::json j;
   for (const auto& station : stations | std::views::values) {
     std::vector<std::pair<std::string, std::string>> edges;
-    for (const auto& track : station->tracks) {
+    // Sort the tracks, so that the export is deterministic. The tracks are
+    // stored in an unordered set, whose iteration order is unspecified.
+    cda_rail::index_vector sorted_tracks(station->tracks.begin(),
+                                         station->tracks.end());
+    std::ranges::sort(sorted_tracks);
+    for (const auto& track : sorted_tracks) {
       const auto& edge = network.get_edge(track);
       edges.emplace_back(network.get_vertex(edge.source).name,
                          network.get_vertex(edge.target).name);

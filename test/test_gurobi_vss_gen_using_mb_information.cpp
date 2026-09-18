@@ -203,8 +203,9 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
     const auto file_path = solution_dir / file_name;
     EXPECT_TRUE(std::filesystem::exists(file_path))
         << "Missing file " << file_path;
-    EXPECT_GT(std::filesystem::file_size(file_path, ec), 0)
-        << "Empty file " << file_path;
+    const auto file_bytes = std::filesystem::file_size(file_path, ec);
+    EXPECT_FALSE(ec) << "Unreadable file " << file_path;
+    EXPECT_GT(file_bytes, 0) << "Empty file " << file_path;
   }
 
   // Neither the instance nor the model itself are expected to be exported

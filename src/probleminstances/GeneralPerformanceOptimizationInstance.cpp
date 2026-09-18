@@ -919,11 +919,12 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
         "Number of stop times does not match number of stops for train " +
         tr_name);
   }
-  double last_pos = 0.0;
+  double last_stop_time = 0.0;
   for (size_t i = 0; i < stop_times.size(); ++i) {
-    exceptions::throw_if_less_than_or_equal(
-        stop_times.at(i), last_pos, "Train stop time " + std::to_string(i));
-    last_pos = stop_times.at(i);
+    exceptions::throw_if_less_than_or_equal(stop_times.at(i), last_stop_time,
+                                            "Train stop time " +
+                                                std::to_string(i));
+    last_stop_time = stop_times.at(i);
   }
   m_train_stop_times.at(tr_idx) = std::move(stop_times);
 }
@@ -1149,9 +1150,6 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   auto const& const_network = this->get_instance()->get_const_network();
   for (size_t edge_id = 0; edge_id < const_network.number_of_edges();
        ++edge_id) {
-    const auto& edge = const_network.get_edge(edge_id);
-    const auto& v0   = const_network.get_vertex(edge.source).name;
-    const auto& v1   = const_network.get_vertex(edge.target).name;
     vss_pos_json[const_network.get_edge_name(edge_id)] = m_vss_pos.at(edge_id);
   }
 

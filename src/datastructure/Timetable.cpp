@@ -285,10 +285,13 @@ size_t cda_rail::Timetable::add_train_private_helper(
     throw exceptions::ConsistencyException("Train " + train_name +
                                            " already exists.");
   }
+  // Construct the schedule first, so that a failing validation does not leave
+  // behind a train without a schedule.
+  Schedule   schedule(entryTime, initialVelocity, entryVertex, exitTime,
+                      exitVelocity, exitVertex);
   auto const index = m_train_list.add_train(train_name, length, maxSpeed,
                                             acceleration, deceleration, tim);
-  m_schedules.emplace_back(entryTime, initialVelocity, entryVertex, exitTime,
-                           exitVelocity, exitVertex);
+  m_schedules.emplace_back(std::move(schedule));
   if (m_schedules.size() != m_train_list.size()) {
     throw exceptions::ConsistencyException(
         "Schedule size (" + std::to_string(m_schedules.size()) +

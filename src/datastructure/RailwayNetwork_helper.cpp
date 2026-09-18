@@ -8,6 +8,7 @@
 #include "tinyxml2.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -24,6 +25,44 @@
 #include <utility>
 #include <variant>
 #include <vector>
+
+namespace {
+// The GraphML attributes are parsed with std::sto* which signals malformed
+// input by throwing std::invalid_argument or std::out_of_range and which
+// happily ignores trailing garbage. The helpers below turn both into the
+// ImportException that read_graphml promises on malformed input.
+int graphml_to_int(const char* text) {
+  try {
+    std::size_t       consumed = 0;
+    std::string const tmp(text);
+    const int         value = std::stoi(tmp, &consumed);
+    if (consumed != tmp.size()) {
+      throw cda_rail::exceptions::ImportException("graphml");
+    }
+    return value;
+  } catch (const std::invalid_argument&) {
+    throw cda_rail::exceptions::ImportException("graphml");
+  } catch (const std::out_of_range&) {
+    throw cda_rail::exceptions::ImportException("graphml");
+  }
+}
+
+double graphml_to_double(const char* text) {
+  try {
+    std::size_t       consumed = 0;
+    std::string const tmp(text);
+    const double      value = std::stod(tmp, &consumed);
+    if (consumed != tmp.size() || !std::isfinite(value)) {
+      throw cda_rail::exceptions::ImportException("graphml");
+    }
+    return value;
+  } catch (const std::invalid_argument&) {
+    throw cda_rail::exceptions::ImportException("graphml");
+  } catch (const std::out_of_range&) {
+    throw cda_rail::exceptions::ImportException("graphml");
+  }
+}
+} // namespace
 
 void cda_rail::Network::read_graphml(const std::filesystem::path& p) {
   tinyxml2::XMLDocument graph_xml;
@@ -111,12 +150,12 @@ void cda_rail::Network::add_vertices_from_graphml(
     std::unordered_map<std::string, std::function<void(const char*)>> parsers;
     if (type.has_value()) {
       parsers.emplace(type.value(), [&v_type](const char* text) {
-        v_type = std::stoi(text);
+        v_type = graphml_to_int(text);
       });
     }
     if (headway.has_value()) {
       parsers.emplace(headway.value(), [&headway_value](const char* text) {
-        headway_value = std::stod(text);
+        headway_value = graphml_to_double(text);
       });
     }
 
@@ -183,24 +222,24 @@ void cda_rail::Network::add_edges_from_graphml(
     }
     if (length.has_value()) {
       parsers.emplace(length.value(), [&e_length](const char* text) {
-        e_length = std::stod(text);
+        e_length = graphml_to_double(text);
       });
     }
     if (max_speed.has_value()) {
       parsers.emplace(max_speed.value(), [&e_max_speed](const char* text) {
-        e_max_speed = std::stod(text);
+        e_max_speed = graphml_to_double(text);
       });
     }
     if (min_block_length.has_value()) {
       parsers.emplace(min_block_length.value(),
                       [&e_min_block_length](const char* text) {
-                        e_min_block_length = std::stod(text);
+                        e_min_block_length = graphml_to_double(text);
                       });
     }
     if (min_stop_block_length.has_value()) {
       parsers.emplace(min_stop_block_length.value(),
                       [&e_min_stop_block_length](const char* text) {
-                        e_min_stop_block_length = std::stod(text);
+                        e_min_stop_block_length = graphml_to_double(text);
                       });
     }
 
@@ -402,6 +441,11 @@ cda_rail::Network::separate_edge_private_helper(
   const auto& edge = get_edge(edge_index);
   const auto  n_blocks =
       vss::functions::max_n_blocks(sep_func, min_length / edge.length);
+
+  if (n_blocks < 2) {
+    // The edge cannot be separated without violating the minimal block length.
+    return {};
+  }
 
   std::vector<double> distances;
   distances.reserve(n_blocks - 1);

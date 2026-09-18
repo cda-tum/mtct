@@ -80,7 +80,10 @@ TEST(FixedSizeVector, AssigningToSelfWorks) {
   original.at(1) = 2;
   original.at(2) = 3;
 
-  original = original;
+  // Assign through an alias, so that the self-assignment branch of the
+  // operator is exercised without triggering a compiler warning.
+  auto& alias = original;
+  original    = alias;
 
   EXPECT_EQ(original.at(0), 1);
   EXPECT_EQ(original.at(1), 2);

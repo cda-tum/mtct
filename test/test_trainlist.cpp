@@ -77,14 +77,6 @@ TEST(Train, ConstructorAcceptsExactlyMinNonZeroForDeceleration) {
   EXPECT_DOUBLE_EQ(train.get_deceleration(), cda_rail::MIN_NON_ZERO);
 }
 
-TEST(Train, SetNameUpdatesName) {
-  cda_rail::Train train("old-name", 120.0, 45.0, 2.5, 1.5);
-
-  train.set_name("new-name");
-
-  EXPECT_EQ(train.get_name(), "new-name");
-}
-
 TEST(Train, SetLengthAcceptsZero) {
   cda_rail::Train train("t", 120.0, 45.0, 2.5, 1.5);
 

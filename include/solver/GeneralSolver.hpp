@@ -9,6 +9,7 @@
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "gtest/gtest_prod.h"
 #include <chrono>
+#include <concepts>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -106,7 +107,8 @@ protected:
    */
   template <typename... Args>
   explicit GeneralSolver(Args&&... args)
-    requires(!IsSingleInstanceArgument<Args...>::value)
+    requires(sizeof...(Args) > 0 && !IsSingleInstanceArgument<Args...>::value &&
+             std::constructible_from<T, Args...>)
       : m_instance(std::forward<Args>(args)...) {}
 
   struct FurtherData {

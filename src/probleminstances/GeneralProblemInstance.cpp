@@ -75,7 +75,7 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
   double len = 0;
   for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
        ++it) {
-    if (!std::ranges::contains(next_station.tracks, *it)) {
+    if (!next_station.tracks.contains(*it)) {
       // Track does not belong to the next station
       return false;
     }
@@ -218,7 +218,7 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     const auto& section     = sections.at(section_id);
     bool        add_section = false;
     for (const auto& e_id : section) {
-      if (std::ranges::contains(edges, e_id)) {
+      if (edges.contains(e_id)) {
         add_section = true;
         break;
       }
