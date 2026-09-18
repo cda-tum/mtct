@@ -1,0 +1,22 @@
+{
+  "abs_mip_gap_double": 10.0,
+  "allow_late_entry_bool": false,
+  "fix_routes_bool": false,
+  "include_higher_velocities_in_edge_expr_bool": false,
+  "include_reverse_headways_bool": true,
+  "lazy_constraint_selection_strategy_string": "AllChecked",
+  "lazy_train_selection_strategy_string": "All",
+  "max_exit_delay_double": 0.0,
+  "max_velocity_delta_double": 5.55,
+  "model_creation_time": 0.041,
+  "model_solving_time": 0.005,
+  "parameter_identifier_string": "",
+  "simplify_headway_constraints_bool": false,
+  "strengthen_vertex_headway_constraints_bool": false,
+  "time_limit_int": 1800,
+  "total_time": 0.046,
+  "use_indicator_constraints_bool": false,
+  "use_lazy_constraints_bool": true,
+  "use_minimum_time_bounds_bool": true,
+  "velocity_refinement_strategy_string": "MinOneStep"
+}

@@ -1,0 +1,278 @@
+{
+  "Train0_0": {
+    "entry": "v1c",
+    "exit": "v14c",
+    "stops": [
+      { "begin": 30.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 800.0, "duration": 45.0, "station": "StationRight" }
+    ],
+    "t_0": 0.0,
+    "t_n": 900.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train0_1": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 0.0,
+    "t_n": 900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train0_2": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 60.0,
+    "t_n": 960.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train1_0": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 1000.0,
+    "t_n": 1900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train1_1": {
+    "entry": "v14a",
+    "exit": "v1a",
+    "stops": [
+      { "begin": 1030.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 1800.0, "duration": 45.0, "station": "StationLeft" }
+    ],
+    "t_0": 1000.0,
+    "t_n": 1900.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train1_2": {
+    "entry": "v1c",
+    "exit": "v14c",
+    "stops": [
+      { "begin": 1030.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 1800.0, "duration": 45.0, "station": "StationRight" }
+    ],
+    "t_0": 1000.0,
+    "t_n": 1900.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train2_0": {
+    "entry": "v1c",
+    "exit": "v14c",
+    "stops": [
+      { "begin": 2030.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 2800.0, "duration": 45.0, "station": "StationRight" }
+    ],
+    "t_0": 2000.0,
+    "t_n": 2900.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train2_1": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 2000.0,
+    "t_n": 2900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train2_2": {
+    "entry": "v1b",
+    "exit": "v14b",
+    "stops": null,
+    "t_0": 2000.0,
+    "t_n": 2900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train3_0": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 3000.0,
+    "t_n": 3900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train3_1": {
+    "entry": "v1b",
+    "exit": "v14b",
+    "stops": null,
+    "t_0": 3000.0,
+    "t_n": 3900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train3_2": {
+    "entry": "v14a",
+    "exit": "v1a",
+    "stops": [
+      { "begin": 3030.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 3800.0, "duration": 45.0, "station": "StationLeft" }
+    ],
+    "t_0": 3000.0,
+    "t_n": 3900.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train4_0": {
+    "entry": "v1b",
+    "exit": "v14b",
+    "stops": null,
+    "t_0": 4000.0,
+    "t_n": 4900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train4_1": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 4000.0,
+    "t_n": 4900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train4_2": {
+    "entry": "v14a",
+    "exit": "v1a",
+    "stops": [
+      { "begin": 4030.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 4800.0, "duration": 45.0, "station": "StationLeft" }
+    ],
+    "t_0": 4000.0,
+    "t_n": 4900.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train5_0": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 5000.0,
+    "t_n": 5900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train5_1": {
+    "entry": "v1c",
+    "exit": "v14c",
+    "stops": [
+      { "begin": 5030.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 5800.0, "duration": 45.0, "station": "StationRight" }
+    ],
+    "t_0": 5000.0,
+    "t_n": 5900.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train5_2": {
+    "entry": "v1b",
+    "exit": "v14b",
+    "stops": null,
+    "t_0": 5000.0,
+    "t_n": 5900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train6_0": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 6000.0,
+    "t_n": 6900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train6_1": {
+    "entry": "v1b",
+    "exit": "v14b",
+    "stops": null,
+    "t_0": 6000.0,
+    "t_n": 6900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train6_2": {
+    "entry": "v14a",
+    "exit": "v1a",
+    "stops": [
+      { "begin": 6030.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 6800.0, "duration": 45.0, "station": "StationLeft" }
+    ],
+    "t_0": 6000.0,
+    "t_n": 6900.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train7_0": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 7000.0,
+    "t_n": 7900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train7_1": {
+    "entry": "v14b",
+    "exit": "v1b",
+    "stops": null,
+    "t_0": 7060.0,
+    "t_n": 7960.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  },
+  "Train7_2": {
+    "entry": "v1c",
+    "exit": "v14c",
+    "stops": [
+      { "begin": 7030.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 7800.0, "duration": 45.0, "station": "StationRight" }
+    ],
+    "t_0": 7000.0,
+    "t_n": 7900.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train8_0": {
+    "entry": "v1c",
+    "exit": "v14c",
+    "stops": [
+      { "begin": 8030.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 8800.0, "duration": 45.0, "station": "StationRight" }
+    ],
+    "t_0": 8000.0,
+    "t_n": 8900.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train8_1": {
+    "entry": "v1c",
+    "exit": "v14c",
+    "stops": [
+      { "begin": 8090.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 8860.0, "duration": 45.0, "station": "StationRight" }
+    ],
+    "t_0": 8060.0,
+    "t_n": 8960.0,
+    "v_0": 25.0,
+    "v_n": 25.0
+  },
+  "Train8_2": {
+    "entry": "v1b",
+    "exit": "v14b",
+    "stops": null,
+    "t_0": 8000.0,
+    "t_n": 8900.0,
+    "v_0": 50.0,
+    "v_n": 50.0
+  }
+}

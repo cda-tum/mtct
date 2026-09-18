@@ -1,0 +1,8 @@
+{
+  "station_delay_weight": 1,
+  "train_weights": {
+    "tr1": 1,
+    "tr2": 1,
+    "tr3": 1
+  }
+}

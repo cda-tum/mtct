@@ -1,0 +1,17 @@
+{
+  "Train0": {
+    "entry": "Ost3Entry",
+    "exit": "DonnersbergerExit",
+    "stops": [
+      {
+        "begin": 300,
+        "duration": 90,
+        "station": "Hbf"
+      }
+    ],
+    "t_0": 0,
+    "t_n": 690,
+    "v_0": 0.0,
+    "v_n": 0.0
+  }
+}

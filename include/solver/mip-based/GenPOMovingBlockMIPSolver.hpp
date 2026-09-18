@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Train.hpp"
@@ -10,9 +11,9 @@
 
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "gtest/gtest_prod.h"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -36,6 +37,34 @@ class GenPOMovingBlockMIPSolver_PrivateFillFunctions_Test;
 
 namespace cda_rail::solver::mip_based {
 
+using std::size_t;
+
+constexpr std::string
+velocity_refinement_strategy_to_string(VelocityRefinementStrategy strategy) {
+  switch (strategy) {
+  case VelocityRefinementStrategy::None:
+    return "None";
+  case VelocityRefinementStrategy::MinOneStep:
+    return "MinOneStep";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown velocity refinement strategy");
+  }
+}
+
+// The maximal delay is the time horizon of the model and with it the big-M of
+// all timing constraints. A big-M of size M turns the tolerance eps with which
+// a solver still accepts a binary variable as integral into a slack of M * eps
+// seconds within the corresponding constraint. A horizon that is numerically
+// infinite hence voids the travel times altogether, which is why the default
+// is a large but finite one. A delay of more than a day is not to be expected
+// in any realistic instance.
+constexpr double DEFAULT_MAX_DELAY = 24 * 60 * 60; // one day
+
+// Smallest and default integrality tolerance supported by Gurobi.
+constexpr double MIN_INT_FEAS_TOL     = 1e-9;
+constexpr double DEFAULT_INT_FEAS_TOL = 1e-5;
+
 struct ModelDetail {
   bool                       fix_routes         = false;
   double                     max_velocity_delta = 5.55; // 20 km/h
@@ -43,20 +72,60 @@ struct ModelDetail {
       VelocityRefinementStrategy::MinOneStep;
   bool simplify_headway_constraints          = false;
   bool strengthen_vertex_headway_constraints = false;
+  bool allow_late_entry                      = false;
+  // Bound every timing variable by the earliest time at which the
+  // corresponding event can happen, i.e. by the minimal running time the train
+  // needs to get there. Without these bounds the only lower bound on the
+  // objective is the scheduled timetable, and since everything that forces a
+  // train to travel at all is a big-M constraint, the LP relaxation is then
+  // free of any running time. Disabling this is only useful to measure the
+  // effect.
+  bool   use_minimum_time_bounds = true;
+  double max_exit_delay          = DEFAULT_MAX_DELAY;
+  double max_station_delay       = DEFAULT_MAX_DELAY;
 };
 
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
   OnlyViolated   = 0,
   OnlyFirstFound = 1,
-  AllChecked     = 2
+  AllChecked     = 2,
 };
+
+constexpr std::string lazy_constraint_selection_strategy_to_string(
+    LazyConstraintSelectionStrategy strategy) {
+  switch (strategy) {
+  case LazyConstraintSelectionStrategy::OnlyViolated:
+    return "OnlyViolated";
+  case LazyConstraintSelectionStrategy::OnlyFirstFound:
+    return "OnlyFirstFound";
+  case LazyConstraintSelectionStrategy::AllChecked:
+    return "AllChecked";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown lazy constraint selection strategy");
+  }
+}
 
 enum class LazyTrainSelectionStrategy : std::uint8_t {
   OnlyAdjacent = 0,
-  All          = 1
+  All          = 1,
 };
 
+constexpr std::string
+lazy_train_selection_strategy_to_string(LazyTrainSelectionStrategy strategy) {
+  switch (strategy) {
+  case LazyTrainSelectionStrategy::OnlyAdjacent:
+    return "OnlyAdjacent";
+  case LazyTrainSelectionStrategy::All:
+    return "All";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown lazy train selection strategy");
+  }
+}
+
 struct SolverStrategyMovingBlock {
+  bool use_indicator_constraints = false;
   bool use_lazy_constraints =
       true; // If false, the following settings are ignored
   bool include_reverse_headways               = false;
@@ -71,38 +140,62 @@ struct SolverStrategyMovingBlock {
 class GenPOMovingBlockMIPSolver
     : public GeneralMIPSolver<
           instances::GeneralPerformanceOptimizationInstance,
-          instances::SolGeneralPerformanceOptimizationInstance<
-              instances::GeneralPerformanceOptimizationInstance>> {
+          instances::SolGeneralPerformanceOptimizationInstance> {
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, PrivateFillFunctions);
 #endif
 
-  SolutionSettingsMovingBlock         solution_settings = {};
-  ModelDetail                         model_detail      = {};
-  SolverStrategyMovingBlock           solver_strategy   = {};
-  size_t                              num_tr            = 0;
-  size_t                              num_edges         = 0;
-  size_t                              num_vertices      = 0;
-  size_t                              num_ttd           = 0;
-  int                                 max_t             = 0;
-  std::vector<cda_rail::index_vector> ttd_sections;
+  SolutionSettingsMovingBlock m_solution_settings = {};
+  ModelDetail                 m_model_detail      = {};
+  SolverStrategyMovingBlock   m_solver_strategy   = {};
+  size_t                      m_num_tr            = 0;
+  size_t                      m_num_edges         = 0;
+  size_t                      m_num_vertices      = 0;
+  size_t                      m_num_ttd           = 0;
+  // int m_max_t = 0;
+  std::vector<cda_rail::index_set> m_ttd_sections;
   // tr_stop_data:
   // For every train, for every station, list of possible stop vertices together
   // with respective edges
   std::vector<std::vector<
       std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>>>
-                                                tr_stop_data;
-  std::vector<std::vector<std::vector<double>>> velocity_extensions;
-  std::vector<std::pair<size_t, size_t>>        relevant_reverse_edges;
+                                                m_tr_stop_data;
+  std::vector<std::vector<std::vector<double>>> m_velocity_extensions;
+  std::vector<std::pair<size_t, size_t>>        m_relevant_reverse_edges;
+  // Earliest time at which the front of a train can arrive at a vertex, by
+  // train and vertex. All zero if ModelDetail::use_minimum_time_bounds is not
+  // set.
+  std::vector<std::vector<double>> m_minimum_arrival_times;
+  // Time the rear of a train needs to reach a vertex after its front, by
+  // train. All zero if ModelDetail::use_minimum_time_bounds is not set.
+  std::vector<double> m_minimum_clearing_times;
+  // Earliest time at which the rear of a train can leave its exit vertex, by
+  // train. At least the scheduled exit time.
+  std::vector<double> m_minimum_exit_times;
+  // Earliest service delay of a scheduled stop, by train and stop. All zero if
+  // ModelDetail::use_minimum_time_bounds is not set.
+  std::vector<std::vector<double>> m_minimum_service_delays;
 
   void initialize_variables(
       const SolutionSettingsMovingBlock& solution_settings_input,
       const SolverStrategyMovingBlock&   solver_strategy_input,
       const ModelDetail&                 model_detail_input);
 
-  double ub_timing_variable(size_t tr) const;
+  double               latest_exit_time(size_t tr) const;
+  [[nodiscard]] double minimum_arrival_time(size_t tr, size_t v) const {
+    return m_minimum_arrival_times.at(tr).at(v);
+  };
+  // Between the front and the rear of a train passing a vertex, the train
+  // covers its own length, which takes at least its length divided by its
+  // maximal speed.
+  [[nodiscard]] double minimum_rear_departure_time(size_t tr, size_t v) const {
+    return std::min(minimum_arrival_time(tr, v) +
+                        m_minimum_clearing_times.at(tr),
+                    latest_exit_time(tr));
+  };
 
+  void fill_minimum_time_bounds();
   void fill_tr_stop_data();
   void fill_relevant_reverse_edges();
   void fill_velocity_extensions();
@@ -144,9 +237,9 @@ private:
                      bool   also_higher_velocities = false);
 
   void extract_solution(
-      instances::SolGeneralPerformanceOptimizationInstance<
-          instances::GeneralPerformanceOptimizationInstance>& sol) const;
+      instances::SolGeneralPerformanceOptimizationInstance& sol) const;
   [[nodiscard]] double extract_speed(size_t tr, size_t vertex_id) const;
+  [[nodiscard]] double extract_stop_time(size_t tr, size_t stop_idx) const;
   static double headway(const Train& tr_obj, const Edge& e_obj, double v_0,
                         double v_1, bool entry_vertex = false);
 
@@ -203,41 +296,24 @@ public:
 
   explicit GenPOMovingBlockMIPSolver(
       const instances::GeneralPerformanceOptimizationInstance& instance)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(instance) {
-        };
+      : GeneralMIPSolver<instances::GeneralPerformanceOptimizationInstance,
+                         instances::SolGeneralPerformanceOptimizationInstance>(
+            instance) {};
 
-  explicit GenPOMovingBlockMIPSolver(const std::filesystem::path& p)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(p) {};
-
-  explicit GenPOMovingBlockMIPSolver(const std::string& path)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(path) {};
-
-  explicit GenPOMovingBlockMIPSolver(const char* path)
-      : GeneralMIPSolver<
-            instances::GeneralPerformanceOptimizationInstance,
-            instances::SolGeneralPerformanceOptimizationInstance<
-                instances::GeneralPerformanceOptimizationInstance>>(path) {};
+  template <typename... Args>
+  explicit GenPOMovingBlockMIPSolver(Args&&... args)
+    requires(!IsSingleInstanceArgument<Args...>::value)
+      : GeneralMIPSolver(std::forward<Args>(args)...) {}
 
   ~GenPOMovingBlockMIPSolver() override = default;
 
   using GeneralSolver::solve;
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(int time_limit, bool debug_input, bool overwrite_severity) override {
     return solve({}, {}, {}, time_limit, debug_input, overwrite_severity);
   };
 
-  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance<
-      instances::GeneralPerformanceOptimizationInstance>
+  [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
   solve(const ModelDetail&                 model_detail_input,
         const SolverStrategyMovingBlock&   solver_strategy_input,
         const SolutionSettingsMovingBlock& solution_settings_input,

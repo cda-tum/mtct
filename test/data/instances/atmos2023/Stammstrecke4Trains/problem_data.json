@@ -1,0 +1,9 @@
+{
+  "station_delay_weight": 1,
+  "train_weights": {
+    "S2Petershausen": 1,
+    "S6Ebersberg": 1,
+    "S6Tutzing": 1,
+    "S7Aying": 1
+  }
+}

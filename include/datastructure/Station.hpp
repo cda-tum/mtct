@@ -5,113 +5,417 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 namespace cda_rail {
+/**
+ * @brief Represents a station as a named set of network tracks (edge indices).
+ *
+ * A station is identified by its `name` and contains all tracks on which trains
+ * are considered to be within that station.
+ */
 struct Station {
   /**
-   * Station object
-   * @param name Name of the station
-   * @param tracks Unordered set of edges that define the station.
+   * @brief Station identifier.
    */
-  std::string name;
-  // NOLINTNEXTLINE(readability-redundant-member-init)
-  cda_rail::index_vector tracks = {};
+  std::string name{};
 
+  /**
+   * @brief Set of track indices (network edges) that belong to this station.
+   */
+  cda_rail::index_set tracks{};
+
+  /**
+   * @brief Computes station tracks that can host a stop for a given train
+   * length.
+   *
+   * For each eligible stop edge, the method returns all valid in-station paths
+   * ending in that edge whose total length can accommodate `tr_len`.
+   *
+   * @param tr_len Train length.
+   * @param network Network containing the station edges.
+   * @param edges_to_consider Optional candidate edges. If empty, all station
+   * edges are considered.
+   * @return Vector of pairs `(stop_edge, stop_paths)`, where `stop_paths`
+   * contains all valid paths ending in `stop_edge`.
+   */
   [[nodiscard]] std::vector<
       std::pair<size_t, std::vector<cda_rail::index_vector>>>
-  get_stop_tracks(double tr_len, const Network& network,
-                  const cda_rail::index_vector& edges_to_consider = {}) const;
+  get_stop_tracks(double tr_len, Network const& network,
+                  cda_rail::index_set const& edges_to_consider = {}) const;
+
+  /**
+   * @brief Checks whether all provided edges belong to this station.
+   *
+   * @param edges Edges to validate.
+   * @return `true` if every edge in `edges` is part of `tracks`; otherwise
+   * `false`.
+   */
+  [[nodiscard]] bool
+  is_fully_in_station(cda_rail::index_set const& edges) const;
+
+  /**
+   * @brief Compares two stations for equality.
+   *
+   * @return bool `true` if the stations have the same name and tracks, `false`
+   * otherwise.
+   */
+  bool operator==(const Station& other) const {
+    return name == other.name && tracks == other.tracks;
+  }
 };
 
+/**
+ * @brief Container and persistence API for named stations.
+ *
+ * `StationList` owns all stations and provides lookup, mutation,
+ * import/export, and helper operations.
+ */
 class StationList {
-  /**
-   * StationList class
-   */
 private:
-  std::unordered_map<std::string, Station> stations;
+  std::unordered_map<std::string, std::shared_ptr<Station>> stations;
+
+  friend class Timetable;
+  /**
+   * @brief Retrieves the shared pointer stored for a station name.
+   *
+   * @param name Station name.
+   * @return Shared pointer to the requested station.
+   * @throws exceptions::StationNotExistentException If `name` is unknown.
+   */
+  [[nodiscard]] std::shared_ptr<Station>
+  get_station_ptr(const std::string& name);
 
 public:
   // Constructors
+  /**
+   * @brief Creates an empty station list.
+   */
   StationList() = default;
-  StationList(const std::filesystem::path& p, const Network& network);
-  StationList(const std::string& path, const Network& network)
-      : StationList(std::filesystem::path(path), network) {};
-  StationList(const char* path, const Network& network)
+
+  /**
+   * @brief Loads stations from `stations.json` in the given directory.
+   *
+   * @param p Directory containing `stations.json`.
+   * @param network Network used to resolve edge endpoints from stored vertex
+   * names.
+   * @throws exceptions::ImportException If `p` does not exist or is not a
+   * directory.
+   */
+  StationList(std::filesystem::path const& p, Network const& network);
+
+  /**
+   * @brief Constructs a station list from a string path.
+   *
+   * Loads stations from `stations.json` located in the given directory.
+   *
+   * @param path Directory containing `stations.json`.
+   * @param network Network used to resolve edge endpoints.
+   *
+   * @throws exceptions::ImportException If `path` does not exist or is not a
+   * directory.
+   */
+  StationList(std::string const& path, Network const& network)
       : StationList(std::filesystem::path(path), network) {};
 
-  // Rule of 5
-  StationList(const StationList& other)            = default;
-  StationList(StationList&& other)                 = default;
-  StationList& operator=(const StationList& other) = default;
-  StationList& operator=(StationList&& other)      = default;
-  ~StationList()                                   = default;
+  /**
+   * @brief Convenience overload forwarding to the filesystem path constructor.
+   *
+   * @param path Directory containing `stations.json`.
+   * @param network Network used to resolve edge endpoints.
+   */
+  StationList(char const* const path, Network const& network)
+      : StationList(std::filesystem::path(path), network) {};
 
-  [[nodiscard]] bool is_fully_in_station(const std::string&     station_name,
-                                         cda_rail::index_vector edges) const;
+  // Custom copy constructor and assignment operator for deep copying
+  /**
+   * @brief Copy constructor that performs a deep copy of all stations.
+   *
+   * @param other The StationList to copy from.
+   */
+  StationList(const StationList& other) {
+    for (const auto& [name, station_ptr] : other.stations) {
+      stations[name] = std::make_shared<Station>(*station_ptr);
+    }
+  }
+
+  /**
+   * @brief Copy assignment operator that performs a deep copy of all stations.
+   *
+   * @param other The StationList to copy from.
+   * @return Reference to this StationList.
+   */
+  StationList& operator=(const StationList& other) {
+    if (this != &other) {
+      stations.clear();
+      for (const auto& [name, station_ptr] : other.stations) {
+        stations[name] = std::make_shared<Station>(*station_ptr);
+      }
+    }
+    return *this;
+  }
+
+  // Default move constructor and move assignment operator
+  /** @brief Move constructor. */
+  StationList(StationList&&) noexcept = default;
+  /** @brief Move assignment operator. */
+  StationList& operator=(StationList&&) noexcept = default;
 
   // Iterators (for range-based for loops) that do not allow modification of the
   // underlying data
-  [[nodiscard]] auto begin() const { return stations.begin(); };
-  [[nodiscard]] auto end() const { return stations.end(); };
-
-  void add_station(const std::string& name) { stations[name] = Station{name}; };
-
-  [[nodiscard]] bool has_station(const std::string& name) const {
-    return stations.find(name) != stations.end();
-  };
-  [[nodiscard]] const Station& get_station(const std::string& name) const;
-
+  /** @brief Read-only iterator to the first station entry. */
+  [[nodiscard]] auto begin() const { return stations.cbegin(); };
+  /** @brief Read-only iterator past the last station entry. */
+  [[nodiscard]] auto end() const { return stations.cend(); };
+  /**
+   * @brief Obtains a const iterator to the first station.
+   *
+   * @return A const iterator to the beginning of the stations collection.
+   */
+  [[nodiscard]] auto cbegin() const { return stations.cbegin(); };
+  /** @brief Read-only iterator past the last station entry (explicit const). */
+  [[nodiscard]] auto cend() const { return stations.cend(); };
+  /**
+   * @brief Retrieves the number of stations.
+   *
+   * @return size_t The number of stations.
+   */
   [[nodiscard]] size_t size() const { return stations.size(); };
-  [[nodiscard]] std::vector<std::string> get_station_names() const;
 
+  /*
+   * GETTER
+   */
+  /**
+   * @brief Checks whether a station with the given name exists.
+   *
+   * @param name Station name.
+   * @return `true` if present; otherwise `false`.
+   */
+  [[nodiscard]] bool has_station(const std::string& name) const {
+    return stations.contains(name);
+  };
+
+  /**
+   * @brief Retrieves a station by name.
+   *
+   * @param name Station name.
+   * @return Immutable reference to the requested station.
+   * @throws exceptions::StationNotExistentException If no station with `name`
+   * exists.
+   */
+  [[nodiscard]] Station const& get_station(const std::string& name) const;
+
+  /**
+   * @brief Returns the set of all station names.
+   *
+   * @return Unordered set containing each station name exactly once.
+   */
+  [[nodiscard]] std::unordered_set<std::string> get_station_names() const;
+
+  /**
+   * @brief Checks whether all given edges belong to a named station.
+   *
+   * @param station_name Station to check.
+   * @param edges Edge indices to validate.
+   * @return `true` if all edges are part of the station; otherwise `false`.
+   * @throws exceptions::StationNotExistentException If `station_name` is
+   * unknown.
+   */
+  [[nodiscard]] bool
+  is_fully_in_station(std::string const&         station_name,
+                      cda_rail::index_set const& edges) const;
+
+  /*
+   * SETTER / EDITING
+   */
+
+  /**
+   * @brief Adds a new station without tracks.
+   *
+   * @param name Name of the station to create.
+   * @throws exceptions::ConsistencyException If a station with `name` already
+   * exists.
+   */
+  void add_empty_station(std::string const& name);
+
+  /**
+   * @brief Adds a track index to an existing station.
+   *
+   * If the track already belongs to the station, the call has no effect.
+   *
+   * @param name Station name.
+   * @param track Track edge index.
+   * @throws exceptions::StationNotExistentException If `name` is unknown.
+   */
   void add_track_to_station(const std::string& name, size_t track);
-  void add_track_to_station(const std::string& name, size_t track,
-                            const Network& network) {
+
+private:
+  /**
+   * @brief Adds a track index to a station after validating it in the network.
+   *
+   * @param name Station name.
+   * @param track Track edge index.
+   * @param network Network used for edge existence validation.
+   * @throws exceptions::EdgeNotExistentException If `track` is not in
+   * `network`.
+   * @throws exceptions::StationNotExistentException If `name` is unknown.
+   */
+  void add_track_to_station_helper(const std::string& name, size_t const track,
+                                   const Network& network) {
     if (!network.has_edge(track)) {
       throw exceptions::EdgeNotExistentException(track);
     }
     add_track_to_station(name, track);
   };
-  void add_track_to_station(const std::string& name, size_t source,
-                            size_t target, const Network& network) {
-    add_track_to_station(name, network.get_edge_index(source, target), network);
-  };
-  void add_track_to_station(const std::string& name, const std::string& source,
-                            const std::string& target, const Network& network) {
-    add_track_to_station(name, network.get_edge_index(source, target), network);
+
+public:
+  /**
+   * @brief Adds a track to a station by resolving an edge specification.
+   *
+   * @param name Station name.
+   * @param edge Edge specification to resolve and add.
+   * @param network Network used to resolve the edge specification.
+   *
+   * @throws exceptions::StationNotExistentException if the station does not
+   * exist.
+   * @throws exceptions::EdgeNotExistentException if the resolved edge does not
+   * exist in the network.
+   */
+  void add_track_to_station(const std::string&                  name,
+                            cda_rail::Network::EdgeInput const& edge,
+                            const Network&                      network) {
+    add_track_to_station_helper(name, edge.resolve(&network), network);
   };
 
-  void export_stations(const std::string& path, const Network& network) const;
-  void export_stations(const char* path, const Network& network) const {
-    export_stations(std::filesystem::path(path), network);
-  };
+  /*
+   * EXPORT/IMPORT
+   */
+
+  /**
+   * @brief Exports all stations to `stations.json` in the target directory.
+   *
+   * Edge endpoints are written using vertex names from `network`.
+   *
+   * @param p Target directory.
+   * @param network Network used to resolve edge endpoint names.
+   * @throws exceptions::ExportException If the target directory cannot be
+   * created.
+   */
   void export_stations(const std::filesystem::path& p,
                        const Network&               network) const;
+
+  /**
+   * @brief Convenience overload forwarding to the filesystem path export.
+   *
+   * @param path Target directory.
+   * @param network Network used to resolve edge endpoint names.
+   */
+  void export_stations(std::string const& path, const Network& network) const {
+    std::filesystem::path const p(path);
+    export_stations(p, network);
+  };
+
+  /**
+   * @brief Writes all stations to the specified directory.
+   *
+   * @param path A C-string representing the target directory.
+   * @param network Network used to resolve edge endpoint names.
+   * @throws exceptions::ExportException If the directory cannot be created.
+   */
+  void export_stations(char const* const path, const Network& network) const {
+    export_stations(std::filesystem::path(path), network);
+  };
+
+  /**
+   * @brief Imports stations from a directory path string.
+   *
+   * @param path Directory containing `stations.json`.
+   * @param network Network used to resolve edge endpoints.
+   * @return A `StationList` containing the imported stations.
+   */
   [[nodiscard]] static StationList import_stations(const std::string& path,
                                                    const Network&     network) {
     return {path, network};
   };
+
+  /**
+   * @brief Imports stations from a C-string path.
+   *
+   * @param path Directory containing `stations.json`.
+   * @param network Network used to resolve edge endpoints.
+   * @return StationList loaded from the specified directory.
+   *
+   * @throws exceptions::ImportException if `path` does not exist or is not a
+   * directory.
+   */
   [[nodiscard]] static StationList import_stations(const char*    path,
                                                    const Network& network) {
     return {path, network};
   };
+
+  /**
+   * @brief Imports stations from a filesystem path.
+   *
+   * @param p Directory containing `stations.json`.
+   * @param network Network used to resolve edge endpoints.
+   * @return Imported station list.
+   * @throws exceptions::ImportException If the directory does not exist or is
+   * not a directory.
+   */
   [[nodiscard]] static StationList
   import_stations(const std::filesystem::path& p, const Network& network) {
     return {p, network};
   };
 
+  /*
+   * HELPER
+   */
+
+  /**
+   * @brief Updates station tracks after network discretization.
+   *
+   * For each pair `(old_edge, replacement_edges)`, every occurrence of
+   * `old_edge` in a station is replaced by all edges in `replacement_edges`.
+   *
+   * @param new_edges Mapping from original edge index to replacement edge set.
+   */
+  void update_after_discretization(
+      const std::vector<std::pair<size_t, cda_rail::index_set>>& new_edges);
+
+  /**
+   * @brief Updates station tracks after network discretization.
+   *
+   * For each pair `(old_edge, replacement_edges)`, every occurrence of
+   * `old_edge` in a station is replaced by all edges in `replacement_edges`.
+   *
+   * @param new_edges Mapping from original edge index to replacement edge
+   * vector.
+   */
   void update_after_discretization(
       const std::vector<std::pair<size_t, cda_rail::index_vector>>& new_edges);
 
+  /**
+   * @brief Computes possible stop tracks for a named station.
+   *
+   * @param name Station name.
+   * @param tr_len Train length.
+   * @param network Network containing the station edges.
+   * @param edges_to_consider Optional candidate edges to filter the result. If
+   * empty, all station edges are considered.
+   * @return Vector of pairs, where each pair contains a stop edge index and the
+   * set of valid in-station paths ending on that edge.
+   * @throws exceptions::StationNotExistentException If `name` is unknown.
+   */
   [[nodiscard]] std::vector<
       std::pair<size_t, std::vector<cda_rail::index_vector>>>
   get_stop_tracks(const std::string& name, double tr_len,
-                  const Network&                network,
-                  const cda_rail::index_vector& edges_to_consider = {}) const {
+                  const Network&             network,
+                  const cda_rail::index_set& edges_to_consider = {}) const {
     return get_station(name).get_stop_tracks(tr_len, network,
                                              edges_to_consider);
   }

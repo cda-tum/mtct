@@ -1,7 +1,7 @@
 # set common compiler options for projects
 function(enable_project_options target_name)
   # set required C++ standard and disable compiler specific extensions
-  target_compile_features(${target_name} INTERFACE cxx_std_17)
+  target_compile_features(${target_name} INTERFACE cxx_std_23)
 
   # Option to enable time tracing with clang
   if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
