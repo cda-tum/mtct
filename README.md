@@ -39,7 +39,7 @@ Its runtime has been improved by an iterative approach [[4]](#references) as wel
 For moving block, no layout has to be designed, and the question becomes how to route and schedule the trains themselves.
 In this case, the times given in the instance are lower bounds only.
 The tool finds routings that minimize a weighted combination of the delays at the stations and when leaving the network.
-They can be obtained by a MILP [[5]](#references) as well as by an A\* search on simulated train movements, whose runtime and scalability are improved considerably by time-aware state transitions [[8]](#references).
+They can be obtained by a MILP [[5]](#references) as well as by an A\* search [[8]](#references) on simulated train movements, whose runtime and scalability are improved considerably by time-aware state transitions [[9]](#references).
 
 All of these methods are built on a common problem description and are accessible through three command line apps.
 The tool is under active development, and more features will follow.
@@ -52,7 +52,7 @@ The tool has been tested under Windows 11 (64-bit) using the MSVC compiler.
 It should also be compatible with any other compiler supporting C++23, where a minimum CMake version of 3.20 is required.
 More precisely, at least GCC 13.0, Clang 17.0, Apple Clang 16.0 (i.e., Xcode 16.0), or MSVC 19.34 (i.e., Visual Studio 2022 17.4) is needed.
 
-Moreover, the tool requires a local installation of a recent Gurobi [[9]](#references) version available at [https://www.gurobi.com/downloads/gurobi-software/](https://www.gurobi.com/downloads/gurobi-software/) as well as a valid [license](https://www.gurobi.com/solutions/licensing/).
+Moreover, the tool requires a local installation of a recent Gurobi [[10]](#references) version available at [https://www.gurobi.com/downloads/gurobi-software/](https://www.gurobi.com/downloads/gurobi-software/) as well as a valid [license](https://www.gurobi.com/solutions/licensing/).
 For academic purposes, Gurobi offers [free academic licenses](https://www.gurobi.com/academia/academic-program-and-licenses/).
 The project currently tests with Gurobi v13.0.3.
 
@@ -465,7 +465,7 @@ Export Options:
 
 ##### A\* Based
 
-`rail_gen_po_moving_block_astar_testing` searches for such a routing using an A\* search on simulated train movements [[8]](#references).
+`rail_gen_po_moving_block_astar_testing` searches for such a routing using an A\* search on simulated train movements [[8,9]](#references).
 The time step of that simulation is given by `--dt`.
 How far the trains are moved in every step is controlled by `--next-state-strategy`, and which heuristic estimates the remaining time by `--remaining-time-heuristic-strategy`.
 Using `--time-aware-state-transitions`, states that cannot lead to a better solution are not explored, which reduces the runtime drastically.
@@ -588,6 +588,8 @@ If you have any questions, feel free to contact us via etcs.cda@xcit.tum.de or b
 
 [[7]](https://www.cda.cit.tum.de/files/eda/2025_eurojtl_etcs_design_tasks_and_complexity.pdf) Stefan Engels and Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Design tasks and their complexity for the European Train Control System with Hybrid Train Detection"**. EURO Journal on Transportation and Logistics, 2025 ([doi](https://doi.org/10.1016/j.ejtl.2025.100161), [arXiv](https://arxiv.org/abs/2308.02572), [pdf](https://www.cda.cit.tum.de/files/eda/2025_eurojtl_etcs_design_tasks_and_complexity.pdf))
 
-[[8]](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf) Stefan Engels and Robert Wille. **"Time-Aware A\* for Optimal Train Routing on Moving Block Systems"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2026 ([pdf](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf))
+[[8]](https://www.cda.cit.tum.de/files/eda/2025_atmos_astar_for_optimal_routing_on_moving_block_systems.pdf) Stefan Engels and Robert Wille. **"Using A\* for Optimal Train Routing on Moving Block Systems"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2025 ([doi](https://doi.org/10.4230/OASIcs.ATMOS.2025.14), [pdf](https://www.cda.cit.tum.de/files/eda/2025_atmos_astar_for_optimal_routing_on_moving_block_systems.pdf))
 
-[[9]](https://www.gurobi.com) Gurobi Optimization, LLC. **"Gurobi Optimizer Reference Manual"**. 2026
+[[9]](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf) Stefan Engels and Robert Wille. **"Time-Aware A\* for Optimal Train Routing on Moving Block Systems"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2026 ([pdf](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf))
+
+[[10]](https://www.gurobi.com) Gurobi Optimization, LLC. **"Gurobi Optimizer Reference Manual"**. 2026
