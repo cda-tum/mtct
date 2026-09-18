@@ -1569,7 +1569,7 @@ public:
    * @param source               Source vertex descriptor.
    * @param target               Target vertex descriptor.
    * @param length               Edge length in metres.
-   * @param maxSpeed             Maximum speed in m/s.
+   * @param max_speed            Maximum speed in m/s.
    * @param breakable            Whether VSS borders may be placed on this
    *                             edge; `std::nullopt` uses
    *                             `Edge::BREAKABLE_DEFAULT`.
@@ -1587,7 +1587,7 @@ public:
    */
   std::pair<size_t, size_t> add_bidirectional_edge(
       VertexInput const& source, VertexInput const& target, double length,
-      double maxSpeed, std::optional<bool> const& breakable = {},
+      double max_speed, std::optional<bool> const& breakable = {},
       std::optional<double> const& min_block_length      = {},
       std::optional<double> const& min_stop_block_length = {});
 

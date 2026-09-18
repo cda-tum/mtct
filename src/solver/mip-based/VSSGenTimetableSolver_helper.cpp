@@ -2,6 +2,7 @@
 #include "Definitions.hpp"
 #include "GeneralHelper.hpp"
 #include "VSSModel.hpp"
+#include "datastructure/Timetable.hpp"
 #include "gurobi_c++.h"
 #include "gurobi_c.h"
 #include "plog/Logger.h"

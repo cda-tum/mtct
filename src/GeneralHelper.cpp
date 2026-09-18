@@ -1,5 +1,6 @@
 #include "GeneralHelper.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 
 #include <algorithm>

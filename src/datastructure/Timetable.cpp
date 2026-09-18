@@ -1,7 +1,6 @@
 #include "datastructure/Timetable.hpp"
 
 #include "CustomExceptions.hpp"
-#include "Definitions.hpp"
 #include "GeneralHelper.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Train.hpp"

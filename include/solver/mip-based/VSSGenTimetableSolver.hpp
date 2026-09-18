@@ -3,6 +3,7 @@
 #include "Definitions.hpp"
 #include "GeneralMIPSolver.hpp"
 #include "VSSModel.hpp"
+#include "datastructure/Timetable.hpp"
 #include "gurobi_c++.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
