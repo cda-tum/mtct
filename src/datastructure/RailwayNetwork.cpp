@@ -713,6 +713,20 @@ size_t cda_rail::Network::add_edge_helper(
   return m_edges.size() - 1;
 }
 
+std::pair<size_t, size_t> cda_rail::Network::add_bidirectional_edge(
+    VertexInput const& source, VertexInput const& target, double const length,
+    double const maxSpeed, std::optional<bool> const& breakable,
+    std::optional<double> const& min_block_length,
+    std::optional<double> const& min_stop_block_length) {
+  size_t const forward_edge_index =
+      add_edge(source, target, length, maxSpeed, breakable, min_block_length,
+               min_stop_block_length);
+  size_t const reverse_edge_index =
+      add_edge(target, source, length, maxSpeed, breakable, min_block_length,
+               min_stop_block_length);
+  return {forward_edge_index, reverse_edge_index};
+}
+
 void cda_rail::Network::add_successor_helper(size_t edge_in, size_t edge_out) {
   if (!has_edge(edge_in)) {
     throw exceptions::EdgeNotExistentException(edge_in);

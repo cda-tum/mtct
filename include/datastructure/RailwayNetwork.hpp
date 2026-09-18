@@ -1563,6 +1563,34 @@ public:
                            min_stop_block_length);
   }
 
+  /**
+   * @brief Adds a bidirectional edge between two vertices, i.e., it adds two
+   * edges, one in each direction.
+   * @param source               Source vertex descriptor.
+   * @param target               Target vertex descriptor.
+   * @param length               Edge length in metres.
+   * @param maxSpeed             Maximum speed in m/s.
+   * @param breakable            Whether VSS borders may be placed on this
+   *                             edge; `std::nullopt` uses
+   *                             `Edge::BREAKABLE_DEFAULT`.
+   * @param min_block_length     Minimum block length in metres; `std::nullopt`
+   *                             uses `Edge::MIN_BLOCK_LENGTH_DEFAULT`.
+   * @param min_stop_block_length Minimum stop-block length in metres;
+   *                              `std::nullopt` uses
+   *                              `Edge::MIN_STOP_BLOCK_LENGTH_DEFAULT`.
+   * @return A pair of indices of the newly added edges, with the first being
+   * the forward edge and the second being the reverse edge.
+   * @throws cda_rail::exceptions::InvalidInputException If source equals
+   *         target or the edge already exists.
+   * @throws cda_rail::exceptions::VertexNotExistentException If either vertex
+   *         does not exist.
+   */
+  std::pair<size_t, size_t> add_bidirectional_edge(
+      VertexInput const& source, VertexInput const& target, double const length,
+      double const maxSpeed, std::optional<bool> const& breakable = {},
+      std::optional<double> const& min_block_length      = {},
+      std::optional<double> const& min_stop_block_length = {});
+
 private:
   /**
    * @brief Registers @p edge_out as a valid successor of @p edge_in.
