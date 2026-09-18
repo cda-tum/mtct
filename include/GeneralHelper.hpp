@@ -144,6 +144,8 @@ template <typename Clock, typename Duration1, typename Duration2>
 /**
  * @brief return last time step before t
  *
+ * A time within EPS of a time step is treated as lying on it.
+ *
  * @param t Time t
  * @param dt Timestep
  * @param t_inclusive Can t itself be returned?
@@ -170,6 +172,9 @@ template <typename Clock, typename Duration1, typename Duration2>
  * Time itself is continuous, only the discretized models index the time steps.
  * This is the index k belonging to get_last_time_step_before(t, dt,
  * t_inclusive), i.e., the returned index multiplied by dt gives back the time.
+ *
+ * A time within EPS of a time step is treated as lying on it, hence there is no
+ * index for a non-inclusive t within EPS of 0.
  *
  * @param t Time t
  * @param dt Timestep
