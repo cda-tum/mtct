@@ -1587,7 +1587,7 @@ public:
    */
   std::pair<size_t, size_t> add_bidirectional_edge(
       VertexInput const& source, VertexInput const& target, double length,
-      double max_speed, std::optional<bool> const& breakable = {},
+      double maxSpeed, std::optional<bool> const& breakable = {},
       std::optional<double> const& min_block_length      = {},
       std::optional<double> const& min_stop_block_length = {});
 
