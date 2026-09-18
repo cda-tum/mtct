@@ -3,6 +3,7 @@
 #include "datastructure/Train.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
+#include "solver/mip-based/GeneralMIPSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
