@@ -642,7 +642,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
     for (size_t t = 0; t <= num_t; ++t) {
       const auto tr_to_consider =
-          m_instance.trains_at_t(static_cast<int>(t) * dt, tr_on_sec);
+          m_instance.trains_at_t(static_cast<double>(t) * dt, tr_on_sec);
       GRBLinExpr lhs = 0;
       for (auto const tr : tr_to_consider) {
         lhs += m_vars["x_sec"](tr, t, sec_index);
@@ -668,9 +668,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_schedule = m_instance.get_const_schedule(tr_name);
     const auto& tr_edges = m_instance.edges_used_by_train(tr, this->fix_routes);
     for (const auto& tr_stop : tr_schedule.get_stops()) {
-      const auto t0 = static_cast<size_t>(tr_stop.get_service_time() / dt);
-      const auto t1 =
-          static_cast<size_t>(std::ceil(tr_stop.get_earliest_departure() / dt));
+      const auto [t0, t1]            = stop_time_indices(tr_stop);
       const auto& stop_station       = tr_stop.get_station();
       const auto  stop_edges         = stop_station.tracks;
       auto        inverse_stop_edges = tr_edges;
@@ -926,7 +924,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       GRBLinExpr rhs               = -1;
       bool       create_constraint = false;
       for (const auto& tr :
-           m_instance.trains_at_t(static_cast<int>(t) * dt, tr_on_e)) {
+           m_instance.trains_at_t(static_cast<double>(t) * dt, tr_on_e)) {
         create_constraint = true;
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           lhs_front += m_vars["b_front"](tr, t, e_index, vss);
@@ -997,7 +995,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         GRBLinExpr lhs = 0;
         GRBLinExpr rhs = 0;
         for (const auto& tr :
-             m_instance.trains_at_t(static_cast<int>(t) * dt, tr_on_e)) {
+             m_instance.trains_at_t(static_cast<double>(t) * dt, tr_on_e)) {
           lhs += m_vars["b_front"](tr, t, e_index, vss);
           if (m_instance.get_const_train_list().get_train(tr).has_tim()) {
             rhs += m_vars["b_rear"](tr, t, e_index, vss);
@@ -1122,14 +1120,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (size_t t = 0; t < num_t; ++t) {
       GRBLinExpr lhs = 0;
       for (const auto& tr :
-           m_instance.trains_at_t(static_cast<int>(t) * dt, tr_on_e)) {
+           m_instance.trains_at_t(static_cast<double>(t) * dt, tr_on_e)) {
         if (!m_instance.get_const_train_list().get_train(tr).has_tim()) {
           lhs += m_vars["x"](tr, t, e);
         }
       }
       m_model->addConstr(lhs, GRB_LESS_EQUAL, 1,
                          "non_tim_train_on_edge_" + e_name + "_" +
-                             std::to_string(static_cast<int>(t) * dt));
+                             std::to_string(static_cast<double>(t) * dt));
     }
   }
 }
@@ -1374,7 +1372,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   // Connect y_sec and x
   for (size_t t = 0; t < num_t; ++t) {
-    const auto tr_at_t = m_instance.trains_at_t(static_cast<int>(t) * dt);
+    const auto tr_at_t = m_instance.trains_at_t(static_cast<double>(t) * dt);
     for (size_t i = 0; i < fwd_bwd_sections.size(); ++i) {
       // y_sec_fwd(t,i) >= x(tr, t, e) for all e in fwd_bwd_sections[i].first
       // and applicable trains y_sec_fwd(t,i) <= sum x(tr, t, e)

@@ -350,7 +350,7 @@ void cda_rail::solver::mip_based::
            t_idx <=
            std::max(tr_prev_interval.second, tr_following_interval.second);
            ++t_idx) {
-        const int t = static_cast<int>(static_cast<double>(t_idx) * dt);
+        const auto t = static_cast<double>(t_idx) * dt;
         if (t_idx >= tr_prev_interval.first &&
             t_idx <= tr_prev_interval.second) {
           prev_x_expr += m_vars["x"](tr_prev, t_idx, prev_e);

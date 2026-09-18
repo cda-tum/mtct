@@ -259,23 +259,18 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
   cda_rail::exceptions::throw_if_negative(t_0, "Entry time");
   cda_rail::exceptions::throw_if_negative(t_n, "Exit time");
 
-  auto const t_0_index = static_cast<size_t>(std::floor(t_0 / dt));
-  // if t_n is divisible by dt (approx)
-  if (std::abs(std::fmod(t_n, dt)) < EPS) {
-    // if tn_inclusive, we want to include the time step at t_n, which is t_n /
-    // dt if tn_inclusive is false, we want to exclude the time step at t_n,
-    // which is (t_n / dt) - 1
-    auto const t_n_div = static_cast<size_t>(t_n / dt);
-    if (!tnInclusive && t_n_div == 0) {
-      throw exceptions::InvalidInputException(
-          "Cannot compute non-inclusive end index when exit time is 0");
-    }
-    return {t_0_index, tnInclusive ? t_n_div : t_n_div - 1};
-  }
+  auto const t_0_index = cda_rail::get_last_time_index_before(t_0, dt, true);
 
-  size_t const t_n_index = tnInclusive
-                               ? static_cast<size_t>(std::ceil(t_n / dt))
-                               : static_cast<size_t>(std::floor(t_n / dt));
+  if (!tnInclusive &&
+      cda_rail::get_first_time_index_after(t_n, dt, true) == 0) {
+    throw exceptions::InvalidInputException(
+        "Cannot compute non-inclusive end index when exit time is 0");
+  }
+  // If tn_inclusive, the time step at t_n belongs to the interval, otherwise it
+  // is the last time step strictly before t_n.
+  auto const t_n_index =
+      tnInclusive ? cda_rail::get_first_time_index_after(t_n, dt, true)
+                  : cda_rail::get_last_time_index_before(t_n, dt, false);
 
   return {t_0_index, t_n_index};
 }

@@ -125,3 +125,28 @@ double cda_rail::get_first_time_step_after(double t, double dt,
   return t_inclusive ? std::ceil((t / dt) - EPS) * dt
                      : (std::floor((t / dt) + EPS) + 1) * dt;
 }
+size_t cda_rail::get_last_time_index_before(double t, double dt,
+                                            bool t_inclusive) {
+  exceptions::throw_if_negative(t, "Time");
+  exceptions::throw_if_non_positive(dt, "Time step length");
+
+  // max (k s.th. k*dt <= t) if t_inclusive is true, otherwise max (k s.th.
+  // k*dt < t)
+  const double index =
+      t_inclusive ? std::floor((t / dt) + EPS) : std::ceil((t / dt) - EPS) - 1;
+  if (index < 0) {
+    throw exceptions::InvalidInputException(
+        "There is no non-negative time index before the given time");
+  }
+  return static_cast<size_t>(index);
+}
+size_t cda_rail::get_first_time_index_after(double t, double dt,
+                                            bool t_inclusive) {
+  exceptions::throw_if_negative(t, "Time");
+  exceptions::throw_if_non_positive(dt, "Time step length");
+
+  // min (k s.th. k*dt >= t) if t_inclusive is true, otherwise min (k s.th.
+  // k*dt > t)
+  return static_cast<size_t>(t_inclusive ? std::ceil((t / dt) - EPS)
+                                         : std::floor((t / dt) + EPS) + 1);
+}

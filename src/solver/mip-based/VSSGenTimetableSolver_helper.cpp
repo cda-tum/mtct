@@ -63,6 +63,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
   return indices;
 }
 
+std::pair<size_t, size_t>
+cda_rail::solver::mip_based::VSSGenTimetableSolver::stop_time_indices(
+    const ScheduledStop& stop) const {
+  return {get_last_time_index_before(stop.get_service_time(), dt, true),
+          get_first_time_index_after(stop.get_earliest_departure(), dt, true)};
+}
+
 cda_rail::solver::mip_based::VSSGenTimetableSolver::TemporaryImpossibilityStruct
 cda_rail::solver::mip_based::VSSGenTimetableSolver::
     get_temporary_impossibility_struct(const size_t& tr,
@@ -92,9 +99,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::
   s.v_after  = tr_schedule.get_exit_velocity();
 
   for (const auto& tr_stop : tr_schedule.get_stops()) {
-    const auto t0 = static_cast<size_t>(tr_stop.get_service_time() / dt);
-    const auto t1 =
-        static_cast<size_t>(std::ceil(tr_stop.get_earliest_departure() / dt));
+    const auto [t0, t1] = stop_time_indices(tr_stop);
     if (t >= t0 && t <= t1) {
       s.to_use = false;
       return s;
@@ -124,7 +129,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(
     const double& a_max, const bool& braking_distance) const {
   const auto& train_object = m_instance.get_const_train_list().get_train(tr);
   const auto  v_max        = train_object.get_max_speed();
-  const auto  time_diff    = static_cast<int>(time_steps) * dt;
+  const auto  time_diff    = static_cast<double>(time_steps) * dt;
   double      ret_val      = 0;
   double      final_speed  = NAN;
   if (!this->include_train_dynamics) {
@@ -737,12 +742,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
   PLOGI << "Creating m_model...";
   PLOGD << "Initialize other relevant variables";
 
-  num_t = static_cast<size_t>(
-      m_instance.get_const_timetable().latest_exit_time() / dt);
-  if (std::fmod(m_instance.get_const_timetable().latest_exit_time(), dt) !=
-      0.0) {
-    num_t += 1;
-  }
+  num_t = get_first_time_index_after(
+      m_instance.get_const_timetable().latest_exit_time(), dt, true);
 
   num_tr       = m_instance.get_const_train_list().size();
   num_edges    = m_instance.get_editable_network().number_of_edges();

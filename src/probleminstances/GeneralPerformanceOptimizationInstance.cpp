@@ -963,7 +963,7 @@ bool cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 
   auto const& train_list = this->get_instance()->get_const_train_list();
-  for (auto tr_id = 0; tr_id < train_list.size(); tr_id++) {
+  for (size_t tr_id = 0; tr_id < train_list.size(); tr_id++) {
     const auto& tr_name = train_list.get_train(tr_id).get_name();
     if (!get_const_solution_routes().has_route(tr_name)) {
       return false;

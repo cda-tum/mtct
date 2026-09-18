@@ -245,9 +245,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto  tr_name     = train_list.get_train(tr).get_name();
     const auto& tr_schedule = m_instance.get_const_schedule(tr_name);
     for (const auto& tr_stop : tr_schedule.get_stops()) {
-      const auto t0 = static_cast<size_t>(tr_stop.get_service_time() / dt);
-      const auto t1 =
-          static_cast<size_t>(std::ceil(tr_stop.get_earliest_departure() / dt));
+      const auto [t0, t1]      = stop_time_indices(tr_stop);
       const auto& stop_station = tr_stop.get_station();
       const auto  stop_edges   = cda_rail::index_vector(
           stop_station.tracks.begin(), stop_station.tracks.end());

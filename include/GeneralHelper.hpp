@@ -164,4 +164,39 @@ template <typename Clock, typename Duration1, typename Duration2>
 [[nodiscard]] double get_first_time_step_after(double t, double dt,
                                                bool t_inclusive);
 
+/**
+ * @brief return the index of the last time step before t
+ *
+ * Time itself is continuous, only the discretized models index the time steps.
+ * This is the index k belonging to get_last_time_step_before(t, dt,
+ * t_inclusive), i.e., the returned index multiplied by dt gives back the time.
+ *
+ * @param t Time t
+ * @param dt Timestep
+ * @param t_inclusive Can t itself be returned?
+ * @return max (k s.th. k*dt <= t) if t_inclusive is true, otherwise max (k
+ * s.th. k*dt < t)
+ * @throws cda_rail::exceptions::InvalidInputException If @p t is negative, @p
+ * dt is non-positive, or no non-negative index exists.
+ */
+[[nodiscard]] size_t get_last_time_index_before(double t, double dt,
+                                                bool t_inclusive);
+/**
+ * @brief return the index of the first time step after t
+ *
+ * Time itself is continuous, only the discretized models index the time steps.
+ * This is the index k belonging to get_first_time_step_after(t, dt,
+ * t_inclusive), i.e., the returned index multiplied by dt gives back the time.
+ *
+ * @param t Time t
+ * @param dt Timestep
+ * @param t_inclusive Can t itself be returned?
+ * @return min (k s.th. k*dt >= t) if t_inclusive is true, otherwise min (k
+ * s.th. k*dt > t)
+ * @throws cda_rail::exceptions::InvalidInputException If @p t is negative or @p
+ * dt is non-positive.
+ */
+[[nodiscard]] size_t get_first_time_index_after(double t, double dt,
+                                                bool t_inclusive);
+
 } // namespace cda_rail

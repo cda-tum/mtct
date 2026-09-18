@@ -426,6 +426,38 @@ TEST(GeneralHelper, LastFirstTimeStep) {
   EXPECT_EQ(cda_rail::get_first_time_step_after(6.5, 2.5, false), 7.5);
 }
 
+TEST(GeneralHelper, LastFirstTimeIndex) {
+  // The index times the time step length gives back the corresponding time
+  EXPECT_EQ(cda_rail::get_last_time_index_before(7.5, 2.5, true), 3);
+  EXPECT_EQ(cda_rail::get_last_time_index_before(7.5, 2.5, false), 2);
+  EXPECT_EQ(cda_rail::get_last_time_index_before(8.5, 2.5, true), 3);
+  EXPECT_EQ(cda_rail::get_last_time_index_before(8.5, 2.5, false), 3);
+
+  EXPECT_EQ(cda_rail::get_first_time_index_after(7.5, 2.5, true), 3);
+  EXPECT_EQ(cda_rail::get_first_time_index_after(7.5, 2.5, false), 4);
+  EXPECT_EQ(cda_rail::get_first_time_index_after(6.5, 2.5, true), 3);
+  EXPECT_EQ(cda_rail::get_first_time_index_after(6.5, 2.5, false), 3);
+
+  // Times are doubles, hence a division might not be exact
+  EXPECT_EQ(cda_rail::get_last_time_index_before(3 * 0.1, 0.1, true), 3);
+  EXPECT_EQ(cda_rail::get_first_time_index_after(3 * 0.1, 0.1, true), 3);
+
+  EXPECT_EQ(cda_rail::get_first_time_index_after(0, 2.5, true), 0);
+  EXPECT_EQ(cda_rail::get_last_time_index_before(0, 2.5, true), 0);
+
+  // There is no non-negative index strictly before time 0
+  EXPECT_THROW(cda_rail::get_last_time_index_before(0, 2.5, false),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::get_last_time_index_before(-1, 2.5, true),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::get_first_time_index_after(-1, 2.5, true),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::get_last_time_index_before(7.5, 0, true),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(cda_rail::get_first_time_index_after(7.5, 0, true),
+               cda_rail::exceptions::InvalidInputException);
+}
+
 TEST(Playground, VectorInsert) {
   std::vector<int> vec{5, 3, 8};
   EXPECT_EQ(vec, std::vector<int>({5, 3, 8}));

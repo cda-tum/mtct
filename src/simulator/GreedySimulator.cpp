@@ -84,13 +84,11 @@ cda_rail::simulator::GreedySimulator::simulate(
       train_trajectories; // time -> {pos, vel}
 
   // Find first time step
-  double min_t              = std::numeric_limits<int>::max();
-  double last_entering_time = std::numeric_limits<int>::min();
+  double min_t = std::numeric_limits<double>::max();
   for (size_t tr = 0; tr < number_of_trains; ++tr) {
     auto const entry_time =
         get_instance()->get_const_schedule(tr).get_entry_time();
-    min_t              = std::min(min_t, entry_time);
-    last_entering_time = std::max(last_entering_time, entry_time);
+    min_t = std::min(min_t, entry_time);
   }
 
   // Initialize variables to keep track of positions and velocities
@@ -481,12 +479,12 @@ cda_rail::simulator::GreedySimulator::simulate(
       // on time
       PLOGV << "No movement detected at time " << t;
       bool reason_found = false;
-      if (std::ranges::any_of(vertex_headways, [t](int vertex_headway) {
+      if (std::ranges::any_of(vertex_headways, [t](double vertex_headway) {
             return vertex_headway > t;
           })) {
         PLOGV << "Vertex headway constraint prevents movement.";
         reason_found = true;
-      } else if (std::ranges::any_of(tr_stop_until, [t, dt](int stop_time) {
+      } else if (std::ranges::any_of(tr_stop_until, [t, dt](double stop_time) {
                    return stop_time + dt > t;
                  })) {
         PLOGV << "Train stop constraint prevents movement.";

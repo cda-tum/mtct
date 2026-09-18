@@ -235,6 +235,20 @@ private:
   [[nodiscard]] TemporaryImpossibilityStruct
   get_temporary_impossibility_struct(const size_t& tr, const size_t& t) const;
 
+  /**
+   * @brief Time step indices during which a train is serviced at a stop.
+   *
+   * The stop itself is given in continuous time, the model only knows time step
+   * indices. The first index is the last time step at or before the start of
+   * the service, the second index the first time step at or after the earliest
+   * departure.
+   *
+   * @param stop The scheduled stop in question.
+   * @return Pair of time step indices (t0, t1) belonging to the stop.
+   */
+  [[nodiscard]] std::pair<size_t, size_t>
+  stop_time_indices(const ScheduledStop& stop) const;
+
   [[nodiscard]] double
   max_distance_travelled(const size_t& tr, const size_t& time_steps,
                          const double& v0, const double& a_max,
