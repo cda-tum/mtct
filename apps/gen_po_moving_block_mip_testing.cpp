@@ -310,7 +310,7 @@ int main(int argc, char** argv) {
              "-e,--solution-export-subdirectory", solution_subdirectory,
              "Subdirectory to export the solution to. Will be created in "
              "export_working_directory/solutions/solution_subdirectory/"
-             "instance_name-parameters.")
+             "instance_subdirectory/instance_name-parameters.")
           ->check(requires_export_option)
           ->group("Export Options");
   auto* model_name_opt =
