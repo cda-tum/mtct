@@ -13,7 +13,7 @@
   </picture>
 </p>
 
-## A Tool for Automated Design of ETCS Systems with Hybrid Train Detection (formerly ETCS Hybrid Level 3)
+## A Tool for Automated Design and Optimization of ETCS Systems with Hybrid Train Detection or Moving Block
 
 Developers: Stefan Engels, Tom Peham, and Robert Wille
 
@@ -21,19 +21,27 @@ Developers: Stefan Engels, Tom Peham, and Robert Wille
 
 The European Train Control System (ETCS) harmonizes many national train control systems.
 Additionally, new specifications strive to increase the capacity of existing railway infrastructure.
-ETCS Hybrid Level 3 (ETCS HL3) is of great practical interest to achieve shorter train following times.
-It allows adding virtual subsections (VSS) that do not depend on trackside train detection (TTD) hardware.
-However, finding optimal layouts is non-trivial and is currently done mainly manually.
-In our research at the [Chair for Design Automation](https://www.cda.cit.tum.de/) of the [Technical University of Munich](https://www.tum.de/en/), we develop design methods to aid designers of such train control systems in automatically finding optimal layouts concerning various optimality criteria.
-A journal article describing the arising design tasks in more detail is available [[7]](#references)
+This is mainly achieved by separating the trains more accurately than the trackside train detection (TTD) hardware allows.
+If the existing TTD sections are subdivided into virtual subsections (VSS), which do not require additional hardware, one speaks of hybrid train detection (HTD, formerly known as ETCS Hybrid Level 3).
+If no trackside train detection is used at all, the trains are separated by their reported positions only, which is known as moving block.
 
+Both settings pose planning tasks that are non-trivial and are currently done mainly manually.
+In our research at the [Chair for Design Automation](https://www.cda.cit.tum.de/) of the [Technical University of Munich](https://www.tum.de/en/), we develop methods that solve them automatically and optimally concerning various optimality criteria.
+A journal article describing the arising design tasks in more detail is available [[7]](#references).
+
+For hybrid train detection, one has to decide where to place the VSS borders.
 First attempts using satisfiability solvers [[1]](#references) and heuristics [[2]](#references) have been implemented at [https://github.com/cda-tum/da_etcs](https://github.com/cda-tum/da_etcs).
 Since the methods used there cannot model continuous properties directly, simplifying assumptions were made.
-
 This tool provides a flexible approach in which designers can individually trade off the efficiency of the solving process and the model's accuracy.
-Currently, it supports an exact Mixed Integer Linear Programming (MILP) approach to generate minimal VSS layouts to satisfy a given timetable [[3]](#references).
-The runtime has been improved using an iterative approach [[4]](#references) and the usage of precomputed routing information [[6]](#references).
-Finally, optimal train routings can also be computed in a moving block controlled environment [[5]](#references).
+Using an exact Mixed Integer Linear Programming (MILP) approach, it adds as few VSS as possible such that the timetable given in the instance can be operated exactly as specified [[3]](#references).
+Its runtime has been improved by an iterative approach [[4]](#references) as well as by taking a precomputed moving block routing into account [[6]](#references).
+
+For moving block, no layout has to be designed, and the question becomes how to route and schedule the trains themselves.
+In this case, the times given in the instance are lower bounds only.
+The tool finds routings that minimize a weighted combination of the delays at the stations and when leaving the network.
+They can be obtained by a MILP [[5]](#references) as well as by an A\* search on simulated train movements, whose runtime and scalability are improved considerably by time-aware state transitions [[8]](#references).
+
+All of these methods are built on a common problem description and are accessible through three command line apps.
 The tool is under active development, and more features will follow.
 
 ### Installation
@@ -41,10 +49,10 @@ The tool is under active development, and more features will follow.
 #### System Requirements
 
 The tool has been tested under Windows 11 (64-bit) using the MSVC compiler.
-It should also be compatible with any current version of g++ supporting C++23 and a minimum CMake version of 3.20.
-On macos, a minimum Xcode version of 16.0 is required.
+It should also be compatible with any other compiler supporting C++23, where a minimum CMake version of 3.20 is required.
+More precisely, at least GCC 13.0, Clang 17.0, Apple Clang 16.0 (i.e., Xcode 16.0), or MSVC 19.34 (i.e., Visual Studio 2022 17.4) is needed.
 
-Moreover, the tool requires a local installation of a recent Gurobi [[8]](#references) version available at [https://www.gurobi.com/downloads/gurobi-software/](https://www.gurobi.com/downloads/gurobi-software/) as well as a valid [license](https://www.gurobi.com/solutions/licensing/).
+Moreover, the tool requires a local installation of a recent Gurobi [[9]](#references) version available at [https://www.gurobi.com/downloads/gurobi-software/](https://www.gurobi.com/downloads/gurobi-software/) as well as a valid [license](https://www.gurobi.com/solutions/licensing/).
 For academic purposes, Gurobi offers [free academic licenses](https://www.gurobi.com/academia/academic-program-and-licenses/).
 The project currently tests with Gurobi v13.0.3.
 
@@ -52,13 +60,25 @@ The project currently tests with Gurobi v13.0.3.
 
 To build the tool, go to the project folder and execute the following:
 
-1. Configure CMake
+1. Clone the submodules, if this has not already been done while cloning the repository.
+
+   ```commandline
+   git submodule update --init --recursive
+   ```
+
+2. Configure CMake
 
    ```commandline
    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
    ```
 
-2. Build the respective target.
+   If the default compiler is too old, a suitable one has to be specified explicitly, e.g.,
+
+   ```commandline
+   CXX=g++-13 CC=gcc-13 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+   ```
+
+3. Build the respective target.
    ```commandline
    cmake --build build --config Release
    ```
@@ -79,162 +99,469 @@ Otherwise, they have to be set manually, see also https://support.gurobi.com/hc/
 
 ### Usage
 
-Currently, the tool provides only basic access via the command line and supports the generation of minimal VSS layouts. More command line functions will be added shortly. Example networks can be found in `test/example-networks/`.
+The tool provides three command line apps, which are built into `build/apps`:
 
-#### Routing on Moving Block networks
+- `rail_vss_generation_timetable_mip_testing` generates minimal VSS layouts for a given timetable using a MILP.
+- `rail_gen_po_moving_block_mip_testing` routes trains optimally under moving block control using a MILP.
+- `rail_gen_po_moving_block_astar_testing` routes trains optimally under moving block control using an A\* search.
 
-##### MILP Based
+Called with `--help` (or `-h`), every app prints the full documentation of all its settings, including their default values and their dependencies on each other.
+The following only summarizes the general ideas; for the exact meaning of a setting, please refer to that output, which is included below for every app.
+Settings that exist in more than one app use the same names everywhere.
+Every setting has a long name, which is used below, and most of them additionally have a short one.
 
-`rail_gen_po_moving_block_lazy_testing` and `rail_gen_po_moving_block_lazy_vss_gen_testing` are command line interfaces for optimal train routing using moving block train control. Various settings can be set by the user affecting the solving process. More precisely, different strategies on how to select lazy constraints can be used.
-The syntax is as follows
+#### Instances and Solutions
 
-```commandline
-.\build\apps\rail_gen_po_moving_block_lazy_testing [model_name] [instance_path] [use_lazy] [reverse_headways] [higher_velocities] [lazy_strategy] [train_strategy] [timeout]
-.\build\apps\rail_gen_po_moving_block_lazy_vss_gen_testing [model_name] [instance_path] [use_lazy] [reverse_headways] [higher_velocities] [lazy_strategy] [train_strategy] [timeout]
-```
+All apps work on the same kind of problem instance, which consists of a railway network, a timetable, and routes.
+Whether these routes are used or optimized again is up to the respective solver and its settings.
+The timings of the timetable, however, are interpreted differently by the two problems.
+For VSS generation they are fixed, whereas for moving block routing they are lower bounds whose violation is minimized.
+An instance is identified by a working directory (`--working-directory`), a subdirectory (`--instance-subdirectory`), and its name (`--instance-name`), and is read from `working_directory/instances/instance_subdirectory/instance_name`.
+Example instances can be found in `test/data/instances`.
 
-The parameters are defined as follows:
+By default, the solution is only printed and not saved.
+Using `--export-solution` (or `--export-solution-and-instance`, if the instance is to be exported alongside it) together with a subdirectory given by `--solution-export-subdirectory`, it is written to `working_directory/solutions/solution_subdirectory/instance_subdirectory/instance_name`.
+If the solutions belong somewhere else than the instances, a separate working directory can be given by `--export-working-directory`.
+Since the same instance is often solved with different settings, an identifier can be appended to the instance name in the export path.
+It is either specified explicitly by `--parameter-identifier` or generated from the used settings by `--generate-parameter-identifier`.
 
-- _use_lazy_: If true, headway constraints are generated on demand as lazy constraints. If false, the full model is explicitly specified before solving.
-- _reverse_headways_: If a violated headway constraint is added, then also constraints are added, in which the train order is reversed.
-- _higher_velocities_: If a violated headway constraint is added, it is also enforced for higher velocities than the one deduced from the current solution.
-- _lazy_strategy_: If 0, only violated headway constraints are added. If 1, then the callback of adding lazy constraints stops after it has found a single violated constraint. If 2, all constraints that are checked for violations are added whether or not they are violated by the current solution.
-- _train_strategy_: If 0, only trains directly following each other are checked for violations. If 1, also constraints for trains where a third train might run in between are added.
-- _timeout_: Time limit in seconds. No limit if negative.
-
-If the instance contains a general timetable, i.e., times are specified with lower and upper bounds only, then `rail_gen_po_moving_block_lazy_testing` should be used. Otherwise, i.e., if the timetable is specified with exact arrival and departure times, then `rail_gen_po_moving_block_lazy_vss_gen_testing` should be used.
-
-Booleans have to be passed as numbers (0 = false or 1 = true).
-Hence, the instance _SimpleStation_ could be solved by the following command:
-
-```commandline
-.\build\apps\rail_gen_po_moving_block_lazy_vss_gen_testing SimpleStation .\test\example-networks\SimpleStation 1 0 0 0 0 -1
-```
-
-A further variant with simpler headway constraints has also been implemented. In this case, the train separation might not be accurate but the solving time might improve significantly. This might be worth considering if the results are only used to make preliminary decisions. The respective command line apps are `rail_gen_po_moving_block_simplified_testing` and `ail_gen_po_moving_block_simplified_vss_gen_testing` respectively with the following parameters
-
-- _use_simplified_headways_: If true, the simplified headways are used.
-- _strengthen_vertex_headway_constraints_: If true, simple linear constraints are used to improve headway estimation at vertices based on the velocity variables.
-- _use_lazy_: If true, headway constraints are generated on demand as lazy constraints. If false, the full model is explicitly specified before solving.
-- _lazy_strategy_: If 0, only violated headway constraints are added. If 1, then the callback of adding lazy constraints stops after it has found a single violated constraint. If 2, all constraints that are checked for violations are added whether or not they are violated by the current solution.
-- _train_strategy_: If 0, only trains directly following each other are checked for violations. If 1, also constraints for trains where a third train might run in between are added.
-- _timeout_: Time limit in seconds. No limit if negative.
-
-This functionality is based on [[5]](#references).
-
-##### A\* Based
-
-`rail_gen_po_moving_block_asstar_testing` is the command line interface for optimal train routing using moving block train control. Various settings can be set by the user affecting the solving process.
-The syntax is as follows
+Hence, the instance _SimpleStation_ can be solved and exported by the following command:
 
 ```commandline
-.\build\apps\rail_gen_po_moving_block_asstar_testing [model_name] [instance_path] [cast_instance] [dt] [allow_delays] [limit_speed_by_leaving_edges] [next_state_strategy] [remaining_time_heuristic] [consider_earliest_exit] [timeout]
-```
-
-The parameters are defined as follows:
-
-- _cast_instance_: If the instance contains a general timetable, i.e., times are specified with lower and upper bounds only, this should be false. Otherwise, i.e., if the timetable is specified with exact arrival and departure times, this should be true to convert to a general timetable.
-- _dt_: The time step (in seconds) to be used for simulation.
-- _allow_delays_: If true, late trains are allowed and only penalized in the objective. If false, a routing in which a train is late will be considered infeasible.
-- _limit_speed_by_leaving_edges_: If true, all edges on which a train is present constitute towards its speed limit. If false, only the speed limit of the trains front position is considered.
-- _next_state_strategy_: If 0, trains are moved one edge at a time. If 1, trains are moved all the way to the next TTD section (or scheduled stop).
-- _remaining_time_heuristic_: If 0, the heuristic always outputs 0. If 1, it outputs the quickest path (neglecting acceleration and deceleration constraints).
-- _consider_earliest_exit_: If true, the heuristic considers the earliest exit times allowed by the timetable.
-- _timeout_: Time limit in seconds. No limit if negative.
-
-Booleans have to be passed as numbers (0 = false or 1 = true).
-Hence, the instance _SimpleStation_ could be solved by the following command:
-
-```commandline
-.\build\apps\rail_gen_po_moving_block_lazy_vss_gen_testing SimpleStation .\test\example-networks\SimpleStation 1 6 0 1 1 1 1 -1
+.\build\apps\rail_gen_po_moving_block_astar_testing --instance-name SimpleStation --instance-subdirectory atmos2023 --working-directory .\test\data --export-solution --solution-export-subdirectory my-solutions --generate-parameter-identifier
 ```
 
 #### VSS Generation
 
+`rail_vss_generation_timetable_mip_testing` adds as few VSS as possible such that the timetable of the instance can be operated exactly as specified.
+The model can be built at different degrees of accuracy [[3]](#references).
+Among others, the length of the discretized time intervals (`--delta-t`), whether the routes are fixed (`--fix-routes`), and whether train dynamics (`--train-dynamics`) and braking curves (`--braking-curves`) are respected can be chosen.
+How the VSS borders themselves are modelled is controlled by `--vss-model-type`, where all but the continuous model additionally expect separation functions given by `--separation-functions`.
+
+Instead of solving the full model at once, the number of VSS per edge can be increased iteratively by `--iterative-approach`, which often improves the runtime significantly [[4]](#references).
+Independent of that, `--optimality-strategy` decides whether a proven optimal solution is required or whether a likely optimal one suffices, which is particularly relevant for the iterative approach.
+
+Finally, a previously computed moving block routing of the very same instance can be used to guide the search [[6]](#references).
+It is loaded by passing its solution subdirectory to `--moving-block-solution-subdirectory`, in which case additional settings control how much of that solution is fixed and how much is only hinted to the solver.
+
+```commandline
+.\build\apps\rail_vss_generation_timetable_mip_testing --instance-name SimpleStation --instance-subdirectory atmos2023 --working-directory .\test\data --delta-t 15 --vss-model-type Continuous
+```
+
+<details>
+<summary>All settings of <code>rail_vss_generation_timetable_mip_testing</code></summary>
+
+```commandline
+VSS Generation Optimization using a MIP
+
+
+.\build\apps\rail_vss_generation_timetable_mip_testing [OPTIONS]
+
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+
+Instance:
+  -n,     --instance-name TEXT REQUIRED
+                              Name of the instance to solve. Will load instance in
+                              working_directory/instances/instance_subdirectory/instance_name.
+  -s,     --instance-subdirectory TEXT REQUIRED
+                              Subdirectory of the instance to solve. Will load instance in
+                              working_directory/instances/instance_subdirectory/instance_name.
+  -d,     --working-directory TEXT REQUIRED
+                              Working directory. Will load instance in
+                              working_directory/instances/instance_subdirectory/instance_name.
+
+Moving Block Information:
+  -m,     --moving-block-solution-subdirectory TEXT Excludes: --free-routes
+                              Subdirectory of a previously obtained moving block solution of
+                              the very same instance. If (and only if) this option is set, the
+                              solver using moving block information is used. The solution is
+                              loaded from
+                              moving_block_working_directory/solutions/moving_block_solution_subdirectory/instance_subdirectory/instance_name.
+                              Note that the routes of the moving block solution supersede the
+                              routes of the instance and that the discrete VSS model type is
+                              not supported in this case.
+          --moving-block-working-directory TEXT Needs: --moving-block-solution-subdirectory
+                              Working directory from which the moving block solution is loaded.
+                              If unset, the normal working directory is used.
+          --moving-block-parameter-identifier TEXT Needs: --moving-block-solution-subdirectory
+                              Parameter identifier that was appended to the instance name when
+                              the moving block solution was exported. If empty, no parameter
+                              identifier is assumed.
+  -z{false}, --free-stop-positions{false}, --fix-stop-positions Needs: --moving-block-solution-subdirectory
+                              The positions at which trains stop at a station are fixed to the
+                              ones of the moving block solution by default. If this flag is
+                              negated (-z or --free-stop-positions), they are optimized again.
+  -l{false}, --free-exact-positions{false}, --fix-exact-positions Needs: --moving-block-solution-subdirectory
+                              The exact positions of the trains at every vertex are fixed to
+                              the ones of the moving block solution by default. If this flag is
+                              negated (-l or --free-exact-positions), they are only bounded by
+                              their minimal and maximal positions.
+  -y{false}, --free-exact-velocities{false}, --fix-exact-velocities Needs: --moving-block-solution-subdirectory
+                              The exact velocities of the trains at every vertex are fixed to
+                              the ones of the moving block solution by default. If this flag is
+                              negated (-y or --free-exact-velocities), they are optimized
+                              again.
+  -u{false}, --no-position-hints{false}, --hint-approximate-positions Needs: --moving-block-solution-subdirectory
+                              The approximate positions of the trains at every point in time
+                              are hinted to the solver by default. If this flag is negated (-u
+                              or --no-position-hints), no such hints are given.
+  -w{false}, --free-order-on-edges{false}, --fix-order-on-edges Needs: --moving-block-solution-subdirectory
+                              The order in which the trains traverse the edges is fixed to the
+                              one of the moving block solution by default. If this flag is
+                              negated (-w or --free-order-on-edges), the order is optimized
+                              again.
+
+Model Parameters:
+  -c,     --delta-t, --dt, --timestep FLOAT:POSITIVE [15]
+                              Length of the discretized time intervals in seconds.
+  -f{false}, --free-routes{false}, --fix-routes Excludes: --moving-block-solution-subdirectory
+                              The routes given by the instance are fixed by default. If this
+                              flag is negated (-f or --free-routes), the routes are optimized
+                              as well. Not applicable together with moving block information,
+                              in which case the routes are always fixed to the ones of the
+                              moving block solution.
+  -a{false}, --no-train-dynamics{false}, --train-dynamics
+                              The train dynamics (i.e., limited acceleration and deceleration)
+                              are included in the model by default. If this flag is negated (-a
+                              or --no-train-dynamics), they are omitted.
+  -k{false}, --no-braking-curves{false}, --braking-curves
+                              The braking curves (i.e., the braking distance depending on the
+                              current speed has to be cleared) are included in the model by
+                              default. If this flag is negated (-k or --no-braking-curves),
+                              they are omitted.
+  -r,     --vss-model-type ENUM:value in {Continuous->1,Discrete->0,Inferred->2,InferredAlt->3} OR {1,0,2,3} [1]
+                              Denotes how the VSS borders are modelled in the solution process.
+                              Currently supports 'Discrete', 'Continuous', 'Inferred', and
+                              'InferredAlt'. 'Discrete' expects exactly one, 'Inferred' and
+                              'InferredAlt' expect at least one separation function, whereas
+                              'Continuous' expects none.
+  -j,     --separation-functions ENUM:value in {Chebyshev->1,Uniform->0} OR {1,0} ...
+                              Separation functions used by the VSS model type. Can be passed
+                              multiple times. Currently supports 'Uniform' and 'Chebyshev'.
+          --only-stop-at-vss  If this flag is set, trains are only allowed to stop at VSS
+                              borders.
+          --use-pwl           If this flag is set, the braking distances are approximated by
+                              piecewise linear functions with a fixed maximal error. Otherwise
+                              (by default) they are modelled as quadratic functions using
+                              Gurobi's ability to solve these by spatial branching. Only
+                              relevant if braking curves are included.
+          --no-schedule-cuts{false}, --use-schedule-cuts
+                              The formulation is strengthened using cuts implied by the
+                              schedule by default. If this flag is negated
+                              (--no-schedule-cuts), these cuts are omitted.
+
+Solver Parameters:
+  -x,     --iterative-approach
+                              If this flag is set, the number of VSS per edge is iteratively
+                              increased until optimality is proven instead of solving the full
+                              model at once.
+  -q,     --optimality-strategy ENUM:value in {Feasible->2,Optimal->0,TradeOff->1} OR {2,0,1} [0]
+                              Optimality strategy to use. Currently supports 'Optimal',
+                              'TradeOff', and 'Feasible'.
+          --iterative-update-strategy ENUM:value in {Fixed->0,Relative->1} OR {0,1} [0]  Needs: --iterative-approach
+                              Strategy used to update the number of VSS per edge within the
+                              iterative approach. Currently supports 'Fixed' (absolute number)
+                              and 'Relative' (fraction of the theoretically possible number).
+          --iterative-initial-value FLOAT:POSITIVE [1]  Needs: --iterative-approach
+                              Initial number of VSS per edge ('Fixed' update strategy, has to
+                              be an integer) or initial fraction of the theoretically possible
+                              number ('Relative' update strategy, has to be within (0,1]) used
+                              by the iterative approach.
+          --iterative-update-value FLOAT:POSITIVE [2]  Needs: --iterative-approach
+                              Value by which the number of VSS per edge is increased in every
+                              iteration. Has to be greater than 1 for the 'Fixed' and within
+                              (0,1) for the 'Relative' update strategy.
+          --no-iterative-cuts{false}, --iterative-cuts Needs: --iterative-approach
+                              Cuts excluding the already explored search space are added in
+                              every iteration of the iterative approach by default. If this
+                              flag is negated (--no-iterative-cuts), these cuts are omitted.
+
+Additional Solving Parameters:
+  -t,     --time-limit INT [-1]
+                              Time limit in seconds for the solver to run. No limit if
+                              negative.
+  -v,     --verbose, --debug  Whether to output debug information during the solving process.
+                              Default: no debug output.
+
+Export Options:
+  -o,     --export-solution Needs: --solution-export-subdirectory Excludes: --export-solution-and-instance
+                              Export the solution.
+  -i,     --export-solution-and-instance Needs: --solution-export-subdirectory Excludes: --export-solution
+                              Export the solution and the instance.
+          --export-lp-model Needs: --solution-export-subdirectory
+                              Export the MIP model itself (as .mps and, if a solution exists,
+                              as .sol) into the solution directory.
+  -b,     --export-working-directory TEXT: Needs: --export-solution, --export-solution-and-instance or --export-lp-model
+                              Working directory for exporting solutions. If unset, the normal
+                              working directory is used.
+  -e,     --solution-export-subdirectory TEXT: Needs: --export-solution, --export-solution-and-instance or --export-lp-model
+                              Subdirectory to export the solution to. Will be created in
+                              export_working_directory/solutions/solution_subdirectory/instance_subdirectory/instance_name-parameters.
+          --model-name TEXT: Needs: --export-solution, --export-solution-and-instance or --export-lp-model [model]  Needs: --export-lp-model
+                              File name (without extension) used when exporting the MIP model
+                              itself.
+          --postprocess       If this flag is set, the solution is postprocessed to remove
+                              potentially unused VSS.
+  -p,     --parameter-identifier TEXT Excludes: --generate-parameter-identifier
+                              Optional identifier to distinguish different parameterizations of
+                              the same instance. Will be appended to the instance name in the
+                              export path as instance_name-parameter_identifier. If empty, no
+                              parameter identifier will be appended
+  -g,     --generate-parameter-identifier Excludes: --parameter-identifier
+                              Whether to automatically generate a parameter identifier based on
+                              the parameter settings. If set, the parameter identifier will be
+                              generated as a concatenation of the parameter names and values.
+                              Otherwise the identifier has to be set explicitly if it should
+                              not remain empty.
+```
+
+</details>
+
+#### Routing on Moving Block Networks
+
+Both moving block apps solve the same problem, namely routing and scheduling the trains such that they are separated by moving block.
+The times given in the instance are lower bounds only, and the objective is to minimize the weighted delays at the stations and when leaving the network.
+Unless `--allow-late-entry` is used, the trains enter the network exactly at their scheduled time.
+The two apps only differ in the method used to solve this problem.
+
 ##### MILP Based
 
-`rail_vss_generation_timetable_mip_testing` provides access to generating minimal VSS layouts given a specific timetable at different levels of accuracy and with a predefined timeout.
-It produces additional debugging output and saves the raw model and solution to a file.
-The syntax is as follows
+`rail_gen_po_moving_block_mip_testing` uses a MILP in which the headway constraints are separated lazily [[5]](#references).
+Which violated constraints are added is controlled by `--lazy-constraint-selection-strategy`, and which train pairs are checked at all by `--lazy-train-selection-strategy`.
+Lazy separation can also be switched off by `--no-lazy-constraints`, in which case the full model is passed to Gurobi upfront.
+Alternatively, `--simplify-headway-constraints` uses simplified headway constraints, which are faster to solve but might not separate the trains accurately.
+This is worth considering if the results are only used to make preliminary decisions.
+
+Moreover, the delays can be bounded, either separately by `--max-exit-delay` and `--max-station-delay` or jointly by `--max-delay`.
+Finally, the granularity of the velocity extensions can be adapted by `--max-velocity-delta` and `--velocity-refinement-strategy`.
 
 ```commandline
-.\build\apps\rail_vss_generation_timetable_mip_testing [model_name] [instance_path] [delta_t] [fix_routes] [discretize_vss_positions] [include_train_dynamics] [include_braking_curves] [use_pwl] [use_schedule_cuts] [timeout]
+.\build\apps\rail_gen_po_moving_block_mip_testing --instance-name SimpleStation --instance-subdirectory atmos2023 --working-directory .\test\data --time-limit 3600
 ```
 
-The parameters meaning is as follows:
-
-- _delta_t_: Length of discretized time intervals in seconds.
-- _fix_routes_: If true, the routes are fixed to the ones given in the instance. Otherwise, routing is part of the optimization.
-- _discretize_vss_positions_: If true, the graphs edges are discretized in many short edges. VSS positions are then represented by vertices. If false, the VSS positions are encoded as continuous integers.
-- _include_train_dynamics_: If true, the train dynamics (i.e., limited acceleration and deceleration) are included in the model.
-- _include_braking_curves_: If true, the braking curves (i.e., the braking distance depending on the current speed has to be cleared) are included in the model.
-- _use_pwl_: If true, the braking distances are approximated by piecewise linear functions with a fixed maximal error. Otherwise, they are modeled as quadratic functions and Gurobi's ability to solve these using spatial branching is used. Only relevant if include_braking_curves is true.
-- _use_schedule_cuts_: If true, the formulation is strengthened using cuts implied by the schedule.
-- _time_limit_: Time limit in seconds. No limit if negative.
-
-Booleans have to be passed as numbers (0 = false or 1 = true).
-Hence, the instance _SimpleStation_ can be solved using default values by the following command:
+<details>
+<summary>All settings of <code>rail_gen_po_moving_block_mip_testing</code></summary>
 
 ```commandline
-.\build\apps\rail_vss_generation_timetable_mip_testing SimpleStation .\test\example-networks\SimpleStation 15 1 0 1 1 0 1 -1
+Moving Block Optimization using a MIP
+
+
+.\build\apps\rail_gen_po_moving_block_mip_testing [OPTIONS]
+
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+
+Instance:
+  -n,     --instance-name TEXT REQUIRED
+                              Name of the instance to solve. Will load instance in
+                              working_directory/instances/instance_subdirectory/instance_name.
+  -s,     --instance-subdirectory TEXT REQUIRED
+                              Subdirectory of the instance to solve. Will load instance in
+                              working_directory/instances/instance_subdirectory/instance_name.
+  -d,     --working-directory TEXT REQUIRED
+                              Working directory. Will load instance in
+                              working_directory/instances/instance_subdirectory/instance_name.
+
+Model Parameters:
+  -f,     --fix-routes        If this flag is set, the routes given by the instance are fixed.
+                              Otherwise (by default) the routes are optimized as well.
+  -m,     --max-velocity-delta FLOAT:POSITIVE [5.55]
+                              Maximal velocity difference (in m/s) between two consecutive
+                              velocity extensions of a train.
+  -r,     --velocity-refinement-strategy ENUM:value in {MinOneStep->1,None->0} OR {1,0} [1]
+                              Strategy used to refine the velocity extensions. Currently
+                              supports 'None' and 'MinOneStep'.
+  -y,     --simplify-headway-constraints
+                              If this flag is set, simplified (weaker) headway constraints are
+                              used instead of the full ones.
+  -q,     --strengthen-vertex-headway-constraints
+                              If this flag is set, the vertex headway constraints are
+                              strengthened.
+  -l,     --allow-late-entry  Allow late entry (delays) in the solution (default without flag
+                              is false)
+          --no-minimum-time-bounds{false}, --use-minimum-time-bounds
+                              Every timing variable is bounded by the minimal running time the
+                              train needs to reach the corresponding event by default. If this
+                              flag is negated (--no-minimum-time-bounds), these bounds are
+                              omitted, which weakens the LP relaxation considerably and is only
+                              useful to measure their effect.
+  -x,     --max-exit-delay FLOAT:NONNEGATIVE [86400]  Excludes: --max-delay
+                              Maximal delay (in seconds) with which a train is allowed to leave
+                              the network compared to its scheduled exit time.
+          --max-station-delay FLOAT:NONNEGATIVE [86400]  Excludes: --max-delay
+                              Maximal delay (in seconds) with which a train is allowed to be
+                              serviced at a station compared to its scheduled service time.
+          --max-delay FLOAT:NONNEGATIVE Excludes: --max-exit-delay --max-station-delay
+                              Maximal delay (in seconds) used for both the exit and the station
+                              delay at once. Mutually exclusive with the individual
+                              --max-exit-delay and --max-station-delay settings.
+
+Solver Parameters:
+  -c,     --use-indicator-constraints
+                              If this flag is set, indicator constraints are used instead of
+                              big-M formulations where possible.
+  -z{false}, --no-lazy-constraints{false}, --use-lazy-constraints
+                              Headway constraints are separated lazily by default. If this flag
+                              is negated (-z or --no-lazy-constraints), they are added to the
+                              model upfront and all remaining lazy settings are ignored.
+  -w,     --include-reverse-headways
+                              If this flag is set, headways on reverse edges are separated as
+                              well. Only possible together with lazy constraints using the
+                              'AllChecked' lazy constraint selection strategy.
+  -u,     --include-higher-velocities-in-edge-expr
+                              If this flag is set, higher velocities are included in the edge
+                              expressions of the lazy headway constraints.
+  -j,     --lazy-constraint-selection-strategy ENUM:value in {AllChecked->2,OnlyFirstFound->1,OnlyViolated->0} OR {2,1,0} [0]
+                              Strategy deciding which violated lazy constraints are added.
+                              Currently supports 'OnlyViolated', 'OnlyFirstFound', and
+                              'AllChecked'.
+  -k,     --lazy-train-selection-strategy ENUM:value in {All->1,OnlyAdjacent->0} OR {1,0} [0]
+                              Strategy deciding which train pairs are checked when separating
+                              lazy constraints. Currently supports 'OnlyAdjacent' and 'All'.
+  -a,     --abs-mip-gap FLOAT:NONNEGATIVE [10]
+                              Absolute MIP gap used as termination criterion of the solver.
+
+Additional Solving Parameters:
+  -t,     --time-limit INT [-1]
+                              Time limit in seconds for the solver to run. No limit if
+                              negative.
+  -v,     --verbose, --debug  Whether to output debug information during the solving process.
+                              Default: no debug output.
+
+Export Options:
+  -o,     --export-solution Needs: --solution-export-subdirectory Excludes: --export-solution-and-instance
+                              Export the solution.
+  -i,     --export-solution-and-instance Needs: --solution-export-subdirectory Excludes: --export-solution
+                              Export the solution and the instance.
+          --export-lp-model Needs: --solution-export-subdirectory
+                              Export the MIP model itself (as .mps and, if a solution exists,
+                              as .json) into the solution directory.
+  -b,     --export-working-directory TEXT: Needs: --export-solution, --export-solution-and-instance or --export-lp-model
+                              Working directory for exporting solutions. If unset, the normal
+                              working directory is used.
+  -e,     --solution-export-subdirectory TEXT: Needs: --export-solution, --export-solution-and-instance or --export-lp-model
+                              Subdirectory to export the solution to. Will be created in
+                              export_working_directory/solutions/solution_subdirectory/instance_subdirectory/instance_name-parameters.
+          --model-name TEXT: Needs: --export-solution, --export-solution-and-instance or --export-lp-model [model]  Needs: --export-lp-model
+                              File name (without extension) used when exporting the MIP model
+                              itself.
+  -p,     --parameter-identifier TEXT Excludes: --generate-parameter-identifier
+                              Optional identifier to distinguish different parameterizations of
+                              the same instance. Will be appended to the instance name in the
+                              export path as instance_name-parameter_identifier. If empty, no
+                              parameter identifier will be appended
+  -g,     --generate-parameter-identifier Excludes: --parameter-identifier
+                              Whether to automatically generate a parameter identifier based on
+                              the parameter settings. If set, the parameter identifier will be
+                              generated as a concatenation of the parameter names and values.
+                              Otherwise the identifier has to be set explicitly if it should
+                              not remain empty.
 ```
 
-This functionality is based on [[3]](#references).
+</details>
 
-##### Iterative Approach
+##### A\* Based
 
-An iterative approach has been implemented, which can significantly improve the runtime. It uses the continuous model for placing VSS borders. The syntax is as follows
+`rail_gen_po_moving_block_astar_testing` searches for such a routing using an A\* search on simulated train movements [[8]](#references).
+The time step of that simulation is given by `--dt`.
+How far the trains are moved in every step is controlled by `--next-state-strategy`, and which heuristic estimates the remaining time by `--remaining-time-heuristic-strategy`.
+Using `--time-aware-state-transitions`, states that cannot lead to a better solution are not explored, which reduces the runtime drastically.
+If a proven optimal solution is not needed, `--heuristic-weight` allows to weight the heuristic, which speeds up the search while still guaranteeing an approximation factor.
+In contrast to the MILP, the A\* search does not support bounding the delays.
 
 ```commandline
-.\build\apps\rail_vss_generation_timetable_mip_iterative_vss_testing [model_name] [instance_path] [delta_t] [fix_routes] [include_train_dynamics] [include_braking_curves] [use_pwl] [use_schedule_cuts] [iterate_vss] [optimality_strategy] [timeout] [output_path - optional]
+.\build\apps\rail_gen_po_moving_block_astar_testing --instance-name SimpleStation --instance-subdirectory atmos2023 --working-directory .\test\data --dt 6 --time-aware-state-transitions
 ```
 
-The parameters meaning is as follows:
-
-- _delta_t_: Length of discretized time intervals in seconds.
-- _fix_routes_: If true, the routes are fixed to the ones given in the instance. Otherwise, routing is part of the optimization.
-- _include_train_dynamics_: If true, the train dynamics (i.e., limited acceleration and deceleration) are included in the model.
-- _include_braking_curves_: If true, the braking curves (i.e., the braking distance depending on the current speed has to be cleared) are included in the model.
-- _use_pwl_: If true, the braking distances are approximated by piecewise linear functions with a fixed maximal error. Otherwise, they are modeled as quadratic functions and Gurobi's ability to solve these using spatial branching is used. Only relevant if include_braking_curves is true.
-- _use_schedule_cuts_: If true, the formulation is strengthened using cuts implied by the schedule.
-- _iterate_vss_: If true, the solver proceeds iteratively, i.e., it will start by trying to solve a restricted model, which is easier to solve, and only slowly increases its size. In many cases, already on such restricted models the optimal solution can be found.
-- _optimality_strategy_: 0 (Optimal): The proven optimal solution is found; 1 (TradeOff): The restricted model is solved to optimality. The solution is returned even if it is not proven to be globally optimal. Experiments show that it is likely optimal, but the algorithm provides no guarantee; 2 (Feasible): The algorithm focuses only on finding a (probably good) feasible solution. It is likely not the optimal solution, but only close to optimal. No guarantee is provided.
-- _time_limit_: Time limit in seconds. No limit if negative.
-- _output_path_: The path in which the solution is written. The default is the current working directory.
-
-Booleans have to be passed as numbers (0 = false or 1 = true).
-Hence, the instance _SimpleStation_ can be solved using default values by the following command:
+<details>
+<summary>All settings of <code>rail_gen_po_moving_block_astar_testing</code></summary>
 
 ```commandline
-.\build\apps\rail_vss_generation_timetable_mip_iterative_vss_testing SimpleStation .\test\example-networks\SimpleStation 15 1 1 1 0 1 1 0 -1
+Moving Block Optimization using A*
+
+
+.\build\apps\rail_gen_po_moving_block_astar_testing [OPTIONS]
+
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+
+Instance:
+  -n,     --instance-name TEXT REQUIRED
+                              Name of the instance to solve. Will load instance in
+                              working_directory/instances/instance_subdirectory/instance_name.
+  -s,     --instance-subdirectory TEXT REQUIRED
+                              Subdirectory of the instance to solve. Will load instance in
+                              working_directory/instances/instance_subdirectory/instance_name.
+  -d,     --working-directory TEXT REQUIRED
+                              Working directory. Will load instance in
+                              working_directory/instances/instance_subdirectory/instance_name.
+
+Model Parameters:
+  -c,     --dt, --timestep FLOAT:POSITIVE [6]
+                              Time step (dt) used in the simulation
+  -l,     --allow-late-entry  Allow late entry (delays) in the solution (default without flag
+                              is false)
+  -f{false}, --speed-limit-only-on-train-front{false}, --limit-speed-by-leaving-edges
+                              If this flag is set, trains only respect the limit of their front
+                              position. Otherwise (by default) any edge's speed limit any part
+                              of the train is on applies, i.e., by default speed limits of
+                              edges the train is leaving (and the front already left) are also
+                              relevant.
+  -y{false}, --allow-early-exit{false}, --consider-earliest-exit
+                              Allow to leave stations and the network early. By defaults trains
+                              cannot leave before the scheduled time, i.e., the earliest exit
+                              times imposed by the schedule are respected.
+
+Solver Parameters:
+  -a,     --time-aware-state-transitions
+                              If this flag is set, use time aware state transitions to avoid
+                              unnecessary state exploration.
+  -w,     --heuristic-weight FLOAT:FLOAT in [1 - 1.79769e+308] [1]
+                              Weight of the heuristic to use in the (weighted) A*. Has to be
+                              >=1. If w is the weight, then A* is an w-approximation.
+  -x,     --next-state-strategy ENUM:value in {NextRelevantTTD->2,NextTTD->1,SingleEdge->0} OR {2,1,0} [0]
+                              Next state strategy to use in the A* search. Currently supports
+                              'SingleEdge', 'NextTTD', and 'NextRelevantTTD'.
+  -r,     --remaining-time-heuristic-strategy ENUM:value in {Simple->1,Zero->0} OR {1,0} [1]
+                              Remaining time heuristic strategy to use in the simulation.
+                              Currently supports 'Zero' and 'Simple'
+
+Additional Solving Parameters:
+  -t,     --time-limit INT [-1]
+                              Time limit in seconds for the solver to run. No limit if
+                              negative.
+  -v,     --verbose, --debug  Whether to output debug information during the solving process.
+                              Default: no debug output.
+
+Export Options:
+  -o,     --export-solution Needs: --solution-export-subdirectory Excludes: --export-solution-and-instance
+                              Export the solution.
+  -i,     --export-solution-and-instance Needs: --solution-export-subdirectory Excludes: --export-solution
+                              Export the solution and the instance.
+  -b,     --export-working-directory TEXT: Needs: --export-solution or --export-solution-and-instance
+                              Working directory for exporting solutions. If unset, the normal
+                              working directory is used.
+  -e,     --solution-export-subdirectory TEXT: Needs: --export-solution or --export-solution-and-instance
+                              Subdirectory to export the solution to. Will be created in
+                              export_working_directory/solutions/solution_subdirectory/instance_subdirectory/instance_name-parameters.
+  -p,     --parameter-identifier TEXT Excludes: --generate-parameter-identifier
+                              Optional identifier to distinguish different parameterizations of
+                              the same instance. Will be appended to the instance name in the
+                              export path as instance_name-parameter_identifier. If empty, no
+                              parameter identifier will be appended
+  -g,     --generate-parameter-identifier Excludes: --parameter-identifier
+                              Whether to automatically generate a parameter identifier based on
+                              the parameter settings. If set, the parameter identifier will be
+                              generated as a concatenation of the parameter names and values.
+                              Otherwise the identifier has to be set explicitly if it should
+                              not remain empty.
 ```
 
-This functionality is based on [[4]](#references).
-
-##### Using Precomputed Solution Information
-
-If a [routing under moving block](#milp-based-routing-under-moving-block) has been precomputed, this information can be used when generating minimal VSS layouts. For this, the app `rail_vss_generation_timetable_using_mb_information_testing` can be used.
-The syntax is as follows
-
-```commandline
-.\build\apps\rail_vss_generation_timetable_using_mb_information_testing [model_name] [instance_path] [delta_t] [use_mb_information] [fix_stop_positions] [fix_exact_positions] [fix_exact_velocities] [hint_approximate_positions] [fix_order_on_edges] [usw_pwl] [output_path - optional]
-```
-
-where the parameters are
-
-- _delta_t_: Length of discretized time intervals in seconds.
-- _use_mb_information_: If true, information from a moving block routing is used. Most importantly, the specific edges used by each train are fixed.
-- _fix_stop_positions_: If true, the approximate stopping position in each station is fixed.
-- _fix_exact_positions_: If true, the position at each time step is bound with additional constraints based on the timing of the moving block solution.
-- _fix_exact_velocities_: If true, the velocity at each time step is bound with additional constraints based on the train speed of the moving block solution.
-- _hint_approximate_positions_: If true, variable hints are passed to Gurobi.
-- _fix_order_on_edges_: If true, on each edge the order in which trains traverse is fixed.
-- _use_pwl_: If true, the braking distances are approximated by piecewise linear functions with a fixed maximal error. Otherwise, they are modeled as quadratic functions and Gurobi's ability to solve these using spatial branching is used. Only relevant if include_braking_curves is true.
-- _time_limit_: Time limit in seconds. No limit if negative.
-
-Booleans have to be passed as numbers (0 = false or 1 = true).
-
-This functionality is based on [[6]](#references).
+</details>
 
 #### Access via C++
 
@@ -261,4 +588,6 @@ If you have any questions, feel free to contact us via etcs.cda@xcit.tum.de or b
 
 [[7]](https://www.cda.cit.tum.de/files/eda/2025_eurojtl_etcs_design_tasks_and_complexity.pdf) Stefan Engels and Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Design tasks and their complexity for the European Train Control System with Hybrid Train Detection"**. EURO Journal on Transportation and Logistics, 2025 ([doi](https://doi.org/https://doi.org/10.1016/j.ejtl.2025.100161), [arXiv](https://arxiv.org/abs/2308.02572), [pdf](https://www.cda.cit.tum.de/files/eda/2025_eurojtl_etcs_design_tasks_and_complexity.pdf))
 
-[[8]](https://www.gurobi.com) Gurobi Optimization, LLC. **"Gurobi Optimizer Reference Manual"**. 2024
+[[8]](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf) Stefan Engels and Robert Wille. **"Time-Aware A\* for Optimal Train Routing on Moving Block Systems"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2026 ([pdf](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf))
+
+[[9]](https://www.gurobi.com) Gurobi Optimization, LLC. **"Gurobi Optimizer Reference Manual"**. 2026
