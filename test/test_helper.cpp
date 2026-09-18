@@ -15,38 +15,38 @@
 // NOLINTBEGIN(clang-diagnostic-unused-result)
 
 TEST(VSSModel, Consistency) {
-  const auto& f = cda_rail::vss::functions::uniform;
+  const auto& f = cda_rail::vss::UNIFORM;
 
   auto model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete);
   EXPECT_FALSE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete, {&f, &f});
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete, {f, f});
   EXPECT_FALSE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {&f});
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {f});
   EXPECT_FALSE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {&f, &f});
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {f, f});
   EXPECT_FALSE(model.check_consistency());
   model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred);
   EXPECT_FALSE(model.check_consistency());
   model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt);
   EXPECT_FALSE(model.check_consistency());
 
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete, {&f});
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete, {f});
   EXPECT_TRUE(model.check_consistency());
   model = cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous);
   EXPECT_TRUE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred, {&f});
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred, {f});
   EXPECT_TRUE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred, {&f, &f});
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred, {f, f});
   EXPECT_TRUE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt, {&f});
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt, {f});
   EXPECT_TRUE(model.check_consistency());
-  model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt, {&f, &f});
+  model = cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt, {f, f});
   EXPECT_TRUE(model.check_consistency());
 }
 
 TEST(VSSModel, Functions) {
-  const auto& f1 = cda_rail::vss::functions::uniform;
-  const auto& f2 = cda_rail::vss::functions::chebyshev;
+  const auto& f1 = cda_rail::vss::UNIFORM;
+  const auto& f2 = cda_rail::vss::CHEBYSHEV;
 
   EXPECT_EQ(f1(0, 1), 1);
   EXPECT_EQ(f1(1, 1), 1);
@@ -89,42 +89,55 @@ TEST(VSSModel, Functions) {
   EXPECT_THROW(cda_rail::vss::functions::max_n_blocks(f1, 1.1),
                std::invalid_argument);
 
-  const cda_rail::vss::SeparationFunction f3 = [](size_t i, size_t n) {
-    if (i >= n) {
-      return 1.0;
-    }
-    return 1 - std::pow(2, -(static_cast<double>(i) + 1));
-  };
+  const cda_rail::vss::SeparationFunction f3{
+      "Halving", [](size_t i, size_t n) {
+        if (i >= n) {
+          return 1.0;
+        }
+        return 1 - std::pow(2, -(static_cast<double>(i) + 1));
+      }};
 
+  EXPECT_EQ(f3.get_name(), "Halving");
   EXPECT_EQ(cda_rail::vss::functions::max_n_blocks(f3, 0.25), 3);
 
-  const cda_rail::vss::SeparationFunction f4 = [](size_t i, size_t n) {
-    if (i >= n) {
-      return 1.0;
-    }
-    if (n == 1) {
-      return 0.5;
-    }
-    if (n == 2) {
-      if (i == 0) {
-        return 0.35;
-      }
-      return 0.6;
-    }
-    if (n == 3) {
-      if (i == 0) {
-        return 0.3;
-      }
-      if (i == 1) {
-        return 0.5;
-      }
-      return 0.75;
-    }
+  const cda_rail::vss::SeparationFunction f4{
+      "Custom", [](size_t i, size_t n) {
+        if (i >= n) {
+          return 1.0;
+        }
+        if (n == 1) {
+          return 0.5;
+        }
+        if (n == 2) {
+          if (i == 0) {
+            return 0.35;
+          }
+          return 0.6;
+        }
+        if (n == 3) {
+          if (i == 0) {
+            return 0.3;
+          }
+          if (i == 1) {
+            return 0.5;
+          }
+          return 0.75;
+        }
 
-    return cda_rail::vss::functions::uniform(i, n);
-  };
+        return cda_rail::vss::functions::uniform(i, n);
+      }};
 
+  EXPECT_EQ(f4.get_name(), "Custom");
   EXPECT_EQ(cda_rail::vss::functions::max_n_blocks(f4, 0.25), 2);
+
+  EXPECT_THROW(
+      cda_rail::vss::SeparationFunction("", &cda_rail::vss::functions::uniform),
+      std::invalid_argument);
+  EXPECT_THROW(cda_rail::vss::SeparationFunction("Empty", {}),
+               std::invalid_argument);
+
+  EXPECT_EQ(cda_rail::vss::UNIFORM.get_name(), "Uniform");
+  EXPECT_EQ(cda_rail::vss::CHEBYSHEV.get_name(), "Chebyshev");
 }
 
 TEST(Helper, GreedySimulatorStateHash) {

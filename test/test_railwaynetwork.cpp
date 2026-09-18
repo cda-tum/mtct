@@ -2078,8 +2078,7 @@ TEST(RailwayNetwork, NetworkEdgeSeparation) {
   network.add_successor(v1_v2, v2_v31);
 
   // Separate edge v1_v2 uniformly
-  auto new_edges =
-      network.separate_edge({"v1", "v2"}, &cda_rail::vss::functions::uniform);
+  auto new_edges = network.separate_edge({"v1", "v2"}, cda_rail::vss::UNIFORM);
 
   // There are 4 new forward edges and no new reverse edges
   EXPECT_EQ(new_edges.first.size(), 4);
@@ -2496,8 +2495,7 @@ TEST(RailwayNetwork, NetworkEdgeSeparationReverse) {
   network.add_successor(v2_v1, v1_v01);
 
   // Separate edge v1_v2 uniformly
-  auto new_edges =
-      network.separate_edge({"v1", "v2"}, &cda_rail::vss::functions::uniform);
+  auto new_edges = network.separate_edge({"v1", "v2"}, cda_rail::vss::UNIFORM);
 
   // There are 4 new edges forward and 4 new edges reverse
   EXPECT_EQ(new_edges.first.size(), 4);

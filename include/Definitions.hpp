@@ -38,14 +38,6 @@ enum class SolutionStatus : std::uint8_t {
   Timeout    = 3,
   Unknown    = 4
 };
-enum class ExportOption : std::uint8_t {
-  NoExport                        = 0,
-  ExportSolution                  = 1,
-  ExportSolutionWithInstance      = 2,
-  ExportLP                        = 3,
-  ExportSolutionAndLP             = 4,
-  ExportSolutionWithInstanceAndLP = 5
-};
 enum class OptimalityStrategy : std::uint8_t {
   Optimal  = 0,
   TradeOff = 1,

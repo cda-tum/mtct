@@ -21,14 +21,15 @@ using std::size_t;
 
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
-cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance cda_rail::
-    solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation::solve(
-        const cda_rail::solver::mip_based::ModelDetailMBInformation&
-            model_detail_mb_information,
-        const cda_rail::solver::mip_based::ModelSettings&    model_settings,
-        const cda_rail::solver::mip_based::SolverStrategy&   solver_strategy,
-        const cda_rail::solver::mip_based::SolutionSettings& solution_settings,
-        int time_limit, bool debug_input, bool overwrite_severity) {
+cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance
+cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation::
+    solve(const cda_rail::solver::mip_based::ModelDetailMBInformation&
+              model_detail_mb_information,
+          const cda_rail::solver::mip_based::ModelSettings&  model_settings,
+          const cda_rail::solver::mip_based::SolverStrategy& solver_strategy,
+          const cda_rail::solver::mip_based::SolutionSettingsVSSGen&
+              solution_settings,
+          int time_limit, bool debug_input, bool overwrite_severity) {
   /**
    * This function solves the VSS generation problem.
    * It functions the same as the solve function in the parent class, but
@@ -76,8 +77,16 @@ cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance cda_rail::
 
   const auto sol_object = optimize(old_instance, time_limit);
 
-  export_lp_if_applicable(solution_settings);
-  export_solution_if_applicable(sol_object, solution_settings);
+  export_lp_model_if_applicable(sol_object.value(), solution_settings);
+
+  auto further_data = get_further_data(solution_settings, time_limit);
+  further_data.bool_data.insert(
+      {{"fix_stop_positions", m_fix_stop_positions},
+       {"fix_exact_positions", m_fix_exact_positions},
+       {"fix_exact_velocities", m_fix_exact_velocities},
+       {"hint_approximate_positions", m_hint_approximate_positions},
+       {"fix_order_on_edges", m_fix_orders_on_edges}});
+  export_general_solution(sol_object.value(), solution_settings, further_data);
 
   cleanup();
 

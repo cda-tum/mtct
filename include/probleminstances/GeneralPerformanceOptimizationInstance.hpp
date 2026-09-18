@@ -507,8 +507,7 @@ public:
   [[nodiscard]] cda_rail::index_set
   trains_at_t(double t, const cda_rail::index_set& trains_to_consider) const;
 
-  void discretize(
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
+  void discretize(const vss::SeparationFunction& sep_func = vss::UNIFORM);
 };
 
 class SolGeneralPerformanceOptimizationInstance

@@ -1,5 +1,6 @@
 #include "Definitions.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "solver/GeneralSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
@@ -175,24 +176,29 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
       std::filesystem::current_path(), temp_dir};
   std::filesystem::current_path(temp_dir);
 
-  const auto sol = solver.solve(
-      {5}, {}, {}, {false, cda_rail::ExportOption::ExportSolution}, 10);
+  cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
+  solution_settings.export_option =
+      cda_rail::solver::GeneralExportOption::ExportSolution;
+  solution_settings.parameter_identifier = "tmpid";
+
+  const auto sol = solver.solve({5}, {}, {}, solution_settings, 10);
 
   EXPECT_FALSE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Timeout);
   EXPECT_EQ(sol.get_obj(), -1);
 
-  // Without an explicit path and name the solution is exported to
-  // ./solutions/model/<instance_subdirectory>/<instance_name>
+  // Without an explicit working directory and solution subdirectory the
+  // solution is exported to ./solutions/unnamed-experiment/
+  // <instance_subdirectory>/<instance_name>-<parameter_identifier>
   const std::filesystem::path solution_dir =
-      std::filesystem::path("solutions") / "model" / INSTANCE_SUBDIRECTORY /
-      "SimpleNetwork";
+      std::filesystem::path("solutions") / "unnamed-experiment" /
+      INSTANCE_SUBDIRECTORY / "SimpleNetwork-tmpid";
   EXPECT_TRUE(std::filesystem::is_directory(solution_dir));
   std::error_code ec;
   for (const auto& file_name :
        {"solution_data.json", "routes.json", "train_pos.json",
         "train_speed.json", "train_exit_times.json", "train_stop_times.json",
-        "vss_pos.json"}) {
+        "vss_pos.json", "solver_data.json"}) {
     const auto file_path = solution_dir / file_name;
     EXPECT_TRUE(std::filesystem::exists(file_path))
         << "Missing file " << file_path;
@@ -203,8 +209,8 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
   // Neither the instance nor the model itself are expected to be exported
   EXPECT_FALSE(std::filesystem::exists("instances"));
   EXPECT_FALSE(std::filesystem::exists("networks"));
-  EXPECT_FALSE(std::filesystem::exists("model.mps"));
-  EXPECT_FALSE(std::filesystem::exists("model.sol"));
+  EXPECT_FALSE(std::filesystem::exists(solution_dir / "model.mps"));
+  EXPECT_FALSE(std::filesystem::exists(solution_dir / "model.sol"));
 }
 
 TEST(VSSGenMBInfoSolver, Default6) {

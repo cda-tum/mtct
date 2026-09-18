@@ -2,6 +2,7 @@
 #include "VSSModel.hpp"
 #include "datastructure/Train.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "solver/GeneralSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
@@ -11,6 +12,7 @@
 #include <filesystem>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -199,7 +201,7 @@ TEST(VSSGenSolver, GurobiVSSDiscretizeInstanceWithoutChange) {
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve({30, true},
                {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                     {cda_rail::vss::functions::uniform})});
+                                     {cda_rail::vss::UNIFORM})});
 
   EXPECT_EQ(num_vertices,
             solver.get_instance().get_const_network().number_of_vertices());
@@ -256,10 +258,10 @@ TEST(VSSGenSolver, GurobiVSSGenDeltaT) {
   const auto obj_val_1 = solver.solve({30, true});
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
-  const auto obj_val_3 = solver.solve(
-      {30, true, false, false},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                            {&cda_rail::vss::functions::uniform})});
+  const auto obj_val_3 =
+      solver.solve({30, true, false, false},
+                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                         {cda_rail::vss::UNIFORM})});
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -457,7 +459,7 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscrete) {
   const auto obj_val =
       solver.solve({15, true, false, false},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {&cda_rail::vss::functions::uniform})},
+                                         {cda_rail::vss::UNIFORM})},
                    {}, {}, 600, true);
 
   // Check if all objective values are 1
@@ -592,7 +594,7 @@ TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {
   const auto obj_val_1 =
       solver.solve({15, true, false, false},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {&cda_rail::vss::functions::uniform})},
+                                         {cda_rail::vss::UNIFORM})},
                    {}, {}, 600, true);
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -620,7 +622,7 @@ TEST(VSSGenSolver, GurobiVSSGenTimDiscrete2) {
   const auto obj_val_2 =
       solver.solve({15, true, false, false},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {&cda_rail::vss::functions::uniform})},
+                                         {cda_rail::vss::UNIFORM})},
                    {}, {}, 600, true);
 
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -648,7 +650,7 @@ TEST(VSSGenSolver, GurobiVSSGenTimDiscrete3) {
   const auto obj_val_3 =
       solver.solve({15, true, false, false},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {&cda_rail::vss::functions::uniform})},
+                                         {cda_rail::vss::UNIFORM})},
                    {}, {}, 600, true);
 
   EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Infeasible);
@@ -796,7 +798,7 @@ TEST(VSSGenSolver, SimpleStationInferredUniform) {
   const auto obj_val =
       solver.solve({},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
-                                         {&cda_rail::vss::functions::uniform})},
+                                         {cda_rail::vss::UNIFORM})},
                    {}, {}, 60, true);
 
   // Check if all objective values are 1
@@ -813,8 +815,8 @@ TEST(VSSGenSolver, SimpleStationInferredUniformPostprocess) {
   const auto obj_val =
       solver.solve({},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
-                                         {&cda_rail::vss::functions::uniform})},
-                   {}, {true}, 60, true);
+                                         {cda_rail::vss::UNIFORM})},
+                   {}, {{}, true}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -830,8 +832,8 @@ TEST(VSSGenSolver, SimpleStationInferredAltUniformPostprocess) {
   const auto obj_val =
       solver.solve({},
                    {cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
-                                         {&cda_rail::vss::functions::uniform})},
-                   {}, {true}, 60, true);
+                                         {cda_rail::vss::UNIFORM})},
+                   {}, {{}, true}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -844,7 +846,7 @@ TEST(VSSGenSolver, SimpleStationContinuousPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
-  const auto obj_val = solver.solve({15, false}, {}, {}, {true}, 240, true);
+  const auto obj_val = solver.solve({15, false}, {}, {}, {{}, true}, 240, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -857,7 +859,7 @@ TEST(VSSGenSolver, SimpleStationContinuousFixedPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
-  const auto obj_val = solver.solve({15, true}, {}, {}, {true}, 60, true);
+  const auto obj_val = solver.solve({15, true}, {}, {}, {{}, true}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -870,11 +872,11 @@ TEST(VSSGenSolver, SimpleStationInferredChebychev) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
-  const auto obj_val = solver.solve(
-      {},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
-                            {&cda_rail::vss::functions::chebyshev})},
-      {}, {}, 60, true);
+  const auto obj_val =
+      solver.solve({},
+                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
+                                         {cda_rail::vss::CHEBYSHEV})},
+                   {}, {}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -887,12 +889,12 @@ TEST(VSSGenSolver, SimpleStationInferredBoth) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
-  const auto obj_val = solver.solve(
-      {},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
-                            {&cda_rail::vss::functions::uniform,
-                             &cda_rail::vss::functions::chebyshev})},
-      {}, {}, 60, true);
+  const auto obj_val =
+      solver.solve({},
+                   {cda_rail::vss::Model(
+                       cda_rail::vss::ModelType::Inferred,
+                       {cda_rail::vss::UNIFORM, cda_rail::vss::CHEBYSHEV})},
+                   {}, {}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -905,12 +907,12 @@ TEST(VSSGenSolver, SimpleStationInferredAltBoth) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
 
-  const auto obj_val = solver.solve(
-      {},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
-                            {&cda_rail::vss::functions::uniform,
-                             &cda_rail::vss::functions::chebyshev})},
-      {}, {}, 60, true);
+  const auto obj_val =
+      solver.solve({},
+                   {cda_rail::vss::Model(
+                       cda_rail::vss::ModelType::InferredAlt,
+                       {cda_rail::vss::UNIFORM, cda_rail::vss::CHEBYSHEV})},
+                   {}, {}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -972,7 +974,7 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredCuts) {
   const auto obj_val = solver.solve(
       {15, true, true, false},
       {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
-                            {&cda_rail::vss::functions::uniform})},
+                            {cda_rail::vss::UNIFORM})},
       {true, cda_rail::OptimalityStrategy::Optimal,
        cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
       {}, 60, true);
@@ -1031,7 +1033,7 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredAlt) {
   const auto obj_val = solver.solve(
       {15, true, true, false},
       {cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
-                            {&cda_rail::vss::functions::uniform})},
+                            {cda_rail::vss::UNIFORM})},
       {true, cda_rail::OptimalityStrategy::Optimal,
        cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
       {}, 60, true);
@@ -1583,13 +1585,18 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
     EXPECT_GT(std::filesystem::file_size(p, ec), 0) << "Empty file " << p;
   };
 
-  // A solution is exported to
-  // <export_dir>/solutions/<solution_subdir>/<instance_subdir>/<instance_name>
+  // A solution is exported to <export_dir>/solutions/<solution_subdir>/
+  // <instance_subdir>/<instance_name>[-<parameter_identifier>]
   const auto solution_dir =
       [&](const std::filesystem::path& export_dir,
-          const std::filesystem::path& solution_subdirectory) {
+          const std::filesystem::path& solution_subdirectory,
+          const std::string&           parameter_identifier = {}) {
+        const std::filesystem::path adjusted_name =
+            parameter_identifier.empty()
+                ? instance_name.string()
+                : instance_name.string() + "-" + parameter_identifier;
         return export_dir / "solutions" / solution_subdirectory /
-               instance_subdirectory / instance_name;
+               instance_subdirectory / adjusted_name;
       };
   const auto expect_solution_files = [&](const std::filesystem::path& p) {
     EXPECT_TRUE(std::filesystem::is_directory(p)) << "Missing directory " << p;
@@ -1600,7 +1607,33 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
     expect_non_empty_file(p / "train_exit_times.json");
     expect_non_empty_file(p / "train_stop_times.json");
     expect_non_empty_file(p / "vss_pos.json");
+    expect_non_empty_file(p / "solver_data.json");
   };
+  const auto expect_no_solution_files = [](const std::filesystem::path& p) {
+    EXPECT_FALSE(std::filesystem::exists(p / "solution_data.json"));
+    EXPECT_FALSE(std::filesystem::exists(p / "vss_pos.json"));
+    EXPECT_FALSE(std::filesystem::exists(p / "solver_data.json"));
+  };
+
+  // The export settings are assigned field by field, because
+  // SolutionSettingsVSSGen inherits the settings shared by all solvers from
+  // GeneralSolutionSettings and the ones shared by the MIP based solvers from
+  // SolutionSettingsMIP.
+  const auto export_settings =
+      [](cda_rail::solver::GeneralExportOption export_option,
+         const std::string&                    working_directory,
+         const std::string& solution_subdirectory, bool export_lp_model,
+         const std::string&                model_name,
+         const std::optional<std::string>& parameter_identifier = {}) {
+        cda_rail::solver::mip_based::SolutionSettingsVSSGen settings;
+        settings.export_option         = export_option;
+        settings.working_directory     = working_directory;
+        settings.solution_subdirectory = solution_subdirectory;
+        settings.parameter_identifier  = parameter_identifier;
+        settings.export_lp_model       = export_lp_model;
+        settings.model_name            = model_name;
+        return settings;
+      };
 
   // The instance is exported to <export_dir>/instances/... and the
   // corresponding network to <export_dir>/networks/...
@@ -1631,28 +1664,32 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
 
   const auto obj_val = solver.solve(
       {15, true, true, false}, {}, {},
-      {false, cda_rail::ExportOption::ExportLP, "tmp1file", "tmp1folder"}, 20,
-      true);
+      export_settings(cda_rail::solver::GeneralExportOption::NoExport,
+                      "tmp1folder", "tmp1file", true, "tmp1file", "tmp1id"),
+      20, true);
 
   // Expect optimal value of 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
 
   check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
-  // Check that tmp1folder and tmp1folder/tmp1file.mps and
-  // tmp1folder/tmp1file.sol exist and are not empty
+  // The model is exported into the standard solution directory, which includes
+  // the parameter identifier
   EXPECT_TRUE(std::filesystem::exists("tmp1folder"));
-  expect_non_empty_file("tmp1folder/tmp1file.mps");
-  expect_non_empty_file("tmp1folder/tmp1file.sol");
+  expect_non_empty_file(solution_dir("tmp1folder", "tmp1file", "tmp1id") /
+                        "tmp1file.mps");
+  expect_non_empty_file(solution_dir("tmp1folder", "tmp1file", "tmp1id") /
+                        "tmp1file.sol");
   // Expect no solution and no instance to be exported
-  EXPECT_FALSE(std::filesystem::exists("tmp1folder/solutions"));
+  expect_no_solution_files(solution_dir("tmp1folder", "tmp1file", "tmp1id"));
   expect_no_instance_files("tmp1folder");
   // Remove tmp1folder and its contents
   std::filesystem::remove_all("tmp1folder");
 
   const auto obj_val2 = solver.solve(
       {15, true, true, false}, {}, {},
-      {false, cda_rail::ExportOption::ExportSolution, "tmp2file", "tmp2folder"},
+      export_settings(cda_rail::solver::GeneralExportOption::ExportSolution,
+                      "tmp2folder", "tmp2file", false, "tmp2file"),
       20, true);
 
   // Expect optimal value of 1
@@ -1666,16 +1703,19 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   expect_solution_files(solution_dir("tmp2folder", "tmp2file"));
   // Expect neither the instance nor the network nor the model to be exported
   expect_no_instance_files("tmp2folder");
-  EXPECT_FALSE(std::filesystem::exists("tmp2folder/tmp2file.mps"));
-  EXPECT_FALSE(std::filesystem::exists("tmp2folder/tmp2file.sol"));
+  EXPECT_FALSE(std::filesystem::exists(solution_dir("tmp2folder", "tmp2file") /
+                                       "tmp2file.mps"));
+  EXPECT_FALSE(std::filesystem::exists(solution_dir("tmp2folder", "tmp2file") /
+                                       "tmp2file.sol"));
   // Remove tmp2folder and its contents
   std::filesystem::remove_all("tmp2folder");
 
-  const auto obj_val3 =
-      solver.solve({15, true, true, false}, {}, {},
-                   {false, cda_rail::ExportOption::ExportSolutionWithInstance,
-                    "tmp3file", "tmp3folder"},
-                   20, true);
+  const auto obj_val3 = solver.solve(
+      {15, true, true, false}, {}, {},
+      export_settings(
+          cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance,
+          "tmp3folder", "tmp3file", false, "tmp3file"),
+      20, true);
 
   // Expect optimal value of 1
   EXPECT_EQ(obj_val3.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1687,15 +1727,18 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   expect_solution_files(solution_dir("tmp3folder", "tmp3file"));
   expect_instance_files("tmp3folder");
   // Expect the model to not be exported
-  EXPECT_FALSE(std::filesystem::exists("tmp3folder/tmp3file.mps"));
-  EXPECT_FALSE(std::filesystem::exists("tmp3folder/tmp3file.sol"));
+  EXPECT_FALSE(std::filesystem::exists(solution_dir("tmp3folder", "tmp3file") /
+                                       "tmp3file.mps"));
+  EXPECT_FALSE(std::filesystem::exists(solution_dir("tmp3folder", "tmp3file") /
+                                       "tmp3file.sol"));
   // Remove tmp3folder and its contents
   std::filesystem::remove_all("tmp3folder");
 
   const auto obj_val4 = solver.solve(
       {15, true, true, false}, {}, {},
-      {false, cda_rail::ExportOption::NoExport, "tmp4file", "tmp4folder"}, 20,
-      true);
+      export_settings(cda_rail::solver::GeneralExportOption::NoExport,
+                      "tmp4folder", "tmp4file", false, "tmp4file"),
+      20, true);
 
   // Expect optimal value of 1
   EXPECT_EQ(obj_val4.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1705,11 +1748,11 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   // Expect no folder tmp4folder to exist
   EXPECT_FALSE(std::filesystem::exists("tmp4folder"));
 
-  const auto obj_val5 =
-      solver.solve({15, true, true, false}, {}, {},
-                   {false, cda_rail::ExportOption::ExportSolutionAndLP,
-                    "tmp5file", "tmp5folder"},
-                   20, false);
+  const auto obj_val5 = solver.solve(
+      {15, true, true, false}, {}, {},
+      export_settings(cda_rail::solver::GeneralExportOption::ExportSolution,
+                      "tmp5folder", "tmp5file", true, "tmp5file"),
+      20, false);
 
   // Expect optimal value of 1
   EXPECT_EQ(obj_val5.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1719,8 +1762,10 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   // Expect relevant folders and files to exist and be not empty
   EXPECT_TRUE(std::filesystem::exists("tmp5folder"));
   expect_solution_files(solution_dir("tmp5folder", "tmp5file"));
-  expect_non_empty_file("tmp5folder/tmp5file.mps");
-  expect_non_empty_file("tmp5folder/tmp5file.sol");
+  expect_non_empty_file(solution_dir("tmp5folder", "tmp5file") /
+                        "tmp5file.mps");
+  expect_non_empty_file(solution_dir("tmp5folder", "tmp5file") /
+                        "tmp5file.sol");
   // Expect neither the instance nor the network to be exported
   expect_no_instance_files("tmp5folder");
   // Remove tmp5folder and its contents
@@ -1728,8 +1773,9 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
 
   const auto obj_val6 = solver.solve(
       {15, true, true, false}, {}, {},
-      {false, cda_rail::ExportOption::ExportSolutionWithInstanceAndLP,
-       "tmp6file", "tmp6folder"},
+      export_settings(
+          cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance,
+          "tmp6folder", "tmp6file", true, "tmp6model", "tmp6id"),
       20, false);
 
   // Expect optimal value of 1
@@ -1737,35 +1783,42 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   EXPECT_EQ(obj_val6.get_obj(), 1);
 
   check_schedule_within_dt_and_order(obj_val6, 15, "obj_val6");
-  // Expect relevant folders and files to exist and be not empty
+  // Expect relevant folders and files to exist and be not empty. The solution
+  // is exported next to the model, below the instance name extended by the
+  // parameter identifier, and the model carries its own name.
   EXPECT_TRUE(std::filesystem::exists("tmp6folder"));
-  expect_solution_files(solution_dir("tmp6folder", "tmp6file"));
+  expect_solution_files(solution_dir("tmp6folder", "tmp6file", "tmp6id"));
   expect_instance_files("tmp6folder");
-  expect_non_empty_file("tmp6folder/tmp6file.mps");
-  expect_non_empty_file("tmp6folder/tmp6file.sol");
+  expect_non_empty_file(solution_dir("tmp6folder", "tmp6file", "tmp6id") /
+                        "tmp6model.mps");
+  expect_non_empty_file(solution_dir("tmp6folder", "tmp6file", "tmp6id") /
+                        "tmp6model.sol");
+  // Expect nothing to be exported below the instance name without the
+  // parameter identifier
+  EXPECT_FALSE(std::filesystem::exists(solution_dir("tmp6folder", "tmp6file")));
   // Remove tmp6folder and its contents
   std::filesystem::remove_all("tmp6folder");
 
-  const auto obj_val7 = solver.solve(
-      {15, true, true, false}, {}, {},
-      {false, cda_rail::ExportOption::ExportSolutionWithInstanceAndLP}, 20,
-      false);
+  cda_rail::solver::mip_based::SolutionSettingsVSSGen default_settings;
+  default_settings.export_option =
+      cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance;
+  default_settings.export_lp_model = true;
+  const auto obj_val7 = solver.solve({15, true, true, false}, {}, {},
+                                     default_settings, 20, false);
 
   // Expect optimal value of 1
   EXPECT_EQ(obj_val7.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val7.get_obj(), 1);
 
   check_schedule_within_dt_and_order(obj_val7, 15, "obj_val7");
-  // By default everything is exported to the current directory using the name
-  // "model"
-  expect_solution_files(solution_dir(".", "model"));
+  // By default everything is exported to the current directory using the
+  // solution subdirectory "unnamed-experiment" and the model name "model"
+  expect_solution_files(solution_dir(".", "unnamed-experiment"));
   expect_instance_files(".");
-  expect_non_empty_file("model.mps");
-  expect_non_empty_file("model.sol");
+  expect_non_empty_file(solution_dir(".", "unnamed-experiment") / "model.mps");
+  expect_non_empty_file(solution_dir(".", "unnamed-experiment") / "model.sol");
   // Remove files and folders
   std::filesystem::remove_all("solutions");
   std::filesystem::remove_all("instances");
   std::filesystem::remove_all("networks");
-  std::filesystem::remove("model.mps");
-  std::filesystem::remove("model.sol");
 }

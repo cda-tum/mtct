@@ -221,6 +221,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
           .double_data = {{"max_velocity_delta",
                            model_detail_input.max_velocity_delta},
                           {"max_exit_delay", model_detail_input.max_exit_delay},
+                          {"max_station_delay",
+                           model_detail_input.max_station_delay},
                           {"abs_mip_gap", solver_strategy_input.abs_mip_gap}},
           .string_data =
               {{"velocity_refinement_strategy",

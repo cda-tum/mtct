@@ -1616,9 +1616,9 @@ public:
    * @throws cda_rail::exceptions::ConsistencyException If the network fails
    *         `is_consistent_for_transformation()` or the edge is not breakable.
    */
-  std::pair<cda_rail::index_vector, cda_rail::index_vector> separate_edge(
-      EdgeInput const&               edge,
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform) {
+  std::pair<cda_rail::index_vector, cda_rail::index_vector>
+  separate_edge(EdgeInput const&               edge,
+                const vss::SeparationFunction& sep_func = vss::UNIFORM) {
     auto const edge_index = edge.resolve(this);
     return separate_edge_private_helper(
         edge_index, get_edge(edge_index).min_block_length, sep_func);
@@ -1637,8 +1637,8 @@ public:
   separate_stop_edge(EdgeInput const& edge) {
     auto const edge_index = edge.resolve(this);
     return separate_edge_private_helper(
-        edge_index, get_edge(edge_index).min_stop_block_length,
-        &vss::functions::uniform, true);
+        edge_index, get_edge(edge_index).min_stop_block_length, vss::UNIFORM,
+        true);
   };
 
   /**
@@ -1662,8 +1662,8 @@ public:
    * @return Vector of pairs `{original_edge_index, new_edge_indices}` for
    *         every separated direction.
    */
-  std::vector<std::pair<size_t, cda_rail::index_vector>> discretize(
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform);
+  std::vector<std::pair<size_t, cda_rail::index_vector>>
+  discretize(const vss::SeparationFunction& sep_func = vss::UNIFORM);
 
   // ------------------------
   // Path Finding Algorithms
@@ -2483,7 +2483,7 @@ private:
   std::pair<cda_rail::index_vector, cda_rail::index_vector>
   separate_edge_private_helper(
       size_t edge_index, double min_length,
-      const vss::SeparationFunction& sep_func = &vss::functions::uniform,
+      const vss::SeparationFunction& sep_func           = vss::UNIFORM,
       bool                           new_edge_breakable = false);
 
   /**

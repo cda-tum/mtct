@@ -536,7 +536,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup() {
   include_train_dynamics    = false;
   use_pwl                   = false;
   use_schedule_cuts         = false;
-  export_option             = ExportOption::NoExport;
   iterative_vss             = false;
   optimality_strategy       = OptimalityStrategy::Optimal;
   iterative_update_strategy = UpdateStrategy::Fixed;
@@ -663,10 +662,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
 
 std::optional<cda_rail::instances::GeneralPerformanceOptimizationInstance>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
-    const cda_rail::solver::mip_based::ModelDetail&      model_detail,
-    const cda_rail::solver::mip_based::ModelSettings&    model_settings,
-    const cda_rail::solver::mip_based::SolverStrategy&   solver_strategy,
-    const cda_rail::solver::mip_based::SolutionSettings& solution_settings,
+    const cda_rail::solver::mip_based::ModelDetail&    model_detail,
+    const cda_rail::solver::mip_based::ModelSettings&  model_settings,
+    const cda_rail::solver::mip_based::SolverStrategy& solver_strategy,
+    const cda_rail::solver::mip_based::SolutionSettingsVSSGen&
+                         solution_settings,
     [[maybe_unused]] int time_limit, bool debug_input,
     bool overwrite_severity) {
   /**
@@ -701,7 +701,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
   this->iterative_update_value    = solver_strategy.update_value;
   this->iterative_include_cuts    = solver_strategy.include_cuts;
   this->postprocess               = solution_settings.postprocess;
-  this->export_option             = solution_settings.export_option;
 
   if (this->iterative_vss) {
     // Iterative optimization strategy
@@ -1035,45 +1034,60 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
-    export_lp_if_applicable(const SolutionSettings& solution_settings) {
-  if (export_option == ExportOption::ExportLP ||
-      export_option == ExportOption::ExportSolutionAndLP ||
-      export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
-    PLOGI << "Saving m_model and solution";
-    const std::filesystem::path path = solution_settings.path;
+    export_lp_model_if_applicable(
+        const instances::SolVSSGeneralPerformanceOptimizationInstance&
+                                      sol_object,
+        const SolutionSettingsVSSGen& solution_settings) {
+  if (!solution_settings.export_lp_model) {
+    return;
+  }
 
-    if (!is_directory_and_create(path)) {
-      PLOGE << "Could not create directory " << path.string();
-      throw exceptions::ExportException("Could not create directory " +
-                                        path.string());
-    }
+  PLOGI << "Saving model";
+  const std::filesystem::path path =
+      sol_object.get_export_path(solution_settings.working_directory,
+                                 solution_settings.solution_subdirectory,
+                                 solution_settings.parameter_identifier);
 
-    m_model->write((path / (solution_settings.name + ".mps")).string());
-    if (m_model->get(GRB_IntAttr_SolCount) >= 1) {
-      m_model->write((path / (solution_settings.name + ".sol")).string());
-    }
+  if (!is_directory_and_create(path)) {
+    PLOGE << "Could not create directory " << path.string();
+    throw exceptions::ExportException("Could not create directory " +
+                                      path.string());
+  }
+
+  m_model->write((path / (solution_settings.model_name + ".mps")).string());
+  if (m_model->get(GRB_IntAttr_SolCount) >= 1) {
+    m_model->write((path / (solution_settings.model_name + ".sol")).string());
   }
 }
 
-void cda_rail::solver::mip_based::VSSGenTimetableSolver::
-    export_solution_if_applicable(
-        const std::optional<
-            cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance>&
-                                sol_object,
-        const SolutionSettings& solution_settings) {
-  if (export_option == ExportOption::ExportSolution ||
-      export_option == ExportOption::ExportSolutionWithInstance ||
-      export_option == ExportOption::ExportSolutionAndLP ||
-      export_option == ExportOption::ExportSolutionWithInstanceAndLP) {
-    const bool export_instance =
-        (export_option == ExportOption::ExportSolutionWithInstance ||
-         export_option == ExportOption::ExportSolutionWithInstanceAndLP);
-    PLOGI << "Saving solution";
-    std::filesystem::path path = solution_settings.path;
-    path /= solution_settings.name;
-    sol_object->export_solution(path.parent_path(), path.filename().string(),
-                                export_instance, {});
-  }
+cda_rail::solver::mip_based::VSSGenTimetableSolver::FurtherData
+cda_rail::solver::mip_based::VSSGenTimetableSolver::get_further_data(
+    const SolutionSettingsVSSGen& solution_settings, int time_limit) const {
+  return {
+      .bool_data    = {{"fix_routes", fix_routes},
+                       {"train_dynamics", include_train_dynamics},
+                       {"braking_curves", include_braking_curves},
+                       {"only_stop_at_vss", vss_model.get_only_stop_at_vss()},
+                       {"use_pwl", use_pwl},
+                       {"use_schedule_cuts", use_schedule_cuts},
+                       {"iterative_approach", iterative_vss},
+                       {"iterative_include_cuts", iterative_include_cuts},
+                       {"postprocess", postprocess}},
+      .integer_data = {{"time_limit", time_limit}},
+      .double_data  = {{"delta_t", dt},
+                       {"iterative_initial_value", iterative_initial_value},
+                       {"iterative_update_value", iterative_update_value}},
+      .string_data  = {{"vss_model_type",
+                        vss::model_type_to_string(vss_model.get_model_type())},
+                       {"separation_functions",
+                        vss_model.get_separation_function_names()},
+                       {"optimality_strategy",
+                        optimality_strategy_to_string(optimality_strategy)},
+                       {"iterative_update_strategy",
+                        update_strategy_to_string(iterative_update_strategy)},
+                       {"parameter_identifier",
+                        solution_settings.parameter_identifier.value_or("")}},
+  };
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)

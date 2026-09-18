@@ -30,9 +30,9 @@ using std::size_t;
 cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance
 cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
     const ModelDetail& model_detail, const ModelSettings& model_settings,
-    const SolverStrategy&   solver_strategy,
-    const SolutionSettings& solution_settings, int time_limit, bool debug_input,
-    bool overwrite_severity) {
+    const SolverStrategy&         solver_strategy,
+    const SolutionSettingsVSSGen& solution_settings, int time_limit,
+    bool debug_input, bool overwrite_severity) {
   /**
    * Solves initiated GeneralPerformanceOptimizationInstance m_instance using
    * Gurobi and a flexible MILP formulation. The level of detail can be
@@ -74,14 +74,20 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
    * greater than 1, otherwise between 0 and 1. Default: 2
    *
    * @param solution_settings: Specify information on the solution, namely
+   * - export_option: Denotes if the solution (and the instance) is exported.
+   * Default: NoExport
+   * - working_directory: Working directory the solution is exported to.
+   * Default: "", i.e., the current working directory
+   * - solution_subdirectory: Subdirectory of working_directory/solutions the
+   * solution is exported to. Default: "unnamed-experiment"
+   * - parameter_identifier: Optional identifier appended to the instance name
+   * within the export path. Default: none
+   * - export_lp_model: If true, the Gurobi m_model itself is exported into the
+   * very same directory as the solution. Default: false
+   * - model_name: Name of the file (without extension) to which the m_model is
+   * exported. Default: "model"
    * - postprocess: If true, the solution is postprocessed to remove potentially
    * unused VSS. Default: false
-   * - export_option: Denotes if the solution and/or Gurobi m_model is exported.
-   * Default: NoExport
-   * - name: Name of the file (without extension) to which the m_model is
-   * exported. Default: "m_model"
-   * - path: Path to which the m_model is exported. Default: "", i.e., the
-   * current working directory
    *
    * @param time_limit: Time limit in seconds. No limit if negative. Default: -1
    *
@@ -105,13 +111,14 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
   const auto sol_object = optimize(old_instance, time_limit);
 
-  export_lp_if_applicable(solution_settings);
+  export_lp_model_if_applicable(sol_object.value(), solution_settings);
 
   if (old_instance.has_value()) {
     m_instance = old_instance.value();
   }
 
-  export_solution_if_applicable(sol_object, solution_settings);
+  export_general_solution(sol_object.value(), solution_settings,
+                          get_further_data(solution_settings, time_limit));
 
   cleanup();
 

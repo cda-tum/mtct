@@ -8,11 +8,64 @@
 #include <limits>
 #include <numbers>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
 namespace cda_rail::vss {
-using SeparationFunction = std::function<double(size_t, size_t)>;
+using SeparationFunctionCallable = std::function<double(size_t, size_t)>;
+
+/**
+ * @brief A separation function together with the name it is known by.
+ *
+ * Two solver runs that only differ in their separation functions are
+ * otherwise indistinguishable, because a callable cannot be written out.
+ * Hence every separation function carries a name, which is what identifies it
+ * wherever the settings of a run are reported, e.g. in the exported solver
+ * data.
+ */
+class SeparationFunction {
+private:
+  std::string                m_name;
+  SeparationFunctionCallable m_function;
+
+public:
+  /**
+   * @brief Names a separation function.
+   *
+   * @param name Name identifying the function, must not be empty.
+   * @param function The separation function itself, must not be empty.
+   *
+   * @throws std::invalid_argument if the name or the function is empty.
+   */
+  SeparationFunction(std::string name, SeparationFunctionCallable function)
+      : m_name(std::move(name)), m_function(std::move(function)) {
+    if (m_name.empty()) {
+      throw std::invalid_argument("A separation function needs a name.");
+    }
+    if (!m_function) {
+      throw std::invalid_argument("A separation function must not be empty.");
+    }
+  }
+
+  /**
+   * @brief Retrieves the name of the separation function.
+   *
+   * @return const std::string& A constant reference to the name.
+   */
+  [[nodiscard]] const std::string& get_name() const { return m_name; }
+
+  /**
+   * @brief Computes the normalized position of a node.
+   *
+   * @param i Zero-based node index.
+   * @param n Total number of nodes.
+   * @return Normalized position in `[0, 1]`.
+   */
+  [[nodiscard]] double operator()(size_t i, size_t n) const {
+    return m_function(i, n);
+  }
+};
 
 enum class ModelType : std::uint8_t {
   Discrete    = 0,
@@ -20,6 +73,21 @@ enum class ModelType : std::uint8_t {
   Inferred    = 2,
   InferredAlt = 3
 };
+
+[[nodiscard]] constexpr std::string model_type_to_string(ModelType model_type) {
+  switch (model_type) {
+  case ModelType::Discrete:
+    return "Discrete";
+  case ModelType::Continuous:
+    return "Continuous";
+  case ModelType::Inferred:
+    return "Inferred";
+  case ModelType::InferredAlt:
+    return "InferredAlt";
+  default:
+    throw std::invalid_argument("Unknown VSS model type.");
+  }
+}
 
 namespace functions {
 /**
@@ -29,7 +97,7 @@ namespace functions {
  * @param n Total number of nodes.
  * @return Normalized position in `[0, 1]`.
  */
-[[nodiscard]] static double uniform(size_t i, size_t n) {
+[[nodiscard]] inline double uniform(size_t i, size_t n) {
   double ret_val = (static_cast<double>(i) + 1) / static_cast<double>(n);
   ret_val        = std::min<double>(ret_val, 1);
   return ret_val;
@@ -46,7 +114,7 @@ namespace functions {
  * @param n Total number of nodes.
  * @return double Normalized position in [0, 1].
  */
-[[nodiscard]] static double chebyshev(size_t i, size_t n) {
+[[nodiscard]] inline double chebyshev(size_t i, size_t n) {
   if (i >= n - 1) {
     return 1;
   }
@@ -70,7 +138,7 @@ namespace functions {
  *
  * @throws std::invalid_argument if min_frac is not in (0, 1].
  */
-[[nodiscard]] static size_t max_n_blocks(const SeparationFunction& sep_func,
+[[nodiscard]] inline size_t max_n_blocks(const SeparationFunction& sep_func,
                                          double                    min_frac) {
   constexpr auto eps = 10 * std::numeric_limits<double>::epsilon();
 
@@ -93,6 +161,16 @@ namespace functions {
   return static_cast<size_t>(std::floor((1 / min_frac) + eps));
 }
 } // namespace functions
+
+/**
+ * @brief The separation functions that are known by name.
+ *
+ * Every separation function used by a solver should be one of these, since
+ * only a named function can be reported back, e.g. in the exported solver
+ * data.
+ */
+inline const SeparationFunction UNIFORM{"Uniform", &functions::uniform};
+inline const SeparationFunction CHEBYSHEV{"Chebyshev", &functions::chebyshev};
 
 class Model {
 private:
@@ -127,6 +205,26 @@ public:
       throw std::logic_error("Model has no separation functions.");
     }
     return separation_functions;
+  }
+
+  /**
+   * @brief Retrieves the names of the separation functions, comma separated.
+   *
+   * In contrast to get_separation_functions this does not throw if the model
+   * has no separation functions, because a model without them, namely a
+   * continuous one, is perfectly valid.
+   *
+   * @return std::string The names in order, empty if there are none.
+   */
+  [[nodiscard]] std::string get_separation_function_names() const {
+    std::string names;
+    for (const auto& separation_function : separation_functions) {
+      if (!names.empty()) {
+        names += ",";
+      }
+      names += separation_function.get_name();
+    }
+    return names;
   }
 
   /**

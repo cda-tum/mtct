@@ -1,4 +1,5 @@
 #pragma once
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "GeneralMIPSolver.hpp"
 #include "VSSModel.hpp"
@@ -10,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -17,6 +19,32 @@ namespace cda_rail::solver::mip_based {
 using std::size_t;
 
 enum class UpdateStrategy : std::uint8_t { Fixed = 0, Relative = 1 };
+
+constexpr std::string update_strategy_to_string(UpdateStrategy strategy) {
+  switch (strategy) {
+  case UpdateStrategy::Fixed:
+    return "Fixed";
+  case UpdateStrategy::Relative:
+    return "Relative";
+  default:
+    throw cda_rail::exceptions::ConsistencyException("Unknown update strategy");
+  }
+}
+
+constexpr std::string
+optimality_strategy_to_string(OptimalityStrategy strategy) {
+  switch (strategy) {
+  case OptimalityStrategy::Optimal:
+    return "Optimal";
+  case OptimalityStrategy::TradeOff:
+    return "TradeOff";
+  case OptimalityStrategy::Feasible:
+    return "Feasible";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown optimality strategy");
+  }
+}
 
 struct SolverStrategy {
   bool                         iterative_approach = false;
@@ -91,7 +119,6 @@ private:
   bool                   iterative_include_cuts{true};
   bool                   iterative_include_cuts_tmp{true};
   bool                   postprocess{false};
-  ExportOption           export_option{ExportOption::NoExport};
   cda_rail::index_vector max_vss_per_edge_in_iteration{};
   std::unordered_map<size_t, size_t> breakable_edge_indices{};
   std::vector<std::pair<cda_rail::index_vector, cda_rail::index_vector>>
@@ -160,12 +187,31 @@ private:
   optimize(const std::optional<
                instances::GeneralPerformanceOptimizationInstance>& old_instance,
            int                                                     time_limit);
-  void export_lp_if_applicable(const SolutionSettings& solution_settings);
-  void export_solution_if_applicable(
-      const std::optional<
-          cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance>&
-                              sol_object,
-      const SolutionSettings& solution_settings);
+  /**
+   * @brief Exports the MIP model itself if solution_settings ask for it.
+   *
+   * The model is written into the standard solution directory of the given
+   * solution, i.e., to the very same place the solution itself is exported to,
+   * using solution_settings.model_name as file name. This happens
+   * independently of the export option, i.e., the model can be exported
+   * without the solution and vice versa.
+   *
+   * @param sol_object The solution defining the export directory
+   * @param solution_settings Settings describing where and what to export
+   */
+  void export_lp_model_if_applicable(
+      const instances::SolVSSGeneralPerformanceOptimizationInstance& sol_object,
+      const SolutionSettingsVSSGen& solution_settings);
+  /**
+   * @brief Collects the solver settings written to solver_data.json.
+   *
+   * @param solution_settings The export settings used
+   * @param time_limit The time limit in seconds passed to the solver
+   * @return The settings as further data of the solver data export
+   */
+  [[nodiscard]] FurtherData
+  get_further_data(const SolutionSettingsVSSGen& solution_settings,
+                   int                           time_limit) const;
   [[nodiscard]] cda_rail::index_vector
                        unbreakable_section_indices(size_t train_index) const;
   void                 calculate_fwd_bwd_sections();
@@ -205,10 +251,10 @@ private:
   void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss,
                               GRBLinExpr& cut_expr);
   [[nodiscard]] std::optional<instances::GeneralPerformanceOptimizationInstance>
-  initialize_variables(const ModelDetail&      model_detail,
-                       const ModelSettings&    model_settings,
-                       const SolverStrategy&   solver_strategy,
-                       const SolutionSettings& solution_settings,
+  initialize_variables(const ModelDetail&            model_detail,
+                       const ModelSettings&          model_settings,
+                       const SolverStrategy&         solver_strategy,
+                       const SolutionSettingsVSSGen& solution_settings,
                        int time_limit, bool debug_input,
                        bool overwrite_severity);
 
@@ -231,12 +277,11 @@ public:
       : GeneralMIPSolver(std::forward<Args>(args)...) {}
 
   // Methods
-  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
-  solve(const ModelDetail&      model_detail,
-        const ModelSettings&    model_settings    = {},
-        const SolverStrategy&   solver_strategy   = {},
-        const SolutionSettings& solution_settings = {}, int time_limit = -1,
-        bool debug_input = false, bool overwrite_severity = true);
+  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance solve(
+      const ModelDetail& model_detail, const ModelSettings& model_settings = {},
+      const SolverStrategy&         solver_strategy   = {},
+      const SolutionSettingsVSSGen& solution_settings = {}, int time_limit = -1,
+      bool debug_input = false, bool overwrite_severity = true);
 
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
@@ -284,10 +329,11 @@ public:
   // Methods
   [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
   solve(const ModelDetailMBInformation& model_detail_mb_information,
-        const ModelSettings&            model_settings  = {},
-        const SolverStrategy&           solver_strategy = {},
-        const SolutionSettings& solution_settings = {}, int time_limit = -1,
-        bool debug_input = false, bool overwrite_severity = true);
+        const ModelSettings&            model_settings    = {},
+        const SolverStrategy&           solver_strategy   = {},
+        const SolutionSettingsVSSGen&   solution_settings = {},
+        int time_limit = -1, bool debug_input = false,
+        bool overwrite_severity = true);
 
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance

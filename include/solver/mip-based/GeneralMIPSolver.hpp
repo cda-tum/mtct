@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Definitions.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
 #include "gurobi_c.h"
@@ -16,15 +15,8 @@
 
 namespace cda_rail::solver::mip_based {
 
-struct SolutionSettings {
-  bool         postprocess   = false;
-  ExportOption export_option = ExportOption::NoExport;
-  std::string  name          = "model";
-  std::string  path;
-};
-
 /**
- * @brief Export settings of the moving block MIP solver.
+ * @brief Export settings shared by all MIP based solvers.
  *
  * The solution itself is exported using the general settings, i.e., to the
  * standard path
@@ -32,9 +24,27 @@ struct SolutionSettings {
  * instance_name[-parameter_identifier]. In addition, the MIP model itself can
  * be written to the very same directory using model_name as file name.
  */
-struct SolutionSettingsMovingBlock : GeneralSolutionSettings {
+struct SolutionSettingsMIP : GeneralSolutionSettings {
   bool        export_lp_model = false;
   std::string model_name      = "model";
+};
+
+/**
+ * @brief Export settings of the moving block MIP solver.
+ *
+ * The moving block MIP solver does not have any export settings beyond the
+ * ones shared by all MIP based solvers.
+ */
+using SolutionSettingsMovingBlock = SolutionSettingsMIP;
+
+/**
+ * @brief Export settings of the VSS generation MIP solver.
+ *
+ * In addition to the settings shared by all MIP based solvers, the extracted
+ * solution can be postprocessed in order to remove potentially unused VSS.
+ */
+struct SolutionSettingsVSSGen : SolutionSettingsMIP {
+  bool postprocess = false;
 };
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
