@@ -220,6 +220,38 @@ TEST(RailwayNetwork, SimpleGetterAndSetter) {
                cda_rail::exceptions::ConsistencyException);
 }
 
+TEST(RailwayNetwork, AddBidirectionalEdge) {
+  cda_rail::Network network{"TestNetwork"};
+
+  auto const v0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  auto const v1 = network.add_vertex("v1", cda_rail::VertexType::NoBorder);
+
+  auto const [e01, e10] =
+      network.add_bidirectional_edge(v0, v1, 100, 20, true, 23, 25);
+
+  EXPECT_EQ(network.number_of_edges(), 2);
+  EXPECT_TRUE(network.has_edge(e01));
+  EXPECT_TRUE(network.has_edge(e10));
+
+  auto const& e01_edge = network.get_edge(e01);
+  EXPECT_EQ(e01_edge.source, v0);
+  EXPECT_EQ(e01_edge.target, v1);
+  EXPECT_EQ(e01_edge.length, 100);
+  EXPECT_EQ(e01_edge.max_speed, 20);
+  EXPECT_TRUE(e01_edge.breakable);
+  EXPECT_EQ(e01_edge.min_block_length, 23);
+  EXPECT_EQ(e01_edge.min_stop_block_length, 25);
+
+  auto const& e10_edge = network.get_edge(e10);
+  EXPECT_EQ(e10_edge.source, v1);
+  EXPECT_EQ(e10_edge.target, v0);
+  EXPECT_EQ(e10_edge.length, 100);
+  EXPECT_EQ(e10_edge.max_speed, 20);
+  EXPECT_TRUE(e10_edge.breakable);
+  EXPECT_EQ(e10_edge.min_block_length, 23);
+  EXPECT_EQ(e10_edge.min_stop_block_length, 25);
+}
+
 TEST(RailwayNetwork, NeighborGetters) {
   cda_rail::Network network;
   auto const        v0  = network.add_vertex("v0", cda_rail::VertexType::TTD);
