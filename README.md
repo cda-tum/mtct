@@ -72,7 +72,7 @@ To build the tool, go to the project folder and execute the following:
    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
    ```
 
-   If the default compiler is too old, a suitable one has to be specified explicitly, e.g.,
+   If the default compiler is too old, a suitable one has to be specified explicitly, e.g., using the following command on Linux and MacOS
 
    ```commandline
    CXX=g++-13 CC=gcc-13 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -586,7 +586,7 @@ If you have any questions, feel free to contact us via etcs.cda@xcit.tum.de or b
 
 [[6]](https://www.cda.cit.tum.de/files/eda/2024_atmos_optimization_pipieline_for_train_control_with_htd.pdf) Stefan Engels and Robert Wille. **"Towards an Optimization Pipeline for the Design of Train Control Systems with Hybrid Train Detection"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2024 ([doi](https://doi.org/10.4230/OASIcs.ATMOS.2024.12), [pdf](https://www.cda.cit.tum.de/files/eda/2024_atmos_optimization_pipieline_for_train_control_with_htd.pdf))
 
-[[7]](https://www.cda.cit.tum.de/files/eda/2025_eurojtl_etcs_design_tasks_and_complexity.pdf) Stefan Engels and Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Design tasks and their complexity for the European Train Control System with Hybrid Train Detection"**. EURO Journal on Transportation and Logistics, 2025 ([doi](https://doi.org/https://doi.org/10.1016/j.ejtl.2025.100161), [arXiv](https://arxiv.org/abs/2308.02572), [pdf](https://www.cda.cit.tum.de/files/eda/2025_eurojtl_etcs_design_tasks_and_complexity.pdf))
+[[7]](https://www.cda.cit.tum.de/files/eda/2025_eurojtl_etcs_design_tasks_and_complexity.pdf) Stefan Engels and Tom Peham and Judith Przigoda and Nils Przigoda and Robert Wille. **"Design tasks and their complexity for the European Train Control System with Hybrid Train Detection"**. EURO Journal on Transportation and Logistics, 2025 ([doi](https://doi.org/10.1016/j.ejtl.2025.100161), [arXiv](https://arxiv.org/abs/2308.02572), [pdf](https://www.cda.cit.tum.de/files/eda/2025_eurojtl_etcs_design_tasks_and_complexity.pdf))
 
 [[8]](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf) Stefan Engels and Robert Wille. **"Time-Aware A\* for Optimal Train Routing on Moving Block Systems"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2026 ([pdf](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf))
 

@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <iterator>
+#include <limits>
 #include <numeric>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
@@ -126,6 +127,20 @@ double cda_rail::get_first_time_step_after(double t, double dt,
   return t_inclusive ? std::ceil((t / dt) - EPS) * dt
                      : (std::floor((t / dt) + EPS) + 1) * dt;
 }
+namespace {
+// Casting a floating point index to size_t is only defined if the value is
+// finite and within range. Times or time step lengths passed by a solver can
+// violate this, e.g., if they are NaN or extremely small.
+size_t checked_time_index_cast(double const index) {
+  if (!std::isfinite(index) ||
+      index >= static_cast<double>(std::numeric_limits<size_t>::max())) {
+    throw cda_rail::exceptions::InvalidInputException(
+        "The time index is not representable");
+  }
+  return static_cast<size_t>(index);
+}
+} // namespace
+
 size_t cda_rail::get_last_time_index_before(double t, double dt,
                                             bool t_inclusive) {
   exceptions::throw_if_negative(t, "Time");
@@ -139,7 +154,7 @@ size_t cda_rail::get_last_time_index_before(double t, double dt,
     throw exceptions::InvalidInputException(
         "There is no non-negative time index before the given time");
   }
-  return static_cast<size_t>(index);
+  return checked_time_index_cast(index);
 }
 size_t cda_rail::get_first_time_index_after(double t, double dt,
                                             bool t_inclusive) {
@@ -148,6 +163,7 @@ size_t cda_rail::get_first_time_index_after(double t, double dt,
 
   // min (k s.th. k*dt >= t) if t_inclusive is true, otherwise min (k s.th.
   // k*dt > t)
-  return static_cast<size_t>(t_inclusive ? std::ceil((t / dt) - EPS)
-                                         : std::floor((t / dt) + EPS) + 1);
+  const double index =
+      t_inclusive ? std::ceil((t / dt) - EPS) : std::floor((t / dt) + EPS) + 1;
+  return checked_time_index_cast(index);
 }

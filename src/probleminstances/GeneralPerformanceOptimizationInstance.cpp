@@ -921,9 +921,16 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
   double last_stop_time = 0.0;
   for (size_t i = 0; i < stop_times.size(); ++i) {
-    exceptions::throw_if_less_than_or_equal(stop_times.at(i), last_stop_time,
-                                            "Train stop time " +
-                                                std::to_string(i));
+    // The first stop may take place at time 0, later stops have to be strictly
+    // after the previous one.
+    if (i == 0) {
+      exceptions::throw_if_negative(stop_times.at(i),
+                                    "Train stop time " + std::to_string(i));
+    } else {
+      exceptions::throw_if_less_than_or_equal(stop_times.at(i), last_stop_time,
+                                              "Train stop time " +
+                                                  std::to_string(i));
+    }
     last_stop_time = stop_times.at(i);
   }
   m_train_stop_times.at(tr_idx) = std::move(stop_times);
