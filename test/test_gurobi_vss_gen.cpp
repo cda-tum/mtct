@@ -56,8 +56,10 @@ void check_schedule_within_dt_and_order(
     const cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance&
                  sol,
     double const dt, const std::string& label) {
-  // Solutions of the discrete VSS model do not contain any train data, hence
-  // there is nothing to check
+  // Every solution object has to be consistent, even if no solution was found
+  EXPECT_TRUE(sol.check_consistency()) << label;
+
+  // Without a solution there is no solution data to check
   if (!sol.has_solution()) {
     return;
   }
@@ -65,6 +67,45 @@ void check_schedule_within_dt_and_order(
   auto const& instance   = *sol.get_instance();
   auto const& network    = instance.get_const_network();
   auto const& train_list = instance.get_const_train_list();
+
+  // Every VSS border lies strictly within its edge and is mirrored on the
+  // reverse edge, if the latter exists. Since the objective counts the borders,
+  // it coincides with the number of borders on one edge of every such pair.
+  size_t num_vss = 0;
+  for (size_t e_id = 0; e_id < network.number_of_edges(); ++e_id) {
+    auto const& edge    = network.get_edge(e_id);
+    auto const  vss_pos = sol.get_vss_pos(e_id);
+    auto const  e_name  = network.get_edge_name(e_id);
+    for (auto const& pos : vss_pos) {
+      EXPECT_GT(pos, 0) << label << ", Edge: " << e_name;
+      EXPECT_LT(pos, edge.length) << label << ", Edge: " << e_name;
+    }
+
+    auto const reverse_edge = network.get_reverse_edge_index(e_id);
+    // Only one edge of every pair of reverse edges contributes to the count
+    if (!reverse_edge.has_value() || reverse_edge.value() > e_id) {
+      num_vss += vss_pos.size();
+    }
+    if (!reverse_edge.has_value()) {
+      continue;
+    }
+
+    // Both vectors are sorted, hence the borders correspond to each other in
+    // reverse order.
+    auto const reverse_vss_pos = sol.get_vss_pos(reverse_edge.value());
+    EXPECT_EQ(vss_pos.size(), reverse_vss_pos.size())
+        << label << ", Edge: " << e_name << "-> skipping detailed test";
+    if (vss_pos.size() != reverse_vss_pos.size()) {
+      continue;
+    }
+    for (size_t i = 0; i < vss_pos.size(); ++i) {
+      EXPECT_NEAR(vss_pos.at(i) +
+                      reverse_vss_pos.at(reverse_vss_pos.size() - 1 - i),
+                  edge.length, cda_rail::EPS)
+          << label << ", Edge: " << e_name;
+    }
+  }
+  EXPECT_EQ(static_cast<double>(num_vss), sol.get_obj()) << label;
 
   for (auto const& tr : train_list) {
     auto const& tr_schedule = instance.get_const_schedule(tr.get_name());
@@ -468,6 +509,119 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscrete) {
   EXPECT_EQ(obj_val.get_obj(), 1);
 
   check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
+}
+
+TEST(VSSGenSolver, GurobiVSSGenVSSDiscreteFree) {
+  // A single track on which two trains follow each other. Because the second
+  // train catches up with the first one, the track has to be separated. The
+  // minimal block length allows for three blocks of equal length, hence the
+  // discretization introduces two possible VSS borders.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 300, 10, true, 100);
+
+  instance.add_train("Train1", 50, 10, 10, 10, true, 0, 10, {"v0"}, 35, 10,
+                     {"v1"}, 1);
+  instance.add_train("Train2", 50, 10, 10, 10, true, 20, 10, {"v0"}, 55, 10,
+                     {"v1"}, 1);
+  for (const auto& tr_name : {"Train1", "Train2"}) {
+    instance.add_empty_route(tr_name);
+    instance.push_back_edge_to_route(tr_name, {"v0", "v1"});
+  }
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  // Both borders introduced by the discretization are needed, because the
+  // second train has caught up with the first one by the time the latter
+  // leaves the network.
+  const std::vector<double> expected_vss_pos{100, 200};
+
+  const auto obj_val_free =
+      solver.solve({5, false, false, false},
+                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                         {cda_rail::vss::UNIFORM})},
+                   {}, {}, 300, true);
+
+  EXPECT_EQ(obj_val_free.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_free.get_obj(), 2);
+  EXPECT_EQ(obj_val_free.get_vss_pos({"v0", "v1"}), expected_vss_pos);
+
+  check_schedule_within_dt_and_order(obj_val_free, 5, "obj_val_free");
+
+  // The very same borders are obtained if the routes are fixed to the only
+  // possible route.
+  const auto obj_val_fixed =
+      solver.solve({5, true, false, false},
+                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                         {cda_rail::vss::UNIFORM})},
+                   {}, {}, 300, true);
+
+  EXPECT_EQ(obj_val_fixed.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_fixed.get_obj(), 2);
+  EXPECT_EQ(obj_val_fixed.get_vss_pos({"v0", "v1"}), expected_vss_pos);
+
+  check_schedule_within_dt_and_order(obj_val_fixed, 5, "obj_val_fixed");
+}
+
+TEST(VSSGenSolver, GurobiVSSGenVSSDiscreteExport) {
+  // The instance is read relative to the current working directory, hence the
+  // solver has to be created before switching to the temporary directory.
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "SimpleStation", "atmos2023", "data");
+
+  // The export happens relative to the current working directory. Hence, the
+  // test is executed within a temporary directory that is removed afterwards,
+  // even if an expectation fails in between.
+  struct ScopedTempWorkingDirectory {
+    std::filesystem::path original_directory;
+    std::filesystem::path temporary_directory;
+    ~ScopedTempWorkingDirectory() {
+      std::error_code ignored;
+      std::filesystem::current_path(original_directory, ignored);
+      std::filesystem::remove_all(temporary_directory, ignored);
+    }
+  };
+
+  const std::filesystem::path temp_dir =
+      std::filesystem::temp_directory_path() /
+      "cda_rail_test_vss_gen_discrete_export";
+  std::filesystem::remove_all(temp_dir);
+  ASSERT_TRUE(std::filesystem::create_directories(temp_dir));
+  const ScopedTempWorkingDirectory temp_working_directory{
+      std::filesystem::current_path(), temp_dir};
+  std::filesystem::current_path(temp_dir);
+
+  cda_rail::solver::mip_based::SolutionSettingsVSSGen export_settings;
+  export_settings.export_option =
+      cda_rail::solver::GeneralExportOption::ExportSolution;
+  export_settings.solution_subdirectory = "discrete";
+
+  const auto obj_val =
+      solver.solve({15, true, false, false},
+                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                         {cda_rail::vss::UNIFORM})},
+                   {}, export_settings, 600, true);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 1);
+
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
+
+  std::error_code             ec;
+  const std::filesystem::path solution_dir =
+      std::filesystem::path("solutions") / "discrete" / "atmos2023" /
+      "SimpleStation";
+  for (const auto& file_name :
+       {"solution_data.json", "routes.json", "train_pos.json",
+        "train_speed.json", "train_exit_times.json", "train_stop_times.json",
+        "vss_pos.json", "solver_data.json"}) {
+    const auto file_path = solution_dir / file_name;
+    EXPECT_TRUE(std::filesystem::exists(file_path))
+        << "Missing file " << file_path;
+    EXPECT_GT(std::filesystem::file_size(file_path, ec), 0)
+        << "Empty file " << file_path;
+  }
 }
 
 TEST(VSSGenSolver, GurobiVSSGenTim) {

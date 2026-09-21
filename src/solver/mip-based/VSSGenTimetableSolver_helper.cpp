@@ -194,16 +194,17 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
       static_cast<int>(std::round(m_model->get(GRB_DoubleAttr_ObjVal)));
   PLOGD << "MIP objective: " << mip_obj_val;
 
-  if (vss_model.get_model_type() == vss::ModelType::Discrete) {
-    // TODO: Implement
-    sol_obj.set_obj(mip_obj_val);
-    return sol_obj;
-  }
-
-  sol_obj.set_solution_found();
-
   int obj = 0;
 
+  if (vss_model.get_model_type() == vss::ModelType::Discrete) {
+    if (postprocess) {
+      PLOGW << "Postprocessing is not available for the discretized VSS model";
+    }
+    obj = extract_discretized_vss_positions(sol_obj);
+  }
+
+  // relevant_edges is only filled for the non-discretized models, hence the
+  // following loop is skipped in the discretized case handled above.
   for (size_t r_e_index = 0; r_e_index < relevant_edges.size(); ++r_e_index) {
     const auto e_index = relevant_edges.at(r_e_index);
     const auto vss_number_e =
@@ -323,44 +324,33 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
 
   sol_obj.set_obj(obj);
 
+  // The routes chosen by the model. In the discretized case they consist of
+  // the sub-edges of the discretized network, whereas the solution object
+  // refers to the original network. They remain empty if the routes are fixed,
+  // in which case the positions do not refer to single edges either.
+  std::vector<cda_rail::index_vector> model_routes;
+
   if (!fix_routes) {
-    sol_obj.reset_routes();
     PLOGD << "Extracting routes";
+    model_routes.reserve(num_tr);
     for (size_t tr = 0; tr < num_tr; ++tr) {
-      const auto train = m_instance.get_const_train_list().get_train(tr);
-      sol_obj.add_empty_route(train.get_name());
-      size_t current_vertex =
-          m_instance.get_const_schedule(tr).get_entry_vertex();
-      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
-           ++t) {
-        std::unordered_set<size_t> edge_list;
-        for (int e = 0; e < num_edges; ++e) {
-          const auto tr_on_edge =
-              m_vars.at("x").at(tr, t, e).get(GRB_DoubleAttr_X) > 0.5;
-          if (tr_on_edge &&
-              !sol_obj.get_const_solution_routes()
-                   .get_route(train.get_name())
-                   .contains_edge(e) &&
-              !edge_list.contains(e)) {
-            edge_list.emplace(e);
-          }
-        }
-        while (!edge_list.empty()) {
-          bool edge_added = false;
-          for (const auto& e : edge_list) {
-            if (m_instance.get_const_network().get_edge(e).source ==
-                current_vertex) {
-              sol_obj.push_back_edge_to_route(train.get_name(), e);
-              current_vertex =
-                  m_instance.get_const_network().get_edge(e).target;
-              edge_list.erase(e);
-              edge_added = true;
-              break;
-            }
-          }
-          if (!edge_added) {
-            throw exceptions::ConsistencyException("Error in route extraction");
-          }
+      model_routes.emplace_back(extract_model_route(tr));
+    }
+
+    sol_obj.reset_routes();
+    for (size_t tr = 0; tr < num_tr; ++tr) {
+      const auto& tr_name =
+          m_instance.get_const_train_list().get_train(tr).get_name();
+      sol_obj.add_empty_route(tr_name);
+      for (const auto& e : model_routes.at(tr)) {
+        // All sub-edges of a discretized edge map back to the edge they were
+        // created from. It is added once, namely for the sub-edge starting at
+        // the original source. Without discretization every edge maps to
+        // itself at position 0.
+        const auto [old_edge, old_edge_pos] =
+            m_instance.get_const_network().get_old_edge(e);
+        if (old_edge_pos == 0) {
+          sol_obj.push_back_edge_to_route(tr_name, old_edge);
         }
       }
     }
@@ -403,18 +393,19 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         if (len_in > EPS) {
           train_pos = -len_in;
         } else {
-          for (auto e_index : sol_obj.get_const_solution_routes()
-                                  .get_route(train.get_name())
-                                  .get_edges()) {
+          // The position of the edge source along the route is tracked
+          // explicitly, because the route used by the model can differ from
+          // the route of the solution object, namely in the discretized case.
+          double e_pos = 0;
+          for (const auto& e_index : model_routes.at(tr)) {
             const bool e_used =
                 m_vars.at("x").at(tr, t, e_index).get(GRB_DoubleAttr_X) > 0.5;
             if (e_used) {
               const double lda_val =
                   m_vars.at("e_lda").at(tr, t, e_index).get(GRB_DoubleAttr_X);
-              const double e_pos =
-                  sol_obj.route_edge_pos(train.get_name(), e_index).source;
               train_pos = std::min(lda_val + e_pos, train_pos);
             }
+            e_pos += m_instance.get_const_network().get_edge(e_index).length;
           }
         }
       }
@@ -475,7 +466,93 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     }
   }
 
+  // Only now the solution object contains all data belonging to the solution
+  sol_obj.set_solution_found();
+
   return sol_obj;
+}
+
+int cda_rail::solver::mip_based::VSSGenTimetableSolver::
+    extract_discretized_vss_positions(
+        instances::SolVSSGeneralPerformanceOptimizationInstance& sol_obj)
+        const {
+  int         obj     = 0;
+  const auto& network = m_instance.get_const_network();
+
+  for (size_t i = 0; i < no_border_vss_vertices.size(); ++i) {
+    if (m_vars.at("b").at(i).get(GRB_DoubleAttr_X) < 0.5) {
+      continue;
+    }
+    obj += 1;
+
+    const auto  v_index   = no_border_vss_vertices.at(i);
+    const auto& v_name    = network.get_vertex(v_index).name;
+    const auto  out_edges = network.out_edges(v_index);
+    if (out_edges.empty()) {
+      throw exceptions::ConsistencyException("VSS vertex " + v_name +
+                                             " has no outgoing edge");
+    }
+    // Every edge leaving the vertex starts exactly at the vertex, hence its
+    // offset within the edge it was created from is the position of the VSS
+    // border. Since the border is added to the reverse edge as well, it does
+    // not matter which of the outgoing edges is used.
+    const auto [old_edge, old_edge_pos] =
+        network.get_old_edge(*out_edges.begin());
+    if (old_edge_pos == 0) {
+      // The vertex already existed before the discretization, hence the border
+      // is a vertex of the original network and not a position on one of its
+      // edges.
+      PLOGD << "Add VSS at vertex " << v_name;
+      continue;
+    }
+    IF_PLOG(plog::debug) {
+      const auto& old_network     = sol_obj.get_instance()->get_const_network();
+      const auto& old_edge_object = old_network.get_edge(old_edge);
+      const auto& source = old_network.get_vertex(old_edge_object.source).name;
+      const auto& target = old_network.get_vertex(old_edge_object.target).name;
+      PLOGD << "Add VSS at " << old_edge_pos << " on " << source << " to "
+            << target;
+    }
+    sol_obj.add_vss_pos(old_edge, old_edge_pos, true);
+  }
+
+  return obj;
+}
+
+cda_rail::index_vector
+cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_model_route(
+    size_t tr) const {
+  cda_rail::index_vector route;
+  size_t current_vertex = m_instance.get_const_schedule(tr).get_entry_vertex();
+  for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
+       ++t) {
+    std::unordered_set<size_t> edge_list;
+    for (size_t e = 0; e < num_edges; ++e) {
+      const auto tr_on_edge =
+          m_vars.at("x").at(tr, t, e).get(GRB_DoubleAttr_X) > 0.5;
+      if (tr_on_edge && !std::ranges::contains(route, e)) {
+        edge_list.emplace(e);
+      }
+    }
+    while (!edge_list.empty()) {
+      bool edge_added = false;
+      for (const auto& e : edge_list) {
+        if (m_instance.get_const_network().get_edge(e).source ==
+            current_vertex) {
+          route.emplace_back(e);
+          current_vertex = m_instance.get_const_network().get_edge(e).target;
+          edge_list.erase(e);
+          edge_added = true;
+          break;
+        }
+      }
+      if (!edge_added) {
+        throw exceptions::ConsistencyException("Error in route extraction");
+      }
+    }
+  }
+
+  return route;
 }
 
 std::pair<std::vector<cda_rail::index_vector>,
