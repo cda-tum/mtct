@@ -261,6 +261,33 @@ private:
       const std::optional<instances::GeneralPerformanceOptimizationInstance>&
           old_instance) const;
 
+  /**
+   * @brief Adds the VSS borders chosen by the discretized model to a solution.
+   *
+   * In the discretized model a VSS border is a vertex of the discretized
+   * network. The solution object, however, refers to the original network, in
+   * which such a vertex is a position on the edge it was created from. The
+   * border is added to that edge and, if it exists, to its reverse edge.
+   *
+   * @param sol_obj Solution object the VSS borders are added to
+   * @return Number of VSS borders chosen by the model
+   */
+  int extract_discretized_vss_positions(
+      instances::SolVSSGeneralPerformanceOptimizationInstance& sol_obj) const;
+
+  /**
+   * @brief The route a train takes according to the occupation variables.
+   *
+   * Only meaningful if the routes are not fixed. For the discretized VSS model
+   * the returned edges belong to the discretized network, which has to be
+   * mapped back to the original network before it is written into a solution
+   * object.
+   *
+   * @param tr Index of the train
+   * @return Edges of the train's route in the order they are traversed
+   */
+  [[nodiscard]] cda_rail::index_vector extract_model_route(size_t tr) const;
+
   bool update_vss(size_t relevant_edge_index, double obj_ub,
                   GRBLinExpr& cut_expr);
   void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss,
