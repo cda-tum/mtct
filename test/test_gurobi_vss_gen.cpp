@@ -94,10 +94,13 @@ void check_schedule_within_dt_and_order(
     // reverse order.
     auto const reverse_vss_pos = sol.get_vss_pos(reverse_edge.value());
     EXPECT_EQ(vss_pos.size(), reverse_vss_pos.size())
-        << label << ", Edge: " << e_name;
-    for (size_t i = 0; i < std::min(vss_pos.size(), reverse_vss_pos.size());
-         ++i) {
-      EXPECT_NEAR(vss_pos.at(i) + reverse_vss_pos.at(vss_pos.size() - 1 - i),
+        << label << ", Edge: " << e_name << "-> skipping detailed test";
+    if (vss_pos.size() != reverse_vss_pos.size()) {
+      continue;
+    }
+    for (size_t i = 0; i < vss_pos.size(); ++i) {
+      EXPECT_NEAR(vss_pos.at(i) +
+                      reverse_vss_pos.at(reverse_vss_pos.size() - 1 - i),
                   edge.length, cda_rail::EPS)
           << label << ", Edge: " << e_name;
     }
