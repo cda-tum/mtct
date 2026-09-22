@@ -33,7 +33,7 @@ using std::size_t;
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
-    const ModelDetail&                 model_detail_input,
+    const ModelDetailMovingBlock&      model_detail_input,
     const SolverStrategyMovingBlock&   solver_strategy_input,
     const SolutionSettingsMovingBlock& solution_settings_input, int time_limit,
     bool debug_input, bool overwrite_severity) {
@@ -661,7 +661,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     initialize_variables(
         const SolutionSettingsMovingBlock& solution_settings_input,
         const SolverStrategyMovingBlock&   solver_strategy_input,
-        const ModelDetail&                 model_detail_input) {
+        const ModelDetailMovingBlock&      model_detail_input) {
   if (solver_strategy_input.include_reverse_headways &&
       !solver_strategy_input.use_lazy_constraints) {
     throw exceptions::InvalidInputException(

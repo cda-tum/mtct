@@ -41,7 +41,7 @@ In this case, the times given in the instance are lower bounds only.
 The tool finds routings that minimize a weighted combination of the delays at the stations and when leaving the network.
 They can be obtained by a MILP [[5]](#references) as well as by an A\* search [[8]](#references) on simulated train movements, whose runtime and scalability are improved considerably by time-aware state transitions [[9]](#references).
 
-All of these methods are built on a common problem description and are accessible through three command line apps.
+All of these methods are built on a common problem description and are accessible through a command line app, which also builds and edits the instances they work on.
 The tool is under active development, and more features will follow.
 
 ### Installation
@@ -99,15 +99,19 @@ Otherwise, they have to be set manually, see also https://support.gurobi.com/hc/
 
 ### Usage
 
-The tool provides three command line apps, which are built into `build/apps`:
+The tool is used through `rail_cli`, built into `build/apps/cli`.
+It creates and edits problem instances and runs every solver on them, see [Interactive Sessions](#interactive-sessions).
+
+In addition, each solver is available as a standalone app in `build/apps`, which solves one instance with one set of settings and terminates:
 
 - `rail_vss_generation_timetable_mip_testing` generates minimal VSS layouts for a given timetable using a MILP.
 - `rail_gen_po_moving_block_mip_testing` routes trains optimally under moving block control using a MILP.
 - `rail_gen_po_moving_block_astar_testing` routes trains optimally under moving block control using an A\* search.
 
-Called with `--help` (or `-h`), every app prints the full documentation of all its settings, including their default values and their dependencies on each other.
-The following only summarizes the general ideas; for the exact meaning of a setting, please refer to that output, which is included below for every app.
-Settings that exist in more than one app use the same names everywhere.
+A solver has the same settings whether it is called through `rail_cli` or through its standalone app.
+Called with `--help` (or `-h`), every app prints the full documentation of all of them, including their default values and their dependencies on each other.
+The following only summarizes the general ideas; for the exact meaning of a setting, please refer to that output, which is included below for the three standalone apps.
+Settings that exist in more than one solver use the same names everywhere.
 Every setting has a long name, which is used below, and most of them additionally have a short one.
 
 #### Instances and Solutions
@@ -117,6 +121,7 @@ Whether these routes are used or optimized again is up to the respective solver 
 The timings of the timetable, however, are interpreted differently by the two problems.
 For VSS generation they are fixed, whereas for moving block routing they are lower bounds whose violation is minimized.
 An instance is identified by a working directory (`--working-directory`), a subdirectory (`--instance-subdirectory`), and its name (`--instance-name`), and is read from `working_directory/instances/instance_subdirectory/instance_name`.
+In `rail_cli`, the same three are the working directory of the session and the two arguments of `instance load`.
 Example instances can be found in `test/data/instances`.
 
 By default, the solution is only printed and not saved.
@@ -130,6 +135,113 @@ Hence, the instance _SimpleStation_ can be solved and exported by the following 
 ```commandline
 .\build\apps\rail_gen_po_moving_block_astar_testing --instance-name SimpleStation --instance-subdirectory atmos2023 --working-directory .\test\data --export-solution --solution-export-subdirectory my-solutions --generate-parameter-identifier
 ```
+
+#### Interactive Sessions
+
+`rail_cli` keeps one instance in memory for a whole session, so that it can be built or changed command by command and solved once it is in shape.
+
+```commandline
+.\build\apps\cli\rail_cli --working-directory .\test\data
+```
+
+A session looks as follows.
+
+```
+rail> instance load SimpleStation -s atmos2023
+Loaded instance SimpleStation using network SimpleStation
+rail (SimpleStation)> status
+Working directory: C:\...\mtct\test\data
+Instance:          SimpleStation (subdirectory atmos2023)
+Network:           SimpleStation (of the instance)
+rail (SimpleStation)> instance info
+Instance:             SimpleStation (subdirectory atmos2023)
+Network:              SimpleStation
+Trains:               3
+Stations:             1
+Routes:               3
+Station delay weight: 1
+rail (SimpleStation)> network info
+Network:   SimpleStation
+Vertices:  11 (2 NoBorder, 9 TTD)
+Edges:     22
+Breakable: 10
+rail (SimpleStation)> train weight tr1 2
+Weight of tr1: 2
+rail (SimpleStation)> status
+Working directory: C:\...\mtct\test\data
+Instance:          SimpleStation (subdirectory atmos2023)  [modified]
+Network:           SimpleStation (of the instance)
+rail (SimpleStation)> instance check
+Consistent (every train routed): yes
+Consistent (routes optional):    yes
+Obviously infeasible:            no
+```
+
+`status` says where the session is, `instance info` and `network info` what the two objects contain, and `instance list` and `network list` what else the working directory has to offer.
+`help` lists all commands, and every command explains its own settings with `--help`, for example `train add --help`.
+
+```
+status                                  network vertex add / change / list
+help                                    network edge add / add-bidirectional / change / list
+exit                                    network successor add / list
+working-directory [<path>]
+                                        station add / add-track / list
+instance new / load / list / info       train add / change / schedule / weight / list
+instance save / reload / close          train stop add / remove
+instance check
+instance station-delay-weight [<w>]     route add / clear / list
+
+network new / load / list / info        solve mb-mip
+network save / reload / close           solve mb-astar
+network rename <new-name>               solve vss-mip
+```
+
+Nothing is written before you ask for it.
+`instance save` writes the loaded instance, `network save` the network it uses, and `instance save --with-network` both at once.
+Keeping the two apart matters because several instances can share one network, so a network is never overwritten as a side effect of saving an instance.
+`status` marks what has been changed but not saved yet, and `instance reload` and `network reload` read the object back from disk, which is the quickest way out of a mistake.
+`exit` refuses to end a session with unsaved changes and says so; `exit --force` ends it anyway and discards them.
+
+`solve mb-mip`, `solve mb-astar`, and `solve vss-mip` run the solvers described in the following sections, with the settings documented there.
+They work on the instance the session holds, including edits that have not been saved, so no `--instance-name` is needed:
+
+```
+rail (SimpleStation)> solve mb-astar --dt 6 --export-solution --solution-export-subdirectory my-solutions
+```
+
+Finally, commands are also read from a file, which is useful to build an instance reproducibly and to keep a record of how it was built next to it:
+
+```commandline
+.\build\apps\cli\rail_cli --working-directory .\test\data --script .\build_stammstrecke.rail
+```
+
+Empty lines and lines starting with `#` are ignored, and `rail_cli < build_stammstrecke.rail` does the same.
+
+<details>
+<summary>An example script</summary>
+
+```
+# a single track between two stations, with one train running along it
+network new ExampleNetwork
+network vertex add west -t TTD
+network vertex add middle -t VSS
+network vertex add east -t TTD
+network edge add-bidirectional west middle -l 1000 -v 27.8
+network edge add-bidirectional middle east -l 1000 -v 27.8
+network successor add west middle middle east
+network save
+
+instance new ExampleInstance -s example --network ExampleNetwork
+station add East
+station add-track East middle east
+train add RB1 -l 100 -v 27.8 -a 0.5 -d 0.5 --entry-vertex west --entry-time 0 --exit-vertex east --exit-time 900
+train stop add RB1 East --service-time 300 --duration 60
+route add RB1 west middle east
+instance check
+instance save
+```
+
+</details>
 
 #### VSS Generation
 

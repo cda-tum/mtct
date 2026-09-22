@@ -768,6 +768,30 @@ public:
   };
 
   /**
+   * @brief Provides mutable access to the schedule of a train.
+   *
+   * @param trainIndex The index of the train.
+   * @return Schedule& A mutable reference to the train's schedule.
+   * @throws exceptions::TrainNotExistentException if the train does not exist.
+   */
+  [[nodiscard]] Schedule& editable_schedule(size_t const trainIndex) {
+    if (!m_train_list.has_train(trainIndex)) {
+      throw exceptions::TrainNotExistentException(trainIndex);
+    }
+    return m_schedules.at(trainIndex);
+  };
+  /**
+   * @brief Provides mutable access to the schedule of a train by name.
+   *
+   * @param train_name Name of the train.
+   * @return Schedule& A mutable reference to the train's schedule.
+   * @throws exceptions::TrainNotExistentException if the train does not exist.
+   */
+  [[nodiscard]] Schedule& editable_schedule(std::string const& train_name) {
+    return editable_schedule(m_train_list.get_train_index(train_name));
+  };
+
+  /**
    * @brief Retrieves available track segments for a train at a station.
    *
    * @param tr Train index.

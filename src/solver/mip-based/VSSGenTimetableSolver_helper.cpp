@@ -745,9 +745,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
 
 std::optional<cda_rail::instances::GeneralPerformanceOptimizationInstance>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
-    const cda_rail::solver::mip_based::ModelDetail&    model_detail,
-    const cda_rail::solver::mip_based::ModelSettings&  model_settings,
-    const cda_rail::solver::mip_based::SolverStrategy& solver_strategy,
+    const cda_rail::solver::mip_based::ModelDetailVSSGen& model_detail,
+    const cda_rail::solver::mip_based::ModelSettings&     model_settings,
+    const cda_rail::solver::mip_based::SolverStrategy&    solver_strategy,
     const cda_rail::solver::mip_based::SolutionSettingsVSSGen&
                          solution_settings,
     [[maybe_unused]] int time_limit, bool debug_input,

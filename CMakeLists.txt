@@ -121,6 +121,12 @@ endif()
 # add main library code
 add_subdirectory(src)
 
+# add the apps, including the interactive one. Its library is also linked into the test binary, so the apps are added
+# before the test code.
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  add_subdirectory(apps)
+endif()
+
 # add test code
 option(BUILD_TESTS "Also build tests for rail project")
 if(BUILD_TESTS)
@@ -128,8 +134,4 @@ if(BUILD_TESTS)
   include(cmake/PackageAddTest.cmake)
   include(GoogleTest)
   add_subdirectory(test)
-endif()
-
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-  add_subdirectory(apps)
 endif()

@@ -64,7 +64,7 @@ next_state_strategy_to_string(NextStateStrategy strategy) {
   }
 }
 
-struct ModelDetail {
+struct ModelDetailMBAStar {
   double dt                  = 6.0; // DB simulation default is 6 seconds
   bool   late_entry_possible = false;
   bool   limit_speed_by_leaving_edges = true;
@@ -171,7 +171,7 @@ public:
    * @return Solution to the general performance optimization problem.
    */
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
-  solve(const ModelDetail&             model_detail_input,
+  solve(const ModelDetailMBAStar&      model_detail_input,
         const SolverStrategyMBAStar&   solver_strategy_input,
         const GeneralSolutionSettings& solution_settings_input,
         int time_limit = -1, bool debug_input = false,
@@ -324,7 +324,7 @@ private:
   [[nodiscard]] static std::vector<simulator::SimulatorState>
   extend_train_orders_of_state(
       size_t tr, simulator::SimulatorState state,
-      const ModelDetail&                      model_detail_input,
+      const ModelDetailMBAStar&               model_detail_input,
       const SolverStrategyMBAStar&            solver_strategy_input,
       std::vector<cda_rail::index_set> const& ttd_sections,
       instances::GeneralPerformanceOptimizationInstance const* instance);
@@ -370,7 +370,7 @@ private:
   [[nodiscard]] static std::vector<simulator::SimulatorState>
   next_states(const simulator::SimulatorState&   simulator_state,
               const simulator::SimulatorResults& simulator_results,
-              const ModelDetail&                 model_detail_input,
+              const ModelDetailMBAStar&          model_detail_input,
               const SolverStrategyMBAStar&       solver_strategy_input,
               instances::GeneralPerformanceOptimizationInstance const* instance,
               std::vector<cda_rail::index_set> const& ttd_sections);

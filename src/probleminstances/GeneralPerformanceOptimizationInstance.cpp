@@ -197,6 +197,9 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
       working_directory, saveNetwork);
   // NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
   nlohmann::json j;
+  // Initialized explicitly, so that the key also exists for an instance
+  // without trains, which the import expects to find.
+  j["train_weights"] = nlohmann::json::object();
   for (size_t i = 0; i < m_train_weights.size(); ++i) {
     j["train_weights"][this->get_const_train_list().get_train(i).get_name()] =
         m_train_weights.at(i);

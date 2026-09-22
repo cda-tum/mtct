@@ -26,7 +26,7 @@
 // NOLINTBEGIN (cppcoreguidelines-pro-type-reinterpret-cast)
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
-    const cda_rail::solver::astar_based::ModelDetail& model_detail_input,
+    const cda_rail::solver::astar_based::ModelDetailMBAStar& model_detail_input,
     const cda_rail::solver::astar_based::SolverStrategyMBAStar&
                                                      solver_strategy_input,
     const cda_rail::solver::GeneralSolutionSettings& solution_settings_input,
@@ -721,7 +721,7 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
 std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
     GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
         size_t tr, simulator::SimulatorState state,
-        const ModelDetail&                      model_detail_input,
+        const ModelDetailMBAStar&               model_detail_input,
         const SolverStrategyMBAStar&            solver_strategy_input,
         std::vector<cda_rail::index_set> const& ttd_sections,
         instances::GeneralPerformanceOptimizationInstance const* instance) {
@@ -869,7 +869,7 @@ std::vector<cda_rail::simulator::SimulatorState>
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::next_states(
     const simulator::SimulatorState&   simulator_state,
     const simulator::SimulatorResults& simulator_results,
-    const ModelDetail&                 model_detail_input,
+    const ModelDetailMBAStar&          model_detail_input,
     const SolverStrategyMBAStar&       solver_strategy_input,
     instances::GeneralPerformanceOptimizationInstance const* instance,
     std::vector<cda_rail::index_set> const&                  ttd_sections) {

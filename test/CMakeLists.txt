@@ -10,7 +10,7 @@ endif()
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 package_add_test(
   ${PROJECT_NAME}_test
-  ${PROJECT_NAME}
+  "${PROJECT_NAME};${PROJECT_NAME}_cli_lib"
   ${CMAKE_CURRENT_SOURCE_DIR}/TestingWarning.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_custom_exceptions.cpp
@@ -31,4 +31,26 @@ package_add_test(
   ${CMAKE_CURRENT_SOURCE_DIR}/test_gurobi_vss_gen_using_mb_information.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_greedysimulator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_greedyheuristic.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test_mb_astar.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_mb_astar.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_cli.cpp)
+
+# Cheap smoke tests for the command line apps: printing the help text exercises every option definition, including the
+# dependencies between them, and calling a solver app without arguments has to fail because of the required instance
+# options.
+foreach(app_name gen_po_moving_block_astar_testing gen_po_moving_block_mip_testing vss_generation_timetable_mip_testing
+                 cli)
+  add_test(NAME ${app_name}_help COMMAND ${PROJECT_NAME}_${app_name} --help)
+endforeach()
+foreach(app_name gen_po_moving_block_astar_testing gen_po_moving_block_mip_testing vss_generation_timetable_mip_testing)
+  add_test(NAME ${app_name}_requires_instance COMMAND ${PROJECT_NAME}_${app_name})
+  set_tests_properties(${app_name}_requires_instance PROPERTIES WILL_FAIL TRUE)
+endforeach()
+
+# The interactive app reads commands until it is told to stop, so it has to be checked that it actually does stop. The
+# command behind the 'exit' would be echoed before it is run, so its name appearing in the output means the session
+# continued; that check does not depend on what the test runner does with standard input. The timeout turns a session
+# that never ends into a failing test rather than a run that never finishes.
+set(CLI_EXIT_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/cli-exit.rail")
+file(WRITE "${CLI_EXIT_SCRIPT}" "status\nexit\nnetwork new ReachedAfterExit\n")
+add_test(NAME cli_exits COMMAND ${PROJECT_NAME}_cli --script "${CLI_EXIT_SCRIPT}")
+set_tests_properties(cli_exits PROPERTIES TIMEOUT 60 FAIL_REGULAR_EXPRESSION "ReachedAfterExit")

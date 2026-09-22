@@ -340,6 +340,23 @@ public:
   };
 
   /**
+   * @brief Gets the schedule of a train by its index for editing.
+   *
+   * @return Schedule& A reference to the editable schedule of the train.
+   */
+  Schedule& editable_schedule(size_t const index) {
+    return m_timetable.editable_schedule(index);
+  }
+  /**
+   * @brief Retrieves mutable access to the schedule of a train by name.
+   *
+   * @return Schedule& Mutable reference to the schedule of the named train.
+   */
+  Schedule& editable_schedule(const std::string& name) {
+    return m_timetable.editable_schedule(name);
+  };
+
+  /**
    * @brief Provides the list of all stations.
    * @return Const reference to the StationList.
    */

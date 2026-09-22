@@ -65,7 +65,7 @@ constexpr double DEFAULT_MAX_DELAY = 24 * 60 * 60; // one day
 constexpr double MIN_INT_FEAS_TOL     = 1e-9;
 constexpr double DEFAULT_INT_FEAS_TOL = 1e-5;
 
-struct ModelDetail {
+struct ModelDetailMovingBlock {
   bool                       fix_routes         = false;
   double                     max_velocity_delta = 5.55; // 20 km/h
   VelocityRefinementStrategy velocity_refinement_strategy =
@@ -147,7 +147,7 @@ private:
 #endif
 
   SolutionSettingsMovingBlock m_solution_settings = {};
-  ModelDetail                 m_model_detail      = {};
+  ModelDetailMovingBlock      m_model_detail      = {};
   SolverStrategyMovingBlock   m_solver_strategy   = {};
   size_t                      m_num_tr            = 0;
   size_t                      m_num_edges         = 0;
@@ -164,23 +164,24 @@ private:
   std::vector<std::vector<std::vector<double>>> m_velocity_extensions;
   std::vector<std::pair<size_t, size_t>>        m_relevant_reverse_edges;
   // Earliest time at which the front of a train can arrive at a vertex, by
-  // train and vertex. All zero if ModelDetail::use_minimum_time_bounds is not
-  // set.
+  // train and vertex. All zero if
+  // ModelDetailMovingBlock::use_minimum_time_bounds is not set.
   std::vector<std::vector<double>> m_minimum_arrival_times;
   // Time the rear of a train needs to reach a vertex after its front, by
-  // train. All zero if ModelDetail::use_minimum_time_bounds is not set.
+  // train. All zero if ModelDetailMovingBlock::use_minimum_time_bounds is not
+  // set.
   std::vector<double> m_minimum_clearing_times;
   // Earliest time at which the rear of a train can leave its exit vertex, by
   // train. At least the scheduled exit time.
   std::vector<double> m_minimum_exit_times;
   // Earliest service delay of a scheduled stop, by train and stop. All zero if
-  // ModelDetail::use_minimum_time_bounds is not set.
+  // ModelDetailMovingBlock::use_minimum_time_bounds is not set.
   std::vector<std::vector<double>> m_minimum_service_delays;
 
   void initialize_variables(
       const SolutionSettingsMovingBlock& solution_settings_input,
       const SolverStrategyMovingBlock&   solver_strategy_input,
-      const ModelDetail&                 model_detail_input);
+      const ModelDetailMovingBlock&      model_detail_input);
 
   double               latest_exit_time(size_t tr) const;
   [[nodiscard]] double minimum_arrival_time(size_t tr, size_t v) const {
@@ -314,7 +315,7 @@ public:
   };
 
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
-  solve(const ModelDetail&                 model_detail_input,
+  solve(const ModelDetailMovingBlock&      model_detail_input,
         const SolverStrategyMovingBlock&   solver_strategy_input,
         const SolutionSettingsMovingBlock& solution_settings_input,
         int time_limit = -1, bool debug_input = false,

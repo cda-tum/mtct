@@ -57,7 +57,7 @@ struct SolverStrategy {
   bool           include_cuts    = true;
 };
 
-struct ModelDetail {
+struct ModelDetailVSSGen {
   double delta_t        = 15;
   bool   fix_routes     = true;
   bool   train_dynamics = true;
@@ -293,7 +293,7 @@ private:
   void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss,
                               GRBLinExpr& cut_expr);
   [[nodiscard]] std::optional<instances::GeneralPerformanceOptimizationInstance>
-  initialize_variables(const ModelDetail&            model_detail,
+  initialize_variables(const ModelDetailVSSGen&      model_detail,
                        const ModelSettings&          model_settings,
                        const SolverStrategy&         solver_strategy,
                        const SolutionSettingsVSSGen& solution_settings,
@@ -319,11 +319,13 @@ public:
       : GeneralMIPSolver(std::forward<Args>(args)...) {}
 
   // Methods
-  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance solve(
-      const ModelDetail& model_detail, const ModelSettings& model_settings = {},
-      const SolverStrategy&         solver_strategy   = {},
-      const SolutionSettingsVSSGen& solution_settings = {}, int time_limit = -1,
-      bool debug_input = false, bool overwrite_severity = true);
+  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
+  solve(const ModelDetailVSSGen&      model_detail,
+        const ModelSettings&          model_settings    = {},
+        const SolverStrategy&         solver_strategy   = {},
+        const SolutionSettingsVSSGen& solution_settings = {},
+        int time_limit = -1, bool debug_input = false,
+        bool overwrite_severity = true);
 
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
