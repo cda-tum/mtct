@@ -11,6 +11,7 @@
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Log.h>
+#include <plog/Logger.h>
 #include <string>
 #include <vector>
 

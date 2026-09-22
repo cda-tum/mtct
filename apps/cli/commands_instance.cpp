@@ -46,8 +46,8 @@ void list_instances(const cda_rail::cli::Session& session) {
   }
 }
 
-void warn_about_discarded(bool const had_unsaved_changes) {
-  if (had_unsaved_changes) {
+void warn_about_discarded(bool const hadUnsavedChanges) {
+  if (hadUnsavedChanges) {
     std::cout << "Warning: unsaved changes were discarded.\n";
   }
 }

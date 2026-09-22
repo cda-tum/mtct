@@ -10,11 +10,15 @@
 #include "options_mb_mip.hpp"
 #include "options_vss_mip.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "simulator/GreedyHeuristic.hpp"
+#include "solver/GeneralSolver.hpp"
+#include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
+#include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
+#include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
 #include <filesystem>
 #include <iostream>
-#include <istream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -56,8 +60,8 @@ void run_all(cda_rail::cli::Session&         session,
 /** @brief Runs one line and returns what it printed. */
 std::string run_capturing(cda_rail::cli::Session& session,
                           const std::string&      line) {
-  std::ostringstream output;
-  auto* const        previous = std::cout.rdbuf(output.rdbuf());
+  const std::ostringstream output;
+  auto* const              previous = std::cout.rdbuf(output.rdbuf());
   run(session, line);
   std::cout.rdbuf(previous);
   return output.str();
@@ -70,10 +74,10 @@ std::string run_capturing(cda_rail::cli::Session& session,
  *         input.
  */
 bool run_script(cda_rail::cli::Session& session, const std::string& script) {
-  std::istringstream input{script};
-  std::ostringstream output;
-  auto* const        previous = std::cout.rdbuf(output.rdbuf());
-  const bool         keep_going =
+  std::istringstream       input{script};
+  const std::ostringstream output;
+  auto* const              previous = std::cout.rdbuf(output.rdbuf());
+  const bool               keep_going =
       cda_rail::cli::run_stream(input, session, false, false);
   std::cout.rdbuf(previous);
   return keep_going;

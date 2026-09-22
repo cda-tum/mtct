@@ -13,10 +13,8 @@
 #include <string>
 
 namespace {
-using cda_rail::cli::edge_input;
 using cda_rail::cli::format_double;
 using cda_rail::cli::Session;
-using cda_rail::cli::vertex_input;
 
 void list_networks(const Session& session) {
   const auto networks_directory = session.working_directory() / "networks";

@@ -21,19 +21,20 @@ using cda_rail::simulator::RemainingTimeHeuristicType;
 using cda_rail::solver::astar_based::NextStateStrategy;
 
 const std::map<std::string, NextStateStrategy>& next_state_strategy_map() {
-  static const std::map<std::string, NextStateStrategy> map{
+  static const std::map<std::string, NextStateStrategy> NEXT_STATE_STRATEGY_MAP{
       {"SingleEdge", NextStateStrategy::SingleEdge},
       {"NextTTD", NextStateStrategy::NextTTD},
       {"NextRelevantTTD", NextStateStrategy::NextRelevantTTD}};
-  return map;
+  return NEXT_STATE_STRATEGY_MAP;
 }
 
 const std::map<std::string, RemainingTimeHeuristicType>&
 remaining_time_heuristic_type_map() {
-  static const std::map<std::string, RemainingTimeHeuristicType> map{
-      {"Zero", RemainingTimeHeuristicType::Zero},
-      {"Simple", RemainingTimeHeuristicType::Simple}};
-  return map;
+  static const std::map<std::string, RemainingTimeHeuristicType>
+      REMAINING_TIME_HEURISTIC_TYPE_MAP{
+          {"Zero", RemainingTimeHeuristicType::Zero},
+          {"Simple", RemainingTimeHeuristicType::Simple}};
+  return REMAINING_TIME_HEURISTIC_TYPE_MAP;
 }
 } // namespace
 

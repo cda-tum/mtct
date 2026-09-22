@@ -10,12 +10,12 @@
 
 const std::map<std::string, cda_rail::VertexType>&
 cda_rail::cli::vertex_type_map() {
-  static const std::map<std::string, VertexType> map{
+  static const std::map<std::string, VertexType> VERTEX_TYPE_MAP{
       {"NoBorder", VertexType::NoBorder},
       {"VSS", VertexType::VSS},
       {"TTD", VertexType::TTD},
       {"NoBorderVSS", VertexType::NoBorderVSS}};
-  return map;
+  return VERTEX_TYPE_MAP;
 }
 
 std::string cda_rail::cli::vertex_type_to_string(VertexType const type) {

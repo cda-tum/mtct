@@ -10,7 +10,6 @@
 #include <vector>
 
 namespace {
-using cda_rail::cli::edge_input;
 using cda_rail::cli::Session;
 
 void list_routes(const Session& session) {

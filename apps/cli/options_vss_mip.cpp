@@ -35,38 +35,41 @@ namespace {
 using cda_rail::cli::SeparationFunctionType;
 
 const std::map<std::string, cda_rail::vss::ModelType>& vss_model_type_map() {
-  static const std::map<std::string, cda_rail::vss::ModelType> map{
-      {"Discrete", cda_rail::vss::ModelType::Discrete},
-      {"Continuous", cda_rail::vss::ModelType::Continuous},
-      {"Inferred", cda_rail::vss::ModelType::Inferred},
-      {"InferredAlt", cda_rail::vss::ModelType::InferredAlt}};
-  return map;
+  static const std::map<std::string, cda_rail::vss::ModelType>
+      VSS_MODEL_TYPE_MAP{
+          {"Discrete", cda_rail::vss::ModelType::Discrete},
+          {"Continuous", cda_rail::vss::ModelType::Continuous},
+          {"Inferred", cda_rail::vss::ModelType::Inferred},
+          {"InferredAlt", cda_rail::vss::ModelType::InferredAlt}};
+  return VSS_MODEL_TYPE_MAP;
 }
 
 const std::map<std::string, SeparationFunctionType>& separation_function_map() {
-  static const std::map<std::string, SeparationFunctionType> map{
-      {"Uniform", SeparationFunctionType::Uniform},
-      {"Chebyshev", SeparationFunctionType::Chebyshev}};
-  return map;
+  static const std::map<std::string, SeparationFunctionType>
+      SEPARATION_FUNCTION_MAP{{"Uniform", SeparationFunctionType::Uniform},
+                              {"Chebyshev", SeparationFunctionType::Chebyshev}};
+  return SEPARATION_FUNCTION_MAP;
 }
 
 const std::map<std::string, cda_rail::OptimalityStrategy>&
 optimality_strategy_map() {
-  static const std::map<std::string, cda_rail::OptimalityStrategy> map{
-      {"Optimal", cda_rail::OptimalityStrategy::Optimal},
-      {"TradeOff", cda_rail::OptimalityStrategy::TradeOff},
-      {"Feasible", cda_rail::OptimalityStrategy::Feasible}};
-  return map;
+  static const std::map<std::string, cda_rail::OptimalityStrategy>
+      OPTIMALITY_STRATEGY_MAP{
+          {"Optimal", cda_rail::OptimalityStrategy::Optimal},
+          {"TradeOff", cda_rail::OptimalityStrategy::TradeOff},
+          {"Feasible", cda_rail::OptimalityStrategy::Feasible}};
+  return OPTIMALITY_STRATEGY_MAP;
 }
 
 const std::map<std::string, cda_rail::solver::mip_based::UpdateStrategyVSSGen>&
 update_strategy_map() {
   static const std::map<std::string,
                         cda_rail::solver::mip_based::UpdateStrategyVSSGen>
-      map{{"Fixed", cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed},
+      UPDATE_STRATEGY_MAP{
+          {"Fixed", cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed},
           {"Relative",
            cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative}};
-  return map;
+  return UPDATE_STRATEGY_MAP;
 }
 } // namespace
 

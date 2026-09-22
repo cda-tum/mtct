@@ -4,6 +4,7 @@
 #include "Definitions.hpp"
 #include "options_common.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
+#include "solver/mip-based/GeneralMIPSolver.hpp"
 
 #include <string>
 

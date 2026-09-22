@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace cda_rail::cli {
 
@@ -83,10 +84,10 @@ public:
   /**
    * @brief Writes the instance and returns the directory it was written to.
    *
-   * The network is only written if @p with_network is set; an instance save
+   * The network is only written if @p withNetwork is set; an instance save
    * otherwise leaves the network on disk untouched, even if it was edited.
    */
-  std::filesystem::path save_instance(bool with_network);
+  std::filesystem::path save_instance(bool withNetwork);
 
   // ---------------------------------------------------------------- network
 

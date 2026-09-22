@@ -31,27 +31,30 @@ using cda_rail::solver::mip_based::LazyTrainSelectionStrategy;
 
 const std::map<std::string, cda_rail::VelocityRefinementStrategy>&
 velocity_refinement_strategy_map() {
-  static const std::map<std::string, cda_rail::VelocityRefinementStrategy> map{
-      {"None", cda_rail::VelocityRefinementStrategy::None},
-      {"MinOneStep", cda_rail::VelocityRefinementStrategy::MinOneStep}};
-  return map;
+  static const std::map<std::string, cda_rail::VelocityRefinementStrategy>
+      VELOCITY_REFINEMENT_STRATEGY_MAP{
+          {"None", cda_rail::VelocityRefinementStrategy::None},
+          {"MinOneStep", cda_rail::VelocityRefinementStrategy::MinOneStep}};
+  return VELOCITY_REFINEMENT_STRATEGY_MAP;
 }
 
 const std::map<std::string, LazyConstraintSelectionStrategy>&
 lazy_constraint_selection_strategy_map() {
-  static const std::map<std::string, LazyConstraintSelectionStrategy> map{
-      {"OnlyViolated", LazyConstraintSelectionStrategy::OnlyViolated},
-      {"OnlyFirstFound", LazyConstraintSelectionStrategy::OnlyFirstFound},
-      {"AllChecked", LazyConstraintSelectionStrategy::AllChecked}};
-  return map;
+  static const std::map<std::string, LazyConstraintSelectionStrategy>
+      LAZY_CONSTRAINT_SELECTION_STRATEGY_MAP{
+          {"OnlyViolated", LazyConstraintSelectionStrategy::OnlyViolated},
+          {"OnlyFirstFound", LazyConstraintSelectionStrategy::OnlyFirstFound},
+          {"AllChecked", LazyConstraintSelectionStrategy::AllChecked}};
+  return LAZY_CONSTRAINT_SELECTION_STRATEGY_MAP;
 }
 
 const std::map<std::string, LazyTrainSelectionStrategy>&
 lazy_train_selection_strategy_map() {
-  static const std::map<std::string, LazyTrainSelectionStrategy> map{
-      {"OnlyAdjacent", LazyTrainSelectionStrategy::OnlyAdjacent},
-      {"All", LazyTrainSelectionStrategy::All}};
-  return map;
+  static const std::map<std::string, LazyTrainSelectionStrategy>
+      LAZY_TRAIN_SELECTION_STRATEGY_MAP{
+          {"OnlyAdjacent", LazyTrainSelectionStrategy::OnlyAdjacent},
+          {"All", LazyTrainSelectionStrategy::All}};
+  return LAZY_TRAIN_SELECTION_STRATEGY_MAP;
 }
 } // namespace
 

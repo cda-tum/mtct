@@ -9,10 +9,8 @@
 #include <string>
 
 namespace {
-using cda_rail::cli::edge_input;
 using cda_rail::cli::format_double;
 using cda_rail::cli::Session;
-using cda_rail::cli::vertex_input;
 
 void list_stations(const Session& session) {
   const auto& instance = session.const_instance();
