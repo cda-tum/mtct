@@ -1,6 +1,8 @@
 ignore:
   - "extern/**/*"
-  - "apps/*"
+  - "apps/gen_po_moving_block_astar_testing.cpp"
+  - "apps/gen_po_moving_block_mip_testing.cpp"
+  - "apps/vss_generation_timetable_mip_testing.cpp"
   - "test/**/*"
   - "test/*"
 
