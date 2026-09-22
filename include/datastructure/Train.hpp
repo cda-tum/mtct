@@ -10,18 +10,18 @@
 #include <vector>
 
 namespace cda_rail {
+/**
+ * @brief Properties and characteristics of a train.
+ *
+ * Stores the name, length, maximum speed, and acceleration/deceleration
+ * capabilities, as well as train integrity monitoring status.
+ *
+ * @invariant m_length >= 0 (non-negative).
+ * @invariant m_max_speed >= MIN_NON_ZERO (strictly positive).
+ * @invariant m_acceleration >= MIN_NON_ZERO (strictly positive).
+ * @invariant m_deceleration >= MIN_NON_ZERO (strictly positive).
+ */
 class Train {
-  /**
-   * @brief Properties and characteristics of a train.
-   *
-   * Stores the name, length, maximum speed, and acceleration/deceleration
-   * capabilities, as well as train integrity monitoring status.
-   *
-   * @invariant m_length >= 0 (non-negative).
-   * @invariant m_max_speed >= MIN_NON_ZERO (strictly positive).
-   * @invariant m_acceleration >= MIN_NON_ZERO (strictly positive).
-   * @invariant m_deceleration >= MIN_NON_ZERO (strictly positive).
-   */
 private:
   std::string m_name;         // name of train
   double      m_length;       // length of train in m: >= 0
@@ -184,18 +184,18 @@ public:
   void set_no_tim() { set_tim_value(false); };
 };
 
+/**
+ * @brief Container for trains with name-based indexing.
+ *
+ * Maintains a sequence of trains and a lookup map from train name to index.
+ *
+ * @invariant `train_name_to_index` contains exactly one entry per train in
+ * `trains`.
+ * @invariant For every train name `n`, `train_name_to_index.at(n)` is the
+ * index of that train in `trains`.
+ * @invariant All train names in `trains` are unique.
+ */
 class TrainList {
-  /**
-   * @brief Container for trains with name-based indexing.
-   *
-   * Maintains a sequence of trains and a lookup map from train name to index.
-   *
-   * @invariant `train_name_to_index` contains exactly one entry per train in
-   * `trains`.
-   * @invariant For every train name `n`, `train_name_to_index.at(n)` is the
-   * index of that train in `trains`.
-   * @invariant All train names in `trains` are unique.
-   */
 private:
   std::vector<Train> trains{}; // list of trains
   std::unordered_map<std::string, size_t>

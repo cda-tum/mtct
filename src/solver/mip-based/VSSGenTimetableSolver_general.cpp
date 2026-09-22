@@ -29,76 +29,11 @@ using std::size_t;
 
 cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance
 cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
-    const ModelDetail& model_detail, const ModelSettings& model_settings,
-    const SolverStrategy&         solver_strategy,
+    const ModelDetailVSSGen&      model_detail,
+    const ModelSettingsVSSGen&    model_settings,
+    const SolverStrategyVSSGen&   solver_strategy,
     const SolutionSettingsVSSGen& solution_settings, int time_limit,
     bool debug_input, bool overwrite_severity) {
-  /**
-   * Solves initiated GeneralPerformanceOptimizationInstance m_instance using
-   * Gurobi and a flexible MILP formulation. The level of detail can be
-   * controlled using the parameters.
-   *
-   * @param model_detail: Contains information on the m_model detail, namely
-   * - delta_t: Length of discretized time intervals in seconds. Default: 15
-   * - fix_routes: If true, the routes are fixed to the ones given in the
-   * - train_dynamic: If true, the train dynamics (i.e., limited acceleration
-   * and deceleration) are included in the m_model. Default: true
-   * - braking_curves: If true, the braking curves (i.e., the braking distance
-   * depending on the current speed has to be cleared) are included in the
-   * m_model. Default: true
-   *
-   * @param model_settings: Contains information on the m_model settings, namely
-   * - model_type: Denotes, how the VSS borders are modelled in the solution
-   * process. Default uses VSSModel::Continuous
-   * - use_pwl: If true, the braking distances are approximated by piecewise
-   * linear functions with a fixed maximal error. Otherwise, they are modeled as
-   * quadratic functions and Gurobi's ability to solve these using spatial
-   * branching is used. Only relevant if include_braking_curves_input is true.
-   * Default: false
-   * - use_schedule_cuts: If true, the formulation is strengthened using cuts
-   * implied by the schedule. Default: true
-   *
-   * @param solver_strategy: Specify information on the algorithm's strategy to
-   * use, namely
-   * - iterative_approach: If true, the VSS is iterated to optimality. Default:
-   * false
-   * - optimality_strategy: Specify the optimality strategy to use. Default:
-   * Optimal
-   * - update_strategy: Specify the update strategy to use. Only relevant if
-   * iterative approach is used. Default: Fixed
-   * - initial_value: Specify the initial value or fraction to use. Only
-   * relevant if iterative approach is used. In case of fixed update, the value
-   * has to be an integer. Otherwise between 0 and 1. Default: 1
-   * - update_value: Specify the update value or fraction to use. Only relevant
-   * if iterative approach is used. In case of fixed update, the value has to be
-   * greater than 1, otherwise between 0 and 1. Default: 2
-   *
-   * @param solution_settings: Specify information on the solution, namely
-   * - export_option: Denotes if the solution (and the instance) is exported.
-   * Default: NoExport
-   * - working_directory: Working directory the solution is exported to.
-   * Default: "", i.e., the current working directory
-   * - solution_subdirectory: Subdirectory of working_directory/solutions the
-   * solution is exported to. Default: "unnamed-experiment"
-   * - parameter_identifier: Optional identifier appended to the instance name
-   * within the export path. Default: none
-   * - export_lp_model: If true, the Gurobi m_model itself is exported into the
-   * very same directory as the solution. Default: false
-   * - model_name: Name of the file (without extension) to which the m_model is
-   * exported. Default: "model"
-   * - postprocess: If true, the solution is postprocessed to remove potentially
-   * unused VSS. Default: false
-   *
-   * @param time_limit: Time limit in seconds. No limit if negative. Default: -1
-   *
-   * @param debug: If true, (more detailed) debug output is printed. Default:
-   * false
-   * @param overwrite_severity: If true, the severity of the log is overwritten
-   * even if this decreases the logging level. Default: true
-   *
-   * @return Solution object containing status, objective value, and solution
-   */
-
   auto old_instance = initialize_variables(
       model_detail, model_settings, solver_strategy, solution_settings,
       time_limit, debug_input, overwrite_severity);
@@ -127,10 +62,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_general_variables() {
-  /**
-   * Creates general variables that are independent of the fixed route
-   */
-
   m_vars["v"] = MultiArray<GRBVar>(num_tr, num_t + 1);
   m_vars["x"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
   m_vars["x_sec"] =
@@ -194,10 +125,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_discretized_variables() {
-  /**
-   * Creates variables connected to the VSS decisions of the problem
-   */
-
   m_vars["b"] = MultiArray<GRBVar>(no_border_vss_vertices.size());
 
   for (size_t i = 0; i < no_border_vss_vertices.size(); ++i) {
@@ -210,10 +137,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_variables() {
-  /**
-   * This method creates the variables needed if the graph is not discretized.
-   */
-
   size_t max_vss = 0;
   for (const auto& e : breakable_edges) {
     max_vss = std::max(
@@ -418,10 +341,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 }
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
-  /**
-   * Sets the objective function of the problem
-   */
-
   PLOGD << "Set objective";
 
   // sum over all b_i as in no_border_vss_vertices
@@ -465,11 +384,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_objective() {
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_discretized_constraints() {
-  /**
-   * Creates VSS constraints, i.e., on NoBorderVSS sections two trains must be
-   * separated by a chosen vertex.
-   */
-
   for (const auto& no_border_vss_section : no_border_vss_sections) {
     const auto section_set = cda_rail::index_set(no_border_vss_section.begin(),
                                                  no_border_vss_section.end());
@@ -604,11 +518,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_unbreakable_sections_constraints() {
-  /**
-   * Creates constraints for unbreakable sections, i.e., only one train can be
-   * on an unbreakable section at a time.
-   */
-
   for (size_t sec_index = 0; sec_index < unbreakable_sections.size();
        ++sec_index) {
     const auto&               sec = unbreakable_sections[sec_index];
@@ -656,12 +565,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_general_schedule_constraints() {
-  /**
-   * Creates constraints for general stations, i.e., if a train is in a station:
-   * - all other x variables are 0
-   * - the speed is 0
-   */
-
   const auto& train_list = m_instance.get_const_train_list();
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     const auto  tr_name     = train_list.get_train(tr).get_name();
@@ -707,11 +610,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_acceleration_constraints() {
-  /**
-   * This method adds constraints connected to acceleration and deceleration of
-   * the trains.
-   */
-
   const auto& train_list = m_instance.get_const_train_list();
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     // Iterate over all time steps
@@ -734,10 +632,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_brakelen_variables() {
-  /**
-   * This method creates the variables corresponding to breaking distances.
-   */
-
   m_vars["brakelen"] = MultiArray<GRBVar>(num_tr, num_t);
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto  max_break_len = get_max_brakelen(tr);
@@ -755,10 +649,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_general_constraints() {
-  /**
-   * These constraints appear in all variants
-   */
-
   create_general_schedule_constraints();
   create_unbreakable_sections_constraints();
   create_general_speed_constraints();
@@ -787,10 +677,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_constraints() {
-  /**
-   * These constraints appear only when the graph is not discretized
-   */
-
   create_non_discretized_general_constraints();
   create_non_discretized_position_constraints();
   if (this->fix_routes) {
@@ -810,10 +696,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_general_constraints() {
-  /**
-   * These constraints appear only when the graph is not discretized, but are
-   * general enough to appear in all m_model variants.
-   */
   // VSS can only be used if it is non-zero
   if (vss_model.get_model_type() == vss::ModelType::Continuous) {
     for (size_t i = 0; i < relevant_edges.size(); ++i) {
@@ -876,10 +758,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_position_constraints() {
-  /**
-   * Creates the position constraints related to non-discretized VSS blocks
-   */
-
   // Border only usable by a train if it is on the edge
   for (size_t e_index = 0; e_index < breakable_edges.size(); ++e_index) {
     const auto& e = breakable_edges[e_index];
@@ -1283,9 +1161,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_brakelen_constraints() {
-  /**
-   * Creates the constraints related to braking distances.
-   */
   // break_len(tr, t) = v(tr, t+1)^2 / (2*tr_deceleration)
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_deceleration =
@@ -1325,10 +1200,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_general_speed_constraints() {
-  /**
-   * Train does not exceed maximum speed on edges
-   */
-
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_speed =
         m_instance.get_const_train_list().get_train(tr).get_max_speed();
@@ -1364,12 +1235,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_reverse_occupation_constraints() {
-  /**
-   * A breakable section can only be occupied in one direction at a time. This
-   * prevents trains from blocking each other, since reversing trains is not
-   * modelled.
-   */
-
   // Connect y_sec and x
   for (size_t t = 0; t < num_t; ++t) {
     const auto tr_at_t = m_instance.trains_at_t(static_cast<double>(t) * dt);
@@ -1427,10 +1292,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     calculate_fwd_bwd_sections() {
-  /**
-   * Calculate the forward and backward sections for each breakable section
-   */
-
   if (this->vss_model.get_model_type() == vss::ModelType::Discrete) {
     calculate_fwd_bwd_sections_discretized();
   } else {
@@ -1440,9 +1301,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     calculate_fwd_bwd_sections_discretized() {
-  /**
-   * For every section, cluster forward and backward edges.
-   */
   for (const auto& vss_section : no_border_vss_sections) {
     const auto vss_section_sorted =
         m_instance.get_editable_network().combine_reverse_edges(vss_section,
@@ -1475,9 +1333,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     calculate_fwd_bwd_sections_non_discretized() {
-  /**
-   * For every section, cluster forward and backward edges.
-   */
   for (const auto& edge_pair : breakable_edges_pairs) {
     if (!edge_pair.first.has_value() || !edge_pair.second.has_value()) {
       continue;
@@ -1490,9 +1345,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 double cda_rail::solver::mip_based::VSSGenTimetableSolver::get_max_brakelen(
     const size_t& tr) const {
-  /**
-   * Returns the maximum braking distance of a train.
-   */
   const auto& tr_deceleration =
       m_instance.get_const_train_list().get_train(tr).get_deceleration();
   const auto& tr_max_speed =
@@ -1502,9 +1354,6 @@ double cda_rail::solver::mip_based::VSSGenTimetableSolver::get_max_brakelen(
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_general_boundary_constraints() {
-  /**
-   * General boundary conditions, i.e., speed
-   */
   auto train_list = m_instance.get_const_train_list();
   for (size_t i = 0; i < num_tr; ++i) {
     auto tr_name = train_list.get_train(i).get_name();

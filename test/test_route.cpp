@@ -86,6 +86,8 @@ struct RouteTestNetwork {
   size_t            e_alt{};
 };
 
+// A path v0 -> v1 -> v2 -> v3 of edges e0, e1, e2, plus the edge e_alt from
+// v0 directly to v2, which is not a successor of anything.
 RouteTestNetwork make_route_test_network() {
   cda_rail::Network network;
   network.add_vertex("v0", cda_rail::VertexType::NoBorder);

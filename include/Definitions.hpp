@@ -25,12 +25,23 @@ constexpr double MIN_OCCUPIED_LENGTH      = 1;
 
 // TODO: Sensible to move any of these
 
+/**
+ * @brief Which kind of block border a vertex is.
+ *
+ * - `NoBorder`: no border at all, the incident edges belong to the same
+ *   unbreakable (TTD) section.
+ * - `VSS`: border of a virtual subsection.
+ * - `TTD`: border of a train detection section.
+ * - `NoBorderVSS`: no border in the given network, but a possible position of
+ *   a VSS border, which is where `discretize` splits an edge.
+ */
 enum class VertexType : std::uint8_t {
   NoBorder    = 0,
   VSS         = 1,
   TTD         = 2,
   NoBorderVSS = 3
 };
+/** @brief What a solver was able to say about the instance it was given. */
 enum class SolutionStatus : std::uint8_t {
   Optimal    = 0,
   Feasible   = 1,
@@ -38,11 +49,25 @@ enum class SolutionStatus : std::uint8_t {
   Timeout    = 3,
   Unknown    = 4
 };
+/**
+ * @brief How hard a solver tries to prove optimality.
+ *
+ * `Optimal` solves to optimality, `TradeOff` stops at the first solution
+ * found, and `Feasible` additionally asks the solver itself to focus on
+ * finding one.
+ */
 enum class OptimalityStrategy : std::uint8_t {
   Optimal  = 0,
   TradeOff = 1,
   Feasible = 2
 };
+/**
+ * @brief How the discrete velocities of a vertex are chosen.
+ *
+ * `None` uses an equidistant grid of the desired accuracy. `MinOneStep`
+ * refines it further where needed, so that two consecutive velocities can be
+ * reached from one another on the shortest neighboring edge.
+ */
 enum class VelocityRefinementStrategy : std::uint8_t {
   None       = 0,
   MinOneStep = 1

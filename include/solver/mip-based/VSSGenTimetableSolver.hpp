@@ -19,19 +19,27 @@
 namespace cda_rail::solver::mip_based {
 using std::size_t;
 
-enum class UpdateStrategy : std::uint8_t { Fixed = 0, Relative = 1 };
+/**
+ * @brief How the iterative approach increases the number of VSS per edge.
+ *
+ * `Fixed` works with absolute numbers of VSS, whereas `Relative` works with
+ * fractions of the number that is theoretically possible on an edge.
+ */
+enum class UpdateStrategyVSSGen : std::uint8_t { Fixed = 0, Relative = 1 };
 
-constexpr std::string update_strategy_to_string(UpdateStrategy strategy) {
+/** @brief The name of @p strategy, as it is reported and parsed. */
+constexpr std::string update_strategy_to_string(UpdateStrategyVSSGen strategy) {
   switch (strategy) {
-  case UpdateStrategy::Fixed:
+  case UpdateStrategyVSSGen::Fixed:
     return "Fixed";
-  case UpdateStrategy::Relative:
+  case UpdateStrategyVSSGen::Relative:
     return "Relative";
   default:
     throw cda_rail::exceptions::ConsistencyException("Unknown update strategy");
   }
 }
 
+/** @brief The name of @p strategy, as it is reported and parsed. */
 constexpr std::string
 optimality_strategy_to_string(OptimalityStrategy strategy) {
   switch (strategy) {
@@ -47,23 +55,40 @@ optimality_strategy_to_string(OptimalityStrategy strategy) {
   }
 }
 
-struct SolverStrategy {
+/**
+ * @brief How the VSS generation model is solved.
+ *
+ * Instead of solving the full model at once, the number of VSS allowed per
+ * edge can be increased iteratively until optimality is proven. The remaining
+ * settings only apply to that approach.
+ */
+struct SolverStrategyVSSGen {
   bool                         iterative_approach = false;
   cda_rail::OptimalityStrategy optimality_strategy =
       cda_rail::OptimalityStrategy::Optimal;
-  UpdateStrategy update_strategy = UpdateStrategy::Fixed;
-  double         initial_value   = 1;
-  double         update_value    = 2;
-  bool           include_cuts    = true;
+  UpdateStrategyVSSGen update_strategy = UpdateStrategyVSSGen::Fixed;
+  double               initial_value   = 1;
+  double               update_value    = 2;
+  bool                 include_cuts    = true;
 };
 
-struct ModelDetail {
+/** @brief How accurately the VSS generation model describes the operation. */
+struct ModelDetailVSSGen {
   double delta_t        = 15;
   bool   fix_routes     = true;
   bool   train_dynamics = true;
   bool   braking_curves = true;
 };
 
+/**
+ * @brief The same, plus how much of a moving block solution is used.
+ *
+ * Everything that is fixed restricts the model to what the moving block
+ * solution did, which speeds up the solving process but can cut off better
+ * solutions. A hint is only a starting point and hence keeps the model as it
+ * is. The routes are always the ones of that solution, since everything else
+ * refers to them.
+ */
 struct ModelDetailMBInformation {
   double delta_t                    = 15;
   bool   train_dynamics             = true;
@@ -75,13 +100,23 @@ struct ModelDetailMBInformation {
   bool   fix_order_on_edges         = true;
 };
 
-struct ModelSettings {
+/** @brief How the VSS borders and the braking distances are modelled. */
+struct ModelSettingsVSSGen {
   // NOLINTNEXTLINE(readability-redundant-member-init)
   vss::Model model_type{};
   bool       use_pwl{false};
   bool       use_schedule_cuts{true};
 };
 
+/**
+ * @brief Adds as few VSS as possible so that the timetable can be operated.
+ *
+ * The model is time-discretized: for every train and every time step it is
+ * decided where the train is, and the VSS borders have to separate every two
+ * trains that are on the same TTD section at the same time. In contrast to the
+ * moving block problem, the timetable is operated exactly as specified, so
+ * that the number of VSS borders is the only thing being minimized.
+ */
 class VSSGenTimetableSolver
     : public GeneralMIPSolver<
           instances::GeneralPerformanceOptimizationInstance,
@@ -114,7 +149,7 @@ private:
   bool                   use_schedule_cuts{false};
   bool                   iterative_vss{false};
   OptimalityStrategy     optimality_strategy{OptimalityStrategy::Optimal};
-  UpdateStrategy         iterative_update_strategy{UpdateStrategy::Fixed};
+  UpdateStrategyVSSGen   iterative_update_strategy{UpdateStrategyVSSGen::Fixed};
   double                 iterative_initial_value{1.0};
   double                 iterative_update_value{2.0};
   bool                   iterative_include_cuts{true};
@@ -126,63 +161,125 @@ private:
       fwd_bwd_sections{};
 
   // Variable functions
+  /** @brief Creates all variables of the requested model variant. */
   void create_variables();
+  /** @brief Creates the variables that every variant needs. */
   void create_general_variables();
+  /** @brief Creates the variables needed if the routes are fixed. */
   void create_fixed_routes_variables();
+  /** @brief Creates the variables needed if the routes are not fixed. */
   void create_free_routes_variables();
+  /** @brief Creates the variables deciding the VSS of a discretized network. */
   void create_discretized_variables();
+  /** @brief Creates the variables needed if the network is not discretized. */
   void create_non_discretized_variables();
+  /** @brief Creates the variables corresponding to the braking distances. */
   void create_brakelen_variables();
+  /** @brief Creates the variables needed if trains only stop at VSS. */
   void create_only_stop_at_vss_variables();
+  /** @brief Creates those of them that refer to non-discretized VSS. */
   void create_non_discretized_only_stop_at_vss_variables();
 
   // Constraint functions
+  /** @brief Creates all constraints of the requested model variant. */
   void create_constraints();
+  /** @brief Creates the constraints that every variant needs. */
   void create_general_constraints();
+  /** @brief Creates the constraints that only appear if routes are fixed. */
   void create_fixed_routes_constraints();
+  /** @brief Creates the constraints that only appear if they are not. */
   void create_free_routes_constraints();
+  /**
+   * @brief Creates the VSS constraints of a discretized network, i.e., two
+   *        trains on a NoBorderVSS section have to be separated by a chosen
+   *        vertex.
+   */
   void create_discretized_constraints();
+  /** @brief Creates the constraints if the network is not discretized. */
   void create_non_discretized_constraints();
+  /** @brief Creates the constraints limiting acceleration and deceleration. */
   void create_acceleration_constraints();
+  /** @brief Creates the constraints related to the braking distances. */
   void create_brakelen_constraints();
 
   // Helper functions for constraints
+  /** @brief Creates the general boundary conditions, i.e., on the speed. */
   void create_general_boundary_constraints();
 
+  /**
+   * @brief Creates the constraints of a train being in a station, in which
+   *        case all of its other position variables and its speed are zero.
+   */
   void create_general_schedule_constraints();
+  /** @brief Only one train may be on an unbreakable section at a time. */
   void create_unbreakable_sections_constraints();
+  /** @brief No train may exceed the maximal speed of an edge. */
   void create_general_speed_constraints();
+  /**
+   * @brief A breakable section may only be occupied in one direction at a
+   *        time.
+   *
+   * This prevents trains from blocking each other, since reversing trains are
+   * not modelled.
+   */
   void create_reverse_occupation_constraints();
 
+  /** @brief The trains move along their fixed routes. */
   void create_fixed_routes_position_constraints();
+  /** @brief Creates the boundary conditions of the fixed routes. */
   void create_boundary_fixed_routes_constraints();
+  /** @brief Creates the edge occupation of trains with fixed routes. */
   void create_fixed_routes_occupation_constraints();
+  /** @brief Constrains lambda and mu for fixed routes in stations. */
   void create_fixed_route_schedule_constraints();
+  /** @brief Cuts off solutions that are not possible in any way. */
   void create_fixed_routes_impossibility_cuts();
+  /** @brief Creates the constraints on common entry and exit points. */
   void create_fixed_routes_no_overlap_entry_exit_constraints();
 
+  /**
+   * @brief Creates the constraints that only appear if the network is not
+   *        discretized, but are general enough to appear in every variant.
+   */
   void create_non_discretized_general_constraints();
+  /** @brief Creates the position constraints of the non-discretized VSS. */
   void create_non_discretized_position_constraints();
+  /** @brief Creates those VSS constraints if the routes are not fixed. */
   void create_non_discretized_free_route_constraints();
+  /** @brief Creates those VSS constraints if the routes are fixed. */
   void create_non_discretized_fixed_route_constraints();
+  /** @brief Places the VSS borders by the separation functions. */
   void create_non_discretized_fraction_constraints();
+  /** @brief Does so in the alternative formulation, see ModelType. */
   void create_non_discretized_alt_fraction_constraints();
+  /** @brief Trains may only stop at a VSS border. */
   void create_non_discretized_general_only_stop_at_vss_constraints();
+  /** @brief Adds what that needs if the routes are not fixed. */
   void create_non_discretized_free_routes_only_stop_at_vss_constraints();
+  /** @brief Adds what that needs if the routes are fixed. */
   void create_non_discretized_fixed_routes_only_stop_at_vss_constraints();
 
+  /** @brief Creates the constraints positioning the trains. */
   void create_free_routes_position_constraints();
+  /** @brief Creates the constraints ensuring the correct overlap. */
   void create_free_routes_overlap_constraints();
+  /** @brief Creates the boundary conditions of the free routes. */
   void create_boundary_free_routes_constraints();
+  /** @brief Connects the position and the occupation variables. */
   void create_free_routes_occupation_constraints();
+  /** @brief Cuts off positions that are impossible by the schedule. */
   void create_free_routes_impossibility_cuts();
+  /** @brief Creates the constraints on common entry and exit points. */
   void create_free_routes_no_overlap_entry_exit_constraints();
 
   // Objective
+  /** @brief Sets the objective function, i.e., the number of VSS borders. */
   void set_objective();
 
   // Helper functions
+  /** @brief Sets the remaining time limit of the Gurobi model. */
   void set_timeout(int time_limit);
+  /** @brief Runs the optimization, iteratively if that was asked for. */
   [[nodiscard]] std::optional<
       instances::SolVSSGeneralPerformanceOptimizationInstance>
   optimize(const std::optional<
@@ -213,17 +310,35 @@ private:
   [[nodiscard]] FurtherData
   get_further_data(const SolutionSettingsVSSGen& solution_settings,
                    int                           time_limit) const;
+  /**
+   * @brief The unbreakable sections traversed by a train.
+   *
+   * @param train_index Index of the train
+   * @return Indices of the unbreakable sections
+   */
   [[nodiscard]] cda_rail::index_vector
-                       unbreakable_section_indices(size_t train_index) const;
-  void                 calculate_fwd_bwd_sections();
-  void                 calculate_fwd_bwd_sections_discretized();
-  void                 calculate_fwd_bwd_sections_non_discretized();
+  unbreakable_section_indices(size_t train_index) const;
+  /** @brief Clusters the forward and backward edges of every section. */
+  void calculate_fwd_bwd_sections();
+  /** @brief Does so for the sections of a discretized network. */
+  void calculate_fwd_bwd_sections_discretized();
+  /** @brief Does so for the sections of a network that is not. */
+  void calculate_fwd_bwd_sections_non_discretized();
+  /** @brief The maximal braking distance of a train. */
   [[nodiscard]] double get_max_brakelen(const size_t& tr) const;
 
+  /**
+   * @brief The trains sharing an entry or exit vertex, sorted by the time at
+   *        which they enter or leave.
+   */
   [[nodiscard]] std::pair<std::vector<cda_rail::index_vector>,
                           std::vector<cda_rail::index_vector>>
   common_entry_exit_vertices() const;
 
+  /**
+   * @brief The stops surrounding a point in time, see
+   *        get_temporary_impossibility_struct.
+   */
   struct TemporaryImpossibilityStruct {
     bool                   to_use;
     size_t                 t_before;
@@ -233,6 +348,17 @@ private:
     cda_rail::index_vector edges_before;
     cda_rail::index_vector edges_after;
   };
+  /**
+   * @brief The last stop before and the first stop after a point in time.
+   *
+   * The times and velocities are those of the entry and the exit of the train
+   * if there is no such stop. Not to be used while the train is being
+   * serviced, which `to_use` reports.
+   *
+   * @param tr Index of the train
+   * @param t Time index
+   * @return The surrounding stops of the train at that time
+   */
   [[nodiscard]] TemporaryImpossibilityStruct
   get_temporary_impossibility_struct(const size_t& tr, const size_t& t) const;
 
@@ -288,14 +414,30 @@ private:
    */
   [[nodiscard]] cda_rail::index_vector extract_model_route(size_t tr) const;
 
+  /**
+   * @brief Increases the number of VSS allowed on an edge, see
+   *        UpdateStrategyVSSGen.
+   *
+   * @param relevant_edge_index Index of the edge within the relevant edges
+   * @param obj_ub Objective value of the best solution found so far
+   * @param cut_expr Expression of the cut excluding the explored search space
+   * @return `false` if the edge already allows every possible VSS
+   */
   bool update_vss(size_t relevant_edge_index, double obj_ub,
                   GRBLinExpr& cut_expr);
+  /** @brief Sets that number, relaxing the bounds of its variables. */
   void update_max_vss_on_edge(size_t relevant_edge_index, size_t new_max_vss,
                               GRBLinExpr& cut_expr);
+  /**
+   * @brief Stores the given settings and derives everything the model needs.
+   *
+   * @return The original instance if it had to be discretized, since the
+   *         solution refers to it, and nothing otherwise.
+   */
   [[nodiscard]] std::optional<instances::GeneralPerformanceOptimizationInstance>
-  initialize_variables(const ModelDetail&            model_detail,
-                       const ModelSettings&          model_settings,
-                       const SolverStrategy&         solver_strategy,
+  initialize_variables(const ModelDetailVSSGen&      model_detail,
+                       const ModelSettingsVSSGen&    model_settings,
+                       const SolverStrategyVSSGen&   solver_strategy,
                        const SolutionSettingsVSSGen& solution_settings,
                        int time_limit, bool debug_input,
                        bool overwrite_severity);
@@ -303,6 +445,7 @@ private:
 protected:
   void cleanup() override;
 
+  /** @brief Initializes the logging and the Gurobi model. */
   void solve_init_vss_gen_timetable(bool debug_input, bool overwrite_severity) {
     this->solve_init_general_mip(debug_input, overwrite_severity);
   };
@@ -319,11 +462,26 @@ public:
       : GeneralMIPSolver(std::forward<Args>(args)...) {}
 
   // Methods
-  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance solve(
-      const ModelDetail& model_detail, const ModelSettings& model_settings = {},
-      const SolverStrategy&         solver_strategy   = {},
-      const SolutionSettingsVSSGen& solution_settings = {}, int time_limit = -1,
-      bool debug_input = false, bool overwrite_severity = true);
+  /**
+   * @brief Solves the instance, adding as few VSS borders as possible.
+   *
+   * @param model_detail How accurately the operation is modelled.
+   * @param model_settings How the VSS borders and braking curves are modelled.
+   * @param solver_strategy How the model is solved.
+   * @param solution_settings Where and what is exported.
+   * @param time_limit Time limit in seconds. No limit if negative.
+   * @param debug_input If true, (more detailed) debug output is printed.
+   * @param overwrite_severity If true, the severity of the log is overwritten
+   *        even if this decreases the logging level.
+   * @return Solution object containing status, objective value, and solution.
+   */
+  [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
+  solve(const ModelDetailVSSGen&      model_detail,
+        const ModelSettingsVSSGen&    model_settings    = {},
+        const SolverStrategyVSSGen&   solver_strategy   = {},
+        const SolutionSettingsVSSGen& solution_settings = {},
+        int time_limit = -1, bool debug_input = false,
+        bool overwrite_severity = true);
 
   using GeneralSolver::solve;
   [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
@@ -332,6 +490,13 @@ public:
   }
 };
 
+/**
+ * @brief The same solver, guided by a moving block solution of the instance.
+ *
+ * A moving block solution is a lower bound on what any VSS layout can achieve,
+ * so it is a good starting point. How much of it is fixed and how much is only
+ * hinted to the solver is given by ModelDetailMBInformation.
+ */
 class VSSGenTimetableSolverWithMovingBlockInformation
     : public VSSGenTimetableSolver {
 private:
@@ -343,10 +508,15 @@ private:
   bool m_hint_approximate_positions{true};
 
   // Additional functions
+  /** @brief Adds everything the moving block solution contributes. */
   void include_additional_information();
+  /** @brief Fixes the order in which the trains traverse the edges. */
   void fix_oder_on_edges();
+  /** @brief Fixes the positions at which the trains serve their stops. */
   void fix_stop_positions_constraints();
+  /** @brief Fixes or bounds the positions and velocities at the vertices. */
   void fix_exact_positions_and_velocities_constraints();
+  /** @brief Hints the positions of the trains at every point in time. */
   void hint_approximate_positions_constraints();
 
 protected:
@@ -369,10 +539,19 @@ public:
   };
 
   // Methods
+  /**
+   * @brief Solves the instance, guided by the moving block solution.
+   *
+   * Works as the solve function of the parent class, except that the routes
+   * and, depending on @p model_detail_mb_information, further parts of the
+   * moving block solution are fixed or hinted to the solver.
+   *
+   * @return Solution object containing status, objective value, and solution.
+   */
   [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
   solve(const ModelDetailMBInformation& model_detail_mb_information,
-        const ModelSettings&            model_settings    = {},
-        const SolverStrategy&           solver_strategy   = {},
+        const ModelSettingsVSSGen&      model_settings    = {},
+        const SolverStrategyVSSGen&     solver_strategy   = {},
         const SolutionSettingsVSSGen&   solution_settings = {},
         int time_limit = -1, bool debug_input = false,
         bool overwrite_severity = true);

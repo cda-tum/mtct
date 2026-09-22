@@ -121,15 +121,19 @@ endif()
 # add main library code
 add_subdirectory(src)
 
-# add test code
 option(BUILD_TESTS "Also build tests for rail project")
+
+# add the apps, including the interactive one. Its library is linked into the test binary and its executables are run by
+# some of the tests, so the apps are needed whenever the tests are built, even when rail itself is only a subproject and
+# the apps would otherwise be left out. They are added before the test code for the same reason.
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR BUILD_TESTS)
+  add_subdirectory(apps)
+endif()
+
+# add test code
 if(BUILD_TESTS)
   enable_testing()
   include(cmake/PackageAddTest.cmake)
   include(GoogleTest)
   add_subdirectory(test)
-endif()
-
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-  add_subdirectory(apps)
 endif()

@@ -13,6 +13,10 @@
 #include <vector>
 
 namespace cda_rail::vss {
+/**
+ * @brief Relative position of the `i`-th border if an edge is separated into
+ *        `n` blocks.
+ */
 using SeparationFunctionCallable = std::function<double(size_t, size_t)>;
 
 /**
@@ -67,6 +71,20 @@ public:
   }
 };
 
+/**
+ * @brief How the VSS borders are modelled in the MILP.
+ *
+ * - `Discrete`: the network is discretized beforehand and one binary variable
+ *   per candidate vertex decides whether a border is placed there.
+ * - `Continuous`: the position of every border is a continuous variable.
+ * - `Inferred`: only the number of blocks per edge is decided, their positions
+ *   follow from one of the given separation functions.
+ * - `InferredAlt`: the same, in an alternative formulation using one binary
+ *   variable per separation function and number of blocks.
+ *
+ * Which of them are consistent with how many separation functions is checked
+ * by Model::check_consistency.
+ */
 enum class ModelType : std::uint8_t {
   Discrete    = 0,
   Continuous  = 1,
@@ -74,6 +92,7 @@ enum class ModelType : std::uint8_t {
   InferredAlt = 3
 };
 
+/** @brief The name of @p model_type, as it is reported and parsed. */
 [[nodiscard]] constexpr std::string model_type_to_string(ModelType model_type) {
   switch (model_type) {
   case ModelType::Discrete:
@@ -172,6 +191,13 @@ namespace functions {
 inline const SeparationFunction UNIFORM{"Uniform", &functions::uniform};
 inline const SeparationFunction CHEBYSHEV{"Chebyshev", &functions::chebyshev};
 
+/**
+ * @brief How a VSS generation solver models the VSS borders.
+ *
+ * Which separation functions are needed depends on the model type, see
+ * ModelType and check_consistency. They are ignored by the continuous model,
+ * which is why they are optional.
+ */
 class Model {
 private:
   ModelType                       model_type       = ModelType::Continuous;
@@ -180,12 +206,21 @@ private:
 
 public:
   // Constructors
+  /** @brief The continuous model without separation functions. */
   explicit Model() = default;
+  /** @brief A model type used without separation functions. */
   explicit Model(ModelType model_type_input) : model_type(model_type_input) {}
+  /** @brief A model type together with the separation functions it uses. */
   explicit Model(ModelType                       model_type_input,
                  std::vector<SeparationFunction> separation_functions_input)
       : model_type(model_type_input),
         separation_functions(std::move(separation_functions_input)) {}
+  /**
+   * @brief The same, restricting where trains are allowed to stop.
+   *
+   * @param only_stop_at_vss_input If set, trains may only stop at VSS borders,
+   *        not anywhere on an edge.
+   */
   explicit Model(ModelType                       model_type_input,
                  std::vector<SeparationFunction> separation_functions_input,
                  bool                            only_stop_at_vss_input)
@@ -198,7 +233,14 @@ public:
    * @return const ModelType& A constant reference to the model type.
    */
   [[nodiscard]] const ModelType& get_model_type() const { return model_type; }
+  /** @brief Whether trains may only stop at VSS borders. */
   [[nodiscard]] bool get_only_stop_at_vss() const { return only_stop_at_vss; }
+  /**
+   * @brief Retrieves the separation functions.
+   *
+   * @return const std::vector<SeparationFunction>& The functions in order.
+   * @throws std::logic_error If the model has none.
+   */
   [[nodiscard]] const std::vector<SeparationFunction>&
   get_separation_functions() const {
     if (separation_functions.empty()) {

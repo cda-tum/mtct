@@ -45,6 +45,15 @@ inline bool case_insensitive_str_equal(std::string_view a, std::string_view b) {
  */
 void to_bool_optional_inplace(std::string_view s_view, std::optional<bool>& b);
 
+/**
+ * @brief Replaces every non-alphanumeric character by a hyphen.
+ *
+ * Used for names that are built from user-provided names, e.g., the variable
+ * names of an exported model.
+ *
+ * @param s String to sanitize.
+ * @return The sanitized string, which has the same length as @p s.
+ */
 std::string sanitize(std::string s);
 
 } // namespace cda_rail

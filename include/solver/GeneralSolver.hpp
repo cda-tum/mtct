@@ -35,12 +35,23 @@ class GenPOMovingBlockAStarSolver_SolverDataExport_Test;
 #endif
 
 namespace cda_rail::solver {
+/**
+ * @brief What a solver writes to disk once it is done.
+ *
+ * Exporting the instance alongside the solution makes the export
+ * self-contained, which is what one wants if the instance was modified by the
+ * solver, e.g. by discretizing it.
+ */
 enum class GeneralExportOption : std::uint8_t {
   NoExport                   = 0,
   ExportSolution             = 1,
   ExportSolutionWithInstance = 2
 };
 
+/**
+ * @brief Where a solver writes its solution to, see
+ *        GeneralSolver::export_general_solution.
+ */
 struct GeneralSolutionSettings {
   GeneralExportOption        export_option{GeneralExportOption::NoExport};
   std::string                working_directory{};
@@ -48,6 +59,19 @@ struct GeneralSolutionSettings {
   std::optional<std::string> parameter_identifier{};
 };
 
+/**
+ * @brief Base of every solver, connecting an instance type to its solution
+ *        type.
+ *
+ * Besides holding the instance, this is where everything that is not specific
+ * to a solving approach lives, namely the initialization of the logging, the
+ * measured times, and the export of the solution together with the solver
+ * data.
+ *
+ * @tparam T The problem instance type, a child of GeneralProblemInstance.
+ * @tparam S The solution type belonging to it, a child of
+ *         SolGeneralProblemInstance.
+ */
 template <typename T, typename S> class GeneralSolver {
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockAStarSolver, SolverDataExport);
@@ -111,6 +135,13 @@ protected:
              std::constructible_from<T, Args...>)
       : m_instance(std::forward<Args>(args)...) {}
 
+  /**
+   * @brief Solver-specific values to be written to solver_data.json.
+   *
+   * The values are grouped by type, since the type has to be known when the
+   * exported data is read back. It is appended to the key, so that the same
+   * key can be used for different types.
+   */
   struct FurtherData {
     std::unordered_map<std::string, bool>        bool_data;
     std::unordered_map<std::string, int>         integer_data;
@@ -233,9 +264,20 @@ public:
   [[nodiscard]] S solve(int time_limit, bool debug_input) {
     return solve(time_limit, debug_input, true);
   }
+  /**
+   * @brief Solves the problem instance, which every solver implements.
+   *
+   * @param time_limit Maximum time allowed for solving. Zero or negative
+   *        values disable the limit.
+   * @param debug_input Whether to enable debug input mode.
+   * @param overwrite_severity Whether the logging severity is overwritten,
+   *        which it should not be if the solver is called by another one.
+   * @return S The computed solution.
+   */
   [[nodiscard]] virtual S solve(int time_limit, bool debug_input,
                                 bool overwrite_severity) = 0;
 
+  /** @brief Virtual destructor. */
   virtual ~GeneralSolver() = default;
 };
 } // namespace cda_rail::solver

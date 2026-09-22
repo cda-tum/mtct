@@ -42,13 +42,24 @@ class GenPOMovingBlockAStarSolver_NextStatesTTD_Test;
 #endif
 
 namespace cda_rail::solver::astar_based {
+// Every so many iterations the current state of the search is logged.
 #define DEBUG_LOGGING_RATE 1000
 
+/**
+ * @brief How far the trains are moved by one state transition.
+ *
+ * `SingleEdge` extends a route by one edge at a time, whereas the other two
+ * extend it until the next TTD section is entered, since a train that has
+ * entered a TTD section is committed to leaving it. `NextRelevantTTD`
+ * additionally skips the TTD sections in which a train can never be delayed by
+ * another one.
+ */
 enum class NextStateStrategy : std::uint8_t {
   SingleEdge      = 0,
   NextTTD         = 1,
   NextRelevantTTD = 2,
 };
+/** @brief The name of @p strategy, as it is reported and parsed. */
 constexpr std::string
 next_state_strategy_to_string(NextStateStrategy strategy) {
   switch (strategy) {
@@ -64,12 +75,20 @@ next_state_strategy_to_string(NextStateStrategy strategy) {
   }
 }
 
-struct ModelDetail {
+/** @brief What the simulation underlying the A* search does. */
+struct ModelDetailMBAStar {
   double dt                  = 6.0; // DB simulation default is 6 seconds
   bool   late_entry_possible = false;
   bool   limit_speed_by_leaving_edges = true;
 };
 
+/**
+ * @brief How the A* search itself explores the states.
+ *
+ * An `a_star_weight` greater than one gives up optimality in exchange for
+ * runtime, in which case the solution is at most that factor worse than an
+ * optimal one.
+ */
 struct SolverStrategyMBAStar {
   simulator::RemainingTimeHeuristicType remaining_time_heuristic_type =
       simulator::RemainingTimeHeuristicType::Simple;
@@ -81,6 +100,16 @@ struct SolverStrategyMBAStar {
 } // namespace cda_rail::solver::astar_based
 
 namespace cda_rail::solver::astar_based {
+/**
+ * @brief Routes the trains of a moving block instance by an A* search.
+ *
+ * A state consists of the decisions made so far, i.e. of partial routes,
+ * orders, and stop positions, see simulator::SimulatorState. Its value is the
+ * objective of the trajectories that the greedy simulator obtains for it, and
+ * the remaining objective is estimated by a heuristic, see
+ * simulator::greedy_heuristic. The first final state that is dequeued is
+ * therefore an optimal solution.
+ */
 class GenPOMovingBlockAStarSolver
     : public GeneralSolver<
           instances::GeneralPerformanceOptimizationInstance,
@@ -171,7 +200,7 @@ public:
    * @return Solution to the general performance optimization problem.
    */
   [[nodiscard]] instances::SolGeneralPerformanceOptimizationInstance
-  solve(const ModelDetail&             model_detail_input,
+  solve(const ModelDetailMBAStar&      model_detail_input,
         const SolverStrategyMBAStar&   solver_strategy_input,
         const GeneralSolutionSettings& solution_settings_input,
         int time_limit = -1, bool debug_input = false,
@@ -196,6 +225,11 @@ private:
   /**
    * @brief Returns the single next train under time-aware state transitions.
    *
+   * The next train is the one with the smallest simulated exit time or, if it
+   * has not entered yet, scheduled entry time. Ties are broken by the weight
+   * of the train, then in favor of trains already in the network, and then
+   * arbitrarily.
+   *
    * @param simulator_state Current simulator state.
    * @param simulator_result Simulation result of the current state.
    * @param instance Performance-optimization instance.
@@ -207,6 +241,9 @@ private:
       instances::GeneralPerformanceOptimizationInstance const* instance);
   /**
    * @brief Selects the trains to consider for the next state transition.
+   *
+   * Every train whose route is not fully specified yet, or, with time-aware
+   * state transitions, only the next one of them.
    *
    * @param simulator_state Current simulator state.
    * @param simulator_result Simulation result of the current state.
@@ -324,7 +361,7 @@ private:
   [[nodiscard]] static std::vector<simulator::SimulatorState>
   extend_train_orders_of_state(
       size_t tr, simulator::SimulatorState state,
-      const ModelDetail&                      model_detail_input,
+      const ModelDetailMBAStar&               model_detail_input,
       const SolverStrategyMBAStar&            solver_strategy_input,
       std::vector<cda_rail::index_set> const& ttd_sections,
       instances::GeneralPerformanceOptimizationInstance const* instance);
@@ -370,7 +407,7 @@ private:
   [[nodiscard]] static std::vector<simulator::SimulatorState>
   next_states(const simulator::SimulatorState&   simulator_state,
               const simulator::SimulatorResults& simulator_results,
-              const ModelDetail&                 model_detail_input,
+              const ModelDetailMBAStar&          model_detail_input,
               const SolverStrategyMBAStar&       solver_strategy_input,
               instances::GeneralPerformanceOptimizationInstance const* instance,
               std::vector<cda_rail::index_set> const& ttd_sections);
@@ -389,6 +426,7 @@ private:
     simulator::SimulatorResults results{};
   };
 
+  /** @brief Priority ordering of the A* search queue. */
   struct CompareByObjective {
     /**
      * @brief Defines priority ordering for the A* search queue.

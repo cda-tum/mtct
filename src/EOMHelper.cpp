@@ -27,6 +27,8 @@ template <typename... Args> void round_with_eps(double eps, Args&... args) {
 
 [[nodiscard]] double square(double value) { return value * value; }
 
+// braking_distance without its input validation, for the callers within this
+// file that have already validated v and d.
 [[nodiscard]] double braking_distance_unchecked(double v, double d) {
   return square(v) / (2 * d);
 }

@@ -14,11 +14,16 @@
 
 namespace cda_rail::simulator {
 
+/**
+ * @brief Position of a train's front along its route in m together with its
+ *        velocity in m/s.
+ */
 struct PosVel {
   double pos;
   double vel;
 };
 
+/** @brief What a simulation run produced. */
 struct SimulatorResults {
   bool success; // true if simulation was successful, false if it was infeasible
   std::vector<double> exit_times; // exit times of each train (or route end time
@@ -33,6 +38,15 @@ struct SimulatorResults {
                           // velocity at that time
 };
 
+/**
+ * @brief Everything a simulation run needs beyond the instance itself.
+ *
+ * These are the decisions a solver makes, namely which edges every train uses,
+ * in which order the trains pass the TTD sections and the vertices, and where
+ * on its route every train serves its stops. A state is compared and hashed as
+ * a whole, since a search algorithm has to recognize states it has seen
+ * before.
+ */
 struct SimulatorState {
   std::vector<cda_rail::index_vector> train_edges;
   std::vector<cda_rail::index_vector> ttd_orders;
@@ -56,15 +70,14 @@ struct SimulatorState {
   bool operator>(const SimulatorState& other) const;
 };
 
+/**
+ * This abstract class defines the interface for a general simulator to
+ * simulate train trajectories given all routing, ordering, and stopping
+ * information. It can, e.g., be used within search algorithms like A* for
+ * objective evaluation. This abstract class defines all necessary functions
+ * to be implemented and provides some general helper functions.
+ */
 class GeneralSimulator {
-  /**
-   * This abstract class defines the interface for a general simulator to
-   * simulate train trajectories given all routing, ordering, and stopping
-   * information. It can, e.g., be used within search algorithms like A* for
-   * objective evaluation. This abstract class defines all necessary functions
-   * to be implemented and provides some general helper functions.
-   */
-
 private:
   std::shared_ptr<
       const cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes>

@@ -26,7 +26,7 @@
 // NOLINTBEGIN (cppcoreguidelines-pro-type-reinterpret-cast)
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
-    const cda_rail::solver::astar_based::ModelDetail& model_detail_input,
+    const cda_rail::solver::astar_based::ModelDetailMBAStar& model_detail_input,
     const cda_rail::solver::astar_based::SolverStrategyMBAStar&
                                                      solver_strategy_input,
     const cda_rail::solver::GeneralSolutionSettings& solution_settings_input,
@@ -438,14 +438,6 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
         simulator::SimulatorState const&   simulator_state,
         simulator::SimulatorResults const& simulator_result,
         instances::GeneralPerformanceOptimizationInstance const* instance) {
-  /**
-   * In the time-aware case, ordering is done by simulated exit time / scheduled
-   * entry. In case of tie, trains with higher weight win. In case of tie,
-   * existing trains win over new trains. In case of tie, either train wins. No
-   * train is returned if all trains have left the network. At most one train is
-   * returned.
-   */
-
   struct Candidate {
     size_t train;
     double time;
@@ -515,14 +507,6 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
         simulator::SimulatorResults const& simulator_result,
         instances::GeneralPerformanceOptimizationInstance const* instance,
         SolverStrategyMBAStar const& solver_strategy) {
-  /**
-   * Returns "all" trains if not time-aware. Returns only the next train if
-   * time-aware. Trains with fully specified route are not returned. In the
-   * time-aware case, ordering is done by braking time / scheduled entry. In
-   * case of tie, trains with higher weight win. In case of tie, existing
-   * trains win over new trains. In case of tie, either train wins.
-   */
-
   return solver_strategy.time_aware_state_transitions
              ? get_next_time_aware_train(simulator_state, simulator_result,
                                          instance)
@@ -721,7 +705,7 @@ std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
 std::vector<cda_rail::simulator::SimulatorState> cda_rail::solver::astar_based::
     GenPOMovingBlockAStarSolver::extend_train_orders_of_state(
         size_t tr, simulator::SimulatorState state,
-        const ModelDetail&                      model_detail_input,
+        const ModelDetailMBAStar&               model_detail_input,
         const SolverStrategyMBAStar&            solver_strategy_input,
         std::vector<cda_rail::index_set> const& ttd_sections,
         instances::GeneralPerformanceOptimizationInstance const* instance) {
@@ -869,7 +853,7 @@ std::vector<cda_rail::simulator::SimulatorState>
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::next_states(
     const simulator::SimulatorState&   simulator_state,
     const simulator::SimulatorResults& simulator_results,
-    const ModelDetail&                 model_detail_input,
+    const ModelDetailMBAStar&          model_detail_input,
     const SolverStrategyMBAStar&       solver_strategy_input,
     instances::GeneralPerformanceOptimizationInstance const* instance,
     std::vector<cda_rail::index_set> const&                  ttd_sections) {

@@ -830,6 +830,17 @@ get_max_travel_time_acceleration_change_points(double v_1, double v_2,
 // Linear Movement
 // ----------------
 
+/**
+ * @brief Computes the time to travel @p s at constant acceleration.
+ *
+ * Solves `s = v_0 * t + a * t^2 / 2` for `t`, where @p a may be negative, and
+ * falls back to `s / v_0` if it is (numerically) zero.
+ *
+ * @param v_0 Initial speed in m/s.
+ * @param a Constant acceleration in m/s^2.
+ * @param s Distance in metres.
+ * @return Travel time in seconds.
+ */
 [[nodiscard]] double
 time_to_travel_distance_with_constant_acceleration(double v_0, double a,
                                                    double s);

@@ -2707,6 +2707,14 @@ private:
 
 public:
   // exception helper
+  /**
+   * @brief Checks that @p edge_out may be used directly after @p edge_in.
+   *
+   * @param edge_in Edge descriptor of the incoming edge.
+   * @param edge_out Edge descriptor of the outgoing edge.
+   * @throws cda_rail::exceptions::InvalidInputException If @p edge_out is not
+   *         a successor of @p edge_in.
+   */
   void throw_if_not_valid_successor(EdgeInput const& edge_in,
                                     EdgeInput const& edge_out) const {
     if (!is_valid_successor(edge_in, edge_out)) {

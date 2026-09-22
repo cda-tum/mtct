@@ -34,13 +34,6 @@ using std::size_t;
 cda_rail::index_vector
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
     size_t train_index) const {
-  /**
-   * This function returns the indices of the unbreakable sections that are
-   * traversed by the train with index train_index
-   * @param train_index index of the train
-   * @return vector of indices
-   */
-
   cda_rail::index_vector indices;
   const auto&            tr_name =
       m_instance.get_const_train_list().get_train(train_index).get_name();
@@ -75,17 +68,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::TemporaryImpossibilityStruct
 cda_rail::solver::mip_based::VSSGenTimetableSolver::
     get_temporary_impossibility_struct(const size_t& tr,
                                        const size_t& t) const {
-  /**
-   * This returns a struct containing information about the previous and
-   * following station.
-   *
-   * @param tr index of the train
-   * @param t time index
-   *
-   * @return struct containing information about the previous and following
-   * station
-   */
-
   // Initialize struct
   TemporaryImpossibilityStruct s;
 
@@ -559,11 +541,6 @@ std::pair<std::vector<cda_rail::index_vector>,
           std::vector<cda_rail::index_vector>>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
     const {
-  /**
-   * Returns trains that have common entry or exit vertices sorted by entry/exit
-   * time
-   */
-
   auto compare_entry = [this](size_t tr1, size_t tr2) {
     return train_interval[tr1].first < train_interval[tr2].first;
   };
@@ -621,7 +598,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup() {
   use_schedule_cuts         = false;
   iterative_vss             = false;
   optimality_strategy       = OptimalityStrategy::Optimal;
-  iterative_update_strategy = UpdateStrategy::Fixed;
+  iterative_update_strategy = UpdateStrategyVSSGen::Fixed;
   iterative_initial_value   = 1;
   iterative_update_value    = 2;
   iterative_include_cuts    = true;
@@ -641,12 +618,12 @@ bool cda_rail::solver::mip_based::VSSGenTimetableSolver::update_vss(
       max_vss_per_edge_in_iteration.at(relevant_edge_index);
 
   size_t increase_val = 1;
-  if (iterative_update_strategy == UpdateStrategy::Fixed) {
+  if (iterative_update_strategy == UpdateStrategyVSSGen::Fixed) {
     increase_val =
         std::max(increase_val, static_cast<size_t>(std::ceil(
                                    (iterative_update_value - 1) *
                                    static_cast<double>(current_vss_number_e))));
-  } else if (iterative_update_strategy == UpdateStrategy::Relative) {
+  } else if (iterative_update_strategy == UpdateStrategyVSSGen::Relative) {
     increase_val = std::max(
         increase_val,
         static_cast<size_t>(std::ceil(iterative_update_value *
@@ -745,17 +722,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
 
 std::optional<cda_rail::instances::GeneralPerformanceOptimizationInstance>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
-    const cda_rail::solver::mip_based::ModelDetail&    model_detail,
-    const cda_rail::solver::mip_based::ModelSettings&  model_settings,
-    const cda_rail::solver::mip_based::SolverStrategy& solver_strategy,
+    const cda_rail::solver::mip_based::ModelDetailVSSGen&    model_detail,
+    const cda_rail::solver::mip_based::ModelSettingsVSSGen&  model_settings,
+    const cda_rail::solver::mip_based::SolverStrategyVSSGen& solver_strategy,
     const cda_rail::solver::mip_based::SolutionSettingsVSSGen&
                          solution_settings,
     [[maybe_unused]] int time_limit, bool debug_input,
     bool overwrite_severity) {
-  /**
-   * This function initializes the variables affecting the m_model creation and
-   * optimization process
-   */
   this->solve_init_vss_gen_timetable(debug_input, overwrite_severity);
 
   if (!model_settings.model_type.check_consistency()) {
@@ -787,13 +760,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
 
   if (this->iterative_vss) {
     // Iterative optimization strategy
-    if (this->iterative_update_strategy == UpdateStrategy::Fixed &&
+    if (this->iterative_update_strategy == UpdateStrategyVSSGen::Fixed &&
         this->iterative_update_value <= 1) {
       PLOGE << "iterative_update_value must be greater than 1";
       throw exceptions::ConsistencyException(
           "iterative_update_value must be greater than 1");
     }
-    if (this->iterative_update_strategy == UpdateStrategy::Relative &&
+    if (this->iterative_update_strategy == UpdateStrategyVSSGen::Relative &&
         (this->iterative_update_value <= 0 ||
          this->iterative_update_value >= 1)) {
       PLOGE << "iterative_update_value must be between 0 and 1";
@@ -879,11 +852,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
     const auto  vss_number_e =
         m_instance.get_editable_network().max_vss_on_edge(e);
     if (iterative_vss) {
-      if (iterative_update_strategy == UpdateStrategy::Fixed) {
+      if (iterative_update_strategy == UpdateStrategyVSSGen::Fixed) {
         max_vss_per_edge_in_iteration[i] = std::min<size_t>(
             vss_number_e,
             static_cast<size_t>(std::ceil(iterative_initial_value)));
-      } else if (iterative_update_strategy == UpdateStrategy::Relative) {
+      } else if (iterative_update_strategy == UpdateStrategyVSSGen::Relative) {
         max_vss_per_edge_in_iteration[i] = std::min<size_t>(
             vss_number_e,
             static_cast<size_t>(std::ceil(iterative_initial_value *
@@ -943,9 +916,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
     const std::optional<instances::GeneralPerformanceOptimizationInstance>&
         old_instance,
     int time_limit) {
-  /**
-   * This function contains the optimization process
-   */
   std::optional<instances::SolVSSGeneralPerformanceOptimizationInstance>
       sol_object;
 

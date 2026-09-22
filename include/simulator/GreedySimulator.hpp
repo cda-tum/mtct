@@ -46,8 +46,21 @@ class GreedySimulator_FutureSpeedRestrictionConstraintsAfterLeaving_Test;
 
 namespace cda_rail::simulator {
 
+/**
+ * @brief After how many time steps without any movement a simulation is given
+ *        up as deadlocked.
+ */
 enum : std::uint16_t { CycleLimit = 1000 };
 
+/**
+ * @brief Simulates the trains of a moving block instance greedily.
+ *
+ * Every train drives as fast as the moving block separation, its own dynamics,
+ * and the orders of the state allow, so that the simulated trajectories are
+ * the best ones for the given routing, ordering, and stopping decisions. The
+ * simulation advances in time steps of the given length until every train has
+ * left the network, or until nothing moves any more, see CycleLimit.
+ */
 class GreedySimulator : public GeneralSimulator {
 public:
   // reuse default values
@@ -175,6 +188,7 @@ private:
   // PRIVATE HELPER FUNCTIONS
   // ---------------------------
 
+  /** @brief Positions of a train's rear and front along its route in m. */
   struct TrainPosition {
     double rear;
     double front;
@@ -182,11 +196,19 @@ private:
 
   // Positioning Helper
 
+  /**
+   * @brief In which way a train occupies an edge.
+   *
+   * A train is on an edge if any part of it is, which is the case in
+   * particular if it covers the edge entirely without either of its ends being
+   * on it.
+   */
   struct OnEdgeIndicator {
     bool tr_on_edge;
     bool rear_on_edge;
     bool front_on_edge;
   };
+  /** @brief Whether and where a train is on a given edge. */
   struct PosOnEdgeReturn {
     OnEdgeIndicator tr_on_edge_indicator;
     TrainPosition   tr_position_on_edge;
@@ -219,11 +241,27 @@ private:
   get_position_on_edge(size_t tr, const TrainPosition& pos, size_t edge_id,
                        std::vector<double> milestones = {}) const;
 
+  /** @brief What is_on_ttd is asked about. */
   enum class TTDOccupationType : std::uint8_t {
     OnlyOccupied,
     OnlyBehind,
     OccupiedOrBehind
   };
+  /**
+   * @brief Checks whether a train occupies a TTD section or has left it.
+   *
+   * Only the edges of the section that are on the train's route are
+   * considered, since a train can neither occupy nor pass the others.
+   *
+   * @param tr Train index.
+   * @param ttd TTD section index.
+   * @param pos Current position of the train.
+   * @param occupation_type Whether the train is to be on the section, behind
+   *        it, or either of the two.
+   * @return `true` if the train is in the requested relation to the section.
+   * @throws cda_rail::exceptions::InvalidInputException If @p ttd does not
+   *         exist.
+   */
   [[nodiscard]] bool is_on_ttd(size_t tr, size_t ttd, const TrainPosition& pos,
                                TTDOccupationType occupation_type =
                                    TTDOccupationType::OnlyOccupied) const;
@@ -344,6 +382,7 @@ private:
                                                        double v_0, double v_m,
                                                        double d, double dt);
 
+  /** @brief A train's moving authority in m and its speed limit in m/s. */
   struct MaAndMaxVResult {
     double ma;
     double max_v;
@@ -479,6 +518,13 @@ private:
 
   // Final State Helper
 
+  /**
+   * @brief What a train has reached at the end of its (partial) route.
+   *
+   * `Network` if that end is its exit vertex, `Station` if it is a stop still
+   * to be served, and `Edge` if it is neither, which is the case while the
+   * route is still being extended. `None` if the train is not there yet.
+   */
   enum class DestinationType : std::uint8_t { None, Network, Station, Edge };
   /**
    * @brief Classifies what destination a train has reached, if any.
@@ -493,6 +539,7 @@ private:
                  bool has_stop_left) const;
 
   // Distance helper
+  /** @brief Whether a vertex is on a train's route and where. */
   struct VertexRoutePos {
     bool   is_on_route;
     double pos;

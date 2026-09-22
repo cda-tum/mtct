@@ -222,8 +222,10 @@ jobs:
           tar -xvzf ${{ env.GUROBI_FILE }}
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DENABLE_COVERAGE=ON
+      # Everything is built, not just rail_test: the test suite also runs the command line apps themselves, which ctest
+      # cannot do if they were never compiled.
       - name: Build
-        run: cmake --build build --config Debug --target rail_test
+        run: cmake --build build --config Debug
       - name: Test
         env:
           CDA_RAIL_WARNING_FILE: ${{ github.workspace }}/build/test/rail_test_warnings.log

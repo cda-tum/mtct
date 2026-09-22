@@ -18,10 +18,6 @@ using std::size_t;
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_variables() {
-  /**
-   * This method creates the variables needed if the routes are not fixed.
-   */
-
   m_vars["overlap"] = MultiArray<GRBVar>(num_tr, num_t - 1, num_edges);
   m_vars["x_v"]     = MultiArray<GRBVar>(num_tr, num_t, num_vertices);
   m_vars["len_in"]  = MultiArray<GRBVar>(num_tr, num_t);
@@ -99,9 +95,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_constraints() {
-  /**
-   * Create constraints that are only present if routes are not fixed.
-   */
   create_free_routes_position_constraints();
   create_free_routes_overlap_constraints();
   create_boundary_free_routes_constraints();
@@ -114,10 +107,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_position_constraints() {
-  /**
-   * Creates constraints connected to positioning of trains.
-   */
-
   auto train_list = m_instance.get_const_train_list();
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).get_name();
@@ -265,11 +254,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_overlap_constraints() {
-  /**
-   * Creates the constraints to ensure the correct overlap when using free
-   * routes
-   */
-
   const auto train_list = m_instance.get_const_train_list();
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).get_name();
@@ -363,10 +347,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_boundary_free_routes_constraints() {
-  /**
-   * Boundary conditions in case of no fixed routes
-   */
-
   const auto train_list = m_instance.get_const_train_list();
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).get_name();
@@ -390,10 +370,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_occupation_constraints() {
-  /**
-   * Connects trains position and occupation variables if routes are not fixed
-   */
-
   const auto train_list = m_instance.get_const_train_list();
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).get_name();
@@ -498,10 +474,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_impossibility_cuts() {
-  /**
-   * Impossible positions cut off due to schedule.
-   */
-
   const auto apsp =
       m_instance.get_editable_network().all_edge_pairs_shortest_paths();
 
@@ -614,10 +586,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_free_route_constraints() {
-  /**
-   * VSS constraints for free routes
-   */
-
   const auto train_list = m_instance.get_const_train_list();
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).get_name();
@@ -661,10 +629,6 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_free_routes_no_overlap_entry_exit_constraints() {
-  /**
-   * Create constraints on common entry and exit points.
-   */
-
   const auto train_entry_exit_pairs = common_entry_exit_vertices();
 
   // If two trains share an entry vertex, then the first train must have left
