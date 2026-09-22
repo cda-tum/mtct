@@ -3,6 +3,7 @@
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/codeql-analysis.yml?label=CodeQL&logo=github&style=flat-square&branch=main)](https://github.com/cda-tum/mtct/actions/workflows/codeql-analysis.yml)
 [![codecov](https://img.shields.io/codecov/c/github/cda-tum/mtct?label=Coverage&logo=codecov&style=flat-square&branch=main)](https://codecov.io/gh/cda-tum/mtct)
 [![License](https://img.shields.io/github/license/cda-tum/mtct?label=License&style=flat-square&branch=main)](https://github.com/cda-tum/mtct/blob/main/LICENSE)
+[![Docs](https://img.shields.io/github/actions/workflow/status/cda-tum/mtct/docs.yml?label=docs&logo=github&style=flat-square&branch=main)](https://cda-tum.github.io/mtct/)
 
 # MTCT - Munich Train Control Toolkit
 
