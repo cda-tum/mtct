@@ -21,15 +21,16 @@ using std::size_t;
 
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
-cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance
-cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation::
-    solve(const cda_rail::solver::mip_based::ModelDetailMBInformation&
-              model_detail_mb_information,
-          const cda_rail::solver::mip_based::ModelSettings&  model_settings,
-          const cda_rail::solver::mip_based::SolverStrategy& solver_strategy,
-          const cda_rail::solver::mip_based::SolutionSettingsVSSGen&
-              solution_settings,
-          int time_limit, bool debug_input, bool overwrite_severity) {
+cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance cda_rail::
+    solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation::solve(
+        const cda_rail::solver::mip_based::ModelDetailMBInformation&
+            model_detail_mb_information,
+        const cda_rail::solver::mip_based::ModelSettingsVSSGen& model_settings,
+        const cda_rail::solver::mip_based::SolverStrategyVSSGen&
+            solver_strategy,
+        const cda_rail::solver::mip_based::SolutionSettingsVSSGen&
+            solution_settings,
+        int time_limit, bool debug_input, bool overwrite_severity) {
   /**
    * This function solves the VSS generation problem.
    * It functions the same as the solve function in the parent class, but

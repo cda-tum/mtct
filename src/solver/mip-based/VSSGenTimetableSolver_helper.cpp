@@ -621,7 +621,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup() {
   use_schedule_cuts         = false;
   iterative_vss             = false;
   optimality_strategy       = OptimalityStrategy::Optimal;
-  iterative_update_strategy = UpdateStrategy::Fixed;
+  iterative_update_strategy = UpdateStrategyVSSGen::Fixed;
   iterative_initial_value   = 1;
   iterative_update_value    = 2;
   iterative_include_cuts    = true;
@@ -641,12 +641,12 @@ bool cda_rail::solver::mip_based::VSSGenTimetableSolver::update_vss(
       max_vss_per_edge_in_iteration.at(relevant_edge_index);
 
   size_t increase_val = 1;
-  if (iterative_update_strategy == UpdateStrategy::Fixed) {
+  if (iterative_update_strategy == UpdateStrategyVSSGen::Fixed) {
     increase_val =
         std::max(increase_val, static_cast<size_t>(std::ceil(
                                    (iterative_update_value - 1) *
                                    static_cast<double>(current_vss_number_e))));
-  } else if (iterative_update_strategy == UpdateStrategy::Relative) {
+  } else if (iterative_update_strategy == UpdateStrategyVSSGen::Relative) {
     increase_val = std::max(
         increase_val,
         static_cast<size_t>(std::ceil(iterative_update_value *
@@ -745,9 +745,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
 
 std::optional<cda_rail::instances::GeneralPerformanceOptimizationInstance>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
-    const cda_rail::solver::mip_based::ModelDetailVSSGen& model_detail,
-    const cda_rail::solver::mip_based::ModelSettings&     model_settings,
-    const cda_rail::solver::mip_based::SolverStrategy&    solver_strategy,
+    const cda_rail::solver::mip_based::ModelDetailVSSGen&    model_detail,
+    const cda_rail::solver::mip_based::ModelSettingsVSSGen&  model_settings,
+    const cda_rail::solver::mip_based::SolverStrategyVSSGen& solver_strategy,
     const cda_rail::solver::mip_based::SolutionSettingsVSSGen&
                          solution_settings,
     [[maybe_unused]] int time_limit, bool debug_input,
@@ -787,13 +787,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
 
   if (this->iterative_vss) {
     // Iterative optimization strategy
-    if (this->iterative_update_strategy == UpdateStrategy::Fixed &&
+    if (this->iterative_update_strategy == UpdateStrategyVSSGen::Fixed &&
         this->iterative_update_value <= 1) {
       PLOGE << "iterative_update_value must be greater than 1";
       throw exceptions::ConsistencyException(
           "iterative_update_value must be greater than 1");
     }
-    if (this->iterative_update_strategy == UpdateStrategy::Relative &&
+    if (this->iterative_update_strategy == UpdateStrategyVSSGen::Relative &&
         (this->iterative_update_value <= 0 ||
          this->iterative_update_value >= 1)) {
       PLOGE << "iterative_update_value must be between 0 and 1";
@@ -879,11 +879,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
     const auto  vss_number_e =
         m_instance.get_editable_network().max_vss_on_edge(e);
     if (iterative_vss) {
-      if (iterative_update_strategy == UpdateStrategy::Fixed) {
+      if (iterative_update_strategy == UpdateStrategyVSSGen::Fixed) {
         max_vss_per_edge_in_iteration[i] = std::min<size_t>(
             vss_number_e,
             static_cast<size_t>(std::ceil(iterative_initial_value)));
-      } else if (iterative_update_strategy == UpdateStrategy::Relative) {
+      } else if (iterative_update_strategy == UpdateStrategyVSSGen::Relative) {
         max_vss_per_edge_in_iteration[i] = std::min<size_t>(
             vss_number_e,
             static_cast<size_t>(std::ceil(iterative_initial_value *

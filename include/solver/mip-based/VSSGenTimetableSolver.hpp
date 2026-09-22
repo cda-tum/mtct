@@ -19,13 +19,13 @@
 namespace cda_rail::solver::mip_based {
 using std::size_t;
 
-enum class UpdateStrategy : std::uint8_t { Fixed = 0, Relative = 1 };
+enum class UpdateStrategyVSSGen : std::uint8_t { Fixed = 0, Relative = 1 };
 
-constexpr std::string update_strategy_to_string(UpdateStrategy strategy) {
+constexpr std::string update_strategy_to_string(UpdateStrategyVSSGen strategy) {
   switch (strategy) {
-  case UpdateStrategy::Fixed:
+  case UpdateStrategyVSSGen::Fixed:
     return "Fixed";
-  case UpdateStrategy::Relative:
+  case UpdateStrategyVSSGen::Relative:
     return "Relative";
   default:
     throw cda_rail::exceptions::ConsistencyException("Unknown update strategy");
@@ -47,14 +47,14 @@ optimality_strategy_to_string(OptimalityStrategy strategy) {
   }
 }
 
-struct SolverStrategy {
+struct SolverStrategyVSSGen {
   bool                         iterative_approach = false;
   cda_rail::OptimalityStrategy optimality_strategy =
       cda_rail::OptimalityStrategy::Optimal;
-  UpdateStrategy update_strategy = UpdateStrategy::Fixed;
-  double         initial_value   = 1;
-  double         update_value    = 2;
-  bool           include_cuts    = true;
+  UpdateStrategyVSSGen update_strategy = UpdateStrategyVSSGen::Fixed;
+  double               initial_value   = 1;
+  double               update_value    = 2;
+  bool                 include_cuts    = true;
 };
 
 struct ModelDetailVSSGen {
@@ -75,7 +75,7 @@ struct ModelDetailMBInformation {
   bool   fix_order_on_edges         = true;
 };
 
-struct ModelSettings {
+struct ModelSettingsVSSGen {
   // NOLINTNEXTLINE(readability-redundant-member-init)
   vss::Model model_type{};
   bool       use_pwl{false};
@@ -114,7 +114,7 @@ private:
   bool                   use_schedule_cuts{false};
   bool                   iterative_vss{false};
   OptimalityStrategy     optimality_strategy{OptimalityStrategy::Optimal};
-  UpdateStrategy         iterative_update_strategy{UpdateStrategy::Fixed};
+  UpdateStrategyVSSGen   iterative_update_strategy{UpdateStrategyVSSGen::Fixed};
   double                 iterative_initial_value{1.0};
   double                 iterative_update_value{2.0};
   bool                   iterative_include_cuts{true};
@@ -294,8 +294,8 @@ private:
                               GRBLinExpr& cut_expr);
   [[nodiscard]] std::optional<instances::GeneralPerformanceOptimizationInstance>
   initialize_variables(const ModelDetailVSSGen&      model_detail,
-                       const ModelSettings&          model_settings,
-                       const SolverStrategy&         solver_strategy,
+                       const ModelSettingsVSSGen&    model_settings,
+                       const SolverStrategyVSSGen&   solver_strategy,
                        const SolutionSettingsVSSGen& solution_settings,
                        int time_limit, bool debug_input,
                        bool overwrite_severity);
@@ -321,8 +321,8 @@ public:
   // Methods
   [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
   solve(const ModelDetailVSSGen&      model_detail,
-        const ModelSettings&          model_settings    = {},
-        const SolverStrategy&         solver_strategy   = {},
+        const ModelSettingsVSSGen&    model_settings    = {},
+        const SolverStrategyVSSGen&   solver_strategy   = {},
         const SolutionSettingsVSSGen& solution_settings = {},
         int time_limit = -1, bool debug_input = false,
         bool overwrite_severity = true);
@@ -373,8 +373,8 @@ public:
   // Methods
   [[nodiscard]] instances::SolVSSGeneralPerformanceOptimizationInstance
   solve(const ModelDetailMBInformation& model_detail_mb_information,
-        const ModelSettings&            model_settings    = {},
-        const SolverStrategy&           solver_strategy   = {},
+        const ModelSettingsVSSGen&      model_settings    = {},
+        const SolverStrategyVSSGen&     solver_strategy   = {},
         const SolutionSettingsVSSGen&   solution_settings = {},
         int time_limit = -1, bool debug_input = false,
         bool overwrite_severity = true);

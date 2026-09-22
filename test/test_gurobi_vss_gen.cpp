@@ -1096,7 +1096,7 @@ TEST(VSSGenSolver, IterativeContinuousSingleTrackCuts) {
   const auto obj_val = solver.solve(
       {}, {},
       {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 1, 2, true},
+       cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed, 1, 2, true},
       {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1112,7 +1112,7 @@ TEST(VSSGenSolver, IterativeContinuousSingleRelative) {
   const auto obj_val =
       solver.solve({}, {},
                    {true, cda_rail::OptimalityStrategy::Optimal,
-                    cda_rail::solver::mip_based::UpdateStrategy::Relative,
+                    cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative,
                     0.025, 0.05, true},
                    {}, 60, true);
 
@@ -1131,7 +1131,7 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredCuts) {
       {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
                             {cda_rail::vss::UNIFORM})},
       {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
+       cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed, 0, 2, true},
       {}, 60, true);
 
   check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
@@ -1144,7 +1144,7 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationCuts) {
   const auto obj_val = solver.solve(
       {15, true, true, false}, {},
       {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
+       cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed, 0, 2, true},
       {}, 60, true);
 
   check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
@@ -1190,7 +1190,7 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredAlt) {
       {cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
                             {cda_rail::vss::UNIFORM})},
       {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
+       cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed, 0, 2, true},
       {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1218,7 +1218,7 @@ TEST(VSSGenSolver, IterativeContinuousStammstrecke4Cuts) {
   const auto obj_val = solver.solve(
       {}, {},
       {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategy::Fixed, 0, 2, true},
+       cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed, 0, 2, true},
       {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1231,11 +1231,12 @@ TEST(VSSGenSolver, IterativeContinuousOvertakeRelative) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "Overtake", "atmos2023", "data");
 
-  const auto obj_val = solver.solve(
-      {}, {},
-      {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategy::Relative, 0.05, 0.05, true},
-      {}, 60, true);
+  const auto obj_val =
+      solver.solve({}, {},
+                   {true, cda_rail::OptimalityStrategy::Optimal,
+                    cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative,
+                    0.05, 0.05, true},
+                   {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 7);

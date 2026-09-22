@@ -59,12 +59,13 @@ optimality_strategy_map() {
   return map;
 }
 
-const std::map<std::string, cda_rail::solver::mip_based::UpdateStrategy>&
+const std::map<std::string, cda_rail::solver::mip_based::UpdateStrategyVSSGen>&
 update_strategy_map() {
   static const std::map<std::string,
-                        cda_rail::solver::mip_based::UpdateStrategy>
-      map{{"Fixed", cda_rail::solver::mip_based::UpdateStrategy::Fixed},
-          {"Relative", cda_rail::solver::mip_based::UpdateStrategy::Relative}};
+                        cda_rail::solver::mip_based::UpdateStrategyVSSGen>
+      map{{"Fixed", cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed},
+          {"Relative",
+           cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative}};
   return map;
 }
 } // namespace
@@ -408,7 +409,7 @@ cda_rail::cli::vss_mip_model_detail_mb(const VssMipSettings& settings) {
           .fix_order_on_edges         = settings.fix_order_on_edges};
 }
 
-cda_rail::solver::mip_based::ModelSettings
+cda_rail::solver::mip_based::ModelSettingsVSSGen
 cda_rail::cli::vss_mip_model_settings(const VssMipSettings& settings) {
   return {.model_type        = vss::Model(settings.vss_model_type,
                                           settings.separation_functions(),
@@ -417,7 +418,7 @@ cda_rail::cli::vss_mip_model_settings(const VssMipSettings& settings) {
           .use_schedule_cuts = settings.use_schedule_cuts};
 }
 
-cda_rail::solver::mip_based::SolverStrategy
+cda_rail::solver::mip_based::SolverStrategyVSSGen
 cda_rail::cli::vss_mip_solver_strategy(const VssMipSettings& settings) {
   return {.iterative_approach  = settings.iterative_approach,
           .optimality_strategy = settings.optimality_strategy,

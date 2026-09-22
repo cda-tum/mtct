@@ -707,7 +707,7 @@ TEST(CliVssOptions, ModelAndSolverSettings) {
   EXPECT_EQ(settings.optimality_strategy,
             cda_rail::OptimalityStrategy::Feasible);
   EXPECT_EQ(settings.iterative_update_strategy,
-            cda_rail::solver::mip_based::UpdateStrategy::Relative);
+            cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative);
   EXPECT_DOUBLE_EQ(settings.iterative_initial_value, 0.5);
   EXPECT_DOUBLE_EQ(settings.iterative_update_value, 0.25);
   EXPECT_FALSE(settings.iterative_include_cuts);

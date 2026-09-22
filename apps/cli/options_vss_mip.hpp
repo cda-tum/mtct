@@ -51,8 +51,8 @@ struct VssMipSettings {
   // solver parameters
   bool               iterative_approach{false};
   OptimalityStrategy optimality_strategy{OptimalityStrategy::Optimal};
-  solver::mip_based::UpdateStrategy iterative_update_strategy{
-      solver::mip_based::UpdateStrategy::Fixed};
+  solver::mip_based::UpdateStrategyVSSGen iterative_update_strategy{
+      solver::mip_based::UpdateStrategyVSSGen::Fixed};
   double iterative_initial_value{1};
   double iterative_update_value{2};
   bool   iterative_include_cuts{true};
@@ -81,9 +81,9 @@ void log_vss_mip_settings(const VssMipSettings& settings,
 vss_mip_model_detail(const VssMipSettings& settings);
 [[nodiscard]] solver::mip_based::ModelDetailMBInformation
 vss_mip_model_detail_mb(const VssMipSettings& settings);
-[[nodiscard]] solver::mip_based::ModelSettings
+[[nodiscard]] solver::mip_based::ModelSettingsVSSGen
 vss_mip_model_settings(const VssMipSettings& settings);
-[[nodiscard]] solver::mip_based::SolverStrategy
+[[nodiscard]] solver::mip_based::SolverStrategyVSSGen
 vss_mip_solver_strategy(const VssMipSettings& settings);
 [[nodiscard]] solver::mip_based::SolutionSettingsVSSGen
 vss_mip_solution_settings(const VssMipSettings& settings,

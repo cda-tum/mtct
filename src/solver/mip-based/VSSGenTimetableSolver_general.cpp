@@ -29,8 +29,9 @@ using std::size_t;
 
 cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance
 cda_rail::solver::mip_based::VSSGenTimetableSolver::solve(
-    const ModelDetailVSSGen& model_detail, const ModelSettings& model_settings,
-    const SolverStrategy&         solver_strategy,
+    const ModelDetailVSSGen&      model_detail,
+    const ModelSettingsVSSGen&    model_settings,
+    const SolverStrategyVSSGen&   solver_strategy,
     const SolutionSettingsVSSGen& solution_settings, int time_limit,
     bool debug_input, bool overwrite_severity) {
   /**
