@@ -50,9 +50,13 @@ int main(int argc, char** argv) {
                  "command.")
       ->capture_default_str();
   app.add_option("-c,--script", scripts,
-                 "Command script to run before reading from standard input. "
-                 "Can be passed multiple times; the scripts are run in the "
-                 "given order. Every line is one command, empty lines and "
+                 "File of commands to run, one per line. These are the very "
+                 "same commands that can be typed at the prompt, so a script "
+                 "can build an instance, edit it, and solve it. The session "
+                 "continues at the prompt once the file has been run, hence a "
+                 "script can also be used to set up an instance that is then "
+                 "worked on by hand. Can be passed multiple times, in which "
+                 "case the files are run in the given order. Empty lines and "
                  "lines starting with '#' are ignored.")
       ->multi_option_policy(CLI::MultiOptionPolicy::TakeAll)
       ->check(CLI::ExistingFile);

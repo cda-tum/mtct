@@ -209,13 +209,15 @@ They work on the instance the session holds, including edits that have not been 
 rail (SimpleStation)> solve mb-astar --dt 6 --export-solution --solution-export-subdirectory my-solutions
 ```
 
-Finally, commands are also read from a file, which is useful to build an instance reproducibly and to keep a record of how it was built next to it:
+Finally, the very same commands can be put in a file, one per line, and run with `--script`:
 
 ```commandline
 .\build\apps\cli\rail_cli --working-directory .\test\data --script .\build_stammstrecke.rail
 ```
 
-Empty lines and lines starting with `#` are ignored, and `rail_cli < build_stammstrecke.rail` does the same.
+Such a file builds an instance reproducibly and keeps a record of how it was built next to it.
+The session then continues at the prompt with everything the script has done, so a script can also be used to set up an instance that is afterwards worked on by hand.
+Empty lines and lines starting with `#` are ignored, and `rail_cli < build_stammstrecke.rail` runs a file as well, but ends when it is through.
 
 <details>
 <summary>An example script</summary>
