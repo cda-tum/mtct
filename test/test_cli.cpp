@@ -44,7 +44,7 @@ protected:
   void TearDown() override { std::filesystem::remove_all(directory); }
 };
 
-/** @brief Runs one line through a fresh interpreter, as the app does. */
+// Runs one line through a fresh interpreter, as the app does.
 void run(cda_rail::cli::Session& session, const std::string& line) {
   cda_rail::cli::CommandInterpreter interpreter{session};
   interpreter.run_line(line);
@@ -57,7 +57,7 @@ void run_all(cda_rail::cli::Session&         session,
   }
 }
 
-/** @brief Runs one line and returns what it printed. */
+// Runs one line and returns what it printed.
 std::string run_capturing(cda_rail::cli::Session& session,
                           const std::string&      line) {
   const std::ostringstream output;
@@ -67,12 +67,8 @@ std::string run_capturing(cda_rail::cli::Session& session,
   return output.str();
 }
 
-/**
- * @brief Feeds a whole script to the read loop, as the app does.
- *
- * @return `false` if the loop was ended by `exit`, `true` if it ran out of
- *         input.
- */
+// Feeds a whole script to the read loop, as the app does. Returns false if the
+// loop was ended by `exit` and true if it ran out of input.
 bool run_script(cda_rail::cli::Session& session, const std::string& script) {
   std::istringstream       input{script};
   const std::ostringstream output;
@@ -83,7 +79,7 @@ bool run_script(cda_rail::cli::Session& session, const std::string& script) {
   return keep_going;
 }
 
-/** @brief The commands building a tiny two-vertex network. */
+// The commands building a tiny two-vertex network.
 const std::vector<std::string> SIMPLE_NETWORK{
     "network new TestNetwork",
     "network vertex add v0 -t TTD",

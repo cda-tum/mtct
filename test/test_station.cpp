@@ -8,6 +8,7 @@
 
 namespace {
 
+// A path v0 -> v1 -> v2 -> v3 of three unbreakable edges of 100m each.
 cda_rail::Network build_linear_test_network() {
   cda_rail::Network network{"StationUnitTestNetwork"};
 

@@ -113,7 +113,7 @@ void list_successors(const cda_rail::Network& network) {
   }
 }
 
-/** @brief The options shared by `edge add` and `edge add-bidirectional`. */
+// The options shared by `edge add` and `edge add-bidirectional`.
 struct EdgeAddOptions {
   std::string source;
   std::string target;

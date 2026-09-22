@@ -25,6 +25,9 @@
 namespace {
 using cda_rail::cli::Session;
 
+// The settings of the three solver subcommands are held by a shared_ptr
+// because the callback of a subcommand runs after the function that added it
+// has returned, so it cannot capture a local by reference.
 void add_mb_mip_command(CLI::App& solve_cmd, Session& session) {
   auto* mb_mip_cmd = solve_cmd.add_subcommand(
       "mb-mip", "Route the trains under moving block control using a MIP");

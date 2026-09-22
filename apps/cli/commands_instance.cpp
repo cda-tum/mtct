@@ -8,12 +8,9 @@
 #include <string>
 
 namespace {
-/**
- * @brief Lists every `<subdirectory>/<name>` below `<working>/instances`.
- *
- * A directory counts as an instance if it contains a `network.json`, which is
- * the file the instance loader reads first.
- */
+// Lists every `<subdirectory>/<name>` below `<working>/instances`. A
+// directory counts as an instance if it contains a `network.json`, which is
+// the file the instance loader reads first.
 void list_instances(const cda_rail::cli::Session& session) {
   const auto instances_directory = session.working_directory() / "instances";
   if (!std::filesystem::is_directory(instances_directory)) {

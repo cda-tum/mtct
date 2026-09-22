@@ -20,6 +20,9 @@ struct WarningEntry {
   std::string message{};
 };
 
+// The state is kept in function-local static variables so that it is
+// initialized on first use, no matter in which order the translation units
+// start up.
 std::once_flag& listener_registration_flag() {
   static std::once_flag flag;
   return flag;
@@ -35,6 +38,9 @@ std::vector<WarningEntry>& warning_entries() {
   return entries;
 }
 
+// The directory warning files may be written to, which the build system pins
+// to the test binary directory and which otherwise defaults to the current
+// working directory.
 std::filesystem::path warning_file_root() {
 #ifdef CDA_RAIL_TEST_WARNING_ROOT
   return std::filesystem::path(CDA_RAIL_TEST_WARNING_ROOT).lexically_normal();
@@ -60,6 +66,8 @@ bool is_path_within_directory(const std::filesystem::path& candidate,
   return true;
 }
 
+// The warning file requested by CDA_RAIL_WARNING_FILE, empty if none was
+// requested or if the path leads outside of the warning file root.
 std::filesystem::path warning_file_path_from_env() {
   const char* warning_file = std::getenv("CDA_RAIL_WARNING_FILE");
   if (warning_file == nullptr) {

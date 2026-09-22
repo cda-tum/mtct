@@ -8,12 +8,9 @@
 #include <string>
 
 namespace {
-/**
- * @brief Answers where the session currently is, in three lines.
- *
- * Everything beyond that, i.e. what the two objects contain, belongs to
- * `instance info` and `network info`.
- */
+// Answers where the session currently is, in three lines. Everything beyond
+// that, i.e. what the two objects contain, belongs to `instance info` and
+// `network info`.
 void print_status(const cda_rail::cli::Session& session) {
   std::cout << "Working directory: "
             << std::filesystem::absolute(session.working_directory()).string()

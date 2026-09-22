@@ -19,13 +19,11 @@
 using std::size_t;
 
 namespace {
-/**
- * Gurobi is allowed to return values that violate a bound by up to its
- * feasibility tolerance. Times marginally below zero are snapped to zero, so
- * that the (correct) non-negativity checks of the solution object do not
- * reject an otherwise valid solution. Larger violations are passed on
- * unchanged and hence still throw.
- */
+// Gurobi is allowed to return values that violate a bound by up to its
+// feasibility tolerance. Times marginally below zero are snapped to zero, so
+// that the (correct) non-negativity checks of the solution object do not
+// reject an otherwise valid solution. Larger violations are passed on
+// unchanged and hence still throw.
 double snap_negative_zero(double value) {
   return (value < 0 && value > -cda_rail::GRB_EPS) ? 0 : value;
 }
