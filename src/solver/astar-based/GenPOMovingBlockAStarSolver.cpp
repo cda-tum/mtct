@@ -438,14 +438,6 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
         simulator::SimulatorState const&   simulator_state,
         simulator::SimulatorResults const& simulator_result,
         instances::GeneralPerformanceOptimizationInstance const* instance) {
-  /**
-   * In the time-aware case, ordering is done by simulated exit time / scheduled
-   * entry. In case of tie, trains with higher weight win. In case of tie,
-   * existing trains win over new trains. In case of tie, either train wins. No
-   * train is returned if all trains have left the network. At most one train is
-   * returned.
-   */
-
   struct Candidate {
     size_t train;
     double time;
@@ -515,14 +507,6 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
         simulator::SimulatorResults const& simulator_result,
         instances::GeneralPerformanceOptimizationInstance const* instance,
         SolverStrategyMBAStar const& solver_strategy) {
-  /**
-   * Returns "all" trains if not time-aware. Returns only the next train if
-   * time-aware. Trains with fully specified route are not returned. In the
-   * time-aware case, ordering is done by braking time / scheduled entry. In
-   * case of tie, trains with higher weight win. In case of tie, existing
-   * trains win over new trains. In case of tie, either train wins.
-   */
-
   return solver_strategy.time_aware_state_transitions
              ? get_next_time_aware_train(simulator_state, simulator_result,
                                          instance)

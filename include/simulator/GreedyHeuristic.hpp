@@ -10,7 +10,14 @@
 #include <vector>
 
 namespace cda_rail::simulator {
+/**
+ * @brief Which lower bound on the remaining time the A* search uses.
+ *
+ * `Zero` uses none, which turns the search into a Dijkstra search, while
+ * `Simple` estimates the remaining time by ignoring every other train.
+ */
 enum class RemainingTimeHeuristicType : std::uint8_t { Zero = 0, Simple = 1 };
+/** @brief The name of @p type, as it is reported and parsed. */
 constexpr std::string
 remaining_time_heuristic_type_to_string(RemainingTimeHeuristicType const type) {
   switch (type) {
@@ -47,6 +54,13 @@ objective_val(const GreedySimulator&                  simulator,
 // Remaining Time Heuristic
 // ----------------------------
 
+/**
+ * @brief What a remaining-time heuristic estimates for one train.
+ *
+ * The two times are kept apart because they enter the objective with different
+ * weights. If the train cannot finish its schedule at all, `feasible` is false
+ * and the times are meaningless.
+ */
 struct RemainingTimeHeuristicResult {
   bool   feasible;
   double remaining_exit_time;
@@ -108,6 +122,7 @@ remaining_time_heuristic(RemainingTimeHeuristicType type, size_t tr,
 // Full Heuristic
 // --------------------------
 
+/** @brief A lower bound on how much the objective still increases. */
 struct HeuristicResult {
   bool   feasible;
   double objective_value_difference;

@@ -22,7 +22,9 @@ struct InstanceSettings {
   std::string working_directory;
 };
 
+/** @brief Adds the options naming the instance to @p app. */
 void add_instance_options(CLI::App& app, InstanceSettings& settings);
+/** @brief Logs the settings, as every app does before it solves. */
 void log_instance_settings(const InstanceSettings& settings);
 
 /**
@@ -59,8 +61,20 @@ struct ExportOptionSupport {
   std::string_view lp_model_solution_extension{".json"};
 };
 
+/**
+ * @brief Adds the export options to @p app.
+ *
+ * @param support The optional options the calling solver supports, see
+ *        ExportOptionSupport.
+ */
 void add_export_options(CLI::App& app, ExportSettings& settings,
                         ExportOptionSupport support);
+/**
+ * @brief Logs the settings.
+ *
+ * @param working_directory Reported if no separate export working directory
+ *        was given.
+ */
 void log_export_settings(const ExportSettings& settings,
                          const std::string&    working_directory);
 
@@ -80,7 +94,9 @@ struct SolvingSettings {
   bool debug_output{false};
 };
 
+/** @brief Adds the time limit and the debug flag to @p app. */
 void add_solving_options(CLI::App& app, SolvingSettings& settings);
+/** @brief Logs the settings. */
 void log_solving_settings(const SolvingSettings& settings);
 
 /** @brief Logs the status and objective of a solution, as the apps do. */

@@ -35,6 +35,13 @@ class GeneralPerformanceOptimizationInstances_PointerCopyIssue_Test;
 
 namespace cda_rail::instances {
 
+/**
+ * @brief Base of every problem instance.
+ *
+ * An instance knows where it is stored, namely under
+ * `<working directory>/instances/<subdirectory>/<name>`, and how to export
+ * itself there. Everything it consists of is added by the derived classes.
+ */
 class GeneralProblemInstance {
   std::string m_instance_name{"UnnamedInstance"};
   std::string m_instance_subdirectory{"UnnamedSubdirectory"};
@@ -146,14 +153,39 @@ public:
     m_instance_subdirectory = instanceSubdirectory;
   }
 
+  /**
+   * @brief The outcome of is_obviously_infeasible, with its reason.
+   *
+   * The reason is only filled if the instance is obviously infeasible, in
+   * which case it names what is wrong and where.
+   */
   struct FeasibilityCheck {
     bool        is_obviously_infeasible{false};
     std::string reason{};
   };
+  /**
+   * @brief Checks the instance for reasons that make it infeasible by itself.
+   *
+   * Only necessary conditions are checked, e.g. whether every train can reach
+   * its stations and its exit vertex at all. An instance that passes this
+   * check may still turn out to be infeasible once the trains are considered
+   * together, which no check can tell without solving the instance.
+   *
+   * @param late_entry_allowed Whether trains may enter later than scheduled.
+   *        If they may not, the scheduled entry times themselves can be
+   *        checked against each other as well.
+   */
   [[nodiscard]] virtual FeasibilityCheck
   is_obviously_infeasible(bool late_entry_allowed) const = 0;
 };
 
+/**
+ * @brief An instance consisting of a network, a timetable, and routes.
+ *
+ * This is what every problem of this tool is posed on. The routes are optional
+ * in the sense that a solver may be free to choose them, which is why an
+ * instance can be consistent with routes missing, see check_consistency.
+ */
 class GeneralProblemInstanceWithScheduleAndRoutes
     : public GeneralProblemInstance {
   friend class SolGeneralProblemInstanceWithScheduleAndRoutes;
@@ -904,6 +936,13 @@ public:
   is_obviously_infeasible(bool late_entry_allowed) const override;
 };
 
+/**
+ * @brief Base of every solution object.
+ *
+ * A solution owns a copy of the instance it belongs to, so that it stays
+ * interpretable on its own, and stores what the solver was able to achieve,
+ * namely its status, its objective value and the best bound it proved.
+ */
 class SolGeneralProblemInstance {
 private:
   std::shared_ptr<GeneralProblemInstance> m_instance;
@@ -1156,6 +1195,12 @@ public:
   operator=(SolGeneralProblemInstance&&) noexcept = default;
 };
 
+/**
+ * @brief A solution that says which routes the trains take.
+ *
+ * The routes are initialized to those of the instance and are filled in by the
+ * solver wherever the instance leaves them open.
+ */
 class SolGeneralProblemInstanceWithScheduleAndRoutes
     : public SolGeneralProblemInstance {
   RouteMap m_solution_routes{};

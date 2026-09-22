@@ -70,11 +70,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 
 std::vector<std::vector<std::pair<size_t, double>>> cda_rail::solver::
     mip_based::GenPOMovingBlockMIPSolver::LazyCallback::get_routes() {
-  /**
-   * Extract routes from the current solution.
-   * At the same time, save the distance from the start for every vertex.
-   */
-
   std::vector<std::vector<std::pair<size_t, double>>> routes;
   routes.reserve(solver->m_num_tr);
   for (size_t tr = 0; tr < solver->m_num_tr; tr++) {

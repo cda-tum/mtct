@@ -49,11 +49,18 @@ struct SolutionSettingsVSSGen : SolutionSettingsMIP {
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
+/**
+ * @brief Routes the output of Gurobi into the logging of this tool.
+ *
+ * Without this callback Gurobi writes to the console directly, which would
+ * bypass the log file and the severity the solver was started with.
+ */
 class MessageCallback : public GRBCallback {
 public:
   explicit MessageCallback() = default;
 
 protected:
+  /** @brief Logs one message of Gurobi, without its trailing newline. */
   void callback() override {
     if (where == GRB_CB_MESSAGE) {
       std::string msg = getStringInfo(GRB_CB_MSG_STRING);
@@ -67,6 +74,17 @@ protected:
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
+/**
+ * @brief Base of every solver that builds a MIP and hands it to Gurobi.
+ *
+ * It owns the Gurobi environment, the model, and its variables, and takes care
+ * of everything that is the same for every model, namely its creation and its
+ * cleanup.
+ *
+ * @tparam T The problem instance type, a child of GeneralProblemInstance.
+ * @tparam S The solution type belonging to it, a child of
+ *         SolGeneralProblemInstance.
+ */
 template <typename T, typename S>
 class GeneralMIPSolver : public GeneralSolver<T, S> {
   static_assert(
@@ -85,6 +103,7 @@ protected:
   std::unordered_map<std::string, MultiArray<GRBVar>> m_vars;
   GRBLinExpr                                          m_objective_expr;
 
+  /** @brief Releases the model and the environment after solving. */
   virtual void cleanup() {
     m_objective_expr = 0;
     m_lazy_constraints.clear();
@@ -94,12 +113,21 @@ protected:
     m_env.reset();
   };
 
+  /** @brief Initializes the model with the default message callback. */
   void solve_init_general_mip(bool debug_input, bool overwrite_severity) {
     static auto message_callback = MessageCallback();
     this->solve_init_general_mip(debug_input, overwrite_severity,
                                  &message_callback);
   };
 
+  /**
+   * @brief Initializes the logging, the Gurobi environment, and the model.
+   *
+   * @param debug_input If true, enables debug-level logging.
+   * @param overwrite_severity If true, overwrites the logging severity level.
+   * @param cb The callback of the model, which a solver using lazy constraints
+   *        provides itself.
+   */
   void solve_init_general_mip(bool debug_input, bool overwrite_severity,
                               GRBCallback* cb) {
     this->solve_init_general(debug_input, overwrite_severity);
@@ -115,9 +143,12 @@ protected:
     this->m_model->set(GRB_IntParam_LogToConsole, 0);
   };
 
+  /** @brief Constructs a solver with a default-initialized problem instance. */
   GeneralMIPSolver() = default;
+  /** @brief Constructs a solver from a problem instance. */
   explicit GeneralMIPSolver(const T& instance)
       : GeneralSolver<T, S>(instance) {};
+  /** @brief Constructs the problem instance from the given arguments. */
   template <typename... Args>
   explicit GeneralMIPSolver(Args&&... args)
     requires(

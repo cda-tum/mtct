@@ -31,22 +31,6 @@ cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance cda_rail::
         const cda_rail::solver::mip_based::SolutionSettingsVSSGen&
             solution_settings,
         int time_limit, bool debug_input, bool overwrite_severity) {
-  /**
-   * This function solves the VSS generation problem.
-   * It functions the same as the solve function in the parent class, but
-   * includes additional information from a previous moving block solution.
-   *
-   * @param model_detail_mb_information.fix_stop_positions: Whether to fix the
-   * positions at which trains stop at a station
-   * @param model_detail_mb_information.fix_exact_positions: Whether to fix the
-   * exact positions of trains at every vertex / bound them by their minimal and
-   * maximal positions
-   * @param model_detail_mb_information.hint_approximate_positions: Whether to
-   * hint approximate positions of trains at every given time
-   *
-   * @return The solution object
-   */
-
   if (model_settings.model_type.get_model_type() == vss::ModelType::Discrete) {
     // Not implemented
     throw cda_rail::exceptions::InvalidInputException(

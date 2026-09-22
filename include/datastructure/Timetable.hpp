@@ -17,18 +17,17 @@
 
 namespace cda_rail {
 
+/**
+ * @brief Scheduling information for a stop within a timetable.
+ *
+ * Stores the earliest service start time, the minimum service duration,
+ * and the associated station.
+ *
+ * @invariant m_service_time >= 0 (non-negative).
+ * @invariant m_service_duration >= 0 (non-negative).
+ * @invariant m_station is always non-null after construction.
+ */
 class ScheduledStop {
-  /**
-   * @brief Scheduling information for a stop within a timetable.
-   *
-   * Stores the earliest service start time, the minimum service duration,
-   * and the associated station.
-   *
-   * @invariant m_service_time >= 0 (non-negative).
-   * @invariant m_service_duration >= 0 (non-negative).
-   * @invariant m_station is always non-null after construction.
-   */
-
   friend class Timetable;
 
 private:
@@ -159,20 +158,19 @@ public:
   }
 };
 
+/**
+ * @brief Specific schedule object with fixed entry/exit constraints.
+ *
+ * Stores timing, velocity, path endpoints, and an ordered list of scheduled
+ * stops for one train.
+ *
+ * @invariant m_entry_time >= 0.
+ * @invariant m_exit_time >= m_entry_time.
+ * @invariant m_initial_velocity >= 0.
+ * @invariant m_exit_velocity >= 0.
+ * @invariant m_stops is ordered by service time
+ */
 class Schedule {
-  /**
-   * @brief Specific schedule object with fixed entry/exit constraints.
-   *
-   * Stores timing, velocity, path endpoints, and an ordered list of scheduled
-   * stops for one train.
-   *
-   * @invariant m_entry_time >= 0.
-   * @invariant m_exit_time >= m_entry_time.
-   * @invariant m_initial_velocity >= 0.
-   * @invariant m_exit_velocity >= 0.
-   * @invariant m_stops is ordered by service time
-   */
-
 private:
   double m_entry_time{}; // (earliest) entry time: >= 0
   double m_exit_time{};  // (desired) exit time: >= entry_time
@@ -461,10 +459,15 @@ public:
   }
 };
 
+/**
+ * @brief The trains of an instance together with what they are to do.
+ *
+ * Holds the stations, the trains, and one schedule per train, where the
+ * schedule of a train is stored at the index the train has in the train list.
+ * The stops of a schedule refer to the stations of this timetable, which is
+ * why a timetable is deep copied.
+ */
 class Timetable {
-  /**
-   * Timetable class
-   */
 private:
   StationList           m_station_list{};
   TrainList             m_train_list{};

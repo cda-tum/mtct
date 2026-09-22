@@ -69,22 +69,38 @@ struct VssMipSettings {
   separation_functions() const;
 };
 
+/** @brief Adds every option of the VSS generation MIP solver to @p app. */
 void add_vss_mip_options(CLI::App& app, VssMipSettings& settings);
 /** @brief Generates the parameter identifier if it was asked for. */
 void finalize_vss_mip_settings(VssMipSettings& settings);
+/** @brief The identifier `--generate-parameter-identifier` produces. */
 [[nodiscard]] std::string
 generate_vss_mip_identifier(const VssMipSettings& settings);
+/** @brief Logs the settings, as the apps do before they solve. */
 void log_vss_mip_settings(const VssMipSettings& settings,
                           const std::string&    working_directory);
 
+/**
+ * @brief The model settings handed to the solver without moving block
+ *        information.
+ */
 [[nodiscard]] solver::mip_based::ModelDetailVSSGen
 vss_mip_model_detail(const VssMipSettings& settings);
+/** @brief The model settings handed to the solver using it. */
 [[nodiscard]] solver::mip_based::ModelDetailMBInformation
 vss_mip_model_detail_mb(const VssMipSettings& settings);
+/** @brief The VSS model settings handed to the solver. */
 [[nodiscard]] solver::mip_based::ModelSettingsVSSGen
 vss_mip_model_settings(const VssMipSettings& settings);
+/** @brief The solver strategy handed to the solver. */
 [[nodiscard]] solver::mip_based::SolverStrategyVSSGen
 vss_mip_solver_strategy(const VssMipSettings& settings);
+/**
+ * @brief The solution settings handed to the solver.
+ *
+ * @param working_directory Used if no separate export working directory was
+ *        given.
+ */
 [[nodiscard]] solver::mip_based::SolutionSettingsVSSGen
 vss_mip_solution_settings(const VssMipSettings& settings,
                           const std::string&    working_directory);

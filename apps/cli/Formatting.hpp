@@ -29,6 +29,7 @@ vertex_input(const std::string& name) {
 
 /** @brief Names accepted for `--type` and printed by the list commands. */
 [[nodiscard]] const std::map<std::string, VertexType>& vertex_type_map();
+/** @brief The name of @p type, as the list commands print it. */
 [[nodiscard]] std::string vertex_type_to_string(VertexType type);
 
 /**

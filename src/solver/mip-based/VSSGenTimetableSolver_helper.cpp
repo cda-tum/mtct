@@ -34,13 +34,6 @@ using std::size_t;
 cda_rail::index_vector
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
     size_t train_index) const {
-  /**
-   * This function returns the indices of the unbreakable sections that are
-   * traversed by the train with index train_index
-   * @param train_index index of the train
-   * @return vector of indices
-   */
-
   cda_rail::index_vector indices;
   const auto&            tr_name =
       m_instance.get_const_train_list().get_train(train_index).get_name();
@@ -75,17 +68,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::TemporaryImpossibilityStruct
 cda_rail::solver::mip_based::VSSGenTimetableSolver::
     get_temporary_impossibility_struct(const size_t& tr,
                                        const size_t& t) const {
-  /**
-   * This returns a struct containing information about the previous and
-   * following station.
-   *
-   * @param tr index of the train
-   * @param t time index
-   *
-   * @return struct containing information about the previous and following
-   * station
-   */
-
   // Initialize struct
   TemporaryImpossibilityStruct s;
 
@@ -559,11 +541,6 @@ std::pair<std::vector<cda_rail::index_vector>,
           std::vector<cda_rail::index_vector>>
 cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
     const {
-  /**
-   * Returns trains that have common entry or exit vertices sorted by entry/exit
-   * time
-   */
-
   auto compare_entry = [this](size_t tr1, size_t tr2) {
     return train_interval[tr1].first < train_interval[tr2].first;
   };
@@ -752,10 +729,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
                          solution_settings,
     [[maybe_unused]] int time_limit, bool debug_input,
     bool overwrite_severity) {
-  /**
-   * This function initializes the variables affecting the m_model creation and
-   * optimization process
-   */
   this->solve_init_vss_gen_timetable(debug_input, overwrite_severity);
 
   if (!model_settings.model_type.check_consistency()) {
@@ -943,9 +916,6 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
     const std::optional<instances::GeneralPerformanceOptimizationInstance>&
         old_instance,
     int time_limit) {
-  /**
-   * This function contains the optimization process
-   */
   std::optional<instances::SolVSSGeneralPerformanceOptimizationInstance>
       sol_object;
 

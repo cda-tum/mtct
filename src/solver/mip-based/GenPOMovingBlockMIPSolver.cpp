@@ -37,20 +37,6 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     const SolverStrategyMovingBlock&   solver_strategy_input,
     const SolutionSettingsMovingBlock& solution_settings_input, int time_limit,
     bool debug_input, bool overwrite_severity) {
-  /**
-   * Solves initiated performance optimization problem with moving block
-   * signaling/routing. Only breakable edges can use moving block. On all
-   * others, only one train is allowed (in practice Flankenschutz can be
-   * included this way). Trains are only routed if no route is specified.
-   *
-   * @param time_limit: time limit for the solver in seconds. If -1, no time
-   * limit is set.
-   * @param debug_input: if true, the debug output is enabled.
-   * @param overwrite_severity: if true, the severity of the log is overwritten
-   *
-   * @return: respective solution object
-   */
-
   std::optional<LazyCallback> cb;
   if (solver_strategy_input.use_lazy_constraints) {
     cb = LazyCallback(this);
@@ -444,10 +430,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     create_reverse_edge_variables() {
-  /**
-   * In order to prevent collisions of trains traveling in opposite directions,
-   * we need additional variables.
-   */
   m_vars["reverse_order"] =
       MultiArray<GRBVar>(m_num_tr, m_num_tr, m_relevant_reverse_edges.size());
 

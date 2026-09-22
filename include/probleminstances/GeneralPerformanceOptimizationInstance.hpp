@@ -76,6 +76,16 @@ struct MinimumRunningTimes {
   double exit_arrival = 0.0;
 };
 
+/**
+ * @brief An instance in which the trains are routed as efficiently as
+ *        possible.
+ *
+ * The times given in the timetable are lower bounds, i.e., no train may enter
+ * the network, serve a station or leave the network earlier than scheduled.
+ * The objective is the weighted sum of the exit times and the average station
+ * delay of every train, where the weight of each train and the weight of the
+ * station delays relative to the exit times are part of the instance.
+ */
 class GeneralPerformanceOptimizationInstance
     : public GeneralProblemInstanceWithScheduleAndRoutes {
   friend class SolGeneralPerformanceOptimizationInstance;
@@ -510,6 +520,15 @@ public:
   void discretize(const vss::SeparationFunction& sep_func = vss::UNIFORM);
 };
 
+/**
+ * @brief The trajectories a solver found for a performance optimization
+ *        instance.
+ *
+ * Positions and velocities are stored per train as samples over time, which
+ * the solvers fill at the points in time their model knows about. The exit and
+ * stop times are stored separately, since they are what the objective is
+ * evaluated on.
+ */
 class SolGeneralPerformanceOptimizationInstance
     : public SolGeneralProblemInstanceWithScheduleAndRoutes {
 private:
@@ -842,6 +861,13 @@ public:
   [[nodiscard]] bool check_consistency() const override;
 };
 
+/**
+ * @brief The same solution, together with the VSS borders it needs.
+ *
+ * This is what the VSS generation solvers return: in addition to the
+ * trajectories, the positions of the VSS borders are stored per edge, measured
+ * from the source vertex of that edge.
+ */
 class SolVSSGeneralPerformanceOptimizationInstance
     : public SolGeneralPerformanceOptimizationInstance {
   std::vector<std::vector<double>> m_vss_pos;

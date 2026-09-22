@@ -60,14 +60,22 @@ void finalize_mb_mip_settings(CLI::App& app, MbMipSettings& settings);
 [[nodiscard]] std::string
 generate_mb_mip_identifier(const MbMipSettings& settings);
 
+/** @brief Logs the settings, as the apps do before they solve. */
 void log_mb_mip_settings(const MbMipSettings& settings,
                          const std::string&   working_directory);
 
 /** @brief The model settings handed to the solver. */
 [[nodiscard]] solver::mip_based::ModelDetailMovingBlock
 mb_mip_model_detail(const MbMipSettings& settings);
+/** @brief The solver strategy handed to the solver. */
 [[nodiscard]] solver::mip_based::SolverStrategyMovingBlock
 mb_mip_solver_strategy(const MbMipSettings& settings);
+/**
+ * @brief The solution settings handed to the solver.
+ *
+ * @param working_directory Used if no separate export working directory was
+ *        given.
+ */
 [[nodiscard]] solver::mip_based::SolutionSettingsMovingBlock
 mb_mip_solution_settings(const MbMipSettings& settings,
                          const std::string&   working_directory);

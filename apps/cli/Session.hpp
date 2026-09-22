@@ -121,6 +121,7 @@ public:
   /** @throws If an instance is loaded, whose network would be replaced. */
   void new_network(const std::string& name);
   void load_network(const std::string& name);
+  /** @brief Rereads the network from disk, discarding unsaved changes. */
   void reload_network();
   void close_network();
   /**
