@@ -4,7 +4,6 @@
 #include "plog/Init.h"
 #include "plog/Severity.h"
 
-#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -16,13 +15,14 @@
 #include <vector>
 
 #ifdef _WIN32
+#include <cstdio>
 #include <io.h>
 #define CDA_RAIL_ISATTY _isatty
-#define CDA_RAIL_FILENO _fileno
+#define CDA_RAIL_STDIN_FILENO _fileno(stdin)
 #else
 #include <unistd.h>
 #define CDA_RAIL_ISATTY isatty
-#define CDA_RAIL_FILENO fileno
+#define CDA_RAIL_STDIN_FILENO STDIN_FILENO
 #endif
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  const bool interactive = CDA_RAIL_ISATTY(CDA_RAIL_FILENO(stdin)) != 0;
+  const bool interactive = CDA_RAIL_ISATTY(CDA_RAIL_STDIN_FILENO) != 0;
   if (interactive) {
     std::cout << "Type 'help' for the list of commands and 'exit' to end the "
                  "session.\n";

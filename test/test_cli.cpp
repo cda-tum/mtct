@@ -938,9 +938,10 @@ TEST(CliOptions, ExportSettings) {
             cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance);
   EXPECT_EQ(settings.exporting.solution_subdirectory, "my-solutions");
   ASSERT_TRUE(settings.exporting.export_working_directory.has_value());
-  EXPECT_EQ(settings.exporting.export_working_directory.value(), "elsewhere");
+  EXPECT_EQ(settings.exporting.export_working_directory.value_or(""),
+            "elsewhere");
   ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
-  EXPECT_EQ(settings.exporting.parameter_identifier.value(), "ident");
+  EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""), "ident");
 
   const auto solution_settings = cda_rail::cli::general_solution_settings(
       settings.exporting, "the-working-directory");
@@ -968,12 +969,12 @@ TEST(CliOptions, MbMipGeneratedIdentifier) {
 
   ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
   // The defaults, in the order in which the identifier concatenates them.
-  EXPECT_EQ(settings.exporting.parameter_identifier.value(),
+  EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
             "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_f_OnlyViolated_"
             "OnlyAdjacent_10_-1");
   // The identifier ends up as a directory name.
   EXPECT_NO_THROW(cda_rail::exceptions::throw_if_invalid_folder_name(
-      settings.exporting.parameter_identifier.value()));
+      settings.exporting.parameter_identifier.value_or("")));
 }
 
 TEST(CliOptions, GeneratedIdentifierExcludesAnExplicitOne) {
@@ -1017,7 +1018,7 @@ TEST(CliOptions, MbAStarGeneratedIdentifier) {
   cda_rail::cli::finalize_mb_astar_settings(settings);
 
   ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
-  EXPECT_EQ(settings.exporting.parameter_identifier.value(),
+  EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
             "6_f_t_t_f_1_SingleEdge_Simple_-1");
 }
 
@@ -1072,9 +1073,9 @@ TEST(CliVssOptions, MovingBlockInformation) {
   EXPECT_TRUE(settings.use_moving_block_information());
   EXPECT_EQ(settings.moving_block_solution_subdirectory, "mb-solutions");
   ASSERT_TRUE(settings.moving_block_working_directory.has_value());
-  EXPECT_EQ(settings.moving_block_working_directory.value(), "elsewhere");
+  EXPECT_EQ(settings.moving_block_working_directory.value_or(""), "elsewhere");
   ASSERT_TRUE(settings.moving_block_parameter_identifier.has_value());
-  EXPECT_EQ(settings.moving_block_parameter_identifier.value(), "id");
+  EXPECT_EQ(settings.moving_block_parameter_identifier.value_or(""), "id");
   EXPECT_FALSE(settings.fix_stop_positions);
   EXPECT_FALSE(settings.fix_exact_positions);
   EXPECT_FALSE(settings.fix_exact_velocities);
@@ -1108,7 +1109,7 @@ TEST(CliVssOptions, GeneratedIdentifier) {
   // The defaults, in the order in which the identifier concatenates them. The
   // trailing 't' is the fix_routes setting, which only exists without moving
   // block information.
-  EXPECT_EQ(settings.exporting.parameter_identifier.value(),
+  EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
             "15_t_t_Continuous_f_f_t_f_Optimal_Fixed_1_2_t_f_-1_t");
 }
 
@@ -1120,7 +1121,7 @@ TEST(CliVssOptions, GeneratedIdentifierWithMovingBlockInformation) {
   cda_rail::cli::finalize_vss_mip_settings(settings);
 
   ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
-  EXPECT_EQ(settings.exporting.parameter_identifier.value(),
+  EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
             "15_t_t_Continuous_f_f_t_f_Optimal_Fixed_1_2_t_f_-1_t_t_t_t_t");
 }
 
@@ -1258,8 +1259,12 @@ TEST(CliOptions, AnUnknownEnumValueIsPrintedAsUnknown) {
   // that is not in the map must not go unnoticed.
   EXPECT_EQ(cda_rail::cli::vertex_type_to_string(cda_rail::VertexType::VSS),
             "VSS");
+  // The enum has a fixed underlying type, so a value without an enumerator is
+  // well-defined; it is exactly what the lookup has to survive here.
+  // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
+  const auto unknown_type = static_cast<cda_rail::VertexType>(42);
   EXPECT_EQ(cda_rail::cli::key_by_value(cda_rail::cli::vertex_type_map(),
-                                        static_cast<cda_rail::VertexType>(42)),
+                                        unknown_type),
             "unknown");
 }
 
@@ -1329,7 +1334,7 @@ TEST(CliVssOptions, GeneratedIdentifierListsTheSeparationFunctions) {
   cda_rail::cli::finalize_vss_mip_settings(settings);
 
   ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
-  const auto& identifier = settings.exporting.parameter_identifier.value();
+  const auto identifier = settings.exporting.parameter_identifier.value_or("");
   EXPECT_NE(identifier.find("Inferred_Uniform_Chebyshev"), std::string::npos);
   EXPECT_NO_THROW(
       cda_rail::exceptions::throw_if_invalid_folder_name(identifier));
