@@ -3,3 +3,4 @@ reviews:
     - "!**/test/*/**"
     - "!**.old"
     - "!**.TODO"
+  poem: true
