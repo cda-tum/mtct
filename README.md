@@ -705,6 +705,6 @@ If you have any questions, feel free to contact us via etcs.cda@xcit.tum.de or b
 
 [[8]](https://www.cda.cit.tum.de/files/eda/2025_atmos_astar_for_optimal_routing_on_moving_block_systems.pdf) Stefan Engels and Robert Wille. **"Using A\* for Optimal Train Routing on Moving Block Systems"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2025 ([doi](https://doi.org/10.4230/OASIcs.ATMOS.2025.14), [pdf](https://www.cda.cit.tum.de/files/eda/2025_atmos_astar_for_optimal_routing_on_moving_block_systems.pdf))
 
-[[9]](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf) Stefan Engels and Robert Wille. **"Time-Aware A\* for Optimal Train Routing on Moving Block Systems"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2026 ([pdf](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf))
+[[9]](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf) Stefan Engels and Robert Wille. **"Time-Aware A\* for Optimal Train Routing on Moving Block Systems"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2026 ([doi](https://doi.org/10.4230/OASIcs.ATMOS.2026.3), [pdf](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf))
 
 [[10]](https://www.gurobi.com) Gurobi Optimization, LLC. **"Gurobi Optimizer Reference Manual"**. 2026
