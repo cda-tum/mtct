@@ -218,12 +218,12 @@ cda_rail::simulator::GreedySimulator::simulate(
       // Where the train's front is once its rear has passed the exit vertex
       auto const tr_exit_pos = tr_route_len + train_object.get_length();
       if (tr_new_speed < V_MIN &&
-          !(last_edge_leaves_network &&
-            train_positions.at(tr).front +
-                    std::min(tr_ma_data.ma,
-                             (train_velocities.at(tr) + tr_new_speed) * dt /
-                                 2.0) >=
-                tr_exit_pos - GRB_EPS)) {
+          (!last_edge_leaves_network ||
+           train_positions.at(tr).front +
+                   std::min(tr_ma_data.ma,
+                            (train_velocities.at(tr) + tr_new_speed) * dt /
+                                2.0) <
+               tr_exit_pos - GRB_EPS)) {
         // Train is stopped, unless it leaves within this time step, after
         // which its speed does not matter
         tr_new_speed = 0.0;
@@ -1123,6 +1123,7 @@ cda_rail::simulator::PosVel
 cda_rail::simulator::GreedySimulator::apply_exit_time(
     size_t tr, const cda_rail::Train& train, double pos, double v_0,
     PosVel ma_and_max_v, double current_time, double dt) const {
+  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
   const auto exit_time = get_instance()->get_const_schedule(tr).get_exit_time();
   if (current_time - dt + GRB_EPS >= exit_time) {
     // This time step starts at or after the exit time
@@ -1266,6 +1267,7 @@ cda_rail::simulator::GreedySimulator::apply_exit_time(
     ma_and_max_v.vel = std::min(ma_and_max_v.vel, v_allowed);
   }
   return ma_and_max_v;
+  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
 double cda_rail::simulator::GreedySimulator::earliest_exit_from_standstill(
