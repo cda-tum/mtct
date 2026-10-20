@@ -100,7 +100,8 @@ SolType following_trains_solution(
 TEST(SolutionEvaluation, PositionBoundHoldsTrainBack) {
   // Until time 50, the train has to be able to stop before 300 m. It hence
   // stops there and waits until it may continue, after which it needs another
-  // 75 s for the remaining 700 m, 5 s of which are lost by accelerating.
+  // 85 s until its rear has passed the exit vertex, i.e., for the remaining
+  // 700 m and its length of 100 m, 5 s of which are lost by accelerating.
   const auto                 instance = one_edge_instance(1);
   simulator::GreedySimulator simulator(instance, {}, {{0}}, {}, {{0}, {0}},
                                        {{}});
@@ -122,11 +123,11 @@ TEST(SolutionEvaluation, PositionBoundHoldsTrainBack) {
     }
   }
   EXPECT_NEAR(result.train_trajectories.at(0).at(49).pos, 300, GRB_EPS);
-  EXPECT_NEAR(result.exit_times.at(0), 125, 1);
+  EXPECT_NEAR(result.exit_times.at(0), 135, 1);
 
   // Without the bound, the train drives through at 10 m/s
   simulator.set_position_bound({});
-  EXPECT_NEAR(simulator.simulate(1.0, false, true).exit_times.at(0), 100, 1);
+  EXPECT_NEAR(simulator.simulate(1.0, false, true).exit_times.at(0), 110, 1);
 }
 
 TEST(SolutionEvaluation, GreedySolutionIsReproduced) {
@@ -158,11 +159,14 @@ TEST(SolutionEvaluation, GreedySolutionIsReproduced) {
 
 TEST(SolutionEvaluation, SlowSolutionIsNotOvertaken) {
   // The solution keeps the train at its entry speed of 5 m/s, whereas a greedy
-  // driver would accelerate to 10 m/s and arrive at about 102.5. The train
-  // hence leaves at 200, which is 100 s later than scheduled. Between the two
-  // samples, the solution is only approximated, which runs slightly ahead, so
-  // that the train has to brake before reaching the second sample. It may
-  // hence arrive marginally later, but never earlier.
+  // driver would accelerate to 10 m/s and arrive at about 102.5. The train's
+  // front hence reaches the exit vertex at 200, which is 100 s later than
+  // scheduled. Between the two samples, the solution is only approximated,
+  // which runs slightly ahead, so that the train has to brake before reaching
+  // the second sample. It may hence arrive marginally later, but never
+  // earlier. Its rear then needs at least another 12.5 s to pass the exit
+  // vertex, since the train must not be faster than its exit speed of 5 m/s
+  // there, and at most 16.25 s from a standstill.
   const auto instance = one_edge_instance(1, 5);
   instances::SolGeneralPerformanceOptimizationInstance sol(
       instance, SolutionStatus::Feasible, 0, true);
@@ -174,8 +178,8 @@ TEST(SolutionEvaluation, SlowSolutionIsNotOvertaken) {
   const auto& evaluation = sol.get_evaluation().value();
   ASSERT_TRUE(evaluation.success);
   EXPECT_EQ(evaluation.dt, 1.0);
-  EXPECT_GE(evaluation.exit_times.at(0), 200);
-  EXPECT_LE(evaluation.exit_times.at(0), 202);
+  EXPECT_GE(evaluation.exit_times.at(0), 200 + 12.5);
+  EXPECT_LE(evaluation.exit_times.at(0), 202 + 16.25);
   EXPECT_NEAR(evaluation.exit_delays.at(0), evaluation.exit_times.at(0) - 100,
               GRB_EPS);
   EXPECT_NEAR(evaluation.obj, evaluation.exit_times.at(0), GRB_EPS);
@@ -184,8 +188,8 @@ TEST(SolutionEvaluation, SlowSolutionIsNotOvertaken) {
 TEST(SolutionEvaluation, StationDelay) {
   // The train arrives at the station at 55, i.e., 15 s after its service
   // should have started, and the solution lets it stand there until 120
-  // instead of only until 85. It then accelerates to 10 m/s within 10 s and
-  // leaves at 175.
+  // instead of only until 85. It then accelerates to 10 m/s within 10 s, its
+  // front reaches the exit vertex at 175, and its rear passes it 10 s later.
   const auto instance = station_instance();
   instances::SolGeneralPerformanceOptimizationInstance sol(
       instance, SolutionStatus::Feasible, 0, true);
@@ -205,8 +209,8 @@ TEST(SolutionEvaluation, StationDelay) {
   ASSERT_TRUE(evaluation.success);
   EXPECT_NEAR(evaluation.stop_times.at(0).at(0), 55, 1);
   EXPECT_NEAR(evaluation.stop_delays.at(0).at(0), 15, 1);
-  EXPECT_NEAR(evaluation.exit_times.at(0), 175, 1);
-  EXPECT_NEAR(evaluation.exit_delays.at(0), 75, 1);
+  EXPECT_NEAR(evaluation.exit_times.at(0), 185, 1);
+  EXPECT_NEAR(evaluation.exit_delays.at(0), 85, 1);
   // With all weights being 1, the objective is the exit time plus the average
   // station delay
   EXPECT_NEAR(evaluation.obj,
@@ -216,12 +220,16 @@ TEST(SolutionEvaluation, StationDelay) {
 
 TEST(SolutionEvaluation, BlockSectionsDelayFollowingTrain) {
   // The second train follows the first one as closely as moving block allows.
-  // Under moving block, it can do so and leaves at 115. With a VSS border in
-  // the middle of the edge, it has to wait until the first train has cleared
-  // the first half, i.e., until its front is at 600 m at time 60, and leaves at
-  // 160. Without any VSS border, the whole edge is one block, which the first
-  // train only clears when leaving at 100, so that the second one leaves at
-  // 200.
+  // A train leaves once its rear has passed the exit vertex, i.e., 10 s after
+  // its front has reached it, so that the first train leaves at 110. Under
+  // moving block, the second train can follow and leaves at 125. With a VSS
+  // border in the middle of the edge, it has to wait until the first train has
+  // cleared the first half, i.e., until its front is at 600 m at time 60. It
+  // then reaches the border at 110, just when the first train clears the
+  // second half, so that it has to brake to 5 m/s before it and leaves at
+  // 172.5. Without any VSS border, the whole edge is one block, which the first
+  // train only clears when leaving at 110, so that the second one leaves at
+  // 220.
   const auto instance = one_edge_instance(2);
 
   auto mb_sol = following_trains_solution<
@@ -241,11 +249,11 @@ TEST(SolutionEvaluation, BlockSectionsDelayFollowingTrain) {
            &mb_sol, &vss_sol_with_border, &vss_sol_without_border}) {
     ASSERT_TRUE(sol->get_evaluation().has_value());
     ASSERT_TRUE(sol->get_evaluation()->success);
-    EXPECT_NEAR(sol->get_evaluation()->exit_times.at(0), 100, 1);
+    EXPECT_NEAR(sol->get_evaluation()->exit_times.at(0), 110, 1);
   }
-  EXPECT_NEAR(mb_sol.get_evaluation()->exit_times.at(1), 115, 1);
-  EXPECT_NEAR(vss_sol_with_border.get_evaluation()->exit_times.at(1), 160, 1);
-  EXPECT_NEAR(vss_sol_without_border.get_evaluation()->exit_times.at(1), 200,
+  EXPECT_NEAR(mb_sol.get_evaluation()->exit_times.at(1), 125, 1);
+  EXPECT_NEAR(vss_sol_with_border.get_evaluation()->exit_times.at(1), 172.5, 1);
+  EXPECT_NEAR(vss_sol_without_border.get_evaluation()->exit_times.at(1), 220,
               1);
 }
 
@@ -344,7 +352,10 @@ TEST(SolutionEvaluation, StoredMovingBlockSolutions) {
   // however, the solution only fixes how long a train takes, and the
   // evaluation assumes it to drive at a constant line speed. A train that the
   // solution lets take long for an edge is hence assumed to crawl, which can
-  // delay a following train by a few seconds.
+  // delay a following train by a few seconds. Since every train of these
+  // solutions leaves exactly when scheduled, i.e., without any slack, this can
+  // delay the train itself by another second, as can stopping when its rear
+  // passes the exit vertex, which only happens at the end of a time step.
   for (const auto* instance_name :
        {"HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "Overtake",
         "SimpleNetwork", "SimpleStation", "SingleTrack",
@@ -362,7 +373,7 @@ TEST(SolutionEvaluation, StoredMovingBlockSolutions) {
     const auto& train_list = instance.get_const_train_list();
     for (size_t tr = 0; tr < train_list.size(); ++tr) {
       const auto& tr_name = train_list.get_train(tr).get_name();
-      EXPECT_NEAR(evaluation.exit_times.at(tr), sol.get_exit_time(tr_name), 1)
+      EXPECT_NEAR(evaluation.exit_times.at(tr), sol.get_exit_time(tr_name), 2)
           << instance_name << ", " << tr_name;
       for (size_t stop = 0; stop < evaluation.stop_times.at(tr).size();
            ++stop) {

@@ -61,6 +61,12 @@ enum : std::uint16_t { CycleLimit = 1000 };
  * the best ones for the given routing, ordering, and stopping decisions. The
  * simulation advances in time steps of the given length until every train has
  * left the network, or until nothing moves any more, see CycleLimit.
+ *
+ * As in the moving block MILP, a train leaves the network once its rear has
+ * passed its exit vertex, which is when its scheduled exit time and speed
+ * apply. Until then, it occupies its last edge, beyond whose end the route
+ * continues at the edge's speed limit. A train only waits within the network,
+ * i.e., at the latest with its front at the exit vertex.
  */
 class GreedySimulator : public GeneralSimulator {
 public:
@@ -452,6 +458,48 @@ private:
                                    bool also_limit_by_leaving_edges) const;
 
   /**
+   * @brief Limits moving authority and speed so that the train's rear does
+   *        not pass the exit vertex before the train's exit time.
+   *
+   * The train slows down just enough to leave exactly at its exit time, by
+   * braking fully as late as possible, also after its front has passed the
+   * exit vertex. It must not stop outside the network, though, i.e., there it
+   * drives at least at V_MIN, as in the moving block MILP. Hence, its front
+   * only passes the exit vertex if the train can then leave without stopping
+   * and not before its exit time. Otherwise, it waits with its front at the
+   * exit vertex until waiting any longer would make it leave late.
+   *
+   * @param tr Train index.
+   * @param train Train object containing dynamic limits.
+   * @param pos Current train-front position, before the train has left.
+   * @param v_0 Current train speed.
+   * @param ma_and_max_v Current moving-authority and speed limits.
+   * @param current_time Time at the end of the time step.
+   * @param dt Simulation time step.
+   * @return Moving-authority and speed limits respecting the exit time.
+   */
+  [[nodiscard]] PosVel apply_exit_time(size_t tr, const Train& train,
+                                       double pos, double v_0,
+                                       PosVel ma_and_max_v, double current_time,
+                                       double dt) const;
+
+  /**
+   * @brief Earliest time at which the train's rear passes the exit vertex if
+   *        the train starts from a standstill and is not hindered otherwise.
+   *
+   * @param tr Train index.
+   * @param train Train object containing dynamic limits.
+   * @param pos Train-front position at which the train stands.
+   * @param start_time Time at which the train starts.
+   * @param dt Simulation time step.
+   * @return Time at which the rear passes the exit vertex, or INF if the
+   *         train does not get there.
+   */
+  [[nodiscard]] double
+  earliest_exit_from_standstill(size_t tr, const Train& train, double pos,
+                                double start_time, double dt) const;
+
+  /**
    * @brief Converts a next-stop position into a moving-authority distance.
    *
    * @param max_displacement Maximal forward displacement in the time step.
@@ -582,9 +630,10 @@ private:
   /**
    * @brief What a train has reached at the end of its (partial) route.
    *
-   * `Network` if that end is its exit vertex, `Station` if it is a stop still
-   * to be served, and `Edge` if it is neither, which is the case while the
-   * route is still being extended. `None` if the train is not there yet.
+   * `Network` if that end is its exit vertex, which the train's rear has
+   * passed, `Station` if it is a stop still to be served, and `Edge` if it is
+   * neither, which is the case while the route is still being extended.
+   * `None` if the train is not there yet.
    */
   enum class DestinationType : std::uint8_t { None, Network, Station, Edge };
   /**

@@ -1448,40 +1448,41 @@ TEST(GreedySimulator, FutureSpeedRestrictionConstraints) {
   EXPECT_EQ(ma12tol, 310);
   EXPECT_EQ(vm12tol, 3);
 
-  // Test exit speed limit at 2010
+  // Test exit speed limit at 2210, where the train's rear passes the exit
+  // vertex at 2010
   // Linear movement 20 -> 14 over 10s: 170m
-  // Braking distance: 14*14/4 = 49 to 2059
-  // if-case: 2010 - 170 = 1840
+  // Braking distance: 14*14/4 = 49 to 2259
+  // if-case: 2210 - 170 = 2040
   const auto ma_data13prev = simulator.get_future_max_speed_constraints(
-      tr1, train, 1600, 20, 1000, 400, 10, {}, false);
+      tr1, train, 1800, 20, 1000, 400, 10, {}, false);
   const auto ma13prev = ma_data13prev.ma;
   const auto vm13prev = ma_data13prev.max_v;
   EXPECT_EQ(ma13prev, 459);
   EXPECT_EQ(vm13prev, 50);
 
   const auto ma_data13 = simulator.get_future_max_speed_constraints(
-      tr1, train, 1800, 20, 1000, 400, 10, {}, false);
+      tr1, train, 2000, 20, 1000, 400, 10, {}, false);
   const auto ma13 = ma_data13.ma;
   const auto vm13 = ma_data13.max_v;
   EXPECT_EQ(ma13, 259);
   EXPECT_EQ(vm13, 50);
 
   const auto ma_data13b = simulator.get_future_max_speed_constraints(
-      tr1, train, 1800, 20, 100, 400, 10, {}, false);
+      tr1, train, 2000, 20, 100, 400, 10, {}, false);
   const auto ma13b = ma_data13b.ma;
   const auto vm13b = ma_data13b.max_v;
   EXPECT_EQ(ma13b, 100);
   EXPECT_EQ(vm13b, 50);
 
   const auto ma_data14 = simulator.get_future_max_speed_constraints(
-      tr1, train, 1840, 20, 1000, 400, 10, {}, false);
+      tr1, train, 2040, 20, 1000, 400, 10, {}, false);
   const auto ma14 = ma_data14.ma;
   const auto vm14 = ma_data14.max_v;
   EXPECT_EQ(ma14, 1000);
   EXPECT_EQ(vm14, 14);
 
   const auto ma_data15 = simulator.get_future_max_speed_constraints(
-      tr1, train, 1841, 20, 1000, 400, 10, {}, false);
+      tr1, train, 2041, 20, 1000, 400, 10, {}, false);
   const auto ma15 = ma_data15.ma;
   const auto vm15 = ma_data15.max_v;
   EXPECT_EQ(ma15, 1000);
@@ -3639,6 +3640,83 @@ TEST(GreedySimulation, ExitTimeConstraintStopping) {
   EXPECT_LE(sim_res2.exit_times[0], 205);
 }
 
+TEST(GreedySimulation, ExitWithRear) {
+  // The train leaves once its rear has passed the exit vertex, i.e., once its
+  // front is 250 m beyond it, which at 50 m/s is at 105
+  Network    network;
+  const auto v0    = network.add_vertex("v0", VertexType::TTD, 0);
+  const auto v1    = network.add_vertex("v1", VertexType::TTD, 0);
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 250, 50, 4, 2, true, 0, 50, v0,
+                                       0, 50, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1});
+
+  const auto sim_res = simulator.simulate(5.0, false, true, true);
+  ASSERT_TRUE(sim_res.success);
+  EXPECT_APPROX_EQ_6(sim_res.exit_times.at(tr1), 105);
+  const auto& [last_t, last_pos_vel] =
+      *sim_res.train_trajectories.at(tr1).rbegin();
+  EXPECT_APPROX_EQ_6(last_t, 105);
+  EXPECT_APPROX_EQ_6(last_pos_vel.pos, 5250);
+}
+
+TEST(GreedySimulation, ExitNotBeforeScheduledExitTime) {
+  // Unrestricted, the train's rear passes the exit vertex at 105. If it is
+  // scheduled to leave later, it leaves exactly then, irrespective of whether
+  // it only slows down or has to wait. It only waits within the network, i.e.,
+  // at the latest with its front at the exit vertex at 5000.
+  Network    network;
+  const auto v0    = network.add_vertex("v0", VertexType::TTD, 0);
+  const auto v1    = network.add_vertex("v1", VertexType::TTD, 0);
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+
+  for (const double dt : {1.0, 5.0}) {
+    for (int step = 0; step <= 40; ++step) {
+      const double exit_time = 100 + (2.5 * step);
+      Timetable    timetable;
+      const auto tr1 = timetable.add_train("Train1", 250, 50, 4, 2, true, 0, 50,
+                                           v0, exit_time, 50, v1, network);
+      RouteMap   routes;
+      cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+          network, timetable, routes);
+
+      cda_rail::simulator::GreedySimulator simulator(instance, {});
+      simulator.set_train_edges_of_tr(tr1, {v0_v1});
+      simulator.set_vertex_orders_of_vertex(v0, {tr1});
+      simulator.set_vertex_orders_of_vertex(v1, {tr1});
+
+      const auto sim_res = simulator.simulate(dt, false, true, true);
+      ASSERT_TRUE(sim_res.success)
+          << "dt " << dt << ", exit time " << exit_time;
+      EXPECT_APPROX_EQ_6(sim_res.exit_times.at(tr1), std::max(exit_time, 105.0))
+          << "dt " << dt << ", exit time " << exit_time;
+      bool waited_at_exit_vertex = false;
+      for (const auto& [t, pos_vel] : sim_res.train_trajectories.at(tr1)) {
+        EXPECT_FALSE(pos_vel.pos > 5000 + cda_rail::GRB_EPS &&
+                     pos_vel.vel < cda_rail::V_MIN)
+            << "dt " << dt << ", exit time " << exit_time << ", time " << t;
+        waited_at_exit_vertex =
+            waited_at_exit_vertex ||
+            (std::abs(pos_vel.pos - 5000) < cda_rail::GRB_EPS &&
+             pos_vel.vel < cda_rail::V_MIN);
+      }
+      // If the train is very early, it has to wait
+      if (exit_time >= 150) {
+        EXPECT_TRUE(waited_at_exit_vertex)
+            << "dt " << dt << ", exit time " << exit_time;
+      }
+    }
+  }
+}
+
 TEST(GreedySimulator, DesiredOrderInstanceSolution) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
@@ -4105,10 +4183,19 @@ TEST(GreedySimulator, SimpleNetworkLRTrains) {
   EXPECT_TRUE(sim_res.success);
   EXPECT_GE(sim_res.exit_times.at(tr1lr), 960);
   EXPECT_LE(sim_res.exit_times.at(tr1lr), 960 + 6);
-  EXPECT_GE(sim_res.exit_times.at(tr2lr), 990);
-  EXPECT_LE(sim_res.exit_times.at(tr2lr), 990 + 6);
   EXPECT_TRUE(sim_res.stop_times.at(tr1lr).empty());
-  EXPECT_EQ(sim_res.stop_times.at(tr2lr).size(), 2);
+  ASSERT_EQ(sim_res.stop_times.at(tr2lr).size(), 2);
+  // tr2lr's last stop is with its front at its exit vertex, after which its
+  // rear still has to pass the exit vertex. From a standstill, this takes at
+  // least the minimal time to cover its length of 400 at a speed of at most
+  // 34, arriving at its exit speed of 25.
+  auto const tr2lr_departure =
+      std::max(sim_res.stop_times.at(tr2lr).at(1) + 60, 960.0);
+  auto const tr2lr_earliest_exit =
+      std::max(990.0, tr2lr_departure +
+                          cda_rail::min_travel_time(0, 25, 34, 1.5, 1.5, 400));
+  EXPECT_GE(sim_res.exit_times.at(tr2lr), tr2lr_earliest_exit);
+  EXPECT_LE(sim_res.exit_times.at(tr2lr), tr2lr_earliest_exit + 6);
 }
 
 TEST(GreedySimulator, StopAtRouteEnd) {
@@ -4427,7 +4514,9 @@ TEST(GreedySimulator, DesiredOrderInstanceSolutionBug) {
   auto const sim_res = simulator.simulate(5.0, false, true, true, true);
   EXPECT_TRUE(sim_res.success);
   EXPECT_GE(sim_res.exit_times.at(tr1), 500);
-  EXPECT_LE(sim_res.train_trajectories.at(tr1).at(500).pos, 250);
+  // Until 500, the rear of the train, which is 50 long, does not pass the exit
+  // vertex at 250
+  EXPECT_LE(sim_res.train_trajectories.at(tr1).at(500).pos, 250 + 50);
   EXPECT_GT(sim_res.exit_times.at(tr2), sim_res.exit_times.at(tr1));
 }
 

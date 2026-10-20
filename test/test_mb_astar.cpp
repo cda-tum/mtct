@@ -2326,8 +2326,8 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
       sol_obj.get_const_solution_routes().get_route("Train1").get_edge_id(0),
       v0_v1);
 
-  EXPECT_EQ(sol_obj.get_train_times("Train1").size(), 7);
-  ASSERT_GE(sol_obj.get_train_times("Train1").size(), 7);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").size(), 8);
+  ASSERT_GE(sol_obj.get_train_times("Train1").size(), 8);
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(0), 10);
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(1), 15);
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(2), 20);
@@ -2335,6 +2335,7 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(4), 30);
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(5), 35);
   EXPECT_EQ(sol_obj.get_train_times("Train1").at(6), 40);
+  EXPECT_EQ(sol_obj.get_train_times("Train1").at(7), 45);
 
   // At time 10, the train enters
   EXPECT_EQ(sol_obj.get_train_pos("Train1", 10), 0);
@@ -2363,6 +2364,11 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
   // t = 40 -> v = 20 -> s = 400 + (20 + 20)/2 * 5 = 500
   EXPECT_EQ(sol_obj.get_train_pos("Train1", 40), 500);
   EXPECT_EQ(sol_obj.get_train_speed("Train1", 40), 20);
+
+  // t = 45 -> v = 20 -> s = 500 + (20 + 20)/2 * 5 = 600, i.e., the train's
+  // rear passes the exit vertex
+  EXPECT_EQ(sol_obj.get_train_pos("Train1", 45), 600);
+  EXPECT_EQ(sol_obj.get_train_speed("Train1", 45), 20);
 }
 
 TEST(GenPOMovingBlockAStarSolver, GeneralSimpleNetwork) {
