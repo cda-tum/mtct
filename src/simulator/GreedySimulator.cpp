@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -159,6 +160,15 @@ cda_rail::simulator::GreedySimulator::simulate(
           t < tr_stop_until.at(tr) + dt) {
         PLOGV << train_object.get_name() << " skipped.";
         continue;
+      }
+
+      if (save_trajectories && !train_trajectories.at(tr).empty() &&
+          train_trajectories.at(tr).rbegin()->first < t - dt - GRB_EPS) {
+        // The train was skipped since its last sample, i.e., it stood in a
+        // station. Hence, the end of that standstill is saved as well.
+        train_trajectories.at(tr)[t - dt] = {.pos =
+                                                 train_positions.at(tr).front,
+                                             .vel = train_velocities.at(tr)};
       }
 
       // Calculate MA
@@ -431,16 +441,26 @@ cda_rail::simulator::GreedySimulator::simulate(
       const auto& train_schedule = get_instance()->get_const_schedule(tr);
       const auto& entry_vertex = get_instance()->get_const_network().get_vertex(
           train_schedule.get_entry_vertex());
+      const auto entry_bound =
+          m_position_bound ? m_position_bound(tr, t) : std::nullopt;
       if (vertex_headways.at(train_schedule.get_entry_vertex()) > t) {
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " cannot enter the network at " << entry_vertex.name
               << " due to vertex headway constraints until time "
               << vertex_headways.at(train_schedule.get_entry_vertex());
       } else if (!is_ok_to_enter(tr, train_positions, train_velocities,
-                                 trains_in_network, trains_on_edges)) {
+                                 trains_in_network, trains_on_edges,
+                                 trains_left)) {
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " cannot enter the network at " << entry_vertex.name
               << " due to moving authority constraints.";
+      } else if (entry_bound.has_value() &&
+                 tr_braking_distance(tr,
+                                     train_schedule.get_initial_velocity()) >
+                     entry_bound->braking_point + GRB_EPS) {
+        PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
+              << " cannot enter the network at " << entry_vertex.name
+              << " due to its position bound.";
       } else {
         trains_in_network.insert(tr);
         vertex_headways.at(train_schedule.get_entry_vertex()) =
@@ -489,6 +509,15 @@ cda_rail::simulator::GreedySimulator::simulate(
                  })) {
         PLOGV << "Train stop constraint prevents movement.";
         reason_found = true;
+      } else if (m_position_bound &&
+                 std::ranges::any_of(
+                     std::views::iota(size_t{0}, number_of_trains),
+                     [this, t, &trains_finished_simulating](size_t tr) {
+                       return !trains_finished_simulating.contains(tr) &&
+                              m_position_bound(tr, t).has_value();
+                     })) {
+        PLOGV << "Position bound prevents movement.";
+        reason_found = true;
       } else {
         for (size_t tr = 0; tr < train_velocities.size(); ++tr) {
           if (!trains_finished_simulating.contains(tr)) {
@@ -519,6 +548,8 @@ cda_rail::simulator::GreedySimulator::simulate(
         PLOGV << "Trains are in a deadlock situation.";
         return build_results(false);
       }
+      // Waiting for a reason that resolves over time is no lack of progress
+      cycles_without_movement = 0;
     }
 
     // Update time
@@ -649,7 +680,8 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
     size_t tr, const std::vector<TrainPosition>& train_positions,
     const std::vector<double>&                     train_velocities,
     const std::unordered_set<size_t>&              trains_in_network,
-    const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
+    const std::vector<std::unordered_set<size_t>>& tr_on_edges,
+    const std::unordered_set<size_t>&              trains_left) const {
   const auto v0 = get_instance()->get_const_schedule(tr).get_initial_velocity();
   const auto bd = tr_braking_distance(tr, v0);
   const auto milestones = edge_milestones(tr);
@@ -709,8 +741,9 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
       }
       const auto& other_tr  = *(ttd_pos - 1); // Previous train in the TTD order
       const auto& other_pos = train_positions.at(other_tr);
-      if (!trains_in_network.contains(other_tr) ||
-          !is_behind_ttd(other_tr, ttd_sec.value(), other_pos)) {
+      if (!trains_left.contains(other_tr) &&
+          (!trains_in_network.contains(other_tr) ||
+           !is_behind_ttd(other_tr, ttd_sec.value(), other_pos))) {
         return false; // Other train is occupying the TTD section
       }
     }
@@ -1119,6 +1152,40 @@ bool cda_rail::simulator::GreedySimulator::is_exit_vertex_blocked(
 }
 
 cda_rail::simulator::GreedySimulator::MaAndMaxVResult
+cda_rail::simulator::GreedySimulator::apply_position_bound(
+    size_t tr, double pos, double v_0, MaAndMaxVResult ma_and_max_v, double t,
+    double dt) const {
+  if (!m_position_bound) {
+    return ma_and_max_v;
+  }
+  const auto bound = m_position_bound(tr, t);
+  if (!bound.has_value()) {
+    return ma_and_max_v;
+  }
+
+  ma_and_max_v.ma =
+      std::min(ma_and_max_v.ma, std::max(bound->braking_point - pos,
+                                         tr_braking_distance(tr, v_0)));
+
+  // With linearly changing speed, the front moves (v_0 + v_1) * dt / 2 within
+  // the time step, which bounds v_1 if the front is to stay behind the bound
+  const auto& train = get_instance()->get_const_train_list().get_train(tr);
+  const auto  v_full_braking =
+      std::max(0.0, v_0 - (train.get_deceleration() * dt));
+  const auto front_max_v =
+      std::max((2.0 * (bound->front - pos) / dt) - v_0, v_full_braking);
+  ma_and_max_v.max_v = std::min(ma_and_max_v.max_v, front_max_v);
+  if (front_max_v < V_MIN) {
+    // The train stops, and a stopping train is moved up to its moving
+    // authority, which hence must not lie beyond the bound either
+    ma_and_max_v.ma =
+        std::min(ma_and_max_v.ma,
+                 std::max(bound->front - pos, tr_braking_distance(tr, v_0)));
+  }
+  return ma_and_max_v;
+}
+
+cda_rail::simulator::GreedySimulator::MaAndMaxVResult
 cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
     size_t tr, const std::vector<double>& train_velocities,
     std::optional<size_t> next_stop, double current_time, double dt,
@@ -1140,9 +1207,14 @@ cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
   ma = get_absolute_distance_ma(tr, ma, train_positions, train_velocities,
                                 trains_in_network, trains_left, tr_on_edges,
                                 also_check_reverse_edges);
-  return get_future_max_speed_constraints(
-      tr, train, train_positions.at(tr).front, train_velocities.at(tr), ma,
-      current_time, dt, blocked_vertices, also_limit_speed_by_leaving_edges);
+  // The movement of this time step yields the train's position at current_time
+  return apply_position_bound(
+      tr, train_positions.at(tr).front, train_velocities.at(tr),
+      get_future_max_speed_constraints(tr, train, train_positions.at(tr).front,
+                                       train_velocities.at(tr), ma,
+                                       current_time, dt, blocked_vertices,
+                                       also_limit_speed_by_leaving_edges),
+      current_time, dt);
 }
 
 double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,

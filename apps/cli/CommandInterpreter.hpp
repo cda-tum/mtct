@@ -75,5 +75,6 @@ void add_network_commands(CLI::App& app, Session& session);
 void add_timetable_commands(CLI::App& app, Session& session);
 void add_route_commands(CLI::App& app, Session& session);
 void add_solve_commands(CLI::App& app, Session& session);
+void add_solution_commands(CLI::App& app, Session& session);
 
 } // namespace cda_rail::cli

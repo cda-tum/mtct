@@ -2,6 +2,7 @@
 
 #include "CLI/CLI.hpp"
 #include "Definitions.hpp"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
 
 #include <optional>
@@ -31,7 +32,9 @@ void log_instance_settings(const InstanceSettings& settings);
  * @brief The export block that all three solver apps share.
  *
  * `export_working_directory` is left empty if the option was not given, in
- * which case the caller substitutes its own working directory.
+ * which case the caller substitutes its own working directory. Likewise,
+ * `evaluation_time_step` is left empty if the evaluation should use the time
+ * step of the solver, which the solver's finalize function fills in.
  */
 struct ExportSettings {
   solver::GeneralExportOption export_option{
@@ -43,6 +46,8 @@ struct ExportSettings {
   std::optional<std::string> export_working_directory{};
   std::optional<std::string> parameter_identifier{};
   bool                       generate_identifier{false};
+  bool                       evaluate{false};
+  std::optional<double>      evaluation_time_step{};
 };
 
 /**
@@ -101,5 +106,11 @@ void log_solving_settings(const SolvingSettings& settings);
 
 /** @brief Logs the status and objective of a solution, as the apps do. */
 void log_solution_status(SolutionStatus status, double objective);
+/**
+ * @brief Logs the evaluation of a solution, if it has one: the objective at
+ *        the simulated times and the delays of every train.
+ */
+void log_solution_evaluation(
+    const instances::SolGeneralPerformanceOptimizationInstance& solution);
 
 } // namespace cda_rail::cli

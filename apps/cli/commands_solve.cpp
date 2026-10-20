@@ -10,7 +10,9 @@
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
+#include <iostream>
 #include <memory>
+#include <optional>
 #include <plog/Log.h>
 
 // The solvers run on the instance the session holds, including its unsaved
@@ -42,12 +44,23 @@ void add_mb_mip_command(CLI::App& solve_cmd, Session& session) {
 
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(
         session.instance());
+    const auto solution_settings =
+        mb_mip_solution_settings(*settings, working_directory);
     PLOGI << "Solving...";
     const auto solution = solver.solve(
         mb_mip_model_detail(*settings), mb_mip_solver_strategy(*settings),
-        mb_mip_solution_settings(*settings, working_directory),
-        settings->solving.time_limit, settings->solving.debug_output, true);
+        solution_settings, settings->solving.time_limit,
+        settings->solving.debug_output, true);
     log_solution_status(solution.get_status(), solution.get_obj());
+    log_solution_evaluation(solution);
+    // The moving block MIP has no time step of its own
+    session.set_solution(
+        std::make_unique<
+            cda_rail::instances::SolGeneralPerformanceOptimizationInstance>(
+            solution),
+        std::nullopt,
+        static_cast<const cda_rail::solver::GeneralSolutionSettings&>(
+            solution_settings));
   });
 }
 
@@ -66,12 +79,20 @@ void add_mb_astar_command(CLI::App& solve_cmd, Session& session) {
 
     cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(
         session.instance());
+    const auto solution_settings =
+        general_solution_settings(settings->exporting, working_directory);
     PLOGI << "Solving...";
     const auto solution = solver.solve(
         mb_astar_model_detail(*settings), mb_astar_solver_strategy(*settings),
-        general_solution_settings(settings->exporting, working_directory),
-        settings->solving.time_limit, settings->solving.debug_output, true);
+        solution_settings, settings->solving.time_limit,
+        settings->solving.debug_output, true);
     log_solution_status(solution.get_status(), solution.get_obj());
+    log_solution_evaluation(solution);
+    session.set_solution(
+        std::make_unique<
+            cda_rail::instances::SolGeneralPerformanceOptimizationInstance>(
+            solution),
+        settings->dt, solution_settings);
   });
 }
 
@@ -122,6 +143,13 @@ void add_vss_mip_command(CLI::App& solve_cmd, Session& session) {
                           settings->solving.debug_output, true);
     }();
     log_solution_status(solution.get_status(), solution.get_obj());
+    log_solution_evaluation(solution);
+    session.set_solution(
+        std::make_unique<
+            instances::SolVSSGeneralPerformanceOptimizationInstance>(solution),
+        settings->delta_t,
+        static_cast<const cda_rail::solver::GeneralSolutionSettings&>(
+            solution_settings));
   });
 }
 } // namespace
@@ -134,6 +162,30 @@ void cda_rail::cli::add_solve_commands(CLI::App& app, Session& session) {
   add_mb_mip_command(*solve_cmd, session);
   add_mb_astar_command(*solve_cmd, session);
   add_vss_mip_command(*solve_cmd, session);
+}
+
+void cda_rail::cli::add_solution_commands(CLI::App& app, Session& session) {
+  auto* solution_cmd = app.add_subcommand(
+      "solution", "Work with the solution of the last solve");
+  solution_cmd->require_subcommand(1);
+
+  auto* evaluate_cmd = solution_cmd->add_subcommand(
+      "evaluate", "Simulate the decisions of the solution in detail and report "
+                  "the resulting delays. If the solution was exported, the "
+                  "evaluation is written back to it.");
+  auto time_step = std::make_shared<std::optional<double>>();
+  evaluate_cmd
+      ->add_option("-c,--dt,--timestep", *time_step,
+                   "Time step (dt) of the evaluation in seconds. If unset, the "
+                   "time step of the solver is used.")
+      ->check(CLI::PositiveNumber);
+  evaluate_cmd->callback([&session, time_step]() {
+    const auto path = session.evaluate_solution(*time_step);
+    log_solution_evaluation(session.solution());
+    if (path.has_value()) {
+      std::cout << "Wrote the evaluation to " << path->string() << '\n';
+    }
+  });
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)

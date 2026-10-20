@@ -2725,6 +2725,46 @@ TEST(GreedySimulator, TrajectorySavingTest) {
   EXPECT_FALSE(sim_res.train_trajectories.at(tr1).empty());
 }
 
+TEST(GreedySimulator, StandstillAtStopIsSavedByItsEndpoints) {
+  // The train drives at 10 m/s towards its stop at 500 m, starts braking at
+  // 450 m, and arrives at time 55. It then stands for its service duration of
+  // 30 s.
+  Network    network;
+  const auto v0    = network.add_vertex("v0", VertexType::TTD, 0);
+  const auto v1    = network.add_vertex("v1", VertexType::TTD, 0);
+  const auto v2    = network.add_vertex("v2", VertexType::TTD, 0);
+  const auto v0_v1 = network.add_edge(v0, v1, 500, 10, true);
+  const auto v1_v2 = network.add_edge(v1, v2, 500, 10, true);
+  network.add_successor(v0_v1, v1_v2);
+
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 10, 1, 1, true, 0, 10, v0,
+                                       100, 10, v2, network);
+  timetable.add_empty_station("Station");
+  timetable.add_track_to_station("Station", v0_v1, network);
+  timetable.insert_stop("Train1", "Station", 40, 30);
+
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, {});
+  cda_rail::simulator::GreedySimulator simulator(
+      instance, {}, {{v0_v1, v1_v2}}, {}, {{tr1}, {}, {tr1}}, {{500}});
+
+  const auto sim_res = simulator.simulate(1.0, false, true, true);
+  ASSERT_TRUE(sim_res.success);
+  ASSERT_EQ(sim_res.stop_times.at(tr1).size(), 1);
+  EXPECT_EQ(sim_res.stop_times.at(tr1).at(0), 55);
+
+  // The standstill is saved at its start and at its end, but not in between
+  const auto& trajectory = sim_res.train_trajectories.at(tr1);
+  ASSERT_TRUE(trajectory.contains(55));
+  ASSERT_TRUE(trajectory.contains(85));
+  EXPECT_EQ(std::distance(trajectory.find(55), trajectory.find(85)), 1);
+  EXPECT_EQ(trajectory.at(55).pos, 500);
+  EXPECT_EQ(trajectory.at(85).pos, 500);
+  EXPECT_EQ(trajectory.at(55).vel, 0);
+  EXPECT_EQ(trajectory.at(85).vel, 0);
+}
+
 TEST(GreedySimulator, TwoStationTestWithExit) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);

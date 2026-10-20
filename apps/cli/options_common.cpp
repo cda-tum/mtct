@@ -2,9 +2,13 @@
 
 #include "CLI/CLI.hpp"
 #include "Definitions.hpp"
+#include "Formatting.hpp"
 #include "StringHelper.hpp"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
 
+#include <cstddef>
+#include <optional>
 #include <plog/Log.h>
 #include <string>
 
@@ -151,6 +155,34 @@ void cda_rail::cli::add_export_options(CLI::App& app, ExportSettings& settings,
                "be set explicitly if it should not remain empty.")
       ->excludes(parameter_identifier_option)
       ->group("Export Options");
+
+  // The evaluation is part of the solution export, which exporting the model
+  // alone does not include.
+  CLI::Validator requires_solution_export(
+      [export_sol_flag, export_sol_inst_flag](std::string&) {
+        if (export_sol_flag->count() == 0 &&
+            export_sol_inst_flag->count() == 0) {
+          return std::string{"requires either --export-solution or "
+                             "--export-solution-and-instance"};
+        }
+        return std::string{};
+      },
+      " Needs: --export-solution or --export-solution-and-instance");
+  requires_solution_export.non_modifying();
+
+  auto* evaluate_flag =
+      app.add_flag("--evaluate", settings.evaluate,
+                   "Evaluate the solution before exporting it, i.e., simulate "
+                   "its decisions in detail, and include the resulting delays "
+                   "in the export.")
+          ->check(requires_solution_export)
+          ->group("Export Options");
+  app.add_option("--evaluation-dt", settings.evaluation_time_step,
+                 "Time step (dt) of the evaluation in seconds. If unset, the "
+                 "time step of the solver is used, if it has one.")
+      ->check(CLI::PositiveNumber)
+      ->needs(evaluate_flag)
+      ->group("Export Options");
 }
 
 void cda_rail::cli::log_export_settings(const ExportSettings& settings,
@@ -176,6 +208,12 @@ void cda_rail::cli::log_export_settings(const ExportSettings& settings,
   PLOGD << "  Parameter identifier: "
         << settings.parameter_identifier.value_or("-")
         << (settings.generate_identifier ? " (generated)" : "");
+  if (settings.evaluate && settings.evaluation_time_step.has_value()) {
+    PLOGD << "  Evaluate solution: yes, with time step (dt) "
+          << settings.evaluation_time_step.value();
+  } else {
+    PLOGD << "  Evaluate solution: no";
+  }
 }
 
 cda_rail::solver::GeneralSolutionSettings
@@ -185,7 +223,9 @@ cda_rail::cli::general_solution_settings(const ExportSettings& settings,
           .working_directory =
               settings.export_working_directory.value_or(working_directory),
           .solution_subdirectory = settings.solution_subdirectory,
-          .parameter_identifier  = settings.parameter_identifier};
+          .parameter_identifier  = settings.parameter_identifier,
+          .evaluation_time_step =
+              settings.evaluate ? settings.evaluation_time_step : std::nullopt};
 }
 
 void cda_rail::cli::add_solving_options(CLI::App&        app,
@@ -229,6 +269,32 @@ void cda_rail::cli::log_solution_status(SolutionStatus const status,
   }
   PLOGI << "Solution status: " << sol_status;
   PLOGI << "Solution objective: " << objective;
+}
+
+void cda_rail::cli::log_solution_evaluation(
+    const instances::SolGeneralPerformanceOptimizationInstance& solution) {
+  const auto& evaluation = solution.get_evaluation();
+  if (!evaluation.has_value()) {
+    return;
+  }
+  if (!evaluation->success) {
+    PLOGI << "Evaluation with time step (dt) " << evaluation->dt
+          << ": the simulation ended in a deadlock.";
+    return;
+  }
+  PLOGI << "Evaluation with time step (dt) " << evaluation->dt << ": objective "
+        << evaluation->obj;
+  const auto& train_list = solution.get_instance()->get_const_train_list();
+  for (size_t tr = 0; tr < train_list.size(); ++tr) {
+    std::string stop_delays;
+    for (const auto delay : evaluation->stop_delays.at(tr)) {
+      stop_delays = concatenate_string_views(
+          {stop_delays, stop_delays.empty() ? "" : ", ", format_double(delay)});
+    }
+    PLOGI << "  " << train_list.get_train(tr).get_name() << ": exit delay "
+          << evaluation->exit_delays.at(tr) << ", station delays ["
+          << stop_delays << "]";
+  }
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)

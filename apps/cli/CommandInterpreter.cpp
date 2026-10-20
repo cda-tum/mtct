@@ -27,6 +27,7 @@ cda_rail::cli::CommandInterpreter::CommandInterpreter(Session& session)
   add_timetable_commands(m_app, m_session);
   add_route_commands(m_app, m_session);
   add_solve_commands(m_app, m_session);
+  add_solution_commands(m_app, m_session);
 }
 
 bool cda_rail::cli::CommandInterpreter::run_line(const std::string& input) {

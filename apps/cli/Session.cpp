@@ -4,8 +4,10 @@
 #include "StringHelper.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "solver/GeneralSolver.hpp"
 
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -70,6 +72,7 @@ void cda_rail::cli::Session::new_instance(const std::string& name,
 
   m_instance          = std::move(new_instance);
   m_instance_modified = true;
+  m_solution          = nullptr;
   // The network is now the instance's; whether it still has unsaved changes
   // does not depend on where it came from.
   m_network_modified   = adopt_standalone_network && m_network_modified;
@@ -83,6 +86,7 @@ void cda_rail::cli::Session::load_instance(const std::string& name,
   m_instance_modified  = false;
   m_standalone_network = std::nullopt;
   m_network_modified   = false;
+  m_solution           = nullptr;
 }
 
 void cda_rail::cli::Session::reload_instance() {
@@ -100,6 +104,7 @@ void cda_rail::cli::Session::close_instance() {
   m_instance          = std::nullopt;
   m_instance_modified = false;
   m_network_modified  = false;
+  m_solution          = nullptr;
 }
 
 std::filesystem::path
@@ -184,4 +189,53 @@ std::filesystem::path cda_rail::cli::Session::save_network(
   network.export_network(m_working_directory);
   m_network_modified = false;
   return m_working_directory / "networks" / network.get_network_name();
+}
+
+// ---------------------------------------------------------------- solution
+
+const cda_rail::instances::SolGeneralPerformanceOptimizationInstance&
+cda_rail::cli::Session::solution() const {
+  if (m_solution == nullptr) {
+    throw exceptions::InvalidInputException(
+        "No solution available. Use 'solve' first.");
+  }
+  return *m_solution;
+}
+
+void cda_rail::cli::Session::set_solution(
+    std::unique_ptr<instances::SolGeneralPerformanceOptimizationInstance>
+                                    solution,
+    std::optional<double>           time_step,
+    solver::GeneralSolutionSettings export_settings) {
+  m_solution                 = std::move(solution);
+  m_solution_time_step       = time_step;
+  m_solution_export_settings = std::move(export_settings);
+}
+
+std::optional<std::filesystem::path>
+cda_rail::cli::Session::evaluate_solution(std::optional<double> time_step) {
+  if (m_solution == nullptr) {
+    throw exceptions::InvalidInputException(
+        "No solution available. Use 'solve' first.");
+  }
+  if (!time_step.has_value()) {
+    time_step = m_solution_time_step;
+  }
+  if (!time_step.has_value()) {
+    throw exceptions::InvalidInputException(
+        "The solver has no time step of its own, hence one has to be given "
+        "for the evaluation.");
+  }
+  m_solution->evaluate(time_step.value());
+
+  const auto& settings = m_solution_export_settings;
+  if (settings.export_option == solver::GeneralExportOption::NoExport) {
+    return std::nullopt;
+  }
+  m_solution->export_solution(settings.working_directory,
+                              settings.solution_subdirectory, false,
+                              settings.parameter_identifier);
+  return m_solution->get_export_path(settings.working_directory,
+                                     settings.solution_subdirectory,
+                                     settings.parameter_identifier);
 }

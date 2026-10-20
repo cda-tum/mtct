@@ -96,6 +96,9 @@ void cda_rail::cli::add_mb_astar_options(CLI::App&        app,
 }
 
 void cda_rail::cli::finalize_mb_astar_settings(MbAStarSettings& settings) {
+  if (!settings.exporting.evaluation_time_step.has_value()) {
+    settings.exporting.evaluation_time_step = settings.dt;
+  }
   if (settings.exporting.generate_identifier) {
     settings.exporting.parameter_identifier =
         generate_mb_astar_identifier(settings);

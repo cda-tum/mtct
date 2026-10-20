@@ -23,6 +23,8 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -716,6 +718,16 @@ void expect_solution_exported(const std::filesystem::path& directory) {
                                       "cli-test-solutions" / "cli-test" /
                                       "TestInstance" / "solution_data.json"));
 }
+
+// The evaluation as it was exported along with the solution.
+std::optional<cda_rail::instances::SolutionEvaluation>
+exported_evaluation(const cda_rail::cli::Session& session,
+                    const std::filesystem::path&  directory) {
+  cda_rail::instances::SolGeneralPerformanceOptimizationInstance solution(
+      session.const_instance());
+  solution.load_solution(directory, "cli-test-solutions");
+  return solution.get_evaluation();
+}
 } // namespace
 
 TEST_F(CliTest, SolveWithTheAStarSearch) {
@@ -774,6 +786,74 @@ TEST_F(CliTest, SolveWithTheVssGenerationMip) {
   EXPECT_EQ(session.const_instance().get_const_train_list().size(), 1);
 }
 
+TEST_F(CliTest, SolveAndEvaluateWithTheAStarSearch) {
+  // Without a time step of its own, the evaluation uses the one of the solver
+  cda_rail::cli::Session session{directory};
+  build_solvable_instance(session);
+
+  run(session, "solve mb-astar --dt 10 --export-solution "
+               "--solution-export-subdirectory cli-test-solutions --evaluate");
+
+  const auto evaluation = exported_evaluation(session, directory);
+  ASSERT_TRUE(evaluation.has_value());
+  EXPECT_EQ(evaluation->dt, 10);
+  EXPECT_TRUE(evaluation->success);
+}
+
+TEST_F(CliTest, SolveAndEvaluateWithTheVssGenerationMip) {
+  cda_rail::cli::Session session{directory};
+  build_solvable_instance(session);
+
+  run(session, "solve vss-mip -c 15 -t 60 --export-solution "
+               "--solution-export-subdirectory cli-test-solutions --evaluate "
+               "--evaluation-dt 1");
+
+  const auto evaluation = exported_evaluation(session, directory);
+  ASSERT_TRUE(evaluation.has_value());
+  EXPECT_EQ(evaluation->dt, 1);
+  EXPECT_TRUE(evaluation->success);
+}
+
+TEST_F(CliTest, EvaluateTheSolutionOfTheLastSolve) {
+  cda_rail::cli::Session session{directory};
+  build_solvable_instance(session);
+
+  // Without a solve, there is nothing to evaluate
+  run(session, "solution evaluate");
+  EXPECT_FALSE(session.has_solution());
+
+  run(session, "solve mb-astar --dt 10 --export-solution "
+               "--solution-export-subdirectory cli-test-solutions");
+  ASSERT_TRUE(session.has_solution());
+  EXPECT_FALSE(session.solution().get_evaluation().has_value());
+  EXPECT_FALSE(exported_evaluation(session, directory).has_value());
+
+  // By default, the time step of the solver is used
+  run(session, "solution evaluate");
+  ASSERT_TRUE(session.solution().get_evaluation().has_value());
+  EXPECT_EQ(session.solution().get_evaluation()->dt, 10);
+
+  // The evaluation is written back to where the solution was exported to
+  run(session, "solution evaluate -c 2");
+  EXPECT_EQ(session.solution().get_evaluation()->dt, 2);
+  const auto evaluation = exported_evaluation(session, directory);
+  ASSERT_TRUE(evaluation.has_value());
+  EXPECT_EQ(evaluation->dt, 2);
+
+  // A solver without a time step of its own needs one to be given
+  session.set_solution(
+      std::make_unique<
+          cda_rail::instances::SolGeneralPerformanceOptimizationInstance>(
+          session.solution()),
+      std::nullopt, {});
+  EXPECT_THROW(session.evaluate_solution(std::nullopt),
+               cda_rail::exceptions::InvalidInputException);
+
+  // The solution belongs to the instance it was obtained for
+  run(session, "instance close");
+  EXPECT_FALSE(session.has_solution());
+}
+
 TEST_F(CliTest, HelpListsTheWholeCommandTree) {
   cda_rail::cli::Session session{directory};
   const auto             help = run_capturing(session, "help");
@@ -783,6 +863,7 @@ TEST_F(CliTest, HelpListsTheWholeCommandTree) {
   EXPECT_NE(help.find("train"), std::string::npos);
   EXPECT_NE(help.find("route"), std::string::npos);
   EXPECT_NE(help.find("solve"), std::string::npos);
+  EXPECT_NE(help.find("solution"), std::string::npos);
 }
 
 TEST_F(CliTest, SavingAnInstanceUnderAnotherName) {
@@ -926,6 +1007,95 @@ TEST(CliOptions, ExportWorkingDirectoryNeedsAnExportOption) {
   CLI::App                     app;
   cda_rail::cli::add_mb_mip_options(app, settings);
   EXPECT_THROW(app.parse(std::string{"-b elsewhere"}), CLI::ParseError);
+}
+
+TEST(CliOptions, EvaluationTimeStepDefaultsToTheSolver) {
+  cda_rail::cli::MbAStarSettings astar_settings;
+  CLI::App                       astar_app;
+  cda_rail::cli::add_mb_astar_options(astar_app, astar_settings);
+  astar_app.parse(std::string{"--dt 10 -o -e sub --evaluate"});
+  cda_rail::cli::finalize_mb_astar_settings(astar_settings);
+  EXPECT_EQ(
+      cda_rail::cli::general_solution_settings(astar_settings.exporting, "wd")
+          .evaluation_time_step,
+      10);
+
+  cda_rail::cli::VssMipSettings vss_settings;
+  CLI::App                      vss_app;
+  cda_rail::cli::add_vss_mip_options(vss_app, vss_settings);
+  vss_app.parse(std::string{"-c 15 -o -e sub --evaluate"});
+  cda_rail::cli::finalize_vss_mip_settings(vss_settings);
+  EXPECT_EQ(cda_rail::cli::vss_mip_solution_settings(vss_settings, "wd")
+                .evaluation_time_step,
+            15);
+}
+
+TEST(CliOptions, EvaluationTimeStepCanBeSet) {
+  cda_rail::cli::MbAStarSettings settings;
+  CLI::App                       app;
+  cda_rail::cli::add_mb_astar_options(app, settings);
+  app.parse(std::string{"--dt 10 -o -e sub --evaluate --evaluation-dt 1"});
+  cda_rail::cli::finalize_mb_astar_settings(settings);
+  EXPECT_EQ(cda_rail::cli::general_solution_settings(settings.exporting, "wd")
+                .evaluation_time_step,
+            1);
+}
+
+TEST(CliOptions, NoEvaluationWithoutTheFlag) {
+  cda_rail::cli::MbAStarSettings settings;
+  CLI::App                       app;
+  cda_rail::cli::add_mb_astar_options(app, settings);
+  app.parse(std::string{"--dt 10 -o -e sub"});
+  cda_rail::cli::finalize_mb_astar_settings(settings);
+  EXPECT_FALSE(
+      cda_rail::cli::general_solution_settings(settings.exporting, "wd")
+          .evaluation_time_step.has_value());
+}
+
+TEST(CliOptions, EvaluationIsPartOfTheExport) {
+  cda_rail::cli::MbAStarSettings settings;
+  CLI::App                       app;
+  cda_rail::cli::add_mb_astar_options(app, settings);
+  EXPECT_THROW(app.parse(std::string{"--evaluate"}), CLI::ParseError);
+}
+
+TEST(CliOptions, EvaluationNeedsTheSolutionExport) {
+  // Exporting the MIP model alone does not export the solution
+  cda_rail::cli::MbMipSettings settings;
+  CLI::App                     app;
+  cda_rail::cli::add_mb_mip_options(app, settings);
+  EXPECT_THROW(app.parse(std::string{
+                   "--export-lp-model -e sub --evaluate --evaluation-dt 1"}),
+               CLI::ParseError);
+}
+
+TEST(CliOptions, EvaluationTimeStepNeedsTheEvaluation) {
+  cda_rail::cli::MbAStarSettings settings;
+  CLI::App                       app;
+  cda_rail::cli::add_mb_astar_options(app, settings);
+  EXPECT_THROW(app.parse(std::string{"-o -e sub --evaluation-dt 1"}),
+               CLI::ParseError);
+}
+
+TEST(CliOptions, MbMipEvaluationNeedsATimeStep) {
+  // The moving block MIP has no time step of its own
+  cda_rail::cli::MbMipSettings settings;
+  CLI::App                     app;
+  cda_rail::cli::add_mb_mip_options(app, settings);
+  EXPECT_THROW(app.parse(std::string{"-o -e sub --evaluate"}), CLI::ParseError);
+
+  cda_rail::cli::MbMipSettings settings_with_time_step;
+  CLI::App                     app_with_time_step;
+  cda_rail::cli::add_mb_mip_options(app_with_time_step,
+                                    settings_with_time_step);
+  app_with_time_step.parse(
+      std::string{"-o -e sub --evaluate --evaluation-dt 2"});
+  cda_rail::cli::finalize_mb_mip_settings(app_with_time_step,
+                                          settings_with_time_step);
+  EXPECT_EQ(
+      cda_rail::cli::mb_mip_solution_settings(settings_with_time_step, "wd")
+          .evaluation_time_step,
+      2);
 }
 
 TEST(CliOptions, ExportSettings) {

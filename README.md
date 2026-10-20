@@ -131,6 +131,12 @@ If the solutions belong somewhere else than the instances, a separate working di
 Since the same instance is often solved with different settings, an identifier can be appended to the instance name in the export path.
 It is either specified explicitly by `--parameter-identifier` or generated from the used settings by `--generate-parameter-identifier`.
 
+An exported solution can be evaluated by `--evaluate`.
+Its routes, train orders, and stops are then simulated in detail, without any train running ahead of the solution, and the resulting delays are added to `solution_data.json`.
+This makes solutions comparable that were obtained with different levels of detail.
+The time step of the simulation is given by `--evaluation-dt` and defaults to the time step of the solver.
+The moving block MILP has no time step, so it has to be given there.
+
 Hence, the instance _SimpleStation_ can be solved and exported by the following command:
 
 ```commandline
@@ -195,6 +201,7 @@ instance station-delay-weight [<w>]     route add / clear / list
 network new / load / list / info        solve mb-mip
 network save / reload / close           solve mb-astar
 network rename <new-name>               solve vss-mip
+                                        solution evaluate
 ```
 
 Nothing is written before you ask for it.
@@ -208,6 +215,14 @@ They work on the instance the session holds, including edits that have not been 
 
 ```
 rail (SimpleStation)> solve mb-astar --dt 6 --export-solution --solution-export-subdirectory my-solutions
+```
+
+The session keeps the solution of the last `solve` until another instance is loaded.
+`solution evaluate` evaluates it as described in [Instances and Solutions](#instances-and-solutions), by default with the time step of the solver or with the one given by `--dt`.
+If the solution was exported, the evaluation is written back to it.
+
+```
+rail (SimpleStation)> solution evaluate --dt 1
 ```
 
 Finally, the very same commands can be put in a file, one per line, and run with `--script`:
@@ -430,6 +445,13 @@ Export Options:
                               generated as a concatenation of the parameter names and values.
                               Otherwise the identifier has to be set explicitly if it should
                               not remain empty.
+          --evaluate : Needs: --export-solution or --export-solution-and-instance
+                              Evaluate the solution before exporting it, i.e., simulate its
+                              decisions in detail, and include the resulting delays in the
+                              export.
+          --evaluation-dt FLOAT:POSITIVE Needs: --evaluate
+                              Time step (dt) of the evaluation in seconds. If unset, the time
+                              step of the solver is used, if it has one.
 ```
 
 </details>
@@ -574,6 +596,13 @@ Export Options:
                               generated as a concatenation of the parameter names and values.
                               Otherwise the identifier has to be set explicitly if it should
                               not remain empty.
+          --evaluate : Needs: --export-solution or --export-solution-and-instance Needs: --evaluation-dt
+                              Evaluate the solution before exporting it, i.e., simulate its
+                              decisions in detail, and include the resulting delays in the
+                              export.
+          --evaluation-dt FLOAT:POSITIVE Needs: --evaluate
+                              Time step (dt) of the evaluation in seconds. If unset, the time
+                              step of the solver is used, if it has one.
 ```
 
 </details>
@@ -674,6 +703,13 @@ Export Options:
                               generated as a concatenation of the parameter names and values.
                               Otherwise the identifier has to be set explicitly if it should
                               not remain empty.
+          --evaluate : Needs: --export-solution or --export-solution-and-instance
+                              Evaluate the solution before exporting it, i.e., simulate its
+                              decisions in detail, and include the resulting delays in the
+                              export.
+          --evaluation-dt FLOAT:POSITIVE Needs: --evaluate
+                              Time step (dt) of the evaluation in seconds. If unset, the time
+                              step of the solver is used, if it has one.
 ```
 
 </details>

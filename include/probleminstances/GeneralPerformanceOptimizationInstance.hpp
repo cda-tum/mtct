@@ -518,6 +518,37 @@ public:
   trains_at_t(double t, const cda_rail::index_set& trains_to_consider) const;
 
   void discretize(const vss::SeparationFunction& sep_func = vss::UNIFORM);
+
+  /**
+   * @brief Splits the edges at the given VSS borders, see
+   *        Network::separate_edges_at_vss, and updates timetable and routes
+   *        accordingly.
+   *
+   * @param vss_positions For every edge, the distances of its borders from
+   *        its source vertex.
+   * @return Vector of pairs `{original_edge_index, new_edge_indices}` for
+   *         every separated direction.
+   */
+  std::vector<std::pair<size_t, cda_rail::index_vector>>
+  separate_edges_at_vss(const std::vector<std::vector<double>>& vss_positions);
+};
+
+/**
+ * @brief What simulating the decisions of a solution yields, see
+ *        SolGeneralPerformanceOptimizationInstance::evaluate.
+ *
+ * The times and delays are only filled if the simulation succeeded. They are
+ * indexed by train and, for the stops, additionally by the stops in schedule
+ * order. A stop time is the time at which the service starts.
+ */
+struct SolutionEvaluation {
+  double                           dt{};
+  bool                             success{false};
+  double                           obj{INF};
+  std::vector<double>              exit_times;
+  std::vector<double>              exit_delays;
+  std::vector<std::vector<double>> stop_times;
+  std::vector<std::vector<double>> stop_delays;
 };
 
 /**
@@ -538,8 +569,33 @@ private:
   std::vector<double>              m_train_exit_times;
   std::vector<std::vector<double>> m_train_stop_times;
 
+  std::optional<SolutionEvaluation> m_evaluation;
+
   /** @brief Initializes per-train solution storage containers. */
   void initialize_vectors();
+
+protected:
+  /** @brief The network and sections the simulation of evaluate() runs on. */
+  struct EvaluationSetup {
+    GeneralPerformanceOptimizationInstance instance;
+    std::vector<cda_rail::index_set>       ttd_sections;
+    RouteMap                               routes;
+  };
+  /**
+   * @brief Prepares the simulation of evaluate().
+   *
+   * Under moving block, the instance and its routes are used as they are and
+   * only the unbreakable sections are block sections.
+   *
+   * @return The instance to simulate, its block sections, and the routes of
+   *         this solution in that instance.
+   */
+  [[nodiscard]] virtual EvaluationSetup get_evaluation_setup() const;
+
+  /** @brief Adds the evaluation, if any, to the solution-wide metadata. */
+  [[nodiscard]] nlohmann::json get_general_solution_data() const override;
+  /** @brief Loads the solution-wide metadata including the evaluation. */
+  void set_general_solution_data(const nlohmann::json& data) override;
 
 public:
   using SolGeneralProblemInstanceWithScheduleAndRoutes::export_solution;
@@ -850,6 +906,40 @@ public:
    */
   void set_stop_times(const std::vector<std::vector<double>>& stop_times);
 
+  // Evaluation
+
+  /**
+   * @brief Simulates the decisions of this solution greedily and stores the
+   *        resulting delays, which are exported with the solution.
+   *
+   * The routes, the orders in which the trains pass every block section and
+   * every entry and exit vertex, and the stop positions are taken from this
+   * solution. Every train then drives as fast as the greedy simulator allows,
+   * but neither its front nor its braking point may get ahead of the train of
+   * this solution at the same time, so that the timing of this solution is
+   * not overtaken. Between two samples of this solution, its trajectory is
+   * approximated by a constant line speed, bounded by what the next sample
+   * fixes exactly. Trains may enter later than scheduled, which then shows up
+   * as delay. The objective is that of the instance evaluated at the simulated
+   * times.
+   *
+   * @param dt Time step of the simulation in seconds.
+   * @throws cda_rail::exceptions::ConsistencyException If there is no solution
+   *         to evaluate.
+   */
+  void evaluate(double dt);
+
+  /**
+   * @brief Returns the result of the last evaluate(), if any.
+   *
+   * @return The evaluation, or `std::nullopt` if the solution was not
+   *         evaluated.
+   */
+  [[nodiscard]] const std::optional<SolutionEvaluation>&
+  get_evaluation() const {
+    return m_evaluation;
+  }
+
   // Check solution consistency
 
   /**
@@ -873,6 +963,20 @@ class SolVSSGeneralPerformanceOptimizationInstance
   std::vector<std::vector<double>> m_vss_pos;
 
   void initialize_vss_vector();
+
+protected:
+  /**
+   * @brief Prepares the simulation of evaluate() without moving block.
+   *
+   * The edges are split at the VSS borders of this solution, and every
+   * resulting section between two borders becomes a block section.
+   *
+   * @return The split instance, its block sections, and the routes of this
+   *         solution in that instance.
+   * @throws cda_rail::exceptions::InvalidInputException If a train has no
+   *         train integrity monitoring, which is not implemented.
+   */
+  [[nodiscard]] EvaluationSetup get_evaluation_setup() const override;
 
 public:
   using SolGeneralPerformanceOptimizationInstance::export_solution;

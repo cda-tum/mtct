@@ -60,7 +60,7 @@ cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance cda_rail::
 
   set_timeout(time_limit);
 
-  const auto sol_object = optimize(old_instance, time_limit);
+  auto sol_object = optimize(old_instance, time_limit);
 
   export_lp_model_if_applicable(sol_object.value(), solution_settings);
 

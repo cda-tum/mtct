@@ -792,6 +792,35 @@ cda_rail::Network::discretize(const vss::SeparationFunction& sep_func) {
   return result;
 }
 
+std::vector<std::pair<size_t, cda_rail::index_vector>>
+cda_rail::Network::separate_edges_at_vss(
+    const std::vector<std::vector<double>>& vss_positions) {
+  if (!is_consistent_for_transformation()) {
+    throw exceptions::ConsistencyException();
+  }
+  if (vss_positions.size() != number_of_edges()) {
+    throw exceptions::InvalidInputException(
+        "Number of VSS position vectors does not match number of edges");
+  }
+
+  std::vector<std::pair<size_t, cda_rail::index_vector>> result;
+  for (const size_t i : relevant_breakable_edges()) {
+    if (vss_positions.at(i).empty()) {
+      continue;
+    }
+    auto [fst, snd] = separate_edge_at(i, vss_positions.at(i));
+    // Every sub-edge but the last one ends at a new border vertex
+    for (size_t j = 0; j + 1 < fst.size(); ++j) {
+      change_vertex_type(get_edge(fst.at(j)).target, VertexType::VSS);
+    }
+    result.emplace_back(fst.back(), fst);
+    if (!snd.empty()) {
+      result.emplace_back(snd.back(), snd);
+    }
+  }
+  return result;
+}
+
 // ------------------------
 // Path Finding Algorithms
 // ------------------------

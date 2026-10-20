@@ -2,8 +2,10 @@
 
 #include "datastructure/RailwayNetwork.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "solver/GeneralSolver.hpp"
 
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -21,6 +23,9 @@ namespace cda_rail::cli {
  * Nothing is written to disk unless one of the `save_*` functions is called.
  * Every mutating command marks the corresponding object as modified, which
  * `status` reports and which the commands that discard state warn about.
+ *
+ * In addition, the session keeps the solution of the last `solve`, so that it
+ * can be evaluated afterwards.
  */
 class Session {
   std::filesystem::path m_working_directory;
@@ -32,6 +37,13 @@ class Session {
   // network is the current one.
   std::optional<Network> m_standalone_network;
   bool                   m_network_modified{false};
+
+  // The solution of the last 'solve', see set_solution. It is discarded
+  // whenever another instance is loaded or created.
+  std::unique_ptr<instances::SolGeneralPerformanceOptimizationInstance>
+                                  m_solution;
+  std::optional<double>           m_solution_time_step;
+  solver::GeneralSolutionSettings m_solution_export_settings;
 
 public:
   explicit Session(std::filesystem::path working_directory)
@@ -131,6 +143,46 @@ public:
    */
   std::filesystem::path
   save_network(const std::optional<std::string>& new_name);
+
+  // --------------------------------------------------------------- solution
+
+  [[nodiscard]] bool has_solution() const { return m_solution != nullptr; }
+
+  /**
+   * @brief The solution of the last `solve`.
+   * @throws cda_rail::exceptions::InvalidInputException If there is none.
+   */
+  [[nodiscard]] const instances::SolGeneralPerformanceOptimizationInstance&
+  solution() const;
+
+  /**
+   * @brief Keeps @p solution as the solution of the session.
+   *
+   * @param time_step The time step of the solver, if it has one, which
+   *        evaluate_solution uses by default.
+   * @param export_settings Where the solver exported @p solution to, which is
+   *        where evaluate_solution writes it back to.
+   */
+  void set_solution(
+      std::unique_ptr<instances::SolGeneralPerformanceOptimizationInstance>
+                                      solution,
+      std::optional<double>           time_step,
+      solver::GeneralSolutionSettings export_settings);
+
+  /**
+   * @brief Evaluates the solution, see
+   *        instances::SolGeneralPerformanceOptimizationInstance::evaluate, and
+   *        writes it back with its evaluation if the solver exported it.
+   *
+   * @param time_step Time step of the evaluation. If unset, the time step of
+   *        the solver is used.
+   * @return The directory written to, or `std::nullopt` if the solution was not
+   *         exported.
+   * @throws cda_rail::exceptions::InvalidInputException If there is no
+   *         solution, or if no time step is given and the solver has none.
+   */
+  std::optional<std::filesystem::path>
+  evaluate_solution(std::optional<double> time_step);
 };
 
 } // namespace cda_rail::cli

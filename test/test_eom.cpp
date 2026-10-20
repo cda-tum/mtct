@@ -483,6 +483,20 @@ TEST(EoM, EoMMaximalTravelTimeNoStop8) {
                    5);
 }
 
+TEST(EoM, EoMMaximalTravelTimeNoStopFullBraking) {
+  // The distance is exactly the braking distance from 2.7046999107196354, as it
+  // occurs in a simulated trajectory. Hence, the train brakes fully all the
+  // way, which takes 2.7046999107196354 seconds, but rounding puts the
+  // braking distance marginally above the distance.
+  EXPECT_APPROX_EQ(cda_rail::max_travel_time_no_stopping(
+                       2.7046999107196354, 0, 0.3, 2, 1, 3.6577008035233121),
+                   2.7046999107196354);
+  // The same for accelerating fully from a standstill
+  EXPECT_APPROX_EQ(cda_rail::max_travel_time_no_stopping(
+                       0, 2.7046999107196354, 0.3, 1, 2, 3.6577008035233121),
+                   2.7046999107196354);
+}
+
 TEST(EoM, EoMMinimalTravelTimeToEnd) {
   // Start at speed 10,
   // accelerate at rate 2 for 5 seconds until maximal speed 20 is reached,
