@@ -6,6 +6,7 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "gtest/gtest_prod.h"

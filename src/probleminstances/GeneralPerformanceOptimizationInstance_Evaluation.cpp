@@ -5,6 +5,7 @@
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "probleminstances/GeneralProblemInstance.hpp"
 #include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedySimulator.hpp"
 

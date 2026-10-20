@@ -796,9 +796,11 @@ TEST_F(CliTest, SolveAndEvaluateWithTheAStarSearch) {
 
   const auto evaluation = exported_evaluation(session, directory);
   ASSERT_TRUE(evaluation.has_value());
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
   EXPECT_EQ(evaluation->dt, 10);
   EXPECT_TRUE(evaluation->trajectory.success);
   EXPECT_TRUE(evaluation->greedy.success);
+  // NOLINTEND(bugprone-unchecked-optional-access)
 }
 
 TEST_F(CliTest, SolveAndEvaluateWithTheVssGenerationMip) {
@@ -811,9 +813,11 @@ TEST_F(CliTest, SolveAndEvaluateWithTheVssGenerationMip) {
 
   const auto evaluation = exported_evaluation(session, directory);
   ASSERT_TRUE(evaluation.has_value());
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
   EXPECT_EQ(evaluation->dt, 1);
   EXPECT_TRUE(evaluation->trajectory.success);
   EXPECT_TRUE(evaluation->greedy.success);
+  // NOLINTEND(bugprone-unchecked-optional-access)
 }
 
 TEST_F(CliTest, EvaluateTheSolutionOfTheLastSolve) {
@@ -833,6 +837,7 @@ TEST_F(CliTest, EvaluateTheSolutionOfTheLastSolve) {
   // By default, the time step of the solver is used
   run(session, "solution evaluate");
   ASSERT_TRUE(session.solution().get_evaluation().has_value());
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
   EXPECT_EQ(session.solution().get_evaluation()->dt, 10);
 
   // The evaluation is written back to where the solution was exported to
@@ -841,6 +846,7 @@ TEST_F(CliTest, EvaluateTheSolutionOfTheLastSolve) {
   const auto evaluation = exported_evaluation(session, directory);
   ASSERT_TRUE(evaluation.has_value());
   EXPECT_EQ(evaluation->dt, 2);
+  // NOLINTEND(bugprone-unchecked-optional-access)
 
   // A solver without a time step of its own needs one to be given
   session.set_solution(

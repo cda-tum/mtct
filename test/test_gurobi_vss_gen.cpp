@@ -1990,6 +1990,7 @@ TEST(VSSGenSolver, EvaluateSolution) {
 
   sol.evaluate(1.0);
   ASSERT_TRUE(sol.get_evaluation().has_value());
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
   ASSERT_TRUE(sol.get_evaluation()->trajectory.success);
   for (const auto delay : sol.get_evaluation()->trajectory.exit_delays) {
     EXPECT_NEAR(delay, 0, 1);
@@ -2011,4 +2012,5 @@ TEST(VSSGenSolver, EvaluateSolution) {
   ASSERT_TRUE(sol_without_vss.get_evaluation()->trajectory.success);
   EXPECT_GT(sol_without_vss.get_evaluation()->trajectory.obj,
             sol.get_evaluation()->trajectory.obj + 1);
+  // NOLINTEND(bugprone-unchecked-optional-access)
 }
