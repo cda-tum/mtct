@@ -534,21 +534,33 @@ public:
 };
 
 /**
- * @brief What simulating the decisions of a solution yields, see
- *        SolGeneralPerformanceOptimizationInstance::evaluate.
+ * @brief The delays of the trains in one simulation of a solution's decisions.
  *
  * The times and delays are only filled if the simulation succeeded. They are
  * indexed by train and, for the stops, additionally by the stops in schedule
  * order. A stop time is the time at which the service starts.
  */
-struct SolutionEvaluation {
-  double                           dt{};
+struct SimulatedDelays {
   bool                             success{false};
   double                           obj{INF};
   std::vector<double>              exit_times;
   std::vector<double>              exit_delays;
   std::vector<std::vector<double>> stop_times;
   std::vector<std::vector<double>> stop_delays;
+};
+
+/**
+ * @brief What simulating the decisions of a solution yields, see
+ *        SolGeneralPerformanceOptimizationInstance::evaluate.
+ *
+ * The decisions are simulated twice with the same time step: once keeping
+ * every train behind its trajectory in the solution, and once greedily, i.e.,
+ * with only the decisions fixed, as in the A* search.
+ */
+struct SolutionEvaluation {
+  double          dt{};
+  SimulatedDelays trajectory;
+  SimulatedDelays greedy;
 };
 
 /**
@@ -914,14 +926,16 @@ public:
    *
    * The routes, the orders in which the trains pass every block section and
    * every entry and exit vertex, and the stop positions are taken from this
-   * solution. Every train then drives as fast as the greedy simulator allows,
-   * but neither its front nor its braking point may get ahead of the train of
-   * this solution at the same time, so that the timing of this solution is
-   * not overtaken. Between two samples of this solution, its trajectory is
-   * approximated by a constant line speed, bounded by what the next sample
-   * fixes exactly. Trains may enter later than scheduled, which then shows up
-   * as delay. The objective is that of the instance evaluated at the simulated
-   * times.
+   * solution. Every train then drives as fast as the greedy simulator allows.
+   * This is done twice, see SolutionEvaluation. In the first simulation,
+   * neither the front nor the braking point of a train may get ahead of the
+   * train of this solution at the same time, so that the timing of this
+   * solution is not overtaken. Between two samples of this solution, its
+   * trajectory is approximated by a constant line speed, bounded by what the
+   * next sample fixes exactly. In the second simulation, the trains are only
+   * bound by the decisions, as in the A* search. In both, trains may enter
+   * later than scheduled, which then shows up as delay. The objective is that
+   * of the instance evaluated at the simulated times.
    *
    * @param dt Time step of the simulation in seconds.
    * @throws cda_rail::exceptions::ConsistencyException If there is no solution

@@ -4,6 +4,7 @@
 #include "Definitions.hpp"
 #include "Formatting.hpp"
 #include "StringHelper.hpp"
+#include "datastructure/Train.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
 
@@ -271,30 +272,41 @@ void cda_rail::cli::log_solution_status(SolutionStatus const status,
   PLOGI << "Solution objective: " << objective;
 }
 
+namespace {
+// Logs the objective and the delays of every train in one simulation.
+void log_simulated_delays(const std::string&                          label,
+                          const cda_rail::instances::SimulatedDelays& delays,
+                          const cda_rail::TrainList& train_list) {
+  if (!delays.success) {
+    PLOGI << "  " << label << ": the simulation ended in a deadlock.";
+    return;
+  }
+  PLOGI << "  " << label << ": objective " << delays.obj;
+  for (size_t tr = 0; tr < train_list.size(); ++tr) {
+    std::string stop_delays;
+    for (const auto delay : delays.stop_delays.at(tr)) {
+      stop_delays = cda_rail::concatenate_string_views(
+          {stop_delays, stop_delays.empty() ? "" : ", ",
+           cda_rail::cli::format_double(delay)});
+    }
+    PLOGI << "    " << train_list.get_train(tr).get_name() << ": exit delay "
+          << delays.exit_delays.at(tr) << ", station delays [" << stop_delays
+          << "]";
+  }
+}
+} // namespace
+
 void cda_rail::cli::log_solution_evaluation(
     const instances::SolGeneralPerformanceOptimizationInstance& solution) {
   const auto& evaluation = solution.get_evaluation();
   if (!evaluation.has_value()) {
     return;
   }
-  if (!evaluation->success) {
-    PLOGI << "Evaluation with time step (dt) " << evaluation->dt
-          << ": the simulation ended in a deadlock.";
-    return;
-  }
-  PLOGI << "Evaluation with time step (dt) " << evaluation->dt << ": objective "
-        << evaluation->obj;
   const auto& train_list = solution.get_instance()->get_const_train_list();
-  for (size_t tr = 0; tr < train_list.size(); ++tr) {
-    std::string stop_delays;
-    for (const auto delay : evaluation->stop_delays.at(tr)) {
-      stop_delays = concatenate_string_views(
-          {stop_delays, stop_delays.empty() ? "" : ", ", format_double(delay)});
-    }
-    PLOGI << "  " << train_list.get_train(tr).get_name() << ": exit delay "
-          << evaluation->exit_delays.at(tr) << ", station delays ["
-          << stop_delays << "]";
-  }
+  PLOGI << "Evaluation with time step (dt) " << evaluation->dt;
+  log_simulated_delays("Behind the solution's trajectory",
+                       evaluation->trajectory, train_list);
+  log_simulated_delays("Greedy", evaluation->greedy, train_list);
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)

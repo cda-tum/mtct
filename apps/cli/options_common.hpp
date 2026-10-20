@@ -107,8 +107,9 @@ void log_solving_settings(const SolvingSettings& settings);
 /** @brief Logs the status and objective of a solution, as the apps do. */
 void log_solution_status(SolutionStatus status, double objective);
 /**
- * @brief Logs the evaluation of a solution, if it has one: the objective at
- *        the simulated times and the delays of every train.
+ * @brief Logs the evaluation of a solution, if it has one: for both of its
+ *        simulations, the objective at the simulated times and the delays of
+ *        every train.
  */
 void log_solution_evaluation(
     const instances::SolGeneralPerformanceOptimizationInstance& solution);

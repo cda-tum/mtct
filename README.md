@@ -132,8 +132,10 @@ Since the same instance is often solved with different settings, an identifier c
 It is either specified explicitly by `--parameter-identifier` or generated from the used settings by `--generate-parameter-identifier`.
 
 An exported solution can be evaluated by `--evaluate`.
-Its routes, train orders, and stops are then simulated in detail, without any train running ahead of the solution, and the resulting delays are added to `solution_data.json`.
-This makes solutions comparable that were obtained with different levels of detail.
+This simulates the solution in full detail and adds the resulting delays to `solution_data.json`, so that solutions obtained with different levels of detail can be compared.
+The simulation is done twice.
+The first one follows the original trajectories as closely as possible.
+The second one only keeps the routes, train orders, and stops of the solution and lets the trains drive greedily as fast as possible.
 The time step of the simulation is given by `--evaluation-dt` and defaults to the time step of the solver.
 The moving block MILP has no time step, so it has to be given there.
 

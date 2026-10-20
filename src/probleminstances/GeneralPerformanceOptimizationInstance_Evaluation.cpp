@@ -1,9 +1,11 @@
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
+#include "datastructure/Train.hpp"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedySimulator.hpp"
 
 #include <algorithm>
@@ -60,6 +62,79 @@ sorted_trains(std::vector<std::pair<double, size_t>> events) {
   trains.reserve(events.size());
   std::ranges::copy(events | std::views::values, std::back_inserter(trains));
   return trains;
+}
+
+// The delays of the trains in one simulation of the decisions of a solution.
+cda_rail::instances::SimulatedDelays simulated_delays(
+    const cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
+    const cda_rail::simulator::SimulatorResults&                       result) {
+  cda_rail::instances::SimulatedDelays delays{.success = result.success};
+  if (!result.success) {
+    return delays;
+  }
+  delays.obj = instance.get_objective_val(result.exit_times, result.stop_times);
+  delays.exit_times = result.exit_times;
+  for (size_t tr = 0; tr < instance.get_const_train_list().size(); ++tr) {
+    const auto& schedule = instance.get_const_schedule(tr);
+    delays.exit_delays.emplace_back(result.exit_times.at(tr) -
+                                    schedule.get_exit_time());
+    // The simulator reports when a train reaches its stop, the service starts
+    // no earlier than scheduled
+    auto& tr_stop_times  = delays.stop_times.emplace_back();
+    auto& tr_stop_delays = delays.stop_delays.emplace_back();
+    for (size_t stop = 0; stop < schedule.get_stops().size(); ++stop) {
+      const auto service_time =
+          schedule.get_stops().at(stop).get_service_time();
+      tr_stop_times.emplace_back(
+          std::max(result.stop_times.at(tr).at(stop), service_time));
+      tr_stop_delays.emplace_back(tr_stop_times.back() - service_time);
+    }
+  }
+  return delays;
+}
+
+// NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
+nlohmann::json
+simulated_delays_to_json(const cda_rail::instances::SimulatedDelays& delays,
+                         const cda_rail::TrainList& train_list) {
+  nlohmann::json json;
+  json["success"] = delays.success;
+  if (!delays.success) {
+    return json;
+  }
+  json["obj"]    = delays.obj;
+  json["trains"] = nlohmann::json::object();
+  for (size_t tr = 0; tr < train_list.size(); ++tr) {
+    json["trains"][train_list.get_train(tr).get_name()] = {
+        {"exit_time", delays.exit_times.at(tr)},
+        {"exit_delay", delays.exit_delays.at(tr)},
+        {"stop_times", delays.stop_times.at(tr)},
+        {"stop_delays", delays.stop_delays.at(tr)}};
+  }
+  return json;
+}
+// NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
+
+cda_rail::instances::SimulatedDelays
+simulated_delays_from_json(const nlohmann::json&      json,
+                           const cda_rail::TrainList& train_list) {
+  cda_rail::instances::SimulatedDelays delays{
+      .success = json.at("success").get<bool>()};
+  if (!delays.success) {
+    return delays;
+  }
+  delays.obj = json.at("obj").get<double>();
+  for (size_t tr = 0; tr < train_list.size(); ++tr) {
+    const auto& tr_json =
+        json.at("trains").at(train_list.get_train(tr).get_name());
+    delays.exit_times.emplace_back(tr_json.at("exit_time").get<double>());
+    delays.exit_delays.emplace_back(tr_json.at("exit_delay").get<double>());
+    delays.stop_times.emplace_back(
+        tr_json.at("stop_times").get<std::vector<double>>());
+    delays.stop_delays.emplace_back(
+        tr_json.at("stop_delays").get<std::vector<double>>());
+  }
+  return delays;
 }
 } // namespace
 
@@ -195,31 +270,17 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
         }
         return bound;
       });
-  const auto result = simulator.simulate(dt, true, true, false, true);
+  const auto trajectory_result =
+      simulator.simulate(dt, true, true, false, true);
+  // Afterwards, only the decisions of this solution are fixed, as in the A*
+  // search
+  simulator.set_position_bound({});
+  const auto greedy_result = simulator.simulate(dt, true, true, false, true);
 
-  SolutionEvaluation evaluation{.dt = dt, .success = result.success};
-  if (result.success) {
-    evaluation.obj =
-        setup.instance.get_objective_val(result.exit_times, result.stop_times);
-    evaluation.exit_times = result.exit_times;
-    for (size_t tr = 0; tr < num_tr; ++tr) {
-      const auto& schedule = setup.instance.get_const_schedule(tr);
-      evaluation.exit_delays.emplace_back(result.exit_times.at(tr) -
-                                          schedule.get_exit_time());
-      // The simulator reports when a train reaches its stop, the service
-      // starts no earlier than scheduled
-      auto& tr_stop_times  = evaluation.stop_times.emplace_back();
-      auto& tr_stop_delays = evaluation.stop_delays.emplace_back();
-      for (size_t stop = 0; stop < schedule.get_stops().size(); ++stop) {
-        const auto service_time =
-            schedule.get_stops().at(stop).get_service_time();
-        tr_stop_times.emplace_back(
-            std::max(result.stop_times.at(tr).at(stop), service_time));
-        tr_stop_delays.emplace_back(tr_stop_times.back() - service_time);
-      }
-    }
-  }
-  m_evaluation = std::move(evaluation);
+  m_evaluation = SolutionEvaluation{
+      .dt         = dt,
+      .trajectory = simulated_delays(setup.instance, trajectory_result),
+      .greedy     = simulated_delays(setup.instance, greedy_result)};
 }
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::EvaluationSetup
@@ -264,23 +325,13 @@ nlohmann::json cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     return data;
   }
 
+  auto const& train_list = get_instance()->get_const_train_list();
   // NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
-  nlohmann::json evaluation;
-  evaluation["dt"]      = m_evaluation->dt;
-  evaluation["success"] = m_evaluation->success;
-  if (m_evaluation->success) {
-    evaluation["obj"]      = m_evaluation->obj;
-    evaluation["trains"]   = nlohmann::json::object();
-    auto const& train_list = get_instance()->get_const_train_list();
-    for (size_t tr = 0; tr < train_list.size(); ++tr) {
-      evaluation["trains"][train_list.get_train(tr).get_name()] = {
-          {"exit_time", m_evaluation->exit_times.at(tr)},
-          {"exit_delay", m_evaluation->exit_delays.at(tr)},
-          {"stop_times", m_evaluation->stop_times.at(tr)},
-          {"stop_delays", m_evaluation->stop_delays.at(tr)}};
-    }
-  }
-  data["evaluation"] = evaluation;
+  data["evaluation"] = {
+      {"dt", m_evaluation->dt},
+      {"trajectory",
+       simulated_delays_to_json(m_evaluation->trajectory, train_list)},
+      {"greedy", simulated_delays_to_json(m_evaluation->greedy, train_list)}};
   // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
   return data;
 }
@@ -294,24 +345,12 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     return;
   }
 
-  const auto&        evaluation_json = data.at("evaluation");
-  SolutionEvaluation evaluation{.dt = evaluation_json.at("dt").get<double>(),
-                                .success =
-                                    evaluation_json.at("success").get<bool>()};
-  if (evaluation.success) {
-    evaluation.obj         = evaluation_json.at("obj").get<double>();
-    auto const& train_list = get_instance()->get_const_train_list();
-    for (size_t tr = 0; tr < train_list.size(); ++tr) {
-      const auto& tr_json =
-          evaluation_json.at("trains").at(train_list.get_train(tr).get_name());
-      evaluation.exit_times.emplace_back(tr_json.at("exit_time").get<double>());
-      evaluation.exit_delays.emplace_back(
-          tr_json.at("exit_delay").get<double>());
-      evaluation.stop_times.emplace_back(
-          tr_json.at("stop_times").get<std::vector<double>>());
-      evaluation.stop_delays.emplace_back(
-          tr_json.at("stop_delays").get<std::vector<double>>());
-    }
-  }
-  m_evaluation = std::move(evaluation);
+  const auto& evaluation_json = data.at("evaluation");
+  auto const& train_list      = get_instance()->get_const_train_list();
+  m_evaluation                = SolutionEvaluation{
+      .dt         = evaluation_json.at("dt").get<double>(),
+      .trajectory = simulated_delays_from_json(evaluation_json.at("trajectory"),
+                                               train_list),
+      .greedy =
+          simulated_delays_from_json(evaluation_json.at("greedy"), train_list)};
 }

@@ -1990,11 +1990,12 @@ TEST(VSSGenSolver, EvaluateSolution) {
 
   sol.evaluate(1.0);
   ASSERT_TRUE(sol.get_evaluation().has_value());
-  ASSERT_TRUE(sol.get_evaluation()->success);
-  for (const auto delay : sol.get_evaluation()->exit_delays) {
+  ASSERT_TRUE(sol.get_evaluation()->trajectory.success);
+  for (const auto delay : sol.get_evaluation()->trajectory.exit_delays) {
     EXPECT_NEAR(delay, 0, 1);
   }
-  for (const auto& tr_stop_delays : sol.get_evaluation()->stop_delays) {
+  for (const auto& tr_stop_delays :
+       sol.get_evaluation()->trajectory.stop_delays) {
     for (const auto delay : tr_stop_delays) {
       EXPECT_NEAR(delay, 0, 1);
     }
@@ -2007,7 +2008,7 @@ TEST(VSSGenSolver, EvaluateSolution) {
   }
   sol_without_vss.evaluate(1.0);
   ASSERT_TRUE(sol_without_vss.get_evaluation().has_value());
-  ASSERT_TRUE(sol_without_vss.get_evaluation()->success);
-  EXPECT_GT(sol_without_vss.get_evaluation()->obj,
-            sol.get_evaluation()->obj + 1);
+  ASSERT_TRUE(sol_without_vss.get_evaluation()->trajectory.success);
+  EXPECT_GT(sol_without_vss.get_evaluation()->trajectory.obj,
+            sol.get_evaluation()->trajectory.obj + 1);
 }

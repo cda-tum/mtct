@@ -797,7 +797,8 @@ TEST_F(CliTest, SolveAndEvaluateWithTheAStarSearch) {
   const auto evaluation = exported_evaluation(session, directory);
   ASSERT_TRUE(evaluation.has_value());
   EXPECT_EQ(evaluation->dt, 10);
-  EXPECT_TRUE(evaluation->success);
+  EXPECT_TRUE(evaluation->trajectory.success);
+  EXPECT_TRUE(evaluation->greedy.success);
 }
 
 TEST_F(CliTest, SolveAndEvaluateWithTheVssGenerationMip) {
@@ -811,7 +812,8 @@ TEST_F(CliTest, SolveAndEvaluateWithTheVssGenerationMip) {
   const auto evaluation = exported_evaluation(session, directory);
   ASSERT_TRUE(evaluation.has_value());
   EXPECT_EQ(evaluation->dt, 1);
-  EXPECT_TRUE(evaluation->success);
+  EXPECT_TRUE(evaluation->trajectory.success);
+  EXPECT_TRUE(evaluation->greedy.success);
 }
 
 TEST_F(CliTest, EvaluateTheSolutionOfTheLastSolve) {

@@ -132,29 +132,33 @@ TEST(SolutionEvaluation, PositionBoundHoldsTrainBack) {
 
 TEST(SolutionEvaluation, GreedySolutionIsReproduced) {
   // A solution obtained by the greedy simulator, as the A* solver does, is
-  // simulated identically, including the stop at the station.
+  // simulated identically, including the stop at the station. Since the
+  // solution is greedy itself, it makes no difference whether the trains are
+  // kept behind it or not.
   const auto                 instance = station_instance();
   simulator::GreedySimulator simulator(instance, {}, {{0, 1}}, {},
                                        {{0}, {}, {0}}, {{500}});
-  const auto greedy = simulator.simulate(1.0, false, true, true);
-  ASSERT_TRUE(greedy.success);
+  const auto simulated = simulator.simulate(1.0, false, true, true);
+  ASSERT_TRUE(simulated.success);
 
   instances::SolGeneralPerformanceOptimizationInstance sol(
       instance, SolutionStatus::Feasible, 0, true);
-  for (const auto& [t, pos_vel] : greedy.train_trajectories.at(0)) {
+  for (const auto& [t, pos_vel] : simulated.train_trajectories.at(0)) {
     sol.add_train_pos("Train1", t, pos_vel.pos);
     sol.add_train_speed("Train1", t, pos_vel.vel);
   }
-  sol.set_exit_times(greedy.exit_times);
-  sol.set_stop_times(greedy.stop_times);
+  sol.set_exit_times(simulated.exit_times);
+  sol.set_stop_times(simulated.stop_times);
 
   sol.evaluate(1.0);
   ASSERT_TRUE(sol.get_evaluation().has_value());
-  const auto& evaluation = sol.get_evaluation().value();
-  ASSERT_TRUE(evaluation.success);
-  EXPECT_NEAR(evaluation.exit_times.at(0), greedy.exit_times.at(0), GRB_EPS);
-  EXPECT_NEAR(evaluation.stop_times.at(0).at(0), greedy.stop_times.at(0).at(0),
-              GRB_EPS);
+  for (const auto* delays :
+       {&sol.get_evaluation()->trajectory, &sol.get_evaluation()->greedy}) {
+    ASSERT_TRUE(delays->success);
+    EXPECT_NEAR(delays->exit_times.at(0), simulated.exit_times.at(0), GRB_EPS);
+    EXPECT_NEAR(delays->stop_times.at(0).at(0),
+                simulated.stop_times.at(0).at(0), GRB_EPS);
+  }
 }
 
 TEST(SolutionEvaluation, SlowSolutionIsNotOvertaken) {
@@ -176,13 +180,21 @@ TEST(SolutionEvaluation, SlowSolutionIsNotOvertaken) {
   sol.evaluate(1.0);
   ASSERT_TRUE(sol.get_evaluation().has_value());
   const auto& evaluation = sol.get_evaluation().value();
-  ASSERT_TRUE(evaluation.success);
   EXPECT_EQ(evaluation.dt, 1.0);
-  EXPECT_GE(evaluation.exit_times.at(0), 200 + 12.5);
-  EXPECT_LE(evaluation.exit_times.at(0), 202 + 16.25);
-  EXPECT_NEAR(evaluation.exit_delays.at(0), evaluation.exit_times.at(0) - 100,
+  const auto& trajectory = evaluation.trajectory;
+  ASSERT_TRUE(trajectory.success);
+  EXPECT_GE(trajectory.exit_times.at(0), 200 + 12.5);
+  EXPECT_LE(trajectory.exit_times.at(0), 202 + 16.25);
+  EXPECT_NEAR(trajectory.exit_delays.at(0), trajectory.exit_times.at(0) - 100,
               GRB_EPS);
-  EXPECT_NEAR(evaluation.obj, evaluation.exit_times.at(0), GRB_EPS);
+  EXPECT_NEAR(trajectory.obj, trajectory.exit_times.at(0), GRB_EPS);
+
+  // Greedily, the train accelerates to 10 m/s within 5 s, i.e., 37.5 m, and
+  // brakes back to its exit speed of 5 m/s within another 5 s and 37.5 m, by
+  // the time its rear passes the exit vertex at 1100 m. It covers the 1025 m in
+  // between at 10 m/s, so that it leaves at 112.5.
+  ASSERT_TRUE(evaluation.greedy.success);
+  EXPECT_NEAR(evaluation.greedy.exit_times.at(0), 112.5, 1);
 }
 
 TEST(SolutionEvaluation, StationDelay) {
@@ -205,17 +217,25 @@ TEST(SolutionEvaluation, StationDelay) {
 
   sol.evaluate(1.0);
   ASSERT_TRUE(sol.get_evaluation().has_value());
-  const auto& evaluation = sol.get_evaluation().value();
-  ASSERT_TRUE(evaluation.success);
-  EXPECT_NEAR(evaluation.stop_times.at(0).at(0), 55, 1);
-  EXPECT_NEAR(evaluation.stop_delays.at(0).at(0), 15, 1);
-  EXPECT_NEAR(evaluation.exit_times.at(0), 185, 1);
-  EXPECT_NEAR(evaluation.exit_delays.at(0), 85, 1);
+  const auto& trajectory = sol.get_evaluation()->trajectory;
+  ASSERT_TRUE(trajectory.success);
+  EXPECT_NEAR(trajectory.stop_times.at(0).at(0), 55, 1);
+  EXPECT_NEAR(trajectory.stop_delays.at(0).at(0), 15, 1);
+  EXPECT_NEAR(trajectory.exit_times.at(0), 185, 1);
+  EXPECT_NEAR(trajectory.exit_delays.at(0), 85, 1);
   // With all weights being 1, the objective is the exit time plus the average
   // station delay
-  EXPECT_NEAR(evaluation.obj,
-              evaluation.exit_times.at(0) + evaluation.stop_delays.at(0).at(0),
+  EXPECT_NEAR(trajectory.obj,
+              trajectory.exit_times.at(0) + trajectory.stop_delays.at(0).at(0),
               GRB_EPS);
+
+  // Greedily, the train leaves the station after its service at 85 instead.
+  // Within 10 s, it accelerates to 10 m/s up to 550 m, and 55 s later its rear
+  // passes the exit vertex at 1100 m.
+  const auto& greedy = sol.get_evaluation()->greedy;
+  ASSERT_TRUE(greedy.success);
+  EXPECT_NEAR(greedy.stop_delays.at(0).at(0), 15, 1);
+  EXPECT_NEAR(greedy.exit_times.at(0), 150, 1);
 }
 
 TEST(SolutionEvaluation, BlockSectionsDelayFollowingTrain) {
@@ -248,13 +268,15 @@ TEST(SolutionEvaluation, BlockSectionsDelayFollowingTrain) {
        std::vector<const instances::SolGeneralPerformanceOptimizationInstance*>{
            &mb_sol, &vss_sol_with_border, &vss_sol_without_border}) {
     ASSERT_TRUE(sol->get_evaluation().has_value());
-    ASSERT_TRUE(sol->get_evaluation()->success);
-    EXPECT_NEAR(sol->get_evaluation()->exit_times.at(0), 110, 1);
+    ASSERT_TRUE(sol->get_evaluation()->trajectory.success);
+    EXPECT_NEAR(sol->get_evaluation()->trajectory.exit_times.at(0), 110, 1);
   }
-  EXPECT_NEAR(mb_sol.get_evaluation()->exit_times.at(1), 125, 1);
-  EXPECT_NEAR(vss_sol_with_border.get_evaluation()->exit_times.at(1), 172.5, 1);
-  EXPECT_NEAR(vss_sol_without_border.get_evaluation()->exit_times.at(1), 220,
-              1);
+  EXPECT_NEAR(mb_sol.get_evaluation()->trajectory.exit_times.at(1), 125, 1);
+  EXPECT_NEAR(vss_sol_with_border.get_evaluation()->trajectory.exit_times.at(1),
+              172.5, 1);
+  EXPECT_NEAR(
+      vss_sol_without_border.get_evaluation()->trajectory.exit_times.at(1), 220,
+      1);
 }
 
 TEST(SolutionEvaluation, TrainsWithoutTimNotImplementedForVSS) {
@@ -304,21 +326,34 @@ TEST(SolutionEvaluation, ExportAndImport) {
     ASSERT_TRUE(data.contains("evaluation"));
     const auto& evaluation = data.at("evaluation");
     EXPECT_EQ(evaluation.at("dt").get<double>(), 1.0);
-    EXPECT_TRUE(evaluation.at("success").get<bool>());
-    EXPECT_EQ(evaluation.at("obj").get<double>(), sol.get_evaluation()->obj);
-    EXPECT_EQ(
-        evaluation.at("trains").at("Train1").at("exit_delay").get<double>(),
-        sol.get_evaluation()->exit_delays.at(0));
+    EXPECT_TRUE(evaluation.at("trajectory").at("success").get<bool>());
+    EXPECT_EQ(evaluation.at("trajectory").at("obj").get<double>(),
+              sol.get_evaluation()->trajectory.obj);
+    EXPECT_TRUE(evaluation.at("greedy").at("success").get<bool>());
+    EXPECT_EQ(evaluation.at("greedy").at("obj").get<double>(),
+              sol.get_evaluation()->greedy.obj);
+    EXPECT_EQ(evaluation.at("trajectory")
+                  .at("trains")
+                  .at("Train1")
+                  .at("exit_delay")
+                  .get<double>(),
+              sol.get_evaluation()->trajectory.exit_delays.at(0));
   }
 
   instances::SolGeneralPerformanceOptimizationInstance sol_read(instance);
   sol_read.load_solution("./tmp-solution-evaluation", "test-evaluation");
   ASSERT_TRUE(sol_read.get_evaluation().has_value());
-  EXPECT_EQ(sol_read.get_evaluation()->exit_times,
-            sol.get_evaluation()->exit_times);
-  EXPECT_EQ(sol_read.get_evaluation()->exit_delays,
-            sol.get_evaluation()->exit_delays);
-  EXPECT_EQ(sol_read.get_evaluation()->obj, sol.get_evaluation()->obj);
+  EXPECT_EQ(sol_read.get_evaluation()->dt, sol.get_evaluation()->dt);
+  EXPECT_EQ(sol_read.get_evaluation()->trajectory.exit_times,
+            sol.get_evaluation()->trajectory.exit_times);
+  EXPECT_EQ(sol_read.get_evaluation()->trajectory.exit_delays,
+            sol.get_evaluation()->trajectory.exit_delays);
+  EXPECT_EQ(sol_read.get_evaluation()->trajectory.obj,
+            sol.get_evaluation()->trajectory.obj);
+  EXPECT_EQ(sol_read.get_evaluation()->greedy.exit_times,
+            sol.get_evaluation()->greedy.exit_times);
+  EXPECT_EQ(sol_read.get_evaluation()->greedy.obj,
+            sol.get_evaluation()->greedy.obj);
 
   std::filesystem::remove_all("./tmp-solution-evaluation");
 }
@@ -335,7 +370,8 @@ TEST(SolutionEvaluation, AStarSolutionWithAFinerTimeStep) {
 
   sol.evaluate(1.0);
   ASSERT_TRUE(sol.get_evaluation().has_value());
-  const auto& evaluation = sol.get_evaluation().value();
+  ASSERT_TRUE(sol.get_evaluation()->greedy.success);
+  const auto& evaluation = sol.get_evaluation()->trajectory;
   ASSERT_TRUE(evaluation.success);
   const auto& train_list = instance.get_const_train_list();
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
@@ -368,7 +404,8 @@ TEST(SolutionEvaluation, StoredMovingBlockSolutions) {
 
     sol.evaluate(1.0);
     ASSERT_TRUE(sol.get_evaluation().has_value()) << instance_name;
-    const auto& evaluation = sol.get_evaluation().value();
+    ASSERT_TRUE(sol.get_evaluation()->greedy.success) << instance_name;
+    const auto& evaluation = sol.get_evaluation()->trajectory;
     ASSERT_TRUE(evaluation.success) << instance_name;
     const auto& train_list = instance.get_const_train_list();
     for (size_t tr = 0; tr < train_list.size(); ++tr) {
