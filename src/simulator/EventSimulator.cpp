@@ -393,11 +393,11 @@ cda_rail::simulator::EventSimulator::exit_movement(
   const auto too_slow = [&](double s) {
     return arrival_speed2(s) < v_min * v_min;
   };
-  const auto can_brake = !too_slow(exit_pos);
+  // From its exit position on, i.e., not at all, if it is too slow anyway
   const auto earliest_braking =
       too_slow(front.pos) ? bisect(front.pos, exit_pos, too_slow).second
                           : front.pos;
-  if (can_brake && late_braking(earliest_braking).end_time() >= exit_time) {
+  if (late_braking(earliest_braking).end_time() >= exit_time) {
     return late_braking(bisect(earliest_braking, exit_pos, [&](double s) {
                           return late_braking(s).end_time() >= exit_time;
                         }).first);
@@ -407,7 +407,7 @@ cda_rail::simulator::EventSimulator::exit_movement(
   // late for that
   if (front.pos + tr_braking_distance(tr, front.vel) >
       exit_vertex_pos + GRB_EPS) {
-    return can_brake ? late_braking(earliest_braking) : fastest;
+    return late_braking(earliest_braking);
   }
   // It brakes towards its exit vertex until x and then leaves as fast as
   // possible at the lowest speed it may have outside the network
@@ -489,7 +489,6 @@ private:
     Status                 status{Status::Waiting};
     Movement               movement{};
     std::optional<size_t>  next_stop;
-    double                 stop_until{-INF};
     double                 blocked_pos{INF};
     std::optional<Blocker> blocker;
     double                 next_event{INF};
@@ -506,10 +505,11 @@ private:
   void block_last_vertex(size_t tr, double t);
 
   // Event queue
-  void                 schedule(size_t tr, double t);
-  void                 schedule_at_most(size_t tr, double t);
-  void                 wake_trains_waiting_for(size_t tr, double t);
-  [[nodiscard]] bool   is_released(Blocker const& blocker, double t) const;
+  void schedule(size_t tr, double t);
+  void schedule_at_most(size_t tr, double t);
+  void wake_trains_waiting_for(size_t tr, double t);
+  [[nodiscard]] std::optional<Blocker>
+  train_blocker(size_t other, double rear_pos, double t) const;
   [[nodiscard]] double release_time(Blocker const& blocker, double t) const;
 
   // Movement authority
@@ -659,10 +659,6 @@ void cda_rail::simulator::EventSimulator::Run::process(size_t tr, double t) {
     m_failed = true;
     return;
   }
-  if (t < state.stop_until) {
-    schedule(tr, state.stop_until);
-    return;
-  }
   if (const auto stop = stop_at_end(tr);
       stop.has_value() && t >= state.movement.end_time()) {
     serve_stop(tr, *stop, t);
@@ -719,17 +715,6 @@ void cda_rail::simulator::EventSimulator::Run::enter(size_t tr, double t) {
   }
   m_vertex_headways.at(entry) = t + network().get_vertex(entry).headway;
   plan(tr, t);
-
-  // Trains heading onto the same first edge only notice the new train once it
-  // is on that edge
-  const auto    first_edge = route(tr).front();
-  const Blocker on_first_edge{.train = tr, .rear_pos = GRB_EPS - length(tr)};
-  for (const auto other : m_trains_on_edges.at(first_edge)) {
-    if (other != tr && m_trains.at(other).status == Status::Driving &&
-        front(other, t).pos <= m_edge_starts.at(other).at(first_edge)) {
-      schedule_at_most(other, release_time(on_first_edge, t));
-    }
-  }
 }
 
 void cda_rail::simulator::EventSimulator::Run::serve_stop(size_t tr,
@@ -746,14 +731,14 @@ void cda_rail::simulator::EventSimulator::Run::serve_stop(size_t tr,
     m_trajectories.at(tr)[t] = {.pos = pos, .vel = 0};
   }
   m_stop_times.at(tr).push_back(t);
-  state.stop_until = std::max(t + scheduled_stop.get_service_duration(),
-                              scheduled_stop.get_earliest_departure());
-  state.next_stop  = stop + 1 < m_simulator.get_stop_positions_of_tr(tr).size()
-                         ? std::optional{stop + 1}
-                         : std::nullopt;
-  state.movement   = {.t = t, .pos = pos, .v = 0, .phases = {}};
-  state.blocker    = std::nullopt;
-  schedule(tr, state.stop_until);
+  state.next_stop = stop + 1 < m_simulator.get_stop_positions_of_tr(tr).size()
+                        ? std::optional{stop + 1}
+                        : std::nullopt;
+  state.movement  = {.t = t, .pos = pos, .v = 0, .phases = {}};
+  state.blocker   = std::nullopt;
+  // Waiting for no other train, it is not woken up before
+  schedule(tr, std::max(t + scheduled_stop.get_service_duration(),
+                        scheduled_stop.get_earliest_departure()));
 }
 
 void cda_rail::simulator::EventSimulator::Run::leave(size_t tr, double t) {
@@ -894,16 +879,17 @@ void cda_rail::simulator::EventSimulator::Run::wake_trains_waiting_for(
   }
 }
 
-bool cda_rail::simulator::EventSimulator::Run::is_released(
-    Blocker const& blocker, double t) const {
-  if (!blocker.train.has_value()) {
-    return t >= blocker.not_before;
-  }
-  const auto& other = m_trains.at(*blocker.train);
-  return other.status == Status::Left ||
-         (other.status == Status::Driving &&
-          front(*blocker.train, t).pos - length(*blocker.train) >=
-              blocker.rear_pos);
+std::optional<cda_rail::simulator::EventSimulator::Run::Blocker>
+cda_rail::simulator::EventSimulator::Run::train_blocker(size_t other,
+                                                        double rear_pos,
+                                                        double t) const {
+  // Blocks until the other train has left or its rear has passed rear_pos
+  const auto status = m_trains.at(other).status;
+  const auto passed = status == Status::Left ||
+                      (status == Status::Driving &&
+                       front(other, t).pos - length(other) >= rear_pos);
+  return passed ? std::nullopt
+                : std::optional{Blocker{.train = other, .rear_pos = rear_pos}};
 }
 
 double
@@ -1085,9 +1071,8 @@ cda_rail::simulator::EventSimulator::Run::ttd_blocker(size_t tr, size_t i,
   if (it == order.begin()) {
     return std::nullopt;
   }
-  const auto    previous = *std::prev(it);
-  const Blocker blocker{.train = previous, .rear_pos = ttd_end(previous, *ttd)};
-  return is_released(blocker, t) ? std::nullopt : std::optional{blocker};
+  const auto previous = *std::prev(it);
+  return train_blocker(previous, ttd_end(previous, *ttd), t);
 }
 
 cda_rail::simulator::EventSimulator::Run::ReverseEdgeUse
@@ -1132,20 +1117,18 @@ cda_rail::simulator::EventSimulator::Run::vertex_order_blocker(size_t tr,
                                                                double t) const {
   // The train before in the vertex's order has to have entered the network
   // there or to have left it, as in GreedySimulator::get_entering_trains and
-  // GreedySimulator::is_exit_vertex_blocked
+  // GreedySimulator::is_exit_vertex_blocked. Having entered, it has to be on
+  // its first edge, since only then a train entering after it notices it.
   const auto& order = m_simulator.get_vertex_orders_of_vertex(vertex);
   const auto  it    = std::ranges::find(order, tr);
   if (it == order.begin() || it == order.end()) {
     return std::nullopt;
   }
-  const auto    previous = *std::prev(it);
-  const Blocker blocker{
-      .train = previous,
-      .rear_pos =
-          m_instance.get_const_schedule(previous).get_entry_vertex() == vertex
-              ? -INF
-              : INF};
-  return is_released(blocker, t) ? std::nullopt : std::optional{blocker};
+  const auto previous = *std::prev(it);
+  const auto enters_there =
+      m_instance.get_const_schedule(previous).get_entry_vertex() == vertex;
+  return train_blocker(previous,
+                       enters_there ? GRB_EPS - length(previous) : INF, t);
 }
 
 // Positions

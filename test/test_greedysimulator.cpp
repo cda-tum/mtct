@@ -2417,6 +2417,38 @@ SIMULATOR_TEST(SimpleSimulationTwoTrains) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[1] + 30);
 }
 
+SIMULATOR_TEST(SimultaneousEntryWithoutHeadway) {
+  // The second train may enter once the first one has left its braking
+  // distance, at about 10 seconds
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 0);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 0);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 5000, 50, true);
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 100, 20, 4, 2, true, 0, 20, v0,
+                                       10, 20, v1, network);
+  const auto tr2 = timetable.add_train("Train2", 100, 20, 4, 2, true, 0, 20, v0,
+                                       10, 20, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+  TypeParam simulator(instance, {});
+
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_train_edges_of_tr(tr2, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1, tr2});
+
+  EXPECT_FALSE(simulator.simulate(6.0, false, true).success);
+
+  const auto sim_res = simulator.simulate(6.0, true, true);
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_APPROX_EQ_6(sim_res.exit_times.at(tr1), 255);
+  EXPECT_GE(sim_res.exit_times.at(tr2), 265);
+  EXPECT_LE(sim_res.exit_times.at(tr2), 265 + 6 + GRB_EPS);
+}
+
 SIMULATOR_TEST(DeadlockTest1) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
@@ -3668,6 +3700,33 @@ SIMULATOR_TEST(ExitTimeConstraintStopping) {
   ASSERT_EQ(sim_res2.exit_times.size(), 1);
   EXPECT_GE(sim_res2.exit_times[0], 200);
   EXPECT_LE(sim_res2.exit_times[0], 205);
+}
+
+SIMULATOR_TEST(ExitTimeConstraintTooLateToStop) {
+  // The train cannot stop at its exit vertex. Braking from its entry on, its
+  // rear passes the exit vertex after 10 seconds, so it waits for its exit
+  // time.
+  Network    network;
+  const auto v0 = network.add_vertex("v0", VertexType::TTD, 0);
+  const auto v1 = network.add_vertex("v1", VertexType::TTD, 0);
+
+  const auto v0_v1 = network.add_edge(v0, v1, 100, 20, true);
+
+  Timetable  timetable;
+  const auto tr1 = timetable.add_train("Train1", 50, 20, 1, 1, true, 0, 20, v0,
+                                       100, 20, v1, network);
+  RouteMap   routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  TypeParam simulator(instance, {});
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1});
+
+  const auto sim_res = simulator.simulate(5.0, false, true);
+  EXPECT_TRUE(sim_res.success);
+  EXPECT_APPROX_EQ_6(sim_res.exit_times.at(tr1), 100);
 }
 
 SIMULATOR_TEST(ExitWithRear) {
