@@ -978,13 +978,13 @@ protected:
    *
    * @return JSON object containing status, objective, and availability flags.
    */
-  [[nodiscard]] nlohmann::json get_general_solution_data() const;
+  [[nodiscard]] virtual nlohmann::json get_general_solution_data() const;
   /**
    * @brief Loads solution-wide metadata from JSON.
    *
    * @param data JSON object containing general solution fields.
    */
-  void set_general_solution_data(const nlohmann::json& data);
+  virtual void set_general_solution_data(const nlohmann::json& data);
 
   /**
    * @brief Retrieves the underlying problem instance pointer.

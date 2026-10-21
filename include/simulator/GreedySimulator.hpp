@@ -9,6 +9,7 @@
 #include "gtest/gtest_prod.h"
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <unordered_set>
 #include <utility>
@@ -47,8 +48,8 @@ class GreedySimulator_FutureSpeedRestrictionConstraintsAfterLeaving_Test;
 namespace cda_rail::simulator {
 
 /**
- * @brief After how many time steps without any movement a simulation is given
- *        up as deadlocked.
+ * @brief After how many time steps without any movement, in which no train has
+ *        a reason to wait, a simulation is given up as deadlocked.
  */
 enum : std::uint16_t { CycleLimit = 1000 };
 
@@ -60,6 +61,12 @@ enum : std::uint16_t { CycleLimit = 1000 };
  * the best ones for the given routing, ordering, and stopping decisions. The
  * simulation advances in time steps of the given length until every train has
  * left the network, or until nothing moves any more, see CycleLimit.
+ *
+ * As in the moving block MILP, a train leaves the network once its rear has
+ * passed its exit vertex, which is when its scheduled exit time and speed
+ * apply. Until then, it occupies its last edge, beyond whose end the route
+ * continues at the edge's speed limit. A train only waits within the network,
+ * i.e., at the latest with its front at the exit vertex.
  */
 class GreedySimulator : public GeneralSimulator {
 public:
@@ -143,6 +150,44 @@ public:
     return dynamic_cast<
         instances::GeneralPerformanceOptimizationInstance const*>(
         GeneralSimulator::get_instance());
+  }
+
+  // ------------------
+  // BOUNDS
+  // ------------------
+  /**
+   * @brief How far along its route a train may be at most at a given time.
+   *
+   * `front` bounds the position of the train's front, and `braking_point`
+   * the latest position at which the train has to be able to stop.
+   */
+  struct PositionBound {
+    double front;
+    double braking_point;
+  };
+  /**
+   * @brief The PositionBound of train `tr` at time `t`, or `std::nullopt` if
+   *        the train is not restricted.
+   */
+  using PositionBoundFunction =
+      std::function<std::optional<PositionBound>(size_t tr, double t)>;
+
+  /**
+   * @brief Restricts the trains to the positions given by @p bound.
+   *
+   * After every time step, a train's braking point must not exceed the bound
+   * at the end of that step, and neither must its front. If this is not even
+   * possible by braking fully, the train brakes fully until it is behind the
+   * bound again. A train only enters the network once its braking point at
+   * the entry is within the bound. This replays the speed decisions of a given
+   * solution, whose trains are hence not overtaken. As long as a train is
+   * restricted, it may wait without the simulation being considered
+   * deadlocked.
+   *
+   * @param bound The bound, see PositionBoundFunction.
+   */
+  void set_position_bound(PositionBoundFunction bound) {
+    m_position_bound = std::move(bound);
   }
 
   // ------------------
@@ -302,13 +347,16 @@ private:
    * @param train_velocities Current per-train velocities.
    * @param trains_in_network Trains currently present in the network.
    * @param tr_on_edges Edge-indexed sets of trains whose routes use the edge.
+   * @param trains_left Trains that already left the network, which hence no
+   *        longer block a TTD section.
    * @return `true` if the train can safely enter, `false` otherwise.
    */
-  [[nodiscard]] bool is_ok_to_enter(
-      size_t tr, const std::vector<TrainPosition>& train_positions,
-      const std::vector<double>&                     train_velocities,
-      const std::unordered_set<size_t>&              trains_in_network,
-      const std::vector<std::unordered_set<size_t>>& tr_on_edges) const;
+  [[nodiscard]] bool
+  is_ok_to_enter(size_t tr, const std::vector<TrainPosition>& train_positions,
+                 const std::vector<double>&        train_velocities,
+                 const std::unordered_set<size_t>& trains_in_network,
+                 const std::vector<std::unordered_set<size_t>>& tr_on_edges,
+                 const std::unordered_set<size_t>& trains_left = {}) const;
 
   /**
    * @brief Determines which trains are due and able to enter at time @p t.
@@ -410,6 +458,48 @@ private:
                                    bool also_limit_by_leaving_edges) const;
 
   /**
+   * @brief Limits moving authority and speed so that the train's rear does
+   *        not pass the exit vertex before the train's exit time.
+   *
+   * The train slows down just enough to leave exactly at its exit time, by
+   * braking fully as late as possible, also after its front has passed the
+   * exit vertex. It must not stop outside the network, though, i.e., there it
+   * drives at least at V_MIN, as in the moving block MILP. Hence, its front
+   * only passes the exit vertex if the train can then leave without stopping
+   * and not before its exit time. Otherwise, it waits with its front at the
+   * exit vertex until waiting any longer would make it leave late.
+   *
+   * @param tr Train index.
+   * @param train Train object containing dynamic limits.
+   * @param pos Current train-front position, before the train has left.
+   * @param v_0 Current train speed.
+   * @param ma_and_max_v Current moving-authority and speed limits.
+   * @param current_time Time at the end of the time step.
+   * @param dt Simulation time step.
+   * @return Moving-authority and speed limits respecting the exit time.
+   */
+  [[nodiscard]] PosVel apply_exit_time(size_t tr, const Train& train,
+                                       double pos, double v_0,
+                                       PosVel ma_and_max_v, double current_time,
+                                       double dt) const;
+
+  /**
+   * @brief Earliest time at which the train's rear passes the exit vertex if
+   *        the train starts from a standstill and is not hindered otherwise.
+   *
+   * @param tr Train index.
+   * @param train Train object containing dynamic limits.
+   * @param pos Train-front position at which the train stands.
+   * @param start_time Time at which the train starts.
+   * @param dt Simulation time step.
+   * @return Time at which the rear passes the exit vertex, or INF if the
+   *         train does not get there.
+   */
+  [[nodiscard]] double
+  earliest_exit_from_standstill(size_t tr, const Train& train, double pos,
+                                double start_time, double dt) const;
+
+  /**
    * @brief Converts a next-stop position into a moving-authority distance.
    *
    * @param max_displacement Maximal forward displacement in the time step.
@@ -447,6 +537,25 @@ private:
   is_exit_vertex_blocked(size_t                            tr,
                          const std::unordered_set<size_t>& trains_in_network,
                          const std::unordered_set<size_t>& trains_left) const;
+
+  /**
+   * @brief Limits moving authority and speed by the position bound, if one is
+   *        set.
+   *
+   * Neither limit asks for more than braking fully, which keeps the braking
+   * point where it is.
+   *
+   * @param tr Train index.
+   * @param pos Current train-front position.
+   * @param v_0 Current train speed.
+   * @param ma_and_max_v Current moving-authority and speed limits.
+   * @param t Time at the end of the time step.
+   * @param dt Simulation time step.
+   * @return Moving-authority and speed limits respecting the position bound.
+   */
+  [[nodiscard]] MaAndMaxVResult
+  apply_position_bound(size_t tr, double pos, double v_0,
+                       MaAndMaxVResult ma_and_max_v, double t, double dt) const;
 
   /**
    * @brief Combines stop, ordering, occupancy, and speed constraints.
@@ -521,9 +630,10 @@ private:
   /**
    * @brief What a train has reached at the end of its (partial) route.
    *
-   * `Network` if that end is its exit vertex, `Station` if it is a stop still
-   * to be served, and `Edge` if it is neither, which is the case while the
-   * route is still being extended. `None` if the train is not there yet.
+   * `Network` if that end is its exit vertex, which the train's rear has
+   * passed, `Station` if it is a stop still to be served, and `Edge` if it is
+   * neither, which is the case while the route is still being extended.
+   * `None` if the train is not there yet.
    */
   enum class DestinationType : std::uint8_t { None, Network, Station, Edge };
   /**
@@ -553,6 +663,9 @@ private:
    *         its route position if it does.
    */
   [[nodiscard]] VertexRoutePos get_vertex_pos(size_t tr, size_t vertex) const;
+
+  /** @brief See set_position_bound; empty if the trains are free. */
+  PositionBoundFunction m_position_bound;
 };
 
 } // namespace cda_rail::simulator

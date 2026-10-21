@@ -23,6 +23,7 @@
 #include <ranges>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -321,6 +322,16 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::discretize(
   const auto new_edges = this->get_editable_network().discretize(sep_func);
   this->get_editable_timetable().update_after_discretization(new_edges);
   this->get_editable_routes().update_after_discretization(new_edges);
+}
+
+std::vector<std::pair<size_t, cda_rail::index_vector>> cda_rail::instances::
+    GeneralPerformanceOptimizationInstance::separate_edges_at_vss(
+        const std::vector<std::vector<double>>& vss_positions) {
+  auto new_edges =
+      this->get_editable_network().separate_edges_at_vss(vss_positions);
+  this->get_editable_timetable().update_after_discretization(new_edges);
+  this->get_editable_routes().update_after_discretization(new_edges);
+  return new_edges;
 }
 
 // -----------------
@@ -1212,9 +1223,22 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   nlohmann::json vss_pos_json = nlohmann::json::parse(vss_pos_file);
   vss_pos_file.close();
 
+  // The edges are stored under the names given by get_edge_name, see
+  // export_solution, which cannot be split reliably since vertex names may
+  // contain the separator themselves
   auto const& const_network = this->get_instance()->get_const_network();
+  std::unordered_map<std::string, size_t> edge_ids;
+  for (size_t edge_id = 0; edge_id < const_network.number_of_edges();
+       ++edge_id) {
+    edge_ids.emplace(const_network.get_edge_name(edge_id), edge_id);
+  }
   for (const auto& [edge_str, pos_vec_json] : vss_pos_json.items()) {
-    const auto          edge_id = const_network.get_edge_index({edge_str});
+    const auto edge_it = edge_ids.find(edge_str);
+    if (edge_it == edge_ids.end()) {
+      throw exceptions::ImportException("Unknown edge " + edge_str +
+                                        " in vss_pos.json.");
+    }
+    const auto          edge_id = edge_it->second;
     std::vector<double> pos_vec = pos_vec_json.get<std::vector<double>>();
     std::ranges::sort(pos_vec);
     m_vss_pos.at(edge_id) = std::move(pos_vec);

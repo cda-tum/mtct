@@ -826,6 +826,13 @@ cda_rail::get_max_travel_time_acceleration_change_points(double v_1, double v_2,
                                                           s);
   }
 
+  if (v_1_below_minimal_speed != v_2_below_minimal_speed) {
+    // The train accelerates, respectively decelerates, all the way, hence
+    // s_2 < s_1 only by as much as the input tolerance allows
+    const double change_point = std::min(s_1, s);
+    return {change_point, change_point};
+  }
+
   assert((!v_1_below_minimal_speed && !v_2_below_minimal_speed));
 
   const double y = ((2 * a * s) + square(v_1) - square(v_2)) /

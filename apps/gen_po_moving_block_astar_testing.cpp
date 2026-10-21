@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
       settings.solving.time_limit, settings.solving.debug_output, true);
 
   cda_rail::cli::log_solution_status(solution.get_status(), solution.get_obj());
+  cda_rail::cli::log_solution_evaluation(solution);
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)

@@ -8,8 +8,10 @@
 
 #include "gtest/gtest.h"
 #include <cmath>
+#include <filesystem>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 using namespace cda_rail;
 
@@ -2874,5 +2876,30 @@ TEST(GeneralPerformanceOptimizationInstances, ScheduledStopPointerCopyIssue) {
   // This is the bug: stop_station_address2 still points to the old station
   // (or a copy of it, but not the one in the copied station list)
   EXPECT_EQ(station_list_address2, stop_station_address2);
+}
+
+TEST(GeneralPerformanceOptimizationInstances, VSSSolutionExportImport) {
+  // The VSS borders are stored per edge name, which contains a separator that
+  // a vertex name may contain as well
+  cda_rail::Network network;
+  const auto        v0 = network.add_vertex("v-0", cda_rail::VertexType::TTD);
+  const auto        v1 = network.add_vertex("v-1", cda_rail::VertexType::TTD);
+  const auto        v0_v1 = network.add_edge(v0, v1, 1000, 10, true);
+  const auto        v1_v0 = network.add_edge(v1, v0, 1000, 10, true);
+  const cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network);
+
+  cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance sol(
+      instance, cda_rail::SolutionStatus::Feasible, 1, false);
+  sol.add_vss_pos(v0_v1, 300);
+  sol.export_solution("./tmp-vss-export", "test-vss");
+
+  cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance sol_read(
+      instance);
+  sol_read.load_solution("./tmp-vss-export", "test-vss");
+  EXPECT_EQ(sol_read.get_vss_pos(v0_v1), std::vector<double>{300});
+  EXPECT_EQ(sol_read.get_vss_pos(v1_v0), std::vector<double>{700});
+
+  std::filesystem::remove_all("./tmp-vss-export");
 }
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

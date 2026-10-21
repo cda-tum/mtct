@@ -11,6 +11,7 @@
 #include <chrono>
 #include <concepts>
 #include <cstdint>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -51,12 +52,18 @@ enum class GeneralExportOption : std::uint8_t {
 /**
  * @brief Where a solver writes its solution to, see
  *        GeneralSolver::export_general_solution.
+ *
+ * If an evaluation time step is given, an exported solution is evaluated with
+ * it beforehand, see
+ * instances::SolGeneralPerformanceOptimizationInstance::evaluate, so that the
+ * export includes the evaluation.
  */
 struct GeneralSolutionSettings {
   GeneralExportOption        export_option{GeneralExportOption::NoExport};
   std::string                working_directory{};
   std::string                solution_subdirectory{"unnamed-experiment"};
   std::optional<std::string> parameter_identifier{};
+  std::optional<double>      evaluation_time_step{};
 };
 
 /**
@@ -199,7 +206,10 @@ protected:
    * The solution is written to the standard solution path, i.e.,
    * working_directory/solutions/solution_subdirectory/instance_subdirectory/
    * instance_name[-parameter_identifier]. Nothing is exported if the export
-   * option is GeneralExportOption::NoExport.
+   * option is GeneralExportOption::NoExport. If an evaluation time step is
+   * given and the solution type supports it, the solution is evaluated before
+   * it is exported, so that the evaluation is part of @p solution afterwards.
+   * If the evaluation fails, the solution is exported without it.
    *
    * @param solution The solution to export
    * @param solution_settings Settings describing where and what to export
@@ -207,11 +217,27 @@ protected:
    * @return The export directory if an export happened, std::nullopt otherwise
    */
   std::optional<std::filesystem::path>
-  export_general_solution(const S&                       solution,
+  export_general_solution(S&                             solution,
                           const GeneralSolutionSettings& solution_settings,
                           FurtherData const&             further_data = {}) {
     if (solution_settings.export_option == GeneralExportOption::NoExport) {
       return std::nullopt;
+    }
+
+    if constexpr (requires(S& sol, double dt) { sol.evaluate(dt); }) {
+      if (solution_settings.evaluation_time_step.has_value() &&
+          solution.has_solution()) {
+        // A failing evaluation must not cost the solution itself
+        // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+        try {
+          solution.evaluate(solution_settings.evaluation_time_step.value());
+        } catch (const std::exception& e) {
+          PLOGW << "Exporting the solution without evaluation, since it "
+                   "failed: "
+                << e.what();
+        }
+        // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+      }
     }
 
     const bool export_instance =

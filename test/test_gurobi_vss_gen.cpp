@@ -1978,3 +1978,39 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   std::filesystem::remove_all("instances");
   std::filesystem::remove_all("networks");
 }
+
+TEST(VSSGenSolver, EvaluateSolution) {
+  // A VSS solution operates the timetable as scheduled, which simulating it
+  // confirms. Without its VSS borders, its trains delay each other.
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "SimpleStation", "atmos2023", "data");
+  auto sol = solver.solve();
+  ASSERT_TRUE(sol.has_solution());
+  EXPECT_GT(sol.get_obj(), 0);
+
+  sol.evaluate(1.0);
+  ASSERT_TRUE(sol.get_evaluation().has_value());
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
+  ASSERT_TRUE(sol.get_evaluation()->trajectory.success);
+  for (const auto delay : sol.get_evaluation()->trajectory.exit_delays) {
+    EXPECT_NEAR(delay, 0, 1);
+  }
+  for (const auto& tr_stop_delays :
+       sol.get_evaluation()->trajectory.stop_delays) {
+    for (const auto delay : tr_stop_delays) {
+      EXPECT_NEAR(delay, 0, 1);
+    }
+  }
+
+  auto        sol_without_vss = sol;
+  const auto& network         = sol.get_instance()->get_const_network();
+  for (size_t edge = 0; edge < network.number_of_edges(); ++edge) {
+    sol_without_vss.reset_vss_pos(edge);
+  }
+  sol_without_vss.evaluate(1.0);
+  ASSERT_TRUE(sol_without_vss.get_evaluation().has_value());
+  ASSERT_TRUE(sol_without_vss.get_evaluation()->trajectory.success);
+  EXPECT_GT(sol_without_vss.get_evaluation()->trajectory.obj,
+            sol.get_evaluation()->trajectory.obj + 1);
+  // NOLINTEND(bugprone-unchecked-optional-access)
+}

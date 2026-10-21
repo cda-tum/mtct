@@ -77,7 +77,12 @@ cda_rail::simulator::simple_remaining_time_heuristic(
                           // objective difference
   }
 
-  heuristic_exit_time = running_times.exit_arrival;
+  // The train leaves once its rear has passed the exit vertex, for which it
+  // covers its own length at most at its maximal speed
+  const auto& train =
+      simulator.get_instance()->get_const_train_list().get_train(tr);
+  heuristic_exit_time =
+      running_times.exit_arrival + (train.get_length() / train.get_max_speed());
   if (consider_earliest_exit) {
     heuristic_exit_time =
         std::max(heuristic_exit_time, tr_schedule.get_exit_time());

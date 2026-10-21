@@ -176,6 +176,8 @@ void cda_rail::cli::add_mb_mip_options(CLI::App& app, MbMipSettings& settings) {
 
   add_solving_options(app, settings.solving);
   add_export_options(app, settings.exporting, {.lp_model = true});
+  // The moving block MIP has no time step of its own to evaluate with
+  app.get_option("--evaluate")->needs("--evaluation-dt");
 }
 
 void cda_rail::cli::finalize_mb_mip_settings(CLI::App&      app,

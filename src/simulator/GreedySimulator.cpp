@@ -19,11 +19,30 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+namespace {
+// Highest speed between 0 and v_high that is not too early, given that 0 is
+// not and that every speed above a too early one is too early as well.
+template <typename TooEarly>
+double highest_allowed_speed(double v_high, const TooEarly& too_early) {
+  double v_low = 0;
+  while (v_high - v_low > cda_rail::EPS) {
+    const auto v_mid = (v_low + v_high) / 2.0;
+    if (too_early(v_mid)) {
+      v_high = v_mid;
+    } else {
+      v_low = v_mid;
+    }
+  }
+  return v_low;
+}
+} // namespace
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
 
@@ -97,6 +116,8 @@ cda_rail::simulator::GreedySimulator::simulate(
     train_trajectories.resize(number_of_trains);
   }
   std::vector<double> overshooting_times(number_of_trains, 0);
+  // Time at which the rear of a train passes its exit vertex
+  std::vector<double> exit_passing_times(number_of_trains, 0);
 
   std::vector<TrainPosition> train_positions(
       number_of_trains,
@@ -161,6 +182,15 @@ cda_rail::simulator::GreedySimulator::simulate(
         continue;
       }
 
+      if (save_trajectories && !train_trajectories.at(tr).empty() &&
+          train_trajectories.at(tr).rbegin()->first < t - dt - GRB_EPS) {
+        // The train was skipped since its last sample, i.e., it stood in a
+        // station. Hence, the end of that standstill is saved as well.
+        train_trajectories.at(tr)[t - dt] = {.pos =
+                                                 train_positions.at(tr).front,
+                                             .vel = train_velocities.at(tr)};
+      }
+
       // Calculate MA
 
       // A* partial-route search: trains disappear at route end, so reverse-edge
@@ -178,33 +208,67 @@ cda_rail::simulator::GreedySimulator::simulate(
           std::min(tr_ma_data.max_v,
                    get_v1_from_ma(train_velocities.at(tr), tr_ma_data.ma,
                                   train_object.get_deceleration(), dt));
-      if (tr_new_speed < V_MIN) {
-        tr_new_speed = 0.0; // Train is stopped
+      auto const tr_route_len = train_edge_length(tr);
+      auto const last_edge_leaves_network =
+          get_instance()
+              ->get_const_network()
+              .get_edge(get_train_edges_of_tr(tr).back())
+              .target ==
+          get_instance()->get_const_schedule(tr).get_exit_vertex();
+      // Where the train's front is once its rear has passed the exit vertex
+      auto const tr_exit_pos = tr_route_len + train_object.get_length();
+      if (tr_new_speed < V_MIN &&
+          (!last_edge_leaves_network ||
+           train_positions.at(tr).front +
+                   std::min(tr_ma_data.ma,
+                            (train_velocities.at(tr) + tr_new_speed) * dt /
+                                2.0) <
+               tr_exit_pos - GRB_EPS)) {
+        // Train is stopped, unless it leaves within this time step, after
+        // which its speed does not matter
+        tr_new_speed = 0.0;
       }
 
       PLOGV << "tr_new_speed = " << tr_new_speed;
 
       // Move trains
+      auto const prev_front = train_positions.at(tr).front;
+      // Time and speed at which the train's rear passes the exit vertex, if
+      // it does so within this time step
+      struct ExitPassing {
+        double t;
+        double vel;
+      };
+      std::optional<ExitPassing> exit_passing;
       if (move_train(tr, train_velocities.at(tr), tr_new_speed, tr_ma_data.ma,
                      dt, train_positions)) {
         movement_detected = true;
 
-        auto const tr_route_len = train_edge_length(tr);
-        auto const last_edge_leaves_network =
-            get_instance()
-                ->get_const_network()
-                .get_edge(get_train_edges_of_tr(tr).back())
-                .target ==
-            get_instance()->get_const_schedule(tr).get_exit_vertex();
         if (last_edge_leaves_network &&
-            train_positions.at(tr).front > tr_route_len) {
-          // The train's front cannot leave the network. At the latest, it
-          // stops at the exit vertex until the train is allowed to disappear.
-          PLOGV << "Train " << train_object.get_name()
-                << " cannot pass the exit vertex at " << tr_route_len
-                << ", hence, its front position "
-                << train_positions.at(tr).front << " is corrected.";
-          train_positions.at(tr).front = tr_route_len;
+            train_positions.at(tr).front > tr_exit_pos - GRB_EPS) {
+          if (prev_front < tr_exit_pos - GRB_EPS) {
+            // The train's rear passes the exit vertex within this time step
+            exit_passing = ExitPassing{.t = t, .vel = tr_new_speed};
+            auto const overshooting_distance =
+                train_positions.at(tr).front - tr_exit_pos;
+            if (overshooting_distance > GRB_EPS) {
+              auto const reverse_acceleration =
+                  (train_velocities.at(tr) - tr_new_speed) / dt;
+              auto const overshooting_time =
+                  time_to_travel_distance_with_constant_acceleration(
+                      tr_new_speed, reverse_acceleration,
+                      overshooting_distance);
+              exit_passing->t -= overshooting_time;
+              exit_passing->vel += reverse_acceleration * overshooting_time;
+            }
+            exit_passing_times.at(tr) = exit_passing->t;
+            PLOGV << "Train " << train_object.get_name()
+                  << " passes the exit vertex with its rear at time "
+                  << exit_passing->t;
+          }
+          // The train cannot move any further than until it has left the
+          // network, where it has to wait if it is not allowed to disappear
+          train_positions.at(tr).front = tr_exit_pos;
         } else if (!last_edge_leaves_network &&
                    tr_route_len < train_positions.at(tr).front + GRB_EPS) {
           PLOGV << "Train " << train_object.get_name()
@@ -234,8 +298,12 @@ cda_rail::simulator::GreedySimulator::simulate(
                                               train_object.get_deceleration());
 
       if (save_trajectories) {
-        train_trajectories.at(tr)[t] = {.pos = train_positions.at(tr).front,
-                                        .vel = train_velocities.at(tr)};
+        // A train that leaves is sampled when its rear passes the exit vertex
+        train_trajectories.at(
+            tr)[exit_passing.has_value() ? exit_passing->t : t] = {
+            .pos = train_positions.at(tr).front,
+            .vel = exit_passing.has_value() ? exit_passing->vel
+                                            : train_velocities.at(tr)};
       }
     }
 
@@ -257,7 +325,7 @@ cda_rail::simulator::GreedySimulator::simulate(
           is_exit_vertex_blocked(tr, trains_in_network, trains_left);
       auto const has_remaining_stop    = tr_next_stop_id.at(tr).has_value();
       auto const after_stop_until_time = t >= tr_stop_until.at(tr);
-      if (tr_status == DestinationType::Network && t < tr_exit_time) {
+      if (tr_status == DestinationType::Network && t + GRB_EPS < tr_exit_time) {
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " has reached the end of its route but cannot leave the "
                  "network until "
@@ -278,17 +346,21 @@ cda_rail::simulator::GreedySimulator::simulate(
               << " cannot be removed until " << tr_stop_until.at(tr)
               << " due to station stop requirements.";
       }
-      if (tr_status == DestinationType::Network && t >= tr_exit_time &&
-          !exit_blocked && !has_remaining_stop && after_stop_until_time) {
+      if (tr_status == DestinationType::Network &&
+          t + GRB_EPS >= tr_exit_time && !exit_blocked && !has_remaining_stop &&
+          after_stop_until_time) {
         trains_to_remove.emplace_back(tr);
         trains_left.insert(tr);
         trains_finished_simulating.insert(tr);
-        exit_times.at(tr) = t;
+        // The train leaves when its rear passes the exit vertex, which is not
+        // before its exit time
+        exit_times.at(tr) = std::max(exit_passing_times.at(tr), tr_exit_time);
         const auto& exit_vertex_idx =
             get_instance()->get_const_schedule(tr).get_exit_vertex();
         const auto& exit_vertex =
             get_instance()->get_const_network().get_vertex(exit_vertex_idx);
-        vertex_headways.at(exit_vertex_idx) = t + exit_vertex.headway;
+        vertex_headways.at(exit_vertex_idx) =
+            exit_times.at(tr) + exit_vertex.headway;
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " left the network.";
       } else if (tr_status == DestinationType::Edge && after_stop_until_time) {
@@ -431,16 +503,26 @@ cda_rail::simulator::GreedySimulator::simulate(
       const auto& train_schedule = get_instance()->get_const_schedule(tr);
       const auto& entry_vertex = get_instance()->get_const_network().get_vertex(
           train_schedule.get_entry_vertex());
+      const auto entry_bound =
+          m_position_bound ? m_position_bound(tr, t) : std::nullopt;
       if (vertex_headways.at(train_schedule.get_entry_vertex()) > t) {
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " cannot enter the network at " << entry_vertex.name
               << " due to vertex headway constraints until time "
               << vertex_headways.at(train_schedule.get_entry_vertex());
       } else if (!is_ok_to_enter(tr, train_positions, train_velocities,
-                                 trains_in_network, trains_on_edges)) {
+                                 trains_in_network, trains_on_edges,
+                                 trains_left)) {
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " cannot enter the network at " << entry_vertex.name
               << " due to moving authority constraints.";
+      } else if (entry_bound.has_value() &&
+                 tr_braking_distance(tr,
+                                     train_schedule.get_initial_velocity()) >
+                     entry_bound->braking_point + GRB_EPS) {
+        PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
+              << " cannot enter the network at " << entry_vertex.name
+              << " due to its position bound.";
       } else {
         trains_in_network.insert(tr);
         vertex_headways.at(train_schedule.get_entry_vertex()) =
@@ -489,6 +571,15 @@ cda_rail::simulator::GreedySimulator::simulate(
                  })) {
         PLOGV << "Train stop constraint prevents movement.";
         reason_found = true;
+      } else if (m_position_bound &&
+                 std::ranges::any_of(
+                     std::views::iota(size_t{0}, number_of_trains),
+                     [this, t, &trains_finished_simulating](size_t tr) {
+                       return !trains_finished_simulating.contains(tr) &&
+                              m_position_bound(tr, t).has_value();
+                     })) {
+        PLOGV << "Position bound prevents movement.";
+        reason_found = true;
       } else {
         for (size_t tr = 0; tr < train_velocities.size(); ++tr) {
           if (!trains_finished_simulating.contains(tr)) {
@@ -519,6 +610,8 @@ cda_rail::simulator::GreedySimulator::simulate(
         PLOGV << "Trains are in a deadlock situation.";
         return build_results(false);
       }
+      // Waiting for a reason that resolves over time is no lack of progress
+      cycles_without_movement = 0;
     }
 
     // Update time
@@ -649,7 +742,8 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
     size_t tr, const std::vector<TrainPosition>& train_positions,
     const std::vector<double>&                     train_velocities,
     const std::unordered_set<size_t>&              trains_in_network,
-    const std::vector<std::unordered_set<size_t>>& tr_on_edges) const {
+    const std::vector<std::unordered_set<size_t>>& tr_on_edges,
+    const std::unordered_set<size_t>&              trains_left) const {
   const auto v0 = get_instance()->get_const_schedule(tr).get_initial_velocity();
   const auto bd = tr_braking_distance(tr, v0);
   const auto milestones = edge_milestones(tr);
@@ -709,8 +803,9 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
       }
       const auto& other_tr  = *(ttd_pos - 1); // Previous train in the TTD order
       const auto& other_pos = train_positions.at(other_tr);
-      if (!trains_in_network.contains(other_tr) ||
-          !is_behind_ttd(other_tr, ttd_sec.value(), other_pos)) {
+      if (!trains_left.contains(other_tr) &&
+          (!trains_in_network.contains(other_tr) ||
+           !is_behind_ttd(other_tr, ttd_sec.value(), other_pos))) {
         return false; // Other train is occupying the TTD section
       }
     }
@@ -987,7 +1082,7 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     }
   }
 
-  // Check exit
+  // Check exit, i.e., the train's rear passing the exit vertex
   const auto& last_edge_id = get_train_edges_of_tr(tr).back();
   const auto& last_edge =
       get_instance()->get_const_network().get_edge(last_edge_id);
@@ -995,74 +1090,222 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
   const bool last_edge_leaves_network =
       (last_edge.target == tr_schedule.get_exit_vertex());
 
-  if (last_edge_leaves_network && pos >= milestones.back() - GRB_EPS) {
-    // The train's front is already at the exit vertex. Since it cannot leave
-    // the network, it waits there until it is allowed to disappear.
-    retval.pos = std::min(retval.pos, std::max(0.0, milestones.back() - pos));
-  } else if (last_edge_leaves_network) {
-    if (pos + max_displacement >= milestones.back()) {
-      // Train's moving authority can potentially leave the network
-      retval = speed_restriction_helper(
-          retval.pos, retval.vel, pos, milestones.back(), v_0,
-          tr_schedule.get_exit_velocity(), train.get_deceleration(), dt);
-      auto const exit_time_tr =
-          this->get_instance()->get_const_schedule(tr).get_exit_time();
-      if (current_time + GRB_EPS < exit_time_tr) {
-        // Train should not exit in this time step, hence, potential restriction
-        bool       calc_speed = true;
-        auto const bd         = braking_distance(v_0, train.get_deceleration());
-        auto const pos_after_movement = pos + ((v_0 + retval.vel) / 2.0 * dt);
-        auto const bd_after_movement =
-            braking_distance(retval.vel, train.get_deceleration());
+  if (last_edge_leaves_network) {
+    // Where the train's front is once its rear has passed the exit vertex
+    const auto exit_pos = milestones.back() + train.get_length();
 
-        if (pos_after_movement + bd_after_movement <=
-            milestones.back() + GRB_EPS) {
-          PLOGV
-              << "At time " << current_time << ", train "
-              << get_instance()->get_const_train_list().get_train(tr).get_name()
-              << " moving authority will not reach route end. No need to slow "
-                 "down.";
-          calc_speed = false;
-        } else if (current_time + dt + GRB_EPS >= exit_time_tr &&
-                   pos_after_movement <= milestones.back() + GRB_EPS) {
-          PLOGV
-              << "At time " << current_time << ", train "
-              << get_instance()->get_const_train_list().get_train(tr).get_name()
-              << " does not have to be slowed down shortly before exit.";
-          calc_speed = false;
-        } else if (pos + bd <= milestones.back() + GRB_EPS) {
-          // Train can stop before exit, but its moving authority can also
-          // overshoot after movement
-          auto const max_t_if_ma_overshoots =
-              max_travel_time_to_stop_at_end_after_one_time_step(
-                  v_0, dt, train.get_deceleration(), milestones.back() - pos);
-          if (max_t_if_ma_overshoots < exit_time_tr - current_time + GRB_EPS) {
-            PLOGV << "At time " << current_time << ", train "
-                  << get_instance()
-                         ->get_const_train_list()
-                         .get_train(tr)
-                         .get_name()
-                  << " has to stop and wait in order not to arrive early.";
-            retval.pos = std::min(retval.pos, milestones.back() - pos);
-            calc_speed = false;
-          }
-        }
-        if (calc_speed) {
-          auto const new_limit = max_travel_time_inverse(
-              v_0, exit_time_tr - current_time, dt, train.get_deceleration(),
-              milestones.back() - pos);
-          PLOGV
-              << "At time " << current_time << ", train "
-              << get_instance()->get_const_train_list().get_train(tr).get_name()
-              << " has speed limit " << new_limit
-              << " in order not to arrive early at the exit vertex.";
-          retval.vel = std::min(retval.vel, new_limit);
-        }
-      }
+    if (pos >= milestones.back()) {
+      // Beyond the exit vertex, the route continues at the speed limit of its
+      // last edge, irrespective of also_limit_by_leaving_edges
+      retval.vel = std::min(retval.vel, last_edge.max_speed);
+    }
+
+    if (pos >= exit_pos - GRB_EPS) {
+      // The train has left the network but is not allowed to disappear yet.
+      // Hence, it waits there. Since its moving authority keeps it within the
+      // network as long as it may not leave, this is only a safeguard for a
+      // train counted as having left within the numerical tolerance.
+      retval.pos = std::min(retval.pos, std::max(0.0, exit_pos - pos));
+    } else if (pos + max_displacement >= exit_pos) {
+      // Train's moving authority can potentially leave the network
+      retval = speed_restriction_helper(retval.pos, retval.vel, pos, exit_pos,
+                                        v_0, tr_schedule.get_exit_velocity(),
+                                        train.get_deceleration(), dt);
+    }
+
+    if (pos < exit_pos - GRB_EPS) {
+      retval = apply_exit_time(tr, train, pos, v_0, retval, current_time, dt);
     }
   }
   return {.ma = retval.pos, .max_v = retval.vel};
   // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+}
+
+cda_rail::simulator::PosVel
+cda_rail::simulator::GreedySimulator::apply_exit_time(
+    size_t tr, const cda_rail::Train& train, double pos, double v_0,
+    PosVel ma_and_max_v, double current_time, double dt) const {
+  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+  const auto exit_time = get_instance()->get_const_schedule(tr).get_exit_time();
+  if (current_time - dt + GRB_EPS >= exit_time) {
+    // This time step starts at or after the exit time
+    return ma_and_max_v;
+  }
+  const auto exit_vertex_pos = train_edge_length(tr);
+  const auto exit_pos        = exit_vertex_pos + train.get_length();
+  // Nothing has to be restricted if, after this time step, the train can
+  // still stop with its front at the exit vertex (or has already passed it),
+  // and if it cannot leave within this time step and needs at least until its
+  // exit time to do so afterwards
+  const auto max_pos_after          = pos + max_displacement(train, v_0, dt);
+  const auto min_remaining_distance = exit_pos - max_pos_after;
+  if ((pos > exit_vertex_pos + GRB_EPS ||
+       max_pos_after <= exit_vertex_pos + GRB_EPS) &&
+      min_remaining_distance > 0 &&
+      current_time + (min_remaining_distance / train.get_max_speed()) +
+              GRB_EPS >=
+          exit_time) {
+    return ma_and_max_v;
+  }
+
+  const auto& last_edge = get_instance()->get_const_network().get_edge(
+      get_train_edges_of_tr(tr).back());
+  const auto a = train.get_acceleration();
+  const auto d = train.get_deceleration();
+  // The front's position at the end of this time step, given the speed v_1
+  // there
+  const auto pos_after = [&](double v_1) {
+    return pos + ((v_0 + v_1) / 2.0 * dt);
+  };
+
+  // The front must not pass the exit vertex if the train could then not
+  // leave without stopping outside the network and not before its exit time.
+  // The latest it can leave without stopping is by accelerating just as much
+  // as needed and braking to the minimal speed until its rear passes the exit
+  // vertex.
+  const auto v_end = std::min(
+      V_MIN, get_instance()->get_const_schedule(tr).get_exit_velocity());
+  const auto latest_exit_without_stopping = [&](double pos_1, double v_1) {
+    const auto s = exit_pos - pos_1;
+    if (s <= 0) {
+      return current_time;
+    }
+    if (v_1 * v_1 >= (2 * d * s) + (v_end * v_end)) {
+      return current_time + ((v_1 - std::sqrt((v_1 * v_1) - (2 * d * s))) / d);
+    }
+    const auto v_peak = std::sqrt(
+        ((2 * a * d * s) + (d * v_1 * v_1) + (a * v_end * v_end)) / (a + d));
+    const auto v_max =
+        std::max(std::min(train.get_max_speed(), last_edge.max_speed), v_1);
+    if (v_peak <= v_max) {
+      return current_time + ((v_peak - v_1) / a) + ((v_peak - v_end) / d);
+    }
+    // In between, the train drives at its maximal speed
+    const auto cruising_distance =
+        s - (((v_max * v_max) - (v_1 * v_1)) / (2 * a)) -
+        (((v_max * v_max) - (v_end * v_end)) / (2 * d));
+    return current_time + ((v_max - v_1) / a) + (cruising_distance / v_max) +
+           ((v_max - v_end) / d);
+  };
+  const auto front_passes_early = [&](double v_1) {
+    const auto pos_1 = pos_after(v_1);
+    return pos_1 + braking_distance(v_1, d) > exit_vertex_pos + GRB_EPS &&
+           latest_exit_without_stopping(pos_1, v_1) + GRB_EPS < exit_time;
+  };
+
+  // The rear must not pass the exit vertex before the exit time. As long as
+  // this time step ends before, the train has to be able to stop before it
+  // leaves or, braking fully, leave no earlier than its exit time. Within the
+  // time step that contains the exit time, the front must not be beyond its
+  // exit position at the exit time, where the speed changes linearly within a
+  // time step. Following this limit, the train brakes fully and leaves exactly
+  // at its exit time.
+  const auto rear_passes_early = [&](double v_1) {
+    if (current_time + GRB_EPS < exit_time) {
+      const auto remaining_distance = exit_pos - pos_after(v_1);
+      if (remaining_distance <= 0) {
+        return true;
+      }
+      if (braking_distance(v_1, d) <= remaining_distance) {
+        return false;
+      }
+      return current_time +
+                 ((v_1 -
+                   std::sqrt(std::max(0.0, (v_1 * v_1) -
+                                               (2 * d * remaining_distance)))) /
+                  d) +
+                 GRB_EPS <
+             exit_time;
+    }
+    const auto tau = exit_time - (current_time - dt);
+    return pos + (v_0 * tau) + ((v_1 - v_0) * tau * tau / (2 * dt)) >
+           exit_pos + GRB_EPS;
+  };
+
+  const auto v_1 = [&]() {
+    return std::min(ma_and_max_v.vel,
+                    get_v1_from_ma(v_0, ma_and_max_v.pos, d, dt));
+  };
+
+  // Since a train stops at its moving authority, it can always wait at the
+  // exit vertex before its front has passed it
+  if (pos <= exit_vertex_pos + GRB_EPS && current_time + GRB_EPS < exit_time &&
+      front_passes_early(v_1())) {
+    const auto v_allowed = highest_allowed_speed(v_1(), front_passes_early);
+    if (v_allowed < V_MIN ||
+        pos_after(v_allowed) + braking_distance(v_allowed, d) <=
+            exit_vertex_pos + GRB_EPS) {
+      // Passing the exit vertex is too early, hence, the train has to be able
+      // to wait there
+      PLOGV << "At time " << current_time << ", train " << train.get_name()
+            << " has to be able to stop at the exit vertex in order not to "
+               "leave before "
+            << exit_time;
+      ma_and_max_v.pos =
+          std::min(ma_and_max_v.pos, std::max(0.0, exit_vertex_pos - pos));
+    } else {
+      ma_and_max_v.vel = std::min(ma_and_max_v.vel, v_allowed);
+    }
+  }
+
+  if (std::abs(pos - exit_vertex_pos) <= GRB_EPS && v_0 < V_MIN &&
+      current_time + GRB_EPS < exit_time &&
+      earliest_exit_from_standstill(tr, train, pos, current_time, dt) <=
+          exit_time + GRB_EPS) {
+    // The train waits at the exit vertex as long as it can still leave in time
+    // afterwards
+    ma_and_max_v.pos = 0;
+  }
+
+  if (rear_passes_early(v_1())) {
+    // If even stopping does not help anymore, the train brakes as much as it
+    // can
+    const auto v_allowed =
+        rear_passes_early(0) ? std::max(0.0, v_0 - (d * dt))
+                             : highest_allowed_speed(v_1(), rear_passes_early);
+    PLOGV << "At time " << current_time << ", train " << train.get_name()
+          << " has speed limit " << v_allowed
+          << " in order not to leave before " << exit_time;
+    ma_and_max_v.vel = std::min(ma_and_max_v.vel, v_allowed);
+  }
+  return ma_and_max_v;
+  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+}
+
+double cda_rail::simulator::GreedySimulator::earliest_exit_from_standstill(
+    size_t tr, const cda_rail::Train& train, double pos, double start_time,
+    double dt) const {
+  // The train moves as in simulate, where a time after its exit time lifts
+  // the restrictions of apply_exit_time
+  const auto exit_pos = train_edge_length(tr) + train.get_length();
+  double     v        = 0;
+  double     t        = start_time;
+  while (pos < exit_pos - GRB_EPS) {
+    t += dt;
+    const auto [ma, max_v] = get_future_max_speed_constraints(
+        tr, train, pos, v, max_displacement(train, v, dt), INF, dt, {}, true);
+    auto v_1 =
+        std::min(max_v, get_v1_from_ma(v, ma, train.get_deceleration(), dt));
+    if (v_1 < V_MIN &&
+        pos + std::min(ma, (v + v_1) * dt / 2.0) < exit_pos - GRB_EPS) {
+      v_1 = 0;
+    }
+    auto move_distance = std::min(ma, (v + v_1) * dt / 2.0);
+    if (v_1 < V_MIN && std::abs(ma - move_distance) < STOP_TOLERANCE) {
+      move_distance = ma;
+    }
+    if (move_distance < EPS) {
+      return INF;
+    }
+    if (pos + move_distance > exit_pos + GRB_EPS) {
+      // The rear passes the exit vertex within this time step
+      return t - time_to_travel_distance_with_constant_acceleration(
+                     v_1, (v - v_1) / dt, pos + move_distance - exit_pos);
+    }
+    pos += move_distance;
+    v = v_1;
+  }
+  return t;
 }
 
 double cda_rail::simulator::GreedySimulator::get_next_stop_ma(
@@ -1119,6 +1362,40 @@ bool cda_rail::simulator::GreedySimulator::is_exit_vertex_blocked(
 }
 
 cda_rail::simulator::GreedySimulator::MaAndMaxVResult
+cda_rail::simulator::GreedySimulator::apply_position_bound(
+    size_t tr, double pos, double v_0, MaAndMaxVResult ma_and_max_v, double t,
+    double dt) const {
+  if (!m_position_bound) {
+    return ma_and_max_v;
+  }
+  const auto bound = m_position_bound(tr, t);
+  if (!bound.has_value()) {
+    return ma_and_max_v;
+  }
+
+  ma_and_max_v.ma =
+      std::min(ma_and_max_v.ma, std::max(bound->braking_point - pos,
+                                         tr_braking_distance(tr, v_0)));
+
+  // With linearly changing speed, the front moves (v_0 + v_1) * dt / 2 within
+  // the time step, which bounds v_1 if the front is to stay behind the bound
+  const auto& train = get_instance()->get_const_train_list().get_train(tr);
+  const auto  v_full_braking =
+      std::max(0.0, v_0 - (train.get_deceleration() * dt));
+  const auto front_max_v =
+      std::max((2.0 * (bound->front - pos) / dt) - v_0, v_full_braking);
+  ma_and_max_v.max_v = std::min(ma_and_max_v.max_v, front_max_v);
+  if (front_max_v < V_MIN) {
+    // The train stops, and a stopping train is moved up to its moving
+    // authority, which hence must not lie beyond the bound either
+    ma_and_max_v.ma =
+        std::min(ma_and_max_v.ma,
+                 std::max(bound->front - pos, tr_braking_distance(tr, v_0)));
+  }
+  return ma_and_max_v;
+}
+
+cda_rail::simulator::GreedySimulator::MaAndMaxVResult
 cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
     size_t tr, const std::vector<double>& train_velocities,
     std::optional<size_t> next_stop, double current_time, double dt,
@@ -1140,9 +1417,14 @@ cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
   ma = get_absolute_distance_ma(tr, ma, train_positions, train_velocities,
                                 trains_in_network, trains_left, tr_on_edges,
                                 also_check_reverse_edges);
-  return get_future_max_speed_constraints(
-      tr, train, train_positions.at(tr).front, train_velocities.at(tr), ma,
-      current_time, dt, blocked_vertices, also_limit_speed_by_leaving_edges);
+  // The movement of this time step yields the train's position at current_time
+  return apply_position_bound(
+      tr, train_positions.at(tr).front, train_velocities.at(tr),
+      get_future_max_speed_constraints(tr, train, train_positions.at(tr).front,
+                                       train_velocities.at(tr), ma,
+                                       current_time, dt, blocked_vertices,
+                                       also_limit_speed_by_leaving_edges),
+      current_time, dt);
 }
 
 double cda_rail::simulator::GreedySimulator::get_v1_from_ma(double v_0,
@@ -1223,6 +1505,12 @@ cda_rail::simulator::GreedySimulator::tr_reached_end(
           ->get_const_network()
           .get_edge(get_train_edges_of_tr(tr).back())
           .target) {
+    const auto tr_len =
+        get_instance()->get_const_train_list().get_train(tr).get_length();
+    if (pos < route_len + tr_len - GRB_EPS) {
+      // The train's rear has not passed the exit vertex yet
+      return DestinationType::None;
+    }
     return DestinationType::Network;
   }
   if (has_stop_left && !get_stop_positions_of_tr(tr).empty() &&

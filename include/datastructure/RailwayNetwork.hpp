@@ -1693,6 +1693,25 @@ public:
   std::vector<std::pair<size_t, cda_rail::index_vector>>
   discretize(const vss::SeparationFunction& sep_func = vss::UNIFORM);
 
+  /**
+   * @brief Splits the breakable edges at the given positions, which become
+   *        `VSS` border vertices.
+   *
+   * Every resulting sub-edge is unbreakable. A reverse edge is split at the
+   * same borders, hence, it is enough to specify them for one direction.
+   *
+   * @param vss_positions For every edge, the distances of its borders from
+   *        its source vertex, strictly between 0 and its length.
+   * @return Vector of pairs `{original_edge_index, new_edge_indices}` for
+   *         every separated direction.
+   * @throws cda_rail::exceptions::ConsistencyException If the network fails
+   *         `is_consistent_for_transformation()`.
+   * @throws cda_rail::exceptions::InvalidInputException If @p vss_positions
+   *         does not have one entry per edge.
+   */
+  std::vector<std::pair<size_t, cda_rail::index_vector>>
+  separate_edges_at_vss(const std::vector<std::vector<double>>& vss_positions);
+
   // ------------------------
   // Path Finding Algorithms
   // ------------------------

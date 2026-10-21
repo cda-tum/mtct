@@ -283,6 +283,9 @@ void cda_rail::cli::add_vss_mip_options(CLI::App&       app,
 }
 
 void cda_rail::cli::finalize_vss_mip_settings(VssMipSettings& settings) {
+  if (!settings.exporting.evaluation_time_step.has_value()) {
+    settings.exporting.evaluation_time_step = settings.delta_t;
+  }
   if (settings.exporting.generate_identifier) {
     settings.exporting.parameter_identifier =
         generate_vss_mip_identifier(settings);

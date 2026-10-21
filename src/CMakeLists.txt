@@ -24,6 +24,7 @@ add_library(
   probleminstances/GeneralProblemInstance.cpp
   ${PROJECT_SOURCE_DIR}/include/probleminstances/GeneralPerformanceOptimizationInstance.hpp
   probleminstances/GeneralPerformanceOptimizationInstance.cpp
+  probleminstances/GeneralPerformanceOptimizationInstance_Evaluation.cpp
   ${PROJECT_SOURCE_DIR}/include/FixedSizeVector.hpp
   ${PROJECT_SOURCE_DIR}/include/MultiArray.hpp
   ${PROJECT_SOURCE_DIR}/include/solver/GeneralSolver.hpp
